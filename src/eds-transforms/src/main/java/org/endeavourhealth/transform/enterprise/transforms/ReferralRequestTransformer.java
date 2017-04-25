@@ -2,6 +2,7 @@ package org.endeavourhealth.transform.enterprise.transforms;
 
 import com.google.common.base.Strings;
 import org.endeavourhealth.common.fhir.CodeableConceptHelper;
+import org.endeavourhealth.common.fhir.ExtensionConverter;
 import org.endeavourhealth.common.fhir.FhirExtensionUri;
 import org.endeavourhealth.common.fhir.ReferenceHelper;
 import org.endeavourhealth.common.fhir.schema.ReferralPriority;
@@ -17,6 +18,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Date;
 import java.util.Map;
+import java.util.UUID;
 
 public class ReferralRequestTransformer extends AbstractTransformer {
 
@@ -29,7 +31,8 @@ public class ReferralRequestTransformer extends AbstractTransformer {
                           Long enterpriseOrganisationId,
                           Long enterprisePatientId,
                           Long enterprisePersonId,
-                          String configName) throws Exception {
+                          String configName,
+                          UUID protocolId) throws Exception {
 
         Long enterpriseId = mapId(resource, csvWriter, true);
         if (enterpriseId == null) {
@@ -41,7 +44,7 @@ public class ReferralRequestTransformer extends AbstractTransformer {
         } else {
 
             Resource fhir = deserialiseResouce(resource);
-            transform(enterpriseId, fhir, data, csvWriter, otherResources, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName);
+            transform(enterpriseId, fhir, data, csvWriter, otherResources, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName, protocolId);
         }
     }
 
@@ -53,7 +56,8 @@ public class ReferralRequestTransformer extends AbstractTransformer {
                           Long enterpriseOrganisationId,
                           Long enterprisePatientId,
                           Long enterprisePersonId,
-                          String configName) throws Exception {
+                          String configName,
+                          UUID protocolId) throws Exception {
 
         ReferralRequest fhir = (ReferralRequest)resource;
 
@@ -74,6 +78,7 @@ public class ReferralRequestTransformer extends AbstractTransformer {
         Boolean outgoing = null;
         String originalCode = null;
         String originalTerm = null;
+        boolean isReview = false;
 
         id = enterpriseId.longValue();
         organizationId = enterpriseOrganisationId.longValue();
@@ -85,13 +90,14 @@ public class ReferralRequestTransformer extends AbstractTransformer {
             encounterId = findEnterpriseId(data.getEncounters(), encounterReference);
         }
 
-        if (fhir.hasRequester()) {
+        //moved to lower down since this isn't correct for incoming referrals
+        /*if (fhir.hasRequester()) {
             Reference practitionerReference = fhir.getRequester();
             practitionerId = findEnterpriseId(data.getPractitioners(), practitionerReference);
             if (practitionerId == null) {
-                practitionerId = transformOnDemand(practitionerReference, data, otherResources, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName);
+                practitionerId = transformOnDemand(practitionerReference, data, otherResources, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName, protocolId);
             }
-        }
+        }*/
 
         if (fhir.hasDateElement()) {
             DateTimeType dt = fhir.getDateElement();
@@ -124,11 +130,11 @@ public class ReferralRequestTransformer extends AbstractTransformer {
             if (resourceType == ResourceType.Organization) {
                 requesterOrganizationId = findEnterpriseId(data.getOrganisations(), requesterReference);
                 if (requesterOrganizationId == null) {
-                    requesterOrganizationId = transformOnDemand(requesterReference, data, otherResources, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName);
+                    requesterOrganizationId = transformOnDemand(requesterReference, data, otherResources, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName, protocolId);
                 }
 
             } else if (resourceType == ResourceType.Practitioner) {
-                requesterOrganizationId = findOrganisationEnterpriseIdFromPractictioner(requesterReference, data, otherResources, fhir, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName);
+                requesterOrganizationId = findOrganisationEnterpriseIdFromPractictioner(requesterReference, data, otherResources, fhir, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName, protocolId);
             }
         }
 
@@ -136,13 +142,12 @@ public class ReferralRequestTransformer extends AbstractTransformer {
 
             //there may be two recipients, one for the organisation and one for the practitioner
             for (Reference recipientReference: fhir.getRecipient()) {
-                ResourceType resourceType = ReferenceHelper.getResourceType(recipientReference);
-                if (resourceType == ResourceType.Organization) {
+                if (ReferenceHelper.isResourceType(recipientReference, ResourceType.Organization)) {
                     //the EMIS test pack contains referrals that point to recipient organisations that don't exist,
                     //so we need to handle the failure to find the organisation
                     recipientOrganizationId = findEnterpriseId(data.getOrganisations(), recipientReference);
                     if (recipientOrganizationId == null) {
-                        recipientOrganizationId = transformOnDemand(recipientReference, data, otherResources, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName);
+                        recipientOrganizationId = transformOnDemand(recipientReference, data, otherResources, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName, protocolId);
                     }
                 }
             }
@@ -150,18 +155,50 @@ public class ReferralRequestTransformer extends AbstractTransformer {
             //if we didn't find an organisation reference, look for a practitioner one
             if (recipientOrganizationId == null) {
                 for (Reference recipientReference : fhir.getRecipient()) {
-                    ResourceType resourceType = ReferenceHelper.getResourceType(recipientReference);
-
-                    if (resourceType == ResourceType.Practitioner) {
-                        recipientOrganizationId = findOrganisationEnterpriseIdFromPractictioner(recipientReference, data, otherResources, fhir, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName);
+                    if (ReferenceHelper.isResourceType(recipientReference, ResourceType.Practitioner)) {
+                        recipientOrganizationId = findOrganisationEnterpriseIdFromPractictioner(recipientReference, data, otherResources, fhir, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName, protocolId);
                     }
                 }
             }
         }
 
-        //base the outgoing flag simply on whether the recipient ID matches the owning ID
+        Reference practitionerReference = null;
+
         if (requesterOrganizationId != null) {
             outgoing = requesterOrganizationId.longValue() == organizationId;
+
+        } else if (recipientOrganizationId != null) {
+            outgoing = recipientOrganizationId.longValue() != organizationId;
+        }
+
+        //if we're an outgoing referral, then populate the practitioner ID from the practitioner in the requester field
+        if (outgoing != null
+            && outgoing.booleanValue()
+            && fhir.hasRequester()) {
+
+            Reference requesterReference = fhir.getRequester();
+            if (ReferenceHelper.isResourceType(requesterReference, ResourceType.Practitioner)) {
+                practitionerReference = requesterReference;
+            }
+        }
+
+        //if we're an incoming referral then populate the practitioner ID using the practitioner in the recipient field
+        if (outgoing != null
+                && !outgoing.booleanValue()
+                && fhir.hasRecipient()) {
+
+            for (Reference recipientReference : fhir.getRecipient()) {
+                if (ReferenceHelper.isResourceType(recipientReference, ResourceType.Practitioner)) {
+                    practitionerReference = recipientReference;
+                }
+            }
+        }
+
+        if (practitionerReference != null) {
+            practitionerId = findEnterpriseId(data.getPractitioners(), practitionerReference);
+            if (practitionerId == null) {
+                practitionerId = transformOnDemand(practitionerReference, data, otherResources, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName, protocolId);
+            }
         }
 
         if (fhir.hasPriority()) {
@@ -196,6 +233,14 @@ public class ReferralRequestTransformer extends AbstractTransformer {
             }
         }
 
+        Extension reviewExtension = ExtensionConverter.findExtension(fhir, FhirExtensionUri.IS_REVIEW);
+        if (reviewExtension != null) {
+            BooleanType b = (BooleanType)reviewExtension.getValue();
+            if (b.getValue() != null) {
+                isReview = b.getValue();
+            }
+        }
+
         org.endeavourhealth.transform.enterprise.outputModels.ReferralRequest model = (org.endeavourhealth.transform.enterprise.outputModels.ReferralRequest)csvWriter;
         model.writeUpsert(id,
             organizationId,
@@ -213,7 +258,8 @@ public class ReferralRequestTransformer extends AbstractTransformer {
             mode,
             outgoing,
             originalCode,
-            originalTerm);
+            originalTerm,
+            isReview);
     }
 
     private Long findOrganisationEnterpriseIdFromPractictioner(Reference practitionerReference,
@@ -223,7 +269,8 @@ public class ReferralRequestTransformer extends AbstractTransformer {
                                                                    Long enterpriseOrganisationId,
                                                                    Long enterprisePatientId,
                                                                    Long enterprisePersonId,
-                                                                   String configName) throws Exception {
+                                                                   String configName,
+                                                               UUID protocolId) throws Exception {
 
         try {
             Practitioner fhirPractitioner = (Practitioner)findResource(practitionerReference, otherResources);
@@ -231,7 +278,7 @@ public class ReferralRequestTransformer extends AbstractTransformer {
             Reference organisationReference = role.getManagingOrganization();
             Long ret = findEnterpriseId(data.getOrganisations(), organisationReference);
             if (ret == null) {
-                ret = transformOnDemand(organisationReference, data, otherResources, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName);
+                ret = transformOnDemand(organisationReference, data, otherResources, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName, protocolId);
             }
             return ret;
 

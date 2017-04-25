@@ -1,25 +1,30 @@
 package org.endeavourhealth.transform.enterprise.transforms;
 
 import OpenPseudonymiser.Crypto;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.base.Strings;
-import org.endeavourhealth.common.fhir.*;
+import org.endeavourhealth.common.config.ConfigManager;
+import org.endeavourhealth.common.fhir.FhirUri;
+import org.endeavourhealth.common.fhir.IdentifierHelper;
 import org.endeavourhealth.common.fhir.schema.OrganisationType;
-import org.endeavourhealth.common.utility.Resources;
+import org.endeavourhealth.core.data.admin.LibraryRepositoryHelper;
 import org.endeavourhealth.core.data.ehr.ResourceRepository;
 import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
-import org.endeavourhealth.core.data.ehr.models.ResourceByPatient;
-import org.endeavourhealth.core.data.ehr.models.ResourceHistory;
 import org.endeavourhealth.core.rdbms.eds.PatientLinkHelper;
 import org.endeavourhealth.core.rdbms.eds.PatientLinkPair;
+import org.endeavourhealth.core.rdbms.eds.PatientSearch;
+import org.endeavourhealth.core.rdbms.eds.PatientSearchHelper;
 import org.endeavourhealth.core.rdbms.reference.PostcodeHelper;
 import org.endeavourhealth.core.rdbms.reference.PostcodeLookup;
 import org.endeavourhealth.core.rdbms.transform.EnterpriseAgeUpdater;
 import org.endeavourhealth.core.rdbms.transform.EnterpriseIdHelper;
 import org.endeavourhealth.core.rdbms.transform.HouseholdHelper;
 import org.endeavourhealth.core.rdbms.transform.PseudoIdHelper;
+import org.endeavourhealth.core.xml.QueryDocument.*;
 import org.endeavourhealth.transform.enterprise.outputModels.AbstractEnterpriseCsvWriter;
 import org.endeavourhealth.transform.enterprise.outputModels.OutputContainer;
 import org.hl7.fhir.instance.model.*;
+import org.hl7.fhir.instance.model.Resource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,9 +37,12 @@ public class PatientTransformer extends AbstractTransformer {
     private static final String PSEUDO_KEY_NHS_NUMBER = "NHSNumber";
     private static final String PSEUDO_KEY_PATIENT_NUMBER = "PatientNumber";
     private static final String PSEUDO_KEY_DATE_OF_BIRTH = "DOB";
-    private static final String PSEUDO_SALT_RESOURCE = "Endeavour Enterprise - East London.EncryptedSalt";
+    //private static final String PSEUDO_SALT_RESOURCE = "Endeavour Enterprise - East London.EncryptedSalt";
 
-    private static byte[] saltBytes = null;
+    private static final int BEST_ORG_SCORE = 10;
+
+    private static Map<String, byte[]> saltCacheMap = new HashMap<>();
+    //private static byte[] saltBytes = null;
     private static ResourceRepository resourceRepository = new ResourceRepository();
 
     public void transform(ResourceByExchangeBatch resource,
@@ -44,7 +52,8 @@ public class PatientTransformer extends AbstractTransformer {
                           Long enterpriseOrganisationId,
                           Long nullEnterprisePatientId,
                           Long nullEnterprisePersonId,
-                          String configName) throws Exception {
+                          String configName,
+                          UUID protocolId) throws Exception {
 
         Long enterpriseId = mapId(resource, csvWriter, true);
         if (enterpriseId == null) {
@@ -55,7 +64,7 @@ public class PatientTransformer extends AbstractTransformer {
 
         } else {
             Resource fhir = deserialiseResouce(resource);
-            transform(enterpriseId, fhir, data, csvWriter, otherResources, enterpriseOrganisationId, nullEnterprisePatientId, nullEnterprisePersonId, configName);
+            transform(enterpriseId, fhir, data, csvWriter, otherResources, enterpriseOrganisationId, nullEnterprisePatientId, nullEnterprisePersonId, configName, protocolId);
         }
     }
 
@@ -67,7 +76,8 @@ public class PatientTransformer extends AbstractTransformer {
                           Long enterpriseOrganisationId,
                           Long nullEnterprisePatientId,
                           Long nullEnterprisePersonId,
-                          String configName) throws Exception {
+                          String configName,
+                          UUID protocolId) throws Exception {
 
         Patient fhirPatient = (Patient)resource;
 
@@ -151,7 +161,7 @@ public class PatientTransformer extends AbstractTransformer {
 
         //check if our patient demographics also should be used as the person demographics. This is typically
         //true if our patient record is at a GP practice.
-        boolean shouldWritePersonRecord = shouldWritePersonRecord(fhirPatient);
+        boolean shouldWritePersonRecord = shouldWritePersonRecord(fhirPatient, discoveryPersonId, protocolId);
 
         org.endeavourhealth.transform.enterprise.outputModels.Patient patientWriter = (org.endeavourhealth.transform.enterprise.outputModels.Patient)csvWriter;
         org.endeavourhealth.transform.enterprise.outputModels.Person personWriter = data.getPersons();
@@ -164,7 +174,7 @@ public class PatientTransformer extends AbstractTransformer {
                 patientGenderId = Enumerations.AdministrativeGender.FEMALE.ordinal();
             }
 
-            pseudoId = pseudonomise(fhirPatient);
+            pseudoId = pseudonymise(fhirPatient, configName);
 
             //only persist the pseudo ID if it's non-null
             if (!Strings.isNullOrEmpty(pseudoId)) {
@@ -236,74 +246,103 @@ public class PatientTransformer extends AbstractTransformer {
         }
     }
 
-    private boolean shouldWritePersonRecord(Patient fhirPatient) throws Exception {
+    private boolean shouldWritePersonRecord(Patient fhirPatient, String discoveryPersonId, UUID protocolId) throws Exception {
 
-        //TODO - remove this
-        if (true) {
-            return false;
+        //check if OUR patient record is an active one at a GP practice, in which case it definitely should define the person record
+        String patientId = fhirPatient.getId();
+        PatientSearch patientSearch = PatientSearchHelper.searchByPatientId(UUID.fromString(patientId));
+        if (isActive(patientSearch)
+                && getPatientSearchOrgScore(patientSearch) == BEST_ORG_SCORE) {
+            return true;
         }
 
-        //if our FHIR record is for an active patient at a GP practice, then it should be the defining demographics for the Person record
-        UUID patientUuid = UUID.fromString(fhirPatient.getId());
-        ResourceHistory patientResourceHistory = resourceRepository.getCurrentVersion(ResourceType.Patient.toString(), patientUuid);
-        UUID serviceUuid = patientResourceHistory.getServiceId();
-        UUID systemUuid = patientResourceHistory.getSystemId();
+        //if we fail the above check, we need to know what other services are in our protocol, so we can see
+        //which service has the most relevant data for the person record
+        LibraryItem libraryItem = LibraryRepositoryHelper.getLibraryItemUsingCache(protocolId);
+        Protocol protocol = libraryItem.getProtocol();
+        Set<String> serviceIdsInProtocol = new HashSet<>();
 
-        boolean activePatient = false;
+        for (ServiceContract serviceContract: protocol.getServiceContract()) {
+            if (serviceContract.getType().equals(ServiceContractType.SUBSCRIBER)
+                && serviceContract.getActive() == ServiceContractActive.TRUE) {
 
+                serviceIdsInProtocol.add(serviceContract.getService().getUuid());
+            }
+        }
 
-        List<ResourceByPatient> episodeResourceWrappers = resourceRepository.getResourcesByPatient(serviceUuid, systemUuid, patientUuid, ResourceType.EpisodeOfCare.toString());
-        for (ResourceByPatient resourceByPatient: episodeResourceWrappers) {
-            EpisodeOfCare episodeOfCare = (EpisodeOfCare)deserialiseResouce(resourceByPatient.getResourceData());
+        //get the other patient IDs for our person record
+        List<PatientSearch> patientSearchesInProtocol = new ArrayList<>();
+        patientSearchesInProtocol.add(patientSearch);
 
-            //if the FHIR episode doesn't have an organisation, there's no point checking it
-            if (!episodeOfCare.hasManagingOrganization()) {
+        List<String> allPatientIds = PatientLinkHelper.getPatientIds(discoveryPersonId);
+        for (String otherPatientId: allPatientIds) {
+
+            //skip the patient ID we've already retrieved
+            if (otherPatientId.equals(patientId)) {
                 continue;
             }
 
-            boolean active = false;
+            PatientSearch otherPatientSearch = PatientSearchHelper.searchByPatientId(UUID.fromString(otherPatientId));
 
-            //episode is active if we have no end date or a future-dated end date
-            if (episodeOfCare.hasPeriod()) {
-                Period period = episodeOfCare.getPeriod();
-                if (!period.hasEnd()
-                    || (period.hasEnd() && period.getEnd().after(new Date()))) {
-                    active = true;
-                }
+            //if this patient search record isn't in our protocol, skip it
+            String otherPatientSearchService = otherPatientSearch.getServiceId();
+            if (!serviceIdsInProtocol.contains(otherPatientSearchService)) {
+                continue;
             }
 
-            //episode is active if we're explicitly told it is
-            if (episodeOfCare.hasStatus()
-                    && episodeOfCare.getStatus() == EpisodeOfCare.EpisodeOfCareStatus.ACTIVE) {
-                active = true;
-            }
-
-            //if the episode is active, we check the managing organisation to see if it's a GP practice
-            if (active) {
-                Reference orgReference = episodeOfCare.getManagingOrganization();
-                ReferenceComponents comps = ReferenceHelper.getReferenceComponents(orgReference);
-                Organization fhirOrganization = (Organization)resourceRepository.getCurrentVersionAsResource(comps.getResourceType(), comps.getId());
-                if (fhirOrganization != null
-                        && fhirOrganization.hasType()) {
-
-                    CodeableConcept codeableConcept = fhirOrganization.getType();
-                    String orgTypeCode = CodeableConceptHelper.findCodingCode(codeableConcept, FhirValueSetUri.VALUE_SET_ORGANISATION_TYPE);
-                    if (!Strings.isNullOrEmpty(orgTypeCode)
-                            && orgTypeCode.equals(OrganisationType.GP_PRACTICE.getCode())) {
-                        return true;
-                    }
-                }
-            }
+            patientSearchesInProtocol.add(otherPatientSearch);
         }
 
-        //TODO - check just if is active and NOT gp practice elsewhere
-        String personId = PatientLinkHelper.getPersonId(patientUuid.toString());
-        List<String> otherPatientIds = PatientLinkHelper.getPatientIds(personId);
+        //sort the patient searches so active GP ones are first
+        patientSearchesInProtocol.sort((o1, o2) -> {
 
-        //TODO - how to work out what other services are in the protocol????
+            //active records always supersede inactive ones
+            boolean o1Active = isActive(o1);
+            boolean o2Active = isActive(o2);
+            if (o1Active && !o2Active) {
+                return -1;
+            } else if (!o1Active && o2Active) {
+                return 1;
+            } else {
+                //if they both have the same active state, then check the org type. We want
+                //GP practices first, then hospital records, then everything else
+                int o1OrgScore = getPatientSearchOrgScore(o1);
+                int o2OrgScore = getPatientSearchOrgScore(o2);
+                if (o1OrgScore > o2OrgScore) {
+                    return -1;
+                } else if (o1OrgScore < o2OrgScore) {
+                    return 1;
+                } else {
+                    return 0;
+                }
+            }
+        });
 
+        //check if the best patient search record matches our patient ID. If it does, then our patient
+        //should be the one that is used to define the person table.
+        PatientSearch bestPatientSearch = patientSearchesInProtocol.get(0);
+        return bestPatientSearch.getPatientId().equals(patientId);
+    }
 
-        return false;
+    private static int getPatientSearchOrgScore(PatientSearch patientSearch) {
+        String typeCode = patientSearch.getOrganisationTypeCode();
+        if (Strings.isNullOrEmpty(typeCode)) {
+            return BEST_ORG_SCORE-4;
+        }
+
+        if (typeCode.equals(OrganisationType.GP_PRACTICE.getCode())) {
+            return BEST_ORG_SCORE;
+        } else if (typeCode.equals(OrganisationType.NHS_TRUST.getCode())
+                || typeCode.equals(OrganisationType.NHS_TRUST_SERVICE.getCode())) {
+            return BEST_ORG_SCORE-1;
+        } else {
+            return BEST_ORG_SCORE-2;
+        }
+    }
+
+    private static boolean isActive(PatientSearch patientSearch) {
+        Date deducted = patientSearch.getRegistrationEnd();
+        return deducted == null || deducted.after(new Date());
     }
 
     private static final String findPostcodePrefix(String postcode) {
@@ -328,7 +367,7 @@ public class PatientTransformer extends AbstractTransformer {
         return postcode.substring(0, len-3);
     }
 
-    private static String pseudonomise(Patient fhirPatient) throws Exception {
+    private static String pseudonymise(Patient fhirPatient, String configName) throws Exception {
 
         String dob = null;
         if (fhirPatient.hasBirthDate()) {
@@ -366,15 +405,38 @@ public class PatientTransformer extends AbstractTransformer {
         }
 
         Crypto crypto = new Crypto();
-        crypto.SetEncryptedSalt(getEncryptedSalt());
+        crypto.SetEncryptedSalt(getEncryptedSalt(configName));
         return crypto.GetDigest(keys);
     }
 
-    private static byte[] getEncryptedSalt() throws Exception {
+
+    private static byte[] getEncryptedSalt(String configName) throws Exception {
+
+        byte[] ret = saltCacheMap.get(configName);
+        if (ret == null) {
+
+            synchronized (saltCacheMap) {
+                ret = saltCacheMap.get(configName);
+                if (ret == null) {
+
+                    JsonNode config = ConfigManager.getConfigurationAsJson(configName, "enterprise");
+                    JsonNode saltNode = config.get("salt");
+                    if (saltNode == null) {
+                        throw new Exception("No 'Salt' element found in Enterprise config " + configName);
+                    }
+                    String base64Salt = saltNode.asText();
+                    ret = Base64.getDecoder().decode(base64Salt);
+                    saltCacheMap.put(configName, ret);
+                }
+            }
+        }
+        return ret;
+    }
+    /*private static byte[] getEncryptedSalt() throws Exception {
         if (saltBytes == null) {
             saltBytes = Resources.getResourceAsBytes(PSEUDO_SALT_RESOURCE);
         }
         return saltBytes;
-    }
+    }*/
 
 }

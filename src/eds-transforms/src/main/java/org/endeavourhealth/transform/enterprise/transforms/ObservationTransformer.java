@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory;
 import java.math.BigDecimal;
 import java.util.Date;
 import java.util.Map;
+import java.util.UUID;
 
 public class ObservationTransformer extends AbstractTransformer {
 
@@ -26,7 +27,8 @@ public class ObservationTransformer extends AbstractTransformer {
                           Long enterpriseOrganisationId,
                           Long enterprisePatientId,
                           Long enterprisePersonId,
-                          String configName) throws Exception {
+                          String configName,
+                          UUID protocolId) throws Exception {
 
         Long enterpriseId = mapId(resource, csvWriter, true);
         if (enterpriseId == null) {
@@ -37,7 +39,7 @@ public class ObservationTransformer extends AbstractTransformer {
 
         } else {
             Resource fhir = deserialiseResouce(resource);
-            transform(enterpriseId, fhir, data, csvWriter, otherResources, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName);
+            transform(enterpriseId, fhir, data, csvWriter, otherResources, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName, protocolId);
         }
     }
 
@@ -49,7 +51,8 @@ public class ObservationTransformer extends AbstractTransformer {
                           Long enterpriseOrganisationId,
                           Long enterprisePatientId,
                           Long enterprisePersonId,
-                          String configName) throws Exception {
+                          String configName,
+                          UUID protocolId) throws Exception {
 
         Observation fhir = (Observation)resource;
 
@@ -85,7 +88,7 @@ public class ObservationTransformer extends AbstractTransformer {
                 if (resourceType == ResourceType.Practitioner) {
                     practitionerId = findEnterpriseId(data.getPractitioners(), reference);
                     if (practitionerId == null) {
-                        practitionerId = transformOnDemand(reference, data, otherResources, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName);
+                        practitionerId = transformOnDemand(reference, data, otherResources, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName, protocolId);
                     }
                 }
             }

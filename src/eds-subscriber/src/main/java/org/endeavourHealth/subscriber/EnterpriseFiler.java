@@ -392,7 +392,24 @@ public class EnterpriseFiler {
             return;
         }
 
-        fileInserts(trueInserts, columns, columnClasses, tableName, connection, keywordEscapeChar);
+        //file the true inserts
+        try {
+            fileInserts(trueInserts, columns, columnClasses, tableName, connection, keywordEscapeChar);
+
+        } catch (SQLException ex) {
+            StringBuffer s = new StringBuffer();
+            s.append("Failed to insert into " + tableName + " record(s): ");
+            for (CSVRecord record: trueInserts) {
+                s.append("\n");
+                for (String column: columns) {
+                    s.append(record.get(column) + ", ");
+                }
+            }
+
+            throw new Exception(s.toString());
+        }
+
+        //then do the updates to records we're also inserting
         recordsUpdated = fileUpdates(laterUpdates, columns, columnClasses, tableName, connection, keywordEscapeChar);
 
         for (int i=0; i<recordsUpdated.length; i++) {

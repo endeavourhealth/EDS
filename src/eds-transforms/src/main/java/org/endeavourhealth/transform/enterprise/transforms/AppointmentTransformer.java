@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Date;
 import java.util.Map;
+import java.util.UUID;
 
 public class AppointmentTransformer extends AbstractTransformer {
 
@@ -23,7 +24,8 @@ public class AppointmentTransformer extends AbstractTransformer {
                           Long enterpriseOrganisationId,
                           Long enterprisePatientId,
                           Long enterprisePersonId,
-                          String configName) throws Exception {
+                          String configName,
+                          UUID protocolId) throws Exception {
 
         Long enterpriseId = mapId(resource, csvWriter, true);
         if (enterpriseId == null) {
@@ -34,7 +36,7 @@ public class AppointmentTransformer extends AbstractTransformer {
 
         } else {
             Resource fhir = deserialiseResouce(resource);
-            transform(enterpriseId, fhir, data, csvWriter, otherResources, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName);
+            transform(enterpriseId, fhir, data, csvWriter, otherResources, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName, protocolId);
         }
     }
 
@@ -46,7 +48,8 @@ public class AppointmentTransformer extends AbstractTransformer {
                           Long enterpriseOrganisationId,
                           Long enterprisePatientId,
                           Long enterprisePersonId,
-                          String configName) throws Exception {
+                          String configName,
+                          UUID protocolId) throws Exception {
 
         Appointment fhir = (Appointment)resource;
 

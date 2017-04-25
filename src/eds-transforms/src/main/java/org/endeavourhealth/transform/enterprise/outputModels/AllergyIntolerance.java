@@ -26,7 +26,8 @@ public class AllergyIntolerance extends AbstractEnterpriseCsvWriter {
                             Integer datePrecisionId,
                             Long snomedConceptId,
                             String originalCode,
-                            String originalTerm) throws Exception {
+                            String originalTerm,
+                            boolean isReview) throws Exception {
 
         super.printRecord(OutputContainer.UPSERT,
                 "" + id,
@@ -39,7 +40,8 @@ public class AllergyIntolerance extends AbstractEnterpriseCsvWriter {
                 convertInt(datePrecisionId),
                 convertLong(snomedConceptId),
                 originalCode,
-                originalTerm);
+                originalTerm,
+                convertBoolean(isReview));
     }
 
     @Override
@@ -56,7 +58,8 @@ public class AllergyIntolerance extends AbstractEnterpriseCsvWriter {
                 "date_precision_id",
                 "snomed_concept_id",
                 "original_code",
-                "original_term"
+                "original_term",
+                "is_review"
         };
     }
 
@@ -74,7 +77,8 @@ public class AllergyIntolerance extends AbstractEnterpriseCsvWriter {
                 Integer.class,
                 Long.class,
                 String.class,
-                String.class
+                String.class,
+                Boolean.TYPE
         };
     }
 }

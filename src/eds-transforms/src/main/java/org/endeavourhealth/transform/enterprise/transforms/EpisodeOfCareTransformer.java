@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Date;
 import java.util.Map;
+import java.util.UUID;
 
 public class EpisodeOfCareTransformer extends AbstractTransformer {
     private static final Logger LOG = LoggerFactory.getLogger(EpisodeOfCareTransformer.class);
@@ -23,7 +24,8 @@ public class EpisodeOfCareTransformer extends AbstractTransformer {
                           Long enterpriseOrganisationId,
                           Long enterprisePatientId,
                           Long enterprisePersonId,
-                          String configName) throws Exception {
+                          String configName,
+                          UUID protocolId) throws Exception {
 
         Long enterpriseId = mapId(resource, csvWriter, true);
         if (enterpriseId == null) {
@@ -34,7 +36,7 @@ public class EpisodeOfCareTransformer extends AbstractTransformer {
 
         } else {
             Resource fhir = deserialiseResouce(resource);
-            transform(enterpriseId, fhir, data, csvWriter, otherResources, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName);
+            transform(enterpriseId, fhir, data, csvWriter, otherResources, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName, protocolId);
         }
     }
 
@@ -46,7 +48,8 @@ public class EpisodeOfCareTransformer extends AbstractTransformer {
                           Long enterpriseOrganisationId,
                           Long enterprisePatientId,
                           Long enterprisePersonId,
-                          String configName) throws Exception {
+                          String configName,
+                          UUID protocolId) throws Exception {
 
         EpisodeOfCare fhirEpisode = (EpisodeOfCare)resource;
 
@@ -69,7 +72,7 @@ public class EpisodeOfCareTransformer extends AbstractTransformer {
             Reference practitionerReference = fhirEpisode.getCareManager();
             usualGpPractitionerId = findEnterpriseId(data.getPractitioners(), practitionerReference);
             if (usualGpPractitionerId == null) {
-                usualGpPractitionerId = transformOnDemand(practitionerReference, data, otherResources, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName);
+                usualGpPractitionerId = transformOnDemand(practitionerReference, data, otherResources, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName, protocolId);
             }
         }
 

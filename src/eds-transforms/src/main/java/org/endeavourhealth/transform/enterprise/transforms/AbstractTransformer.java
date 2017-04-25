@@ -21,6 +21,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Map;
+import java.util.UUID;
 
 public abstract class AbstractTransformer {
 
@@ -54,7 +55,8 @@ public abstract class AbstractTransformer {
                                    Long enterpriseOrganisationId,
                                    Long enterprisePatientId,
                                    Long enterprisePersonId,
-                                   String configName) throws Exception;
+                                   String configName,
+                                   UUID protocolId) throws Exception;
 
     public abstract void transform(Long enterpriseId,
                                    Resource resource,
@@ -64,7 +66,8 @@ public abstract class AbstractTransformer {
                                    Long enterpriseOrganisationId,
                                    Long enterprisePatientId,
                                    Long enterprisePersonId,
-                                   String configName) throws Exception;
+                                   String configName,
+                                   UUID protocolId) throws Exception;
 
     protected static Integer convertDatePrecision(TemporalPrecisionEnum precision) throws Exception {
         return Integer.valueOf(precision.getCalendarConstant());
@@ -209,7 +212,8 @@ public abstract class AbstractTransformer {
                                      Long enterpriseOrganisationId,
                                      Long enterprisePatientId,
                                      Long enterprisePersonId,
-                                     String configName) throws Exception {
+                                     String configName,
+                                     UUID protocolId) throws Exception {
         Resource fhir = null;
         try {
             fhir = findResource(reference, hmAllResources);
@@ -230,7 +234,7 @@ public abstract class AbstractTransformer {
 
         AbstractEnterpriseCsvWriter csvWriter = FhirToEnterpriseCsvTransformer.findCsvWriterForResourceType(resourceType, data);
         Long enterpriseId = findOrCreateEnterpriseId(csvWriter, resourceType.toString(), fhir.getId());
-        transformer.transform(enterpriseId, fhir, data, csvWriter, hmAllResources, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName);
+        transformer.transform(enterpriseId, fhir, data, csvWriter, hmAllResources, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName, protocolId);
 
         return enterpriseId;
     }

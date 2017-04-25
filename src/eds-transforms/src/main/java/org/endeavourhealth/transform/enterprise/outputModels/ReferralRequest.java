@@ -32,7 +32,8 @@ public class ReferralRequest extends AbstractEnterpriseCsvWriter {
                             String mode,
                             Boolean outgoing,
                             String originalCode,
-                            String originalTerm) throws Exception {
+                            String originalTerm,
+                            boolean isReview) throws Exception {
 
         super.printRecord(OutputContainer.UPSERT,
                 "" + id,
@@ -51,7 +52,8 @@ public class ReferralRequest extends AbstractEnterpriseCsvWriter {
                 mode,
                 convertBoolean(outgoing),
                 originalCode,
-                originalTerm);
+                originalTerm,
+                convertBoolean(isReview));
     }
 
     @Override
@@ -74,7 +76,8 @@ public class ReferralRequest extends AbstractEnterpriseCsvWriter {
                 "mode",
                 "outgoing_referral",
                 "original_code",
-                "original_term"
+                "original_term",
+                "is_review"
         };
     }
 
@@ -98,7 +101,8 @@ public class ReferralRequest extends AbstractEnterpriseCsvWriter {
                 String.class,
                 Boolean.class,
                 String.class,
-                String.class
+                String.class,
+                Boolean.TYPE
         };
     }
 }

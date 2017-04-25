@@ -1,6 +1,7 @@
 package org.endeavourhealth.transform.enterprise.transforms;
 
 import org.endeavourhealth.common.fhir.CodeableConceptHelper;
+import org.endeavourhealth.common.fhir.ExtensionConverter;
 import org.endeavourhealth.common.fhir.FhirExtensionUri;
 import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
 import org.endeavourhealth.transform.enterprise.outputModels.AbstractEnterpriseCsvWriter;
@@ -11,6 +12,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Date;
 import java.util.Map;
+import java.util.UUID;
 
 public class AllergyIntoleranceTransformer extends AbstractTransformer {
 
@@ -23,7 +25,8 @@ public class AllergyIntoleranceTransformer extends AbstractTransformer {
                           Long enterpriseOrganisationId,
                           Long enterprisePatientId,
                           Long enterprisePersonId,
-                          String configName) throws Exception {
+                          String configName,
+                          UUID protocolId) throws Exception {
 
         Long enterpriseId = mapId(resource, csvWriter, true);
         if (enterpriseId == null) {
@@ -35,7 +38,7 @@ public class AllergyIntoleranceTransformer extends AbstractTransformer {
         } else {
 
             Resource fhir = deserialiseResouce(resource);
-            transform(enterpriseId, fhir, data, csvWriter, otherResources, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName);
+            transform(enterpriseId, fhir, data, csvWriter, otherResources, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName, protocolId);
         }
     }
 
@@ -47,7 +50,8 @@ public class AllergyIntoleranceTransformer extends AbstractTransformer {
                           Long enterpriseOrganisationId,
                           Long enterprisePatientId,
                           Long enterprisePersonId,
-                          String configName) throws Exception {
+                          String configName,
+                          UUID protocolId) throws Exception {
 
         AllergyIntolerance fhir = (AllergyIntolerance)resource;
 
@@ -62,6 +66,7 @@ public class AllergyIntoleranceTransformer extends AbstractTransformer {
         Long snomedConceptId = null;
         String originalCode = null;
         String originalTerm = null;
+        boolean isReview = false;
 
         id = enterpriseId.longValue();
         organisationId = enterpriseOrganisationId.longValue();
@@ -81,7 +86,7 @@ public class AllergyIntoleranceTransformer extends AbstractTransformer {
             Reference practitionerReference = fhir.getRecorder();
             practitionerId = findEnterpriseId(data.getPractitioners(), practitionerReference);
             if (practitionerId == null) {
-                practitionerId = transformOnDemand(practitionerReference, data, otherResources, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName);
+                practitionerId = transformOnDemand(practitionerReference, data, otherResources, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName, protocolId);
             }
         }
 
@@ -100,6 +105,14 @@ public class AllergyIntoleranceTransformer extends AbstractTransformer {
         //add original term too, for easy display of results
         originalTerm = fhir.getSubstance().getText();
 
+        Extension reviewExtension = ExtensionConverter.findExtension(fhir, FhirExtensionUri.IS_REVIEW);
+        if (reviewExtension != null) {
+            BooleanType b = (BooleanType)reviewExtension.getValue();
+            if (b.getValue() != null) {
+                isReview = b.getValue();
+            }
+        }
+
         org.endeavourhealth.transform.enterprise.outputModels.AllergyIntolerance model = (org.endeavourhealth.transform.enterprise.outputModels.AllergyIntolerance)csvWriter;
         model.writeUpsert(id,
             organisationId,
@@ -111,7 +124,8 @@ public class AllergyIntoleranceTransformer extends AbstractTransformer {
             datePrecisionId,
             snomedConceptId,
             originalCode,
-            originalTerm);
+            originalTerm,
+            isReview);
     }
 
 }

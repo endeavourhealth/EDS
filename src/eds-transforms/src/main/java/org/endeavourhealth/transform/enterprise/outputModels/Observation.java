@@ -32,7 +32,7 @@ public class Observation extends AbstractEnterpriseCsvWriter {
                             boolean isProblem,
                             String originalTerm,
                             boolean isReview) throws Exception {
-//TODO - use isReview boolean
+
         super.printRecord(OutputContainer.UPSERT,
                 "" + id,
                 "" + organisationId,
@@ -47,7 +47,8 @@ public class Observation extends AbstractEnterpriseCsvWriter {
                 units,
                 originalCode,
                 convertBoolean(isProblem),
-                originalTerm);
+                originalTerm,
+                convertBoolean(isReview));
     }
 
     @Override
@@ -67,7 +68,8 @@ public class Observation extends AbstractEnterpriseCsvWriter {
                 "units",
                 "original_code",
                 "is_problem",
-                "original_term"
+                "original_term",
+                "is_review"
         };
     }
 
@@ -88,7 +90,8 @@ public class Observation extends AbstractEnterpriseCsvWriter {
                 String.class,
                 String.class,
                 Boolean.TYPE,
-                String.class
+                String.class,
+                Boolean.TYPE
         };
     }
 }

@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Map;
+import java.util.UUID;
 
 public class PractitionerTransformer extends AbstractTransformer {
     private static final Logger LOG = LoggerFactory.getLogger(PractitionerTransformer.class);
@@ -20,7 +21,8 @@ public class PractitionerTransformer extends AbstractTransformer {
                           Long enterpriseOrganisationId,
                           Long enterprisePatientId,
                           Long enterprisePersonId,
-                          String configName) throws Exception {
+                          String configName,
+                          UUID protocolId) throws Exception {
 
         Long enterpriseId = mapId(resource, csvWriter, false); //don't assign IDs automatically for every org
         if (enterpriseId == null) {
@@ -31,7 +33,7 @@ public class PractitionerTransformer extends AbstractTransformer {
 
         } else {
             Resource fhir = deserialiseResouce(resource);
-            transform(enterpriseId, fhir, data, csvWriter, otherResources, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName);
+            transform(enterpriseId, fhir, data, csvWriter, otherResources, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName, protocolId);
         }
     }
 
@@ -43,7 +45,8 @@ public class PractitionerTransformer extends AbstractTransformer {
                           Long enterpriseOrganisationId,
                           Long enterprisePatientId,
                           Long enterprisePersonId,
-                          String configName) throws Exception {
+                          String configName,
+                          UUID protocolId) throws Exception {
 
         Practitioner fhir = (Practitioner)resource;
 
@@ -75,7 +78,7 @@ public class PractitionerTransformer extends AbstractTransformer {
             Reference organisationReference = role.getManagingOrganization();
             practitionerEnterpriseOrgId = findEnterpriseId(data.getOrganisations(), organisationReference);
             if (practitionerEnterpriseOrgId == null) {
-                practitionerEnterpriseOrgId = transformOnDemand(organisationReference, data, otherResources, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName);
+                practitionerEnterpriseOrgId = transformOnDemand(organisationReference, data, otherResources, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName, protocolId);
             }
             //LOG.trace("Got role with org ID " + practitionerEnterpriseOrgId + " from " + organisationReference);
         }

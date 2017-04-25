@@ -39,7 +39,8 @@ public class FhirToEnterpriseCsvTransformer extends FhirToXTransformerBase {
                                            Map<ResourceType,
                                            List<UUID>> resourceIds,
                                            boolean pseudonymised,
-                                           String configName) throws Exception {
+                                           String configName,
+                                           UUID protocolId) throws Exception {
 
         //retrieve our resources
         List<ResourceByExchangeBatch> filteredResources = getResources(batchId, resourceIds);
@@ -54,7 +55,7 @@ public class FhirToEnterpriseCsvTransformer extends FhirToXTransformerBase {
         Long enterpriseOrgId = findEnterpriseOrgId(serviceId, systemId, configName, data);
 
         try {
-            tranformResources(data, filteredResources, enterpriseOrgId, configName);
+            tranformResources(data, filteredResources, enterpriseOrgId, configName, protocolId);
 
             byte[] bytes = data.writeToZip();
             return Base64.getEncoder().encodeToString(bytes);
@@ -136,20 +137,35 @@ public class FhirToEnterpriseCsvTransformer extends FhirToXTransformerBase {
     private static void tranformResources(OutputContainer data,
                                          List<ResourceByExchangeBatch> resources,
                                          Long enterpriseOrganisationId,
-                                         String configName) throws Exception {
+                                         String configName,
+                                         UUID protocolId) throws Exception {
 
         //hash the resources by reference to them, so the transforms can quickly look up dependant resources
         Map<String, ResourceByExchangeBatch> resourcesMap = hashResourcesByReference(resources);
 
+        int threads = Math.min(10, resources.size()/10); //limit to 10 threads, but don't create too many unnecessarily if we only have a few resources
+        threads = Math.max(threads, 1); //make sure we have a min of 1
+
+        ThreadPool threadPool = new ThreadPool(threads, 1000);
+
         //we detect whether we're doing an update or insert, based on whether we're previously mapped
         //a reference to a resource, so we need to transform the resources in a specific order, so
         //that we transform resources before we ones that refer to them
-        tranformResources(ResourceType.Organization, data, resources, resourcesMap, enterpriseOrganisationId, null, null, configName);
-        tranformResources(ResourceType.Practitioner, data, resources, resourcesMap, enterpriseOrganisationId, null, null, configName);
-        tranformResources(ResourceType.Schedule, data, resources, resourcesMap, enterpriseOrganisationId, null, null, configName);
-        tranformResources(ResourceType.Patient, data, resources, resourcesMap, enterpriseOrganisationId, null, null, configName);
+        tranformResources(ResourceType.Organization, data, resources, resourcesMap, enterpriseOrganisationId, null, null, configName, protocolId, threadPool);
+        tranformResources(ResourceType.Practitioner, data, resources, resourcesMap, enterpriseOrganisationId, null, null, configName, protocolId, threadPool);
+        tranformResources(ResourceType.Schedule, data, resources, resourcesMap, enterpriseOrganisationId, null, null, configName, protocolId, threadPool);
+        boolean didPatient = tranformResources(ResourceType.Patient, data, resources, resourcesMap, enterpriseOrganisationId, null, null, configName, protocolId, threadPool);
 
-        //having done any patient resource, we should have created an enterprise patient ID and person ID that we can use for all remaining resources
+        //if we transformed a patient resource, we need to guarantee that the patient is transformed before continuing
+        //so we need to close the thread pool and wait. Then re-open for any remaining resources.
+        if (didPatient) {
+            List<ThreadPoolError> errors = threadPool.waitAndStop();
+            handleErrors(errors);
+
+            threadPool = new ThreadPool(threads, 1000);
+        }
+
+        //having done any patient resource in our batch, we should have created an enterprise patient ID and person ID that we can use for all remaining resources
         Long enterprisePatientId = null;
         Long enterprisePersonId = null;
         String discoveryPatientId = findPatientId(resources);
@@ -175,27 +191,31 @@ public class FhirToEnterpriseCsvTransformer extends FhirToXTransformerBase {
             enterprisePersonId = EnterpriseIdHelper.findOrCreateEnterprisePersonId(discoveryPersonId, configName);
         }
 
-        tranformResources(ResourceType.EpisodeOfCare, data, resources, resourcesMap, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName);
-        tranformResources(ResourceType.Appointment, data, resources, resourcesMap, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName);
-        tranformResources(ResourceType.Encounter, data, resources, resourcesMap, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName);
-        tranformResources(ResourceType.Condition, data, resources, resourcesMap, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName);
-        tranformResources(ResourceType.Procedure, data, resources, resourcesMap, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName);
-        tranformResources(ResourceType.ReferralRequest, data, resources, resourcesMap, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName);
-        tranformResources(ResourceType.ProcedureRequest, data, resources, resourcesMap, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName);
-        tranformResources(ResourceType.Observation, data, resources, resourcesMap, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName);
-        tranformResources(ResourceType.MedicationStatement, data, resources, resourcesMap, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName);
-        tranformResources(ResourceType.MedicationOrder, data, resources, resourcesMap, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName);
-        tranformResources(ResourceType.Immunization, data, resources, resourcesMap, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName);
-        tranformResources(ResourceType.FamilyMemberHistory, data, resources, resourcesMap, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName);
-        tranformResources(ResourceType.AllergyIntolerance, data, resources, resourcesMap, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName);
-        tranformResources(ResourceType.DiagnosticOrder, data, resources, resourcesMap, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName);
-        tranformResources(ResourceType.DiagnosticReport, data, resources, resourcesMap, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName);
-        tranformResources(ResourceType.Specimen, data, resources, resourcesMap, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName);
+        tranformResources(ResourceType.EpisodeOfCare, data, resources, resourcesMap, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName, protocolId, threadPool);
+        tranformResources(ResourceType.Appointment, data, resources, resourcesMap, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName, protocolId, threadPool);
+        tranformResources(ResourceType.Encounter, data, resources, resourcesMap, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName, protocolId, threadPool);
+        tranformResources(ResourceType.Condition, data, resources, resourcesMap, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName, protocolId, threadPool);
+        tranformResources(ResourceType.Procedure, data, resources, resourcesMap, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName, protocolId, threadPool);
+        tranformResources(ResourceType.ReferralRequest, data, resources, resourcesMap, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName, protocolId, threadPool);
+        tranformResources(ResourceType.ProcedureRequest, data, resources, resourcesMap, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName, protocolId, threadPool);
+        tranformResources(ResourceType.Observation, data, resources, resourcesMap, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName, protocolId, threadPool);
+        tranformResources(ResourceType.MedicationStatement, data, resources, resourcesMap, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName, protocolId, threadPool);
+        tranformResources(ResourceType.MedicationOrder, data, resources, resourcesMap, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName, protocolId, threadPool);
+        tranformResources(ResourceType.Immunization, data, resources, resourcesMap, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName, protocolId, threadPool);
+        tranformResources(ResourceType.FamilyMemberHistory, data, resources, resourcesMap, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName, protocolId, threadPool);
+        tranformResources(ResourceType.AllergyIntolerance, data, resources, resourcesMap, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName, protocolId, threadPool);
+        tranformResources(ResourceType.DiagnosticOrder, data, resources, resourcesMap, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName, protocolId, threadPool);
+        tranformResources(ResourceType.DiagnosticReport, data, resources, resourcesMap, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName, protocolId, threadPool);
+        tranformResources(ResourceType.Specimen, data, resources, resourcesMap, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName, protocolId, threadPool);
 
         //for these resource types, call with a null transformer as they're actually transformed when
         //doing one of the above entities, but we want to remove them from the resources list
-        tranformResources(ResourceType.Slot, data, resources, resourcesMap, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName);
-        tranformResources(ResourceType.Location, data, resources, resourcesMap, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName);
+        tranformResources(ResourceType.Slot, data, resources, resourcesMap, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName, protocolId, threadPool);
+        tranformResources(ResourceType.Location, data, resources, resourcesMap, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName, protocolId, threadPool);
+
+        //close the thread pool
+        List<ThreadPoolError> errors = threadPool.waitAndStop();
+        handleErrors(errors);
 
         //if there's anything left in the list, then we've missed a resource type
         if (!resources.isEmpty()) {
@@ -313,14 +333,16 @@ public class FhirToEnterpriseCsvTransformer extends FhirToXTransformerBase {
         }
     }
 
-    private static void tranformResources(ResourceType resourceType,
+    private static boolean tranformResources(ResourceType resourceType,
                                           OutputContainer data,
                                           List<ResourceByExchangeBatch> resources,
                                           Map<String, ResourceByExchangeBatch> resourcesMap,
                                           Long enterpriseOrganisationId,
                                           Long enterprisePatientId,
                                           Long enterprisePersonId,
-                                          String configName) throws Exception {
+                                          String configName,
+                                          UUID protocolId,
+                                          ThreadPool threadPool) throws Exception {
 
         //find all the ones we want to transform
         List<ResourceByExchangeBatch> resourcesToTransform = new ArrayList<>();
@@ -333,7 +355,7 @@ public class FhirToEnterpriseCsvTransformer extends FhirToXTransformerBase {
         }
 
         if (resourcesToTransform.isEmpty()) {
-            return;
+            return false;
         }
 
         //remove all the resources we processed, so we can check for ones we missed at the end
@@ -350,24 +372,19 @@ public class FhirToEnterpriseCsvTransformer extends FhirToXTransformerBase {
         AbstractTransformer transformer = createTransformerForResourceType(resourceType);
         AbstractEnterpriseCsvWriter csvWriter = findCsvWriterForResourceType(resourceType, data);
         if (transformer != null) {
-            int threads = Math.min(10, resources.size()/10); //limit to 10 threads, but don't create too many unnecessarily if we only have a few resources
-            threads = Math.max(threads, 1); //make sure we have a min of 1
-
-            ThreadPool threadPool = new ThreadPool(threads, 1000);
 
             for (ResourceByExchangeBatch resource: resourcesToTransform) {
 
                 TransformResourceCallable callable = new TransformResourceCallable(transformer, resource, data, csvWriter,
                                                                         resourcesMap, enterpriseOrganisationId,
-                                                                        enterprisePatientId, enterprisePersonId, configName);
+                                                                        enterprisePatientId, enterprisePersonId,
+                                                                        configName, protocolId);
                 List<ThreadPoolError> errors = threadPool.submit(callable);
                 handleErrors(errors);
             }
-
-            List<ThreadPoolError> errors = threadPool.waitAndStop();
-            handleErrors(errors);
         }
 
+        return true;
     }
 
     private static void handleErrors(List<ThreadPoolError> errors) throws Exception {
@@ -450,6 +467,7 @@ public class FhirToEnterpriseCsvTransformer extends FhirToXTransformerBase {
         private Long enterprisePatientId = null;
         private Long enterprisePersonId = null;
         private String configName = null;
+        private UUID protocolId = null;
 
         public TransformResourceCallable(AbstractTransformer transformer,
                                          ResourceByExchangeBatch resource,
@@ -459,7 +477,8 @@ public class FhirToEnterpriseCsvTransformer extends FhirToXTransformerBase {
                                          Long enterpriseOrganisationId,
                                          Long enterprisePatientId,
                                          Long enterprisePersonId,
-                                         String configName) {
+                                         String configName,
+                                         UUID protocolId) {
 
             this.transformer = transformer;
             this.resource = resource;
@@ -470,12 +489,13 @@ public class FhirToEnterpriseCsvTransformer extends FhirToXTransformerBase {
             this.enterprisePatientId = enterprisePatientId;
             this.enterprisePersonId = enterprisePersonId;
             this.configName = configName;
+            this.protocolId = protocolId;
         }
 
         @Override
         public Object call() throws Exception {
             try {
-                transformer.transform(resource, data, csvWriter, resourcesMap, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName);
+                transformer.transform(resource, data, csvWriter, resourcesMap, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName, protocolId);
             } catch (Exception ex) {
                 throw new TransformException("Exception transforming " + resource.getResourceType() + " " + resource.getResourceId(), ex);
             }
