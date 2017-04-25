@@ -12,7 +12,6 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.common.security.KeycloakConfigUtils;
-import org.endeavourhealth.common.security.SecurityUtils;
 import org.endeavourhealth.common.security.annotations.RequiresAdmin;
 import org.endeavourhealth.common.security.keycloak.client.KeycloakAdminClient;
 import org.endeavourhealth.common.security.keycloak.client.KeycloakClient;
@@ -35,6 +34,9 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+
+import static org.endeavourhealth.common.security.SecurityUtils.getCurrentUserId;
+import static org.endeavourhealth.common.security.SecurityUtils.hasRole;
 
 @Path("/usermanager")
 public final class UserManagerEndpoint extends AbstractEndpoint {
@@ -221,7 +223,7 @@ public final class UserManagerEndpoint extends AbstractEndpoint {
 	public Response getUser(@Context SecurityContext sc, @QueryParam("userId") String userId) throws Exception {
 		super.setLogbackMarkers(sc);
 
-		userAuditRepository.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
+		userAuditRepository.save(getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
 				"User", "User Id", userId);
 
 		LOG.trace("getUser");
@@ -251,7 +253,7 @@ public final class UserManagerEndpoint extends AbstractEndpoint {
 	public Response getUsers(@Context SecurityContext sc, @QueryParam("searchData") String searchData) throws Exception {
 		super.setLogbackMarkers(sc);
 
-		userAuditRepository.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
+		userAuditRepository.save(getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
 				"Users", "Search Data", searchData);
 
 		LOG.trace("getUsers");
@@ -286,7 +288,7 @@ public final class UserManagerEndpoint extends AbstractEndpoint {
 	public Response getAvailableRealmRoles(@Context SecurityContext sc, @QueryParam("userId") String userId) throws Exception {
 		super.setLogbackMarkers(sc);
 
-		userAuditRepository.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
+		userAuditRepository.save(getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
 				"User roles available", "User Id", userId);
 
 		LOG.trace("getUserAvailableRealmRoles for userId: "+userId);
@@ -325,7 +327,7 @@ public final class UserManagerEndpoint extends AbstractEndpoint {
 	public Response getRealmClients(@Context SecurityContext sc) throws Exception {
 		super.setLogbackMarkers(sc);
 
-		userAuditRepository.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
+		userAuditRepository.save(getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
 				"Clients");
 
 		LOG.trace("getRealmClients");
@@ -389,7 +391,7 @@ public final class UserManagerEndpoint extends AbstractEndpoint {
 	public Response getUserAssignedRoles(@Context SecurityContext sc, @QueryParam("userId") String userId) throws Exception {
 		super.setLogbackMarkers(sc);
 
-		userAuditRepository.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
+		userAuditRepository.save(getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
 				"User roles assigned", "User Id", userId);
 
 		LOG.trace("getUserAssignedRoles for userId: "+userId);
@@ -435,10 +437,24 @@ public final class UserManagerEndpoint extends AbstractEndpoint {
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Path("/users/save")
 	@RequiresAdmin
-	public Response saveUser(@Context SecurityContext sc, JsonEndUser user, @QueryParam("editMode") String editMode) throws Exception {
+	public Response saveUserOwn(@Context SecurityContext sc, JsonEndUser user, @QueryParam("editMode") String editMode) throws Exception {
 		super.setLogbackMarkers(sc);
 
 		boolean editModeb = editMode.equalsIgnoreCase("1") ? true:false;
+
+		//If editing and the user IDs don't match, then throw an error if user does not have correct role
+		//This prevents security vunerability when an authenticated user could execute API outside of app without role
+		if (editModeb){
+			//get current authenticated user id and check for user editing role (currently eds_superuser for v1.1)  //TODO: v2 roles
+			UUID currentUserUuid = getCurrentUserId(sc);
+			boolean superUser = hasRole(sc, "eds_superuser");
+
+			//can only update other users with eds_superuser role
+			if (!currentUserUuid.toString().equalsIgnoreCase(user.getUuid().toString()) && !superUser)
+			{
+				throw new Exception("Save User failed.  UserId mismatch");
+			}
+		}
 
 		//Set the basic user profile info
 		UserRepresentation userRep = new UserRepresentation();
@@ -512,7 +528,7 @@ public final class UserManagerEndpoint extends AbstractEndpoint {
 
 		//Blank out password for audit object
 		user.setPassword("*********");
-		userAuditRepository.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Save,
+		userAuditRepository.save(getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Save,
 				"User", "User", user);
 
 		clearLogbackMarkers();
@@ -531,7 +547,7 @@ public final class UserManagerEndpoint extends AbstractEndpoint {
 	public Response saveRole(@Context SecurityContext sc, JsonEndUserRole userRole, @QueryParam("editMode") String editMode) throws Exception {
 		super.setLogbackMarkers(sc);
 
-		userAuditRepository.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Save,
+		userAuditRepository.save(getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Save,
 				"Roles", "Role", userRole);
 
 		boolean editModeb = editMode.equalsIgnoreCase("1") ? true:false;
@@ -599,7 +615,7 @@ public final class UserManagerEndpoint extends AbstractEndpoint {
 	public Response deleteUser(@Context SecurityContext sc, @QueryParam("userId") String userId) throws Exception {
 		super.setLogbackMarkers(sc);
 
-		userAuditRepository.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Delete,
+		userAuditRepository.save(getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Delete,
 				"User", "User Id", userId);
 
 		//Create the keycloak admin client and delete the user
@@ -620,7 +636,7 @@ public final class UserManagerEndpoint extends AbstractEndpoint {
 	public Response deleteRealmRole(@Context SecurityContext sc, @QueryParam("roleName") String roleName) throws Exception {
 		super.setLogbackMarkers(sc);
 
-		userAuditRepository.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Delete,
+		userAuditRepository.save(getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Delete,
 				"Role", "Role", roleName);
 
 		//Create the keycloak admin client and delete the role
