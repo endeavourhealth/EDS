@@ -18,6 +18,7 @@ import org.endeavourhealth.core.xml.TransformErrorUtility;
 import org.endeavourhealth.core.xml.transformError.Error;
 import org.endeavourhealth.core.xml.transformError.ExceptionLine;
 import org.endeavourhealth.core.xml.transformError.TransformError;
+import org.endeavourhealth.transform.adastra.AdastraXmlToFhirTransformer;
 import org.endeavourhealth.transform.common.FhirDeltaResourceFilter;
 import org.endeavourhealth.transform.common.MessageFormat;
 import org.endeavourhealth.transform.common.exceptions.SoftwareNotSupportedException;
@@ -106,6 +107,9 @@ public class MessageTransformInbound extends PipelineComponent {
                 } else if (software.equalsIgnoreCase(MessageFormat.HL7V2)) {
                     processHL7V2Filer(exchange, serviceId, systemId, messageVersion, software, currentErrors, batchIds, previousErrors);
 
+				} else if (software.equalsIgnoreCase(MessageFormat.ADASTRA_XML)) {
+					processAdastraXml(exchange, serviceId, systemId, messageVersion, software, currentErrors, batchIds, previousErrors);
+
 				} else {
 					throw new SoftwareNotSupportedException(software, messageVersion);
 				}
@@ -144,6 +148,23 @@ public class MessageTransformInbound extends PipelineComponent {
 		createTransformAudit(serviceId, systemId, exchange.getExchangeId(), transformStarted, currentErrors, batchIds);
 
 		return batchIds;
+	}
+
+	private void processAdastraXml(Exchange exchange, UUID serviceId, UUID systemId, String messageVersion,
+								   String software, TransformError currentErrors, List<UUID> batchIds, TransformError previousErrors) throws Exception {
+
+		int maxFilingThreads = config.getFilingThreadLimit();
+
+		//payload
+		String xmlPayload = exchange.getBody();
+		UUID exchangeId = exchange.getExchangeId();
+
+		//transform from XML -> FHIR
+		List<Resource> resources = AdastraXmlToFhirTransformer.toFhirFullRecord(xmlPayload);
+
+		//map IDs, compute delta and file
+		//FhirDeltaResourceFilter filer = new FhirDeltaResourceFilter(serviceId, systemId, maxFilingThreads);
+		//filer.process(resources, exchangeId, currentErrors, batchIds);
 	}
 
 	private void sendSlackAlert(Exchange exchange, String software, TransformError currentErrors) {

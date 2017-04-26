@@ -15,4 +15,5 @@ public class MessageFormat {
     public static final String TABLEAU = "TABLEAU";
     public static final String ENTERPRISE_CSV = "ENTERPRISE_CSV";
     public static final String HL7V2 = "HL7V2";
+    public static final String ADASTRA_XML = "ADASTRA_XML";
 }

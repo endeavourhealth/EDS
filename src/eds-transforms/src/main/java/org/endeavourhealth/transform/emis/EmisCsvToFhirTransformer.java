@@ -63,7 +63,13 @@ public abstract class EmisCsvToFhirTransformer {
                                  String sharedStoragePath, int maxFilingThreads) throws Exception {
 
         //for EMIS CSV, the exchange body will be a list of files received
-        String[] files = exchangeBody.split(java.lang.System.lineSeparator());
+        //split by /n but trim each one, in case there's a sneaky /r in there
+        String[] files = exchangeBody.split("\n");
+        for (int i=0; i<files.length; i++) {
+            String file = files[i].trim();
+            files[i] = file;
+        }
+        //String[] files = exchangeBody.split(java.lang.System.lineSeparator());
 
         LOG.info("Invoking EMIS CSV transformer for {} files using {} threads", files.length, maxFilingThreads);
 

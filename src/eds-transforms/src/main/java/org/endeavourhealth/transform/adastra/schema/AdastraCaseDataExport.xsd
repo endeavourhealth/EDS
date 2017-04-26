@@ -1,0 +1,719 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- edited with XMLSpy v2010 rel. 3 (x64) (http://www.altova.com) by James Berry (Adastra Software Ltd) -->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns="http://www.adastra.com/dataExport" xmlns:altova="http://www.altova.com/xml-schema-extensions" targetNamespace="http://www.adastra.com/dataExport" elementFormDefault="qualified" attributeFormDefault="unqualified">
+	<xs:element name="adastraCaseDataExport">
+		<xs:annotation>
+			<xs:documentation>The root element for the Adastra Case Data Export message.</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="adastraCaseReference">
+					<xs:annotation>
+						<xs:documentation>The unique identifier for the Adastra Case</xs:documentation>
+						<xs:appinfo>
+							<altova:exampleValues>
+								<altova:example value="66c3bd5d-7a00-45d1-9db0-b5b9fd9dc740"/>
+							</altova:exampleValues>
+						</xs:appinfo>
+					</xs:annotation>
+					<xs:simpleType>
+						<xs:restriction base="xs:string">
+							<xs:minLength value="1"/>
+							<xs:maxLength value="40"/>
+						</xs:restriction>
+					</xs:simpleType>
+				</xs:element>
+				<xs:element name="adastraCaseNumber">
+					<xs:annotation>
+						<xs:documentation>A non-unique Case identifier used for operational reference to an active Case.</xs:documentation>
+						<xs:appinfo>
+							<altova:exampleValues>
+								<altova:example value="10475"/>
+							</altova:exampleValues>
+						</xs:appinfo>
+					</xs:annotation>
+					<xs:simpleType>
+						<xs:restriction base="xs:string">
+							<xs:minLength value="1"/>
+							<xs:maxLength value="20"/>
+						</xs:restriction>
+					</xs:simpleType>
+				</xs:element>
+				<xs:element name="patient">
+					<xs:annotation>
+						<xs:documentation>The demographic details of the patient at the time of the  Case</xs:documentation>
+					</xs:annotation>
+					<xs:complexType>
+						<xs:sequence>
+							<xs:element name="firstName">
+								<xs:annotation>
+									<xs:documentation>The patient's first name </xs:documentation>
+									<xs:appinfo>
+										<altova:exampleValues>
+											<altova:example value="Matt"/>
+										</altova:exampleValues>
+									</xs:appinfo>
+								</xs:annotation>
+								<xs:simpleType>
+									<xs:restriction base="xs:string">
+										<xs:maxLength value="50"/>
+										<xs:minLength value="1"/>
+									</xs:restriction>
+								</xs:simpleType>
+							</xs:element>
+							<xs:element name="lastName">
+								<xs:annotation>
+									<xs:documentation>The patient's last name (surname)</xs:documentation>
+									<xs:appinfo>
+										<altova:exampleValues>
+											<altova:example value="Stibbs"/>
+										</altova:exampleValues>
+									</xs:appinfo>
+								</xs:annotation>
+								<xs:simpleType>
+									<xs:restriction base="xs:string">
+										<xs:minLength value="1"/>
+										<xs:maxLength value="50"/>
+									</xs:restriction>
+								</xs:simpleType>
+							</xs:element>
+							<xs:element name="dateOfBirth" type="dateOfBirthType" minOccurs="0"/>
+							<xs:element name="gender" minOccurs="0">
+								<xs:annotation>
+									<xs:appinfo>
+										<altova:exampleValues>
+											<altova:example value="Male"/>
+										</altova:exampleValues>
+									</xs:appinfo>
+								</xs:annotation>
+								<xs:simpleType>
+									<xs:restriction base="xs:string">
+										<xs:enumeration value="Male"/>
+										<xs:enumeration value="Female"/>
+										<xs:enumeration value="Unknown"/>
+									</xs:restriction>
+								</xs:simpleType>
+							</xs:element>
+							<xs:element name="nationalNumber" type="nationalNumberType" minOccurs="0">
+								<xs:annotation>
+									<xs:documentation>The patient's national patient index number. e.g. NHS number.</xs:documentation>
+								</xs:annotation>
+							</xs:element>
+							<xs:element name="address" type="patientAddressType" minOccurs="0" maxOccurs="unbounded"/>
+							<xs:element name="phone" type="patientPhoneNumberType" minOccurs="0" maxOccurs="unbounded"/>
+							<xs:element name="gpRegistration">
+								<xs:complexType>
+									<xs:sequence>
+										<xs:element name="registrationStatus">
+											<xs:annotation>
+												<xs:appinfo>
+													<altova:exampleValues>
+														<altova:example value="Registered"/>
+													</altova:exampleValues>
+												</xs:appinfo>
+											</xs:annotation>
+											<xs:simpleType>
+												<xs:restriction base="xs:string">
+													<xs:maxLength value="50"/>
+												</xs:restriction>
+											</xs:simpleType>
+										</xs:element>
+										<xs:element name="gpNationalCode" minOccurs="0">
+											<xs:simpleType>
+												<xs:restriction base="xs:string">
+													<xs:maxLength value="10"/>
+													<xs:minLength value="1"/>
+												</xs:restriction>
+											</xs:simpleType>
+										</xs:element>
+										<xs:element name="surgeryNationalCode" minOccurs="0">
+											<xs:simpleType>
+												<xs:restriction base="xs:string">
+													<xs:maxLength value="10"/>
+													<xs:minLength value="1"/>
+												</xs:restriction>
+											</xs:simpleType>
+										</xs:element>
+										<xs:element name="surgeryPostcode" minOccurs="0">
+											<xs:annotation>
+												<xs:appinfo>
+													<altova:exampleValues>
+														<altova:example value="CT56JH"/>
+													</altova:exampleValues>
+												</xs:appinfo>
+											</xs:annotation>
+											<xs:simpleType>
+												<xs:restriction base="xs:string">
+													<xs:minLength value="1"/>
+													<xs:maxLength value="15"/>
+												</xs:restriction>
+											</xs:simpleType>
+										</xs:element>
+									</xs:sequence>
+								</xs:complexType>
+							</xs:element>
+						</xs:sequence>
+					</xs:complexType>
+				</xs:element>
+				<xs:element name="presentingCondition">
+					<xs:complexType>
+						<xs:sequence>
+							<xs:element name="symptoms" type="xs:string">
+								<xs:annotation>
+									<xs:appinfo>
+										<altova:exampleValues>
+											<altova:example value="Patient has a severe earache."/>
+										</altova:exampleValues>
+									</xs:appinfo>
+								</xs:annotation>
+							</xs:element>
+							<xs:element name="comments" type="xs:string" minOccurs="0">
+								<xs:annotation>
+									<xs:appinfo>
+										<altova:exampleValues>
+											<altova:example value="Patient seems to be quite distressed."/>
+										</altova:exampleValues>
+									</xs:appinfo>
+								</xs:annotation>
+							</xs:element>
+						</xs:sequence>
+					</xs:complexType>
+				</xs:element>
+				<xs:element name="priority" type="codedItem">
+					<xs:annotation>
+						<xs:documentation>The latest priority of the Case</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="caseType" type="codedItem">
+					<xs:annotation>
+						<xs:documentation>The type of Case </xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="caseStatus">
+					<xs:annotation>
+						<xs:documentation>The latest status of the Case, e.g. NEW, TRIAGE, COMPLETE, etc.</xs:documentation>
+						<xs:appinfo>
+							<altova:exampleValues>
+								<altova:example value="COMPLETE"/>
+							</altova:exampleValues>
+						</xs:appinfo>
+					</xs:annotation>
+					<xs:simpleType>
+						<xs:restriction base="xs:string">
+							<xs:minLength value="0"/>
+							<xs:maxLength value="10"/>
+						</xs:restriction>
+					</xs:simpleType>
+				</xs:element>
+				<xs:element name="activeDate" type="xs:dateTime">
+					<xs:annotation>
+						<xs:documentation>The date and time that the Case was initially raised in the Adastra system.</xs:documentation>
+						<xs:appinfo>
+							<altova:exampleValues>
+								<altova:example value="2012-05-30T09:30:10Z"/>
+							</altova:exampleValues>
+						</xs:appinfo>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="completedDate" type="xs:dateTime" minOccurs="0">
+					<xs:annotation>
+						<xs:documentation>The date and time that the Case was completed/closed in the Adastra system.</xs:documentation>
+						<xs:appinfo>
+							<altova:exampleValues>
+								<altova:example value="2012-05-30T10:15:10Z"/>
+							</altova:exampleValues>
+						</xs:appinfo>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="returnPhone" type="phoneNumberType" minOccurs="0"/>
+				<xs:element name="callerPhone" type="phoneNumberType" minOccurs="0"/>
+				<xs:element name="latestAppointment" minOccurs="0">
+					<xs:annotation>
+						<xs:documentation>Details of the latest appointment for the Case in the Adastra system.</xs:documentation>
+					</xs:annotation>
+					<xs:complexType>
+						<xs:sequence>
+							<xs:element name="appointmentTime" type="xs:dateTime">
+								<xs:annotation>
+									<xs:appinfo>
+										<altova:exampleValues>
+											<altova:example value="2012-05-30T09:45:00Z"/>
+										</altova:exampleValues>
+									</xs:appinfo>
+								</xs:annotation>
+							</xs:element>
+							<xs:element name="location">
+								<xs:annotation>
+									<xs:appinfo>
+										<altova:exampleValues>
+											<altova:example value="Walk-In Centre"/>
+										</altova:exampleValues>
+									</xs:appinfo>
+								</xs:annotation>
+								<xs:simpleType>
+									<xs:restriction base="xs:string">
+										<xs:maxLength value="50"/>
+										<xs:minLength value="0"/>
+									</xs:restriction>
+								</xs:simpleType>
+							</xs:element>
+							<xs:element name="status">
+								<xs:annotation>
+									<xs:appinfo>
+										<altova:exampleValues>
+											<altova:example value="Arrived"/>
+										</altova:exampleValues>
+									</xs:appinfo>
+								</xs:annotation>
+								<xs:simpleType>
+									<xs:restriction base="xs:string">
+										<xs:enumeration value="None"/>
+										<xs:enumeration value="Arrived"/>
+										<xs:enumeration value="DidNotAttend"/>
+										<xs:enumeration value="Cancelled"/>
+									</xs:restriction>
+								</xs:simpleType>
+							</xs:element>
+						</xs:sequence>
+					</xs:complexType>
+				</xs:element>
+				<xs:element name="questions" type="xs:string" minOccurs="0">
+					<xs:annotation>
+						<xs:documentation>Free text summary of the combined question sets answered during the Case so far.</xs:documentation>
+						<xs:appinfo>
+							<altova:exampleValues>
+								<altova:example value="A block of free text will be displayed here listing questions and answers asked during the case. Line breaks will be included."/>
+							</altova:exampleValues>
+						</xs:appinfo>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="consultation" minOccurs="0" maxOccurs="unbounded">
+					<xs:complexType>
+						<xs:sequence>
+							<xs:element name="startTime" type="xs:dateTime">
+								<xs:annotation>
+									<xs:appinfo>
+										<altova:exampleValues>
+											<altova:example value="2012-05-30T09:46:32Z"/>
+										</altova:exampleValues>
+									</xs:appinfo>
+								</xs:annotation>
+							</xs:element>
+							<xs:element name="endTime" type="xs:dateTime">
+								<xs:annotation>
+									<xs:appinfo>
+										<altova:exampleValues>
+											<altova:example value="2012-05-30T09:56:23Z"/>
+										</altova:exampleValues>
+									</xs:appinfo>
+								</xs:annotation>
+							</xs:element>
+							<xs:element name="consultationBy">
+								<xs:annotation>
+									<xs:documentation>The provider who performed the consultation.</xs:documentation>
+								</xs:annotation>
+								<xs:complexType>
+									<xs:sequence>
+										<xs:element name="name">
+											<xs:annotation>
+												<xs:appinfo>
+													<altova:exampleValues>
+														<altova:example value="Dr John Smith"/>
+													</altova:exampleValues>
+												</xs:appinfo>
+											</xs:annotation>
+											<xs:simpleType>
+												<xs:restriction base="xs:string">
+													<xs:minLength value="0"/>
+													<xs:maxLength value="50"/>
+												</xs:restriction>
+											</xs:simpleType>
+										</xs:element>
+									</xs:sequence>
+									<xs:attribute name="providerType">
+										<xs:annotation>
+											<xs:appinfo>
+												<altova:exampleValues>
+													<altova:example value="Doctor"/>
+												</altova:exampleValues>
+											</xs:appinfo>
+										</xs:annotation>
+										<xs:simpleType>
+											<xs:restriction base="xs:string">
+												<xs:maxLength value="10"/>
+												<xs:minLength value="1"/>
+											</xs:restriction>
+										</xs:simpleType>
+									</xs:attribute>
+								</xs:complexType>
+							</xs:element>
+							<xs:element name="location" minOccurs="0">
+								<xs:annotation>
+									<xs:documentation>The location/clinic name where the consultation was performed.</xs:documentation>
+									<xs:appinfo>
+										<altova:exampleValues>
+											<altova:example value="Walk-In Centre"/>
+										</altova:exampleValues>
+									</xs:appinfo>
+								</xs:annotation>
+								<xs:simpleType>
+									<xs:restriction base="xs:string">
+										<xs:minLength value="0"/>
+										<xs:maxLength value="50"/>
+									</xs:restriction>
+								</xs:simpleType>
+							</xs:element>
+							<xs:element name="summary" type="xs:string">
+								<xs:annotation>
+									<xs:documentation>Text summary of the consultation notes. Including prescribed items, clinical template, question sets, etc.</xs:documentation>
+									<xs:appinfo>
+										<altova:exampleValues>
+											<altova:example value="A free text block of text detailing all information captured during the consultation."/>
+										</altova:exampleValues>
+									</xs:appinfo>
+								</xs:annotation>
+							</xs:element>
+							<xs:element name="medicalHistory" type="xs:string" minOccurs="0">
+								<xs:annotation>
+									<xs:documentation>Textual summary of mediical history available at the time of the consultation.</xs:documentation>
+									<xs:appinfo>
+										<altova:exampleValues>
+											<altova:example value="A block of text summarising all medical history information known at the time of the consultaiton."/>
+										</altova:exampleValues>
+									</xs:appinfo>
+								</xs:annotation>
+							</xs:element>
+							<xs:element name="eventOutcome" type="codedItem" minOccurs="0" maxOccurs="unbounded">
+								<xs:annotation>
+									<xs:documentation>Event Outcomes recorded as part of this consultation</xs:documentation>
+								</xs:annotation>
+							</xs:element>
+							<xs:element name="clinicalCode" type="codedItem" minOccurs="0" maxOccurs="unbounded">
+								<xs:annotation>
+									<xs:documentation>Clinical Read Codes recorded as part of this consultation</xs:documentation>
+								</xs:annotation>
+							</xs:element>
+						</xs:sequence>
+					</xs:complexType>
+				</xs:element>
+				<xs:element name="specialNote" minOccurs="0" maxOccurs="unbounded">
+					<xs:annotation>
+						<xs:documentation>Any special patient notes that are attached to this Case.</xs:documentation>
+					</xs:annotation>
+					<xs:complexType>
+						<xs:sequence>
+							<xs:element name="reviewDate" type="xs:date">
+								<xs:annotation>
+									<xs:appinfo>
+										<altova:exampleValues>
+											<altova:example value="2012-06-02"/>
+											<altova:example value="2012-06-01"/>
+										</altova:exampleValues>
+									</xs:appinfo>
+								</xs:annotation>
+							</xs:element>
+							<xs:element name="text" type="xs:string">
+								<xs:annotation>
+									<xs:appinfo>
+										<altova:exampleValues>
+											<altova:example value="This patient has a very nasty dog."/>
+											<altova:example value="This patient has an incredibly pleasant dog too."/>
+										</altova:exampleValues>
+									</xs:appinfo>
+								</xs:annotation>
+							</xs:element>
+						</xs:sequence>
+					</xs:complexType>
+				</xs:element>
+				<xs:element name="outcome" type="codedItem" minOccurs="0" maxOccurs="unbounded"/>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:complexType name="codedItem">
+		<xs:sequence>
+			<xs:element name="code">
+				<xs:annotation>
+					<xs:documentation>The code value.</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:minLength value="1"/>
+						<xs:maxLength value="10"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="description">
+				<xs:annotation>
+					<xs:documentation>Display name or title for the code.</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:minLength value="1"/>
+						<xs:maxLength value="50"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+		</xs:sequence>
+		<xs:attribute name="codeScheme" type="xs:string">
+			<xs:annotation>
+				<xs:documentation>Identifies the scheme that the code comes from.</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:complexType name="nationalNumberType">
+		<xs:sequence>
+			<xs:element name="number">
+				<xs:annotation>
+					<xs:appinfo>
+						<altova:exampleValues>
+							<altova:example value="1111111111"/>
+						</altova:exampleValues>
+					</xs:appinfo>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="20"/>
+						<xs:minLength value="1"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+		</xs:sequence>
+		<xs:attribute name="nationalNumberStatus" use="required">
+			<xs:annotation>
+				<xs:appinfo>
+					<altova:exampleValues>
+						<altova:example value="Confirmed"/>
+					</altova:exampleValues>
+				</xs:appinfo>
+			</xs:annotation>
+			<xs:simpleType>
+				<xs:restriction base="xs:string">
+					<xs:enumeration value="Confirmed"/>
+					<xs:enumeration value="Unconfirmed"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:complexType name="dateOfBirthType">
+		<xs:sequence>
+			<xs:element name="dobValue" type="xs:date">
+				<xs:annotation>
+					<xs:appinfo>
+						<altova:exampleValues>
+							<altova:example value="2011-05-23"/>
+						</altova:exampleValues>
+					</xs:appinfo>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+		<xs:attribute name="dataOfBirthType" use="required">
+			<xs:annotation>
+				<xs:appinfo>
+					<altova:exampleValues>
+						<altova:example value="Exact"/>
+					</altova:exampleValues>
+				</xs:appinfo>
+			</xs:annotation>
+			<xs:simpleType>
+				<xs:restriction base="xs:string">
+					<xs:enumeration value="Exact"/>
+					<xs:enumeration value="AgeOnly"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:complexType name="patientAddressType">
+		<xs:sequence>
+			<xs:element name="line1">
+				<xs:annotation>
+					<xs:appinfo>
+						<altova:exampleValues>
+							<altova:example value="Bolberry Down"/>
+						</altova:exampleValues>
+					</xs:appinfo>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="55"/>
+						<xs:minLength value="0"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="line2">
+				<xs:annotation>
+					<xs:appinfo>
+						<altova:exampleValues>
+							<altova:example value="4 Crossway"/>
+						</altova:exampleValues>
+					</xs:appinfo>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="55"/>
+						<xs:minLength value="0"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="locality">
+				<xs:annotation>
+					<xs:appinfo>
+						<altova:exampleValues>
+							<altova:example value="Kennington"/>
+						</altova:exampleValues>
+					</xs:appinfo>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="55"/>
+						<xs:minLength value="0"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="town">
+				<xs:annotation>
+					<xs:appinfo>
+						<altova:exampleValues>
+							<altova:example value="Ashford"/>
+						</altova:exampleValues>
+					</xs:appinfo>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="55"/>
+						<xs:minLength value="0"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="county">
+				<xs:annotation>
+					<xs:appinfo>
+						<altova:exampleValues>
+							<altova:example value="Kent"/>
+						</altova:exampleValues>
+					</xs:appinfo>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="55"/>
+						<xs:minLength value="0"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="postcode">
+				<xs:annotation>
+					<xs:appinfo>
+						<altova:exampleValues>
+							<altova:example value="TN248SB"/>
+						</altova:exampleValues>
+					</xs:appinfo>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="15"/>
+						<xs:minLength value="0"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+		</xs:sequence>
+		<xs:attribute name="addressType" use="required">
+			<xs:annotation>
+				<xs:appinfo>
+					<altova:exampleValues>
+						<altova:example value="Home"/>
+					</altova:exampleValues>
+				</xs:appinfo>
+			</xs:annotation>
+			<xs:simpleType>
+				<xs:restriction base="xs:string">
+					<xs:enumeration value="Home"/>
+					<xs:enumeration value="CurrentLocation"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:complexType name="patientPhoneNumberType">
+		<xs:sequence>
+			<xs:element name="number">
+				<xs:annotation>
+					<xs:appinfo>
+						<altova:exampleValues>
+							<altova:example value="01234 567890"/>
+						</altova:exampleValues>
+					</xs:appinfo>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="15"/>
+						<xs:minLength value="0"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="extension" minOccurs="0">
+				<xs:annotation>
+					<xs:appinfo>
+						<altova:exampleValues>
+							<altova:example value="132323"/>
+						</altova:exampleValues>
+					</xs:appinfo>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="6"/>
+						<xs:minLength value="0"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+		</xs:sequence>
+		<xs:attribute name="numberType" use="required">
+			<xs:annotation>
+				<xs:appinfo>
+					<altova:exampleValues>
+						<altova:example value="Home"/>
+					</altova:exampleValues>
+				</xs:appinfo>
+			</xs:annotation>
+			<xs:simpleType>
+				<xs:restriction base="xs:string">
+					<xs:enumeration value="Home"/>
+					<xs:enumeration value="Work"/>
+					<xs:enumeration value="Mobile"/>
+					<xs:enumeration value="Other"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:complexType name="phoneNumberType">
+		<xs:sequence>
+			<xs:element name="number">
+				<xs:annotation>
+					<xs:appinfo>
+						<altova:exampleValues>
+							<altova:example value="01234560780"/>
+						</altova:exampleValues>
+					</xs:appinfo>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:minLength value="0"/>
+						<xs:maxLength value="15"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="extension" minOccurs="0">
+				<xs:annotation>
+					<xs:appinfo>
+						<altova:exampleValues>
+							<altova:example value="132645"/>
+						</altova:exampleValues>
+					</xs:appinfo>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:minLength value="0"/>
+						<xs:maxLength value="6"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+</xs:schema>
