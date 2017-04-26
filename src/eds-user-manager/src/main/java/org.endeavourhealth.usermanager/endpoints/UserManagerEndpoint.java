@@ -437,7 +437,7 @@ public final class UserManagerEndpoint extends AbstractEndpoint {
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Path("/users/save")
 	@RequiresAdmin
-	public Response saveUserOwn(@Context SecurityContext sc, JsonEndUser user, @QueryParam("editMode") String editMode) throws Exception {
+	public Response saveUser(@Context SecurityContext sc, JsonEndUser user, @QueryParam("editMode") String editMode) throws Exception {
 		super.setLogbackMarkers(sc);
 
 		boolean editModeb = editMode.equalsIgnoreCase("1") ? true:false;
@@ -452,7 +452,7 @@ public final class UserManagerEndpoint extends AbstractEndpoint {
 			//can only update other users with eds_superuser role
 			if (!currentUserUuid.toString().equalsIgnoreCase(user.getUuid().toString()) && !superUser)
 			{
-				throw new Exception("Save User failed.  UserId mismatch");
+				throw new NotAllowedException("Save User not allowed with UserId mismatch");
 			}
 		}
 
@@ -589,7 +589,7 @@ public final class UserManagerEndpoint extends AbstractEndpoint {
 
 		//If adding a new role, just add the role composites, else, delete existing role composites and then add the new role composites (edit)
 		if(!editModeb){
-			//Save the roles to the user (add)
+			//Save the composite roles to the role (add)
 			keycloakClient.realms().roles().composites().postComposite(roleName, clientRoles);
 		} else {
 			//Delete the existing roles from the edited user
