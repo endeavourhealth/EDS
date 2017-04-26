@@ -41,6 +41,17 @@ public class Main {
 		LOG.info("Initialising config manager");
 		ConfigManager.Initialize("queuereader");
 
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("FixExchanges")) {
+
+			UUID justThisService = null;
+			if (args.length > 1) {
+				justThisService = UUID.fromString(args[1]);
+			}
+
+			fixExchanges(justThisService);
+		}
+
 		if (args.length >= 0
 				&& args[0].equalsIgnoreCase("FixOrgs")) {
 			fixOrgs();
@@ -82,6 +93,78 @@ public class Main {
 		LOG.info("Starting message consumption");
 		rabbitHandler.start();
 		LOG.info("EDS Queue reader running");
+	}
+
+	private static void fixExchanges(UUID justThisService) {
+		LOG.info("Fixing exchanges");
+
+		try {
+			Iterable<Service> iterable = new ServiceRepository().getAll();
+			for (Service service : iterable) {
+				UUID serviceId = service.getId();
+
+				if (justThisService != null
+						&& !service.getId().equals(justThisService)) {
+					LOG.info("Skipping service " + service.getName());
+					continue;
+				}
+
+				LOG.info("Doing service " + service.getName());
+
+				List<UUID> exchangeIds = new AuditRepository().getExchangeIdsForService(serviceId);
+				for (UUID exchangeId : exchangeIds) {
+
+					Exchange exchange = AuditWriter.readExchange(exchangeId);
+
+					String software = exchange.getHeader(HeaderKeys.SourceSystem);
+					if (!software.equalsIgnoreCase(MessageFormat.EMIS_CSV)) {
+						continue;
+					}
+
+					boolean changed = false;
+
+					String body = exchange.getBody();
+
+					String[] files = body.split("\n");
+					if (files.length == 0) {
+						continue;
+					}
+
+					for (int i=0; i<files.length; i++) {
+						String original = files[i];
+
+						//remove /r characters
+						String trimmed = original.trim();
+
+						//add the new prefix
+						if (!trimmed.startsWith("sftpreader/EMIS001/")) {
+							trimmed = "sftpreader/EMIS001/" + trimmed;
+						}
+
+						if (!original.equals(trimmed)) {
+							files[i] = trimmed;
+							changed = true;
+						}
+					}
+
+					if (changed) {
+
+						LOG.info("Fixed exchange " + exchangeId);
+						LOG.info(body);
+
+						body = String.join("\n", files);
+						exchange.setBody(body);
+
+						AuditWriter.writeExchange(exchange);
+					}
+				}
+			}
+
+			LOG.info("Fixed exchanges");
+
+		} catch (Exception ex) {
+			LOG.error("", ex);
+		}
 	}
 
 
