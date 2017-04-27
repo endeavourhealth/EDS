@@ -1,8 +1,7 @@
 import {Component} from "@angular/core";
 import {Organisation} from "../organisationManager/models/Organisation";
 import {Address} from "../organisationManager/models/Address";
-import {AdminService} from "../administration/admin.service";
-import {LoggerService} from "../common/logger.service";
+import {AdminService, LoggerService} from "eds-common-js";
 import {Transition, StateService} from "ui-router-ng2";
 import {RegionPickerDialog} from "../region/regionPicker.dialog";
 import {NgbModal} from "@ng-bootstrap/ng-bootstrap";

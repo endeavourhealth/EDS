@@ -1,7 +1,8 @@
 package org.endeavourhealth.core.rdbms.eds;
 
-import org.endeavourhealth.common.fhir.FhirUri;
-import org.endeavourhealth.common.fhir.IdentifierHelper;
+import org.endeavourhealth.common.fhir.*;
+import org.endeavourhealth.core.data.ehr.ResourceNotFoundException;
+import org.endeavourhealth.core.data.ehr.ResourceRepository;
 import org.endeavourhealth.core.fhirStorage.metadata.ReferenceHelper;
 import org.hl7.fhir.instance.model.*;
 import org.slf4j.Logger;
@@ -14,9 +15,6 @@ import java.util.*;
 
 public class PatientSearchHelper {
     private static final Logger LOG = LoggerFactory.getLogger(PatientSearchHelper.class);
-
-    //private final static String IDENTIFIER_SYSTEM_NHSNUMBER = "http://fhir.nhs.net/Id/nhs-number";
-
 
     public static void update(UUID serviceId, UUID systemId, Patient fhirPatient) throws Exception {
         update(serviceId, systemId, fhirPatient, null);
@@ -59,6 +57,7 @@ public class PatientSearchHelper {
         PatientSearch patientSearch = createOrUpdatePatientSearch(serviceId, systemId, fhirPatient, fhirEpisode, entityManager);
         entityManager.persist(patientSearch);
 
+        //only if we have a patient resource do we need to update the local identifiers
         if (fhirPatient != null) {
             List<PatientSearchLocalIdentifier> localIdentifiers = createOrUpdateLocalIdentifiers(serviceId, systemId, fhirPatient, entityManager);
             for (PatientSearchLocalIdentifier localIdentifier: localIdentifiers) {
@@ -189,6 +188,8 @@ public class PatientSearchHelper {
 
             Date regStart = null;
             Date regEnd = null;
+            String orgTypeCode = null;
+
             if (fhirEpisode.hasPeriod()) {
                 Period period = fhirEpisode.getPeriod();
                 if (period.hasStart()) {
@@ -199,8 +200,25 @@ public class PatientSearchHelper {
                 }
             }
 
+            if (fhirEpisode.hasManagingOrganization()) {
+                Reference orgReference = fhirEpisode.getManagingOrganization();
+                ReferenceComponents comps = org.endeavourhealth.common.fhir.ReferenceHelper.getReferenceComponents(orgReference);
+                ResourceType type = comps.getResourceType();
+                String id = comps.getId();
+                try {
+                    Organization org = (Organization)new ResourceRepository().getCurrentVersionAsResource(type, id);
+                    if (org != null) {
+                        CodeableConcept concept = org.getType();
+                        orgTypeCode = CodeableConceptHelper.findCodingCode(concept, FhirValueSetUri.VALUE_SET_ORGANISATION_TYPE);
+                    }
+                } catch (ResourceNotFoundException ex) {
+                    //if the resource doesn't exist, then just leave the field blank
+                }
+            }
+
             patientSearch.setRegistrationStart(regStart);
             patientSearch.setRegistrationEnd(regEnd);
+            patientSearch.setOrganisationTypeCode(orgTypeCode);
         }
 
         patientSearch.setLastUpdated(new Date());

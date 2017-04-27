@@ -8,7 +8,8 @@
 			<div class="form-group col-md-6">
 				<div>
 					<label class="control-label">Role name</label>
-					<input type="text" class="form-control" placeholder="Rolename" [(ngModel)]="resultData.name" name="rolename" #rolename>
+					<input type="text" *ngIf="isEditMode()" disabled class="form-control" placeholder="Rolename" [(ngModel)]="resultData.name" name="rolename" #rolename>
+					<input type="text" *ngIf="!isEditMode()" class="form-control" placeholder="Rolename" [(ngModel)]="resultData.name" (ngModelChange)="updateRoleName($event)" name="rolename" #rolename>
 				</div>
 				<div>
 					<label for="description">Description</label>
@@ -17,8 +18,10 @@
 				<div>
 					<label class="control-label">Organisation</label>
 					<div class="input-group">
-						<input type="text" name="searchTerm" placeholder="Organisation search..." class="form-control">
-						<span class="btn input-group-addon"><i class="fa fa-search" title="Search"></i></span>
+						<input type="text" class="form-control" [(ngModel)]="resultData.organisation.name" name="searchTerm" placeholder="Organisation search..." #organisaion>
+						<span class="btn input-group-addon" (click)="searchOrganisations()">
+							<i class="fa fa-search" title="Search"></i>
+						</span>
 					</div>
 
 				</div>
@@ -28,10 +31,10 @@
 				<div class="table scroll-box-350 form-control" style="min-height: 220px">
 					<loadingIndicator [done]="availableClients">
 						<ul class="list-group" *ngFor="let client of availableClients" >
-							<h4 class="list-group-item-heading">{{client.name}}</h4>
+							<h4 *ngIf="client.clientRoles.length>0" class="list-group-item-heading">{{client.name}}</h4>
 							<li class="list-group-item" *ngFor="let clientRole of client.clientRoles" #clientlist>
 								<div class="check-box">
-									<input type="checkbox" (ngModel)="clientRole.uuid" (ngModelChange)="processCheckedClientRole($event, clientRole)" name="optRadio" value="{{clientRole.uuid}}">  {{clientRole.name}}
+									<input type="checkbox" [checked]="isClientRoleAssigned(clientRole)" (change)="processCheckedClientRole($event, clientRole)" name="optChecked" value="{{clientRole}}">  {{clientRole.name}}
 									<span class="fa fa-info-circle fa-right-pad text-muted" ngbTooltip="{{clientRole.description}}" *ngIf="clientRole.description"></span>
 								</div>
 							</li>

@@ -1,12 +1,13 @@
 package org.endeavourhealth.transform.vitrucare;
 
 import OpenPseudonymiser.Crypto;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.base.Strings;
+import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.common.fhir.CodeableConceptHelper;
 import org.endeavourhealth.common.fhir.ExtensionConverter;
 import org.endeavourhealth.common.fhir.FhirExtensionUri;
 import org.endeavourhealth.common.fhir.IdentifierHelper;
-import org.endeavourhealth.common.utility.Resources;
 import org.endeavourhealth.common.utility.XmlSerializer;
 import org.endeavourhealth.core.data.ehr.ExchangeBatchRepository;
 import org.endeavourhealth.core.data.ehr.HasResourceDataJson;
@@ -41,17 +42,18 @@ public class FhirToVitruCareXmlTransformer extends FhirToXTransformerBase {
     private static final String XSD = "VitruCare.xsd";
     private static final String PSEUDO_KEY_NHS_NUMBER = "NHSNumber";
     private static final String PSEUDO_KEY_DATE_OF_BIRTH = "DOB";
-    private static final String PSEUDO_SALT_RESOURCE = "VitruCare - Leeds.EncryptedSalt";
+    //private static final String PSEUDO_SALT_RESOURCE = "VitruCare - Leeds.EncryptedSalt";
 
     private static ResourceRepository resourceRepository = new ResourceRepository();
     private static VitruCareRepository vitruCareRepository = new VitruCareRepository();
     private static ExchangeBatchRepository exchangeBatchRepository = new ExchangeBatchRepository();
-    private static byte[] saltBytes = null;
+    //private static byte[] saltBytes = null;
     private static Set<String> snomedCodeSet = null;
     private static Set<String> emisCodeSet = null;
+    private static Map<String, byte[]> saltCacheMap = new HashMap<>();
 
     public static String transformFromFhir(UUID batchId,
-                                           Map<ResourceType, List<UUID>> resourceIds) throws Exception {
+                                           Map<ResourceType, List<UUID>> resourceIds, String configName) throws Exception {
 
         //retrieve our resources
         List<ResourceByExchangeBatch> filteredResources = getResources(batchId, resourceIds);
@@ -100,10 +102,10 @@ public class FhirToVitruCareXmlTransformer extends FhirToXTransformerBase {
         String vitruCareId = findVitruCareId(edsPatientId);
 
         if (Strings.isNullOrEmpty(vitruCareId)) {
-            return createInitialPayload(edsPatientId);
+            return createInitialPayload(edsPatientId, configName);
 
         } else if (containsDeletes) {
-            return createReplacePayload(vitruCareId, edsPatientId);
+            return createReplacePayload(vitruCareId, edsPatientId, configName);
 
         } else {
             return createUpdatePayload(vitruCareId, patientResourceWrappers);
@@ -138,10 +140,10 @@ public class FhirToVitruCareXmlTransformer extends FhirToXTransformerBase {
         return XmlSerializer.serializeToString(element, XSD);
     }
 
-    private static String createReplacePayload(String vitruCareId, UUID edsPatientId) throws Exception {
+    private static String createReplacePayload(String vitruCareId, UUID edsPatientId, String configName) throws Exception {
 
         Payload payload = new Payload();
-        if (!populateFullPayload(payload, edsPatientId, vitruCareId)) {
+        if (!populateFullPayload(payload, edsPatientId, vitruCareId, configName)) {
             return null;
         }
 
@@ -149,11 +151,11 @@ public class FhirToVitruCareXmlTransformer extends FhirToXTransformerBase {
         return XmlSerializer.serializeToString(element, XSD);
     }
 
-    private static String createInitialPayload(UUID edsPatientId) throws Exception {
+    private static String createInitialPayload(UUID edsPatientId, String configName) throws Exception {
 
         //if we don't have a VitruCare ID, we need to get the full record from the DB to send a full payload
         Payload payload = new Payload();
-        if (!populateFullPayload(payload, edsPatientId, null)) {
+        if (!populateFullPayload(payload, edsPatientId, null, configName)) {
             return null;
         }
 
@@ -162,7 +164,7 @@ public class FhirToVitruCareXmlTransformer extends FhirToXTransformerBase {
     }
 
 
-    private static boolean populateFullPayload(Payload payload, UUID edsPatientId, String vitruCareId) throws Exception {
+    private static boolean populateFullPayload(Payload payload, UUID edsPatientId, String vitruCareId, String configName) throws Exception {
 
         ResourceHistory patientResourceWrapper = resourceRepository.getCurrentVersion(ResourceType.Patient.toString(), edsPatientId);
         if (patientResourceWrapper == null
@@ -176,7 +178,7 @@ public class FhirToVitruCareXmlTransformer extends FhirToXTransformerBase {
 
         //if we don't have a VitruCare ID, generate one from our patient
         if (vitruCareId == null) {
-            vitruCareId = createVitruCareId(fhirPatient);
+            vitruCareId = createVitruCareId(fhirPatient, configName);
             vitruCareRepository.saveVitruCareIdMapping(edsPatientId, serviceId, systemId, vitruCareId);
         }
         payload.setPatientGUID(vitruCareId);
@@ -432,7 +434,7 @@ public class FhirToVitruCareXmlTransformer extends FhirToXTransformerBase {
         return vitruCareRepository.getVitruCareId(edsPatientId);
     }
 
-    private static String createVitruCareId(Patient fhirPatient) throws Exception {
+    private static String createVitruCareId(Patient fhirPatient, String configName) throws Exception {
 
         String nhsNumber = IdentifierHelper.findNhsNumber(fhirPatient);
 
@@ -453,16 +455,38 @@ public class FhirToVitruCareXmlTransformer extends FhirToXTransformerBase {
         keys.put(PSEUDO_KEY_NHS_NUMBER, nhsNumber);
 
         Crypto crypto = new Crypto();
-        crypto.SetEncryptedSalt(getEncryptedSalt());
+        crypto.SetEncryptedSalt(getEncryptedSalt(configName));
         return crypto.GetDigest(keys);
     }
 
-    private static byte[] getEncryptedSalt() throws Exception {
+    private static byte[] getEncryptedSalt(String configName) throws Exception {
+
+        byte[] ret = saltCacheMap.get(configName);
+        if (ret == null) {
+
+            synchronized (saltCacheMap) {
+                ret = saltCacheMap.get(configName);
+                if (ret == null) {
+
+                    JsonNode config = ConfigManager.getConfigurationAsJson(configName, "enterprise");
+                    JsonNode saltNode = config.get("salt");
+                    if (saltNode == null) {
+                        throw new Exception("No 'Salt' element found in Enterprise config " + configName);
+                    }
+                    String base64Salt = saltNode.asText();
+                    ret = Base64.getDecoder().decode(base64Salt);
+                    saltCacheMap.put(configName, ret);
+                }
+            }
+        }
+        return ret;
+    }
+    /*private static byte[] getEncryptedSalt() throws Exception {
         if (saltBytes == null) {
             saltBytes = Resources.getResourceAsBytes(PSEUDO_SALT_RESOURCE);
         }
         return saltBytes;
-    }
+    }*/
 
     private static String findCodeToInclude(CodeableConcept codeableConcept) {
 

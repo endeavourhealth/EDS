@@ -6,14 +6,15 @@ import javax.persistence.Query;
 
 public class PseudoIdHelper {
 
-    public static void storePseudoId(String patientId, String pseudoId) throws Exception {
+    public static void storePseudoId(String patientId, String configName, String pseudoId) throws Exception {
 
         EntityManager entityManager = TransformConnection.getEntityManager();
 
-        PseudoIdMap map = findIdMap(patientId, entityManager);
+        PseudoIdMap map = findIdMap(patientId, configName, entityManager);
         if (map == null) {
             map = new PseudoIdMap();
             map.setPatientId(patientId);
+            map.setEnterpriseConfigName(configName);
         }
         map.setPseudoId(pseudoId);
 
@@ -23,16 +24,18 @@ public class PseudoIdHelper {
         entityManager.close();
     }
 
-    private static PseudoIdMap findIdMap(String patientId, EntityManager entityManager) throws Exception {
+    private static PseudoIdMap findIdMap(String patientId, String configName, EntityManager entityManager) throws Exception {
 
         String sql = "select c"
                 + " from"
                 + " PseudoIdMap c"
-                + " where c.patientId = :patientId";
+                + " where c.patientId = :patientId"
+                + " and c.enterpriseConfigName = :enterpriseConfigName";
 
 
         Query query = entityManager.createQuery(sql, PseudoIdMap.class)
-                .setParameter("patientId", patientId);
+                .setParameter("patientId", patientId)
+                .setParameter("enterpriseConfigName", configName);
 
         try {
             return (PseudoIdMap)query.getSingleResult();

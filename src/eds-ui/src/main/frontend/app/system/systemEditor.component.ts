@@ -1,14 +1,12 @@
-import {LibraryItemComponent} from "../library/libraryItemComponent";
+import {LibraryItemComponent} from "../edsLibrary/libraryItemComponent";
 import {System} from "./models/System";
 import {TechnicalInterface} from "./models/TechnicalInterface";
-import {LibraryService} from "../library/library.service";
 import {ServiceService} from "../services/service.service";
-import {LoggerService} from "../common/logger.service";
-import {AdminService} from "../administration/admin.service";
-import {LibraryItem} from "../library/models/LibraryItem";
+import {AdminService, LibraryService, LoggerService} from "eds-common-js";
 import {StateService, Transition} from "ui-router-ng2";
 import {NgbModal} from "@ng-bootstrap/ng-bootstrap";
 import {Component} from "@angular/core";
+import {EdsLibraryItem} from "../edsLibrary/models/EdsLibraryItem";
 
 @Component({
 	template : require('./system.html')
@@ -49,7 +47,7 @@ export class SystemEditComponent extends LibraryItemComponent {
 			description: '',
 			folderUuid: folderUuid,
 			system: this.system
-		} as LibraryItem;
+		} as EdsLibraryItem;
 
 	}
 

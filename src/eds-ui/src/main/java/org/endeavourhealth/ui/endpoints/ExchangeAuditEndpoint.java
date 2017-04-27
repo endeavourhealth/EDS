@@ -1,8 +1,10 @@
 
 package org.endeavourhealth.ui.endpoints;
 
+import com.codahale.metrics.annotation.Timed;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.base.Strings;
+import io.astefanutti.metrics.aspectj.Metrics;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.common.security.SecurityUtils;
@@ -51,6 +53,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Path("/exchangeAudit")
+@Metrics(registry = "EdsRegistry")
 public class ExchangeAuditEndpoint extends AbstractEndpoint {
     private static final Logger LOG = LoggerFactory.getLogger(ExchangeAuditEndpoint .class);
 
@@ -63,6 +66,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.ExchangeAuditEndpoint.GetExchangeList")
     @Path("/getExchangeList")
     public Response getExchangeList(@Context SecurityContext sc, @QueryParam("serviceId") String serviceIdStr,
                                                                  @QueryParam("maxRows") int maxRows,
@@ -124,6 +128,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.ExchangeAuditEndpoint.GetExchangeById")
     @Path("/getExchangeById")
     public Response getExchangeById(@Context SecurityContext sc, @QueryParam("serviceId") String serviceIdStr, @QueryParam("exchangeId") String exchangeIdStr) throws Exception {
         super.setLogbackMarkers(sc);
@@ -157,7 +162,16 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
         String exchangeServiceIdStr = headers.get(HeaderKeys.SenderServiceUuid);
         if (exchangeServiceIdStr == null
                 || !exchangeServiceIdStr.equals(serviceIdStr)) {
-            throw new BadRequestException("Exchange isn't for this service");
+            String err = "Exchange isn't for this service";
+
+            if (!Strings.isNullOrEmpty(exchangeServiceIdStr)) {
+                Service service = serviceRepository.getById(UUID.fromString(serviceIdStr));
+                if (service != null) {
+                    err += " (" + service.getName() + ")";
+                }
+            }
+
+            throw new BadRequestException(err);
         }
 
         JsonExchange jsonExchange = new JsonExchange(exchangeUuid, serviceUuid, timestamp, headers, bodyLines);
@@ -191,6 +205,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.ExchangeAuditEndpoint.GetExchangeEvents")
     @Path("/getExchangeEvents")
     public Response getExchangeEvents(@Context SecurityContext sc, @QueryParam("exchangeId") String exchangeIdStr) throws Exception {
         super.setLogbackMarkers(sc);
@@ -223,6 +238,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.ExchangeAuditEndpoint.PostToExchange")
     @Path("/postToExchange")
     @RequiresAdmin
     public Response postToExchange(@Context SecurityContext sc, JsonPostToExchangeRequest request) throws Exception {
@@ -233,15 +249,6 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
                 "Service ID", request.getServiceId(),
                 "Exchange Name", request.getExchangeName(),
                 "Post All", request.isPostAllExchanges());
-
-        /*LOG.info("-----posting to exchange");
-        Throwable t = new RuntimeException();
-        t.fillInStackTrace();
-        t.printStackTrace();
-        for (int i=0; i<20; i++) {
-            Thread.sleep(1000 * 60);
-            LOG.info("Sleeping " + i);
-        }*/
 
         UUID selectedExchangeId = request.getExchangeId();
         UUID serviceId = request.getServiceId();
@@ -292,10 +299,25 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
             }
         }
 
-        postToExchange(exchangeConfig, exchange);
+        //re-post back into Rabbit using the same pipeline component as used by the messaging API
+        PostMessageToExchange component = new PostMessageToExchange(exchangeConfig);
+        component.process(exchange);
 
         //write an event for the exchange, so we can see this happened
         AuditWriter.writeExchangeEvent(exchange, "Manually pushed into " + exchangeName + " exchange");
+
+        //if pushed into the Inbound queue, and it previously had an error in there, mark it as resubmitted
+        /*if (exchangeName.equals("EdsInbound")) {
+
+            UUID serviceId = exchange.getHeaderAsUuid(HeaderKeys.SenderServiceUuid);
+            UUID systemId = exchange.getHeaderAsUuid(HeaderKeys.SystemVersion);
+
+            ExchangeTransformAudit audit = auditRepository.getMostRecentExchangeTransform(serviceId, systemId, exchangeId);
+            if (!audit.isResubmitted()) {
+                audit.setResubmitted(true);
+                auditRepository.save(audit);
+            }
+        }*/
     }
 
     private void populateMulticastHeader(org.endeavourhealth.core.messaging.exchange.Exchange exchange, String multicastHeader) throws Exception {
@@ -462,18 +484,11 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
         return exchange;
     }*/
 
-    private void postToExchange(PostMessageToExchangeConfig exchangeConfig, org.endeavourhealth.core.messaging.exchange.Exchange exchange) throws Exception {
-
-        //re-post back into Rabbit using the same pipeline component as used by the messaging API
-        PostMessageToExchange component = new PostMessageToExchange(exchangeConfig);
-        component.process(exchange);
-
-    }
-
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.ExchangeAuditEndpoint.GetTransformErrorSummaries")
     @Path("/getTransformErrorSummaries")
     public Response getTransformErrorSummaries(@Context SecurityContext sc) throws Exception {
         super.setLogbackMarkers(sc);
@@ -532,6 +547,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.ExchangeAuditEndpoint.GetTransformErrorDetails")
     @Path("/getTransformErrorDetails")
     public Response getTransformErrorDetails(@Context SecurityContext sc,
                                     @QueryParam("serviceId") String serviceIdStr,
@@ -676,6 +692,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.ExchangeAuditEndpoint.RerunFirstExchangeInError")
     @Path("/rerunFirstExchangeInError")
     @RequiresAdmin
     public Response rerunFirstExchangeInError(@Context SecurityContext sc, JsonTransformRerunRequest request) throws Exception {
@@ -702,6 +719,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.ExchangeAuditEndpoint.RerunAllExchangeInError")
     @Path("/rerunAllExchangesInError")
     @RequiresAdmin
     public Response rerunAllExchangesInError(@Context SecurityContext sc, JsonTransformRerunRequest request) throws Exception {
@@ -758,6 +776,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.ExchangeAuditEndpoint.GetTransformErrorLines")
     @Path("/getTransformErrorLines")
     public Response getTransformErrorLines(@Context SecurityContext sc,
                                              @QueryParam("serviceId") String serviceIdStr,
@@ -789,5 +808,33 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
                 .entity(lines)
                 .build();
     }
+
+    /*@POST
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Path("/postTest")
+    @RequiresAdmin
+    public Response postTest(@Context SecurityContext sc, JsonPostToExchangeRequest request) throws Exception {
+        super.setLogbackMarkers(sc);
+
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Save, "Testing Post Rerequesting");
+
+        LOG.info("-----posting to exchange for service " + request.getServiceId());
+        Throwable t = new RuntimeException();
+        t.fillInStackTrace();
+        LOG.error("", t);
+
+        for (int i=0; i<20; i++) {
+            LOG.info("Sleeping " + i);
+            Thread.sleep(1000 * 60);
+        }
+        LOG.info("Done");
+
+        clearLogbackMarkers();
+
+        return Response
+                .ok()
+                .build();
+    }*/
 }
 

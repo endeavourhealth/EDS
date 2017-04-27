@@ -14,6 +14,7 @@ export class User {
 	mobile:string;
 	photo:string;
 	totp: string;
+	defaultOrgId: string;
 	userRoles: UserRole[];
 
 	isSuperUser:boolean;

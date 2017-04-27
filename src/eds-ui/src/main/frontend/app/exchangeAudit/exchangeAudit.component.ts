@@ -2,17 +2,7 @@ import {Component} from "@angular/core";
 import {NgbModal} from "@ng-bootstrap/ng-bootstrap";
 import {StateService, Transition} from "ui-router-ng2";
 import {Service} from "../services/models/Service";
-import {Organisation} from "../organisations/models/Organisation";
-import {System} from "../system/models/System";
-import {TechnicalInterface} from "../system/models/TechnicalInterface";
-import {AdminService} from "../administration/admin.service";
-import {OrganisationPickerDialog} from "../organisations/organisationPicker.dialog";
-import {MessageBoxDialog} from "../dialogs/messageBox/messageBox.dialog";
-import {LoggerService} from "../common/logger.service";
-import {SystemService} from "../system/system.service";
-
-import {ExchangeAuditTransformErrorSummary} from "./ExchangeAuditTransformErrorSummary";
-import {ExchangeAuditTransformErrorDetail} from "./ExchangeAuditTransformErrorDetail";
+import {LoggerService} from "eds-common-js";
 import {ExchangeAuditService} from "./exchangeAudit.service";
 import {Exchange} from "./Exchange";
 import {ServiceService} from "../services/service.service";
@@ -38,6 +28,7 @@ export class ExchangeAuditComponent {
 	exchanges: Exchange[];
 	selectedExchange: Exchange;
 	busyPostingToExchange: Subscription;
+	//busyTestingPost: Subscription;
 
 	postAllExchanges: boolean;
 
@@ -246,4 +237,23 @@ export class ExchangeAuditComponent {
 	checkboxChanged() {
 		console.log('checkbox changed = ' + this.postAllExchanges);
 	}
+
+	/*postTest() {
+		var vm = this;
+		var serviceId = this.service.uuid;
+		console.log("Post test in component class");
+
+		this.busyTestingPost = vm.exchangeAuditService.postTest(serviceId).subscribe(
+			(result) => {
+				console.log("Post test successful");
+				vm.log.success('Successfully tested post');
+				this.busyPostingToExchange = null;
+			},
+			(error) => {
+				console.log("Post test failed");
+				vm.log.error('Failed to test post')
+				this.busyPostingToExchange = null;
+			}
+		)
+	}*/
 }

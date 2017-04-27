@@ -1,12 +1,10 @@
 import {User} from "./models/User";
 import {UserEditorDialog} from "./userEditor.dialog";
-import {LoggerService} from "../common/logger.service";
 import {NgbModal, NgbTabChangeEvent} from "@ng-bootstrap/ng-bootstrap";
 import {Component} from "@angular/core";
 import {UserService} from "./user.service";
 import {UserRole} from "./models/UserRole";
-import {MessageBoxDialog} from "../dialogs/messageBox/messageBox.dialog";
-import {SecurityService} from "../security/security.service";
+import {LoggerService, SecurityService, MessageBoxDialog} from "eds-common-js";
 
 @Component({
 	template : require('./userManagerUserView.html')
@@ -40,18 +38,6 @@ export class UserManagerUserViewComponent {
 			);
 	}
 
-	editUserEx(userId: string) {
-		var vm = this;
-
-		//get user object using userId
-
-		UserEditorDialog.open(vm.$modal, null, true)
-            .result.then(
-			(editedUser) => vm.saveUser(null, editedUser),
-			() => vm.log.info('User edit cancelled')
-		);
-	}
-
 	editUser(user:User) {
 		var vm = this;
 		UserEditorDialog.open(vm.$modal, user, true)
@@ -66,10 +52,9 @@ export class UserManagerUserViewComponent {
 		vm.userService.saveUser(editedUser, true)
 			.subscribe(
 				(response) => {
-					this.selectedUser = editedUser;
-					this.getUserRoles(editedUser);
-					var msg = (user == null) ? 'User added' : 'User edited';
-					vm.log.info(msg);
+					this.selectedUser = response;
+					this.getUserRoles(response);
+					vm.log.success('User saved', response, 'Edit user');
 				},
 				(error) => vm.log.error('Error saving user', error, 'Error')
 			);

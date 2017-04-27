@@ -1,9 +1,8 @@
 import {Component} from "@angular/core";
 import {NgbModal} from "@ng-bootstrap/ng-bootstrap";
 import {StateService} from "ui-router-ng2";
-import {LoggerService} from "../common/logger.service";
+import {LoggerService, MessageBoxDialog} from "eds-common-js";
 import {DsaService} from "./dsa.service";
-import {MessageBoxDialog} from "../dialogs/messageBox/messageBox.dialog";
 import {Dsa} from "./models/Dsa";
 
 @Component({

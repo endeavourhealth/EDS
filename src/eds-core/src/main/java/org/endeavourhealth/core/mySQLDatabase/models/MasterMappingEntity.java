@@ -172,6 +172,11 @@ public class MasterMappingEntity {
             Map<UUID, String> organisations = region.getOrganisations();
             saveChildMappings(organisations, MapType.ORGANISATION.getMapType(), region.getUuid(), MapType.REGION.getMapType());
         }
+
+        if (region.getSharingAgreements() != null) {
+            Map<UUID, String> sharingAgreements = region.getSharingAgreements();
+            saveChildMappings(sharingAgreements, MapType.DATASHARINGAGREEMENT.getMapType(), region.getUuid(), MapType.REGION.getMapType());
+        }
     }
 
     public static void saveDataSharingAgreementMappings(JsonDSA dsa) throws Exception {
@@ -179,6 +184,11 @@ public class MasterMappingEntity {
         if (dsa.getDataFlows() != null) {
             Map<UUID, String> dataFlows = dsa.getDataFlows();
             saveChildMappings(dataFlows, MapType.DATAFLOW.getMapType(), dsa.getUuid(), MapType.DATASHARINGAGREEMENT.getMapType());
+        }
+
+        if (dsa.getRegions() != null) {
+            Map<UUID, String> regions = dsa.getRegions();
+            saveParentMappings(regions, MapType.REGION.getMapType(), dsa.getUuid(), MapType.DATASHARINGAGREEMENT.getMapType());
         }
     }
 
@@ -206,13 +216,26 @@ public class MasterMappingEntity {
             Map<UUID, String> cohorts = dpa.getCohorts();
             saveChildMappings(cohorts, MapType.COHORT.getMapType(), dpa.getUuid(), MapType.DATAPROCESSINGAGREEMENT.getMapType());
         }
+
+        if (dpa.getDataSets() != null) {
+            Map<UUID, String> datasets = dpa.getDataSets();
+            saveChildMappings(datasets, MapType.DATASET.getMapType(), dpa.getUuid(), MapType.DATAPROCESSINGAGREEMENT.getMapType());
+        }
     }
 
     public static void saveCohortMappings(JsonCohort cohort) throws Exception {
 
         if (cohort.getDpas() != null) {
-            Map<UUID, String> dataFlows = cohort.getDpas();
-            saveParentMappings(dataFlows, MapType.DATAFLOW.getMapType(), cohort.getUuid(), MapType.COHORT.getMapType());
+            Map<UUID, String> dataDpas = cohort.getDpas();
+            saveParentMappings(dataDpas, MapType.DATAPROCESSINGAGREEMENT.getMapType(), cohort.getUuid(), MapType.COHORT.getMapType());
+        }
+    }
+
+    public static void saveDataSetMappings(JsonDataSet dataset) throws Exception {
+
+        if (dataset.getDpas() != null) {
+            Map<UUID, String> dataDpas = dataset.getDpas();
+            saveParentMappings(dataDpas, MapType.DATAPROCESSINGAGREEMENT.getMapType(), dataset.getUuid(), MapType.DATASET.getMapType());
         }
     }
 

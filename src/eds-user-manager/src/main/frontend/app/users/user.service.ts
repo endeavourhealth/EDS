@@ -2,7 +2,7 @@ import {Injectable} from "@angular/core";
 import {User} from "./models/User";
 import {Observable} from "rxjs/Observable";
 import {Http, Response, URLSearchParams} from "@angular/http";
-import {BaseHttp2Service} from "../core/baseHttp2.service";
+import {BaseHttp2Service} from "eds-common-js";
 import {UserRole} from "./models/UserRole";
 import {Client} from "./models/Client";
 
@@ -56,8 +56,10 @@ export class UserService extends BaseHttp2Service {
 		return this.httpDelete ('api/usermanager/users/delete', {search: params});
 	}
 
-	saveRole(editedRole: UserRole): Observable<UserRole> {
-		return this.httpPost('api/usermanager/users/roles/save', editedRole);
+	saveRole(editedRole: UserRole, editMode: Boolean): Observable<UserRole> {
+		let params = new URLSearchParams();
+		params.set('editMode', editMode == true ? "1":"0");
+		return this.httpPost('api/usermanager/users/roles/save', editedRole, {search: params});
 	}
 
 	deleteRole(roleName: string) {

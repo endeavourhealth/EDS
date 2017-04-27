@@ -25,6 +25,7 @@ public class PatientSearch implements Serializable {
     private Date registrationEnd = null;
     private String patientId = null;
     private Date lastUpdated = null;
+    private String organisationTypeCode = null;
 
     @Id
     @Column(name = "service_id", nullable = false)
@@ -148,5 +149,12 @@ public class PatientSearch implements Serializable {
         this.lastUpdated = lastUpdated;
     }
 
+    @Column(name = "organisation_type_code")
+    public String getOrganisationTypeCode() {
+        return organisationTypeCode;
+    }
 
+    public void setOrganisationTypeCode(String organisationTypeCode) {
+        this.organisationTypeCode = organisationTypeCode;
+    }
 }

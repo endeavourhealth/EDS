@@ -1,5 +1,7 @@
 package org.endeavourhealth.ui.endpoints;
 
+import com.codahale.metrics.annotation.Timed;
+import io.astefanutti.metrics.aspectj.Metrics;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
@@ -35,6 +37,7 @@ import java.util.stream.Collectors;
         @Authorization(value="oauth", scopes = {})
 })
 @Path("/security/orgRoleGroups/{organisationId}")
+@Metrics(registry = "EdsRegistry")
 public final class SecurityOrgRoleEndpoint extends AbstractEndpoint {
     private static final Logger LOG = LoggerFactory.getLogger(SecurityOrgRoleEndpoint.class);
 
@@ -42,6 +45,7 @@ public final class SecurityOrgRoleEndpoint extends AbstractEndpoint {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.SecurityOrgRoleEndpoint.GetAllRoleProfileGroups")
     @Path("")
     @RequiresAdmin
     @ApiOperation(value = "Get all role profile groups for the currently selected organisation")
@@ -83,6 +87,7 @@ public final class SecurityOrgRoleEndpoint extends AbstractEndpoint {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.SecurityOrgRoleEndpoint.GetRoleProfileGroup")
     @Path("/{orgRoleId}")
     @RequiresAdmin
     @ApiOperation(value = "Get a role profile group for the currently selected organisation")
@@ -119,6 +124,7 @@ public final class SecurityOrgRoleEndpoint extends AbstractEndpoint {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.SecurityOrgRoleEndpoint.GetEffectiveRoleProfileGroup")
     @Path("/{orgRoleId}/effective")
     @RequiresAdmin
     @ApiOperation(value = "Get effective roles for a role profile group for the currently selected organisation")
@@ -152,6 +158,7 @@ public final class SecurityOrgRoleEndpoint extends AbstractEndpoint {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.SecurityOrgRoleEndpoint.GetRoleProfileGroupMembers")
     @Path("/{orgRoleId}/members")
     @RequiresAdmin
     @ApiOperation(value = "Get members of a role profile group for the currently selected organisation")
@@ -199,6 +206,7 @@ public final class SecurityOrgRoleEndpoint extends AbstractEndpoint {
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.SecurityOrgRoleEndpoint.CreateRoleProfileGroup")
     @Path("")
     @RequiresAdmin
     @ApiOperation(value = "Create a role profile group for the currently selected organisation")
@@ -235,6 +243,7 @@ public final class SecurityOrgRoleEndpoint extends AbstractEndpoint {
     @PUT
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.SecurityOrgRoleEndpoint.UpdateRoleProfileGroup")
     @Path("/{orgRoleId}")
     @RequiresAdmin
     @ApiOperation(value = "Update a role profile group for the currently selected organisation")
@@ -287,6 +296,7 @@ public final class SecurityOrgRoleEndpoint extends AbstractEndpoint {
     }
 
     @DELETE
+    @Timed(absolute = true, name="EDS-UI.SecurityOrgRoleEndpoint.DeleteRoleProfileGroup")
     @Path("/{orgRoleId}")
     @RequiresAdmin
     @ApiOperation(value = "Delete a role profile group for the currently selected organisation")

@@ -13,7 +13,7 @@ import java.util.List;
 public class LoggingManager {
     private static final int PAGESIZE = 15;
     public static List<LoggingEventEntity> getLoggingEvents(int page, String serviceId, String level) throws Exception {
-        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+        EntityManager entityManager = LogbackDb.INSTANCE.getEntityManager();
 
         String sql = "select e" +
                     " from " +
@@ -45,7 +45,7 @@ public class LoggingManager {
     }
 
     public static String getStackTrace(Long eventId) throws Exception {
-        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+        EntityManager entityManager = LogbackDb.INSTANCE.getEntityManager();
 
         String sql = "select e.traceLine" +
             " from " +

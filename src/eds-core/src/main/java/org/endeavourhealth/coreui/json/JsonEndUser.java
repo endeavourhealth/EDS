@@ -21,6 +21,8 @@ public final class JsonEndUser {
     private String mobile = null;
     private String photo = null;
     private String totp = null;
+    private String defaultOrgId = null;   //v1 organisation-id attribute for patient-explorer reports
+
     private Boolean superUser = null; //using non-primative types because serialisation to JSON can skip nulls, if we want
     private Boolean admin = null;
     private Integer permissions = null; //to be removed after isEDSAdmin is adopted
@@ -49,7 +51,10 @@ public final class JsonEndUser {
                     this.mobile = obj.toString().substring(1, obj.toString().length()-1);
                 } else if (attributeKey.equalsIgnoreCase("photo")) {
                     Object obj = userAttributes.get(attributeKey);
-                    this.photo = obj.toString().substring(1, obj.toString().length()-1);;
+                    this.photo = obj.toString().substring(1, obj.toString().length()-1);
+                } else if (attributeKey.equalsIgnoreCase("organisation-id")) {
+                    Object obj = userAttributes.get(attributeKey);
+                    this.defaultOrgId = obj.toString().substring(1, obj.toString().length() - 1);
                 }
             }
         }
@@ -179,6 +184,10 @@ public final class JsonEndUser {
     public String getPhoto() {return photo; }
 
     public void setPhoto(String photo) { this.photo = photo;}
+
+    public String getDefaultOrgId() {return defaultOrgId; }
+
+    public void setDefaultOrgId(String defaultOrgId) { this.defaultOrgId = defaultOrgId;}
 
     public String getTOTP() {return totp; }
 

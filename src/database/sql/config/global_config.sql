@@ -64,6 +64,7 @@ VALUES
   <logger name="com.datastax" level="ERROR"/>
   <logger name="org.hibernate" level="ERROR"/>
   <logger name="io.netty" level="ERROR"/>
+  <logger name="com.zaxxer" level="WARN"/>
 
   <!-- enable TRACE logging for Endeavour code -->
   <logger name="org.endeavourhealth" level="TRACE"/>

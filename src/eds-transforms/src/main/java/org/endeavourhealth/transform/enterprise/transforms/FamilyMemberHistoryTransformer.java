@@ -1,20 +1,20 @@
 package org.endeavourhealth.transform.enterprise.transforms;
 
 import org.endeavourhealth.common.fhir.CodeableConceptHelper;
+import org.endeavourhealth.common.fhir.ExtensionConverter;
 import org.endeavourhealth.common.fhir.FhirExtensionUri;
 import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
+import org.endeavourhealth.transform.enterprise.outputModels.AbstractEnterpriseCsvWriter;
 import org.endeavourhealth.transform.enterprise.outputModels.OutputContainer;
-import org.hl7.fhir.instance.model.DateTimeType;
-import org.hl7.fhir.instance.model.Extension;
-import org.hl7.fhir.instance.model.FamilyMemberHistory;
-import org.hl7.fhir.instance.model.Reference;
+import org.hl7.fhir.instance.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
 import java.util.Date;
 import java.util.Map;
+import java.util.UUID;
 
 public class FamilyMemberHistoryTransformer extends AbstractTransformer {
 
@@ -22,173 +22,121 @@ public class FamilyMemberHistoryTransformer extends AbstractTransformer {
 
     public void transform(ResourceByExchangeBatch resource,
                           OutputContainer data,
+                          AbstractEnterpriseCsvWriter csvWriter,
                           Map<String, ResourceByExchangeBatch> otherResources,
                           Long enterpriseOrganisationId,
                           Long enterprisePatientId,
                           Long enterprisePersonId,
-                          String configName) throws Exception {
+                          String configName,
+                          UUID protocolId) throws Exception {
 
-        org.endeavourhealth.transform.enterprise.outputModels.Observation model = data.getObservations();
-
-        Long enterpriseId = mapId(resource, model);
+        Long enterpriseId = mapId(resource, csvWriter, true);
         if (enterpriseId == null) {
             return;
 
         } else if (resource.getIsDeleted()) {
-            model.writeDelete(enterpriseId.longValue());
+            csvWriter.writeDelete(enterpriseId.longValue());
 
         } else {
 
-            FamilyMemberHistory fhir = (FamilyMemberHistory)deserialiseResouce(resource);
-
-            /*Reference patientReference = fhir.getPatient();
-            Long enterprisePatientId = findEnterpriseId(data.getPatients(), patientReference);*/
-
-            //the test pack has data that refers to deleted or missing patients, so if we get a null
-            //patient ID here, then skip this resource
-            if (enterprisePatientId == null) {
-                LOG.warn("Skipping " + fhir.getResourceType() + " " + fhir.getId() + " as no Enterprise patient ID could be found for it");
-                return;
-            }
-
-            long id;
-            long organisationId;
-            long patientId;
-            long personId;
-            Long encounterId = null;
-            Long practitionerId = null;
-            Date clinicalEffectiveDate = null;
-            Integer datePrecisionId = null;
-            Long snomedConceptId = null;
-            BigDecimal value = null;
-            String units = null;
-            String originalCode = null;
-            boolean isProblem = false;
-            String originalTerm = null;
-
-            id = enterpriseId.longValue();
-            organisationId = enterpriseOrganisationId.longValue();
-            patientId = enterprisePatientId.longValue();
-            personId = enterprisePersonId.longValue();
-
-            if (fhir.hasExtension()) {
-                for (Extension extension: fhir.getExtension()) {
-                    if (extension.getUrl().equals(FhirExtensionUri.ASSOCIATED_ENCOUNTER)) {
-                        Reference encounterReference = (Reference)extension.getValue();
-                        encounterId = findEnterpriseId(data.getEncounters(), encounterReference);
-
-                    } else if (extension.getUrl().equals(FhirExtensionUri.FAMILY_MEMBER_HISTORY_REPORTED_BY)) {
-                        Reference practitionerReference = (Reference)extension.getValue();
-                        practitionerId = findEnterpriseId(data.getPractitioners(), practitionerReference);
-                    }
-                }
-            }
-
-            if (fhir.hasDateElement()) {
-                DateTimeType dt = fhir.getDateElement();
-                clinicalEffectiveDate = dt.getValue();
-                datePrecisionId = convertDatePrecision(dt.getPrecision());
-            }
-
-            if (fhir.getCondition().size() > 1) {
-                throw new TransformException("FamilyMemberHistory with more than one item not supported");
-            }
-            FamilyMemberHistory.FamilyMemberHistoryConditionComponent condition = fhir.getCondition().get(0);
-            snomedConceptId = CodeableConceptHelper.findSnomedConceptId(condition.getCode());
-
-            //add the raw original code, to assist in data checking
-            originalCode = CodeableConceptHelper.findOriginalCode(condition.getCode());
-
-            //add original term too, for easy display of results
-            originalTerm = condition.getCode().getText();
-
-            model.writeUpsert(id,
-                    organisationId,
-                    patientId,
-                    personId,
-                    encounterId,
-                    practitionerId,
-                    clinicalEffectiveDate,
-                    datePrecisionId,
-                    snomedConceptId,
-                    value,
-                    units,
-                    originalCode,
-                    isProblem,
-                    originalTerm);
+            Resource fhir = deserialiseResouce(resource);
+            transform(enterpriseId, fhir, data, csvWriter, otherResources, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName, protocolId);
         }
     }
 
-    /*public void transform(ResourceByExchangeBatch resource,
-                                 EnterpriseData data,
-                                 Map<String, ResourceByExchangeBatch> otherResources,
-                                 Integer enterpriseOrganisationUuid) throws Exception {
+    public void transform(Long enterpriseId,
+                                   Resource resource,
+                                   OutputContainer data,
+                                    AbstractEnterpriseCsvWriter csvWriter,
+                                   Map<String, ResourceByExchangeBatch> otherResources,
+                                   Long enterpriseOrganisationId,
+                                   Long enterprisePatientId,
+                                   Long enterprisePersonId,
+                                   String configName,
+                                    UUID protocolId) throws Exception {
 
-        //org.endeavourhealth.core.xml.enterprise.FamilyMemberHistory model = new org.endeavourhealth.core.xml.enterprise.FamilyMemberHistory();
-        org.endeavourhealth.core.xml.enterprise.Observation model = new org.endeavourhealth.core.xml.enterprise.Observation();
+        FamilyMemberHistory fhir = (FamilyMemberHistory)resource;
 
-        if (!mapIdAndMode(resource, model)) {
-            return;
-        }
+        long id;
+        long organisationId;
+        long patientId;
+        long personId;
+        Long encounterId = null;
+        Long practitionerId = null;
+        Date clinicalEffectiveDate = null;
+        Integer datePrecisionId = null;
+        Long snomedConceptId = null;
+        BigDecimal value = null;
+        String units = null;
+        String originalCode = null;
+        boolean isProblem = false;
+        String originalTerm = null;
+        boolean isReview = false;
 
-        //if it will be passed to Enterprise as an Insert or Update, then transform the remaining fields
-        if (model.getSaveMode() == SaveMode.UPSERT) {
+        id = enterpriseId.longValue();
+        organisationId = enterpriseOrganisationId.longValue();
+        patientId = enterprisePatientId.longValue();
+        personId = enterprisePersonId.longValue();
 
-            FamilyMemberHistory fhir = (FamilyMemberHistory)deserialiseResouce(resource);
+        if (fhir.hasExtension()) {
+            for (Extension extension: fhir.getExtension()) {
+                if (extension.getUrl().equals(FhirExtensionUri.ASSOCIATED_ENCOUNTER)) {
+                    Reference encounterReference = (Reference)extension.getValue();
+                    encounterId = findEnterpriseId(data.getEncounters(), encounterReference);
 
-            model.setOrganizationId(enterpriseOrganisationUuid);
-
-            Reference patientReference = fhir.getPatient();
-            Integer enterprisePatientUuid = findEnterpriseId(new Patient(), patientReference);
-
-            //the test pack has data that refers to deleted or missing patients, so if we get a null
-            //patient ID here, then skip this resource
-            if (enterprisePatientUuid == null) {
-                LOG.warn("Skipping " + fhir.getResourceType() + " " + fhir.getId() + " as no Enterprise patient ID could be found for it");
-                return;
-            }
-
-            model.setPatientId(enterprisePatientUuid);
-
-            if (fhir.hasExtension()) {
-                for (Extension extension: fhir.getExtension()) {
-                    if (extension.getUrl().equals(FhirExtensionUri.ASSOCIATED_ENCOUNTER)) {
-                        Reference encounterReference = (Reference)extension.getValue();
-                        Integer enterpriseEncounterUuid = findEnterpriseId(new Encounter(), encounterReference);
-                        model.setEncounterId(enterpriseEncounterUuid);
-
-                    } else if (extension.getUrl().equals(FhirExtensionUri.FAMILY_MEMBER_HISTORY_REPORTED_BY)) {
-                        Reference practitionerReference = (Reference)extension.getValue();
-                        Integer enterprisePractitionerUuid = findEnterpriseId(new Practitioner(), practitionerReference);
-                        model.setPractitionerId(enterprisePractitionerUuid);
+                } else if (extension.getUrl().equals(FhirExtensionUri.FAMILY_MEMBER_HISTORY_REPORTED_BY)) {
+                    Reference practitionerReference = (Reference)extension.getValue();
+                    practitionerId = findEnterpriseId(data.getPractitioners(), practitionerReference);
+                    if (practitionerId == null) {
+                        practitionerId = transformOnDemand(practitionerReference, data, otherResources, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName, protocolId);
                     }
                 }
             }
-
-            if (fhir.hasDateElement()) {
-                DateTimeType dt = fhir.getDateElement();
-                model.setClinicalEffectiveDate(convertDate(dt.getValue()));
-                model.setDatePrecisionId(convertDatePrecision(dt.getPrecision()));
-            }
-
-            if (fhir.getCondition().size() > 1) {
-                throw new TransformException("FamilyMemberHistory with more than one item not supported");
-            }
-            FamilyMemberHistory.FamilyMemberHistoryConditionComponent condition = fhir.getCondition().get(0);
-            Long snomedConceptId = findSnomedConceptId(condition.getCode());
-            model.setSnomedConceptId(snomedConceptId);
-
-            //add the raw original code, to assist in data checking
-            String originalCode = findOriginalCode(condition.getCode());
-            model.setOriginalCode(originalCode);
-
-            //add original term too, for easy display of results
-            String originalTerm = condition.getCode().getText();
-            model.setOriginalTerm(originalTerm);
         }
 
-        data.getObservation().add(model);
-    }*/
+        if (fhir.hasDateElement()) {
+            DateTimeType dt = fhir.getDateElement();
+            clinicalEffectiveDate = dt.getValue();
+            datePrecisionId = convertDatePrecision(dt.getPrecision());
+        }
+
+        if (fhir.getCondition().size() > 1) {
+            throw new TransformException("FamilyMemberHistory with more than one item not supported");
+        }
+        FamilyMemberHistory.FamilyMemberHistoryConditionComponent condition = fhir.getCondition().get(0);
+        snomedConceptId = CodeableConceptHelper.findSnomedConceptId(condition.getCode());
+
+        //add the raw original code, to assist in data checking
+        originalCode = CodeableConceptHelper.findOriginalCode(condition.getCode());
+
+        //add original term too, for easy display of results
+        originalTerm = condition.getCode().getText();
+
+        Extension reviewExtension = ExtensionConverter.findExtension(fhir, FhirExtensionUri.IS_REVIEW);
+        if (reviewExtension != null) {
+            BooleanType b = (BooleanType)reviewExtension.getValue();
+            if (b.getValue() != null) {
+                isReview = b.getValue();
+            }
+        }
+
+        org.endeavourhealth.transform.enterprise.outputModels.Observation model = (org.endeavourhealth.transform.enterprise.outputModels.Observation)csvWriter;
+        model.writeUpsert(id,
+                organisationId,
+                patientId,
+                personId,
+                encounterId,
+                practitionerId,
+                clinicalEffectiveDate,
+                datePrecisionId,
+                snomedConceptId,
+                value,
+                units,
+                originalCode,
+                isProblem,
+                originalTerm,
+                isReview);
+    }
 
 
 }

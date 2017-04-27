@@ -138,6 +138,10 @@ public class ConsultationTransformer {
             csvHelper.addLinkedItemsToResource(fhirEncounter, references, FhirExtensionUri.ENCOUNTER_COMPONENTS);
         }
 
+        if (parser.getIsConfidential()) {
+            fhirEncounter.addExtension(ExtensionConverter.createBooleanExtension(FhirExtensionUri.IS_CONFIDENTIAL, true));
+        }
+
         fhirResourceFiler.savePatientResource(parser.getCurrentState(), patientGuid, fhirEncounter);
     }
 

@@ -22,9 +22,12 @@ public class LibraryRepositoryHelper {
 	//disable validation when READING XML (it's still done when writing)
 	//private static final String XSD = "QueryDocument.xsd";
 
+	private static final long CACHE_DURATION = 1000 * 60; //cache objects for 60s
+
 	private static final LibraryRepository repository = new LibraryRepository();
 
 	private static final Map<String, ExpiringCache<TechnicalInterface>> technicalInterfaceCache = new ConcurrentHashMap<>();
+	private static final Map<String, ExpiringCache<LibraryItem>> libraryItemCache = new ConcurrentHashMap<>();
 
 	public static List<LibraryItem> getProtocolsByServiceId(String serviceId) throws ParserConfigurationException, IOException, SAXException, JAXBException {
 		DefinitionItemType itemType = DefinitionItemType.Protocol;
@@ -132,8 +135,34 @@ public class LibraryRepositoryHelper {
 						|| cacheWrapper.isExpired()) {
 
 					TechnicalInterface ti = getTechnicalInterfaceDetails(systemUuidStr, technicalInterfaceUuidStr);
-					cacheWrapper = new ExpiringCache<>(ti, 1000 * 60);
+					cacheWrapper = new ExpiringCache<>(ti, CACHE_DURATION);
 					technicalInterfaceCache.put(cacheKey, cacheWrapper);
+				}
+			}
+		}
+		return cacheWrapper.getObject();
+	}
+
+	/**
+	 * uses a cache to cut load on deserialising LibraryItems (particularly protocols). Library items
+	 * stay in the cache for one minute before expiring.
+     */
+	public static LibraryItem getLibraryItemUsingCache(UUID itemUuid) throws Exception {
+		String cacheKey = itemUuid.toString();
+		ExpiringCache<LibraryItem> cacheWrapper = libraryItemCache.get(cacheKey);
+		if (cacheWrapper == null
+				|| cacheWrapper.isExpired()) {
+
+			synchronized (libraryItemCache) {
+
+				//once in the sync block, make another check, in case another thread has refreshed our cache for us
+				cacheWrapper = libraryItemCache.get(cacheKey);
+				if (cacheWrapper == null
+						|| cacheWrapper.isExpired()) {
+
+					LibraryItem libraryItem = getLibraryItem(itemUuid);
+					cacheWrapper = new ExpiringCache<>(libraryItem, CACHE_DURATION);
+					libraryItemCache.put(cacheKey, cacheWrapper);
 				}
 			}
 		}

@@ -1,5 +1,7 @@
 package org.endeavourhealth.ui.endpoints;
 
+import com.codahale.metrics.annotation.Timed;
+import io.astefanutti.metrics.aspectj.Metrics;
 import org.endeavourhealth.common.security.annotations.RequiresAdmin;
 import org.endeavourhealth.core.data.audit.UserAuditRepository;
 import org.endeavourhealth.core.data.audit.models.AuditAction;
@@ -17,6 +19,7 @@ import javax.ws.rs.core.*;
 import java.util.*;
 
 @Path("/dsa")
+@Metrics(registry = "EdsRegistry")
 public final class DsaEndpoint extends AbstractEndpoint {
     private static final Logger LOG = LoggerFactory.getLogger(OrganisationEndpoint.class);
 
@@ -26,6 +29,7 @@ public final class DsaEndpoint extends AbstractEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.DsaEndpoint.Get")
     @Path("/")
     public Response get(@Context SecurityContext sc, @QueryParam("uuid") String uuid, @QueryParam("searchData") String searchData) throws Exception {
         super.setLogbackMarkers(sc);
@@ -50,6 +54,7 @@ public final class DsaEndpoint extends AbstractEndpoint {
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.DsaEndpoint.Post")
     @Path("/")
     @RequiresAdmin
     public Response post(@Context SecurityContext sc, JsonDSA dsa) throws Exception {
@@ -78,6 +83,7 @@ public final class DsaEndpoint extends AbstractEndpoint {
     @DELETE
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.DsaEndpoint.Delete")
     @Path("/")
     @RequiresAdmin
     public Response delete(@Context SecurityContext sc, @QueryParam("uuid") String uuid) throws Exception {
@@ -97,6 +103,7 @@ public final class DsaEndpoint extends AbstractEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.DsaEndpoint.GetDataFlows")
     @Path("/dataflows")
     public Response getLinkedCohorts(@Context SecurityContext sc, @QueryParam("uuid") String uuid) throws Exception {
         super.setLogbackMarkers(sc);
@@ -105,6 +112,20 @@ public final class DsaEndpoint extends AbstractEndpoint {
                 "DSA Id", uuid);
 
         return getLinkedDataFlows(uuid);
+    }
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.DsaEndpoint.GetRegions")
+    @Path("/regions")
+    public Response getLinkedRegions(@Context SecurityContext sc, @QueryParam("uuid") String uuid) throws Exception {
+        super.setLogbackMarkers(sc);
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
+                "dataflow(s)",
+                "DSA Id", uuid);
+
+        return getLinkedRegions(uuid);
     }
 
     private Response getDSAList() throws Exception {
@@ -146,6 +167,22 @@ public final class DsaEndpoint extends AbstractEndpoint {
 
         if (dataFlowUuids.size() > 0)
             ret = DataFlowEntity.getDataFlowsFromList(dataFlowUuids);
+
+        clearLogbackMarkers();
+        return Response
+                .ok()
+                .entity(ret)
+                .build();
+    }
+
+    private Response getLinkedRegions(String dsaUuid) throws Exception {
+
+        List<String> regionUuids = MasterMappingEntity.getParentMappings(dsaUuid, MapType.DATASHARINGAGREEMENT.getMapType(), MapType.REGION.getMapType());
+
+        List<RegionEntity> ret = new ArrayList<>();
+
+        if (regionUuids.size() > 0)
+            ret = RegionEntity.getRegionsFromList(regionUuids);
 
         clearLogbackMarkers();
         return Response

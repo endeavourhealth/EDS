@@ -1,9 +1,8 @@
 import {Component, Input} from "@angular/core";
 import {NgbModal} from "@ng-bootstrap/ng-bootstrap";
-import {AdminService} from "../administration/admin.service";
 import {StateService} from "ui-router-ng2";
 import {DataSharingSummary} from "./models/DataSharingSummary";
-import {LoggerService} from "../common/logger.service";
+import {AdminService, LoggerService} from "eds-common-js";
 import {DataSharingSummaryService} from "./dataSharingSummary.service";
 import {Region} from "../region/models/Region";
 import {OrganisationManagerStatistics} from "../organisationManager/models/OrganisationManagerStatistics";
@@ -19,6 +18,7 @@ export class DataSharingSummaryOverviewComponent {
     dsaStats : OrganisationManagerStatistics[];
     dataflowStats : OrganisationManagerStatistics[];
     cohortStats : OrganisationManagerStatistics[];
+    datasetStats : OrganisationManagerStatistics[];
 
     constructor(private $modal: NgbModal,
                 private dataSharingSummaryService: DataSharingSummaryService,
@@ -35,7 +35,7 @@ export class DataSharingSummaryOverviewComponent {
         vm.getDsaStatistics();
         vm.getDataFlowStatistics();
         vm.getCohortStatistics();
-
+        vm.getDataSetStatistics();
     }
 
     getSummaryStatistics() {
@@ -88,6 +88,16 @@ export class DataSharingSummaryOverviewComponent {
             );
     }
 
+    getDataSetStatistics() {
+        var vm= this;
+        vm.dataSharingSummaryService.getStatistics('dataset')
+            .subscribe(result => {
+                    vm.datasetStats = result
+                },
+                error => vm.log.error('Failed to load Dataset statistics', error, 'Load Dataset statistics')
+            );
+    }
+
     fileChange(event) {
         let fileList: FileList = event.target.files;
         if(fileList.length > 0)
@@ -114,5 +124,9 @@ export class DataSharingSummaryOverviewComponent {
 
     goToCohorts() {
         this.$state.go('app.cohort');
+    }
+
+    goToDataSets() {
+        this.$state.go('app.dataSet');
     }
 }

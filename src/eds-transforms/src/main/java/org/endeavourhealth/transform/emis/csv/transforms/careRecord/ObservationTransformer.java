@@ -56,7 +56,7 @@ public class ObservationTransformer {
                                        EmisCsvHelper csvHelper,
                                        String version) throws Exception {
 
-        ResourceType resourceType = findOriginalTargetResourceType(fhirResourceFiler, csvHelper, parser);
+        ResourceType resourceType = findOriginalTargetResourceType(fhirResourceFiler, parser);
         if (resourceType != null) {
             switch (resourceType) {
                 case Observation:
@@ -102,7 +102,7 @@ public class ObservationTransformer {
         //a FHIR Condition (for the problem) as well as the FHIR FamilyMemberHistory. The above code will
         //sort out deleting the FamilyMemberHistory, so we also need to see if the same EMIS observation
         //was saved as a condition too
-        if (wasSavedAsResourceType(fhirResourceFiler, csvHelper, parser, ResourceType.Condition)) {
+        if (wasSavedAsResourceType(fhirResourceFiler, parser, ResourceType.Condition)) {
             createOrDeleteCondition(parser, fhirResourceFiler, csvHelper, true);
         }
     }
@@ -111,7 +111,7 @@ public class ObservationTransformer {
     /**
      * finds out what resource type an EMIS observation was previously saved as
      */
-    private static ResourceType findOriginalTargetResourceType(FhirResourceFiler fhirResourceFiler, EmisCsvHelper csvHelper, Observation parser) {
+    private static ResourceType findOriginalTargetResourceType(FhirResourceFiler fhirResourceFiler, Observation parser) {
 
         List<ResourceType> potentialResourceTypes = new ArrayList<>();
         potentialResourceTypes.add(ResourceType.Observation);
@@ -126,15 +126,15 @@ public class ObservationTransformer {
         potentialResourceTypes.add(ResourceType.ReferralRequest);
         
         for (ResourceType resourceType: potentialResourceTypes) {
-            if (wasSavedAsResourceType(fhirResourceFiler, csvHelper, parser, resourceType)) {
+            if (wasSavedAsResourceType(fhirResourceFiler, parser, resourceType)) {
                 return resourceType;
             }
         }
         return null;
     }
 
-    private static boolean wasSavedAsResourceType(FhirResourceFiler fhirResourceFiler, EmisCsvHelper csvHelper, Observation parser, ResourceType resourceType) {
-        String uniqueId = csvHelper.createUniqueId(parser.getPatientGuid(), parser.getObservationGuid());
+    private static boolean wasSavedAsResourceType(FhirResourceFiler fhirResourceFiler, Observation parser, ResourceType resourceType) {
+        String uniqueId = EmisCsvHelper.createUniqueId(parser.getPatientGuid(), parser.getObservationGuid());
         ResourceIdMap mapping = idMapRepository.getResourceIdMap(fhirResourceFiler.getServiceId(), fhirResourceFiler.getSystemId(), resourceType.toString(), uniqueId);
         return mapping != null;
     }
@@ -462,7 +462,8 @@ public class ObservationTransformer {
 
         Long codeId = parser.getCodeId();
         //after discussion, the observation code should go into the service requested field
-        fhirReferral.addServiceRequested(csvHelper.findClinicalCode(codeId));
+        CodeableConcept codeableConcept = csvHelper.findClinicalCode(codeId);
+        fhirReferral.addServiceRequested(codeableConcept);
         //fhirReferral.setType(csvHelper.findClinicalCode(codeId));
 
         String clinicianGuid = parser.getClinicianUserInRoleGuid();
@@ -491,21 +492,14 @@ public class ObservationTransformer {
         addRecordedByExtension(fhirReferral, parser, csvHelper);
         addRecordedDateExtension(fhirReferral, parser);
         addDocumentExtension(fhirReferral, parser);
+        addReviewExtension(fhirReferral, codeableConcept, parser, csvHelper, fhirResourceFiler);
+        addConfidentialExtension(fhirReferral, parser);
 
         //assert that these fields are empty, as we don't stored them in this resource type,
         assertValueEmpty(fhirReferral, parser);
         assertNumericUnitEmpty(fhirReferral, parser);
         assertNumericRangeLowEmpty(fhirReferral, parser);
         assertNumericRangeHighEmpty(fhirReferral, parser);
-
-
-        //if this record is linked to a problem, store this relationship in the helper
-/*
-        csvHelper.cacheProblemRelationship(parser.getProblemGuid(),
-                                            patientGuid,
-                                            parser.getObservationGuid(),
-                                            fhirReferral.getResourceType());
-*/
 
         fhirResourceFiler.savePatientResource(parser.getCurrentState(), patientGuid, fhirReferral);
 
@@ -557,6 +551,8 @@ public class ObservationTransformer {
         addRecordedByExtension(fhirOrder, parser, csvHelper);
         addRecordedDateExtension(fhirOrder, parser);
         addDocumentExtension(fhirOrder, parser);
+        addReviewExtension(fhirOrder, diagnosticOrderItemComponent.getCode(), parser, csvHelper, fhirResourceFiler);
+        addConfidentialExtension(fhirOrder, parser);
 
         //assert that these cells are empty, as we don't stored them in this resource type
         assertValueEmpty(fhirOrder, parser);
@@ -615,6 +611,8 @@ public class ObservationTransformer {
         addRecordedByExtension(fhirSpecimen, parser, csvHelper);
         addRecordedDateExtension(fhirSpecimen, parser);
         addDocumentExtension(fhirSpecimen, parser);
+        addReviewExtension(fhirSpecimen, fhirSpecimen.getType(), parser, csvHelper, fhirResourceFiler);
+        addConfidentialExtension(fhirSpecimen, parser);
 
         //assert that these cells are empty, as we don't stored them in this resource type
         assertValueEmpty(fhirSpecimen, parser);
@@ -622,16 +620,7 @@ public class ObservationTransformer {
         assertNumericRangeLowEmpty(fhirSpecimen, parser);
         assertNumericRangeHighEmpty(fhirSpecimen, parser);
 
-        //if this record is linked to a problem, store this relationship in the helper
-/*
-        csvHelper.cacheProblemRelationship(parser.getProblemGuid(),
-                patientGuid,
-                observationGuid,
-                fhirOrder.getResourceType());
-*/
-
         fhirResourceFiler.savePatientResource(parser.getCurrentState(), patientGuid, fhirSpecimen);
-
     }
 
 
@@ -675,6 +664,8 @@ public class ObservationTransformer {
         fhirAllergy.setNote(AnnotationHelper.createAnnotation(associatedText));
 
         addEncounterExtension(fhirAllergy, parser, csvHelper, patientGuid);
+        addReviewExtension(fhirAllergy, fhirAllergy.getSubstance(), parser, csvHelper, fhirResourceFiler);
+        addConfidentialExtension(fhirAllergy, parser);
 
         assertValueEmpty(fhirAllergy, parser);
         assertNumericUnitEmpty(fhirAllergy, parser);
@@ -749,18 +740,14 @@ public class ObservationTransformer {
         addRecordedByExtension(fhirReport, parser, csvHelper);
         addRecordedDateExtension(fhirReport, parser);
         addDocumentExtension(fhirReport, parser);
+        addReviewExtension(fhirReport, fhirReport.getCode(), parser, csvHelper, fhirResourceFiler);
+        addConfidentialExtension(fhirReport, parser);
 
         //assert that these cells are empty, as we don't stored them in this resource type
         assertValueEmpty(fhirReport, parser);
         assertNumericUnitEmpty(fhirReport, parser);
         assertNumericRangeLowEmpty(fhirReport, parser);
         assertNumericRangeHighEmpty(fhirReport, parser);
-
-        //if this record is linked to a problem, store this relationship in the helper
-        /*csvHelper.cacheProblemRelationship(parser.getProblemGuid(),
-                patientGuid,
-                observationGuid,
-                fhirReport.getResourceType());*/
 
         fhirResourceFiler.savePatientResource(parser.getCurrentState(), patientGuid, fhirReport);
 
@@ -811,20 +798,14 @@ public class ObservationTransformer {
         addRecordedByExtension(fhirProcedure, parser, csvHelper);
         addRecordedDateExtension(fhirProcedure, parser);
         addDocumentExtension(fhirProcedure, parser);
+        addReviewExtension(fhirProcedure, fhirProcedure.getCode(), parser, csvHelper, fhirResourceFiler);
+        addConfidentialExtension(fhirProcedure, parser);
 
         //assert that these cells are empty, as we don't stored them in this resource type
         assertValueEmpty(fhirProcedure, parser);
         assertNumericUnitEmpty(fhirProcedure, parser);
         assertNumericRangeLowEmpty(fhirProcedure, parser);
         assertNumericRangeHighEmpty(fhirProcedure, parser);
-
-        //if this record is linked to a problem, store this relationship in the helper
-/*
-        csvHelper.cacheProblemRelationship(parser.getProblemGuid(),
-                patientGuid,
-                observationGuid,
-                fhirProcedure.getResourceType());
-*/
 
         fhirResourceFiler.savePatientResource(parser.getCurrentState(), patientGuid, fhirProcedure);
     }
@@ -870,10 +851,6 @@ public class ObservationTransformer {
         Date enteredDate = parser.getEnteredDateTime();
         fhirCondition.setDateRecorded(enteredDate);
 
-        //the entered by is stored in an extension
-        addRecordedByExtension(fhirCondition, parser, csvHelper);
-        addDocumentExtension(fhirCondition, parser);
-
         Long codeId = parser.getCodeId();
         fhirCondition.setCode(csvHelper.findClinicalCode(codeId));
 
@@ -904,6 +881,12 @@ public class ObservationTransformer {
             Reference problemReference = csvHelper.createProblemReference(problemGuid, patientGuid);
             fhirCondition.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.CONDITION_PART_OF_PROBLEM, problemReference));
         }
+
+        //the entered by is stored in an extension
+        addRecordedByExtension(fhirCondition, parser, csvHelper);
+        addDocumentExtension(fhirCondition, parser);
+        addReviewExtension(fhirCondition, fhirCondition.getCode(), parser, csvHelper, fhirResourceFiler);
+        addConfidentialExtension(fhirCondition, parser);
 
         //assert that these cells are empty, as we don't stored them in this resource type
         //but only if we've passed in the boolean to say so - if this is false, we've already processed this
@@ -1000,6 +983,8 @@ public class ObservationTransformer {
         addRecordedByExtension(fhirObservation, parser, csvHelper);
         addRecordedDateExtension(fhirObservation, parser);
         addDocumentExtension(fhirObservation, parser);
+        addReviewExtension(fhirObservation, fhirObservation.getCode(), parser, csvHelper, fhirResourceFiler);
+        addConfidentialExtension(fhirObservation, parser);
 
         fhirResourceFiler.savePatientResource(parser.getCurrentState(), patientGuid, fhirObservation);
     }
@@ -1051,18 +1036,14 @@ public class ObservationTransformer {
         addRecordedByExtension(fhirFamilyHistory, parser, csvHelper);
         addRecordedDateExtension(fhirFamilyHistory, parser);
         addDocumentExtension(fhirFamilyHistory, parser);
+        addReviewExtension(fhirFamilyHistory, fhirCondition.getCode(), parser, csvHelper, fhirResourceFiler);
+        addConfidentialExtension(fhirFamilyHistory, parser);
 
         //assert that these cells are empty, as we don't stored them in this resource type
         assertValueEmpty(fhirFamilyHistory, parser);
         assertNumericUnitEmpty(fhirFamilyHistory, parser);
         assertNumericRangeLowEmpty(fhirFamilyHistory, parser);
         assertNumericRangeHighEmpty(fhirFamilyHistory, parser);
-
-        //if this record is linked to a problem, store this relationship in the helper
-        /*csvHelper.cacheProblemRelationship(parser.getProblemGuid(),
-                patientGuid,
-                observationGuid,
-                fhirFamilyHistory.getResourceType());*/
 
         fhirResourceFiler.savePatientResource(parser.getCurrentState(), patientGuid, fhirFamilyHistory);
     }
@@ -1115,18 +1096,14 @@ public class ObservationTransformer {
         addRecordedByExtension(fhirImmunisation, parser, csvHelper);
         addRecordedDateExtension(fhirImmunisation, parser);
         addDocumentExtension(fhirImmunisation, parser);
+        addReviewExtension(fhirImmunisation, fhirImmunisation.getVaccineCode(), parser, csvHelper, fhirResourceFiler);
+        addConfidentialExtension(fhirImmunisation, parser);
 
         //assert that these cells are empty, as we don't stored them in this resource type
         assertValueEmpty(fhirImmunisation, parser);
         assertNumericUnitEmpty(fhirImmunisation, parser);
         assertNumericRangeLowEmpty(fhirImmunisation, parser);
         assertNumericRangeHighEmpty(fhirImmunisation, parser);
-
-        //if this record is linked to a problem, store this relationship in the helper
-        /*csvHelper.cacheProblemRelationship(parser.getProblemGuid(),
-                patientGuid,
-                observationGuid,
-                fhirImmunisation.getResourceType());*/
 
         fhirResourceFiler.savePatientResource(parser.getCurrentState(), patientGuid, fhirImmunisation);
     }
@@ -1194,25 +1171,37 @@ public class ObservationTransformer {
     }
 
 
-    /**
-     "EffectiveDate",
-     "EffectiveDatePrecision",
-     "EnteredDate",
-     "EnteredTime",
-     "ClinicianUserInRoleGuid",
-     "EnteredByUserInRoleGuid",
-     "ParentObservationGuid",
-     "CodeId",
-     "ProblemGuid",
-     "AssociatedText",
-     "ConsultationGuid",
-            "Value",
-            "NumericUnit",
-            "ObservationType",
-            "      NumericRangeLow",
-            "NumericRangeHigh",
-             "DocumentGuid",
-            "Deleted",
-                "IsConfidential",
-     */
+    private static void addReviewExtension(DomainResource resource, CodeableConcept codeableConcept, Observation parser,
+                                           EmisCsvHelper csvHelper, FhirResourceFiler fhirResourceFiler) throws Exception {
+        String problemGuid = parser.getProblemGuid();
+        if (Strings.isNullOrEmpty(problemGuid)) {
+            return;
+        }
+
+        //find the original code our problem was coded with
+        String patientGuid = parser.getPatientGuid();
+        String problemReadCode = csvHelper.findProblemObservationReadCode(patientGuid, problemGuid, fhirResourceFiler);
+        if (Strings.isNullOrEmpty(problemReadCode)) {
+            return;
+        }
+
+        //find the original code our current observation is coded with
+        String observationReadCode = CodeableConceptHelper.findOriginalCode(codeableConcept);
+        if (!problemReadCode.equals(observationReadCode)) {
+            //if the codes differ, then return out
+            return;
+        }
+
+        //if the codes are the same, our current observation is a review of the problem
+        Extension extension = ExtensionConverter.createExtension(FhirExtensionUri.IS_REVIEW, new BooleanType(true));
+        resource.addExtension(extension);
+    }
+
+    private static void addConfidentialExtension(DomainResource resource, Observation parser) {
+        if (parser.getIsConfidential()) {
+            resource.addExtension(ExtensionConverter.createBooleanExtension(FhirExtensionUri.IS_CONFIDENTIAL, true));
+        }
+    }
+
+
 }

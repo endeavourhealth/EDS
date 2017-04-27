@@ -51,6 +51,7 @@ public class MessageTransformOutbound extends PipelineComponent {
 		// List of resources and subscriber service contracts
 		TransformBatch transformBatch = getTransformBatch(exchange);
 		UUID batchId = transformBatch.getBatchId();
+		UUID protocolId = transformBatch.getProtocolId();
 		Map<ResourceType, List<UUID>> resourceIds = transformBatch.getResourceIds();
 
 		// Run the transform, creating a subscriber batch for each
@@ -87,7 +88,7 @@ public class MessageTransformOutbound extends PipelineComponent {
 
 			String outboundData = null;
 			try {
-				outboundData = transform(exchange, batchId, software, softwareVersion, resourceIds, endpoint);
+				outboundData = transform(exchange, batchId, software, softwareVersion, resourceIds, endpoint, protocolId);
 			} catch (Exception ex) {
 				throw new PipelineException("Failed to transform exchange " + exchange + " and batch " + batchId, ex);
 			}
@@ -121,34 +122,27 @@ public class MessageTransformOutbound extends PipelineComponent {
 		//LOG.trace("Message transformed (outbound)");
 	}
 
-	private String transform(Exchange exchange, UUID batchId, String software, String softwareVersion, Map<ResourceType, List<UUID>> resourceIds, String endpoint) throws Exception {
+	private String transform(Exchange exchange,
+							 UUID batchId,
+							 String software,
+							 String softwareVersion,
+							 Map<ResourceType, List<UUID>> resourceIds,
+							 String endpoint,
+							 UUID protocolId) throws Exception {
 
 		if (software.equals(MessageFormat.ENTERPRISE_CSV)) {
 
-			UUID senderOrganisationUuid = exchange.getHeaderAsUuid(HeaderKeys.SenderOrganisationUuid);
+			UUID serviceId = exchange.getHeaderAsUuid(HeaderKeys.SenderServiceUuid);
+			UUID systemId = exchange.getHeaderAsUuid(HeaderKeys.SenderSystemUuid);
 
 			JsonNode config = ConfigManager.getConfigurationAsJson(endpoint, "enterprise");
 			boolean pseudonymised = config.get("pseudonymised").asBoolean();
 
-			String zippedCsvs = FhirToEnterpriseCsvTransformer.transformFromFhir(senderOrganisationUuid, batchId, resourceIds, pseudonymised, endpoint);
-
-			return zippedCsvs;
-			/*//file the data directly, so return null to end the pipeline
-			if (!Strings.isNullOrEmpty(zippedCsvs)) {
-				EnterpriseFiler.file(zippedCsvs, config);
-			}
-
-			return null;*/
+			return FhirToEnterpriseCsvTransformer.transformFromFhir(serviceId, systemId, batchId, resourceIds, pseudonymised, endpoint, protocolId);
 
 		} else if (software.equals(MessageFormat.VITRUICARE_XML)) {
 
-			String xml = FhirToVitruCareXmlTransformer.transformFromFhir(batchId, resourceIds);
-
-			return xml;
-			/*if (!Strings.isNullOrEmpty(xml)) {
-				sendHttpPost(xml, endpoint);
-			}
-			return null;*/
+			return FhirToVitruCareXmlTransformer.transformFromFhir(batchId, resourceIds, endpoint);
 
 		} else {
 			throw new PipelineException("Unsupported outbound software " + software + " for exchange " + exchange.getExchangeId());

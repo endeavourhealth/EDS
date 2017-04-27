@@ -1,8 +1,7 @@
-import {Component} from "@angular/core";
+import {Component, Injectable} from "@angular/core";
 import {Organisation} from "../organisationManager/models/Organisation";
-import {AdminService} from "../administration/admin.service";
 import {RegionService} from "./region.service";
-import {LoggerService} from "../common/logger.service";
+import {AdminService, LoggerService} from "eds-common-js";
 import {Transition, StateService} from "ui-router-ng2";
 import {NgbModal} from "@ng-bootstrap/ng-bootstrap";
 import {Region} from "./models/Region";
@@ -10,6 +9,8 @@ import {OrganisationManagerPickerDialog} from "../organisationManager/organisati
 import {RegionPickerDialog} from "./regionPicker.dialog";
 import {Marker} from "./models/Marker";
 import {OrganisationManagerService} from "../organisationManager/organisationManager.service";
+import {Dsa} from "../dsa/models/Dsa";
+import {DsaPickerDialog} from "../dsa/dsaPicker.dialog";
 
 @Component({
     template: require('./regionEditor.html')
@@ -20,6 +21,7 @@ export class RegionEditorComponent {
     organisations : Organisation[];
     parentRegions : Region[];
     childRegions : Region[];
+    sharingAgreements : Dsa[];
     lat: number = 54.4347266;
     lng: number = -4.7194005;
     zoom: number = 6.01;
@@ -64,6 +66,7 @@ export class RegionEditorComponent {
                     vm.getParentRegions();
                     vm.getChildRegions();
                     vm.getOrganisationMarkers();
+                    vm.getSharingAgreements();
                 },
                 error => vm.log.error('Error loading', error, 'Error')
             );
@@ -91,6 +94,13 @@ export class RegionEditorComponent {
         for (var idx in this.childRegions) {
             var region : Region = this.childRegions[idx];
             this.region.childRegions[region.uuid] = region.name;
+        }
+
+        //populate sharing agreements
+        vm.region.sharingAgreements = {};
+        for (var idx in this.sharingAgreements) {
+            var dsa : Dsa = this.sharingAgreements[idx];
+            this.region.sharingAgreements[dsa.uuid] = dsa.name;
         }
 
         vm.regionService.saveRegion(vm.region)
@@ -135,12 +145,24 @@ export class RegionEditorComponent {
             );
     }
 
+    private getSharingAgreements() {
+        var vm = this;
+        vm.regionService.getSharingAgreements(vm.region.uuid)
+            .subscribe(
+                result => {
+                    vm.sharingAgreements = result;
+                },
+                error => vm.log.error('Failed to load sharing agreements', error, 'Load sharing agreements')
+
+            );
+    }
+
     private getOrganisationMarkers() {
         var vm = this;
         vm.organisationManagerService.getOrganisationMarkers(vm.region.uuid)
             .subscribe(
                 result => vm.markers = result,
-                error => vm.log.error('Failed to load oranisation markers', error, 'Load organisation Markers')
+                error => vm.log.error('Failed to load organisation markers', error, 'Load organisation Markers')
             );
     }
 
@@ -168,6 +190,14 @@ export class RegionEditorComponent {
         });
     }
 
+    private editSharingAgreements() {
+        var vm = this;
+        DsaPickerDialog.open(vm.$modal, vm.sharingAgreements)
+            .result.then(function (result : Dsa[]) {
+            vm.sharingAgreements = result;
+        });
+    }
+
     editOrganisation(item : Organisation) {
         this.$state.go('app.organisationManagerEditor', {itemUuid: item.uuid, itemAction: 'edit'});
     }
@@ -175,4 +205,9 @@ export class RegionEditorComponent {
     editRegion(item : Organisation) {
         this.$state.go('app.regionEditor', {itemUuid: item.uuid, itemAction: 'edit'});
     }
+
+    editSharingAgreement(item : Dsa) {
+        this.$state.go('app.dsaEditor', {itemUuid: item.uuid, itemAction: 'edit'});
+    }
 }
+

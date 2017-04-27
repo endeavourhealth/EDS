@@ -1,17 +1,16 @@
 import {OnInit, Input, Component} from "@angular/core";
 import {NgbModal, NgbActiveModal} from "@ng-bootstrap/ng-bootstrap";
-import {CodeSetValue} from "../coding/models/CodeSetValue";
 import {Test} from "./models/Test";
 import {IsAny} from "./models/IsAny";
 import {Resource} from "../dataSet/models/Resource";
-import {CodePickerDialog} from "../coding/codePicker.dialog";
 import {CodeSet} from "./models/CodeSet";
 import {FieldTest} from "./models/FieldTest";
 import {ValueFrom} from "./models/ValueFrom";
 import {ValueTo} from "./models/ValueTo";
 import {ValueSet} from "./models/ValueSet";
 import {Restriction} from "../expressions/models/Restriction";
-import {CodingService} from "../coding/coding.service";
+import {CodeSetValue} from "eds-common-js/dist/coding/models/CodeSetValue";
+import {CodePickerDialog, CodingService} from "eds-common-js";
 
 @Component({
 	selector: 'ngbd-modal-content',

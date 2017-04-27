@@ -3,8 +3,7 @@ import {Component, Input, ViewChild, ViewChildren} from "@angular/core";
 import {NgbModal, NgbActiveModal} from "@ng-bootstrap/ng-bootstrap";
 import {UserService} from "./user.service";
 import {UserRole} from "./models/UserRole";
-import {LoggerService} from "../common/logger.service";
-import {MessageBoxDialog} from "../dialogs/messageBox/messageBox.dialog";
+import {LoggerService, MessageBoxDialog} from "eds-common-js";
 import {NgbTabset} from "@ng-bootstrap/ng-bootstrap/tabset/tabset";
 
 @Component({
@@ -57,6 +56,7 @@ export class UserEditorDialog {
 				email: '',
 				mobile: '',
 				photo: '',
+				defaultOrgId: '',
 				totp: 'no',
 				userRoles: []
 			} as User;
@@ -73,6 +73,7 @@ export class UserEditorDialog {
 				email: this.resultData.email,
 				mobile: this.resultData.mobile,
 				photo: this.resultData.photo == null ? '': this.resultData.photo,
+				defaultOrgId: this.resultData.defaultOrgId == null ? '': this.resultData.defaultOrgId,
 				totp: 'no',
 				userRoles: this.resultData.userRoles
 			} as User;

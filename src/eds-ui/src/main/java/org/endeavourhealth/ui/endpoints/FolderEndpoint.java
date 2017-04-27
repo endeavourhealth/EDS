@@ -1,5 +1,7 @@
 package org.endeavourhealth.ui.endpoints;
 
+import com.codahale.metrics.annotation.Timed;
+import io.astefanutti.metrics.aspectj.Metrics;
 import org.endeavourhealth.core.data.admin.LibraryRepository;
 import org.endeavourhealth.core.data.admin.models.*;
 import org.endeavourhealth.core.data.audit.UserAuditRepository;
@@ -23,6 +25,7 @@ import java.util.*;
  * Endpoint for functions related to creating and managing folders
  */
 @Path("/folder")
+@Metrics(registry = "EdsRegistry")
 public final class FolderEndpoint extends AbstractItemEndpoint {
     private static final Logger LOG = LoggerFactory.getLogger(FolderEndpoint.class);
     private static final UserAuditRepository userAudit = new UserAuditRepository(AuditModule.EdsUiModule.Folders);
@@ -30,6 +33,7 @@ public final class FolderEndpoint extends AbstractItemEndpoint {
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.FolderEndpoint.SaveFolder")
     @Path("/saveFolder")
     @RequiresAdmin
     public Response saveFolder(@Context SecurityContext sc, JsonFolder folderParameters) throws Exception {
@@ -120,6 +124,7 @@ public final class FolderEndpoint extends AbstractItemEndpoint {
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.FolderEndpoint.DeleteFolder")
     @Path("/deleteFolder")
     @RequiresAdmin
     public Response deleteFolder(@Context SecurityContext sc, JsonFolder folderParameters) throws Exception {
@@ -159,6 +164,7 @@ public final class FolderEndpoint extends AbstractItemEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.FolderEndpoint.GetFolders")
     @Path("/getFolders")
     public Response getFolders(@Context SecurityContext sc, @QueryParam("folderType") int folderType, @QueryParam("parentUuid") String parentUuidStr) throws Exception {
         super.setLogbackMarkers(sc);
@@ -286,104 +292,6 @@ public final class FolderEndpoint extends AbstractItemEndpoint {
 
         // write to Cassandra
         repository.save(toSave);
-    }
-
-    @GET
-    @Produces(MediaType.APPLICATION_JSON)
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Path("/getFolderContents")
-    public Response getFolderContents(@Context SecurityContext sc, @QueryParam("folderUuid") String uuidStr) throws Exception {
-        super.setLogbackMarkers(sc);
-        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
-            "FolderContents",
-            "Folder Id", uuidStr);
-
-        LibraryRepository repository = new LibraryRepository();
-
-        UUID folderUuid = UUID.fromString(uuidStr);
-        UUID orgUuid = getOrganisationUuidFromToken(sc);
-
-        LOG.trace("GettingFolderContents for folder {}", folderUuid);
-
-        JsonFolderContentsList ret = new JsonFolderContentsList();
-
-        List<ActiveItem> childActiveItems = new ArrayList();
-
-        Iterable<ItemDependency> itemDependency = repository.getItemDependencyByDependentItemId(folderUuid, DependencyType.IsContainedWithin.getValue());
-
-        for (ItemDependency dependency: itemDependency) {
-            Iterable<ActiveItem> item = repository.getActiveItemByAuditId(dependency.getAuditId());
-            for (ActiveItem activeItem: item) {
-                if (activeItem.getIsDeleted()==false)
-                    childActiveItems.add(activeItem);
-            }
-        }
-
-        HashMap<UUID, Audit> hmAuditsByAuditUuid = new HashMap<>();
-        List<Audit> audits = new ArrayList<>();
-        for (ActiveItem activeItem: childActiveItems) {
-            Audit audit = repository.getAuditByKey(activeItem.getAuditId());
-            audits.add(audit);
-        }
-
-        for (Audit audit: audits) {
-            hmAuditsByAuditUuid.put(audit.getId(), audit);
-        }
-
-        HashMap<UUID, Item> hmItemsByItemUuid = new HashMap<>();
-        List<Item> items = new ArrayList<>();
-        for (ActiveItem activeItem: childActiveItems) {
-            Item item = repository.getItemByKey(activeItem.getItemId(), activeItem.getAuditId());
-            items.add(item);
-        }
-        
-        for (Item item: items) {
-            hmItemsByItemUuid.put(item.getId(), item);
-        }
-
-        for (int i = 0; i < childActiveItems.size(); i++) {
-
-            ActiveItem activeItem = childActiveItems.get(i);
-            Item item = hmItemsByItemUuid.get(activeItem.getItemId());
-
-            DefinitionItemType itemType = DefinitionItemType.get(activeItem.getItemTypeId());
-            Audit audit = hmAuditsByAuditUuid.get(item.getAuditId());
-
-            JsonFolderContent c = new JsonFolderContent(activeItem, item, audit);
-            ret.addContent(c);
-
-            //and set any extra data we need
-            if (itemType == DefinitionItemType.Query) {
-
-            } else if (itemType == DefinitionItemType.Test) {
-
-            } else if (itemType == DefinitionItemType.Resource) {
-
-            } else if (itemType == DefinitionItemType.CodeSet) {
-
-            } else if (itemType == DefinitionItemType.DataSet) {
-
-            } else if (itemType == DefinitionItemType.Protocol) {
-
-            } else if (itemType == DefinitionItemType.System) {
-
-            } else if (itemType == DefinitionItemType.CountReport) {
-
-            } else {
-                throw new RuntimeException("Unexpected content " + item + " in folder");
-            }
-        }
-
-        if (ret.getContents() != null) {
-            Collections.sort(ret.getContents());
-        }
-
-        clearLogbackMarkers();
-
-        return Response
-                .ok()
-                .entity(ret)
-                .build();
     }
 
 }

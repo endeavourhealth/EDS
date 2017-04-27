@@ -27,7 +27,8 @@ public class Encounter extends AbstractEnterpriseCsvWriter {
                             Long snomedConceptId,
                             String originalCode,
                             String originalTerm,
-                            Long episodeOfCareId) throws Exception {
+                            Long episodeOfCareId,
+                            Long serviceProviderOrganisationId) throws Exception {
 
         super.printRecord(OutputContainer.UPSERT,
                 "" + id,
@@ -41,7 +42,8 @@ public class Encounter extends AbstractEnterpriseCsvWriter {
                 convertLong(snomedConceptId),
                 originalCode,
                 originalTerm,
-                convertLong(episodeOfCareId));
+                convertLong(episodeOfCareId),
+                convertLong(serviceProviderOrganisationId));
     }
 
     @Override
@@ -59,7 +61,8 @@ public class Encounter extends AbstractEnterpriseCsvWriter {
                 "snomed_concept_id",
                 "original_code",
                 "original_term",
-                "episode_of_care_id"
+                "episode_of_care_id",
+                "service_provider_organization_id"
         };
     }
 
@@ -78,6 +81,7 @@ public class Encounter extends AbstractEnterpriseCsvWriter {
                 Long.class,
                 String.class,
                 String.class,
+                Long.class,
                 Long.class
         };
     }

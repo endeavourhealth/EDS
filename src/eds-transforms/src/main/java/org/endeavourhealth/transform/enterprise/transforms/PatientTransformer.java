@@ -1,32 +1,35 @@
 package org.endeavourhealth.transform.enterprise.transforms;
 
 import OpenPseudonymiser.Crypto;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.base.Strings;
+import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.common.fhir.FhirUri;
 import org.endeavourhealth.common.fhir.IdentifierHelper;
-import org.endeavourhealth.common.utility.Resources;
+import org.endeavourhealth.common.fhir.schema.OrganisationType;
+import org.endeavourhealth.core.data.admin.LibraryRepositoryHelper;
+import org.endeavourhealth.core.data.ehr.ResourceRepository;
 import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
 import org.endeavourhealth.core.rdbms.eds.PatientLinkHelper;
 import org.endeavourhealth.core.rdbms.eds.PatientLinkPair;
+import org.endeavourhealth.core.rdbms.eds.PatientSearch;
+import org.endeavourhealth.core.rdbms.eds.PatientSearchHelper;
 import org.endeavourhealth.core.rdbms.reference.PostcodeHelper;
-import org.endeavourhealth.core.rdbms.reference.PostcodeReference;
+import org.endeavourhealth.core.rdbms.reference.PostcodeLookup;
 import org.endeavourhealth.core.rdbms.transform.EnterpriseAgeUpdater;
 import org.endeavourhealth.core.rdbms.transform.EnterpriseIdHelper;
 import org.endeavourhealth.core.rdbms.transform.HouseholdHelper;
 import org.endeavourhealth.core.rdbms.transform.PseudoIdHelper;
+import org.endeavourhealth.core.xml.QueryDocument.*;
+import org.endeavourhealth.transform.enterprise.outputModels.AbstractEnterpriseCsvWriter;
 import org.endeavourhealth.transform.enterprise.outputModels.OutputContainer;
-import org.hl7.fhir.instance.model.Address;
-import org.hl7.fhir.instance.model.DateType;
-import org.hl7.fhir.instance.model.Enumerations;
-import org.hl7.fhir.instance.model.Patient;
+import org.hl7.fhir.instance.model.*;
+import org.hl7.fhir.instance.model.Resource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
 
 public class PatientTransformer extends AbstractTransformer {
     private static final Logger LOG = LoggerFactory.getLogger(PatientTransformer.class);
@@ -34,131 +37,172 @@ public class PatientTransformer extends AbstractTransformer {
     private static final String PSEUDO_KEY_NHS_NUMBER = "NHSNumber";
     private static final String PSEUDO_KEY_PATIENT_NUMBER = "PatientNumber";
     private static final String PSEUDO_KEY_DATE_OF_BIRTH = "DOB";
-    private static final String PSEUDO_SALT_RESOURCE = "Endeavour Enterprise - East London.EncryptedSalt";
+    //private static final String PSEUDO_SALT_RESOURCE = "Endeavour Enterprise - East London.EncryptedSalt";
 
-    private static byte[] saltBytes = null;
+    private static final int BEST_ORG_SCORE = 10;
+
+    private static Map<String, byte[]> saltCacheMap = new HashMap<>();
+    //private static byte[] saltBytes = null;
+    private static ResourceRepository resourceRepository = new ResourceRepository();
 
     public void transform(ResourceByExchangeBatch resource,
                           OutputContainer data,
+                          AbstractEnterpriseCsvWriter csvWriter,
                           Map<String, ResourceByExchangeBatch> otherResources,
                           Long enterpriseOrganisationId,
                           Long nullEnterprisePatientId,
                           Long nullEnterprisePersonId,
-                          String configName) throws Exception {
+                          String configName,
+                          UUID protocolId) throws Exception {
 
-        org.endeavourhealth.transform.enterprise.outputModels.Patient model = data.getPatients();
-
-        Long enterpriseId = mapId(resource, model);
+        Long enterpriseId = mapId(resource, csvWriter, true);
         if (enterpriseId == null) {
             return;
 
         } else if (resource.getIsDeleted()) {
-            model.writeDelete(enterpriseId.longValue());
+            csvWriter.writeDelete(enterpriseId.longValue());
 
         } else {
-            Patient fhirPatient = (Patient)deserialiseResouce(resource);
+            Resource fhir = deserialiseResouce(resource);
+            transform(enterpriseId, fhir, data, csvWriter, otherResources, enterpriseOrganisationId, nullEnterprisePatientId, nullEnterprisePersonId, configName, protocolId);
+        }
+    }
 
-            String discoveryPersonId = PatientLinkHelper.getPersonId(fhirPatient.getId());
+    public void transform(Long enterpriseId,
+                          Resource resource,
+                          OutputContainer data,
+                          AbstractEnterpriseCsvWriter csvWriter,
+                          Map<String, ResourceByExchangeBatch> otherResources,
+                          Long enterpriseOrganisationId,
+                          Long nullEnterprisePatientId,
+                          Long nullEnterprisePersonId,
+                          String configName,
+                          UUID protocolId) throws Exception {
 
-            //when the person ID table was populated, patients who had been deleted weren't added,
-            //so we'll occasionally get null for some patients. If this happens, just do what would have
-            //been done originally and assign an ID
-            if (Strings.isNullOrEmpty(discoveryPersonId)) {
-                PatientLinkPair pair = PatientLinkHelper.updatePersonId(fhirPatient);
-                discoveryPersonId = pair.getNewPersonId();
-            }
+        Patient fhirPatient = (Patient)resource;
 
-            Long enterprisePersonId = EnterpriseIdHelper.findOrCreateEnterprisePersonId(discoveryPersonId, configName);
+        String discoveryPersonId = PatientLinkHelper.getPersonId(fhirPatient.getId());
 
-            long id;
-            long organizationId;
-            long personId;
-            int patientGenderId;
-            String pseudoId = null;
-            String nhsNumber = null;
-            Integer ageYears = null;
-            Integer ageMonths = null;
-            Integer ageWeeks = null;
-            Date dateOfBirth = null;
-            Date dateOfDeath = null;
-            String postcode = null;
-            String postcodePrefix = null;
-            Long householdId = null;
-            String lsoaCode = null;
-            String msoaCode = null;
-            BigDecimal townsendScore = null;
+        //when the person ID table was populated, patients who had been deleted weren't added,
+        //so we'll occasionally get null for some patients. If this happens, just do what would have
+        //been done originally and assign an ID
+        if (Strings.isNullOrEmpty(discoveryPersonId)) {
+            PatientLinkPair pair = PatientLinkHelper.updatePersonId(fhirPatient);
+            discoveryPersonId = pair.getNewPersonId();
+        }
 
-            id = enterpriseId.longValue();
-            organizationId = enterpriseOrganisationId.longValue();
-            personId = enterprisePersonId.longValue();
+        Long enterprisePersonId = EnterpriseIdHelper.findOrCreateEnterprisePersonId(discoveryPersonId, configName);
 
-            //Calendar cal = Calendar.getInstance();
+        long id;
+        long organizationId;
+        long personId;
+        int patientGenderId;
+        String pseudoId = null;
+        String nhsNumber = null;
+        Integer ageYears = null;
+        Integer ageMonths = null;
+        Integer ageWeeks = null;
+        Date dateOfBirth = null;
+        Date dateOfDeath = null;
+        String postcode = null;
+        String postcodePrefix = null;
+        Long householdId = null;
+        String lsoaCode = null;
+        String msoaCode = null;
 
-            dateOfBirth = fhirPatient.getBirthDate();
-            /*cal.setTime(dob);
-            int yearOfBirth = cal.get(Calendar.YEAR);
-            model.setYearOfBirth(yearOfBirth);*/
+        id = enterpriseId.longValue();
+        organizationId = enterpriseOrganisationId.longValue();
+        personId = enterprisePersonId.longValue();
 
-            if (fhirPatient.hasDeceasedDateTimeType()) {
-                dateOfDeath = fhirPatient.getDeceasedDateTimeType().getValue();
-                /*cal.setTime(dod);
-                int yearOfDeath = cal.get(Calendar.YEAR);
-                model.setYearOfDeath(new Integer(yearOfDeath));*/
-            } else if (fhirPatient.hasDeceased()
-                    && fhirPatient.getDeceased() instanceof DateType) {
-                //should always be a DATE TIME type, but a bug in the CSV->FHIR transform
-                //means we've got data with a DATE type too
-                DateType d = (DateType)fhirPatient.getDeceased();
-                dateOfDeath = d.getValue();
-            }
+        //Calendar cal = Calendar.getInstance();
 
-            patientGenderId = fhirPatient.getGender().ordinal();
+        dateOfBirth = fhirPatient.getBirthDate();
+        /*cal.setTime(dob);
+        int yearOfBirth = cal.get(Calendar.YEAR);
+        model.setYearOfBirth(yearOfBirth);*/
+
+        if (fhirPatient.hasDeceasedDateTimeType()) {
+            dateOfDeath = fhirPatient.getDeceasedDateTimeType().getValue();
+            /*cal.setTime(dod);
+            int yearOfDeath = cal.get(Calendar.YEAR);
+            model.setYearOfDeath(new Integer(yearOfDeath));*/
+        } else if (fhirPatient.hasDeceased()
+                && fhirPatient.getDeceased() instanceof DateType) {
+            //should always be a DATE TIME type, but a bug in the CSV->FHIR transform
+            //means we've got data with a DATE type too
+            DateType d = (DateType)fhirPatient.getDeceased();
+            dateOfDeath = d.getValue();
+        }
+
+        patientGenderId = fhirPatient.getGender().ordinal();
 
 
-            if (fhirPatient.hasAddress()) {
-                for (Address address: fhirPatient.getAddress()) {
-                    if (address.getUse().equals(Address.AddressUse.HOME)) {
-                        postcode = address.getPostalCode();
-                        postcodePrefix = findPostcodePrefix(postcode);
-                        householdId = HouseholdHelper.findOrCreateHouseholdId(address);
-                    }
+        if (fhirPatient.hasAddress()) {
+            for (Address address: fhirPatient.getAddress()) {
+                if (address.getUse() != null //got Homerton data will null address use
+                        && address.getUse().equals(Address.AddressUse.HOME)) {
+                    postcode = address.getPostalCode();
+                    postcodePrefix = findPostcodePrefix(postcode);
+                    householdId = HouseholdHelper.findOrCreateHouseholdId(address);
+                    break;
                 }
             }
+        }
 
-            //if we've found a postcode, then get the LSOA etc. for it
-            if (!Strings.isNullOrEmpty(postcode)) {
-                PostcodeReference postcodeReference = PostcodeHelper.getPostcodeReference(postcode);
-                if (postcodeReference != null) {
-                    lsoaCode = postcodeReference.getLsoaCode();
-                    msoaCode = postcodeReference.getMsoaCode();
-                    townsendScore = postcodeReference.getTownsendScore();
-                }
+        //if we've found a postcode, then get the LSOA etc. for it
+        if (!Strings.isNullOrEmpty(postcode)) {
+            PostcodeLookup postcodeReference = PostcodeHelper.getPostcodeReference(postcode);
+            if (postcodeReference != null) {
+                lsoaCode = postcodeReference.getLsoaCode();
+                msoaCode = postcodeReference.getMsoaCode();
+                //townsendScore = postcodeReference.getTownsendScore();
+            }
+        }
+
+        //check if our patient demographics also should be used as the person demographics. This is typically
+        //true if our patient record is at a GP practice.
+        boolean shouldWritePersonRecord = shouldWritePersonRecord(fhirPatient, discoveryPersonId, protocolId);
+
+        org.endeavourhealth.transform.enterprise.outputModels.Patient patientWriter = (org.endeavourhealth.transform.enterprise.outputModels.Patient)csvWriter;
+        org.endeavourhealth.transform.enterprise.outputModels.Person personWriter = data.getPersons();
+
+        if (patientWriter.isPseduonymised()) {
+
+            //if pseudonymised, all non-male/non-female genders should be treated as female
+            if (fhirPatient.getGender() != Enumerations.AdministrativeGender.FEMALE
+                    && fhirPatient.getGender() != Enumerations.AdministrativeGender.MALE) {
+                patientGenderId = Enumerations.AdministrativeGender.FEMALE.ordinal();
             }
 
+            pseudoId = pseudonymise(fhirPatient, configName);
 
-            if (model.isPseduonymised()) {
+            //only persist the pseudo ID if it's non-null
+            if (!Strings.isNullOrEmpty(pseudoId)) {
+                PseudoIdHelper.storePseudoId(fhirPatient.getId(), configName, pseudoId);
+            }
 
-                //if pseudonymised, all non-male/non-female genders should be treated as female
-                if (fhirPatient.getGender() != Enumerations.AdministrativeGender.FEMALE
-                        && fhirPatient.getGender() != Enumerations.AdministrativeGender.MALE) {
-                    patientGenderId = Enumerations.AdministrativeGender.FEMALE.ordinal();
-                }
+            Integer[] ageValues = EnterpriseAgeUpdater.calculateAgeValues(id, dateOfBirth, configName);
+            ageYears = ageValues[EnterpriseAgeUpdater.UNIT_YEARS];
+            ageMonths = ageValues[EnterpriseAgeUpdater.UNIT_MONTHS];
+            ageWeeks = ageValues[EnterpriseAgeUpdater.UNIT_WEEKS];
 
-                pseudoId = pseudonomise(fhirPatient);
+            patientWriter.writeUpsertPseudonymised(id,
+                    organizationId,
+                    personId,
+                    patientGenderId,
+                    pseudoId,
+                    ageYears,
+                    ageMonths,
+                    ageWeeks,
+                    dateOfDeath,
+                    postcodePrefix,
+                    householdId,
+                    lsoaCode,
+                    msoaCode);
 
-                //only persist the pseudo ID if it's non-null
-                if (!Strings.isNullOrEmpty(pseudoId)) {
-                    PseudoIdHelper.storePseudoId(fhirPatient.getId(), pseudoId);
-                }
-
-                Integer[] ageValues = EnterpriseAgeUpdater.calculateAgeValues(id, dateOfBirth, configName);
-                ageYears = ageValues[EnterpriseAgeUpdater.UNIT_YEARS];
-                ageMonths = ageValues[EnterpriseAgeUpdater.UNIT_MONTHS];
-                ageWeeks = ageValues[EnterpriseAgeUpdater.UNIT_WEEKS];
-
-                model.writeUpsertPseudonymised(id,
-                        organizationId,
-                        personId,
+            //if our patient record is the one that should define the person record, then write that too
+            if (shouldWritePersonRecord) {
+                personWriter.writeUpsertPseudonymised(personId,
                         patientGenderId,
                         pseudoId,
                         ageYears,
@@ -168,16 +212,28 @@ public class PatientTransformer extends AbstractTransformer {
                         postcodePrefix,
                         householdId,
                         lsoaCode,
-                        msoaCode,
-                        townsendScore);
+                        msoaCode);
+            }
 
-            } else {
+        } else {
 
-                nhsNumber = IdentifierHelper.findNhsNumber(fhirPatient);
+            nhsNumber = IdentifierHelper.findNhsNumber(fhirPatient);
 
-                model.writeUpsertIdentifiable(id,
-                        organizationId,
-                        personId,
+            patientWriter.writeUpsertIdentifiable(id,
+                    organizationId,
+                    personId,
+                    patientGenderId,
+                    nhsNumber,
+                    dateOfBirth,
+                    dateOfDeath,
+                    postcode,
+                    householdId,
+                    lsoaCode,
+                    msoaCode);
+
+            //if our patient record is the one that should define the person record, then write that too
+            if (shouldWritePersonRecord) {
+                personWriter.writeUpsertIdentifiable(personId,
                         patientGenderId,
                         nhsNumber,
                         dateOfBirth,
@@ -185,11 +241,108 @@ public class PatientTransformer extends AbstractTransformer {
                         postcode,
                         householdId,
                         lsoaCode,
-                        msoaCode,
-                        townsendScore);
-
+                        msoaCode);
             }
         }
+    }
+
+    private boolean shouldWritePersonRecord(Patient fhirPatient, String discoveryPersonId, UUID protocolId) throws Exception {
+
+        //check if OUR patient record is an active one at a GP practice, in which case it definitely should define the person record
+        String patientId = fhirPatient.getId();
+        PatientSearch patientSearch = PatientSearchHelper.searchByPatientId(UUID.fromString(patientId));
+        if (isActive(patientSearch)
+                && getPatientSearchOrgScore(patientSearch) == BEST_ORG_SCORE) {
+            return true;
+        }
+
+        //if we fail the above check, we need to know what other services are in our protocol, so we can see
+        //which service has the most relevant data for the person record
+        LibraryItem libraryItem = LibraryRepositoryHelper.getLibraryItemUsingCache(protocolId);
+        Protocol protocol = libraryItem.getProtocol();
+        Set<String> serviceIdsInProtocol = new HashSet<>();
+
+        for (ServiceContract serviceContract: protocol.getServiceContract()) {
+            if (serviceContract.getType().equals(ServiceContractType.SUBSCRIBER)
+                && serviceContract.getActive() == ServiceContractActive.TRUE) {
+
+                serviceIdsInProtocol.add(serviceContract.getService().getUuid());
+            }
+        }
+
+        //get the other patient IDs for our person record
+        List<PatientSearch> patientSearchesInProtocol = new ArrayList<>();
+        patientSearchesInProtocol.add(patientSearch);
+
+        List<String> allPatientIds = PatientLinkHelper.getPatientIds(discoveryPersonId);
+        for (String otherPatientId: allPatientIds) {
+
+            //skip the patient ID we've already retrieved
+            if (otherPatientId.equals(patientId)) {
+                continue;
+            }
+
+            PatientSearch otherPatientSearch = PatientSearchHelper.searchByPatientId(UUID.fromString(otherPatientId));
+
+            //if this patient search record isn't in our protocol, skip it
+            String otherPatientSearchService = otherPatientSearch.getServiceId();
+            if (!serviceIdsInProtocol.contains(otherPatientSearchService)) {
+                continue;
+            }
+
+            patientSearchesInProtocol.add(otherPatientSearch);
+        }
+
+        //sort the patient searches so active GP ones are first
+        patientSearchesInProtocol.sort((o1, o2) -> {
+
+            //active records always supersede inactive ones
+            boolean o1Active = isActive(o1);
+            boolean o2Active = isActive(o2);
+            if (o1Active && !o2Active) {
+                return -1;
+            } else if (!o1Active && o2Active) {
+                return 1;
+            } else {
+                //if they both have the same active state, then check the org type. We want
+                //GP practices first, then hospital records, then everything else
+                int o1OrgScore = getPatientSearchOrgScore(o1);
+                int o2OrgScore = getPatientSearchOrgScore(o2);
+                if (o1OrgScore > o2OrgScore) {
+                    return -1;
+                } else if (o1OrgScore < o2OrgScore) {
+                    return 1;
+                } else {
+                    return 0;
+                }
+            }
+        });
+
+        //check if the best patient search record matches our patient ID. If it does, then our patient
+        //should be the one that is used to define the person table.
+        PatientSearch bestPatientSearch = patientSearchesInProtocol.get(0);
+        return bestPatientSearch.getPatientId().equals(patientId);
+    }
+
+    private static int getPatientSearchOrgScore(PatientSearch patientSearch) {
+        String typeCode = patientSearch.getOrganisationTypeCode();
+        if (Strings.isNullOrEmpty(typeCode)) {
+            return BEST_ORG_SCORE-4;
+        }
+
+        if (typeCode.equals(OrganisationType.GP_PRACTICE.getCode())) {
+            return BEST_ORG_SCORE;
+        } else if (typeCode.equals(OrganisationType.NHS_TRUST.getCode())
+                || typeCode.equals(OrganisationType.NHS_TRUST_SERVICE.getCode())) {
+            return BEST_ORG_SCORE-1;
+        } else {
+            return BEST_ORG_SCORE-2;
+        }
+    }
+
+    private static boolean isActive(PatientSearch patientSearch) {
+        Date deducted = patientSearch.getRegistrationEnd();
+        return deducted == null || deducted.after(new Date());
     }
 
     private static final String findPostcodePrefix(String postcode) {
@@ -214,147 +367,7 @@ public class PatientTransformer extends AbstractTransformer {
         return postcode.substring(0, len-3);
     }
 
-    /**
-     * We've had a bug that resulted in deleted patient resources where the dependent resources we're also deleted
-     * This is now fixed in the inbound Emis transform, but the existing data is in a state that the need to handle below
-     * Update 21/02/2017 - data in AIMES has been fixed, so this isn't required any more
-     */
-    /*private void deleteAllDependentEntities(OutputContainer data, ResourceByExchangeBatch resourceBatchEntry) throws Exception {
-
-        //retrieve all past versions, to find the EDS patient ID
-        ResourceRepository resourceRepository = new ResourceRepository();
-        UUID patientResourceId = resourceBatchEntry.getResourceId();
-        String patientResourceType = resourceBatchEntry.getResourceType();
-        //LOG.trace("Deleting patient " + patientResourceId);
-
-        ResourceHistory resourceHistory = resourceRepository.getCurrentVersion(patientResourceType, patientResourceId);
-        UUID serviceId = resourceHistory.getServiceId();
-        UUID systemId = resourceHistory.getSystemId();
-
-        //retrieve all non-deleted resources
-        List<ResourceByPatient> resourceByPatients = resourceRepository.getResourcesByPatient(serviceId, systemId, patientResourceId);
-        //LOG.trace("Found " + resourceByPatients.size() + " resources for service " + serviceId + " system " + systemId + " and patient " + patientResourceId);
-        for (ResourceByPatient resourceByPatient: resourceByPatients) {
-
-            String resourceTypeStr = resourceByPatient.getResourceType();
-            UUID resourceId = resourceByPatient.getResourceId();
-            ResourceType resourceType = ResourceType.valueOf(resourceTypeStr);
-
-            AbstractEnterpriseCsvWriter csvWriter = null;
-            if (resourceType == ResourceType.Organization) {
-                csvWriter = data.getOrganisations();
-            } else if (resourceType == ResourceType.Practitioner) {
-                csvWriter = data.getPractitioners();
-            } else if (resourceType == ResourceType.Schedule) {
-                csvWriter = data.getSchedules();
-            } else if (resourceType == ResourceType.Patient) {
-                csvWriter = data.getPatients();
-            } else if (resourceType == ResourceType.EpisodeOfCare) {
-                csvWriter = data.getEpisodesOfCare();
-            } else if (resourceType == ResourceType.Appointment) {
-                csvWriter = data.getAppointments();
-            } else if (resourceType == ResourceType.Encounter) {
-                csvWriter = data.getEncounters();
-            } else if (resourceType == ResourceType.ReferralRequest) {
-                csvWriter = data.getReferralRequests();
-            } else if (resourceType == ResourceType.ProcedureRequest) {
-                csvWriter = data.getProcedureRequests();
-            } else if (resourceType == ResourceType.Observation) {
-                csvWriter = data.getObservations();
-            } else if (resourceType == ResourceType.MedicationStatement) {
-                csvWriter = data.getMedicationStatements();
-            } else if (resourceType == ResourceType.MedicationOrder) {
-                csvWriter = data.getMedicationOrders();
-            } else if (resourceType == ResourceType.AllergyIntolerance) {
-                csvWriter = data.getAllergyIntolerances();
-            } else if (resourceType == ResourceType.Condition) {
-                csvWriter = data.getObservations();
-            } else if (resourceType == ResourceType.Procedure) {
-                csvWriter = data.getObservations();
-            } else if (resourceType == ResourceType.Immunization) {
-                csvWriter = data.getObservations();
-            } else if (resourceType == ResourceType.FamilyMemberHistory) {
-                csvWriter = data.getObservations();
-            } else if (resourceType == ResourceType.DiagnosticOrder) {
-                csvWriter = data.getObservations();
-            } else if (resourceType == ResourceType.DiagnosticReport) {
-                csvWriter = data.getObservations();
-            } else if (resourceType == ResourceType.Specimen) {
-                csvWriter = data.getObservations();
-            } else if (resourceType == ResourceType.Slot) {
-                //these aren't sent to Enterprise
-                continue;
-            } else if (resourceType == ResourceType.Location) {
-                //these aren't sent to Enterprise
-                continue;
-            } else {
-                throw new Exception("Unhandlded resource type " + resourceType);
-            }
-
-            Integer enterpriseId = findEnterpriseId(csvWriter, resourceTypeStr, resourceId);
-            //LOG.trace("Writing delete for " + csvWriter.getClass().getSimpleName() + " " + enterpriseId);
-            if (enterpriseId != null) {
-                csvWriter.writeDelete(enterpriseId.intValue());
-            }
-        }
-    }*/
-
-    /*public void transform(ResourceByExchangeBatch resource,
-                          EnterpriseData data,
-                          Map<String, ResourceByExchangeBatch> otherResources,
-                          Integer enterpriseOrganisationUuid) throws Exception {
-
-        org.endeavourhealth.core.xml.enterprise.Patient model = new org.endeavourhealth.core.xml.enterprise.Patient();
-
-        if (!mapIdAndMode(resource, model)) {
-            return;
-        }
-
-        //if it will be passed to Enterprise as an Insert or Update, then transform the remaining fields
-        if (model.getSaveMode() == SaveMode.UPSERT) {
-
-            Patient fhirPatient = (Patient)deserialiseResouce(resource);
-
-            model.setOrganizationId(enterpriseOrganisationUuid);
-
-            //Calendar cal = Calendar.getInstance();
-
-            Date dob = fhirPatient.getBirthDate();
-            model.setDateOfBirth(convertDate(dob));
-            *//*cal.setTime(dob);
-            int yearOfBirth = cal.get(Calendar.YEAR);
-            model.setYearOfBirth(yearOfBirth);*//*
-
-            if (fhirPatient.hasDeceasedDateTimeType()) {
-                Date dod = fhirPatient.getDeceasedDateTimeType().getValue();
-                model.setDateOfDeath(convertDate(dod));
-                *//*cal.setTime(dod);
-                int yearOfDeath = cal.get(Calendar.YEAR);
-                model.setYearOfDeath(new Integer(yearOfDeath));*//*
-            }
-
-            model.setPatientGenderId(fhirPatient.getGender().ordinal());
-
-            if (fhirPatient.hasAddress()) {
-                for (Address address: fhirPatient.getAddress()) {
-                    if (address.getUse().equals(Address.AddressUse.HOME)) {
-                        String postcode = address.getPostalCode();
-                        model.setPostcode(postcode);
-                    }
-                }
-            }
-
-            model.setPseudoId(pseudonomise(fhirPatient));
-
-            //adding NHS number to allow data checking
-            String nhsNumber = findNhsNumber(fhirPatient);
-            model.setNhsNumber(nhsNumber);
-        }
-
-        data.getPatient().add(model);
-    }*/
-
-    private static String pseudonomise(Patient fhirPatient) throws Exception {
+    private static String pseudonymise(Patient fhirPatient, String configName) throws Exception {
 
         String dob = null;
         if (fhirPatient.hasBirthDate()) {
@@ -392,15 +405,38 @@ public class PatientTransformer extends AbstractTransformer {
         }
 
         Crypto crypto = new Crypto();
-        crypto.SetEncryptedSalt(getEncryptedSalt());
+        crypto.SetEncryptedSalt(getEncryptedSalt(configName));
         return crypto.GetDigest(keys);
     }
 
-    private static byte[] getEncryptedSalt() throws Exception {
+
+    private static byte[] getEncryptedSalt(String configName) throws Exception {
+
+        byte[] ret = saltCacheMap.get(configName);
+        if (ret == null) {
+
+            synchronized (saltCacheMap) {
+                ret = saltCacheMap.get(configName);
+                if (ret == null) {
+
+                    JsonNode config = ConfigManager.getConfigurationAsJson(configName, "enterprise");
+                    JsonNode saltNode = config.get("salt");
+                    if (saltNode == null) {
+                        throw new Exception("No 'Salt' element found in Enterprise config " + configName);
+                    }
+                    String base64Salt = saltNode.asText();
+                    ret = Base64.getDecoder().decode(base64Salt);
+                    saltCacheMap.put(configName, ret);
+                }
+            }
+        }
+        return ret;
+    }
+    /*private static byte[] getEncryptedSalt() throws Exception {
         if (saltBytes == null) {
             saltBytes = Resources.getResourceAsBytes(PSEUDO_SALT_RESOURCE);
         }
         return saltBytes;
-    }
+    }*/
 
 }

@@ -1,6 +1,8 @@
 package org.endeavourhealth.ui.endpoints;
 
+import com.codahale.metrics.annotation.Timed;
 import com.google.common.collect.Lists;
+import io.astefanutti.metrics.aspectj.Metrics;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
@@ -33,6 +35,7 @@ import java.util.List;
         @Authorization(value="oauth", scopes = {})
 })
 @Path("/security/users")
+@Metrics(registry = "EdsRegistry")
 public final class SecurityUserEndpoint extends AbstractEndpoint {
     private static final Logger LOG = LoggerFactory.getLogger(SecurityUserEndpoint.class);
 
@@ -40,6 +43,7 @@ public final class SecurityUserEndpoint extends AbstractEndpoint {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.SecurityUserEndpoint.SearchForUsers")
     @Path("")
     @RequiresAdmin
     @ApiOperation(value = "Search for users")
@@ -64,6 +68,7 @@ public final class SecurityUserEndpoint extends AbstractEndpoint {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.SecurityUserEndpoint.GetUserDetails")
     @Path("/{userId}")
     @RequiresAdmin
     @ApiOperation(value = "Get a user's details")
@@ -92,6 +97,7 @@ public final class SecurityUserEndpoint extends AbstractEndpoint {
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.SecurityUserEndpoint.CreateUser")
     @Path("")
     @RolesAllowed({ "eds_admin" })
     @ApiOperation(value = "Create a user")
@@ -133,6 +139,7 @@ public final class SecurityUserEndpoint extends AbstractEndpoint {
     @PUT
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.SecurityUserEndpoint.UpdateUser")
     @Path("/{userId}")
     @RequiresAdmin
     @ApiOperation(value = "Update a user")
@@ -162,6 +169,7 @@ public final class SecurityUserEndpoint extends AbstractEndpoint {
     }
 
     @DELETE
+    @Timed(absolute = true, name="EDS-UI.SecurityUserEndpoint.DeleteUser")
     @Path("/{userId}")
     @RequiresAdmin
     @ApiOperation(value = "Delete a user")
@@ -188,6 +196,7 @@ public final class SecurityUserEndpoint extends AbstractEndpoint {
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.SecurityUserEndpoint.JoinGroup")
     @Path("/{userId}/groups/{groupId}")
     @RequiresAdmin
     @ApiOperation(value = "Add a user to a group or role-profile group")
@@ -207,6 +216,7 @@ public final class SecurityUserEndpoint extends AbstractEndpoint {
     }
 
     @DELETE
+    @Timed(absolute = true, name="EDS-UI.SecurityUserEndpoint.LeaveGroup")
     @Path("/{userId}/groups/{groupId}")
     @RequiresAdmin
     @ApiOperation(value = "Remove a user from a group or role-profile group")

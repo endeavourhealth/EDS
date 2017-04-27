@@ -1,6 +1,8 @@
 package org.endeavourhealth.ui.endpoints;
 
+import com.codahale.metrics.annotation.Timed;
 import com.google.common.base.Strings;
+import io.astefanutti.metrics.aspectj.Metrics;
 import org.endeavourhealth.common.security.SecurityUtils;
 import org.endeavourhealth.core.data.admin.LibraryRepository;
 import org.endeavourhealth.core.data.admin.ServiceRepository;
@@ -32,6 +34,7 @@ import java.util.List;
 import java.util.UUID;
 
 @Path("/patientIdentity")
+@Metrics(registry = "EdsRegistry")
 public final class PatientIdentityEndpoint extends AbstractEndpoint {
     private static final Logger LOG = LoggerFactory.getLogger(PatientIdentityEndpoint.class);
 
@@ -43,6 +46,7 @@ public final class PatientIdentityEndpoint extends AbstractEndpoint {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.PatientIdentityEndpoint.GetByLocalIdentifier")
     @Path("/byLocalIdentifier")
     public Response byLocalIdentifier(@Context SecurityContext sc,
                          @QueryParam("serviceId") String serviceIdStr,
@@ -127,6 +131,7 @@ public final class PatientIdentityEndpoint extends AbstractEndpoint {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.PatientIdentityEndpoint.GetByNHSNumber")
     @Path("/byNhsNumber")
     public Response byNhsNumber(@Context SecurityContext sc, @QueryParam("nhsNumber") String nhsNumber) throws Exception {
         super.setLogbackMarkers(sc);
@@ -206,6 +211,7 @@ public final class PatientIdentityEndpoint extends AbstractEndpoint {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.PatientIdentityEndpoint.GetByPatientId")
     @Path("/byPatientId")
     public Response byPatientId(@Context SecurityContext sc, @QueryParam("patientId") String patientIdStr) throws Exception {
         super.setLogbackMarkers(sc);

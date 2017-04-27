@@ -12,4 +12,5 @@ export class Dpa {
     returnToSenderPolicy : string;
     dataFlows : { [key:string]:string; };
     cohorts : { [key:string]:string; };
+    dataSets : { [key:string]:string; };
 }

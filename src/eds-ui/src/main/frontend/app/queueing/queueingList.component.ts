@@ -3,8 +3,7 @@ import {RabbitNode} from "./models/RabbitNode";
 import {Routing} from "./Routing";
 import {RabbitBinding} from "./models/RabbitBinding";
 import {RabbitService} from "./rabbit.service";
-import {LoggerService} from "../common/logger.service";
-import {MessageBoxDialog} from "../dialogs/messageBox/messageBox.dialog";
+import {LoggerService, MessageBoxDialog} from "eds-common-js";
 import {NgbModal} from "@ng-bootstrap/ng-bootstrap";
 import {QueueEditDialog} from "./queueingEditor.dialog";
 

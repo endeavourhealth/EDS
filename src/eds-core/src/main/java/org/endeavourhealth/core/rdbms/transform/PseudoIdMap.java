@@ -11,6 +11,7 @@ import java.io.Serializable;
 public class PseudoIdMap implements Serializable {
 
     private String patientId = null;
+    private String enterpriseConfigName = null;
     private String pseudoId = null;
 
     @Id
@@ -21,6 +22,16 @@ public class PseudoIdMap implements Serializable {
 
     public void setPatientId(String patientId) {
         this.patientId = patientId;
+    }
+
+    @Id
+    @Column(name = "enterprise_config_name", nullable = false)
+    public String getEnterpriseConfigName() {
+        return enterpriseConfigName;
+    }
+
+    public void setEnterpriseConfigName(String enterpriseConfigName) {
+        this.enterpriseConfigName = enterpriseConfigName;
     }
 
     @Column(name = "pseudo_id", nullable = false)

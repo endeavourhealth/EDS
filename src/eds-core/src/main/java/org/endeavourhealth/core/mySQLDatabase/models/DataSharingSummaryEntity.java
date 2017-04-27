@@ -32,6 +32,10 @@ import java.util.List;
         @NamedStoredProcedureQuery(
                 name = "getCohortStatistics",
                 procedureName = "getCohortStatistics"
+        ),
+        @NamedStoredProcedureQuery(
+                name = "getDataSetStatistics",
+                procedureName = "getDataSetStatistics"
         )
 })
 @Table(name = "DataSharingSummary", schema = "OrganisationManager")

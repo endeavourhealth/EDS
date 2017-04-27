@@ -1,5 +1,7 @@
 package org.endeavourhealth.ui.endpoints;
 
+import com.codahale.metrics.annotation.Timed;
+import io.astefanutti.metrics.aspectj.Metrics;
 import org.endeavourhealth.common.security.annotations.RequiresAdmin;
 import org.endeavourhealth.core.data.audit.UserAuditRepository;
 import org.endeavourhealth.core.data.audit.models.AuditAction;
@@ -17,6 +19,7 @@ import javax.ws.rs.core.*;
 import java.util.*;
 
 @Path("/dpa")
+@Metrics(registry = "EdsRegistry")
 public final class DpaEndpoint extends AbstractEndpoint {
     private static final Logger LOG = LoggerFactory.getLogger(OrganisationEndpoint.class);
 
@@ -26,6 +29,7 @@ public final class DpaEndpoint extends AbstractEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.DpaEndpoint.Get")
     @Path("/")
     public Response get(@Context SecurityContext sc, @QueryParam("uuid") String uuid, @QueryParam("searchData") String searchData) throws Exception {
         super.setLogbackMarkers(sc);
@@ -50,6 +54,7 @@ public final class DpaEndpoint extends AbstractEndpoint {
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.DpaEndpoint.Post")
     @Path("/")
     @RequiresAdmin
     public Response post(@Context SecurityContext sc, JsonDPA dpa) throws Exception {
@@ -78,6 +83,7 @@ public final class DpaEndpoint extends AbstractEndpoint {
     @DELETE
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.DpaEndpoint.Delete")
     @Path("/")
     @RequiresAdmin
     public Response delete(@Context SecurityContext sc, @QueryParam("uuid") String uuid) throws Exception {
@@ -97,6 +103,7 @@ public final class DpaEndpoint extends AbstractEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.DpaEndpoint.GetDataFlows")
     @Path("/dataflows")
     public Response getLinkedDataFlows(@Context SecurityContext sc, @QueryParam("uuid") String uuid) throws Exception {
         super.setLogbackMarkers(sc);
@@ -110,6 +117,7 @@ public final class DpaEndpoint extends AbstractEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.DpaEndpoint.GetCohorts")
     @Path("/cohorts")
     public Response getLinkedCohorts(@Context SecurityContext sc, @QueryParam("uuid") String uuid) throws Exception {
         super.setLogbackMarkers(sc);
@@ -118,6 +126,20 @@ public final class DpaEndpoint extends AbstractEndpoint {
                 "DPA Id", uuid);
 
         return getLinkedCohorts(uuid);
+    }
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.DpaEndpoint.GetDataSets")
+    @Path("/datasets")
+    public Response getLinkedDataSets(@Context SecurityContext sc, @QueryParam("uuid") String uuid) throws Exception {
+        super.setLogbackMarkers(sc);
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
+                "Data Sets(s)",
+                "DPA Id", uuid);
+
+        return getLinkedDataSets(uuid);
     }
 
     private Response getDPAList() throws Exception {
@@ -181,4 +203,18 @@ public final class DpaEndpoint extends AbstractEndpoint {
                 .build();
     }
 
+    private Response getLinkedDataSets(String dpaUuid) throws Exception {
+        List<String> datasets = MasterMappingEntity.getChildMappings(dpaUuid, MapType.DATAPROCESSINGAGREEMENT.getMapType(), MapType.DATASET.getMapType());
+
+        List<DatasetEntity> ret = new ArrayList<>();
+
+        if (datasets.size() > 0)
+            ret = DatasetEntity.getDataSetsFromList(datasets);
+
+        clearLogbackMarkers();
+        return Response
+                .ok()
+                .entity(ret)
+                .build();
+    }
 }

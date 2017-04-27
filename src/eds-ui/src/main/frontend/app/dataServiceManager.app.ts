@@ -1,10 +1,11 @@
+// Styling
+import "../content/css/index.css";
+import "../content/less/index.less";
 // Core
 import {NgModule} from "@angular/core";
-import {Application} from "./application";
 // Modules
-import {FlowchartModule} from "./flowchart/flowchart.module";
 import {DashboardModule} from "./dashboard/dashboard.module";
-import {LibraryModule} from "./library/library.module";
+import {EdsLibraryModule} from "./edsLibrary/library.module";
 import {OrganisationsModule} from "./organisations/organisations.module";
 import {ServicesModule} from "./services/services.module";
 import {QueueingModule} from "./queueing/queueing.module";
@@ -12,7 +13,6 @@ import {LoggingModule} from "./logging/logging.module";
 import {TransformErrorsModule} from "./transformErrors/transformErrors.module";
 import {StatsModule} from "./stats/stats.module";
 import {AuditModule} from "./audit/audit.module";
-import {AdminModule} from "./administration/admin.module";
 import {UserModule} from "./users/user.module";
 import {SystemModule} from "./system/system.module";
 import {QueryModule} from "./query/query.module";
@@ -40,7 +40,7 @@ import {AuditComponent} from "./audit/audit.component";
 import {LoggingComponent} from "./logging/logging.component";
 import {QueueingListComponent} from "./queueing/queueingList.component";
 import {StatsComponent} from "./stats/stats.component";
-import {LibraryComponent} from "./library/library.component";
+import {LibraryComponent} from "./edsLibrary/library.component";
 import {SystemEditComponent} from "./system/systemEditor.component";
 import {QueryEditComponent} from "./query/queryEditor.component";
 import {ProtocolEditComponent} from "./protocol/protocolEditor.component";
@@ -65,14 +65,15 @@ import {DpaEditorComponent} from "./dpa/dpaEditor.component";
 import {DataSharingSummaryOverviewComponent} from "./dataSharingSummary/dataSharingSummaryOverview.component";
 import {DataSharingSummaryComponent} from "./dataSharingSummary/dataSharingSummary.component";
 import {DataSharingSummaryEditorComponent} from "./dataSharingSummary/dataSharingSummaryEditor.component";
+import {Application, AdminModule} from "eds-common-js";
+import {DataServiceManagerMenuService} from "./dataServiceManager.menu";
+import {DataSetComponent} from "./dataSet/dataSet.component";
 
 @NgModule(
 	Application.Define({
 		modules: [
-			FlowchartModule,
-
 			DashboardModule,
-			LibraryModule,
+			EdsLibraryModule,
 			OrganisationsModule,
 			ServicesModule,
 			QueueingModule,
@@ -96,7 +97,7 @@ import {DataSharingSummaryEditorComponent} from "./dataSharingSummary/dataSharin
 			DsaModule,
 			DpaModule,
 			DataSharingSummaryModule,
-			PaginationModule
+			PaginationModule,
 		],
 		states: [
 			{name: 'app.dashboard', url: '/dashboard', component: DashboardComponent},
@@ -127,6 +128,8 @@ import {DataSharingSummaryEditorComponent} from "./dataSharingSummary/dataSharin
 			{name: 'app.cohortEditor', url: '/cohort/:itemAction/:itemUuid', component: CohortEditorComponent},
 			{name: 'app.dataFlow', url: '/dataFlow', component: DataFlowComponent},
 			{name: 'app.dataFlowEditor', url: '/dataFlow/:itemAction/:itemUuid', component: DataFlowEditorComponent},
+			{name: 'app.dataSet', url: '/dataSet', component: DataSetComponent},
+			{name: 'app.dataSetEditor', url: '/dataSet/:itemAction/:itemUuid', component: DataSetEditComponent},
 			{name: 'app.dsa', url: '/dsa', component: DsaComponent},
 			{name: 'app.dsaEditor', url: '/dsa/:itemAction/:itemUuid', component: DsaEditorComponent},
 			{name: 'app.dpa', url: '/dpa', component: DpaComponent},
@@ -135,7 +138,8 @@ import {DataSharingSummaryEditorComponent} from "./dataSharingSummary/dataSharin
 			{name: 'app.dataSharingSummary', url: '/dataSharingSummary', component: DataSharingSummaryComponent},
 			{name: 'app.dataSharingSummaryEditor', url: '/dataSharingSummary/:itemAction/:itemUuid', component: DataSharingSummaryEditorComponent}
 		],
-		defaultState : { state: 'app.dashboard', params: {} }
+		defaultState : { state: 'app.dashboard', params: {} },
+		menuManager : DataServiceManagerMenuService
 	})
 )
 export class AppModule {}

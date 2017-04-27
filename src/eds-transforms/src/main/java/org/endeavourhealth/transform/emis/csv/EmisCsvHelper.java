@@ -54,6 +54,7 @@ public class EmisCsvHelper {
     private Map<String, List<String>> organisationLocationMap = new HashMap<>();
     private Map<String, DateAndCode> ethnicityMap = new HashMap<>();
     private Map<String, DateAndCode> maritalStatusMap = new HashMap<>();
+    private Map<String, String> problemReadCodes = new HashMap<>();
 
     public EmisCsvHelper(String dataSharingAgreementGuid) {
         this.dataSharingAgreementGuid = dataSharingAgreementGuid;
@@ -1099,6 +1100,39 @@ public class EmisCsvHelper {
         return ReferenceHelper.createReference(ResourceType.EpisodeOfCare, patientGuid);
     }
 
+    public void cacheProblemObservationGuid(String patientGuid, String problemGuid, String readCode) {
+        problemReadCodes.put(createUniqueId(patientGuid, problemGuid), readCode);
+    }
+
+    public boolean isProblemObservationGuid(String patientGuid, String problemGuid) {
+        return problemReadCodes.containsKey(createUniqueId(patientGuid, problemGuid));
+    }
+
+    public String findProblemObservationReadCode(String patientGuid, String problemGuid, FhirResourceFiler fhirResourceFiler) throws Exception {
+
+        String locallyUniqueId = createUniqueId(patientGuid, problemGuid);
+
+        //if we've already cached our problem code, then just return it
+        if (problemReadCodes.containsKey(locallyUniqueId)) {
+            return problemReadCodes.get(locallyUniqueId);
+        }
+
+        //if we've not cached our problem code, then the problem itself isn't part of this extract,
+        //so we'll need to retrieve it from the DB and cache the code
+        String readCode = null;
+
+        try {
+            Condition fhirPproblem = (Condition)retrieveResource(locallyUniqueId, ResourceType.Condition, fhirResourceFiler);
+            CodeableConcept codeableConcept = fhirPproblem.getCode();
+            readCode = CodeableConceptHelper.findOriginalCode(codeableConcept);
+
+        } catch (ResourceDeletedException|ResourceNotFoundException ex) {
+            //we've had cases of data referring to non-existent problems
+        }
+
+        problemReadCodes.put(locallyUniqueId, readCode);
+        return readCode;
+    }
 
     /**
      * temporary storage class for changes to the practitioners involved in a session

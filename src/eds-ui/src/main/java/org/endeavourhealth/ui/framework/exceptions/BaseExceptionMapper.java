@@ -10,6 +10,7 @@ import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.ExceptionMapper;
 import javax.ws.rs.ext.Provider;
+import java.util.UUID;
 
 @Provider
 public final class BaseExceptionMapper implements ExceptionMapper<Exception> {
@@ -45,7 +46,9 @@ public final class BaseExceptionMapper implements ExceptionMapper<Exception> {
         //so even if there's an error, we can give some feedback as to what it is
         String message = exception.getMessage();
         if (message != null) {
-            JsonServerException wrapper = new JsonServerException(message);
+					UUID errorId = UUID.randomUUID();
+					LOG.error("Server error " + errorId.toString() + " : " + message);
+            JsonServerException wrapper = new JsonServerException("Server error " + errorId.toString());
             r = r.entity(wrapper);
         }
 

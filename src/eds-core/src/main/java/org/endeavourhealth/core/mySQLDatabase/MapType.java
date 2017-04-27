@@ -8,7 +8,8 @@ public enum MapType {
     DATASHARINGAGREEMENT((short)3),
     DATAFLOW((short)4),
     DATAPROCESSINGAGREEMENT((short)5),
-    COHORT((short)6);
+    COHORT((short)6),
+    DATASET((short)7);
 
     private Short mapType;
 

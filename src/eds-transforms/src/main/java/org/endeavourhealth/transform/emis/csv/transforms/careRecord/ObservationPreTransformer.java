@@ -1,6 +1,7 @@
 package org.endeavourhealth.transform.emis.csv.transforms.careRecord;
 
 import com.google.common.base.Strings;
+import org.endeavourhealth.common.fhir.CodeableConceptHelper;
 import org.endeavourhealth.common.fhir.FhirUri;
 import org.endeavourhealth.common.fhir.QuantityHelper;
 import org.endeavourhealth.common.fhir.schema.EthnicCategory;
@@ -141,6 +142,16 @@ public class ObservationPreTransformer {
                 csvHelper.cacheMaritalStatus(patientGuid, fhirDate, maritalStatus);
             }
         }
+
+        //if we've previously found that our observation is a problem (via the problem pre-transformer)
+        //then we need to cache the code ID of our observation
+        String patientGuid = parser.getPatientGuid();
+        String observationGuid = parser.getObservationGuid();
+        if (csvHelper.isProblemObservationGuid(patientGuid, observationGuid)) {
+            CodeableConcept codeableConcept = csvHelper.findClinicalCode(codeId);
+            String readCode = CodeableConceptHelper.findOriginalCode(codeableConcept);
+            csvHelper.cacheProblemObservationGuid(patientGuid, observationGuid, readCode);
+        }
     }
 
     private static MaritalStatus findMaritalStatus(CodeableConcept codeableConcept) {
@@ -150,6 +161,7 @@ public class ObservationPreTransformer {
         }
 
         if (code.equals("1331.")) {
+            //single
 
         } else if (code.equals("1332.")
             || code.equals("EMISNQHO15")

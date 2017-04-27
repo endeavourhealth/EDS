@@ -20,6 +20,7 @@ public class JsonDPA {
     private String returnToSenderPolicy = null;
     private Map<UUID, String> dataFlows = null;
     private Map<UUID, String> cohorts = null;
+    private Map<UUID, String> dataSets = null;
 
     public String getUuid() {
         return uuid;
@@ -123,5 +124,13 @@ public class JsonDPA {
 
     public void setCohorts(Map<UUID, String> cohorts) {
         this.cohorts = cohorts;
+    }
+
+    public Map<UUID, String> getDataSets() {
+        return dataSets;
+    }
+
+    public void setDataSets(Map<UUID, String> datasets) {
+        this.dataSets = datasets;
     }
 }

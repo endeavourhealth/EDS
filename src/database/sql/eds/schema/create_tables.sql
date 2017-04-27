@@ -20,6 +20,7 @@ CREATE TABLE patient_search
 	registration_end date,
 	patient_id character(36) NOT NULL,
 	last_updated timestamp NOT NULL,
+	organisation_type_code character varying(10),
 	CONSTRAINT pk_patient_search PRIMARY KEY (service_id, system_id, patient_id)
 )
 WITH (

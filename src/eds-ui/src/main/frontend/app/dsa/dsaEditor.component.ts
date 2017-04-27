@@ -1,19 +1,21 @@
 import {Component} from "@angular/core";
-import {AdminService} from "../administration/admin.service";
 import {DsaService} from "./dsa.service";
-import {LoggerService} from "../common/logger.service";
+import {AdminService, LoggerService} from "eds-common-js";
 import {Transition, StateService} from "ui-router-ng2";
 import {NgbModal} from "@ng-bootstrap/ng-bootstrap";
 import {Dsa} from "./models/Dsa";
 import {DataFlowPickerDialog} from "../dataFlow/dataFlowPicker.dialog";
 import {DataFlow} from "../dataFlow/models/DataFlow";
+import {Region} from "../region/models/Region";
+import {RegionPickerDialog} from "../region/regionPicker.dialog";
 
 @Component({
     template: require('./dsaEditor.html')
 })
 export class DsaEditorComponent {
     dsa : Dsa = <Dsa>{};
-    dataFlows : DataFlow [];
+    dataFlows : DataFlow[];
+    regions : Region[];
 
     status = [
         {num: 0, name : "Active"},
@@ -54,6 +56,7 @@ export class DsaEditorComponent {
             .subscribe(result =>  {
                     vm.dsa = result;
                     vm.getLinkedDataFlows();
+                    vm.getLinkedRegions();
                 },
                 error => vm.log.error('Error loading', error, 'Error')
             );
@@ -68,27 +71,48 @@ export class DsaEditorComponent {
             this.dsa.dataFlows[dataflow.uuid] = dataflow.name;
         }
 
+        // Populate regions before save
+        vm.dsa.regions= {};
+        for (var idx in this.regions) {
+            var region : Region = this.regions[idx];
+            this.dsa.regions[region.uuid] = region.name;
+        }
+
         vm.dsaService.saveDsa(vm.dsa)
             .subscribe(saved => {
                     vm.adminService.clearPendingChanges();
-                    vm.log.success('Item saved', vm.dsa, 'Saved');
-                    if (close) { vm.$state.go('app.dataSharingSummaryOverview'); }
+                    vm.log.success('Data Sharing Agreement saved', vm.dsa, 'Saved');
+                    if (close) { vm.close();}
                 },
-                error => vm.log.error('Error saving', error, 'Error')
+                error => vm.log.error('Error saving Data Sharing Agreement', error, 'Error')
             );
     }
 
     close() {
         this.adminService.clearPendingChanges();
-        this.$state.go('app.dataSharingSummaryOverview');
+        window.history.back();
     }
 
     private editDataFlows() {
         var vm = this;
         DataFlowPickerDialog.open(vm.$modal, vm.dataFlows)
-            .result.then(function (result : DataFlow[]) {
-            vm.dataFlows = result;
-        });
+            .result.then(function
+                (result : DataFlow[]) { vm.dataFlows = result;},
+                () => vm.log.info('Edit Data Flows cancelled')
+        );
+    }
+
+    private editRegion(item : DataFlow) {
+        this.$state.go('app.regionEditor', {itemUuid: item.uuid, itemAction: 'edit'});
+    }
+
+    private editRegions() {
+        var vm = this;
+        RegionPickerDialog.open(vm.$modal, vm.regions)
+            .result.then(function
+                (result : Region[]) { vm.regions = result; },
+                () => vm.log.info('Edit Regions cancelled')
+        );
     }
 
     private editDataFlow(item : DataFlow) {
@@ -101,6 +125,15 @@ export class DsaEditorComponent {
             .subscribe(
                 result => vm.dataFlows = result,
                 error => vm.log.error('Failed to load linked Data Flows', error, 'Load Linked Data Flows')
+            );
+    }
+
+    private getLinkedRegions() {
+        var vm = this;
+        vm.dsaService.getLinkedRegions(vm.dsa.uuid)
+            .subscribe(
+                result => vm.regions = result,
+                error => vm.log.error('Failed to load linked Regions', error, 'Load Linked Regions')
             );
     }
 }

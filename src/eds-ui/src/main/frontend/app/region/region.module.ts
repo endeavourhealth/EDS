@@ -6,13 +6,12 @@ import {RegionComponent} from "./region.component";
 import {RegionEditorComponent} from "./regionEditor.component";
 import {RegionService} from "./region.service";
 import {RegionPickerDialog} from "./regionPicker.dialog";
-import { AgmCoreModule } from 'angular2-google-maps/core';
+import {AgmCoreModule, MapsAPILoader} from 'angular2-google-maps/core';
+import {CustomLazyAPIKeyLoader} from "./CustomLazyAPIKeyLoader";
 
 @NgModule({
     imports : [
-        AgmCoreModule.forRoot({
-            apiKey: 'AIzaSyBuLpebNb3ZNXFYpya0s5_ZXBXhMNjENik'
-        }),
+        AgmCoreModule.forRoot(),
         BrowserModule,
         FormsModule,
         NgbModule,
@@ -26,7 +25,8 @@ import { AgmCoreModule } from 'angular2-google-maps/core';
         RegionPickerDialog
     ],
     providers : [
-        RegionService
+        RegionService,
+        {provide: MapsAPILoader, useClass: CustomLazyAPIKeyLoader }
     ]
 })
 export class RegionModule {}

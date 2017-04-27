@@ -1,11 +1,10 @@
 package org.endeavourhealth.ui.endpoints;
 
+import com.codahale.metrics.annotation.Timed;
+import io.astefanutti.metrics.aspectj.Metrics;
 import org.endeavourhealth.core.data.admin.LibraryRepository;
 import org.endeavourhealth.core.data.admin.LibraryRepositoryHelper;
-import org.endeavourhealth.core.data.admin.models.ActiveItem;
-import org.endeavourhealth.core.data.admin.models.DefinitionItemType;
-import org.endeavourhealth.core.data.admin.models.Item;
-import org.endeavourhealth.core.data.admin.models.ItemDependency;
+import org.endeavourhealth.core.data.admin.models.*;
 import org.endeavourhealth.core.data.audit.UserAuditRepository;
 import org.endeavourhealth.core.data.audit.models.AuditAction;
 import org.endeavourhealth.core.data.audit.models.AuditModule;
@@ -32,19 +31,119 @@ import javax.ws.rs.core.SecurityContext;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.StringReader;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 @Path("/library")
+@Metrics(registry = "EdsRegistry")
 public final class LibraryEndpoint extends AbstractItemEndpoint {
 
     private static final Logger LOG = LoggerFactory.getLogger(LibraryEndpoint.class);
     private static final UserAuditRepository userAudit = new UserAuditRepository(AuditModule.EdsUiModule.Library);
 
-    @GET
+
+	@GET
+	@Produces(MediaType.APPLICATION_JSON)
+	@Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.LibraryEndpoint.GetFolderContents")
+	@Path("/getFolderContents")
+	public Response getFolderContents(@Context SecurityContext sc, @QueryParam("folderUuid") String uuidStr) throws Exception {
+		super.setLogbackMarkers(sc);
+		userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
+				"FolderContents",
+				"Folder Id", uuidStr);
+
+		LibraryRepository repository = new LibraryRepository();
+
+		UUID folderUuid = UUID.fromString(uuidStr);
+
+		LOG.trace("GettingFolderContents for folder {}", folderUuid);
+
+		JsonFolderContentsList ret = new JsonFolderContentsList();
+
+		List<ActiveItem> childActiveItems = new ArrayList();
+
+		Iterable<ItemDependency> itemDependency = repository.getItemDependencyByDependentItemId(folderUuid, DependencyType.IsContainedWithin.getValue());
+
+		for (ItemDependency dependency: itemDependency) {
+			Iterable<ActiveItem> item = repository.getActiveItemByAuditId(dependency.getAuditId());
+			for (ActiveItem activeItem: item) {
+				if (activeItem.getIsDeleted()==false)
+					childActiveItems.add(activeItem);
+			}
+		}
+
+		HashMap<UUID, Audit> hmAuditsByAuditUuid = new HashMap<>();
+		List<Audit> audits = new ArrayList<>();
+		for (ActiveItem activeItem: childActiveItems) {
+			Audit audit = repository.getAuditByKey(activeItem.getAuditId());
+			audits.add(audit);
+		}
+
+		for (Audit audit: audits) {
+			hmAuditsByAuditUuid.put(audit.getId(), audit);
+		}
+
+		HashMap<UUID, Item> hmItemsByItemUuid = new HashMap<>();
+		List<Item> items = new ArrayList<>();
+		for (ActiveItem activeItem: childActiveItems) {
+			Item item = repository.getItemByKey(activeItem.getItemId(), activeItem.getAuditId());
+			items.add(item);
+		}
+
+		for (Item item: items) {
+			hmItemsByItemUuid.put(item.getId(), item);
+		}
+
+		for (int i = 0; i < childActiveItems.size(); i++) {
+
+			ActiveItem activeItem = childActiveItems.get(i);
+			Item item = hmItemsByItemUuid.get(activeItem.getItemId());
+
+			DefinitionItemType itemType = DefinitionItemType.get(activeItem.getItemTypeId());
+			Audit audit = hmAuditsByAuditUuid.get(item.getAuditId());
+
+			JsonFolderContent c = new JsonFolderContent(activeItem, item, audit);
+			ret.addContent(c);
+
+			//and set any extra data we need
+			if (itemType == DefinitionItemType.Query) {
+
+			} else if (itemType == DefinitionItemType.Test) {
+
+			} else if (itemType == DefinitionItemType.Resource) {
+
+			} else if (itemType == DefinitionItemType.CodeSet) {
+
+			} else if (itemType == DefinitionItemType.DataSet) {
+
+			} else if (itemType == DefinitionItemType.Protocol) {
+
+			} else if (itemType == DefinitionItemType.System) {
+
+			} else if (itemType == DefinitionItemType.CountReport) {
+
+			} else {
+				throw new RuntimeException("Unexpected content " + item + " in folder");
+			}
+		}
+
+		if (ret.getContents() != null) {
+			Collections.sort(ret.getContents());
+		}
+
+		clearLogbackMarkers();
+
+		return Response
+				.ok()
+				.entity(ret)
+				.build();
+	}
+
+
+	@GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.LibraryEndpoint.GetLibraryItem")
     @Path("/getLibraryItem")
     public Response getLibraryItem(@Context SecurityContext sc, @QueryParam("uuid") String uuidStr) throws Exception {
         super.setLogbackMarkers(sc);
@@ -75,6 +174,7 @@ public final class LibraryEndpoint extends AbstractItemEndpoint {
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.LibraryEndpoint.SaveLibraryItem")
     @Path("/saveLibraryItem")
     @RequiresAdmin
     public Response saveLibraryItem(@Context SecurityContext sc, LibraryItem libraryItem) throws Exception {
@@ -175,6 +275,7 @@ public final class LibraryEndpoint extends AbstractItemEndpoint {
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.LibraryEndpoint.DeleteLibraryItem")
     @Path("/deleteLibraryItem")
     @RequiresAdmin
     public Response deleteLibraryItem(@Context SecurityContext sc, LibraryItem libraryItem) throws Exception {
@@ -202,6 +303,7 @@ public final class LibraryEndpoint extends AbstractItemEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.LibraryEndpoint.GetContentNamesForReportLibraryItem")
     @Path("/getContentNamesForReportLibraryItem")
     public Response getContentNamesForReportLibraryItem(@Context SecurityContext sc, @QueryParam("uuid") String uuidStr) throws Exception {
         super.setLogbackMarkers(sc);
@@ -241,6 +343,7 @@ public final class LibraryEndpoint extends AbstractItemEndpoint {
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.LibraryEndpoint.MoveLibraryItems")
     @Path("/moveLibraryItems")
     @RequiresAdmin
     public Response moveLibraryItems(@Context SecurityContext sc, JsonMoveItems parameters) throws Exception {
@@ -266,6 +369,7 @@ public final class LibraryEndpoint extends AbstractItemEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.LibraryEndpoint.GetSystems")
     @Path("/getSystems")
     public Response getSystems(@Context SecurityContext sc) throws Exception {
         super.setLogbackMarkers(sc);
@@ -351,6 +455,7 @@ public final class LibraryEndpoint extends AbstractItemEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.LibraryEndpoint.GetQueries")
     @Path("/getQueries") // queries define cohorts
     public Response getQueries(@Context SecurityContext sc) throws Exception {
         super.setLogbackMarkers(sc);
@@ -398,6 +503,7 @@ public final class LibraryEndpoint extends AbstractItemEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.LibraryEndpoint.GetDataSets")
     @Path("/getDataSets")
     public Response getDataSets(@Context SecurityContext sc) throws Exception {
         super.setLogbackMarkers(sc);
@@ -445,6 +551,7 @@ public final class LibraryEndpoint extends AbstractItemEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.LibraryEndpoint.GetProtocols")
     @Path("/getProtocols")
     public Response getProtocols(@Context SecurityContext sc, @QueryParam("serviceId") String serviceId) throws Exception {
         super.setLogbackMarkers(sc);

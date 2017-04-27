@@ -7,7 +7,6 @@ export class UserRole {
 	uuid:string;
 	name:string;
 	description:string;
-	//isClient:boolean;
 	organisation: Organisation;
 	clientRoles: UserRole[];
 }

@@ -25,8 +25,19 @@ public class ExchangeBatchRepository extends Repository {
         return Lists.newArrayList(accessor.getForExchangeId(exchangeId));
     }
 
+    public ExchangeBatch retrieveFirstForExchangeId(UUID exchangeId) {
+        ExchangeBatchAccessor accessor = getMappingManager().createAccessor(ExchangeBatchAccessor.class);
+        return accessor.getFirstForExchangeId(exchangeId);
+    }
+
     public ExchangeBatch getForExchangeAndBatchId(UUID exchangeId, UUID batchId) {
         Mapper<ExchangeBatch> mapper = getMappingManager().mapper(ExchangeBatch.class);
         return mapper.get(exchangeId, batchId);
+    }
+
+    //TODO - to be removed
+    public ExchangeBatch retrieveFirstForBatchId(UUID batchId) {
+        ExchangeBatchAccessor accessor = getMappingManager().createAccessor(ExchangeBatchAccessor.class);
+        return accessor.getFirstForBatchId(batchId);
     }
 }

@@ -1,5 +1,9 @@
 package org.endeavourhealth.ui.endpoints;
 
+import com.codahale.metrics.annotation.Timed;
+import com.fasterxml.jackson.databind.JsonNode;
+import io.astefanutti.metrics.aspectj.Metrics;
+import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.common.security.annotations.RequiresAdmin;
 import org.endeavourhealth.core.data.audit.UserAuditRepository;
 import org.endeavourhealth.core.data.audit.models.AuditAction;
@@ -20,6 +24,7 @@ import javax.ws.rs.core.SecurityContext;
 import java.util.*;
 
 @Path("/region")
+@Metrics(registry = "EdsRegistry")
 public final class RegionEndpoint extends AbstractEndpoint {
     private static final Logger LOG = LoggerFactory.getLogger(OrganisationEndpoint.class);
 
@@ -28,6 +33,7 @@ public final class RegionEndpoint extends AbstractEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.RegionEndpoint.Get")
     @Path("/")
     public Response get(@Context SecurityContext sc, @QueryParam("uuid") String uuid, @QueryParam("searchData") String searchData) throws Exception {
         super.setLogbackMarkers(sc);
@@ -51,6 +57,7 @@ public final class RegionEndpoint extends AbstractEndpoint {
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.RegionEndpoint.Post")
     @Path("/")
     @RequiresAdmin
     public Response post(@Context SecurityContext sc, JsonRegion region) throws Exception {
@@ -80,6 +87,7 @@ public final class RegionEndpoint extends AbstractEndpoint {
     @DELETE
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.RegionEndpoint.Delete")
     @Path("/")
     @RequiresAdmin
     public Response deleteRegion(@Context SecurityContext sc, @QueryParam("uuid") String uuid) throws Exception {
@@ -99,6 +107,7 @@ public final class RegionEndpoint extends AbstractEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.RegionEndpoint.GetOrganisations")
     @Path("/organisations")
     public Response get(@Context SecurityContext sc, @QueryParam("uuid") String uuid) throws Exception {
         super.setLogbackMarkers(sc);
@@ -112,6 +121,7 @@ public final class RegionEndpoint extends AbstractEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.RegionEndpoint.GetParentRegions")
     @Path("/parentRegions")
     public Response getParentRegions(@Context SecurityContext sc, @QueryParam("uuid") String uuid) throws Exception {
         super.setLogbackMarkers(sc);
@@ -125,6 +135,7 @@ public final class RegionEndpoint extends AbstractEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.RegionEndpoint.GetChildRegions")
     @Path("/childRegions")
     public Response getChildRegions(@Context SecurityContext sc, @QueryParam("uuid") String uuid) throws Exception {
         super.setLogbackMarkers(sc);
@@ -135,6 +146,37 @@ public final class RegionEndpoint extends AbstractEndpoint {
         return getChildRegions(uuid);
     }
 
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.RegionEndpoint.GetSharingAgreements")
+    @Path("/sharingAgreements")
+    public Response getSharingAgreements(@Context SecurityContext sc, @QueryParam("uuid") String uuid) throws Exception {
+        super.setLogbackMarkers(sc);
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
+                "Sharing Agreement(s)",
+                "Region Id", uuid);
+
+        return getSharingAgreements(uuid);
+    }
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.RegionEndpoint.getApiKey")
+    @Path("/getApiKey")
+    public Response getApiKey(@Context SecurityContext sc) throws Exception {
+        super.setLogbackMarkers(sc);
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
+                "get Api Key");
+
+        JsonNode json = ConfigManager.getConfigurationAsJson("GoogleMapsAPI");
+       // String apiKey = json.get("apiKey").asText();
+        return Response
+                .ok()
+                .entity(json)
+                .build();
+    }
     private Response getRegionList() throws Exception {
 
         List<RegionEntity> regions = RegionEntity.getAllRegions();
@@ -203,6 +245,21 @@ public final class RegionEndpoint extends AbstractEndpoint {
 
         if (regionUuids.size() > 0)
             ret = RegionEntity.getRegionsFromList(regionUuids);
+
+        clearLogbackMarkers();
+        return Response
+                .ok()
+                .entity(ret)
+                .build();
+    }
+
+    private Response getSharingAgreements(String regionUuid) throws Exception {
+
+        List<String> sharingAgreementUuids = MasterMappingEntity.getChildMappings(regionUuid, MapType.REGION.getMapType(), MapType.DATASHARINGAGREEMENT.getMapType());
+        List<DataSharingAgreementEntity> ret = new ArrayList<>();
+
+        if (sharingAgreementUuids.size() > 0)
+            ret = DataSharingAgreementEntity.getDSAsFromList(sharingAgreementUuids);
 
         clearLogbackMarkers();
         return Response

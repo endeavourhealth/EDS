@@ -2,7 +2,6 @@ package org.endeavourhealth.transform.enterprise.outputModels;
 
 import org.apache.commons.csv.CSVFormat;
 
-import java.math.BigDecimal;
 import java.util.Date;
 
 public class Patient extends AbstractEnterpriseCsvWriter {
@@ -38,8 +37,7 @@ public class Patient extends AbstractEnterpriseCsvWriter {
                             String postcodePrefix,
                             Long householdId,
                             String lsoaCode,
-                            String msoaCode,
-                            BigDecimal townsendScore) throws Exception {
+                            String msoaCode) throws Exception {
 
         super.printRecord(OutputContainer.UPSERT,
                         "" + id,
@@ -54,8 +52,7 @@ public class Patient extends AbstractEnterpriseCsvWriter {
                         postcodePrefix,
                         convertLong(householdId),
                         lsoaCode,
-                        msoaCode,
-                        convertBigDecimal(townsendScore));
+                        msoaCode);
     }
 
 
@@ -69,8 +66,7 @@ public class Patient extends AbstractEnterpriseCsvWriter {
                                         String postcode,
                                         Long householdId,
                                         String lsoaCode,
-                                        String msoaCode,
-                                        BigDecimal townsendScore) throws Exception {
+                                        String msoaCode) throws Exception {
 
         super.printRecord(OutputContainer.UPSERT,
                 "" + id,
@@ -83,8 +79,7 @@ public class Patient extends AbstractEnterpriseCsvWriter {
                 postcode,
                 convertLong(householdId),
                 lsoaCode,
-                msoaCode,
-                convertBigDecimal(townsendScore));
+                msoaCode);
     }
 
     @Override
@@ -104,8 +99,7 @@ public class Patient extends AbstractEnterpriseCsvWriter {
                     "postcode_prefix",
                     "household_id",
                     "lsoa_code",
-                    "msoa_code",
-                    "townsend_score"
+                    "msoa_code"
             };
         } else {
             return new String[]{
@@ -120,8 +114,7 @@ public class Patient extends AbstractEnterpriseCsvWriter {
                     "postcode",
                     "household_id",
                     "lsoa_code",
-                    "msoa_code",
-                    "townsend_score"
+                    "msoa_code"
             };
         }
     }
@@ -143,8 +136,7 @@ public class Patient extends AbstractEnterpriseCsvWriter {
                     String.class,
                     Long.TYPE,
                     String.class,
-                    String.class,
-                    BigDecimal.class
+                    String.class
             };
         } else {
             return new Class[] {
@@ -159,8 +151,7 @@ public class Patient extends AbstractEnterpriseCsvWriter {
                     String.class,
                     Long.TYPE,
                     String.class,
-                    String.class,
-                    BigDecimal.class
+                    String.class
             };
         }
     }

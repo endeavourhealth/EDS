@@ -1,10 +1,9 @@
 import {Component} from "@angular/core";
 import {NgbModal} from "@ng-bootstrap/ng-bootstrap";
 import {StateService} from "ui-router-ng2";
-import {LoggerService} from "../common/logger.service";
 import {DataFlowService} from "./dataFlow.service";
-import {MessageBoxDialog} from "../dialogs/messageBox/messageBox.dialog";
 import {DataFlow} from "./models/DataFlow";
+import {LoggerService, MessageBoxDialog} from "eds-common-js";
 
 @Component({
     template: require('./dataFlow.html')
@@ -16,10 +15,10 @@ export class DataFlowComponent {
                 private dataFlowService : DataFlowService,
                 private log : LoggerService,
                 protected $state : StateService) {
-        this.getCohorts();
+        this.getDataFlows();
     }
 
-    getCohorts() {
+    getDataFlows() {
 
         var vm = this;
         vm.dataFlowService.getAllDataFlows()

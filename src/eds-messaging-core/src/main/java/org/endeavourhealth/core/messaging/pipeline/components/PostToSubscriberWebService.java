@@ -63,8 +63,7 @@ public class PostToSubscriberWebService extends PipelineComponent {
 	private void sendToSubscriber(String payload, UUID exchangeId, UUID batchId, String software, String softwareVersion, String endpoint) throws Exception {
 
 		if (software.equals(MessageFormat.ENTERPRISE_CSV)) {
-			JsonNode config = ConfigManager.getConfigurationAsJson(endpoint, "enterprise");
-			EnterpriseFiler.file(batchId, payload, config);
+			EnterpriseFiler.file(batchId, payload, endpoint);
 
 		} else if (software.equals(MessageFormat.VITRUICARE_XML)) {
 			sendHttpPost(payload, endpoint);
@@ -74,11 +73,14 @@ public class PostToSubscriberWebService extends PipelineComponent {
 		}
 	}
 
-	private static void sendHttpPost(String payload, String url) throws Exception {
+	private static void sendHttpPost(String payload, String configName) throws Exception {
 
 		//String url = "http://127.0.0.1:8002/notify";
 		//String url = "http://localhost:8002";
 		//String url = "http://posttestserver.com/post.php";
+
+		JsonNode config = ConfigManager.getConfigurationAsJson(configName, "vitruCare");
+		String url = config.get("url").asText();
 
 		if (url == null || url.length() <= "http://".length()) {
 			LOG.trace("No/invalid url : [" + url + "]");

@@ -1,8 +1,8 @@
 import {Component, Input} from "@angular/core";
 import {Cohort} from "./models/Cohort";
 import {CohortService} from "./cohort.service";
-import {LoggerService} from "../common/logger.service";
 import {NgbModal, NgbActiveModal} from "@ng-bootstrap/ng-bootstrap";
+import {LoggerService} from "eds-common-js";
 
 @Component({
     selector: 'ngbd-modal-content',

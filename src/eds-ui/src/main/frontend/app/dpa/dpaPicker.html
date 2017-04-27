@@ -8,8 +8,8 @@
             <div class="form-group col-md-12">
                 <label class="control-label">Search Criteria</label>
                 <div class="input-group">
-                    <input type="text" class="form-control" placeholder="Search term" aria-describedby="searchTerm"
-                           [(ngModel)]="searchData" (keyup)="search()" autofocus name="searchData">
+                    <input type="text" autofocus class="form-control" placeholder="Search term" aria-describedby="searchTerm"
+                           [(ngModel)]="searchData" (keyup)="search()" name="searchData">
                     <span class="input-group-addon" (click)="search()" style="cursor: pointer">
 						<i class="fa fa-search" id="searchTerm" aria-hidden="true"></i>
 					</span>
@@ -50,5 +50,5 @@
     <button type="button" class="btn"
             (click)="cancel()">Cancel</button>
     <button type="button" class="btn btn-primary"
-            (click)="ok();">Ok</button>
+            (click)="ok();">OK</button>
 </div>

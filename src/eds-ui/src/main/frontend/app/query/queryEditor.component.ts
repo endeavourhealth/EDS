@@ -1,20 +1,16 @@
 import {Component} from "@angular/core";
 import {Transition, StateService} from "ui-router-ng2";
 import {NgbModal} from "@ng-bootstrap/ng-bootstrap";
-import {LoggerService} from "../common/logger.service";
-import {LibraryService} from "../library/library.service";
-import {AdminService} from "../administration/admin.service";
+import {AdminService, flowchart, LibraryService, LoggerService, MessageBoxDialog} from "eds-common-js";
 import {ExpressionType} from "./models/ExpressionType";
 import {ExpressionEditDialog} from "../expressions/expressionEditor.dialog";
 import {TestEditDialog} from "../tests/testEditor.dialog";
 import {QueryPickerDialog} from "./queryPicker.dialog";
 import {Test} from "../tests/models/Test";
 import {QuerySelection} from "./models/QuerySelection";
-import {LibraryItem} from "../library/models/LibraryItem";
 import {StartingRules} from "./models/StartingRules";
 import {Query} from "./models/Query";
-import {flowchart} from "../flowchart/flowchart.viewmodel";
-import {MessageBoxDialog} from "../dialogs/messageBox/messageBox.dialog";
+import {EdsLibraryItem} from "../edsLibrary/models/EdsLibraryItem";
 
 @Component({
 	template : require('./queryEditor.html'),
@@ -35,7 +31,7 @@ export class QueryEditComponent {
 	private dataModel: boolean;
 	private startingRules: StartingRules;
 	private query: Query;
-	private libraryItem: LibraryItem;
+	private libraryItem: EdsLibraryItem;
 	private rulePassAction: string;
 	private ruleFailAction: string;
 	private ruleDescription: string;
@@ -70,7 +66,7 @@ export class QueryEditComponent {
 			rule: []
 		}
 
-		this.libraryItem = <LibraryItem> {
+		this.libraryItem = <EdsLibraryItem> {
 			folderUuid: transition.params()['itemUuid'],
 		};
 
@@ -79,7 +75,7 @@ export class QueryEditComponent {
 		this.performAction(transition.params()['itemAction'], transition.params()['itemUuid']);
 	}
 
-	private createModel(libraryItem: LibraryItem) {
+	private createModel(libraryItem: EdsLibraryItem) {
 		this.chartViewModel = new flowchart.ChartViewModel(libraryItem);
 	}
 
@@ -95,14 +91,14 @@ export class QueryEditComponent {
 
 	load(itemUuid : string) {
 		var vm = this;
-		vm.libraryService.getLibraryItem(itemUuid)
+		vm.libraryService.getLibraryItem<EdsLibraryItem>(itemUuid)
 			.subscribe(
 				(libraryItem) => vm.processLibraryItem(libraryItem),
 				(error) => vm.logger.error('Error loading query', error, 'Error')
 			);
 	}
 
-	processLibraryItem(libraryItem : LibraryItem) {
+	processLibraryItem(libraryItem : EdsLibraryItem) {
 		var vm = this;
 		vm.createModel(libraryItem);
 

@@ -14,7 +14,7 @@ public class PostcodeHelper {
 
 
 
-    public static PostcodeReference getPostcodeReference(String postcode) throws Exception {
+    public static PostcodeLookup getPostcodeReference(String postcode) throws Exception {
 
         EntityManager entityManager = ReferenceConnection.getEntityManager();
         try {
@@ -24,7 +24,7 @@ public class PostcodeHelper {
         }
     }
 
-    public static PostcodeReference getPostcodeReference(String postcode, EntityManager entityManager) throws Exception {
+    public static PostcodeLookup getPostcodeReference(String postcode, EntityManager entityManager) throws Exception {
 
         //if called with an empty postcode, just return null
         if (Strings.isNullOrEmpty(postcode)) {
@@ -38,15 +38,15 @@ public class PostcodeHelper {
         postcode = postcode.replaceAll(" ", "");
 
         String sql = "select r"
-                   + " from PostcodeReference r"
+                   + " from PostcodeLookup r"
                    + " where r.postcodeNoSpace = :postcodeNoSpace";
 
         Query query = entityManager
-                .createQuery(sql, PostcodeReference.class)
+                .createQuery(sql, PostcodeLookup.class)
                 .setParameter("postcodeNoSpace", postcode);
 
         try {
-            return (PostcodeReference)query.getSingleResult();
+            return (PostcodeLookup)query.getSingleResult();
 
         } catch (NoResultException e) {
             return null;

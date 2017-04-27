@@ -8,13 +8,15 @@ import {DataSharingSummaryEditorComponent} from "./dataSharingSummaryEditor.comp
 import {DataSharingSummaryService} from "./dataSharingSummary.service";
 import {NKDatetimeModule} from "ng2-datetime/ng2-datetime";
 import {DataSharingSummaryPickerDialog} from './dataSharingSummaryPicker.dialog'
+import {LoggerModule} from "eds-common-js";
 
 @NgModule({
     imports : [
         BrowserModule,
         FormsModule,
         NgbModule,
-        NKDatetimeModule
+        NKDatetimeModule,
+        LoggerModule
     ],
     declarations : [
         DataSharingSummaryComponent,
