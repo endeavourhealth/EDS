@@ -29,13 +29,6 @@
             <version>${eds-common.version}</version>
         </dependency>
 
-        <!--Slack-->
-        <dependency>
-            <groupId>net.gpedro.integrations.slack</groupId>
-            <artifactId>slack-webhook</artifactId>
-            <version>${slack-integration.version}</version>
-        </dependency>
-
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>

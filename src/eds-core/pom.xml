@@ -45,6 +45,13 @@
             <version>${eds-common.version}</version>
         </dependency>
 
+        <!--Slack-->
+        <dependency>
+            <groupId>net.gpedro.integrations.slack</groupId>
+            <artifactId>slack-webhook</artifactId>
+            <version>${slack-integration.version}</version>
+        </dependency>
+
         <!-- Keycloak -->
         <dependency>
             <groupId>org.keycloak</groupId>

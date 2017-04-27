@@ -1,11 +1,7 @@
 
 package org.endeavourhealth.core.configuration;
 
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.XmlType;
+import javax.xml.bind.annotation.*;
 
 
 /**
@@ -19,7 +15,6 @@ import javax.xml.bind.annotation.XmlType;
  *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
  *       &lt;sequence>
  *         &lt;element name="Queue" type="{}nonEmptyString" minOccurs="0"/>
- *         &lt;element name="RejectionSlackAlertUrl" type="{}nonEmptyString" minOccurs="0"/>
  *         &lt;element name="Pipeline" type="{}Pipeline"/>
  *       &lt;/sequence>
  *     &lt;/restriction>
@@ -32,7 +27,6 @@ import javax.xml.bind.annotation.XmlType;
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "", propOrder = {
     "queue",
-    "rejectionSlackAlertUrl",
     "pipeline"
 })
 @XmlRootElement(name = "QueueReaderConfiguration")
@@ -40,8 +34,6 @@ public class QueueReaderConfiguration {
 
     @XmlElement(name = "Queue")
     protected String queue;
-    @XmlElement(name = "RejectionSlackAlertUrl")
-    protected String rejectionSlackAlertUrl;
     @XmlElement(name = "Pipeline", required = true)
     protected Pipeline pipeline;
 
@@ -67,30 +59,6 @@ public class QueueReaderConfiguration {
      */
     public void setQueue(String value) {
         this.queue = value;
-    }
-
-    /**
-     * Gets the value of the rejectionSlackAlertUrl property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
-     */
-    public String getRejectionSlackAlertUrl() {
-        return rejectionSlackAlertUrl;
-    }
-
-    /**
-     * Sets the value of the rejectionSlackAlertUrl property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
-     */
-    public void setRejectionSlackAlertUrl(String value) {
-        this.rejectionSlackAlertUrl = value;
     }
 
     /**
