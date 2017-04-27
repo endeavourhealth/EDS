@@ -1,58 +1,40 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 
-# All Vagrant configuration is done below. The "2" in Vagrant.configure
-# configures the configuration version (we support older styles for
-# backwards compatibility). Please don't change it unless you know what
-# you're doing.
+unless Vagrant.has_plugin?("vagrant-docker-compose")
+  system("vagrant plugin install vagrant-docker-compose")
+  puts "Dependencies installed, please try the command again."
+  exit
+end
+
 Vagrant.configure("2") do |config|
-  # The most common configuration options are documented and commented below.
-  # For a complete reference, please see the online documentation at
-  # https://docs.vagrantup.com.
+  # I am using bento/ubuntu because of a bug in ubuntu/xenial64
+  # info: https://bugs.launchpad.net/cloud-images/+bug/1569237
+  config.vm.box = "bento/ubuntu-16.04"
+  config.vm.box_check_update = true
 
-  # Every Vagrant development environment requires a box. You can search for
-  # boxes at https://atlas.hashicorp.com/search.
-  config.vm.box = "ubuntu/xenial"
+  ## PORT FORWARDING SETTINGS
+  # the 'autocorrect' flag corrects any port clashes on your local machine
+  # (but can introduce inconsistency about on which port a given service is located)
+  # EDS => normal port 80 web left forwarded, but changed from Vagrant's
+  # default of 8080 to something else (so as not to clash with Tomcat)
+  config.vm.network "forwarded_port", guest: 80, host: 4080, auto_correct: true
+  # Tomcat (8080) on VM guest forwarded to localhost:8080 on host
+  config.vm.network "forwarded_port", guest: 8080, host: 8080, auto_correct: true
+  # PostgreSQL (5432) on VM guest forwarded to localhost:5432 on host
+  config.vm.network "forwarded_port", guest: 5432, host: 5432, auto_correct: true
 
-  # Disable automatic box update checking. If you disable this, then
-  # boxes will only be checked for updates when the user runs
-  # `vagrant box outdated`. This is not recommended.
-  # config.vm.box_check_update = false
-
-  # Create a forwarded port mapping which allows access to a specific port
-  # within the machine from a port on the host machine. In the example below,
-  # accessing "localhost:8080" will access port 80 on the guest machine.
-  # config.vm.network "forwarded_port", guest: 80, host: 8080
-
-  # Create a private network, which allows host-only access to the machine
-  # using a specific IP.
   # config.vm.network "private_network", ip: "192.168.33.10"
-
-  # Create a public network, which generally matched to bridged network.
-  # Bridged networks make the machine appear as another physical device on
-  # your network.
   # config.vm.network "public_network"
 
-  # Share an additional folder to the guest VM. The first argument is
-  # the path on the host to the actual folder. The second argument is
-  # the path on the guest to mount the folder. And the optional third
-  # argument is a set of non-required options.
-  # config.vm.synced_folder "../data", "/vagrant_data"
+  config.vm.synced_folder ".", "/vagrant"
 
-  # Provider-specific configuration so you can fine-tune various
-  # backing providers for Vagrant. These expose provider-specific options.
-  # Example for VirtualBox:
-  #
-  # config.vm.provider "virtualbox" do |vb|
-  #   # Display the VirtualBox GUI when booting the machine
-  #   vb.gui = true
-  #
-  #   # Customize the amount of memory on the VM:
-  #   vb.memory = "1024"
-  # end
-  #
-  # View the documentation for the provider you are using for more
-  # information on available options.
+  config.vm.provider "virtualbox" do |vb|
+    # Display the VirtualBox GUI when booting the machine
+    # vb.gui = true
+    # Customize the amount of memory on the VM:
+    vb.memory = "2048"
+  end
 
   # Define a Vagrant Push strategy for pushing to Atlas. Other push strategies
   # such as FTP and Heroku are also available. See the documentation at
@@ -61,11 +43,29 @@ Vagrant.configure("2") do |config|
   #   push.app = "YOUR_ATLAS_USERNAME/YOUR_APPLICATION_NAME"
   # end
 
-  # Enable provisioning with a shell script. Additional provisioners such as
-  # Puppet, Chef, Ansible, Salt, and Docker are also available. Please see the
-  # documentation for more information about their specific syntax and use.
-  # config.vm.provision "shell", inline: <<-SHELL
-  #   apt-get update
-  #   apt-get install -y apache2
-  # SHELL
+  ## PROVISIONING
+  $sagd = <<SCRIPT
+  DEBIAN_FRONTEND=noninteractive \
+  sudo apt-get \
+  -o Dpkg::Options::="--force-confnew" \
+  --force-yes \
+  -fuy \
+  dist-upgrade
+SCRIPT
+
+  # updates
+  config.vm.provision :shell, inline: "sudo apt-get update"
+  config.vm.provision :shell, inline: $sagd
+  config.vm.provision :shell, inline: "sudo apt-get -y autoremove"
+  # java SDK
+  config.vm.provision :shell, inline: "sudo apt-get -y install openjdk-8-jdk"
+  config.vm.provision :shell, inline: "sudo apt-get -y install maven"
+  # nodejs
+  config.vm.provision "shell", path: "./install-node.sh"
+  # install docker
+  config.vm.provision :docker
+  # install docker-compose (runs several containers and links them together automatically)
+  # this installs tomcat, cassandra, postgres and rabbitmq in separate containers
+  config.vm.provision :docker_compose, yml: "/vagrant/docker-compose.yml", run: "always"
+  # config.vm.provision "shell", path: "./provision.sh"
 end

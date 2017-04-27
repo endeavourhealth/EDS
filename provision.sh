@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
 
+set -o errexit    # exit on error
+set -o pipefail   # The exit status of the last command that threw a non-zero exit code is returned
+set -o nounset    # raise error if unset variables are used
+# set -o xtrace   # trace what gets executed (for debugging)
+
 ## OS updates
 sudo apt update && sudo apt dist-upgrade
 sudo apt autoremove
@@ -13,9 +18,21 @@ sudo apt -y install openjdk-8-jdk
 ## APACHE MAVEN - version in ubuntu repos was latest version anyway
 sudo apt -y install maven
 
-## POSTGRESQL 9.5 via apt
-#https://www.digitalocean.com/community/tutorials/how-to-install-and-use-postgresql-on-ubuntu-16-04
-#sudo apt-get -y install postgresql postgresql-contrib
+## INSTALL DOCKER - Cassandra/RabbitMQ/Postgres will be running in Docker
+sudo apt-get install apt-transport-https ca-certificates curl software-properties-common
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+sudo apt-key fingerprint 0EBFCD88
+sudo add-apt-repository \
+  "deb [arch=amd64] https://download.docker.com/linux/ubuntu \
+  $(lsb_release -cs) \
+  stable"
+sudo apt update
+sudo apt install docker-ce
+
+#####TODO##### env variables for passwords
+
+## POSTGRESQL 9.5
+docker run --name eds-postgres -e POSTGRES_PASSWORD=mysecretpassword -d postgres:9.5
 
 # RABBITMQ 3.6 from RabbitMQ repo NOT Ubuntu repos as they are out of date #(3.5.7)
 ## from https://www.rabbitmq.com/install-debian.html
@@ -30,7 +47,8 @@ sudo apt -y install maven
 #sudo rabbitmq-plugins enable rabbitmq_management
 
 ## CASSANDRA 3.5 from ASF
-# from https://www.digitalocean.com/community/tutorials/how-to-install-cassandra-and-ru#n-a-single-node-cluster-on-ubuntu-14-04
+# https://store.docker.com/images/cassandra?tab=description
+docker run --name eds-cassandra -d cassandra:latest
 
 echo "deb http://www.apache.org/dist/cassandra/debian 22x main" | sudo tee -a #/etc/apt/sources.list.d/cassandra.sources.list
 echo "deb-src http://www.apache.org/dist/cassandra/debian 22x main" | sudo tee #-a /etc/apt/sources.list.d/cassandra.sources.list

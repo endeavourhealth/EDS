@@ -1,0 +1,17 @@
+version: '3'
+
+services:
+  eds-app:
+    build: .
+    volumes:
+      - /vagrant/:/usr/local/tomcat/webapps
+    image: tomcat:9-jre8
+    ports:
+      - "8080:8080"
+
+  rabbitmq:
+    image: rabbitmq:3
+  cassandra:
+    image: cassandra:latest
+  postgres:
+    image: postgres:9.5
