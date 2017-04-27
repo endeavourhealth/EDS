@@ -44,19 +44,12 @@ Vagrant.configure("2") do |config|
   # end
 
   ## PROVISIONING
-  $sagd = <<SCRIPT
-  DEBIAN_FRONTEND=noninteractive \
-  sudo apt-get \
-  -o Dpkg::Options::="--force-confnew" \
-  --force-yes \
-  -fuy \
-  dist-upgrade
-SCRIPT
 
-  # updates
-  config.vm.provision :shell, inline: "sudo apt-get update"
-  config.vm.provision :shell, inline: $sagd
-  config.vm.provision :shell, inline: "sudo apt-get -y autoremove"
+  # OSupdates
+  # config.vm.provision :shell, inline: "sudo apt-get update"
+  # config.vm.provision :shell, inline: "sudo apt-get upgrade"
+  # config.vm.provision :shell, inline: "sudo apt-get -y autoremove"
+
   # java SDK
   config.vm.provision :shell, inline: "sudo apt-get -y install openjdk-8-jdk"
   config.vm.provision :shell, inline: "sudo apt-get -y install maven"
@@ -65,7 +58,7 @@ SCRIPT
   # install docker
   config.vm.provision :docker
   # install docker-compose (runs several containers and links them together automatically)
-  # this installs tomcat, cassandra, postgres and rabbitmq in separate containers
+  # this installs tomcat, cassandra, postgres and rabbitmq in separate linked containers
   config.vm.provision :docker_compose, yml: "/vagrant/docker-compose.yml", run: "always"
   # config.vm.provision "shell", path: "./provision.sh"
 end
