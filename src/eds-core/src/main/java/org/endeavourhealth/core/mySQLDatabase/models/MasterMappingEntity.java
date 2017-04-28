@@ -127,6 +127,25 @@ public class MasterMappingEntity {
         return children;
     }
 
+    public static List<MasterMappingEntity> getAllChildMappings(String parentUuid, Short parentMapTypeId) throws Exception {
+        EntityManager entityManager = PersistenceManager.getEntityManager();
+
+        CriteriaBuilder cb = entityManager.getCriteriaBuilder();
+        CriteriaQuery<MasterMappingEntity> cq = cb.createQuery(MasterMappingEntity.class);
+        Root<MasterMappingEntity> rootEntry = cq.from(MasterMappingEntity.class);
+
+        Predicate predicate = cb.and(cb.equal(rootEntry.get("parentUUid"), parentUuid ),
+                cb.equal(rootEntry.get("parentMapTypeId"), parentMapTypeId));
+
+        cq.where(predicate);
+        TypedQuery<MasterMappingEntity> query = entityManager.createQuery(cq);
+        List<MasterMappingEntity> maps =  query.getResultList();
+
+        entityManager.close();
+
+        return maps;
+    }
+
     public static void saveOrganisationMappings(JsonOrganisationManager organisation) throws Exception {
         //Default to organisation
         Short organisationType = MapType.ORGANISATION.getMapType();

@@ -8,6 +8,7 @@ import {RegionService} from "./region.service";
 import {RegionPickerDialog} from "./regionPicker.dialog";
 import {AgmCoreModule, MapsAPILoader} from 'angular2-google-maps/core';
 import {CustomLazyAPIKeyLoader} from "./CustomLazyAPIKeyLoader";
+import {TreeModule} from "angular2-tree-component";
 
 @NgModule({
     imports : [
@@ -15,6 +16,7 @@ import {CustomLazyAPIKeyLoader} from "./CustomLazyAPIKeyLoader";
         BrowserModule,
         FormsModule,
         NgbModule,
+        TreeModule
     ],
     declarations : [
         RegionComponent,

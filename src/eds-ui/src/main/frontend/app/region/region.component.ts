@@ -5,6 +5,7 @@ import {Organisation} from "../organisationManager/models/Organisation";
 import {LoggerService, MessageBoxDialog} from "eds-common-js";
 import {RegionService} from "./region.service";
 import {Region} from "../region/models/Region";
+import {TreeNode} from "angular2-tree-component";
 
 @Component({
     template: require('./region.html')
@@ -12,6 +13,17 @@ import {Region} from "../region/models/Region";
 export class RegionComponent {
     organisations : Organisation[];
     regions : Region[] = [];
+    regionNodes = [];
+    nodes = [];
+    treeData = [];
+
+    options = {
+        allowDrag: true,
+        allowDrop: true,
+        getChildren: (node:TreeNode) => {
+            return this.getChildNode(node);
+        }
+    }
 
     constructor(private $modal: NgbModal,
                 private regionService : RegionService,
@@ -25,9 +37,23 @@ export class RegionComponent {
          var vm = this;
          vm.regionService.getAllRegions()
          .subscribe(
-         result => vm.regions = result,
-         error => vm.log.error('Failed to load organisations', error, 'Load organisations')
+             result => {
+                 vm.regions = result;
+                 vm.regionService.getTreeNodes()
+                     .subscribe(
+                         tree => {
+                             vm.treeData = tree;
+                         }
+                     )
+             },
+            error => vm.log.error('Failed to load organisations', error, 'Load organisations')
          );
+    }
+
+    getChildNode(node : any) {
+        var vm = this;
+        return  vm.regionService.getChildTreeNodes(node.data.itemUuid, node.data.type)
+            .toPromise();
     }
 
     add() {
