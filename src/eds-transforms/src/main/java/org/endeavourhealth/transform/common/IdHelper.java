@@ -45,7 +45,17 @@ public class IdHelper {
     }
 
     private static String createCacheKey(UUID serviceId, UUID systemId, ResourceType resourceType, String sourceId) {
-        return serviceId + "/" + systemId + "/" + resourceType + "/" + sourceId;
+        //quick optimisation to cut on string creation
+        StringBuilder sb = new StringBuilder();
+        sb.append(serviceId.toString());
+        sb.append("/");
+        sb.append(systemId.toString());
+        sb.append("/");
+        sb.append(resourceType.toString());
+        sb.append("/");
+        sb.append(sourceId);
+        return sb.toString();
+        //return serviceId + "/" + systemId + "/" + resourceType + "/" + sourceId;
     }
 
     public static String getOrCreateEdsResourceIdString(UUID serviceId, UUID systemId, ResourceType resourceType, String sourceId) {
