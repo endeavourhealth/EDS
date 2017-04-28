@@ -228,6 +228,14 @@ public final class UserManagerEndpoint extends AbstractEndpoint {
 
 		LOG.trace("getUser");
 
+		UUID currentUserUuid = getCurrentUserId(sc);
+		boolean superUser = hasRole(sc, "eds_superuser");
+		//can only view other users info with eds_superuser role in v1.1
+		if (!currentUserUuid.toString().equalsIgnoreCase(userId) && !superUser)
+		{
+			throw new NotAllowedException("Get User not allowed with UserId mismatch");
+		}
+
 		//First up, get the user account representation
 		KeycloakAdminClient keycloakClient = new KeycloakAdminClient();
 		UserRepresentation userRep = keycloakClient.realms().users().getUser(userId);
