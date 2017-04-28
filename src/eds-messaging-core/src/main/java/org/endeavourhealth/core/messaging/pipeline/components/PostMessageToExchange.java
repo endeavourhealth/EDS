@@ -172,7 +172,7 @@ public class PostMessageToExchange extends PipelineComponent {
 	private String getRoutingKey(Exchange exchange) {
 		String routingIdentifier = "Unknown";
 
-	if (config.getRoutingHeader() != null && !config.getRoutingHeader().isEmpty())
+		if (config.getRoutingHeader() != null && !config.getRoutingHeader().isEmpty())
 			routingIdentifier = exchange.getHeader(config.getRoutingHeader());
 
 		return RoutingManager.getInstance().getRoutingKeyForIdentifier(routingIdentifier);

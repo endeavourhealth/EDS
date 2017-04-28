@@ -9,27 +9,18 @@ import org.endeavourhealth.core.audit.AuditWriter;
 import org.endeavourhealth.core.configuration.Pipeline;
 import org.endeavourhealth.core.configuration.PostMessageToExchangeConfig;
 import org.endeavourhealth.core.configuration.QueueReaderConfiguration;
-import org.endeavourhealth.core.data.admin.ServiceRepository;
 import org.endeavourhealth.core.data.admin.models.Service;
-import org.endeavourhealth.core.data.audit.AuditRepository;
 import org.endeavourhealth.core.data.ehr.ExchangeBatchRepository;
 import org.endeavourhealth.core.data.ehr.ResourceRepository;
 import org.endeavourhealth.core.data.ehr.models.ExchangeBatch;
 import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
 import org.endeavourhealth.core.fhirStorage.JsonServiceInterfaceEndpoint;
-import org.endeavourhealth.core.messaging.exchange.Exchange;
 import org.endeavourhealth.core.messaging.exchange.HeaderKeys;
 import org.endeavourhealth.core.messaging.pipeline.components.PostMessageToExchange;
-import org.endeavourhealth.core.messaging.slack.SlackHelper;
-import org.endeavourhealth.transform.common.IdHelper;
-import org.endeavourhealth.transform.common.MessageFormat;
-import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
-import org.endeavourhealth.transform.emis.csv.schema.AbstractCsvParser;
 import org.hl7.fhir.instance.model.ResourceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
 import java.util.*;
 
 public class Main {
@@ -41,32 +32,9 @@ public class Main {
 		LOG.info("Initialising config manager");
 		ConfigManager.Initialize("queuereader");
 
-		if (args.length >= 1
-				&& args[0].equalsIgnoreCase("FixExchanges")) {
-
-			UUID justThisService = null;
-			if (args.length > 1) {
-				justThisService = UUID.fromString(args[1]);
-			}
-
-			fixExchanges(justThisService);
-		}
-
 		if (args.length >= 0
 				&& args[0].equalsIgnoreCase("FixOrgs")) {
 			fixOrgs();
-		}
-
-		if (args.length >= 2
-				&& args[0].equalsIgnoreCase("RunProtocols")) {
-
-			String path = args[1];
-			UUID justThisService = null;
-			if (args.length > 2) {
-				justThisService = UUID.fromString(args[2]);
-			}
-
-			runProtocolsForConfidentialPatients(path, justThisService);
 		}
 
 		if (args.length != 1) {
@@ -83,7 +51,6 @@ public class Main {
 		LOG.info("Fetching queuereader configuration");
 		String configXml = ConfigManager.getConfiguration(configId);
 		QueueReaderConfiguration configuration = ConfigDeserialiser.deserialise(configXml);
-		SlackHelper.setSlackUrl(configuration.getRejectionSlackAlertUrl());
 
 		// Instantiate rabbit handler
 		LOG.info("Creating EDS queue reader");
@@ -95,7 +62,7 @@ public class Main {
 		LOG.info("EDS Queue reader running");
 	}
 
-	private static void fixExchanges(UUID justThisService) {
+	/*private static void fixExchanges(UUID justThisService) {
 		LOG.info("Fixing exchanges");
 
 		try {
@@ -165,7 +132,7 @@ public class Main {
 		} catch (Exception ex) {
 			LOG.error("", ex);
 		}
-	}
+	}*/
 
 
 	/*private static void deleteDataForService(UUID serviceId) {
@@ -2174,7 +2141,7 @@ public class Main {
 	}*/
 
 
-	private static void runProtocolsForConfidentialPatients(String sharedStoragePath, UUID justThisService) {
+	/*private static void runProtocolsForConfidentialPatients(String sharedStoragePath, UUID justThisService) {
 		LOG.info("Running Protocols for Confidential Patients using path " + sharedStoragePath + " and service " + justThisService);
 
 		ExchangeBatchRepository exchangeBatchRepository = new ExchangeBatchRepository();
@@ -2374,7 +2341,7 @@ public class Main {
 		} catch (Exception ex) {
 			LOG.error("", ex);
 		}
-	}
+	}*/
 
 	private static void fixOrgs() {
 

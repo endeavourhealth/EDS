@@ -9,7 +9,7 @@ import org.endeavourhealth.core.data.admin.QueuedMessageRepository;
 import org.endeavourhealth.core.data.admin.models.QueuedMessage;
 import org.endeavourhealth.core.messaging.exchange.Exchange;
 import org.endeavourhealth.core.messaging.pipeline.PipelineProcessor;
-import org.endeavourhealth.core.messaging.slack.SlackHelper;
+import org.endeavourhealth.core.slack.SlackHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -84,6 +84,6 @@ public class RabbitConsumer extends DefaultConsumer {
 
 		String s = "Exchange " + exchangeId + " rejected in " + queueName;
 
-		SlackHelper.sendSlackMessage(s, exchange.getException());
+		SlackHelper.sendSlackMessage(SlackHelper.Channel.ProductionAlerts, s, exchange.getException());
 	}
 }

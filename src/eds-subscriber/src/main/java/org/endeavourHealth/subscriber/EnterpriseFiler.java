@@ -703,7 +703,7 @@ public class EnterpriseFiler {
                     pool.setJdbcUrl(url);
                     pool.setUsername(username);
                     pool.setPassword(password);
-                    pool.setMaximumPoolSize(5);
+                    pool.setMaximumPoolSize(3);
                     pool.setMinimumIdle(1);
                     pool.setIdleTimeout(60000);
                     pool.setPoolName("EnterpriseFilerConnectionPool" + url);

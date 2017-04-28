@@ -12,7 +12,7 @@ import org.endeavourhealth.core.messaging.exchange.Exchange;
 import org.endeavourhealth.core.messaging.exchange.HeaderKeys;
 import org.endeavourhealth.core.messaging.pipeline.PipelineComponent;
 import org.endeavourhealth.core.messaging.pipeline.PipelineException;
-import org.endeavourhealth.core.messaging.slack.SlackHelper;
+import org.endeavourhealth.core.slack.SlackHelper;
 import org.endeavourhealth.core.xml.TransformErrorSerializer;
 import org.endeavourhealth.core.xml.TransformErrorUtility;
 import org.endeavourhealth.core.xml.transformError.Error;
@@ -204,7 +204,7 @@ public class MessageTransformInbound extends PipelineComponent {
 
 		String attachment = String.join("\n", lines);
 
-		SlackHelper.sendSlackMessage(message, attachment);
+		SlackHelper.sendSlackMessage(SlackHelper.Channel.ProductionAlerts, message, attachment);
 	}
 
 	/**
