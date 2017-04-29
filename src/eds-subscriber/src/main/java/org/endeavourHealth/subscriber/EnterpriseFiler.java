@@ -406,7 +406,7 @@ public class EnterpriseFiler {
                 }
             }
 
-            throw new Exception(s.toString());
+            throw new Exception(s.toString(), ex);
         }
 
         //then do the updates to records we're also inserting
