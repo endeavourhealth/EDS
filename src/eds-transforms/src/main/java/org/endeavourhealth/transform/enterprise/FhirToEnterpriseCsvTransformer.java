@@ -54,6 +54,11 @@ public class FhirToEnterpriseCsvTransformer extends FhirToXTransformerBase {
 
         Long enterpriseOrgId = findEnterpriseOrgId(serviceId, systemId, configName, data);
 
+        //sometimes we may fail to find an org id, so just return null as there's nothing to send
+        if (enterpriseOrgId == null) {
+            return null;
+        }
+
         try {
             tranformResources(data, filteredResources, enterpriseOrgId, configName, protocolId);
 
@@ -80,7 +85,11 @@ public class FhirToEnterpriseCsvTransformer extends FhirToXTransformerBase {
         ResourceRepository resourceRepository = new ResourceRepository();
         ResourceByService resourceByService = resourceRepository.getFirstResourceByService(serviceId, systemId, ResourceType.Patient);
         if (resourceByService == null) {
-            throw new TransformException("Cannot find a Patient resource for service " + serviceId + " and system " + systemId);
+            //Emis sometimes activate practices before they send up patient data, so we may have a service with all the
+            //non-patient metadata, but no patient data. If this happens, then don't send anything to Enterprise, as
+            //it'll all be sorted out when they do send patient data.
+            return null;
+            //throw new TransformException("Cannot find a Patient resource for service " + serviceId + " and system " + systemId);
         }
 
         String json = resourceByService.getResourceData();
@@ -156,7 +165,7 @@ public class FhirToEnterpriseCsvTransformer extends FhirToXTransformerBase {
         tranformResources(ResourceType.Schedule, data, resources, resourcesMap, enterpriseOrganisationId, null, null, configName, protocolId, threadPool);
         boolean didPatient = tranformResources(ResourceType.Patient, data, resources, resourcesMap, enterpriseOrganisationId, null, null, configName, protocolId, threadPool);
 
-        //if we transformed a patient resource, we need to guarantee that the patient is transformed before continuing
+        //if we transformed a patient resource, we need to guarantee that the patient is fully transformed before continuing
         //so we need to close the thread pool and wait. Then re-open for any remaining resources.
         if (didPatient) {
             List<ThreadPoolError> errors = threadPool.waitAndStop();
