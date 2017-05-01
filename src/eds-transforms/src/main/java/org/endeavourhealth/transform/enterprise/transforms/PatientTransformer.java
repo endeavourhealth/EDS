@@ -231,7 +231,9 @@ public class PatientTransformer extends AbstractTransformer {
         //check if OUR patient record is an active one at a GP practice, in which case it definitely should define the person record
         String patientId = fhirPatient.getId();
         PatientSearch patientSearch = PatientSearchHelper.searchByPatientId(UUID.fromString(patientId));
-        if (isActive(patientSearch)
+
+        if (patientSearch != null //if we get null back, then we'll have deleted the patient, so just skip the ID
+                && isActive(patientSearch)
                 && getPatientSearchOrgScore(patientSearch) == BEST_ORG_SCORE) {
             return true;
         }
