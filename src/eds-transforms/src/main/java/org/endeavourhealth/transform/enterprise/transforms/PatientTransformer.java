@@ -309,6 +309,12 @@ public class PatientTransformer extends AbstractTransformer {
         //check if the best patient search record matches our patient ID. If it does, then our patient
         //should be the one that is used to define the person table.
         PatientSearch bestPatientSearch = patientSearchesInProtocol.get(0);
+
+        //if there are no patient search records (i.e. patient is deleted everywhere), just return false since there doesn't need to be a person record
+        if (bestPatientSearch == null) {
+            return false;
+        }
+
         return bestPatientSearch.getPatientId().equals(patientId);
     }
 
