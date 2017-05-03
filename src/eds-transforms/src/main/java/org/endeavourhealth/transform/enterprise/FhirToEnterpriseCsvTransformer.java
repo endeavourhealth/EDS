@@ -34,9 +34,7 @@ public class FhirToEnterpriseCsvTransformer extends FhirToXTransformerBase {
     private static final Logger LOG = LoggerFactory.getLogger(FhirToEnterpriseCsvTransformer.class);
 
     private static final int DEFAULT_TRANSFORM_BATCH_SIZE = 50;
-    private static Map<String, Integer> transformBatchSizes = new HashMap<>();
-
-    //private static final String ZIP_ENTRY = "EnterpriseData.xml";
+    private static Map<String, Integer> transformBatchSizeCache = new HashMap<>();
 
     public static String transformFromFhir(UUID serviceId,
                                            UUID systemId,
@@ -77,7 +75,7 @@ public class FhirToEnterpriseCsvTransformer extends FhirToXTransformerBase {
     }
 
     private static int findTransformBatchSize(String configName) throws Exception {
-        Integer i = transformBatchSizes.get(configName);
+        Integer i = transformBatchSizeCache.get(configName);
         if (i == null) {
             JsonNode json = ConfigManager.getConfigurationAsJson(configName, "enterprise");
             JsonNode batchSize = json.get("TransformBatchSize");
@@ -86,7 +84,7 @@ public class FhirToEnterpriseCsvTransformer extends FhirToXTransformerBase {
             } else {
                 i = new Integer(batchSize.asInt());
             }
-            transformBatchSizes.put(configName, i);
+            transformBatchSizeCache.put(configName, i);
         }
         return i.intValue();
     }

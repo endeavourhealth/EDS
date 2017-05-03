@@ -2,18 +2,12 @@
 package org.endeavourhealth.ui.endpoints;
 
 import com.codahale.metrics.annotation.Timed;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.base.Strings;
 import io.astefanutti.metrics.aspectj.Metrics;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
-import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.common.security.SecurityUtils;
 import org.endeavourhealth.common.security.annotations.RequiresAdmin;
-import org.endeavourhealth.common.utility.StreamExtension;
-import org.endeavourhealth.core.audit.AuditWriter;
-import org.endeavourhealth.core.configuration.*;
 import org.endeavourhealth.core.data.admin.LibraryRepository;
-import org.endeavourhealth.core.data.admin.LibraryRepositoryHelper;
 import org.endeavourhealth.core.data.admin.ServiceRepository;
 import org.endeavourhealth.core.data.admin.models.ActiveItem;
 import org.endeavourhealth.core.data.admin.models.Item;
@@ -21,25 +15,15 @@ import org.endeavourhealth.core.data.admin.models.Service;
 import org.endeavourhealth.core.data.audit.AuditRepository;
 import org.endeavourhealth.core.data.audit.UserAuditRepository;
 import org.endeavourhealth.core.data.audit.models.*;
-import org.endeavourhealth.core.data.ehr.ExchangeBatchRepository;
-import org.endeavourhealth.core.data.ehr.models.ExchangeBatch;
 import org.endeavourhealth.core.messaging.exchange.HeaderKeys;
-import org.endeavourhealth.core.messaging.pipeline.TransformBatch;
-import org.endeavourhealth.core.messaging.pipeline.components.DetermineRelevantProtocolIds;
-import org.endeavourhealth.core.messaging.pipeline.components.PostMessageToExchange;
-import org.endeavourhealth.core.messaging.pipeline.components.RunDataDistributionProtocols;
-import org.endeavourhealth.core.xml.QueryDocument.LibraryItem;
-import org.endeavourhealth.core.xml.QueryDocument.ServiceContract;
-import org.endeavourhealth.core.xml.QueryDocument.ServiceContractType;
+import org.endeavourhealth.core.queueing.QueueHelper;
 import org.endeavourhealth.core.xml.TransformErrorSerializer;
 import org.endeavourhealth.core.xml.transformError.Arg;
 import org.endeavourhealth.core.xml.transformError.Error;
 import org.endeavourhealth.core.xml.transformError.ExceptionLine;
 import org.endeavourhealth.core.xml.transformError.TransformError;
 import org.endeavourhealth.coreui.endpoints.AbstractEndpoint;
-import org.endeavourhealth.queuereader.ConfigDeserialiser;
 import org.endeavourhealth.ui.json.*;
-import org.hl7.fhir.instance.model.ResourceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,12 +34,11 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Path("/exchangeAudit")
 @Metrics(registry = "EdsRegistry")
 public class ExchangeAuditEndpoint extends AbstractEndpoint {
-    private static final Logger LOG = LoggerFactory.getLogger(ExchangeAuditEndpoint .class);
+    private static final Logger LOG = LoggerFactory.getLogger(ExchangeAuditEndpoint.class);
 
     private static final UserAuditRepository userAudit = new UserAuditRepository(AuditModule.EdsUiModule.ExchangeAudit);
     private static final AuditRepository auditRepository = new AuditRepository();
@@ -258,11 +241,11 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
 
             List<UUID> exchangeIds = auditRepository.getExchangeIdsForService(serviceId);
             for (UUID exchangeId: exchangeIds) {
-                postToExchange(exchangeId, exchangeName);
+                QueueHelper.postToExchange(exchangeId, exchangeName);
             }
 
         } else {
-            postToExchange(selectedExchangeId, exchangeName);
+            QueueHelper.postToExchange(selectedExchangeId, exchangeName);
         }
 
         clearLogbackMarkers();
@@ -272,202 +255,8 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
                 .build();
     }
 
-    private void postToExchange(UUID exchangeId, String exchangeName) throws Exception {
-
-        PostMessageToExchangeConfig exchangeConfig = findExchangeConfig(exchangeName);
-        if (exchangeConfig == null) {
-            throw new BadRequestException("Failed to find PostMessageToExchange config details for exchange " + exchangeName);
-        }
-
-        org.endeavourhealth.core.messaging.exchange.Exchange exchange = AuditWriter.readExchange(exchangeId);
-        //org.endeavourhealth.core.messaging.exchange.Exchange exchange = retrieveExchange(exchangeId);
-
-        //to make sure the latest setup applies, re-calculate the protocols that apply to this exchange
-        String serviceUuid = exchange.getHeader(HeaderKeys.SenderServiceUuid);
-        String newProtocolIdsJson = DetermineRelevantProtocolIds.getProtocolIdsForPublisherService(serviceUuid);
-        String oldProtocolIdsJson = exchange.getHeader(HeaderKeys.ProtocolIds);
-        if (!newProtocolIdsJson.equals(oldProtocolIdsJson)) {
-            exchange.setHeader(HeaderKeys.ProtocolIds, newProtocolIdsJson);
-            AuditWriter.writeExchange(exchange);
-        }
-
-        //work out what multicast header we need
-        String multicastHeader = exchangeConfig.getMulticastHeader();
-        if (!Strings.isNullOrEmpty(multicastHeader)) {
-            if (exchange.getHeader(multicastHeader) == null) {
-                populateMulticastHeader(exchange, multicastHeader);
-            }
-        }
-
-        //re-post back into Rabbit using the same pipeline component as used by the messaging API
-        PostMessageToExchange component = new PostMessageToExchange(exchangeConfig);
-        component.process(exchange);
-
-        //write an event for the exchange, so we can see this happened
-        AuditWriter.writeExchangeEvent(exchange, "Manually pushed into " + exchangeName + " exchange");
-
-        //if pushed into the Inbound queue, and it previously had an error in there, mark it as resubmitted
-        /*if (exchangeName.equals("EdsInbound")) {
-
-            UUID serviceId = exchange.getHeaderAsUuid(HeaderKeys.SenderServiceUuid);
-            UUID systemId = exchange.getHeaderAsUuid(HeaderKeys.SystemVersion);
-
-            ExchangeTransformAudit audit = auditRepository.getMostRecentExchangeTransform(serviceId, systemId, exchangeId);
-            if (!audit.isResubmitted()) {
-                audit.setResubmitted(true);
-                auditRepository.save(audit);
-            }
-        }*/
-    }
-
-    private void populateMulticastHeader(org.endeavourhealth.core.messaging.exchange.Exchange exchange, String multicastHeader) throws Exception {
-
-        UUID exchangeUuid = exchange.getExchangeId();
-
-        if (multicastHeader.equalsIgnoreCase(HeaderKeys.BatchIdsJson)) {
-
-            ExchangeBatchRepository exchangeBatchRepository = new ExchangeBatchRepository();
-            List<ExchangeBatch> batches = exchangeBatchRepository.retrieveForExchangeId(exchangeUuid);
-
-            List<UUID> batchUuids = batches
-                    .stream()
-                    .map(t -> t.getBatchId())
-                    .collect(Collectors.toList());
-            try {
-                String batchUuidsStr = ObjectMapperPool.getInstance().writeValueAsString(batchUuids.toArray());
-                exchange.setHeader(HeaderKeys.BatchIdsJson, batchUuidsStr);
-
-            } catch (JsonProcessingException e) {
-                LOG.error("Failed to populate batch IDs for exchange " + exchangeUuid, e);
-            }
-
-        } else if (multicastHeader.equalsIgnoreCase(HeaderKeys.TransformBatch)) {
-
-            List<TransformBatch> transformBatches = new ArrayList<>();
-
-            String[] protocolIds = exchange.getHeaderAsStringArray(HeaderKeys.ProtocolIds);
-
-            ExchangeBatchRepository exchangeBatchRepository = new ExchangeBatchRepository();
-            List<ExchangeBatch> batches = exchangeBatchRepository.retrieveForExchangeId(exchangeUuid);
-
-            for (String protocolId: protocolIds) {
-
-                UUID protocolUuid = UUID.fromString(protocolId);
-                LibraryItem libraryItem = LibraryRepositoryHelper.getLibraryItem(protocolUuid);
-                List<ServiceContract> subscribers = libraryItem
-                        .getProtocol()
-                        .getServiceContract()
-                        .stream()
-                        .filter(sc -> sc.getType().equals(ServiceContractType.SUBSCRIBER))
-                        .collect(Collectors.toList());
-
-                //if there's no subscribers on this protocol, just skip it
-                if (subscribers.isEmpty()) {
-                    continue;
-                }
-
-                for (ExchangeBatch batch: batches) {
-
-                    String batchId = batch.getBatchId().toString();
-                    Map<ResourceType, List<UUID>> filteredResources = RunDataDistributionProtocols.filterResources(libraryItem.getProtocol(), batchId);
-                    if (filteredResources.isEmpty()) {
-                        continue;
-                    }
-
-                    //the only bit of data we can populate is the batch ID
-                    TransformBatch transformBatch = new TransformBatch();
-                    transformBatch.setBatchId(batch.getBatchId());
-                    transformBatch.setProtocolId(UUID.fromString(protocolId));
-                    transformBatch.setSubscribers(subscribers);
-                    transformBatch.setResourceIds(filteredResources);
-
-                    transformBatches.add(transformBatch);
-                }
-            }
-
-            try {
-                String transformBatchesJson = ObjectMapperPool.getInstance().writeValueAsString(transformBatches);
-                exchange.setHeader(HeaderKeys.TransformBatch, transformBatchesJson);
-
-            } catch (JsonProcessingException e) {
-                LOG.error("Failed to populate batch IDs for exchange " + exchangeUuid, e);
-            }
-
-        } else if (multicastHeader.equalsIgnoreCase(HeaderKeys.SubscriberBatch)) {
-
-            throw new BadRequestException("Mutlicasting using subscriber batch not supported");
-
-        } else {
-            throw new BadRequestException("Unsupported multicast header: " + multicastHeader);
-        }
-
-    }
 
 
-
-    private PostMessageToExchangeConfig findExchangeConfig(String exchangeName) throws Exception {
-
-        //go through all the known app configs to find config for posting to the Rabbit Exchange we're interested in
-        PostMessageToExchangeConfig config = findExchangeConfig("messaging-api", "api-configuration", exchangeName);
-        if (config != null) {
-            return config;
-        }
-
-        config = findExchangeConfig("queuereader", "inbound", exchangeName);
-        if (config != null) {
-            return config;
-        }
-
-        config = findExchangeConfig("queuereader", "protocol", exchangeName);
-        if (config != null) {
-            return config;
-        }
-
-        config = findExchangeConfig("queuereader", "response", exchangeName);
-        if (config != null) {
-            return config;
-        }
-
-        config = findExchangeConfig("queuereader", "subscriber", exchangeName);
-        if (config != null) {
-            return config;
-        }
-
-        config = findExchangeConfig("queuereader", "transform", exchangeName);
-        if (config != null) {
-            return config;
-        }
-
-        return null;
-    }
-
-    private PostMessageToExchangeConfig findExchangeConfig(String appId, String configId, String exchangeName) throws Exception {
-
-        //we access the messaging API config directly, to find out how it posts new incoming exchanges to rabbit
-        String configXml = ConfigManager.getConfiguration(configId, appId);
-
-        Pipeline pipeline = null;
-
-        //the config XML may be one of two serialised classes, so we use a try/catch to safely try both if necessary
-        try {
-            ApiConfiguration config = ConfigWrapper.deserialise(configXml);
-            ApiConfiguration.PostMessageAsync postConfig = config.getPostMessageAsync();
-            pipeline = postConfig.getPipeline();
-
-        } catch (Exception e) {
-
-            QueueReaderConfiguration configuration = ConfigDeserialiser.deserialise(configXml);
-            pipeline = configuration.getPipeline();
-        }
-
-        return pipeline
-                .getPipelineComponents()
-                .stream()
-                .filter(t -> t instanceof PostMessageToExchangeConfig)
-                .map(t -> (PostMessageToExchangeConfig)t)
-                .filter(t -> t.getExchange().equalsIgnoreCase(exchangeName))
-                .collect(StreamExtension.singleOrNullCollector());
-    }
 
     /*private org.endeavourhealth.core.messaging.exchange.Exchange retrieveExchange(UUID exchangeId) throws Exception {
 
@@ -763,7 +552,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
             auditRepository.save(audit);
 
             //then re-submit the exchange to Rabbit MQ for the queue reader to pick up
-            postToExchange(exchangeId, "EdsInbound");
+            QueueHelper.postToExchange(exchangeId, "EdsInbound");
 
             //if we only want to re-queue the first exchange, then break out
             if (firstOnly) {

@@ -165,7 +165,7 @@ public class EmisCsvHelper {
     private void retrieveClinicalCode(Long codeId) throws Exception {
         EmisCsvCodeMap mapping = mappingRepository.getMostRecentCode(dataSharingAgreementGuid, false, codeId);
         if (mapping == null) {
-            throw new ClinicalCodeNotFoundException(codeId, false);
+            throw new ClinicalCodeNotFoundException(dataSharingAgreementGuid, false, codeId);
         }
 
         String json = mapping.getCodeableConcept();
@@ -198,7 +198,7 @@ public class EmisCsvHelper {
     private void retrieveMedication(Long codeId) throws Exception {
         EmisCsvCodeMap mapping = mappingRepository.getMostRecentCode(dataSharingAgreementGuid, true, codeId);
         if (mapping == null) {
-            throw new ClinicalCodeNotFoundException(codeId, true);
+            throw new ClinicalCodeNotFoundException(dataSharingAgreementGuid, true, codeId);
         }
 
         String json = mapping.getCodeableConcept();

@@ -2,13 +2,13 @@ package org.endeavourhealth.transform.emis.csv.transforms.careRecord;
 
 import com.google.common.base.Strings;
 import org.endeavourhealth.common.fhir.*;
+import org.endeavourhealth.common.fhir.schema.ReferralPriority;
+import org.endeavourhealth.common.fhir.schema.ReferralRequestSendMode;
+import org.endeavourhealth.common.fhir.schema.ReferralType;
 import org.endeavourhealth.transform.common.FhirResourceFiler;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
 import org.endeavourhealth.transform.emis.csv.schema.AbstractCsvParser;
 import org.endeavourhealth.transform.emis.csv.schema.careRecord.ObservationReferral;
-import org.endeavourhealth.common.fhir.schema.ReferralPriority;
-import org.endeavourhealth.common.fhir.schema.ReferralRequestSendMode;
-import org.endeavourhealth.common.fhir.schema.ReferralType;
 import org.hl7.fhir.instance.model.CodeableConcept;
 import org.hl7.fhir.instance.model.Meta;
 import org.hl7.fhir.instance.model.ReferralRequest;
@@ -168,6 +168,9 @@ public class ObservationReferralTransformer {
 
         } else if (type.equalsIgnoreCase("Day Care")) {
             return ReferralType.DAY_CARE;
+
+        } else if (type.equalsIgnoreCase("Assessment & Education")) {
+            return ReferralType.ASSESSMENT_AND_EDUCATION;
 
         } else {
             return null;
