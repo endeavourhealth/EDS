@@ -8,7 +8,6 @@ import org.endeavourhealth.common.fhir.FhirUri;
 import org.endeavourhealth.common.fhir.IdentifierHelper;
 import org.endeavourhealth.common.fhir.schema.OrganisationType;
 import org.endeavourhealth.core.data.admin.LibraryRepositoryHelper;
-import org.endeavourhealth.core.data.ehr.ResourceRepository;
 import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
 import org.endeavourhealth.core.rdbms.eds.PatientLinkHelper;
 import org.endeavourhealth.core.rdbms.eds.PatientLinkPair;
@@ -43,29 +42,10 @@ public class PatientTransformer extends AbstractTransformer {
 
     private static Map<String, byte[]> saltCacheMap = new HashMap<>();
     //private static byte[] saltBytes = null;
-    private static ResourceRepository resourceRepository = new ResourceRepository();
+    //private static ResourceRepository resourceRepository = new ResourceRepository();
 
-    public void transform(ResourceByExchangeBatch resource,
-                          OutputContainer data,
-                          AbstractEnterpriseCsvWriter csvWriter,
-                          Map<String, ResourceByExchangeBatch> otherResources,
-                          Long enterpriseOrganisationId,
-                          Long nullEnterprisePatientId,
-                          Long nullEnterprisePersonId,
-                          String configName,
-                          UUID protocolId) throws Exception {
-
-        Long enterpriseId = mapId(resource, csvWriter, true);
-        if (enterpriseId == null) {
-            return;
-
-        } else if (resource.getIsDeleted()) {
-            csvWriter.writeDelete(enterpriseId.longValue());
-
-        } else {
-            Resource fhir = deserialiseResouce(resource);
-            transform(enterpriseId, fhir, data, csvWriter, otherResources, enterpriseOrganisationId, nullEnterprisePatientId, nullEnterprisePersonId, configName, protocolId);
-        }
+    public boolean shouldAlwaysTransform() {
+        return true;
     }
 
     public void transform(Long enterpriseId,
@@ -251,7 +231,9 @@ public class PatientTransformer extends AbstractTransformer {
         //check if OUR patient record is an active one at a GP practice, in which case it definitely should define the person record
         String patientId = fhirPatient.getId();
         PatientSearch patientSearch = PatientSearchHelper.searchByPatientId(UUID.fromString(patientId));
-        if (isActive(patientSearch)
+
+        if (patientSearch != null //if we get null back, then we'll have deleted the patient, so just skip the ID
+                && isActive(patientSearch)
                 && getPatientSearchOrgScore(patientSearch) == BEST_ORG_SCORE) {
             return true;
         }
@@ -327,6 +309,12 @@ public class PatientTransformer extends AbstractTransformer {
         //check if the best patient search record matches our patient ID. If it does, then our patient
         //should be the one that is used to define the person table.
         PatientSearch bestPatientSearch = patientSearchesInProtocol.get(0);
+
+        //if there are no patient search records (i.e. patient is deleted everywhere), just return false since there doesn't need to be a person record
+        if (bestPatientSearch == null) {
+            return false;
+        }
+
         return bestPatientSearch.getPatientId().equals(patientId);
     }
 

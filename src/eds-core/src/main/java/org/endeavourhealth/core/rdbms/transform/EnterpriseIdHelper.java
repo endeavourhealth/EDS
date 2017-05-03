@@ -1,12 +1,16 @@
 package org.endeavourhealth.core.rdbms.transform;
 
+import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
 import javax.persistence.Query;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class EnterpriseIdHelper {
     private static final Logger LOG = LoggerFactory.getLogger(EnterpriseIdHelper.class);
@@ -290,6 +294,114 @@ public class EnterpriseIdHelper {
         try {
             List<EnterprisePersonIdMap> ret = query.getResultList();
             return ret;
+
+        } finally {
+            entityManager.close();
+        }
+    }
+
+    public static void findEnterpriseIds(String enterpriseTableName, List<ResourceByExchangeBatch> resources, Map<ResourceByExchangeBatch, Long> ids) throws Exception {
+        EntityManager entityManager = TransformConnection.getEntityManager();
+        try {
+            findEnterpriseIds(enterpriseTableName, resources, ids, entityManager);
+        } finally {
+            entityManager.close();
+        }
+    }
+
+    private static void findEnterpriseIds(String enterpriseTableName, List<ResourceByExchangeBatch> resources, Map<ResourceByExchangeBatch, Long> ids, EntityManager entityManager) throws Exception {
+
+        String resourceType = null;
+        List<String> resourceIds = new ArrayList<>();
+        Map<String, ResourceByExchangeBatch> resourceIdMap = new HashMap<>();
+
+        for (ResourceByExchangeBatch resource: resources) {
+
+            if (resourceType == null) {
+                resourceType = resource.getResourceType();
+            } else if (!resourceType.equals(resource.getResourceType())) {
+                throw new Exception("Can't find enterprise IDs for different resource types");
+            }
+
+            String id = resource.getResourceId().toString();
+            resourceIds.add(id);
+            resourceIdMap.put(id, resource);
+        }
+
+        String sql = "select c"
+                + " from"
+                + " EnterpriseIdMap c"
+                + " where c.enterpriseTableName = :enterpriseTableName"
+                + " and c.resourceType = :resourceType"
+                + " and c.resourceId IN :resourceId";
+
+
+        Query query = entityManager.createQuery(sql, EnterpriseIdMap.class)
+                .setParameter("enterpriseTableName", enterpriseTableName)
+                .setParameter("resourceType", resourceType)
+                .setParameter("resourceId", resourceIds);
+
+        List<EnterpriseIdMap> results = query.getResultList();
+        for (EnterpriseIdMap result: results) {
+            String resourceId = result.getResourceId();
+            Long enterpriseId = result.getEnterpriseId();
+
+            ResourceByExchangeBatch resource = resourceIdMap.get(resourceId);
+            ids.put(resource, enterpriseId);
+        }
+    }
+
+    public static void findOrCreateEnterpriseIds(String enterpriseTableName, List<ResourceByExchangeBatch> resources, Map<ResourceByExchangeBatch, Long> ids) throws Exception {
+        EntityManager entityManager = TransformConnection.getEntityManager();
+
+        //check the DB for existing IDs
+        findEnterpriseIds(enterpriseTableName, resources, ids, entityManager);
+
+        //find the resources that didn't have an ID
+        List<ResourceByExchangeBatch> resourcesToCreate = new ArrayList<>();
+        for (ResourceByExchangeBatch resource: resources) {
+            if (!ids.containsKey(resource)) {
+                resourcesToCreate.add(resource);
+            }
+        }
+
+        //for any resource without an ID, we want to create one
+        try {
+            entityManager.getTransaction().begin();
+
+            Map<ResourceByExchangeBatch, EnterpriseIdMap> mappingMap = new HashMap<>();
+
+            for (ResourceByExchangeBatch resource: resourcesToCreate) {
+
+                EnterpriseIdMap mapping = new EnterpriseIdMap();
+                mapping.setEnterpriseTableName(enterpriseTableName);
+                mapping.setResourceType(resource.getResourceType());
+                mapping.setResourceId(resource.getResourceId().toString());
+
+                entityManager.persist(mapping);
+
+                mappingMap.put(resource, mapping);
+            }
+
+            entityManager.getTransaction().commit();
+
+            for (ResourceByExchangeBatch resource: resourcesToCreate) {
+
+                EnterpriseIdMap mapping = mappingMap.get(resource);
+                Long enterpriseId = mapping.getEnterpriseId();
+                ids.put(resource, enterpriseId);
+            }
+
+        } catch (Exception ex) {
+            //if another thread has beat us to it and created an ID for one of our records and we'll get an exception, so try the find again
+            //but for each one individually
+            entityManager.getTransaction().rollback();
+            LOG.warn("Failed to create " + resourcesToCreate.size() + " IDs in one go, so doing one by one");
+
+            for (ResourceByExchangeBatch resource: resourcesToCreate) {
+                Long enterpriseId = findOrCreateEnterpriseId(enterpriseTableName, resource.getResourceType(), resource.getResourceId().toString());
+                ids.put(resource, enterpriseId);
+            }
 
         } finally {
             entityManager.close();

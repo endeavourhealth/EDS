@@ -14,7 +14,7 @@ import {CustomLazyAPIKeyLoader} from "./CustomLazyAPIKeyLoader";
         AgmCoreModule.forRoot(),
         BrowserModule,
         FormsModule,
-        NgbModule,
+        NgbModule
     ],
     declarations : [
         RegionComponent,

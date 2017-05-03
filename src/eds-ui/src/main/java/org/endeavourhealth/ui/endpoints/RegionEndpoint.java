@@ -171,12 +171,13 @@ public final class RegionEndpoint extends AbstractEndpoint {
                 "get Api Key");
 
         JsonNode json = ConfigManager.getConfigurationAsJson("GoogleMapsAPI");
-       // String apiKey = json.get("apiKey").asText();
+
         return Response
                 .ok()
                 .entity(json)
                 .build();
     }
+
     private Response getRegionList() throws Exception {
 
         List<RegionEntity> regions = RegionEntity.getAllRegions();

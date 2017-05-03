@@ -6,6 +6,7 @@ import org.endeavourhealth.common.cache.ParserPool;
 import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.common.utility.StreamExtension;
 import org.endeavourhealth.core.audit.AuditWriter;
+import org.endeavourhealth.core.configuration.ConfigDeserialiser;
 import org.endeavourhealth.core.configuration.Pipeline;
 import org.endeavourhealth.core.configuration.PostMessageToExchangeConfig;
 import org.endeavourhealth.core.configuration.QueueReaderConfiguration;

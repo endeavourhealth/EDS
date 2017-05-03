@@ -18,34 +18,8 @@ import java.util.UUID;
 public class OrganisationTransformer extends AbstractTransformer {
     private static final Logger LOG = LoggerFactory.getLogger(OrganisationTransformer.class);
 
-    /*private String extractOrgOdsCode = null;
-
-    public OrganisationTransformer(String extractOrgOdsCode) {
-        this.extractOrgOdsCode = extractOrgOdsCode;
-    }*/
-
-    public void transform(ResourceByExchangeBatch resource,
-                          OutputContainer data,
-                          AbstractEnterpriseCsvWriter csvWriter,
-                          Map<String, ResourceByExchangeBatch> otherResources,
-                          Long enterpriseOrganisationId,
-                          Long enterprisePatientId,
-                          Long enterprisePersonId,
-                          String configName,
-                          UUID protocolId) throws Exception {
-
-        Long enterpriseId = mapId(resource, csvWriter, false); //don't assign IDs automatically for every org
-        if (enterpriseId == null) {
-            return;
-
-        } else if (resource.getIsDeleted()) {
-            csvWriter.writeDelete(enterpriseId.longValue());
-
-        } else {
-
-            Resource fhir = deserialiseResouce(resource);
-            transform(enterpriseId, fhir, data, csvWriter, otherResources, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName, protocolId);
-        }
+    public boolean shouldAlwaysTransform() {
+        return false;
     }
 
     public void transform(Long enterpriseId,

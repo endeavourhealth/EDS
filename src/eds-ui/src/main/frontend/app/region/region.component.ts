@@ -5,6 +5,7 @@ import {Organisation} from "../organisationManager/models/Organisation";
 import {LoggerService, MessageBoxDialog} from "eds-common-js";
 import {RegionService} from "./region.service";
 import {Region} from "../region/models/Region";
+import {TreeNode} from "angular2-tree-component";
 
 @Component({
     template: require('./region.html')
@@ -25,8 +26,10 @@ export class RegionComponent {
          var vm = this;
          vm.regionService.getAllRegions()
          .subscribe(
-         result => vm.regions = result,
-         error => vm.log.error('Failed to load organisations', error, 'Load organisations')
+             result => {
+                 vm.regions = result;
+             },
+            error => vm.log.error('Failed to load organisations', error, 'Load organisations')
          );
     }
 

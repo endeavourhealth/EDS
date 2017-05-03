@@ -20,8 +20,7 @@ import org.hl7.fhir.instance.model.TemporalPrecisionEnum;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 public abstract class AbstractTransformer {
 
@@ -48,15 +47,39 @@ public abstract class AbstractTransformer {
         }
     }
 
-    public abstract void transform(ResourceByExchangeBatch resource,
-                                   OutputContainer data,
-                                   AbstractEnterpriseCsvWriter csvWriter,
-                                   Map<String, ResourceByExchangeBatch> otherResources,
-                                   Long enterpriseOrganisationId,
-                                   Long enterprisePatientId,
-                                   Long enterprisePersonId,
-                                   String configName,
-                                   UUID protocolId) throws Exception;
+    public void transform(List<ResourceByExchangeBatch> resources,
+                          OutputContainer data,
+                          AbstractEnterpriseCsvWriter csvWriter,
+                          Map<String, ResourceByExchangeBatch> otherResources,
+                          Long enterpriseOrganisationId,
+                          Long enterprisePatientId,
+                          Long enterprisePersonId,
+                          String configName,
+                          UUID protocolId) throws Exception {
+
+        Map<ResourceByExchangeBatch, Long> enterpriseIds = mapIds(resources, csvWriter, shouldAlwaysTransform());
+
+        for (ResourceByExchangeBatch resource: resources) {
+
+            try {
+                Long enterpriseId = enterpriseIds.get(resource);
+                if (enterpriseId == null) {
+                    continue;
+
+                } else if (resource.getIsDeleted()) {
+                    csvWriter.writeDelete(enterpriseId.longValue());
+
+                } else {
+                    Resource fhir = deserialiseResouce(resource);
+                    transform(enterpriseId, fhir, data, csvWriter, otherResources, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName, protocolId);
+                }
+            } catch (Exception ex) {
+                throw new TransformException("Exception transforming " + resource.getResourceType() + " " + resource.getResourceId(), ex);
+            }
+        }
+    }
+
+    public abstract boolean shouldAlwaysTransform();
 
     public abstract void transform(Long enterpriseId,
                                    Resource resource,
@@ -122,11 +145,25 @@ public abstract class AbstractTransformer {
         return ret;
     }
 
-    private static Long checkCacheForId(String enterpriseTableName, String resourceType, String resourceId) throws Exception {
-        return (Long)cache.get(enterpriseTableName + ":" + resourceType + "/" + resourceId);
+    private static String createCacheKey(String enterpriseTableName, String resourceType, String resourceId) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(enterpriseTableName);
+        sb.append(":");
+        sb.append(resourceType);
+        sb.append("/");
+        sb.append(resourceId);
+        return sb.toString();
     }
+
+    private static Long checkCacheForId(String enterpriseTableName, String resourceType, String resourceId) throws Exception {
+        return (Long)cache.get(createCacheKey(enterpriseTableName, resourceType, resourceId));
+    }
+
     private static void addIdToCache(String enterpriseTableName, String resourceType, String resourceId, Long toCache) throws Exception {
-        cache.put(enterpriseTableName + ":" + resourceType + "/" + resourceId, toCache);
+        if (toCache == null) {
+            return;
+        }
+        cache.put(createCacheKey(enterpriseTableName, resourceType, resourceId), toCache);
     }
 
     public static Resource deserialiseResouce(ResourceByExchangeBatch resourceByExchangeBatch) throws Exception {
@@ -184,26 +221,71 @@ public abstract class AbstractTransformer {
         }
     }
 
+    protected static Map<ResourceByExchangeBatch, Long> mapIds(List<ResourceByExchangeBatch> resources, AbstractEnterpriseCsvWriter csvWriter, boolean createIfNotFound) throws Exception {
 
-    /*private static int getNextId(String enterpriseTableName) {
+        Map<ResourceByExchangeBatch, Long> ids = new HashMap<>();
 
-        AtomicInteger ai = maxIdMap.get(enterpriseTableName);
-        if (ai == null) {
-            futuresLock.lock();
+        String enterpriseTableName = csvWriter.getFileNameWithoutExtension();
 
-            try {
-                ai = maxIdMap.get(enterpriseTableName);
-                if (ai == null) {
-                    int lastVal = idMappingRepository.getMaxEnterpriseId(enterpriseTableName);
-                    ai = new AtomicInteger(lastVal);
-                    maxIdMap.put(enterpriseTableName, ai);
-                }
-            } finally {
-                futuresLock.unlock();
+        //first, try to find existing IDs for our resources in our memory cache
+        findEnterpriseIdsInCache(enterpriseTableName, resources, ids);
+
+        List<ResourceByExchangeBatch> resourcesToFindOnDb = new ArrayList<>();
+        List<ResourceByExchangeBatch> resourcesToFindOrCreateOnDb = new ArrayList<>();
+
+        for (ResourceByExchangeBatch resource: resources) {
+
+            //if our memory cache contained this ID, then skip it
+            if (ids.containsKey(resource)) {
+                continue;
+            }
+
+            //if we didn't find an ID in memory, then we'll either want to simply find on the DB or find and create on the DB
+            if (resource.getIsDeleted()
+                    || !createIfNotFound) {
+                resourcesToFindOnDb.add(resource);
+
+            } else {
+                resourcesToFindOrCreateOnDb.add(resource);
             }
         }
-        return ai.incrementAndGet();
-    }*/
+
+        //look up any resources we need
+        if (!resourcesToFindOnDb.isEmpty()) {
+            EnterpriseIdHelper.findEnterpriseIds(enterpriseTableName, resourcesToFindOnDb, ids);
+
+            //add them to our cache
+            for (ResourceByExchangeBatch resource: resourcesToFindOnDb) {
+                Long enterpriseId = ids.get(resource);
+                addIdToCache(enterpriseTableName, resource.getResourceType(), resource.getResourceId().toString(), enterpriseId);
+            }
+        }
+
+        //lookup and create any resources we need
+        if (!resourcesToFindOrCreateOnDb.isEmpty()) {
+            EnterpriseIdHelper.findOrCreateEnterpriseIds(enterpriseTableName, resourcesToFindOrCreateOnDb, ids);
+
+            //add them to our cache
+            for (ResourceByExchangeBatch resource: resourcesToFindOrCreateOnDb) {
+                Long enterpriseId = ids.get(resource);
+                addIdToCache(enterpriseTableName, resource.getResourceType(), resource.getResourceId().toString(), enterpriseId);
+            }
+        }
+
+        return ids;
+    }
+
+    private static void findEnterpriseIdsInCache(String enterpriseTableName, List<ResourceByExchangeBatch> resources, Map<ResourceByExchangeBatch, Long> ids) throws Exception {
+
+        for (ResourceByExchangeBatch resource: resources) {
+            Long cachedId = checkCacheForId(enterpriseTableName, resource.getResourceType(), resource.getResourceId().toString());
+            if (cachedId != null) {
+                ids.put(resource, cachedId);
+            }
+        }
+    }
+
+
 
 
     protected Long transformOnDemand(Reference reference,

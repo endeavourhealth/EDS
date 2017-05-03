@@ -19,27 +19,8 @@ public class DiagnosticReportTransformer extends AbstractTransformer {
 
     private static final Logger LOG = LoggerFactory.getLogger(DiagnosticReportTransformer.class);
 
-    public void transform(ResourceByExchangeBatch resource,
-                          OutputContainer data,
-                          AbstractEnterpriseCsvWriter csvWriter,
-                          Map<String, ResourceByExchangeBatch> otherResources,
-                          Long enterpriseOrganisationId,
-                          Long enterprisePatientId,
-                          Long enterprisePersonId,
-                          String configName,
-                          UUID protocolId) throws Exception {
-
-        Long enterpriseId = mapId(resource, csvWriter, true);
-        if (enterpriseId == null) {
-            return;
-
-        } else if (resource.getIsDeleted()) {
-            csvWriter.writeDelete(enterpriseId.longValue());
-
-        } else {
-            Resource fhir = deserialiseResouce(resource);
-            transform(enterpriseId, fhir, data, csvWriter, otherResources, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName, protocolId);
-        }
+    public boolean shouldAlwaysTransform() {
+        return true;
     }
 
     public void transform(Long enterpriseId,

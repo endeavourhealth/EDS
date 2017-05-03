@@ -1,6 +1,8 @@
 package org.endeavourhealth.transform.enterprise.transforms;
 
 import org.endeavourhealth.common.fhir.FhirExtensionUri;
+import org.endeavourhealth.common.fhir.ReferenceComponents;
+import org.endeavourhealth.common.fhir.ReferenceHelper;
 import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.enterprise.outputModels.AbstractEnterpriseCsvWriter;
@@ -17,27 +19,8 @@ public class AppointmentTransformer extends AbstractTransformer {
 
     private static final Logger LOG = LoggerFactory.getLogger(AppointmentTransformer.class);
 
-    public void transform(ResourceByExchangeBatch resource,
-                          OutputContainer data,
-                          AbstractEnterpriseCsvWriter csvWriter,
-                          Map<String, ResourceByExchangeBatch> otherResources,
-                          Long enterpriseOrganisationId,
-                          Long enterprisePatientId,
-                          Long enterprisePersonId,
-                          String configName,
-                          UUID protocolId) throws Exception {
-
-        Long enterpriseId = mapId(resource, csvWriter, true);
-        if (enterpriseId == null) {
-            return;
-
-        } else if (resource.getIsDeleted()) {
-            csvWriter.writeDelete(enterpriseId.longValue());
-
-        } else {
-            Resource fhir = deserialiseResouce(resource);
-            transform(enterpriseId, fhir, data, csvWriter, otherResources, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName, protocolId);
-        }
+    public boolean shouldAlwaysTransform() {
+        return true;
     }
 
     public void transform(Long enterpriseId,
@@ -68,20 +51,19 @@ public class AppointmentTransformer extends AbstractTransformer {
         Date sentIn = null;
         Date left = null;
 
-        /*Long enterprisePatientId = null;
         if (fhir.hasParticipant()) {
             for (Appointment.AppointmentParticipantComponent participantComponent: fhir.getParticipant()) {
                 Reference reference = participantComponent.getActor();
                 ReferenceComponents components = ReferenceHelper.getReferenceComponents(reference);
 
-                if (components.getResourceType() == ResourceType.Patient) {
-                    enterprisePatientId = findEnterpriseId(data.getPatients(), reference);
-
-                } else if (components.getResourceType() == ResourceType.Practitioner) {
+                if (components.getResourceType() == ResourceType.Practitioner) {
                     practitionerId = findEnterpriseId(data.getPractitioners(), reference);
+                    if (practitionerId == null) {
+                        practitionerId = transformOnDemand(reference, data, otherResources, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName, protocolId);
+                    }
                 }
             }
-        }*/
+        }
 
         //the test pack has data that refers to deleted or missing patients, so if we get a null
         //patient ID here, then skip this resource
@@ -104,6 +86,9 @@ public class AppointmentTransformer extends AbstractTransformer {
 
             Reference scheduleReference = fhirSlot.getSchedule();
             scheduleId = findEnterpriseId(data.getSchedules(), scheduleReference);
+            if (scheduleId == null) {
+                scheduleId = transformOnDemand(scheduleReference, data, otherResources, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName, protocolId);
+            }
 
         } else {
             LOG.warn("Failed to find " + slotReference.getReference() + " for " + fhir.getResourceType() + " " + fhir.getId());
