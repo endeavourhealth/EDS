@@ -13,17 +13,6 @@ import {TreeNode} from "angular2-tree-component";
 export class RegionComponent {
     organisations : Organisation[];
     regions : Region[] = [];
-    regionNodes = [];
-    nodes = [];
-    treeData = [];
-
-    options = {
-        allowDrag: true,
-        allowDrop: true,
-        getChildren: (node:TreeNode) => {
-            return this.getChildNode(node);
-        }
-    }
 
     constructor(private $modal: NgbModal,
                 private regionService : RegionService,
@@ -39,21 +28,9 @@ export class RegionComponent {
          .subscribe(
              result => {
                  vm.regions = result;
-                 vm.regionService.getTreeNodes()
-                     .subscribe(
-                         tree => {
-                             vm.treeData = tree;
-                         }
-                     )
              },
             error => vm.log.error('Failed to load organisations', error, 'Load organisations')
          );
-    }
-
-    getChildNode(node : any) {
-        var vm = this;
-        return  vm.regionService.getChildTreeNodes(node.data.itemUuid, node.data.type)
-            .toPromise();
     }
 
     add() {

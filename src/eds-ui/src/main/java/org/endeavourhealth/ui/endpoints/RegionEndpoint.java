@@ -13,7 +13,6 @@ import org.endeavourhealth.core.mySQLDatabase.MapType;
 import org.endeavourhealth.core.mySQLDatabase.models.*;
 import org.endeavourhealth.coreui.endpoints.AbstractEndpoint;
 import org.endeavourhealth.coreui.json.JsonRegion;
-import org.endeavourhealth.coreui.json.JsonTreeNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -172,164 +171,10 @@ public final class RegionEndpoint extends AbstractEndpoint {
                 "get Api Key");
 
         JsonNode json = ConfigManager.getConfigurationAsJson("GoogleMapsAPI");
-       // String apiKey = json.get("apiKey").asText();
+
         return Response
                 .ok()
                 .entity(json)
-                .build();
-    }
-
-    @GET
-    @Produces(MediaType.APPLICATION_JSON)
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Timed(absolute = true, name="EDS-UI.RegionEndpoint.getTreeNodes")
-    @Path("/getTreeNodes")
-    public Response getTreeNodes(@Context SecurityContext sc) throws Exception {
-        super.setLogbackMarkers(sc);
-        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
-                "get Tree Nodes");
-
-        return getTreeNodes();
-    }
-
-    @GET
-    @Produces(MediaType.APPLICATION_JSON)
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Timed(absolute = true, name="EDS-UI.RegionEndpoint.getTreeNodes")
-    @Path("/getChildTreeNodes")
-    public Response getChildTreeNodes(@Context SecurityContext sc, @QueryParam("uuid") String uuid, @QueryParam("type") Short type) throws Exception {
-        super.setLogbackMarkers(sc);
-        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
-                "get Child Tree Nodes");
-
-        return getChildTreeNodes(uuid, type);
-    }
-
-    private Response getTreeNodes() throws Exception {
-
-        List<RegionEntity> regions = RegionEntity.getAllRegions();
-
-        List<JsonTreeNode> tree = new ArrayList<>();
-
-        for (RegionEntity region : regions ) {
-            JsonTreeNode node = new JsonTreeNode();
-            node.setName(region.getName());
-            node.setItemUuid(region.getUuid());
-            node.setId(UUID.randomUUID().toString());
-            node.setHasChildren(true);
-            node.setType(MapType.REGION.getMapType());
-
-            tree.add(node);
-        }
-
-        return Response
-                .ok()
-                .entity(tree)
-                .build();
-    }
-
-
-
-    private Response getChildTreeNodes(String parentUuid, Short type) throws Exception {
-
-        List<MasterMappingEntity> all = MasterMappingEntity.getAllChildMappings(parentUuid, type);
-        List<String> organisationUuids = new ArrayList<>();
-        List<String> serviceUuids = new ArrayList<>();
-        List<String> regionUuids = new ArrayList<>();
-        List<OrganisationEntity> organisations = new ArrayList<>();
-        List<OrganisationEntity> services = new ArrayList<>();
-        List<RegionEntity> regions = new ArrayList<>();
-
-        for (MasterMappingEntity mme : all) {
-            switch (mme.getChildMapTypeId()) {
-                case 0 : serviceUuids.add(mme.getChildUuid());
-                    break;
-                case 1 : organisationUuids.add(mme.getChildUuid());
-                    break;
-                case 2 : regionUuids.add(mme.getChildUuid());
-                    break;
-                default : break;
-            }
-        }
-
-        if (organisationUuids.size() > 0)
-            organisations = OrganisationEntity.getOrganisationsFromList(organisationUuids);
-        if (serviceUuids.size() > 0)
-            services = OrganisationEntity.getOrganisationsFromList(serviceUuids);
-        if (regionUuids.size() > 0)
-            regions = RegionEntity.getRegionsFromList(regionUuids);
-
-        List<JsonTreeNode> tree = new ArrayList<>();
-
-        if (organisations.size() > 0) {
-            JsonTreeNode parentNode = new JsonTreeNode();
-            parentNode.setName("Organisations");
-            parentNode.setId(UUID.randomUUID().toString());
-            parentNode.setHasChildren(true);
-
-            List<JsonTreeNode> children = new ArrayList<>();
-            for (OrganisationEntity org : organisations) {
-                JsonTreeNode node = new JsonTreeNode();
-                node.setName(org.getName());
-                node.setItemUuid(org.getUuid());
-                node.setId(UUID.randomUUID().toString());
-                node.setHasChildren(true);
-                node.setType(MapType.ORGANISATION.getMapType());
-
-                children.add(node);
-            }
-
-            parentNode.setChildren(children);
-            tree.add(parentNode);
-        }
-
-        if (services.size() > 0) {
-            JsonTreeNode parentNode = new JsonTreeNode();
-            parentNode.setName("Services");
-            parentNode.setId(UUID.randomUUID().toString());
-            parentNode.setHasChildren(true);
-
-            List<JsonTreeNode> children = new ArrayList<>();
-            for (OrganisationEntity ser : services) {
-                JsonTreeNode node = new JsonTreeNode();
-                node.setName(ser.getName());
-                node.setItemUuid(ser.getUuid());
-                node.setId(UUID.randomUUID().toString());
-                node.setHasChildren(true);
-                node.setType(MapType.SERVICE.getMapType());
-
-                children.add(node);
-            }
-
-            parentNode.setChildren(children);
-            tree.add(parentNode);
-        }
-
-        if (regions.size() > 0) {
-            JsonTreeNode parentNode = new JsonTreeNode();
-            parentNode.setName("Regions");
-            parentNode.setId(UUID.randomUUID().toString());
-            parentNode.setHasChildren(true);
-
-            List<JsonTreeNode> children = new ArrayList<>();
-            for (RegionEntity reg : regions) {
-                JsonTreeNode node = new JsonTreeNode();
-                node.setName(reg.getName());
-                node.setItemUuid(reg.getUuid());
-                node.setId(UUID.randomUUID().toString());
-                node.setHasChildren(true);
-                node.setType(MapType.REGION.getMapType());
-
-                children.add(node);
-            }
-
-            parentNode.setChildren(children);
-            tree.add(parentNode);
-        }
-
-        return Response
-                .ok()
-                .entity(tree)
                 .build();
     }
 

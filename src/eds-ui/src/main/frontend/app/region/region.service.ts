@@ -5,7 +5,6 @@ import {BaseHttp2Service} from "eds-common-js";
 import {Organisation} from "../organisationManager/models/Organisation";
 import {Region} from "./models/Region";
 import {Dsa} from "../dsa/models/Dsa";
-import {OrganisationNode} from "./models/OrganisationNode";
 
 @Injectable()
 export class RegionService extends BaseHttp2Service  {
@@ -63,16 +62,5 @@ export class RegionService extends BaseHttp2Service  {
 
     getAPIKey() : Observable<any> {
         return this.httpGet('api/region/getApiKey');
-    }
-
-    getTreeNodes() : Observable<OrganisationNode[]> {
-        return this.httpGet('api/region/getTreeNodes');
-    }
-
-    getChildTreeNodes(uuid : string, type : number) : Observable<OrganisationNode[]> {
-        let params = new URLSearchParams();
-        params.set('uuid',uuid);
-        params.set('type',type.toString());
-        return this.httpGet('api/region/getChildTreeNodes', { search : params });
     }
 }
