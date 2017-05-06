@@ -3,7 +3,7 @@ import {NgbModal} from "@ng-bootstrap/ng-bootstrap";
 import {StateService} from "ui-router-ng2";
 import {Service} from "./models/Service";
 import {ServiceService} from "./service.service";
-import {LoggerService, MessageBoxDialog} from "eds-common-js";
+import {linq, LoggerService, MessageBoxDialog} from "eds-common-js";
 import {Observable} from "rxjs";
 
 @Component({
@@ -27,7 +27,7 @@ export class ServiceListComponent {
 		vm.serviceService.getAll()
 			.subscribe(
 				(result) => {
-					vm.services = result;
+					vm.services = linq(result).OrderBy(s => s.name).ToArray();
 					vm.startRefreshTimersIfNecessary();
 				},
 				(error) => vm.log.error('Failed to load services', error, 'Load services')

@@ -89,7 +89,7 @@
 								</thead>
 								<tbody>
 								<tr class="hover-box show-child-on-hover"
-									*ngFor="let item of libraryItem.protocol.serviceContract"
+									*ngFor="let item of getServiceContracts()"
 									(click)="selectedContract = item;"
 									[ngClass]="{'selection': item == selectedContract}">
 									<td>{{item.type}}</td>

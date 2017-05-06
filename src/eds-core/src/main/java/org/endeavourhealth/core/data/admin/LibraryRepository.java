@@ -8,11 +8,15 @@ import org.endeavourhealth.core.data.admin.models.Item;
 import org.endeavourhealth.core.data.admin.models.Audit;
 import org.endeavourhealth.core.data.admin.models.ActiveItem;
 import org.endeavourhealth.core.data.admin.models.ItemDependency;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.UUID;
 
 public class LibraryRepository extends Repository {
+		private static final Logger LOG = LoggerFactory.getLogger(LibraryRepository.class);
+
     public void save(List<Object> entities){
 
         Mapper<Item> mapperLibraryItem = getMappingManager().mapper(Item.class);
@@ -38,6 +42,8 @@ public class LibraryRepository extends Repository {
             }
 
         }
+
+        LOG.trace("Saving batch of " + batch.size() + " items.");
 
         getSession().execute(batch);
     }

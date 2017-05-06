@@ -5,7 +5,7 @@ import {System} from "../system/models/System";
 import {TechnicalInterface} from "../system/models/TechnicalInterface";
 import {DataSet} from "../dataSet/models/Dataset";
 import {ServiceService} from "../services/service.service";
-import {AdminService, LibraryService, LoggerService} from "eds-common-js";
+import {AdminService, LibraryService, linq, LoggerService} from "eds-common-js";
 import {NgbModal} from "@ng-bootstrap/ng-bootstrap";
 import {Transition, StateService} from "ui-router-ng2";
 import {Component} from "@angular/core";
@@ -233,5 +233,12 @@ export class ProtocolEditComponent {
 		var p = this.libraryItem.protocol;
 		var cohort = p.cohort;
 		return cohort == 'Defining Services';
+	}
+
+	getServiceContracts() {
+		return linq(this.libraryItem.protocol.serviceContract)
+			.OrderBy(sc => sc.type)
+			.ThenBy(sc => sc.service.name)
+			.ToArray();
 	}
 }
