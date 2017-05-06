@@ -168,7 +168,7 @@ export class ProtocolEditComponent {
 		var vm = this;
 		vm.serviceService.getAll()
 			.subscribe(
-				(result) => vm.services = result,
+				(result) => vm.services = linq(result).OrderBy(s => s.name).ToArray(),
 				(error) => vm.logger.error('Failed to load services', error, 'Load services')
 			);
 	}
@@ -186,7 +186,7 @@ export class ProtocolEditComponent {
 		var vm = this;
 		vm.dataSetService.getDatasets()
 			.subscribe(
-				(result) => vm.dataSets = result,
+				(result) => vm.dataSets = linq(result).OrderBy(ds => ds.name).ToArray(),
 				(error) => vm.logger.error('Failed to load dataSets', error, 'Load dataSets')
 			);
 
@@ -208,9 +208,9 @@ export class ProtocolEditComponent {
 			);
 	}
 
-	private processSystems(systems) {
+	private processSystems(systems:System[]) {
 		var vm = this;
-		vm.systems = systems;
+		vm.systems = linq(systems).OrderBy(s => s.name).ToArray();
 		vm.technicalInterfaces = [];
 		console.log(vm.systems[0].technicalInterface.length);
 		console.log(vm.systems[0].technicalInterface[0].name);
@@ -227,6 +227,7 @@ export class ProtocolEditComponent {
 				vm.technicalInterfaces.push(technicalInterface);
 			}
 		}
+		vm.technicalInterfaces = linq(vm.technicalInterfaces).OrderBy(ti => ti.name).ToArray();
 	}
 
 	isCohortDefinedByServices(): boolean {
