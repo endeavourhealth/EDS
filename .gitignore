@@ -324,3 +324,6 @@ index.d.ts
 **/typings/globals
 
 id_file
+
+# Ignore vagrant-created database directory <-- added Marcus Baw 08.05.2017
+database/

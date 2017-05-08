@@ -28,6 +28,7 @@ Vagrant.configure("2") do |config|
   # config.vm.network "public_network"
 
   config.vm.synced_folder ".", "/vagrant"
+  # config.vm.synced_folder "./database/eds-data", "/vagrant/database/eds-data", owner: "postgres", group: "postgres", create: "true"
 
   config.vm.provider "virtualbox" do |vb|
     # Display the VirtualBox GUI when booting the machine
@@ -52,7 +53,7 @@ Vagrant.configure("2") do |config|
 
   # java SDK
   config.vm.provision :shell, inline: "sudo apt-get -y install openjdk-8-jdk"
-  config.vm.provision :shell, inline: "sudo apt-get -y install maven"
+  config.vm.provision :shell, inline: "sudo apt-get -y install maven postgresql"
   # nodejs
   config.vm.provision "shell", path: "./install-node.sh"
   # install docker

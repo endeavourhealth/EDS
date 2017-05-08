@@ -1,17 +1,36 @@
 version: '3'
 
+volumes:
+  db-data:
+
 services:
+  # EDS app is created from a Tomcat container base
+  # volumes on the vagrant box are mapped to relevant parts of it so we never need to enter it
   eds-app:
-    build: .
-    volumes:
-      - /vagrant/:/usr/local/tomcat/webapps
     image: tomcat:9-jre8
+    volumes:
+      - /vagrant/src/eds-ui/target/ROOT.war:/usr/local/tomcat/webapps/ROOT.war
+      - /vagrant/src/eds-user-manager/target/user-manager.war:/usr/local/tomcat/webapps/user-manager.war
+      - /vagrant/src/eds-messaging-api/target/messaging.war:/usr/local/tomcat/webapps/messaging.war
+      - /vagrant/keycloak-libs:/usr/local/tomcat/lib
     ports:
       - "8080:8080"
+    network_mode: "host"
 
+  # the following services are loaded as standard Docker containers, as distributed by their sources
+  # eg Cassandra Docker image comes from ASF
   rabbitmq:
     image: rabbitmq:3
+
   cassandra:
     image: cassandra:latest
+
   postgres:
+    network_mode: "host"
     image: postgres:9.5
+    environment:
+      - POSTGRES_USER:'postgres'
+      - POSTGRES_PASSWORD:''
+    volumes:
+      - db-data:/var/lib/postgresql/data
+      - /vagrant/src/database/sql:/vagrant/src/database/sql
