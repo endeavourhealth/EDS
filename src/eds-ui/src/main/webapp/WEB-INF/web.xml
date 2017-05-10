@@ -107,7 +107,7 @@
         <filter-class>org.apache.catalina.filters.CorsFilter</filter-class>
         <init-param>
             <param-name>cors.allowed.origins</param-name>
-            <param-value>http://10.44.112.51:8080 https://eds.endeavourhealth.net/</param-value>
+            <param-value>http://10.44.112.51:8080 https://eds.endeavourhealth.net</param-value>
         </init-param>
         <init-param>
             <param-name>cors.allowed.methods</param-name>
