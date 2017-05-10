@@ -11,9 +11,10 @@ You will need the following installed on your development machine
 * enough RAM to run a 3Gb Virtualbox machine
 
 `git clone git@github.com:endeavourhealth/EDS.git`
+
 **Important** Make sure you are using the develop branch.
-git checkout develop
-vagrant up
+`git checkout develop`
+`vagrant up`
 
 ### Java
 openJDK8 and Maven is provisioned automatically to the Vagrant box using apt-get, so that the build can take place in the standardised environment of the VM. (There's nothing stopping you doing the build on your development machine, but therein is created some opportunity for inconsistency or hard-to-debug errors due to Java and Maven versions)
