@@ -13,7 +13,9 @@ You will need the following installed on your development machine
 `git clone git@github.com:endeavourhealth/EDS.git`
 
 **Important** Make sure you are using the develop branch.
+
 `git checkout develop`
+
 `vagrant up`
 
 ### Java
