@@ -11,6 +11,7 @@ public class JsonPostToExchangeRequest {
     private UUID serviceId;
     private String exchangeName;
     private boolean postAllExchanges;
+    private UUID specificProtocolId;
 
     public JsonPostToExchangeRequest() {}
 
@@ -44,5 +45,13 @@ public class JsonPostToExchangeRequest {
 
     public void setPostAllExchanges(boolean postAllExchanges) {
         this.postAllExchanges = postAllExchanges;
+    }
+
+    public UUID getSpecificProtocolId() {
+        return specificProtocolId;
+    }
+
+    public void setSpecificProtocolId(UUID specificProtocolId) {
+        this.specificProtocolId = specificProtocolId;
     }
 }

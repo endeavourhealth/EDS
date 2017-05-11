@@ -32,7 +32,7 @@ import java.util.stream.Collectors;
 public class QueueHelper {
     private static final Logger LOG = LoggerFactory.getLogger(QueueHelper.class);
 
-    public static void postToExchange(UUID exchangeId, String exchangeName) throws Exception {
+    public static void postToExchange(UUID exchangeId, String exchangeName, UUID specificProtocolId) throws Exception {
 
         PostMessageToExchangeConfig exchangeConfig = findExchangeConfig(exchangeName);
         if (exchangeConfig == null) {
@@ -49,6 +49,29 @@ public class QueueHelper {
         if (!newProtocolIdsJson.equals(oldProtocolIdsJson)) {
             exchange.setHeader(HeaderKeys.ProtocolIds, newProtocolIdsJson);
             AuditWriter.writeExchange(exchange);
+        }
+
+        //if we want to restrict the protocols applied (e.g. only want to populate a specific subscriber)
+        //then filter the protocols in the header
+        if (specificProtocolId != null) {
+
+            //validate the selected protocol does apply to this exchange
+            boolean foundInHeader = false;
+            String[] protocolIds = exchange.getHeaderAsStringArray(HeaderKeys.ProtocolIds);
+            for (String protocolId: protocolIds) {
+                if (protocolId.equals(specificProtocolId.toString())) {
+                    foundInHeader = true;
+                    break;
+                }
+            }
+
+            if (!foundInHeader) {
+                throw new BadRequestException("Restricting to protocol " + specificProtocolId + " but that doesn't apply to exchange " + exchangeId);
+            }
+
+            String[] specificProtocolArr = new String[]{specificProtocolId.toString()};
+            String specificProtocolJson = ObjectMapperPool.getInstance().writeValueAsString(specificProtocolArr);
+            exchange.setHeader(HeaderKeys.ProtocolIds, specificProtocolJson);
         }
 
         //work out what multicast header we need

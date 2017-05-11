@@ -130,6 +130,12 @@
                                 <input type="checkbox" [(ngModel)]="postAllExchanges" [disabled]="busyPostingToExchange" (click)="checkboxChanged()">
                                 Do ALL Exchanges
 
+                                <!--<select id="protocol" class="form-control" [(ngModel)]="postSpecificProtocol" name="protocolId">-->
+                                <select id="protocol" [(ngModel)]="postSpecificProtocol" name="protocolId">
+                                    <option value="">--All Protocols--</option>
+                                    <option *ngFor="let protocol of protocols" value="{{protocol.id}}">{{protocol.name}}</option>
+                                </select>
+
                                 <span class="fa fa-sm fa-refresh fa-refresh-animate" *ngIf="busyPostingToExchange"></span>
                             </div>
                         </div>

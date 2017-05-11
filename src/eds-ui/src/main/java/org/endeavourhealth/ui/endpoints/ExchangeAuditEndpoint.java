@@ -8,6 +8,7 @@ import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.common.security.SecurityUtils;
 import org.endeavourhealth.common.security.annotations.RequiresAdmin;
 import org.endeavourhealth.core.data.admin.LibraryRepository;
+import org.endeavourhealth.core.data.admin.LibraryRepositoryHelper;
 import org.endeavourhealth.core.data.admin.ServiceRepository;
 import org.endeavourhealth.core.data.admin.models.ActiveItem;
 import org.endeavourhealth.core.data.admin.models.Item;
@@ -17,6 +18,7 @@ import org.endeavourhealth.core.data.audit.UserAuditRepository;
 import org.endeavourhealth.core.data.audit.models.*;
 import org.endeavourhealth.core.messaging.exchange.HeaderKeys;
 import org.endeavourhealth.core.queueing.QueueHelper;
+import org.endeavourhealth.core.xml.QueryDocument.*;
 import org.endeavourhealth.core.xml.TransformErrorSerializer;
 import org.endeavourhealth.core.xml.transformError.Arg;
 import org.endeavourhealth.core.xml.transformError.Error;
@@ -231,21 +233,24 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
                 "Exchange ID", request.getExchangeId(),
                 "Service ID", request.getServiceId(),
                 "Exchange Name", request.getExchangeName(),
-                "Post All", request.isPostAllExchanges());
+                "Post All", request.isPostAllExchanges(),
+                "Protocol ID", request.getSpecificProtocolId());
 
         UUID selectedExchangeId = request.getExchangeId();
         UUID serviceId = request.getServiceId();
         String exchangeName = request.getExchangeName();
         boolean postAllExchanges = request.isPostAllExchanges();
+        UUID specificProtocolId = request.getSpecificProtocolId();
+
         if (postAllExchanges) {
 
             List<UUID> exchangeIds = auditRepository.getExchangeIdsForService(serviceId);
             for (UUID exchangeId: exchangeIds) {
-                QueueHelper.postToExchange(exchangeId, exchangeName);
+                QueueHelper.postToExchange(exchangeId, exchangeName, specificProtocolId);
             }
 
         } else {
-            QueueHelper.postToExchange(selectedExchangeId, exchangeName);
+            QueueHelper.postToExchange(selectedExchangeId, exchangeName, specificProtocolId);
         }
 
         clearLogbackMarkers();
@@ -552,7 +557,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
             auditRepository.save(audit);
 
             //then re-submit the exchange to Rabbit MQ for the queue reader to pick up
-            QueueHelper.postToExchange(exchangeId, "EdsInbound");
+            QueueHelper.postToExchange(exchangeId, "EdsInbound", null);
 
             //if we only want to re-queue the first exchange, then break out
             if (firstOnly) {
@@ -625,5 +630,52 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
                 .ok()
                 .build();
     }*/
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.ExchangeAuditEndpoint.GetProtocolsForService")
+    @Path("/getProtocolsForService")
+    public Response getProtocolsForService(@Context SecurityContext sc,
+                                           @QueryParam("serviceId") String serviceIdStr) throws Exception {
+        super.setLogbackMarkers(sc);
+
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
+                "Get Protocols For Service",
+                "Service Id", serviceIdStr);
+
+        List<JsonProtocol> ret = new ArrayList<>();
+
+        List<LibraryItem> libraryItems = LibraryRepositoryHelper.getProtocolsByServiceId(serviceIdStr);
+        for (LibraryItem libraryItem: libraryItems) {
+            Protocol protocol = libraryItem.getProtocol();
+
+            //only return active protocols
+            if (protocol.getEnabled() == ProtocolEnabled.TRUE) {
+
+                //only return protocols with an active service contract for our service
+                for (ServiceContract serviceContract : protocol.getServiceContract()) {
+                    if (serviceContract.getService().getUuid().equals(serviceIdStr)
+                        && serviceContract.getActive() == ServiceContractActive.TRUE) {
+
+                        JsonProtocol json = new JsonProtocol();
+                        json.setId(UUID.fromString(libraryItem.getUuid()));
+                        json.setName(libraryItem.getName());
+                        ret.add(json);
+                        break;
+                    }
+                }
+            }
+        }
+
+        clearLogbackMarkers();
+
+        return Response
+                .ok()
+                .entity(ret)
+                .build();
+    }
+
+
 }
 

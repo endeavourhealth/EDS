@@ -9,6 +9,7 @@ import {ServiceService} from "../services/service.service";
 import {Subscription} from "rxjs/Subscription";
 import {TransformErrorDetail} from "./TransformErrorDetail";
 import {TransformErrorsDialog} from "./transformErrors.dialog";
+import {Protocol} from "./Protocol";
 
 @Component({
 	template : require('./exchangeAudit.html')
@@ -26,11 +27,11 @@ export class ExchangeAuditComponent {
 
 	//results
 	exchanges: Exchange[];
+	protocols: Protocol[];
 	selectedExchange: Exchange;
 	busyPostingToExchange: Subscription;
-	//busyTestingPost: Subscription;
-
 	postAllExchanges: boolean;
+	postSpecificProtocol: string;
 
 
 	constructor(private $modal : NgbModal,
@@ -51,6 +52,7 @@ export class ExchangeAuditComponent {
 				(result) => {
 					this.service = result;
 					this.refreshExchanges();
+					this.refreshProtocols();
 				},
 				(error) => log.error('Failed to retrieve service', error, 'Refresh Service')
 			)
@@ -60,6 +62,18 @@ export class ExchangeAuditComponent {
 
 	close() {
 		this.$window.go(this.transition.from());
+	}
+
+	refreshProtocols() {
+		var vm = this;
+		var serviceId = vm.service.uuid;
+
+		this.exchangeAuditService.getProtocolsList(serviceId).subscribe(
+			(result) => {
+				vm.protocols = result;
+			},
+			(error) => vm.log.error('Failed to retrieve protocols', error, 'Get Protocols')
+		);
 	}
 
 	refreshExchanges() {
@@ -195,7 +209,7 @@ export class ExchangeAuditComponent {
 		var exchangeId = vm.selectedExchange.exchangeId;
 		var serviceId = this.service.uuid;
 
-		this.busyPostingToExchange = vm.exchangeAuditService.postToExchange(exchangeId, serviceId, exchangeName, this.postAllExchanges).subscribe(
+		this.busyPostingToExchange = vm.exchangeAuditService.postToExchange(exchangeId, serviceId, exchangeName, this.postAllExchanges, this.postSpecificProtocol).subscribe(
 			(result) => {
 				vm.log.success('Successfully posted to ' + exchangeName + ' exchange', 'Post to Exchange');
 

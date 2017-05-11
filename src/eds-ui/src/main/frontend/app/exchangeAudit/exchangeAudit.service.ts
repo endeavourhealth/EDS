@@ -6,6 +6,7 @@ import {Exchange} from "./Exchange";
 import {ExchangeEvent} from "./ExchangeEvent";
 import {TransformErrorSummary} from "./TransformErrorSummary";
 import {TransformErrorDetail} from "./TransformErrorDetail";
+import {Protocol} from "./Protocol";
 
 @Injectable()
 export class ExchangeAuditService extends BaseHttp2Service {
@@ -48,12 +49,13 @@ export class ExchangeAuditService extends BaseHttp2Service {
         return this.httpGet('api/exchangeAudit/getExchangeEvents', { search : params});
     }
 
-    postToExchange(exchangeId: string, serviceId: string, exchangeName: string, postAllExchanges: boolean):Observable<any> {
+    postToExchange(exchangeId: string, serviceId: string, exchangeName: string, postAllExchanges: boolean, postSpecificProtocol: string):Observable<any> {
         var request = {
             'exchangeId': exchangeId,
             'serviceId': serviceId,
             'exchangeName': exchangeName,
-            'postAllExchanges': postAllExchanges
+            'postAllExchanges': postAllExchanges,
+            'specificProtocolId': postSpecificProtocol
         };
         return this.httpPost('api/exchangeAudit/postToExchange', request);
     }
@@ -109,4 +111,12 @@ export class ExchangeAuditService extends BaseHttp2Service {
         console.log("Post test in service class");
         return this.httpPost('api/exchangeAudit/postTest', request);
     }*/
+
+    getProtocolsList(serviceId:string) : Observable<Protocol[]> {
+
+        var params = new URLSearchParams();
+        params.append('serviceId', serviceId);
+
+        return this.httpGet('api/exchangeAudit/getProtocolsForService', { search : params});
+    }
 }
