@@ -29,7 +29,7 @@ public class EpisodeOfCareTransformer extends AbstractTransformer {
                           Long enterpriseOrganisationId,
                           Long enterprisePatientId,
                           Long enterprisePersonId,
-                          String configName,
+                          String enterpriseConfigName,
                           UUID protocolId) throws Exception {
 
         EpisodeOfCare fhirEpisode = (EpisodeOfCare)resource;
@@ -51,9 +51,9 @@ public class EpisodeOfCareTransformer extends AbstractTransformer {
 
         if (fhirEpisode.hasCareManager()) {
             Reference practitionerReference = fhirEpisode.getCareManager();
-            usualGpPractitionerId = findEnterpriseId(data.getPractitioners(), practitionerReference);
+            usualGpPractitionerId = findEnterpriseId(enterpriseConfigName, practitionerReference);
             if (usualGpPractitionerId == null) {
-                usualGpPractitionerId = transformOnDemand(practitionerReference, data, otherResources, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName, protocolId);
+                usualGpPractitionerId = transformOnDemand(practitionerReference, data, otherResources, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, enterpriseConfigName, protocolId);
             }
         }
 

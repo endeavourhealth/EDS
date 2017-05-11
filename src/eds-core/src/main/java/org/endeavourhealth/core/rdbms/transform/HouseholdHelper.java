@@ -11,7 +11,7 @@ import java.util.List;
 
 public class HouseholdHelper {
 
-    public static Long findOrCreateHouseholdId(Address address) throws Exception {
+    public static Long findOrCreateHouseholdId(String enterpriseConfigName, Address address) throws Exception {
 
         //the postcode is enough to get us to a small area,
         //so we don't need to match on town or city, but since
@@ -51,7 +51,7 @@ public class HouseholdHelper {
         }
 
 
-        EntityManager entityManager = TransformConnection.getEntityManager();
+        EntityManager entityManager = TransformConnection.getEntityManager(enterpriseConfigName);
 
         Long ret = findHouseholdId(postcode, line1, line2, entityManager);
         if (ret != null) {

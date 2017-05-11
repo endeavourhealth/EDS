@@ -5,10 +5,13 @@ INSERT INTO config
 VALUES
 ('enterprise', 'patient_database', '{
   "driverClass" : "org.postgresql.Driver",
-	"username" : "postgres",
-	"password" : "",
-	"url"	: "jdbc:postgresql://localhost:5432/enterprise_data",
-	"pseudonymised": false
+	"enterprise_username" : "postgres",
+	"enterprise_password" : "",
+	"enterprise_url"	: "jdbc:postgresql://localhost:5432/enterprise_data",
+	"pseudonymised": false,
+	"transform_username" : "postgres",
+	"transform_password" : "",
+	"transform_url"	: "jdbc:postgresql://localhost:5432/transform_enterprise_pi"
 }' );
 
 INSERT INTO config
@@ -29,10 +32,13 @@ INSERT INTO config
 VALUES
 ('enterprise', 'patient_database', '{
   "driverClass" : "com.mysql.jdbc.Driver",
-	"username" : "root",
-	"password" : "",
-	"url"	: "jdbc:mysql://localhost:3306/enterprise_data_pseudonymised?useSSL=false",
-	"pseudonymised": false
+	"enterprise_username" : "root",
+	"enterprise_password" : "",
+	"enterprise_url"	: "jdbc:mysql://localhost:3306/enterprise_data_pseudonymised?useSSL=false",
+	"pseudonymised": false,
+	"transform_username" : "postgres",
+	"transform_password" : "",
+	"transform_url"	: "jdbc:postgresql://localhost:5432/transform_enterprise_pi"
 }' );
 
 INSERT INTO config

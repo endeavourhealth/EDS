@@ -7,14 +7,17 @@ import {NgbModal, NgbActiveModal, NgbModalOptions} from "@ng-bootstrap/ng-bootst
 	template : require('./queueingEditor.html')
 })
 export class QueueEditDialog {
+
 	public static open(modalService: NgbModal, routing : Routing) {
 		const modalRef = modalService.open(QueueEditDialog, { backdrop : "static"} as NgbModalOptions);
 		modalRef.componentInstance.resultData = jQuery.extend(true, [], routing);
+		modalRef.componentInstance.allowEditingExchange = !(routing.exchangeName && routing.exchangeName.length > 0);
 
 		return modalRef;
 	}
 
 	@Input() resultData : Routing;
+	@Input() allowEditingExchange: boolean;
 
 	constructor(public activeModal: NgbActiveModal) {
 	}

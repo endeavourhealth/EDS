@@ -7,9 +7,9 @@ import java.util.Date;
 
 public class EnterprisePersonUpdateHelper {
 
-    public static Date findDatePersonUpdaterLastRun() throws Exception {
+    public static Date findDatePersonUpdaterLastRun(String enterpriseConfigName) throws Exception {
 
-        EntityManager entityManager = TransformConnection.getEntityManager();
+        EntityManager entityManager = TransformConnection.getEntityManager(enterpriseConfigName);
 
         String sql = "select c"
                 + " from"
@@ -31,12 +31,12 @@ public class EnterprisePersonUpdateHelper {
         }
     }
 
-    public static void updatePersonUpdaterLastRun(Date d) throws Exception {
+    public static void updatePersonUpdaterLastRun(String enterpriseConfigName, Date d) throws Exception {
 
         EnterprisePersonUpdateHistory history = new EnterprisePersonUpdateHistory();
         history.setDateRun(d);
 
-        EntityManager entityManager = TransformConnection.getEntityManager();
+        EntityManager entityManager = TransformConnection.getEntityManager(enterpriseConfigName);
 
         try {
             entityManager.getTransaction().begin();

@@ -7,11 +7,11 @@ import javax.persistence.Table;
 import java.io.Serializable;
 
 @Entity
-@Table(name = "pseudo_id_map", schema = "public", catalog = "transform")
+@Table(name = "pseudo_id_map", schema = "public")
 public class PseudoIdMap implements Serializable {
 
     private String patientId = null;
-    private String enterpriseConfigName = null;
+    //private String enterpriseConfigName = null;
     private String pseudoId = null;
 
     @Id
@@ -24,7 +24,7 @@ public class PseudoIdMap implements Serializable {
         this.patientId = patientId;
     }
 
-    @Id
+    /*@Id
     @Column(name = "enterprise_config_name", nullable = false)
     public String getEnterpriseConfigName() {
         return enterpriseConfigName;
@@ -32,7 +32,7 @@ public class PseudoIdMap implements Serializable {
 
     public void setEnterpriseConfigName(String enterpriseConfigName) {
         this.enterpriseConfigName = enterpriseConfigName;
-    }
+    }*/
 
     @Column(name = "pseudo_id", nullable = false)
     public String getPseudoId() {

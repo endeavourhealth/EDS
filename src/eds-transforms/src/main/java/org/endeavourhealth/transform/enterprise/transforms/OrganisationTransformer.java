@@ -30,7 +30,7 @@ public class OrganisationTransformer extends AbstractTransformer {
                           Long enterpriseOrganisationId,
                           Long enterprisePatientId,
                           Long enterprisePersonId,
-                          String configName,
+                          String enterpriseConfigName,
                           UUID protocolId) throws Exception {
 
         org.hl7.fhir.instance.model.Organization fhir = (org.hl7.fhir.instance.model.Organization)resource;
@@ -66,9 +66,9 @@ public class OrganisationTransformer extends AbstractTransformer {
 
         if (fhir.hasPartOf()) {
             Reference partOfReference = fhir.getPartOf();
-            parentOrganisationId = findEnterpriseId(data.getOrganisations(), partOfReference);
+            parentOrganisationId = findEnterpriseId(enterpriseConfigName, partOfReference);
             if (parentOrganisationId == null) {
-                parentOrganisationId = transformOnDemand(partOfReference, data, otherResources, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName, protocolId);
+                parentOrganisationId = transformOnDemand(partOfReference, data, otherResources, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, enterpriseConfigName, protocolId);
             }
         }
 

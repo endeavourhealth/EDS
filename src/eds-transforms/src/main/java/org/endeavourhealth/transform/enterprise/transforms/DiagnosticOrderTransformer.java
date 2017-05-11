@@ -32,7 +32,7 @@ public class DiagnosticOrderTransformer extends AbstractTransformer {
                           Long enterpriseOrganisationId,
                           Long enterprisePatientId,
                           Long enterprisePersonId,
-                          String configName,
+                          String enterpriseConfigName,
                           UUID protocolId) throws Exception {
 
         DiagnosticOrder fhir = (DiagnosticOrder)resource;
@@ -60,14 +60,14 @@ public class DiagnosticOrderTransformer extends AbstractTransformer {
 
         if (fhir.hasEncounter()) {
             Reference encounterReference = fhir.getEncounter();
-            encounterId = findEnterpriseId(data.getEncounters(), encounterReference);
+            encounterId = findEnterpriseId(enterpriseConfigName, encounterReference);
         }
 
         if (fhir.hasOrderer()) {
             Reference practitionerReference = fhir.getOrderer();
-            practitionerId = findEnterpriseId(data.getPractitioners(), practitionerReference);
+            practitionerId = findEnterpriseId(enterpriseConfigName, practitionerReference);
             if (practitionerId == null) {
-                practitionerId = transformOnDemand(practitionerReference, data, otherResources, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName, protocolId);
+                practitionerId = transformOnDemand(practitionerReference, data, otherResources, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, enterpriseConfigName, protocolId);
             }
         }
 

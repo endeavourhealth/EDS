@@ -169,12 +169,29 @@ public class PostMessageToExchange extends PipelineComponent {
 		}
 	}*/
 
-	private String getRoutingKey(Exchange exchange) {
+	private String getRoutingKey(Exchange exchange) throws PipelineException {
+
+		//get the value we're routing on
+		String routingValue = null;
+
+		String routingHeader = config.getRoutingHeader();
+		if (!Strings.isNullOrEmpty(routingHeader)) {
+			routingValue = exchange.getHeader(routingHeader);
+		}
+
+		if (Strings.isNullOrEmpty(routingValue)) {
+			throw new PipelineException("Failed to find routing value for " + routingHeader + " in exchange " + exchange);
+		}
+
+		String exchangeName = config.getExchange();
+		return RoutingManager.getInstance().getRoutingKeyForIdentifier(exchangeName, routingValue);
+	}
+	/*private String getRoutingKey(Exchange exchange) {
 		String routingIdentifier = "Unknown";
 
 		if (config.getRoutingHeader() != null && !config.getRoutingHeader().isEmpty())
 			routingIdentifier = exchange.getHeader(config.getRoutingHeader());
 
 		return RoutingManager.getInstance().getRoutingKeyForIdentifier(routingIdentifier);
-	}
+	}*/
 }

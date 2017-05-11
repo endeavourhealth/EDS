@@ -8,7 +8,7 @@ import java.io.Serializable;
 import java.util.Date;
 
 @Entity
-@Table(name = "enterprise_person_update_history", schema = "public", catalog = "transform")
+@Table(name = "enterprise_person_update_history", schema = "public")
 public class EnterprisePersonUpdateHistory implements Serializable {
 
     private Date dateRun = null;

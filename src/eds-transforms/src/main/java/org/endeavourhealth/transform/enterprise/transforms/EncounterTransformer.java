@@ -31,7 +31,7 @@ public class EncounterTransformer extends AbstractTransformer {
                           Long enterpriseOrganisationId,
                           Long enterprisePatientId,
                           Long enterprisePersonId,
-                          String configName,
+                          String enterpriseConfigName,
                           UUID protocolId) throws Exception {
 
         Encounter fhir = (Encounter)resource;
@@ -71,9 +71,9 @@ public class EncounterTransformer extends AbstractTransformer {
 
                 if (primary) {
                     Reference practitionerReference = participantComponent.getIndividual();
-                    practitionerId = findEnterpriseId(data.getPractitioners(), practitionerReference);
+                    practitionerId = findEnterpriseId(enterpriseConfigName, practitionerReference);
                     if (practitionerId == null) {
-                        practitionerId = transformOnDemand(practitionerReference, data, otherResources, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName, protocolId);
+                        practitionerId = transformOnDemand(practitionerReference, data, otherResources, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, enterpriseConfigName, protocolId);
                     }
                 }
             }
@@ -81,7 +81,7 @@ public class EncounterTransformer extends AbstractTransformer {
 
         if (fhir.hasAppointment()) {
             Reference appointmentReference = fhir.getAppointment();
-            appointmentId = findEnterpriseId(data.getAppointments(), appointmentReference);
+            appointmentId = findEnterpriseId(enterpriseConfigName, appointmentReference);
         }
 
         if (fhir.hasPeriod()) {
@@ -112,12 +112,12 @@ public class EncounterTransformer extends AbstractTransformer {
                 throw new TransformException("Can't handle encounters linked to more than one episode of care");
             }
             Reference episodeReference = fhir.getEpisodeOfCare().get(0);
-            episodeOfCareId = findEnterpriseId(data.getEpisodesOfCare(), episodeReference);
+            episodeOfCareId = findEnterpriseId(enterpriseConfigName, episodeReference);
         }
 
         if (fhir.hasServiceProvider()) {
             Reference orgReference = fhir.getServiceProvider();
-            serviceProviderOrganisationId = findEnterpriseId(data.getOrganisations(), orgReference);
+            serviceProviderOrganisationId = findEnterpriseId(enterpriseConfigName, orgReference);
         }
         if (serviceProviderOrganisationId == null) {
             serviceProviderOrganisationId = enterpriseOrganisationId;

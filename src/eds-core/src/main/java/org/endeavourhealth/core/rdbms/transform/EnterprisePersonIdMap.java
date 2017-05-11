@@ -10,11 +10,11 @@ import javax.persistence.Table;
 import java.io.Serializable;
 
 @Entity
-@Table(name = "enterprise_person_id_map", schema = "public", catalog = "transform")
+@Table(name = "enterprise_person_id_map", schema = "public")
 public class EnterprisePersonIdMap implements Serializable {
 
     private String personId = null;
-    private String enterpriseConfigName = null;
+    //private String enterpriseConfigName = null;
     private Long enterprisePersonId;
 
     @Id
@@ -27,7 +27,7 @@ public class EnterprisePersonIdMap implements Serializable {
         this.personId = personId;
     }
 
-    @Id
+    /*@Id
     @Column(name = "enterprise_config_name", nullable = false)
     public String getEnterpriseConfigName() {
         return enterpriseConfigName;
@@ -35,7 +35,7 @@ public class EnterprisePersonIdMap implements Serializable {
 
     public void setEnterpriseConfigName(String enterpriseConfigName) {
         this.enterpriseConfigName = enterpriseConfigName;
-    }
+    }*/
 
     @Generated(GenerationTime.INSERT)
     @Column(name = "enterprise_person_id", insertable = false)

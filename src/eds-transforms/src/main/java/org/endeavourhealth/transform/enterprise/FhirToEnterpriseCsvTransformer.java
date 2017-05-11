@@ -89,10 +89,10 @@ public class FhirToEnterpriseCsvTransformer extends FhirToXTransformerBase {
         return i.intValue();
     }
 
-    private static Long findEnterpriseOrgId(UUID serviceId, UUID systemId, String configName, OutputContainer data) throws Exception {
+    private static Long findEnterpriseOrgId(UUID serviceId, UUID systemId, String enterpriseConfigName, OutputContainer data) throws Exception {
 
         //if we've previously transformed for our ODS code, then we'll have a mapping to the enterprise ID for that ODS code
-        Long enterpriseOrganisationId = EnterpriseIdHelper.findEnterpriseOrganisationId(serviceId.toString(), systemId.toString(), configName);
+        Long enterpriseOrganisationId = EnterpriseIdHelper.findEnterpriseOrganisationId(serviceId.toString(), systemId.toString(), enterpriseConfigName);
         if (enterpriseOrganisationId != null) {
             return enterpriseOrganisationId;
         }
@@ -124,9 +124,9 @@ public class FhirToEnterpriseCsvTransformer extends FhirToXTransformerBase {
 
         AbstractEnterpriseCsvWriter csvWriter = data.getOrganisations();
 
-        enterpriseOrganisationId = AbstractTransformer.findOrCreateEnterpriseId(csvWriter, resourceType.toString(), resourceId);
+        enterpriseOrganisationId = AbstractTransformer.findOrCreateEnterpriseId(enterpriseConfigName, resourceType.toString(), resourceId);
 
-        EnterpriseIdHelper.saveEnterpriseOrganisationId(serviceId.toString(), systemId.toString(), configName, enterpriseOrganisationId);
+        EnterpriseIdHelper.saveEnterpriseOrganisationId(serviceId.toString(), systemId.toString(), enterpriseConfigName, enterpriseOrganisationId);
 
         return enterpriseOrganisationId;
     }
@@ -165,7 +165,7 @@ public class FhirToEnterpriseCsvTransformer extends FhirToXTransformerBase {
     private static void tranformResources(OutputContainer data,
                                          List<ResourceByExchangeBatch> resources,
                                          Long enterpriseOrganisationId,
-                                         String configName,
+                                         String enterpriseConfigName,
                                          UUID protocolId,
                                           int batchSize) throws Exception {
 
@@ -180,10 +180,10 @@ public class FhirToEnterpriseCsvTransformer extends FhirToXTransformerBase {
         //we detect whether we're doing an update or insert, based on whether we're previously mapped
         //a reference to a resource, so we need to transform the resources in a specific order, so
         //that we transform resources before we ones that refer to them
-        tranformResources(ResourceType.Organization, data, resources, resourcesMap, enterpriseOrganisationId, null, null, configName, protocolId, threadPool, batchSize);
-        tranformResources(ResourceType.Practitioner, data, resources, resourcesMap, enterpriseOrganisationId, null, null, configName, protocolId, threadPool, batchSize);
-        tranformResources(ResourceType.Schedule, data, resources, resourcesMap, enterpriseOrganisationId, null, null, configName, protocolId, threadPool, batchSize);
-        boolean didPatient = tranformResources(ResourceType.Patient, data, resources, resourcesMap, enterpriseOrganisationId, null, null, configName, protocolId, threadPool, batchSize);
+        tranformResources(ResourceType.Organization, data, resources, resourcesMap, enterpriseOrganisationId, null, null, enterpriseConfigName, protocolId, threadPool, batchSize);
+        tranformResources(ResourceType.Practitioner, data, resources, resourcesMap, enterpriseOrganisationId, null, null, enterpriseConfigName, protocolId, threadPool, batchSize);
+        tranformResources(ResourceType.Schedule, data, resources, resourcesMap, enterpriseOrganisationId, null, null, enterpriseConfigName, protocolId, threadPool, batchSize);
+        boolean didPatient = tranformResources(ResourceType.Patient, data, resources, resourcesMap, enterpriseOrganisationId, null, null, enterpriseConfigName, protocolId, threadPool, batchSize);
 
         //if we transformed a patient resource, we need to guarantee that the patient is fully transformed before continuing
         //so we need to close the thread pool and wait. Then re-open for any remaining resources.
@@ -199,7 +199,7 @@ public class FhirToEnterpriseCsvTransformer extends FhirToXTransformerBase {
         Long enterprisePersonId = null;
         String discoveryPatientId = findPatientId(resources);
         if (!Strings.isNullOrEmpty(discoveryPatientId)) {
-            enterprisePatientId = AbstractTransformer.findEnterpriseId(data.getPatients(), ResourceType.Patient.toString(), discoveryPatientId);
+            enterprisePatientId = AbstractTransformer.findEnterpriseId(enterpriseConfigName, ResourceType.Patient.toString(), discoveryPatientId);
             if (enterprisePatientId == null) {
                 //with the Homerton data, we just get data from a point in time, not historic data too, so we have some episodes of
                 //care where we don't have patients. If we're in this situation, then don't send over the data.
@@ -217,30 +217,30 @@ public class FhirToEnterpriseCsvTransformer extends FhirToXTransformerBase {
                 return;
             }
 
-            enterprisePersonId = EnterpriseIdHelper.findOrCreateEnterprisePersonId(discoveryPersonId, configName);
+            enterprisePersonId = EnterpriseIdHelper.findOrCreateEnterprisePersonId(discoveryPersonId, enterpriseConfigName);
         }
 
-        tranformResources(ResourceType.EpisodeOfCare, data, resources, resourcesMap, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName, protocolId, threadPool, batchSize);
-        tranformResources(ResourceType.Appointment, data, resources, resourcesMap, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName, protocolId, threadPool, batchSize);
-        tranformResources(ResourceType.Encounter, data, resources, resourcesMap, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName, protocolId, threadPool, batchSize);
-        tranformResources(ResourceType.Condition, data, resources, resourcesMap, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName, protocolId, threadPool, batchSize);
-        tranformResources(ResourceType.Procedure, data, resources, resourcesMap, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName, protocolId, threadPool, batchSize);
-        tranformResources(ResourceType.ReferralRequest, data, resources, resourcesMap, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName, protocolId, threadPool, batchSize);
-        tranformResources(ResourceType.ProcedureRequest, data, resources, resourcesMap, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName, protocolId, threadPool, batchSize);
-        tranformResources(ResourceType.Observation, data, resources, resourcesMap, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName, protocolId, threadPool, batchSize);
-        tranformResources(ResourceType.MedicationStatement, data, resources, resourcesMap, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName, protocolId, threadPool, batchSize);
-        tranformResources(ResourceType.MedicationOrder, data, resources, resourcesMap, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName, protocolId, threadPool, batchSize);
-        tranformResources(ResourceType.Immunization, data, resources, resourcesMap, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName, protocolId, threadPool, batchSize);
-        tranformResources(ResourceType.FamilyMemberHistory, data, resources, resourcesMap, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName, protocolId, threadPool, batchSize);
-        tranformResources(ResourceType.AllergyIntolerance, data, resources, resourcesMap, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName, protocolId, threadPool, batchSize);
-        tranformResources(ResourceType.DiagnosticOrder, data, resources, resourcesMap, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName, protocolId, threadPool, batchSize);
-        tranformResources(ResourceType.DiagnosticReport, data, resources, resourcesMap, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName, protocolId, threadPool, batchSize);
-        tranformResources(ResourceType.Specimen, data, resources, resourcesMap, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName, protocolId, threadPool, batchSize);
+        tranformResources(ResourceType.EpisodeOfCare, data, resources, resourcesMap, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, enterpriseConfigName, protocolId, threadPool, batchSize);
+        tranformResources(ResourceType.Appointment, data, resources, resourcesMap, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, enterpriseConfigName, protocolId, threadPool, batchSize);
+        tranformResources(ResourceType.Encounter, data, resources, resourcesMap, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, enterpriseConfigName, protocolId, threadPool, batchSize);
+        tranformResources(ResourceType.Condition, data, resources, resourcesMap, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, enterpriseConfigName, protocolId, threadPool, batchSize);
+        tranformResources(ResourceType.Procedure, data, resources, resourcesMap, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, enterpriseConfigName, protocolId, threadPool, batchSize);
+        tranformResources(ResourceType.ReferralRequest, data, resources, resourcesMap, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, enterpriseConfigName, protocolId, threadPool, batchSize);
+        tranformResources(ResourceType.ProcedureRequest, data, resources, resourcesMap, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, enterpriseConfigName, protocolId, threadPool, batchSize);
+        tranformResources(ResourceType.Observation, data, resources, resourcesMap, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, enterpriseConfigName, protocolId, threadPool, batchSize);
+        tranformResources(ResourceType.MedicationStatement, data, resources, resourcesMap, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, enterpriseConfigName, protocolId, threadPool, batchSize);
+        tranformResources(ResourceType.MedicationOrder, data, resources, resourcesMap, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, enterpriseConfigName, protocolId, threadPool, batchSize);
+        tranformResources(ResourceType.Immunization, data, resources, resourcesMap, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, enterpriseConfigName, protocolId, threadPool, batchSize);
+        tranformResources(ResourceType.FamilyMemberHistory, data, resources, resourcesMap, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, enterpriseConfigName, protocolId, threadPool, batchSize);
+        tranformResources(ResourceType.AllergyIntolerance, data, resources, resourcesMap, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, enterpriseConfigName, protocolId, threadPool, batchSize);
+        tranformResources(ResourceType.DiagnosticOrder, data, resources, resourcesMap, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, enterpriseConfigName, protocolId, threadPool, batchSize);
+        tranformResources(ResourceType.DiagnosticReport, data, resources, resourcesMap, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, enterpriseConfigName, protocolId, threadPool, batchSize);
+        tranformResources(ResourceType.Specimen, data, resources, resourcesMap, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, enterpriseConfigName, protocolId, threadPool, batchSize);
 
         //for these resource types, call with a null transformer as they're actually transformed when
         //doing one of the above entities, but we want to remove them from the resources list
-        tranformResources(ResourceType.Slot, data, resources, resourcesMap, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName, protocolId, threadPool, batchSize);
-        tranformResources(ResourceType.Location, data, resources, resourcesMap, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName, protocolId, threadPool, batchSize);
+        tranformResources(ResourceType.Slot, data, resources, resourcesMap, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, enterpriseConfigName, protocolId, threadPool, batchSize);
+        tranformResources(ResourceType.Location, data, resources, resourcesMap, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, enterpriseConfigName, protocolId, threadPool, batchSize);
 
         //close the thread pool
         List<ThreadPoolError> errors = threadPool.waitAndStop();

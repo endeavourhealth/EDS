@@ -10,7 +10,7 @@ import javax.persistence.Table;
 import java.io.Serializable;
 
 @Entity
-@Table(name = "household_id_map", schema = "public", catalog = "transform")
+@Table(name = "household_id_map", schema = "public")
 public class HouseholdIdMap implements Serializable {
 
     private String postcode = null;

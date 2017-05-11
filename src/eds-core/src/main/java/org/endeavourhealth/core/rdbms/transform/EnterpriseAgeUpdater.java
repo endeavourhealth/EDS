@@ -19,7 +19,7 @@ public class EnterpriseAgeUpdater {
 
     public static Integer[] calculateAgeValues(long patientId, Date dateOfBirth, String enterpriseConfigName) throws Exception {
 
-        EntityManager entityManager = TransformConnection.getEntityManager();
+        EntityManager entityManager = TransformConnection.getEntityManager(enterpriseConfigName);
 
         EnterpriseAge map = findAgeObject(patientId, entityManager);
         if (map == null) {
@@ -29,7 +29,7 @@ public class EnterpriseAgeUpdater {
 
         //always re-set these, in case they've changed
         map.setDateOfBirth(dateOfBirth);
-        map.setEnterpriseConfigName(enterpriseConfigName);
+        //map.setEnterpriseConfigName(enterpriseConfigName);
 
         Integer[] ret = calculateAgeValues(map);
 

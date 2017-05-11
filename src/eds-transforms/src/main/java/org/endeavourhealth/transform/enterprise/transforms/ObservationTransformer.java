@@ -32,7 +32,7 @@ public class ObservationTransformer extends AbstractTransformer {
                           Long enterpriseOrganisationId,
                           Long enterprisePatientId,
                           Long enterprisePersonId,
-                          String configName,
+                          String enterpriseConfigName,
                           UUID protocolId) throws Exception {
 
         Observation fhir = (Observation)resource;
@@ -60,16 +60,16 @@ public class ObservationTransformer extends AbstractTransformer {
 
         if (fhir.hasEncounter()) {
             Reference encounterReference = fhir.getEncounter();
-            encounterId = findEnterpriseId(data.getEncounters(), encounterReference);
+            encounterId = findEnterpriseId(enterpriseConfigName, encounterReference);
         }
 
         if (fhir.hasPerformer()) {
             for (Reference reference: fhir.getPerformer()) {
                 ResourceType resourceType = ReferenceHelper.getResourceType(reference);
                 if (resourceType == ResourceType.Practitioner) {
-                    practitionerId = findEnterpriseId(data.getPractitioners(), reference);
+                    practitionerId = findEnterpriseId(enterpriseConfigName, reference);
                     if (practitionerId == null) {
-                        practitionerId = transformOnDemand(reference, data, otherResources, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName, protocolId);
+                        practitionerId = transformOnDemand(reference, data, otherResources, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, enterpriseConfigName, protocolId);
                     }
                 }
             }

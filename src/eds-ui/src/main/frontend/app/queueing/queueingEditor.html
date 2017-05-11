@@ -6,8 +6,8 @@
 	<form endUserRole="form" class="container-fluid">
 		<div class="row">
 			<div class="form-group col-md-12">
-				<label class="control-label">Name</label>
-				<input type="text" class="form-control" placeholder="Route name" [(ngModel)]="resultData.name" name="name">
+				<label class="control-label">Exchange</label>
+				<input type="text" class="form-control" placeholder="Exchange name" [(ngModel)]="resultData.exchangeName" name="exchange" [disabled]="!allowEditingExchange">
 			</div>
 		</div>
 		<div class="row">
@@ -18,7 +18,7 @@
 		</div>
 		<div class="row">
 			<div class="form-group col-md-12">
-				<label class="control-label">Filter</label>
+				<label class="control-label">Regex Filter</label>
 				<input type="text" class="form-control" placeholder="Filter" [(ngModel)]="resultData.regex" name="regex">
 			</div>
 		</div>
@@ -32,7 +32,7 @@
 		</div>
 		<div class="row">
 			<div class="form-group col-md-12">
-				<label class="control-label">Key/Queue</label>
+				<label class="control-label">Routing Key</label>
 				<input type="text" class="form-control" placeholder="Route Key" [(ngModel)]="resultData.routeKey" name="routeKey">
 			</div>
 		</div>

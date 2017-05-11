@@ -7,12 +7,12 @@ import javax.persistence.Table;
 import java.io.Serializable;
 
 @Entity
-@Table(name = "enterprise_organisation_id_map", schema = "public", catalog = "transform")
+@Table(name = "enterprise_organisation_id_map", schema = "public")
 public class EnterpriseOrganisationIdMap implements Serializable {
 
     private String serviceId = null;
     private String systemId = null;
-    private String enterpriseConfigName = null;
+    //private String enterpriseConfigName = null;
     //private String odsCode = null;
     private Long enterpriseId = null;
 
@@ -36,7 +36,7 @@ public class EnterpriseOrganisationIdMap implements Serializable {
         this.systemId = systemId;
     }
 
-    @Id
+    /*@Id
     @Column(name = "enterprise_config_name", nullable = false)
     public String getEnterpriseConfigName() {
         return enterpriseConfigName;
@@ -44,7 +44,7 @@ public class EnterpriseOrganisationIdMap implements Serializable {
 
     public void setEnterpriseConfigName(String enterpriseConfigName) {
         this.enterpriseConfigName = enterpriseConfigName;
-    }
+    }*/
 
     /*@Id
     @Column(name = "ods_code", nullable = false)

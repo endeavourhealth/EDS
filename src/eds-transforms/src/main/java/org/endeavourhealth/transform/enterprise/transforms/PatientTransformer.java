@@ -56,7 +56,7 @@ public class PatientTransformer extends AbstractTransformer {
                           Long enterpriseOrganisationId,
                           Long nullEnterprisePatientId,
                           Long nullEnterprisePersonId,
-                          String configName,
+                          String enterpriseConfigName,
                           UUID protocolId) throws Exception {
 
         Patient fhirPatient = (Patient)resource;
@@ -71,7 +71,7 @@ public class PatientTransformer extends AbstractTransformer {
             discoveryPersonId = pair.getNewPersonId();
         }
 
-        Long enterprisePersonId = EnterpriseIdHelper.findOrCreateEnterprisePersonId(discoveryPersonId, configName);
+        Long enterprisePersonId = EnterpriseIdHelper.findOrCreateEnterprisePersonId(discoveryPersonId, enterpriseConfigName);
 
         long id;
         long organizationId;
@@ -123,7 +123,7 @@ public class PatientTransformer extends AbstractTransformer {
                         && address.getUse().equals(Address.AddressUse.HOME)) {
                     postcode = address.getPostalCode();
                     postcodePrefix = findPostcodePrefix(postcode);
-                    householdId = HouseholdHelper.findOrCreateHouseholdId(address);
+                    householdId = HouseholdHelper.findOrCreateHouseholdId(enterpriseConfigName, address);
                     break;
                 }
             }
@@ -154,14 +154,14 @@ public class PatientTransformer extends AbstractTransformer {
                 patientGenderId = Enumerations.AdministrativeGender.FEMALE.ordinal();
             }
 
-            pseudoId = pseudonymise(fhirPatient, configName);
+            pseudoId = pseudonymise(fhirPatient, enterpriseConfigName);
 
             //only persist the pseudo ID if it's non-null
             if (!Strings.isNullOrEmpty(pseudoId)) {
-                PseudoIdHelper.storePseudoId(fhirPatient.getId(), configName, pseudoId);
+                PseudoIdHelper.storePseudoId(fhirPatient.getId(), enterpriseConfigName, pseudoId);
             }
 
-            Integer[] ageValues = EnterpriseAgeUpdater.calculateAgeValues(id, dateOfBirth, configName);
+            Integer[] ageValues = EnterpriseAgeUpdater.calculateAgeValues(id, dateOfBirth, enterpriseConfigName);
             ageYears = ageValues[EnterpriseAgeUpdater.UNIT_YEARS];
             ageMonths = ageValues[EnterpriseAgeUpdater.UNIT_MONTHS];
             ageWeeks = ageValues[EnterpriseAgeUpdater.UNIT_WEEKS];

@@ -5,13 +5,13 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import io.astefanutti.metrics.aspectj.Metrics;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
+import org.endeavourhealth.common.config.ConfigManager;
+import org.endeavourhealth.common.security.SecurityUtils;
+import org.endeavourhealth.common.security.annotations.RequiresAdmin;
 import org.endeavourhealth.core.data.audit.UserAuditRepository;
 import org.endeavourhealth.core.data.audit.models.AuditAction;
 import org.endeavourhealth.core.data.audit.models.AuditModule;
-import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.core.queueing.RabbitConfig;
-import org.endeavourhealth.common.security.SecurityUtils;
-import org.endeavourhealth.common.security.annotations.RequiresAdmin;
 import org.endeavourhealth.coreui.endpoints.AbstractEndpoint;
 import org.endeavourhealth.ui.json.*;
 import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
@@ -26,7 +26,9 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Path("/rabbit")
 @Metrics(registry = "EdsRegistry")
@@ -79,7 +81,7 @@ public final class RabbitEndpoint extends AbstractEndpoint {
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Timed(absolute = true, name="EDS-UI.RabbitEndpoint.PostRoutings")
 	@Path("/routings")
-	public Response getRoutings(@Context SecurityContext sc, String routings) throws Exception {
+	public Response saveRoutings(@Context SecurityContext sc, String routings) throws Exception {
 		super.setLogbackMarkers(sc);
 		userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load, "Routings");
 
@@ -276,7 +278,7 @@ public final class RabbitEndpoint extends AbstractEndpoint {
 				"Bindings (Sync)",
 				"Address", address);
 
-		String[] pipelines = {"EdsInbound", "EdsProtocol", "EdsTransform", "EdsResponse", "EdsSubscriber"};
+		//String[] pipelines = {"EdsInbound", "EdsProtocol", "EdsTransform", "EdsResponse", "EdsSubscriber"};
 
 		super.setLogbackMarkers(sc);
 
@@ -284,9 +286,52 @@ public final class RabbitEndpoint extends AbstractEndpoint {
 		List<JsonRabbitBinding> currentBindings = getCurrentRabbitBindings(address);
 
 		// Load config
-		List<JsonRouteGroup> configuredBindings = getConfiguredBindings();
+		List<JsonRouteGroup> allRoutings = getConfiguredBindings();
 
-		for (String pipeline : pipelines) {
+		//hash by exchange name
+		Map<String, List<JsonRouteGroup>> map = new HashMap<>();
+		for (JsonRouteGroup r: allRoutings) {
+			List<JsonRouteGroup> list = map.get(r.getExchangeName());
+			if (list == null) {
+				list = new ArrayList<>();
+				map.put(r.getExchangeName(), list);
+			}
+			list.add(r);
+		}
+
+		for (String pipeline: map.keySet()) {
+			List<JsonRouteGroup> routings = map.get(pipeline);
+
+			// Declare exchanges
+			declareAllExchanges(address, pipeline);
+
+			// Declare (config) queues
+			declareAllQueues(address, pipeline, routings);
+
+			// Bind (config) queues to DLE
+			bindQueuesToExchange(address, pipeline + "-DLE", pipeline, routings);
+
+			// Remove all bindings from main exchange (DLE now routes to queues based on new config)
+			removeBindingsFromMainExchange(address, pipeline, currentBindings);
+
+			// Bind (config) to main exchange (main exchange now routes to queues based on new config)
+			bindQueuesToExchange(address, pipeline, pipeline, routings);
+
+			// Remove (config) bindings from DLE
+			removeBindingsFromDLEExchange(address, pipeline + "-DLE", pipeline, routings);
+
+			// Determine queues to remove (unbound)
+
+			// Wait for any unbound queues to drain
+
+			// Remove (now empty) unbound queues
+
+			// (Shutdown readers of unbound queues????)
+
+			// (Startup readers of queues without readers????)
+		}
+
+		/*for (String pipeline : pipelines) {
 			// Declare exchanges
 			declareAllExchanges(address, pipeline);
 
@@ -314,7 +359,7 @@ public final class RabbitEndpoint extends AbstractEndpoint {
 			// (Shutdown readers of unbound queues????)
 
 			// (Startup readers of queues without readers????)
-		}
+		}*/
 
 		String ret = getRabbitBindingsJson(address);
 
@@ -406,21 +451,27 @@ public final class RabbitEndpoint extends AbstractEndpoint {
 		Client client = ClientBuilder.newClient();
 		client.register(rabbitAuth);
 
+		//declare a queue for each
 		for (JsonRouteGroup routeGroup : routeGroups) {
-			WebTarget resource = client.target("http://" + address + "/api/queues/%2f/"+queuePrefix + "-" + routeGroup.getRouteKey());
-			Invocation.Builder request = resource.request();
-
-			JsonRabbitQueueOptions optionsJson = new JsonRabbitQueueOptions();
-			optionsJson.setAuto_delete(false);
-			optionsJson.setDurable(true);
-
-			Response response = request.put(Entity.json(optionsJson));
-			if (response.getStatusInfo().getFamily() != Response.Status.Family.SUCCESSFUL) {
-				throw new Exception("Unable do declare the queue");
-			}
-			response.close();
+			String queueName = queuePrefix + "-" + routeGroup.getRouteKey();
+			declareQueue(client, address, queueName);
 		}
 		client.close();
+	}
+
+	private static void declareQueue(Client client, String address, String queueName) throws Exception {
+		WebTarget resource = client.target("http://" + address + "/api/queues/%2f/" + queueName);
+		Invocation.Builder request = resource.request();
+
+		JsonRabbitQueueOptions optionsJson = new JsonRabbitQueueOptions();
+		optionsJson.setAuto_delete(false);
+		optionsJson.setDurable(true);
+
+		Response response = request.put(Entity.json(optionsJson));
+		if (response.getStatusInfo().getFamily() != Response.Status.Family.SUCCESSFUL) {
+			throw new Exception("Unable do declare the queue");
+		}
+		response.close();
 	}
 
 	private void bindQueuesToExchange(String address, String exchange, String queuePrefix, List<JsonRouteGroup> routeGroups) throws Exception {

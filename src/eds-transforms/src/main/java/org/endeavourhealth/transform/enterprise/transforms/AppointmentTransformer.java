@@ -31,7 +31,7 @@ public class AppointmentTransformer extends AbstractTransformer {
                           Long enterpriseOrganisationId,
                           Long enterprisePatientId,
                           Long enterprisePersonId,
-                          String configName,
+                          String enterpriseConfigName,
                           UUID protocolId) throws Exception {
 
         Appointment fhir = (Appointment)resource;
@@ -57,9 +57,9 @@ public class AppointmentTransformer extends AbstractTransformer {
                 ReferenceComponents components = ReferenceHelper.getReferenceComponents(reference);
 
                 if (components.getResourceType() == ResourceType.Practitioner) {
-                    practitionerId = findEnterpriseId(data.getPractitioners(), reference);
+                    practitionerId = findEnterpriseId(enterpriseConfigName, reference);
                     if (practitionerId == null) {
-                        practitionerId = transformOnDemand(reference, data, otherResources, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName, protocolId);
+                        practitionerId = transformOnDemand(reference, data, otherResources, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, enterpriseConfigName, protocolId);
                     }
                 }
             }
@@ -85,9 +85,9 @@ public class AppointmentTransformer extends AbstractTransformer {
         if (fhirSlot != null) {
 
             Reference scheduleReference = fhirSlot.getSchedule();
-            scheduleId = findEnterpriseId(data.getSchedules(), scheduleReference);
+            scheduleId = findEnterpriseId(enterpriseConfigName, scheduleReference);
             if (scheduleId == null) {
-                scheduleId = transformOnDemand(scheduleReference, data, otherResources, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName, protocolId);
+                scheduleId = transformOnDemand(scheduleReference, data, otherResources, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, enterpriseConfigName, protocolId);
             }
 
         } else {

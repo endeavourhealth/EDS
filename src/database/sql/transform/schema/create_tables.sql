@@ -7,6 +7,11 @@ DROP TABLE IF EXISTS enterprise_age;
 DROP TABLE IF EXISTS enterprise_person_id_map;
 DROP TABLE IF EXISTS enterprise_person_update_history;
 
+-- DROP SEQUENCE enterprise_id_seq;
+-- DROP SEQUENCE household_id_seq;
+-- DROP SEQUENCE enterprise_person_id_seq;
+
+
 -- Sequence: public.enterprise_id_seq
 
 -- DROP SEQUENCE public.enterprise_id_seq;
@@ -27,11 +32,10 @@ ALTER TABLE public.enterprise_id_seq
 
 CREATE TABLE public.enterprise_id_map
 (
-  enterprise_table_name character varying(255) NOT NULL,
   resource_type character varying(255) NOT NULL,
   resource_id character varying(255) NOT NULL,
   enterprise_id bigint NOT NULL DEFAULT nextval('enterprise_id_seq'::regclass),
-  CONSTRAINT pk_enterprise_id_map PRIMARY KEY (enterprise_table_name, resource_type, resource_id)
+  CONSTRAINT pk_enterprise_id_map PRIMARY KEY (resource_id, resource_type)
 )
 WITH (
   OIDS=FALSE
@@ -48,9 +52,8 @@ CREATE TABLE public.enterprise_organisation_id_map
 (
   service_id character(36) NOT NULL,
   system_id character(36) NOT NULL,
-  enterprise_config_name character varying(255) NOT NULL,
   enterprise_id bigint NOT NULL,
-  CONSTRAINT pk_enterprise_organisation_id_map PRIMARY KEY (service_id, system_id, enterprise_config_name)
+  CONSTRAINT pk_enterprise_organisation_id_map PRIMARY KEY (service_id, system_id)
 )
 WITH (
   OIDS=FALSE
@@ -97,9 +100,8 @@ ALTER TABLE public.household_id_map
 CREATE TABLE public.pseudo_id_map
 (
   patient_id character varying(255) NOT NULL,
-  enterprise_config_name character varying(255) NOT NULL,
   pseudo_id character varying(255) NOT NULL,
-  CONSTRAINT pk_pseudo_id_map PRIMARY KEY (patient_id, enterprise_config_name)
+  CONSTRAINT pk_pseudo_id_map PRIMARY KEY (patient_id)
 )
 WITH (
   OIDS=FALSE
@@ -117,7 +119,6 @@ CREATE TABLE public.enterprise_age
   enterprise_patient_id bigint NOT NULL,
   date_of_birth date NOT NULL,
   date_next_change date NOT NULL,
-  enterprise_config_name character varying(255) NOT NULL,
   CONSTRAINT pk_enterprise_age PRIMARY KEY (enterprise_patient_id)
 )
 WITH (
@@ -154,9 +155,8 @@ ALTER TABLE public.enterprise_person_id_seq
 CREATE TABLE public.enterprise_person_id_map
 (
   person_id character(36) NOT NULL,
-  enterprise_config_name character varying(255) NOT NULL,
   enterprise_person_id bigint NOT NULL DEFAULT nextval('enterprise_person_id_seq'::regclass),
-  CONSTRAINT pk_enterprise_person_id_map PRIMARY KEY (person_id, enterprise_config_name)
+  CONSTRAINT pk_enterprise_person_id_map PRIMARY KEY (person_id)
 )
 WITH (
   OIDS=FALSE

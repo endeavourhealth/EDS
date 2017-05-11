@@ -3,87 +3,73 @@
 		<div class="module-heading">
 			Route Groups
 			<button class="btn btn-success btn-sm pull-right" (click)="sync()">Sync</button>
+			<button class="btn btn-success btn-sm pull-right" (click)="newRouting()">New</button>
+			<button class="btn btn-success btn-sm pull-right" (click)="refresh()">Refresh</button>
 		</div>
 		<div class="module-body">
 			<form>
 				<div class="row">
-					<div class="form-group col-md-1"></div>
-					<div class="form-group col-md-2">
-						<label>Inbound</label>
-						<div *ngFor="let item of routings">
-							<label class="small"><i [ngClass]="getRouteGroupClass(item, inboundBindings)"></i> {{item.name}}</label>
-						</div>
-						<div *ngFor="let item of inboundBindings">
-							<label class="small" *ngIf="!bindingExists(item)"><i class="fa fa-minus-circle text-danger"></i> {{item.routing_key}}</label>
-						</div>
-					</div>
-					<div class="form-group col-md-2">
-						<label>Response</label>
-						<div *ngFor="let item of routings">
-							<label class="small"><i [ngClass]="getRouteGroupClass(item, responseBindings)"></i> {{item.name}}</label>
-						</div>
-						<div *ngFor="let item of responseBindings">
-							<label class="small" *ngIf="!bindingExists(item)"><i class="fa fa-minus-circle text-danger"></i> {{item.routing_key}}</label>
-						</div>
-					</div>
-					<div class="form-group col-md-2">
-						<label>Protocol</label>
-						<div *ngFor="let item of routings">
-							<label class="small"><i [ngClass]="getRouteGroupClass(item, protocolBindings)"></i> {{item.name}}</label>
-						</div>
-						<div *ngFor="let item of protocolBindings">
-							<label class="small" *ngIf="!bindingExists(item)"><i class="fa fa-minus-circle text-danger"></i> {{item.routing_key}}</label>
-						</div>
-					</div>
-					<div class="form-group col-md-2">
-						<label>Transform</label>
-						<div *ngFor="let item of routings">
-							<label class="small"><i [ngClass]="getRouteGroupClass(item, transformBindings)"></i> {{item.name}}</label>
-						</div>
-						<div *ngFor="let item of transformBindings">
-							<label class="small" *ngIf="!bindingExists(item)"><i class="fa fa-minus-circle text-danger"></i> {{item.routing_key}}</label>
-						</div>
-					</div>
-					<div class="form-group col-md-2">
-						<label>Subscriber</label>
-						<div *ngFor="let item of routings">
-							<label class="small"><i [ngClass]="getRouteGroupClass(item, subscriberBindings)"></i> {{item.name}}</label>
-						</div>
-						<div *ngFor="let item of subscriberBindings">
-							<label class="small" *ngIf="!bindingExists(item)"><i class="fa fa-minus-circle text-danger"></i> {{item.routing_key}}</label>
+					<div *ngFor="let exchangeName of routingExchangeNames">
+						<div class="form-group col-md-2">
+							<label>{{exchangeName}}</label>
+
+							<div *ngFor="let routing of getRoutingsForExchange(exchangeName)">
+								<label class="small">
+									<i [ngClass]="getRouteGroupStatusIconClass(routing)"></i>
+									{{routing.routeKey}}
+									<span class="fa fa-info-circle fa-right-pad text-muted" ngbTooltip="{{routing.description}}" *ngIf="routing.description"></span>
+								</label>
+							</div>
+							<div *ngFor="let binding of getBindingsForExchange(exchangeName)">
+								<label class="small" *ngIf="!bindingExistsInConfig(binding)">
+									<i class="fa fa-minus-circle text-danger"></i>
+									{{binding.routing_key}}
+								</label>
+							</div>
 						</div>
 					</div>
 				</div>
-				<div class="row">
-					<div class="form-group col-md-12">
-						<div class="table">
-							<table class="table table-striped table-condensed">
-								<thead>
-									<tr>
-										<th class="col-md-5">Name</th>
-										<th class="col-md-2">Key/Queue</th>
-										<th class="col-md-4">Filter</th>
-										<th class="col-md-1"></th>
-									</tr>
-								</thead>
-								<tbody>
-									<tr class="hover-box show-child-on-hover" *ngFor="let item of routings">
-										<td>
-												<a (click)="edit(item)">{{item.name}}</a>
-												<span class="fa fa-info-circle fa-right-pad text-muted" ngbTooltip="{{item.description}}" *ngIf="item.description"></span>
-										</td>
-										<td>
-											{{item.routeKey}}
-										</td>
-										<td>
-											{{item.regex}}
-										</td>
-										<td>
-											<button type="button" class="btn btn-danger btn-xs child-to-show" (click)="delete(item)"><span class="fa fa-remove"></span></button>
-										</td>
-									</tr>
-								</tbody>
-							</table>
+
+
+				<div *ngFor="let exchangeName of routingExchangeNames">
+
+					<h2>
+						{{exchangeName}}
+						<button type="button" class="btn btn-sm btn-success" (click)="newRouting(exchangeName)">New</button>
+					</h2>
+
+					<div class="row">
+						<div class="form-group col-md-12">
+							<div class="table">
+								<table class="table table-striped table-condensed">
+									<thead>
+										<tr>
+											<th class="col-md-5">Description</th>
+											<th class="col-md-4">Regex Filter</th>
+											<th class="col-md-2">Routing Key</th>
+											<th class="col-md-1"></th>
+										</tr>
+									</thead>
+									<tbody>
+										<tr class="hover-box show-child-on-hover" *ngFor="let item of getRoutingsForExchange(exchangeName)">
+											<td>
+												<a (click)="edit(item)">{{item.description}}</a>
+											</td>
+											<td>
+												{{item.routeKey}}
+											</td>
+											<td>
+												{{item.regex}}
+											</td>
+											<td>
+												<button type="button" class="btn btn-default btn-xs child-to-show" (click)="moveUp(item)"><span class="fa fa-arrow-up"></span></button>
+												<button type="button" class="btn btn-default btn-xs child-to-show" (click)="moveDown(item)"><span class="fa fa-arrow-down"></span></button>
+												<button type="button" class="btn btn-danger btn-xs child-to-show" (click)="delete(item)"><span class="fa fa-remove"></span></button>
+											</td>
+										</tr>
+									</tbody>
+								</table>
+							</div>
 						</div>
 					</div>
 				</div>

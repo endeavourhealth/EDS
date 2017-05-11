@@ -8,13 +8,13 @@ import java.io.Serializable;
 import java.util.Date;
 
 @Entity
-@Table(name = "enterprise_age", schema = "public", catalog = "transform")
+@Table(name = "enterprise_age", schema = "public")
 public class EnterpriseAge implements Serializable {
 
     private long enterprisePatientId;
     private Date dateOfBirth = null;
     private Date dateNextChange = null;
-    private String enterpriseConfigName = null;
+    //private String enterpriseConfigName = null;
 
     @Id
     @Column(name = "enterprise_patient_id", nullable = false)
@@ -44,12 +44,12 @@ public class EnterpriseAge implements Serializable {
         this.dateNextChange = dateNextChange;
     }
 
-    @Column(name = "enterprise_config_name", nullable = false)
+    /*@Column(name = "enterprise_config_name", nullable = false)
     public String getEnterpriseConfigName() {
         return enterpriseConfigName;
     }
 
     public void setEnterpriseConfigName(String enterpriseConfigName) {
         this.enterpriseConfigName = enterpriseConfigName;
-    }
+    }*/
 }

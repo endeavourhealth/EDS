@@ -28,7 +28,7 @@ public class ScheduleTransformer extends AbstractTransformer {
                           Long enterpriseOrganisationId,
                           Long enterprisePatientId,
                           Long enterprisePersonId,
-                          String configName,
+                          String enterpriseConfigName,
                           UUID protocolId) throws Exception {
 
         Schedule fhir = (Schedule)resource;
@@ -45,9 +45,9 @@ public class ScheduleTransformer extends AbstractTransformer {
 
         if (fhir.hasActor()) {
             Reference practitionerReference = fhir.getActor();
-            practitionerId = findEnterpriseId(data.getPractitioners(), practitionerReference);
+            practitionerId = findEnterpriseId(enterpriseConfigName, practitionerReference);
             if (practitionerId == null) {
-                practitionerId = transformOnDemand(practitionerReference, data, otherResources, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName, protocolId);
+                practitionerId = transformOnDemand(practitionerReference, data, otherResources, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, enterpriseConfigName, protocolId);
             }
         }
 

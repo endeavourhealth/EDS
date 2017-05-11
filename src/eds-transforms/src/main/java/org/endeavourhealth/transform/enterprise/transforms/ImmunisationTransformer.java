@@ -31,7 +31,7 @@ public class ImmunisationTransformer extends AbstractTransformer {
                           Long enterpriseOrganisationId,
                           Long enterprisePatientId,
                           Long enterprisePersonId,
-                          String configName,
+                          String enterpriseConfigName,
                           UUID protocolId) throws Exception {
 
         Immunization fhir = (Immunization)resource;
@@ -59,14 +59,14 @@ public class ImmunisationTransformer extends AbstractTransformer {
 
         if (fhir.hasEncounter()) {
             Reference encounterReference = fhir.getEncounter();
-            encounterId = findEnterpriseId(data.getEncounters(), encounterReference);
+            encounterId = findEnterpriseId(enterpriseConfigName, encounterReference);
         }
 
         if (fhir.hasPerformer()) {
             Reference practitionerReference = fhir.getPerformer();
-            practitionerId = findEnterpriseId(data.getPractitioners(), practitionerReference);
+            practitionerId = findEnterpriseId(enterpriseConfigName, practitionerReference);
             if (practitionerId == null) {
-                practitionerId = transformOnDemand(practitionerReference, data, otherResources, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName, protocolId);
+                practitionerId = transformOnDemand(practitionerReference, data, otherResources, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, enterpriseConfigName, protocolId);
             }
         }
 

@@ -13,7 +13,6 @@ import org.endeavourhealth.common.config.ConfigManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.xml.crypto.dsig.TransformException;
 import java.io.*;
 import java.math.BigDecimal;
 import java.sql.*;
@@ -55,7 +54,7 @@ public class EnterpriseFiler {
         JsonNode columnClassMappings = null;
 
         JsonNode config = ConfigManager.getConfigurationAsJson(configName, "enterprise");
-        String url = config.get("url").asText();
+        String url = config.get("enterprise_url").asText();
         Connection connection = openConnection(url, config);
         String keywordEscapeChar = getKeywordEscapeChar(url);
 
@@ -87,7 +86,7 @@ public class EnterpriseFiler {
             //if we get an exception, write out the zip file, so we can investigate what was being filed
             writeZipFile(bytes);
 
-            throw new TransformException("Exception filing to " + url, ex);
+            throw new Exception("Exception filing to " + url, ex);
 
         } finally {
             if (zis != null) {
@@ -239,7 +238,7 @@ public class EnterpriseFiler {
         for (String column: csvHeaderMap.keySet()) {
             JsonNode node = columnClassMappings.get(column);
             if (node == null) {
-                throw new TransformException("Failed to find class for column " + column + " in " + entryFileName);
+                throw new Exception("Failed to find class for column " + column + " in " + entryFileName);
             }
             String className = node.asText();
             Class cls = null;
@@ -693,8 +692,8 @@ public class EnterpriseFiler {
                 if (pool == null) {
 
                     String driverClass = config.get("driverClass").asText();
-                    String username = config.get("username").asText();
-                    String password = config.get("password").asText();
+                    String username = config.get("enterprise_username").asText();
+                    String password = config.get("enterprise_password").asText();
 
                     //force the driver to be loaded
                     Class.forName(driverClass);

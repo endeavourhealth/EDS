@@ -33,7 +33,7 @@ public class MedicationStatementTransformer extends AbstractTransformer {
                           Long enterpriseOrganisationId,
                           Long enterprisePatientId,
                           Long enterprisePersonId,
-                          String configName,
+                          String enterpriseConfigName,
                           UUID protocolId) throws Exception {
 
         MedicationStatement fhir = (MedicationStatement)resource;
@@ -62,9 +62,9 @@ public class MedicationStatementTransformer extends AbstractTransformer {
 
         if (fhir.hasInformationSource()) {
             Reference practitionerReference = fhir.getInformationSource();
-            practitionerId = findEnterpriseId(data.getPractitioners(), practitionerReference);
+            practitionerId = findEnterpriseId(enterpriseConfigName, practitionerReference);
             if (practitionerId == null) {
-                practitionerId = transformOnDemand(practitionerReference, data, otherResources, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName, protocolId);
+                practitionerId = transformOnDemand(practitionerReference, data, otherResources, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, enterpriseConfigName, protocolId);
             }
         }
 

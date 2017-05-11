@@ -32,7 +32,7 @@ public class MedicationOrderTransformer extends AbstractTransformer {
                           Long enterpriseOrganisationId,
                           Long enterprisePatientId,
                           Long enterprisePersonId,
-                          String configName,
+                          String enterpriseConfigName,
                           UUID protocolId) throws Exception {
 
         MedicationOrder fhir = (MedicationOrder)resource;
@@ -61,15 +61,15 @@ public class MedicationOrderTransformer extends AbstractTransformer {
 
         if (fhir.hasPrescriber()) {
             Reference practitionerReference = fhir.getPrescriber();
-            practitionerId = findEnterpriseId(data.getPractitioners(), practitionerReference);
+            practitionerId = findEnterpriseId(enterpriseConfigName, practitionerReference);
             if (practitionerId == null) {
-                practitionerId = transformOnDemand(practitionerReference, data, otherResources, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName, protocolId);
+                practitionerId = transformOnDemand(practitionerReference, data, otherResources, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, enterpriseConfigName, protocolId);
             }
         }
 
         if (fhir.hasEncounter()) {
             Reference encounterReference = fhir.getEncounter();
-            encounterId = findEnterpriseId(data.getEncounters(), encounterReference);
+            encounterId = findEnterpriseId(enterpriseConfigName, encounterReference);
         }
 
         if (fhir.hasDateWrittenElement()) {
@@ -130,7 +130,7 @@ public class MedicationOrderTransformer extends AbstractTransformer {
 
                 } else if (extension.getUrl().equals(FhirExtensionUri.MEDICATION_ORDER_AUTHORISATION)) {
                     Reference medicationStatementReference = (Reference)extension.getValue();
-                    medicationStatementId = findEnterpriseId(data.getMedicationStatements(), medicationStatementReference);
+                    medicationStatementId = findEnterpriseId(enterpriseConfigName, medicationStatementReference);
 
                     //the test pack contains medication orders (i.e. issueRecords) that point to medication statements (i.e. drugRecords)
                     //that don't exist, so log it out and just skip this bad record

@@ -26,7 +26,7 @@ public class PractitionerTransformer extends AbstractTransformer {
                           Long enterpriseOrganisationId,
                           Long enterprisePatientId,
                           Long enterprisePersonId,
-                          String configName,
+                          String enterpriseConfigName,
                           UUID protocolId) throws Exception {
 
         Practitioner fhir = (Practitioner)resource;
@@ -57,9 +57,9 @@ public class PractitionerTransformer extends AbstractTransformer {
             }
 
             Reference organisationReference = role.getManagingOrganization();
-            practitionerEnterpriseOrgId = findEnterpriseId(data.getOrganisations(), organisationReference);
+            practitionerEnterpriseOrgId = findEnterpriseId(enterpriseConfigName, organisationReference);
             if (practitionerEnterpriseOrgId == null) {
-                practitionerEnterpriseOrgId = transformOnDemand(organisationReference, data, otherResources, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName, protocolId);
+                practitionerEnterpriseOrgId = transformOnDemand(organisationReference, data, otherResources, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, enterpriseConfigName, protocolId);
             }
             //LOG.trace("Got role with org ID " + practitionerEnterpriseOrgId + " from " + organisationReference);
         }

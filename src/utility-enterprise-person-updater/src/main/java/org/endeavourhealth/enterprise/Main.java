@@ -14,7 +14,9 @@ import org.slf4j.LoggerFactory;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
 
 public class Main {
     private static final Logger LOG = LoggerFactory.getLogger(Main.class);
@@ -31,17 +33,18 @@ public class Main {
         ConfigManager.Initialize("EnterprisePersonUpdater");
 
         try {
-            if (args.length != 0) {
-                LOG.error("No parameters required.");
+            if (args.length != 1) {
+                LOG.error("Parameter required: <enterprise config name>");
                 return;
             }
 
-            LOG.info("Person updater starting");
+            String enterpriseConfigName = args[0];
+            LOG.info("Person updater starting for " + enterpriseConfigName);
 
             //create this date BEFORE we get the date we last run, so there's no risk of a gap
             Date dateNextRun = new Date();
 
-            Date dateLastRun = EnterprisePersonUpdateHelper.findDatePersonUpdaterLastRun();
+            Date dateLastRun = EnterprisePersonUpdateHelper.findDatePersonUpdaterLastRun(enterpriseConfigName);
             LOG.info("Looking for Person ID changes since " + dateLastRun);
             List<PatientLinkPair> changes = PatientLinkHelper.getChangesSince(dateLastRun);
 
@@ -55,26 +58,22 @@ public class Main {
             LOG.info("Found " + changes.size() + " changes in Person ID");
 
             //find the Enterprise Person ID for each of the changes, hashing them by the enterprise instance they're on
-            Map<String, List<UpdateJob>> changesMap = convertChangesToEnterprise(changes);
+            List<UpdateJob> updates = convertChangesToEnterprise(enterpriseConfigName, changes);
 
-            for (String enterpriseConfigName: changesMap.keySet()) {
+            Connection connection = EnterpriseConnector.openConnection(enterpriseConfigName);
 
-                List<UpdateJob> updates = changesMap.get(enterpriseConfigName);
-                Connection connection = EnterpriseConnector.openConnection(enterpriseConfigName);
+            LOG.info("Updating " + updates.size() + " person IDs on " + enterpriseConfigName);
 
-                LOG.info("Updating " + updates.size() + " person IDs on " + enterpriseConfigName);
-
-                try {
-                    for (UpdateJob update: updates) {
-                        changePersonId(update, connection);
-                    }
-
-                } finally {
-                    connection.close();
+            try {
+                for (UpdateJob update: updates) {
+                    changePersonId(update, connection);
                 }
+
+            } finally {
+                connection.close();
             }
 
-            EnterprisePersonUpdateHelper.updatePersonUpdaterLastRun(dateNextRun);
+            EnterprisePersonUpdateHelper.updatePersonUpdaterLastRun(enterpriseConfigName, dateNextRun);
 
             LOG.info("Person updates complete");
 
@@ -87,8 +86,9 @@ public class Main {
     }
 
 
-    private static Map<String, List<UpdateJob>> convertChangesToEnterprise(List<PatientLinkPair> changes) throws Exception {
-        Map<String, List<UpdateJob>> map = new HashMap<>();
+    private static List<UpdateJob> convertChangesToEnterprise(String enterpriseConfigName, List<PatientLinkPair> changes) throws Exception {
+        List<UpdateJob> updatesForConfig = new ArrayList<>();
+
         for (PatientLinkPair change: changes) {
 
             String oldDiscoveryPersonId = change.getPreviousPersonId();
@@ -102,24 +102,17 @@ public class Main {
                 continue;
             }
 
-            List<EnterprisePersonIdMap> mappings = EnterpriseIdHelper.findEnterprisePersonMapsForPersonId(oldDiscoveryPersonId);
+            List<EnterprisePersonIdMap> mappings = EnterpriseIdHelper.findEnterprisePersonMapsForPersonId(enterpriseConfigName, oldDiscoveryPersonId);
             for (EnterprisePersonIdMap mapping: mappings) {
 
-                String enterpriseConfigName = mapping.getEnterpriseConfigName();
                 Long oldEnterprisePersonId = mapping.getEnterprisePersonId();
                 Long newEnterprisePersonId = EnterpriseIdHelper.findOrCreateEnterprisePersonId(newDiscoveryPersonId, enterpriseConfigName);
-
-                List<UpdateJob> updatesForConfig = map.get(enterpriseConfigName);
-                if (updatesForConfig == null) {
-                    updatesForConfig = new ArrayList<>();
-                    map.put(enterpriseConfigName, updatesForConfig);
-                }
 
                 updatesForConfig.add(new UpdateJob(enterprisePatientId, oldEnterprisePersonId, newEnterprisePersonId));
             }
         }
 
-        return map;
+        return updatesForConfig;
     }
 
     private static void changePersonId(UpdateJob change, Connection connection) throws Exception {

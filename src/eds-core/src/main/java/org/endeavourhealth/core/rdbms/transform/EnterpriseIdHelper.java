@@ -16,22 +16,22 @@ public class EnterpriseIdHelper {
     private static final Logger LOG = LoggerFactory.getLogger(EnterpriseIdHelper.class);
 
 
-    public static Long findOrCreateEnterpriseId(String enterpriseTableName, String resourceType, String resourceId) throws Exception {
+    public static Long findOrCreateEnterpriseId(String enterpriseConfigName, String resourceType, String resourceId) throws Exception {
 
-        EntityManager entityManager = TransformConnection.getEntityManager();
+        EntityManager entityManager = TransformConnection.getEntityManager(enterpriseConfigName);
 
-        Long ret = findEnterpriseId(enterpriseTableName, resourceType, resourceId, entityManager);
+        Long ret = findEnterpriseId(resourceType, resourceId, entityManager);
         if (ret != null) {
             entityManager.close();
             return ret;
         }
 
         try {
-            return createEnterpriseId(enterpriseTableName, resourceType, resourceId, entityManager);
+            return createEnterpriseId(resourceType, resourceId, entityManager);
 
         } catch (Exception ex) {
             //if another thread has beat us to it, we'll get an exception, so try the find again
-            ret = findEnterpriseId(enterpriseTableName, resourceType, resourceId, entityManager);
+            ret = findEnterpriseId(resourceType, resourceId, entityManager);
             if (ret != null) {
                 return ret;
             }
@@ -42,14 +42,13 @@ public class EnterpriseIdHelper {
         }
     }
 
-    private static Long createEnterpriseId(String enterpriseTableName, String resourceType, String resourceId, EntityManager entityManager) throws Exception {
+    private static Long createEnterpriseId(String resourceType, String resourceId, EntityManager entityManager) throws Exception {
 
         if (resourceId == null) {
             throw new IllegalArgumentException("Null resource ID");
         }
 
         EnterpriseIdMap mapping = new EnterpriseIdMap();
-        mapping.setEnterpriseTableName(enterpriseTableName);
         mapping.setResourceType(resourceType);
         mapping.setResourceId(resourceId);
         //mapping.setEnterpriseId(new Long(0));
@@ -66,27 +65,25 @@ public class EnterpriseIdHelper {
         return mapping.getEnterpriseId();
     }
 
-    public static Long findEnterpriseId(String enterpriseTableName, String resourceType, String resourceId) throws Exception {
-        EntityManager entityManager = TransformConnection.getEntityManager();
+    public static Long findEnterpriseId(String enterpriseConfigName, String resourceType, String resourceId) throws Exception {
+        EntityManager entityManager = TransformConnection.getEntityManager(enterpriseConfigName);
         try {
-            return findEnterpriseId(enterpriseTableName, resourceType, resourceId, entityManager);
+            return findEnterpriseId(resourceType, resourceId, entityManager);
         } finally {
             entityManager.close();
         }
     }
 
-    private static Long findEnterpriseId(String enterpriseTableName, String resourceType, String resourceId, EntityManager entityManager) throws Exception {
+    private static Long findEnterpriseId(String resourceType, String resourceId, EntityManager entityManager) throws Exception {
 
         String sql = "select c"
                 + " from"
                 + " EnterpriseIdMap c"
-                + " where c.enterpriseTableName = :enterpriseTableName"
-                + " and c.resourceType = :resourceType"
+                + " where c.resourceType = :resourceType"
                 + " and c.resourceId = :resourceId";
 
 
         Query query = entityManager.createQuery(sql, EnterpriseIdMap.class)
-                .setParameter("enterpriseTableName", enterpriseTableName)
                 .setParameter("resourceType", resourceType)
                 .setParameter("resourceId", resourceId);
 
@@ -99,20 +96,20 @@ public class EnterpriseIdHelper {
         }
     }
 
-    public static void saveEnterpriseOrganisationId(String serviceId, String systemId, String configName, Long enterpriseId) throws Exception {
+    public static void saveEnterpriseOrganisationId(String serviceId, String systemId, String enterpriseConfigName, Long enterpriseId) throws Exception {
 
-        EntityManager entityManager = TransformConnection.getEntityManager();
+        EntityManager entityManager = TransformConnection.getEntityManager(enterpriseConfigName);
 
         try {
-            EnterpriseOrganisationIdMap mapping = findEnterpriseOrganisationMapping(serviceId, systemId, configName, entityManager);
+            EnterpriseOrganisationIdMap mapping = findEnterpriseOrganisationMapping(serviceId, systemId, entityManager);
             if (mapping != null) {
-                throw new Exception("EnterpriseOrganisationIdMap already exists for service " + serviceId + " system " + systemId + " config " + configName);
+                throw new Exception("EnterpriseOrganisationIdMap already exists for service " + serviceId + " system " + systemId + " config " + enterpriseConfigName);
             }
 
             mapping = new EnterpriseOrganisationIdMap();
             mapping.setServiceId(serviceId);
             mapping.setSystemId(systemId);
-            mapping.setEnterpriseConfigName(configName);
+            //mapping.setEnterpriseConfigName(configName);
             mapping.setEnterpriseId(enterpriseId);
 
             entityManager.getTransaction().begin();
@@ -124,19 +121,17 @@ public class EnterpriseIdHelper {
         }
     }
 
-    private static EnterpriseOrganisationIdMap findEnterpriseOrganisationMapping(String serviceId, String systemId, String configName,  EntityManager entityManager) throws Exception {
+    private static EnterpriseOrganisationIdMap findEnterpriseOrganisationMapping(String serviceId, String systemId, EntityManager entityManager) throws Exception {
 
         String sql = "select c"
                 + " from"
                 + " EnterpriseOrganisationIdMap c"
                 + " where c.serviceId = :serviceId"
-                + " and c.systemId = :systemId"
-                + " and c.enterpriseConfigName = :enterpriseConfigName";
+                + " and c.systemId = :systemId";
 
         Query query = entityManager.createQuery(sql, EnterpriseOrganisationIdMap.class)
                 .setParameter("serviceId", serviceId)
-                .setParameter("systemId", systemId)
-                .setParameter("enterpriseConfigName", configName);
+                .setParameter("systemId", systemId);
 
         try {
             EnterpriseOrganisationIdMap result = (EnterpriseOrganisationIdMap)query.getSingleResult();
@@ -147,10 +142,10 @@ public class EnterpriseIdHelper {
         }
     }
 
-    public static Long findEnterpriseOrganisationId(String serviceId, String systemId, String configName) throws Exception {
+    public static Long findEnterpriseOrganisationId(String serviceId, String systemId, String enterpriseConfigName) throws Exception {
 
-        EntityManager entityManager = TransformConnection.getEntityManager();
-        EnterpriseOrganisationIdMap mapping = findEnterpriseOrganisationMapping(serviceId, systemId, configName, entityManager);
+        EntityManager entityManager = TransformConnection.getEntityManager(enterpriseConfigName);
+        EnterpriseOrganisationIdMap mapping = findEnterpriseOrganisationMapping(serviceId, systemId, entityManager);
         entityManager.close();
         if (mapping != null) {
             return mapping.getEnterpriseId();
@@ -210,20 +205,20 @@ public class EnterpriseIdHelper {
 
     public static Long findOrCreateEnterprisePersonId(String discoveryPersonId, String enterpriseConfigName) throws Exception {
 
-        EntityManager entityManager = TransformConnection.getEntityManager();
+        EntityManager entityManager = TransformConnection.getEntityManager(enterpriseConfigName);
 
-        Long ret = findEnterprisePersonId(discoveryPersonId, enterpriseConfigName, entityManager);
+        Long ret = findEnterprisePersonId(discoveryPersonId, entityManager);
         if (ret != null) {
             entityManager.close();
             return ret;
         }
 
         try {
-            return createEnterprisePersonId(discoveryPersonId, enterpriseConfigName, entityManager);
+            return createEnterprisePersonId(discoveryPersonId, entityManager);
 
         } catch (Exception ex) {
             //if another thread has beat us to it, we'll get an exception, so try the find again
-            ret = findEnterprisePersonId(discoveryPersonId, enterpriseConfigName, entityManager);
+            ret = findEnterprisePersonId(discoveryPersonId, entityManager);
             if (ret != null) {
                 return ret;
             }
@@ -234,18 +229,16 @@ public class EnterpriseIdHelper {
         }
     }
 
-    private static Long findEnterprisePersonId(String discoveryPersonId, String enterpriseConfigName, EntityManager entityManager) {
+    private static Long findEnterprisePersonId(String discoveryPersonId, EntityManager entityManager) {
 
         String sql = "select c"
                 + " from"
                 + " EnterprisePersonIdMap c"
-                + " where c.personId = :personId"
-                + " and c.enterpriseConfigName = :enterpriseConfigName";
+                + " where c.personId = :personId";
 
 
         Query query = entityManager.createQuery(sql, EnterprisePersonIdMap.class)
-                .setParameter("personId", discoveryPersonId)
-                .setParameter("enterpriseConfigName", enterpriseConfigName);
+                .setParameter("personId", discoveryPersonId);
 
         try {
             EnterprisePersonIdMap result = (EnterprisePersonIdMap)query.getSingleResult();
@@ -256,11 +249,10 @@ public class EnterpriseIdHelper {
         }
     }
 
-    private static Long createEnterprisePersonId(String discoveryPersonId, String enterpriseConfigName, EntityManager entityManager) throws Exception {
+    private static Long createEnterprisePersonId(String discoveryPersonId, EntityManager entityManager) throws Exception {
 
         EnterprisePersonIdMap mapping = new EnterprisePersonIdMap();
         mapping.setPersonId(discoveryPersonId);
-        mapping.setEnterpriseConfigName(enterpriseConfigName);
 
         entityManager.getTransaction().begin();
         entityManager.persist(mapping);
@@ -270,17 +262,17 @@ public class EnterpriseIdHelper {
     }
 
     public static Long findEnterprisePersonId(String discoveryPersonId, String enterpriseConfigName) throws Exception {
-        EntityManager entityManager = TransformConnection.getEntityManager();
+        EntityManager entityManager = TransformConnection.getEntityManager(enterpriseConfigName);
         try {
-            return findEnterprisePersonId(discoveryPersonId, enterpriseConfigName, entityManager);
+            return findEnterprisePersonId(discoveryPersonId, entityManager);
         } finally {
             entityManager.close();
         }
     }
 
-    public static List<EnterprisePersonIdMap> findEnterprisePersonMapsForPersonId(String discoveryPersonId) throws Exception {
+    public static List<EnterprisePersonIdMap> findEnterprisePersonMapsForPersonId(String enterpriseConfigName, String discoveryPersonId) throws Exception {
 
-        EntityManager entityManager = TransformConnection.getEntityManager();
+        EntityManager entityManager = TransformConnection.getEntityManager(enterpriseConfigName);
 
         String sql = "select c"
                 + " from"
@@ -300,16 +292,16 @@ public class EnterpriseIdHelper {
         }
     }
 
-    public static void findEnterpriseIds(String enterpriseTableName, List<ResourceByExchangeBatch> resources, Map<ResourceByExchangeBatch, Long> ids) throws Exception {
-        EntityManager entityManager = TransformConnection.getEntityManager();
+    public static void findEnterpriseIds(String enterpriseConfigName, List<ResourceByExchangeBatch> resources, Map<ResourceByExchangeBatch, Long> ids) throws Exception {
+        EntityManager entityManager = TransformConnection.getEntityManager(enterpriseConfigName);
         try {
-            findEnterpriseIds(enterpriseTableName, resources, ids, entityManager);
+            findEnterpriseIds(resources, ids, entityManager);
         } finally {
             entityManager.close();
         }
     }
 
-    private static void findEnterpriseIds(String enterpriseTableName, List<ResourceByExchangeBatch> resources, Map<ResourceByExchangeBatch, Long> ids, EntityManager entityManager) throws Exception {
+    private static void findEnterpriseIds(List<ResourceByExchangeBatch> resources, Map<ResourceByExchangeBatch, Long> ids, EntityManager entityManager) throws Exception {
 
         String resourceType = null;
         List<String> resourceIds = new ArrayList<>();
@@ -331,13 +323,11 @@ public class EnterpriseIdHelper {
         String sql = "select c"
                 + " from"
                 + " EnterpriseIdMap c"
-                + " where c.enterpriseTableName = :enterpriseTableName"
-                + " and c.resourceType = :resourceType"
+                + " where c.resourceType = :resourceType"
                 + " and c.resourceId IN :resourceId";
 
 
         Query query = entityManager.createQuery(sql, EnterpriseIdMap.class)
-                .setParameter("enterpriseTableName", enterpriseTableName)
                 .setParameter("resourceType", resourceType)
                 .setParameter("resourceId", resourceIds);
 
@@ -351,11 +341,11 @@ public class EnterpriseIdHelper {
         }
     }
 
-    public static void findOrCreateEnterpriseIds(String enterpriseTableName, List<ResourceByExchangeBatch> resources, Map<ResourceByExchangeBatch, Long> ids) throws Exception {
-        EntityManager entityManager = TransformConnection.getEntityManager();
+    public static void findOrCreateEnterpriseIds(String enterpriseConfigName, List<ResourceByExchangeBatch> resources, Map<ResourceByExchangeBatch, Long> ids) throws Exception {
+        EntityManager entityManager = TransformConnection.getEntityManager(enterpriseConfigName);
 
         //check the DB for existing IDs
-        findEnterpriseIds(enterpriseTableName, resources, ids, entityManager);
+        findEnterpriseIds(resources, ids, entityManager);
 
         //find the resources that didn't have an ID
         List<ResourceByExchangeBatch> resourcesToCreate = new ArrayList<>();
@@ -374,7 +364,6 @@ public class EnterpriseIdHelper {
             for (ResourceByExchangeBatch resource: resourcesToCreate) {
 
                 EnterpriseIdMap mapping = new EnterpriseIdMap();
-                mapping.setEnterpriseTableName(enterpriseTableName);
                 mapping.setResourceType(resource.getResourceType());
                 mapping.setResourceId(resource.getResourceId().toString());
 
@@ -399,7 +388,7 @@ public class EnterpriseIdHelper {
             LOG.warn("Failed to create " + resourcesToCreate.size() + " IDs in one go, so doing one by one");
 
             for (ResourceByExchangeBatch resource: resourcesToCreate) {
-                Long enterpriseId = findOrCreateEnterpriseId(enterpriseTableName, resource.getResourceType(), resource.getResourceId().toString());
+                Long enterpriseId = findOrCreateEnterpriseId(enterpriseConfigName, resource.getResourceType(), resource.getResourceId().toString());
                 ids.put(resource, enterpriseId);
             }
 

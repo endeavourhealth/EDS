@@ -30,7 +30,7 @@ public class AllergyIntoleranceTransformer extends AbstractTransformer {
                           Long enterpriseOrganisationId,
                           Long enterprisePatientId,
                           Long enterprisePersonId,
-                          String configName,
+                          String enterpriseConfigName,
                           UUID protocolId) throws Exception {
 
         AllergyIntolerance fhir = (AllergyIntolerance)resource;
@@ -57,16 +57,16 @@ public class AllergyIntoleranceTransformer extends AbstractTransformer {
             for (Extension extension: fhir.getExtension()) {
                 if (extension.getUrl().equals(FhirExtensionUri.ASSOCIATED_ENCOUNTER)) {
                     Reference encounterReference = (Reference)extension.getValue();
-                    encounterId = findEnterpriseId(data.getEncounters(), encounterReference);
+                    encounterId = findEnterpriseId(enterpriseConfigName, encounterReference);
                 }
             }
         }
 
         if (fhir.hasRecorder()) {
             Reference practitionerReference = fhir.getRecorder();
-            practitionerId = findEnterpriseId(data.getPractitioners(), practitionerReference);
+            practitionerId = findEnterpriseId(enterpriseConfigName, practitionerReference);
             if (practitionerId == null) {
-                practitionerId = transformOnDemand(practitionerReference, data, otherResources, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName, protocolId);
+                practitionerId = transformOnDemand(practitionerReference, data, otherResources, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, enterpriseConfigName, protocolId);
             }
         }
 

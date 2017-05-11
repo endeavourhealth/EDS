@@ -32,39 +32,26 @@ public class Main {
         ConfigManager.Initialize("EnterpriseAgeUpdater");
 
         try {
-            if (args.length != 0) {
-                LOG.error("No parameters required.");
+            if (args.length != 1) {
+                LOG.error("Parameter required: <enterprise config name>");
                 return;
             }
 
-            LOG.info("Age updater starting");
+            String enterpriseConfigName = args[0];
+            LOG.info("Age updater starting for " + enterpriseConfigName);
 
-            EntityManager entityManager = TransformConnection.getEntityManager();
+            EntityManager entityManager = TransformConnection.getEntityManager(enterpriseConfigName);
             List<EnterpriseAge> agesToUpdate = findAgesToUpdate(entityManager);
             LOG.info("Found " + agesToUpdate.size() + " ages to update");
 
-            String currentConfigName = null;
-            Connection currentConnection = null;
+            Connection enterpriseConnection = EnterpriseConnector.openConnection(enterpriseConfigName);
 
             int progress = 0;
             for (EnterpriseAge ageToUpdate: agesToUpdate) {
 
                 Integer[] ages = EnterpriseAgeUpdater.calculateAgeValues(ageToUpdate);
 
-                //see if we're on a different enterprise DB yet, loading the config if needed
-                if (currentConfigName == null
-                        || !currentConfigName.equalsIgnoreCase(ageToUpdate.getEnterpriseConfigName())) {
-
-                    if (currentConnection != null) {
-                        currentConnection.close();
-                    }
-
-                    currentConfigName = ageToUpdate.getEnterpriseConfigName();
-                    currentConnection = EnterpriseConnector.openConnection(currentConfigName);
-                    LOG.info("Updating ages on " + currentConfigName);
-                }
-
-                updateEnterprise(ageToUpdate.getEnterprisePatientId(), ages, currentConnection);
+                updateEnterprise(ageToUpdate.getEnterprisePatientId(), ages, enterpriseConnection);
 
                 //if we've successfully updated Enterprise, then it's time to save our updated map object
                 //with the newly calculated date of next update
@@ -78,8 +65,8 @@ public class Main {
                 }
             }
 
-            if (currentConnection != null) {
-                currentConnection.close();
+            if (enterpriseConnection != null) {
+                enterpriseConnection.close();
             }
 
             entityManager.close();
