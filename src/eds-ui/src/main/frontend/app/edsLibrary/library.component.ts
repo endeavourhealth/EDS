@@ -5,7 +5,7 @@ import {LibraryService, LoggerService, ModuleStateService} from "eds-common-js";
 import {FolderNode} from "eds-common-js/dist/folder/models/FolderNode";
 import {ItemSummaryList} from "eds-common-js/dist/library/models/ItemSummaryList";
 import {ItemType} from "eds-common-js/dist/folder/models/ItemType";
-import {FolderItem} from "eds-common-js/dist/folder/models/FolderContent";
+import {FolderItem} from "eds-common-js/dist/folder/models/FolderItem";
 import {LibraryItem} from "eds-common-js/dist/library/models/LibraryItem";
 import {ActionMenuItem} from "eds-common-js/dist/folder/models/ActionMenuItem";
 

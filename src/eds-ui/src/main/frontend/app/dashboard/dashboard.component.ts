@@ -5,7 +5,7 @@ import {RabbitExchange} from "../queueing/models/RabbitExchange";
 import {RabbitQueue} from "../queueing/models/RabbitQueue";
 import {RabbitService} from "../queueing/rabbit.service";
 import {DashboardService} from "./dashboard.service";
-import {FolderItem} from "eds-common-js/dist/folder/models/FolderContent";
+import {FolderItem} from "eds-common-js/dist/folder/models/FolderItem";
 import {ItemType} from "eds-common-js/dist/folder/models/ItemType";
 
 @Component({

@@ -2,7 +2,7 @@ import {Injectable} from "@angular/core";
 import {Http, URLSearchParams} from "@angular/http";
 import {Observable} from "rxjs";
 import {BaseHttp2Service} from "eds-common-js";
-import {FolderItem} from "eds-common-js/dist/folder/models/FolderContent";
+import {FolderItem} from "eds-common-js/dist/folder/models/FolderItem";
 
 @Injectable()
 export class DashboardService extends BaseHttp2Service {
