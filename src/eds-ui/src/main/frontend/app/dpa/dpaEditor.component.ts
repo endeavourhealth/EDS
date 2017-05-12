@@ -15,10 +15,13 @@ import {DataSetPickerDialog} from "../dataSet/dataSetPicker.dialog";
     template: require('./dpaEditor.html')
 })
 export class DpaEditorComponent {
+    public accordionClass: string = 'accordionClass';
+
     dpa: Dpa = <Dpa>{};
     dataFlows: DataFlow[];
     cohorts: Cohort[];
     dataSets: DataSet[];
+    editDisabled : boolean = false;
 
     status = [
         {num: 0, name: "Active"},
@@ -30,6 +33,10 @@ export class DpaEditorComponent {
         {num: 1, name: "Temporary Store And Forward"},
         {num: 2, name: "Permanent Record Store"}
     ];
+
+    dataFlowDetailsToShow = new DataFlow().getDisplayItems();
+    datasetDetailsToShow = new DataSet().getDisplayItems();
+    cohortDetailsToShow = new Cohort().getDisplayItems();
 
     constructor(private $modal: NgbModal,
                 private log: LoggerService,

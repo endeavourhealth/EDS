@@ -13,6 +13,8 @@ import {AdminService, LoggerService} from "eds-common-js";
     template: require('./dataFlowEditor.html')
 })
 export class DataFlowEditorComponent {
+    public accordionClass: string = 'accordionClass';
+
     dataFlow : DataFlow = <DataFlow>{};
     dsas : Dsa[];
     dpas : Dpa[];
@@ -36,6 +38,9 @@ export class DataFlowEditorComponent {
         {num: 0, name : "In Development"},
         {num: 1, name : "Live"}
     ];
+
+    dsaDetailsToShow = new Dsa().getDisplayItems();
+    dpaDetailsToShow = new Dpa().getDisplayItems();
 
     constructor(private $modal: NgbModal,
                 private state : StateService,

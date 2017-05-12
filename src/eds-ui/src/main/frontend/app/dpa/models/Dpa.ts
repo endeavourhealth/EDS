@@ -13,4 +13,16 @@ export class Dpa {
     dataFlows : { [key:string]:string; };
     cohorts : { [key:string]:string; };
     dataSets : { [key:string]:string; };
+
+    getDisplayItems() :any[] {
+        return [
+            {label: 'Description', property: 'description'},
+            {label: 'Derivation', property: 'derivation'},
+            {label: 'Publisher Information', property: 'publisherInformation'},
+            {label: 'Publisher Contract Information', property: 'publisherContractInformation'},
+            {label: 'Publisher DataSet', property: 'publisherDataSet'},
+            {label: 'DSA Status Id', property: 'dsaStatusId'},
+            {label: 'Return To Sender Policy', property: 'returnToSenderPolicy'}
+        ];
+    }
 }

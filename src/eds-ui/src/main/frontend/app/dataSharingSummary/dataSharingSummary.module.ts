@@ -7,8 +7,9 @@ import {DataSharingSummaryComponent} from "./dataSharingSummary.component";
 import {DataSharingSummaryEditorComponent} from "./dataSharingSummaryEditor.component";
 import {DataSharingSummaryService} from "./dataSharingSummary.service";
 import {NKDatetimeModule} from "ng2-datetime/ng2-datetime";
-import {DataSharingSummaryPickerDialog} from './dataSharingSummaryPicker.dialog'
+import {DataSharingSummaryPickerDialog} from './dataSharingSummaryPicker.dialog';
 import {LoggerModule} from "eds-common-js";
+import {ControlsModule} from "eds-common-js";
 
 @NgModule({
     imports : [
@@ -16,7 +17,8 @@ import {LoggerModule} from "eds-common-js";
         FormsModule,
         NgbModule,
         NKDatetimeModule,
-        LoggerModule
+        LoggerModule,
+        ControlsModule
     ],
     declarations : [
         DataSharingSummaryComponent,

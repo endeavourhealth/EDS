@@ -36,6 +36,7 @@ export class DataSharingSummaryOverviewComponent {
         vm.getDataFlowStatistics();
         vm.getCohortStatistics();
         vm.getDataSetStatistics();
+        vm.getSummaryStatistics();
     }
 
     getSummaryStatistics() {

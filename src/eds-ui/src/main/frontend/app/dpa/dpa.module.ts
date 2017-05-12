@@ -6,12 +6,18 @@ import {DpaComponent} from "./dpa.component";
 import {DpaEditorComponent} from "./dpaEditor.component";
 import {DpaService} from "./dpa.service";
 import {DpaPickerDialog} from './dpaPicker.dialog';
+import {ControlsModule} from "eds-common-js";
+import {EntityViewComponentsModule} from "eds-common-js";
+import { AccordionModule } from 'ngx-bootstrap';
 
 @NgModule({
     imports : [
         BrowserModule,
         FormsModule,
         NgbModule,
+        ControlsModule,
+        EntityViewComponentsModule,
+        AccordionModule.forRoot()
     ],
     declarations : [
         DpaComponent,

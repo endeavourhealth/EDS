@@ -9,4 +9,10 @@ export class DataSet {
 	dpas : { [key:string]:string; };
 
 	composition : Composition[];
+
+	getDisplayItems() :any[] {
+		return [
+			{label: 'Description', property: 'description'}
+		];
+	}
 }

@@ -8,13 +8,19 @@ import {RegionService} from "./region.service";
 import {RegionPickerDialog} from "./regionPicker.dialog";
 import {AgmCoreModule, MapsAPILoader} from 'angular2-google-maps/core';
 import {CustomLazyAPIKeyLoader} from "./CustomLazyAPIKeyLoader";
+import {ControlsModule} from "eds-common-js";
+import {EntityViewComponentsModule} from "eds-common-js";
+import { AccordionModule } from 'ngx-bootstrap';
 
 @NgModule({
     imports : [
         AgmCoreModule.forRoot(),
         BrowserModule,
         FormsModule,
-        NgbModule
+        NgbModule,
+        ControlsModule,
+        AccordionModule.forRoot(),
+        EntityViewComponentsModule
     ],
     declarations : [
         RegionComponent,

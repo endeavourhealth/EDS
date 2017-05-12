@@ -19,4 +19,16 @@ export class Organisation {
     childOrganisations : { [key:string]:string; };
     services : { [key:string]:string; };
     addresses : Address[];
+
+    getDisplayItems() :any[] {
+        return [
+            {label: 'ODS Code', property: 'odsCode'},
+            {label: 'Alternative Name', property: 'alternativeName'},
+            {label: 'ICO Code', property: 'icoCode'},
+            {label: 'IG Toolkit Status', property: 'igToolkitStatus'},
+            {label: 'Date of Registration', property: 'dateOfRegistration'},
+            {label: 'Registration Person', property: 'registrationPerson'},
+            {label: 'Evidence Of Registration', property: 'evidenceOfRegistration'}
+        ];
+    }
 }

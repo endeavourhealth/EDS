@@ -14,6 +14,7 @@ import {OrganisationManagerPickerDialog} from "./organisationManagerPicker.dialo
     template: require('./organisationManagerEditor.html')
 })
 export class OrganisationManagerEditorComponent {
+    public accordionClass: string = 'accordionClass';
 
     region : Region = <Region>{};
     organisation : Organisation = <Organisation>{};
@@ -24,6 +25,9 @@ export class OrganisationManagerEditorComponent {
     addresses : Address[];
     location : any;
     orgType : string = 'Organisation';
+
+    orgDetailsToShow = new Organisation().getDisplayItems();
+    regionDetailsToShow = new Region().getDisplayItems();
 
     constructor(private $modal: NgbModal,
                 private state : StateService,

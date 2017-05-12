@@ -6,12 +6,16 @@ import {DataFlowComponent} from "./dataFlow.component";
 import {DataFlowEditorComponent} from "./dataFlowEditor.component";
 import {DataFlowService} from "./dataFlow.service";
 import {DataFlowPickerDialog} from './dataFlowPicker.dialog';
+import {EntityViewComponentsModule} from "eds-common-js";
+import { AccordionModule } from 'ngx-bootstrap';
 
 @NgModule({
     imports : [
         BrowserModule,
         FormsModule,
         NgbModule,
+        EntityViewComponentsModule,
+        AccordionModule.forRoot()
     ],
     declarations : [
         DataFlowComponent,

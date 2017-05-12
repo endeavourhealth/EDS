@@ -14,4 +14,12 @@ export class DataFlow {
     subscriber : string;
     dsas : { [key:string]:string; };
     dpas : { [key:string]:string; };
+
+    getDisplayItems() :any[] {
+        return [
+            {label: 'Status', property: 'status'},
+            {label: 'Approximate Volume', property: 'approximateVolume'},
+            {label: 'Sign Off', property: 'signOff'},
+        ];
+    }
 }

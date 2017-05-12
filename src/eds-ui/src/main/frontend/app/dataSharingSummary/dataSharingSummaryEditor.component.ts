@@ -65,7 +65,6 @@ export class DataSharingSummaryEditorComponent {
         vm.dataSharingSummaryService.getDataSharingSummary(uuid)
             .subscribe(result =>  {
                     vm.dataSharingSummary = result;
-                    console.log(result);
                 },
                 error => vm.log.error('Error loading', error, 'Error')
             );

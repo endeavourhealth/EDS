@@ -16,6 +16,7 @@ import {DsaPickerDialog} from "../dsa/dsaPicker.dialog";
     template: require('./regionEditor.html')
 })
 export class RegionEditorComponent {
+    public accordionClass: string = 'accordionClass';
 
     region : Region = <Region>{};
     organisations : Organisation[];
@@ -26,7 +27,11 @@ export class RegionEditorComponent {
     lng: number = -4.7194005;
     zoom: number = 6.01;
     markers: Marker[];
+    editDisabled : boolean = false;
 
+    orgDetailsToShow = new Organisation().getDisplayItems();
+    regionDetailsToShow = new Region().getDisplayItems();
+    sharingAgreementsDetailsToShow = new Dsa().getDisplayItems();
 
     constructor(private $modal: NgbModal,
                 private state : StateService,

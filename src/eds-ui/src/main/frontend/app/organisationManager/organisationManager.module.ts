@@ -7,12 +7,16 @@ import {OrganisationManagerEditorComponent} from "./organisationManagerEditor.co
 import {OrganisationManagerService} from "./organisationManager.service";
 import {OrganisationManagerPickerDialog} from './organisationManagerPicker.dialog';
 import {OrganisationManagerOverviewComponent} from './organisationManagerOverview.component';
+import {EntityViewComponentsModule} from "eds-common-js";
+import { AccordionModule } from 'ngx-bootstrap';
 
 @NgModule({
     imports : [
         BrowserModule,
         FormsModule,
-        NgbModule
+        NgbModule,
+        AccordionModule.forRoot(),
+        EntityViewComponentsModule
     ],
     declarations : [
         OrganisationManagerComponent,

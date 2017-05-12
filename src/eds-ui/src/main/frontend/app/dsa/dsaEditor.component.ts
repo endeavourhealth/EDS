@@ -13,6 +13,8 @@ import {RegionPickerDialog} from "../region/regionPicker.dialog";
     template: require('./dsaEditor.html')
 })
 export class DsaEditorComponent {
+    public accordionClass: string = 'accordionClass';
+
     dsa : Dsa = <Dsa>{};
     dataFlows : DataFlow[];
     regions : Region[];
@@ -21,6 +23,9 @@ export class DsaEditorComponent {
         {num: 0, name : "Active"},
         {num: 1, name : "Inactive"}
     ];
+
+    dataflowDetailsToShow = new DataFlow().getDisplayItems();
+    regionDetailsToShow = new Region().getDisplayItems();
 
     constructor(private $modal: NgbModal,
                 private state : StateService,

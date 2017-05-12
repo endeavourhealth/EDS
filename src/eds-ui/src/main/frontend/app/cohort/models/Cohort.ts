@@ -6,4 +6,10 @@ export class Cohort {
     QueryDefinition: string;
     RemovalPolicy: string;
     dpas : { [key:string]:string; };
+
+    getDisplayItems() :any[] {
+        return [
+            {label: 'Nature', property: 'nature'}
+        ];
+    }
 }

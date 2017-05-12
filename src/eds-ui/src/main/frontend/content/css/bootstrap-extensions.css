@@ -1,5 +1,6 @@
 /* Additions/customizations to Bootstrap CSS */
 
+
 .sebm-google-map-container {
     height: 600px;
 }
@@ -61,5 +62,52 @@
 
 .dropdown-submenu > .dropdown-menu > li {
     padding-left: 10px;
+}
+
+.region {
+    text-align:center;
+    padding: 2px 2px;
+    border: #333 1px solid;
+    margin-bottom:20px;
+    min-height:75px;
+    overflow:hidden;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    border-radius: 6px;
+}
+
+.region > span {
+}
+
+.card.accordionClass,
+.card.accordionClass .card-header
+{
+    background-color: #3a87ad;
+    color: #fff;
+    border: #333 1px solid;
+}
+
+.panel.accordionClass .panel-body {
+    background-color: #FFFFFF;
+    color: #000000;
+    border: #333 1px solid;
+}
+
+.sign {
+    display: inline-block;
+    position: relative;
+    width: auto;
+    height: auto;
+    box-sizing: border-box;
+    padding: 0 0.4em;
+    border-radius: 6px;
+    border: 0px solid #999;
+    text-align: center;
+    line-height: 1.2;
+    font-family: sans-serif;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+    color: #222;
+    background-color: #f9f9f9;
+    box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
 }
 

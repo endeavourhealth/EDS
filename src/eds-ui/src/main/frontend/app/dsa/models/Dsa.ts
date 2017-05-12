@@ -11,4 +11,15 @@ export class Dsa {
     consentModel : string;
     dataFlows : { [key:string]:string; };
     regions : { [key:string]:string; };
+
+    getDisplayItems() :any[] {
+        return [
+            {label: 'Description', property: 'description'},
+            {label: 'Derivation', property: 'derivation'},
+            {label: 'Publisher Information', property: 'publisherInformation'},
+            {label: 'Publisher Contract Information', property: 'publisherContractInformation'},
+            {label: 'Subscriber Information', property: 'subscriberInformation'},
+            {label: 'Subscriber Contract Information', property: 'subscriberContractInformation'},
+        ];
+    }
 }
