@@ -25,7 +25,7 @@ public class UIMedicationStatementTransform extends UIClinicalTransform<Medicati
                 .collect(Collectors.toList());
     }
 
-    private UIMedicationStatement transform(MedicationStatement medicationStatement, ReferencedResources referencedResources) {
+    public static UIMedicationStatement transform(MedicationStatement medicationStatement, ReferencedResources referencedResources) {
         return new UIMedicationStatement()
             .setId(medicationStatement.getId())
 			.setDateAuthorised(getDateAsserted(medicationStatement)) //the asserted date is more relevant

@@ -43,6 +43,8 @@ public class UITransform {
             return new UIDiaryTransform();
         else if (resourceType == UIMedicationStatement.class)
             return new UIMedicationStatementTransform();
+        else if (resourceType == UIMedicationOrder.class)
+        		return new UIMedicationOrderTransform();
         else if (resourceType == UIFamilyMemberHistory.class)
             return new UIFamilyMemberHistoryTransform();
         else if (resourceType == UIEpisodeOfCare.class)
