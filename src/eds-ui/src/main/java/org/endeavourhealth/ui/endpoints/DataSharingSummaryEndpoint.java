@@ -65,9 +65,9 @@ public final class DataSharingSummaryEndpoint extends AbstractEndpoint {
                 "Data Sharing Summary", dataSharingSummary);
 
         if (dataSharingSummary.getUuid() != null) {
-            dataSharingSummary.setUuid(UUID.randomUUID().toString());
             DataSharingSummaryEntity.updateDataSharingSummary(dataSharingSummary);
         } else {
+            dataSharingSummary.setUuid(UUID.randomUUID().toString());
             DataSharingSummaryEntity.saveDataSharingSummary(dataSharingSummary);
         }
 
@@ -171,7 +171,7 @@ public final class DataSharingSummaryEndpoint extends AbstractEndpoint {
             case "dsa" : return "getDataSharingAgreementStatistics";
             case "dataflow" : return "getDataFlowStatistics";
             case "cohort" : return "getCohortStatistics";
-            case "dataset" : return "getDataSetStatistics";
+            case "dataset" : return "getDatasetStatistics";
             default : throw new Exception("Invalid statistics type");
         }
     }

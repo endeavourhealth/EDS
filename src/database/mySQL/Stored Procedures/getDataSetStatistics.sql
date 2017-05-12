@@ -1,21 +1,21 @@
 
-drop procedure if exists OrganisationManager.getDataSetStatistics;
+drop procedure if exists OrganisationManager.getDatasetStatistics;
 DELIMITER //
-CREATE PROCEDURE OrganisationManager.getDataSetStatistics (
+CREATE PROCEDURE OrganisationManager.getDatasetStatistics (
 )
 BEGIN
-  create temporary table OrganisationManager.DataSetStatistics (
+  create temporary table OrganisationManager.DatasetStatistics (
 	label varchar(100) not null,
     value varchar(100) not null
     );
     
-    insert into OrganisationManager.DataSetStatistics (label, value)
-    select 'Total Number of Data Sets', count(*)
-    from OrganisationManager.DataSet;
+    insert into OrganisationManager.DatasetStatistics (label, value)
+    select 'Total Number of Datasets', count(*)
+    from OrganisationManager.Dataset;
     
-    select label, value from OrganisationManager.DataSetStatistics;
+    select label, value from OrganisationManager.DatasetStatistics;
     
-    drop table OrganisationManager.DataSetStatistics;
+    drop table OrganisationManager.DatasetStatistics;
     
   
 END //
