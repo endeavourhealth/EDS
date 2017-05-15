@@ -1,3 +1,5 @@
+import {DsaPurpose} from "./DsaPurpose";
+
 export class Dsa {
     uuid : string;
     name : string;
@@ -11,6 +13,9 @@ export class Dsa {
     consentModel : string;
     dataFlows : { [key:string]:string; };
     regions : { [key:string]:string; };
+    publishers : { [key:string]:string; };
+    subscribers : { [key:string]:string; };
+    purposes : DsaPurpose[];
 
     getDisplayItems() :any[] {
         return [

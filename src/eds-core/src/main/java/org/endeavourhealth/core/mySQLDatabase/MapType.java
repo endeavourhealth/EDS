@@ -9,7 +9,9 @@ public enum MapType {
     DATAFLOW((short)4),
     DATAPROCESSINGAGREEMENT((short)5),
     COHORT((short)6),
-    DATASET((short)7);
+    DATASET((short)7),
+    PUBLISHER((short)8),
+    SUBSCRIBER((short)9);
 
     private Short mapType;
 

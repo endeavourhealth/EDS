@@ -209,6 +209,16 @@ public class MasterMappingEntity {
             Map<UUID, String> regions = dsa.getRegions();
             saveParentMappings(regions, MapType.REGION.getMapType(), dsa.getUuid(), MapType.DATASHARINGAGREEMENT.getMapType());
         }
+
+        if (dsa.getPublishers() != null) {
+            Map<UUID, String> publishers = dsa.getPublishers();
+            saveChildMappings(publishers, MapType.PUBLISHER.getMapType(), dsa.getUuid(), MapType.DATASHARINGAGREEMENT.getMapType());
+        }
+
+        if (dsa.getSubscribers() != null) {
+            Map<UUID, String> subscribers = dsa.getSubscribers();
+            saveChildMappings(subscribers, MapType.SUBSCRIBER.getMapType(), dsa.getUuid(), MapType.DATASHARINGAGREEMENT.getMapType());
+        }
     }
 
     public static void saveDataFlowMappings(JsonDataFlow dataFlow) throws Exception {

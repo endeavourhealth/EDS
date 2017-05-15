@@ -63,6 +63,32 @@
                 </div>
 
                 <accordion>
+                    <accordion-group [panelClass]="accordionClass" #purps>
+                        <div accordion-heading>
+                            <div class="row">
+                                <div class="col-md-2">
+                                    Purposes
+                                </div>
+                                <div class="col-md-1">
+                                    <span class="badge">{{purposes?.length}}</span>
+                                    <i class="float-xs-right glyphicon pull-right"
+                                       [ngClass]="{'glyphicon-chevron-down': purps?.isOpen, 'glyphicon-chevron-right': !purps?.isOpen}"></i>
+                                    <button type="button" class="btn btn-xs btn-success pull-right" (click)="editPurposes()">Add</button>
+                                </div>
+                            </div>
+                        </div>
+                        <entity-viewer
+                                [items]="purposes"
+                                [primary]="'title'"
+                                [primaryOrderText]="'Title'"
+                                [displayClass]="'region'"
+                                [secondary]="'detail'"
+                                [secondaryOrderText]="'Detail'"
+                                [typeDescription]="'Purpose'"
+                                [model]="'organisation'"
+                                [detailsToShow]="purposeDetailsToShow">
+                        </entity-viewer>
+                    </accordion-group>
                     <accordion-group [panelClass]="accordionClass" #regs>
                         <div accordion-heading>
                             <div class="row">
@@ -114,6 +140,58 @@
                                 [typeDescription]="'Data Flow'"
                                 [model]="'dataflow'"
                                 [detailsToShow]="dataflowDetailsToShow">
+                        </entity-viewer>
+                    </accordion-group>
+                    <accordion-group [panelClass]="accordionClass" #pubs>
+                        <div accordion-heading>
+                            <div class="row">
+                                <div class="col-md-2">
+                                    Publishers
+                                </div>
+                                <div class="col-md-1">
+                                    <span class="badge">{{publishers?.length}}</span>
+                                    <i class="float-xs-right glyphicon pull-right"
+                                       [ngClass]="{'glyphicon-chevron-down': pubs?.isOpen, 'glyphicon-chevron-right': !pubs?.isOpen}"></i>
+                                    <button type="button" class="btn btn-xs btn-success pull-right" (click)="editPublishers()">Edit</button>
+                                </div>
+                            </div>
+                        </div>
+                        <entity-viewer
+                                [items]="publishers"
+                                [primary]="'name'"
+                                [primaryOrderText]="'Name'"
+                                [displayClass]="'region'"
+                                [secondary]="'odsCode'"
+                                [secondaryOrderText]="'ODS Code'"
+                                [typeDescription]="'Publisher'"
+                                [model]="'organisation'"
+                                [detailsToShow]="orgDetailsToShow">
+                        </entity-viewer>
+                    </accordion-group>
+                    <accordion-group [panelClass]="accordionClass" #subs>
+                        <div accordion-heading>
+                            <div class="row">
+                                <div class="col-md-2">
+                                    Subscribers
+                                </div>
+                                <div class="col-md-1">
+                                    <span class="badge">{{subscribers?.length}}</span>
+                                    <i class="float-xs-right glyphicon pull-right"
+                                       [ngClass]="{'glyphicon-chevron-down': subs?.isOpen, 'glyphicon-chevron-right': !subs?.isOpen}"></i>
+                                    <button type="button" class="btn btn-xs btn-success pull-right" (click)="editSubscribers()">Edit</button>
+                                </div>
+                            </div>
+                        </div>
+                        <entity-viewer
+                                [items]="subscribers"
+                                [primary]="'name'"
+                                [primaryOrderText]="'Name'"
+                                [displayClass]="'region'"
+                                [secondary]="'odsCode'"
+                                [secondaryOrderText]="'ODS Code'"
+                                [typeDescription]="'Subscriber'"
+                                [model]="'organisation'"
+                                [detailsToShow]="orgDetailsToShow">
                         </entity-viewer>
                     </accordion-group>
                 </accordion>

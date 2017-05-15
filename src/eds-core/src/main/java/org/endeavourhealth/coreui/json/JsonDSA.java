@@ -2,6 +2,8 @@ package org.endeavourhealth.coreui.json;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -19,6 +21,9 @@ public class JsonDSA {
     private String consentModel = null;
     private Map<UUID, String> dataFlows = null;
     private Map<UUID, String> regions = null;
+    private Map<UUID, String> publishers = null;
+    private Map<UUID, String> subscribers = null;
+    private List<JsonDsaPurpose> purposes = new ArrayList<>();
 
     public String getUuid() {
         return uuid;
@@ -114,5 +119,29 @@ public class JsonDSA {
 
     public void setRegions(Map<UUID, String> regions) {
         this.regions = regions;
+    }
+
+    public Map<UUID, String> getPublishers() {
+        return publishers;
+    }
+
+    public void setPublishers(Map<UUID, String> publishers) {
+        this.publishers = publishers;
+    }
+
+    public Map<UUID, String> getSubscribers() {
+        return subscribers;
+    }
+
+    public void setSubscribers(Map<UUID, String> subscribers) {
+        this.subscribers = subscribers;
+    }
+
+    public List<JsonDsaPurpose> getPurposes() {
+        return purposes;
+    }
+
+    public void setPurposes(List<JsonDsaPurpose> purposes) {
+        this.purposes = purposes;
     }
 }

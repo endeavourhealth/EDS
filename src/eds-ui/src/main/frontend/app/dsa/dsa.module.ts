@@ -6,6 +6,7 @@ import {DsaComponent} from "./dsa.component";
 import {DsaEditorComponent} from "./dsaEditor.component";
 import {DsaService} from "./dsa.service";
 import {DsaPickerDialog} from './dsaPicker.dialog'
+import {PurposeAddDialog} from './purposeAdd.dialog';
 import {EntityViewComponentsModule} from "eds-common-js";
 import { AccordionModule } from 'ngx-bootstrap';
 
@@ -20,10 +21,12 @@ import { AccordionModule } from 'ngx-bootstrap';
     declarations : [
         DsaComponent,
         DsaEditorComponent,
-        DsaPickerDialog
+        DsaPickerDialog,
+        PurposeAddDialog
     ],
     entryComponents : [
-        DsaPickerDialog
+        DsaPickerDialog,
+        PurposeAddDialog
     ],
     providers : [
         DsaService

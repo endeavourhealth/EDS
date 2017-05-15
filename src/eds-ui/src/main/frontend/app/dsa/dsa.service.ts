@@ -5,6 +5,8 @@ import {BaseHttp2Service} from "eds-common-js";
 import {Dsa} from "./models/Dsa";
 import {DataFlow} from "../dataFlow/models/DataFlow";
 import {Region} from "../region/models/Region";
+import {Organisation} from "../organisationManager/models/Organisation";
+import {DsaPurpose} from "./models/DsaPurpose";
 
 @Injectable()
 export class DsaService extends BaseHttp2Service  {
@@ -46,5 +48,23 @@ export class DsaService extends BaseHttp2Service  {
         let params = new URLSearchParams();
         params.set('uuid',uuid);
         return this.httpGet('api/dsa/regions', { search : params });
+    }
+
+    getPublishers(uuid : string) :  Observable<Organisation[]> {
+        let params = new URLSearchParams();
+        params.set('uuid',uuid);
+        return this.httpGet('api/dsa/publishers', { search : params });
+    }
+
+    getSubscribers(uuid : string) :  Observable<Organisation[]> {
+        let params = new URLSearchParams();
+        params.set('uuid',uuid);
+        return this.httpGet('api/dsa/subscribers', { search : params });
+    }
+
+    getPurposes(uuid : string) :  Observable<DsaPurpose[]> {
+        let params = new URLSearchParams();
+        params.set('uuid',uuid);
+        return this.httpGet('api/dsa/purposes', { search : params });
     }
 }

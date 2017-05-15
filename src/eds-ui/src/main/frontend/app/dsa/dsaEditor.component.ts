@@ -8,6 +8,10 @@ import {DataFlowPickerDialog} from "../dataFlow/dataFlowPicker.dialog";
 import {DataFlow} from "../dataFlow/models/DataFlow";
 import {Region} from "../region/models/Region";
 import {RegionPickerDialog} from "../region/regionPicker.dialog";
+import {Organisation} from "../organisationManager/models/Organisation";
+import {OrganisationManagerPickerDialog} from "../organisationManager/organisationManagerPicker.dialog";
+import {DsaPurpose} from "./models/DsaPurpose";
+import {PurposeAddDialog} from "./purposeAdd.dialog";
 
 @Component({
     template: require('./dsaEditor.html')
@@ -18,6 +22,9 @@ export class DsaEditorComponent {
     dsa : Dsa = <Dsa>{};
     dataFlows : DataFlow[];
     regions : Region[];
+    publishers : Organisation[];
+    subscribers : Organisation[];
+    purposes : DsaPurpose[];
 
     status = [
         {num: 0, name : "Active"},
@@ -26,6 +33,8 @@ export class DsaEditorComponent {
 
     dataflowDetailsToShow = new DataFlow().getDisplayItems();
     regionDetailsToShow = new Region().getDisplayItems();
+    orgDetailsToShow = new Organisation().getDisplayItems();
+    purposeDetailsToShow = new DsaPurpose().getDisplayItems();
 
     constructor(private $modal: NgbModal,
                 private state : StateService,
@@ -62,6 +71,9 @@ export class DsaEditorComponent {
                     vm.dsa = result;
                     vm.getLinkedDataFlows();
                     vm.getLinkedRegions();
+                    vm.getPublishers();
+                    vm.getSubscribers();
+                    vm.getPurposes();
                 },
                 error => vm.log.error('Error loading', error, 'Error')
             );
@@ -82,6 +94,24 @@ export class DsaEditorComponent {
             var region : Region = this.regions[idx];
             this.dsa.regions[region.uuid] = region.name;
         }
+
+        // Populate publishers before save
+        vm.dsa.publishers = {};
+        for (var idx in this.publishers) {
+            var pub : Organisation = this.publishers[idx];
+            this.dsa.publishers[pub.uuid] = pub.name;
+        }
+
+        // Populate subscribers before save
+        vm.dsa.subscribers = {};
+        for (var idx in this.subscribers) {
+            var sub : Organisation = this.subscribers[idx];
+            this.dsa.subscribers[sub.uuid] = sub.name;
+        }
+
+        // Populate purposes before save
+        vm.dsa.purposes = [];
+        vm.dsa.purposes = this.purposes;
 
         vm.dsaService.saveDsa(vm.dsa)
             .subscribe(saved => {
@@ -120,6 +150,33 @@ export class DsaEditorComponent {
         );
     }
 
+    private editPublishers() {
+        var vm = this;
+        OrganisationManagerPickerDialog.open(vm.$modal, vm.publishers, 'organisation')
+            .result.then(function
+                (result : Organisation[]) { vm.publishers = result; },
+            () => vm.log.info('Edit Publishers cancelled')
+        );
+    }
+
+    private editSubscribers() {
+        var vm = this;
+        OrganisationManagerPickerDialog.open(vm.$modal, vm.subscribers, 'organisation')
+            .result.then(function
+                (result : Organisation[]) { vm.subscribers = result; },
+            () => vm.log.info('Edit Subscribers cancelled')
+        );
+    }
+
+    private editPurposes() {
+        var vm = this;
+        PurposeAddDialog.open(vm.$modal, vm.purposes)
+            .result.then(function
+                (result : DsaPurpose[]) { vm.purposes= result; },
+            () => vm.log.info('Edit Purposes cancelled')
+        );
+    }
+
     private editDataFlow(item : DataFlow) {
         this.$state.go('app.dataFlowEditor', {itemUuid: item.uuid, itemAction: 'edit'});
     }
@@ -139,6 +196,33 @@ export class DsaEditorComponent {
             .subscribe(
                 result => vm.regions = result,
                 error => vm.log.error('Failed to load linked Regions', error, 'Load Linked Regions')
+            );
+    }
+
+    private getPublishers() {
+        var vm = this;
+        vm.dsaService.getPublishers(vm.dsa.uuid)
+            .subscribe(
+                result => vm.publishers = result,
+                error => vm.log.error('Failed to load publishers', error, 'Load Publishers')
+            );
+    }
+
+    private getSubscribers() {
+        var vm = this;
+        vm.dsaService.getSubscribers(vm.dsa.uuid)
+            .subscribe(
+                result => vm.subscribers = result,
+                error => vm.log.error('Failed to load subscribers', error, 'Load Subscribers')
+            );
+    }
+
+    private getPurposes() {
+        var vm = this;
+        vm.dsaService.getPurposes(vm.dsa.uuid)
+            .subscribe(
+                result => vm.purposes = result,
+                error => vm.log.error('Failed to load purposes', error, 'Load Purposes')
             );
     }
 }

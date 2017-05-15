@@ -262,8 +262,16 @@ create table OrganisationManager.MasterMapping (
     primary key (ChildUuid, ChildMapTypeId, ParentUUid, ParentMapTypeId)
 );
 
+drop table if exists OrganisationManager.DataSharingAgreementPurpose;
 
-
+create table OrganisationManager.DataSharingAgreementPurpose (
+	Uuid char(36) not null primary key,
+	DataSharingAgreementUuid char(36) not null,
+    Title varchar(50) not null,
+    Detail varchar(2000) not null,
+    
+    foreign key (DataSharingAgreementUuid) references OrganisationManager.DataSharingAgreement(Uuid)
+);
 
 
 

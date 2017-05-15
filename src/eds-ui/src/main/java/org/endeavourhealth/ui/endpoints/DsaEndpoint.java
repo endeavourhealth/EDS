@@ -73,6 +73,22 @@ public final class DsaEndpoint extends AbstractEndpoint {
 
         MasterMappingEntity.saveDataSharingAgreementMappings(dsa);
 
+        List<JsonDsaPurpose> purposes = dsa.getPurposes();
+
+        if (purposes.size() > 0) {
+            for (JsonDsaPurpose purp : purposes) {
+                if (purp.getDataSharingAgreementUuid() == null)
+                    purp.setDataSharingAgreementUuid(dsa.getUuid());
+
+                if (purp.getUuid() == null) {
+                    purp.setUuid(UUID.randomUUID().toString());
+                    DataSharingAgreementPurposeEntity.savePurpose(purp);
+                } else {
+                    DataSharingAgreementPurposeEntity.updatePurpose(purp);
+                }
+            }
+        }
+
         clearLogbackMarkers();
 
         return Response
@@ -126,6 +142,48 @@ public final class DsaEndpoint extends AbstractEndpoint {
                 "DSA Id", uuid);
 
         return getLinkedRegions(uuid);
+    }
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.DsaEndpoint.GetPublishers")
+    @Path("/publishers")
+    public Response getPublishers(@Context SecurityContext sc, @QueryParam("uuid") String uuid) throws Exception {
+        super.setLogbackMarkers(sc);
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
+                "publisher(s)",
+                "DSA Id", uuid);
+
+        return getPublishers(uuid);
+    }
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.DsaEndpoint.GetSubscribers")
+    @Path("/subscribers")
+    public Response getSubscribers(@Context SecurityContext sc, @QueryParam("uuid") String uuid) throws Exception {
+        super.setLogbackMarkers(sc);
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
+                "subscriber(s)",
+                "DSA Id", uuid);
+
+        return getSubscribers(uuid);
+    }
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.DsaEndpoint.GetPurposes")
+    @Path("/purposes")
+    public Response getPurposes(@Context SecurityContext sc, @QueryParam("uuid") String uuid) throws Exception {
+        super.setLogbackMarkers(sc);
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
+                "purpose(s)",
+                "DSA Id", uuid);
+
+        return getPurposes(uuid);
     }
 
     private Response getDSAList() throws Exception {
@@ -188,6 +246,49 @@ public final class DsaEndpoint extends AbstractEndpoint {
         return Response
                 .ok()
                 .entity(ret)
+                .build();
+    }
+
+    private Response getPublishers(String dsaUuid) throws Exception {
+
+        List<String> publisherUuids = MasterMappingEntity.getChildMappings(dsaUuid, MapType.DATASHARINGAGREEMENT.getMapType(), MapType.PUBLISHER.getMapType());
+
+        List<OrganisationEntity> ret = new ArrayList<>();
+
+        if (publisherUuids.size() > 0)
+            ret = OrganisationEntity.getOrganisationsFromList(publisherUuids);
+
+        clearLogbackMarkers();
+        return Response
+                .ok()
+                .entity(ret)
+                .build();
+    }
+
+    private Response getSubscribers(String dsaUuid) throws Exception {
+
+        List<String> subscriberUuids = MasterMappingEntity.getChildMappings(dsaUuid, MapType.DATASHARINGAGREEMENT.getMapType(), MapType.SUBSCRIBER.getMapType());
+
+        List<OrganisationEntity> ret = new ArrayList<>();
+
+        if (subscriberUuids.size() > 0)
+            ret = OrganisationEntity.getOrganisationsFromList(subscriberUuids);
+
+        clearLogbackMarkers();
+        return Response
+                .ok()
+                .entity(ret)
+                .build();
+    }
+
+    private Response getPurposes(String dsaUuid) throws Exception {
+
+        List<DataSharingAgreementPurposeEntity> purposes = DataSharingAgreementPurposeEntity.getAllPurposes(dsaUuid);
+
+        clearLogbackMarkers();
+        return Response
+                .ok()
+                .entity(purposes)
                 .build();
     }
 
