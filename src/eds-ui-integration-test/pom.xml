@@ -76,6 +76,12 @@
         </dependency>
 
         <dependency>
+            <groupId>com.github.endeavourhealth.Common</groupId>
+            <artifactId>security</artifactId>
+            <version>${eds-common.version}</version>
+        </dependency>
+
+        <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-admin-client</artifactId>
             <version>${keycloak.version}</version>

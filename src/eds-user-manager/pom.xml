@@ -27,9 +27,9 @@
         </dependency>
 
         <dependency>
-            <groupId>com.github.endeavourhealth.Common</groupId>
-            <artifactId>config</artifactId>
-            <version>${eds-common.version}</version>
+            <groupId>com.github.endeavourhealth.ConfigManager</groupId>
+            <artifactId>configmanager</artifactId>
+            <version>${eds-config.version}</version>
         </dependency>
 
 
