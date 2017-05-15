@@ -25,10 +25,6 @@ export class PurposeAddDialog {
     constructor(public activeModal: NgbActiveModal,
                 private log:LoggerService) {}
 
-    private add(match : DsaPurpose) {
-        if ($.grep(this.resultData, function(o:Dsa) { return o.uuid === match.uuid; }).length === 0)
-            this.resultData.push(match);
-    }
 
     Add() {
         this.newPurpose.title = this.title;
