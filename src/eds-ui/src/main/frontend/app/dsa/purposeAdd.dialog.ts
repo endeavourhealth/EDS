@@ -20,23 +20,24 @@ export class PurposeAddDialog {
     @Input() resultData : DsaPurpose[];
     title : string = '';
     detail : string = '';
-    newPurpose : DsaPurpose = new DsaPurpose();
 
     constructor(public activeModal: NgbActiveModal,
                 private log:LoggerService) {}
 
 
     Add() {
-        this.newPurpose.title = this.title;
-        this.newPurpose.detail = this.detail;
-        this.resultData.push(this.newPurpose);
+        var newPurpose : DsaPurpose = new DsaPurpose();
+        newPurpose.title = this.title;
+        newPurpose.detail = this.detail;
+        this.resultData.push(newPurpose);
         this.activeModal.close(this.resultData);
     }
 
     AddAnother() {
-        this.newPurpose.title = this.title;
-        this.newPurpose.detail = this.detail;
-        this.resultData.push(this.newPurpose);
+        var newPurpose : DsaPurpose = new DsaPurpose();
+        newPurpose.title = this.title;
+        newPurpose.detail = this.detail;
+        this.resultData.push(newPurpose);
         this.title = '';
         this.detail = '';
     }
