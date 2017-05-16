@@ -11,7 +11,7 @@ BEGIN
     
     insert into OrganisationManager.DataSetStatistics (label, value)
     select 'Total Number of Data Sets', count(*)
-    from OrganisationManager.DataSet;
+    from OrganisationManager.Dataset;
     
     select label, value from OrganisationManager.DataSetStatistics;
     

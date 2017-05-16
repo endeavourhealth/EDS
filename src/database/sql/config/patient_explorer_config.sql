@@ -38,5 +38,5 @@ VALUES
     "password" : "",
     "ui-username" : "restricted",
     "ui-password" : "",
-    "url"    : "jdbc:postgresql://localhost:5432/enterprise_data"
+    "url"    : "jdbc:postgresql://postgres:5432/enterprise_data"
 }');

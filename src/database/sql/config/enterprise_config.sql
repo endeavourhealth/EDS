@@ -7,7 +7,7 @@ VALUES
   "driverClass" : "org.postgresql.Driver",
 	"username" : "postgres",
 	"password" : "",
-	"url"	: "jdbc:postgresql://localhost:5432/enterprise_data",
+	"url"	: "jdbc:postgresql://postgres:5432/enterprise_data",
 	"pseudonymised": false
 }' );
 
@@ -18,7 +18,7 @@ VALUES
   "driverClass" : "org.postgresql.Driver",
 	"username" : "postgres",
 	"password" : "",
-	"url"	: "jdbc:postgresql://localhost:5432/enterprise_admin",
+	"url"	: "jdbc:postgresql://postgres:5432/enterprise_admin",
 	"pseudonymised": false
 }' );
 

@@ -1,36 +1,64 @@
 version: '3'
 
 volumes:
-  db-data:
+  # data volumes allow the database container to be stateless
+  # data from postgres is stored in this volume, which is initialised here
+  # and is referenced further down when we declare the postgres container
+  postgres-data:
+  cassandra-1-data:
+  cassandra-2-data:
+  rabbitmq-data:
+  mysql-data:
 
+  # Docker's internal networking lets each service can be addressed
+  # by its service name as a URL eg postgres:5432 
 services:
-  # EDS app is created from a Tomcat container base
-  # volumes on the vagrant box are mapped to relevant parts of it so we never need to enter it
-  eds-app:
+  tomcat:
     image: tomcat:9-jre8
+    environment:
+      - CONFIG_JDBC_URL=jdbc:postgresql://postgres:5432/config
+      - CONFIG_JDBC_USERNAME=postgres
+      - CONFIG_JDBC_PASSWORD=
     volumes:
-      - /vagrant/src/eds-ui/target/ROOT.war:/usr/local/tomcat/webapps/ROOT.war
-      - /vagrant/src/eds-user-manager/target/user-manager.war:/usr/local/tomcat/webapps/user-manager.war
-      - /vagrant/src/eds-messaging-api/target/messaging.war:/usr/local/tomcat/webapps/messaging.war
+      - /vagrant/src/eds-ui/target/eds-ui-1.0-SNAPSHOT.war:/usr/local/tomcat/webapps/ROOT.war
+      - /vagrant/src/eds-user-manager/target/eds-user-manager-1.0-SNAPSHOT.war:/usr/local/tomcat/webapps/user-manager.war
+      - /vagrant/src/eds-messaging-api/target/eds-messaging-api-1.0-SNAPSHOT.war:/usr/local/tomcat/webapps/messaging.war
       - /vagrant/keycloak-libs:/usr/local/tomcat/lib
     ports:
       - "8080:8080"
-    network_mode: "host"
 
-  # the following services are loaded as standard Docker containers, as distributed by their sources
-  # eg Cassandra Docker image comes from ASF
   rabbitmq:
-    image: rabbitmq:3
+  # the rabbitmq:3-management image comes with the mgmt plugin already enabled
+    image: rabbitmq:3-management
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq/mnesia
 
-  cassandra:
+  cassandra-1:
     image: cassandra:latest
+    volumes:
+      - cassandra-1-data:/var/lib/cassandra/data
+      - /vagrant/src/database/cql:/vagrant/src/database/cql
+
+  cassandra-2:
+    image: cassandra:latest
+    environment:
+      - CASSANDRA_SEEDS=cassandra-1
+    volumes:
+      - cassandra-2-data:/var/lib/cassandra/data
 
   postgres:
-    network_mode: "host"
     image: postgres:9.5
     environment:
-      - POSTGRES_USER:'postgres'
       - POSTGRES_PASSWORD:''
     volumes:
-      - db-data:/var/lib/postgresql/data
+      - postgres-data:/var/lib/postgresql/data
       - /vagrant/src/database/sql:/vagrant/src/database/sql
+
+  mysql:
+    image: mysql
+    environment:
+      - MYSQL_ALLOW_EMPTY_PASSWORD=yes # acceptable ONLY because this is local dev box
+    volumes:
+      - mysql-data:/var/lib/mysql/
+      - /vagrant/src/database/mySQL:/vagrant/src/database/mySQL
+

@@ -38,7 +38,7 @@
             <property name="hibernate.hikari.idleTimeout" value="60000" />
             <property name="hibernate.hikari.dataSourceClassName" value="org.postgresql.ds.PGSimpleDataSource" />
 
-            <property name="hibernate.hikari.dataSource.url" value="jdbc:postgresql://localhost:5432/config"/>
+            <property name="hibernate.hikari.dataSource.url" value="jdbc:postgresql://postgres:5432/config"/>
             <property name="hibernate.hikari.dataSource.user" value="postgres"/>
             <property name="hibernate.hikari.dataSource.password" value=""/>
         </properties>

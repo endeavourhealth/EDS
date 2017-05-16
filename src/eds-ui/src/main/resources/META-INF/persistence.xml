@@ -18,7 +18,7 @@
             <property name="hibernate.hikari.minimumIdle" value="5" />
             <property name="hibernate.hikari.dataSourceClassName" value="org.postgresql.ds.PGSimpleDataSource" />
 
-            <property name="hibernate.hikari.dataSource.url" value="jdbc:postgresql://localhost:5432/logback"/>
+            <property name="hibernate.hikari.dataSource.url" value="jdbc:postgresql://postgres:5432/logback"/>
             <property name="hibernate.hikari.dataSource.user" value="postgres"/>
             <property name="hibernate.hikari.dataSource.password" value=""/>
         </properties>
@@ -40,7 +40,7 @@
             <property name="hibernate.hikari.minimumIdle" value="5" />
             <property name="hibernate.hikari.dataSourceClassName" value="org.postgresql.ds.PGSimpleDataSource" />
 
-            <property name="hibernate.hikari.dataSource.url" value="jdbc:postgresql://localhost:5432/coding"/>
+            <property name="hibernate.hikari.dataSource.url" value="jdbc:postgresql://postgres:5432/coding"/>
             <property name="hibernate.hikari.dataSource.user" value="postgres"/>
             <property name="hibernate.hikari.dataSource.password" value=""/>
         </properties>

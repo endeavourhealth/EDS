@@ -3,7 +3,7 @@ INSERT INTO config
 VALUES
 ('global', 'cassandra', '{
  "node" : [
-    "127.0.0.1"
+    "cassandra-1"
   ]
  }' );
 
@@ -25,7 +25,7 @@ VALUES
     <!--<connectionSource class="ch.qos.logback.core.db.DriverManagerConnectionSource">-->
     <connectionSource class="org.endeavourhealth.common.config.LogbackPooledConnectionSource">
       <driverClass>org.postgresql.Driver</driverClass>
-      <url>jdbc:postgresql://localhost:5432/logback</url>
+      <url>jdbc:postgresql://postgres:5432/logback</url>
       <user>postgres</user>
       <password></password>
     </connectionSource>
@@ -92,7 +92,7 @@ VALUES
 ('global', 'rabbit', '{
 	"username" : "guest",
 	"password" : "guest",
-	"nodes"	: "127.0.0.1:5672",
+	"nodes"	: "rabbitmq:5672",
 	"managementPortOffset" : "10000"
 }');
 
@@ -134,7 +134,7 @@ INSERT INTO config
 (app_id, config_id, config_data)
 VALUES
 ('global', 'coding','{
-   "url" : "jdbc:postgresql://localhost:5432/coding",
+   "url" : "jdbc:postgresql://postgres:5432/coding",
    "username" : "postgres",
    "password" : ""
 }');
@@ -143,7 +143,7 @@ INSERT INTO config
 (app_id, config_id, config_data)
 VALUES
 ('global', 'reference_db','{
-   "url" : "jdbc:postgresql://localhost:5432/reference",
+   "url" : "jdbc:postgresql://postgres:5432/reference",
    "username" : "postgres",
    "password" : ""
 }');
@@ -152,7 +152,7 @@ INSERT INTO config
 (app_id, config_id, config_data)
 VALUES
 ('global', 'eds_db', '{
-   "url" : "jdbc:postgresql://localhost:5432/eds",
+   "url" : "jdbc:postgresql://postgres:5432/eds",
    "username" : "postgres",
    "password" : ""
 }' );
