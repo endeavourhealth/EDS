@@ -31,11 +31,17 @@ export class PurposeAddDialog {
         this.newPurpose.detail = this.detail;
         this.resultData.push(this.newPurpose);
         this.activeModal.close(this.resultData);
-        console.log('OK Pressed');
+    }
+
+    AddAnother() {
+        this.newPurpose.title = this.title;
+        this.newPurpose.detail = this.detail;
+        this.resultData.push(this.newPurpose);
+        this.title = '';
+        this.detail = '';
     }
 
     cancel() {
         this.activeModal.dismiss('cancel');
-        console.log('Cancel Pressed');
     }
 }
