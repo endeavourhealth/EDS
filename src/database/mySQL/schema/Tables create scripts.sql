@@ -273,5 +273,16 @@ create table OrganisationManager.DataSharingAgreementPurpose (
     foreign key (DataSharingAgreementUuid) references OrganisationManager.DataSharingAgreement(Uuid)
 );
 
+drop table if exists OrganisationManager.DataSharingAgreementBenefit;
+
+create table OrganisationManager.DataSharingAgreementBenefit (
+	Uuid char(36) not null primary key,
+	DataSharingAgreementUuid char(36) not null,
+    Title varchar(50) not null,
+    Detail varchar(2000) not null,
+    
+    foreign key (DataSharingAgreementUuid) references OrganisationManager.DataSharingAgreement(Uuid)
+);
+
 
 

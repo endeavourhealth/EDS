@@ -1,6 +1,4 @@
 import {Component, Input} from "@angular/core";
-import {Dsa} from "./models/Dsa";
-import {DsaService} from "./dsa.service";
 import {LoggerService} from "eds-common-js";
 import {NgbModal, NgbActiveModal} from "@ng-bootstrap/ng-bootstrap";
 import {DsaPurpose} from "./models/DsaPurpose";
@@ -10,16 +8,19 @@ import {DsaPurpose} from "./models/DsaPurpose";
     template: require('./purposeAdd.html')
 })
 export class PurposeAddDialog {
-    public static open(modalService: NgbModal, purposes : DsaPurpose[]) {
+    public static open(modalService: NgbModal, purposes : DsaPurpose[], type : string) {
         const modalRef = modalService.open(PurposeAddDialog, { backdrop : "static"});
         modalRef.componentInstance.resultData = jQuery.extend(true, [], purposes);
+        modalRef.componentInstance.type = type;
 
         return modalRef;
     }
 
     @Input() resultData : DsaPurpose[];
+    @Input() type : string;
     title : string = '';
     detail : string = '';
+
 
     constructor(public activeModal: NgbActiveModal,
                 private log:LoggerService) {}

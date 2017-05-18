@@ -1,4 +1,5 @@
 import {DsaPurpose} from "./DsaPurpose";
+import {DsaBenefit} from "./DsaBenefit";
 
 export class Dsa {
     uuid : string;
@@ -16,6 +17,7 @@ export class Dsa {
     publishers : { [key:string]:string; };
     subscribers : { [key:string]:string; };
     purposes : DsaPurpose[];
+    benefits : DsaBenefit[];
 
     getDisplayItems() :any[] {
         return [

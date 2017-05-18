@@ -89,6 +89,33 @@
                                 [detailsToShow]="purposeDetailsToShow">
                         </entity-viewer>
                     </accordion-group>
+
+                    <accordion-group [panelClass]="accordionClass" #bens>
+                        <div accordion-heading>
+                            <div class="row">
+                                <div class="col-md-2">
+                                    Benefits
+                                </div>
+                                <div class="col-md-1">
+                                    <span class="badge">{{benefits?.length}}</span>
+                                    <i class="float-xs-right glyphicon pull-right"
+                                       [ngClass]="{'glyphicon-chevron-down': bens?.isOpen, 'glyphicon-chevron-right': !bens?.isOpen}"></i>
+                                    <button type="button" class="btn btn-xs btn-success pull-right" (click)="editBenefits()">Add</button>
+                                </div>
+                            </div>
+                        </div>
+                        <entity-viewer
+                                [items]="benefits"
+                                [primary]="'title'"
+                                [primaryOrderText]="'Title'"
+                                [displayClass]="'region'"
+                                [secondary]="'detail'"
+                                [secondaryOrderText]="'Detail'"
+                                [typeDescription]="'Benefit'"
+                                [model]="'benefit'"
+                                [detailsToShow]="benefitDetailsToShow">
+                        </entity-viewer>
+                    </accordion-group>
                     <accordion-group [panelClass]="accordionClass" #regs>
                         <div accordion-heading>
                             <div class="row">

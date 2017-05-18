@@ -1,7 +1,7 @@
 package org.endeavourhealth.core.mySQLDatabase.models;
 
 import org.endeavourhealth.core.mySQLDatabase.PersistenceManager;
-import org.endeavourhealth.coreui.json.JsonDsaPurpose;
+import org.endeavourhealth.coreui.json.JsonDsaBenefit;
 
 import javax.persistence.*;
 import javax.persistence.criteria.CriteriaBuilder;
@@ -11,8 +11,8 @@ import javax.persistence.criteria.Root;
 import java.util.List;
 
 @Entity
-@Table(name = "DataSharingAgreementPurpose", schema = "OrganisationManager")
-public class DataSharingAgreementPurposeEntity {
+@Table(name = "DataSharingAgreementBenefit", schema = "OrganisationManager")
+public class DataSharingAgreementBenefitEntity {
     private String uuid;
     private String dataSharingAgreementUuid;
     private String title;
@@ -63,7 +63,7 @@ public class DataSharingAgreementPurposeEntity {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        DataSharingAgreementPurposeEntity that = (DataSharingAgreementPurposeEntity) o;
+        DataSharingAgreementBenefitEntity that = (DataSharingAgreementBenefitEntity) o;
 
         if (uuid != null ? !uuid.equals(that.uuid) : that.uuid != null) return false;
         if (dataSharingAgreementUuid != null ? !dataSharingAgreementUuid.equals(that.dataSharingAgreementUuid) : that.dataSharingAgreementUuid != null)
@@ -83,33 +83,33 @@ public class DataSharingAgreementPurposeEntity {
         return result;
     }
 
-    public static List<DataSharingAgreementPurposeEntity> getAllPurposes(String Uuid) throws Exception {
+    public static List<DataSharingAgreementBenefitEntity> getAllBenefits(String Uuid) throws Exception {
         EntityManager entityManager = PersistenceManager.getEntityManager();
 
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
-        CriteriaQuery<DataSharingAgreementPurposeEntity> cq = cb.createQuery(DataSharingAgreementPurposeEntity.class);
-        Root<DataSharingAgreementPurposeEntity> rootEntry = cq.from(DataSharingAgreementPurposeEntity.class);
+        CriteriaQuery<DataSharingAgreementBenefitEntity> cq = cb.createQuery(DataSharingAgreementBenefitEntity.class);
+        Root<DataSharingAgreementBenefitEntity> rootEntry = cq.from(DataSharingAgreementBenefitEntity.class);
 
         Predicate predicate = cb.equal(rootEntry.get("dataSharingAgreementUuid"), Uuid );
 
         cq.where(predicate);
-        TypedQuery<DataSharingAgreementPurposeEntity> query = entityManager.createQuery(cq);
+        TypedQuery<DataSharingAgreementBenefitEntity> query = entityManager.createQuery(cq);
 
-        List<DataSharingAgreementPurposeEntity> ret = query.getResultList();
+        List<DataSharingAgreementBenefitEntity> ret = query.getResultList();
 
         entityManager.close();
 
         return ret;
     }
 
-    public static void savePurpose(JsonDsaPurpose purpose) throws Exception {
+    public static void saveBenefit(JsonDsaBenefit benefit) throws Exception {
         EntityManager entityManager = PersistenceManager.getEntityManager();
 
-        DataSharingAgreementPurposeEntity dsaPurpose = new DataSharingAgreementPurposeEntity();
-        dsaPurpose.setUuid(purpose.getUuid());
-        dsaPurpose.setDetail(purpose.getDetail());
-        dsaPurpose.setTitle(purpose.getTitle());
-        dsaPurpose.setDataSharingAgreementUuid(purpose.getDataSharingAgreementUuid());
+        DataSharingAgreementBenefitEntity dsaPurpose = new DataSharingAgreementBenefitEntity();
+        dsaPurpose.setUuid(benefit.getUuid());
+        dsaPurpose.setDetail(benefit.getDetail());
+        dsaPurpose.setTitle(benefit.getTitle());
+        dsaPurpose.setDataSharingAgreementUuid(benefit.getDataSharingAgreementUuid());
         entityManager.getTransaction().begin();
         entityManager.persist(dsaPurpose);
         entityManager.getTransaction().commit();
@@ -117,14 +117,14 @@ public class DataSharingAgreementPurposeEntity {
         entityManager.close();
     }
 
-    public static void updatePurpose(JsonDsaPurpose purpose) throws Exception {
+    public static void updateBenefit(JsonDsaBenefit benefit) throws Exception {
         EntityManager entityManager = PersistenceManager.getEntityManager();
 
-        DataSharingAgreementPurposeEntity dsaPurpose = entityManager.find(DataSharingAgreementPurposeEntity.class, purpose.getUuid());
+        DataSharingAgreementBenefitEntity dsaPurpose = entityManager.find(DataSharingAgreementBenefitEntity.class, benefit.getUuid());
         entityManager.getTransaction().begin();
-        dsaPurpose.setTitle(purpose.getTitle());
-        dsaPurpose.setDetail(purpose.getDetail());
-        dsaPurpose.setDataSharingAgreementUuid(purpose.getDataSharingAgreementUuid());
+        dsaPurpose.setTitle(benefit.getTitle());
+        dsaPurpose.setDetail(benefit.getDetail());
+        dsaPurpose.setDataSharingAgreementUuid(benefit.getDataSharingAgreementUuid());
         entityManager.getTransaction().commit();
 
         entityManager.close();

@@ -89,6 +89,21 @@ public final class DsaEndpoint extends AbstractEndpoint {
             }
         }
 
+        List<JsonDsaBenefit> benefits = dsa.getBenefits();
+        if (benefits.size() > 0) {
+            for (JsonDsaBenefit ben : benefits) {
+                if (ben.getDataSharingAgreementUuid() == null)
+                    ben.setDataSharingAgreementUuid(dsa.getUuid());
+
+                if (ben.getUuid() == null) {
+                    ben.setUuid(UUID.randomUUID().toString());
+                    DataSharingAgreementBenefitEntity.saveBenefit(ben);
+                } else {
+                    DataSharingAgreementBenefitEntity.updateBenefit(ben);
+                }
+            }
+        }
+
         clearLogbackMarkers();
 
         return Response
@@ -184,6 +199,20 @@ public final class DsaEndpoint extends AbstractEndpoint {
                 "DSA Id", uuid);
 
         return getPurposes(uuid);
+    }
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.DsaEndpoint.getBenefits")
+    @Path("/benefits")
+    public Response getBenefits(@Context SecurityContext sc, @QueryParam("uuid") String uuid) throws Exception {
+        super.setLogbackMarkers(sc);
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
+                "benefits(s)",
+                "DSA Id", uuid);
+
+        return getBenefits(uuid);
     }
 
     private Response getDSAList() throws Exception {
@@ -284,6 +313,17 @@ public final class DsaEndpoint extends AbstractEndpoint {
     private Response getPurposes(String dsaUuid) throws Exception {
 
         List<DataSharingAgreementPurposeEntity> purposes = DataSharingAgreementPurposeEntity.getAllPurposes(dsaUuid);
+
+        clearLogbackMarkers();
+        return Response
+                .ok()
+                .entity(purposes)
+                .build();
+    }
+
+    private Response getBenefits(String dsaUuid) throws Exception {
+
+        List<DataSharingAgreementBenefitEntity> purposes = DataSharingAgreementBenefitEntity.getAllBenefits(dsaUuid);
 
         clearLogbackMarkers();
         return Response

@@ -24,6 +24,7 @@ public class JsonDSA {
     private Map<UUID, String> publishers = null;
     private Map<UUID, String> subscribers = null;
     private List<JsonDsaPurpose> purposes = new ArrayList<>();
+    private List<JsonDsaBenefit> benefits = new ArrayList<>();
 
     public String getUuid() {
         return uuid;
@@ -143,5 +144,13 @@ public class JsonDSA {
 
     public void setPurposes(List<JsonDsaPurpose> purposes) {
         this.purposes = purposes;
+    }
+
+    public List<JsonDsaBenefit> getBenefits() {
+        return benefits;
+    }
+
+    public void setBenefits(List<JsonDsaBenefit> benefits) {
+        this.benefits = benefits;
     }
 }

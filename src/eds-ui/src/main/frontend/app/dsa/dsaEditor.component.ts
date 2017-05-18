@@ -12,6 +12,7 @@ import {Organisation} from "../organisationManager/models/Organisation";
 import {OrganisationManagerPickerDialog} from "../organisationManager/organisationManagerPicker.dialog";
 import {DsaPurpose} from "./models/DsaPurpose";
 import {PurposeAddDialog} from "./purposeAdd.dialog";
+import {DsaBenefit} from "./models/DsaBenefit";
 
 @Component({
     template: require('./dsaEditor.html')
@@ -25,6 +26,7 @@ export class DsaEditorComponent {
     publishers : Organisation[];
     subscribers : Organisation[];
     purposes : DsaPurpose[];
+    benefits : DsaBenefit[];
 
     status = [
         {num: 0, name : "Active"},
@@ -35,6 +37,7 @@ export class DsaEditorComponent {
     regionDetailsToShow = new Region().getDisplayItems();
     orgDetailsToShow = new Organisation().getDisplayItems();
     purposeDetailsToShow = new DsaPurpose().getDisplayItems();
+    benefitDetailsToShow = new DsaBenefit().getDisplayItems();
 
     constructor(private $modal: NgbModal,
                 private state : StateService,
@@ -74,6 +77,7 @@ export class DsaEditorComponent {
                     vm.getPublishers();
                     vm.getSubscribers();
                     vm.getPurposes();
+                    vm.getBenefits();
                 },
                 error => vm.log.error('Error loading', error, 'Error')
             );
@@ -112,6 +116,10 @@ export class DsaEditorComponent {
         // Populate purposes before save
         vm.dsa.purposes = [];
         vm.dsa.purposes = this.purposes;
+
+        // Populate benefits before save
+        vm.dsa.benefits = [];
+        vm.dsa.benefits = this.benefits;
 
         vm.dsaService.saveDsa(vm.dsa)
             .subscribe(saved => {
@@ -170,10 +178,19 @@ export class DsaEditorComponent {
 
     private editPurposes() {
         var vm = this;
-        PurposeAddDialog.open(vm.$modal, vm.purposes)
+        PurposeAddDialog.open(vm.$modal, vm.purposes, 'Purpose')
             .result.then(function
                 (result : DsaPurpose[]) { vm.purposes= result; },
             () => vm.log.info('Edit Purposes cancelled')
+        );
+    }
+
+    private editBenefits() {
+        var vm = this;
+        PurposeAddDialog.open(vm.$modal, vm.benefits, 'Benefit')
+            .result.then(function
+                (result : DsaBenefit[]) { vm.benefits= result; },
+            () => vm.log.info('Edit Benefits cancelled')
         );
     }
 
@@ -223,6 +240,15 @@ export class DsaEditorComponent {
             .subscribe(
                 result => vm.purposes = result,
                 error => vm.log.error('Failed to load purposes', error, 'Load Purposes')
+            );
+    }
+
+    private getBenefits() {
+        var vm = this;
+        vm.dsaService.getBenefits(vm.dsa.uuid)
+            .subscribe(
+                result => vm.benefits = result,
+                error => vm.log.error('Failed to load benefits', error, 'Load Benefits')
             );
     }
 }
