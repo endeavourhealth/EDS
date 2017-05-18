@@ -1,5 +1,6 @@
 package org.endeavourhealth.core.rdbms.eds;
 
+import com.google.common.base.Strings;
 import org.endeavourhealth.common.fhir.*;
 import org.endeavourhealth.core.data.ehr.ResourceNotFoundException;
 import org.endeavourhealth.core.data.ehr.ResourceRepository;
@@ -279,7 +280,17 @@ public class PatientSearchHelper {
             if (fhirAddress.getUse() != Address.AddressUse.HOME) {
                 continue;
             }
-            return fhirAddress.getPostalCode();
+
+            //Homerton seem to sometimes enter extra information in the postcode
+            //field, making it longer than the 8 chars the field allows. So
+            //simply truncate down
+            String s = fhirAddress.getPostalCode();
+            if (!Strings.isNullOrEmpty(s)
+                    && s.length() > 8) {
+                s = s.substring(0, 8);
+            }
+            return s;
+            //return fhirAddress.getPostalCode();
         }
         return null;
     }

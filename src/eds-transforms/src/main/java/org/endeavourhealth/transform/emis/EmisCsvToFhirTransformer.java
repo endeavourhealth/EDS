@@ -71,7 +71,7 @@ public abstract class EmisCsvToFhirTransformer {
         }
         //String[] files = exchangeBody.split(java.lang.System.lineSeparator());
 
-        LOG.info("Invoking EMIS CSV transformer for {} files using {} threads", files.length, maxFilingThreads);
+        LOG.info("Invoking EMIS CSV transformer for {} files using {} threads and service {}", files.length, maxFilingThreads, serviceId);
 
         //the files should all be in a directory structure of org folder -> processing ID folder -> CSV files
         File orgDirectory = validateAndFindCommonDirectory(sharedStoragePath, files);

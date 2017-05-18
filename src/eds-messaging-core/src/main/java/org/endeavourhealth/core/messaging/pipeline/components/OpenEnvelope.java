@@ -1,9 +1,9 @@
 package org.endeavourhealth.core.messaging.pipeline.components;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import org.endeavourhealth.core.audit.AuditWriter;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.common.cache.ParserPool;
+import org.endeavourhealth.core.audit.AuditWriter;
 import org.endeavourhealth.core.configuration.OpenEnvelopeConfig;
 import org.endeavourhealth.core.data.admin.LibraryRepository;
 import org.endeavourhealth.core.data.admin.OrganisationRepository;
@@ -128,7 +128,7 @@ public class OpenEnvelope extends PipelineComponent {
 		UUID systemUuid = findSystemId(service, software, version);
 
 		if (systemUuid == null) {
-			throw new PipelineException("No service found for service " + service.getId() + " software " + software + " version " + version + " opening exchange " + exchange.getExchangeId());
+			throw new PipelineException("No system found for service " + service.getId() + " software " + software + " version " + version + " opening exchange " + exchange.getExchangeId());
 		}
 
 		//record the service-exchange linkage, so we can retrieve exchanges by service
