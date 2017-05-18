@@ -332,8 +332,11 @@
                         </configuration>
                     </execution>
                     <execution>
-                        <id>npm install</id>
+                        <id>npm install --no-bin-links</id>
                         <goals><goal>npm</goal></goals>
+                        <configuration>
+                            <arguments>install --no-bin-links</arguments>
+                        </configuration>
                     </execution>
                     <execution>
                         <id>typings install</id>
