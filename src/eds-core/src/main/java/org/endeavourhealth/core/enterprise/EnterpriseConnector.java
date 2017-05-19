@@ -13,9 +13,9 @@ public class EnterpriseConnector {
         JsonNode config = ConfigManager.getConfigurationAsJson(enterpriseConfigName, "enterprise");
 
         String driverClass = config.get("driverClass").asText();
-        String url = config.get("url").asText();
-        String username = config.get("username").asText();
-        String password = config.get("password").asText();
+        String url = config.get("enterprise_url").asText();
+        String username = config.get("enterprise_username").asText();
+        String password = config.get("enterprise_password").asText();
 
         //force the driver to be loaded
         Class.forName(driverClass);
