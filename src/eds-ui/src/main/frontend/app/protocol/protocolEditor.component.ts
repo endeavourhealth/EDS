@@ -13,6 +13,7 @@ import {SystemService} from "../system/system.service";
 import {DataSetService} from "../dataSet/dataSet.service";
 import {ProtocolService} from "./protocol.service";
 import {EdsLibraryItem} from "../edsLibrary/models/EdsLibraryItem";
+import {LibraryItem} from "eds-common-js/dist/library/models/LibraryItem";
 
 @Component({
 	template : require('./protocolEditor.html')
@@ -142,12 +143,23 @@ export class ProtocolEditComponent {
 		this.libraryItem.protocol.serviceContract.push(this.selectedContract);
 	}
 
-	removeContract(scope : any) {
+	removeContract(contract: ServiceContract) {
+
+		var list = this.libraryItem.protocol.serviceContract;
+		var index = list.indexOf(contract);
+		list.splice(index, 1);
+
+		if (this.selectedContract === contract) {
+			this.selectedContract = null;
+		}
+	}
+
+	/*removeContract(scope : any) {
 		this.libraryItem.protocol.serviceContract.splice(scope.$index, 1);
 		if (this.selectedContract === scope.item) {
 			this.selectedContract = null;
 		}
-	}
+	}*/
 
 	setService() {
 		var serviceName = $("#service>option:selected").html()

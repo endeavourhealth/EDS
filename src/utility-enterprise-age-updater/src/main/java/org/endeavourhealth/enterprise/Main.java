@@ -127,8 +127,7 @@ public class Main {
         String sql = "select c"
                 + " from"
                 + " EnterpriseAge c"
-                + " where c.dateNextChange <= :dateNextChange"
-                + " order by c.enterpriseConfigName";
+                + " where c.dateNextChange <= :dateNextChange";
 
 
         Query query = entityManager.createQuery(sql, EnterpriseAge.class)

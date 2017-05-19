@@ -95,7 +95,7 @@ public class Main {
             String newDiscoveryPersonId = change.getNewPersonId();
             String discoveryPatientId = change.getPatientId();
 
-            Long enterprisePatientId = EnterpriseIdHelper.findEnterpriseId("patient", ResourceType.Patient.toString(), discoveryPatientId);
+            Long enterprisePatientId = EnterpriseIdHelper.findEnterpriseId(enterpriseConfigName, ResourceType.Patient.toString(), discoveryPatientId);
 
             //if this patient has never gone to enterprise, then skip it
             if (enterprisePatientId == null) {
