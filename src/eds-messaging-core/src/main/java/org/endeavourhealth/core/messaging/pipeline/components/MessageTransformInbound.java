@@ -127,7 +127,14 @@ public class MessageTransformInbound extends PipelineComponent {
 			//send an alert if we've had an error while trying to process an exchange
 			if (currentErrors.getError().size() > 0) {
 				sendSlackAlert(exchange, software, currentErrors);
-                //throw new Exception("Failing transform");
+
+				//for bulk transforms, I want them to fail gracefully, but that mechanism doesn't work for the
+				//thousands of ADT messages, so for them just throw the exception to halt all inbound processing
+				//(i.e. it'll reject the message in rabbit, then pull it out again)
+				if (!software.equalsIgnoreCase(MessageFormat.EMIS_CSV)
+					&& !software.equalsIgnoreCase(MessageFormat.TPP_CSV)) {
+					throw new Exception("Failing transform");
+				}
 			}
 
 		} else {
