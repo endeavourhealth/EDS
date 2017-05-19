@@ -1,7 +1,7 @@
 package org.endeavourhealth.core.queueing;
 
 import org.endeavourhealth.common.cache.CacheManager;
-import org.endeavourhealth.common.cache.ICacheable;
+import org.endeavourhealth.common.cache.ICache;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.core.messaging.pipeline.PipelineException;
@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-public class RoutingManager implements ICacheable {
+public class RoutingManager implements ICache {
 	private static final Logger LOG = LoggerFactory.getLogger(RoutingManager.class);
 	private static RoutingManager instance;
 
@@ -76,6 +76,14 @@ public class RoutingManager implements ICacheable {
 		return cachedRoutings.get(exchangeName);
 	}
 
+	@Override
+	public String getName() { return "RoutingManager"; }
+
+	@Override
+	public
+	long getSize() { return cachedRoutings == null ? 0 : cachedRoutings.size(); }
+
+	@Override
 	public void clearCache() {
 		cachedRoutings = null;
 	}
