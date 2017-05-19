@@ -10,6 +10,8 @@ export class Dpa {
     storageProtocolId : number;
     dataFlow : string;
     returnToSenderPolicy : string;
+    startDate : string;
+    endDate : string;
     dataFlows : { [key:string]:string; };
     cohorts : { [key:string]:string; };
     dataSets : { [key:string]:string; };

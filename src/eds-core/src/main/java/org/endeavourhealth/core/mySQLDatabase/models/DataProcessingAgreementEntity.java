@@ -8,6 +8,7 @@ import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
+import java.sql.Date;
 import java.util.List;
 
 @Entity
@@ -24,6 +25,8 @@ public class DataProcessingAgreementEntity {
     private short storageProtocolId;
     private String dataFlow;
     private String returnToSenderPolicy;
+    private Date startDate;
+    private Date endDate;
 
     @Id
     @Column(name = "Uuid", nullable = false, length = 36)
@@ -46,7 +49,7 @@ public class DataProcessingAgreementEntity {
     }
 
     @Basic
-    @Column(name = "Description", nullable = true, length = 100)
+    @Column(name = "Description", nullable = true, length = -1)
     public String getDescription() {
         return description;
     }
@@ -135,6 +138,26 @@ public class DataProcessingAgreementEntity {
         this.returnToSenderPolicy = returnToSenderPolicy;
     }
 
+    @Basic
+    @Column(name = "StartDate", nullable = true)
+    public Date getStartDate() {
+        return startDate;
+    }
+
+    public void setStartDate(Date startDate) {
+        this.startDate = startDate;
+    }
+
+    @Basic
+    @Column(name = "EndDate", nullable = true)
+    public Date getEndDate() {
+        return endDate;
+    }
+
+    public void setEndDate(Date endDate) {
+        this.endDate = endDate;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -157,6 +180,8 @@ public class DataProcessingAgreementEntity {
         if (dataFlow != null ? !dataFlow.equals(that.dataFlow) : that.dataFlow != null) return false;
         if (returnToSenderPolicy != null ? !returnToSenderPolicy.equals(that.returnToSenderPolicy) : that.returnToSenderPolicy != null)
             return false;
+        if (startDate != null ? !startDate.equals(that.startDate) : that.startDate != null) return false;
+        if (endDate != null ? !endDate.equals(that.endDate) : that.endDate != null) return false;
 
         return true;
     }
@@ -174,6 +199,8 @@ public class DataProcessingAgreementEntity {
         result = 31 * result + (int) storageProtocolId;
         result = 31 * result + (dataFlow != null ? dataFlow.hashCode() : 0);
         result = 31 * result + (returnToSenderPolicy != null ? returnToSenderPolicy.hashCode() : 0);
+        result = 31 * result + (startDate != null ? startDate.hashCode() : 0);
+        result = 31 * result + (endDate != null ? endDate.hashCode() : 0);
         return result;
     }
 
@@ -217,6 +244,12 @@ public class DataProcessingAgreementEntity {
         dpaEntity.setStorageProtocolId(dpa.getStorageProtocolId());
         dpaEntity.setDataFlow(dpa.getDataFlow());
         dpaEntity.setReturnToSenderPolicy(dpa.getReturnToSenderPolicy());
+        if (dpa.getStartDate() != null) {
+            dpaEntity.setStartDate(Date.valueOf(dpa.getStartDate()));
+        }
+        if (dpa.getEndDate() != null) {
+            dpaEntity.setEndDate(Date.valueOf(dpa.getEndDate()));
+        }
         entityManager.getTransaction().commit();
 
         entityManager.close();
@@ -238,6 +271,12 @@ public class DataProcessingAgreementEntity {
         dpaEntity.setStorageProtocolId(dpa.getStorageProtocolId());
         dpaEntity.setDataFlow(dpa.getDataFlow());
         dpaEntity.setReturnToSenderPolicy(dpa.getReturnToSenderPolicy());
+        if (dpa.getStartDate() != null) {
+            dpaEntity.setStartDate(Date.valueOf(dpa.getStartDate()));
+        }
+        if (dpa.getEndDate() != null) {
+            dpaEntity.setEndDate(Date.valueOf(dpa.getEndDate()));
+        }
         dpaEntity.setUuid(dpa.getUuid());
         entityManager.persist(dpaEntity);
         entityManager.getTransaction().commit();

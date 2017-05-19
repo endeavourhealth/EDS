@@ -18,6 +18,8 @@ public class JsonDPA {
     private Short storageProtocolId = null;
     private String dataFlow = null;
     private String returnToSenderPolicy = null;
+    private String startDate = null;
+    private String endDate = null;
     private Map<UUID, String> dataFlows = null;
     private Map<UUID, String> cohorts = null;
     private Map<UUID, String> dataSets = null;
@@ -132,5 +134,21 @@ public class JsonDPA {
 
     public void setDataSets(Map<UUID, String> datasets) {
         this.dataSets = datasets;
+    }
+
+    public String getStartDate() {
+        return startDate;
+    }
+
+    public void setStartDate(String startDate) {
+        this.startDate = startDate;
+    }
+
+    public String getEndDate() {
+        return endDate;
+    }
+
+    public void setEndDate(String endDate) {
+        this.endDate = endDate;
     }
 }

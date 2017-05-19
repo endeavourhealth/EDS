@@ -22,6 +22,7 @@ export class DpaEditorComponent {
     cohorts: Cohort[];
     dataSets: DataSet[];
     editDisabled : boolean = false;
+    processor : string = 'Discovery';
 
     status = [
         {num: 0, name: "Active"},
