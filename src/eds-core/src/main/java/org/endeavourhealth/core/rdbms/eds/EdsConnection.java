@@ -30,6 +30,11 @@ public class EdsConnection {
             return;
         }
 
+        //adding this line to force compile-time checking for this class. Spent far too long investigating
+        //why this wasn't being found when it turned out to be that it had been removed from POM.xml,
+        //so adding this to ensure it's picked up during compile-time rather than run-time
+        org.hibernate.hikaricp.internal.HikariCPConnectionProvider p = null;
+
         JsonNode json = ConfigManager.getConfigurationAsJson("eds_db");
         String url = json.get("url").asText();
         String user = json.get("username").asText();
