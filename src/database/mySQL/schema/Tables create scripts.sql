@@ -152,6 +152,14 @@ create table OrganisationManager.DSAStatus (
     
 );
 
+drop table if exists OrganisationManager.ConsentModel;
+
+create table OrganisationManager.ConsentModel (
+	id smallint not null primary key,
+    ConsentModel varchar(100) not null
+    
+);
+
 drop table if exists OrganisationManager.DataSharingAgreement;
 
 create table OrganisationManager.DataSharingAgreement (
@@ -159,14 +167,13 @@ create table OrganisationManager.DataSharingAgreement (
     Name varchar(100) not null,
     Description varchar(100) null,
     Derivation varchar(100) null, 
-    PublisherInformation varchar(100) null, 
-    SubscriberInformation varchar(100)  null,
-    PublisherContractInformation varchar(100) null,
-    SubscriberContractInformation varchar(100) null,
     DSAStatusId smallint not null,
-    ConsentModel char(36),
+    ConsentModelId smallint not null,
+    StartDate Date null,
+    EndDate Date null,    
     
-    foreign key (DSAStatusId) references OrganisationManager.DSAStatus(id)    
+    foreign key (DSAStatusId) references OrganisationManager.DSAStatus(id),
+    foreign key (ConsentModelId) references OrganisationManager.ConsentModel(id)        
 );
 
 drop table if exists OrganisationManager.StorageProtocol;
@@ -176,6 +183,7 @@ create table OrganisationManager.StorageProtocol (
     StorageProtocol varchar(100) not null
     
 );
+
 
 drop table if exists OrganisationManager.DataProcessingAgreement;
 
@@ -190,6 +198,8 @@ create table OrganisationManager.DataProcessingAgreement (
     DSAStatusId smallint not null,
     DataFlow char(36) null,
     ReturnToSenderPolicy varchar(100) null,
+    StartDate Date null,
+    EndDate Date null,
     
     foreign key (DSAStatusId) references OrganisationManager.DSAStatus(id)
 );
@@ -280,7 +290,7 @@ create table OrganisationManager.DataSharingAgreementPurpose (
     Title varchar(50) not null,
     Detail varchar(2000) not null,
     
-    foreign key (DataSharingAgreementUuid) references OrganisationManager.DataSharingAgreement(Uuid)
+    foreign key (DataSharingAgreementUuid) references OrganisationManager.DataSharingAgreement(Uuid) on delete cascade
 );
 
 drop table if exists OrganisationManager.DataSharingAgreementBenefit;
@@ -291,7 +301,7 @@ create table OrganisationManager.DataSharingAgreementBenefit (
     Title varchar(50) not null,
     Detail varchar(2000) not null,
     
-    foreign key (DataSharingAgreementUuid) references OrganisationManager.DataSharingAgreement(Uuid)
+    foreign key (DataSharingAgreementUuid) references OrganisationManager.DataSharingAgreement(Uuid) on delete cascade
 );
 
 

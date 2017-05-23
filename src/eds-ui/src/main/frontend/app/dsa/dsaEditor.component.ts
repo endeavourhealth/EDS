@@ -33,6 +33,11 @@ export class DsaEditorComponent {
         {num: 1, name : "Inactive"}
     ];
 
+    consents = [
+        {num: 0, name : "Explicit Consent"},
+        {num: 1, name : "Implied Consent"}
+    ];
+
     dataflowDetailsToShow = new DataFlow().getDisplayItems();
     regionDetailsToShow = new Region().getDisplayItems();
     orgDetailsToShow = new Organisation().getDisplayItems();

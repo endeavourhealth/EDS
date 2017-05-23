@@ -6,12 +6,10 @@ export class Dsa {
     name : string;
     description : string;
     derivation : string;
-    publisherInformation : string;
-    publisherContractInformation : string;
-    subscriberInformation : string;
-    subscriberContractInformation : string;
     dsaStatusId : number;
-    consentModel : string;
+    consentModelId : number;
+    startDate : string;
+    endDate : string;
     dataFlows : { [key:string]:string; };
     regions : { [key:string]:string; };
     publishers : { [key:string]:string; };
@@ -22,11 +20,7 @@ export class Dsa {
     getDisplayItems() :any[] {
         return [
             {label: 'Description', property: 'description'},
-            {label: 'Derivation', property: 'derivation'},
-            {label: 'Publisher Information', property: 'publisherInformation'},
-            {label: 'Publisher Contract Information', property: 'publisherContractInformation'},
-            {label: 'Subscriber Information', property: 'subscriberInformation'},
-            {label: 'Subscriber Contract Information', property: 'subscriberContractInformation'},
+            {label: 'Derivation', property: 'derivation'}
         ];
     }
 }

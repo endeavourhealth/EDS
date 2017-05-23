@@ -13,12 +13,10 @@ public class JsonDSA {
     private String name = null;
     private String description = null;
     private String derivation = null;
-    private String publisherInformation = null;
-    private String publisherContractInformation = null;
-    private String subscriberInformation = null;
-    private String subscriberContractInformation = null;
     private Short dsaStatusId = null;
-    private String consentModel = null;
+    private Short consentModelId = null;
+    private String startDate = null;
+    private String endDate = null;
     private Map<UUID, String> dataFlows = null;
     private Map<UUID, String> regions = null;
     private Map<UUID, String> publishers = null;
@@ -58,38 +56,6 @@ public class JsonDSA {
         this.derivation = derivation;
     }
 
-    public String getPublisherInformation() {
-        return publisherInformation;
-    }
-
-    public void setPublisherInformation(String publisherInformation) {
-        this.publisherInformation = publisherInformation;
-    }
-
-    public String getPublisherContractInformation() {
-        return publisherContractInformation;
-    }
-
-    public void setPublisherContractInformation(String publisherContractInformation) {
-        this.publisherContractInformation = publisherContractInformation;
-    }
-
-    public String getSubscriberInformation() {
-        return subscriberInformation;
-    }
-
-    public void setSubscriberInformation(String subscriberInformation) {
-        this.subscriberInformation = subscriberInformation;
-    }
-
-    public String getSubscriberContractInformation() {
-        return subscriberContractInformation;
-    }
-
-    public void setSubscriberContractInformation(String subscriberContractInformation) {
-        this.subscriberContractInformation = subscriberContractInformation;
-    }
-
     public Short getDsaStatusId() {
         return dsaStatusId;
     }
@@ -98,12 +64,28 @@ public class JsonDSA {
         this.dsaStatusId = dsaStatusId;
     }
 
-    public String getConsentModel() {
-        return consentModel;
+    public Short getConsentModelId() {
+        return consentModelId;
     }
 
-    public void setConsentModel(String consentModel) {
-        this.consentModel = consentModel;
+    public void setConsentModelId(Short consentModelId) {
+        this.consentModelId = consentModelId;
+    }
+
+    public String getStartDate() {
+        return startDate;
+    }
+
+    public void setStartDate(String startDate) {
+        this.startDate = startDate;
+    }
+
+    public String getEndDate() {
+        return endDate;
+    }
+
+    public void setEndDate(String endDate) {
+        this.endDate = endDate;
     }
 
     public Map<UUID, String> getDataFlows() {

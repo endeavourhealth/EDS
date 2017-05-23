@@ -8,6 +8,7 @@ import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
+import java.sql.Date;
 import java.util.List;
 
 @Entity
@@ -17,12 +18,10 @@ public class DataSharingAgreementEntity {
     private String name;
     private String description;
     private String derivation;
-    private String publisherInformation;
-    private String subscriberInformation;
-    private String publisherContractInformation;
-    private String subscriberContractInformation;
     private short dsaStatusId;
-    private String consentModel;
+    private short consentModelId;
+    private Date startDate;
+    private Date endDate;
 
     @Id
     @Column(name = "Uuid", nullable = false, length = 36)
@@ -65,46 +64,6 @@ public class DataSharingAgreementEntity {
     }
 
     @Basic
-    @Column(name = "PublisherInformation", nullable = true, length = 100)
-    public String getPublisherInformation() {
-        return publisherInformation;
-    }
-
-    public void setPublisherInformation(String publisherInformation) {
-        this.publisherInformation = publisherInformation;
-    }
-
-    @Basic
-    @Column(name = "SubscriberInformation", nullable = true, length = 100)
-    public String getSubscriberInformation() {
-        return subscriberInformation;
-    }
-
-    public void setSubscriberInformation(String subscriberInformation) {
-        this.subscriberInformation = subscriberInformation;
-    }
-
-    @Basic
-    @Column(name = "PublisherContractInformation", nullable = true, length = 100)
-    public String getPublisherContractInformation() {
-        return publisherContractInformation;
-    }
-
-    public void setPublisherContractInformation(String publisherContractInformation) {
-        this.publisherContractInformation = publisherContractInformation;
-    }
-
-    @Basic
-    @Column(name = "SubscriberContractInformation", nullable = true, length = 100)
-    public String getSubscriberContractInformation() {
-        return subscriberContractInformation;
-    }
-
-    public void setSubscriberContractInformation(String subscriberContractInformation) {
-        this.subscriberContractInformation = subscriberContractInformation;
-    }
-
-    @Basic
     @Column(name = "DSAStatusId", nullable = false)
     public short getDsaStatusId() {
         return dsaStatusId;
@@ -115,13 +74,33 @@ public class DataSharingAgreementEntity {
     }
 
     @Basic
-    @Column(name = "ConsentModel", nullable = true, length = 36)
-    public String getConsentModel() {
-        return consentModel;
+    @Column(name = "ConsentModelId", nullable = false)
+    public short getConsentModelId() {
+        return consentModelId;
     }
 
-    public void setConsentModel(String consentModel) {
-        this.consentModel = consentModel;
+    public void setConsentModelId(short consentModelId) {
+        this.consentModelId = consentModelId;
+    }
+
+    @Basic
+    @Column(name = "StartDate", nullable = true)
+    public Date getStartDate() {
+        return startDate;
+    }
+
+    public void setStartDate(Date startDate) {
+        this.startDate = startDate;
+    }
+
+    @Basic
+    @Column(name = "EndDate", nullable = true)
+    public Date getEndDate() {
+        return endDate;
+    }
+
+    public void setEndDate(Date endDate) {
+        this.endDate = endDate;
     }
 
     @Override
@@ -132,19 +111,13 @@ public class DataSharingAgreementEntity {
         DataSharingAgreementEntity that = (DataSharingAgreementEntity) o;
 
         if (dsaStatusId != that.dsaStatusId) return false;
+        if (consentModelId != that.consentModelId) return false;
         if (uuid != null ? !uuid.equals(that.uuid) : that.uuid != null) return false;
         if (name != null ? !name.equals(that.name) : that.name != null) return false;
         if (description != null ? !description.equals(that.description) : that.description != null) return false;
         if (derivation != null ? !derivation.equals(that.derivation) : that.derivation != null) return false;
-        if (publisherInformation != null ? !publisherInformation.equals(that.publisherInformation) : that.publisherInformation != null)
-            return false;
-        if (subscriberInformation != null ? !subscriberInformation.equals(that.subscriberInformation) : that.subscriberInformation != null)
-            return false;
-        if (publisherContractInformation != null ? !publisherContractInformation.equals(that.publisherContractInformation) : that.publisherContractInformation != null)
-            return false;
-        if (subscriberContractInformation != null ? !subscriberContractInformation.equals(that.subscriberContractInformation) : that.subscriberContractInformation != null)
-            return false;
-        if (consentModel != null ? !consentModel.equals(that.consentModel) : that.consentModel != null) return false;
+        if (startDate != null ? !startDate.equals(that.startDate) : that.startDate != null) return false;
+        if (endDate != null ? !endDate.equals(that.endDate) : that.endDate != null) return false;
 
         return true;
     }
@@ -155,12 +128,10 @@ public class DataSharingAgreementEntity {
         result = 31 * result + (name != null ? name.hashCode() : 0);
         result = 31 * result + (description != null ? description.hashCode() : 0);
         result = 31 * result + (derivation != null ? derivation.hashCode() : 0);
-        result = 31 * result + (publisherInformation != null ? publisherInformation.hashCode() : 0);
-        result = 31 * result + (subscriberInformation != null ? subscriberInformation.hashCode() : 0);
-        result = 31 * result + (publisherContractInformation != null ? publisherContractInformation.hashCode() : 0);
-        result = 31 * result + (subscriberContractInformation != null ? subscriberContractInformation.hashCode() : 0);
         result = 31 * result + (int) dsaStatusId;
-        result = 31 * result + (consentModel != null ? consentModel.hashCode() : 0);
+        result = 31 * result + (int) consentModelId;
+        result = 31 * result + (startDate != null ? startDate.hashCode() : 0);
+        result = 31 * result + (endDate != null ? endDate.hashCode() : 0);
         return result;
     }
 
@@ -197,12 +168,14 @@ public class DataSharingAgreementEntity {
         dsaEntity.setName(dsa.getName());
         dsaEntity.setDescription(dsa.getDescription());
         dsaEntity.setDerivation(dsa.getDerivation());
-        dsaEntity.setPublisherInformation(dsa.getPublisherInformation());
-        dsaEntity.setPublisherContractInformation(dsa.getPublisherContractInformation());
-        dsaEntity.setSubscriberInformation(dsa.getSubscriberInformation());
-        dsaEntity.setSubscriberContractInformation(dsa.getSubscriberContractInformation());
         dsaEntity.setDsaStatusId(dsa.getDsaStatusId());
-        dsaEntity.setConsentModel(dsa.getConsentModel());
+        dsaEntity.setConsentModelId(dsa.getConsentModelId());
+        if (dsa.getStartDate() != null) {
+            dsaEntity.setStartDate(Date.valueOf(dsa.getStartDate()));
+        }
+        if (dsa.getEndDate() != null) {
+            dsaEntity.setEndDate(Date.valueOf(dsa.getEndDate()));
+        }
         entityManager.getTransaction().commit();
 
         entityManager.close();
@@ -216,12 +189,14 @@ public class DataSharingAgreementEntity {
         dsaEntity.setName(dsa.getName());
         dsaEntity.setDescription(dsa.getDescription());
         dsaEntity.setDerivation(dsa.getDerivation());
-        dsaEntity.setPublisherInformation(dsa.getPublisherInformation());
-        dsaEntity.setPublisherContractInformation(dsa.getPublisherContractInformation());
-        dsaEntity.setSubscriberInformation(dsa.getSubscriberInformation());
-        dsaEntity.setSubscriberContractInformation(dsa.getSubscriberContractInformation());
         dsaEntity.setDsaStatusId(dsa.getDsaStatusId());
-        dsaEntity.setConsentModel(dsa.getConsentModel());
+        dsaEntity.setConsentModelId(dsa.getConsentModelId());
+        if (dsa.getStartDate() != null) {
+            dsaEntity.setStartDate(Date.valueOf(dsa.getStartDate()));
+        }
+        if (dsa.getEndDate() != null) {
+            dsaEntity.setEndDate(Date.valueOf(dsa.getEndDate()));
+        }
         dsaEntity.setUuid(dsa.getUuid());
         entityManager.persist(dsaEntity);
         entityManager.getTransaction().commit();

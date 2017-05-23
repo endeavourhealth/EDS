@@ -25,30 +25,6 @@
                         <label class="control-label">Derivation</label>
                         <input type="text" class="form-control" placeholder="Derivation" [(ngModel)]="dsa.derivation" name="derivation">
                     </div>
-                    <div class="form-group col-md-6">
-                        <label class="control-label">Publisher Information</label>
-                        <input type="text" class="form-control" placeholder="Publisher Information" [(ngModel)]="dsa.publisherInformation" name="publisherInformation">
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="form-group col-md-6">
-                        <label class="control-label">Publisher Contract Information</label>
-                        <input type="text" class="form-control" placeholder="Publisher Contract Information" [(ngModel)]="dsa.publisherContractInformation" name="publisherContractInformation">
-                    </div>
-                    <div class="form-group col-md-6">
-                        <label class="control-label">Subscriber Information</label>
-                        <input type="text" class="form-control" placeholder="Subscriber Information" [(ngModel)]="dsa.subscriberInformation" name="subscriberInformation">
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="form-group col-md-6">
-                        <label class="control-label">Subscriber Contract Information</label>
-                        <input type="text" class="form-control" placeholder="Subscriber Contract Information" [(ngModel)]="dsa.subscriberContractInformation" name="subscriberContractInformation">
-                    </div>
-                    <div class="form-group col-md-6">
-                        <label class="control-label">Consent Model</label>
-                        <input type="text" class="form-control" placeholder="Consent Model" [(ngModel)]="dsa.consentModel" name="consentModel">
-                    </div>
                 </div>
                 <div class="row">
                     <div class="form-group col-md-3">
@@ -59,6 +35,23 @@
                                 <option *ngFor="let st of status" [ngValue]="st.num">{{st.name}}</option>
                             </select>
                         </div>
+                    </div>
+                    <div class="form-group col-md-3">
+                        <label class="control-label">Consent Model</label>
+                        <div class="input-group">
+                            <span class="input-group-addon"><i class="fa fa-th-large fa-lg fa-fw"></i></span>
+                            <select class="form-control" [(ngModel)]="dsa.consentModelId" name="consentModelId">
+                                <option *ngFor="let con of consents" [ngValue]="con.num">{{con.name}}</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group col-md-3">
+                        <label class="control-label">Start Date</label>
+                        <input type="date" class="form-control" placeholder="Start Date" [(ngModel)]="dsa.startDate" name="startDate">
+                    </div>
+                    <div class="form-group col-md-3">
+                        <label class="control-label">End Date</label>
+                        <input type="date" class="form-control" placeholder="End Date" [(ngModel)]="dsa.endDate" name="endDate">
                     </div>
                 </div>
 

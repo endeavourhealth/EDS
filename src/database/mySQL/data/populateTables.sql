@@ -138,4 +138,10 @@ values (0, "TLS/MA");
 insert into OrganisationManager.SecurityArchitecture (Id, SecurityArchitecture)
 values (1, "Secure FTP");
 
+/*OrganisationManager.ConsentModel*/
+insert into OrganisationManager.ConsentModel (Id, ConsentModel)
+values (0, "Explicit Consent");
+
+insert into OrganisationManager.ConsentModel (Id, ConsentModel)
+values (1, "Implied Consent");
 
