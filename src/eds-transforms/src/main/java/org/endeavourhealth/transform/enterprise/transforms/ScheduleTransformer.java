@@ -1,17 +1,14 @@
 package org.endeavourhealth.transform.enterprise.transforms;
 
 import org.endeavourhealth.common.fhir.FhirExtensionUri;
-import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
+import org.endeavourhealth.transform.enterprise.EnterpriseTransformParams;
 import org.endeavourhealth.transform.enterprise.outputModels.AbstractEnterpriseCsvWriter;
-import org.endeavourhealth.transform.enterprise.outputModels.OutputContainer;
 import org.hl7.fhir.instance.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Date;
-import java.util.Map;
-import java.util.UUID;
 
 public class ScheduleTransformer extends AbstractTransformer {
     private static final Logger LOG = LoggerFactory.getLogger(ScheduleTransformer.class);
@@ -22,14 +19,8 @@ public class ScheduleTransformer extends AbstractTransformer {
 
     public void transform(Long enterpriseId,
                           Resource resource,
-                          OutputContainer data,
                           AbstractEnterpriseCsvWriter csvWriter,
-                          Map<String, ResourceByExchangeBatch> otherResources,
-                          Long enterpriseOrganisationId,
-                          Long enterprisePatientId,
-                          Long enterprisePersonId,
-                          String enterpriseConfigName,
-                          UUID protocolId) throws Exception {
+                          EnterpriseTransformParams params) throws Exception {
 
         Schedule fhir = (Schedule)resource;
 
@@ -41,13 +32,13 @@ public class ScheduleTransformer extends AbstractTransformer {
         String location = null;
 
         id = enterpriseId.longValue();
-        organisationId = enterpriseOrganisationId.longValue();
+        organisationId = params.getEnterpriseOrganisationId().longValue();
 
         if (fhir.hasActor()) {
             Reference practitionerReference = fhir.getActor();
-            practitionerId = findEnterpriseId(enterpriseConfigName, practitionerReference);
+            practitionerId = findEnterpriseId(params, practitionerReference);
             if (practitionerId == null) {
-                practitionerId = transformOnDemand(practitionerReference, data, otherResources, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, enterpriseConfigName, protocolId);
+                practitionerId = transformOnDemand(practitionerReference, params);
             }
         }
 
@@ -61,7 +52,7 @@ public class ScheduleTransformer extends AbstractTransformer {
                 if (extension.getUrl().equals(FhirExtensionUri.SCHEDULE_LOCATION)) {
                     Reference locationReference = (Reference)extension.getValue();
 
-                    Location fhirLocation = (Location)findResource(locationReference, otherResources);
+                    Location fhirLocation = (Location)findResource(locationReference, params);
                     if (fhirLocation != null) {
                         location = fhirLocation.getName();
                     }

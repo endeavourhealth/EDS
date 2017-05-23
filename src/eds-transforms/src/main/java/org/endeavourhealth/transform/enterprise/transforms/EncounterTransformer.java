@@ -3,17 +3,14 @@ package org.endeavourhealth.transform.enterprise.transforms;
 import org.endeavourhealth.common.fhir.CodeableConceptHelper;
 import org.endeavourhealth.common.fhir.FhirExtensionUri;
 import org.endeavourhealth.common.fhir.schema.EncounterParticipantType;
-import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
+import org.endeavourhealth.transform.enterprise.EnterpriseTransformParams;
 import org.endeavourhealth.transform.enterprise.outputModels.AbstractEnterpriseCsvWriter;
-import org.endeavourhealth.transform.enterprise.outputModels.OutputContainer;
 import org.hl7.fhir.instance.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Date;
-import java.util.Map;
-import java.util.UUID;
 
 public class EncounterTransformer extends AbstractTransformer {
 
@@ -25,14 +22,8 @@ public class EncounterTransformer extends AbstractTransformer {
 
     public void transform(Long enterpriseId,
                           Resource resource,
-                          OutputContainer data,
                           AbstractEnterpriseCsvWriter csvWriter,
-                          Map<String, ResourceByExchangeBatch> otherResources,
-                          Long enterpriseOrganisationId,
-                          Long enterprisePatientId,
-                          Long enterprisePersonId,
-                          String enterpriseConfigName,
-                          UUID protocolId) throws Exception {
+                          EnterpriseTransformParams params) throws Exception {
 
         Encounter fhir = (Encounter)resource;
 
@@ -51,9 +42,9 @@ public class EncounterTransformer extends AbstractTransformer {
         Long serviceProviderOrganisationId = null;
 
         id = enterpriseId.longValue();
-        organisationId = enterpriseOrganisationId.longValue();
-        patientId = enterprisePatientId.longValue();
-        personId = enterprisePersonId.longValue();
+        organisationId = params.getEnterpriseOrganisationId().longValue();
+        patientId = params.getEnterprisePatientId().longValue();
+        personId = params.getEnterprisePersonId().longValue();
 
         if (fhir.hasParticipant()) {
 
@@ -71,9 +62,9 @@ public class EncounterTransformer extends AbstractTransformer {
 
                 if (primary) {
                     Reference practitionerReference = participantComponent.getIndividual();
-                    practitionerId = findEnterpriseId(enterpriseConfigName, practitionerReference);
+                    practitionerId = findEnterpriseId(params, practitionerReference);
                     if (practitionerId == null) {
-                        practitionerId = transformOnDemand(practitionerReference, data, otherResources, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, enterpriseConfigName, protocolId);
+                        practitionerId = transformOnDemand(practitionerReference, params);
                     }
                 }
             }
@@ -81,7 +72,7 @@ public class EncounterTransformer extends AbstractTransformer {
 
         if (fhir.hasAppointment()) {
             Reference appointmentReference = fhir.getAppointment();
-            appointmentId = findEnterpriseId(enterpriseConfigName, appointmentReference);
+            appointmentId = findEnterpriseId(params, appointmentReference);
         }
 
         if (fhir.hasPeriod()) {
@@ -112,15 +103,15 @@ public class EncounterTransformer extends AbstractTransformer {
                 throw new TransformException("Can't handle encounters linked to more than one episode of care");
             }
             Reference episodeReference = fhir.getEpisodeOfCare().get(0);
-            episodeOfCareId = findEnterpriseId(enterpriseConfigName, episodeReference);
+            episodeOfCareId = findEnterpriseId(params, episodeReference);
         }
 
         if (fhir.hasServiceProvider()) {
             Reference orgReference = fhir.getServiceProvider();
-            serviceProviderOrganisationId = findEnterpriseId(enterpriseConfigName, orgReference);
+            serviceProviderOrganisationId = findEnterpriseId(params, orgReference);
         }
         if (serviceProviderOrganisationId == null) {
-            serviceProviderOrganisationId = enterpriseOrganisationId;
+            serviceProviderOrganisationId = params.getEnterpriseOrganisationId();
         }
 
         org.endeavourhealth.transform.enterprise.outputModels.Encounter model = (org.endeavourhealth.transform.enterprise.outputModels.Encounter)csvWriter;

@@ -5,15 +5,11 @@ import org.endeavourhealth.common.fhir.FhirUri;
 import org.endeavourhealth.common.fhir.FhirValueSetUri;
 import org.endeavourhealth.common.fhir.IdentifierHelper;
 import org.endeavourhealth.core.data.ehr.ResourceNotFoundException;
-import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
+import org.endeavourhealth.transform.enterprise.EnterpriseTransformParams;
 import org.endeavourhealth.transform.enterprise.outputModels.AbstractEnterpriseCsvWriter;
-import org.endeavourhealth.transform.enterprise.outputModels.OutputContainer;
 import org.hl7.fhir.instance.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Map;
-import java.util.UUID;
 
 public class OrganisationTransformer extends AbstractTransformer {
     private static final Logger LOG = LoggerFactory.getLogger(OrganisationTransformer.class);
@@ -24,14 +20,8 @@ public class OrganisationTransformer extends AbstractTransformer {
 
     public void transform(Long enterpriseId,
                           Resource resource,
-                          OutputContainer data,
                           AbstractEnterpriseCsvWriter csvWriter,
-                          Map<String, ResourceByExchangeBatch> otherResources,
-                          Long enterpriseOrganisationId,
-                          Long enterprisePatientId,
-                          Long enterprisePersonId,
-                          String enterpriseConfigName,
-                          UUID protocolId) throws Exception {
+                          EnterpriseTransformParams params) throws Exception {
 
         org.hl7.fhir.instance.model.Organization fhir = (org.hl7.fhir.instance.model.Organization)resource;
 
@@ -66,9 +56,9 @@ public class OrganisationTransformer extends AbstractTransformer {
 
         if (fhir.hasPartOf()) {
             Reference partOfReference = fhir.getPartOf();
-            parentOrganisationId = findEnterpriseId(enterpriseConfigName, partOfReference);
+            parentOrganisationId = findEnterpriseId(params, partOfReference);
             if (parentOrganisationId == null) {
-                parentOrganisationId = transformOnDemand(partOfReference, data, otherResources, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, enterpriseConfigName, protocolId);
+                parentOrganisationId = transformOnDemand(partOfReference, params);
             }
         }
 
@@ -92,7 +82,7 @@ public class OrganisationTransformer extends AbstractTransformer {
                     Reference locationReference = (Reference)extension.getValue();
 
                     try {
-                        Location location = (Location)findResource(locationReference, otherResources);
+                        Location location = (Location)findResource(locationReference, params);
                         if (location != null
                                 && location.hasAddress()) {
                             Address address = location.getAddress();

@@ -32,7 +32,7 @@ import java.util.stream.Collectors;
 public class QueueHelper {
     private static final Logger LOG = LoggerFactory.getLogger(QueueHelper.class);
 
-    public static void postToExchange(UUID exchangeId, String exchangeName, UUID specificProtocolId) throws Exception {
+    public static void postToExchange(UUID exchangeId, String exchangeName, UUID specificProtocolId, boolean recalculateProtocols) throws Exception {
 
         PostMessageToExchangeConfig exchangeConfig = findExchangeConfig(exchangeName);
         if (exchangeConfig == null) {
@@ -43,12 +43,14 @@ public class QueueHelper {
         //org.endeavourhealth.core.messaging.exchange.Exchange exchange = retrieveExchange(exchangeId);
 
         //to make sure the latest setup applies, re-calculate the protocols that apply to this exchange
-        String serviceUuid = exchange.getHeader(HeaderKeys.SenderServiceUuid);
-        String newProtocolIdsJson = DetermineRelevantProtocolIds.getProtocolIdsForPublisherService(serviceUuid);
-        String oldProtocolIdsJson = exchange.getHeader(HeaderKeys.ProtocolIds);
-        if (!newProtocolIdsJson.equals(oldProtocolIdsJson)) {
-            exchange.setHeader(HeaderKeys.ProtocolIds, newProtocolIdsJson);
-            AuditWriter.writeExchange(exchange);
+        if (recalculateProtocols) {
+            String serviceUuid = exchange.getHeader(HeaderKeys.SenderServiceUuid);
+            String newProtocolIdsJson = DetermineRelevantProtocolIds.getProtocolIdsForPublisherService(serviceUuid);
+            String oldProtocolIdsJson = exchange.getHeader(HeaderKeys.ProtocolIds);
+            if (!newProtocolIdsJson.equals(oldProtocolIdsJson)) {
+                exchange.setHeader(HeaderKeys.ProtocolIds, newProtocolIdsJson);
+                AuditWriter.writeExchange(exchange);
+            }
         }
 
         //if we want to restrict the protocols applied (e.g. only want to populate a specific subscriber)

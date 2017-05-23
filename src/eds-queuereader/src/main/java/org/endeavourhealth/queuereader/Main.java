@@ -1,28 +1,24 @@
 package org.endeavourhealth.queuereader;
 
+import com.datastax.driver.core.*;
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.common.cache.ParserPool;
+import org.endeavourhealth.common.cassandra.CassandraConnector;
 import org.endeavourhealth.common.config.ConfigManager;
-import org.endeavourhealth.common.utility.StreamExtension;
-import org.endeavourhealth.core.audit.AuditWriter;
 import org.endeavourhealth.core.configuration.ConfigDeserialiser;
-import org.endeavourhealth.core.configuration.Pipeline;
-import org.endeavourhealth.core.configuration.PostMessageToExchangeConfig;
 import org.endeavourhealth.core.configuration.QueueReaderConfiguration;
 import org.endeavourhealth.core.data.admin.models.Service;
-import org.endeavourhealth.core.data.ehr.ExchangeBatchRepository;
-import org.endeavourhealth.core.data.ehr.ResourceRepository;
-import org.endeavourhealth.core.data.ehr.models.ExchangeBatch;
-import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
+import org.endeavourhealth.core.data.audit.AuditRepository;
+import org.endeavourhealth.core.data.audit.models.ExchangeTransformAudit;
 import org.endeavourhealth.core.fhirStorage.JsonServiceInterfaceEndpoint;
-import org.endeavourhealth.core.messaging.exchange.HeaderKeys;
-import org.endeavourhealth.core.messaging.pipeline.components.PostMessageToExchange;
-import org.hl7.fhir.instance.model.ResourceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.UUID;
 
 public class Main {
 	private static final Logger LOG = LoggerFactory.getLogger(Main.class);
@@ -34,8 +30,8 @@ public class Main {
 		ConfigManager.Initialize("queuereader");
 
 		if (args.length >= 0
-				&& args[0].equalsIgnoreCase("FixOrgs")) {
-			fixOrgs();
+				&& args[0].equalsIgnoreCase("FindCodes")) {
+			findCodes();
 		}
 
 		if (args.length != 1) {
@@ -2344,7 +2340,7 @@ public class Main {
 		}
 	}*/
 
-	private static void fixOrgs() {
+	/*private static void fixOrgs() {
 
 		LOG.info("Posting orgs to protocol queue");
 
@@ -2423,6 +2419,66 @@ public class Main {
 
 
 		LOG.info("Finished posting orgs to protocol queue");
+	}*/
+
+	private static void findCodes() {
+
+		LOG.info("Finding missing codes");
+
+		AuditRepository auditRepository = new AuditRepository();
+
+		Session session = CassandraConnector.getInstance().getSession();
+		Statement stmt = new SimpleStatement("SELECT service_id, system_id, exchange_id, version FROM audit.exchange_transform_audit ALLOW FILTERING;");
+		stmt.setFetchSize(100);
+
+		HashSet<String> done = new HashSet<>();
+
+		ResultSet rs = session.execute(stmt);
+		while (!rs.isExhausted()) {
+			Row row = rs.one();
+			UUID serviceId = row.get(0, UUID.class);
+			UUID systemId = row.get(1, UUID.class);
+			UUID exchangeId = row.get(2, UUID.class);
+			UUID version = row.get(3, UUID.class);
+
+			ExchangeTransformAudit audit = auditRepository.getExchangeTransformAudit(serviceId, systemId, exchangeId, version);
+			String xml = audit.getErrorXml();
+			if (xml == null) {
+				continue;
+			}
+
+			String codePrefix = "Failed to find clinical code CodeableConcept for codeId ";
+			int codeIndex = xml.indexOf(codePrefix);
+			if (codeIndex > -1) {
+				int startIndex = codeIndex + codePrefix.length();
+				int tagEndIndex = xml.indexOf("<", startIndex);
+
+				String code = xml.substring(startIndex, tagEndIndex);
+
+				if (!done.contains(code)) {
+					LOG.info("Readcode " + code + " from " + audit.getStarted());
+					done.add(code);
+				}
+				continue;
+			}
+
+			codePrefix = "Failed to find medication CodeableConcept for codeId ";
+			codeIndex = xml.indexOf(codePrefix);
+			if (codeIndex > -1) {
+				int startIndex = codeIndex + codePrefix.length();
+				int tagEndIndex = xml.indexOf("<", startIndex);
+
+				String code = xml.substring(startIndex, tagEndIndex);
+
+				if (!done.contains(code)) {
+					LOG.info("Medication " + code + " from " + audit.getStarted());
+					done.add(code);
+				}
+				continue;
+			}
+		}
+
+		LOG.info("Finished finding missing codes");
 	}
 }
 

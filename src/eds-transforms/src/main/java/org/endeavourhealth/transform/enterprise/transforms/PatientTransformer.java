@@ -8,7 +8,6 @@ import org.endeavourhealth.common.fhir.FhirUri;
 import org.endeavourhealth.common.fhir.IdentifierHelper;
 import org.endeavourhealth.common.fhir.schema.OrganisationType;
 import org.endeavourhealth.core.data.admin.LibraryRepositoryHelper;
-import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
 import org.endeavourhealth.core.rdbms.eds.PatientLinkHelper;
 import org.endeavourhealth.core.rdbms.eds.PatientLinkPair;
 import org.endeavourhealth.core.rdbms.eds.PatientSearch;
@@ -20,8 +19,8 @@ import org.endeavourhealth.core.rdbms.transform.EnterpriseIdHelper;
 import org.endeavourhealth.core.rdbms.transform.HouseholdHelper;
 import org.endeavourhealth.core.rdbms.transform.PseudoIdHelper;
 import org.endeavourhealth.core.xml.QueryDocument.*;
+import org.endeavourhealth.transform.enterprise.EnterpriseTransformParams;
 import org.endeavourhealth.transform.enterprise.outputModels.AbstractEnterpriseCsvWriter;
-import org.endeavourhealth.transform.enterprise.outputModels.OutputContainer;
 import org.hl7.fhir.instance.model.*;
 import org.hl7.fhir.instance.model.Resource;
 import org.slf4j.Logger;
@@ -50,14 +49,8 @@ public class PatientTransformer extends AbstractTransformer {
 
     public void transform(Long enterpriseId,
                           Resource resource,
-                          OutputContainer data,
                           AbstractEnterpriseCsvWriter csvWriter,
-                          Map<String, ResourceByExchangeBatch> otherResources,
-                          Long enterpriseOrganisationId,
-                          Long nullEnterprisePatientId,
-                          Long nullEnterprisePersonId,
-                          String enterpriseConfigName,
-                          UUID protocolId) throws Exception {
+                          EnterpriseTransformParams params) throws Exception {
 
         Patient fhirPatient = (Patient)resource;
 
@@ -71,7 +64,7 @@ public class PatientTransformer extends AbstractTransformer {
             discoveryPersonId = pair.getNewPersonId();
         }
 
-        Long enterprisePersonId = EnterpriseIdHelper.findOrCreateEnterprisePersonId(discoveryPersonId, enterpriseConfigName);
+        Long enterprisePersonId = EnterpriseIdHelper.findOrCreateEnterprisePersonId(discoveryPersonId, params.getEnterpriseConfigName());
 
         long id;
         long organizationId;
@@ -91,7 +84,7 @@ public class PatientTransformer extends AbstractTransformer {
         String msoaCode = null;
 
         id = enterpriseId.longValue();
-        organizationId = enterpriseOrganisationId.longValue();
+        organizationId = params.getEnterpriseOrganisationId().longValue();
         personId = enterprisePersonId.longValue();
 
         //Calendar cal = Calendar.getInstance();
@@ -123,7 +116,7 @@ public class PatientTransformer extends AbstractTransformer {
                         && address.getUse().equals(Address.AddressUse.HOME)) {
                     postcode = address.getPostalCode();
                     postcodePrefix = findPostcodePrefix(postcode);
-                    householdId = HouseholdHelper.findOrCreateHouseholdId(enterpriseConfigName, address);
+                    householdId = HouseholdHelper.findOrCreateHouseholdId(params.getEnterpriseConfigName(), address);
                     break;
                 }
             }
@@ -141,10 +134,10 @@ public class PatientTransformer extends AbstractTransformer {
 
         //check if our patient demographics also should be used as the person demographics. This is typically
         //true if our patient record is at a GP practice.
-        boolean shouldWritePersonRecord = shouldWritePersonRecord(fhirPatient, discoveryPersonId, protocolId);
+        boolean shouldWritePersonRecord = shouldWritePersonRecord(fhirPatient, discoveryPersonId, params.getProtocolId());
 
         org.endeavourhealth.transform.enterprise.outputModels.Patient patientWriter = (org.endeavourhealth.transform.enterprise.outputModels.Patient)csvWriter;
-        org.endeavourhealth.transform.enterprise.outputModels.Person personWriter = data.getPersons();
+        org.endeavourhealth.transform.enterprise.outputModels.Person personWriter = params.getData().getPersons();
 
         if (patientWriter.isPseduonymised()) {
 
@@ -154,14 +147,14 @@ public class PatientTransformer extends AbstractTransformer {
                 patientGenderId = Enumerations.AdministrativeGender.FEMALE.ordinal();
             }
 
-            pseudoId = pseudonymise(fhirPatient, enterpriseConfigName);
+            pseudoId = pseudonymise(fhirPatient, params);
 
             //only persist the pseudo ID if it's non-null
             if (!Strings.isNullOrEmpty(pseudoId)) {
-                PseudoIdHelper.storePseudoId(fhirPatient.getId(), enterpriseConfigName, pseudoId);
+                PseudoIdHelper.storePseudoId(fhirPatient.getId(), params.getEnterpriseConfigName(), pseudoId);
             }
 
-            Integer[] ageValues = EnterpriseAgeUpdater.calculateAgeValues(id, dateOfBirth, enterpriseConfigName);
+            Integer[] ageValues = EnterpriseAgeUpdater.calculateAgeValues(id, dateOfBirth, params.getEnterpriseConfigName());
             ageYears = ageValues[EnterpriseAgeUpdater.UNIT_YEARS];
             ageMonths = ageValues[EnterpriseAgeUpdater.UNIT_MONTHS];
             ageWeeks = ageValues[EnterpriseAgeUpdater.UNIT_WEEKS];
@@ -361,7 +354,7 @@ public class PatientTransformer extends AbstractTransformer {
         return postcode.substring(0, len-3);
     }
 
-    private static String pseudonymise(Patient fhirPatient, String configName) throws Exception {
+    private static String pseudonymise(Patient fhirPatient, EnterpriseTransformParams params) throws Exception {
 
         String dob = null;
         if (fhirPatient.hasBirthDate()) {
@@ -374,7 +367,7 @@ public class PatientTransformer extends AbstractTransformer {
             return null;
         }
 
-        TreeMap keys = new TreeMap();
+        TreeMap<String, String> keys = new TreeMap<>();
         keys.put(PSEUDO_KEY_DATE_OF_BIRTH, dob);
 
         String nhsNumber = IdentifierHelper.findNhsNumber(fhirPatient);
@@ -399,7 +392,7 @@ public class PatientTransformer extends AbstractTransformer {
         }
 
         Crypto crypto = new Crypto();
-        crypto.SetEncryptedSalt(getEncryptedSalt(configName));
+        crypto.SetEncryptedSalt(getEncryptedSalt(params.getEnterpriseConfigName()));
         return crypto.GetDigest(keys);
     }
 

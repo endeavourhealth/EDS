@@ -10,9 +10,9 @@ import org.endeavourhealth.core.data.ehr.ResourceRepository;
 import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
 import org.endeavourhealth.core.rdbms.transform.EnterpriseIdHelper;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
+import org.endeavourhealth.transform.enterprise.EnterpriseTransformParams;
 import org.endeavourhealth.transform.enterprise.FhirToEnterpriseCsvTransformer;
 import org.endeavourhealth.transform.enterprise.outputModels.AbstractEnterpriseCsvWriter;
-import org.endeavourhealth.transform.enterprise.outputModels.OutputContainer;
 import org.hl7.fhir.instance.model.Reference;
 import org.hl7.fhir.instance.model.Resource;
 import org.hl7.fhir.instance.model.ResourceType;
@@ -20,7 +20,10 @@ import org.hl7.fhir.instance.model.TemporalPrecisionEnum;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public abstract class AbstractTransformer {
 
@@ -48,16 +51,10 @@ public abstract class AbstractTransformer {
     }
 
     public void transform(List<ResourceByExchangeBatch> resources,
-                          OutputContainer data,
                           AbstractEnterpriseCsvWriter csvWriter,
-                          Map<String, ResourceByExchangeBatch> otherResources,
-                          Long enterpriseOrganisationId,
-                          Long enterprisePatientId,
-                          Long enterprisePersonId,
-                          String enterpriseConfigName,
-                          UUID protocolId) throws Exception {
+                          EnterpriseTransformParams params) throws Exception {
 
-        Map<ResourceByExchangeBatch, Long> enterpriseIds = mapIds(enterpriseConfigName, resources, shouldAlwaysTransform());
+        Map<ResourceByExchangeBatch, Long> enterpriseIds = mapIds(params.getEnterpriseConfigName(), resources, shouldAlwaysTransform());
 
         for (ResourceByExchangeBatch resource: resources) {
 
@@ -71,7 +68,7 @@ public abstract class AbstractTransformer {
 
                 } else {
                     Resource fhir = deserialiseResouce(resource);
-                    transform(enterpriseId, fhir, data, csvWriter, otherResources, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, enterpriseConfigName, protocolId);
+                    transform(enterpriseId, fhir, csvWriter, params);
                 }
             } catch (Exception ex) {
                 throw new TransformException("Exception transforming " + resource.getResourceType() + " " + resource.getResourceId(), ex);
@@ -83,14 +80,8 @@ public abstract class AbstractTransformer {
 
     public abstract void transform(Long enterpriseId,
                                    Resource resource,
-                                   OutputContainer data,
                                    AbstractEnterpriseCsvWriter csvWriter,
-                                   Map<String, ResourceByExchangeBatch> otherResources,
-                                   Long enterpriseOrganisationId,
-                                   Long enterprisePatientId,
-                                   Long enterprisePersonId,
-                                   String configName,
-                                   UUID protocolId) throws Exception;
+                                   EnterpriseTransformParams params) throws Exception;
 
     protected static Integer convertDatePrecision(TemporalPrecisionEnum precision) throws Exception {
         return Integer.valueOf(precision.getCalendarConstant());
@@ -98,44 +89,44 @@ public abstract class AbstractTransformer {
 
 
 
-    protected static Long findEnterpriseId(String enterpriseConfigName, Resource resource) throws Exception {
+    protected static Long findEnterpriseId(EnterpriseTransformParams params, Resource resource) throws Exception {
         String resourceType = resource.getResourceType().toString();
         String resourceId = resource.getId();
-        return findEnterpriseId(enterpriseConfigName, resourceType, resourceId);
+        return findEnterpriseId(params, resourceType, resourceId);
     }
 
-    protected static Long findEnterpriseId(String enterpriseConfigName, Reference reference) throws Exception {
+    protected static Long findEnterpriseId(EnterpriseTransformParams params, Reference reference) throws Exception {
         ReferenceComponents comps = ReferenceHelper.getReferenceComponents(reference);
         String resourceType = comps.getResourceType().toString();
         String resourceId = comps.getId();
-        return findEnterpriseId(enterpriseConfigName, resourceType, resourceId);
+        return findEnterpriseId(params, resourceType, resourceId);
     }
 
-    protected static Long findEnterpriseId(String enterpriseConfigName, ResourceByExchangeBatch resource) throws Exception {
-        return findEnterpriseId(enterpriseConfigName, resource.getResourceType(), resource.getResourceId().toString());
+    protected static Long findEnterpriseId(EnterpriseTransformParams params, ResourceByExchangeBatch resource) throws Exception {
+        return findEnterpriseId(params, resource.getResourceType(), resource.getResourceId().toString());
     }
 
-    public static Long findEnterpriseId(String enterpriseConfigName, String resourceType, String resourceId) throws Exception {
-        Long ret = checkCacheForId(enterpriseConfigName, resourceType, resourceId);
+    public static Long findEnterpriseId(EnterpriseTransformParams params, String resourceType, String resourceId) throws Exception {
+        Long ret = checkCacheForId(params.getEnterpriseConfigName(), resourceType, resourceId);
         if (ret == null) {
-            ret = EnterpriseIdHelper.findEnterpriseId(enterpriseConfigName, resourceType, resourceId);
+            ret = EnterpriseIdHelper.findEnterpriseId(params.getEnterpriseConfigName(), resourceType, resourceId);
             //ret = idMappingRepository.getEnterpriseIdMappingId(enterpriseTableName, resourceType, resourceId);
         }
         return ret;
     }
 
-    protected static Long findOrCreateEnterpriseId(String enterpriseConfigName, ResourceByExchangeBatch resource) throws Exception {
+    protected static Long findOrCreateEnterpriseId(EnterpriseTransformParams params, ResourceByExchangeBatch resource) throws Exception {
         String resourceType = resource.getResourceType();
         String resourceId = resource.getResourceId().toString();
-        return findOrCreateEnterpriseId(enterpriseConfigName, resourceType, resourceId);
+        return findOrCreateEnterpriseId(params, resourceType, resourceId);
     }
 
-    public static Long findOrCreateEnterpriseId(String enterpriseConfigName, String resourceType, String resourceId) throws Exception {
-        Long ret = checkCacheForId(enterpriseConfigName, resourceType, resourceId);
+    public static Long findOrCreateEnterpriseId(EnterpriseTransformParams params, String resourceType, String resourceId) throws Exception {
+        Long ret = checkCacheForId(params.getEnterpriseConfigName(), resourceType, resourceId);
         if (ret == null) {
-            ret = EnterpriseIdHelper.findOrCreateEnterpriseId(enterpriseConfigName, resourceType, resourceId);
+            ret = EnterpriseIdHelper.findOrCreateEnterpriseId(params.getEnterpriseConfigName(), resourceType, resourceId);
 
-            addIdToCache(enterpriseConfigName, resourceType, resourceId, ret);
+            addIdToCache(params.getEnterpriseConfigName(), resourceType, resourceId, ret);
         }
         return ret;
     }
@@ -179,8 +170,10 @@ public abstract class AbstractTransformer {
     }
 
     protected static Resource findResource(Reference reference,
-                                           Map<String, ResourceByExchangeBatch> hmAllResources) throws Exception {
+                                           EnterpriseTransformParams params) throws Exception {
+
         String referenceStr = reference.getReference();
+        Map<String, ResourceByExchangeBatch> hmAllResources = params.getAllResources();
 
         //look in our resources map first
         ResourceByExchangeBatch ret = hmAllResources.get(referenceStr);
@@ -198,7 +191,7 @@ public abstract class AbstractTransformer {
         }
     }
 
-    protected static Long mapId(String enterpriseConfigName, ResourceByExchangeBatch resource, boolean createIfNotFound) throws Exception {
+    /*protected static Long mapId(String enterpriseConfigName, ResourceByExchangeBatch resource, boolean createIfNotFound) throws Exception {
 
         if (resource.getIsDeleted()) {
             //if it's a delete, then don't bother creating a new Enterprise ID if we've never previously sent it
@@ -214,7 +207,7 @@ public abstract class AbstractTransformer {
                 return findEnterpriseId(enterpriseConfigName, resource);
             }
         }
-    }
+    }*/
 
     protected static Map<ResourceByExchangeBatch, Long> mapIds(String enterpriseConfigName, List<ResourceByExchangeBatch> resources, boolean createIfNotFound) throws Exception {
 
@@ -282,16 +275,10 @@ public abstract class AbstractTransformer {
 
 
     protected Long transformOnDemand(Reference reference,
-                                     OutputContainer data,
-                                     Map<String, ResourceByExchangeBatch> hmAllResources,
-                                     Long enterpriseOrganisationId,
-                                     Long enterprisePatientId,
-                                     Long enterprisePersonId,
-                                     String enterpriseConfigName,
-                                     UUID protocolId) throws Exception {
+                                     EnterpriseTransformParams params) throws Exception {
         Resource fhir = null;
         try {
-            fhir = findResource(reference, hmAllResources);
+            fhir = findResource(reference, params);
         } catch (ResourceNotFoundException ex) {
             //we have some data that refers to non-existant resources, so if we get that, log it
             LOG.warn("No resource found for reference " + reference.getReference());
@@ -307,9 +294,9 @@ public abstract class AbstractTransformer {
             throw new TransformException("No transformer found for resource " + reference.getReference());
         }
 
-        AbstractEnterpriseCsvWriter csvWriter = FhirToEnterpriseCsvTransformer.findCsvWriterForResourceType(resourceType, data);
-        Long enterpriseId = findOrCreateEnterpriseId(enterpriseConfigName, resourceType.toString(), fhir.getId());
-        transformer.transform(enterpriseId, fhir, data, csvWriter, hmAllResources, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, enterpriseConfigName, protocolId);
+        AbstractEnterpriseCsvWriter csvWriter = FhirToEnterpriseCsvTransformer.findCsvWriterForResourceType(resourceType, params);
+        Long enterpriseId = findOrCreateEnterpriseId(params, resourceType.toString(), fhir.getId());
+        transformer.transform(enterpriseId, fhir, csvWriter, params);
 
         return enterpriseId;
     }

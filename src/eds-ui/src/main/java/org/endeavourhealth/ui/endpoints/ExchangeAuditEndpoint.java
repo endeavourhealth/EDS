@@ -246,11 +246,11 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
 
             List<UUID> exchangeIds = auditRepository.getExchangeIdsForService(serviceId);
             for (UUID exchangeId: exchangeIds) {
-                QueueHelper.postToExchange(exchangeId, exchangeName, specificProtocolId);
+                QueueHelper.postToExchange(exchangeId, exchangeName, specificProtocolId, true);
             }
 
         } else {
-            QueueHelper.postToExchange(selectedExchangeId, exchangeName, specificProtocolId);
+            QueueHelper.postToExchange(selectedExchangeId, exchangeName, specificProtocolId, true);
         }
 
         clearLogbackMarkers();
@@ -557,7 +557,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
             auditRepository.save(audit);
 
             //then re-submit the exchange to Rabbit MQ for the queue reader to pick up
-            QueueHelper.postToExchange(exchangeId, "EdsInbound", null);
+            QueueHelper.postToExchange(exchangeId, "EdsInbound", null, false);
 
             //if we only want to re-queue the first exchange, then break out
             if (firstOnly) {

@@ -1,15 +1,11 @@
 package org.endeavourhealth.transform.enterprise.transforms;
 
 import org.endeavourhealth.common.fhir.FhirValueSetUri;
-import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
+import org.endeavourhealth.transform.enterprise.EnterpriseTransformParams;
 import org.endeavourhealth.transform.enterprise.outputModels.AbstractEnterpriseCsvWriter;
-import org.endeavourhealth.transform.enterprise.outputModels.OutputContainer;
 import org.hl7.fhir.instance.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Map;
-import java.util.UUID;
 
 public class PractitionerTransformer extends AbstractTransformer {
     private static final Logger LOG = LoggerFactory.getLogger(PractitionerTransformer.class);
@@ -20,14 +16,8 @@ public class PractitionerTransformer extends AbstractTransformer {
 
     public void transform(Long enterpriseId,
                           Resource resource,
-                          OutputContainer data,
                           AbstractEnterpriseCsvWriter csvWriter,
-                          Map<String, ResourceByExchangeBatch> otherResources,
-                          Long enterpriseOrganisationId,
-                          Long enterprisePatientId,
-                          Long enterprisePersonId,
-                          String enterpriseConfigName,
-                          UUID protocolId) throws Exception {
+                          EnterpriseTransformParams params) throws Exception {
 
         Practitioner fhir = (Practitioner)resource;
 
@@ -57,16 +47,16 @@ public class PractitionerTransformer extends AbstractTransformer {
             }
 
             Reference organisationReference = role.getManagingOrganization();
-            practitionerEnterpriseOrgId = findEnterpriseId(enterpriseConfigName, organisationReference);
+            practitionerEnterpriseOrgId = findEnterpriseId(params, organisationReference);
             if (practitionerEnterpriseOrgId == null) {
-                practitionerEnterpriseOrgId = transformOnDemand(organisationReference, data, otherResources, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, enterpriseConfigName, protocolId);
+                practitionerEnterpriseOrgId = transformOnDemand(organisationReference, params);
             }
             //LOG.trace("Got role with org ID " + practitionerEnterpriseOrgId + " from " + organisationReference);
         }
 
         if (practitionerEnterpriseOrgId == null) {
             //LOG.trace("No role, so setting to the enterpriseOrganisationUuid " + enterpriseOrganisationUuid);
-            practitionerEnterpriseOrgId = enterpriseOrganisationId;
+            practitionerEnterpriseOrgId = params.getEnterpriseOrganisationId();
         }
 
         organizaationId = practitionerEnterpriseOrgId.longValue();

@@ -3,17 +3,14 @@ package org.endeavourhealth.transform.enterprise.transforms;
 import org.endeavourhealth.common.fhir.FhirExtensionUri;
 import org.endeavourhealth.common.fhir.ReferenceComponents;
 import org.endeavourhealth.common.fhir.ReferenceHelper;
-import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
+import org.endeavourhealth.transform.enterprise.EnterpriseTransformParams;
 import org.endeavourhealth.transform.enterprise.outputModels.AbstractEnterpriseCsvWriter;
-import org.endeavourhealth.transform.enterprise.outputModels.OutputContainer;
 import org.hl7.fhir.instance.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Date;
-import java.util.Map;
-import java.util.UUID;
 
 public class AppointmentTransformer extends AbstractTransformer {
 
@@ -25,14 +22,8 @@ public class AppointmentTransformer extends AbstractTransformer {
 
     public void transform(Long enterpriseId,
                           Resource resource,
-                          OutputContainer data,
                           AbstractEnterpriseCsvWriter csvWriter,
-                          Map<String, ResourceByExchangeBatch> otherResources,
-                          Long enterpriseOrganisationId,
-                          Long enterprisePatientId,
-                          Long enterprisePersonId,
-                          String enterpriseConfigName,
-                          UUID protocolId) throws Exception {
+                          EnterpriseTransformParams params) throws Exception {
 
         Appointment fhir = (Appointment)resource;
 
@@ -57,9 +48,9 @@ public class AppointmentTransformer extends AbstractTransformer {
                 ReferenceComponents components = ReferenceHelper.getReferenceComponents(reference);
 
                 if (components.getResourceType() == ResourceType.Practitioner) {
-                    practitionerId = findEnterpriseId(enterpriseConfigName, reference);
+                    practitionerId = findEnterpriseId(params, reference);
                     if (practitionerId == null) {
-                        practitionerId = transformOnDemand(reference, data, otherResources, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, enterpriseConfigName, protocolId);
+                        practitionerId = transformOnDemand(reference, params);
                     }
                 }
             }
@@ -67,27 +58,27 @@ public class AppointmentTransformer extends AbstractTransformer {
 
         //the test pack has data that refers to deleted or missing patients, so if we get a null
         //patient ID here, then skip this resource
-        if (enterprisePatientId == null) {
+        if (params.getEnterprisePatientId() == null) {
             LOG.warn("Skipping " + fhir.getResourceType() + " " + fhir.getId() + " as no Enterprise patient ID could be found for it");
             return;
         }
 
         id = enterpriseId.longValue();
-        organisationId = enterpriseOrganisationId.longValue();
-        patientId = enterprisePatientId.longValue();
-        personId = enterprisePersonId.longValue();
+        organisationId = params.getEnterpriseOrganisationId().longValue();
+        patientId = params.getEnterprisePatientId().longValue();
+        personId = params.getEnterprisePersonId().longValue();
 
         if (fhir.getSlot().size() > 1) {
             throw new TransformException("Cannot handle appointments linked to multiple slots " + fhir.getId());
         }
         Reference slotReference = fhir.getSlot().get(0);
-        Slot fhirSlot = (Slot)findResource(slotReference, otherResources);
+        Slot fhirSlot = (Slot)findResource(slotReference, params);
         if (fhirSlot != null) {
 
             Reference scheduleReference = fhirSlot.getSchedule();
-            scheduleId = findEnterpriseId(enterpriseConfigName, scheduleReference);
+            scheduleId = findEnterpriseId(params, scheduleReference);
             if (scheduleId == null) {
-                scheduleId = transformOnDemand(scheduleReference, data, otherResources, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, enterpriseConfigName, protocolId);
+                scheduleId = transformOnDemand(scheduleReference, params);
             }
 
         } else {
