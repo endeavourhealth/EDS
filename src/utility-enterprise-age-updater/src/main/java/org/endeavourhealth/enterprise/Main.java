@@ -51,7 +51,8 @@ public class Main {
 
                 Integer[] ages = EnterpriseAgeUpdater.calculateAgeValues(ageToUpdate);
 
-                updateEnterprise(ageToUpdate.getEnterprisePatientId(), ages, enterpriseConnection);
+                updateEnterprisePatient(ageToUpdate.getEnterprisePatientId(), ages, enterpriseConnection);
+                updateEnterprisePerson(ageToUpdate.getEnterprisePatientId(), ages, enterpriseConnection);
 
                 //if we've successfully updated Enterprise, then it's time to save our updated map object
                 //with the newly calculated date of next update
@@ -82,7 +83,7 @@ public class Main {
     }
 
 
-    private static void updateEnterprise(long enterprisePatientId, Integer[] ages, Connection connection) throws Exception {
+    private static void updateEnterprisePatient(long enterprisePatientId, Integer[] ages, Connection connection) throws Exception {
 
         //the enterprise patient database isn't managed using hibernate, so we need to simply write a simple update statement
         StringBuilder sb = new StringBuilder();
@@ -120,6 +121,46 @@ public class Main {
         connection.commit();
 
         LOG.info("Updated patient " + enterprisePatientId + " to ages " + ages[EnterpriseAgeUpdater.UNIT_YEARS] + " y, " + ages[EnterpriseAgeUpdater.UNIT_MONTHS] + " m " + ages[EnterpriseAgeUpdater.UNIT_WEEKS] + " wks");
+    }
+
+    private static void updateEnterprisePerson(long enterprisePatientId, Integer[] ages, Connection connection) throws Exception {
+
+        //update the age fields on the person table where the person is for our patient and their pseudo IDs match
+        StringBuilder sb = new StringBuilder();
+        sb.append("UPDATE patient, person SET ");
+        sb.append("person.age_years = ?, ");
+        sb.append("person.age_months = ?, ");
+        sb.append("person.age_weeks = ? ");
+        sb.append("WHERE patient.id = ? ");
+        sb.append("AND patient.person_id = person.id ");
+        sb.append("AND patient.pseudo_id = person.pseudo_id");
+
+        PreparedStatement update = connection.prepareStatement(sb.toString());
+
+        if (ages[EnterpriseAgeUpdater.UNIT_YEARS] == null) {
+            update.setNull(1, Types.INTEGER);
+        } else {
+            update.setInt(1, ages[EnterpriseAgeUpdater.UNIT_YEARS]);
+        }
+
+        if (ages[EnterpriseAgeUpdater.UNIT_MONTHS] == null) {
+            update.setNull(2, Types.INTEGER);
+        } else {
+            update.setInt(2, ages[EnterpriseAgeUpdater.UNIT_MONTHS]);
+        }
+
+        if (ages[EnterpriseAgeUpdater.UNIT_WEEKS] == null) {
+            update.setNull(3, Types.INTEGER);
+        } else {
+            update.setInt(3, ages[EnterpriseAgeUpdater.UNIT_WEEKS]);
+        }
+
+        update.setLong(4, enterprisePatientId);
+
+        update.addBatch();
+        update.executeBatch();
+
+        connection.commit();
     }
 
     private static List<EnterpriseAge> findAgesToUpdate(EntityManager entityManager) {

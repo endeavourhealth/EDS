@@ -8,6 +8,7 @@ import org.endeavourhealth.common.cassandra.CassandraConnector;
 import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.core.configuration.ConfigDeserialiser;
 import org.endeavourhealth.core.configuration.QueueReaderConfiguration;
+import org.endeavourhealth.core.data.admin.ServiceRepository;
 import org.endeavourhealth.core.data.admin.models.Service;
 import org.endeavourhealth.core.data.audit.AuditRepository;
 import org.endeavourhealth.core.data.audit.models.ExchangeTransformAudit;
@@ -2426,9 +2427,10 @@ public class Main {
 		LOG.info("Finding missing codes");
 
 		AuditRepository auditRepository = new AuditRepository();
+		ServiceRepository serviceRepository = new ServiceRepository();
 
 		Session session = CassandraConnector.getInstance().getSession();
-		Statement stmt = new SimpleStatement("SELECT service_id, system_id, exchange_id, version FROM audit.exchange_transform_audit ALLOW FILTERING;");
+		Statement stmt = new SimpleStatement("SELECT service_id, system_id, exchange_id, version FROM audit.exchange_transform_audit WHERE error_xml >= '<' ALLOW FILTERING;");
 		stmt.setFetchSize(100);
 
 		HashSet<String> done = new HashSet<>();
@@ -2456,7 +2458,11 @@ public class Main {
 				String code = xml.substring(startIndex, tagEndIndex);
 
 				if (!done.contains(code)) {
-					LOG.info("Readcode " + code + " from " + audit.getStarted());
+
+					Service service = serviceRepository.getById(serviceId);
+					String name = service.getName();
+
+					LOG.info(name + " clinical code " + code + " from " + audit.getStarted());
 					done.add(code);
 				}
 				continue;
@@ -2471,7 +2477,11 @@ public class Main {
 				String code = xml.substring(startIndex, tagEndIndex);
 
 				if (!done.contains(code)) {
-					LOG.info("Medication " + code + " from " + audit.getStarted());
+
+					Service service = serviceRepository.getById(serviceId);
+					String name = service.getName();
+
+					LOG.info(name + " drug code " + code + " from " + audit.getStarted());
 					done.add(code);
 				}
 				continue;
