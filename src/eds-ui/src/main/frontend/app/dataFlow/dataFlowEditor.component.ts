@@ -39,6 +39,23 @@ export class DataFlowEditorComponent {
         {num: 1, name : "Live"}
     ];
 
+    storageProtocols = [
+        {num: 0, name: "Audit only"},
+        {num: 1, name: "Temporary Store And Forward"},
+        {num: 2, name: "Permanent Record Store"}
+    ];
+
+    securityArchitectures = [
+        {num: 0, name: "TLS/MA"},
+        {num: 1, name: "Secure FTP"}
+    ];
+
+    securityInfrastructures = [
+        {num: 0, name: "N3"},
+        {num: 1, name: "PSN"},
+        {num: 2, name: "Internet"}
+    ];
+
     dsaDetailsToShow = new Dsa().getDisplayItems();
     dpaDetailsToShow = new Dpa().getDisplayItems();
 

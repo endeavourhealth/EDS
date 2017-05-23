@@ -15,7 +15,6 @@ public class JsonDPA {
     private String publisherContractInformation = null;
     private String publisherDataSet = null;
     private Short dsaStatusId = null;
-    private Short storageProtocolId = null;
     private String dataFlow = null;
     private String returnToSenderPolicy = null;
     private String startDate = null;
@@ -86,14 +85,6 @@ public class JsonDPA {
 
     public void setDsaStatusId(Short dsaStatusId) {
         this.dsaStatusId = dsaStatusId;
-    }
-
-    public Short getStorageProtocolId() {
-        return storageProtocolId;
-    }
-
-    public void setStorageProtocolId(Short storageProtocolId) {
-        this.storageProtocolId = storageProtocolId;
     }
 
     public String getDataFlow() {

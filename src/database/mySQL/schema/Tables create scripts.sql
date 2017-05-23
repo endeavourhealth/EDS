@@ -82,6 +82,20 @@ create table OrganisationManager.FlowStatus (
     
 );
 
+drop table if exists OrganisationManager.SecurityInfrastructure;
+
+create table OrganisationManager.SecurityInfrastructure (
+	id smallint not null primary key,
+    SecurityInfrastructure varchar(100) not null    
+);
+
+drop table if exists OrganisationManager.SecurityArchitecture;
+
+create table OrganisationManager.SecurityArchitecture (
+	id smallint not null primary key,
+    SecurityArchitecture varchar(100) not null    
+);
+
 drop table if exists OrganisationManager.Cohort;
 
 create table OrganisationManager.Cohort (
@@ -110,24 +124,22 @@ drop table if exists OrganisationManager.DataFlow;
 create table OrganisationManager.DataFlow (
 	Uuid char(36) not null primary key,
     Name varchar(100) not null,
-    Status varchar(100) null,
-    /*OrganisationsInvolved - link table*/
     DirectionId smallint null, 
     FlowScheduleId smallint not null, 
     ApproximateVolume int not null,
     DataExchangeMethodId smallint not null,
     FlowStatusId smallint not null,    
-    /*contact - link table*/
     AdditionalDocumentation varchar(100) null,
     SignOff varchar(10),
-    DataSet char(36) null,
-    Cohort char(36) null,
-    Subscriber varchar(100) null,
+    StorageProtocolId smallint not null,
+    SecurityInfrastructureId smallint not null,
+    SecurityArchitectureId smallint not null,
     
     foreign key (FlowScheduleId) references OrganisationManager.FlowSchedule(id),    
     foreign key (DataExchangeMethodId) references OrganisationManager.DataExchangeMethod(id),
     foreign key (FlowStatusId) references OrganisationManager.FlowStatus(id),
-    foreign key (DirectionId) references OrganisationManager.FlowDirection(id)
+    foreign key (DirectionId) references OrganisationManager.FlowDirection(id),
+    foreign key (StorageProtocolId) references OrganisationManager.StorageProtocol(id)
     
 );
 
@@ -176,12 +188,10 @@ create table OrganisationManager.DataProcessingAgreement (
     PublisherContractInformation varchar(100) null,
     PublisherDataSet char(36) null,
     DSAStatusId smallint not null,
-    StorageProtocolId smallint(36) not null,
     DataFlow char(36) null,
     ReturnToSenderPolicy varchar(100) null,
     
-    foreign key (DSAStatusId) references OrganisationManager.DSAStatus(id),
-    foreign key (StorageProtocolId) references OrganisationManager.StorageProtocol(id)
+    foreign key (DSAStatusId) references OrganisationManager.DSAStatus(id)
 );
 
 drop table if exists OrganisationManager.NatureOfInformation;
@@ -283,6 +293,5 @@ create table OrganisationManager.DataSharingAgreementBenefit (
     
     foreign key (DataSharingAgreementUuid) references OrganisationManager.DataSharingAgreement(Uuid)
 );
-
 
 

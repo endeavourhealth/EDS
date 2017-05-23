@@ -10,17 +10,16 @@ import java.util.UUID;
 public class JsonDataFlow {
     private String uuid = null;
     private String name = null;
-    private String status = null;
     private Short directionId = null;
     private Short flowScheduleId = null;
     private Integer approximateVolume = null;
     private Short dataExchangeMethodId = null;
+    private Short storageProtocolId = null;
+    private Short securityInfrastructureId = null;
+    private Short securityArchitectureId = null;
     private Short flowStatusId = null;
     private String additionalDocumentation = null;
     private String signOff = null;
-    private String dataSet = null;
-    private String cohort = null;
-    private String subscriber = null;
     private Map<UUID, String> dsas = null;
     private Map<UUID, String> dpas = null;
 
@@ -38,14 +37,6 @@ public class JsonDataFlow {
 
     public void setName(String name) {
         this.name = name;
-    }
-
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
     }
 
     public Short getDirectionId() {
@@ -104,30 +95,6 @@ public class JsonDataFlow {
         this.signOff = signOff;
     }
 
-    public String getDataSet() {
-        return dataSet;
-    }
-
-    public void setDataSet(String dataSet) {
-        this.dataSet = dataSet;
-    }
-
-    public String getCohort() {
-        return cohort;
-    }
-
-    public void setCohort(String cohort) {
-        this.cohort = cohort;
-    }
-
-    public String getSubscriber() {
-        return subscriber;
-    }
-
-    public void setSubscriber(String subscriber) {
-        this.subscriber = subscriber;
-    }
-
     public Map<UUID, String> getDsas() {
         return dsas;
     }
@@ -142,5 +109,29 @@ public class JsonDataFlow {
 
     public void setDpas(Map<UUID, String> dpas) {
         this.dpas = dpas;
+    }
+
+    public Short getStorageProtocolId() {
+        return storageProtocolId;
+    }
+
+    public void setStorageProtocolId(Short storageProtocolId) {
+        this.storageProtocolId = storageProtocolId;
+    }
+
+    public Short getSecurityInfrastructureId() {
+        return securityInfrastructureId;
+    }
+
+    public void setSecurityInfrastructureId(Short securityInfrastructureId) {
+        this.securityInfrastructureId = securityInfrastructureId;
+    }
+
+    public Short getSecurityArchitectureId() {
+        return securityArchitectureId;
+    }
+
+    public void setSecurityArchitectureId(Short securityArchitectureId) {
+        this.securityArchitectureId = securityArchitectureId;
     }
 }

@@ -29,12 +29,6 @@ export class DpaEditorComponent {
         {num: 1, name: "Inactive"}
     ];
 
-    storageProtocols = [
-        {num: 0, name: "Audit only"},
-        {num: 1, name: "Temporary Store And Forward"},
-        {num: 2, name: "Permanent Record Store"}
-    ];
-
     dataFlowDetailsToShow = new DataFlow().getDisplayItems();
     datasetDetailsToShow = new DataSet().getDisplayItems();
     cohortDetailsToShow = new Cohort().getDisplayItems();

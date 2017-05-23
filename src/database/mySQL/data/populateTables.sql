@@ -1,58 +1,3 @@
-/*Regions*/
-insert into OrganisationManager.Region (name, description, Uuid)
-values ("East London", "East London Region", "2773b467-07dd-11e7-83f3-80fa5b27a530");
-
-insert into OrganisationManager.Region (name, description, Uuid)
-values ("North East Corner", "Newcastle and Cumbria", "2bd60c36-07dd-11e7-83f3-80fa5b27a530");
-
-insert into OrganisationManager.Region (name, description, Uuid)
-values ("Manchester", "M62 Corridor", "29f15c8e-08ad-11e7-a81d-80fa5b27a530");
-
-insert into OrganisationManager.Region (name, description, Uuid)
-values ("London", "London City Supra Region", "3bd58c4c-08ad-11e7-a81d-80fa5b27a530");
-
-insert into OrganisationManager.Region (name, description, Uuid)
-values ("England", "Whole country", "4e812e38-08ad-11e7-a81d-80fa5b27a530");
-
-/*Organisations*/
-insert into OrganisationManager.Organisation (name, alternative_name, ods_code, uuid, IsService)
-values ("Crisp Street", "Crispy Street", "A12354", "77f0ebd0-07dc-11e7-83f3-80fa5b27a530", 0);
-
-insert into OrganisationManager.Organisation (name, alternative_name, ods_code, uuid, IsService)
-values ("North Street", "Northy Street", "A11111", "856e4efb-07dc-11e7-83f3-80fa5b27a530", 0);
-
-insert into OrganisationManager.Organisation (name, alternative_name, ods_code, uuid, IsService)
-values ("East Street", "Easty Street", "B22222", "aefcb614-07dc-11e7-83f3-80fa5b27a530", 0);
-
-insert into OrganisationManager.Organisation (name, alternative_name, ods_code, uuid, IsService)
-values ("West Street", "Westy Street", "C33333", "b61572e6-07dc-11e7-83f3-80fa5b27a530", 0);
-
-insert into OrganisationManager.Organisation (name, alternative_name, ods_code, uuid, IsService)
-values ("West Street Minor Injuries Unit", "Westy Street MIU", "C33333", "d43a509a-0d3e-11e7-8387-80fa5b27a530", 1);
-
-insert into OrganisationManager.Organisation (name, alternative_name, ods_code, uuid, IsService)
-values ("West Street GP Surgery Service", "Westy Street GP", "C33333", "ef71a067-0d3e-11e7-8387-80fa5b27a530", 1);
-
-/*OrganisationManager.MasterMapping*/
-/*
-insert into OrganisationManager.MasterMapping (ChildUuid, ParentUUid, MapTypeId, IsDefault)
-values ("d43a509a-0d3e-11e7-8387-80fa5b27a530", "b61572e6-07dc-11e7-83f3-80fa5b27a530", 0, 0);
-
-insert into OrganisationManager.MasterMapping (ChildUuid, ParentUUid, MapTypeId, IsDefault)
-values ("ef71a067-0d3e-11e7-8387-80fa5b27a530", "b61572e6-07dc-11e7-83f3-80fa5b27a530", 0, 1);
-
-insert into OrganisationManager.MasterMapping (ChildUuid, ParentUUid, MapTypeId, IsDefault)
-values ("77f0ebd0-07dc-11e7-83f3-80fa5b27a530", "2773b467-07dd-11e7-83f3-80fa5b27a530", 1, 1);
-
-insert into OrganisationManager.MasterMapping (ChildUuid, ParentUUid, MapTypeId, IsDefault)
-values ("856e4efb-07dc-11e7-83f3-80fa5b27a530", "2773b467-07dd-11e7-83f3-80fa5b27a530", 1, 1);
-
-insert into OrganisationManager.MasterMapping (ChildUuid, ParentUUid, MapTypeId, IsDefault)
-values ("aefcb614-07dc-11e7-83f3-80fa5b27a530", "2773b467-07dd-11e7-83f3-80fa5b27a530", 1, 1);
-
-insert into OrganisationManager.MasterMapping (ChildUuid, ParentUUid, MapTypeId, IsDefault)
-values ("b61572e6-07dc-11e7-83f3-80fa5b27a530", "2bd60c36-07dd-11e7-83f3-80fa5b27a530", 1, 1);
-*/
 
 /*OrganisationManager.FlowDirection*/
 insert into OrganisationManager.FlowDirection (Id, Direction)
@@ -174,4 +119,23 @@ values (6, "Cohort");
 
 insert into OrganisationManager.MapType (Id, MapType)
 values (7, "Data Set");
+
+
+/*OrganisationManager.SecurityInfrastructure*/
+insert into OrganisationManager.SecurityInfrastructure (Id, SecurityInfrastructure)
+values (0, "N3");
+
+insert into OrganisationManager.SecurityInfrastructure (Id, SecurityInfrastructure)
+values (1, "PSN");
+
+insert into OrganisationManager.SecurityInfrastructure (Id, SecurityInfrastructure)
+values (2, "Internet");
+
+/*OrganisationManager.SecurityArchitecture*/
+insert into OrganisationManager.SecurityArchitecture (Id, SecurityArchitecture)
+values (0, "TLS/MA");
+
+insert into OrganisationManager.SecurityArchitecture (Id, SecurityArchitecture)
+values (1, "Secure FTP");
+
 

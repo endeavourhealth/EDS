@@ -22,7 +22,6 @@ public class DataProcessingAgreementEntity {
     private String publisherContractInformation;
     private String publisherDataSet;
     private short dsaStatusId;
-    private short storageProtocolId;
     private String dataFlow;
     private String returnToSenderPolicy;
     private Date startDate;
@@ -109,16 +108,6 @@ public class DataProcessingAgreementEntity {
     }
 
     @Basic
-    @Column(name = "StorageProtocolId", nullable = false)
-    public short getStorageProtocolId() {
-        return storageProtocolId;
-    }
-
-    public void setStorageProtocolId(short storageProtocolId) {
-        this.storageProtocolId = storageProtocolId;
-    }
-
-    @Basic
     @Column(name = "DataFlow", nullable = true, length = 36)
     public String getDataFlow() {
         return dataFlow;
@@ -166,7 +155,6 @@ public class DataProcessingAgreementEntity {
         DataProcessingAgreementEntity that = (DataProcessingAgreementEntity) o;
 
         if (dsaStatusId != that.dsaStatusId) return false;
-        if (storageProtocolId != that.storageProtocolId) return false;
         if (uuid != null ? !uuid.equals(that.uuid) : that.uuid != null) return false;
         if (name != null ? !name.equals(that.name) : that.name != null) return false;
         if (description != null ? !description.equals(that.description) : that.description != null) return false;
@@ -196,7 +184,6 @@ public class DataProcessingAgreementEntity {
         result = 31 * result + (publisherContractInformation != null ? publisherContractInformation.hashCode() : 0);
         result = 31 * result + (publisherDataSet != null ? publisherDataSet.hashCode() : 0);
         result = 31 * result + (int) dsaStatusId;
-        result = 31 * result + (int) storageProtocolId;
         result = 31 * result + (dataFlow != null ? dataFlow.hashCode() : 0);
         result = 31 * result + (returnToSenderPolicy != null ? returnToSenderPolicy.hashCode() : 0);
         result = 31 * result + (startDate != null ? startDate.hashCode() : 0);
@@ -241,7 +228,6 @@ public class DataProcessingAgreementEntity {
         dpaEntity.setPublisherContractInformation(dpa.getPublisherContractInformation());
         dpaEntity.setPublisherDataSet(dpa.getPublisherDataSet());
         dpaEntity.setDsaStatusId(dpa.getDsaStatusId());
-        dpaEntity.setStorageProtocolId(dpa.getStorageProtocolId());
         dpaEntity.setDataFlow(dpa.getDataFlow());
         dpaEntity.setReturnToSenderPolicy(dpa.getReturnToSenderPolicy());
         if (dpa.getStartDate() != null) {
@@ -268,7 +254,6 @@ public class DataProcessingAgreementEntity {
         dpaEntity.setPublisherContractInformation(dpa.getPublisherContractInformation());
         dpaEntity.setPublisherDataSet(dpa.getPublisherDataSet());
         dpaEntity.setDsaStatusId(dpa.getDsaStatusId());
-        dpaEntity.setStorageProtocolId(dpa.getStorageProtocolId());
         dpaEntity.setDataFlow(dpa.getDataFlow());
         dpaEntity.setReturnToSenderPolicy(dpa.getReturnToSenderPolicy());
         if (dpa.getStartDate() != null) {

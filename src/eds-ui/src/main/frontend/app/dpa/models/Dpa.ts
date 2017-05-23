@@ -7,7 +7,6 @@ export class Dpa {
     publisherContractInformation : string;
     publisherDataSet : string;
     dsaStatusId : number;
-    storageProtocolId : number;
     dataFlow : string;
     returnToSenderPolicy : string;
     startDate : string;
