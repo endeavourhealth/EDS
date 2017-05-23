@@ -2429,7 +2429,7 @@ public class Main {
 		ServiceRepository serviceRepository = new ServiceRepository();
 
 		Session session = CassandraConnector.getInstance().getSession();
-		Statement stmt = new SimpleStatement("SELECT service_id, system_id, exchange_id, version FROM audit.exchange_transform_audit WHERE error_xml >= '<' ALLOW FILTERING;");
+		Statement stmt = new SimpleStatement("SELECT service_id, system_id, exchange_id, version FROM audit.exchange_transform_audit ALLOW FILTERING;");
 		stmt.setFetchSize(100);
 
 		ResultSet rs = session.execute(stmt);
