@@ -17,7 +17,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.UUID;
 
@@ -2433,8 +2432,6 @@ public class Main {
 		Statement stmt = new SimpleStatement("SELECT service_id, system_id, exchange_id, version FROM audit.exchange_transform_audit WHERE error_xml >= '<' ALLOW FILTERING;");
 		stmt.setFetchSize(100);
 
-		HashSet<String> done = new HashSet<>();
-
 		ResultSet rs = session.execute(stmt);
 		while (!rs.isExhausted()) {
 			Row row = rs.one();
@@ -2457,14 +2454,10 @@ public class Main {
 
 				String code = xml.substring(startIndex, tagEndIndex);
 
-				if (!done.contains(code)) {
+				Service service = serviceRepository.getById(serviceId);
+				String name = service.getName();
 
-					Service service = serviceRepository.getById(serviceId);
-					String name = service.getName();
-
-					LOG.info(name + " clinical code " + code + " from " + audit.getStarted());
-					done.add(code);
-				}
+				LOG.info(name + " clinical code " + code + " from " + audit.getStarted());
 				continue;
 			}
 
@@ -2475,15 +2468,10 @@ public class Main {
 				int tagEndIndex = xml.indexOf("<", startIndex);
 
 				String code = xml.substring(startIndex, tagEndIndex);
+				Service service = serviceRepository.getById(serviceId);
+				String name = service.getName();
 
-				if (!done.contains(code)) {
-
-					Service service = serviceRepository.getById(serviceId);
-					String name = service.getName();
-
-					LOG.info(name + " drug code " + code + " from " + audit.getStarted());
-					done.add(code);
-				}
+				LOG.info(name + " drug code " + code + " from " + audit.getStarted());
 				continue;
 			}
 		}
