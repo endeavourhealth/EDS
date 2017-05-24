@@ -9,10 +9,7 @@ import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 @NamedStoredProcedureQueries({
     @NamedStoredProcedureQuery(
@@ -218,6 +215,24 @@ public class MasterMappingEntity {
         if (dsa.getSubscribers() != null) {
             Map<UUID, String> subscribers = dsa.getSubscribers();
             saveChildMappings(subscribers, MapType.SUBSCRIBER.getMapType(), dsa.getUuid(), MapType.DATASHARINGAGREEMENT.getMapType());
+        }
+
+        if (dsa.getPurposes() != null) {
+            Map<UUID, String> purposes = new HashMap<>();
+            List<JsonPurpose> jsonPurposes =  dsa.getPurposes();
+            for (JsonPurpose purp : jsonPurposes) {
+                purposes.put(UUID.fromString(purp.getUuid()), purp.getTitle());
+            }
+            saveChildMappings(purposes, MapType.PURPOSE.getMapType(), dsa.getUuid(), MapType.DATASHARINGAGREEMENT.getMapType());
+        }
+
+        if (dsa.getBenefits() != null) {
+            Map<UUID, String> benefits = new HashMap<>();
+            List<JsonPurpose> jsonBenefits =  dsa.getBenefits();
+            for (JsonPurpose benef : jsonBenefits) {
+                benefits.put(UUID.fromString(benef.getUuid()), benef.getTitle());
+            }
+            saveChildMappings(benefits, MapType.BENEFIT.getMapType(), dsa.getUuid(), MapType.DATASHARINGAGREEMENT.getMapType());
         }
     }
 

@@ -10,9 +10,8 @@ import {Region} from "../region/models/Region";
 import {RegionPickerDialog} from "../region/regionPicker.dialog";
 import {Organisation} from "../organisationManager/models/Organisation";
 import {OrganisationManagerPickerDialog} from "../organisationManager/organisationManagerPicker.dialog";
-import {DsaPurpose} from "./models/DsaPurpose";
+import {Purpose} from "./models/Purpose";
 import {PurposeAddDialog} from "./purposeAdd.dialog";
-import {DsaBenefit} from "./models/DsaBenefit";
 
 @Component({
     template: require('./dsaEditor.html')
@@ -25,8 +24,8 @@ export class DsaEditorComponent {
     regions : Region[];
     publishers : Organisation[];
     subscribers : Organisation[];
-    purposes : DsaPurpose[];
-    benefits : DsaBenefit[];
+    purposes : Purpose[];
+    benefits : Purpose[];
 
     status = [
         {num: 0, name : "Active"},
@@ -41,8 +40,7 @@ export class DsaEditorComponent {
     dataflowDetailsToShow = new DataFlow().getDisplayItems();
     regionDetailsToShow = new Region().getDisplayItems();
     orgDetailsToShow = new Organisation().getDisplayItems();
-    purposeDetailsToShow = new DsaPurpose().getDisplayItems();
-    benefitDetailsToShow = new DsaBenefit().getDisplayItems();
+    purposeDetailsToShow = new Purpose().getDisplayItems();
 
     constructor(private $modal: NgbModal,
                 private state : StateService,
@@ -185,7 +183,7 @@ export class DsaEditorComponent {
         var vm = this;
         PurposeAddDialog.open(vm.$modal, vm.purposes, 'Purpose')
             .result.then(function
-                (result : DsaPurpose[]) { vm.purposes= result; },
+                (result : Purpose[]) { vm.purposes= result; },
             () => vm.log.info('Edit Purposes cancelled')
         );
     }
@@ -194,7 +192,7 @@ export class DsaEditorComponent {
         var vm = this;
         PurposeAddDialog.open(vm.$modal, vm.benefits, 'Benefit')
             .result.then(function
-                (result : DsaBenefit[]) { vm.benefits= result; },
+                (result : Purpose[]) { vm.benefits= result; },
             () => vm.log.info('Edit Benefits cancelled')
         );
     }

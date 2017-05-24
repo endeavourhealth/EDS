@@ -11,7 +11,10 @@ public enum MapType {
     COHORT((short)6),
     DATASET((short)7),
     PUBLISHER((short)8),
-    SUBSCRIBER((short)9);
+    SUBSCRIBER((short)9),
+    PURPOSE((short)10),
+    BENEFIT((short)11);
+
 
     private Short mapType;
 

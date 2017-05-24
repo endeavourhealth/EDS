@@ -120,6 +120,18 @@ values (6, "Cohort");
 insert into OrganisationManager.MapType (Id, MapType)
 values (7, "Data Set");
 
+insert into OrganisationManager.MapType (Id, MapType)
+values (8, "Publisher");
+
+insert into OrganisationManager.MapType (Id, MapType)
+values (9, "Subscriber");
+
+insert into OrganisationManager.MapType (Id, MapType)
+values (10, "Purpose");
+
+insert into OrganisationManager.MapType (Id, MapType)
+values (11, "Benefit");
+
 
 /*OrganisationManager.SecurityInfrastructure*/
 insert into OrganisationManager.SecurityInfrastructure (Id, SecurityInfrastructure)

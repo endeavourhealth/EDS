@@ -6,7 +6,7 @@ import {Dsa} from "./models/Dsa";
 import {DataFlow} from "../dataFlow/models/DataFlow";
 import {Region} from "../region/models/Region";
 import {Organisation} from "../organisationManager/models/Organisation";
-import {DsaPurpose} from "./models/DsaPurpose";
+import {Purpose} from "./models/Purpose";
 
 @Injectable()
 export class DsaService extends BaseHttp2Service  {
@@ -62,13 +62,13 @@ export class DsaService extends BaseHttp2Service  {
         return this.httpGet('api/dsa/subscribers', { search : params });
     }
 
-    getPurposes(uuid : string) :  Observable<DsaPurpose[]> {
+    getPurposes(uuid : string) :  Observable<Purpose[]> {
         let params = new URLSearchParams();
         params.set('uuid',uuid);
         return this.httpGet('api/dsa/purposes', { search : params });
     }
 
-    getBenefits(uuid : string) :  Observable<DsaPurpose[]> {
+    getBenefits(uuid : string) :  Observable<Purpose[]> {
         let params = new URLSearchParams();
         params.set('uuid',uuid);
         return this.httpGet('api/dsa/benefits', { search : params });

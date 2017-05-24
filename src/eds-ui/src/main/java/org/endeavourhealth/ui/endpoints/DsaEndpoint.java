@@ -63,6 +63,8 @@ public final class DsaEndpoint extends AbstractEndpoint {
                 "DSA",
                 "DSA", dsa);
 
+        PurposeEntity.deleteAllPurposes(dsa.getUuid(), MapType.DATASHARINGAGREEMENT.getMapType());
+
         if (dsa.getUuid() != null) {
             MasterMappingEntity.deleteAllMappings(dsa.getUuid());
             DataSharingAgreementEntity.updateDSA(dsa);
@@ -71,38 +73,10 @@ public final class DsaEndpoint extends AbstractEndpoint {
             DataSharingAgreementEntity.saveDSA(dsa);
         }
 
+        dsa.setPurposes(setUuidsAndSavePurpose(dsa.getPurposes()));
+        dsa.setBenefits(setUuidsAndSavePurpose(dsa.getBenefits()));
+
         MasterMappingEntity.saveDataSharingAgreementMappings(dsa);
-
-        List<JsonDsaPurpose> purposes = dsa.getPurposes();
-
-        if (purposes.size() > 0) {
-            for (JsonDsaPurpose purp : purposes) {
-                if (purp.getDataSharingAgreementUuid() == null)
-                    purp.setDataSharingAgreementUuid(dsa.getUuid());
-
-                if (purp.getUuid() == null) {
-                    purp.setUuid(UUID.randomUUID().toString());
-                    DataSharingAgreementPurposeEntity.savePurpose(purp);
-                } else {
-                    DataSharingAgreementPurposeEntity.updatePurpose(purp);
-                }
-            }
-        }
-
-        List<JsonDsaBenefit> benefits = dsa.getBenefits();
-        if (benefits.size() > 0) {
-            for (JsonDsaBenefit ben : benefits) {
-                if (ben.getDataSharingAgreementUuid() == null)
-                    ben.setDataSharingAgreementUuid(dsa.getUuid());
-
-                if (ben.getUuid() == null) {
-                    ben.setUuid(UUID.randomUUID().toString());
-                    DataSharingAgreementBenefitEntity.saveBenefit(ben);
-                } else {
-                    DataSharingAgreementBenefitEntity.updateBenefit(ben);
-                }
-            }
-        }
 
         clearLogbackMarkers();
 
@@ -311,25 +285,45 @@ public final class DsaEndpoint extends AbstractEndpoint {
     }
 
     private Response getPurposes(String dsaUuid) throws Exception {
+        List<String> purposeUuids = MasterMappingEntity.getChildMappings(dsaUuid, MapType.DATASHARINGAGREEMENT.getMapType(), MapType.PURPOSE.getMapType());
 
-        List<DataSharingAgreementPurposeEntity> purposes = DataSharingAgreementPurposeEntity.getAllPurposes(dsaUuid);
+        List<PurposeEntity> ret = new ArrayList<>();
+
+        if (purposeUuids.size() > 0)
+            ret = PurposeEntity.getPurposesFromList(purposeUuids);
 
         clearLogbackMarkers();
         return Response
                 .ok()
-                .entity(purposes)
+                .entity(ret)
                 .build();
     }
 
     private Response getBenefits(String dsaUuid) throws Exception {
 
-        List<DataSharingAgreementBenefitEntity> purposes = DataSharingAgreementBenefitEntity.getAllBenefits(dsaUuid);
+        List<String> benefitUuids = MasterMappingEntity.getChildMappings(dsaUuid, MapType.DATASHARINGAGREEMENT.getMapType(), MapType.BENEFIT.getMapType());
+
+        List<PurposeEntity> ret = new ArrayList<>();
+
+        if (benefitUuids.size() > 0)
+            ret = PurposeEntity.getPurposesFromList(benefitUuids);
 
         clearLogbackMarkers();
         return Response
                 .ok()
-                .entity(purposes)
+                .entity(ret)
                 .build();
+    }
+
+    private List<JsonPurpose> setUuidsAndSavePurpose(List<JsonPurpose> purposes) throws Exception {
+        for (JsonPurpose purpose : purposes) {
+            if (purpose.getUuid() == null) {
+                purpose.setUuid(UUID.randomUUID().toString());
+            }
+            PurposeEntity.savePurpose(purpose);
+        }
+
+        return purposes;
     }
 
 }

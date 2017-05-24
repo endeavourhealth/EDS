@@ -1,6 +1,5 @@
-export class DsaPurpose {
+export class Purpose {
     uuid: string;
-    name: string;
     title: string;
     detail: string;
 

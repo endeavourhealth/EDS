@@ -21,8 +21,8 @@ public class JsonDSA {
     private Map<UUID, String> regions = null;
     private Map<UUID, String> publishers = null;
     private Map<UUID, String> subscribers = null;
-    private List<JsonDsaPurpose> purposes = new ArrayList<>();
-    private List<JsonDsaBenefit> benefits = new ArrayList<>();
+    private List<JsonPurpose> purposes = new ArrayList<>();
+    private List<JsonPurpose> benefits = new ArrayList<>();
 
     public String getUuid() {
         return uuid;
@@ -120,19 +120,19 @@ public class JsonDSA {
         this.subscribers = subscribers;
     }
 
-    public List<JsonDsaPurpose> getPurposes() {
+    public List<JsonPurpose> getPurposes() {
         return purposes;
     }
 
-    public void setPurposes(List<JsonDsaPurpose> purposes) {
+    public void setPurposes(List<JsonPurpose> purposes) {
         this.purposes = purposes;
     }
 
-    public List<JsonDsaBenefit> getBenefits() {
+    public List<JsonPurpose> getBenefits() {
         return benefits;
     }
 
-    public void setBenefits(List<JsonDsaBenefit> benefits) {
+    public void setBenefits(List<JsonPurpose> benefits) {
         this.benefits = benefits;
     }
 }

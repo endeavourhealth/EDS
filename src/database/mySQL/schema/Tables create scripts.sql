@@ -282,26 +282,17 @@ create table OrganisationManager.MasterMapping (
     primary key (ChildUuid, ChildMapTypeId, ParentUUid, ParentMapTypeId)
 );
 
+drop table if exists OrganisationManager.Purpose;
+
+create table OrganisationManager.Purpose (
+	Uuid char(36) not null primary key,
+    Title varchar(50) not null,
+    Detail varchar(2000) not null
+);
+
+drop table if exists OrganisationManager.Benefit;
+drop table if exists OrganisationManager.DataSharingAgreementBenefit;
 drop table if exists OrganisationManager.DataSharingAgreementPurpose;
 
-create table OrganisationManager.DataSharingAgreementPurpose (
-	Uuid char(36) not null primary key,
-	DataSharingAgreementUuid char(36) not null,
-    Title varchar(50) not null,
-    Detail varchar(2000) not null,
-    
-    foreign key (DataSharingAgreementUuid) references OrganisationManager.DataSharingAgreement(Uuid) on delete cascade
-);
-
-drop table if exists OrganisationManager.DataSharingAgreementBenefit;
-
-create table OrganisationManager.DataSharingAgreementBenefit (
-	Uuid char(36) not null primary key,
-	DataSharingAgreementUuid char(36) not null,
-    Title varchar(50) not null,
-    Detail varchar(2000) not null,
-    
-    foreign key (DataSharingAgreementUuid) references OrganisationManager.DataSharingAgreement(Uuid) on delete cascade
-);
 
 
