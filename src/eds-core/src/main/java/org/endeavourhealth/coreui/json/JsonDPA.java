@@ -2,6 +2,8 @@ package org.endeavourhealth.coreui.json;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -22,6 +24,7 @@ public class JsonDPA {
     private Map<UUID, String> dataFlows = null;
     private Map<UUID, String> cohorts = null;
     private Map<UUID, String> dataSets = null;
+    private List<JsonDocumentation> documentations = new ArrayList<>();
 
     public String getUuid() {
         return uuid;
@@ -141,5 +144,13 @@ public class JsonDPA {
 
     public void setEndDate(String endDate) {
         this.endDate = endDate;
+    }
+
+    public List<JsonDocumentation> getDocumentations() {
+        return documentations;
+    }
+
+    public void setDocumentations(List<JsonDocumentation> documentations) {
+        this.documentations = documentations;
     }
 }

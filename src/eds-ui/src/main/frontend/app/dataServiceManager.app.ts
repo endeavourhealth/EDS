@@ -29,6 +29,7 @@ import {DsaModule} from "./dsa/dsa.module";
 import {DpaModule} from "./dpa/dpa.module";
 import {DataSharingSummaryModule} from "./dataSharingSummary/dataSharingSummary.module";
 import {PaginationModule} from './pagination/pagination.module';
+import {DocumentationModule} from './documention/documentation.module';
 // State components
 import {DashboardComponent} from "./dashboard/dashboard.component";
 import {OrganisationListComponent} from "./organisations/organisationList.component";
@@ -98,6 +99,7 @@ import {DataSetComponent} from "./dataSet/dataSet.component";
 			DpaModule,
 			DataSharingSummaryModule,
 			PaginationModule,
+			DocumentationModule
 		],
 		states: [
 			{name: 'app.dashboard', url: '/dashboard', component: DashboardComponent},

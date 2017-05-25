@@ -71,6 +71,15 @@ public final class DpaEndpoint extends AbstractEndpoint {
             DataProcessingAgreementEntity.saveDPA(dpa);
         }
 
+        for (JsonDocumentation doc : dpa.getDocumentations()) {
+            if (doc.getUuid() != null) {
+                DocumentationEntity.updateDocument(doc);
+            } else {
+                doc.setUuid(UUID.randomUUID().toString());
+                DocumentationEntity.saveDocument(doc);
+            }
+        }
+
         MasterMappingEntity.saveDataProcessingAgreementMappings(dpa);
 
         clearLogbackMarkers();

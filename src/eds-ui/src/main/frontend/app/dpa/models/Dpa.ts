@@ -1,3 +1,4 @@
+import {Documentation} from "../../documention/models/Documentation";
 export class Dpa {
     uuid : string;
     name : string;
@@ -14,6 +15,7 @@ export class Dpa {
     dataFlows : { [key:string]:string; };
     cohorts : { [key:string]:string; };
     dataSets : { [key:string]:string; };
+    documentations : Documentation[];
 
     getDisplayItems() :any[] {
         return [

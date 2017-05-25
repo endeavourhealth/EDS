@@ -13,7 +13,8 @@ public enum MapType {
     PUBLISHER((short)8),
     SUBSCRIBER((short)9),
     PURPOSE((short)10),
-    BENEFIT((short)11);
+    BENEFIT((short)11),
+    DOCUMENT((short)12);
 
 
     private Short mapType;

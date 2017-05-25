@@ -132,6 +132,9 @@ values (10, "Purpose");
 insert into OrganisationManager.MapType (Id, MapType)
 values (11, "Benefit");
 
+insert into OrganisationManager.MapType (Id, MapType)
+values (12, "Document");
+
 
 /*OrganisationManager.SecurityInfrastructure*/
 insert into OrganisationManager.SecurityInfrastructure (Id, SecurityInfrastructure)

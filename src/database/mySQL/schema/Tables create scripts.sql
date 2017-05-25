@@ -294,5 +294,12 @@ drop table if exists OrganisationManager.Benefit;
 drop table if exists OrganisationManager.DataSharingAgreementBenefit;
 drop table if exists OrganisationManager.DataSharingAgreementPurpose;
 
+drop table if exists OrganisationManager.Documentation;
 
+create table OrganisationManager.Documentation (
+	Uuid char(36) not null primary key,
+    Title varchar(50) not null,
+    Filename varchar(50) not null,
+    FileData mediumblob not null
+);
 

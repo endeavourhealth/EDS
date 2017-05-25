@@ -150,10 +150,73 @@
                                 [detailsToShow]="datasetDetailsToShow">
                         </entity-viewer>
                     </accordion-group>
+                    <accordion-group [panelClass]="accordionClass" #docs>
+                        <div accordion-heading>
+                            <div class="row">
+                                <div class="col-md-2">
+                                    Associated Documentation
+                                </div>
+                                <div class="col-md-1">
+                                    <span class="badge">{{documentations?.length}}</span>
+                                    <i class="float-xs-right glyphicon pull-right"
+                                       [ngClass]="{'glyphicon-chevron-down': docs?.isOpen, 'glyphicon-chevron-right': !docs?.isOpen}"></i>
+                                    <button type="button" class="btn btn-xs btn-success pull-right" (click)="editDataSets()">Edit</button>
+                                </div>
+                            </div>
+                        </div>
+                        <entity-viewer
+                                [items]="documentations"
+                                [primary]="'title'"
+                                [primaryOrderText]="'Title'"
+                                [displayClass]="'region'"
+                                [typeDescription]="'Associated Documentation'"
+                                [model]="'documentation'"
+                                [detailsToShow]="documentDetailsToShow">
+                        </entity-viewer>
+                    </accordion-group>
                 </accordion>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="panel panel-primary">
+                            <div class="panel-heading">Upload Data Processing Agreement</div>
+                            <div class="panel-body">
+                                <form endUserRole="form" class="container-fluid">
+                                    <div class="row">
+                                        <div class="form-group col-md-12">
+                                            <label class="control-label">PDF File</label>
+                                            <div class="input-group">
+                                                <input type="file" (change)="fileChange($event)" placeholder="Upload file" accept=".pdf">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </form>
+
+                                <button type="button" class="btn bnt-default" (click)="cancel()">Cancel</button>
+                                <button type="button" class="btn btn-primary" (click)="ok()" [disabled]="!file">OK</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </form>
             <br>
             <br>
+            <div class="row">
+                <div>
+                    <label>PDF src</label>
+                    <input type="text" placeholder="PDF src" [(ngModel)]="pdfSrc">
+                </div>
+                <div>
+                    <label>Page:</label>
+                    <input type="number" placeholder="Page" [(ngModel)]="page">
+                </div>
+                <pdf-viewer [src]="pdfSrc"
+                            [page]="page"
+                            [original-size]="true"
+                            [render-text]="true"
+                            [show-all]="true"
+                            style="display: block;"
+                ></pdf-viewer>
+            </div>
         </div>
     </div>
 </div>

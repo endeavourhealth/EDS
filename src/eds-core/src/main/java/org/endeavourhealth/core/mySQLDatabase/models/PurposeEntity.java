@@ -67,25 +67,6 @@ public class PurposeEntity {
         return result;
     }
 
-    public static List<PurposeEntity> getAllPurposes(String Uuid) throws Exception {
-        EntityManager entityManager = PersistenceManager.getEntityManager();
-
-        CriteriaBuilder cb = entityManager.getCriteriaBuilder();
-        CriteriaQuery<PurposeEntity> cq = cb.createQuery(PurposeEntity.class);
-        Root<PurposeEntity> rootEntry = cq.from(PurposeEntity.class);
-
-        Predicate predicate = cb.equal(rootEntry.get("dataSharingAgreementUuid"), Uuid );
-
-        cq.where(predicate);
-        TypedQuery<PurposeEntity> query = entityManager.createQuery(cq);
-
-        List<PurposeEntity> ret = query.getResultList();
-
-        entityManager.close();
-
-        return ret;
-    }
-
     public static void savePurpose(JsonPurpose purpose) throws Exception {
         EntityManager entityManager = PersistenceManager.getEntityManager();
 

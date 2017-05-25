@@ -265,6 +265,15 @@ public class MasterMappingEntity {
             Map<UUID, String> datasets = dpa.getDataSets();
             saveChildMappings(datasets, MapType.DATASET.getMapType(), dpa.getUuid(), MapType.DATAPROCESSINGAGREEMENT.getMapType());
         }
+
+        if (dpa.getDocumentations() != null) {
+            Map<UUID, String> documentation = new HashMap<>();
+            List<JsonDocumentation> jsonDocumentations =  dpa.getDocumentations();
+            for (JsonDocumentation doc : jsonDocumentations) {
+                documentation.put(UUID.fromString(doc.getUuid()), doc.getTitle());
+            }
+            saveChildMappings(documentation, MapType.DOCUMENT.getMapType(), dpa.getUuid(), MapType.DATAPROCESSINGAGREEMENT.getMapType());
+        }
     }
 
     public static void saveCohortMappings(JsonCohort cohort) throws Exception {
