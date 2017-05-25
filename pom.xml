@@ -12,8 +12,8 @@
         <node.version>v6.10.1</node.version>
         <maven-compiler-plugin.version>3.1</maven-compiler-plugin.version>
         <frontend-maven-plugin.version>1.4</frontend-maven-plugin.version>
-        <eds-common.version>2.83</eds-common.version>
-        <eds-config.version>1.04</eds-config.version>
+        <eds-common.version>2.83-SNAPSHOT</eds-common.version>
+        <eds-config.version>1.06-SNAPSHOT</eds-config.version>
 
         <amqp-client.version>3.6.2</amqp-client.version>
         <aspectj-metrics.version>1.2.0</aspectj-metrics.version>
@@ -51,13 +51,6 @@
         <swagger.version>1.5.10</swagger.version>
 
     </properties>
-
-    <repositories>
-        <repository>
-            <id>jitpack.io</id>
-            <url>https://jitpack.io</url>
-        </repository>
-    </repositories>
 
     <modules>
         <module>src/eds-core</module>

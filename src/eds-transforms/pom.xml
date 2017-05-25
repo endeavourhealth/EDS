@@ -24,13 +24,13 @@
         </dependency>
 
         <dependency>
-            <groupId>com.github.endeavourhealth.Common</groupId>
+            <groupId>org.endeavourhealth.common</groupId>
             <artifactId>cache</artifactId>
             <version>${eds-common.version}</version>
         </dependency>
 
         <dependency>
-            <groupId>com.github.endeavourhealth.Common</groupId>
+            <groupId>org.endeavourhealth.common</groupId>
             <artifactId>fhir</artifactId>
             <version>${eds-common.version}</version>
         </dependency>

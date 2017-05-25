@@ -21,12 +21,12 @@
             <version>1.0-SNAPSHOT</version>
         </dependency>
         <dependency>
-            <groupId>com.github.endeavourhealth.ConfigManager</groupId>
+            <groupId>org.endeavourhealth.configmanager</groupId>
             <artifactId>configmanager</artifactId>
             <version>${eds-config.version}</version>
         </dependency>
         <dependency>
-            <groupId>com.github.endeavourhealth.Common</groupId>
+            <groupId>org.endeavourhealth.common</groupId>
             <artifactId>cache</artifactId>
             <version>${eds-common.version}</version>
         </dependency>

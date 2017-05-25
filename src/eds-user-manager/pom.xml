@@ -21,13 +21,13 @@
         <!-- dependent on EDS-core -->
 
         <dependency>
-            <groupId>com.github.endeavourhealth.Common</groupId>
+            <groupId>org.endeavourhealth.common</groupId>
             <artifactId>api</artifactId>
             <version>${eds-common.version}</version>
         </dependency>
 
         <dependency>
-            <groupId>com.github.endeavourhealth.ConfigManager</groupId>
+            <groupId>org.endeavourhealth.configmanager</groupId>
             <artifactId>configmanager</artifactId>
             <version>${eds-config.version}</version>
         </dependency>
