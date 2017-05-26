@@ -24,6 +24,12 @@
             <version>${eds-common.version}</version>
         </dependency>
 
+        <dependency>
+            <groupId>org.endeavourhealth</groupId>
+            <artifactId>eds-messaging-core</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
+
         <!-- Jersey -->
         <dependency>
             <groupId>org.glassfish.jersey.core</groupId>

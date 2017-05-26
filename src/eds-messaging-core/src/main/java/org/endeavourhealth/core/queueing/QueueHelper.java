@@ -189,9 +189,54 @@ public class QueueHelper {
 
     }
 
-
-
     private static PostMessageToExchangeConfig findExchangeConfig(String exchangeName) throws Exception {
+
+        //go through all the known app configs to find config for posting to the Rabbit Exchange we're interested in
+        String messagingApiConfigXml = ConfigManager.getConfiguration("api-configuration", "messaging-api");
+        PostMessageToExchangeConfig config = findExchangeConfig(messagingApiConfigXml, exchangeName);
+        if (config != null) {
+            return config;
+        }
+
+        Map<String, String> queueReadConfigs = ConfigManager.getConfigurations("queuereader");
+        for (String configId: queueReadConfigs.keySet()) {
+            String queueReaderConfigXml = queueReadConfigs.get(configId);
+
+            config = findExchangeConfig(queueReaderConfigXml, exchangeName);
+            if (config != null) {
+                return config;
+            }
+        }
+
+        return null;
+    }
+
+    private static PostMessageToExchangeConfig findExchangeConfig(String configXml, String exchangeName) throws Exception {
+
+        Pipeline pipeline = null;
+
+        //the config XML may be one of two serialised classes, so we use a try/catch to safely try both if necessary
+        try {
+            ApiConfiguration config = ConfigWrapper.deserialise(configXml);
+            ApiConfiguration.PostMessageAsync postConfig = config.getPostMessageAsync();
+            pipeline = postConfig.getPipeline();
+
+        } catch (Exception e) {
+
+            QueueReaderConfiguration configuration = ConfigDeserialiser.deserialise(configXml);
+            pipeline = configuration.getPipeline();
+        }
+
+        return pipeline
+                .getPipelineComponents()
+                .stream()
+                .filter(t -> t instanceof PostMessageToExchangeConfig)
+                .map(t -> (PostMessageToExchangeConfig)t)
+                .filter(t -> t.getExchange().equalsIgnoreCase(exchangeName))
+                .collect(StreamExtension.singleOrNullCollector());
+    }
+
+    /*private static PostMessageToExchangeConfig findExchangeConfig(String exchangeName) throws Exception {
 
         //go through all the known app configs to find config for posting to the Rabbit Exchange we're interested in
         PostMessageToExchangeConfig config = findExchangeConfig("messaging-api", "api-configuration", exchangeName);
@@ -254,5 +299,5 @@ public class QueueHelper {
                 .map(t -> (PostMessageToExchangeConfig)t)
                 .filter(t -> t.getExchange().equalsIgnoreCase(exchangeName))
                 .collect(StreamExtension.singleOrNullCollector());
-    }
+    }*/
 }
