@@ -15,7 +15,7 @@ public class DocumentationEntity {
     private String uuid;
     private String title;
     private String fileName;
-    private byte[] fileData;
+    private String fileData;
 
     @Id
     @Column(name = "Uuid", nullable = false, length = 36)
@@ -49,11 +49,11 @@ public class DocumentationEntity {
 
     @Basic
     @Column(name = "FileData", nullable = false)
-    public byte[] getFileData() {
+    public String getFileData() {
         return fileData;
     }
 
-    public void setFileData(byte[] fileData) {
+    public void setFileData(String fileData) {
         this.fileData = fileData;
     }
 
@@ -67,7 +67,7 @@ public class DocumentationEntity {
         if (uuid != null ? !uuid.equals(that.uuid) : that.uuid != null) return false;
         if (title != null ? !title.equals(that.title) : that.title != null) return false;
         if (fileName != null ? !fileName.equals(that.fileName) : that.fileName != null) return false;
-        if (!Arrays.equals(fileData, that.fileData)) return false;
+        if (fileData != null ? !fileData.equals(that.fileData) : that.fileData != null) return false;
 
         return true;
     }
@@ -77,7 +77,7 @@ public class DocumentationEntity {
         int result = uuid != null ? uuid.hashCode() : 0;
         result = 31 * result + (title != null ? title.hashCode() : 0);
         result = 31 * result + (fileName != null ? fileName.hashCode() : 0);
-        result = 31 * result + Arrays.hashCode(fileData);
+        result = 31 * result + (fileData != null ? fileData.hashCode() : 0);
         return result;
     }
 

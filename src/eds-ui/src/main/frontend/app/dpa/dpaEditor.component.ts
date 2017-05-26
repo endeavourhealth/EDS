@@ -214,21 +214,12 @@ export class DpaEditorComponent {
         myReader.onloadend = function(e){
             // you can perform an action with readed data here
             vm.log.success('Uploading File', null, 'Upload');
-            //console.log(myReader.result);
-            //console.log(myReader.result.substr(myReader.result.indexOf(',') + 1, myReader.result.length));
-            //console.log(vm.file.name);
             vm.pdfSrc = myReader.result;
             var newDoc : Documentation = new Documentation();
-            newDoc.fileData = myReader.result.substr(myReader.result.indexOf(',') + 1, myReader.result.length);
+            newDoc.fileData = myReader.result;
             newDoc.title = vm.file.name;
             newDoc.filename = vm.file.name;
             vm.documentations.push(newDoc);
-            /*vm.organisationManagerService.uploadCsv(myReader.result)
-                .subscribe(result => {
-                        vm.log.success('Organisations uploaded successfully', null, 'Success');
-                    },
-                    error => vm.log.error('Failed to upload bulk organisations', error, 'Upload Bulk Organisations')
-                );*/
         }
 
 
@@ -241,5 +232,9 @@ export class DpaEditorComponent {
 
     cancel() {
         this.file = null;
+    }
+
+    delete($event) {
+        console.log($event);
     }
 }

@@ -3,7 +3,6 @@ package org.endeavourhealth.core.mySQLDatabase.models;
 import org.endeavourhealth.core.mySQLDatabase.PersistenceManager;
 import org.endeavourhealth.coreui.json.JsonOrganisation;
 import org.endeavourhealth.coreui.json.JsonOrganisationManager;
-import org.joda.time.DateTime;
 
 import javax.persistence.*;
 import javax.persistence.criteria.CriteriaBuilder;

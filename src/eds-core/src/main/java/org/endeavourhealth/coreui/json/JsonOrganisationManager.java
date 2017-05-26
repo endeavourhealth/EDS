@@ -2,7 +2,6 @@ package org.endeavourhealth.coreui.json;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import org.endeavourhealth.core.mySQLDatabase.models.RegionEntity;
-import org.joda.time.DateTime;
 
 import java.util.*;
 

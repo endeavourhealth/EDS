@@ -7,7 +7,7 @@ public class JsonDocumentation {
     private String uuid = null;
     private String title = null;
     private String filename = null;
-    private byte[] fileData = null;
+    private String fileData = null;
 
     public String getUuid() {
         return uuid;
@@ -33,11 +33,11 @@ public class JsonDocumentation {
         this.filename = filename;
     }
 
-    public byte[] getFileData() {
+    public String getFileData() {
         return fileData;
     }
 
-    public void setFileData(byte[] fileData) {
+    public void setFileData(String fileData) {
         this.fileData = fileData;
     }
 }

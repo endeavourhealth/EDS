@@ -9,7 +9,6 @@ import {DpaPickerDialog} from './dpaPicker.dialog';
 import {ControlsModule} from "eds-common-js";
 import {EntityViewComponentsModule} from "eds-common-js";
 import { AccordionModule } from 'ngx-bootstrap';
-import { PdfViewerComponent } from 'ng2-pdf-viewer';
 
 @NgModule({
     imports : [
@@ -23,8 +22,7 @@ import { PdfViewerComponent } from 'ng2-pdf-viewer';
     declarations : [
         DpaComponent,
         DpaEditorComponent,
-        DpaPickerDialog,
-        PdfViewerComponent
+        DpaPickerDialog
     ],
     entryComponents : [
         DpaPickerDialog

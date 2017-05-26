@@ -300,6 +300,6 @@ create table OrganisationManager.Documentation (
 	Uuid char(36) not null primary key,
     Title varchar(50) not null,
     Filename varchar(50) not null,
-    FileData mediumblob not null
+    FileData mediumtext not null
 );
 
