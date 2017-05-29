@@ -10,6 +10,7 @@ import org.endeavourhealth.common.utility.ThreadPoolError;
 import org.endeavourhealth.core.data.ehr.ResourceRepository;
 import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
 import org.endeavourhealth.core.data.ehr.models.ResourceByService;
+import org.endeavourhealth.core.data.ehr.models.ResourceHistory;
 import org.endeavourhealth.core.rdbms.eds.PatientLinkHelper;
 import org.endeavourhealth.core.rdbms.transform.EnterpriseIdHelper;
 import org.endeavourhealth.transform.common.FhirResourceFiler;
@@ -119,6 +120,18 @@ public class FhirToEnterpriseCsvTransformer extends FhirToXTransformerBase {
         }
 
         String json = resourceByService.getResourceData();
+
+        //if the first patient has been deleted, then we need to look at its history to find the JSON from when it wasn't deleted
+        if (Strings.isNullOrEmpty(json)) {
+            List<ResourceHistory> history = resourceRepository.getResourceHistory(resourceByService.getResourceType(), resourceByService.getResourceId());
+            for (ResourceHistory historyItem: history) {
+                json = historyItem.getResourceData();
+                if (!Strings.isNullOrEmpty(json)) {
+                    break;
+                }
+            }
+        }
+
         Patient patient = (Patient)AbstractTransformer.deserialiseResouce(json);
         if (!patient.hasManagingOrganization()) {
             throw new TransformException("Patient " + patient.getId() + " doesn't have a managing org for service " + serviceId + " and system " + systemId);

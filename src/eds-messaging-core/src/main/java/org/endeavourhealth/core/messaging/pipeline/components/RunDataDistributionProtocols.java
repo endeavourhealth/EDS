@@ -175,8 +175,10 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 			}
 		}
 
+		//if we've not activated any service contracts yet, this will be empty, which is fine
 		if (serviceIdsDefiningCohort.isEmpty()) {
-			throw new PipelineException("Protocol " + protocolId + " has cohort to be service-defined, but has no service contracts that define it");
+			return false;
+			//throw new PipelineException("Protocol " + protocolId + " has cohort to be service-defined, but has no service contracts that define it");
 		}
 
 		//check to see if our service is one of the defining service contracts
