@@ -11,6 +11,8 @@ import {Dpa} from "./models/Dpa";
 export class DpaComponent {
     dpas : Dpa[] = [];
 
+    dpaDetailsToShow = new Dpa().getDisplayItems();
+
     constructor(private $modal: NgbModal,
                 private dpaService : DpaService,
                 private log : LoggerService,

@@ -11,6 +11,8 @@ import {LoggerService, MessageBoxDialog} from "eds-common-js";
 export class DataFlowComponent {
     dataflows : DataFlow[] = [];
 
+    dataflowDetailsToShow = new DataFlow().getDisplayItems();
+
     constructor(private $modal: NgbModal,
                 private dataFlowService : DataFlowService,
                 private log : LoggerService,

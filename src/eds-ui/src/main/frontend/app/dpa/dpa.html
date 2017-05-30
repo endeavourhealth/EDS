@@ -14,31 +14,18 @@
             <form>
                 <div class="row">
                     <div class="form-group col-md-12">
-                        <div class="table">
-                            <table class="table table-striped table-condensed">
-                                <thead>
-                                <tr>
-                                    <th class="col-md-3">Data Processing Agreement Name</th>
-                                    <th class="col-md-3">Description</th>
-                                    <th class="col-md-1"></th>
-                                </tr>
-                                </thead>
-                                <tbody>
-                                <tr class="hover-box show-child-on-hover" *ngFor="let dpa of dpas">
-                                    <td>
-                                        <a (click)="edit(dpa)">{{dpa.name}}</a>
-                                        <span class="fa fa-info-circle fa-right-pad text-muted" ngbTooltip="{{dpa.description}}" *ngIf="dpa.description"></span>
-                                    </td>
-                                    <td>
-                                        {{dpa.description}}
-                                    </td>
-                                    <td>
-                                        <button type="button" class="btn btn-danger btn-xs child-to-show pull-right" (click)="delete(dpa)"><span class="fa fa-remove"></span></button>
-                                    </td>
-                                </tr>
-                                </tbody>
-                            </table>
-                        </div>
+                        <entity-viewer
+                                [items]="dpas"
+                                [primary]="'name'"
+                                [primaryOrderText]="'Name'"
+                                [displayClass]="'region'"
+                                [secondary]="'description'"
+                                [secondaryOrderText]="'Description'"
+                                [typeDescription]="'Data Processing Agreement'"
+                                [model]="'dpa'"
+                                [pageSize]="20"
+                                [detailsToShow]="dpaDetailsToShow">
+                        </entity-viewer>
                     </div>
                 </div>
             </form>

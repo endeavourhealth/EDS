@@ -26,6 +26,8 @@ export class OrganisationManagerComponent {
 
     //page size
     pageSize : number = 15;
+    orgDetailsToShow = new Organisation().getDisplayItems();
+
 
     constructor(private $modal: NgbModal,
                 private organisationManagerService : OrganisationManagerService,
@@ -80,6 +82,7 @@ export class OrganisationManagerComponent {
         vm.organisationManagerService.getAllServices()
             .subscribe(result => {
                     this.allItems = result;
+                    this.organisations = result;
                     this.setPage(1);
                 },
                 error => vm.log.error('Failed to load Services', error, 'Load Services')

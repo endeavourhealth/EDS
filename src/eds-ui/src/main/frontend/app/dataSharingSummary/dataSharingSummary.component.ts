@@ -11,6 +11,8 @@ import {DataSharingSummary} from "./models/DataSharingSummary";
 export class DataSharingSummaryComponent {
     dataSharingSummaries : DataSharingSummary[] = [];
 
+    dssDetailsToShow = new DataSharingSummary().getDisplayItems();
+
     constructor(private $modal: NgbModal,
                 private dataSharingSummaryService : DataSharingSummaryService,
                 private log : LoggerService,

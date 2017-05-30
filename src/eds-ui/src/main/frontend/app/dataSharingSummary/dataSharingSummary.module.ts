@@ -10,6 +10,7 @@ import {NKDatetimeModule} from "ng2-datetime/ng2-datetime";
 import {DataSharingSummaryPickerDialog} from './dataSharingSummaryPicker.dialog';
 import {LoggerModule} from "eds-common-js";
 import {ControlsModule} from "eds-common-js";
+import {EntityViewComponentsModule} from "eds-common-js";
 
 @NgModule({
     imports : [
@@ -18,7 +19,8 @@ import {ControlsModule} from "eds-common-js";
         NgbModule,
         NKDatetimeModule,
         LoggerModule,
-        ControlsModule
+        ControlsModule,
+        EntityViewComponentsModule
     ],
     declarations : [
         DataSharingSummaryComponent,

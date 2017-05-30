@@ -11,6 +11,8 @@ import {Dsa} from "./models/Dsa";
 export class DsaComponent {
     dsas : Dsa[] = [];
 
+    dsaDetailsToShow = new Dsa().getDisplayItems();
+
     constructor(private $modal: NgbModal,
                 private dsaService : DsaService,
                 private log : LoggerService,

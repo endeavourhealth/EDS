@@ -14,6 +14,8 @@ export class RegionComponent {
     organisations : Organisation[];
     regions : Region[] = [];
 
+    regionDetailsToShow = new Region().getDisplayItems();
+
     constructor(private $modal: NgbModal,
                 private regionService : RegionService,
                 private log : LoggerService,

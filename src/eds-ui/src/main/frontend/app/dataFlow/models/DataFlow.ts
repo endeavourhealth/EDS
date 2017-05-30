@@ -18,7 +18,7 @@ export class DataFlow {
         return [
             {label: 'Status', property: 'status'},
             {label: 'Approximate Volume', property: 'approximateVolume'},
-            {label: 'Sign Off', property: 'signOff'},
+            {label: 'Sign Off', property: 'signOff'}
         ];
     }
 }

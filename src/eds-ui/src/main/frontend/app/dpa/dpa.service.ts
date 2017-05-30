@@ -21,8 +21,8 @@ export class DpaService extends BaseHttp2Service  {
         return this.httpGet('api/dpa', { search : params });
     }
 
-    saveDpa(dsa : Dpa) : Observable<any> {
-        return this.httpPost('api/dpa', dsa);
+    saveDpa(dpa : Dpa) : Observable<any> {
+        return this.httpPost('api/dpa', dpa);
     }
 
     deleteDpa(uuid : string) : Observable<any> {

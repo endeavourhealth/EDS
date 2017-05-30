@@ -14,7 +14,7 @@ import java.util.List;
 public class DocumentationEntity {
     private String uuid;
     private String title;
-    private String fileName;
+    private String filename;
     private String fileData;
 
     @Id
@@ -38,13 +38,13 @@ public class DocumentationEntity {
     }
 
     @Basic
-    @Column(name = "FileName", nullable = false, length = 50)
-    public String getFileName() {
-        return fileName;
+    @Column(name = "Filename", nullable = false, length = 50)
+    public String getFilename() {
+        return filename;
     }
 
-    public void setFileName(String fileName) {
-        this.fileName = fileName;
+    public void setFilename(String fileName) {
+        this.filename = fileName;
     }
 
     @Basic
@@ -66,7 +66,7 @@ public class DocumentationEntity {
 
         if (uuid != null ? !uuid.equals(that.uuid) : that.uuid != null) return false;
         if (title != null ? !title.equals(that.title) : that.title != null) return false;
-        if (fileName != null ? !fileName.equals(that.fileName) : that.fileName != null) return false;
+        if (filename != null ? !filename.equals(that.filename) : that.filename != null) return false;
         if (fileData != null ? !fileData.equals(that.fileData) : that.fileData != null) return false;
 
         return true;
@@ -76,7 +76,7 @@ public class DocumentationEntity {
     public int hashCode() {
         int result = uuid != null ? uuid.hashCode() : 0;
         result = 31 * result + (title != null ? title.hashCode() : 0);
-        result = 31 * result + (fileName != null ? fileName.hashCode() : 0);
+        result = 31 * result + (filename != null ? filename.hashCode() : 0);
         result = 31 * result + (fileData != null ? fileData.hashCode() : 0);
         return result;
     }
@@ -95,7 +95,7 @@ public class DocumentationEntity {
 
         DocumentationEntity documentationEntity = new DocumentationEntity();
         documentationEntity.setUuid(document.getUuid());
-        documentationEntity.setFileName(document.getFilename());
+        documentationEntity.setFilename(document.getFilename());
         documentationEntity.setTitle(document.getTitle());
         documentationEntity.setFileData(document.getFileData());
         entityManager.getTransaction().begin();
@@ -111,7 +111,7 @@ public class DocumentationEntity {
         DocumentationEntity documentationEntity = entityManager.find(DocumentationEntity.class, document.getUuid());
         entityManager.getTransaction().begin();
         documentationEntity.setTitle(document.getTitle());
-        documentationEntity.setFileName(document.getFilename());
+        documentationEntity.setFilename(document.getFilename());
         entityManager.getTransaction().commit();
 
         entityManager.close();
