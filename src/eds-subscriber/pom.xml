@@ -16,8 +16,8 @@
 
     <dependencies>
         <dependency>
-            <groupId>org.endeavourhealth</groupId>
-            <artifactId>eds-core</artifactId>
+            <groupId>org.endeavourhealth.common</groupId>
+            <artifactId>core</artifactId>
             <version>${eds-core.version}</version>
         </dependency>
         <dependency>
