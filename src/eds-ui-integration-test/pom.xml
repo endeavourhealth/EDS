@@ -59,19 +59,12 @@
         </profile>
     </profiles>
 
-    <repositories>
-        <repository>
-            <id>jitpack.io</id>
-            <url>https://jitpack.io</url>
-        </repository>
-    </repositories>
-
     <dependencies>
 
         <!-- EDS -->
         <dependency>
-            <groupId>com.github.endeavourhealth.Common</groupId>
-            <artifactId>eds-core</artifactId>
+            <groupId>org.endeavourhealth.common</groupId>
+            <artifactId>core</artifactId>
             <version>${eds-core.version}</version>
         </dependency>
 
