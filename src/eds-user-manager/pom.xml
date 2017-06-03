@@ -23,7 +23,13 @@
         <dependency>
             <groupId>org.endeavourhealth.common</groupId>
             <artifactId>api</artifactId>
-            <version>${eds-common.version}</version>
+            <version>${eds-api.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.endeavourhealth.common</groupId>
+            <artifactId>core</artifactId>
+            <version>${eds-core.version}</version>
         </dependency>
 
         <dependency>
@@ -32,6 +38,17 @@
             <version>${eds-config.version}</version>
         </dependency>
 
+        <dependency>
+            <groupId>org.endeavourhealth.common</groupId>
+            <artifactId>security</artifactId>
+            <version>${eds-security.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.endeavourhealth.common</groupId>
+            <artifactId>transforms</artifactId>
+            <version>${eds-transform.version}</version>
+        </dependency>
 
         <dependency>
             <groupId>org.hibernate</groupId>
@@ -217,12 +234,6 @@
         </dependency>
 
         <!-- dependent on EDS-transforms -->
-
-        <dependency>
-            <groupId>org.endeavourhealth</groupId>
-            <artifactId>eds-transforms</artifactId>
-            <version>1.0-SNAPSHOT</version>
-        </dependency>
 
     </dependencies>
 

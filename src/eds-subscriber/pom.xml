@@ -28,7 +28,7 @@
         <dependency>
             <groupId>org.endeavourhealth.common</groupId>
             <artifactId>cache</artifactId>
-            <version>${eds-common.version}</version>
+            <version>${eds-cache.version}</version>
         </dependency>
 
         <dependency>

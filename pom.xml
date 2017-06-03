@@ -12,8 +12,16 @@
         <node.version>v6.10.1</node.version>
         <maven-compiler-plugin.version>3.1</maven-compiler-plugin.version>
         <frontend-maven-plugin.version>1.4</frontend-maven-plugin.version>
-        <eds-common.version>2.83-SNAPSHOT</eds-common.version>
-        <eds-config.version>1.07-SNAPSHOT</eds-config.version>
+
+        <eds-api.version>1.0-SNAPSHOT</eds-api.version>
+        <eds-cache.version>1.0-SNAPSHOT</eds-cache.version>
+        <eds-cassandra.version>1.0-SNAPSHOT</eds-cassandra.version>
+        <eds-config.version>1.08-SNAPSHOT</eds-config.version>
+        <eds-core.version>1.0-SNAPSHOT</eds-core.version>
+        <eds-fhir.version>1.0-SNAPSHOT</eds-fhir.version>
+        <eds-security.version>1.0-SNAPSHOT</eds-security.version>
+        <eds-transform.version>1.0-SNAPSHOT</eds-transform.version>
+        <eds-utility.version>1.0-SNAPSHOT</eds-utility.version>
 
         <amqp-client.version>3.6.2</amqp-client.version>
         <aspectj-metrics.version>1.2.0</aspectj-metrics.version>
@@ -53,13 +61,10 @@
     </properties>
 
     <modules>
-        <module>src/eds-core</module>
-        <module>src/cassandra</module>
         <module>src/eds-messaging-api</module>
         <module>src/eds-messaging-core</module>
         <module>src/eds-queuereader</module>
         <module>src/eds-subscriber</module>
-        <module>src/eds-transforms</module>
         <module>src/eds-ui</module>
         <module>src/eds-keycloak-providers</module>
         <module>src/eds-keycloak-theme</module>
@@ -70,4 +75,22 @@
         <module>src/utility-enterprise-person-updater</module>
         <module>src/eds-user-manager</module>
     </modules>
+
+    <repositories>
+        <repository>
+            <snapshots />
+            <id>snapshots</id>
+            <name>libs-snapshot</name>
+            <url>http://maven.endeavourhealth.net:8081/artifactory/libs-snapshot</url>
+        </repository>
+    </repositories>
+
+    <distributionManagement>
+        <snapshotRepository>
+            <id>snapshots</id>
+            <name>maven.endeavourhealth.org-snapshots</name>
+            <url>http://maven.endeavourhealth.net:8081/artifactory/libs-snapshot-local</url>
+        </snapshotRepository>
+    </distributionManagement>
+
 </project>
