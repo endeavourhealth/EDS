@@ -28,7 +28,7 @@
         <dependency>
             <groupId>org.endeavourhealth.common</groupId>
             <artifactId>api</artifactId>
-            <version>${eds-common.version}</version>
+            <version>${eds-api.version}</version>
         </dependency>
 
         <dependency>

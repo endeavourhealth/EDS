@@ -13,7 +13,7 @@
 
     <properties>
 
-        <eds-common.version>1.32</eds-common.version>
+        <eds-core.version>1.0-SNAPSHOT</eds-core.version>
 
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <shrinkwrap-resolver.version>2.2.2</shrinkwrap-resolver.version>
@@ -72,7 +72,7 @@
         <dependency>
             <groupId>com.github.endeavourhealth.Common</groupId>
             <artifactId>eds-core</artifactId>
-            <version>${eds-common.version}</version>
+            <version>${eds-core.version}</version>
         </dependency>
 
         <dependency>
