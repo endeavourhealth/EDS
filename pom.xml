@@ -66,9 +66,6 @@
         <module>src/eds-queuereader</module>
         <module>src/eds-subscriber</module>
         <module>src/eds-ui</module>
-        <module>src/eds-keycloak-providers</module>
-        <module>src/eds-keycloak-theme</module>
-        <module>src/eds-bootstrap</module>
         <module>src/eds-ui-integration-test</module>
         <module>src/utility-postcode-updater</module>
         <module>src/utility-enterprise-age-updater</module>
