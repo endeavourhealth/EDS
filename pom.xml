@@ -70,7 +70,6 @@
         <module>src/utility-postcode-updater</module>
         <module>src/utility-enterprise-age-updater</module>
         <module>src/utility-enterprise-person-updater</module>
-        <module>src/eds-user-manager</module>
     </modules>
 
     <repositories>
