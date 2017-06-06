@@ -17,7 +17,7 @@
         <eds-cache.version>1.0-SNAPSHOT</eds-cache.version>
         <eds-cassandra.version>1.0-SNAPSHOT</eds-cassandra.version>
         <eds-config.version>1.08-SNAPSHOT</eds-config.version>
-        <eds-core.version>1.0-SNAPSHOT</eds-core.version>
+        <eds-core.version>1.1-SNAPSHOT</eds-core.version>
         <eds-fhir.version>1.0-SNAPSHOT</eds-fhir.version>
         <eds-security.version>1.0-SNAPSHOT</eds-security.version>
         <eds-transform.version>1.0-SNAPSHOT</eds-transform.version>
@@ -79,6 +79,14 @@
             <id>snapshots</id>
             <name>libs-snapshot</name>
             <url>http://maven.endeavourhealth.net:8081/artifactory/libs-snapshot</url>
+        </repository>
+        <repository>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+            <id>central</id>
+            <name>libs-release</name>
+            <url>http://maven.endeavourhealth.net:8081/artifactory/libs-release</url>
         </repository>
     </repositories>
 
