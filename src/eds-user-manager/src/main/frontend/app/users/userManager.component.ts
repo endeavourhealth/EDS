@@ -5,6 +5,7 @@ import {Component} from "@angular/core";
 import {UserService} from "./user.service";
 import {UserRole} from "./models/UserRole";
 import {SecurityService, MessageBoxDialog, LoggerService} from "eds-common-js";
+import {Group} from "./models/Group";
 
 @Component({
 	template : require('./userManager.html')
@@ -26,7 +27,7 @@ export class UserManagerComponent {
 		this.searched = false;
 		this.loggedOnUserUuid = this.securityService.getCurrentUser().uuid;
 
-		this.getUsersAndRoles();
+		this.getUsers();
 	}
 
 	editUser(user:User) {
@@ -47,13 +48,25 @@ export class UserManagerComponent {
 		);
 	}
 
+	createGroup() {
+		var vm = this;
+		vm.userService.createGroup()
+            .subscribe(
+				(response) => {
+					vm.log.success('Group created', response, 'Success');
+				},
+				(error) => vm.log.error('Error creating group', error, 'Error')
+			);
+	}
+
 	private saveUser(user, editedUser : User) {
 		var vm = this;
 		var editMode = (user != null);
+
 		vm.userService.saveUser(editedUser, editMode)
 			.subscribe(
 				(response) => {
-					this.getUsersAndRoles();
+					this.getUsers();
 					this.selectedUser = response;
 					this.getUserRoles(response);
 					var msg = (!editMode) ? 'Add user' : 'Edit user';
@@ -80,7 +93,7 @@ export class UserManagerComponent {
                         .subscribe(
 							(result) => {
 								result;
-								this.getUsersAndRoles();
+								this.getUsers();
 								this.selectedUser = null;
 								vm.log.info("User deleted");
 							},
@@ -104,9 +117,9 @@ export class UserManagerComponent {
 		return this.userRoleList;
 	}
 
-	getUsersAndRoles(){
+	getUsers(){
 		var vm = this;
-		vm.userService.getUsersAndRoles()
+		vm.userService.getUsers()
 			.subscribe(
 				(result) => vm.userList = result,
 				(error) => vm.log.error('Error loading users and roles', error, 'Error')
@@ -145,7 +158,7 @@ export class UserManagerComponent {
 	clearSearch(){
 		this.searched = false;
 		this.searchTerm = "";
-		this.getUsersAndRoles();
+		this.getUsers();
 	}
 
 	setSelectedRole(role) {

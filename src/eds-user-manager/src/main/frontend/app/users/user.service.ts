@@ -5,6 +5,7 @@ import {Http, Response, URLSearchParams} from "@angular/http";
 import {BaseHttp2Service} from "eds-common-js";
 import {UserRole} from "./models/UserRole";
 import {Client} from "./models/Client";
+import {Group} from "./models/Group";
 
 @Injectable()
 export class UserService extends BaseHttp2Service {
@@ -12,7 +13,7 @@ export class UserService extends BaseHttp2Service {
 		super(http);
 	}
 
-	getUsersAndRoles(): Observable<User[]> {
+	getUsers(): Observable<User[]> {
 		return this.httpGet('api/usermanager/users');
 	}
 
@@ -32,6 +33,10 @@ export class UserService extends BaseHttp2Service {
 		let params = new URLSearchParams();
 		params.set('userId', userId);
 		return this.httpGet('api/usermanager/users/roles/realm/available', {search: params});
+	}
+
+	getRealmRoles(): Observable<UserRole[]> {
+		return this.httpGet('api/usermanager/roles/realm');
 	}
 
 	getRealmClients(): Observable<Client[]> {
@@ -66,5 +71,19 @@ export class UserService extends BaseHttp2Service {
 		let params = new URLSearchParams();
 		params.set('roleName', roleName);
 		return this.httpDelete ('api/usermanager/users/role/delete', {search: params});
+	}
+
+	getGroups(): Observable<Group[]> {
+		return this.httpGet('api/usermanager/groups');
+	}
+
+	getUserGroups(userId: string): Observable<Group[]> {
+		let params = new URLSearchParams();
+		params.set('userId', userId);
+		return this.httpGet('api/usermanager/users/user/groups', {search: params});
+	}
+
+	createGroup(): Observable<any> {
+		return this.httpPost('api/usermanager/groups/save');
 	}
 }

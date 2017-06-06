@@ -18,17 +18,21 @@
 				<div>
 					<label class="control-label">Organisation</label>
 					<div class="input-group">
-						<input type="text" class="form-control" [(ngModel)]="resultData.organisation.name" name="searchTerm" placeholder="Organisation search..." #organisaion>
-						<span class="btn input-group-addon" (click)="searchOrganisations()">
+						<input type="text" class="form-control" name="searchTerm" [(ngModel)]="groupSearchData" (keyup)="filterGroups()" placeholder="Organisation search..." #organisation>
+						<span class="btn input-group-addon" (click)="filterGroups()">
 							<i class="fa fa-search" title="Search"></i>
 						</span>
 					</div>
-
+					<div class="table scroll-box-350 form-control" style="min-height: 200px;max-height: 200px">
+						<loadingIndicator [done]="groupList">
+							<Tree [nodes]="groupList" [options]="groupListOptions" (onActivate)="selectGroup($event.node.data)" (onInitialized)="groupsInitialized()"></Tree>
+						</loadingIndicator>
+					</div>
 				</div>
 			</div>
 			<div class="form-group col-md-6">
 				<label class="control-label">Client Access Profiles</label>
-				<div class="table scroll-box-350 form-control" style="min-height: 220px">
+				<div class="table scroll-box-350 form-control" style="min-height: 370px">
 					<loadingIndicator [done]="availableClients">
 						<ul class="list-group" *ngFor="let client of availableClients" >
 							<h4 *ngIf="client.clientRoles.length>0" class="list-group-item-heading">{{client.name}}</h4>

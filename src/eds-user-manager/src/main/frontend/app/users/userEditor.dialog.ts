@@ -4,7 +4,6 @@ import {NgbModal, NgbActiveModal} from "@ng-bootstrap/ng-bootstrap";
 import {UserService} from "./user.service";
 import {UserRole} from "./models/UserRole";
 import {LoggerService, MessageBoxDialog} from "eds-common-js";
-import {NgbTabset} from "@ng-bootstrap/ng-bootstrap/tabset/tabset";
 
 @Component({
 	selector: 'ngbd-modal-content',
@@ -57,7 +56,6 @@ export class UserEditorDialog {
 				mobile: '',
 				photo: '',
 				defaultOrgId: '',
-				totp: 'no',
 				userRoles: []
 			} as User;
 		}
@@ -74,7 +72,6 @@ export class UserEditorDialog {
 				mobile: this.resultData.mobile,
 				photo: this.resultData.photo == null ? '': this.resultData.photo,
 				defaultOrgId: this.resultData.defaultOrgId == null ? '': this.resultData.defaultOrgId,
-				totp: 'no',
 				userRoles: this.resultData.userRoles
 			} as User;
 		}
@@ -221,11 +218,4 @@ export class UserEditorDialog {
 
 		return result;
 	}
-
-	totpConfigured(){
-		return this.resultData.totp;
-	}
-
-
-
 }

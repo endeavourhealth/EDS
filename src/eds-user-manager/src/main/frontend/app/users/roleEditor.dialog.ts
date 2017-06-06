@@ -3,8 +3,9 @@ import {NgbModal, NgbActiveModal} from "@ng-bootstrap/ng-bootstrap";
 import {UserService} from "./user.service";
 import {UserRole} from "./models/UserRole";
 import {LoggerService, MessageBoxDialog} from "eds-common-js";
-import {Organisation} from "./models/Organisation";
 import {Client} from "./models/Client";
+import {Group} from "./models/Group";
+import {ITreeOptions, TreeNode, TreeComponent} from "angular2-tree-component";
 
 @Component({
 	selector: 'ngbd-modal-content',
@@ -26,15 +27,27 @@ export class RoleEditorDialog {
 	@Input() $modal: NgbModal;
 	dialogTitle : String;
 	availableClients : Client[];
+	groupList : Group[];
+	groupListOptions : ITreeOptions;
+	groupSearchData : string = '';
 
 	@ViewChild('rolename') rolenameBox;
 	@ViewChild('description') roledescBox;
 	@ViewChild('clientlist') clientList;
+	@ViewChild('organisation') groupsearchbox;
+	@ViewChild(TreeComponent) grouptree: TreeComponent;
 
 	constructor(private log:LoggerService,
 				protected activeModal: NgbActiveModal,
 				protected userService: UserService) {
 
+		this.groupListOptions = {
+			displayField : 'name',
+			childrenField : 'subGroups',
+			idField : 'uuid'
+			// isExpandedField : 'isExpanded',
+			// getChildren : (node) => { this.getChildren(node)}
+		}
 	}
 
 	isEditMode(){
@@ -57,7 +70,7 @@ export class RoleEditorDialog {
 				uuid: null,
 				name: '',
 				description: '',
-				organisation: new Organisation(),
+				group: new Group(),
 				clientRoles: []
 			} as UserRole;
 		}
@@ -68,11 +81,15 @@ export class RoleEditorDialog {
 				uuid: this.resultData.uuid,
 				name: this.resultData.name,
 				description: this.resultData.description,
-				organisation: this.resultData.organisation,
+				group: this.resultData.group,
 				clientRoles: this.resultData.clientRoles
 			} as UserRole;
+
+			//set search data to current group name
+			this.groupSearchData = this.resultData.group.name;
 		}
 
+		this.getRealmGroups();
 		this.getRealmClients();
 	}
 
@@ -92,16 +109,6 @@ export class RoleEditorDialog {
 		);
 	}
 
-	searchOrganisations(){
-
-        //*** Cannot import cross module components   **
-	    // var organisation = this.resultData.organisation[0];
-         // OrganisationManagerPickerDialog.open(this.$modal, organisation, 'organisation' )
-         //     .result.then(function (result : Organisation[]) {
-         //     this.resultData.organisation = result;
-         // });
-	}
-
 	getRealmClients(){
 		var vm = this;
 		vm.userService.getRealmClients()
@@ -109,6 +116,59 @@ export class RoleEditorDialog {
 				(result) => vm.availableClients = result,
 				(error) => vm.log.error('Error loading realm clients', error, 'Error')
 			);
+	}
+
+	getRealmGroups() {
+		var vm = this;
+		vm.userService.getGroups()
+            .subscribe(
+				(result) => {
+					vm.groupList = result;
+				},
+				(error) => vm.log.error('Error loading all groups', error, 'Error')
+			);
+	}
+
+	getGroupList() {
+		return this.groupList;
+	}
+
+	groupsInitialized(){
+		// If edit mode, filter the group list and select current group
+		if (this.editMode && this.resultData.group != null) {
+			this.selectGroupNode(this.resultData.group);
+			this.filterGroups();
+		}
+
+		// Expand root if not already done
+		// this.grouptree.treeModel.getFirstRoot().expand();
+	}
+
+	filterGroups(){
+		// Search on text > 2 characters
+		if (this.groupSearchData != null) {
+			if (this.groupSearchData.trim().length > 2) {
+				this.grouptree.treeModel.filterNodes(this.groupSearchData, true);
+			} else if (this.groupSearchData.trim().length == 0) {
+				this.grouptree.treeModel.filterNodes('', true);   // Reset filter
+			}
+		}
+	}
+
+	selectGroup(group: Group) {
+		if (group === this.resultData.group) { return; }
+		var vm = this;
+		vm.resultData.group = group;
+	}
+
+	selectGroupNode(group: Group) {
+		if (group.uuid != null) {
+			let treeNode = this.grouptree.treeModel.getNodeById(group.uuid);
+			if (treeNode != null) {
+				treeNode.setIsActive(true);
+				this.selectGroup(group);
+			}
+		}
 	}
 
 	validateFormInput(){
@@ -127,6 +187,13 @@ export class RoleEditorDialog {
 				vm.rolenameBox.nativeElement.focus();
 				result = false;
 			} else
+			//check user has selected a group/organisation
+			if (this.resultData.group.name.trim() == '') {
+				vm.log.warning('You must select an organisation');
+				vm.groupsearchbox.nativeElement.focus();
+				result = false;
+			}
+			else
 			//check user has at least one client access role
 			if (this.resultData.clientRoles.length < 1){
 				vm.log.warning('You must select at least one client access profile');
@@ -150,7 +217,7 @@ export class RoleEditorDialog {
 		return result;
 	}
 
-	processCheckedClientRole(e, clientRole) {
+	processCheckedClientRole(e, clientRole){
 		var vm = this;
 
 		if (e.currentTarget.checked == true){
@@ -166,8 +233,7 @@ export class RoleEditorDialog {
 		}
 	}
 
-	isClientRoleAssigned(availableClientRole)
-	{
+	isClientRoleAssigned(availableClientRole){
 		var result = false;
 
 		for (var i = 0; i <= this.resultData.clientRoles.length-1; ++i){
@@ -179,8 +245,7 @@ export class RoleEditorDialog {
 		return result;
 	}
 
-	assignedClientRoleIndex(availableClientRole)
-	{
+	assignedClientRoleIndex(availableClientRole){
 		var result = -1;
 
 		for (var i = 0; i <= this.resultData.clientRoles.length-1; ++i){
@@ -192,6 +257,7 @@ export class RoleEditorDialog {
 		return result;
 	}
 
+	// Replace spaces with underscores.  Need to move to role-with-id calls
 	updateRoleName ($event){
 		var roleName = $event;
 		roleName = roleName.replace(' ','_');

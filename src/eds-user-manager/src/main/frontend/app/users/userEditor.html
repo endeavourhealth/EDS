@@ -64,15 +64,6 @@
 							<label class="control-label">Password Confirmation *</label>
 							<input type="password" class="form-control" placeholder="Password" [(ngModel)]="resultData.password" name="passwordConf" #password2>
 						</div>
-						<div class="col-md-4">
-							<!--<label class="control-label">TOTP</label>-->
-							<!--<span class="fa fa-info-circle fa-right-pad text-muted" [ngbTooltip]="tipContentTOTP"></span>-->
-							<!--<template #tipContentTOTP>User is required to use Time-based One Time Passcode authentication using their smartphone. </template>-->
-							<!--<div class="radio" #totp>-->
-								<!--<label class="radio-inline"><input type="radio" name="totpRadioOpt" value="yes" [(ngModel)]="resultData.totp">Yes</label>-->
-								<!--<label class="radio-inline"><input type="radio" name="totpRadioOpt" value="no" [(ngModel)]="resultData.totp">No</label>-->
-							<!--</div>-->
-						</div>
 				</div>
 				</form>
 			</div>
@@ -92,7 +83,7 @@
 									 class="hover-box show-child-on-hover striped"
 									 [ngClass]="{'selection': role == selectedCurrentRole}">
 
-									<template #tipContentCurrent><b><u>Description</u></b><br>{{role.description}}<br><br><b><u>Client Access Profile</u></b><br>{{buildRoleToolTip(role)}}</template>
+									<template #tipContentCurrent><b><u>Description</u></b><br>{{role.description}}<br><br><b><u>Organisation</u></b><br>{{role.group.name}}<br><br><b><u>Client Access Profile</u></b><br>{{buildRoleToolTip(role)}}</template>
 									{{role.name}}
 									<span class="fa fa-info-circle fa-right-pad text-muted" [ngbTooltip]="tipContentCurrent"></span>
 
@@ -110,7 +101,7 @@
 										 class="hover-box show-child-on-hover striped"
 										 [ngClass]="{'selection': role == selectedAvailableRole}">
 
-										<template #tipContentAvail><b><u>Description</u></b><br>{{role.description}}<br><br><b><u>Client Access Profile</u></b><br>{{buildRoleToolTip(role)}}</template>
+										<template #tipContentAvail><b><u>Description</u></b><br>{{role.description}}<br><br><b><u>Organisation</u></b><br>{{role.group.name}}<br><br><b><u>Client Access Profile</u></b><br>{{buildRoleToolTip(role)}}</template>
 										{{role.name}}
 										<span class="fa fa-info-circle fa-right-pad text-muted" [ngbTooltip]="tipContentAvail"></span>
 

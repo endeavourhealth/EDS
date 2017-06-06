@@ -1,5 +1,3 @@
-import {User} from "./models/User";
-import {UserEditorDialog} from "./userEditor.dialog";
 import {NgbModal, NgbTabChangeEvent} from "@ng-bootstrap/ng-bootstrap";
 import {Component} from "@angular/core";
 import {UserService} from "./user.service";
@@ -25,7 +23,7 @@ export class RoleManagerComponent {
 		var vm = this;
 		RoleEditorDialog.open(vm.$modal, role, true, vm.roleList)
 			.result.then(
-			(editedUser) => vm.saveRole(role, editedUser),
+			(editedRole) => vm.saveRole(role, editedRole),
 			() => vm.log.info('Role edit cancelled')
 		);
 	}
@@ -84,7 +82,7 @@ export class RoleManagerComponent {
 
 	getRealmRoles(){
 		var vm = this;
-		vm.userService.getAvailableRealmRoles(null)
+		vm.userService.getRealmRoles()
             .subscribe(
 				(result) => vm.roleList = result,
 				(error) => vm.log.error('Error loading realm roles', error, 'Error')

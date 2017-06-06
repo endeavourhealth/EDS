@@ -9,6 +9,8 @@ import {RoleManagerComponent} from "./roleManager.component";
 import {RoleEditorDialog} from "./roleEditor.dialog";
 import {UserManagerUserViewComponent} from "./userManagerUserView.component";
 import {LoadingIndicatorComponent, LoggerModule} from "eds-common-js";
+import {ClientManagerComponent} from "./clientManager.component";
+import {TreeModule} from "angular2-tree-component";
 
 @NgModule({
 	imports:[
@@ -16,6 +18,7 @@ import {LoadingIndicatorComponent, LoggerModule} from "eds-common-js";
 		FormsModule,
 		NgbModule,
 		LoggerModule,
+		TreeModule,
 	],
 	declarations:[
 		UserManagerComponent,
@@ -24,6 +27,7 @@ import {LoadingIndicatorComponent, LoggerModule} from "eds-common-js";
 		UserEditorDialog,
 		RoleEditorDialog,
 		LoadingIndicatorComponent,
+		ClientManagerComponent,
 	],
 	providers:[
 		UserService

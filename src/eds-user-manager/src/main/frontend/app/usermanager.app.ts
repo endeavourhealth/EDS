@@ -16,6 +16,7 @@ import {RoleManagerComponent} from "./users/roleManager.component";
 import {RoleEditorDialog} from "./users/roleEditor.dialog";
 import {UserManagerUserViewComponent} from "./users/userManagerUserView.component";
 import {UserManagerMenuService} from "./usermanager.menu";
+import {ClientManagerComponent} from "./users/clientManager.component";
 
 @NgModule(
 	Application.Define({
@@ -31,6 +32,7 @@ import {UserManagerMenuService} from "./usermanager.menu";
 			{name: 'app.userEditor', url: '/users/userEditor', component: UserEditorDialog},
 			{name: 'app.roleManager', url: '/users/roleManager', component: RoleManagerComponent},
 			{name: 'app.roleEditor', url: '/users/roleEditor', component: RoleEditorDialog},
+			{name: 'app.clientManager', url: '/users/clientManager', component: ClientManagerComponent},
 		],
 		defaultState : { state: 'app.userManager', params: {} },
 		menuManager : UserManagerMenuService

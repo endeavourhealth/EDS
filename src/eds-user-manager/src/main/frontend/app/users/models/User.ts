@@ -5,7 +5,6 @@ export class User {
 	}
 
 	uuid:string;
-	title:string;
 	forename:string;
 	surname:string;
 	username:string;
@@ -13,7 +12,6 @@ export class User {
 	email:string;
 	mobile:string;
 	photo:string;
-	totp: string;
 	defaultOrgId: string;
 	userRoles: UserRole[];
 
@@ -29,10 +27,6 @@ export class User {
 		}
 
 		var displayName = this.forename + ' ' + this.surname;
-
-		if(this.title != null) {
-			displayName = this.title + ' ' + displayName;
-		}
 
 		return displayName.trim();
 	}
