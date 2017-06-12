@@ -6,7 +6,7 @@ import {RabbitQueue} from "../queueing/models/RabbitQueue";
 	template:
 		`
 	<div class="progress">
-		<div class="small">{{getName(queue?.name)}} ({{queue?.messages_ready}} @ {{queue?.message_stats?.publish_details.rate}}/s)</div>
+		<div class="small">{{getName(queue?.name)}} ({{queue?.messages_ready}} @ {{queue?.message_stats?.publish_details?.rate}}/s)</div>
 		<ngb-progressbar 
 		min="0" 
 		max="{{queueRateMax}}" 
