@@ -13,7 +13,7 @@ import org.endeavour.eds.test.AuthHelper;
 import org.endeavour.eds.test.JsonHelper;
 import org.endeavour.eds.test.api.security.orgRoles.JsonOrgRole;
 import org.endeavour.eds.test.api.security.orgRoles.SecurityOrgRoleEndPointTest;
-import org.endeavourhealth.core.security.keycloak.client.KeycloakClient;
+import org.endeavourhealth.common.security.keycloak.client.KeycloakClient;
 import org.jboss.arquillian.container.test.api.RunAsClient;
 import org.jboss.arquillian.junit.Arquillian;
 import org.junit.Test;

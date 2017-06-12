@@ -14,6 +14,7 @@
     <properties>
 
         <eds-core.version>1.0-SNAPSHOT</eds-core.version>
+        <eds-security.version>1.0-SNAPSHOT</eds-security.version>
 
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <shrinkwrap-resolver.version>2.2.2</shrinkwrap-resolver.version>
@@ -75,6 +76,12 @@
             <groupId>org.endeavourhealth.common</groupId>
             <artifactId>core</artifactId>
             <version>${eds-core.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.endeavourhealth.common</groupId>
+            <artifactId>security</artifactId>
+            <version>${eds-security.version}</version>
         </dependency>
 
         <dependency>
