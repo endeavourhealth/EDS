@@ -520,7 +520,7 @@ public final class OrganisationManagerEndpoint extends AbstractEndpoint {
     private Response processCSVFile(String csvData) throws Exception {
         boolean found = false;
 
-        OrganisationEntity.deleteUneditedBulkOrganisations();
+        //OrganisationEntity.deleteUneditedBulkOrganisations();
 
         List<OrganisationEntity> updatedBulkOrganisations = OrganisationEntity.getUpdatedBulkOrganisations();
 
