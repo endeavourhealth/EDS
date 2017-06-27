@@ -17,6 +17,7 @@ import org.endeavourhealth.core.mySQLDatabase.MapType;
 import org.endeavourhealth.core.mySQLDatabase.models.*;
 import org.endeavourhealth.coreui.endpoints.AbstractEndpoint;
 import org.endeavourhealth.coreui.json.*;
+import org.endeavourhealth.ui.json.JsonFileUpload;
 import org.endeavourhealth.ui.metrics.EdsInstrumentedFilterContextListener;
 import org.endeavourhealth.ui.utility.CsvHelper;
 import org.slf4j.Logger;
@@ -37,6 +38,11 @@ import java.util.*;
 @Metrics(registry = "EdsRegistry")
 public final class OrganisationManagerEndpoint extends AbstractEndpoint {
     private static final Logger LOG = LoggerFactory.getLogger(OrganisationEndpoint.class);
+
+    private static List<MasterMappingEntity> bulkUploadMappings = new ArrayList<>();
+    private static HashMap<String, String> bulkOrgMap = new HashMap<>();
+    private static HashMap<String, String> childParentMap = new HashMap<>();
+    private static boolean uploadInProgress = false;
 
     private static final UserAuditRepository userAudit = new UserAuditRepository(AuditModule.EdsUiModule.Organisation);
 
@@ -340,17 +346,47 @@ public final class OrganisationManagerEndpoint extends AbstractEndpoint {
 
     @POST
     @Produces(MediaType.APPLICATION_JSON)
-    @Consumes(MediaType.TEXT_PLAIN)
+    @Consumes(MediaType.APPLICATION_JSON)
     @Timed(absolute = true, name="OrganisationManager.UploadBulkOrganisations")
     @Path("/upload")
     @RequiresAdmin
-    public Response post(@Context SecurityContext sc, String csvFile) throws Exception {
+    public Response post(@Context SecurityContext sc, JsonFileUpload fileUpload) throws Exception {
         super.setLogbackMarkers(sc);
         userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Save,
                 "Organisation",
-                "Organisation", csvFile);
+                "Organisation", fileUpload);
 
-        return processCSVFile(csvFile);
+        return processCSVFile(fileUpload);
+    }
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="OrganisationManager.startUpload")
+    @Path("/startUpload")
+    @RequiresAdmin
+    public Response startUpload(@Context SecurityContext sc) throws Exception {
+        super.setLogbackMarkers(sc);
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Save,
+                "Start Upload",
+                "Organisation", null);
+
+        return startUpload();
+    }
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="OrganisationManager.endUpload")
+    @Path("/endUpload")
+    @RequiresAdmin
+    public Response endUpload(@Context SecurityContext sc) throws Exception {
+        super.setLogbackMarkers(sc);
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Save,
+                "End Upload",
+                "Organisation", null);
+
+        return endUpload();
     }
 
 
@@ -517,9 +553,34 @@ public final class OrganisationManagerEndpoint extends AbstractEndpoint {
                 .build();
     }
 
-    private Response processCSVFile(String csvData) throws Exception {
-        boolean found = false;
+    private Response startUpload() throws Exception {
+        bulkUploadMappings.clear();
+        bulkOrgMap.clear();
+        childParentMap.clear();
+        uploadInProgress = true;
 
+        return Response
+                .ok()
+                .build();
+    }
+
+
+
+    private Response endUpload() throws Exception {
+        saveBulkMappings();
+
+        bulkUploadMappings.clear();
+        bulkOrgMap.clear();
+        childParentMap.clear();
+        uploadInProgress = false;
+
+        return Response
+                .ok()
+                .build();
+    }
+
+    private Response processCSVFile(JsonFileUpload file) throws Exception {
+        boolean found = false;
         //OrganisationEntity.deleteUneditedBulkOrganisations();
 
         List<OrganisationEntity> updatedBulkOrganisations = OrganisationEntity.getUpdatedBulkOrganisations();
@@ -527,13 +588,24 @@ public final class OrganisationManagerEndpoint extends AbstractEndpoint {
         List<OrganisationEntity> organisationEntities = new ArrayList<>();
         List<AddressEntity> addressEntities = new ArrayList<>();
 
+
+        System.out.println(file.getName());
+        if (file.getFileData() == null) {
+            throw new Exception("No File Data transferred");
+        }
+
+        String csvData = file.getFileData();
         Scanner scanner = new Scanner(csvData);
 
         while (scanner.hasNext()) {
             List<String> org = CsvHelper.parseLine(scanner.nextLine());
+
+        if (file.getName().equals("etrust.csv") && org.get(0).length() > 3)
+            continue;
+
             OrganisationEntity importedOrg = createOrganisationEntity(org);
 
-            for (OrganisationEntity oe : updatedBulkOrganisations){
+            for (OrganisationEntity oe : updatedBulkOrganisations) {
                 if (oe.getUuid().equals(importedOrg.getUuid())) {
                     found = true;
                 }
@@ -545,8 +617,15 @@ public final class OrganisationManagerEndpoint extends AbstractEndpoint {
                 importedOrg.setUuid(UUID.nameUUIDFromBytes((importedOrg.getName() + importedOrg.getOdsCode() + "conflict").getBytes()).toString());
             }
 
-            organisationEntities.add(importedOrg);
-            addressEntities.add(createAddressEntity(org, importedOrg.getUuid()));
+            if (bulkOrgMap.get(importedOrg.getOdsCode()) == null) {
+                organisationEntities.add(importedOrg);
+                addressEntities.add(createAddressEntity(org, importedOrg.getUuid()));
+                bulkOrgMap.put(importedOrg.getOdsCode(), importedOrg.getUuid());
+
+                if (!org.get(14).equals("")) {
+                    childParentMap.put(importedOrg.getOdsCode(), org.get(14));
+                }
+            }
 
             found = false;
         }
@@ -557,6 +636,23 @@ public final class OrganisationManagerEndpoint extends AbstractEndpoint {
         return Response
                 .ok()
                 .build();
+    }
+
+    private void saveBulkMappings() throws Exception {
+
+        childParentMap.forEach((k, v) -> {
+            MasterMappingEntity map = new MasterMappingEntity();
+            map.setChildUuid(bulkOrgMap.get(k));
+            map.setChildMapTypeId(MapType.ORGANISATION.getMapType());
+            map.setParentUUid(bulkOrgMap.get(v));
+            map.setParentMapTypeId(MapType.ORGANISATION.getMapType());
+
+            if (map.getParentUUid() != null)
+                bulkUploadMappings.add(map);
+        });
+
+        if (bulkUploadMappings.size() > 0)
+            MasterMappingEntity.bulkSaveMappings(bulkUploadMappings);
     }
 
     private OrganisationEntity createOrganisationEntity(List<String> org) throws Exception {

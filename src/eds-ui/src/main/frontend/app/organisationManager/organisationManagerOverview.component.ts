@@ -6,6 +6,7 @@ import {AdminService, LoggerService} from "eds-common-js";
 import {OrganisationManagerService} from "./organisationManager.service";
 import {Region} from "../region/models/Region";
 import {OrganisationManagerStatistics} from "./models/OrganisationManagerStatistics";
+import {FileUpload} from "./models/FileUpload";
 
 @Component({
     template: require('./organisationManagerOverview.html')
@@ -17,6 +18,8 @@ export class OrganisationManagerOverviewComponent {
     private file : File;
     existingOrg : Organisation;
     newOrg : Organisation;
+    filesToUpload: FileUpload[] = [];
+    fileList: FileList;
 
     conflictedOrgs : Organisation[];
     orgStats : OrganisationManagerStatistics[];
@@ -71,35 +74,81 @@ export class OrganisationManagerOverviewComponent {
     }
 
     fileChange(event) {
-        let fileList: FileList = event.target.files;
-        if(fileList.length > 0)
-            this.file = fileList[0];
+        var vm = this;
+        vm.filesToUpload = [];
+
+        vm.fileList = event.target.files;
+
+        if(vm.fileList.length > 0) {
+            this.file = vm.fileList[0];
+            for (var i =0; i <= vm.fileList.length - 1; i++){
+                this.filesToUpload.push(<FileUpload>{
+                        name: vm.fileList[i].name,
+                        file: vm.fileList[i]
+                    }
+                );
+            }
+        }
         else
             this.file = null;
     }
 
-    private uploadFile() {
+    private uploadFile(fileToUpload: FileUpload) {
         var vm = this;
+
         var myReader:FileReader = new FileReader();
 
-        myReader.onloadend = function(e){
-            // you can perform an action with readed data here
-            vm.log.success('Uploading File', null, 'Upload');
-            vm.organisationManagerService.uploadCsv(myReader.result)
-                    .subscribe(result => {
-                        vm.log.success('Organisations uploaded successfully', null, 'Success');
+        myReader.onloadend = function(e) {
+            fileToUpload.fileData = myReader.result;
+            fileToUpload.file = null;
+            vm.log.success('Uploading File ' + fileToUpload.name, null, 'Upload');
+            vm.sendToServer(fileToUpload);
+        }
+
+        myReader.readAsText(fileToUpload.file);
+    }
+
+    private getNextFileToUpload() {
+        var vm = this;
+        var allUploaded : boolean = true;
+        for (let file of vm.filesToUpload) {
+            if (file.success == null) {
+                vm.uploadFile(file);
+                allUploaded = false;
+                break;
+            }
+        };
+
+        if (allUploaded) {
+            vm.log.success('All Uploaded Successfully', null, 'Upload');
+            vm.log.success('Saving mappings now', null, 'Upload');
+            vm.organisationManagerService.endUpload()
+                .subscribe(
+                    result => {
+                        vm.log.success('Mappings saved Successfully ' , null, 'Success');
+                        vm.log.success('All Organisations Uploaded Successfully ' , null, 'Success');
                         vm.getOrganisationStatistics();
                         vm.getServiceStatistics();
                         vm.getRegionStatistics();
                         vm.getConflictingOrganisations();
                     },
-                    error => vm.log.error('Failed to upload bulk organisations', error, 'Upload Bulk Organisations')
-                );
-            }
-
-
-        myReader.readAsText(vm.file);
+                    error => vm.log.error('Failed to save mappings', error, 'Upload Bulk Organisations')
+                )
+        }
     }
+
+    private sendToServer(fileToUpload: FileUpload) {
+        var vm = this;
+        vm.log.success('Sending To Server', null, 'Upload');
+        vm.organisationManagerService.uploadCsv(fileToUpload)
+            .subscribe(result => {
+                    fileToUpload.success = 1;
+                    vm.log.success('File Uploaded Successfully ' + fileToUpload.name, null, 'Success');
+                    vm.getNextFileToUpload();
+                },
+                error => vm.log.error('Failed to upload bulk organisations ' + fileToUpload.name, error, 'Upload Bulk Organisations')
+            );
+    };
 
     private getConflictingOrganisations() {
         var vm = this;
@@ -109,7 +158,19 @@ export class OrganisationManagerOverviewComponent {
     }
 
     ok() {
-        this.uploadFile();
+        this.uploadFiles();
+    }
+
+    private uploadFiles() {
+        var vm = this;
+        vm.organisationManagerService.startUpload()
+            .subscribe(
+                result => {
+                    vm.getNextFileToUpload();
+                },
+                error => vm.log.error('Error starting upload', error, 'Error')
+            );
+
     }
 
     cancel() {

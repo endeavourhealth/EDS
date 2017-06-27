@@ -7,6 +7,7 @@ import {Region} from "../region/models/Region";
 import {Address} from "./models/Address";
 import {Marker} from "../region/models/Marker";
 import {OrganisationManagerStatistics} from "./models/OrganisationManagerStatistics";
+import {FileUpload} from "./models/FileUpload";
 
 @Injectable()
 export class OrganisationManagerService extends BaseHttp2Service  {
@@ -95,8 +96,16 @@ export class OrganisationManagerService extends BaseHttp2Service  {
         return this.httpDelete('api/organisationManager/deleteBulks');
     }
 
-    uploadCsv(csvData : String) : Observable<any> {
-        return this.httpPost('api/organisationManager/upload', csvData);
+    startUpload() : Observable<any> {
+        return this.httpGet('api/organisationManager/startUpload');
+    }
+
+    endUpload() : Observable<any> {
+        return this.httpGet('api/organisationManager/endUpload');
+    }
+
+    uploadCsv(fileToUpload : FileUpload) : Observable<any> {
+        return this.httpPost('api/organisationManager/upload', fileToUpload);
     }
 
     getOrganisationStatistics() : Observable<OrganisationManagerStatistics[]> {
