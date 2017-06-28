@@ -600,10 +600,7 @@ public final class OrganisationManagerEndpoint extends AbstractEndpoint {
         while (scanner.hasNext()) {
             List<String> org = CsvHelper.parseLine(scanner.nextLine());
 
-        if (file.getName().equals("etrust.csv") && org.get(0).length() > 3)
-            continue;
-
-            OrganisationEntity importedOrg = createOrganisationEntity(org);
+            OrganisationEntity importedOrg = createOrganisationEntity(org, file.getName());
 
             for (OrganisationEntity oe : updatedBulkOrganisations) {
                 if (oe.getUuid().equals(importedOrg.getUuid())) {
@@ -621,11 +618,12 @@ public final class OrganisationManagerEndpoint extends AbstractEndpoint {
                 organisationEntities.add(importedOrg);
                 addressEntities.add(createAddressEntity(org, importedOrg.getUuid()));
                 bulkOrgMap.put(importedOrg.getOdsCode(), importedOrg.getUuid());
-
-                if (!org.get(14).equals("")) {
-                    childParentMap.put(importedOrg.getOdsCode(), org.get(14));
-                }
             }
+
+            if (!org.get(14).equals("") && childParentMap.get(importedOrg.getOdsCode()) == null) {
+                childParentMap.put(importedOrg.getOdsCode(), org.get(14));
+            }
+
 
             found = false;
         }
@@ -655,7 +653,151 @@ public final class OrganisationManagerEndpoint extends AbstractEndpoint {
             MasterMappingEntity.bulkSaveMappings(bulkUploadMappings);
     }
 
-    private OrganisationEntity createOrganisationEntity(List<String> org) throws Exception {
+    private String getOrgTypeFromFilename(String filename, String odsCode) throws Exception {
+
+        String file = filename.toLowerCase();
+
+        if (file.contains("epraccur"))
+            return "GP Practice";
+
+        if (file.contains("etrust")) {
+            if (odsCode.length() <= 3)
+                return "NHS Trust";
+            else
+                return "NHS Trust Site";
+        }
+
+        if (file.contains("etr"))
+            return "NHS Trust";
+
+        if (file.contains("plab"))
+            return "Pathology Laboratories";
+
+        if (file.contains("epracarc"))
+            return "Archived GP Practice";
+
+        if (file.contains("branch"))
+            return "Branch";
+
+        if (file.contains("auth"))
+            return "Commissioning Region";
+
+        if (file.contains("ecare") && odsCode.length() > 3)
+            return "Care Trust Site";
+
+        if (file.contains("ecare") && odsCode.length() <= 3)
+            return "Care Trust";
+
+        if (file.contains("ccgsite"))
+            return "CCG Site";
+
+        if (file.contains("ccg"))
+            return "CCG";
+
+        if (file.contains("ccgsite"))
+            return "CCG Site";
+
+        if (file.contains("csuaq"))
+            return "CSU";
+
+        if (file.contains("csusite"))
+            return "CSU Site";
+
+        if (file.equals("ect.csv"))
+            return "Care Trust";
+
+        if (file.contains("ectsite"))
+            return "Care Trust Site";
+
+        if (file.contains("dispensary"))
+            return "Dispensary";
+
+        if (file.contains("educate"))
+            return "Education Establishment";
+
+        if (file.contains("egp"))
+            return "GP Practice";
+
+        if (file.contains("hospice")) {
+            if (odsCode.length() > 3)
+                return "Non NHS Hospice";
+            if (odsCode.length() <= 3)
+                return "NHS Hospice";
+        }
+
+        if (file.contains("iom")) {
+            if (odsCode.length() <= 3) {
+                if (odsCode.substring(1, 1).equals("K"))
+                    return "IoM Government Directorate";
+                else
+                    return "IoM Government Department";
+            } else
+                return "IoM Government Directorate Site";
+
+        }
+
+        if (file.contains("justice"))
+            return "Justice Entity";
+
+        if (file.contains("nonnhs"))
+            return "Non NHS Organisation";
+
+        if (file.equals("ensa.csv"))
+            return "NHS Support Agency and Shared Service";
+
+        if (file.contains("eopthq"))
+            return "Optical Headquarters";
+
+        if (file.contains("eoptsite"))
+            return "Optical Site";
+
+        if (file.contains("other"))
+            return "Other";
+
+        if (file.contains("pharmacyhq"))
+            return "Pharmacy Headquarters";
+
+        if (file.contains("ephpsite"))
+            return "ISHP Site";
+
+        if (file.contains("ephp"))
+            return "ISHP";
+
+        if (file.contains("prison"))
+            return "Prison";
+
+        if (file.contains("school"))
+            return "School";
+
+        if (file.contains("spha"))
+            return "Special Health Authority";
+
+        if (file.contains("lauthsite"))
+            return "Local Authority Site";
+
+        if (file.contains("lauth"))
+            return "Local Authority";
+
+        if (file.contains("niarchive") || file.contains("niorg"))
+            return "NI Organisation";
+
+        if (file.contains("scotgp"))
+            return "Scottish GP Practice";
+
+        if (file.contains("scotorg"))
+            return "Scottish Provider Organisation";
+
+        if (file.contains("whbs")) {
+            if (odsCode.length() > 3)
+                return "Wales Health Board Site";
+            else
+                return "Wales Health Board";
+        }
+
+        return "Unknown";
+    }
+
+    private OrganisationEntity createOrganisationEntity(List<String> org, String filename) throws Exception {
 
         OrganisationEntity organisationEntity = new OrganisationEntity();
         organisationEntity.setName(org.get(1));
@@ -665,6 +807,7 @@ public final class OrganisationManagerEndpoint extends AbstractEndpoint {
         organisationEntity.setIsService((byte)0);
         organisationEntity.setBulkImported((byte)1);
         organisationEntity.setBulkItemUpdated((byte)0);
+        organisationEntity.setType(getOrgTypeFromFilename(filename, org.get(0)));
 
         SimpleDateFormat format = new SimpleDateFormat("yyyyMMdd");
         Date date = format.parse(org.get(10));

@@ -14,6 +14,7 @@ export class Organisation {
     bulkImported : number;
     bulkItemUpdated : number;
     bulkConflictedWith : string;
+    type : string;
     regions : { [key:string]:string; };
     parentOrganisations : { [key:string]:string; };
     childOrganisations : { [key:string]:string; };
@@ -28,7 +29,8 @@ export class Organisation {
             {label: 'IG Toolkit Status', property: 'igToolkitStatus'},
             {label: 'Date of Registration', property: 'dateOfRegistration'},
             {label: 'Registration Person', property: 'registrationPerson'},
-            {label: 'Evidence Of Registration', property: 'evidenceOfRegistration'}
+            {label: 'Evidence Of Registration', property: 'evidenceOfRegistration'},
+            {label: 'Type', property: 'type'}
         ];
     }
 }

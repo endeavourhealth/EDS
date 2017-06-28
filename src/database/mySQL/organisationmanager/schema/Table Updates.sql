@@ -20,3 +20,7 @@ values (8, "Publisher");
 
 insert into OrganisationManager.MapType (Id, MapType)
 values (9, "Subscriber");
+
+Alter table OrganisationManager.Organisation
+add column Type varchar(40) null;
+
