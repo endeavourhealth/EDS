@@ -37,7 +37,7 @@
     "angular2-tree-component": "2.6.0",
     "bootstrap": "3.3.7",
     "core-js": "2.4.1",
-    "eds-common-js": "https://github.com/endeavourhealth/Angular/raw/master/eds-common-js-1.0.13.tgz",
+    "eds-common-js": "https://github.com/endeavourhealth/Angular/raw/master/eds-common-js-1.0.14.tgz",
     "es6-promise": "4.0.5",
     "es6-shim": "0.35.2",
     "font-awesome": "4.7.0",

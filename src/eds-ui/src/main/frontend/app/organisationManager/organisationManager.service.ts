@@ -14,16 +14,6 @@ export class OrganisationManagerService extends BaseHttp2Service  {
 
     constructor(http : Http) { super (http); }
 
-    getOrganisations(): Observable<Organisation[]> {
-        return this.httpGet('api/organisationManager');
-    }
-
-    getAllServices(): Observable<Organisation[]> {
-        let params = new URLSearchParams();
-        params.set('searchType','services');
-        return this.httpGet('api/organisationManager', { search : params });
-    }
-
     getOrganisation(uuid : string) : Observable<Organisation> {
         let params = new URLSearchParams();
         params.set('uuid',uuid);
@@ -71,10 +61,16 @@ export class OrganisationManagerService extends BaseHttp2Service  {
         return this.httpDelete('api/organisationManager', { search : params });
     }
 
-    search(searchData : string, searchType : string) : Observable<Organisation[]> {
+    search(searchData : string, searchType : string,
+           pageNumber : number = 1, pageSize : number = 20,
+            orderColumn : string = 'name', descending : boolean = false ) : Observable<Organisation[]> {
         let params = new URLSearchParams();
         params.set('searchData',searchData);
         params.set('searchType',searchType);
+        params.set('pageNumber', pageNumber.toString());
+        params.set('pageSize', pageSize.toString());
+        params.set('orderColumn', orderColumn);
+        params.set('descending', descending.toString());
         return this.httpGet('api/organisationManager', { search : params });
     }
 
@@ -118,6 +114,13 @@ export class OrganisationManagerService extends BaseHttp2Service  {
 
     getRegionStatistics() : Observable<OrganisationManagerStatistics[]> {
         return this.httpGet('api/organisationManager/regionStatistics');
+    }
+
+    getTotalCount(expression: string, searchType: string) : Observable<number> {
+        const params = new URLSearchParams();
+        params.set('expression', expression);
+        params.set('searchType', searchType);
+        return this.httpGet('api/organisationManager/searchCount', { search : params });
     }
 
 }

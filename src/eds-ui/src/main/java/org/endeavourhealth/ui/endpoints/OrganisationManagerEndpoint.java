@@ -45,9 +45,12 @@ public final class OrganisationManagerEndpoint extends AbstractEndpoint {
     private static boolean uploadInProgress = false;
 
     private static final UserAuditRepository userAudit = new UserAuditRepository(AuditModule.EdsUiModule.Organisation);
-
-
     private static final MetricRegistry metricRegistry = EdsInstrumentedFilterContextListener.REGISTRY;
+
+    private Integer defaultPageNumber = 1;
+    private Integer defaultPageSize = 20;
+    private String defaultOrderColumn = "name";
+    private String defaultSearchData = "";
 
 
     @GET
@@ -55,7 +58,14 @@ public final class OrganisationManagerEndpoint extends AbstractEndpoint {
     @Consumes(MediaType.APPLICATION_JSON)
     @Timed(absolute = true, name="EDS-UI.OrganisationManagerEndpoint.Get")
     @Path("/")
-    public Response get(@Context SecurityContext sc, @QueryParam("uuid") String uuid, @QueryParam("searchData") String searchData, @QueryParam("searchType") String searchType) throws Exception {
+    public Response get(@Context SecurityContext sc,
+                            @QueryParam("uuid") String uuid,
+                            @QueryParam("searchData") String searchData,
+                            @QueryParam("searchType") String searchType,
+                            @QueryParam("pageNumber") Integer pageNumber,
+                            @QueryParam("pageSize") Integer pageSize,
+                            @QueryParam("orderColumn") String orderColumn,
+                            @QueryParam("descending") boolean descending) throws Exception {
 
         super.setLogbackMarkers(sc);
         userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
@@ -67,16 +77,21 @@ public final class OrganisationManagerEndpoint extends AbstractEndpoint {
         if (searchType != null && searchType.equals("services"))
             searchServices = true;
 
-        if (uuid == null && searchData == null) {
-            LOG.trace("getOrganisation - list");
+        if (pageNumber == null)
+            pageNumber = defaultPageNumber;
+        if (pageSize == null)
+            pageSize = defaultPageSize;
+        if (orderColumn == null)
+            orderColumn = defaultOrderColumn;
+        if (searchData == null)
+            searchData = defaultSearchData;
 
-            return getOrganisationList(searchServices);
-        } else if (uuid != null) {
+        if (uuid != null) {
             LOG.trace("getOrganisation - single - " + uuid);
             return getSingleOrganisation(uuid);
         } else {
             LOG.trace("Search Organisations - " + searchData + searchType);
-            return search(searchData, searchServices);
+            return getOrganisations(searchData, searchServices, pageNumber, pageSize, orderColumn, descending);
         }
     }
 
@@ -168,11 +183,13 @@ public final class OrganisationManagerEndpoint extends AbstractEndpoint {
     @Consumes(MediaType.APPLICATION_JSON)
     @Timed(absolute = true, name="EDS-UI.OrganisationManagerEndpoint.GetChildOrganisations")
     @Path("/childOrganisations")
-    public Response getChildOrganisations(@Context SecurityContext sc, @QueryParam("uuid") String uuid) throws Exception {
+    public Response getChildOrganisations(@Context SecurityContext sc,
+                                          @QueryParam("uuid") String uuid) throws Exception {
         super.setLogbackMarkers(sc);
         userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
                 "Child Organisations(s)",
                 "Organisation Id", uuid);
+
 
         return getChildOrganisations(uuid, MapType.ORGANISATION.getMapType());
     }
@@ -182,7 +199,8 @@ public final class OrganisationManagerEndpoint extends AbstractEndpoint {
     @Consumes(MediaType.APPLICATION_JSON)
     @Timed(absolute = true, name="EDS-UI.OrganisationManagerEndpoint.GetServices")
     @Path("/services")
-    public Response getServices(@Context SecurityContext sc, @QueryParam("uuid") String uuid) throws Exception {
+    public Response getServices(@Context SecurityContext sc,
+                                @QueryParam("uuid") String uuid) throws Exception {
         super.setLogbackMarkers(sc);
         userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
                 "services(s)",
@@ -196,7 +214,9 @@ public final class OrganisationManagerEndpoint extends AbstractEndpoint {
     @Consumes(MediaType.APPLICATION_JSON)
     @Timed(absolute = true, name="EDS-UI.OrganisationManagerEndpoint.GetParentOrganisations")
     @Path("/parentOrganisations")
-    public Response getParentOrganisations(@Context SecurityContext sc, @QueryParam("uuid") String uuid, @QueryParam("isService") String isService) throws Exception {
+    public Response getParentOrganisations(@Context SecurityContext sc,
+                                           @QueryParam("uuid") String uuid,
+                                           @QueryParam("isService") String isService) throws Exception {
         super.setLogbackMarkers(sc);
         userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
                 "Parent Organisations(s)",
@@ -389,15 +409,32 @@ public final class OrganisationManagerEndpoint extends AbstractEndpoint {
         return endUpload();
     }
 
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="InformationManager.ConceptEndpoint.searchCount")
+    @Path("/searchCount")
+    public Response getConceptSearchCount(@Context SecurityContext sc,
+                                          @QueryParam("expression") String expression,
+                                          @QueryParam("searchType") String searchType
+    ) throws Exception {
 
-    private Response getOrganisationList(boolean searchServices) throws Exception {
+        boolean searchServices = false;
+        if (searchType != null && searchType.equals("services"))
+            searchServices = true;
 
-        List<OrganisationEntity> organisations = OrganisationEntity.getAllOrganisations(searchServices);
+        if (expression == null)
+            expression = "";
 
-        clearLogbackMarkers();
+        return getTotalNumberOfOrganisations(expression, searchServices);
+    }
+
+    private Response getTotalNumberOfOrganisations(String expression, boolean searchServices) throws Exception {
+        Long count = OrganisationEntity.getTotalNumberOfOrganisations(expression, searchServices);
+
         return Response
                 .ok()
-                .entity(organisations)
+                .entity(count)
                 .build();
     }
 
@@ -411,8 +448,11 @@ public final class OrganisationManagerEndpoint extends AbstractEndpoint {
 
     }
 
-    private Response search(String searchData, boolean searchServices) throws Exception {
-        Iterable<OrganisationEntity> organisations = OrganisationEntity.search(searchData, searchServices);
+    private Response getOrganisations(String searchData, boolean searchServices,
+                            Integer pageNumber, Integer pageSize,
+                            String orderColumn, boolean descending) throws Exception {
+        Iterable<OrganisationEntity> organisations = OrganisationEntity.getOrganisations(searchData, searchServices,
+                pageNumber, pageSize, orderColumn, descending);
 
         clearLogbackMarkers();
         return Response

@@ -13,8 +13,13 @@
         <div class="module-body">
             <form>
                 <div class="form-group col-md-12">
-                    <entity-viewer
+                    <entity-viewer-ssp
+                            (onPageChange)="pageChange($event)"
+                            (onPageSizeChange)="pageSizeChange($event)"
+                            (search)="onSearch($event)"
+                            (onOrderChange)="onOrderChange($event)"
                             [items]="organisations"
+                            [totalItems]="totalItems"
                             [primary]="'name'"
                             [primaryOrderText]="'Name'"
                             [displayClass]="'region'"
@@ -22,9 +27,11 @@
                             [secondaryOrderText]="'ODS Code'"
                             [typeDescription]="modeType"
                             [model]="'organisation'"
-                            [pageSize]="20"
+                            [pageSize]="pageSize"
+                            [pageNumber]="pageNumber"
+                            [maxPageSize]="48"
                             [detailsToShow]="orgDetailsToShow">
-                    </entity-viewer>
+                    </entity-viewer-ssp>
                 </div>
             </form>
         </div>

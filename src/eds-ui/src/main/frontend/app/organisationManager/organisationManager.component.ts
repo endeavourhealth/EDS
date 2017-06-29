@@ -12,20 +12,13 @@ import { PaginationService } from '../pagination/pagination.service';
 export class OrganisationManagerComponent {
     organisations : Organisation[];
     modeType : string;
-    searchData : string;
+    searchData : string = '';
     searchType : string;
-
-    // array of all items to be paged
-    private allItems: Organisation[];
-
-    // pager object
-    pager: any = {};
-
-    // paged items
-    pagedItems: any[];
-
-    //page size
-    pageSize : number = 15;
+    totalItems : number = 5;
+    pageNumber : number = 1;
+    pageSize : number = 20;
+    orderColumn : string = 'name';
+    descending : boolean = false;
     orgDetailsToShow = new Organisation().getDisplayItems();
 
 
@@ -44,48 +37,26 @@ export class OrganisationManagerComponent {
             case 'organisations':
                 this.modeType = 'Organisation';
                 this.searchType = 'organisation';
-                this.getOrganisations();
+                this.search();
+                this.getTotalOrganisationCount();
                 break;
             case 'services':
                 this.modeType = 'Service';
                 this.searchType = 'services';
-                this.getAllServices();
+                this.search();
+                this.getTotalOrganisationCount();
                 break;
         }
     }
-    getOrganisations() {
-        var vm = this;
-        vm.organisationManagerService.getOrganisations()
-            .subscribe(result => {
-                    this.allItems = result;
-                    this.organisations = result;
-                    this.setPage(1);
+
+    getTotalOrganisationCount() {
+        const vm = this;
+        vm.organisationManagerService.getTotalCount(vm.searchData, vm.searchType)
+            .subscribe(
+                (result) => {
+                    vm.totalItems = result;
                 },
-                error => vm.log.error('Failed to load organisations', error, 'Load organisations')
-            );
-
-    }
-
-    setPage(page: number) {
-        if (page < 1 || page > this.pager.totalPages) {
-            return;
-        }
-
-        // get pager object from service
-        this.pager = this.paginationService.getPager(this.allItems.length, page, this.pageSize);
-        // get current page of items
-        this.pagedItems = this.allItems.slice(this.pager.startIndex, this.pager.endIndex + 1);
-    }
-
-    private getAllServices() {
-        var vm = this;
-        vm.organisationManagerService.getAllServices()
-            .subscribe(result => {
-                    this.allItems = result;
-                    this.organisations = result;
-                    this.setPage(1);
-                },
-                error => vm.log.error('Failed to load Services', error, 'Load Services')
+                (error) => console.log(error)
             );
     }
 
@@ -130,9 +101,7 @@ export class OrganisationManagerComponent {
         vm.organisationManagerService.deleteOrganisation(item.uuid)
             .subscribe(
                 () => {
-                    var index = vm.allItems.indexOf(item);
-                    vm.allItems.splice(index, 1);
-                    vm.setPage(vm.pager.currentPage);
+                    vm.search();
                     vm.log.success('Organisation deleted', item, 'Delete Organisation');
                 },
                 (error) => vm.log.error('Failed to delete Organisation', error, 'Delete Organisation')
@@ -143,21 +112,40 @@ export class OrganisationManagerComponent {
         this.$state.go('app.organisationManagerOverview');
     }
 
+    onSearch($event) {
+        var vm = this;
+        vm.searchData = $event;
+        vm.pageNumber = 1;
+        vm.search();
+        vm.getTotalOrganisationCount();
+    }
+
     private search() {
         var vm = this;
-        if (vm.searchData.length < 3) {
-            vm.allItems = vm.organisations;
-            vm.setPage(1)
-            return;
-        }
-        vm.organisationManagerService.search(vm.searchData, vm.searchType)
+        vm.organisationManagerService.search(vm.searchData, vm.searchType, vm.pageNumber, vm.pageSize, vm.orderColumn, vm.descending)
             .subscribe(result => {
-                    vm.allItems = result;
-                    vm.pager = {};
-                    vm.setPage(1);
+                    vm.organisations = result;
                 },
                 error => vm.log.error(error)
             );
     }
 
+    pageChange($event) {
+        const vm = this;
+        vm.pageNumber = $event;
+        vm.search();
+    }
+
+    pageSizeChange($event) {
+        const vm = this;
+        vm.pageSize = $event;
+        vm.search();
+    }
+
+    onOrderChange($event) {
+        const vm = this;
+        vm.orderColumn = $event.column;
+        vm.descending = $event.descending;
+        vm.search();
+    }
 }
