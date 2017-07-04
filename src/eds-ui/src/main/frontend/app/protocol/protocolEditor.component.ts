@@ -254,4 +254,26 @@ export class ProtocolEditComponent {
 			.ThenBy(sc => sc.service.name)
 			.ToArray();
 	}
+
+	publisherCount(): number {
+		return this.getServiceContractCount("PUBLISHER");
+	}
+
+	subscriberCount(): number {
+		return this.getServiceContractCount("SUBSCRIBER");
+	}
+
+	private getServiceContractCount(typeToCheck: string): number {
+		var contracts = this.getServiceContracts();
+		var count = 0;
+
+		for (var i=0; i<contracts.length; i++) {
+			var contract = contracts[i];
+			if (contract.type == typeToCheck) {
+				count ++;
+			}
+		}
+
+		return count;
+	}
 }
