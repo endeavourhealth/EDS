@@ -119,19 +119,16 @@ export class ServiceListComponent {
 
 	private startRefreshTimersIfNecessary() {
 		var vm = this;
-		console.log('starting timer?');
+
 		//if we already have a timer, unsubscribe from it
 		vm.stopTimer();
 
 		//check to see if any service has additional info. If any does, start the timer
 		if (vm.anyServiceWithAdditionalInfo()) {
-			console.log('yes');
+
 			vm.timerSubscription = Observable.interval(2000).subscribe(x => {
-				console.log('going to refresh');
 				vm.refreshServiceAdditionalInfo();
 			});
-		} else {
-			console.log('no');
 		}
 	}
 
