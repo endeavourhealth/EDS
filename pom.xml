@@ -20,7 +20,7 @@
         <eds-core.version>1.13-SNAPSHOT</eds-core.version>
         <eds-fhir.version>1.10-SNAPSHOT</eds-fhir.version>
         <eds-security.version>1.0-SNAPSHOT</eds-security.version>
-        <eds-transform.version>1.28-SNAPSHOT</eds-transform.version>
+        <eds-transform.version>1.33-SNAPSHOT</eds-transform.version>
         <eds-utility.version>1.0-SNAPSHOT</eds-utility.version>
 
         <amqp-client.version>3.6.2</amqp-client.version>
