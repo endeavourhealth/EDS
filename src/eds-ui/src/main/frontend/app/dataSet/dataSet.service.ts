@@ -4,7 +4,6 @@ import {Observable} from "rxjs";
 import {BaseHttp2Service} from "eds-common-js";
 import {DataSet} from "./models/Dataset";
 import {EntityMap} from "./models/EntityMap";
-import {Dpa} from "../dpa/models/Dpa";
 
 @Injectable()
 export class DataSetService extends BaseHttp2Service {
@@ -44,11 +43,5 @@ export class DataSetService extends BaseHttp2Service {
 		let params = new URLSearchParams();
 		params.set('searchData',searchData);
 		return this.httpGet('api/dataSet', { search : params });
-	}
-
-	getLinkedDpas(uuid : string) :  Observable<Dpa[]> {
-		let params = new URLSearchParams();
-		params.set('uuid',uuid);
-		return this.httpGet('api/dataSet/dpas', { search : params });
 	}
 }

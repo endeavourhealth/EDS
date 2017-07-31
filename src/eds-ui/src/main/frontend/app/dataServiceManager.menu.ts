@@ -18,9 +18,7 @@ export class DataServiceManagerMenuService implements  MenuService {
 			{caption: 'Monitoring', state: 'app.monitoring', icon: 'fa fa-list-alt'},
 			{caption: 'Transform Errors', state: 'app.transformErrors', icon: 'fa fa-exchange'},
 			{caption: 'Statistics', state: 'app.stats', icon: 'fa fa-line-chart'},
-			{caption: 'Audit', state: 'app.audit', icon: 'fa fa-list-ul'},
-			{caption: 'Organisation Manager', state: 'app.organisationManagerOverview', icon: 'fa fa-hospital-o'},
-			{caption: 'Data Sharing Summary', state: 'app.dataSharingSummaryOverview', icon: 'fa fa-cogs'}
+			{caption: 'Audit', state: 'app.audit', icon: 'fa fa-list-ul'}
 			// {caption: 'Admin', state: 'app.admin', icon: 'fa fa-user'}
 		];
 	}

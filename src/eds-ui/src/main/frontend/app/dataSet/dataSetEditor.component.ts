@@ -11,8 +11,6 @@ import {NgbModal} from "@ng-bootstrap/ng-bootstrap";
 import {DataSetService} from "./dataSet.service";
 import {EdsLibraryItem} from "../edsLibrary/models/EdsLibraryItem";
 import {DataSet} from "./models/Dataset";
-import {Dpa} from "../dpa/models/Dpa";
-import {DpaPickerDialog} from "../dpa/dpaPicker.dialog";
 
 @Component({
 	template : require('./dataSetEditor.html')
@@ -25,7 +23,6 @@ export class DataSetEditComponent {
 	entityMap: EntityMap;
 
 	dataset : DataSet = <DataSet>{};
-	dpas : Dpa[];
 
 	@ViewChild('datasetname') dataSetNameInput;
 
@@ -224,7 +221,6 @@ export class DataSetEditComponent {
 		vm.dataSetService.getDataSet(uuid)
             .subscribe(result =>  {
 					vm.dataset = result;
-					vm.getLinkedDpas();
 				},
 				error => vm.log.error('Error loading Data Set', error, 'Error')
 			);
@@ -246,7 +242,7 @@ export class DataSetEditComponent {
 	// 		);
 	// }
 
-	save(close : boolean) {
+	/*save(close : boolean) {
 
 		if (!this.validateInput())
 			return;
@@ -269,33 +265,11 @@ export class DataSetEditComponent {
 				},
 				(error) => vm.log.error('Error saving Data Set', error, 'Error')
 			);
-	}
+	}*/
 
 	close() {
 		this.adminService.clearPendingChanges();
 		window.history.back();
-	}
-
-	private getLinkedDpas() {
-		var vm = this;
-		vm.dataSetService.getLinkedDpas(vm.dataset.uuid)
-            .subscribe(
-				result => vm.dpas = result,
-				error => vm.log.error('Failed to load linked Data Processing Agreement', error, 'Load Linked Data Processing Agreement')
-			);
-	}
-
-	private editDataProcessingAgreements() {
-		var vm = this;
-		DpaPickerDialog.open(vm.$modal, vm.dpas)
-            .result.then(function
-					(result : Dpa[]) { vm.dpas = result;},
-					() => vm.log.info('Edit Data Processing Agreements cancelled')
-		);
-	}
-
-	private editDataProcessingAgreement(item : Dpa) {
-		this.$state.go('app.dpaEditor', {itemUuid: item.uuid, itemAction: 'edit'});
 	}
 
 	private validateInput(){
