@@ -11,14 +11,15 @@ import org.endeavourhealth.core.configuration.QueueReaderConfiguration;
 import org.endeavourhealth.core.data.admin.ServiceRepository;
 import org.endeavourhealth.core.data.admin.models.Service;
 import org.endeavourhealth.core.data.audit.AuditRepository;
+import org.endeavourhealth.core.data.audit.models.Exchange;
+import org.endeavourhealth.core.data.audit.models.ExchangeByService;
 import org.endeavourhealth.core.data.audit.models.ExchangeTransformAudit;
 import org.endeavourhealth.core.fhirStorage.JsonServiceInterfaceEndpoint;
+import org.endeavourhealth.core.messaging.exchange.HeaderKeys;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 public class Main {
 	private static final Logger LOG = LoggerFactory.getLogger(Main.class);
@@ -32,6 +33,11 @@ public class Main {
 		if (args.length >= 0
 				&& args[0].equalsIgnoreCase("FindCodes")) {
 			findCodes();
+		}
+
+		if (args.length >= 0
+				&& args[0].equalsIgnoreCase("FindDeletedOrgs")) {
+			findDeletedOrgs();
 		}
 
 		if (args.length != 1) {
@@ -57,6 +63,92 @@ public class Main {
 		LOG.info("Starting message consumption");
 		rabbitHandler.start();
 		LOG.info("EDS Queue reader running");
+	}
+
+	private static void findDeletedOrgs() {
+		LOG.info("Starting finding deleted orgs");
+
+		ServiceRepository serviceRepository = new ServiceRepository();
+		AuditRepository auditRepository = new AuditRepository();
+
+		List<Service> services = new ArrayList<>();
+		for (Service service: serviceRepository.getAll()) {
+			services.add(service);
+		}
+
+		services.sort((o1, o2) -> {
+			String name1 = o1.getName();
+			String name2 = o2.getName();
+			return name1.compareToIgnoreCase(name2);
+		});
+
+		for (Service service: services) {
+
+			UUID serviceUuid = service.getId();
+			List<ExchangeByService> exchangeByServices = auditRepository.getExchangesByService(serviceUuid, 1, new Date(0), new Date());
+
+			LOG.info("Service: " + service.getName() + " " + service.getLocalIdentifier());
+
+			if (exchangeByServices.isEmpty()) {
+				LOG.info("    no exchange found!");
+				continue;
+			}
+
+			try {
+				ExchangeByService exchangeByService = exchangeByServices.get(0);
+				UUID exchangeId = exchangeByService.getExchangeId();
+				Exchange exchange = auditRepository.getExchange(exchangeId);
+
+				String headerJson = exchange.getHeaders();
+				HashMap<String, String> headers = ObjectMapperPool.getInstance().readValue(headerJson, HashMap.class);
+
+				String systemUuidStr = headers.get(HeaderKeys.SenderSystemUuid);
+				UUID systemUuid = UUID.fromString(systemUuidStr);
+
+				int batches = countBatches(exchangeId, serviceUuid, systemUuid);
+				LOG.info("    Most recent exchange had " + batches + " batches");
+
+				if (batches > 1 && batches < 2000) {
+					continue;
+				}
+
+				//go back until we find the FIRST exchange where it broke
+				exchangeByServices = auditRepository.getExchangesByService(serviceUuid, 250, new Date(0), new Date());
+				for (int i=0; i<exchangeByServices.size(); i++) {
+					exchangeByService = exchangeByServices.get(i);
+					exchangeId = exchangeByService.getExchangeId();
+					batches = countBatches(exchangeId, serviceUuid, systemUuid);
+
+					exchange = auditRepository.getExchange(exchangeId);
+					Date timestamp = exchange.getTimestamp();
+
+					if (batches < 1 || batches > 2000) {
+						LOG.info("    " + timestamp + " had " + batches);
+					}
+
+					if (batches > 1 && batches < 2000) {
+						LOG.info("    " + timestamp + " had " + batches);
+						break;
+					}
+				}
+
+
+			} catch (Exception ex) {
+				LOG.error("", ex);
+			}
+
+		}
+
+		LOG.info("Finished finding deleted orgs");
+	}
+
+	private static int countBatches(UUID exchangeId, UUID serviceId, UUID systemId) {
+		int batches = 0;
+		List<ExchangeTransformAudit> audits = new AuditRepository().getAllExchangeTransformAudits(serviceId, systemId, exchangeId);
+		for (ExchangeTransformAudit audit: audits) {
+			batches += audit.getNumberBatchesCreated();
+		}
+		return batches;
 	}
 
 	/*private static void fixExchanges(UUID justThisService) {
