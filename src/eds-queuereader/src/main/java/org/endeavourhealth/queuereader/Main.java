@@ -146,7 +146,9 @@ public class Main {
 		int batches = 0;
 		List<ExchangeTransformAudit> audits = new AuditRepository().getAllExchangeTransformAudits(serviceId, systemId, exchangeId);
 		for (ExchangeTransformAudit audit: audits) {
-			batches += audit.getNumberBatchesCreated();
+			if (audit.getNumberBatchesCreated() != null) {
+				batches += audit.getNumberBatchesCreated();
+			}
 		}
 		return batches;
 	}
