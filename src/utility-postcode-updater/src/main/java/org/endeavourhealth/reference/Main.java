@@ -44,6 +44,11 @@ public class Main {
             } else if (type.equalsIgnoreCase("copy_deprivation")) {
                 DeprivationCopier.copyDeprivation(args);
 
+            } else if (type.equalsIgnoreCase("copy_all")) {
+                MsoaCopier.copyMsoas(args);
+                LsoaCopier.copyLsoas(args);
+                DeprivationCopier.copyDeprivation(args);
+
             } else {
                 LOG.error("Unknown first argument " + type);
             }

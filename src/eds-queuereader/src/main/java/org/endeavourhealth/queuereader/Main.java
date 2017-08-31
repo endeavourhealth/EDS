@@ -16,6 +16,7 @@ import org.endeavourhealth.core.data.audit.models.ExchangeByService;
 import org.endeavourhealth.core.data.audit.models.ExchangeTransformAudit;
 import org.endeavourhealth.core.fhirStorage.JsonServiceInterfaceEndpoint;
 import org.endeavourhealth.core.messaging.exchange.HeaderKeys;
+import org.endeavourhealth.core.queueing.QueueHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,14 +32,22 @@ public class Main {
 		ConfigManager.Initialize("queuereader");
 
 		if (args.length >= 0
-				&& args[0].equalsIgnoreCase("FindCodes")) {
-			findCodes();
+				&& args[0].equalsIgnoreCase("PopulateProtocolQueue")) {
+			populateProtocolQueue();
+			System.exit(0);
 		}
 
-		if (args.length >= 0
+		/*if (args.length >= 0
+				&& args[0].equalsIgnoreCase("FindCodes")) {
+			findCodes();
+			System.exit(0);
+		}*/
+
+		/*if (args.length >= 0
 				&& args[0].equalsIgnoreCase("FindDeletedOrgs")) {
 			findDeletedOrgs();
-		}
+			System.exit(0);
+		}*/
 
 		if (args.length != 1) {
 			LOG.error("Usage: queuereader config_id");
@@ -63,6 +72,28 @@ public class Main {
 		LOG.info("Starting message consumption");
 		rabbitHandler.start();
 		LOG.info("EDS Queue reader running");
+	}
+
+	private static void populateProtocolQueue() {
+		LOG.info("Starting Populating Protocol Queue");
+
+		ServiceRepository serviceRepository = new ServiceRepository();
+		AuditRepository auditRepository = new AuditRepository();
+
+		try {
+			for (Service service: serviceRepository.getAll()) {
+
+				List<UUID> exchangeIds = auditRepository.getExchangeIdsForService(service.getId());
+				for (UUID exchangeId: exchangeIds) {
+					QueueHelper.postToExchange(exchangeId, "edsProtocol", null, true);
+				}
+
+			}
+		} catch (Exception ex) {
+			LOG.error("", ex);
+		}
+
+		LOG.info("Finished Populating Protocol Queue");
 	}
 
 	private static void findDeletedOrgs() {
