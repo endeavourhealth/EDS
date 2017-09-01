@@ -103,8 +103,8 @@ module.exports = {
 		contentBase: '..\\webapp',
 
 		proxy: {
-			'/api': { target: 'http://localhost:8001' },
-			'/public': { target: 'http://localhost:8001'}
+			'/api': { target: 'http://localhost:8000' },
+			'/public': { target: 'http://localhost:8000'}
 		}
 	}
 };

@@ -7,9 +7,9 @@ DROP TABLE IF EXISTS enterprise_age;
 DROP TABLE IF EXISTS enterprise_person_id_map;
 DROP TABLE IF EXISTS enterprise_person_update_history;
 
--- DROP SEQUENCE enterprise_id_seq;
--- DROP SEQUENCE household_id_seq;
--- DROP SEQUENCE enterprise_person_id_seq;
+DROP SEQUENCE IF EXISTS enterprise_id_seq;
+DROP SEQUENCE IF EXISTS household_id_seq;
+DROP SEQUENCE IF EXISTS enterprise_person_id_seq;
 
 
 -- Sequence: public.enterprise_id_seq
