@@ -15,7 +15,7 @@ CREATE TABLE patient_search
 	date_of_birth date,
 	date_of_death date,
 	postcode character varying(8),
-	gender character varying(6),
+	gender character varying(7),
 	registration_start date,
 	registration_end date,
 	patient_id character(36) NOT NULL,

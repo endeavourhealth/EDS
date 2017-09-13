@@ -14,7 +14,7 @@ CREATE TABLE eds.patient_search
 	date_of_birth date,
 	date_of_death date,
 	postcode varchar(8),
-	gender varchar(6),
+	gender varchar(7),
 	registration_start date,
 	registration_end date,
 	patient_id varchar(36) NOT NULL,
