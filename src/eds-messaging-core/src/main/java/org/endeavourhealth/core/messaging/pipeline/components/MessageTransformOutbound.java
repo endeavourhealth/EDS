@@ -135,7 +135,7 @@ public class MessageTransformOutbound extends PipelineComponent {
 			UUID serviceId = exchange.getHeaderAsUuid(HeaderKeys.SenderServiceUuid);
 			UUID systemId = exchange.getHeaderAsUuid(HeaderKeys.SenderSystemUuid);
 
-			JsonNode config = ConfigManager.getConfigurationAsJson(endpoint, "enterprise");
+			JsonNode config = ConfigManager.getConfigurationAsJson(endpoint, "subscriber");
 			boolean pseudonymised = config.get("pseudonymised").asBoolean();
 
 			return FhirToEnterpriseCsvTransformer.transformFromFhir(serviceId, systemId, batchId, resourceIds, pseudonymised, endpoint, protocolId);

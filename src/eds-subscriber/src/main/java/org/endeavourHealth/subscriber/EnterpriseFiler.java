@@ -53,7 +53,7 @@ public class EnterpriseFiler {
 
         JsonNode columnClassMappings = null;
 
-        JsonNode config = ConfigManager.getConfigurationAsJson(configName, "enterprise");
+        JsonNode config = ConfigManager.getConfigurationAsJson(configName, "subscriber");
         String url = config.get("enterprise_url").asText();
         Connection connection = openConnection(url, config);
         String keywordEscapeChar = getKeywordEscapeChar(url);
