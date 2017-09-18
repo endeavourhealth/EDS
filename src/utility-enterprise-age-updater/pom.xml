@@ -24,6 +24,12 @@
             <version>${eds-core.version}</version>
         </dependency>
 
+        <dependency>
+            <groupId>org.endeavourhealth.common</groupId>
+            <artifactId>utility</artifactId>
+            <version>${eds-utility.version}</version>
+        </dependency>
+
     </dependencies>
 
     <build>

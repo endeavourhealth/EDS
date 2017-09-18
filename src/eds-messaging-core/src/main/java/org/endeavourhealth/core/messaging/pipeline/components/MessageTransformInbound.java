@@ -3,6 +3,7 @@ package org.endeavourhealth.core.messaging.pipeline.components;
 import com.datastax.driver.core.utils.UUIDs;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
+import org.endeavourhealth.common.utility.SlackHelper;
 import org.endeavourhealth.core.configuration.MessageTransformInboundConfig;
 import org.endeavourhealth.core.data.admin.LibraryRepository;
 import org.endeavourhealth.core.data.audit.AuditRepository;
@@ -12,7 +13,6 @@ import org.endeavourhealth.core.messaging.exchange.Exchange;
 import org.endeavourhealth.core.messaging.exchange.HeaderKeys;
 import org.endeavourhealth.core.messaging.pipeline.PipelineComponent;
 import org.endeavourhealth.core.messaging.pipeline.PipelineException;
-import org.endeavourhealth.core.slack.SlackHelper;
 import org.endeavourhealth.core.xml.TransformErrorSerializer;
 import org.endeavourhealth.core.xml.TransformErrorUtility;
 import org.endeavourhealth.core.xml.transformError.Error;
@@ -210,7 +210,7 @@ public class MessageTransformInbound extends PipelineComponent {
 
 		String attachment = String.join("\n", lines);
 
-		SlackHelper.sendSlackMessage(SlackHelper.Channel.ProductionAlerts, message, attachment);
+		SlackHelper.sendSlackMessage(SlackHelper.Channel.QueueReaderAlerts, message, attachment);
 	}
 
 	/**
