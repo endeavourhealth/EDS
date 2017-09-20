@@ -1,11 +1,11 @@
 package org.endeavourhealth.enterprise;
 
 import org.endeavourhealth.common.config.ConfigManager;
+import org.endeavourhealth.common.utility.SlackHelper;
 import org.endeavourhealth.core.enterprise.EnterpriseConnector;
 import org.endeavourhealth.core.rdbms.transform.EnterpriseAge;
 import org.endeavourhealth.core.rdbms.transform.EnterpriseAgeUpdater;
 import org.endeavourhealth.core.rdbms.transform.TransformConnection;
-import org.endeavourhealth.core.slack.SlackHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -76,7 +76,7 @@ public class Main {
 
         } catch (Exception ex) {
             LOG.error("", ex);
-            SlackHelper.sendSlackMessage(SlackHelper.Channel.ProductionAlerts, "Exception in Enterprise Age Updater", ex);
+            SlackHelper.sendSlackMessage(SlackHelper.Channel.EnterpriseAgeUpdaterAlerts, "Exception in Enterprise Age Updater", ex);
         }
 
         System.exit(0);

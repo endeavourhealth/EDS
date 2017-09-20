@@ -1,13 +1,13 @@
 package org.endeavourhealth.enterprise;
 
 import org.endeavourhealth.common.config.ConfigManager;
+import org.endeavourhealth.common.utility.SlackHelper;
 import org.endeavourhealth.core.enterprise.EnterpriseConnector;
 import org.endeavourhealth.core.rdbms.eds.PatientLinkHelper;
 import org.endeavourhealth.core.rdbms.eds.PatientLinkPair;
 import org.endeavourhealth.core.rdbms.transform.EnterpriseIdHelper;
 import org.endeavourhealth.core.rdbms.transform.EnterprisePersonIdMap;
 import org.endeavourhealth.core.rdbms.transform.EnterprisePersonUpdateHelper;
-import org.endeavourhealth.core.slack.SlackHelper;
 import org.hl7.fhir.instance.model.ResourceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -79,7 +79,7 @@ public class Main {
 
         } catch (Exception ex) {
             LOG.error("", ex);
-            SlackHelper.sendSlackMessage(SlackHelper.Channel.ProductionAlerts, "Exception in Enterprise Person Updater", ex);
+            SlackHelper.sendSlackMessage(SlackHelper.Channel.EnterprisePersonUpdaterAlerts, "Exception in Enterprise Person Updater", ex);
         }
 
         System.exit(0);
