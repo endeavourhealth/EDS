@@ -20,8 +20,8 @@
         <eds-core.version>1.17-SNAPSHOT</eds-core.version>
         <eds-fhir.version>1.13-SNAPSHOT</eds-fhir.version>
         <eds-security.version>1.0-SNAPSHOT</eds-security.version>
-        <eds-transform.version>1.40-SNAPSHOT</eds-transform.version>
-        <eds-utility.version>1.1-SNAPSHOT</eds-utility.version>
+        <eds-transform.version>1.41-SNAPSHOT</eds-transform.version>
+        <eds-utility.version>1.2-SNAPSHOT</eds-utility.version>
 
         <amqp-client.version>3.6.2</amqp-client.version>
         <aspectj-metrics.version>1.2.0</aspectj-metrics.version>
