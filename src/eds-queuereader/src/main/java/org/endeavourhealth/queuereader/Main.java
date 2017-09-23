@@ -31,9 +31,10 @@ public class Main {
 		LOG.info("Initialising config manager");
 		ConfigManager.Initialize("queuereader");
 
-		if (args.length >= 0
+		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("PopulateProtocolQueue")) {
-			populateProtocolQueue();
+			String serviceId = args[1];
+			populateProtocolQueue(serviceId);
 			System.exit(0);
 		}
 
@@ -74,26 +75,31 @@ public class Main {
 		LOG.info("EDS Queue reader running");
 	}
 
-	private static void populateProtocolQueue() {
-		LOG.info("Starting Populating Protocol Queue");
+	private static void populateProtocolQueue(String serviceIdStr) {
+		LOG.info("Starting Populating Protocol Queue for " + serviceIdStr);
+
+		UUID serviceId = UUID.fromString(serviceIdStr);
 
 		ServiceRepository serviceRepository = new ServiceRepository();
 		AuditRepository auditRepository = new AuditRepository();
 
 		try {
-			for (Service service: serviceRepository.getAll()) {
+			Service service = serviceRepository.getById(serviceId);
 
-				List<UUID> exchangeIds = auditRepository.getExchangeIdsForService(service.getId());
-				for (UUID exchangeId: exchangeIds) {
-					QueueHelper.postToExchange(exchangeId, "edsProtocol", null, true);
-				}
+			//for (Service service: serviceRepository.getAll()) {
+			List<UUID> exchangeIds = auditRepository.getExchangeIdsForService(service.getId());
 
+			//the list of exchange IDs will be in reverse order, so we need to go through them backwards
+			for (int i=exchangeIds.size()-1; i>=0; i--) {
+				UUID exchangeId = exchangeIds.get(i);
+				QueueHelper.postToExchange(exchangeId, "edsProtocol", null, true);
 			}
+
 		} catch (Exception ex) {
 			LOG.error("", ex);
 		}
 
-		LOG.info("Finished Populating Protocol Queue");
+		LOG.info("Finished Populating Protocol Queue for " + serviceIdStr);
 	}
 
 	private static void findDeletedOrgs() {
