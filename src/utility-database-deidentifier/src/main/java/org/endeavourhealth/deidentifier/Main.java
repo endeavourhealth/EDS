@@ -1000,14 +1000,15 @@ public class Main {
             LOG.info("Deleting all medication_statement instances of " + dmdId + " " + term + " as only " + count + " instances");
 
             //we have to delete all medication orders that link to the statements first
-            sql = "SELECT person_id, id FROM medication_statement WHERE dmd_id = " + dmdId + ";";
+            sql = "SELECT organization_id, person_id, id FROM medication_statement WHERE dmd_id = " + dmdId + ";";
             Connection connectionOrders = getConnection();
             ResultSet rsOrders = executeQuery(connectionOrders, sql);
 
             while (rsOrders.next()) {
-                long personId = rsOrders.getLong(1);
-                long id = rsOrders.getLong(2);
-                sql = "DELETE FROM medication_order WHERE person_id = " + personId + " AND medication_statement_id = " + id + ";";
+                long orgId = rsOrders.getLong(1);
+                long personId = rsOrders.getLong(2);
+                long id = rsOrders.getLong(3);
+                sql = "DELETE FROM medication_order WHERE organization_id = " + orgId + " AND person_id = " + personId + " AND medication_statement_id = " + id + ";";
                 executeUpdate(sql);
             }
 
