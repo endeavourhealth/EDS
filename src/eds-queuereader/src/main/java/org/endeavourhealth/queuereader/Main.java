@@ -2,6 +2,11 @@ package org.endeavourhealth.queuereader;
 
 import com.datastax.driver.core.*;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.google.common.base.Strings;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVParser;
+import org.apache.commons.csv.CSVRecord;
+import org.apache.commons.io.FileUtils;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.common.cache.ParserPool;
 import org.endeavourhealth.common.cassandra.CassandraConnector;
@@ -20,6 +25,9 @@ import org.endeavourhealth.core.queueing.QueueHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
+import java.nio.charset.Charset;
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 public class Main {
@@ -31,9 +39,18 @@ public class Main {
 		LOG.info("Initialising config manager");
 		ConfigManager.Initialize("queuereader");
 
-		if (args.length >= 0
+		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("PopulateProtocolQueue")) {
-			populateProtocolQueue();
+			String serviceId = args[1];
+			populateProtocolQueue(serviceId);
+			System.exit(0);
+		}
+
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("FindEncounterTerms")) {
+			String path = args[1];
+			String outputPath = args[2];
+			findEncounterTerms(path, outputPath);
 			System.exit(0);
 		}
 
@@ -74,26 +91,184 @@ public class Main {
 		LOG.info("EDS Queue reader running");
 	}
 
-	private static void populateProtocolQueue() {
-		LOG.info("Starting Populating Protocol Queue");
+	private static void findEncounterTerms(String path, String outputPath) {
+		LOG.info("Finding Encounter Terms from " + path);
+
+		Map<String, Long> hmResults = new HashMap<>();
+
+		//source term, source term snomed ID, source term snomed term - count
+
+		try {
+			File root = new File(path);
+			File[] files = root.listFiles();
+			for (File readerRoot: files) { //emis001
+				LOG.info("Finding terms in " + readerRoot);
+
+				//first read in all the coding files to build up our map of codes
+				Map<String, String> hmCodes = new HashMap<>();
+
+				for (File dateFolder: readerRoot.listFiles()) {
+					LOG.info("Looking for codes in " + dateFolder);
+
+					File f = findFile(dateFolder, "Coding_ClinicalCode");
+					if (f == null) {
+						LOG.error("Failed to find coding file in " + dateFolder.getAbsolutePath());
+						continue;
+					}
+
+					CSVParser csvParser = CSVParser.parse(f, Charset.defaultCharset(), CSVFormat.DEFAULT.withHeader());
+					Iterator<CSVRecord> csvIterator = csvParser.iterator();
+
+					while (csvIterator.hasNext()) {
+						CSVRecord csvRecord = csvIterator.next();
+
+						String codeId = csvRecord.get("CodeId");
+						String term = csvRecord.get("Term");
+						String snomed = csvRecord.get("SnomedCTConceptId");
+
+						hmCodes.put(codeId, snomed + ",\"" + term + "\"");
+					}
+
+					csvParser.close();
+				}
+
+				SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+				Date cutoff = dateFormat.parse("2017-01-01");
+
+				//now process the consultation files themselves
+				for (File dateFolder: readerRoot.listFiles()) {
+					LOG.info("Looking for consultations in " + dateFolder);
+
+					File f = findFile(dateFolder, "CareRecord_Consultation");
+					if (f == null) {
+						LOG.error("Failed to find consultation file in " + dateFolder.getAbsolutePath());
+						continue;
+					}
+
+					CSVParser csvParser = CSVParser.parse(f, Charset.defaultCharset(), CSVFormat.DEFAULT.withHeader());
+					Iterator<CSVRecord> csvIterator = csvParser.iterator();
+
+					while (csvIterator.hasNext()) {
+						CSVRecord csvRecord = csvIterator.next();
+
+						String term = csvRecord.get("ConsultationSourceTerm");
+						String codeId = csvRecord.get("ConsultationSourceCodeId");
+
+						if (Strings.isNullOrEmpty(term)
+								&& Strings.isNullOrEmpty(codeId)) {
+							continue;
+						}
+
+						String date = csvRecord.get("EffectiveDate");
+						if (Strings.isNullOrEmpty(date)) {
+							continue;
+						}
+
+						Date d = dateFormat.parse(date);
+						if (d.before(cutoff)) {
+							continue;
+						}
+
+						String line = "\"" + term + "\",";
+
+						if (!Strings.isNullOrEmpty(codeId)) {
+
+							String codeLookup = hmCodes.get(codeId);
+							if (codeLookup == null) {
+								LOG.error("Failed to find lookup for codeID " + codeId);
+								continue;
+							}
+
+							line += codeLookup;
+
+						} else {
+
+							line += ",";
+						}
+
+						Long count = hmResults.get(line);
+						if (count == null) {
+							count = new Long(1);
+						} else {
+							count = new Long(count.longValue() + 1);
+						}
+						hmResults.put(line, count);
+					}
+
+					csvParser.close();
+				}
+
+
+			}
+
+			//save results to file
+			StringBuilder output = new StringBuilder();
+			output.append("\"consultation term\",\"snomed concept ID\",\"snomed term\",\"count\"");
+			output.append("\r\n");
+
+			for (String line: hmResults.keySet()) {
+				Long count = hmResults.get(line);
+				String combined = line + "," + count;
+
+				output.append(combined);
+				output.append("\r\n");
+			}
+			LOG.info("FInished");
+			LOG.info(output.toString());
+
+			FileUtils.writeStringToFile(new File(outputPath), output.toString());
+
+			LOG.info("written output to " + outputPath);
+
+
+		} catch (Exception ex) {
+			LOG.error("", ex);
+		}
+
+		LOG.info("Finished finding Encounter Terms from " + path);
+	}
+
+	private static File findFile(File root, String token) throws Exception {
+		for (File f: root.listFiles()) {
+			String s = f.getName();
+			if (s.indexOf(token) > -1) {
+				return f;
+			}
+		}
+
+		return null;
+	}
+
+	private static void populateProtocolQueue(String serviceIdStr) {
+		LOG.info("Starting Populating Protocol Queue for " + serviceIdStr);
+
+		UUID serviceId = UUID.fromString(serviceIdStr);
 
 		ServiceRepository serviceRepository = new ServiceRepository();
 		AuditRepository auditRepository = new AuditRepository();
 
 		try {
-			for (Service service: serviceRepository.getAll()) {
+			Service service = serviceRepository.getById(serviceId);
 
-				List<UUID> exchangeIds = auditRepository.getExchangeIdsForService(service.getId());
-				for (UUID exchangeId: exchangeIds) {
-					QueueHelper.postToExchange(exchangeId, "edsProtocol", null, true);
+			//for (Service service: serviceRepository.getAll()) {
+			List<UUID> exchangeIds = auditRepository.getExchangeIdsForService(service.getId());
+			LOG.info("Found " + exchangeIds.size() + " exchangeIds");
+
+			//the list of exchange IDs will be in reverse order, so we need to go through them backwards
+			for (int i=exchangeIds.size()-1; i>=0; i--) {
+				UUID exchangeId = exchangeIds.get(i);
+				QueueHelper.postToExchange(exchangeId, "edsProtocol", null, true);
+
+				if (i % 1000 == 0) {
+					LOG.info("" + i + " remaining");
 				}
-
 			}
+
 		} catch (Exception ex) {
 			LOG.error("", ex);
 		}
 
-		LOG.info("Finished Populating Protocol Queue");
+		LOG.info("Finished Populating Protocol Queue for " + serviceIdStr);
 	}
 
 	private static void findDeletedOrgs() {
