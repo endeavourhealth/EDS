@@ -226,19 +226,6 @@ public class Main {
         }
 
         try {
-            if (stepNotDone(STEP_DELETE_MEDICATION_STATEMENTS)) {
-                LOG.info("Deleting low incidence medication_statements");
-                deleteLowIncidenceMedicationStatements(populationCount);
-                LOG.info("...Done");
-                stepDone(STEP_DELETE_MEDICATION_STATEMENTS);
-            }
-        } catch (Exception ex) {
-            LOG.error("", ex);
-            System.exit(0);
-            return;
-        }
-
-        try {
             if (stepNotDone(STEP_DELETE_MEDICATION_ORDERS)) {
                 LOG.info("Deleting low incidence medication_orders");
                 deleteLowIncidenceMedicationOrders(populationCount);
@@ -251,7 +238,18 @@ public class Main {
             return;
         }
 
-
+        try {
+            if (stepNotDone(STEP_DELETE_MEDICATION_STATEMENTS)) {
+                LOG.info("Deleting low incidence medication_statements");
+                deleteLowIncidenceMedicationStatements(populationCount);
+                LOG.info("...Done");
+                stepDone(STEP_DELETE_MEDICATION_STATEMENTS);
+            }
+        } catch (Exception ex) {
+            LOG.error("", ex);
+            System.exit(0);
+            return;
+        }
 
         try {
             if (stepNotDone(STEP_PREPARE_LSOA_CODES)) {
@@ -984,10 +982,35 @@ public class Main {
      */
     private static void deleteLowIncidenceMedicationStatements(int populationCount) throws Exception {
 
+        //first delete any medication orders that link to statements with null DM+D ID (we've already deleted
+        //medication_orders with a null DM+D ID, but there may be some orders with non-null DM+D IDs that link
+        //to statements with null DM+D IDs)
+        String sql = "SELECT organization_id, person_id, id FROM medication_statement WHERE dmd_id IS NULL;";
+        Connection connectionNullStatements = getConnection();
+        ResultSet rsNullStatements = executeQuery(connectionNullStatements, sql);
+
+        while (rsNullStatements.next()) {
+            long orgId = rsNullStatements.getLong(1);
+            long personId = rsNullStatements.getLong(2);
+            long statementId = rsNullStatements.getLong(3);
+            sql = "DELETE FROM medication_order WHERE organization_id = " + orgId + " AND person_id = " + personId + " AND medication_statement_id = " + statementId + ";";
+            executeUpdate(sql);
+        }
+
+        rsNullStatements.close();
+        connectionNullStatements.close();
+
+        //next delete any medication statements that have a null DM+D ID
+        LOG.info("Deleting all instances of medication_order where DM+D ID is null");
+        sql = "DELETE FROM medication_statement WHERE dmd_id IS NULL";
+        executeUpdate(sql);
+
+        //now count the low volume non-null dm+d IDs
         int cutoff = populationCount / 1000;
 
-        String sql = "SELECT dmd_id, original_term, COUNT(1)"
+        sql = "SELECT dmd_id, original_term, COUNT(1)"
                 + " FROM medication_statement"
+                + " WHERE dmd_id IS NOT NULL"
                 + " GROUP BY dmd_id, original_term"
                 + " HAVING COUNT(1) < " + cutoff + ";";
         Connection connection = getConnection();
@@ -1028,10 +1051,17 @@ public class Main {
      */
     private static void deleteLowIncidenceMedicationOrders(int populationCount) throws Exception {
 
-        int cutoff = populationCount / 1000;
+        //first delete any where the dm+d ID is null, since they are low-volume and we don't know what they mean
+        LOG.info("Deleting all instances of medication_order where DM+D ID is null");
+        String sql = "DELETE FROM medication_order WHERE dmd_id IS NULL";
+        executeUpdate(sql);
 
-        String sql = "SELECT dmd_id, original_term, COUNT(1)"
+        //now get the low-count DM+D IDs
+        int cutoff = populationCount / 1000; //want to delete where <0.1% of population has it
+
+        sql = "SELECT dmd_id, original_term, COUNT(1)"
                 + " FROM medication_order"
+                + " WHERE dmd_id IS NOT NULL"
                 + " GROUP BY dmd_id, original_term"
                 + " HAVING COUNT(1) < " + cutoff + ";";
         Connection connection = getConnection();
@@ -1058,10 +1088,16 @@ public class Main {
      */
     private static void deleteLowIncidenceRecords(int populationCount, String tableName) throws Exception {
 
+        //first delete any where the concept ID is null, since they are low-volume and we don't know what they mean
+        LOG.info("Deleting all instances of from " + tableName + " where concept ID is null");
+        String sql = "DELETE FROM " + tableName + " WHERE snomed_concept_id IS NULL";
+        executeUpdate(sql);
+
         int cutoff = populationCount / 1000;
 
-        String sql = "SELECT snomed_concept_id, original_term, COUNT(1)"
+        sql = "SELECT snomed_concept_id, original_term, COUNT(1)"
                 + " FROM " + tableName
+                + " WHERE snomed_concept_id IS NOT NULL"
                 + " GROUP BY snomed_concept_id, original_term"
                 + " HAVING COUNT(1) < " + cutoff + " ORDER BY COUNT(1) DESC;";
         Connection connection = getConnection();
@@ -1071,7 +1107,7 @@ public class Main {
             long snomedConceptId = rs.getLong(1);
             String term = rs.getString(2);
             int count = rs.getInt(3);
-            LOG.info("Deleting all instances of " + snomedConceptId + " " + term + " as only " + count + " instances");
+            LOG.info("Deleting all instances of " + snomedConceptId + " " + term + " from " + tableName + " as only " + count + " instances");
 
             sql = "DELETE FROM " + tableName + " WHERE snomed_concept_id = " + snomedConceptId;
             executeUpdate(sql);
