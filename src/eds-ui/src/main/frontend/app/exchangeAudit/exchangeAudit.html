@@ -109,6 +109,7 @@
                     <ngb-accordion #acc="ngbAccordion">
                         <ngb-panel title="View Body">
                             <template ngbPanelContent>
+                                <button type="button" class="btn btn-sm btn-success" (click)="copyBodyToClipboard()">Copy to Clipboard</button>
                                 <div *ngFor="let item of getSelectedExchangeHBodyLines()">
                                     {{ item }}
                                 </div>

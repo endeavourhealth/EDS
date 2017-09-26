@@ -133,7 +133,10 @@ public class MessageTransformOutbound extends PipelineComponent {
 			UUID serviceId = exchange.getHeaderAsUuid(HeaderKeys.SenderServiceUuid);
 			UUID systemId = exchange.getHeaderAsUuid(HeaderKeys.SenderSystemUuid);
 
-			return FhirToEnterpriseCsvTransformer.transformFromFhir(serviceId, systemId, batchId, resourceIds, endpoint, protocolId);
+			//have to pass in the exchange body now
+			String body = exchange.getBody();
+			return FhirToEnterpriseCsvTransformer.transformFromFhir(serviceId, systemId, batchId, resourceIds, endpoint, protocolId, body);
+			//return FhirToEnterpriseCsvTransformer.transformFromFhir(serviceId, systemId, batchId, resourceIds, endpoint, protocolId);
 
 		} else if (software.equals(MessageFormat.VITRUICARE_XML)) {
 

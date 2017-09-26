@@ -252,6 +252,11 @@ export class ExchangeAuditComponent {
 		console.log('checkbox changed = ' + this.postAllExchanges);
 	}
 
+	copyBodyToClipboard() {
+
+	}
+
+
 	/*postTest() {
 		var vm = this;
 		var serviceId = this.service.uuid;
