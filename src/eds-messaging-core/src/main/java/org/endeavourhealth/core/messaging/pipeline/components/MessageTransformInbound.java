@@ -19,6 +19,7 @@ import org.endeavourhealth.core.xml.transformError.Error;
 import org.endeavourhealth.core.xml.transformError.ExceptionLine;
 import org.endeavourhealth.core.xml.transformError.TransformError;
 import org.endeavourhealth.transform.adastra.AdastraXmlToFhirTransformer;
+import org.endeavourhealth.transform.barts.BartsCsvToFhirTransformer;
 import org.endeavourhealth.transform.common.FhirDeltaResourceFilter;
 import org.endeavourhealth.transform.common.MessageFormat;
 import org.endeavourhealth.transform.common.exceptions.SoftwareNotSupportedException;
@@ -109,6 +110,9 @@ public class MessageTransformInbound extends PipelineComponent {
 
 				} else if (software.equalsIgnoreCase(MessageFormat.ADASTRA_XML)) {
 					processAdastraXml(exchange, serviceId, systemId, messageVersion, software, currentErrors, batchIds, previousErrors);
+
+				} else if (software.equalsIgnoreCase(MessageFormat.BARTS_CSV)) {
+					processBartsCsvTransform(exchange, serviceId, systemId, messageVersion, software, currentErrors, batchIds, previousErrors);
 
 				} else {
 					throw new SoftwareNotSupportedException(software, messageVersion);
@@ -352,6 +356,21 @@ public class MessageTransformInbound extends PipelineComponent {
 
 		EmisCsvToFhirTransformer.transform(exchangeId, exchangeBody, serviceId, systemId, currentErrors,
 									batchIds, previousErrors, sharedStoragePath, maxFilingThreads);
+	}
+
+	private void processBartsCsvTransform(Exchange exchange, UUID serviceId, UUID systemId, String version,
+										 String software, TransformError currentErrors, List<UUID> batchIds,
+										 TransformError previousErrors) throws Exception {
+
+		//get our configuration options
+		String sharedStoragePath = config.getSharedStoragePath();
+		int maxFilingThreads = config.getFilingThreadLimit();
+
+		String exchangeBody = exchange.getBody();
+		UUID exchangeId = exchange.getExchangeId();
+
+		BartsCsvToFhirTransformer.transform(exchangeId, exchangeBody, serviceId, systemId, currentErrors,
+				batchIds, previousErrors, sharedStoragePath, maxFilingThreads, version);
 	}
 
 	private void processTppXmlTransform(Exchange exchange, UUID serviceId, UUID systemId, String version,
