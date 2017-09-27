@@ -95,8 +95,11 @@
 							</div>
 						</div>
 						<div class="row">
+
 							<div class="form-group col-md-12">
-								<label>Message Format</label>
+								<label>Message Format</label>&nbsp;
+								<button type="button" class="btn btn-xs btn-default" (click)="newFormat()">New Format</button>
+
 								<div class="input-group">
 									<span class="input-group-addon"><i class="fa fa-code fa-lg fa-fw"></i></span>
 									<select class="form-control" [(ngModel)]="selectedInterface.messageFormat" name="messagFormat">

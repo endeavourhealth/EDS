@@ -7,6 +7,7 @@ import {StateService, Transition} from "ui-router-ng2";
 import {NgbModal} from "@ng-bootstrap/ng-bootstrap";
 import {Component} from "@angular/core";
 import {EdsLibraryItem} from "../edsLibrary/models/EdsLibraryItem";
+import {SystemService} from "./system.service";
 
 @Component({
 	template : require('./system.html')
@@ -16,7 +17,8 @@ export class SystemEditComponent extends LibraryItemComponent {
 	selectedInterface : TechnicalInterface;
 
 	//NOTE: these strings correspnd to the values in the MessageFormat class
-	formats = ["EMISOPEN", "OPENHR", "EMISCSV", "TPPCSV", "TPPXML", "FHIRJSON", "FHIRXML", "VITRUCARE", "EDWXML", "TABLEAU", "ENTERPRISE_CSV", "HL7V2", "BARTSCSV"];
+	formats: string[];
+	//formats = ["EMISOPEN", "OPENHR", "EMISCSV", "TPPCSV", "TPPXML", "FHIRJSON", "FHIRXML", "VITRUCARE", "EDWXML", "TABLEAU", "ENTERPRISE_CSV", "HL7V2", "BARTSCSV"];
 
 	types = ["Patient Record","Demographics","Appointments","Summary","Discharge","Episode"];
 	frequencies = ["Transactional","Hourly","Daily"];
@@ -28,10 +30,55 @@ export class SystemEditComponent extends LibraryItemComponent {
 		protected transition : Transition,
 		protected state : StateService,
 		protected serviceService : ServiceService,
+		private systemService : SystemService,
 		protected $modal : NgbModal) {
 
 		super(libraryService, adminService, log, transition, state);
 
+		//load our list of known system formats from the systems already on the DB
+		this.loadMessageFormats();
+	}
+
+	private loadMessageFormats() {
+		console.log('loading formats');
+
+		this.systemService.getSystems().subscribe(
+			(result) => {
+				//go through the existing systems to work out the distinct list of know message formats to choose from
+				this.formats = [];
+				for (var i = 0; i < result.length; ++i) {
+					var existingSystem = result[i];
+
+					for (var j=0; j<existingSystem.technicalInterface.length; j++) {
+						var existingTechnicalInterface = existingSystem.technicalInterface[j];
+						var existingMessageFormat = existingTechnicalInterface.messageFormat;
+
+						if (!this.formatsContains(existingMessageFormat)) {
+							this.formats.push(existingMessageFormat);
+						}
+					}
+				}
+
+				this.formats.sort();
+			},
+			(error) => {
+				console.log('failed to get systems');
+				console.log(error);
+
+				this.log.error('Failed to retrieve system formats', error);
+			}
+		);
+	}
+
+	private formatsContains(newFormat: string) : boolean {
+		for (var i=0; i<this.formats.length; i++) {
+			var format = this.formats[i];
+			if (format == newFormat) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	create(folderUuid : string) {
@@ -76,6 +123,25 @@ export class SystemEditComponent extends LibraryItemComponent {
 		if (this.selectedInterface === scope.item) {
 			this.selectedInterface = null;
 		}
+	}
+
+	newFormat() {
+		var newFormat = prompt("Enter the new format name");
+		if (newFormat == null) {
+			return;
+		}
+		if (newFormat.length == 0) {
+			this.log.error('Format cannot be empty');
+			return;
+		}
+
+		if (this.formatsContains(newFormat)) {
+			this.log.error('Format already exists');
+			return;
+		}
+
+		this.formats.push(newFormat);
+		this.selectedInterface.messageFormat = newFormat;
 	}
 
 }

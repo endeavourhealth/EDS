@@ -508,7 +508,240 @@ public class Main {
         return ret;
     }
 
+    /*private static void updatePatients() throws Exception {
+
+        //create table if necessary
+        String sql = "SELECT 1 FROM " + PERSON_TEMP_TABLE;
+
+        Connection connection = getConnection();
+        try {
+            //test if the table exists by selecting from it and catching the error,
+            //which will work on all databases, unlike doing something specific for MySQL
+            executeQuery(connection, sql);
+
+        } catch (SQLException se) {
+
+            LOG.info("Creating adjustments table");
+
+            sql = "CREATE TABLE " + PERSON_TEMP_TABLE + " ("
+                    + " person_id bigint,"
+                    + " age_years int,"
+                    + " age_months int,"
+                    + " age_weeks int,"
+                    + " done boolean,"
+                    + " adjustment_days int"
+                    + ");";
+            executeUpdate(sql);
+
+            sql = "INSERT INTO " + PERSON_TEMP_TABLE
+                    + " (person_id, age_years, age_months, age_weeks, done)"
+                    + " SELECT id, age_years, age_months, age_weeks, 0"
+                    + " FROM person";
+            executeUpdate(sql);
+
+            sql = "UPDATE " + PERSON_TEMP_TABLE
+                    + " SET adjustment_days = "
+                    + " CASE"
+                    + " WHEN age_years > 5 THEN FLOOR(RAND() * -1825)"
+                    + " WHEN age_years > 2 OR age_months > 24 THEN FLOOR(RAND() * -730)"
+                    + " ELSE FLOOR(RAND() * -180)"
+                    + " END;";
+            executeUpdate(sql);
+
+            LOG.info("Created adjustments table");
+        } finally {
+            connection.close();
+        }
+
+        List<String> lsoaCodes = retrieveTempTableRows(LSOA_TEMP_TABLE);
+        List<String> msoaCodes = retrieveTempTableRows(MSOA_TEMP_TABLE);
+        List<String> postcodes = retrieveTempTableRows(POSTCODE_TEMP_TABLE);
+        Random r = new Random();
+
+        sql = "SELECT person_id, adjustment_days FROM " + PERSON_TEMP_TABLE + " WHERE done = false;";
+        connection = getConnection();
+        ResultSet rs = executeQuery(connection, sql);
+
+        Set<Long> personIds = new HashSet<>();
+        while (rs.next()) {
+            long personId = rs.getLong(1);
+            personIds.add(new Long(personId));
+        }
+
+        rs.close();
+        connection.close();
+
+        int count = 0;
+
+        for (Long personId: personIds) {
+
+            sql = "SELECT age_years, age_months, age_weeks, adjustment_days"
+                    + " FROM " + PERSON_TEMP_TABLE + " WHERE person_id = " + personId + " LIMIT 1;";
+            connection = getConnection();
+            rs = executeQuery(connection, sql);
+
+            rs.next();
+            Integer ageYears = new Integer(rs.getInt(1));
+            if (rs.wasNull()) {
+                ageYears = null;
+            }
+
+            Integer ageMonths = new Integer(rs.getInt(2));
+            if (rs.wasNull()) {
+                ageMonths = null;
+            }
+
+            Integer ageWeeks = new Integer(rs.getInt(3));
+            if (rs.wasNull()) {
+                ageWeeks = null;
+            }
+
+            Integer adjustment = new Integer(rs.getInt(4));
+
+            rs.close();
+            connection.close();
+
+            count ++;
+            if (count % 1000 == 0) {
+                LOG.info("Done " + count + " patients out of " + personIds.size());
+            }
+
+
+            if (ageYears != null) {
+                ageYears = new Integer(ageYears.intValue() - (adjustment / 365));
+
+            } else if (ageMonths != null) {
+                ageMonths = new Integer(ageMonths.intValue() - (adjustment / 30));
+                if (ageMonths.intValue() >= 60) {
+                    ageYears = new Integer(ageMonths.intValue() / 12);
+                    ageMonths = null;
+                }
+
+            } else if (ageWeeks != null) {
+                ageWeeks = new Integer(ageWeeks.intValue() - (adjustment / 7));
+                if (ageWeeks.intValue() > 52) {
+                    ageMonths = new Integer(ageWeeks.intValue() / 4);
+                    ageWeeks = null;
+                }
+            }
+
+            String pseudoId = createRandomId(64);
+            int householdId = count; //just use the count as an arbitrary number for the household
+            String lsoaCode = lsoaCodes.get(r.nextInt(lsoaCodes.size()));
+            String msoaCode = msoaCodes.get(r.nextInt(msoaCodes.size()));
+            String postcode = postcodes.get(r.nextInt(postcodes.size()));
+
+            //because the table is indexed by organisation and person ID, it's quicker to do more updates
+            //but using those columns
+            sql = "SELECT DISTINCT organization_id FROM patient WHERE person_id = " + personId + ";";
+            Connection orgsConnection = getConnection();
+            ResultSet rsOrgs = executeQuery(orgsConnection, sql);
+
+            while (rsOrgs.next()) {
+                long orgId = rsOrgs.getLong(1);
+
+                sql = "UPDATE allergy_intolerance"
+                        + " SET clinical_effective_date = DATE_ADD(clinical_effective_date, INTERVAL " + adjustment + " DAY)"
+                        + " WHERE organization_id = " + orgId + " AND person_id = " + personId
+                        + " AND clinical_effective_date IS NOT NULL";
+                executeUpdate(sql);
+
+                sql = "UPDATE observation"
+                        + " SET clinical_effective_date = DATE_ADD(clinical_effective_date, INTERVAL " + adjustment + " DAY)"
+                        + " WHERE organization_id = " + orgId + " AND person_id = " + personId
+                        + " AND clinical_effective_date IS NOT NULL";
+                executeUpdate(sql);
+
+                sql = "UPDATE medication_statement"
+                        + " SET clinical_effective_date = DATE_ADD(clinical_effective_date, INTERVAL " + adjustment + " DAY)"
+                        + " WHERE organization_id = " + orgId + " AND person_id = " + personId
+                        + " AND clinical_effective_date IS NOT NULL";
+                executeUpdate(sql);
+
+                sql = "UPDATE medication_order"
+                        + " SET clinical_effective_date = DATE_ADD(clinical_effective_date, INTERVAL " + adjustment + " DAY)"
+                        + " WHERE organization_id = " + orgId + " AND person_id = " + personId
+                        + " AND clinical_effective_date IS NOT NULL";
+                executeUpdate(sql);
+
+                sql = "UPDATE referral_request"
+                        + " SET clinical_effective_date = DATE_ADD(clinical_effective_date, INTERVAL " + adjustment + " DAY)"
+                        + " WHERE organization_id = " + orgId + " AND person_id = " + personId
+                        + " AND clinical_effective_date IS NOT NULL";
+                executeUpdate(sql);
+
+                sql = "UPDATE procedure_request"
+                        + " SET clinical_effective_date = DATE_ADD(clinical_effective_date, INTERVAL " + adjustment + " DAY)"
+                        + " WHERE organization_id = " + orgId + " AND person_id = " + personId
+                        + " AND clinical_effective_date IS NOT NULL";
+                executeUpdate(sql);
+
+                sql = "UPDATE encounter"
+                        + " SET clinical_effective_date = DATE_ADD(clinical_effective_date, INTERVAL " + adjustment + " DAY)"
+                        + " WHERE organization_id = " + orgId + " AND person_id = " + personId
+                        + " AND clinical_effective_date IS NOT NULL";
+                executeUpdate(sql);
+
+                sql = "UPDATE episode_of_care"
+                        + " SET date_registered = DATE_ADD(date_registered, INTERVAL " + adjustment + " DAY)"
+                        + " WHERE organization_id = " + orgId + " AND person_id = " + personId
+                        + " AND date_registered IS NOT NULL";
+                executeUpdate(sql);
+
+                sql = "UPDATE episode_of_care"
+                        + " SET date_registered_end = DATE_ADD(date_registered_end, INTERVAL " + adjustment + " DAY)"
+                        + " WHERE organization_id = " + orgId + " AND person_id = " + personId
+                        + " AND date_registered_end IS NOT NULL";
+                executeUpdate(sql);
+
+                sql = "UPDATE patient"
+                        + " SET date_of_death = DATE_ADD(date_of_death, INTERVAL " + adjustment + " DAY)"
+                        + " WHERE organization_id = " + orgId + " AND person_id = " + personId
+                        + " AND date_of_death IS NOT NULL";
+                executeUpdate(sql);
+
+                sql = "UPDATE patient"
+                        + " SET age_years = " + ageYears + ", age_months = " + ageMonths + ", age_weeks = " + ageWeeks + ","
+                        + " pseudo_id = '" + pseudoId + "', household_id = " + householdId + ","
+                        + " lsoa_code = '" + lsoaCode + "', msoa_code = '" + msoaCode + "', postcode_prefix = '" + postcode + "'"
+                        + " WHERE organization_id = " + orgId + " AND person_id = " + personId;
+                executeUpdate(sql);
+            }
+
+            rsOrgs.close();
+            orgsConnection.close();
+
+            sql = "UPDATE person"
+                    + " SET date_of_death = DATE_ADD(date_of_death, INTERVAL " + adjustment + " DAY)"
+                    + " WHERE id = " + personId
+                    + " AND date_of_death IS NOT NULL";
+            executeUpdate(sql);
+
+            sql = "UPDATE person"
+                    + " SET age_years = " + ageYears + ", age_months = " + ageMonths + ", age_weeks = " + ageWeeks + ","
+                    + " pseudo_id = '" + pseudoId + "', household_id = " + householdId + ","
+                    + " lsoa_code = '" + lsoaCode + "', msoa_code = '" + msoaCode + "', postcode_prefix = '" + postcode + "'"
+                    + " WHERE id = " + personId;
+            executeUpdate(sql);
+
+            //update the temp table, so we don't lose all progress if we restart
+            sql = "UPDATE " + PERSON_TEMP_TABLE
+                    + " SET done = true"
+                    + " WHERE person_id = " + personId;
+            executeUpdate(sql);
+        }
+
+    }*/
+
     private static void updatePatients() throws Exception {
+
+        //create table with ALL data in
+        //create batch table of X patients
+        //perform update on all tables, joining to that table
+        //update source table
+        //repeat
+
+
 
         //create table if necessary
         String sql = "SELECT 1 FROM " + PERSON_TEMP_TABLE;
@@ -732,8 +965,6 @@ public class Main {
         }
 
     }
-
-
 
     private static String createRandomId(int len) {
 
