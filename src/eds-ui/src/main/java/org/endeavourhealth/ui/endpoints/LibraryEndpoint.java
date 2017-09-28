@@ -2,14 +2,14 @@ package org.endeavourhealth.ui.endpoints;
 
 import com.codahale.metrics.annotation.Timed;
 import io.astefanutti.metrics.aspectj.Metrics;
+import org.endeavourhealth.common.security.SecurityUtils;
+import org.endeavourhealth.common.security.annotations.RequiresAdmin;
 import org.endeavourhealth.core.data.admin.LibraryRepository;
 import org.endeavourhealth.core.data.admin.LibraryRepositoryHelper;
 import org.endeavourhealth.core.data.admin.models.*;
 import org.endeavourhealth.core.data.audit.UserAuditRepository;
 import org.endeavourhealth.core.data.audit.models.AuditAction;
 import org.endeavourhealth.core.data.audit.models.AuditModule;
-import org.endeavourhealth.common.security.SecurityUtils;
-import org.endeavourhealth.common.security.annotations.RequiresAdmin;
 import org.endeavourhealth.core.xml.QueryDocument.*;
 import org.endeavourhealth.core.xml.QueryDocument.System;
 import org.endeavourhealth.core.xml.QueryDocumentSerializer;
@@ -17,20 +17,12 @@ import org.endeavourhealth.ui.DependencyType;
 import org.endeavourhealth.ui.json.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-import org.xml.sax.InputSource;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import java.io.StringReader;
 import java.util.*;
 
 @Path("/library")
@@ -374,6 +366,51 @@ public final class LibraryEndpoint extends AbstractItemEndpoint {
     public Response getSystems(@Context SecurityContext sc) throws Exception {
         super.setLogbackMarkers(sc);
         userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
+                "Systems");
+
+        DefinitionItemType itemType = DefinitionItemType.System;
+
+        UUID orgUuid = getOrganisationUuidFromToken(sc);
+
+        Iterable<ActiveItem> activeItems = null;
+        List<Item> items = new ArrayList();
+        Iterable<ItemDependency> itemDependency = null;
+
+        LibraryRepository repository = new LibraryRepository();
+
+        activeItems = repository.getActiveItemByOrgAndTypeId(orgUuid, itemType.getValue(), false);
+
+        for (ActiveItem activeItem: activeItems) {
+            Item item = repository.getItemByKey(activeItem.getItemId(), activeItem.getAuditId());
+            if (item.getIsDeleted()==false)
+                items.add(item);
+        }
+
+        List<System> ret = new ArrayList<>();
+
+        for (int i = 0; i < items.size(); i++) {
+            Item item = items.get(i);
+
+            String xml = item.getXmlContent();
+            LibraryItem libraryItem = QueryDocumentSerializer.readLibraryItemFromXml(xml);
+
+            System system = libraryItem.getSystem();
+            if (system != null) {
+                ret.add(system);
+            }
+        }
+
+        clearLogbackMarkers();
+
+        return Response
+                .ok()
+                .entity(ret)
+                .build();
+    }
+
+    /*public Response getSystems(@Context SecurityContext sc) throws Exception {
+        super.setLogbackMarkers(sc);
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
             "Systems");
 
         DefinitionItemType itemType = DefinitionItemType.System;
@@ -449,7 +486,7 @@ public final class LibraryEndpoint extends AbstractItemEndpoint {
                 .ok()
                 .entity(ret)
                 .build();
-    }
+    }*/
 
 
     @GET
