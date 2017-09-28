@@ -17,10 +17,10 @@
         <eds-cache.version>1.0-SNAPSHOT</eds-cache.version>
         <eds-cassandra.version>1.0-SNAPSHOT</eds-cassandra.version>
         <eds-config.version>1.12-SNAPSHOT</eds-config.version>
-        <eds-core.version>1.18-SNAPSHOT</eds-core.version>
+        <eds-core.version>1.20-SNAPSHOT</eds-core.version>
         <eds-fhir.version>1.14-SNAPSHOT</eds-fhir.version>
         <eds-security.version>1.0-SNAPSHOT</eds-security.version>
-        <eds-transform.version>1.44-SNAPSHOT</eds-transform.version>
+        <eds-transform.version>1.46-SNAPSHOT</eds-transform.version>
         <eds-utility.version>1.2-SNAPSHOT</eds-utility.version>
 
         <amqp-client.version>3.6.2</amqp-client.version>
