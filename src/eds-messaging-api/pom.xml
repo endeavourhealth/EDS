@@ -44,6 +44,12 @@
         </dependency>
 
         <dependency>
+            <groupId>org.endeavourhealth.dataSharingManager</groupId>
+            <artifactId>Models</artifactId>
+            <version>${eds-datasharing.version}</version>
+        </dependency>
+
+        <dependency>
             <groupId>commons-codec</groupId>
             <artifactId>commons-codec</artifactId>
             <version>${commons-codec.version}</version>
