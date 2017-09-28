@@ -88,7 +88,7 @@ public class MessageTransformOutbound extends PipelineComponent {
 			try {
 				outboundData = transform(exchange, batchId, software, softwareVersion, resourceIds, endpoint, protocolId);
 			} catch (Exception ex) {
-				throw new PipelineException("Failed to transform exchange " + exchange + " and batch " + batchId, ex);
+				throw new PipelineException("Failed to transform exchange " + exchange.getExchangeId() + " and batch " + batchId, ex);
 			}
 
 			//not all transforms may actually decide to generate any outbound content, so check for null and empty
