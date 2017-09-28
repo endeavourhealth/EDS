@@ -195,11 +195,11 @@ export class ExchangeAuditComponent {
 	getSelectedExchangeHBodyLines(): string[] {
 
 		if (!this.selectedExchange) {
-			console.log('No selected exchange');
+			//console.log('No selected exchange');
 			return null;
 		}
-		console.log('Got selected exchange');
-		console.log('Body = ' + this.selectedExchange.bodyLines);
+		//console.log('Got selected exchange');
+		//console.log('Body = ' + this.selectedExchange.bodyLines);
 
 		return this.selectedExchange.bodyLines;
 	}
@@ -252,22 +252,38 @@ export class ExchangeAuditComponent {
 		console.log('checkbox changed = ' + this.postAllExchanges);
 	}
 
-	/*postTest() {
-		var vm = this;
-		var serviceId = this.service.uuid;
-		console.log("Post test in component class");
+	copyBodyToClipboard() {
+		//join the body lines into a single string
+		var lines = this.getSelectedExchangeHBodyLines();
+		var joined = lines.join('\r\n');
 
-		this.busyTestingPost = vm.exchangeAuditService.postTest(serviceId).subscribe(
-			(result) => {
-				console.log("Post test successful");
-				vm.log.success('Successfully tested post');
-				this.busyPostingToExchange = null;
-			},
-			(error) => {
-				console.log("Post test failed");
-				vm.log.error('Failed to test post')
-				this.busyPostingToExchange = null;
+		//create a text area containing the text and insert into the document
+		var txtArea = document.createElement("textarea");
+		txtArea.style.position = 'fixed';
+		txtArea.value = joined;
+		document.body.appendChild(txtArea);
+		txtArea.select();
+
+		var vm = this;
+
+		//invoke the copy action on the text area
+		try {
+			var successful = document.execCommand('copy');
+			if (successful) {
+				this.log.success('Copied to clipboard');
+			} else {
+				this.log.error('Failed to copy to clipboard');
 			}
-		)
-	}*/
+
+		} catch (err) {
+			console.log('Failed to copy text to clipboard');
+			console.log(err);
+
+			this.log.error('Failed to copy to clipboard', err, 'Copy');
+		}
+
+		//remove from the document
+		document.body.removeChild(txtArea);
+	}
+
 }

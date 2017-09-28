@@ -2,10 +2,8 @@ package org.endeavourhealth.core.messaging.pipeline.components;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.base.Strings;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
-import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.core.configuration.MessageTransformOutboundConfig;
 import org.endeavourhealth.core.data.admin.LibraryRepositoryHelper;
 import org.endeavourhealth.core.data.admin.QueuedMessageRepository;
@@ -90,7 +88,7 @@ public class MessageTransformOutbound extends PipelineComponent {
 			try {
 				outboundData = transform(exchange, batchId, software, softwareVersion, resourceIds, endpoint, protocolId);
 			} catch (Exception ex) {
-				throw new PipelineException("Failed to transform exchange " + exchange + " and batch " + batchId, ex);
+				throw new PipelineException("Failed to transform exchange " + exchange.getExchangeId() + " and batch " + batchId, ex);
 			}
 
 			//not all transforms may actually decide to generate any outbound content, so check for null and empty
@@ -135,10 +133,10 @@ public class MessageTransformOutbound extends PipelineComponent {
 			UUID serviceId = exchange.getHeaderAsUuid(HeaderKeys.SenderServiceUuid);
 			UUID systemId = exchange.getHeaderAsUuid(HeaderKeys.SenderSystemUuid);
 
-			JsonNode config = ConfigManager.getConfigurationAsJson(endpoint, "subscriber");
-			boolean pseudonymised = config.get("pseudonymised").asBoolean();
-
-			return FhirToEnterpriseCsvTransformer.transformFromFhir(serviceId, systemId, batchId, resourceIds, pseudonymised, endpoint, protocolId);
+			//have to pass in the exchange body now
+			String body = exchange.getBody();
+			return FhirToEnterpriseCsvTransformer.transformFromFhir(serviceId, systemId, batchId, resourceIds, endpoint, protocolId, body);
+			//return FhirToEnterpriseCsvTransformer.transformFromFhir(serviceId, systemId, batchId, resourceIds, endpoint, protocolId);
 
 		} else if (software.equals(MessageFormat.VITRUICARE_XML)) {
 

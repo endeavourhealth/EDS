@@ -226,19 +226,6 @@ public class Main {
         }
 
         try {
-            if (stepNotDone(STEP_DELETE_MEDICATION_STATEMENTS)) {
-                LOG.info("Deleting low incidence medication_statements");
-                deleteLowIncidenceMedicationStatements(populationCount);
-                LOG.info("...Done");
-                stepDone(STEP_DELETE_MEDICATION_STATEMENTS);
-            }
-        } catch (Exception ex) {
-            LOG.error("", ex);
-            System.exit(0);
-            return;
-        }
-
-        try {
             if (stepNotDone(STEP_DELETE_MEDICATION_ORDERS)) {
                 LOG.info("Deleting low incidence medication_orders");
                 deleteLowIncidenceMedicationOrders(populationCount);
@@ -251,7 +238,18 @@ public class Main {
             return;
         }
 
-
+        try {
+            if (stepNotDone(STEP_DELETE_MEDICATION_STATEMENTS)) {
+                LOG.info("Deleting low incidence medication_statements");
+                deleteLowIncidenceMedicationStatements(populationCount);
+                LOG.info("...Done");
+                stepDone(STEP_DELETE_MEDICATION_STATEMENTS);
+            }
+        } catch (Exception ex) {
+            LOG.error("", ex);
+            System.exit(0);
+            return;
+        }
 
         try {
             if (stepNotDone(STEP_PREPARE_LSOA_CODES)) {
@@ -510,7 +508,240 @@ public class Main {
         return ret;
     }
 
+    /*private static void updatePatients() throws Exception {
+
+        //create table if necessary
+        String sql = "SELECT 1 FROM " + PERSON_TEMP_TABLE;
+
+        Connection connection = getConnection();
+        try {
+            //test if the table exists by selecting from it and catching the error,
+            //which will work on all databases, unlike doing something specific for MySQL
+            executeQuery(connection, sql);
+
+        } catch (SQLException se) {
+
+            LOG.info("Creating adjustments table");
+
+            sql = "CREATE TABLE " + PERSON_TEMP_TABLE + " ("
+                    + " person_id bigint,"
+                    + " age_years int,"
+                    + " age_months int,"
+                    + " age_weeks int,"
+                    + " done boolean,"
+                    + " adjustment_days int"
+                    + ");";
+            executeUpdate(sql);
+
+            sql = "INSERT INTO " + PERSON_TEMP_TABLE
+                    + " (person_id, age_years, age_months, age_weeks, done)"
+                    + " SELECT id, age_years, age_months, age_weeks, 0"
+                    + " FROM person";
+            executeUpdate(sql);
+
+            sql = "UPDATE " + PERSON_TEMP_TABLE
+                    + " SET adjustment_days = "
+                    + " CASE"
+                    + " WHEN age_years > 5 THEN FLOOR(RAND() * -1825)"
+                    + " WHEN age_years > 2 OR age_months > 24 THEN FLOOR(RAND() * -730)"
+                    + " ELSE FLOOR(RAND() * -180)"
+                    + " END;";
+            executeUpdate(sql);
+
+            LOG.info("Created adjustments table");
+        } finally {
+            connection.close();
+        }
+
+        List<String> lsoaCodes = retrieveTempTableRows(LSOA_TEMP_TABLE);
+        List<String> msoaCodes = retrieveTempTableRows(MSOA_TEMP_TABLE);
+        List<String> postcodes = retrieveTempTableRows(POSTCODE_TEMP_TABLE);
+        Random r = new Random();
+
+        sql = "SELECT person_id, adjustment_days FROM " + PERSON_TEMP_TABLE + " WHERE done = false;";
+        connection = getConnection();
+        ResultSet rs = executeQuery(connection, sql);
+
+        Set<Long> personIds = new HashSet<>();
+        while (rs.next()) {
+            long personId = rs.getLong(1);
+            personIds.add(new Long(personId));
+        }
+
+        rs.close();
+        connection.close();
+
+        int count = 0;
+
+        for (Long personId: personIds) {
+
+            sql = "SELECT age_years, age_months, age_weeks, adjustment_days"
+                    + " FROM " + PERSON_TEMP_TABLE + " WHERE person_id = " + personId + " LIMIT 1;";
+            connection = getConnection();
+            rs = executeQuery(connection, sql);
+
+            rs.next();
+            Integer ageYears = new Integer(rs.getInt(1));
+            if (rs.wasNull()) {
+                ageYears = null;
+            }
+
+            Integer ageMonths = new Integer(rs.getInt(2));
+            if (rs.wasNull()) {
+                ageMonths = null;
+            }
+
+            Integer ageWeeks = new Integer(rs.getInt(3));
+            if (rs.wasNull()) {
+                ageWeeks = null;
+            }
+
+            Integer adjustment = new Integer(rs.getInt(4));
+
+            rs.close();
+            connection.close();
+
+            count ++;
+            if (count % 1000 == 0) {
+                LOG.info("Done " + count + " patients out of " + personIds.size());
+            }
+
+
+            if (ageYears != null) {
+                ageYears = new Integer(ageYears.intValue() - (adjustment / 365));
+
+            } else if (ageMonths != null) {
+                ageMonths = new Integer(ageMonths.intValue() - (adjustment / 30));
+                if (ageMonths.intValue() >= 60) {
+                    ageYears = new Integer(ageMonths.intValue() / 12);
+                    ageMonths = null;
+                }
+
+            } else if (ageWeeks != null) {
+                ageWeeks = new Integer(ageWeeks.intValue() - (adjustment / 7));
+                if (ageWeeks.intValue() > 52) {
+                    ageMonths = new Integer(ageWeeks.intValue() / 4);
+                    ageWeeks = null;
+                }
+            }
+
+            String pseudoId = createRandomId(64);
+            int householdId = count; //just use the count as an arbitrary number for the household
+            String lsoaCode = lsoaCodes.get(r.nextInt(lsoaCodes.size()));
+            String msoaCode = msoaCodes.get(r.nextInt(msoaCodes.size()));
+            String postcode = postcodes.get(r.nextInt(postcodes.size()));
+
+            //because the table is indexed by organisation and person ID, it's quicker to do more updates
+            //but using those columns
+            sql = "SELECT DISTINCT organization_id FROM patient WHERE person_id = " + personId + ";";
+            Connection orgsConnection = getConnection();
+            ResultSet rsOrgs = executeQuery(orgsConnection, sql);
+
+            while (rsOrgs.next()) {
+                long orgId = rsOrgs.getLong(1);
+
+                sql = "UPDATE allergy_intolerance"
+                        + " SET clinical_effective_date = DATE_ADD(clinical_effective_date, INTERVAL " + adjustment + " DAY)"
+                        + " WHERE organization_id = " + orgId + " AND person_id = " + personId
+                        + " AND clinical_effective_date IS NOT NULL";
+                executeUpdate(sql);
+
+                sql = "UPDATE observation"
+                        + " SET clinical_effective_date = DATE_ADD(clinical_effective_date, INTERVAL " + adjustment + " DAY)"
+                        + " WHERE organization_id = " + orgId + " AND person_id = " + personId
+                        + " AND clinical_effective_date IS NOT NULL";
+                executeUpdate(sql);
+
+                sql = "UPDATE medication_statement"
+                        + " SET clinical_effective_date = DATE_ADD(clinical_effective_date, INTERVAL " + adjustment + " DAY)"
+                        + " WHERE organization_id = " + orgId + " AND person_id = " + personId
+                        + " AND clinical_effective_date IS NOT NULL";
+                executeUpdate(sql);
+
+                sql = "UPDATE medication_order"
+                        + " SET clinical_effective_date = DATE_ADD(clinical_effective_date, INTERVAL " + adjustment + " DAY)"
+                        + " WHERE organization_id = " + orgId + " AND person_id = " + personId
+                        + " AND clinical_effective_date IS NOT NULL";
+                executeUpdate(sql);
+
+                sql = "UPDATE referral_request"
+                        + " SET clinical_effective_date = DATE_ADD(clinical_effective_date, INTERVAL " + adjustment + " DAY)"
+                        + " WHERE organization_id = " + orgId + " AND person_id = " + personId
+                        + " AND clinical_effective_date IS NOT NULL";
+                executeUpdate(sql);
+
+                sql = "UPDATE procedure_request"
+                        + " SET clinical_effective_date = DATE_ADD(clinical_effective_date, INTERVAL " + adjustment + " DAY)"
+                        + " WHERE organization_id = " + orgId + " AND person_id = " + personId
+                        + " AND clinical_effective_date IS NOT NULL";
+                executeUpdate(sql);
+
+                sql = "UPDATE encounter"
+                        + " SET clinical_effective_date = DATE_ADD(clinical_effective_date, INTERVAL " + adjustment + " DAY)"
+                        + " WHERE organization_id = " + orgId + " AND person_id = " + personId
+                        + " AND clinical_effective_date IS NOT NULL";
+                executeUpdate(sql);
+
+                sql = "UPDATE episode_of_care"
+                        + " SET date_registered = DATE_ADD(date_registered, INTERVAL " + adjustment + " DAY)"
+                        + " WHERE organization_id = " + orgId + " AND person_id = " + personId
+                        + " AND date_registered IS NOT NULL";
+                executeUpdate(sql);
+
+                sql = "UPDATE episode_of_care"
+                        + " SET date_registered_end = DATE_ADD(date_registered_end, INTERVAL " + adjustment + " DAY)"
+                        + " WHERE organization_id = " + orgId + " AND person_id = " + personId
+                        + " AND date_registered_end IS NOT NULL";
+                executeUpdate(sql);
+
+                sql = "UPDATE patient"
+                        + " SET date_of_death = DATE_ADD(date_of_death, INTERVAL " + adjustment + " DAY)"
+                        + " WHERE organization_id = " + orgId + " AND person_id = " + personId
+                        + " AND date_of_death IS NOT NULL";
+                executeUpdate(sql);
+
+                sql = "UPDATE patient"
+                        + " SET age_years = " + ageYears + ", age_months = " + ageMonths + ", age_weeks = " + ageWeeks + ","
+                        + " pseudo_id = '" + pseudoId + "', household_id = " + householdId + ","
+                        + " lsoa_code = '" + lsoaCode + "', msoa_code = '" + msoaCode + "', postcode_prefix = '" + postcode + "'"
+                        + " WHERE organization_id = " + orgId + " AND person_id = " + personId;
+                executeUpdate(sql);
+            }
+
+            rsOrgs.close();
+            orgsConnection.close();
+
+            sql = "UPDATE person"
+                    + " SET date_of_death = DATE_ADD(date_of_death, INTERVAL " + adjustment + " DAY)"
+                    + " WHERE id = " + personId
+                    + " AND date_of_death IS NOT NULL";
+            executeUpdate(sql);
+
+            sql = "UPDATE person"
+                    + " SET age_years = " + ageYears + ", age_months = " + ageMonths + ", age_weeks = " + ageWeeks + ","
+                    + " pseudo_id = '" + pseudoId + "', household_id = " + householdId + ","
+                    + " lsoa_code = '" + lsoaCode + "', msoa_code = '" + msoaCode + "', postcode_prefix = '" + postcode + "'"
+                    + " WHERE id = " + personId;
+            executeUpdate(sql);
+
+            //update the temp table, so we don't lose all progress if we restart
+            sql = "UPDATE " + PERSON_TEMP_TABLE
+                    + " SET done = true"
+                    + " WHERE person_id = " + personId;
+            executeUpdate(sql);
+        }
+
+    }*/
+
     private static void updatePatients() throws Exception {
+
+        //create table with ALL data in
+        //create batch table of X patients
+        //perform update on all tables, joining to that table
+        //update source table
+        //repeat
+
+
 
         //create table if necessary
         String sql = "SELECT 1 FROM " + PERSON_TEMP_TABLE;
@@ -734,8 +965,6 @@ public class Main {
         }
 
     }
-
-
 
     private static String createRandomId(int len) {
 
@@ -984,10 +1213,35 @@ public class Main {
      */
     private static void deleteLowIncidenceMedicationStatements(int populationCount) throws Exception {
 
+        //first delete any medication orders that link to statements with null DM+D ID (we've already deleted
+        //medication_orders with a null DM+D ID, but there may be some orders with non-null DM+D IDs that link
+        //to statements with null DM+D IDs)
+        String sql = "SELECT organization_id, person_id, id FROM medication_statement WHERE dmd_id IS NULL;";
+        Connection connectionNullStatements = getConnection();
+        ResultSet rsNullStatements = executeQuery(connectionNullStatements, sql);
+
+        while (rsNullStatements.next()) {
+            long orgId = rsNullStatements.getLong(1);
+            long personId = rsNullStatements.getLong(2);
+            long statementId = rsNullStatements.getLong(3);
+            sql = "DELETE FROM medication_order WHERE organization_id = " + orgId + " AND person_id = " + personId + " AND medication_statement_id = " + statementId + ";";
+            executeUpdate(sql);
+        }
+
+        rsNullStatements.close();
+        connectionNullStatements.close();
+
+        //next delete any medication statements that have a null DM+D ID
+        LOG.info("Deleting all instances of medication_order where DM+D ID is null");
+        sql = "DELETE FROM medication_statement WHERE dmd_id IS NULL";
+        executeUpdate(sql);
+
+        //now count the low volume non-null dm+d IDs
         int cutoff = populationCount / 1000;
 
-        String sql = "SELECT dmd_id, original_term, COUNT(1)"
+        sql = "SELECT dmd_id, original_term, COUNT(1)"
                 + " FROM medication_statement"
+                + " WHERE dmd_id IS NOT NULL"
                 + " GROUP BY dmd_id, original_term"
                 + " HAVING COUNT(1) < " + cutoff + ";";
         Connection connection = getConnection();
@@ -1000,14 +1254,15 @@ public class Main {
             LOG.info("Deleting all medication_statement instances of " + dmdId + " " + term + " as only " + count + " instances");
 
             //we have to delete all medication orders that link to the statements first
-            sql = "SELECT person_id, id FROM medication_statement WHERE dmd_id = " + dmdId + ";";
+            sql = "SELECT organization_id, person_id, id FROM medication_statement WHERE dmd_id = " + dmdId + ";";
             Connection connectionOrders = getConnection();
             ResultSet rsOrders = executeQuery(connectionOrders, sql);
 
             while (rsOrders.next()) {
-                long personId = rsOrders.getLong(1);
-                long id = rsOrders.getLong(2);
-                sql = "DELETE FROM medication_order WHERE person_id = " + personId + " AND medication_statement_id = " + id + ";";
+                long orgId = rsOrders.getLong(1);
+                long personId = rsOrders.getLong(2);
+                long id = rsOrders.getLong(3);
+                sql = "DELETE FROM medication_order WHERE organization_id = " + orgId + " AND person_id = " + personId + " AND medication_statement_id = " + id + ";";
                 executeUpdate(sql);
             }
 
@@ -1027,10 +1282,17 @@ public class Main {
      */
     private static void deleteLowIncidenceMedicationOrders(int populationCount) throws Exception {
 
-        int cutoff = populationCount / 1000;
+        //first delete any where the dm+d ID is null, since they are low-volume and we don't know what they mean
+        LOG.info("Deleting all instances of medication_order where DM+D ID is null");
+        String sql = "DELETE FROM medication_order WHERE dmd_id IS NULL";
+        executeUpdate(sql);
 
-        String sql = "SELECT dmd_id, original_term, COUNT(1)"
+        //now get the low-count DM+D IDs
+        int cutoff = populationCount / 1000; //want to delete where <0.1% of population has it
+
+        sql = "SELECT dmd_id, original_term, COUNT(1)"
                 + " FROM medication_order"
+                + " WHERE dmd_id IS NOT NULL"
                 + " GROUP BY dmd_id, original_term"
                 + " HAVING COUNT(1) < " + cutoff + ";";
         Connection connection = getConnection();
@@ -1057,10 +1319,16 @@ public class Main {
      */
     private static void deleteLowIncidenceRecords(int populationCount, String tableName) throws Exception {
 
+        //first delete any where the concept ID is null, since they are low-volume and we don't know what they mean
+        LOG.info("Deleting all instances of from " + tableName + " where concept ID is null");
+        String sql = "DELETE FROM " + tableName + " WHERE snomed_concept_id IS NULL";
+        executeUpdate(sql);
+
         int cutoff = populationCount / 1000;
 
-        String sql = "SELECT snomed_concept_id, original_term, COUNT(1)"
+        sql = "SELECT snomed_concept_id, original_term, COUNT(1)"
                 + " FROM " + tableName
+                + " WHERE snomed_concept_id IS NOT NULL"
                 + " GROUP BY snomed_concept_id, original_term"
                 + " HAVING COUNT(1) < " + cutoff + " ORDER BY COUNT(1) DESC;";
         Connection connection = getConnection();
@@ -1070,7 +1338,7 @@ public class Main {
             long snomedConceptId = rs.getLong(1);
             String term = rs.getString(2);
             int count = rs.getInt(3);
-            LOG.info("Deleting all instances of " + snomedConceptId + " " + term + " as only " + count + " instances");
+            LOG.info("Deleting all instances of " + snomedConceptId + " " + term + " from " + tableName + " as only " + count + " instances");
 
             sql = "DELETE FROM " + tableName + " WHERE snomed_concept_id = " + snomedConceptId;
             executeUpdate(sql);

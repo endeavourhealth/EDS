@@ -83,3 +83,30 @@ WITH (
 );
 ALTER TABLE public.deprivation_lookup
   OWNER TO postgres;
+
+-- Table: public.encounter_code
+
+-- DROP TABLE public.encounter_code;
+
+CREATE TABLE public.encounter_code
+(
+  code bigint NOT NULL,
+  term character varying(255),
+  mapping character varying(1024),
+  CONSTRAINT pk_code PRIMARY KEY (code)
+)
+WITH (
+  OIDS=FALSE
+);
+ALTER TABLE public.encounter_code
+  OWNER TO postgres;
+
+-- Index: public.ix_mapping
+
+-- DROP INDEX public.ix_mapping;
+
+CREATE UNIQUE INDEX ix_mapping
+  ON public.encounter_code
+  USING btree
+  (mapping COLLATE pg_catalog."default");
+
