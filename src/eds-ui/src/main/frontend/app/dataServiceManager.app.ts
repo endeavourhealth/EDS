@@ -40,13 +40,15 @@ import {CodeSetEditComponent} from "./codeSet/codeSetEditor.component";
 import {TransformErrorsComponent} from "./transformErrors/transformErrors.component";
 import {CountReportEditComponent} from "./countReport/countReport.component";
 import {ExchangeAuditComponent} from "./exchangeAudit/exchangeAudit.component";
-import {Application, AdminModule} from "eds-common-js";
+import {Application, AdminModule, LoggerModule} from "eds-common-js";
 import {DataServiceManagerMenuService} from "./dataServiceManager.menu";
 import {DataSetEditComponent} from "./dataSet/dataSetEditor.component";
 
 @NgModule(
 	Application.Define({
 		modules: [
+			AdminModule,
+			LoggerModule,
 			DashboardModule,
 			EdsLibraryModule,
 			OrganisationsModule,
@@ -56,7 +58,6 @@ import {DataSetEditComponent} from "./dataSet/dataSetEditor.component";
 			TransformErrorsModule,
 			StatsModule,
 			AuditModule,
-			AdminModule,
 			DataSetModule,
 			UserModule,
 			SystemModule,
