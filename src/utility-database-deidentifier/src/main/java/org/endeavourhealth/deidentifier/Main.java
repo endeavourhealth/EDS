@@ -798,6 +798,8 @@ public class Main {
                 + " END;";
         executeUpdate(sql);
 
+        LOG.info("Populated rows in person temp table");
+
         List<String> lsoaCodes = retrieveTempTableRows(LSOA_TEMP_TABLE);
         List<String> msoaCodes = retrieveTempTableRows(MSOA_TEMP_TABLE);
         List<String> postcodes = retrieveTempTableRows(POSTCODE_TEMP_TABLE);
@@ -1497,8 +1499,19 @@ public class Main {
     }
 
     private static void executeUpdate(List<String> sql) throws Exception {
-        String joined = String.join("\n", sql);
-        executeUpdate(joined);
+
+        Connection connection = getConnection();
+
+        try {
+            Statement statement = connection.createStatement();
+            for (String item: sql) {
+                statement.addBatch(item);
+            }
+            statement.executeBatch();
+            connection.commit();
+        } finally {
+            connection.close();
+        }
     }
 
     private static void executeUpdate(String sql) throws Exception {
