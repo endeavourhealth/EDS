@@ -1500,18 +1500,23 @@ public class Main {
 
     private static void executeUpdate(List<String> sql) throws Exception {
 
+        LOG.info("Executing batch of " + sql.size());
         Connection connection = getConnection();
 
         try {
             Statement statement = connection.createStatement();
+            LOG.info("Created statement");
             for (String item: sql) {
                 statement.addBatch(item);
             }
+            LOG.info("Going to execute batch");
             statement.executeBatch();
+            LOG.info("Going to execute commit");
             connection.commit();
         } finally {
             connection.close();
         }
+        LOG.info("Finished batch of " + sql.size());
     }
 
     private static void executeUpdate(String sql) throws Exception {
