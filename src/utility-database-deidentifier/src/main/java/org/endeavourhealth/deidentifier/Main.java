@@ -51,7 +51,7 @@ public class Main {
     private static final String STEP_PREPARE_MSOA_CODES = "PrepareMsoaCodes";
     private static final String STEP_PREPARE_POSTCODES = "PreparePostcodes";
     private static final String STEP_PREPARE_PATIENTS = "PreparePatients";
-    private static final String STEP_ADJUSTING_DATES = "AdjustDates";
+    private static final String STEP_CHANGE_PATIENT_DATES = "AdjustDates";
 
     /**
      * utility to apply level 2 de-identification to a pseudonymised Compass database
@@ -309,11 +309,11 @@ public class Main {
         }
 
         try {
-            if (stepNotDone(STEP_ADJUSTING_DATES)) {
+            if (stepNotDone(STEP_CHANGE_PATIENT_DATES)) {
                 LOG.info("Adjusting dates");
                 updatePatients();
                 LOG.info("...Done");
-                stepDone(STEP_ADJUSTING_DATES);
+                stepDone(STEP_CHANGE_PATIENT_DATES);
             }
         } catch (Exception ex) {
             LOG.error("", ex);
@@ -808,6 +808,7 @@ public class Main {
         ResultSet rs = executeQuery(connection, sql);
 
         int count = 0;
+        List<String> batch = new ArrayList<>();
 
         while (rs.next()) {
 
@@ -868,7 +869,17 @@ public class Main {
                     + " msoa_code = '" + msoaCode + "',"
                     + " postcode_prefix = '" + postcode + "'"
                     + " WHERE person_id = " + personId + ";";
-            executeUpdate(sql);
+
+            batch.add(sql);
+            if (batch.size() >= 500) {
+                executeUpdate(batch);
+                batch.clear();
+            }
+            //executeUpdate(sql);
+        }
+
+        if (!batch.isEmpty()) {
+            executeUpdate(batch);
         }
 
         connection.close();
@@ -1483,6 +1494,11 @@ public class Main {
         connection.close();
 
         return count;
+    }
+
+    private static void executeUpdate(List<String> sql) throws Exception {
+        String joined = String.join("\n", sql);
+        executeUpdate(joined);
     }
 
     private static void executeUpdate(String sql) throws Exception {
