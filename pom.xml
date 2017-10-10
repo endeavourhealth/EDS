@@ -17,10 +17,10 @@
         <eds-cache.version>1.0-SNAPSHOT</eds-cache.version>
         <eds-cassandra.version>1.0-SNAPSHOT</eds-cassandra.version>
         <eds-config.version>1.12-SNAPSHOT</eds-config.version>
-        <eds-core.version>1.23-SNAPSHOT</eds-core.version>
+        <eds-core.version>1.26-SNAPSHOT</eds-core.version>
         <eds-fhir.version>1.15-SNAPSHOT</eds-fhir.version>
         <eds-security.version>1.2-SNAPSHOT</eds-security.version>
-        <eds-transform.version>1.49-SNAPSHOT</eds-transform.version>
+        <eds-transform.version>1.50-SNAPSHOT</eds-transform.version>
         <eds-utility.version>1.2-SNAPSHOT</eds-utility.version>
         <eds-datasharing.version>0.0.2-SNAPSHOT</eds-datasharing.version>
 
@@ -38,8 +38,8 @@
         <gson.version>2.6.2</gson.version>
         <guava.version>19.0</guava.version>
         <hapi.version>2.2</hapi.version>
-        <hibernate.version>5.2.5.Final</hibernate.version>
-        <hikari.version>2.5.1</hikari.version>
+        <hibernate.version>5.2.10.Final</hibernate.version>
+        <hikari.version>2.7.1</hikari.version>
         <httpclient.version>4.5.2</httpclient.version>
         <jackson.version>2.5.4</jackson.version>
         <javax.annotation-api.version>1.2</javax.annotation-api.version>
