@@ -80,6 +80,27 @@ WHERE service_id IS NOT NULL
 PRIMARY KEY((service_id, system_id, patient_id), resource_type, resource_id)
 WITH compression = { 'sstable_compression' : 'LZ4Compressor' };
 
+CREATE MATERIALIZED VIEW resource_by_service_all_systems AS
+SELECT service_id, system_id, patient_id, resource_type, resource_id, schema_version, resource_metadata, resource_data
+FROM resource_by_service
+WHERE service_id IS NOT NULL
+  AND system_id IS NOT NULL
+  AND resource_type IS NOT NULL
+  AND resource_id IS NOT NULL
+PRIMARY KEY((service_id, resource_type, resource_id), system_id)
+WITH compression = { 'sstable_compression' : 'LZ4Compressor' };
+
+CREATE MATERIALIZED VIEW resource_by_patient_all_systems AS
+SELECT service_id, system_id, patient_id, resource_type, resource_id, schema_version, resource_metadata, resource_data
+FROM resource_by_service
+WHERE service_id IS NOT NULL
+  AND system_id IS NOT NULL
+  AND patient_id IS NOT NULL
+  AND resource_type IS NOT NULL
+  AND resource_id IS NOT NULL
+PRIMARY KEY((service_id, patient_id, resource_type), resource_id, system_id)
+WITH compression = { 'sstable_compression' : 'LZ4Compressor' };
+
 CREATE TABLE resource_by_exchange_batch (
   batch_id uuid,
   exchange_id uuid,
