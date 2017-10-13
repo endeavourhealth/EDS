@@ -1071,7 +1071,7 @@ public class Main {
 
             sql = "UPDATE patient a, " + PERSON_TEMP_ORG_BATCH_TABLE + " b"
                     + " SET a.date_of_death = DATE_ADD(a.date_of_death, INTERVAL b.adjustment_days DAY)"
-                    + " WHERE a.patient_id = b.patient_id"
+                    + " WHERE a.id = b.patient_id"
                     + " AND date_of_death IS NOT NULL";
             executeUpdate(sql);
 
@@ -1084,7 +1084,7 @@ public class Main {
                     + " a.lsoa_code = b.lsoa_code, "
                     + " a.msoa_code = b.msoa_code, "
                     + " a.postcode_prefix = b.postcode_prefix"
-                    + " WHERE a.patient_id = b.patient_id";
+                    + " WHERE a.id = b.patient_id";
             executeUpdate(sql);
 
             /*//perform updates
