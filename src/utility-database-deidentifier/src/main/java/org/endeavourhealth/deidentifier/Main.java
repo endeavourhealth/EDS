@@ -781,6 +781,16 @@ public class Main {
                 + ");";
         executeUpdate(sql);
 
+        //bit of a dirty fix, but we have some missing person records, so run this to re-create them
+        sql = "INSERT INTO person"
+                + " SELECT DISTINCT person_id, patient_gender_id, pseudo_id, age_years, age_months, age_weeks, date_of_death, postcode_prefix, household_id, lsoa_code, msoa_code, ethnic_code"
+                + " FROM patient"
+                + " WHERE NOT EXISTS ("
+                + " SELECT 1"
+                + " FROM person"
+                + " WHERE person.id = patient.person_id);";
+        executeUpdate(sql);
+
         //populate with person data
         sql = "INSERT INTO " + PERSON_TEMP_TABLE
                 + " (person_id, age_years, age_months, age_weeks, done)"
