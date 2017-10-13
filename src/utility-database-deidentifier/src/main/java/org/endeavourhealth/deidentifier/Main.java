@@ -798,6 +798,12 @@ public class Main {
                 + " END;";
         executeUpdate(sql);
 
+        //index on person ID
+        sql = "CREATE INDEX ix_" + PERSON_TEMP_TABLE + "_personid"
+                + " ON " + PERSON_TEMP_TABLE
+                + " (person_id);";
+        executeUpdate(sql);
+
         LOG.info("Populated rows in person temp table");
 
         List<String> lsoaCodes = retrieveTempTableRows(LSOA_TEMP_TABLE);
@@ -887,7 +893,7 @@ public class Main {
         connection.close();
 
         //index the table
-        sql = " CREATE INDEX ix_person_done"
+        sql = " CREATE INDEX ix_" + PERSON_TEMP_TABLE + "_done"
                 + " ON " + PERSON_TEMP_TABLE
                 + " (done);";
         executeUpdate(sql);
