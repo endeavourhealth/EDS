@@ -1000,6 +1000,17 @@ public class Main {
                     + " ON p.person_id = src.person_id;";
             executeUpdate(sql);
 
+            //index the batch tables
+            sql = "CREATE INDEX ix_" + PERSON_TEMP_ORG_BATCH_TABLE + "_personid"
+                    + " ON " + PERSON_TEMP_ORG_BATCH_TABLE
+                    + " (organization_id, person_id, adjustment_days);";
+            executeUpdate(sql);
+
+            sql = "CREATE INDEX ix_" + PERSON_TEMP_BATCH_TABLE + "_personid"
+                    + " ON " + PERSON_TEMP_BATCH_TABLE
+                    + " (person_id, adjustment_days);";
+            executeUpdate(sql);
+
             //perform updates
             sql = "UPDATE allergy_intolerance a, " + PERSON_TEMP_ORG_BATCH_TABLE + " b"
                     + " SET a.clinical_effective_date = DATE_ADD(a.clinical_effective_date, INTERVAL b.adjustment_days DAY)"
