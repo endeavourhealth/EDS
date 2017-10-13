@@ -979,6 +979,7 @@ public class Main {
                     + " lsoa_code varchar(50),"
                     + " msoa_code varchar(50),"
                     + " postcode_prefix varchar(20),"
+                    + " patient_id bigint,"
                     + " organization_id bigint"
                     + ");";
             executeUpdate(sql);
@@ -994,6 +995,7 @@ public class Main {
                     + " src.lsoa_code,"
                     + " src.msoa_code,"
                     + " src.postcode_prefix,"
+                    + " p.id,"
                     + " p.organization_id"
                     + " FROM " + PERSON_TEMP_BATCH_TABLE + " src"
                     + " JOIN patient p"
@@ -1012,6 +1014,80 @@ public class Main {
             executeUpdate(sql);
 
             //perform updates
+            //changed joins to work with the indexes
+            sql = "UPDATE allergy_intolerance a, " + PERSON_TEMP_ORG_BATCH_TABLE + " b"
+                    + " SET a.clinical_effective_date = DATE_ADD(a.clinical_effective_date, INTERVAL b.adjustment_days DAY)"
+                    + " WHERE a.patient_id = b.patient_id"
+                    + " AND clinical_effective_date IS NOT NULL";
+            executeUpdate(sql);
+
+            sql = "UPDATE observation a, " + PERSON_TEMP_ORG_BATCH_TABLE + " b"
+                    + " SET a.clinical_effective_date = DATE_ADD(a.clinical_effective_date, INTERVAL b.adjustment_days DAY)"
+                    + " WHERE a.patient_id = b.patient_id"
+                    + " AND clinical_effective_date IS NOT NULL";
+            executeUpdate(sql);
+
+            sql = "UPDATE medication_statement a, " + PERSON_TEMP_ORG_BATCH_TABLE + " b"
+                    + " SET a.clinical_effective_date = DATE_ADD(a.clinical_effective_date, INTERVAL b.adjustment_days DAY)"
+                    + " WHERE a.patient_id = b.patient_id"
+                    + " AND clinical_effective_date IS NOT NULL";
+            executeUpdate(sql);
+
+            sql = "UPDATE medication_order a, " + PERSON_TEMP_ORG_BATCH_TABLE + " b"
+                    + " SET a.clinical_effective_date = DATE_ADD(a.clinical_effective_date, INTERVAL b.adjustment_days DAY)"
+                    + " WHERE a.patient_id = b.patient_id"
+                    + " AND clinical_effective_date IS NOT NULL";
+            executeUpdate(sql);
+
+            sql = "UPDATE referral_request a, " + PERSON_TEMP_ORG_BATCH_TABLE + " b"
+                    + " SET a.clinical_effective_date = DATE_ADD(a.clinical_effective_date, INTERVAL b.adjustment_days DAY)"
+                    + " WHERE a.patient_id = b.patient_id"
+                    + " AND clinical_effective_date IS NOT NULL";
+            executeUpdate(sql);
+
+            sql = "UPDATE procedure_request a, " + PERSON_TEMP_ORG_BATCH_TABLE + " b"
+                    + " SET a.clinical_effective_date = DATE_ADD(a.clinical_effective_date, INTERVAL b.adjustment_days DAY)"
+                    + " WHERE a.patient_id = b.patient_id"
+                    + " AND clinical_effective_date IS NOT NULL";
+            executeUpdate(sql);
+
+            sql = "UPDATE encounter a, " + PERSON_TEMP_ORG_BATCH_TABLE + " b"
+                    + " SET a.clinical_effective_date = DATE_ADD(a.clinical_effective_date, INTERVAL b.adjustment_days DAY)"
+                    + " WHERE a.patient_id = b.patient_id"
+                    + " AND clinical_effective_date IS NOT NULL";
+            executeUpdate(sql);
+
+            sql = "UPDATE episode_of_care a, " + PERSON_TEMP_ORG_BATCH_TABLE + " b"
+                    + " SET a.date_registered = DATE_ADD(a.date_registered, INTERVAL b.adjustment_days DAY)"
+                    + " WHERE a.patient_id = b.patient_id"
+                    + " AND date_registered IS NOT NULL";
+            executeUpdate(sql);
+
+            sql = "UPDATE episode_of_care a, " + PERSON_TEMP_ORG_BATCH_TABLE + " b"
+                    + " SET a.date_registered_end = DATE_ADD(a.date_registered_end, INTERVAL b.adjustment_days DAY)"
+                    + " WHERE a.patient_id = b.patient_id"
+                    + " AND date_registered_end IS NOT NULL";
+            executeUpdate(sql);
+
+            sql = "UPDATE patient a, " + PERSON_TEMP_ORG_BATCH_TABLE + " b"
+                    + " SET a.date_of_death = DATE_ADD(a.date_of_death, INTERVAL b.adjustment_days DAY)"
+                    + " WHERE a.patient_id = b.patient_id"
+                    + " AND date_of_death IS NOT NULL";
+            executeUpdate(sql);
+
+            sql = "UPDATE patient a, " + PERSON_TEMP_ORG_BATCH_TABLE + " b"
+                    + " SET a.age_years = b.age_years,"
+                    + " a.age_months = b.age_months, "
+                    + " a.age_weeks = b.age_weeks, "
+                    + " a.pseudo_id = b.pseudo_id, "
+                    + " a.household_id = b.household_id, "
+                    + " a.lsoa_code = b.lsoa_code, "
+                    + " a.msoa_code = b.msoa_code, "
+                    + " a.postcode_prefix = b.postcode_prefix"
+                    + " WHERE a.patient_id = b.patient_id";
+            executeUpdate(sql);
+
+            /*//perform updates
             sql = "UPDATE allergy_intolerance a, " + PERSON_TEMP_ORG_BATCH_TABLE + " b"
                     + " SET a.clinical_effective_date = DATE_ADD(a.clinical_effective_date, INTERVAL b.adjustment_days DAY)"
                     + " WHERE a.organization_id = b.organization_id AND a.person_id = b.person_id"
@@ -1082,7 +1158,7 @@ public class Main {
                     + " a.msoa_code = b.msoa_code, "
                     + " a.postcode_prefix = b.postcode_prefix"
                     + " WHERE a.organization_id = b.organization_id AND a.person_id = b.person_id";
-            executeUpdate(sql);
+            executeUpdate(sql);*/
 
             sql = "UPDATE person a, " + PERSON_TEMP_BATCH_TABLE + " b"
                     + " SET a.date_of_death = DATE_ADD(a.date_of_death, INTERVAL b.adjustment_days DAY)"
