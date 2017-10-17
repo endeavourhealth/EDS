@@ -63,6 +63,9 @@ public class Main {
      *
      * Parameters:
      * <db_connection_url> <driver_class> <db_username> <db_password>
+     *
+     * To run as nohup:
+     * sudo nohup sudo ./deidentifier/deidentify.sh 2>&1 > deidentify.txt &
      */
     public static void main(String[] args) throws Exception {
 
