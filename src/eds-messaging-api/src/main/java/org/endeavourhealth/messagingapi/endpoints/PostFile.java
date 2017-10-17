@@ -21,7 +21,6 @@ import org.apache.http.entity.ContentType;
 import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.datasharingmanagermodel.models.database.DataProcessingAgreementEntity;
 
-import javax.annotation.security.RolesAllowed;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
@@ -38,40 +37,43 @@ import java.util.List;
 public class PostFile extends AbstractEndpoint {
 	@POST
 	@Path("/PostFile")
-	@RolesAllowed({"tpp-bulk-extract-provider", "homerton-bulk-extract-provider"})
+	//@RolesAllowed({"tpp-bulk-extract-provider", "homerton-bulk-extract-provider"})
 	@Consumes(MediaType.MULTIPART_FORM_DATA)
 	public Response uploadFiles(@Context final HttpServletRequest request) {
-		// check publisher has a DPA with Discovery
 		String organisationId = request.getQueryString().replaceAll("organisationId=","");
-		if (publisherHasDPA(organisationId)) {
-			// Check that we have a multi-part file upload request
-			boolean isMultipart = ServletFileUpload.isMultipartContent(request);
-			if (isMultipart) {
-				// Create a factory for temp disk file items
-				DiskFileItemFactory factory = new DiskFileItemFactory();
-				// Configure a repository (to ensure a secure temp location is used)
-				ServletContext servletContext = request.getServletContext();
-				File repository = (File) servletContext.getAttribute("javax.servlet.context.tempdir");
-				factory.setRepository(repository);
-				// setup temp disk clearing tracker
-				FileCleaningTracker fileCleaningTracker = FileCleanerCleanup.getFileCleaningTracker(servletContext);
-				factory.setFileCleaningTracker(fileCleaningTracker);
 
-				// Create a new file upload handler
-				ServletFileUpload upload = new ServletFileUpload(factory);
-				try {
-					// Parse and upload the files into AWS
-					List<FileItem> items = upload.parseRequest(request);
+		// Check that we have a multi-part file upload request
+		boolean isMultipart = ServletFileUpload.isMultipartContent(request);
+		if (isMultipart) {
+			// Create a factory for temp disk file items
+			DiskFileItemFactory factory = new DiskFileItemFactory();
+			// Configure a repository (to ensure a secure temp location is used)
+			ServletContext servletContext = request.getServletContext();
+			File repository = (File) servletContext.getAttribute("javax.servlet.context.tempdir");
+			factory.setRepository(repository);
+			// Setup temp disk clearing tracker
+			FileCleaningTracker fileCleaningTracker = FileCleanerCleanup.getFileCleaningTracker(servletContext);
+			factory.setFileCleaningTracker(fileCleaningTracker);
+
+			// Create a new file upload handler
+			ServletFileUpload upload = new ServletFileUpload(factory);
+			try {
+				// Parse and upload the files
+				List<FileItem> items = upload.parseRequest(request);
+
+				// Check the publisher has a DPA with Discovery before moving the data onto AWS
+				if (publisherHasDPA(organisationId)) {
 					MoveDataFilesToAWS(organisationId, items);
-
-				} catch (Exception e) {
-					return Response.serverError().status(Response.Status.PRECONDITION_FAILED).entity(e.getMessage()).build();
 				}
-				return Response.ok().status(Response.Status.OK).entity("Data file upload complete").build();
+				else {
+					return Response.serverError().status(Response.Status.METHOD_NOT_ALLOWED).entity(String.format("No DPA for publishing organisation: %s",organisationId)).build();
+				}
+			} catch (Exception e) {
+				return Response.serverError().status(Response.Status.PRECONDITION_FAILED).entity(e.getMessage()).build();
 			}
-			return Response.serverError().status(Response.Status.METHOD_NOT_ALLOWED).entity("Unexpected content. Multi-part expected").build();
+			return Response.ok().status(Response.Status.OK).entity("Data file upload complete").build();
 		}
-		return Response.serverError().status(Response.Status.METHOD_NOT_ALLOWED).entity(String.format("No DPA for publishing organisation: %s",organisationId)).build();
+		return Response.serverError().status(Response.Status.METHOD_NOT_ALLOWED).entity("Unexpected content. Multi-part expected").build();
 	}
 
 	private static void MoveDataFilesToAWS(String organisationId, List<FileItem> fileItems) throws Exception {
