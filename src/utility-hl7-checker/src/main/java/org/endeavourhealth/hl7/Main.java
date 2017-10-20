@@ -1,7 +1,14 @@
 package org.endeavourhealth.hl7;
 
+import ca.uhn.hl7v2.DefaultHapiContext;
+import ca.uhn.hl7v2.HL7Exception;
+import ca.uhn.hl7v2.HapiContext;
+import ca.uhn.hl7v2.model.Message;
+import ca.uhn.hl7v2.parser.Parser;
+import ca.uhn.hl7v2.util.Terser;
 import com.google.common.base.Strings;
 import com.zaxxer.hikari.HikariDataSource;
+import org.apache.commons.lang3.StringUtils;
 import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.common.utility.SlackHelper;
 import org.slf4j.Logger;
@@ -15,6 +22,8 @@ public class Main {
     private static final Logger LOG = LoggerFactory.getLogger(Main.class);
 
     private static HikariDataSource connectionPool = null;
+    private static HapiContext context;
+    private static Parser parser;
 
     /**
      * utility to check the HL7 Receiver database and move any blocking messages to the Dead Letter Queue
@@ -23,6 +32,8 @@ public class Main {
      * <db_connection_url> <driver_class> <db_username> <db_password>
      */
     public static void main(String[] args) throws Exception {
+        context = new DefaultHapiContext();
+        parser = context.getGenericParser();
 
         ConfigManager.Initialize("Hl7Checker");
 
@@ -115,13 +126,19 @@ public class Main {
         return ret;
     }*/
 
-    private static String shouldIgnore(int channelId, String messageType, String inboundPayload, String errorMessage) {
+    private static String shouldIgnore(int channelId, String messageType, String inboundPayload, String errorMessage) throws HL7Exception {
 
         if (channelId == 1
             && messageType.equals("ADT^A44")
             && errorMessage.equals("[org.endeavourhealth.hl7receiver.model.exceptions.HL7MessageProcessorException]  Transform failure\r\n[java.lang.NullPointerException]  episodeIdentifierValue")) {
 
-            //Peter, add extra validation here if required
+            Message hapiMsg = parser.parse(inboundPayload);
+            Terser terser = new Terser(hapiMsg);
+            String mergeEpisodeId = terser.get("/MRG-5");
+            // If merge episodeId is missing then move to DLQ
+            if (mergeEpisodeId.length() > 0 ) {
+                return null;
+            }
 
             return "Automatically moved A44 because of missing episode ID";
         }
@@ -130,7 +147,13 @@ public class Main {
             && messageType.equals("ADT^A31")
             && errorMessage.startsWith("[org.endeavourhealth.hl7receiver.model.exceptions.HL7MessageProcessorException]  Transform failure\r\n[org.endeavourhealth.hl7transform.common.TransformException]  Could not create organisation ")) {
 
-            //Peter, add extra validation here if required
+            Message hapiMsg = parser.parse(inboundPayload);
+            Terser terser = new Terser(hapiMsg);
+            String gpPracticeId = terser.get("/PD1-3-3");
+            // If practice id is missing or numeric then move to DLQ
+            if ((gpPracticeId.length() > 0) && (StringUtils.isNumeric(gpPracticeId) == false)) {
+                return null;
+            }
 
             return "Automatically moved A31 because of invalid practice code";
         }
