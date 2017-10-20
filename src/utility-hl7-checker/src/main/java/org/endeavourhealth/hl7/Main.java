@@ -36,7 +36,7 @@ public class Main {
 
         ConfigManager.Initialize("Hl7Checker");
 
-        if (args.length != 4) {
+        if (args.length < 4) {
             LOG.error("Expecting four parameters:");
             LOG.error("<db_connection_url> <driver_class> <db_username> <db_password>");
             System.exit(0);
@@ -47,6 +47,12 @@ public class Main {
         String driverClass = args[1];
         String user = args[2];
         String pass = args[3];
+
+        //optional fifth parameter puts it in read only mode
+        boolean readOnly = false;
+        if (args.length > 4) {
+            readOnly = Boolean.parseBoolean(args[4]);
+        }
 
         LOG.info("Starting HL7 Check on " + url);
 
@@ -73,6 +79,12 @@ public class Main {
 
                     String ignoreReason = shouldIgnore(channelId, messageType, inboundPayload, errorMessage);
                     if (!Strings.isNullOrEmpty(ignoreReason)) {
+
+                        if (readOnly) {
+                            LOG.info("Would have moved message " + messageId + " to the DLQ but in read only mode");
+                            continue;
+                        }
+
                         //if we have a non-null reason, move to the DLQ
                         moveToDlq(messageId, ignoreReason);
 
