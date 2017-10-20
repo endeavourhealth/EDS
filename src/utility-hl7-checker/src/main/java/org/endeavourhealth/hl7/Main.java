@@ -61,8 +61,7 @@ public class Main {
                         moveToDlq(messageId, ignoreReason);
 
                         //and notify Slack that we've done so
-                        String messageSource = findMessageSource(channelId);
-                        SlackHelper.sendSlackMessage(SlackHelper.Channel.Hl7ReceiverAlerts, "HL7 Checker moved message ID " + messageId + " from " + messageSource + " for reason\r\n" + ignoreReason);
+                        sendSlackMessage(channelId, messageId, ignoreReason);
                     }
                 }
 
@@ -73,7 +72,8 @@ public class Main {
 
         } catch (Exception ex) {
             LOG.error("", ex);
-            SlackHelper.sendSlackMessage(SlackHelper.Channel.Hl7ReceiverAlerts, "Exception in HL7 Checker", ex);
+            //although the error may be related to Homerton, just send to one channel for simplicity
+            SlackHelper.sendSlackMessage(SlackHelper.Channel.Hl7ReceiverAlertsBarts, "Exception in HL7 Checker", ex);
             System.exit(0);
         }
 
@@ -81,7 +81,23 @@ public class Main {
         System.exit(0);
     }
 
-    private static String findMessageSource(int channelId) throws Exception {
+    private static void sendSlackMessage(int channelId, int messageId, String ignoreReason) throws Exception {
+
+        SlackHelper.Channel channel = null;
+        if (channelId == 1) {
+            channel = SlackHelper.Channel.Hl7ReceiverAlertsHomerton;
+
+        } else if (channelId == 2) {
+            channel = SlackHelper.Channel.Hl7ReceiverAlertsBarts;
+
+        } else {
+            throw new Exception("Unknown channel " + channelId);
+        }
+
+        SlackHelper.sendSlackMessage(channel, "HL7 Checker moved message ID " + messageId + ":\r\n" + ignoreReason);
+    }
+
+    /*private static String findMessageSource(int channelId) throws Exception {
 
         String sql = "SELECT channel_name FROM configuration.channel WHERE channel_id = " + channelId + ";";
         Connection connection = getConnection();
@@ -97,7 +113,7 @@ public class Main {
         connection.close();
 
         return ret;
-    }
+    }*/
 
     private static String shouldIgnore(int channelId, String messageType, String inboundPayload, String errorMessage) {
 
