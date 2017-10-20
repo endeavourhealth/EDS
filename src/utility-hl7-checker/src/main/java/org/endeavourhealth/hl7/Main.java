@@ -32,8 +32,6 @@ public class Main {
      * <db_connection_url> <driver_class> <db_username> <db_password>
      */
     public static void main(String[] args) throws Exception {
-        context = new DefaultHapiContext();
-        parser = context.getGenericParser();
 
         ConfigManager.Initialize("Hl7Checker");
 
@@ -53,6 +51,9 @@ public class Main {
 
         try {
             openConnectionPool(url, driverClass, user, pass);
+
+            context = new DefaultHapiContext();
+            parser = context.getGenericParser();
 
             String sql = "SELECT message_id, channel_id, inbound_message_type, inbound_payload, error_message, pid2 FROM log.message WHERE error_message is not null;";
             Connection connection = getConnection();
@@ -136,12 +137,11 @@ public class Main {
             Message hapiMsg = parser.parse(inboundPayload);
             Terser terser = new Terser(hapiMsg);
             String mergeEpisodeId = terser.get("/MRG-5");
-            // If merge episodeId is missing then move to DLQ
-            if (mergeEpisodeId.length() > 0 ) {
-                return null;
-            }
 
-            return "Automatically moved A44 because of missing episode ID";
+            // If merge episodeId is missing then move to DLQ
+            if (Strings.isNullOrEmpty(mergeEpisodeId)) {
+                return "Automatically moved A44 because of missing episode ID";
+            }
         }
 
         if (channelId == 2
@@ -151,12 +151,12 @@ public class Main {
             Message hapiMsg = parser.parse(inboundPayload);
             Terser terser = new Terser(hapiMsg);
             String gpPracticeId = terser.get("/PD1-3-3");
-            // If practice id is missing or numeric then move to DLQ
-            if ((gpPracticeId.length() > 0) && (StringUtils.isNumeric(gpPracticeId) == false)) {
-                return null;
-            }
 
-            return "Automatically moved A31 because of invalid practice code";
+            // If practice id is missing or numeric then move to DLQ
+            if (Strings.isNullOrEmpty(gpPracticeId)
+                    && StringUtils.isNumeric(gpPracticeId)) {
+                return "Automatically moved A31 because of invalid practice code";
+            }
         }
 
         //return null to indicate we don't ignore it
@@ -165,11 +165,9 @@ public class Main {
 
     private static void moveToDlq(int messageId, String reason) throws Exception {
 
-        //not sure if this should be treated as a select or update, since it actually does perform updates. Probably need to test???
-        Connection connection = getConnection();
-        String sql = "SELECT * FROM helper.move_message_to_dead_letter(" + messageId + ", '" + reason + "');";
-        executeQuery(connection, sql);
-        connection.close();
+        //although it looks like a select, it's just invoking a function which performs an update
+        String sql = "SELECT helper.move_message_to_dead_letter(" + messageId + ", '" + reason + "');";
+        executeUpdate(sql);
 
         sql = "UPDATE log.message"
                 + " SELECT next_attempt_date = now() - interval '1 hour'"
