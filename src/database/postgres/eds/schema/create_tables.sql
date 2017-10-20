@@ -1,4 +1,3 @@
-
 DROP TABLE IF EXISTS patient_search_local_identifier;
 DROP TABLE IF EXISTS patient_search;
 DROP TABLE IF EXISTS patient_link;

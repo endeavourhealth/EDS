@@ -157,7 +157,7 @@ public class Main {
 
             // If practice id is missing or numeric then move to DLQ
             if (Strings.isNullOrEmpty(gpPracticeId)
-                    && StringUtils.isNumeric(gpPracticeId)) {
+                    || StringUtils.isNumeric(gpPracticeId)) {
                 return "Automatically moved A31 because of invalid practice code";
             }
         }
