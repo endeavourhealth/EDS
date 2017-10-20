@@ -125,7 +125,6 @@ public class MessageTransformInbound extends PipelineComponent {
 				}
 			}
 			catch (Exception ex) {
-
 				LOG.error("Error processing exchange " + exchange.getExchangeId() + " from service " + serviceId + " and system " + systemId, ex);
 
 				//record the exception as a fatal error with the exchange
