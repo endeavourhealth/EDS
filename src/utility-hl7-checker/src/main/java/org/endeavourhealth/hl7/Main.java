@@ -54,7 +54,7 @@ public class Main {
         try {
             openConnectionPool(url, driverClass, user, pass);
 
-            String sql = "SELECT message_id, channel_id, inbound_message_type, inbound_payload, error_message FROM log.message WHERE error_message is not null;";
+            String sql = "SELECT message_id, channel_id, inbound_message_type, inbound_payload, error_message, pid2 FROM log.message WHERE error_message is not null;";
             Connection connection = getConnection();
             ResultSet resultSet = executeQuery(connection, sql);
 
@@ -65,6 +65,7 @@ public class Main {
                     String messageType = resultSet.getString(3);
                     String inboundPayload = resultSet.getString(4);
                     String errorMessage = resultSet.getString(5);
+                    String localPatientId = resultSet.getString(6);
 
                     String ignoreReason = shouldIgnore(channelId, messageType, inboundPayload, errorMessage);
                     if (!Strings.isNullOrEmpty(ignoreReason)) {
@@ -72,7 +73,7 @@ public class Main {
                         moveToDlq(messageId, ignoreReason);
 
                         //and notify Slack that we've done so
-                        sendSlackMessage(channelId, messageId, ignoreReason);
+                        sendSlackMessage(channelId, messageId, ignoreReason, localPatientId);
                     }
                 }
 
@@ -92,7 +93,7 @@ public class Main {
         System.exit(0);
     }
 
-    private static void sendSlackMessage(int channelId, int messageId, String ignoreReason) throws Exception {
+    private static void sendSlackMessage(int channelId, int messageId, String ignoreReason, String localPatientId) throws Exception {
 
         SlackHelper.Channel channel = null;
         if (channelId == 1) {
@@ -105,7 +106,7 @@ public class Main {
             throw new Exception("Unknown channel " + channelId);
         }
 
-        SlackHelper.sendSlackMessage(channel, "HL7 Checker moved message ID " + messageId + ":\r\n" + ignoreReason);
+        SlackHelper.sendSlackMessage(channel, "HL7 Checker moved message ID " + messageId + " (PatientId=" + localPatientId + "):\r\n" + ignoreReason);
     }
 
     /*private static String findMessageSource(int channelId) throws Exception {
