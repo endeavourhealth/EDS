@@ -4,6 +4,10 @@ import ca.uhn.hl7v2.DefaultHapiContext;
 import ca.uhn.hl7v2.HL7Exception;
 import ca.uhn.hl7v2.HapiContext;
 import ca.uhn.hl7v2.model.Message;
+import ca.uhn.hl7v2.model.v23.message.ADT_A31;
+import ca.uhn.hl7v2.model.v23.message.ADT_A44;
+import ca.uhn.hl7v2.model.v23.segment.MRG;
+import ca.uhn.hl7v2.model.v23.segment.PD1;
 import ca.uhn.hl7v2.parser.Parser;
 import ca.uhn.hl7v2.util.Terser;
 import ca.uhn.hl7v2.validation.impl.NoValidation;
@@ -144,6 +148,11 @@ public class Main {
     }*/
 
     private static String shouldIgnore(int channelId, String messageType, String inboundPayload, String errorMessage) throws HL7Exception {
+        LOG.info("Checking auto-DLQ rules");
+        LOG.info("channelId:" + channelId);
+        LOG.info("messageType:" + messageType);
+        LOG.info("errorMessage:" + errorMessage);
+        LOG.info("inboundPayload:" + inboundPayload);
 
         if (channelId == 1
             && messageType.equals("ADT^A44")
@@ -151,7 +160,18 @@ public class Main {
 
             Message hapiMsg = parser.parse(inboundPayload);
             Terser terser = new Terser(hapiMsg);
-            String mergeEpisodeId = terser.get("/MRG-5");
+            /*
+            if (hapiMsg instanceof ADT_A44) {
+                ADT_A44 a44 = (ADT_A44) hapiMsg;
+                MRG segment = a44.getPATIENT().getMRG();
+                if (segment.getMrg5_PriorVisitNumber() == null) {
+
+                }
+            }
+            */
+
+            String mergeEpisodeId = terser.get("/PATIENT/MRG-5");
+            LOG.info("mergeEpisodeId:" + mergeEpisodeId);
 
             // If merge episodeId is missing then move to DLQ
             if (Strings.isNullOrEmpty(mergeEpisodeId)) {
@@ -166,6 +186,16 @@ public class Main {
             Message hapiMsg = parser.parse(inboundPayload);
             Terser terser = new Terser(hapiMsg);
             String gpPracticeId = terser.get("/PD1-3-3");
+            LOG.info("Practice:" + gpPracticeId);
+            /*
+            if (hapiMsg instanceof ADT_A31) {
+                ADT_A31 a31 = (ADT_A31) hapiMsg;
+                PD1 segment = a31.getPD1().g
+                if (segment.getMrg5_PriorVisitNumber() == null) {
+
+                }
+            }
+            */
 
             // If practice id is missing or numeric then move to DLQ
             if (Strings.isNullOrEmpty(gpPracticeId)
