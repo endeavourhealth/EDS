@@ -4,10 +4,6 @@ import ca.uhn.hl7v2.DefaultHapiContext;
 import ca.uhn.hl7v2.HL7Exception;
 import ca.uhn.hl7v2.HapiContext;
 import ca.uhn.hl7v2.model.Message;
-import ca.uhn.hl7v2.model.v23.message.ADT_A31;
-import ca.uhn.hl7v2.model.v23.message.ADT_A44;
-import ca.uhn.hl7v2.model.v23.segment.MRG;
-import ca.uhn.hl7v2.model.v23.segment.PD1;
 import ca.uhn.hl7v2.parser.Parser;
 import ca.uhn.hl7v2.util.Terser;
 import ca.uhn.hl7v2.validation.impl.NoValidation;
@@ -215,7 +211,7 @@ public class Main {
         executeUpdate(sql);
 
         sql = "UPDATE log.message"
-                + " SELECT next_attempt_date = now() - interval '1 hour'"
+                + " SET next_attempt_date = now() - interval '1 hour'"
                 + " WHERE message_id = " + messageId + ";";
         executeUpdate(sql);
 

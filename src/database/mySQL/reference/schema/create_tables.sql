@@ -1,9 +1,11 @@
-DROP TABLE IF EXISTS reference.postcode_lookup;
-DROP TABLE IF EXISTS reference.lsoa_lookup;
-DROP TABLE IF EXISTS reference.msoa_lookup;
-DROP TABLE IF EXISTS reference.deprivation_lookup;
+USE reference;
 
-CREATE TABLE reference.postcode_lookup
+DROP TABLE IF EXISTS postcode_lookup;
+DROP TABLE IF EXISTS lsoa_lookup;
+DROP TABLE IF EXISTS msoa_lookup;
+DROP TABLE IF EXISTS deprivation_lookup;
+
+CREATE TABLE postcode_lookup
 (
   postcode_no_space varchar(8) NOT NULL,
   postcode varchar(8) NOT NULL,
@@ -16,7 +18,7 @@ CREATE TABLE reference.postcode_lookup
 );
 
 
-CREATE TABLE reference.lsoa_lookup
+CREATE TABLE lsoa_lookup
 (
   lsoa_code varchar(9) NOT NULL,
   lsoa_name varchar(255),
@@ -24,7 +26,7 @@ CREATE TABLE reference.lsoa_lookup
 );
 
 
-CREATE TABLE reference.msoa_lookup
+CREATE TABLE msoa_lookup
 (
   msoa_code varchar(9) NOT NULL,
   msoa_name varchar(255),
@@ -32,7 +34,7 @@ CREATE TABLE reference.msoa_lookup
 );
 
 
-CREATE TABLE reference.deprivation_lookup
+CREATE TABLE deprivation_lookup
 (
   lsoa_code varchar(255) NOT NULL,
   imd_rank integer NOT NULL,
@@ -53,3 +55,16 @@ CREATE TABLE reference.deprivation_lookup
   living_environment_decile integer NOT NULL,
   CONSTRAINT pk_deprivation_lookup PRIMARY KEY (lsoa_code)
 );
+
+
+CREATE TABLE encounter_code
+(
+  code bigint NOT NULL,
+  term varchar(255),
+  mapping varchar(1024),
+  CONSTRAINT pk_encounter_code PRIMARY KEY (code)
+);
+
+
+CREATE UNIQUE INDEX ix_encounter_code_mapping
+  ON encounter_code (mapping);

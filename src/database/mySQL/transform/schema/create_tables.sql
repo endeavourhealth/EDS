@@ -1,13 +1,15 @@
-DROP TABLE IF EXISTS transform.enterprise_id_map;
-DROP TABLE IF EXISTS transform.enterprise_organisation_id_map;
-DROP TABLE IF EXISTS transform.household_id_map;
-DROP TABLE IF EXISTS transform.pseudo_id_map;
-DROP TABLE IF EXISTS transform.enterprise_age;
-DROP TABLE IF EXISTS transform.enterprise_person_id_map;
-DROP TABLE IF EXISTS transform.enterprise_person_update_history;
+USE ???? -- db name varies
 
--- NOTE:  Use ALTER TABLE transform.enterprise_id_map AUTO_INCREMENT=XXXXX; to set the auto increment id starting value
-CREATE TABLE transform.enterprise_id_map
+DROP TABLE IF EXISTS enterprise_id_map;
+DROP TABLE IF EXISTS enterprise_organisation_id_map;
+DROP TABLE IF EXISTS household_id_map;
+DROP TABLE IF EXISTS pseudo_id_map;
+DROP TABLE IF EXISTS enterprise_age;
+DROP TABLE IF EXISTS enterprise_person_id_map;
+DROP TABLE IF EXISTS enterprise_person_update_history;
+
+-- NOTE:  Use ALTER TABLE enterprise_id_map AUTO_INCREMENT=XXXXX; to set the auto increment id starting value
+CREATE TABLE enterprise_id_map
 (
   resource_type varchar(255) NOT NULL,
   resource_id varchar(255) NOT NULL,
@@ -16,10 +18,10 @@ CREATE TABLE transform.enterprise_id_map
 );
 
 CREATE UNIQUE INDEX ix_enterprise_id_map
-  ON transform.enterprise_id_map (resource_id, resource_type);
+  ON enterprise_id_map (resource_id, resource_type);
 
 
-CREATE TABLE transform.enterprise_organisation_id_map
+CREATE TABLE enterprise_organisation_id_map
 (
   service_id char(36) NOT NULL,
   system_id char(36) NOT NULL,
@@ -28,7 +30,7 @@ CREATE TABLE transform.enterprise_organisation_id_map
 );
 
 
-CREATE TABLE transform.household_id_map
+CREATE TABLE household_id_map
 (
   postcode char(8) NOT NULL,
   line_1 varchar(255) NOT NULL,
@@ -38,17 +40,17 @@ CREATE TABLE transform.household_id_map
 );
 
 CREATE UNIQUE INDEX ix_household_id_map
-  ON transform.household_id_map  (postcode, line_1, line_2);
+  ON household_id_map  (postcode, line_1, line_2);
 
 
-CREATE TABLE transform.pseudo_id_map
+CREATE TABLE pseudo_id_map
 (
   patient_id varchar(255) NOT NULL PRIMARY KEY,
   pseudo_id varchar(255) NOT NULL
 );
 
 
-CREATE TABLE transform.enterprise_age
+CREATE TABLE enterprise_age
 (
   enterprise_patient_id bigint NOT NULL PRIMARY KEY,
   date_of_birth date NOT NULL,
@@ -56,10 +58,10 @@ CREATE TABLE transform.enterprise_age
 );
 
 CREATE INDEX ix_date_next_change
-  ON transform.enterprise_age (date_next_change);
+  ON enterprise_age (date_next_change);
 
 
-CREATE TABLE transform.enterprise_person_id_map
+CREATE TABLE enterprise_person_id_map
 (
   enterprise_person_id bigint NOT NULL auto_increment PRIMARY KEY,
   person_id character(36) NOT NULL
@@ -67,10 +69,10 @@ CREATE TABLE transform.enterprise_person_id_map
 );
 
 CREATE UNIQUE INDEX ix_enterprise_person_id_map
-  ON transform.enterprise_person_id_map  (person_id);
+  ON enterprise_person_id_map  (person_id);
 
 
-CREATE TABLE transform.enterprise_person_update_history
+CREATE TABLE enterprise_person_update_history
 (
   date_run timestamp NOT NULL,
   CONSTRAINT pk_person_update_history PRIMARY KEY (date_run)

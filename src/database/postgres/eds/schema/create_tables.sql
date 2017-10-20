@@ -69,30 +69,30 @@ CREATE INDEX ix_service_surname_forenames
   USING btree
   (service_id COLLATE pg_catalog."default", surname COLLATE pg_catalog."default", forenames COLLATE pg_catalog."default");
 
-CREATE TABLE patient_search_local_identifier
+CREATE TABLE public.patient_search_local_identifier
 (
-	service_id character(36) NOT NULL,
-	system_id character(36) NOT NULL,
-	local_id character varying(1000),
-	local_id_system character varying(1000),
-	patient_id character(36) NOT NULL,
-	last_updated timestamp NOT NULL,
-	CONSTRAINT pk_patient_search_local_identifier PRIMARY KEY (service_id, system_id, patient_id, local_id_system),
-	CONSTRAINT fk_patient_search_local_identifier_patient_id FOREIGN KEY (service_id, system_id, patient_id)
-		REFERENCES public.patient_search (service_id, system_id, patient_id) MATCH SIMPLE
-		ON UPDATE NO ACTION ON DELETE NO ACTION
+  service_id character(36) NOT NULL,
+  system_id character(36) NOT NULL,
+  local_id character varying(1000) NOT NULL,
+  local_id_system character varying(1000) NOT NULL,
+  patient_id character(36) NOT NULL,
+  last_updated timestamp without time zone NOT NULL,
+  CONSTRAINT pk_patient_search_local_identifier PRIMARY KEY (service_id, system_id, patient_id, local_id_system, local_id),
+  CONSTRAINT fk_patient_search_local_identifier_patient_id FOREIGN KEY (service_id, system_id, patient_id)
+      REFERENCES public.patient_search (service_id, system_id, patient_id) MATCH SIMPLE
+      ON UPDATE NO ACTION ON DELETE NO ACTION
 )
 WITH (
   OIDS=FALSE
 );
-ALTER TABLE patient_search_local_identifier
+ALTER TABLE public.patient_search_local_identifier
   OWNER TO postgres;
-
 
 CREATE INDEX ix_service_system_patient_id
   ON public.patient_search_local_identifier
   USING btree
   (service_id COLLATE pg_catalog."default", system_id COLLATE pg_catalog."default", patient_id COLLATE pg_catalog."default", local_id COLLATE pg_catalog."default");
+
 
 -- Table: public.patient_link
 

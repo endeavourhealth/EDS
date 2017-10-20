@@ -55,18 +55,18 @@ CREATE TABLE patient_search_local_identifier
 (
 	service_id char(36) NOT NULL,
 	system_id char(36) NOT NULL,
-	local_id varchar(100),
-	local_id_system varchar(100),
+	local_id varchar(1000),
+	local_id_system varchar(1000),
 	patient_id char(36) NOT NULL,
 	last_updated timestamp NOT NULL,
-	CONSTRAINT pk_patient_search_local_identifier PRIMARY KEY (service_id, system_id, patient_id, local_id_system),
+	CONSTRAINT pk_patient_search_local_identifier PRIMARY KEY (service_id, system_id, patient_id, local_id_system, local_id),
 	CONSTRAINT fk_patient_search_local_identifier_patient_id FOREIGN KEY (service_id, system_id, patient_id)
 		REFERENCES patient_search (service_id, system_id, patient_id) MATCH SIMPLE
 		ON UPDATE NO ACTION ON DELETE NO ACTION
 );
 
 CREATE INDEX ix_service_system_patient_id
-  ON patient_search_local_identifier (service_id, system_id, patient_id, local_id);
+  ON patient_search_local_identifier (service_id, system_id, patient_id);
 
 
 CREATE TABLE patient_link
