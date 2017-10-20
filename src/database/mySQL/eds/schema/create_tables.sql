@@ -100,5 +100,5 @@ CREATE TABLE patient_link_person
   CONSTRAINT pk_patient_link_person PRIMARY KEY (person_id)
 );
 
-CREATE INDEX ix_nhs_number
+CREATE UNIQUE INDEX ix_nhs_number
   ON patient_link_person (nhs_number);

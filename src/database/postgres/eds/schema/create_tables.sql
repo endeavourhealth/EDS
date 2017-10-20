@@ -167,10 +167,11 @@ ALTER TABLE public.patient_link_person
 
 -- DROP INDEX public.ix_nhs_number;
 
-CREATE INDEX ix_nhs_number
+CREATE UNIQUE INDEX ix_nhs_number
   ON public.patient_link_person
   USING btree
   (nhs_number COLLATE pg_catalog."default");
+
 
 
 
