@@ -6,6 +6,7 @@ import ca.uhn.hl7v2.HapiContext;
 import ca.uhn.hl7v2.model.Message;
 import ca.uhn.hl7v2.parser.Parser;
 import ca.uhn.hl7v2.util.Terser;
+import ca.uhn.hl7v2.validation.impl.NoValidation;
 import com.google.common.base.Strings;
 import com.zaxxer.hikari.HikariDataSource;
 import org.apache.commons.lang3.StringUtils;
@@ -53,6 +54,8 @@ public class Main {
             openConnectionPool(url, driverClass, user, pass);
 
             context = new DefaultHapiContext();
+            context.setValidationContext(new NoValidation());
+
             parser = context.getGenericParser();
 
             String sql = "SELECT message_id, channel_id, inbound_message_type, inbound_payload, error_message, pid2 FROM log.message WHERE error_message is not null;";
