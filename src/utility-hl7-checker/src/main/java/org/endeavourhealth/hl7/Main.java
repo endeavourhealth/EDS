@@ -156,15 +156,6 @@ public class Main {
 
             Message hapiMsg = parser.parse(inboundPayload);
             Terser terser = new Terser(hapiMsg);
-            /*
-            if (hapiMsg instanceof ADT_A44) {
-                ADT_A44 a44 = (ADT_A44) hapiMsg;
-                MRG segment = a44.getPATIENT().getMRG();
-                if (segment.getMrg5_PriorVisitNumber() == null) {
-
-                }
-            }
-            */
 
             String mergeEpisodeId = terser.get("/PATIENT/MRG-5");
             LOG.info("mergeEpisodeId:" + mergeEpisodeId);
@@ -172,6 +163,22 @@ public class Main {
             // If merge episodeId is missing then move to DLQ
             if (Strings.isNullOrEmpty(mergeEpisodeId)) {
                 return "Automatically moved A44 because of missing episode ID";
+            }
+        }
+
+        if (channelId == 1
+                && messageType.equals("ADT^A44")
+                && errorMessage.equals("[org.endeavourhealth.hl7receiver.model.exceptions.HL7MessageProcessorException]  Transform failure\r\n[java.lang.NullPointerException]  patientIdentifierValue")) {
+
+            Message hapiMsg = parser.parse(inboundPayload);
+            Terser terser = new Terser(hapiMsg);
+
+            String mergePatientId = terser.get("/PATIENT/MRG-1");
+            LOG.info("mergePatientId:" + mergePatientId);
+
+            // If merge patientId is missing then move to DLQ
+            if (Strings.isNullOrEmpty(mergePatientId)) {
+                return "Automatically moved A44 because of missing MRG patientId ID";
             }
         }
 
@@ -183,15 +190,6 @@ public class Main {
             Terser terser = new Terser(hapiMsg);
             String gpPracticeId = terser.get("/PD1-3-3");
             LOG.info("Practice:" + gpPracticeId);
-            /*
-            if (hapiMsg instanceof ADT_A31) {
-                ADT_A31 a31 = (ADT_A31) hapiMsg;
-                PD1 segment = a31.getPD1().g
-                if (segment.getMrg5_PriorVisitNumber() == null) {
-
-                }
-            }
-            */
 
             // If practice id is missing or numeric then move to DLQ
             if (Strings.isNullOrEmpty(gpPracticeId)
