@@ -18,7 +18,7 @@ CREATE TABLE enterprise_id_map
 );
 
 CREATE UNIQUE INDEX ix_enterprise_id_map
-  ON enterprise_id_map (resource_id, resource_type);
+  ON enterprise_id_map (resource_id, resource_type, enterprise_id);
 
 
 CREATE TABLE enterprise_organisation_id_map
@@ -40,7 +40,7 @@ CREATE TABLE household_id_map
 );
 
 CREATE UNIQUE INDEX ix_household_id_map
-  ON household_id_map  (postcode, line_1, line_2);
+  ON household_id_map  (postcode, line_1, line_2, household_id);
 
 
 CREATE TABLE pseudo_id_map
@@ -69,7 +69,7 @@ CREATE TABLE enterprise_person_id_map
 );
 
 CREATE UNIQUE INDEX ix_enterprise_person_id_map
-  ON enterprise_person_id_map  (person_id);
+  ON enterprise_person_id_map  (person_id, enterprise_person_id);
 
 
 CREATE TABLE enterprise_person_update_history
