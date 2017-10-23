@@ -4,9 +4,9 @@ import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.endeavourhealth.core.csv.CsvHelper;
-import org.endeavourhealth.core.rdbms.reference.LsoaLookup;
-import org.endeavourhealth.core.rdbms.reference.MsoaLookup;
-import org.endeavourhealth.core.rdbms.reference.ReferenceConnection;
+import org.endeavourhealth.core.rdbms.ConnectionManager;
+import org.endeavourhealth.core.rdbms.reference.models.LsoaLookup;
+import org.endeavourhealth.core.rdbms.reference.models.MsoaLookup;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -100,7 +100,7 @@ public class LsoaUpdater {
 
         Map<String, String> msoaMap = readerLsoaOrMsoaMapFile(msoaMapFile, MSOA_MAP_CODE, MSOA_MAP_NAME);
 
-        EntityManager entityManager = ReferenceConnection.getEntityManager();
+        EntityManager entityManager = ConnectionManager.getReferenceEntityManager();
 
         int done = 0;
 
@@ -142,7 +142,7 @@ public class LsoaUpdater {
 
         Map<String, String> lsoaMap = readerLsoaOrMsoaMapFile(lsoaMapFile, LSOA_MAP_CODE, LSOA_MAP_NAME);
 
-        EntityManager entityManager = ReferenceConnection.getEntityManager();
+        EntityManager entityManager = ConnectionManager.getReferenceEntityManager();
 
         int done = 0;
 

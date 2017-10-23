@@ -4,8 +4,8 @@ import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.endeavourhealth.core.csv.CsvHelper;
-import org.endeavourhealth.core.rdbms.reference.DeprivationLookup;
-import org.endeavourhealth.core.rdbms.reference.ReferenceConnection;
+import org.endeavourhealth.core.rdbms.ConnectionManager;
+import org.endeavourhealth.core.rdbms.reference.models.DeprivationLookup;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -76,7 +76,7 @@ public class DeprivationUpdater {
 
         CSVFormat format = CSVFormat.DEFAULT;
 
-        EntityManager entityManager = ReferenceConnection.getEntityManager();
+        EntityManager entityManager = ConnectionManager.getReferenceEntityManager();
 
         int rowsDone = 0;
         CSVParser parser = null;

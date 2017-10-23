@@ -4,7 +4,7 @@ use transform;
 DROP TABLE IF EXISTS emis_csv_code_map;
 DROP TABLE IF EXISTS emis_admin_resource_cache;
 DROP TABLE IF EXISTS resource_id_map;
-DROP TABLE IF EXISTS vitrucare_patient_id_map;
+DROP TABLE IF EXISTS vitru_care_patient_id_map;
 
 CREATE TABLE emis_csv_code_map (
 	data_sharing_agreement_guid varchar(36),
@@ -42,9 +42,9 @@ CREATE TABLE resource_id_map (
 );
 
 CREATE INDEX ix_resource_id_map_resource_type_eds_id
-ON resource_id_map (resource_type, eds_id, service_id, system_id, source_id);
+ON resource_id_map (resource_type, eds_id);
 
-CREATE TABLE vitrucare_patient_id_map (
+CREATE TABLE vitru_care_patient_id_map (
 	eds_patient_id varchar(36),
 	service_id varchar(36),
 	system_id varchar(36),

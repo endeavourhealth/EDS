@@ -2,15 +2,14 @@ package org.endeavourhealth.ui.endpoints;
 
 import com.codahale.metrics.annotation.Timed;
 import io.astefanutti.metrics.aspectj.Metrics;
+import org.endeavourhealth.common.security.SecurityUtils;
 import org.endeavourhealth.core.data.audit.UserAuditRepository;
-import org.endeavourhealth.core.data.audit.models.AuditAction;
-import org.endeavourhealth.core.data.audit.models.AuditModule;
 import org.endeavourhealth.core.fhirStorage.statistics.PatientStatistics;
 import org.endeavourhealth.core.fhirStorage.statistics.ResourceStatistics;
 import org.endeavourhealth.core.fhirStorage.statistics.StorageStatistics;
 import org.endeavourhealth.core.fhirStorage.statistics.StorageStatisticsService;
-import org.endeavourhealth.common.security.SecurityUtils;
-
+import org.endeavourhealth.core.rdbms.audit.models.AuditAction;
+import org.endeavourhealth.core.rdbms.audit.models.AuditModule;
 import org.endeavourhealth.coreui.endpoints.AbstractEndpoint;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

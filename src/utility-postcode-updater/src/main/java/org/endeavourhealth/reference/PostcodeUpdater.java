@@ -5,9 +5,9 @@ import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.endeavourhealth.common.utility.ThreadPool;
 import org.endeavourhealth.common.utility.ThreadPoolError;
+import org.endeavourhealth.core.rdbms.ConnectionManager;
 import org.endeavourhealth.core.rdbms.reference.PostcodeHelper;
-import org.endeavourhealth.core.rdbms.reference.PostcodeLookup;
-import org.endeavourhealth.core.rdbms.reference.ReferenceConnection;
+import org.endeavourhealth.core.rdbms.reference.models.PostcodeLookup;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -276,7 +276,7 @@ public class PostcodeUpdater {
 
             String postcodeNoSpace = postcode.replace(" ", "");
 
-            EntityManager entityManager = ReferenceConnection.getEntityManager();
+            EntityManager entityManager = ConnectionManager.getReferenceEntityManager();
 
             PostcodeLookup postcodeReference = PostcodeHelper.getPostcodeReference(postcode, entityManager);
             if (postcodeReference == null) {

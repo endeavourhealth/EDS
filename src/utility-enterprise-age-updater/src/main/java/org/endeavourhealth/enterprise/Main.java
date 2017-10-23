@@ -3,9 +3,9 @@ package org.endeavourhealth.enterprise;
 import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.common.utility.SlackHelper;
 import org.endeavourhealth.core.enterprise.EnterpriseConnector;
-import org.endeavourhealth.core.rdbms.transform.EnterpriseAge;
-import org.endeavourhealth.core.rdbms.transform.EnterpriseAgeUpdater;
-import org.endeavourhealth.core.rdbms.transform.TransformConnection;
+import org.endeavourhealth.core.rdbms.subscriber.EnterpriseAgeUpdater;
+import org.endeavourhealth.core.rdbms.subscriber.SubscriberConnectionMananger;
+import org.endeavourhealth.core.rdbms.subscriber.models.EnterpriseAge;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,7 +40,7 @@ public class Main {
             String enterpriseConfigName = args[0];
             LOG.info("Age updater starting for " + enterpriseConfigName);
 
-            EntityManager entityManager = TransformConnection.getEntityManager(enterpriseConfigName);
+            EntityManager entityManager = SubscriberConnectionMananger.getEntityManager(enterpriseConfigName);
             List<EnterpriseAge> agesToUpdate = findAgesToUpdate(entityManager);
             LOG.info("Found " + agesToUpdate.size() + " ages to update");
 

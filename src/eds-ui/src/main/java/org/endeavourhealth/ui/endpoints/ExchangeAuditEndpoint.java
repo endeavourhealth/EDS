@@ -18,6 +18,8 @@ import org.endeavourhealth.core.data.audit.UserAuditRepository;
 import org.endeavourhealth.core.data.audit.models.*;
 import org.endeavourhealth.core.messaging.exchange.HeaderKeys;
 import org.endeavourhealth.core.queueing.QueueHelper;
+import org.endeavourhealth.core.rdbms.audit.models.AuditAction;
+import org.endeavourhealth.core.rdbms.audit.models.AuditModule;
 import org.endeavourhealth.core.xml.QueryDocument.*;
 import org.endeavourhealth.core.xml.TransformErrorSerializer;
 import org.endeavourhealth.core.xml.transformError.Arg;

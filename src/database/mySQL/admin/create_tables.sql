@@ -29,10 +29,9 @@ CREATE TABLE item_type
 CREATE TABLE audit
 (
     id varchar(36),
-    end_user_id varchar(36),
-    timestamp datetime,
-    audit_version int,
     organisation_id varchar(36),
+    timestamp datetime,
+    end_user_id varchar(36),
     CONSTRAINT pk_item_type PRIMARY KEY (id, organisation_id, timestamp)
 );
 

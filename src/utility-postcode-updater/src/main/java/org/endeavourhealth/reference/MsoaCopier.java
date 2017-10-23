@@ -1,8 +1,8 @@
 package org.endeavourhealth.reference;
 
 import org.endeavourhealth.core.enterprise.EnterpriseConnector;
-import org.endeavourhealth.core.rdbms.reference.MsoaLookup;
-import org.endeavourhealth.core.rdbms.reference.ReferenceConnection;
+import org.endeavourhealth.core.rdbms.ConnectionManager;
+import org.endeavourhealth.core.rdbms.reference.models.MsoaLookup;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,7 +37,7 @@ public class MsoaCopier {
         LOG.info("MSOA Copy to " + enterpriseConfigName + " Starting");
 
         Connection enterpriseConnection = EnterpriseConnector.openConnection(enterpriseConfigName);
-        EntityManager entityManager = ReferenceConnection.getEntityManager();
+        EntityManager entityManager = ConnectionManager.getReferenceEntityManager();
 
         PreparedStatement update = null;
         PreparedStatement insert = null;
