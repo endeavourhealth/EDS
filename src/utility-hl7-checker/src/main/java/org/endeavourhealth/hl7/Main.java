@@ -182,6 +182,23 @@ public class Main {
             }
         }
 
+        // Added 2017-10-24
+        if (channelId == 1
+                && messageType.equals("ADT^A07")
+                && errorMessage.equals("[org.endeavourhealth.hl7receiver.model.exceptions.HL7MessageProcessorException]  Transform failure\r\n[java.lang.IllegalArgumentException]  episodeIdentifierValue")) {
+
+            Message hapiMsg = parser.parse(inboundPayload);
+            Terser terser = new Terser(hapiMsg);
+
+            String episodeId = terser.get("/PV1-19");
+            LOG.info("episodeId:" + episodeId);
+
+            // If episode id / encounter id is missing then move to DLQ
+            if (Strings.isNullOrEmpty(episodeId)) {
+                return "Automatically moved A07 because of missing PV1:19";
+            }
+        }
+
         if (channelId == 2
             && messageType.equals("ADT^A31")
             && errorMessage.startsWith("[org.endeavourhealth.hl7receiver.model.exceptions.HL7MessageProcessorException]  Transform failure\r\n[org.endeavourhealth.hl7transform.common.TransformException]  Could not create organisation ")) {
