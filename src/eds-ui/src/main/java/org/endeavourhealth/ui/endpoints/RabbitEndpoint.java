@@ -8,10 +8,11 @@ import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.common.security.SecurityUtils;
 import org.endeavourhealth.common.security.annotations.RequiresAdmin;
-import org.endeavourhealth.core.data.audit.UserAuditRepository;
+import org.endeavourhealth.core.database.dal.DalProvider;
+import org.endeavourhealth.core.database.dal.audit.UserAuditDalI;
+import org.endeavourhealth.core.database.dal.audit.models.AuditAction;
+import org.endeavourhealth.core.database.dal.audit.models.AuditModule;
 import org.endeavourhealth.core.queueing.RabbitConfig;
-import org.endeavourhealth.core.rdbms.audit.models.AuditAction;
-import org.endeavourhealth.core.rdbms.audit.models.AuditModule;
 import org.endeavourhealth.coreui.endpoints.AbstractEndpoint;
 import org.endeavourhealth.ui.json.*;
 import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
@@ -35,7 +36,7 @@ import java.util.Map;
 public final class RabbitEndpoint extends AbstractEndpoint {
 	private static final Logger LOG = LoggerFactory.getLogger(RabbitEndpoint.class);
 
-	private static final UserAuditRepository userAudit = new UserAuditRepository(AuditModule.EdsUiModule.Rabbit);
+	private static final UserAuditDalI userAudit = DalProvider.factoryUserAuditDal(AuditModule.EdsUiModule.Rabbit);
 
 	private final HttpAuthenticationFeature rabbitAuth;
 	{

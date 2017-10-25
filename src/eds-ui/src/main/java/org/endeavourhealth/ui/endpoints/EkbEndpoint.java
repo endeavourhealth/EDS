@@ -2,8 +2,9 @@ package org.endeavourhealth.ui.endpoints;
 
 import com.codahale.metrics.annotation.Timed;
 import io.astefanutti.metrics.aspectj.Metrics;
-import org.endeavourhealth.core.data.audit.UserAuditRepository;
-import org.endeavourhealth.core.rdbms.audit.models.AuditModule;
+import org.endeavourhealth.core.database.dal.DalProvider;
+import org.endeavourhealth.core.database.dal.audit.UserAuditDalI;
+import org.endeavourhealth.core.database.dal.audit.models.AuditModule;
 import org.endeavourhealth.coreui.endpoints.AbstractEndpoint;
 import org.endeavourhealth.ui.database.EkbManager;
 import org.endeavourhealth.ui.database.models.ConceptEntity;
@@ -24,7 +25,7 @@ import java.util.stream.Collectors;
 @Metrics(registry = "EdsRegistry")
 public final class EkbEndpoint extends AbstractEndpoint {
 	private static final Logger LOG = LoggerFactory.getLogger(EkbEndpoint.class);
-	private UserAuditRepository userAudit = new UserAuditRepository(AuditModule.EdsUiModule.Ekb);
+	private static final UserAuditDalI userAudit = DalProvider.factoryUserAuditDal(AuditModule.EdsUiModule.Ekb);
 
 
 	@GET

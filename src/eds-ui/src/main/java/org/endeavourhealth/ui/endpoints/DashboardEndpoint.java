@@ -3,13 +3,14 @@ package org.endeavourhealth.ui.endpoints;
 import com.codahale.metrics.annotation.Timed;
 import io.astefanutti.metrics.aspectj.Metrics;
 import org.endeavourhealth.common.security.SecurityUtils;
-import org.endeavourhealth.core.data.admin.LibraryRepository;
-import org.endeavourhealth.core.data.admin.models.ActiveItem;
-import org.endeavourhealth.core.data.admin.models.Audit;
-import org.endeavourhealth.core.data.admin.models.Item;
-import org.endeavourhealth.core.data.audit.UserAuditRepository;
-import org.endeavourhealth.core.rdbms.audit.models.AuditAction;
-import org.endeavourhealth.core.rdbms.audit.models.AuditModule;
+import org.endeavourhealth.core.database.dal.DalProvider;
+import org.endeavourhealth.core.database.dal.admin.LibraryDalI;
+import org.endeavourhealth.core.database.dal.admin.models.ActiveItem;
+import org.endeavourhealth.core.database.dal.admin.models.Audit;
+import org.endeavourhealth.core.database.dal.admin.models.Item;
+import org.endeavourhealth.core.database.dal.audit.UserAuditDalI;
+import org.endeavourhealth.core.database.dal.audit.models.AuditAction;
+import org.endeavourhealth.core.database.dal.audit.models.AuditModule;
 import org.endeavourhealth.coreui.endpoints.AbstractEndpoint;
 import org.endeavourhealth.ui.json.JsonFolderContent;
 import org.slf4j.Logger;
@@ -28,7 +29,7 @@ import java.util.UUID;
 @Metrics(registry = "EdsRegistry")
 public final class DashboardEndpoint extends AbstractEndpoint {
 	private static final Logger LOG = LoggerFactory.getLogger(DashboardEndpoint.class);
-	private static final UserAuditRepository userAudit = new UserAuditRepository(AuditModule.EdsUiModule.Dashboard);
+	private static final UserAuditDalI userAudit = DalProvider.factoryUserAuditDal(AuditModule.EdsUiModule.Dashboard);
 
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
@@ -47,13 +48,13 @@ public final class DashboardEndpoint extends AbstractEndpoint {
 
 		List<JsonFolderContent> ret = new ArrayList<>();
 
-		LibraryRepository repository = new LibraryRepository();
+		LibraryDalI repository = DalProvider.factoryLibraryDal();
 
 		Iterable<Audit> audit = repository.getAuditByOrgAndDateDesc(orgUuid);
 		for (Audit auditItem: audit) {
 			Iterable<ActiveItem> activeItems = repository.getActiveItemByAuditId(auditItem.getId());
 			for (ActiveItem activeItem: activeItems) {
-				if (activeItem.getIsDeleted()!=null && activeItem.getIsDeleted()==false) {
+				if (!activeItem.isDeleted()) {
 					Item item = repository.getItemByKey(activeItem.getItemId(), activeItem.getAuditId());
 
 					JsonFolderContent content = new JsonFolderContent(activeItem, item, auditItem);

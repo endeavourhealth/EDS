@@ -11,9 +11,10 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.core.configuration.PostToSubscriberWebServiceConfig;
-import org.endeavourhealth.core.data.admin.QueuedMessageRepository;
-import org.endeavourhealth.core.messaging.exchange.Exchange;
-import org.endeavourhealth.core.messaging.exchange.HeaderKeys;
+import org.endeavourhealth.core.database.dal.DalProvider;
+import org.endeavourhealth.core.database.dal.audit.QueuedMessageDalI;
+import org.endeavourhealth.core.database.dal.audit.models.Exchange;
+import org.endeavourhealth.core.database.dal.audit.models.HeaderKeys;
 import org.endeavourhealth.core.messaging.pipeline.PipelineComponent;
 import org.endeavourhealth.core.messaging.pipeline.PipelineException;
 import org.endeavourhealth.core.messaging.pipeline.SubscriberBatch;
@@ -44,16 +45,17 @@ public class PostToSubscriberWebService extends PipelineComponent {
 		UUID batchId = transformBatch.getBatchId();
 
 		SubscriberBatch subscriberBatch = getSubscriberBatch(exchange);
-		UUID exchangeId = exchange.getExchangeId();
+		UUID exchangeId = exchange.getId();
 
 		UUID queuedMessageId = subscriberBatch.getQueuedMessageId();
 		String software = subscriberBatch.getSoftware();
 		String softwareVersion = subscriberBatch.getSoftwareVersion();
 		String endpoint = subscriberBatch.getEndpoint();
 
-		String payload = new QueuedMessageRepository().getById(queuedMessageId).getMessageBody();
-
 		try {
+			QueuedMessageDalI queuedMessageDal = DalProvider.factoryQueuedMessageDal();
+			String payload = queuedMessageDal.getById(queuedMessageId);
+
 			sendToSubscriber(payload, exchangeId, batchId, software, softwareVersion, endpoint);
 		} catch (Exception ex) {
 			throw new PipelineException("Failed to send to " + software + " for exchange " + exchangeId + " and batch " + batchId + " and queued message " + queuedMessageId, ex);

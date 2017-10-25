@@ -1,10 +1,7 @@
 package org.endeavourhealth.core.messaging.pipeline;
 
-import org.endeavourhealth.core.messaging.exchange.Exchange;
-import org.endeavourhealth.core.messaging.exchange.HeaderKeys;
-import org.hl7.fhir.instance.formats.IParser;
-import org.hl7.fhir.instance.formats.JsonParser;
-import org.hl7.fhir.instance.formats.XmlParser;
+import org.endeavourhealth.core.database.dal.audit.models.Exchange;
+import org.endeavourhealth.core.database.dal.audit.models.HeaderKeys;
 import org.slf4j.MDC;
 
 import java.util.UUID;
@@ -31,7 +28,7 @@ public abstract class PipelineComponent {
 	 * have these values associated with them
      */
 	private void setLoggingContext(Exchange exchange) {
-		UUID exchangeId = exchange.getExchangeId();
+		UUID exchangeId = exchange.getId();
 		if (exchangeId != null) {
 			MDC.put(LOGGING_KEY_EXCHANGE, exchangeId.toString());
 		}

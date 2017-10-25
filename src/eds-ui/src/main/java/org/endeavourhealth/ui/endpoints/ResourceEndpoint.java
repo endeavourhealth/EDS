@@ -4,12 +4,12 @@ import com.codahale.metrics.annotation.Timed;
 import com.google.common.base.Strings;
 import io.astefanutti.metrics.aspectj.Metrics;
 import org.endeavourhealth.common.security.SecurityUtils;
-import org.endeavourhealth.core.data.audit.UserAuditRepository;
-import org.endeavourhealth.core.data.ehr.ResourceRepository;
-import org.endeavourhealth.core.data.ehr.models.ResourceByPatient;
-import org.endeavourhealth.core.data.ehr.models.ResourceHistory;
-import org.endeavourhealth.core.rdbms.audit.models.AuditAction;
-import org.endeavourhealth.core.rdbms.audit.models.AuditModule;
+import org.endeavourhealth.core.database.dal.DalProvider;
+import org.endeavourhealth.core.database.dal.audit.UserAuditDalI;
+import org.endeavourhealth.core.database.dal.audit.models.AuditAction;
+import org.endeavourhealth.core.database.dal.audit.models.AuditModule;
+import org.endeavourhealth.core.database.dal.ehr.ResourceDalI;
+import org.endeavourhealth.core.database.dal.ehr.models.ResourceWrapper;
 import org.endeavourhealth.coreui.endpoints.AbstractEndpoint;
 import org.endeavourhealth.coreui.framework.exceptions.BadRequestException;
 import org.endeavourhealth.ui.json.JsonResourceContainer;
@@ -35,9 +35,9 @@ import java.util.UUID;
 public class ResourceEndpoint extends AbstractEndpoint {
     private static final Logger LOG = LoggerFactory.getLogger(ResourceEndpoint.class);
 
-    private static final ResourceRepository resourceRepository = new ResourceRepository();
+    private static final ResourceDalI resourceRepository = DalProvider.factoryResourceDal();
     //private static final PatientIdentifierRepository identifierRepository = new PatientIdentifierRepository();
-    private static final UserAuditRepository userAudit = new UserAuditRepository(AuditModule.EdsUiModule.Resource);
+    private static final UserAuditDalI userAudit = DalProvider.factoryUserAuditDal(AuditModule.EdsUiModule.Resource);
     /*@GET
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/resourceTypesForPatient")
@@ -123,7 +123,7 @@ public class ResourceEndpoint extends AbstractEndpoint {
 
         List<JsonResourceContainer> ret = new ArrayList<>();
 
-        ResourceHistory resourceHistory = resourceRepository.getCurrentVersion(resourceType, UUID.fromString(resourceId));
+        ResourceWrapper resourceHistory = resourceRepository.getCurrentVersion(resourceType, UUID.fromString(resourceId));
         if (resourceHistory != null) {
             ret.add(new JsonResourceContainer(resourceHistory));
         }
@@ -162,14 +162,14 @@ public class ResourceEndpoint extends AbstractEndpoint {
 
         List<JsonResourceContainer> ret = new ArrayList<>();
 
-        ResourceHistory patientResource = resourceRepository.getCurrentVersion(ResourceType.Patient.toString(), patientId);
+        ResourceWrapper patientResource = resourceRepository.getCurrentVersion(ResourceType.Patient.toString(), patientId);
         if (patientResource != null) {
 
             UUID serviceId = patientResource.getServiceId();
             UUID systemId = patientResource.getSystemId();
 
-            List<ResourceByPatient> resourceHistories = resourceRepository.getResourcesByPatient(serviceId, systemId, patientId, resourceType);
-            for (ResourceByPatient resourceHistory: resourceHistories) {
+            List<ResourceWrapper> resourceHistories = resourceRepository.getResourcesByPatient(serviceId, systemId, patientId, resourceType);
+            for (ResourceWrapper resourceHistory: resourceHistories) {
                 ret.add(new JsonResourceContainer(resourceHistory));
             }
         }
@@ -206,8 +206,8 @@ public class ResourceEndpoint extends AbstractEndpoint {
 
         List<JsonResourceContainer> ret = new ArrayList<>();
 
-        List<ResourceHistory> resourceHistories = resourceRepository.getResourceHistory(resourceType, UUID.fromString(resourceId));
-        for (ResourceHistory resourceHistory: resourceHistories) {
+        List<ResourceWrapper> resourceHistories = resourceRepository.getResourceHistory(resourceType, UUID.fromString(resourceId));
+        for (ResourceWrapper resourceHistory: resourceHistories) {
             ret.add(new JsonResourceContainer(resourceHistory));
         }
 

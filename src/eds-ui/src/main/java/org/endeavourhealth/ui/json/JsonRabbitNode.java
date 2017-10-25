@@ -1,11 +1,6 @@
 package org.endeavourhealth.ui.json;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.databind.ser.std.InetAddressSerializer;
-import org.endeavourhealth.core.data.admin.models.Service;
-
-import java.util.Map;
-import java.util.UUID;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public final class JsonRabbitNode {

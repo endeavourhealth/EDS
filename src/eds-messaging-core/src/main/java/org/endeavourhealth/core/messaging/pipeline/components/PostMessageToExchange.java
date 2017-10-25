@@ -6,8 +6,10 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.core.configuration.PostMessageToExchangeConfig;
-import org.endeavourhealth.core.data.admin.QueuedMessageRepository;
-import org.endeavourhealth.core.messaging.exchange.Exchange;
+import org.endeavourhealth.core.database.dal.DalProvider;
+import org.endeavourhealth.core.database.dal.audit.QueuedMessageDalI;
+import org.endeavourhealth.core.database.dal.audit.models.Exchange;
+import org.endeavourhealth.core.database.dal.audit.models.QueuedMessageType;
 import org.endeavourhealth.core.messaging.pipeline.PipelineComponent;
 import org.endeavourhealth.core.messaging.pipeline.PipelineException;
 import org.endeavourhealth.core.queueing.ConnectionManager;
@@ -36,8 +38,13 @@ public class PostMessageToExchange extends PipelineComponent {
 		String routingKey = getRoutingKey(exchange);
 
 		// Generate message identifier and store message in db
-		UUID messageUuid = exchange.getExchangeId();
-		new QueuedMessageRepository().save(messageUuid, exchange.getBody());
+		UUID messageUuid = exchange.getId();
+		try {
+			QueuedMessageDalI queuedMessageDal = DalProvider.factoryQueuedMessageDal();
+			queuedMessageDal.save(messageUuid, exchange.getBody(), QueuedMessageType.InboundData);
+		} catch (Exception ex) {
+			throw new PipelineException("Failed to save queued message", ex);
+		}
 
 		Connection connection = getConnection();
 		Channel channel = getChannel(connection);
@@ -66,7 +73,7 @@ public class PostMessageToExchange extends PipelineComponent {
 
 			//adding handler for when we're missing multicast header data
 			if (Strings.isNullOrEmpty(multicastData)) {
-				throw new PipelineException("No multicast data for " + multicastHeader + " to post exchange " + exchange.getExchangeId() + " to " + config.getExchange());
+				throw new PipelineException("No multicast data for " + multicastHeader + " to post exchange " + exchange.getId() + " to " + config.getExchange());
 			}
 
 			try {

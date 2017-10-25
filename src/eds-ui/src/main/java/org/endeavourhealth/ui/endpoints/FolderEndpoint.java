@@ -4,11 +4,12 @@ import com.codahale.metrics.annotation.Timed;
 import io.astefanutti.metrics.aspectj.Metrics;
 import org.endeavourhealth.common.security.SecurityUtils;
 import org.endeavourhealth.common.security.annotations.RequiresAdmin;
-import org.endeavourhealth.core.data.admin.LibraryRepository;
-import org.endeavourhealth.core.data.admin.models.*;
-import org.endeavourhealth.core.data.audit.UserAuditRepository;
-import org.endeavourhealth.core.rdbms.audit.models.AuditAction;
-import org.endeavourhealth.core.rdbms.audit.models.AuditModule;
+import org.endeavourhealth.core.database.dal.DalProvider;
+import org.endeavourhealth.core.database.dal.admin.LibraryDalI;
+import org.endeavourhealth.core.database.dal.admin.models.*;
+import org.endeavourhealth.core.database.dal.audit.UserAuditDalI;
+import org.endeavourhealth.core.database.dal.audit.models.AuditAction;
+import org.endeavourhealth.core.database.dal.audit.models.AuditModule;
 import org.endeavourhealth.ui.DependencyType;
 import org.endeavourhealth.ui.json.JsonDeleteResponse;
 import org.endeavourhealth.ui.json.JsonFolder;
@@ -33,7 +34,7 @@ import java.util.UUID;
 @Metrics(registry = "EdsRegistry")
 public final class FolderEndpoint extends AbstractItemEndpoint {
     private static final Logger LOG = LoggerFactory.getLogger(FolderEndpoint.class);
-    private static final UserAuditRepository userAudit = new UserAuditRepository(AuditModule.EdsUiModule.Folders);
+    private static final UserAuditDalI userAudit = DalProvider.factoryUserAuditDal(AuditModule.EdsUiModule.Folders);
 
     @POST
     @Produces(MediaType.APPLICATION_JSON)
@@ -58,7 +59,7 @@ public final class FolderEndpoint extends AbstractItemEndpoint {
         //if the folder type wasn't specified, see if we can derive it from our parent
         DefinitionItemType itemType = null;
 
-        LibraryRepository repository = new LibraryRepository();
+        LibraryDalI repository = DalProvider.factoryLibraryDal();
 
         //if folder type was passed up from client
         if (folderType != null) {
@@ -144,7 +145,7 @@ public final class FolderEndpoint extends AbstractItemEndpoint {
 
         LOG.trace("DeletingFolder FolderUUID {}", folderUuid);
 
-        LibraryRepository repository = new LibraryRepository();
+        LibraryDalI repository = DalProvider.factoryLibraryDal();
 
         //to delete it, we need to find out the item type
         ActiveItem activeItem = repository.getActiveItemByItemId(folderUuid);
@@ -194,7 +195,7 @@ public final class FolderEndpoint extends AbstractItemEndpoint {
         List<Item> items = new ArrayList();
         Iterable<ItemDependency> itemDependency = null;
 
-        LibraryRepository repository = new LibraryRepository();
+        LibraryDalI repository = DalProvider.factoryLibraryDal();
 
         //if we have no parent, then we're looking for the TOP-LEVEL folder
         if (parentUuidStr == null) {
@@ -205,8 +206,9 @@ public final class FolderEndpoint extends AbstractItemEndpoint {
 
                 if (!itemDependency.iterator().hasNext()) {
                     Item item = repository.getItemByKey(activeItem.getItemId(), activeItem.getAuditId());
-                    if (item.getIsDeleted()==false)
+                    if (!item.isDeleted()) {
                         items.add(item);
+                    }
                 }
             }
 
@@ -223,8 +225,9 @@ public final class FolderEndpoint extends AbstractItemEndpoint {
 
                     if (!itemDependency.iterator().hasNext()) {
                         Item item = repository.getItemByKey(activeItem.getItemId(), activeItem.getAuditId());
-                        if (item.getIsDeleted()==false)
+                        if (!item.isDeleted()) {
                             items.add(item);
+                        }
                     }
                 }
             }
@@ -273,7 +276,7 @@ public final class FolderEndpoint extends AbstractItemEndpoint {
 
         LOG.trace("Creating top-level folder of type {}", itemType);
 
-        LibraryRepository repository = new LibraryRepository();
+        LibraryDalI repository = DalProvider.factoryLibraryDal();
 
         String title = null;
         if (itemType == DefinitionItemType.LibraryFolder) {

@@ -1,8 +1,7 @@
 package org.endeavourhealth.ui.json;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import org.endeavourhealth.core.data.ehr.models.ResourceByPatient;
-import org.endeavourhealth.core.data.ehr.models.ResourceHistory;
+import org.endeavourhealth.core.database.dal.ehr.models.ResourceWrapper;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class JsonResourceContainer {
@@ -13,17 +12,12 @@ public class JsonResourceContainer {
 
     public JsonResourceContainer() {}
 
-    public JsonResourceContainer(ResourceHistory resourceHistory) {
+    public JsonResourceContainer(ResourceWrapper resourceHistory) {
         this.resourceId = resourceHistory.getResourceId().toString();
         this.resourceType = resourceHistory.getResourceType();
         this.resourceJson = resourceHistory.getResourceData();
     }
 
-    public JsonResourceContainer(ResourceByPatient resourceHistory) {
-        this.resourceId = resourceHistory.getResourceId().toString();
-        this.resourceType = resourceHistory.getResourceType();
-        this.resourceJson = resourceHistory.getResourceData();
-    }
 
     public String getResourceId() {
         return resourceId;

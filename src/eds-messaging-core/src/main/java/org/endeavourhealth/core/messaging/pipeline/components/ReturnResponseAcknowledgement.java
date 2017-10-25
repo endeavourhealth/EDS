@@ -2,8 +2,8 @@ package org.endeavourhealth.core.messaging.pipeline.components;
 
 import org.endeavourhealth.common.cache.ParserPool;
 import org.endeavourhealth.core.configuration.ReturnResponseAcknowledgementConfig;
-import org.endeavourhealth.core.messaging.exchange.Exchange;
-import org.endeavourhealth.core.messaging.exchange.HeaderKeys;
+import org.endeavourhealth.core.database.dal.audit.models.Exchange;
+import org.endeavourhealth.core.database.dal.audit.models.HeaderKeys;
 import org.endeavourhealth.core.messaging.pipeline.PipelineComponent;
 import org.endeavourhealth.core.messaging.pipeline.PipelineException;
 import org.hl7.fhir.instance.model.Coding;

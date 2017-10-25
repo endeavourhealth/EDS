@@ -4,6 +4,7 @@ DROP TABLE IF EXISTS postcode_lookup;
 DROP TABLE IF EXISTS lsoa_lookup;
 DROP TABLE IF EXISTS msoa_lookup;
 DROP TABLE IF EXISTS deprivation_lookup;
+DROP TABLE IF EXISTS snomed_lookup;
 
 CREATE TABLE postcode_lookup
 (
@@ -68,3 +69,10 @@ CREATE TABLE encounter_code
 
 CREATE UNIQUE INDEX ix_encounter_code_mapping
   ON encounter_code (mapping);
+
+CREATE TABLE snomed_lookup (
+    concept_id varchar(50),
+    type_id varchar(50),
+    term text,
+    CONSTRAINT pk_encounter_code PRIMARY KEY (concept_id)
+);

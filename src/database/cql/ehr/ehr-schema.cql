@@ -4,16 +4,22 @@ CREATE KEYSPACE ehr WITH REPLICATION = { 'class' : 'SimpleStrategy', 'replicatio
 
 USE ehr;
 
-DROP TABLE IF EXISTS resource_history;
-DROP TABLE IF EXISTS resource_history_by_service;
-
 DROP MATERIALIZED VIEW IF EXISTS resource_by_patient;
-DROP TABLE IF EXISTS resource_by_service;
+DROP MATERIALIZED VIEW IF EXISTS resource_by_service_all_systems;
+DROP MATERIALIZED VIEW IF EXISTS resource_by_patient_all_systems;
 
+DROP TABLE IF EXISTS resource_history;
+DROP TABLE IF EXISTS resource_by_service;
 DROP TABLE IF EXISTS resource_by_exchange_batch;
 DROP TABLE IF EXISTS exchange_batch;
 
-DROP TABLE IF EXISTS resource_types_used; //old table, not re-created
+//old tables, not re-created
+DROP TABLE IF EXISTS resource_history_by_service;
+DROP TABLE IF EXISTS resource_types_used;
+DROP TABLE IF EXISTS person_consent_global;
+DROP TABLE IF EXISTS person_consent_protocol;
+DROP TABLE IF EXISTS person_consent_organisation;
+
 
 // 1. Get Resource based on ID and Type				= resource_history
 // 2. Get Resource History						= resource_history
@@ -122,13 +128,11 @@ CREATE TABLE exchange_batch (
   PRIMARY KEY((exchange_id), batch_id)
 );
 
-DROP TABLE IF EXISTS person_consent_global;
-DROP TABLE IF EXISTS person_consent_protocol;
-DROP TABLE IF EXISTS person_consent_organisation;
+/*
 
 CREATE TABLE person_consent_global (
 	person_id UUID,
-	timestamp TIMESTAMP, 
+	timestamp TIMESTAMP,
 	consent_given BOOLEAN,
 	PRIMARY KEY ((person_id), timestamp))
 	WITH CLUSTERING ORDER BY (timestamp DESC);
@@ -136,7 +140,7 @@ CREATE TABLE person_consent_global (
 CREATE TABLE person_consent_protocol (
 	person_id UUID,
 	protocol_id UUID,
-	timestamp TIMESTAMP, 
+	timestamp TIMESTAMP,
 	consent_given BOOLEAN,
 	PRIMARY KEY ((person_id), protocol_id, timestamp))
 	WITH CLUSTERING ORDER BY (protocol_id ASC, timestamp DESC);
@@ -145,12 +149,12 @@ CREATE TABLE person_consent_organisation (
 	person_id UUID,
 	protocol_id UUID,
 	organisation_id UUID,
-	timestamp TIMESTAMP, 
+	timestamp TIMESTAMP,
 	consent_given BOOLEAN,
 	PRIMARY KEY ((person_id), protocol_id, organisation_id, timestamp))
 	WITH CLUSTERING ORDER BY (protocol_id ASC, organisation_id ASC, timestamp DESC);
-	
 
+*/
 
 
 

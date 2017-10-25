@@ -3,7 +3,7 @@ package org.endeavourhealth.ui.json;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
-import org.endeavourhealth.core.data.admin.models.Service;
+import org.endeavourhealth.core.database.dal.admin.models.Service;
 import org.endeavourhealth.core.fhirStorage.JsonServiceInterfaceEndpoint;
 
 import java.io.IOException;
@@ -29,7 +29,7 @@ public final class JsonService {
     }
     public JsonService(Service service, String additionalInfo) throws IOException {
         this.uuid = service.getId();
-        this.localIdentifier = service.getLocalIdentifier();
+        this.localIdentifier = service.getLocalId();
         this.name = service.getName();
         this.organisations = service.getOrganisations();
         this.additionalInfo = additionalInfo;

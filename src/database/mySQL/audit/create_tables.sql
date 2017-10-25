@@ -32,17 +32,17 @@ CREATE TABLE exchange_event
 
 CREATE TABLE exchange_transform_audit
 (
+	id varchar(36),
 	service_id varchar(36),
     system_id varchar(36),
     exchange_id varchar(36),
-    timestamp datetime,
     started datetime,
     ended datetime,
     error_xml text,
 	resubmitted boolean,
 	deleted datetime,
 	number_batches_created int,
-    CONSTRAINT pk_exchange_transform_audit PRIMARY KEY (service_id, system_id, exchange_id, timestamp DESC)
+    CONSTRAINT pk_exchange_transform_audit PRIMARY KEY (service_id, system_id, exchange_id, started DESC)
 );
 
 CREATE INDEX ix_exchange_transform_audit_service_system_started

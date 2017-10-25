@@ -5,13 +5,11 @@ import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.endeavourhealth.common.utility.ThreadPool;
 import org.endeavourhealth.common.utility.ThreadPoolError;
-import org.endeavourhealth.core.rdbms.ConnectionManager;
-import org.endeavourhealth.core.rdbms.reference.PostcodeHelper;
-import org.endeavourhealth.core.rdbms.reference.models.PostcodeLookup;
+import org.endeavourhealth.core.database.dal.DalProvider;
+import org.endeavourhealth.core.database.dal.reference.ReferenceUpdaterDalI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.persistence.EntityManager;
 import java.io.File;
 import java.nio.charset.Charset;
 import java.util.Iterator;
@@ -269,34 +267,9 @@ public class PostcodeUpdater {
             String ward1998 = record.get(POSTCODE_1998_WARD);
             String ccgCode = record.get(POSTCODE_CCG_CODE);
 
-            //BigDecimal townsendScore = townsendMap.get(ward1998);
+            ReferenceUpdaterDalI referenceUpdaterDal = DalProvider.factoryReferenceUpdaterDal();
+            referenceUpdaterDal.updatePostcodeMap(postcode, lsoaCode, msoaCode, ward, ward1998, ccgCode);
 
-            //always make sure this is uppercase
-            postcode = postcode.toUpperCase();
-
-            String postcodeNoSpace = postcode.replace(" ", "");
-
-            EntityManager entityManager = ConnectionManager.getReferenceEntityManager();
-
-            PostcodeLookup postcodeReference = PostcodeHelper.getPostcodeReference(postcode, entityManager);
-            if (postcodeReference == null) {
-                postcodeReference = new PostcodeLookup();
-                postcodeReference.setPostcodeNoSpace(postcodeNoSpace);
-            }
-
-            postcodeReference.setPostcode(postcode);
-            postcodeReference.setCcg(ccgCode);
-            postcodeReference.setLsoaCode(lsoaCode);
-            postcodeReference.setMsoaCode(msoaCode);
-            postcodeReference.setWard(ward);
-            postcodeReference.setWard1998(ward1998);
-            //postcodeReference.setTownsendScore(townsendScore);
-
-            entityManager.getTransaction().begin();
-            entityManager.persist(postcodeReference);
-            entityManager.getTransaction().commit();
-
-            entityManager.close();
             return null;
         }
     }

@@ -2,19 +2,17 @@ package org.endeavourhealth.core.messaging.pipeline.components;
 
 import org.apache.http.HttpStatus;
 import org.endeavourhealth.core.configuration.PostToRestConfig;
-import org.endeavourhealth.core.messaging.exchange.Exchange;
-import org.endeavourhealth.core.messaging.exchange.HeaderKeys;
+import org.endeavourhealth.core.database.dal.audit.models.Exchange;
+import org.endeavourhealth.core.database.dal.audit.models.HeaderKeys;
 import org.endeavourhealth.core.messaging.pipeline.PipelineComponent;
 import org.endeavourhealth.core.messaging.pipeline.PipelineException;
+import org.glassfish.jersey.client.ClientConfig;
 import org.glassfish.jersey.filter.LoggingFilter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.client.*;
 import javax.ws.rs.core.Response;
-
-import org.glassfish.jersey.client.ClientConfig;
-
 import java.util.Set;
 
 public class PostToRest extends PipelineComponent {

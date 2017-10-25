@@ -4,13 +4,14 @@ import com.codahale.metrics.annotation.Timed;
 import io.astefanutti.metrics.aspectj.Metrics;
 import org.endeavourhealth.common.security.SecurityUtils;
 import org.endeavourhealth.common.security.annotations.RequiresAdmin;
-import org.endeavourhealth.core.data.admin.OrganisationRepository;
-import org.endeavourhealth.core.data.admin.ServiceRepository;
-import org.endeavourhealth.core.data.admin.models.Organisation;
-import org.endeavourhealth.core.data.admin.models.Service;
-import org.endeavourhealth.core.data.audit.UserAuditRepository;
-import org.endeavourhealth.core.rdbms.audit.models.AuditAction;
-import org.endeavourhealth.core.rdbms.audit.models.AuditModule;
+import org.endeavourhealth.core.database.dal.DalProvider;
+import org.endeavourhealth.core.database.dal.admin.OrganisationDalI;
+import org.endeavourhealth.core.database.dal.admin.ServiceDalI;
+import org.endeavourhealth.core.database.dal.admin.models.Organisation;
+import org.endeavourhealth.core.database.dal.admin.models.Service;
+import org.endeavourhealth.core.database.dal.audit.UserAuditDalI;
+import org.endeavourhealth.core.database.dal.audit.models.AuditAction;
+import org.endeavourhealth.core.database.dal.audit.models.AuditModule;
 import org.endeavourhealth.coreui.endpoints.AbstractEndpoint;
 import org.endeavourhealth.coreui.json.JsonOrganisation;
 import org.endeavourhealth.ui.json.JsonService;
@@ -31,9 +32,9 @@ import java.util.UUID;
 public final class OrganisationEndpoint extends AbstractEndpoint {
 	private static final Logger LOG = LoggerFactory.getLogger(OrganisationEndpoint.class);
 
-	private static final UserAuditRepository userAudit = new UserAuditRepository(AuditModule.EdsUiModule.Organisation);
-	private static final OrganisationRepository repository = new OrganisationRepository();
-	private static final ServiceRepository serviceRepository = new ServiceRepository();
+	private static final UserAuditDalI userAudit = DalProvider.factoryUserAuditDal(AuditModule.EdsUiModule.Organisation);
+	private static final OrganisationDalI organisationRepository = DalProvider.factoryOrganisationDal();
+	private static final ServiceDalI serviceRepository = DalProvider.factoryServiceDal();
 
 	@POST
 	@Produces(MediaType.APPLICATION_JSON)
@@ -53,7 +54,7 @@ public final class OrganisationEndpoint extends AbstractEndpoint {
 		dbOrganisation.setName(organisation.getName());
 		dbOrganisation.setNationalId(organisation.getNationalId());
 		dbOrganisation.setServices(organisation.getServices());
-		UUID organisationUuid = repository.save(dbOrganisation);
+		UUID organisationUuid = organisationRepository.save(dbOrganisation);
 
 		if (organisation.getUuid() == null)
 			organisation.setUuid(organisationUuid);
@@ -80,9 +81,9 @@ public final class OrganisationEndpoint extends AbstractEndpoint {
 				"Organisation Id", uuid);
 
 		UUID organisationUuid = UUID.fromString(uuid);
-		Organisation dbOrganisation = repository.getById(organisationUuid);
+		Organisation dbOrganisation = organisationRepository.getById(organisationUuid);
 
-		repository.delete(dbOrganisation);
+		organisationRepository.delete(dbOrganisation);
 
 		clearLogbackMarkers();
 		return Response
@@ -102,7 +103,7 @@ public final class OrganisationEndpoint extends AbstractEndpoint {
 
 		super.setLogbackMarkers(sc);
 		UUID organisationUuid = UUID.fromString(uuid);
-		Organisation organisation = repository.getById(organisationUuid);
+		Organisation organisation = organisationRepository.getById(organisationUuid);
 
 		List<JsonService> ret = new ArrayList<>();
 		for (UUID serviceId : organisation.getServices().keySet()) {
@@ -142,7 +143,7 @@ public final class OrganisationEndpoint extends AbstractEndpoint {
 	}
 
 	private Response getOrganisationList() throws Exception {
-		Iterable<Organisation> organisations = repository.getAll();
+		Iterable<Organisation> organisations = organisationRepository.getAll();
 
 		List<JsonOrganisation> ret = new ArrayList<>();
 
@@ -159,7 +160,7 @@ public final class OrganisationEndpoint extends AbstractEndpoint {
 
 	private Response getOrganisation(String uuid) throws Exception {
 		UUID organisationUuid = UUID.fromString(uuid);
-		Organisation organisation = repository.getById(organisationUuid);
+		Organisation organisation = organisationRepository.getById(organisationUuid);
 
 		JsonOrganisation ret = new JsonOrganisation(organisation, false);
 
@@ -170,8 +171,8 @@ public final class OrganisationEndpoint extends AbstractEndpoint {
 				.build();
 	}
 
-	private Response search(String searchData) {
-		Iterable<Organisation> organisations = repository.search(searchData);
+	private Response search(String searchData) throws Exception {
+		Iterable<Organisation> organisations = organisationRepository.search(searchData);
 
 		List<JsonOrganisation> ret = new ArrayList<>();
 

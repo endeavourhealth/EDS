@@ -2,12 +2,12 @@ package org.endeavourhealth.enterprise;
 
 import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.common.utility.SlackHelper;
-import org.endeavourhealth.core.enterprise.EnterpriseConnector;
-import org.endeavourhealth.core.rdbms.eds.PatientLinkHelper;
-import org.endeavourhealth.core.rdbms.eds.PatientLinkPair;
-import org.endeavourhealth.core.rdbms.subscriber.EnterpriseIdHelper;
-import org.endeavourhealth.core.rdbms.subscriber.EnterprisePersonUpdateHelper;
-import org.endeavourhealth.core.rdbms.subscriber.models.EnterprisePersonIdMap;
+import org.endeavourhealth.core.database.dal.DalProvider;
+import org.endeavourhealth.core.database.dal.eds.PatientLinkDalI;
+import org.endeavourhealth.core.database.dal.eds.models.PatientLinkPair;
+import org.endeavourhealth.core.database.dal.subscriber.EnterpriseIdDalI;
+import org.endeavourhealth.core.database.dal.subscriber.EnterprisePersonUpdaterHistoryDalI;
+import org.endeavourhealth.core.database.rdbms.enterprise.EnterpriseConnector;
 import org.hl7.fhir.instance.model.ResourceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,9 +44,12 @@ public class Main {
             //create this date BEFORE we get the date we last run, so there's no risk of a gap
             Date dateNextRun = new Date();
 
-            Date dateLastRun = EnterprisePersonUpdateHelper.findDatePersonUpdaterLastRun(enterpriseConfigName);
+            EnterprisePersonUpdaterHistoryDalI enterprisePersonUpdaterHistoryDal = DalProvider.factoryEnterprisePersonUpdateHistoryDal(enterpriseConfigName);
+            Date dateLastRun = enterprisePersonUpdaterHistoryDal.findDatePersonUpdaterLastRun();
             LOG.info("Looking for Person ID changes since " + dateLastRun);
-            List<PatientLinkPair> changes = PatientLinkHelper.getChangesSince(dateLastRun);
+
+            PatientLinkDalI patientLinkDal = DalProvider.factoryPatientLinkDal();
+            List<PatientLinkPair> changes = patientLinkDal.getChangesSince(dateLastRun);
 
             //strip out any that are just telling us NEW person IDs
             for (int i=changes.size()-1; i>=0; i--) {
@@ -73,7 +76,7 @@ public class Main {
                 connection.close();
             }
 
-            EnterprisePersonUpdateHelper.updatePersonUpdaterLastRun(enterpriseConfigName, dateNextRun);
+            enterprisePersonUpdaterHistoryDal.updatePersonUpdaterLastRun(dateNextRun);
 
             LOG.info("Person updates complete");
 
@@ -95,18 +98,17 @@ public class Main {
             String newDiscoveryPersonId = change.getNewPersonId();
             String discoveryPatientId = change.getPatientId();
 
-            Long enterprisePatientId = EnterpriseIdHelper.findEnterpriseId(enterpriseConfigName, ResourceType.Patient.toString(), discoveryPatientId);
+            EnterpriseIdDalI enterpriseIdDalI = DalProvider.factoryEnterpriseIdDal(enterpriseConfigName);
+            Long enterprisePatientId = enterpriseIdDalI.findEnterpriseId(ResourceType.Patient.toString(), discoveryPatientId);
 
             //if this patient has never gone to enterprise, then skip it
             if (enterprisePatientId == null) {
                 continue;
             }
 
-            List<EnterprisePersonIdMap> mappings = EnterpriseIdHelper.findEnterprisePersonMapsForPersonId(enterpriseConfigName, oldDiscoveryPersonId);
-            for (EnterprisePersonIdMap mapping: mappings) {
-
-                Long oldEnterprisePersonId = mapping.getEnterprisePersonId();
-                Long newEnterprisePersonId = EnterpriseIdHelper.findOrCreateEnterprisePersonId(newDiscoveryPersonId, enterpriseConfigName);
+            List<Long> mappings = enterpriseIdDalI.findEnterprisePersonIdsForPersonId(oldDiscoveryPersonId);
+            for (Long oldEnterprisePersonId: mappings) {
+                Long newEnterprisePersonId = enterpriseIdDalI.findOrCreateEnterprisePersonId(newDiscoveryPersonId);
 
                 updatesForConfig.add(new UpdateJob(enterprisePatientId, oldEnterprisePersonId, newEnterprisePersonId));
             }

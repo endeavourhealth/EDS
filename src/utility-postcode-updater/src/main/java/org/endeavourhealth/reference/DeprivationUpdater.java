@@ -4,14 +4,11 @@ import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.endeavourhealth.core.csv.CsvHelper;
-import org.endeavourhealth.core.rdbms.ConnectionManager;
-import org.endeavourhealth.core.rdbms.reference.models.DeprivationLookup;
+import org.endeavourhealth.core.database.dal.DalProvider;
+import org.endeavourhealth.core.database.dal.reference.ReferenceUpdaterDalI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.persistence.EntityManager;
-import javax.persistence.NoResultException;
-import javax.persistence.Query;
 import java.io.File;
 import java.nio.charset.Charset;
 import java.util.Iterator;
@@ -76,8 +73,6 @@ public class DeprivationUpdater {
 
         CSVFormat format = CSVFormat.DEFAULT;
 
-        EntityManager entityManager = ConnectionManager.getReferenceEntityManager();
-
         int rowsDone = 0;
         CSVParser parser = null;
         try {
@@ -90,7 +85,7 @@ public class DeprivationUpdater {
             while (iterator.hasNext()) {
                 CSVRecord record = iterator.next();
 
-                updateDeprivationScore(entityManager, record);
+                updateDeprivationScore(record);
 
                 rowsDone ++;
                 if (rowsDone % 1000 == 0) {
@@ -104,14 +99,10 @@ public class DeprivationUpdater {
             if (parser != null) {
                 parser.close();
             }
-
-            if (entityManager != null) {
-                entityManager.close();
-            }
         }
     }
 
-    private static void updateDeprivationScore(EntityManager entityManager, CSVRecord record) {
+    private static void updateDeprivationScore(CSVRecord record) throws Exception {
 
         String lsoaCode = record.get(LSOA_CODE);
 
@@ -133,42 +124,25 @@ public class DeprivationUpdater {
         Integer livingEnvironmentRank = new Integer(record.get(LIVING_ENVIRONMENT_RANK).replace(",", ""));
         Integer livingEnvironmentDecile = new Integer(record.get(LIVING_ENVIRONMENT_DECILE).replace(",", ""));
 
-        String sql = "select r"
-                + " from DeprivationLookup r"
-                + " where r.lsoaCode = :lsoaCode";
+        ReferenceUpdaterDalI referenceUpdaterDal = DalProvider.factoryReferenceUpdaterDal();
+        referenceUpdaterDal.updateDeprivationMap(lsoaCode,
+                rank,
+                decile,
+                incomeRank,
+                incomeDecile,
+                employmentRank,
+                employmentDecile,
+                educationRank,
+                educationDecile,
+                healthRank,
+                healthDecile,
+                crimeRank,
+                crimeDecile,
+                housingAndServicesBarriersRank,
+                housingAndServicesBarriersDecile,
+                livingEnvironmentRank,
+                livingEnvironmentDecile);
 
-        Query query = entityManager
-                .createQuery(sql, DeprivationLookup.class)
-                .setParameter("lsoaCode", lsoaCode);
-
-        DeprivationLookup lookup = null;
-        try {
-            lookup = (DeprivationLookup)query.getSingleResult();
-        } catch (NoResultException e) {
-            lookup = new DeprivationLookup();
-            lookup.setLsoaCode(lsoaCode);
-        }
-
-        lookup.setImdRank(rank);
-        lookup.setImdDecile(decile);
-        lookup.setIncomeRank(incomeRank);
-        lookup.setIncomeDecile(incomeDecile);
-        lookup.setEmploymentRank(employmentRank);
-        lookup.setEmploymentDecile(employmentDecile);
-        lookup.setEducationRank(educationRank);
-        lookup.setEducationDecile(educationDecile);
-        lookup.setHealthRank(healthRank);
-        lookup.setHealthDecile(healthDecile);
-        lookup.setCrimeRank(crimeRank);
-        lookup.setCrimeDecile(crimeDecile);
-        lookup.setHousingAndServicesBarriersRank(housingAndServicesBarriersRank);
-        lookup.setHousingAndServicesBarriersDecile(housingAndServicesBarriersDecile);
-        lookup.setLivingEnvironmentRank(livingEnvironmentRank);
-        lookup.setLivingEnvironmentDecile(livingEnvironmentDecile);
-
-        entityManager.getTransaction().begin();
-        entityManager.persist(lookup);
-        entityManager.getTransaction().commit();
     }
 
     public static String[] getCsvHeadings() {

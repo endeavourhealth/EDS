@@ -4,16 +4,17 @@ import com.codahale.metrics.annotation.Timed;
 import com.google.common.base.Strings;
 import io.astefanutti.metrics.aspectj.Metrics;
 import org.endeavourhealth.common.security.SecurityUtils;
-import org.endeavourhealth.core.data.admin.LibraryRepository;
-import org.endeavourhealth.core.data.admin.ServiceRepository;
-import org.endeavourhealth.core.data.admin.models.ActiveItem;
-import org.endeavourhealth.core.data.admin.models.Item;
-import org.endeavourhealth.core.data.admin.models.Service;
-import org.endeavourhealth.core.data.audit.UserAuditRepository;
-import org.endeavourhealth.core.rdbms.audit.models.AuditAction;
-import org.endeavourhealth.core.rdbms.audit.models.AuditModule;
-import org.endeavourhealth.core.rdbms.eds.PatientSearchHelper;
-import org.endeavourhealth.core.rdbms.eds.models.PatientSearch;
+import org.endeavourhealth.core.database.dal.DalProvider;
+import org.endeavourhealth.core.database.dal.admin.LibraryDalI;
+import org.endeavourhealth.core.database.dal.admin.ServiceDalI;
+import org.endeavourhealth.core.database.dal.admin.models.ActiveItem;
+import org.endeavourhealth.core.database.dal.admin.models.Item;
+import org.endeavourhealth.core.database.dal.admin.models.Service;
+import org.endeavourhealth.core.database.dal.audit.UserAuditDalI;
+import org.endeavourhealth.core.database.dal.audit.models.AuditAction;
+import org.endeavourhealth.core.database.dal.audit.models.AuditModule;
+import org.endeavourhealth.core.database.dal.eds.PatientSearchDalI;
+import org.endeavourhealth.core.database.dal.eds.models.PatientSearch;
 import org.endeavourhealth.coreui.endpoints.AbstractEndpoint;
 import org.endeavourhealth.coreui.framework.exceptions.BadRequestException;
 import org.endeavourhealth.ui.json.JsonPatientIdentifier;
@@ -39,10 +40,9 @@ public final class PatientIdentityEndpoint extends AbstractEndpoint {
     private static final Logger LOG = LoggerFactory.getLogger(PatientIdentityEndpoint.class);
 
     //private static final PatientIdentifierRepository identifierRepository = new PatientIdentifierRepository();
-    private static final ServiceRepository serviceRepository = new ServiceRepository();
-    private static final LibraryRepository libraryRepository = new LibraryRepository();
-
-    private UserAuditRepository userAudit = new UserAuditRepository(AuditModule.EdsUiModule.PatientIdentity);
+    private static final ServiceDalI serviceRepository = DalProvider.factoryServiceDal();
+    private static final LibraryDalI libraryRepository = DalProvider.factoryLibraryDal();
+    private static final UserAuditDalI userAudit = DalProvider.factoryUserAuditDal(AuditModule.EdsUiModule.PatientIdentity);
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
@@ -78,7 +78,8 @@ public final class PatientIdentityEndpoint extends AbstractEndpoint {
 
         List<JsonPatientIdentifier> ret = new ArrayList<>();
 
-        List<PatientSearch> identifiers = PatientSearchHelper.searchByLocalId(serviceId, systemId, localId);
+        PatientSearchDalI patientSearchDal = DalProvider.factoryPatientSearchDal();
+        List<PatientSearch> identifiers = patientSearchDal.searchByLocalId(serviceId, systemId, localId);
         for (PatientSearch identifier: identifiers) {
 
             JsonPatientIdentifier json = new JsonPatientIdentifier();
@@ -92,7 +93,7 @@ public final class PatientIdentityEndpoint extends AbstractEndpoint {
             json.setDateOfBirth(identifier.getDateOfBirth());
             json.setPostcode(identifier.getPostcode());
             json.setGender(identifier.getGender());
-            json.setPatientId(UUID.fromString(identifier.getPatientId()));
+            json.setPatientId(identifier.getPatientId());
             //json.setLocalId(identifier.getLocalId());
             //json.setLocalIdSystem(identifier.getLocalIdSystem());
 
@@ -145,11 +146,12 @@ public final class PatientIdentityEndpoint extends AbstractEndpoint {
 
         List<JsonPatientIdentifier> ret = new ArrayList<>();
 
-        List<PatientSearch> identifiers = PatientSearchHelper.searchByNhsNumber(nhsNumber);
+        PatientSearchDalI patientSearchDal = DalProvider.factoryPatientSearchDal();
+        List<PatientSearch> identifiers = patientSearchDal.searchByNhsNumber(nhsNumber);
         for (PatientSearch identifier: identifiers) {
 
-            UUID serviceId = UUID.fromString(identifier.getServiceId());
-            UUID systemId = UUID.fromString(identifier.getSystemId());
+            UUID serviceId = identifier.getServiceId();
+            UUID systemId = identifier.getSystemId();
 
             String serviceName = getServiceNameForId(serviceId);
             String systemName = getSystemNameForId(systemId);
@@ -165,7 +167,7 @@ public final class PatientIdentityEndpoint extends AbstractEndpoint {
             json.setDateOfBirth(identifier.getDateOfBirth());
             json.setPostcode(identifier.getPostcode());
             json.setGender(identifier.getGender());
-            json.setPatientId(UUID.fromString(identifier.getPatientId()));
+            json.setPatientId(identifier.getPatientId());
             //json.setLocalId(identifier.getLocalId());
             //json.setLocalIdSystem(identifier.getLocalIdSystem());
 
@@ -234,11 +236,12 @@ public final class PatientIdentityEndpoint extends AbstractEndpoint {
 
         if (patientId != null) {
 
-            PatientSearch identifier = PatientSearchHelper.searchByPatientId(patientId);
+            PatientSearchDalI patientSearchDal = DalProvider.factoryPatientSearchDal();
+            PatientSearch identifier = patientSearchDal.searchByPatientId(patientId);
             if (identifier != null) {
 
-                UUID serviceId = UUID.fromString(identifier.getServiceId());
-                UUID systemId = UUID.fromString(identifier.getSystemId());
+                UUID serviceId = identifier.getServiceId();
+                UUID systemId = identifier.getSystemId();
 
                 String serviceName = getServiceNameForId(serviceId);
                 String systemName = getSystemNameForId(systemId);
@@ -254,7 +257,7 @@ public final class PatientIdentityEndpoint extends AbstractEndpoint {
                 json.setDateOfBirth(identifier.getDateOfBirth());
                 json.setPostcode(identifier.getPostcode());
                 json.setGender(identifier.getGender());
-                json.setPatientId(UUID.fromString(identifier.getPatientId()));
+                json.setPatientId(identifier.getPatientId());
                 //json.setLocalId(identifier.getLocalId());
                 //json.setLocalIdSystem(identifier.getLocalIdSystem());
 
@@ -366,7 +369,7 @@ public final class PatientIdentityEndpoint extends AbstractEndpoint {
         }
     }
 
-    private static String getServiceNameForId(UUID serviceId) {
+    private static String getServiceNameForId(UUID serviceId) throws Exception {
         try {
             Service service = serviceRepository.getById(serviceId);
             return service.getName();
@@ -376,7 +379,7 @@ public final class PatientIdentityEndpoint extends AbstractEndpoint {
         }
 
     }
-    private static String getSystemNameForId(UUID systemId) {
+    private static String getSystemNameForId(UUID systemId) throws Exception {
         try {
             ActiveItem activeItem = libraryRepository.getActiveItemByItemId(systemId);
             Item item = libraryRepository.getItemByKey(systemId, activeItem.getAuditId());

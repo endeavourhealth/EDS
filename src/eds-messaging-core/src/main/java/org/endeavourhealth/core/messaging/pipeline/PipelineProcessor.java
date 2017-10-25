@@ -1,7 +1,7 @@
 package org.endeavourhealth.core.messaging.pipeline;
 
 import org.endeavourhealth.core.configuration.*;
-import org.endeavourhealth.core.messaging.exchange.Exchange;
+import org.endeavourhealth.core.database.dal.audit.models.Exchange;
 import org.endeavourhealth.core.messaging.pipeline.components.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

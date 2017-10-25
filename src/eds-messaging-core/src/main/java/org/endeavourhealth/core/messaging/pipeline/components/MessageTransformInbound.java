@@ -5,12 +5,13 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.common.utility.SlackHelper;
 import org.endeavourhealth.core.configuration.MessageTransformInboundConfig;
-import org.endeavourhealth.core.data.admin.LibraryRepository;
-import org.endeavourhealth.core.data.audit.AuditRepository;
-import org.endeavourhealth.core.data.audit.models.ExchangeTransformAudit;
-import org.endeavourhealth.core.data.audit.models.ExchangeTransformErrorState;
-import org.endeavourhealth.core.messaging.exchange.Exchange;
-import org.endeavourhealth.core.messaging.exchange.HeaderKeys;
+import org.endeavourhealth.core.database.dal.DalProvider;
+import org.endeavourhealth.core.database.dal.admin.LibraryDalI;
+import org.endeavourhealth.core.database.dal.audit.ExchangeDalI;
+import org.endeavourhealth.core.database.dal.audit.models.Exchange;
+import org.endeavourhealth.core.database.dal.audit.models.ExchangeTransformAudit;
+import org.endeavourhealth.core.database.dal.audit.models.ExchangeTransformErrorState;
+import org.endeavourhealth.core.database.dal.audit.models.HeaderKeys;
 import org.endeavourhealth.core.messaging.pipeline.PipelineComponent;
 import org.endeavourhealth.core.messaging.pipeline.PipelineException;
 import org.endeavourhealth.core.xml.TransformErrorSerializer;
@@ -39,7 +40,8 @@ public class MessageTransformInbound extends PipelineComponent {
 	private static final Logger LOG = LoggerFactory.getLogger(MessageTransformInbound.class);
 
 	//private static final ServiceRepository serviceRepository = new ServiceRepository();
-	private static final LibraryRepository libraryRepository = new LibraryRepository();
+	private static final LibraryDalI libraryRepository = DalProvider.factoryLibraryDal();
+	private static final ExchangeDalI auditRepository = DalProvider.factoryExchangeDal();
 
 	private MessageTransformInboundConfig config;
 
@@ -87,12 +89,13 @@ public class MessageTransformInbound extends PipelineComponent {
 		TransformError currentErrors = new TransformError();
 
 		//find the current error state for the source of our data
-		ExchangeTransformErrorState errorState = new AuditRepository().getErrorState(serviceId, systemId);
+		ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
+		ExchangeTransformErrorState errorState = exchangeDal.getErrorState(serviceId, systemId);
 
-		if (canTransformExchange(errorState, exchange.getExchangeId())) {
+		if (canTransformExchange(errorState, exchange.getId())) {
 
 			//retrieve the audit of any errors from the last time we processed this exchange ID
-			TransformError previousErrors = findPreviousErrors(serviceId, systemId, exchange.getExchangeId());
+			TransformError previousErrors = findPreviousErrors(serviceId, systemId, exchange.getId());
 
 			try {
 
@@ -125,7 +128,7 @@ public class MessageTransformInbound extends PipelineComponent {
 				}
 			}
 			catch (Exception ex) {
-				LOG.error("Error processing exchange " + exchange.getExchangeId() + " from service " + serviceId + " and system " + systemId, ex);
+				LOG.error("Error processing exchange " + exchange.getId() + " from service " + serviceId + " and system " + systemId, ex);
 
 				//record the exception as a fatal error with the exchange
 				Map<String, String> args = new HashMap<>();
@@ -148,7 +151,7 @@ public class MessageTransformInbound extends PipelineComponent {
 			}
 
 		} else {
-			LOG.info("NOT performing transform for Exchange {} because previous Exchange went into error", exchange.getExchangeId());
+			LOG.info("NOT performing transform for Exchange {} because previous Exchange went into error", exchange.getId());
 
 			//record the exception as a fatal error with the exchange
 			Map<String, String> args = new HashMap<>();
@@ -158,10 +161,10 @@ public class MessageTransformInbound extends PipelineComponent {
 
 		//if we had any errors with the transform, update the error state for this service and system, so
 		//we don't attempt to run any further exchanges from the same source until the error is resolved
-		updateErrorState(errorState, serviceId, systemId, exchange.getExchangeId(), currentErrors);
+		updateErrorState(errorState, serviceId, systemId, exchange.getId(), currentErrors);
 
 		//save the audit of this transform, including errors
-		createTransformAudit(serviceId, systemId, exchange.getExchangeId(), transformStarted, currentErrors, batchIds);
+		createTransformAudit(serviceId, systemId, exchange.getId(), transformStarted, currentErrors, batchIds);
 
 		return batchIds;
 	}
@@ -173,7 +176,7 @@ public class MessageTransformInbound extends PipelineComponent {
 
 		//payload
 		String xmlPayload = exchange.getBody();
-		UUID exchangeId = exchange.getExchangeId();
+		UUID exchangeId = exchange.getId();
 
 		//transform from XML -> FHIR
 		List<Resource> resources = AdastraXmlToFhirTransformer.toFhirFullRecord(xmlPayload);
@@ -191,7 +194,7 @@ public class MessageTransformInbound extends PipelineComponent {
 		if (countErrors > 1) {
 			message += "1 of " + countErrors + " ";
 		}
-		message += "in inbound transform from " + software + " for exchange " + exchange.getExchangeId() + "\n";
+		message += "in inbound transform from " + software + " for exchange " + exchange.getId() + "\n";
 		message += "view the full error details on the Transform Errors page of EDS-UI";
 
 		Error error = currentErrors.getError().get(0);
@@ -231,7 +234,7 @@ public class MessageTransformInbound extends PipelineComponent {
 								  UUID serviceId,
 								  UUID systemId,
 								  UUID exchangeId,
-								  TransformError currentErrors) {
+								  TransformError currentErrors) throws Exception {
 
 		boolean hadError = currentErrors.getError().size() > 0;
 
@@ -247,7 +250,7 @@ public class MessageTransformInbound extends PipelineComponent {
 				errorState.setServiceId(serviceId);
 				errorState.setSystemId(systemId);
 				errorState.getExchangeIdsInError().add(exchangeId);
-				new AuditRepository().save(errorState);
+				auditRepository.save(errorState);
 			}
 
 		} else {
@@ -265,16 +268,16 @@ public class MessageTransformInbound extends PipelineComponent {
 
 			//if the error state object is now empty, delete it
 			if (errorState.getExchangeIdsInError().isEmpty()) {
-				new AuditRepository().delete(errorState);
+				auditRepository.delete(errorState);
 			} else {
-				new AuditRepository().save(errorState);
+				auditRepository.save(errorState);
 			}
 		}
 	}
 
-	private TransformError findPreviousErrors(UUID serviceId, UUID systemId, UUID exchangeId) {
+	private TransformError findPreviousErrors(UUID serviceId, UUID systemId, UUID exchangeId) throws Exception {
 
-		ExchangeTransformAudit previous = new AuditRepository().getMostRecentExchangeTransform(serviceId, systemId, exchangeId);
+		ExchangeTransformAudit previous = auditRepository.getMostRecentExchangeTransform(serviceId, systemId, exchangeId);
 		if (previous == null
 				|| previous.getErrorXml() == null
 				|| previous.getDeleted() != null) {
@@ -315,12 +318,12 @@ public class MessageTransformInbound extends PipelineComponent {
 		return false;
 	}
 
-	private static void createTransformAudit(UUID serviceId, UUID systemId, UUID exchangeId, Date transformStarted, TransformError transformError, List<UUID> batchIds) {
+	private static void createTransformAudit(UUID serviceId, UUID systemId, UUID exchangeId, Date transformStarted, TransformError transformError, List<UUID> batchIds) throws Exception {
 		ExchangeTransformAudit transformAudit = new ExchangeTransformAudit();
 		transformAudit.setServiceId(serviceId);
 		transformAudit.setSystemId(systemId);
 		transformAudit.setExchangeId(exchangeId);
-		transformAudit.setVersion(UUIDs.timeBased());
+		transformAudit.setId(UUIDs.timeBased());
 		transformAudit.setStarted(transformStarted);
 		transformAudit.setEnded(new Date());
 
@@ -332,7 +335,7 @@ public class MessageTransformInbound extends PipelineComponent {
 			transformAudit.setErrorXml(TransformErrorSerializer.writeToXml(transformError));
 		}
 
-		new AuditRepository().save(transformAudit);
+		auditRepository.save(transformAudit);
 	}
 
 	private static String convertUUidsToStrings(List<UUID> uuids) throws PipelineException {
@@ -358,7 +361,7 @@ public class MessageTransformInbound extends PipelineComponent {
 		int maxFilingThreads = config.getFilingThreadLimit();
 
 		String exchangeBody = exchange.getBody();
-		UUID exchangeId = exchange.getExchangeId();
+		UUID exchangeId = exchange.getId();
 
 		EmisCsvToFhirTransformer.transform(exchangeId, exchangeBody, serviceId, systemId, currentErrors,
 									batchIds, previousErrors, sharedStoragePath, maxFilingThreads);
@@ -373,7 +376,7 @@ public class MessageTransformInbound extends PipelineComponent {
 		int maxFilingThreads = config.getFilingThreadLimit();
 
 		String exchangeBody = exchange.getBody();
-		UUID exchangeId = exchange.getExchangeId();
+		UUID exchangeId = exchange.getId();
 
 		BartsCsvToFhirTransformer.transform(exchangeId, exchangeBody, serviceId, systemId, currentErrors,
 				batchIds, previousErrors, sharedStoragePath, maxFilingThreads, version);
@@ -388,7 +391,7 @@ public class MessageTransformInbound extends PipelineComponent {
 		int maxFilingThreads = config.getFilingThreadLimit();
 
 		String exchangeBody = exchange.getBody();
-		UUID exchangeId = exchange.getExchangeId();
+		UUID exchangeId = exchange.getId();
 
 		HomertonCsvToFhirTransformer.transform(exchangeId, exchangeBody, serviceId, systemId, currentErrors,
 				batchIds, previousErrors, sharedStoragePath, maxFilingThreads, version);
@@ -409,7 +412,7 @@ public class MessageTransformInbound extends PipelineComponent {
 
 		//payload
 		String xmlPayload = exchange.getBody();
-		UUID exchangeId = exchange.getExchangeId();
+		UUID exchangeId = exchange.getId();
 
 		//transform from XML -> FHIR
 		List<Resource> resources = EmisOpenToFhirTransformer.toFhirFullRecord(xmlPayload);
@@ -429,7 +432,7 @@ public class MessageTransformInbound extends PipelineComponent {
                                           String software, TransformError currentErrors, List<UUID> batchIds,
                                           TransformError previousErrors) throws Exception {
 
-        UUID exchangeId = exchange.getExchangeId();
+        UUID exchangeId = exchange.getId();
 	    String exchangeBody = exchange.getBody();
 
         FhirHl7v2Filer fhirHl7v2Filer = new FhirHl7v2Filer();

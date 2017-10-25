@@ -5,13 +5,15 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.base.Strings;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.core.configuration.MessageTransformOutboundConfig;
-import org.endeavourhealth.core.data.admin.LibraryRepositoryHelper;
-import org.endeavourhealth.core.data.admin.QueuedMessageRepository;
-import org.endeavourhealth.core.data.admin.ServiceRepository;
-import org.endeavourhealth.core.data.admin.models.Service;
+import org.endeavourhealth.core.database.dal.DalProvider;
+import org.endeavourhealth.core.database.dal.admin.LibraryRepositoryHelper;
+import org.endeavourhealth.core.database.dal.admin.ServiceDalI;
+import org.endeavourhealth.core.database.dal.admin.models.Service;
+import org.endeavourhealth.core.database.dal.audit.QueuedMessageDalI;
+import org.endeavourhealth.core.database.dal.audit.models.Exchange;
+import org.endeavourhealth.core.database.dal.audit.models.HeaderKeys;
+import org.endeavourhealth.core.database.dal.audit.models.QueuedMessageType;
 import org.endeavourhealth.core.fhirStorage.JsonServiceInterfaceEndpoint;
-import org.endeavourhealth.core.messaging.exchange.Exchange;
-import org.endeavourhealth.core.messaging.exchange.HeaderKeys;
 import org.endeavourhealth.core.messaging.pipeline.PipelineComponent;
 import org.endeavourhealth.core.messaging.pipeline.PipelineException;
 import org.endeavourhealth.core.messaging.pipeline.SubscriberBatch;
@@ -88,7 +90,7 @@ public class MessageTransformOutbound extends PipelineComponent {
 			try {
 				outboundData = transform(exchange, batchId, software, softwareVersion, resourceIds, endpoint, protocolId);
 			} catch (Exception ex) {
-				throw new PipelineException("Failed to transform exchange " + exchange.getExchangeId() + " and batch " + batchId, ex);
+				throw new PipelineException("Failed to transform exchange " + exchange.getId() + " and batch " + batchId, ex);
 			}
 
 			//not all transforms may actually decide to generate any outbound content, so check for null and empty
@@ -96,7 +98,13 @@ public class MessageTransformOutbound extends PipelineComponent {
 
 				// Store transformed message
 				UUID messageUuid = UUID.randomUUID();
-				new QueuedMessageRepository().save(messageUuid, outboundData);
+
+				try {
+					QueuedMessageDalI queuedMessageDal = DalProvider.factoryQueuedMessageDal();
+					queuedMessageDal.save(messageUuid, outboundData, QueuedMessageType.OutboundData);
+				} catch (Exception ex) {
+					throw new PipelineException("Failed to save queued message", ex);
+				}
 
 				SubscriberBatch subscriberBatch = new SubscriberBatch();
 				subscriberBatch.setQueuedMessageId(messageUuid);
@@ -143,7 +151,7 @@ public class MessageTransformOutbound extends PipelineComponent {
 			return FhirToVitruCareXmlTransformer.transformFromFhir(batchId, resourceIds, endpoint);
 
 		} else {
-			throw new PipelineException("Unsupported outbound software " + software + " for exchange " + exchange.getExchangeId());
+			throw new PipelineException("Unsupported outbound software " + software + " for exchange " + exchange.getId());
 		}
 	}
 
@@ -260,7 +268,7 @@ public class MessageTransformOutbound extends PipelineComponent {
 			UUID serviceId = UUID.fromString(contract.getService().getUuid());
 			UUID technicalInterfaceId = UUID.fromString(contract.getTechnicalInterface().getUuid());
 
-			ServiceRepository serviceRepository = new ServiceRepository();
+			ServiceDalI serviceRepository = DalProvider.factoryServiceDal();
 
 			Service service = serviceRepository.getById(serviceId);
 			List<JsonServiceInterfaceEndpoint> serviceEndpoints = ObjectMapperPool.getInstance().readValue(service.getEndpoints(), new TypeReference<List<JsonServiceInterfaceEndpoint>>() {});
@@ -272,8 +280,8 @@ public class MessageTransformOutbound extends PipelineComponent {
 
 			return null;
 
-		} catch (IOException e) {
-			throw new PipelineException(e.getMessage(), e);
+		} catch (Exception ex) {
+			throw new PipelineException("Failed to get endpoint for contract", ex);
 		}
 	}
 

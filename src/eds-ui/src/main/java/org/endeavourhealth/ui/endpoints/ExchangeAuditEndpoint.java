@@ -4,22 +4,19 @@ package org.endeavourhealth.ui.endpoints;
 import com.codahale.metrics.annotation.Timed;
 import com.google.common.base.Strings;
 import io.astefanutti.metrics.aspectj.Metrics;
-import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.common.security.SecurityUtils;
 import org.endeavourhealth.common.security.annotations.RequiresAdmin;
-import org.endeavourhealth.core.data.admin.LibraryRepository;
-import org.endeavourhealth.core.data.admin.LibraryRepositoryHelper;
-import org.endeavourhealth.core.data.admin.ServiceRepository;
-import org.endeavourhealth.core.data.admin.models.ActiveItem;
-import org.endeavourhealth.core.data.admin.models.Item;
-import org.endeavourhealth.core.data.admin.models.Service;
-import org.endeavourhealth.core.data.audit.AuditRepository;
-import org.endeavourhealth.core.data.audit.UserAuditRepository;
-import org.endeavourhealth.core.data.audit.models.*;
-import org.endeavourhealth.core.messaging.exchange.HeaderKeys;
+import org.endeavourhealth.core.database.dal.DalProvider;
+import org.endeavourhealth.core.database.dal.admin.LibraryDalI;
+import org.endeavourhealth.core.database.dal.admin.LibraryRepositoryHelper;
+import org.endeavourhealth.core.database.dal.admin.ServiceDalI;
+import org.endeavourhealth.core.database.dal.admin.models.ActiveItem;
+import org.endeavourhealth.core.database.dal.admin.models.Item;
+import org.endeavourhealth.core.database.dal.admin.models.Service;
+import org.endeavourhealth.core.database.dal.audit.ExchangeDalI;
+import org.endeavourhealth.core.database.dal.audit.UserAuditDalI;
+import org.endeavourhealth.core.database.dal.audit.models.*;
 import org.endeavourhealth.core.queueing.QueueHelper;
-import org.endeavourhealth.core.rdbms.audit.models.AuditAction;
-import org.endeavourhealth.core.rdbms.audit.models.AuditModule;
 import org.endeavourhealth.core.xml.QueryDocument.*;
 import org.endeavourhealth.core.xml.TransformErrorSerializer;
 import org.endeavourhealth.core.xml.transformError.Arg;
@@ -44,10 +41,10 @@ import java.util.*;
 public class ExchangeAuditEndpoint extends AbstractEndpoint {
     private static final Logger LOG = LoggerFactory.getLogger(ExchangeAuditEndpoint.class);
 
-    private static final UserAuditRepository userAudit = new UserAuditRepository(AuditModule.EdsUiModule.ExchangeAudit);
-    private static final AuditRepository auditRepository = new AuditRepository();
-    private static final ServiceRepository serviceRepository = new ServiceRepository();
-    private static final LibraryRepository libraryRepository = new LibraryRepository();
+    private static final UserAuditDalI userAudit = DalProvider.factoryUserAuditDal(AuditModule.EdsUiModule.ExchangeAudit);
+    private static final ExchangeDalI auditRepository = DalProvider.factoryExchangeDal();
+    private static final ServiceDalI serviceRepository = DalProvider.factoryServiceDal();
+    private static final LibraryDalI libraryRepository = DalProvider.factoryLibraryDal();
 
 
     @GET
@@ -90,14 +87,13 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
             }
         }
 
-        List<ExchangeByService> exchangeByServices = auditRepository.getExchangesByService(serviceUuid, maxRows, dateFrom, dateTo);
-        for (ExchangeByService exchangeByService: exchangeByServices) {
+        List<Exchange> exchangeByServices = auditRepository.getExchangesByService(serviceUuid, maxRows, dateFrom, dateTo);
+        for (Exchange exchangeByService: exchangeByServices) {
 
-            UUID exchangeId = exchangeByService.getExchangeId();
+            UUID exchangeId = exchangeByService.getId();
             Exchange exchange = auditRepository.getExchange(exchangeId);
             Date timestamp = exchange.getTimestamp();
-            String headerJson = exchange.getHeaders();
-            HashMap<String, String> headers = ObjectMapperPool.getInstance().readValue(headerJson, HashMap.class);
+            Map<String, String> headers = exchange.getHeaders();
             List<String> bodyLines = getExchangeBodyLines(exchange);
 
             JsonExchange jsonExchange = new JsonExchange(exchangeId, serviceUuid, timestamp, headers, bodyLines);
@@ -141,8 +137,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
         }
 
         Date timestamp = exchange.getTimestamp();
-        String headerJson = exchange.getHeaders();
-        HashMap<String, String> headers = ObjectMapperPool.getInstance().readValue(headerJson, HashMap.class);
+        Map<String, String> headers = exchange.getHeaders();
         List<String> bodyLines = getExchangeBodyLines(exchange);
 
         //validate the exchange is for our service
@@ -309,7 +304,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
     }
 
 
-    private static JsonTransformServiceErrorSummary convertErrorStateToJson(ExchangeTransformErrorState errorState) {
+    private static JsonTransformServiceErrorSummary convertErrorStateToJson(ExchangeTransformErrorState errorState) throws Exception {
 
         if (errorState == null) {
             return null;
@@ -380,7 +375,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
 
             JsonTransformExchangeError jsonObj = new JsonTransformExchangeError();
             jsonObj.setExchangeId(exchangeId);
-            jsonObj.setVersion(transformAudit.getVersion());
+            jsonObj.setVersion(transformAudit.getId());
             jsonObj.setTransformStart(transformAudit.getStarted());
             jsonObj.setTransformEnd(transformAudit.getEnded());
             jsonObj.setNumberBatchIdsCreated(transformAudit.getNumberBatchesCreated());
@@ -464,7 +459,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
         return lines;
     }
 
-    private static String getServiceNameForId(UUID serviceId) {
+    private static String getServiceNameForId(UUID serviceId) throws Exception {
         try {
             Service service = serviceRepository.getById(serviceId);
             return service.getName();
@@ -474,7 +469,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
         }
     }
 
-    private static String getSystemNameForId(UUID systemId) {
+    private static String getSystemNameForId(UUID systemId) throws Exception {
         try {
             ActiveItem activeItem = libraryRepository.getActiveItemByItemId(systemId);
             Item item = libraryRepository.getItemByKey(systemId, activeItem.getAuditId());

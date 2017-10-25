@@ -3,7 +3,7 @@ package org.endeavourhealth.core.messaging.pipeline.components;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.core.configuration.ForEachConfig;
 import org.endeavourhealth.core.configuration.Pipeline;
-import org.endeavourhealth.core.messaging.exchange.Exchange;
+import org.endeavourhealth.core.database.dal.audit.models.Exchange;
 import org.endeavourhealth.core.messaging.pipeline.PipelineComponent;
 import org.endeavourhealth.core.messaging.pipeline.PipelineException;
 import org.endeavourhealth.core.messaging.pipeline.PipelineProcessor;

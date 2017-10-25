@@ -1,6 +1,5 @@
 package org.endeavourhealth.queuereader;
 
-import com.datastax.driver.core.*;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.base.Strings;
 import org.apache.commons.csv.CSVFormat;
@@ -9,18 +8,17 @@ import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.io.FileUtils;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.common.cache.ParserPool;
-import org.endeavourhealth.common.cassandra.CassandraConnector;
 import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.core.configuration.ConfigDeserialiser;
 import org.endeavourhealth.core.configuration.QueueReaderConfiguration;
-import org.endeavourhealth.core.data.admin.ServiceRepository;
-import org.endeavourhealth.core.data.admin.models.Service;
-import org.endeavourhealth.core.data.audit.AuditRepository;
-import org.endeavourhealth.core.data.audit.models.Exchange;
-import org.endeavourhealth.core.data.audit.models.ExchangeByService;
-import org.endeavourhealth.core.data.audit.models.ExchangeTransformAudit;
+import org.endeavourhealth.core.database.dal.DalProvider;
+import org.endeavourhealth.core.database.dal.admin.ServiceDalI;
+import org.endeavourhealth.core.database.dal.admin.models.Service;
+import org.endeavourhealth.core.database.dal.audit.ExchangeDalI;
+import org.endeavourhealth.core.database.dal.audit.models.Exchange;
+import org.endeavourhealth.core.database.dal.audit.models.ExchangeTransformAudit;
+import org.endeavourhealth.core.database.dal.audit.models.HeaderKeys;
 import org.endeavourhealth.core.fhirStorage.JsonServiceInterfaceEndpoint;
-import org.endeavourhealth.core.messaging.exchange.HeaderKeys;
 import org.endeavourhealth.core.queueing.QueueHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -244,8 +242,8 @@ public class Main {
 
 		UUID serviceId = UUID.fromString(serviceIdStr);
 
-		ServiceRepository serviceRepository = new ServiceRepository();
-		AuditRepository auditRepository = new AuditRepository();
+		ServiceDalI serviceRepository = DalProvider.factoryServiceDal();
+		ExchangeDalI auditRepository = DalProvider.factoryExchangeDal();
 
 		try {
 			Service service = serviceRepository.getById(serviceId);
@@ -274,12 +272,16 @@ public class Main {
 	private static void findDeletedOrgs() {
 		LOG.info("Starting finding deleted orgs");
 
-		ServiceRepository serviceRepository = new ServiceRepository();
-		AuditRepository auditRepository = new AuditRepository();
+		ServiceDalI serviceRepository = DalProvider.factoryServiceDal();
+		ExchangeDalI auditRepository = DalProvider.factoryExchangeDal();
 
 		List<Service> services = new ArrayList<>();
-		for (Service service: serviceRepository.getAll()) {
-			services.add(service);
+		try {
+			for (Service service: serviceRepository.getAll()) {
+				services.add(service);
+			}
+		} catch (Exception ex) {
+			LOG.error("", ex);
 		}
 
 		services.sort((o1, o2) -> {
@@ -290,23 +292,23 @@ public class Main {
 
 		for (Service service: services) {
 
-			UUID serviceUuid = service.getId();
-			List<ExchangeByService> exchangeByServices = auditRepository.getExchangesByService(serviceUuid, 1, new Date(0), new Date());
-
-			LOG.info("Service: " + service.getName() + " " + service.getLocalIdentifier());
-
-			if (exchangeByServices.isEmpty()) {
-				LOG.info("    no exchange found!");
-				continue;
-			}
-
 			try {
-				ExchangeByService exchangeByService = exchangeByServices.get(0);
-				UUID exchangeId = exchangeByService.getExchangeId();
+				UUID serviceUuid = service.getId();
+				List<Exchange> exchangeByServices = auditRepository.getExchangesByService(serviceUuid, 1, new Date(0), new Date());
+
+				LOG.info("Service: " + service.getName() + " " + service.getLocalId());
+
+				if (exchangeByServices.isEmpty()) {
+					LOG.info("    no exchange found!");
+					continue;
+				}
+
+
+				Exchange exchangeByService = exchangeByServices.get(0);
+				UUID exchangeId = exchangeByService.getId();
 				Exchange exchange = auditRepository.getExchange(exchangeId);
 
-				String headerJson = exchange.getHeaders();
-				HashMap<String, String> headers = ObjectMapperPool.getInstance().readValue(headerJson, HashMap.class);
+				Map<String, String> headers = exchange.getHeaders();
 
 				String systemUuidStr = headers.get(HeaderKeys.SenderSystemUuid);
 				UUID systemUuid = UUID.fromString(systemUuidStr);
@@ -322,7 +324,7 @@ public class Main {
 				exchangeByServices = auditRepository.getExchangesByService(serviceUuid, 250, new Date(0), new Date());
 				for (int i=0; i<exchangeByServices.size(); i++) {
 					exchangeByService = exchangeByServices.get(i);
-					exchangeId = exchangeByService.getExchangeId();
+					exchangeId = exchangeByService.getId();
 					batches = countBatches(exchangeId, serviceUuid, systemUuid);
 
 					exchange = auditRepository.getExchange(exchangeId);
@@ -348,9 +350,10 @@ public class Main {
 		LOG.info("Finished finding deleted orgs");
 	}
 
-	private static int countBatches(UUID exchangeId, UUID serviceId, UUID systemId) {
+	private static int countBatches(UUID exchangeId, UUID serviceId, UUID systemId) throws Exception {
 		int batches = 0;
-		List<ExchangeTransformAudit> audits = new AuditRepository().getAllExchangeTransformAudits(serviceId, systemId, exchangeId);
+		ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
+		List<ExchangeTransformAudit> audits = exchangeDal.getAllExchangeTransformAudits(serviceId, systemId, exchangeId);
 		for (ExchangeTransformAudit audit: audits) {
 			if (audit.getNumberBatchesCreated() != null) {
 				batches += audit.getNumberBatchesCreated();
@@ -2721,7 +2724,7 @@ public class Main {
 		LOG.info("Finished posting orgs to protocol queue");
 	}*/
 
-	private static void findCodes() {
+	/*private static void findCodes() {
 
 		LOG.info("Finding missing codes");
 
@@ -2777,7 +2780,7 @@ public class Main {
 		}
 
 		LOG.info("Finished finding missing codes");
-	}
+	}*/
 }
 
 /*class ResourceFiler extends FhirResourceFiler {

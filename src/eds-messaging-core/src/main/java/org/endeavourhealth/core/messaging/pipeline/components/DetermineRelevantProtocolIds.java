@@ -4,9 +4,9 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.core.audit.AuditWriter;
 import org.endeavourhealth.core.configuration.DetermineRelevantProtocolIdsConfig;
-import org.endeavourhealth.core.data.admin.LibraryRepositoryHelper;
-import org.endeavourhealth.core.messaging.exchange.Exchange;
-import org.endeavourhealth.core.messaging.exchange.HeaderKeys;
+import org.endeavourhealth.core.database.dal.admin.LibraryRepositoryHelper;
+import org.endeavourhealth.core.database.dal.audit.models.Exchange;
+import org.endeavourhealth.core.database.dal.audit.models.HeaderKeys;
 import org.endeavourhealth.core.messaging.pipeline.PipelineComponent;
 import org.endeavourhealth.core.messaging.pipeline.PipelineException;
 import org.endeavourhealth.core.xml.QueryDocument.*;
@@ -34,7 +34,11 @@ public class DetermineRelevantProtocolIds extends PipelineComponent {
 		exchange.setHeader(HeaderKeys.ProtocolIds, protocolIdsJson);
 
 		//commit what we've just received to the DB
-		AuditWriter.writeExchange(exchange);
+		try {
+			AuditWriter.writeExchange(exchange);
+		} catch (Exception ex) {
+			throw new PipelineException("Failed write exchange " + exchange.getId() + " to database", ex);
+		}
 
 		LOG.debug("Data distribution protocols identified");
 	}

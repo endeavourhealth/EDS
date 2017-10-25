@@ -10,8 +10,9 @@ import org.apache.commons.lang3.StringUtils;
 import org.endeavourhealth.common.security.OrgRoles;
 import org.endeavourhealth.common.security.annotations.RequiresAdmin;
 import org.endeavourhealth.common.security.keycloak.client.KeycloakAdminClient;
-import org.endeavourhealth.core.data.audit.UserAuditRepository;
-import org.endeavourhealth.core.rdbms.audit.models.AuditModule;
+import org.endeavourhealth.core.database.dal.DalProvider;
+import org.endeavourhealth.core.database.dal.audit.UserAuditDalI;
+import org.endeavourhealth.core.database.dal.audit.models.AuditModule;
 import org.endeavourhealth.coreui.endpoints.AbstractEndpoint;
 import org.endeavourhealth.ui.json.security.JsonRole;
 import org.endeavourhealth.ui.json.security.JsonRoleProfile;
@@ -36,7 +37,7 @@ import java.util.stream.Collectors;
 public final class SecurityRoleProfileEndpoint extends AbstractEndpoint {
     private static final Logger LOG = LoggerFactory.getLogger(SecurityRoleProfileEndpoint.class);
 
-    private static final UserAuditRepository userAudit = new UserAuditRepository(AuditModule.EdsUiModule.Security);
+    private static final UserAuditDalI userAudit = DalProvider.factoryUserAuditDal(AuditModule.EdsUiModule.Security);
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)

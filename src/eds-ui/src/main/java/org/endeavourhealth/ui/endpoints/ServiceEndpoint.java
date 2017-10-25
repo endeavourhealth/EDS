@@ -6,19 +6,20 @@ import io.astefanutti.metrics.aspectj.Metrics;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.common.security.SecurityUtils;
 import org.endeavourhealth.common.security.annotations.RequiresAdmin;
-import org.endeavourhealth.core.data.admin.LibraryRepository;
-import org.endeavourhealth.core.data.admin.OrganisationRepository;
-import org.endeavourhealth.core.data.admin.ServiceRepository;
-import org.endeavourhealth.core.data.admin.models.ActiveItem;
-import org.endeavourhealth.core.data.admin.models.Item;
-import org.endeavourhealth.core.data.admin.models.Organisation;
-import org.endeavourhealth.core.data.admin.models.Service;
-import org.endeavourhealth.core.data.audit.UserAuditRepository;
-import org.endeavourhealth.core.data.ehr.ResourceRepository;
+import org.endeavourhealth.core.database.dal.DalProvider;
+import org.endeavourhealth.core.database.dal.admin.LibraryDalI;
+import org.endeavourhealth.core.database.dal.admin.OrganisationDalI;
+import org.endeavourhealth.core.database.dal.admin.ServiceDalI;
+import org.endeavourhealth.core.database.dal.admin.models.ActiveItem;
+import org.endeavourhealth.core.database.dal.admin.models.Item;
+import org.endeavourhealth.core.database.dal.admin.models.Organisation;
+import org.endeavourhealth.core.database.dal.admin.models.Service;
+import org.endeavourhealth.core.database.dal.audit.UserAuditDalI;
+import org.endeavourhealth.core.database.dal.audit.models.AuditAction;
+import org.endeavourhealth.core.database.dal.audit.models.AuditModule;
+import org.endeavourhealth.core.database.dal.ehr.ResourceDalI;
 import org.endeavourhealth.core.fhirStorage.FhirDeletionService;
 import org.endeavourhealth.core.fhirStorage.JsonServiceInterfaceEndpoint;
-import org.endeavourhealth.core.rdbms.audit.models.AuditAction;
-import org.endeavourhealth.core.rdbms.audit.models.AuditModule;
 import org.endeavourhealth.core.xml.QueryDocument.LibraryItem;
 import org.endeavourhealth.core.xml.QueryDocument.System;
 import org.endeavourhealth.core.xml.QueryDocumentSerializer;
@@ -44,9 +45,9 @@ import java.util.concurrent.ConcurrentHashMap;
 public final class ServiceEndpoint extends AbstractEndpoint {
 	private static final Logger LOG = LoggerFactory.getLogger(ServiceEndpoint.class);
 
-	private static final ServiceRepository repository = new ServiceRepository();
-	private static final OrganisationRepository organisationRepository = new OrganisationRepository();
-	private static final UserAuditRepository userAudit = new UserAuditRepository(AuditModule.EdsUiModule.Service);
+	private static final ServiceDalI repository = DalProvider.factoryServiceDal();
+	private static final OrganisationDalI organisationRepository = DalProvider.factoryOrganisationDal();
+	private static final UserAuditDalI userAudit = DalProvider.factoryUserAuditDal(AuditModule.EdsUiModule.Service);
 	private static final Map<UUID, FhirDeletionService> dataBeingDeleted = new ConcurrentHashMap<>();
 
 	@POST
@@ -64,7 +65,7 @@ public final class ServiceEndpoint extends AbstractEndpoint {
 		Service dbService = new Service();
 		dbService.setId(service.getUuid());
 		dbService.setName(service.getName());
-		dbService.setLocalIdentifier(service.getLocalIdentifier());
+		dbService.setLocalId(service.getLocalIdentifier());
 		dbService.setOrganisations(service.getOrganisations());
 
 		String endpointsJson = ObjectMapperPool.getInstance().writeValueAsString(service.getEndpoints());
@@ -99,7 +100,7 @@ public final class ServiceEndpoint extends AbstractEndpoint {
 		Service service = repository.getById(serviceUuid);
 
 		//validate that there's no data in the EHR repo before allowing a delete
-		ResourceRepository resourceRepository = new ResourceRepository();
+		ResourceDalI resourceRepository = DalProvider.factoryResourceDal();
 		List<JsonServiceInterfaceEndpoint> endpoints = ObjectMapperPool.getInstance().readValue(service.getEndpoints(), new TypeReference<List<JsonServiceInterfaceEndpoint>>() {});
 		for (JsonServiceInterfaceEndpoint endpoint: endpoints) {
 			UUID systemId = endpoint.getSystemUuid();
@@ -284,9 +285,11 @@ public final class ServiceEndpoint extends AbstractEndpoint {
 				"ServiceId", serviceIdStr);
 
 		UUID serviceId = UUID.fromString(serviceIdStr);
-		org.endeavourhealth.core.data.admin.models.Service service = new ServiceRepository().getById(serviceId);
 
-		LibraryRepository libraryRepository = new LibraryRepository();
+		ServiceDalI serviceDal = DalProvider.factoryServiceDal();
+		Service service = serviceDal.getById(serviceId);
+
+		LibraryDalI libraryRepository = DalProvider.factoryLibraryDal();
 
 		List<System> ret = new ArrayList<>();
 

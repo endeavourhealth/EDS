@@ -4,15 +4,11 @@ import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.endeavourhealth.core.csv.CsvHelper;
-import org.endeavourhealth.core.rdbms.ConnectionManager;
-import org.endeavourhealth.core.rdbms.reference.models.LsoaLookup;
-import org.endeavourhealth.core.rdbms.reference.models.MsoaLookup;
+import org.endeavourhealth.core.database.dal.DalProvider;
+import org.endeavourhealth.core.database.dal.reference.ReferenceUpdaterDalI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.persistence.EntityManager;
-import javax.persistence.NoResultException;
-import javax.persistence.Query;
 import java.io.File;
 import java.nio.charset.Charset;
 import java.util.HashMap;
@@ -99,85 +95,39 @@ public class LsoaUpdater {
     private static void saveMsoaMappings(File msoaMapFile) throws Exception {
 
         Map<String, String> msoaMap = readerLsoaOrMsoaMapFile(msoaMapFile, MSOA_MAP_CODE, MSOA_MAP_NAME);
-
-        EntityManager entityManager = ConnectionManager.getReferenceEntityManager();
-
         int done = 0;
+
+        ReferenceUpdaterDalI referenceUpdaterDal = DalProvider.factoryReferenceUpdaterDal();
 
         for (String msoaCode: msoaMap.keySet()) {
             String msoaName = msoaMap.get(msoaCode);
 
-            String sql = "select r"
-                    + " from MsoaLookup r"
-                    + " where r.msoaCode = :msoaCode";
-
-            Query query = entityManager
-                    .createQuery(sql, MsoaLookup.class)
-                    .setParameter("msoaCode", msoaCode);
-
-            MsoaLookup lookup = null;
-            try {
-                lookup = (MsoaLookup)query.getSingleResult();
-            } catch (NoResultException e) {
-                lookup = new MsoaLookup();
-                lookup.setMsoaCode(msoaCode);
-            }
-
-            lookup.setMsoaName(msoaName);
-
-            entityManager.getTransaction().begin();
-            entityManager.persist(lookup);
-            entityManager.getTransaction().commit();
+            referenceUpdaterDal.updateMosaMap(msoaCode, msoaName);
 
             done ++;
             if (done % 1000 == 0) {
                 LOG.info("Done " + done + " MSOA mappings (out of approx 7K)");
             }
         }
-
-        entityManager.close();
     }
 
     private static void saveLsoaMappings(File lsoaMapFile) throws Exception {
 
         Map<String, String> lsoaMap = readerLsoaOrMsoaMapFile(lsoaMapFile, LSOA_MAP_CODE, LSOA_MAP_NAME);
-
-        EntityManager entityManager = ConnectionManager.getReferenceEntityManager();
-
         int done = 0;
+
+        ReferenceUpdaterDalI referenceUpdaterDal = DalProvider.factoryReferenceUpdaterDal();
 
         for (String lsoaCode: lsoaMap.keySet()) {
             String lsoaName = lsoaMap.get(lsoaCode);
 
-            String sql = "select r"
-                    + " from LsoaLookup r"
-                    + " where r.lsoaCode = :lsoaCode";
-
-            Query query = entityManager
-                    .createQuery(sql, LsoaLookup.class)
-                    .setParameter("lsoaCode", lsoaCode);
-
-            LsoaLookup lookup = null;
-            try {
-                lookup = (LsoaLookup)query.getSingleResult();
-            } catch (NoResultException e) {
-                lookup = new LsoaLookup();
-                lookup.setLsoaCode(lsoaCode);
-            }
-
-            lookup.setLsoaName(lsoaName);
-
-            entityManager.getTransaction().begin();
-            entityManager.persist(lookup);
-            entityManager.getTransaction().commit();
+            referenceUpdaterDal.updateLosaMap(lsoaCode, lsoaName);
 
             done ++;
             if (done % 1000 == 0) {
                 LOG.info("Done " + done + " LSOA mappings (out of approx 35K)");
             }
         }
-
-        entityManager.close();
     }
 
 

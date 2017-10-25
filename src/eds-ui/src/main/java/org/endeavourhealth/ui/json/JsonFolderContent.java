@@ -1,10 +1,10 @@
 package org.endeavourhealth.ui.json;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import org.endeavourhealth.core.data.admin.models.ActiveItem;
-import org.endeavourhealth.core.data.admin.models.Audit;
-import org.endeavourhealth.core.data.admin.models.DefinitionItemType;
-import org.endeavourhealth.core.data.admin.models.Item;
+import org.endeavourhealth.core.database.dal.admin.models.ActiveItem;
+import org.endeavourhealth.core.database.dal.admin.models.Audit;
+import org.endeavourhealth.core.database.dal.admin.models.DefinitionItemType;
+import org.endeavourhealth.core.database.dal.admin.models.Item;
 
 import java.util.Date;
 import java.util.UUID;
@@ -35,7 +35,7 @@ public final class JsonFolderContent implements Comparable {
         this.description = item.getDescription();
 
         if (audit != null) {
-            this.lastModified = audit.getTimeStamp();
+            this.lastModified = audit.getTimestamp();
         }
     }
 

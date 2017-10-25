@@ -4,12 +4,13 @@ import com.codahale.metrics.annotation.Timed;
 import io.astefanutti.metrics.aspectj.Metrics;
 import org.endeavourhealth.common.security.SecurityUtils;
 import org.endeavourhealth.common.security.annotations.RequiresAdmin;
-import org.endeavourhealth.core.data.admin.LibraryRepository;
-import org.endeavourhealth.core.data.admin.LibraryRepositoryHelper;
-import org.endeavourhealth.core.data.admin.models.*;
-import org.endeavourhealth.core.data.audit.UserAuditRepository;
-import org.endeavourhealth.core.rdbms.audit.models.AuditAction;
-import org.endeavourhealth.core.rdbms.audit.models.AuditModule;
+import org.endeavourhealth.core.database.dal.DalProvider;
+import org.endeavourhealth.core.database.dal.admin.LibraryDalI;
+import org.endeavourhealth.core.database.dal.admin.LibraryRepositoryHelper;
+import org.endeavourhealth.core.database.dal.admin.models.*;
+import org.endeavourhealth.core.database.dal.audit.UserAuditDalI;
+import org.endeavourhealth.core.database.dal.audit.models.AuditAction;
+import org.endeavourhealth.core.database.dal.audit.models.AuditModule;
 import org.endeavourhealth.core.xml.QueryDocument.*;
 import org.endeavourhealth.core.xml.QueryDocument.System;
 import org.endeavourhealth.core.xml.QueryDocumentSerializer;
@@ -30,7 +31,7 @@ import java.util.*;
 public final class LibraryEndpoint extends AbstractItemEndpoint {
 
     private static final Logger LOG = LoggerFactory.getLogger(LibraryEndpoint.class);
-    private static final UserAuditRepository userAudit = new UserAuditRepository(AuditModule.EdsUiModule.Library);
+    private static final UserAuditDalI userAudit = DalProvider.factoryUserAuditDal(AuditModule.EdsUiModule.Library);
 
 
 	@GET
@@ -44,7 +45,7 @@ public final class LibraryEndpoint extends AbstractItemEndpoint {
 				"FolderContents",
 				"Folder Id", uuidStr);
 
-		LibraryRepository repository = new LibraryRepository();
+		LibraryDalI repository = DalProvider.factoryLibraryDal();
 
 		UUID folderUuid = UUID.fromString(uuidStr);
 
@@ -59,8 +60,9 @@ public final class LibraryEndpoint extends AbstractItemEndpoint {
 		for (ItemDependency dependency: itemDependency) {
 			Iterable<ActiveItem> item = repository.getActiveItemByAuditId(dependency.getAuditId());
 			for (ActiveItem activeItem: item) {
-				if (activeItem.getIsDeleted()==false)
-					childActiveItems.add(activeItem);
+				if (!activeItem.isDeleted()) {
+                    childActiveItems.add(activeItem);
+                }
 			}
 		}
 
@@ -146,7 +148,7 @@ public final class LibraryEndpoint extends AbstractItemEndpoint {
         UUID libraryItemUuid = UUID.fromString(uuidStr);
 
         LOG.trace("GettingLibraryItem for UUID {}", libraryItemUuid);
-        LibraryRepository repository = new LibraryRepository();
+        LibraryDalI repository = DalProvider.factoryLibraryDal();
 
         ActiveItem activeItem = repository.getActiveItemByItemId(libraryItemUuid);
 
@@ -175,7 +177,7 @@ public final class LibraryEndpoint extends AbstractItemEndpoint {
             "LibraryItem",
             "Item", libraryItem);
 
-        LibraryRepository repository = new LibraryRepository();
+        LibraryDalI repository = DalProvider.factoryLibraryDal();
 
         UUID orgUuid = getOrganisationUuidFromToken(sc);
         UUID userUuid = SecurityUtils.getCurrentUserId(sc);
@@ -303,7 +305,7 @@ public final class LibraryEndpoint extends AbstractItemEndpoint {
             "ContentForReport",
             "ReportId", uuidStr);
 
-        LibraryRepository repository = new LibraryRepository();
+        LibraryDalI repository = DalProvider.factoryLibraryDal();
 
         UUID itemUuid = UUID.fromString(uuidStr);
 
@@ -376,14 +378,15 @@ public final class LibraryEndpoint extends AbstractItemEndpoint {
         List<Item> items = new ArrayList();
         Iterable<ItemDependency> itemDependency = null;
 
-        LibraryRepository repository = new LibraryRepository();
+        LibraryDalI repository = DalProvider.factoryLibraryDal();
 
         activeItems = repository.getActiveItemByOrgAndTypeId(orgUuid, itemType.getValue(), false);
 
         for (ActiveItem activeItem: activeItems) {
             Item item = repository.getItemByKey(activeItem.getItemId(), activeItem.getAuditId());
-            if (item.getIsDeleted()==false)
+            if (!item.isDeleted()) {
                 items.add(item);
+            }
         }
 
         List<System> ret = new ArrayList<>();
@@ -507,14 +510,16 @@ public final class LibraryEndpoint extends AbstractItemEndpoint {
         List<Item> items = new ArrayList();
         Iterable<ItemDependency> itemDependency = null;
 
-        LibraryRepository repository = new LibraryRepository();
+        LibraryDalI repository = DalProvider.factoryLibraryDal();
 
         activeItems = repository.getActiveItemByOrgAndTypeId(orgUuid, itemType.getValue(), false);
 
         for (ActiveItem activeItem: activeItems) {
             Item item = repository.getItemByKey(activeItem.getItemId(), activeItem.getAuditId());
-            if (item.getIsDeleted()==false)
+            if (!item.isDeleted()) {
                 items.add(item);
+            }
+
         }
 
         List<JsonQuery> ret = new ArrayList<>();
@@ -555,14 +560,16 @@ public final class LibraryEndpoint extends AbstractItemEndpoint {
         List<Item> items = new ArrayList();
         Iterable<ItemDependency> itemDependency = null;
 
-        LibraryRepository repository = new LibraryRepository();
+        LibraryDalI repository = DalProvider.factoryLibraryDal();
 
         activeItems = repository.getActiveItemByOrgAndTypeId(orgUuid, itemType.getValue(), false);
 
         for (ActiveItem activeItem: activeItems) {
             Item item = repository.getItemByKey(activeItem.getItemId(), activeItem.getAuditId());
-            if (item.getIsDeleted()==false)
+            if (!item.isDeleted()) {
                 items.add(item);
+            }
+
         }
 
         List<JsonDataSet> ret = new ArrayList<>();

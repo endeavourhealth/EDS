@@ -7,10 +7,12 @@ import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.common.utility.StreamExtension;
 import org.endeavourhealth.core.audit.AuditWriter;
 import org.endeavourhealth.core.configuration.*;
-import org.endeavourhealth.core.data.admin.LibraryRepositoryHelper;
-import org.endeavourhealth.core.data.ehr.ExchangeBatchRepository;
-import org.endeavourhealth.core.data.ehr.models.ExchangeBatch;
-import org.endeavourhealth.core.messaging.exchange.HeaderKeys;
+import org.endeavourhealth.core.database.dal.DalProvider;
+import org.endeavourhealth.core.database.dal.admin.LibraryRepositoryHelper;
+import org.endeavourhealth.core.database.dal.audit.ExchangeBatchDalI;
+import org.endeavourhealth.core.database.dal.audit.models.Exchange;
+import org.endeavourhealth.core.database.dal.audit.models.ExchangeBatch;
+import org.endeavourhealth.core.database.dal.audit.models.HeaderKeys;
 import org.endeavourhealth.core.messaging.pipeline.TransformBatch;
 import org.endeavourhealth.core.messaging.pipeline.components.DetermineRelevantProtocolIds;
 import org.endeavourhealth.core.messaging.pipeline.components.PostMessageToExchange;
@@ -39,7 +41,7 @@ public class QueueHelper {
             throw new BadRequestException("Failed to find PostMessageToExchange config details for exchange " + exchangeName);
         }
 
-        org.endeavourhealth.core.messaging.exchange.Exchange exchange = AuditWriter.readExchange(exchangeId);
+        Exchange exchange = AuditWriter.readExchange(exchangeId);
         //org.endeavourhealth.core.messaging.exchange.Exchange exchange = retrieveExchange(exchangeId);
 
         //to make sure the latest setup applies, re-calculate the protocols that apply to this exchange
@@ -106,14 +108,13 @@ public class QueueHelper {
     }
 
 
-    private static void populateMulticastHeader(org.endeavourhealth.core.messaging.exchange.Exchange exchange, String multicastHeader) throws Exception {
+    private static void populateMulticastHeader(Exchange exchange, String multicastHeader) throws Exception {
 
-        UUID exchangeUuid = exchange.getExchangeId();
+        UUID exchangeUuid = exchange.getId();
+        ExchangeBatchDalI exchangeBatchRepository = DalProvider.factoryExchangeBatchDal();
+        List<ExchangeBatch> batches = exchangeBatchRepository.retrieveForExchangeId(exchangeUuid);
 
         if (multicastHeader.equalsIgnoreCase(HeaderKeys.BatchIdsJson)) {
-
-            ExchangeBatchRepository exchangeBatchRepository = new ExchangeBatchRepository();
-            List<ExchangeBatch> batches = exchangeBatchRepository.retrieveForExchangeId(exchangeUuid);
 
             List<UUID> batchUuids = batches
                     .stream()
@@ -132,9 +133,6 @@ public class QueueHelper {
             List<TransformBatch> transformBatches = new ArrayList<>();
 
             String[] protocolIds = exchange.getHeaderAsStringArray(HeaderKeys.ProtocolIds);
-
-            ExchangeBatchRepository exchangeBatchRepository = new ExchangeBatchRepository();
-            List<ExchangeBatch> batches = exchangeBatchRepository.retrieveForExchangeId(exchangeUuid);
 
             for (String protocolId: protocolIds) {
 
