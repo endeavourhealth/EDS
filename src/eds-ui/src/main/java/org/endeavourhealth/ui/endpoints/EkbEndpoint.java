@@ -5,9 +5,9 @@ import io.astefanutti.metrics.aspectj.Metrics;
 import org.endeavourhealth.core.database.dal.DalProvider;
 import org.endeavourhealth.core.database.dal.audit.UserAuditDalI;
 import org.endeavourhealth.core.database.dal.audit.models.AuditModule;
+import org.endeavourhealth.core.database.dal.coding.CodingDalI;
+import org.endeavourhealth.core.database.dal.coding.models.Concept;
 import org.endeavourhealth.coreui.endpoints.AbstractEndpoint;
-import org.endeavourhealth.ui.database.EkbManager;
-import org.endeavourhealth.ui.database.models.ConceptEntity;
 import org.endeavourhealth.ui.json.JsonCodeSetValue;
 import org.endeavourhealth.ui.json.JsonConcept;
 import org.slf4j.Logger;
@@ -26,7 +26,7 @@ import java.util.stream.Collectors;
 public final class EkbEndpoint extends AbstractEndpoint {
 	private static final Logger LOG = LoggerFactory.getLogger(EkbEndpoint.class);
 	private static final UserAuditDalI userAudit = DalProvider.factoryUserAuditDal(AuditModule.EdsUiModule.Ekb);
-
+	private static final CodingDalI codingDal = DalProvider.factoryCodingDal();
 
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
@@ -37,7 +37,7 @@ public final class EkbEndpoint extends AbstractEndpoint {
 		super.setLogbackMarkers(sc);
 		// userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load);
 
-		List<ConceptEntity> concepts = EkbManager.search(term, maxResultsSize, start);
+		List<Concept> concepts = codingDal.search(term, maxResultsSize, start);
 		List<JsonCodeSetValue> ret = concepts.stream().map(JsonCodeSetValue::new).collect(Collectors.toList());
 
 		clearLogbackMarkers();
@@ -57,7 +57,7 @@ public final class EkbEndpoint extends AbstractEndpoint {
 		super.setLogbackMarkers(sc);
 		// userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load);
 
-		ConceptEntity concept = EkbManager.getConcept(code);
+		Concept concept = codingDal.getConcept(code);
 		JsonConcept ret = new JsonConcept(concept);
 
 		clearLogbackMarkers();
@@ -77,7 +77,7 @@ public final class EkbEndpoint extends AbstractEndpoint {
 		super.setLogbackMarkers(sc);
 		// userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load);
 
-		List<ConceptEntity> concepts = EkbManager.getChildren(code);
+		List<Concept> concepts = codingDal.getChildren(code);
 		List<JsonCodeSetValue> ret = concepts.stream().map(JsonCodeSetValue::new).collect(Collectors.toList());
 
 		clearLogbackMarkers();
@@ -97,7 +97,7 @@ public final class EkbEndpoint extends AbstractEndpoint {
 		super.setLogbackMarkers(sc);
 		// userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load);
 
-		List<ConceptEntity> concepts = EkbManager.getParents(code);
+		List<Concept> concepts = codingDal.getParents(code);
 		List<JsonCodeSetValue> ret = concepts.stream().map(JsonCodeSetValue::new).collect(Collectors.toList());
 
 		clearLogbackMarkers();

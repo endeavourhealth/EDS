@@ -7,9 +7,9 @@ import org.endeavourhealth.core.database.dal.DalProvider;
 import org.endeavourhealth.core.database.dal.audit.UserAuditDalI;
 import org.endeavourhealth.core.database.dal.audit.models.AuditAction;
 import org.endeavourhealth.core.database.dal.audit.models.AuditModule;
+import org.endeavourhealth.core.database.dal.logback.LogbackDalI;
+import org.endeavourhealth.core.database.dal.logback.models.LoggingEvent;
 import org.endeavourhealth.coreui.endpoints.AbstractEndpoint;
-import org.endeavourhealth.ui.database.LoggingManager;
-import org.endeavourhealth.ui.database.models.LoggingEventEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,6 +25,7 @@ import java.util.List;
 public final class LoggingEndpoint extends AbstractEndpoint {
     private static final Logger LOG = LoggerFactory.getLogger(LoggingEndpoint.class);
     private static final UserAuditDalI userAudit = DalProvider.factoryUserAuditDal(AuditModule.EdsUiModule.Monitoring);
+    private static final LogbackDalI logbackDal = DalProvider.factoryLogbackDal();
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
@@ -42,9 +43,7 @@ public final class LoggingEndpoint extends AbstractEndpoint {
             "Service", serviceId,
             "Level",level);
 
-        LoggingManager db = new LoggingManager();
-
-        List<LoggingEventEntity> events = db.getLoggingEvents(page, serviceId, level);
+        List<LoggingEvent> events = logbackDal.getLoggingEvents(page, serviceId, level);
 
         clearLogbackMarkers();
 
@@ -65,9 +64,7 @@ public final class LoggingEndpoint extends AbstractEndpoint {
             "Stack Trace",
             "EventId", eventId);
 
-        LoggingManager db = new LoggingManager();
-
-        String stackTrace = db.getStackTrace(eventId);
+        String stackTrace = logbackDal.getStackTrace(eventId);
 
         clearLogbackMarkers();
 

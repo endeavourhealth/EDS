@@ -5,7 +5,7 @@ CREATE KEYSPACE admin WITH REPLICATION = { 'class' : 'SimpleStrategy', 'replicat
 USE admin;
 
 DROP TABLE IF EXISTS patient_cohort;
-
+DROP TABLE IF EXISTS queuedMessage;
 
 CREATE TABLE snomed_lookup (
     concept_id text,

@@ -1,4 +1,4 @@
-USE ???? -- db name varies
+USE subscriber_transform_???? -- db name varies
 
 DROP TABLE IF EXISTS enterprise_id_map;
 DROP TABLE IF EXISTS enterprise_organisation_id_map;
@@ -7,6 +7,7 @@ DROP TABLE IF EXISTS pseudo_id_map;
 DROP TABLE IF EXISTS enterprise_age;
 DROP TABLE IF EXISTS enterprise_person_id_map;
 DROP TABLE IF EXISTS enterprise_person_update_history;
+DROP TABLE IF EXISTS vitru_care_patient_id_map;
 
 -- NOTE:  Use ALTER TABLE enterprise_id_map AUTO_INCREMENT=XXXXX; to set the auto increment id starting value
 CREATE TABLE enterprise_id_map
@@ -76,4 +77,13 @@ CREATE TABLE enterprise_person_update_history
 (
   date_run timestamp NOT NULL,
   CONSTRAINT pk_person_update_history PRIMARY KEY (date_run)
+);
+
+CREATE TABLE vitru_care_patient_id_map (
+	eds_patient_id varchar(36),
+	service_id varchar(36),
+	system_id varchar(36),
+	created_at datetime,
+	vitrucare_id varchar(250),
+    CONSTRAINT pk_resource_id_map PRIMARY KEY (eds_patient_id)
 );

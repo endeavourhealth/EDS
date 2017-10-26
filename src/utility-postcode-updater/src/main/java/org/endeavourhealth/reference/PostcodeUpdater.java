@@ -157,8 +157,14 @@ public class PostcodeUpdater {
 
         //if we've had multiple errors, just throw the first one, since they'll most-likely be the same
         ThreadPoolError first = errors.get(0);
-        Exception exception = first.getException();
-        throw exception;
+        Throwable cause = first.getException();
+        //the cause may be an Exception or Error so we need to explicitly
+        //cast to the right type to throw it without changing the method signature
+        if (cause instanceof Exception) {
+            throw (Exception)cause;
+        } else if (cause instanceof Error) {
+            throw (Error)cause;
+        }
     }
 
     /*private static Map<String, BigDecimal> readTownsendMap(File townsendMapFile) throws Exception {
