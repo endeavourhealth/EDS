@@ -6,6 +6,7 @@ DROP TABLE IF EXISTS pseudo_id_map;
 DROP TABLE IF EXISTS enterprise_age;
 DROP TABLE IF EXISTS enterprise_person_id_map;
 DROP TABLE IF EXISTS enterprise_person_update_history;
+DROP TABLE IF EXISTS vitru_care_patient_id_map;
 
 DROP SEQUENCE IF EXISTS enterprise_id_seq;
 DROP SEQUENCE IF EXISTS household_id_seq;
@@ -179,3 +180,20 @@ WITH (
 );
 ALTER TABLE public.enterprise_person_update_history
   OWNER TO postgres;
+
+
+
+CREATE TABLE vitru_care_patient_id_map (
+	eds_patient_id character varying(36),
+	service_id character varying(36),
+	system_id character varying(36),
+	created_at timestamp without time zone NOT NULL,
+	vitrucare_id varchar(250),
+    CONSTRAINT pk_resource_id_map PRIMARY KEY (eds_patient_id)
+)
+WITH (
+  OIDS=FALSE
+);
+ALTER TABLE public.vitru_care_patient_id_map
+  OWNER TO postgres;
+

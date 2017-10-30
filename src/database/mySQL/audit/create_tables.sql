@@ -13,7 +13,7 @@ CREATE TABLE exchange
 (
     id varchar(36),
     timestamp datetime,
-    headers varchar(1000),
+    headers text,
     service_id varchar(36),
     body text,
     CONSTRAINT pk_exchange PRIMARY KEY (id)
@@ -24,10 +24,11 @@ ON exchange (service_id, timestamp);
 
 CREATE TABLE exchange_event
 (
-	exchange_id varchar(36),
+	id  varchar(36),
+    exchange_id varchar(36),
     timestamp datetime,
     event_desc varchar(250),
-    CONSTRAINT pk_exchange_event PRIMARY KEY (exchange_id, timestamp)
+    CONSTRAINT pk_exchange_event PRIMARY KEY (exchange_id, timestamp ASC, id)
 );
 
 CREATE TABLE exchange_transform_audit
@@ -42,7 +43,7 @@ CREATE TABLE exchange_transform_audit
 	resubmitted boolean,
 	deleted datetime,
 	number_batches_created int,
-    CONSTRAINT pk_exchange_transform_audit PRIMARY KEY (service_id, system_id, exchange_id, started DESC)
+    CONSTRAINT pk_exchange_transform_audit PRIMARY KEY (service_id, system_id, exchange_id, id)
 );
 
 CREATE INDEX ix_exchange_transform_audit_service_system_started
@@ -58,6 +59,7 @@ CREATE TABLE exchange_transform_error_state
 
 CREATE TABLE user_event
 (
+    id varchar(36),
     user_id varchar(36),
     organisation_id varchar(36),
     module varchar(50),
@@ -65,7 +67,7 @@ CREATE TABLE user_event
     action varchar(250),
     timestamp datetime,
     data text,
-    CONSTRAINT pk_user_event PRIMARY KEY (user_id, module, timestamp DESC, organisation_id, sub_module)
+    CONSTRAINT pk_user_event PRIMARY KEY (user_id, module, timestamp DESC, organisation_id, id)
 );
 
 CREATE INDEX ix_user_event_module_user_timestamp

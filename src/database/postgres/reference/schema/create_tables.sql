@@ -1,3 +1,9 @@
+DROP TABLE IF EXISTS postcode_lookup;
+DROP TABLE IF EXISTS lsoa_lookup;
+DROP TABLE IF EXISTS msoa_lookup;
+DROP TABLE IF EXISTS deprivation_lookup;
+DROP TABLE IF EXISTS encounter_code;
+
 -- Table: public.postcode_lookup
 
 -- DROP TABLE public.postcode_lookup;

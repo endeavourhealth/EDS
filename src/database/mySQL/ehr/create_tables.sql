@@ -14,7 +14,8 @@ CREATE TABLE resource_history (
   resource_checksum bigint,
   is_deleted boolean,
   exchange_batch_id varchar(36),
-  CONSTRAINT pk_resource_history PRIMARY KEY (resource_id, resource_type, created_at DESC)
+  version varchar(36),
+  CONSTRAINT pk_resource_history PRIMARY KEY (resource_id, resource_type, created_at DESC, version)
 );
 
 CREATE INDEX ix_resource_history_batch_id
@@ -39,6 +40,8 @@ ON resource_current (service_id, system_id, resource_type, resource_id);
 CREATE INDEX ix_resource_current_service_type_id_system
 ON resource_current (service_id, resource_type, resource_id, system_id);
 
+CREATE INDEX ix_resource_current_type_id
+ON resource_current (resource_type, resource_id);
 
 
 

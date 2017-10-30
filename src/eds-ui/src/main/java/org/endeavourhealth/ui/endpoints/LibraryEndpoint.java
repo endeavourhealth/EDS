@@ -395,7 +395,14 @@ public final class LibraryEndpoint extends AbstractItemEndpoint {
             Item item = items.get(i);
 
             String xml = item.getXmlContent();
-            LibraryItem libraryItem = QueryDocumentSerializer.readLibraryItemFromXml(xml);
+
+            LibraryItem libraryItem = null;
+            try {
+                libraryItem = QueryDocumentSerializer.readLibraryItemFromXml(xml);
+            } catch (Exception ex) {
+                LOG.error(xml, ex);
+                throw ex;
+            }
 
             System system = libraryItem.getSystem();
             if (system != null) {

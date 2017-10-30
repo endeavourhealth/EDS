@@ -1,3 +1,6 @@
+DROP TABLE IF EXISTS trm_concept;
+DROP TABLE IF EXISTS trm_concept_pc_link;
+
 -- Table: public.trm_concept
 
 -- DROP TABLE public.trm_concept;
