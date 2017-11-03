@@ -75,7 +75,7 @@ public class EnterpriseFiler {
                     columnClassMappings = ObjectMapperPool.getInstance().readTree(jsonStr);
 
                 } else {
-                    fileCsvData(entryFileName, entryBytes, columnClassMappings, connection, keywordEscapeChar, deletes);
+                    processCsvData(entryFileName, entryBytes, columnClassMappings, connection, keywordEscapeChar, deletes);
                 }
             }
 
@@ -169,7 +169,7 @@ public class EnterpriseFiler {
         return baos.toByteArray();
     }
 
-    private static void fileCsvData(String entryFileName, byte[] csvBytes, JsonNode allColumnClassMappings, Connection connection, String keywordEscapeChar, List<DeleteWrapper> deletes) throws Exception {
+    private static void processCsvData(String entryFileName, byte[] csvBytes, JsonNode allColumnClassMappings, Connection connection, String keywordEscapeChar, List<DeleteWrapper> deletes) throws Exception {
 
         String tableName = Files.getNameWithoutExtension(entryFileName);
 
@@ -193,9 +193,9 @@ public class EnterpriseFiler {
             String saveMode = csvRecord.get(COL_SAVE_MODE);
 
             if (saveMode.equalsIgnoreCase(DELETE)) {
-                //we have to play deletes in reverse, so don't delete immediately. Cache for now.
+                //we have to play deletes in reverse, so just add to this list and they'll be processed after all the upserts
                 deletes.add(new DeleteWrapper(tableName, csvRecord, columns, columnClasses));
-                //deletes.add(csvRecord);
+
             } else {
                 upserts.add(csvRecord);
             }
