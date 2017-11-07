@@ -107,7 +107,7 @@
         <filter-class>org.apache.catalina.filters.CorsFilter</filter-class>
         <init-param>
             <param-name>cors.allowed.origins</param-name>
-            <param-value>http://10.44.112.51:8080,https://eds.endeavourhealth.net,http://35.177.247.26:8080,https://deveds.endeavourhealth.net</param-value>
+            <param-value>https://n3portal.endeavourhealth.net,http://10.44.112.51:8080,https://eds.endeavourhealth.net,http://35.177.247.26:8080,https://deveds.endeavourhealth.net,http://localhost:4200</param-value>
         </init-param>
         <init-param>
             <param-name>cors.allowed.methods</param-name>
