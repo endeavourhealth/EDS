@@ -186,7 +186,7 @@ public class Main {
 
 				String startDateDesc = null;
 				if (startDate != null) {
-					sdfOutput.format(startDate);
+					startDateDesc = sdfOutput.format(startDate);
 				}
 
 				sb.append("\n");
