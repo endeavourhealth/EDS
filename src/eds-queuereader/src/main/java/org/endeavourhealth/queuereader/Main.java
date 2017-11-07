@@ -166,7 +166,9 @@ public class Main {
 								}
 
 							} else {
-								startDates.put(orgGuid, null);
+								if (startDates.containsKey(orgGuid)) {
+									startDates.put(orgGuid, null);
+								}
 							}
 						}
 					} finally {
