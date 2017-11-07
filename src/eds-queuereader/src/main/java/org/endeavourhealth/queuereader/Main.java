@@ -161,8 +161,8 @@ public class Main {
 							String orgGuid = csvRecord.get("OrganisationGuid");
 							servers.put(orgGuid, sftpRoot.getName());
 
-							String activated = csvRecord.get("IsActivated");
-							if (activated.equalsIgnoreCase("true")) {
+							String disabled = csvRecord.get("Disabled");
+							if (disabled.equalsIgnoreCase("false")) {
 
 								Date d = sdf.parse(extractRoot.getName());
 								Date existingDate = startDates.get(orgGuid);
