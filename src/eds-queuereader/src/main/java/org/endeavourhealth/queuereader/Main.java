@@ -159,20 +159,24 @@ public class Main {
 							CSVRecord csvRecord = csvIterator.next();
 
 							String orgGuid = csvRecord.get("OrganisationGuid");
+							String activated = csvRecord.get("IsActivated");
+							String disabled = csvRecord.get("Disabled");
+
 							servers.put(orgGuid, sftpRoot.getName());
 
-							String disabled = csvRecord.get("Disabled");
-							if (disabled.equalsIgnoreCase("false")) {
+							if (activated.equalsIgnoreCase("true")) {
+								if (disabled.equalsIgnoreCase("false")) {
 
-								Date d = sdf.parse(extractRoot.getName());
-								Date existingDate = startDates.get(orgGuid);
-								if (existingDate == null) {
-									startDates.put(orgGuid, d);
-								}
+									Date d = sdf.parse(extractRoot.getName());
+									Date existingDate = startDates.get(orgGuid);
+									if (existingDate == null) {
+										startDates.put(orgGuid, d);
+									}
 
-							} else {
-								if (startDates.containsKey(orgGuid)) {
-									startDates.put(orgGuid, null);
+								} else {
+									if (startDates.containsKey(orgGuid)) {
+										startDates.put(orgGuid, null);
+									}
 								}
 							}
 						}
