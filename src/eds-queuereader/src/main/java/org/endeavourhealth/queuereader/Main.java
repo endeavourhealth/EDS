@@ -184,7 +184,10 @@ public class Main {
 				Date startDate = startDates.get(orgGuid);
 				String server = servers.get(orgGuid);
 
-				String startDateDesc = sdfOutput.format(startDate);
+				String startDateDesc = null;
+				if (startDate != null) {
+					sdfOutput.format(startDate);
+				}
 
 				sb.append("\n");
 				sb.append("\"" + orgGuid + "\"");
