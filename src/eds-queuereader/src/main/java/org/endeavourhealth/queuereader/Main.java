@@ -52,6 +52,14 @@ public class Main {
 			System.exit(0);
 		}
 
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("FindEmisStartDates")) {
+			String path = args[1];
+			String outputPath = args[2];
+			findEmisStartDates(path, outputPath);
+			System.exit(0);
+		}
+
 		/*if (args.length >= 0
 				&& args[0].equalsIgnoreCase("FindCodes")) {
 			findCodes();
@@ -87,6 +95,114 @@ public class Main {
 		LOG.info("Starting message consumption");
 		rabbitHandler.start();
 		LOG.info("EDS Queue reader running");
+	}
+
+	private static void findEmisStartDates(String path, String outputPath) {
+		LOG.info("Finding EMIS Start Dates in " + path + ", writing to " + outputPath);
+
+		try {
+
+			SimpleDateFormat sdf = new SimpleDateFormat("yyy-MM-dd'T'HH.mm.ss");
+
+			Map<String, Date> startDates = new HashMap<>();
+			Map<String, String> servers = new HashMap<>();
+
+			File root = new File(path);
+			for (File sftpRoot: root.listFiles()) {
+				LOG.info("Checking " + sftpRoot);
+
+				Map<Date, File> extracts = new HashMap<>();
+				List<Date> extractDates = new ArrayList<>();
+
+				for (File extractRoot: sftpRoot.listFiles()) {
+					Date d = sdf.parse(extractRoot.getName());
+
+					//LOG.info("" + extractRoot.getName() + " -> " + d);
+
+					extracts.put(d, extractRoot);
+					extractDates.add(d);
+				}
+
+				Collections.sort(extractDates);
+
+				for (Date extractDate: extractDates) {
+					File extractRoot = extracts.get(extractDate);
+					LOG.info("Checking " + extractRoot);
+
+					//read the sharing agreements file
+					//e.g. 291_Agreements_SharingOrganisation_20150211164536_45E7CD20-EE37-41AB-90D6-DC9D4B03D102.csv
+					File sharingAgreementsFile = null;
+					for (File f: extractRoot.listFiles()) {
+						String name = f.getName().toLowerCase();
+						if (name.indexOf("agreements_sharingorganisation") > -1
+								&& name.endsWith(".csv")) {
+							sharingAgreementsFile = f;
+							break;
+						}
+					}
+
+					if (sharingAgreementsFile == null) {
+						LOG.info("Null agreements file for " + extractRoot);
+						continue;
+					}
+
+					CSVParser csvParser = CSVParser.parse(sharingAgreementsFile, Charset.defaultCharset(), CSVFormat.DEFAULT.withHeader());
+					try {
+						Iterator<CSVRecord> csvIterator = csvParser.iterator();
+
+						while (csvIterator.hasNext()) {
+							CSVRecord csvRecord = csvIterator.next();
+
+							String orgGuid = csvRecord.get("OrganisationGuid");
+							servers.put(orgGuid, sftpRoot.getName());
+
+							String activated = csvRecord.get("IsActivated");
+							if (activated.equalsIgnoreCase("true")) {
+
+								Date d = sdf.parse(extractRoot.getName());
+								Date existingDate = startDates.get(orgGuid);
+								if (existingDate == null) {
+									startDates.put(orgGuid, d);
+								}
+
+							} else {
+								startDates.put(orgGuid, null);
+							}
+						}
+					} finally {
+						csvParser.close();
+					}
+				}
+			}
+
+			SimpleDateFormat sdfOutput = new SimpleDateFormat("yyyy-MM-dd");
+
+			StringBuilder sb = new StringBuilder();
+			sb.append("OrgGuid, StartDate, Server");
+
+			for (String orgGuid: startDates.keySet()) {
+				Date startDate = startDates.get(orgGuid);
+				String server = servers.get(orgGuid);
+
+				String startDateDesc = sdfOutput.format(startDate);
+
+				sb.append("\n");
+				sb.append("\"" + orgGuid + "\"");
+				sb.append(",");
+				sb.append(startDateDesc);
+				sb.append(",");
+				sb.append(server);
+			}
+
+			LOG.info(sb.toString());
+
+			FileUtils.writeStringToFile(new File(outputPath), sb.toString());
+
+		} catch (Exception ex) {
+			LOG.error("", ex);
+		}
+
+		LOG.info("Finished Finding Start Dates in " + path + ", writing to " + outputPath);
 	}
 
 	private static void findEncounterTerms(String path, String outputPath) {
