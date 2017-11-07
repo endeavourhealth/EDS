@@ -107,6 +107,11 @@ public class Main {
 			Map<String, Date> startDates = new HashMap<>();
 			Map<String, String> servers = new HashMap<>();
 
+			Map<String, String> names = new HashMap<>();
+			Map<String, String> odsCodes = new HashMap<>();
+			Map<String, String> cdbNumbers = new HashMap<>();
+			Map<String, Set<String>> distinctPatients = new HashMap<>();
+
 			File root = new File(path);
 			for (File sftpRoot: root.listFiles()) {
 				LOG.info("Checking " + sftpRoot);
@@ -174,29 +179,115 @@ public class Main {
 					} finally {
 						csvParser.close();
 					}
+
+					//go through orgs file to get name, ods and cdb codes
+					File orgsFile = null;
+					for (File f: extractRoot.listFiles()) {
+						String name = f.getName().toLowerCase();
+						if (name.indexOf("admin_organisation_") > -1
+								&& name.endsWith(".csv")) {
+							orgsFile = f;
+							break;
+						}
+					}
+
+					csvParser = CSVParser.parse(orgsFile, Charset.defaultCharset(), CSVFormat.DEFAULT.withHeader());
+					try {
+						Iterator<CSVRecord> csvIterator = csvParser.iterator();
+
+						while (csvIterator.hasNext()) {
+							CSVRecord csvRecord = csvIterator.next();
+
+							String orgGuid = csvRecord.get("OrganisationGuid");
+							String name = csvRecord.get("OrganisationName");
+							String odsCode = csvRecord.get("ODSCode");
+							String cdb = csvRecord.get("CDB");
+
+							names.put(orgGuid, name);
+							odsCodes.put(orgGuid, odsCode);
+							cdbNumbers.put(orgGuid, cdb);
+						}
+					} finally {
+						csvParser.close();
+					}
+
+					//go through patients file to get count
+					File patientFile = null;
+					for (File f: extractRoot.listFiles()) {
+						String name = f.getName().toLowerCase();
+						if (name.indexOf("admin_patient_") > -1
+								&& name.endsWith(".csv")) {
+							patientFile = f;
+							break;
+						}
+					}
+
+					csvParser = CSVParser.parse(patientFile, Charset.defaultCharset(), CSVFormat.DEFAULT.withHeader());
+					try {
+						Iterator<CSVRecord> csvIterator = csvParser.iterator();
+
+						while (csvIterator.hasNext()) {
+							CSVRecord csvRecord = csvIterator.next();
+
+							String orgGuid = csvRecord.get("OrganisationGuid");
+							String patientGuid = csvRecord.get("PatientGuid");
+							String deleted = csvRecord.get("Deleted");
+
+							Set<String> distinctPatientSet = distinctPatients.get(orgGuid);
+							if (distinctPatientSet == null) {
+								distinctPatientSet = new HashSet<>();
+								distinctPatients.put(orgGuid, distinctPatientSet);
+							}
+
+							if (deleted.equalsIgnoreCase("true")) {
+								distinctPatientSet.remove(patientGuid);
+							} else {
+								distinctPatientSet.add(patientGuid);
+							}
+						}
+					} finally {
+						csvParser.close();
+					}
 				}
 			}
 
 			SimpleDateFormat sdfOutput = new SimpleDateFormat("yyyy-MM-dd");
 
 			StringBuilder sb = new StringBuilder();
-			sb.append("OrgGuid, StartDate, Server");
+			sb.append("Name,OdsCode,CDB,OrgGuid,StartDate,Server,Patients");
 
 			for (String orgGuid: startDates.keySet()) {
 				Date startDate = startDates.get(orgGuid);
 				String server = servers.get(orgGuid);
+				String name = names.get(orgGuid);
+				String odsCode = odsCodes.get(orgGuid);
+				String cdbNumber = cdbNumbers.get(orgGuid);
+				Set<String> distinctPatientSet = distinctPatients.get(orgGuid);
 
 				String startDateDesc = null;
 				if (startDate != null) {
 					startDateDesc = sdfOutput.format(startDate);
 				}
 
+				Long countDistinctPatients = null;
+				if (distinctPatientSet != null) {
+					countDistinctPatients = new Long(distinctPatientSet.size());
+				}
+
 				sb.append("\n");
+				sb.append("\"" + name + "\"");
+				sb.append(",");
+				sb.append("\"" + odsCode + "\"");
+				sb.append(",");
+				sb.append("\"" + cdbNumber + "\"");
+				sb.append(",");
 				sb.append("\"" + orgGuid + "\"");
 				sb.append(",");
 				sb.append(startDateDesc);
 				sb.append(",");
-				sb.append(server);
+				sb.append("\"" + server + "\"");
+				sb.append(",");
+				sb.append(countDistinctPatients);
 			}
 
 			LOG.info(sb.toString());
