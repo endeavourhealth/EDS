@@ -215,6 +215,40 @@ public class Main {
             }
         }
 
+        // Added 2017-10-25
+        if (channelId == 2
+                && messageType.equals("ADT^A03")
+                && errorMessage.equals("[org.endeavourhealth.hl7receiver.model.exceptions.HL7MessageProcessorException]  Transform failure\r\n[java.lang.NullPointerException]  episodeIdentifierValue")) {
+
+            Message hapiMsg = parser.parse(inboundPayload);
+            Terser terser = new Terser(hapiMsg);
+
+            String episodeId = terser.get("/PV1-19");
+            LOG.info("episodeId:" + episodeId);
+
+            // If episode id / encounter id is missing then move to DLQ
+            if (Strings.isNullOrEmpty(episodeId)) {
+                return "Automatically moved A03 because of missing PV1:19";
+            }
+        }
+
+        // Added 2017-11-07
+        if (channelId == 2
+                && messageType.equals("ADT^A08")
+                && errorMessage.equals("[org.endeavourhealth.hl7receiver.model.exceptions.HL7MessageProcessorException]  Transform failure\r\n[java.lang.NullPointerException]  episodeIdentifierValue")) {
+
+            Message hapiMsg = parser.parse(inboundPayload);
+            Terser terser = new Terser(hapiMsg);
+
+            String episodeId = terser.get("/PV1-19");
+            LOG.info("episodeId:" + episodeId);
+
+            // If episode id / encounter id is missing then move to DLQ
+            if (Strings.isNullOrEmpty(episodeId)) {
+                return "Automatically moved A08 because of missing PV1:19";
+            }
+        }
+
         //return null to indicate we don't ignore it
         return null;
     }
