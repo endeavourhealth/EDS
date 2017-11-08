@@ -103,7 +103,7 @@ CREATE TABLE service
     CONSTRAINT pk_service PRIMARY KEY (id)
 );
 
-CREATE INDEX ix_service_local_id
+CREATE UNIQUE INDEX ix_service_local_id
 ON service (local_id, id);
 
 
@@ -116,7 +116,7 @@ CREATE TABLE organisation
     CONSTRAINT pk_organisation PRIMARY KEY (id)
 );
 
-CREATE INDEX ix_organisation_national_identifier
+CREATE UNIQUE INDEX ix_organisation_national_identifier
 ON organisation (national_id, id);
 
 

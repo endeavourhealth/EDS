@@ -10,15 +10,18 @@ import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.io.FileUtils;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.common.config.ConfigManager;
+import org.endeavourhealth.core.database.rdbms.ConnectionManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.math.BigDecimal;
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.Timestamp;
+import java.sql.Types;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.Date;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -75,7 +78,7 @@ public class EnterpriseFiler {
                     columnClassMappings = ObjectMapperPool.getInstance().readTree(jsonStr);
 
                 } else {
-                    fileCsvData(entryFileName, entryBytes, columnClassMappings, connection, keywordEscapeChar, deletes);
+                    processCsvData(entryFileName, entryBytes, columnClassMappings, connection, keywordEscapeChar, deletes);
                 }
             }
 
@@ -169,7 +172,7 @@ public class EnterpriseFiler {
         return baos.toByteArray();
     }
 
-    private static void fileCsvData(String entryFileName, byte[] csvBytes, JsonNode allColumnClassMappings, Connection connection, String keywordEscapeChar, List<DeleteWrapper> deletes) throws Exception {
+    private static void processCsvData(String entryFileName, byte[] csvBytes, JsonNode allColumnClassMappings, Connection connection, String keywordEscapeChar, List<DeleteWrapper> deletes) throws Exception {
 
         String tableName = Files.getNameWithoutExtension(entryFileName);
 
@@ -193,11 +196,14 @@ public class EnterpriseFiler {
             String saveMode = csvRecord.get(COL_SAVE_MODE);
 
             if (saveMode.equalsIgnoreCase(DELETE)) {
-                //we have to play deletes in reverse, so don't delete immediately. Cache for now.
+                //we have to play deletes in reverse, so just add to this list and they'll be processed after all the upserts
                 deletes.add(new DeleteWrapper(tableName, csvRecord, columns, columnClasses));
-                //deletes.add(csvRecord);
-            } else {
+
+            } else if (saveMode.equalsIgnoreCase(UPSERT)) {
                 upserts.add(csvRecord);
+
+            } else {
+                throw new Exception("Unknown save mode " + saveMode);
             }
         }
 
@@ -343,7 +349,118 @@ public class EnterpriseFiler {
         }
     }
 
+    private static PreparedStatement createUpsertPreparedStatement(String tableName, List<String> columns, Connection connection, String keywordEscapeChar) throws Exception {
+
+        StringBuilder sql = new StringBuilder();
+
+        if (ConnectionManager.isPostgreSQL(connection)) {
+            sql.append("INSERT INTO " + tableName + "(");
+
+            for (int i = 0; i < columns.size(); i++) {
+                String column = columns.get(i);
+                sql.append(keywordEscapeChar + column + keywordEscapeChar);
+                if (i + 1 < columns.size()) {
+                    sql.append(", ");
+                }
+            }
+
+            sql.append(") VALUES (");
+
+            for (int i = 0; i < columns.size(); i++) {
+                sql.append("?");
+                if (i + 1 < columns.size()) {
+                    sql.append(", ");
+                }
+            }
+
+            sql.append(") ON CONFLICT (");
+            sql.append(COL_ID);
+            sql.append(") DO UPDATE SET ");
+
+            for (int i = 0; i < columns.size(); i++) {
+                String column = columns.get(i);
+                if (column.equals(COL_ID)) {
+                    continue;
+                }
+
+                sql.append(keywordEscapeChar + column + keywordEscapeChar + " = EXCLUDED." + keywordEscapeChar + column + keywordEscapeChar);
+                if (i + 1 < columns.size()) {
+                    sql.append(", ");
+                }
+            }
+
+            sql.append(";");
+
+        } else {
+            sql.append("INSERT INTO " + tableName + "(");
+
+            for (int i = 0; i < columns.size(); i++) {
+                String column = columns.get(i);
+                sql.append(keywordEscapeChar + column + keywordEscapeChar);
+                if (i + 1 < columns.size()) {
+                    sql.append(", ");
+                }
+            }
+
+            sql.append(") VALUES (");
+
+            for (int i = 0; i < columns.size(); i++) {
+                sql.append("?");
+                if (i + 1 < columns.size()) {
+                    sql.append(", ");
+                }
+            }
+
+            sql.append(") ON DUPLICATE KEY UPDATE ");
+
+            for (int i = 0; i < columns.size(); i++) {
+                String column = columns.get(i);
+                if (column.equals(COL_ID)) {
+                    continue;
+                }
+
+                sql.append(keywordEscapeChar + column + keywordEscapeChar + " = VALUES(" + keywordEscapeChar + column + keywordEscapeChar + ")");
+                if (i + 1 < columns.size()) {
+                    sql.append(", ");
+                }
+            }
+
+            sql.append(";");
+        }
+
+        return connection.prepareStatement(sql.toString());
+    }
+
     private static void fileUpserts(List<CSVRecord> csvRecords, List<String> columns, HashMap<String, Class> columnClasses,
+                                    String tableName, Connection connection, String keywordEscapeChar) throws Exception {
+
+        if (csvRecords.isEmpty()) {
+            return;
+        }
+
+        //the first element in the columns list is the save mode, so remove that
+        columns = new ArrayList<>(columns);
+        columns.remove(COL_SAVE_MODE);
+
+        PreparedStatement insert = createUpsertPreparedStatement(tableName, columns, connection, keywordEscapeChar);
+
+        for (CSVRecord csvRecord: csvRecords) {
+
+            int index = 1;
+            for (String column: columns) {
+                addToStatement(insert, csvRecord, column, columnClasses, index);
+                index ++;
+            }
+
+            insert.addBatch();
+        }
+
+        insert.executeBatch();
+        insert.close();
+        connection.commit();
+    }
+
+    /*private static void fileUpserts(List<CSVRecord> csvRecords, List<String> columns, HashMap<String, Class> columnClasses,
                                     String tableName, Connection connection, String keywordEscapeChar) throws Exception {
 
         if (csvRecords.isEmpty()) {
@@ -426,57 +543,6 @@ public class EnterpriseFiler {
         }
     }
 
-    /*private static void fileUpserts(List<CSVRecord> csvRecords, List<String> columns, HashMap<String, Class> columnClasses,
-                                    String tableName, Connection connection, String keywordEscapeChar) throws Exception {
-
-        if (csvRecords.isEmpty()) {
-            return;
-        }
-
-        //first try treating all the objects as inserts
-        try {
-            fileInserts(csvRecords, columns, columnClasses, tableName, connection, keywordEscapeChar);
-
-        } catch (SQLException ex) {
-            //if we get a SQL Exception, then it's probably because one of the objects is an update, so we try to
-            //save each object separately first as an insert, then as an update
-            connection.rollback();
-
-            //if we have only one record, just try performing an update
-            if (csvRecords.size() == 1) {
-                CSVRecord singleRecord = csvRecords.get(0);
-                List<CSVRecord> singleRecords = new ArrayList<>();
-                singleRecords.add(singleRecord);
-
-                try {
-                    fileUpdates(singleRecords, columns, columnClasses, tableName, connection, keywordEscapeChar);
-
-                } catch (SQLException ex3) {
-                    StringBuffer s = new StringBuffer();
-                    s.append("Failed to insert or update " + tableName + " record: ");
-                    for (String column: columns) {
-                        s.append(singleRecord.get(column) + ", ");
-                    }
-
-                    //we've got two exceptions in scope - the original insert exception and the update exception
-                    //so we need to log both. Since only one can be wrapped in the exception we throw, we
-                    //log the other one out here
-                    LOG.error("", ex);
-
-                    throw new Exception(s.toString(), ex3);
-                }
-
-            } else {
-                //if we have multilple records, try inserting them one at a time
-                for (CSVRecord csvRecord: csvRecords) {
-                    List<CSVRecord> singleRecord = new ArrayList<>();
-                    singleRecord.add(csvRecord);
-
-                    fileUpserts(singleRecord, columns, columnClasses, tableName, connection, keywordEscapeChar);
-                }
-            }
-        }
-    }*/
 
     private static void fileInserts(List<CSVRecord> csvRecords, List<String> columns, HashMap<String, Class> columnClasses,
                                     String tableName, Connection connection, String keywordEscapeChar) throws Exception {
@@ -500,29 +566,6 @@ public class EnterpriseFiler {
         String columnStr = sb.toString();
 
         PreparedStatement insert = connection.prepareStatement("insert into " + tableName + " (" + columnStr + ") values (" + parameters + ")");
-
-        //the version with the named columns doesn't seem to work on all versions of MySQL, so removing until can fix
-        //but we need it for the episode_of_care table, which has additional columns
-        /*PreparedStatement insert = null;
-        if (!tableName.equalsIgnoreCase("episode_of_care")) {
-            insert = connection.prepareStatement("insert into " + tableName + " values (" + parameters + ")");
-
-        } else {
-
-            StringBuilder sb = new StringBuilder();
-            for (String column: columns) {
-                if (!column.equals(COL_SAVE_MODE)) {
-                    if (sb.length() > 0) {
-                        sb.append(", ");
-                    }
-                    sb.append(keywordEscapeChar + column + keywordEscapeChar);
-                }
-            }
-            String columnStr = sb.toString();
-
-            insert = connection.prepareStatement("insert into " + tableName + " (" + columnStr + ") values (" + parameters + ")");
-        }*/
-
 
         for (CSVRecord csvRecord: csvRecords) {
 
@@ -615,69 +658,9 @@ public class EnterpriseFiler {
         connection.commit();
 
         return updateCounts;
-    }
-
-    /*private static void fileUpdates(List<CSVRecord> csvRecords, List<String> columns, HashMap<String, Class> columnClasses,
-                                    String tableName, Connection connection, String keywordEscapeChar) throws Exception {
-
-        if (csvRecords.isEmpty()) {
-            return;
-        }
-
-        //build the update statement
-        StringBuilder sb = new StringBuilder();
-        sb.append("update " + tableName + " set ");
-
-        boolean addComma = false;
-        for (String column: columns) {
-
-            if (column.equals(COL_SAVE_MODE)
-                    || column.equals(COL_ID)) {
-                continue;
-            }
-
-            if (addComma) {
-                sb.append(", ");
-            }
-            addComma = true;
-
-            sb.append(keywordEscapeChar + column + keywordEscapeChar + " = ?");
-        }
-        sb.append(" where " + COL_ID + " = ?");
-
-        PreparedStatement update = connection.prepareStatement(sb.toString());
-
-        //populate the statement with the updates
-        for (CSVRecord csvRecord: csvRecords) {
-
-            //add all the updated columns
-            int index = 1;
-            for (String column: columns) {
-
-                if (column.equals(COL_SAVE_MODE)
-                        || column.equals(COL_ID)) {
-                    continue;
-                }
-
-                addToStatement(update, csvRecord, column, columnClasses, index);
-                index ++;
-            }
-
-            //then add the ID
-            addToStatement(update, csvRecord, COL_ID, columnClasses, index);
-            update.addBatch();
-        }
-
-        //execute the update, making sure the update count is what we ex[ect
-        int[] updateCounts = update.executeBatch();
-        update.close(); //was forgetting to do this
-
-        if (updateCounts[0] != csvRecords.size()) {
-            throw new SQLException("Failed to update the right number of rows. Expected " + csvRecords.size() + " Got " + updateCounts[0]);
-        }
-
-        connection.commit();
     }*/
+
+
 
     private static String getKeywordEscapeChar(String url) {
         return escapeCharacters.get(url);
@@ -721,23 +704,6 @@ public class EnterpriseFiler {
 
         return pool.getConnection();
     }
-    /*private static Connection openConnection(JsonNode config) throws Exception {
-
-        String driverClass = config.get("driverClass").asText();
-        String url = config.get("url").asText();
-        String username = config.get("username").asText();
-        String password = config.get("password").asText();
-
-        keywordEscapeChar = config.get("keywordEscapeChar").asText();
-
-        //force the driver to be loaded
-        Class.forName(driverClass);
-
-        Connection conn = DriverManager.getConnection(url, username, password);
-        conn.setAutoCommit(false);
-
-        return conn;
-    }*/
 }
 
 

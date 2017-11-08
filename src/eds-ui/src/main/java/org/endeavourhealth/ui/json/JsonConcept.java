@@ -1,6 +1,6 @@
 package org.endeavourhealth.ui.json;
 
-import org.endeavourhealth.core.database.dal.coding.models.Concept;
+import org.endeavourhealth.core.database.dal.reference.models.Concept;
 
 public final class JsonConcept {
     private String id;

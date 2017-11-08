@@ -4,6 +4,7 @@ import ca.uhn.hl7v2.DefaultHapiContext;
 import ca.uhn.hl7v2.HL7Exception;
 import ca.uhn.hl7v2.HapiContext;
 import ca.uhn.hl7v2.model.Message;
+import ca.uhn.hl7v2.model.v23.segment.MRG;
 import ca.uhn.hl7v2.parser.Parser;
 import ca.uhn.hl7v2.util.Terser;
 import ca.uhn.hl7v2.validation.impl.NoValidation;
@@ -199,6 +200,20 @@ public class Main {
             }
         }
 
+        // Added 2017-11-08
+        if (channelId == 1
+                && messageType.equals("ADT^A34")
+                && errorMessage.equals("[org.endeavourhealth.hl7receiver.model.exceptions.HL7MessageProcessorException]  Transform failure\r\n[org.endeavourhealth.hl7transform.common.TransformException]  MRG segment exists less than 1 time(s)")) {
+
+            Message hapiMsg = parser.parse(inboundPayload);
+            MRG mrg = (MRG) hapiMsg.get("MRG");
+
+            // If MRG missing
+            if (mrg == null) {
+                return "Automatically moved A34 because of missing MRG";
+            }
+        }
+
         if (channelId == 2
             && messageType.equals("ADT^A31")
             && errorMessage.startsWith("[org.endeavourhealth.hl7receiver.model.exceptions.HL7MessageProcessorException]  Transform failure\r\n[org.endeavourhealth.hl7transform.common.TransformException]  Could not create organisation ")) {
@@ -212,6 +227,40 @@ public class Main {
             if (Strings.isNullOrEmpty(gpPracticeId)
                     || StringUtils.isNumeric(gpPracticeId)) {
                 return "Automatically moved A31 because of invalid practice code";
+            }
+        }
+
+        // Added 2017-10-25
+        if (channelId == 2
+                && messageType.equals("ADT^A03")
+                && errorMessage.equals("[org.endeavourhealth.hl7receiver.model.exceptions.HL7MessageProcessorException]  Transform failure\r\n[java.lang.NullPointerException]  episodeIdentifierValue")) {
+
+            Message hapiMsg = parser.parse(inboundPayload);
+            Terser terser = new Terser(hapiMsg);
+
+            String episodeId = terser.get("/PV1-19");
+            LOG.info("episodeId:" + episodeId);
+
+            // If episode id / encounter id is missing then move to DLQ
+            if (Strings.isNullOrEmpty(episodeId)) {
+                return "Automatically moved A03 because of missing PV1:19";
+            }
+        }
+
+        // Added 2017-11-07
+        if (channelId == 2
+                && messageType.equals("ADT^A08")
+                && errorMessage.equals("[org.endeavourhealth.hl7receiver.model.exceptions.HL7MessageProcessorException]  Transform failure\r\n[java.lang.NullPointerException]  episodeIdentifierValue")) {
+
+            Message hapiMsg = parser.parse(inboundPayload);
+            Terser terser = new Terser(hapiMsg);
+
+            String episodeId = terser.get("/PV1-19");
+            LOG.info("episodeId:" + episodeId);
+
+            // If episode id / encounter id is missing then move to DLQ
+            if (Strings.isNullOrEmpty(episodeId)) {
+                return "Automatically moved A08 because of missing PV1:19";
             }
         }
 

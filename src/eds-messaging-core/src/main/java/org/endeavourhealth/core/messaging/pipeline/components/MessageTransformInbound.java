@@ -249,6 +249,7 @@ public class MessageTransformInbound extends PipelineComponent {
 				errorState = new ExchangeTransformErrorState();
 				errorState.setServiceId(serviceId);
 				errorState.setSystemId(systemId);
+				errorState.setExchangeIdsInError(new ArrayList<>());
 				errorState.getExchangeIdsInError().add(exchangeId);
 				auditRepository.save(errorState);
 			}
