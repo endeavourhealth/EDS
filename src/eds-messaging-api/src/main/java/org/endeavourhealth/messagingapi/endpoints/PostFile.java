@@ -21,6 +21,7 @@ import org.apache.http.entity.ContentType;
 import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.datasharingmanagermodel.models.database.DataProcessingAgreementEntity;
 
+import javax.annotation.security.RolesAllowed;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
@@ -37,7 +38,7 @@ import java.util.List;
 public class PostFile extends AbstractEndpoint {
 	@POST
 	@Path("/PostFile")
-	//@RolesAllowed({"tpp-bulk-extract-provider", "homerton-bulk-extract-provider"})
+	@RolesAllowed({"tpp-bulk-extract-provider", "homerton-bulk-extract-provider"})
 	@Consumes(MediaType.MULTIPART_FORM_DATA)
 	public Response uploadFiles(@Context final HttpServletRequest request) {
 		String organisationId = request.getQueryString().replaceAll("organisationId=","");
