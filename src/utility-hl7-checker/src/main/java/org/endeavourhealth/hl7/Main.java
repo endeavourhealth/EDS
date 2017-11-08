@@ -151,6 +151,9 @@ public class Main {
         LOG.info("errorMessage:" + errorMessage);
         LOG.info("inboundPayload:" + inboundPayload);
 
+        // *************************************************************************************************************************************************
+        // Rules for Homerton
+        // *************************************************************************************************************************************************
         if (channelId == 1
             && messageType.equals("ADT^A44")
             && errorMessage.equals("[org.endeavourhealth.hl7receiver.model.exceptions.HL7MessageProcessorException]  Transform failure\r\n[java.lang.NullPointerException]  episodeIdentifierValue")) {
@@ -214,6 +217,9 @@ public class Main {
             }
         }
 
+        // *************************************************************************************************************************************************
+        // Rules for Barts
+        // *************************************************************************************************************************************************
         if (channelId == 2
             && messageType.equals("ADT^A31")
             && errorMessage.startsWith("[org.endeavourhealth.hl7receiver.model.exceptions.HL7MessageProcessorException]  Transform failure\r\n[org.endeavourhealth.hl7transform.common.TransformException]  Could not create organisation ")) {
@@ -261,6 +267,34 @@ public class Main {
             // If episode id / encounter id is missing then move to DLQ
             if (Strings.isNullOrEmpty(episodeId)) {
                 return "Automatically moved A08 because of missing PV1:19";
+            }
+        }
+
+        // Added 2017-11-08
+        if (channelId == 2
+                && messageType.equals("ADT^A34")
+                && errorMessage.equals("[org.endeavourhealth.hl7receiver.model.exceptions.HL7MessageProcessorException]  Transform failure\r\n[org.endeavourhealth.hl7transform.common.TransformException]  MRG segment exists less than 1 time(s)")) {
+
+            Message hapiMsg = parser.parse(inboundPayload);
+            MRG mrg = (MRG) hapiMsg.get("MRG");
+
+            // If MRG missing
+            if (mrg == null) {
+                return "Automatically moved A34 because of missing MRG";
+            }
+        }
+
+        // Added 2017-11-08
+        if (channelId == 2
+                && messageType.equals("ADT^A35")
+                && errorMessage.equals("[org.endeavourhealth.hl7receiver.model.exceptions.HL7MessageProcessorException]  Transform failure\r\n[org.endeavourhealth.hl7transform.common.TransformException]  MRG segment exists less than 1 time(s)")) {
+
+            Message hapiMsg = parser.parse(inboundPayload);
+            MRG mrg = (MRG) hapiMsg.get("MRG");
+
+            // If MRG missing
+            if (mrg == null) {
+                return "Automatically moved A35 because of missing MRG";
             }
         }
 
