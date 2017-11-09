@@ -289,10 +289,10 @@ public class Main {
             MRG mrg = (MRG) hapiMsg.get("MRG");
 
             // If MRG missing
-            if (mrg == null) {
+            if (mrg == null || mrg.isEmpty()) {
                 return "Automatically moved A34 because of missing MRG";
             } else {
-                LOG.info("MRG segment found");
+                LOG.info("MRG segment found. isEmpty()=" + mrg.isEmpty());
             }
         }
 
@@ -306,7 +306,7 @@ public class Main {
             MRG mrg = (MRG) hapiMsg.get("MRG");
 
             // If MRG missing
-            if (mrg == null) {
+            if (mrg == null || mrg.isEmpty()) {
                 return "Automatically moved A35 because of missing MRG";
             } else {
                 LOG.info("MRG segment found. isEmpty()=" + mrg.isEmpty());
