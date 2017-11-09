@@ -309,7 +309,7 @@ public class Main {
             if (mrg == null) {
                 return "Automatically moved A35 because of missing MRG";
             } else {
-                LOG.info("MRG segment found");
+                LOG.info("MRG segment found. isEmpty()=" + mrg.isEmpty());
             }
         }
 
