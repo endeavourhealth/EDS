@@ -106,3 +106,26 @@ CREATE TABLE trm_concept_pc_link
     codesystem_pid bigint NOT NULL,
     parent_pid bigint NOT NULL
 );
+
+CREATE TABLE public.read2_to_snomed_map
+(
+  map_id varchar (38) NOT NULL PRIMARY KEY,
+  read_code varchar (5) NOT NULL,
+  term_code varchar (2) NOT NULL,
+  concept_id varchar (18) NOT NULL,
+  effective_date date NOT NULL,
+  map_status int NOT NULL
+);
+
+CREATE TABLE reference.ctv3_to_snomed_map
+(
+  map_id varchar(38) NOT NULL PRIMARY KEY,
+  ctv3_concept_id varchar (12) NOT NULL,
+  ctv3_term_id varchar(6) NOT NULL,
+  ctv3_term_type varchar (1),
+  sct_concept_id varchar (18) NOT NULL,
+  sct_description_id varchar (18),
+  map_status int NOT NULL,
+  effective_date date NOT NULL,
+  is_assured int NOT NULL
+);
