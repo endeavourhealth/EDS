@@ -28,6 +28,7 @@ import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
 import org.endeavourhealth.transform.emis.EmisOpenToFhirTransformer;
 import org.endeavourhealth.transform.fhirhl7v2.FhirHl7v2Filer;
 import org.endeavourhealth.transform.homerton.HomertonCsvToFhirTransformer;
+import org.endeavourhealth.transform.vision.VisionCsvToFhirTransformer;
 import org.hl7.fhir.instance.model.Resource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -123,7 +124,10 @@ public class MessageTransformInbound extends PipelineComponent {
 				} else if (software.equalsIgnoreCase(MessageFormat.HOMERTON_CSV)) {
 					processHomertonCsvTransform(exchange, serviceId, systemId, messageVersion, software, currentErrors, batchIds, previousErrors);
 
-				} else {
+				} else if (software.equalsIgnoreCase(MessageFormat.VISION_CSV)) {
+					processVisionCsvTransform(exchange, serviceId, systemId, messageVersion, software, currentErrors, batchIds, previousErrors);
+				}
+				else {
 					throw new SoftwareNotSupportedException(software, messageVersion);
 				}
 			}
@@ -395,6 +399,21 @@ public class MessageTransformInbound extends PipelineComponent {
 		UUID exchangeId = exchange.getId();
 
 		HomertonCsvToFhirTransformer.transform(exchangeId, exchangeBody, serviceId, systemId, currentErrors,
+				batchIds, previousErrors, sharedStoragePath, maxFilingThreads, version);
+	}
+
+	private void processVisionCsvTransform(Exchange exchange, UUID serviceId, UUID systemId, String version,
+											 String software, TransformError currentErrors, List<UUID> batchIds,
+											 TransformError previousErrors) throws Exception {
+
+		//get our configuration options
+		String sharedStoragePath = config.getSharedStoragePath();
+		int maxFilingThreads = config.getFilingThreadLimit();
+
+		String exchangeBody = exchange.getBody();
+		UUID exchangeId = exchange.getId();
+
+		VisionCsvToFhirTransformer.transform(exchangeId, exchangeBody, serviceId, systemId, currentErrors,
 				batchIds, previousErrors, sharedStoragePath, maxFilingThreads, version);
 	}
 
