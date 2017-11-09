@@ -151,6 +151,9 @@ public class Main {
         LOG.info("errorMessage:" + errorMessage);
         LOG.info("inboundPayload:" + inboundPayload);
 
+        // *************************************************************************************************************************************************
+        // Rules for Homerton
+        // *************************************************************************************************************************************************
         if (channelId == 1
             && messageType.equals("ADT^A44")
             && errorMessage.equals("[org.endeavourhealth.hl7receiver.model.exceptions.HL7MessageProcessorException]  Transform failure\r\n[java.lang.NullPointerException]  episodeIdentifierValue")) {
@@ -165,7 +168,16 @@ public class Main {
             if (Strings.isNullOrEmpty(mergeEpisodeId)) {
                 return "Automatically moved A44 because of missing episode ID";
             }
+
+            String mergeEpisodeIdSource = terser.get("/PATIENT/MRG-5-4");
+            LOG.info("mergeEpisodeIdSource:" + mergeEpisodeIdSource);
+
+            // If merge episodeId is from Newham then move to DLQ
+            if (mergeEpisodeIdSource != null && mergeEpisodeIdSource.toUpperCase().startsWith("NEWHAM")) {
+                return "Automatically moved A44 because of merging Newham episode";
+            }
         }
+
 
         if (channelId == 1
                 && messageType.equals("ADT^A44")
@@ -214,6 +226,9 @@ public class Main {
             }
         }
 
+        // *************************************************************************************************************************************************
+        // Rules for Barts
+        // *************************************************************************************************************************************************
         if (channelId == 2
             && messageType.equals("ADT^A31")
             && errorMessage.startsWith("[org.endeavourhealth.hl7receiver.model.exceptions.HL7MessageProcessorException]  Transform failure\r\n[org.endeavourhealth.hl7transform.common.TransformException]  Could not create organisation ")) {
@@ -264,10 +279,47 @@ public class Main {
             }
         }
 
+        // Added 2017-11-08
+        if (channelId == 2
+                && messageType.equals("ADT^A34")
+                && errorMessage.equals("[org.endeavourhealth.hl7receiver.model.exceptions.HL7MessageProcessorException]  Transform failure\r\n[org.endeavourhealth.hl7transform.common.TransformException]  MRG segment exists less than 1 time(s)")) {
+
+            LOG.info("Looking for MRG segment");
+            Message hapiMsg = parser.parse(inboundPayload);
+            MRG mrg = (MRG) hapiMsg.get("MRG");
+
+            // If MRG missing
+            if (mrg == null || mrg.isEmpty()) {
+                return "Automatically moved A34 because of missing MRG";
+            } else {
+                LOG.info("MRG segment found. isEmpty()=" + mrg.isEmpty());
+            }
+        }
+
+        // Added 2017-11-08
+        if (channelId == 2
+                && messageType.equals("ADT^A35")
+                && errorMessage.equals("[org.endeavourhealth.hl7receiver.model.exceptions.HL7MessageProcessorException]  Transform failure\r\n[org.endeavourhealth.hl7transform.common.TransformException]  MRG segment exists less than 1 time(s)")) {
+
+            LOG.info("Looking for MRG segment");
+            Message hapiMsg = parser.parse(inboundPayload);
+            MRG mrg = (MRG) hapiMsg.get("MRG");
+
+            // If MRG missing
+            if (mrg == null || mrg.isEmpty()) {
+                return "Automatically moved A35 because of missing MRG";
+            } else {
+                LOG.info("MRG segment found. isEmpty()=" + mrg.isEmpty());
+            }
+        }
+
         //return null to indicate we don't ignore it
         return null;
     }
 
+    /*
+     *
+     */
     private static void moveToDlq(int messageId, String reason) throws Exception {
 
         //although it looks like a select, it's just invoking a function which performs an update
@@ -281,6 +333,9 @@ public class Main {
 
     }
 
+    /*
+     *
+     */
     private static void openConnectionPool(String url, String driverClass, String username, String password) throws Exception {
 
         //force the driver to be loaded

@@ -102,7 +102,7 @@ public class Main {
 
 		try {
 
-			SimpleDateFormat sdf = new SimpleDateFormat("yyy-MM-dd'T'HH.mm.ss");
+			SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH.mm.ss");
 
 			Map<String, Date> startDates = new HashMap<>();
 			Map<String, String> servers = new HashMap<>();
