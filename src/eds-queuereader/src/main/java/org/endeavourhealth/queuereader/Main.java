@@ -7,7 +7,6 @@ import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.io.FileUtils;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
-import org.endeavourhealth.common.cache.ParserPool;
 import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.core.configuration.ConfigDeserialiser;
 import org.endeavourhealth.core.configuration.QueueReaderConfiguration;
@@ -30,7 +29,6 @@ import java.util.*;
 
 public class Main {
 	private static final Logger LOG = LoggerFactory.getLogger(Main.class);
-	private static final ParserPool PARSER_POOL = new ParserPool();
 
 	public static void main(String[] args) throws Exception {
 
@@ -87,6 +85,9 @@ public class Main {
 		String configXml = ConfigManager.getConfiguration(configId);
 		QueueReaderConfiguration configuration = ConfigDeserialiser.deserialise(configXml);
 
+		/*LOG.info("Registering shutdown hook");
+		registerShutdownHook();*/
+
 		// Instantiate rabbit handler
 		LOG.info("Creating EDS queue reader");
 		RabbitHandler rabbitHandler = new RabbitHandler(configuration);
@@ -96,6 +97,24 @@ public class Main {
 		rabbitHandler.start();
 		LOG.info("EDS Queue reader running");
 	}
+
+	/*private static void registerShutdownHook() {
+
+		Runtime.getRuntime().addShutdownHook(new Thread() {
+			@Override
+			public void run() {
+
+				LOG.info("");
+				try {
+					Thread.sleep(5000);
+				} catch (Throwable ex) {
+					LOG.error("", ex);
+				}
+				LOG.info("Done");
+			}
+		});
+	}*/
+
 
 	private static void findEmisStartDates(String path, String outputPath) {
 		LOG.info("Finding EMIS Start Dates in " + path + ", writing to " + outputPath);

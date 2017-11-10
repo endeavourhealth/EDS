@@ -7,6 +7,7 @@ DROP TABLE IF EXISTS pseudo_id_map;
 DROP TABLE IF EXISTS enterprise_age;
 DROP TABLE IF EXISTS enterprise_person_id_map;
 DROP TABLE IF EXISTS enterprise_person_update_history;
+DROP TABLE IF EXISTS exchange_batch_extra_resources;
 DROP TABLE IF EXISTS enterprise_instance_map;
 DROP TABLE IF EXISTS vitru_care_patient_id_map;
 
@@ -87,6 +88,14 @@ CREATE TABLE vitru_care_patient_id_map (
 	created_at datetime,
 	vitrucare_id varchar(250),
     CONSTRAINT pk_resource_id_map PRIMARY KEY (eds_patient_id)
+);
+
+CREATE TABLE exchange_batch_extra_resources (
+	exchange_id char(36) NOT NULL,
+    batch_id char(36) NOT NULL,
+    resource_id char(36) NOT NULL,
+    resource_type varchar(100) NOT NULL,
+    CONSTRAINT pk_enterprise_organisation_id_map PRIMARY KEY (exchange_id, batch_id, resource_id, resource_type)
 );
 
 CREATE TABLE enterprise_instance_map
