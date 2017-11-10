@@ -217,12 +217,32 @@ public class Main {
                 && messageType.equals("ADT^A34")
                 && errorMessage.equals("[org.endeavourhealth.hl7receiver.model.exceptions.HL7MessageProcessorException]  Transform failure\r\n[org.endeavourhealth.hl7transform.common.TransformException]  MRG segment exists less than 1 time(s)")) {
 
+            LOG.info("Looking for MRG segment");
             Message hapiMsg = parser.parse(inboundPayload);
             MRG mrg = (MRG) hapiMsg.get("MRG");
 
             // If MRG missing
-            if (mrg == null) {
+            if (mrg == null || mrg.isEmpty()) {
                 return "Automatically moved A34 because of missing MRG";
+            } else {
+                LOG.info("MRG segment found. isEmpty()=" + mrg.isEmpty());
+            }
+        }
+
+        // Added 2017-11-10
+        if (channelId == 1
+                && messageType.equals("ADT^A35")
+                && errorMessage.equals("[org.endeavourhealth.hl7receiver.model.exceptions.HL7MessageProcessorException]  Transform failure\r\n[org.endeavourhealth.hl7transform.common.TransformException]  MRG segment exists less than 1 time(s)")) {
+
+            LOG.info("Looking for MRG segment");
+            Message hapiMsg = parser.parse(inboundPayload);
+            MRG mrg = (MRG) hapiMsg.get("MRG");
+
+            // If MRG missing
+            if (mrg == null || mrg.isEmpty()) {
+                return "Automatically moved A35 because of missing MRG";
+            } else {
+                LOG.info("MRG segment found. isEmpty()=" + mrg.isEmpty());
             }
         }
 
