@@ -7,6 +7,7 @@ DROP TABLE IF EXISTS pseudo_id_map;
 DROP TABLE IF EXISTS enterprise_age;
 DROP TABLE IF EXISTS enterprise_person_id_map;
 DROP TABLE IF EXISTS enterprise_person_update_history;
+DROP TABLE IF EXISTS enterprise_instance_map;
 DROP TABLE IF EXISTS vitru_care_patient_id_map;
 
 -- NOTE:  Use ALTER TABLE enterprise_id_map AUTO_INCREMENT=XXXXX; to set the auto increment id starting value
@@ -87,3 +88,15 @@ CREATE TABLE vitru_care_patient_id_map (
 	vitrucare_id varchar(250),
     CONSTRAINT pk_resource_id_map PRIMARY KEY (eds_patient_id)
 );
+
+CREATE TABLE enterprise_instance_map
+(
+	resource_type varchar(100) NOT NULL,
+	resource_id_from char(36) NOT NULL,
+	resource_id_to char(36),
+	mapping_value varchar(100),
+	CONSTRAINT pk_enterprise_organisation_id_map PRIMARY KEY (resource_id_from, resource_type)
+);
+
+CREATE INDEX ix_enterprise_instance_map_type_value
+ON enterprise_instance_map (resource_type, mapping_value);
