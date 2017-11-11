@@ -210,6 +210,14 @@ public class Main {
             if (Strings.isNullOrEmpty(episodeId)) {
                 return "Automatically moved ADT because of missing PV1:19";
             }
+
+            String finNo = terser.get("/PID-18-1");
+            LOG.info("finNo:" + finNo);
+
+            // If episode id / encounter id is missing then move to DLQ
+            if (finNo != null && finNo.length() == 0) {
+                return "Automatically moved ADT because of missing PID18.1 (FIN No)";
+            }
         }
 
         // Added 2017-11-08
