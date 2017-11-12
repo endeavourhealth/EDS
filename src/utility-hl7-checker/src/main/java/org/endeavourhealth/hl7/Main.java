@@ -215,7 +215,7 @@ public class Main {
             LOG.info("finNo:" + finNo);
 
             // If episode id / encounter id is missing then move to DLQ
-            if (finNo != null && finNo.length() == 0) {
+            if (Strings.isNullOrEmpty(finNo)) {
                 return "Automatically moved ADT because of missing PID18.1 (FIN No)";
             }
         }
