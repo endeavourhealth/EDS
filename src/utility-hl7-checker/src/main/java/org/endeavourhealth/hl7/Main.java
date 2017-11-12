@@ -294,7 +294,7 @@ public class Main {
 
             // If episode id / encounter id is missing then move to DLQ
             if (Strings.isNullOrEmpty(episodeIdType)) {
-                return "Automatically moved ADT because of missing PV1:19.5 - expecting 'VISITID'";
+                return "Automatically moved ADT because of missing PV1:19.5 - expecting VISITID";
             }
         }
 
