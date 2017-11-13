@@ -218,6 +218,14 @@ public class Main {
             if (Strings.isNullOrEmpty(finNo)) {
                 return "Automatically moved ADT because of missing PID18.1 (FIN No)";
             }
+
+            String finNoType = terser.get("/PID-18-4");
+            LOG.info("finNoType:" + finNoType);
+
+            // If episode id / encounter id is missing then move to DLQ
+            if (finNoType.compareToIgnoreCase("Newham FIN") == 0) {
+                return "Automatically moved ADT because PID18.4 (FIN No Type) indicates Newham";
+            }
         }
 
         // Added 2017-11-08
