@@ -13,6 +13,9 @@ import org.endeavourhealth.core.database.dal.audit.QueuedMessageDalI;
 import org.endeavourhealth.core.database.dal.audit.models.Exchange;
 import org.endeavourhealth.core.database.dal.audit.models.HeaderKeys;
 import org.endeavourhealth.core.database.dal.audit.models.QueuedMessageType;
+import org.endeavourhealth.core.database.dal.ehr.ResourceDalI;
+import org.endeavourhealth.core.database.dal.ehr.models.ResourceWrapper;
+import org.endeavourhealth.core.database.dal.subscriberTransform.ExchangeBatchExtraResourceDalI;
 import org.endeavourhealth.core.fhirStorage.JsonServiceInterfaceEndpoint;
 import org.endeavourhealth.core.messaging.pipeline.PipelineComponent;
 import org.endeavourhealth.core.messaging.pipeline.PipelineException;
@@ -28,10 +31,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 
 public class MessageTransformOutbound extends PipelineComponent {
@@ -136,6 +136,13 @@ public class MessageTransformOutbound extends PipelineComponent {
 							 String endpoint,
 							 UUID protocolId) throws Exception {
 
+		//retrieve our resources
+		UUID exchangeId = exchange.getId();
+		List<ResourceWrapper> filteredResources = getResources(exchangeId, batchId, resourceIds, endpoint);
+		if (filteredResources.isEmpty()) {
+			return null;
+		}
+
 		if (software.equals(MessageFormat.ENTERPRISE_CSV)) {
 
 			UUID serviceId = exchange.getHeaderAsUuid(HeaderKeys.SenderServiceUuid);
@@ -143,12 +150,10 @@ public class MessageTransformOutbound extends PipelineComponent {
 
 			//have to pass in the exchange body now
 			String body = exchange.getBody();
-			return FhirToEnterpriseCsvTransformer.transformFromFhir(serviceId, systemId, batchId, resourceIds, endpoint, protocolId, body);
-			//return FhirToEnterpriseCsvTransformer.transformFromFhir(serviceId, systemId, batchId, resourceIds, endpoint, protocolId);
+			return FhirToEnterpriseCsvTransformer.transformFromFhir(serviceId, systemId, exchangeId, batchId, filteredResources, endpoint, protocolId, body);
 
 		} else if (software.equals(MessageFormat.VITRUICARE_XML)) {
-
-			return FhirToVitruCareXmlTransformer.transformFromFhir(batchId, resourceIds, endpoint);
+			return FhirToVitruCareXmlTransformer.transformFromFhir(batchId, filteredResources, endpoint);
 
 		} else {
 			throw new PipelineException("Unsupported outbound software " + software + " for exchange " + exchange.getId());
@@ -316,5 +321,117 @@ public class MessageTransformOutbound extends PipelineComponent {
 	}
 
 
+	private static List<ResourceWrapper> getResources(UUID exchangeId, UUID batchId, Map<ResourceType, List<UUID>> resourceIds, String subscriberConfigName) throws Exception {
+
+		//get the resources actually in the batch we're transforming
+		ResourceDalI resourceDal = DalProvider.factoryResourceDal();
+		List<ResourceWrapper> resources = resourceDal.getResourcesForBatch(batchId);
+
+		//then add in any EXTRA resources we've previously calculated we'll need to include
+		ExchangeBatchExtraResourceDalI exchangeBatchExtraResourceDalI = DalProvider.factoryExchangeBatchExtraResourceDal(subscriberConfigName);
+		Map<ResourceType, List<UUID>> extraReourcesByType = exchangeBatchExtraResourceDalI.findExtraResources(exchangeId, batchId);
+		for (ResourceType resourceType: extraReourcesByType.keySet()) {
+			List<UUID> extraIds = extraReourcesByType.get(resourceType);
+			for (UUID extraId: extraIds) {
+				ResourceWrapper extraResource = resourceDal.getCurrentVersion(resourceType.toString(), extraId);
+				resources.add(extraResource);
+			}
+		}
+
+		//then filter to remove duplicates and ones the data set has filtered out
+		resources = filterResources(resources, resourceIds);
+		resources = pruneOlderDuplicates(resources);
+
+		return resources;
+	}
+
+	/**
+	 * we can end up with multiple instances of the same resource in a batch (or at least the Emis test data can)
+	 * so strip out all but the latest version of each resource, so we're not wasting time sending over
+	 * data that will immediately be overwritten and also we don't need to make sure to process them in order
+	 */
+	private static List<ResourceWrapper> pruneOlderDuplicates(List<ResourceWrapper> resources) {
+
+		HashMap<UUID, UUID> hmLatestVersion = new HashMap<>();
+		List<ResourceWrapper> ret = new ArrayList<>();
+
+		for (ResourceWrapper resource: resources) {
+			UUID id = resource.getResourceId();
+			UUID version = resource.getVersion();
+
+			//we'll have a null version for resource wrappers that we've added as "extra" to the exchange
+			//batch using the exchange_batch_extra_resource table, as we just load the most recent version,
+			//so just skip these as we'll automatically keep anything with a null version, below
+			if (version == null) {
+				continue;
+			}
+
+			UUID latestVersion = hmLatestVersion.get(id);
+			if (latestVersion == null) {
+				hmLatestVersion.put(id, version);
+
+			} else {
+				int comp = version.compareTo(latestVersion);
+				if (comp > 0) {
+					hmLatestVersion.put(id, latestVersion);
+				}
+			}
+		}
+
+		for (ResourceWrapper resource: resources) {
+			UUID id = resource.getResourceId();
+			UUID version = resource.getVersion();
+
+			//we'll have a null version for resource wrappers that we've added as "extra" to the exchange
+			//batch using the exchange_batch_extra_resource table, as we just load the most recent version,
+			//so always just add these
+			if (version == null) {
+				ret.add(resource);
+
+			} else {
+				//if we have a version, make sure ours is the latest version according to our map
+				UUID latestVersion = hmLatestVersion.get(id);
+				if (latestVersion.equals(version)) {
+					ret.add(resource);
+				}
+			}
+		}
+
+		return ret;
+	}
+
+	private static List<ResourceWrapper> filterResources(List<ResourceWrapper> allResources,
+														 Map<ResourceType, List<UUID>> resourceIdsToKeep) throws Exception {
+
+		List<ResourceWrapper> ret = new ArrayList<>();
+
+		for (ResourceWrapper resource: allResources) {
+			UUID resourceId = resource.getResourceId();
+			ResourceType resourceType = ResourceType.valueOf(resource.getResourceType());
+
+			//the map of resource IDs tells us the resources that passed the protocol and should be passed
+			//to the subscriber. However, any resources that should be deleted should be passed, whether the
+			//protocol says to include it or not, since it may have previously been passed to the subscriber anyway
+			if (resource.isDeleted()) {
+				ret.add(resource);
+
+			} else {
+
+				//during testing, the resource ID is null, so handle this
+				if (resourceIdsToKeep == null) {
+					ret.add(resource);
+					continue;
+				}
+
+				List<UUID> uuidsToKeep = resourceIdsToKeep.get(resourceType);
+				if (uuidsToKeep != null
+						|| uuidsToKeep.contains(resourceId)) {
+					ret.add(resource);
+				}
+			}
+		}
+
+		return ret;
+	}
 
 }

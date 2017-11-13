@@ -20,8 +20,12 @@ CREATE TABLE enterprise_id_map
   -- CONSTRAINT pk_enterprise_id_map PRIMARY KEY (resource_id, resource_type)
 );
 
-CREATE UNIQUE INDEX ix_enterprise_id_map
+CREATE INDEX ix_enterprise_id_map
   ON enterprise_id_map (resource_id, resource_type, enterprise_id);
+
+-- needed to ensure thread-safe processing of resources, to ensure we don't generate >1 enterprise IDs for the same resource
+CREATE UNIQUE INDEX ix_enterprise_id_map
+  ON enterprise_id_map (resource_id, resource_type);
 
 
 CREATE TABLE enterprise_organisation_id_map
