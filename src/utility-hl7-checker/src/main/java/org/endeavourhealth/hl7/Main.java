@@ -218,6 +218,14 @@ public class Main {
             if (Strings.isNullOrEmpty(finNo)) {
                 return "Automatically moved ADT because of missing PID18.1 (FIN No)";
             }
+        }
+
+        if (channelId == 1
+                && messageType.startsWith("ADT^")
+                && errorMessage.equals("[org.endeavourhealth.hl7receiver.model.exceptions.HL7MessageProcessorException]  Transform failure\r\n[java.lang.NullPointerException]  episodeIdentifierValue")) {
+
+            Message hapiMsg = parser.parse(inboundPayload);
+            Terser terser = new Terser(hapiMsg);
 
             String finNoType = terser.get("/PID-18-4");
             LOG.info("finNoType:" + finNoType);
