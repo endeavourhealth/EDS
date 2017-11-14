@@ -159,7 +159,7 @@ public class Main {
 			ServiceDalI serviceDalI = DalProvider.factoryServiceDal();
 			ParserPool parser = new ParserPool();
 
-			Map<Integer, List<String[]>> patientRows = new HashMap<>();
+			Map<Integer, List<Object[]>> patientRows = new HashMap<>();
 			SimpleDateFormat sdfOutput = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
 			for (UUID serviceId: serviceAndSystemIds.keySet()) {
@@ -210,6 +210,15 @@ public class Main {
 								Period period = fhirEncounter.getPeriod();
 								if (period.hasStart()) {
 									date = period.getStart();
+								}
+							}
+
+							String encounterId = null;
+							if (fhirEncounter.hasIdentifier()) {
+								encounterId = IdentifierHelper.findIdentifierValue(fhirEncounter.getIdentifier(), FhirUri.IDENTIFIER_SYSTEM_BARTS_FIN_EPISODE_ID);
+
+								if (Strings.isNullOrEmpty(encounterId)) {
+									encounterId = IdentifierHelper.findIdentifierValue(fhirEncounter.getIdentifier(), FhirUri.IDENTIFIER_SYSTEM_HOMERTON_FIN_EPISODE_ID);
 								}
 							}
 
@@ -298,20 +307,21 @@ public class Main {
 								}
 							}
 
-							//"Source", "Patient", "Date", "ADT Message Type", "Class", "Status", "Location", "Location Type", "Clinician"
-							String[] row = new String[8];
+							//"Source", "Patient", "Date", "Encounter ID", "ADT Message Type", "Class", "Status", "Location", "Location Type", "Clinician"
+							Object[] row = new Object[10];
 
 							row[0] = serviceName;
 							row[1] = patientIdInt.toString();
 							row[2] = sdfOutput.format(date);
-							row[3] = adtType;
-							row[4] = cls;
-							row[5] = status;
-							row[6] = location;
-							row[7] = locationType;
-							row[8] = clinician;
+							row[3] = encounterId;
+							row[4] = adtType;
+							row[5] = cls;
+							row[6] = status;
+							row[7] = location;
+							row[8] = locationType;
+							row[9] = clinician;
 
-							List<String[]> rows = patientRows.get(patientIdInt);
+							List<Object[]> rows = patientRows.get(patientIdInt);
 							if (rows == null) {
 								rows = new ArrayList<>();
 								patientRows.put(patientIdInt, rows);
@@ -323,7 +333,7 @@ public class Main {
 			}
 
 
-			String[] outputColumnHeaders = new String[] {"Source", "Patient", "Date", "ADT Message Type", "Class", "Status", "Location", "Location Type", "Clinician"};
+			String[] outputColumnHeaders = new String[] {"Source", "Patient", "Date", "Encounter ID", "ADT Message Type", "Class", "Status", "Location", "Location Type", "Clinician"};
 
 			FileWriter fileWriter = new FileWriter(outputPath);
 			BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
@@ -331,9 +341,9 @@ public class Main {
 
 			for (int i=0; i <= count; i++) {
 				Integer patientIdInt = new Integer(i);
-				List<String[]> rows = patientRows.get(patientIdInt);
+				List<Object[]> rows = patientRows.get(patientIdInt);
 				if (rows != null) {
-					for (String[] row: rows) {
+					for (Object[] row: rows) {
 						csvPrinter.printRecord(row);
 					}
 				}

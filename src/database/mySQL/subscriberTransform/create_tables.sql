@@ -99,7 +99,7 @@ CREATE TABLE exchange_batch_extra_resources (
     batch_id char(36) NOT NULL,
     resource_id char(36) NOT NULL,
     resource_type varchar(100) NOT NULL,
-    CONSTRAINT pk_enterprise_organisation_id_map PRIMARY KEY (exchange_id, batch_id, resource_id, resource_type)
+    CONSTRAINT pk_exchange_batch_extra_resources PRIMARY KEY (exchange_id, batch_id, resource_id, resource_type)
 );
 
 CREATE TABLE enterprise_instance_map
@@ -108,7 +108,7 @@ CREATE TABLE enterprise_instance_map
 	resource_id_from char(36) NOT NULL,
 	resource_id_to char(36),
 	mapping_value varchar(100),
-	CONSTRAINT pk_enterprise_organisation_id_map PRIMARY KEY (resource_id_from, resource_type)
+	CONSTRAINT pk_enterprise_instance_map PRIMARY KEY (resource_id_from, resource_type)
 );
 
 CREATE INDEX ix_enterprise_instance_map_type_value
