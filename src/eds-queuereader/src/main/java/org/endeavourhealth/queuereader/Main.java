@@ -117,6 +117,84 @@ public class Main {
 		LOG.info("EDS Queue reader running");
 	}
 
+	/**
+	 * exports ADT Encounters for patients based on a CSV file produced using the below SQL
+	 --USE EDS DATABASE
+
+	 -- barts b5a08769-cbbe-4093-93d6-b696cd1da483
+	 -- homerton 962d6a9a-5950-47ac-9e16-ebee56f9507a
+
+	 create table adt_patients (
+	 service_id character(36),
+	 system_id character(36),
+	 nhs_number character varying(10),
+	 patient_id character(36)
+	 );
+
+	 -- delete from adt_patients;
+
+	 select * from patient_search limit 10;
+	 select * from patient_link limit 10;
+
+	 insert into adt_patients
+	 select distinct ps.service_id, ps.system_id, ps.nhs_number, ps.patient_id
+	 from patient_search ps
+	 join patient_link pl
+	 on pl.patient_id = ps.patient_id
+	 join patient_link pl2
+	 on pl.person_id = pl2.person_id
+	 join patient_search ps2
+	 on ps2.patient_id = pl2.patient_id
+	 where
+	 ps.service_id IN ('b5a08769-cbbe-4093-93d6-b696cd1da483', '962d6a9a-5950-47ac-9e16-ebee56f9507a')
+	 and ps2.service_id NOT IN ('b5a08769-cbbe-4093-93d6-b696cd1da483', '962d6a9a-5950-47ac-9e16-ebee56f9507a');
+
+
+	 select count(1) from adt_patients limit 100;
+	 select * from adt_patients limit 100;
+
+
+
+
+	 ---MOVE TABLE TO HL7 RECEIVER DB
+
+	 select count(1) from adt_patients;
+
+	 -- top 1000 patients with messages
+
+	 select * from mapping.resource_uuid where resource_type = 'Patient' limit 10;
+
+	 select * from log.message limit 10;
+
+	 create table adt_patient_counts (
+	 nhs_number character varying(100),
+	 count int
+	 );
+
+	 insert into adt_patient_counts
+	 select pid1, count(1)
+	 from log.message
+	 where pid1 is not null
+	 and pid1 <> ''
+	 group by pid1;
+
+	 select * from adt_patient_counts order by count desc limit 100;
+
+	 alter table adt_patients
+	 add count int;
+
+	 update adt_patients
+	 set count = adt_patient_counts.count
+	 from adt_patient_counts
+	 where adt_patients.nhs_number = adt_patient_counts.nhs_number;
+
+	 select count(1) from adt_patients where nhs_number is null;
+
+	 select * from adt_patients
+	 where nhs_number is not null
+	 and count is not null
+	 order by count desc limit 1000;
+     */
 	private static void exportHl7Encounters(String sourceCsvPath, String outputPath) {
 		LOG.info("Exporting HL7 Encounters from " + sourceCsvPath + " to " + outputPath);
 
