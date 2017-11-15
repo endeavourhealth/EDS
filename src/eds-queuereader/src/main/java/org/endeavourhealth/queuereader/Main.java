@@ -280,6 +280,7 @@ public class Main {
 								continue;
 							}
 
+							LOG.info("Processing " + resourceWrapper.getResourceType() + " " + resourceWrapper.getResourceId());
 							String json = resourceWrapper.getResourceData();
 							Encounter fhirEncounter = (Encounter)parser.parse(json);
 
@@ -291,16 +292,26 @@ public class Main {
 								}
 							}
 
-							String encounterId = null;
-							if (fhirEncounter.hasIdentifier()) {
-								encounterId = IdentifierHelper.findIdentifierValue(fhirEncounter.getIdentifier(), FhirUri.IDENTIFIER_SYSTEM_BARTS_FIN_EPISODE_ID);
+							String episodeId = null;
+							if (fhirEncounter.hasEpisodeOfCare()) {
+								Reference episodeReference = fhirEncounter.getEpisodeOfCare().get(0);
+								ReferenceComponents comps = ReferenceHelper.getReferenceComponents(episodeReference);
+								EpisodeOfCare fhirEpisode = (EpisodeOfCare)resourceDalI.getCurrentVersionAsResource(comps.getResourceType(), comps.getId());
+								if (fhirEpisode != null) {
+									if (fhirEpisode.hasIdentifier()) {
+										episodeId = IdentifierHelper.findIdentifierValue(fhirEpisode.getIdentifier(), FhirUri.IDENTIFIER_SYSTEM_BARTS_FIN_EPISODE_ID);
 
-								if (Strings.isNullOrEmpty(encounterId)) {
-									encounterId = IdentifierHelper.findIdentifierValue(fhirEncounter.getIdentifier(), FhirUri.IDENTIFIER_SYSTEM_HOMERTON_FIN_EPISODE_ID);
+										if (Strings.isNullOrEmpty(episodeId)) {
+											episodeId = IdentifierHelper.findIdentifierValue(fhirEpisode.getIdentifier(), FhirUri.IDENTIFIER_SYSTEM_HOMERTON_FIN_EPISODE_ID);
+										}
+									}
 								}
 							}
 
+
+
 							String adtType = null;
+							String adtCode = null;
 							Extension extension = ExtensionConverter.findExtension(fhirEncounter, FhirExtensionUri.HL7_MESSAGE_TYPE);
 
 							if (extension != null) {
@@ -308,6 +319,7 @@ public class Main {
 								Coding hl7MessageTypeCoding = CodeableConceptHelper.findCoding(codeableConcept, FhirUri.CODE_SYSTEM_HL7V2_MESSAGE_TYPE);
 								if (hl7MessageTypeCoding != null) {
 									adtType = hl7MessageTypeCoding.getDisplay();
+									adtCode = hl7MessageTypeCoding.getCode();
 								}
 
 							} else {
@@ -324,6 +336,7 @@ public class Main {
 											if (header.hasEvent()) {
 												Coding coding = header.getEvent();
 												adtType = coding.getDisplay();
+												adtCode = coding.getCode();
 											}
 										}
 									}
@@ -335,7 +348,28 @@ public class Main {
 							String cls = null;
 							if (fhirEncounter.hasClass_()) {
 								Encounter.EncounterClass encounterClass = fhirEncounter.getClass_();
-								cls = encounterClass.toCode();
+								if (encounterClass == Encounter.EncounterClass.OTHER
+										&& fhirEncounter.hasClass_Element()
+										&& fhirEncounter.getClass_Element().hasExtension()) {
+
+									for (Extension classExtension: fhirEncounter.getClass_Element().getExtension()) {
+										if (classExtension.getUrl().equals(FhirExtensionUri.ENCOUNTER_CLASS)) {
+											//not 100% of the type of the value, so just append to a String
+											cls = "" + classExtension.getValue();
+										}
+									}
+								}
+
+								if (Strings.isNullOrEmpty(cls)) {
+									cls = encounterClass.toCode();
+								}
+							}
+
+							String type = null;
+							if (fhirEncounter.hasType()) {
+								//only seem to ever have one type
+								CodeableConcept codeableConcept = fhirEncounter.getType().get(0);
+								type = codeableConcept.getText();
 							}
 
 							String status = null;
@@ -379,25 +413,42 @@ public class Main {
 									Practitioner fhirPractitioner = (Practitioner)resourceDalI.getCurrentVersionAsResource(comps.getResourceType(), comps.getId());
 									if (fhirPractitioner != null) {
 										if (fhirPractitioner.hasName()) {
-											clinician = fhirPractitioner.getName().getText();
+											HumanName name = fhirPractitioner.getName();
+											clinician = name.getText();
+											if (Strings.isNullOrEmpty(clinician)) {
+												for (StringType s: name.getPrefix()) {
+													clinician += s.getValueNotNull();
+													clinician += " ";
+												}
+												for (StringType s: name.getGiven()) {
+													clinician += s.getValueNotNull();
+													clinician += " ";
+												}
+												for (StringType s: name.getFamily()) {
+													clinician += s.getValueNotNull();
+													clinician += " ";
+												}
+												clinician = clinician.trim();
+											}
 										}
 									}
 								}
 							}
 
-							//"Source", "Patient", "Date", "Encounter ID", "ADT Message Type", "Class", "Status", "Location", "Location Type", "Clinician"
-							Object[] row = new Object[10];
+							Object[] row = new Object[12];
 
 							row[0] = serviceName;
 							row[1] = patientIdInt.toString();
 							row[2] = sdfOutput.format(date);
-							row[3] = encounterId;
-							row[4] = adtType;
-							row[5] = cls;
-							row[6] = status;
-							row[7] = location;
-							row[8] = locationType;
-							row[9] = clinician;
+							row[3] = episodeId;
+							row[4] = adtCode;
+							row[5] = adtType;
+							row[6] = cls;
+							row[7] = type;
+							row[8] = status;
+							row[9] = location;
+							row[10] = locationType;
+							row[11] = clinician;
 
 							List<Object[]> rows = patientRows.get(patientIdInt);
 							if (rows == null) {
@@ -411,11 +462,14 @@ public class Main {
 			}
 
 
-			String[] outputColumnHeaders = new String[] {"Source", "Patient", "Date", "Encounter ID", "ADT Message Type", "Class", "Status", "Location", "Location Type", "Clinician"};
+			String[] outputColumnHeaders = new String[] {"Source", "Patient", "Date", "Episode ID", "ADT Message Code", "ADT Message Type", "Class", "Type", "Status", "Location", "Location Type", "Clinician"};
 
 			FileWriter fileWriter = new FileWriter(outputPath);
 			BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
-			CSVPrinter csvPrinter = new CSVPrinter(bufferedWriter, CSVFormat.DEFAULT.withHeader(outputColumnHeaders));
+			CSVFormat format = CSVFormat.DEFAULT
+					.withHeader(outputColumnHeaders)
+					.withQuote('"');
+			CSVPrinter csvPrinter = new CSVPrinter(bufferedWriter, format);
 
 			for (int i=0; i <= count; i++) {
 				Integer patientIdInt = new Integer(i);
