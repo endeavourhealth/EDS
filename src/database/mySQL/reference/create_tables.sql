@@ -107,7 +107,7 @@ CREATE TABLE trm_concept_pc_link
     parent_pid bigint NOT NULL
 );
 
-CREATE TABLE public.read2_to_snomed_map
+CREATE TABLE read2_to_snomed_map
 (
   map_id varchar (38) NOT NULL PRIMARY KEY,
   read_code varchar (5) NOT NULL,
@@ -117,7 +117,7 @@ CREATE TABLE public.read2_to_snomed_map
   map_status int NOT NULL
 );
 
-CREATE TABLE reference.ctv3_to_snomed_map
+CREATE TABLE ctv3_to_snomed_map
 (
   map_id varchar(38) NOT NULL PRIMARY KEY,
   ctv3_concept_id varchar (12) NOT NULL,
