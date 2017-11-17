@@ -416,6 +416,8 @@ public class Main {
 											HumanName name = fhirPractitioner.getName();
 											clinician = name.getText();
 											if (Strings.isNullOrEmpty(clinician)) {
+												clinician = "";
+
 												for (StringType s: name.getPrefix()) {
 													clinician += s.getValueNotNull();
 													clinician += " ";
