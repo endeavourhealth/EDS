@@ -1,12 +1,11 @@
 use publisher_transform;
 
-
 DROP TABLE IF EXISTS emis_csv_code_map;
 DROP TABLE IF EXISTS emis_admin_resource_cache;
 DROP TABLE IF EXISTS resource_id_map;
+DROP TABLE IF EXISTS sus_resource_map;
 
 CREATE TABLE emis_csv_code_map (
-	data_sharing_agreement_guid varchar(36),
 	medication boolean,
 	code_id bigint,
 	code_type varchar(250),
@@ -20,7 +19,7 @@ CREATE TABLE emis_csv_code_map (
 	national_code_category varchar(500),
 	national_code_description varchar(500),
 	parent_code_id bigint,
-    CONSTRAINT pk_emis_csv_code_map PRIMARY KEY (data_sharing_agreement_guid, medication, code_id)
+    CONSTRAINT pk_emis_csv_code_map PRIMARY KEY (medication, code_id)
 );
 
 CREATE TABLE emis_admin_resource_cache (
@@ -42,3 +41,11 @@ CREATE TABLE resource_id_map (
 
 CREATE INDEX ix_resource_id_map_resource_type_eds_id
 ON resource_id_map (resource_type, eds_id);
+
+CREATE TABLE sus_resource_map (
+  service_id char(36),
+  source_row_id varchar(200),
+  destination_resource_type varchar(100),
+  destination_resource_id char(36),
+  CONSTRAINT pk_sus_resource_map PRIMARY KEY (service_id, source_row_id, destination_resource_type, destination_resource_id)
+);
