@@ -219,10 +219,16 @@ public class QueueHelper {
             ApiConfiguration.PostMessageAsync postConfig = config.getPostMessageAsync();
             pipeline = postConfig.getPipeline();
 
-        } catch (Exception e) {
+        } catch (Exception ex) {
 
-            QueueReaderConfiguration configuration = ConfigDeserialiser.deserialise(configXml);
-            pipeline = configuration.getPipeline();
+            try {
+                QueueReaderConfiguration configuration = ConfigDeserialiser.deserialise(configXml);
+                pipeline = configuration.getPipeline();
+
+            } catch (Exception ex2) {
+                //we also have some non-XML config records in there, so we'll get another exception for them
+                return null;
+            }
         }
 
         return pipeline
