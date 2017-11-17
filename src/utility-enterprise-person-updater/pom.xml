@@ -30,6 +30,12 @@
             <version>${eds-utility.version}</version>
         </dependency>
 
+        <dependency>
+            <groupId>org.endeavourhealth.common</groupId>
+            <artifactId>transforms</artifactId>
+            <version>${eds-transform.version}</version>
+        </dependency>
+
         <!--mySQL-->
         <dependency>
             <groupId>mysql</groupId>
@@ -43,6 +49,7 @@
             <artifactId>postgresql</artifactId>
             <version>${postgresql.version}</version>
         </dependency>
+
 
     </dependencies>
 

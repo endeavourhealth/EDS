@@ -197,7 +197,7 @@ public class Main {
 
         // Added 2017-10-24
         if (channelId == 1
-                && messageType.equals("ADT^A07")
+                && (messageType.startsWith("ADT^"))
                 && errorMessage.equals("[org.endeavourhealth.hl7receiver.model.exceptions.HL7MessageProcessorException]  Transform failure\r\n[java.lang.IllegalArgumentException]  episodeIdentifierValue")) {
 
             Message hapiMsg = parser.parse(inboundPayload);
@@ -208,7 +208,31 @@ public class Main {
 
             // If episode id / encounter id is missing then move to DLQ
             if (Strings.isNullOrEmpty(episodeId)) {
-                return "Automatically moved A07 because of missing PV1:19";
+                return "Automatically moved ADT because of missing PV1:19";
+            }
+
+            String finNo = terser.get("/PID-18-1");
+            LOG.info("finNo:" + finNo);
+
+            // If episode id / encounter id is missing then move to DLQ
+            if (Strings.isNullOrEmpty(finNo)) {
+                return "Automatically moved ADT because of missing PID18.1 (FIN No)";
+            }
+        }
+
+        if (channelId == 1
+                && messageType.startsWith("ADT^")
+                && errorMessage.equals("[org.endeavourhealth.hl7receiver.model.exceptions.HL7MessageProcessorException]  Transform failure\r\n[java.lang.NullPointerException]  episodeIdentifierValue")) {
+
+            Message hapiMsg = parser.parse(inboundPayload);
+            Terser terser = new Terser(hapiMsg);
+
+            String finNoType = terser.get("/PID-18-4");
+            LOG.info("finNoType:" + finNoType);
+
+            // If episode id / encounter id is missing then move to DLQ
+            if (finNoType.compareToIgnoreCase("Newham FIN") == 0) {
+                return "Automatically moved ADT because PID18.4 (FIN No Type) indicates Newham";
             }
         }
 
@@ -217,12 +241,32 @@ public class Main {
                 && messageType.equals("ADT^A34")
                 && errorMessage.equals("[org.endeavourhealth.hl7receiver.model.exceptions.HL7MessageProcessorException]  Transform failure\r\n[org.endeavourhealth.hl7transform.common.TransformException]  MRG segment exists less than 1 time(s)")) {
 
+            LOG.info("Looking for MRG segment");
             Message hapiMsg = parser.parse(inboundPayload);
             MRG mrg = (MRG) hapiMsg.get("MRG");
 
             // If MRG missing
-            if (mrg == null) {
+            if (mrg == null || mrg.isEmpty()) {
                 return "Automatically moved A34 because of missing MRG";
+            } else {
+                LOG.info("MRG segment found. isEmpty()=" + mrg.isEmpty());
+            }
+        }
+
+        // Added 2017-11-10
+        if (channelId == 1
+                && messageType.equals("ADT^A35")
+                && errorMessage.equals("[org.endeavourhealth.hl7receiver.model.exceptions.HL7MessageProcessorException]  Transform failure\r\n[org.endeavourhealth.hl7transform.common.TransformException]  MRG segment exists less than 1 time(s)")) {
+
+            LOG.info("Looking for MRG segment");
+            Message hapiMsg = parser.parse(inboundPayload);
+            MRG mrg = (MRG) hapiMsg.get("MRG");
+
+            // If MRG missing
+            if (mrg == null || mrg.isEmpty()) {
+                return "Automatically moved A35 because of missing MRG";
+            } else {
+                LOG.info("MRG segment found. isEmpty()=" + mrg.isEmpty());
             }
         }
 
@@ -245,26 +289,9 @@ public class Main {
             }
         }
 
-        // Added 2017-10-25
-        if (channelId == 2
-                && messageType.equals("ADT^A03")
-                && errorMessage.equals("[org.endeavourhealth.hl7receiver.model.exceptions.HL7MessageProcessorException]  Transform failure\r\n[java.lang.NullPointerException]  episodeIdentifierValue")) {
-
-            Message hapiMsg = parser.parse(inboundPayload);
-            Terser terser = new Terser(hapiMsg);
-
-            String episodeId = terser.get("/PV1-19");
-            LOG.info("episodeId:" + episodeId);
-
-            // If episode id / encounter id is missing then move to DLQ
-            if (Strings.isNullOrEmpty(episodeId)) {
-                return "Automatically moved A03 because of missing PV1:19";
-            }
-        }
-
         // Added 2017-11-07
         if (channelId == 2
-                && messageType.equals("ADT^A08")
+                && messageType.startsWith("ADT^")
                 && errorMessage.equals("[org.endeavourhealth.hl7receiver.model.exceptions.HL7MessageProcessorException]  Transform failure\r\n[java.lang.NullPointerException]  episodeIdentifierValue")) {
 
             Message hapiMsg = parser.parse(inboundPayload);
@@ -275,7 +302,15 @@ public class Main {
 
             // If episode id / encounter id is missing then move to DLQ
             if (Strings.isNullOrEmpty(episodeId)) {
-                return "Automatically moved A08 because of missing PV1:19";
+                return "Automatically moved ADT because of missing PV1:19";
+            }
+
+            String episodeIdType = terser.get("/PV1-19-5");
+            LOG.info("episodeIdType:" + episodeIdType);
+
+            // If episode id / encounter id is missing then move to DLQ
+            if (Strings.isNullOrEmpty(episodeIdType)) {
+                return "Automatically moved ADT because of missing PV1:19.5 - expecting VISITID";
             }
         }
 

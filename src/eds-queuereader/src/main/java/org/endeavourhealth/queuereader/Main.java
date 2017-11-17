@@ -4,33 +4,42 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.base.Strings;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
+import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.io.FileUtils;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.common.cache.ParserPool;
 import org.endeavourhealth.common.config.ConfigManager;
+import org.endeavourhealth.common.fhir.*;
 import org.endeavourhealth.core.configuration.ConfigDeserialiser;
 import org.endeavourhealth.core.configuration.QueueReaderConfiguration;
 import org.endeavourhealth.core.database.dal.DalProvider;
 import org.endeavourhealth.core.database.dal.admin.ServiceDalI;
 import org.endeavourhealth.core.database.dal.admin.models.Service;
+import org.endeavourhealth.core.database.dal.audit.ExchangeBatchDalI;
 import org.endeavourhealth.core.database.dal.audit.ExchangeDalI;
 import org.endeavourhealth.core.database.dal.audit.models.Exchange;
+import org.endeavourhealth.core.database.dal.audit.models.ExchangeBatch;
 import org.endeavourhealth.core.database.dal.audit.models.ExchangeTransformAudit;
 import org.endeavourhealth.core.database.dal.audit.models.HeaderKeys;
+import org.endeavourhealth.core.database.dal.ehr.ResourceDalI;
+import org.endeavourhealth.core.database.dal.ehr.models.ResourceWrapper;
+import org.endeavourhealth.core.fhirStorage.FhirResourceHelper;
 import org.endeavourhealth.core.fhirStorage.JsonServiceInterfaceEndpoint;
 import org.endeavourhealth.core.queueing.QueueHelper;
+import org.hl7.fhir.instance.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
 import java.nio.charset.Charset;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
 public class Main {
 	private static final Logger LOG = LoggerFactory.getLogger(Main.class);
-	private static final ParserPool PARSER_POOL = new ParserPool();
 
 	public static void main(String[] args) throws Exception {
 
@@ -57,6 +66,14 @@ public class Main {
 			String path = args[1];
 			String outputPath = args[2];
 			findEmisStartDates(path, outputPath);
+			System.exit(0);
+		}
+
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("ExportHl7Encounters")) {
+			String sourceCsvPpath = args[1];
+			String outputPath = args[2];
+			exportHl7Encounters(sourceCsvPpath, outputPath);
 			System.exit(0);
 		}
 
@@ -87,6 +104,9 @@ public class Main {
 		String configXml = ConfigManager.getConfiguration(configId);
 		QueueReaderConfiguration configuration = ConfigDeserialiser.deserialise(configXml);
 
+		/*LOG.info("Registering shutdown hook");
+		registerShutdownHook();*/
+
 		// Instantiate rabbit handler
 		LOG.info("Creating EDS queue reader");
 		RabbitHandler rabbitHandler = new RabbitHandler(configuration);
@@ -96,6 +116,398 @@ public class Main {
 		rabbitHandler.start();
 		LOG.info("EDS Queue reader running");
 	}
+
+	/**
+	 * exports ADT Encounters for patients based on a CSV file produced using the below SQL
+	 --USE EDS DATABASE
+
+	 -- barts b5a08769-cbbe-4093-93d6-b696cd1da483
+	 -- homerton 962d6a9a-5950-47ac-9e16-ebee56f9507a
+
+	 create table adt_patients (
+	 service_id character(36),
+	 system_id character(36),
+	 nhs_number character varying(10),
+	 patient_id character(36)
+	 );
+
+	 -- delete from adt_patients;
+
+	 select * from patient_search limit 10;
+	 select * from patient_link limit 10;
+
+	 insert into adt_patients
+	 select distinct ps.service_id, ps.system_id, ps.nhs_number, ps.patient_id
+	 from patient_search ps
+	 join patient_link pl
+	 on pl.patient_id = ps.patient_id
+	 join patient_link pl2
+	 on pl.person_id = pl2.person_id
+	 join patient_search ps2
+	 on ps2.patient_id = pl2.patient_id
+	 where
+	 ps.service_id IN ('b5a08769-cbbe-4093-93d6-b696cd1da483', '962d6a9a-5950-47ac-9e16-ebee56f9507a')
+	 and ps2.service_id NOT IN ('b5a08769-cbbe-4093-93d6-b696cd1da483', '962d6a9a-5950-47ac-9e16-ebee56f9507a');
+
+
+	 select count(1) from adt_patients limit 100;
+	 select * from adt_patients limit 100;
+
+
+
+
+	 ---MOVE TABLE TO HL7 RECEIVER DB
+
+	 select count(1) from adt_patients;
+
+	 -- top 1000 patients with messages
+
+	 select * from mapping.resource_uuid where resource_type = 'Patient' limit 10;
+
+	 select * from log.message limit 10;
+
+	 create table adt_patient_counts (
+	 nhs_number character varying(100),
+	 count int
+	 );
+
+	 insert into adt_patient_counts
+	 select pid1, count(1)
+	 from log.message
+	 where pid1 is not null
+	 and pid1 <> ''
+	 group by pid1;
+
+	 select * from adt_patient_counts order by count desc limit 100;
+
+	 alter table adt_patients
+	 add count int;
+
+	 update adt_patients
+	 set count = adt_patient_counts.count
+	 from adt_patient_counts
+	 where adt_patients.nhs_number = adt_patient_counts.nhs_number;
+
+	 select count(1) from adt_patients where nhs_number is null;
+
+	 select * from adt_patients
+	 where nhs_number is not null
+	 and count is not null
+	 order by count desc limit 1000;
+     */
+	private static void exportHl7Encounters(String sourceCsvPath, String outputPath) {
+		LOG.info("Exporting HL7 Encounters from " + sourceCsvPath + " to " + outputPath);
+
+		try {
+
+			File sourceFile = new File(sourceCsvPath);
+			CSVParser csvParser = CSVParser.parse(sourceFile, Charset.defaultCharset(), CSVFormat.DEFAULT.withHeader());
+
+			//"service_id","system_id","nhs_number","patient_id","count"
+
+			int count = 0;
+			HashMap<UUID, List<UUID>> serviceAndSystemIds = new HashMap<>();
+			HashMap<UUID, Integer> patientIds = new HashMap<>();
+
+			Iterator<CSVRecord> csvIterator = csvParser.iterator();
+			while (csvIterator.hasNext()) {
+				CSVRecord csvRecord = csvIterator.next();
+				count ++;
+
+				String serviceId = csvRecord.get("service_id");
+				String systemId = csvRecord.get("system_id");
+				String patientId = csvRecord.get("patient_id");
+
+				UUID serviceUuid = UUID.fromString(serviceId);
+				List<UUID> systemIds = serviceAndSystemIds.get(serviceUuid);
+				if (systemIds == null) {
+					systemIds = new ArrayList<>();
+					serviceAndSystemIds.put(serviceUuid, systemIds);
+				}
+				systemIds.add(UUID.fromString(systemId));
+
+				patientIds.put(UUID.fromString(patientId), new Integer(count));
+			}
+
+			csvParser.close();
+
+			ExchangeDalI exchangeDalI = DalProvider.factoryExchangeDal();
+			ResourceDalI resourceDalI = DalProvider.factoryResourceDal();
+			ExchangeBatchDalI exchangeBatchDalI = DalProvider.factoryExchangeBatchDal();
+			ServiceDalI serviceDalI = DalProvider.factoryServiceDal();
+			ParserPool parser = new ParserPool();
+
+			Map<Integer, List<Object[]>> patientRows = new HashMap<>();
+			SimpleDateFormat sdfOutput = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
+			for (UUID serviceId: serviceAndSystemIds.keySet()) {
+				//List<UUID> systemIds = serviceAndSystemIds.get(serviceId);
+
+				Service service = serviceDalI.getById(serviceId);
+				String serviceName = service.getName();
+				LOG.info("Doing service " + serviceId + " " + serviceName);
+
+				List<UUID> exchangeIds = exchangeDalI.getExchangeIdsForService(serviceId);
+				LOG.info("Got " + exchangeIds.size() + " exchange IDs to scan");
+				int exchangeCount = 0;
+
+				for (UUID exchangeId: exchangeIds) {
+
+					exchangeCount ++;
+					if (exchangeCount % 1000 == 0) {
+						LOG.info("Done " + exchangeCount + " exchanges");
+					}
+
+					List<ExchangeBatch> exchangeBatches = exchangeBatchDalI.retrieveForExchangeId(exchangeId);
+					for (ExchangeBatch exchangeBatch: exchangeBatches) {
+						UUID patientId = exchangeBatch.getEdsPatientId();
+						if (patientId != null
+							&& !patientIds.containsKey(patientId)) {
+							continue;
+						}
+
+						Integer patientIdInt = patientIds.get(patientId);
+
+						//get encounters for exchange batch
+						UUID batchId = exchangeBatch.getBatchId();
+						List<ResourceWrapper> resourceWrappers = resourceDalI.getResourcesForBatch(batchId);
+						for (ResourceWrapper resourceWrapper: resourceWrappers) {
+							if (resourceWrapper.isDeleted()) {
+								continue;
+							}
+							String resourceType = resourceWrapper.getResourceType();
+							if (!resourceType.equals(ResourceType.Encounter.toString())) {
+								continue;
+							}
+
+							LOG.info("Processing " + resourceWrapper.getResourceType() + " " + resourceWrapper.getResourceId());
+							String json = resourceWrapper.getResourceData();
+							Encounter fhirEncounter = (Encounter)parser.parse(json);
+
+							Date date = null;
+							if (fhirEncounter.hasPeriod()) {
+								Period period = fhirEncounter.getPeriod();
+								if (period.hasStart()) {
+									date = period.getStart();
+								}
+							}
+
+							String episodeId = null;
+							if (fhirEncounter.hasEpisodeOfCare()) {
+								Reference episodeReference = fhirEncounter.getEpisodeOfCare().get(0);
+								ReferenceComponents comps = ReferenceHelper.getReferenceComponents(episodeReference);
+								EpisodeOfCare fhirEpisode = (EpisodeOfCare)resourceDalI.getCurrentVersionAsResource(comps.getResourceType(), comps.getId());
+								if (fhirEpisode != null) {
+									if (fhirEpisode.hasIdentifier()) {
+										episodeId = IdentifierHelper.findIdentifierValue(fhirEpisode.getIdentifier(), FhirUri.IDENTIFIER_SYSTEM_BARTS_FIN_EPISODE_ID);
+
+										if (Strings.isNullOrEmpty(episodeId)) {
+											episodeId = IdentifierHelper.findIdentifierValue(fhirEpisode.getIdentifier(), FhirUri.IDENTIFIER_SYSTEM_HOMERTON_FIN_EPISODE_ID);
+										}
+									}
+								}
+							}
+
+
+
+							String adtType = null;
+							String adtCode = null;
+							Extension extension = ExtensionConverter.findExtension(fhirEncounter, FhirExtensionUri.HL7_MESSAGE_TYPE);
+
+							if (extension != null) {
+								CodeableConcept codeableConcept = (CodeableConcept) extension.getValue();
+								Coding hl7MessageTypeCoding = CodeableConceptHelper.findCoding(codeableConcept, FhirUri.CODE_SYSTEM_HL7V2_MESSAGE_TYPE);
+								if (hl7MessageTypeCoding != null) {
+									adtType = hl7MessageTypeCoding.getDisplay();
+									adtCode = hl7MessageTypeCoding.getCode();
+								}
+
+							} else {
+								//for older formats of the transformed resources, the HL7 message type can only be found from the raw original exchange body
+								try {
+									Exchange exchange = exchangeDalI.getExchange(exchangeId);
+									String exchangeBody = exchange.getBody();
+									Bundle bundle = (Bundle) FhirResourceHelper.deserialiseResouce(exchangeBody);
+									for (Bundle.BundleEntryComponent entry: bundle.getEntry()) {
+										if (entry.getResource() != null
+												&& entry.getResource() instanceof MessageHeader) {
+
+											MessageHeader header = (MessageHeader)entry.getResource();
+											if (header.hasEvent()) {
+												Coding coding = header.getEvent();
+												adtType = coding.getDisplay();
+												adtCode = coding.getCode();
+											}
+										}
+									}
+								} catch (Exception ex) {
+									//if the exchange body isn't a FHIR bundle, then we'll get an error by treating as such, so just ignore them
+								}
+							}
+
+							String cls = null;
+							if (fhirEncounter.hasClass_()) {
+								Encounter.EncounterClass encounterClass = fhirEncounter.getClass_();
+								if (encounterClass == Encounter.EncounterClass.OTHER
+										&& fhirEncounter.hasClass_Element()
+										&& fhirEncounter.getClass_Element().hasExtension()) {
+
+									for (Extension classExtension: fhirEncounter.getClass_Element().getExtension()) {
+										if (classExtension.getUrl().equals(FhirExtensionUri.ENCOUNTER_CLASS)) {
+											//not 100% of the type of the value, so just append to a String
+											cls = "" + classExtension.getValue();
+										}
+									}
+								}
+
+								if (Strings.isNullOrEmpty(cls)) {
+									cls = encounterClass.toCode();
+								}
+							}
+
+							String type = null;
+							if (fhirEncounter.hasType()) {
+								//only seem to ever have one type
+								CodeableConcept codeableConcept = fhirEncounter.getType().get(0);
+								type = codeableConcept.getText();
+							}
+
+							String status = null;
+							if (fhirEncounter.hasStatus()) {
+								Encounter.EncounterState encounterState = fhirEncounter.getStatus();
+								status = encounterState.toCode();
+							}
+
+							String location = null;
+							String locationType = null;
+							if (fhirEncounter.hasLocation()) {
+								//first location is always the current location
+								Encounter.EncounterLocationComponent encounterLocation = fhirEncounter.getLocation().get(0);
+								if (encounterLocation.hasLocation()) {
+									Reference locationReference = encounterLocation.getLocation();
+									ReferenceComponents comps = ReferenceHelper.getReferenceComponents(locationReference);
+									Location fhirLocation = (Location)resourceDalI.getCurrentVersionAsResource(comps.getResourceType(), comps.getId());
+									if (fhirLocation != null) {
+										if (fhirLocation.hasName()) {
+											location = fhirLocation.getName();
+										}
+										if (fhirLocation.hasType()) {
+											CodeableConcept typeCodeableConcept = fhirLocation.getType();
+											if (typeCodeableConcept.hasCoding()) {
+												Coding coding = typeCodeableConcept.getCoding().get(0);
+												locationType = coding.getDisplay();
+											}
+										}
+									}
+								}
+							}
+
+							String clinician = null;
+
+							if (fhirEncounter.hasParticipant()) {
+								//first participant seems to be the interesting one
+								Encounter.EncounterParticipantComponent encounterParticipant = fhirEncounter.getParticipant().get(0);
+								if (encounterParticipant.hasIndividual()) {
+									Reference practitionerReference = encounterParticipant.getIndividual();
+									ReferenceComponents comps = ReferenceHelper.getReferenceComponents(practitionerReference);
+									Practitioner fhirPractitioner = (Practitioner)resourceDalI.getCurrentVersionAsResource(comps.getResourceType(), comps.getId());
+									if (fhirPractitioner != null) {
+										if (fhirPractitioner.hasName()) {
+											HumanName name = fhirPractitioner.getName();
+											clinician = name.getText();
+											if (Strings.isNullOrEmpty(clinician)) {
+												for (StringType s: name.getPrefix()) {
+													clinician += s.getValueNotNull();
+													clinician += " ";
+												}
+												for (StringType s: name.getGiven()) {
+													clinician += s.getValueNotNull();
+													clinician += " ";
+												}
+												for (StringType s: name.getFamily()) {
+													clinician += s.getValueNotNull();
+													clinician += " ";
+												}
+												clinician = clinician.trim();
+											}
+										}
+									}
+								}
+							}
+
+							Object[] row = new Object[12];
+
+							row[0] = serviceName;
+							row[1] = patientIdInt.toString();
+							row[2] = sdfOutput.format(date);
+							row[3] = episodeId;
+							row[4] = adtCode;
+							row[5] = adtType;
+							row[6] = cls;
+							row[7] = type;
+							row[8] = status;
+							row[9] = location;
+							row[10] = locationType;
+							row[11] = clinician;
+
+							List<Object[]> rows = patientRows.get(patientIdInt);
+							if (rows == null) {
+								rows = new ArrayList<>();
+								patientRows.put(patientIdInt, rows);
+							}
+							rows.add(row);
+						}
+					}
+				}
+			}
+
+
+			String[] outputColumnHeaders = new String[] {"Source", "Patient", "Date", "Episode ID", "ADT Message Code", "ADT Message Type", "Class", "Type", "Status", "Location", "Location Type", "Clinician"};
+
+			FileWriter fileWriter = new FileWriter(outputPath);
+			BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
+			CSVFormat format = CSVFormat.DEFAULT
+					.withHeader(outputColumnHeaders)
+					.withQuote('"');
+			CSVPrinter csvPrinter = new CSVPrinter(bufferedWriter, format);
+
+			for (int i=0; i <= count; i++) {
+				Integer patientIdInt = new Integer(i);
+				List<Object[]> rows = patientRows.get(patientIdInt);
+				if (rows != null) {
+					for (Object[] row: rows) {
+						csvPrinter.printRecord(row);
+					}
+				}
+			}
+
+			csvPrinter.close();
+			bufferedWriter.close();
+
+		} catch (Exception ex) {
+			LOG.error("", ex);
+		}
+
+		LOG.info("Finished Exporting Encounters from " + sourceCsvPath + " to " + outputPath);
+	}
+
+	/*private static void registerShutdownHook() {
+
+		Runtime.getRuntime().addShutdownHook(new Thread() {
+			@Override
+			public void run() {
+
+				LOG.info("");
+				try {
+					Thread.sleep(5000);
+				} catch (Throwable ex) {
+					LOG.error("", ex);
+				}
+				LOG.info("Done");
+			}
+		});
+	}*/
+
 
 	private static void findEmisStartDates(String path, String outputPath) {
 		LOG.info("Finding EMIS Start Dates in " + path + ", writing to " + outputPath);

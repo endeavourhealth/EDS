@@ -7,19 +7,24 @@ DROP TABLE IF EXISTS pseudo_id_map;
 DROP TABLE IF EXISTS enterprise_age;
 DROP TABLE IF EXISTS enterprise_person_id_map;
 DROP TABLE IF EXISTS enterprise_person_update_history;
+DROP TABLE IF EXISTS exchange_batch_extra_resources;
+DROP TABLE IF EXISTS enterprise_instance_map;
 DROP TABLE IF EXISTS vitru_care_patient_id_map;
 
--- NOTE:  Use ALTER TABLE enterprise_id_map AUTO_INCREMENT=XXXXX; to set the auto increment id starting value
 CREATE TABLE enterprise_id_map
 (
   resource_type varchar(255) NOT NULL,
   resource_id varchar(255) NOT NULL,
-  enterprise_id bigint NOT NULL auto_increment PRIMARY KEY
-  -- CONSTRAINT pk_enterprise_id_map PRIMARY KEY (resource_id, resource_type)
+  enterprise_id bigint NOT NULL,
+  CONSTRAINT pk_enterprise_id_map PRIMARY KEY (resource_id, resource_type)
 );
 
-CREATE UNIQUE INDEX ix_enterprise_id_map
-  ON enterprise_id_map (resource_id, resource_type, enterprise_id);
+-- this unique index is required to make the column auto-increment
+CREATE UNIQUE INDEX pk_enterprise_id_map_auto_increment
+ON enterprise_id_map (enterprise_id);
+
+ALTER TABLE enterprise_id_map MODIFY COLUMN enterprise_id INT auto_increment;
+
 
 
 CREATE TABLE enterprise_organisation_id_map
@@ -36,12 +41,15 @@ CREATE TABLE household_id_map
   postcode char(8) NOT NULL,
   line_1 varchar(255) NOT NULL,
   line_2 varchar(255) NOT NULL,
-  household_id bigint NOT NULL auto_increment PRIMARY KEY
-  -- CONSTRAINT pk_household_id_map PRIMARY KEY (postcode, line_1, line_2)
+  household_id bigint NOT NULL,
+  CONSTRAINT pk_household_id_map PRIMARY KEY (postcode, line_1, line_2)
 );
 
-CREATE UNIQUE INDEX ix_household_id_map
-  ON household_id_map  (postcode, line_1, line_2, household_id);
+-- this unique index is required to make the column auto-increment
+CREATE UNIQUE INDEX ix_household_id_map_auto_increment
+ON household_id_map (household_id);
+
+ALTER TABLE household_id_map MODIFY COLUMN household_id INT auto_increment;
 
 
 CREATE TABLE pseudo_id_map
@@ -64,13 +72,16 @@ CREATE INDEX ix_date_next_change
 
 CREATE TABLE enterprise_person_id_map
 (
-  enterprise_person_id bigint NOT NULL auto_increment PRIMARY KEY,
-  person_id character(36) NOT NULL
-  -- CONSTRAINT pk_enterprise_person_id_map PRIMARY KEY (person_id)
+  enterprise_person_id bigint NOT NULL,
+  person_id character(36) NOT NULL,
+  CONSTRAINT pk_enterprise_person_id_map PRIMARY KEY (person_id)
 );
 
-CREATE UNIQUE INDEX ix_enterprise_person_id_map
-  ON enterprise_person_id_map  (person_id, enterprise_person_id);
+-- this unique index is needed to make the column auto-increment
+CREATE UNIQUE INDEX ix_enterprise_person_id_map_auto_increment
+ON enterprise_person_id_map (enterprise_person_id);
+
+ALTER TABLE enterprise_person_id_map MODIFY COLUMN enterprise_person_id INT auto_increment;
 
 
 CREATE TABLE enterprise_person_update_history
@@ -87,3 +98,23 @@ CREATE TABLE vitru_care_patient_id_map (
 	vitrucare_id varchar(250),
     CONSTRAINT pk_resource_id_map PRIMARY KEY (eds_patient_id)
 );
+
+CREATE TABLE exchange_batch_extra_resources (
+	exchange_id char(36) NOT NULL,
+    batch_id char(36) NOT NULL,
+    resource_id char(36) NOT NULL,
+    resource_type varchar(100) NOT NULL,
+    CONSTRAINT pk_exchange_batch_extra_resources PRIMARY KEY (exchange_id, batch_id, resource_id, resource_type)
+);
+
+CREATE TABLE enterprise_instance_map
+(
+	resource_type varchar(100) NOT NULL,
+	resource_id_from char(36) NOT NULL,
+	resource_id_to char(36),
+	mapping_value varchar(100),
+	CONSTRAINT pk_enterprise_instance_map PRIMARY KEY (resource_id_from, resource_type)
+);
+
+CREATE INDEX ix_enterprise_instance_map_type_value
+ON enterprise_instance_map (resource_type, mapping_value);

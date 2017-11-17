@@ -8,10 +8,11 @@ DROP TABLE IF EXISTS user_event;
 DROP TABLE IF EXISTS queued_message;
 DROP TABLE IF EXISTS queued_message_type;
 DROP TABLE IF EXISTS exchange_batch;
+DROP TABLE IF EXISTS exchange_subscriber_transform_audit;
 
 CREATE TABLE exchange
 (
-    id varchar(36),
+    id varchar(36) NOT NULL,
     timestamp datetime,
     headers text,
     service_id varchar(36),
@@ -24,26 +25,26 @@ ON exchange (service_id, timestamp);
 
 CREATE TABLE exchange_event
 (
-	id  varchar(36),
-    exchange_id varchar(36),
-    timestamp datetime,
-    event_desc varchar(250),
-    CONSTRAINT pk_exchange_event PRIMARY KEY (exchange_id, timestamp ASC, id)
+  id varchar(36) NOT NULL,
+  exchange_id varchar(36) NOT NULL,
+  timestamp datetime NOT NULL,
+  event_desc varchar(250),
+  CONSTRAINT pk_exchange_event PRIMARY KEY (exchange_id, timestamp ASC, id)
 );
 
 CREATE TABLE exchange_transform_audit
 (
-	id varchar(36),
-	service_id varchar(36),
-    system_id varchar(36),
-    exchange_id varchar(36),
-    started datetime,
-    ended datetime,
-    error_xml text,
-	resubmitted boolean,
-	deleted datetime,
-	number_batches_created int,
-    CONSTRAINT pk_exchange_transform_audit PRIMARY KEY (service_id, system_id, exchange_id, id)
+	id varchar(36) NOT NULL,
+	service_id varchar(36) NOT NULL,
+  system_id varchar(36) NOT NULL,
+  exchange_id varchar(36) NOT NULL,
+  started datetime,
+  ended datetime,
+  error_xml text,
+  resubmitted boolean,
+  deleted datetime,
+  number_batches_created int,
+  CONSTRAINT pk_exchange_transform_audit PRIMARY KEY (service_id, system_id, exchange_id, id)
 );
 
 CREATE INDEX ix_exchange_transform_audit_service_system_started
@@ -51,8 +52,8 @@ ON exchange_transform_audit (service_id, system_id, started);
 
 CREATE TABLE exchange_transform_error_state
 (
-	service_id varchar(36),
-    system_id varchar(36),
+	service_id varchar(36) NOT NULL,
+    system_id varchar(36) NOT NULL,
     exchange_ids_in_error text,
     CONSTRAINT pk_exchange_transform_error_state PRIMARY KEY (service_id, system_id)
 );
@@ -78,26 +79,37 @@ ON user_event (module, user_id, organisation_id, timestamp);
 
 CREATE TABLE queued_message
 (
-	id varchar(36),
-	message_body text,
-    timestamp datetime,
-    queued_message_type_id int,
+	id varchar(36) NOT NULL,
+	message_body text NOT NULL,
+    timestamp datetime NOT NULL,
+    queued_message_type_id int NOT NULL,
     CONSTRAINT pk_queued_message PRIMARY KEY (id)
 );
 
 CREATE TABLE queued_message_type
 (
-    id int,
-    description varchar(50),
+    id int NOT NULL,
+    description varchar(50) NOT NULL,
     CONSTRAINT pk_queued_message_type PRIMARY KEY (id)
 );
 
 CREATE TABLE exchange_batch (
-  exchange_id varchar(36),
-  batch_id varchar(36),
-  inserted_at datetime,
+  exchange_id varchar(36) NOT NULL,
+  batch_id varchar(36) NOT NULL,
+  inserted_at datetime NOT NULL,
   eds_patient_id varchar(36),
   CONSTRAINT pk_exchange_batch PRIMARY KEY (exchange_id, batch_id)
 );
 
-
+CREATE TABLE exchange_subscriber_transform_audit
+(
+    exchange_id varchar(36) NOT NULL,
+    exchange_batch_id varchar(36) NOT NULL,
+    subscriber_config_name varchar(100) NOT NULL,
+    started datetime NOT NULL,
+    ended datetime,
+    error_xml text,
+    number_resources_transformed int,
+    queued_message_id varchar(36),
+    CONSTRAINT pk_exchange_transform_audit PRIMARY KEY (exchange_id, exchange_batch_id, subscriber_config_name, started)
+);

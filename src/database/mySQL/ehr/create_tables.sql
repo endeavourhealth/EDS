@@ -40,9 +40,8 @@ ON resource_current (service_id, system_id, resource_type, resource_id);
 CREATE INDEX ix_resource_current_service_type_id_system
 ON resource_current (service_id, resource_type, resource_id, system_id);
 
-CREATE INDEX ix_resource_current_type_id
-ON resource_current (resource_type, resource_id);
+/*CREATE INDEX ix_resource_current_type_id
+ON resource_current (resource_type, resource_id);*/
 
-
-
-
+CREATE INDEX ix_resource_current_id_type_checksum
+ON resource_current (resource_id, resource_type, resource_checksum);

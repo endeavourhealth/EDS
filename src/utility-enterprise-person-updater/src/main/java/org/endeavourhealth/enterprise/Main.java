@@ -1,5 +1,6 @@
 package org.endeavourhealth.enterprise;
 
+import org.apache.commons.io.FilenameUtils;
 import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.common.utility.SlackHelper;
 import org.endeavourhealth.core.database.dal.DalProvider;
@@ -8,6 +9,8 @@ import org.endeavourhealth.core.database.dal.eds.models.PatientLinkPair;
 import org.endeavourhealth.core.database.dal.subscriberTransform.EnterpriseIdDalI;
 import org.endeavourhealth.core.database.dal.subscriberTransform.EnterprisePersonUpdaterHistoryDalI;
 import org.endeavourhealth.core.database.rdbms.enterprise.EnterpriseConnector;
+import org.endeavourhealth.transform.enterprise.outputModels.AbstractEnterpriseCsvWriter;
+import org.endeavourhealth.transform.enterprise.outputModels.OutputContainer;
 import org.hl7.fhir.instance.model.ResourceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -119,6 +122,36 @@ public class Main {
 
     private static void changePersonId(UpdateJob change, Connection connection) throws Exception {
 
+        OutputContainer outputContainer = new OutputContainer(true, true); //doesn't matter what we pass into the constructor
+
+        //the csv writers are mapped to the tables in the database, so we can use them to discover
+        //what tables have person and patient ID columns
+        List<AbstractEnterpriseCsvWriter> csvWriters = outputContainer.getCsvWriters();
+
+        //the writers are in dependency order (least dependent -> most) so we need to go backwards to avoid
+        //upsetting any foreign key constraints
+        for (int i=csvWriters.size()-1; i>=0; i--) {
+            AbstractEnterpriseCsvWriter csvWriter = csvWriters.get(i);
+
+            String[] csvHeaders = csvWriter.getCsvHeaders();
+            for (String header: csvHeaders) {
+                if (header.equalsIgnoreCase("person_id")) {
+
+                    String fileName = csvWriter.getFileName();
+                    String tableName = FilenameUtils.removeExtension(fileName);
+                    changePersonIdOnTable(tableName, change, connection);
+                    break;
+                }
+            }
+        }
+
+        connection.commit();
+
+        LOG.info("Updated person ID from " + change.getOldEnterprisePersonId() + " to " + change.getNewEnterprisePersonId() + " for patient " + change.getEnterprisePatientId());
+    }
+
+    /*private static void changePersonId(UpdateJob change, Connection connection) throws Exception {
+
         //can't think of a good way to make this list dynamic
         changePersonIdOnTable("allergy_intolerance", change, connection);
         changePersonIdOnTable("appointment", change, connection);
@@ -134,7 +167,7 @@ public class Main {
         connection.commit();
 
         LOG.info("Updated person ID from " + change.getOldEnterprisePersonId() + " to " + change.getNewEnterprisePersonId() + " for patient " + change.getEnterprisePatientId());
-    }
+    }*/
 
 
     private static void changePersonIdOnTable(String tableName, UpdateJob change, Connection connection) throws Exception {
