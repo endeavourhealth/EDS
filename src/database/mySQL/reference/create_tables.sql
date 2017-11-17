@@ -117,6 +117,9 @@ CREATE TABLE read2_to_snomed_map
   map_status int NOT NULL
 );
 
+CREATE INDEX ix_read2_to_snomed_map_read_code_concept_id
+ON read2_to_snomed_map (read_code, concept_id);
+
 CREATE TABLE ctv3_to_snomed_map
 (
   map_id varchar(38) NOT NULL PRIMARY KEY,
@@ -129,3 +132,6 @@ CREATE TABLE ctv3_to_snomed_map
   effective_date date NOT NULL,
   is_assured int NOT NULL
 );
+
+CREATE INDEX ix_ctv3_to_snomed_map_ctv3_concept_id_sct_concept_id
+ON ctv3_to_snomed_map (ctv3_concept_id, sct_concept_id);
