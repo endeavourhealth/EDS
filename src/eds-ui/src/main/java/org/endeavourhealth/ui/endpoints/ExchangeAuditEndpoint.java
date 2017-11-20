@@ -242,9 +242,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
         if (postAllExchanges) {
 
             List<UUID> exchangeIds = auditRepository.getExchangeIdsForService(serviceId);
-            for (UUID exchangeId: exchangeIds) {
-                QueueHelper.postToExchange(exchangeId, exchangeName, specificProtocolId, true);
-            }
+            QueueHelper.postToExchange(exchangeIds, exchangeName, specificProtocolId, true);
 
         } else {
             QueueHelper.postToExchange(selectedExchangeId, exchangeName, specificProtocolId, true);

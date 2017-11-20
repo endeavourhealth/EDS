@@ -882,16 +882,7 @@ public class Main {
 			List<UUID> exchangeIds = auditRepository.getExchangeIdsForService(service.getId());
 			LOG.info("Found " + exchangeIds.size() + " exchangeIds");
 
-			//the list of exchange IDs will be in reverse order, so we need to go through them backwards
-			//for (int i=exchangeIds.size()-1; i>=0; i--) {
-			for (int i=0; i<exchangeIds.size(); i++) {
-				UUID exchangeId = exchangeIds.get(i);
-				QueueHelper.postToExchange(exchangeId, "edsProtocol", null, true);
-
-				if (i % 1000 == 0) {
-					LOG.info("" + (exchangeIds.size() - i) + " remaining");
-				}
-			}
+			QueueHelper.postToExchange(exchangeIds, "edsProtocol", null, true);
 
 		} catch (Exception ex) {
 			LOG.error("", ex);

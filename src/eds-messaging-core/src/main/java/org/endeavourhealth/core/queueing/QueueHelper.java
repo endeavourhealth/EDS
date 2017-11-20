@@ -35,63 +35,88 @@ public class QueueHelper {
     private static final Logger LOG = LoggerFactory.getLogger(QueueHelper.class);
 
     public static void postToExchange(UUID exchangeId, String exchangeName, UUID specificProtocolId, boolean recalculateProtocols) throws Exception {
+        List<UUID> exchangeIds = new ArrayList<>();
+        exchangeIds.add(exchangeId);
+
+        postToExchange(exchangeIds, exchangeName, specificProtocolId, recalculateProtocols);
+    }
+
+    public static void postToExchange(List<UUID> exchangeIds, String exchangeName, UUID specificProtocolId, boolean recalculateProtocols) throws Exception {
 
         PostMessageToExchangeConfig exchangeConfig = findExchangeConfig(exchangeName);
         if (exchangeConfig == null) {
             throw new BadRequestException("Failed to find PostMessageToExchange config details for exchange " + exchangeName);
         }
 
-        Exchange exchange = AuditWriter.readExchange(exchangeId);
-        //org.endeavourhealth.core.messaging.exchange.Exchange exchange = retrieveExchange(exchangeId);
-
-        //to make sure the latest setup applies, re-calculate the protocols that apply to this exchange
-        if (recalculateProtocols) {
-            String serviceUuid = exchange.getHeader(HeaderKeys.SenderServiceUuid);
-            String newProtocolIdsJson = DetermineRelevantProtocolIds.getProtocolIdsForPublisherService(serviceUuid);
-            String oldProtocolIdsJson = exchange.getHeader(HeaderKeys.ProtocolIds);
-            if (!newProtocolIdsJson.equals(oldProtocolIdsJson)) {
-                exchange.setHeader(HeaderKeys.ProtocolIds, newProtocolIdsJson);
-                AuditWriter.writeExchange(exchange);
-            }
+        if (exchangeIds.isEmpty()) {
+            return;
         }
 
-        //if we want to restrict the protocols applied (e.g. only want to populate a specific subscriber)
-        //then filter the protocols in the header
-        if (specificProtocolId != null) {
+        String newProtocolIdsJson = null;
+        if (recalculateProtocols) {
+            UUID firstExchangeId = exchangeIds.get(0);
+            Exchange firstExchange = AuditWriter.readExchange(firstExchangeId);
+            String serviceUuid = firstExchange.getHeader(HeaderKeys.SenderServiceUuid);
+            newProtocolIdsJson = DetermineRelevantProtocolIds.getProtocolIdsForPublisherService(serviceUuid);
+        }
 
-            //validate the selected protocol does apply to this exchange
-            boolean foundInHeader = false;
-            String[] protocolIds = exchange.getHeaderAsStringArray(HeaderKeys.ProtocolIds);
-            for (String protocolId: protocolIds) {
-                if (protocolId.equals(specificProtocolId.toString())) {
-                    foundInHeader = true;
-                    break;
+        for (int i=0; i<exchangeIds.size(); i++) {
+
+            UUID exchangeId = exchangeIds.get(i);
+            Exchange exchange = AuditWriter.readExchange(exchangeId);
+            //org.endeavourhealth.core.messaging.exchange.Exchange exchange = retrieveExchange(exchangeId);
+
+            //to make sure the latest setup applies, re-calculate the protocols that apply to this exchange
+            if (recalculateProtocols) {
+                String oldProtocolIdsJson = exchange.getHeader(HeaderKeys.ProtocolIds);
+                if (!newProtocolIdsJson.equals(oldProtocolIdsJson)) {
+                    exchange.setHeader(HeaderKeys.ProtocolIds, newProtocolIdsJson);
+                    AuditWriter.writeExchange(exchange);
                 }
             }
 
-            if (!foundInHeader) {
-                throw new BadRequestException("Restricting to protocol " + specificProtocolId + " but that doesn't apply to exchange " + exchangeId);
+            //if we want to restrict the protocols applied (e.g. only want to populate a specific subscriber)
+            //then filter the protocols in the header
+            if (specificProtocolId != null) {
+
+                //validate the selected protocol does apply to this exchange
+                boolean foundInHeader = false;
+                String[] protocolIds = exchange.getHeaderAsStringArray(HeaderKeys.ProtocolIds);
+                for (String protocolId : protocolIds) {
+                    if (protocolId.equals(specificProtocolId.toString())) {
+                        foundInHeader = true;
+                        break;
+                    }
+                }
+
+                if (!foundInHeader) {
+                    throw new BadRequestException("Restricting to protocol " + specificProtocolId + " but that doesn't apply to exchange " + exchangeId);
+                }
+
+                String[] specificProtocolArr = new String[]{specificProtocolId.toString()};
+                String specificProtocolJson = ObjectMapperPool.getInstance().writeValueAsString(specificProtocolArr);
+                exchange.setHeader(HeaderKeys.ProtocolIds, specificProtocolJson);
             }
 
-            String[] specificProtocolArr = new String[]{specificProtocolId.toString()};
-            String specificProtocolJson = ObjectMapperPool.getInstance().writeValueAsString(specificProtocolArr);
-            exchange.setHeader(HeaderKeys.ProtocolIds, specificProtocolJson);
-        }
+            //work out what multicast header we need
+            String multicastHeader = exchangeConfig.getMulticastHeader();
+            if (!Strings.isNullOrEmpty(multicastHeader)) {
+                if (exchange.getHeader(multicastHeader) == null) {
+                    populateMulticastHeader(exchange, multicastHeader);
+                }
+            }
 
-        //work out what multicast header we need
-        String multicastHeader = exchangeConfig.getMulticastHeader();
-        if (!Strings.isNullOrEmpty(multicastHeader)) {
-            if (exchange.getHeader(multicastHeader) == null) {
-                populateMulticastHeader(exchange, multicastHeader);
+            //re-post back into Rabbit using the same pipeline component as used by the messaging API
+            PostMessageToExchange component = new PostMessageToExchange(exchangeConfig);
+            component.process(exchange);
+
+            //write an event for the exchange, so we can see this happened
+            AuditWriter.writeExchangeEvent(exchange, "Manually pushed into " + exchangeName + " exchange");
+
+            if (i % 1000 == 0) {
+                LOG.info("Posted " + i + " / " + exchangeIds.size() + " exchanges to " + exchangeName);
             }
         }
-
-        //re-post back into Rabbit using the same pipeline component as used by the messaging API
-        PostMessageToExchange component = new PostMessageToExchange(exchangeConfig);
-        component.process(exchange);
-
-        //write an event for the exchange, so we can see this happened
-        AuditWriter.writeExchangeEvent(exchange, "Manually pushed into " + exchangeName + " exchange");
 
         //if pushed into the Inbound queue, and it previously had an error in there, mark it as resubmitted
         /*if (exchangeName.equals("EdsInbound")) {
