@@ -883,12 +883,13 @@ public class Main {
 			LOG.info("Found " + exchangeIds.size() + " exchangeIds");
 
 			//the list of exchange IDs will be in reverse order, so we need to go through them backwards
-			for (int i=exchangeIds.size()-1; i>=0; i--) {
+			//for (int i=exchangeIds.size()-1; i>=0; i--) {
+			for (int i=0; i<exchangeIds.size(); i++) {
 				UUID exchangeId = exchangeIds.get(i);
 				QueueHelper.postToExchange(exchangeId, "edsProtocol", null, true);
 
 				if (i % 1000 == 0) {
-					LOG.info("" + i + " remaining");
+					LOG.info("" + (exchangeIds.size() - i) + " remaining");
 				}
 			}
 
