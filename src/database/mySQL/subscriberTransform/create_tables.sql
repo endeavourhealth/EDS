@@ -20,7 +20,7 @@ CREATE TABLE enterprise_id_map
 );
 
 -- this unique index is required to make the column auto-increment
-CREATE UNIQUE INDEX pk_enterprise_id_map_auto_increment
+CREATE UNIQUE INDEX uix_enterprise_id_map_auto_increment
 ON enterprise_id_map (enterprise_id);
 
 ALTER TABLE enterprise_id_map MODIFY COLUMN enterprise_id INT auto_increment;
@@ -46,7 +46,7 @@ CREATE TABLE household_id_map
 );
 
 -- this unique index is required to make the column auto-increment
-CREATE UNIQUE INDEX ix_household_id_map_auto_increment
+CREATE UNIQUE INDEX uix_household_id_map_auto_increment
 ON household_id_map (household_id);
 
 ALTER TABLE household_id_map MODIFY COLUMN household_id INT auto_increment;
@@ -78,7 +78,7 @@ CREATE TABLE enterprise_person_id_map
 );
 
 -- this unique index is needed to make the column auto-increment
-CREATE UNIQUE INDEX ix_enterprise_person_id_map_auto_increment
+CREATE UNIQUE INDEX uix_enterprise_person_id_map_auto_increment
 ON enterprise_person_id_map (enterprise_person_id);
 
 ALTER TABLE enterprise_person_id_map MODIFY COLUMN enterprise_person_id INT auto_increment;
@@ -112,9 +112,10 @@ CREATE TABLE enterprise_instance_map
 	resource_type varchar(100) NOT NULL,
 	resource_id_from char(36) NOT NULL,
 	resource_id_to char(36),
-	mapping_value varchar(100),
+	mapping_value varchar(1000),
 	CONSTRAINT pk_enterprise_instance_map PRIMARY KEY (resource_id_from, resource_type)
 );
 
 CREATE INDEX ix_enterprise_instance_map_type_value
 ON enterprise_instance_map (resource_type, mapping_value);
+

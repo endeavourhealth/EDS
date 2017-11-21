@@ -1,7 +1,11 @@
 
 package org.endeavourhealth.core.configuration;
 
-import javax.xml.bind.annotation.*;
+import javax.xml.bind.annotation.XmlAccessType;
+import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.XmlType;
 
 
 /**
@@ -14,7 +18,8 @@ import javax.xml.bind.annotation.*;
  *   &lt;complexContent>
  *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
  *       &lt;sequence>
- *         &lt;element name="Queue" type="{}nonEmptyString" minOccurs="0"/>
+ *         &lt;element name="Queue" type="{}nonEmptyString"/>
+ *         &lt;element name="KillFileLocation" type="{}nonEmptyString" minOccurs="0"/>
  *         &lt;element name="Pipeline" type="{}Pipeline"/>
  *       &lt;/sequence>
  *     &lt;/restriction>
@@ -27,13 +32,16 @@ import javax.xml.bind.annotation.*;
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "", propOrder = {
     "queue",
+    "killFileLocation",
     "pipeline"
 })
 @XmlRootElement(name = "QueueReaderConfiguration")
 public class QueueReaderConfiguration {
 
-    @XmlElement(name = "Queue")
+    @XmlElement(name = "Queue", required = true)
     protected String queue;
+    @XmlElement(name = "KillFileLocation")
+    protected String killFileLocation;
     @XmlElement(name = "Pipeline", required = true)
     protected Pipeline pipeline;
 
@@ -59,6 +67,30 @@ public class QueueReaderConfiguration {
      */
     public void setQueue(String value) {
         this.queue = value;
+    }
+
+    /**
+     * Gets the value of the killFileLocation property.
+     * 
+     * @return
+     *     possible object is
+     *     {@link String }
+     *     
+     */
+    public String getKillFileLocation() {
+        return killFileLocation;
+    }
+
+    /**
+     * Sets the value of the killFileLocation property.
+     * 
+     * @param value
+     *     allowed object is
+     *     {@link String }
+     *     
+     */
+    public void setKillFileLocation(String value) {
+        this.killFileLocation = value;
     }
 
     /**

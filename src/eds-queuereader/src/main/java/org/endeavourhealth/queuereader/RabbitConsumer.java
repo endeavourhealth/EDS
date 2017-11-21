@@ -1,9 +1,11 @@
 package org.endeavourhealth.queuereader;
 
+import com.google.common.base.Strings;
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.DefaultConsumer;
 import com.rabbitmq.client.Envelope;
+import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.common.utility.SlackHelper;
 import org.endeavourhealth.core.configuration.QueueReaderConfiguration;
 import org.endeavourhealth.core.database.dal.DalProvider;
@@ -13,6 +15,7 @@ import org.endeavourhealth.core.messaging.pipeline.PipelineProcessor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.Date;
 import java.util.HashMap;
@@ -22,15 +25,17 @@ import java.util.UUID;
 public class RabbitConsumer extends DefaultConsumer {
 	private static final Logger LOG = LoggerFactory.getLogger(RabbitConsumer.class);
 
-	private PipelineProcessor pipeline;
-	private QueueReaderConfiguration configuration;
+	private final QueueReaderConfiguration configuration;
+	private final RabbitHandler handler;
+	private final PipelineProcessor pipeline;
 	private UUID lastExchangeRejected;
 
-	public RabbitConsumer(Channel channel, QueueReaderConfiguration configuration) {
+	public RabbitConsumer(Channel channel, QueueReaderConfiguration configuration, RabbitHandler handler) {
 		super(channel);
 
-		this.pipeline = new PipelineProcessor(configuration.getPipeline());
 		this.configuration = configuration;
+		this.handler = handler;
+		this.pipeline = new PipelineProcessor(configuration.getPipeline());
 	}
 
 	@Override
@@ -83,6 +88,17 @@ public class RabbitConsumer extends DefaultConsumer {
 			sendSlackAlert(exchange);
 			LOG.error("Have sent REJECT for exchange {}", exchange.getId());
 		}
+
+		//see if we've been told to finish
+		if (checkIfKilled()) {
+			try {
+				handler.stop();
+			} catch (Exception ex) {
+				LOG.error("Failed to close Rabbit channel or connection", ex);
+			}
+			LOG.info("Queue Reader " + ConfigManager.getAppId() + " exiting");
+			System.exit(0);
+		}
 	}
 
 	private void sendSlackAlert(Exchange exchange) {
@@ -100,5 +116,26 @@ public class RabbitConsumer extends DefaultConsumer {
 		String s = "Exchange " + exchangeId + " rejected in " + queueName;
 
 		SlackHelper.sendSlackMessage(SlackHelper.Channel.QueueReaderAlerts, s, exchange.getException());
+	}
+
+	/**
+	 * checks to see if a file exists that tells us to finish processing and stop
+     */
+	private boolean checkIfKilled() {
+		String killFileLocation = configuration.getKillFileLocation();
+		if (Strings.isNullOrEmpty(killFileLocation)) {
+			LOG.error("No kill file location set in app configuration XML");
+			return false;
+		}
+
+		String appId = ConfigManager.getAppId();
+		File killFile = new File(killFileLocation, appId + ".kill");
+		if (killFile.exists()) {
+			LOG.info("Kill file detected: " + killFile);
+			return true;
+
+		} else {
+			return false;
+		}
 	}
 }

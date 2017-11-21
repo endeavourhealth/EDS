@@ -33,7 +33,7 @@ public class RabbitHandler {
 		channel.basicQos(1);
 
 		// Create consumer
-		consumer = new RabbitConsumer(channel, configuration);
+		consumer = new RabbitConsumer(channel, configuration, this);
 	}
 
 	private Connection createRabbitConnection(QueueReaderConfiguration configuration) throws IOException, TimeoutException {
