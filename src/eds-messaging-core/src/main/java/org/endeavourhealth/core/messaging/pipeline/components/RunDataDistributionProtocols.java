@@ -397,7 +397,9 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 			UUID protocolUuid = UUID.fromString(protocolId);
 
 			try {
-				LibraryItem libraryItem = LibraryRepositoryHelper.getLibraryItem(protocolUuid);
+				//changed to use cached version
+				LibraryItem libraryItem = LibraryRepositoryHelper.getLibraryItemUsingCache(protocolUuid);
+				//LibraryItem libraryItem = LibraryRepositoryHelper.getLibraryItem(protocolUuid);
 				ret.add(libraryItem);
 			} catch (Exception e) {
 				throw new PipelineException("Failed to read protocol item for " + protocolId, e);
