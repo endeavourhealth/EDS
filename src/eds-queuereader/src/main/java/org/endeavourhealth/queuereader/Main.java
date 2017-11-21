@@ -77,6 +77,12 @@ public class Main {
 			System.exit(0);
 		}
 
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("FixExchangeBatches")) {
+			fixExchangeBatches();
+			System.exit(0);
+		}
+
 		/*if (args.length >= 0
 				&& args[0].equalsIgnoreCase("FindCodes")) {
 			findCodes();
@@ -115,6 +121,54 @@ public class Main {
 		LOG.info("Starting message consumption");
 		rabbitHandler.start();
 		LOG.info("EDS Queue reader running");
+	}
+
+	private static void fixExchangeBatches() {
+		LOG.info("Starting Fixing Exchange Batches");
+
+		try {
+
+			ServiceDalI serviceDalI = DalProvider.factoryServiceDal();
+			ExchangeDalI exchangeDalI = DalProvider.factoryExchangeDal();
+			ExchangeBatchDalI exchangeBatchDalI = DalProvider.factoryExchangeBatchDal();
+			ResourceDalI resourceDalI = DalProvider.factoryResourceDal();
+
+			List<Service> services = serviceDalI.getAll();
+			for (Service service: services) {
+				LOG.info("Doing " + service.getName());
+
+				List<UUID> exchangeIds = exchangeDalI.getExchangeIdsForService(service.getId());
+				for (UUID exchangeId: exchangeIds) {
+					LOG.info("   Exchange " + exchangeId);
+
+					List<ExchangeBatch> exchangeBatches = exchangeBatchDalI.retrieveForExchangeId(exchangeId);
+					for (ExchangeBatch exchangeBatch: exchangeBatches) {
+
+						if (exchangeBatch.getEdsPatientId() != null) {
+							continue;
+						}
+
+						List<ResourceWrapper> resources = resourceDalI.getResourcesForBatch(exchangeBatch.getBatchId());
+						if (resources.isEmpty()) {
+							continue;
+						}
+
+						ResourceWrapper first = resources.get(0);
+						UUID patientId = first.getPatientId();
+						if (patientId != null) {
+							exchangeBatch.setEdsPatientId(patientId);
+							exchangeBatchDalI.save(exchangeBatch);
+							LOG.info("Fixed batch " + exchangeBatch.getBatchId() + " -> " + exchangeBatch.getEdsPatientId());
+						}
+					}
+				}
+			}
+
+			LOG.info("Finished Fixing Exchange Batches");
+
+		} catch (Exception ex) {
+			LOG.error("", ex);
+		}
 	}
 
 	/**
