@@ -118,8 +118,8 @@ export class SystemEditComponent extends LibraryItemComponent {
 		this.libraryItem.system.technicalInterface.push(this.selectedInterface);
 	}
 
-	removeInterface(scope : any) {
-		this.libraryItem.system.technicalInterface.splice(scope.$index, 1);
+	removeInterface(index: number, scope : any) {
+		this.libraryItem.system.technicalInterface.splice(index, 1);
 		if (this.selectedInterface === scope.item) {
 			this.selectedInterface = null;
 		}

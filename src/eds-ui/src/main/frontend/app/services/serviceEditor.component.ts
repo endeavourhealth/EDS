@@ -103,8 +103,8 @@ export class ServiceEditComponent {
 		this.selectedEndpoint = newEndpoint;
 	}
 
-	removeEndpoint(scope : any) {
-		this.service.endpoints.splice(scope.$index, 1);
+	removeEndpoint(index: number, scope : any) {
+		this.service.endpoints.splice(index, 1);
 		if (this.selectedEndpoint === scope.item) {
 			this.selectedEndpoint = null;
 		}

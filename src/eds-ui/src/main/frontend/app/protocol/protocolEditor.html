@@ -89,7 +89,7 @@
 								</thead>
 								<tbody>
 								<tr class="hover-box show-child-on-hover"
-									*ngFor="let item of getServiceContracts()"
+									*ngFor="let item of getServiceContracts(); let i = index;"
 									(click)="selectedContract = item;"
 									[ngClass]="{'selection': item == selectedContract}">
 									<td>{{item.type}}</td>
@@ -100,7 +100,7 @@
 									<td *ngIf="isCohortDefinedByServices()">{{item.definesCohort}}</td>
 									<td>
 										<div class="child-to-show">
-											<button type="button" class="btn btn-danger btn-xs pull-right" (click)="removeContract(item)">
+											<button type="button" class="btn btn-danger btn-xs pull-right" (click)="removeContract(i, item)">
 												<span class="fa fa-remove"></span>
 											</button>
 										</div>
