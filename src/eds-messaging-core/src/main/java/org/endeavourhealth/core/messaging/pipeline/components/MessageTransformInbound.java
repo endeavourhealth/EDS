@@ -182,12 +182,8 @@ public class MessageTransformInbound extends PipelineComponent {
 		String xmlPayload = exchange.getBody();
 		UUID exchangeId = exchange.getId();
 
-		//transform from XML -> FHIR
-		List<Resource> resources = AdastraXmlToFhirTransformer.toFhirFullRecord(xmlPayload);
-
-		//map IDs, compute delta and file
-		//FhirDeltaResourceFilter filer = new FhirDeltaResourceFilter(serviceId, systemId, maxFilingThreads);
-		//filer.process(resources, exchangeId, currentErrors, batchIds);
+		AdastraXmlToFhirTransformer.transform(exchangeId, xmlPayload, serviceId, systemId,
+				currentErrors, batchIds, previousErrors, null, maxFilingThreads, messageVersion);
 	}
 
 	private void sendSlackAlert(Exchange exchange, String software, TransformError currentErrors) {
