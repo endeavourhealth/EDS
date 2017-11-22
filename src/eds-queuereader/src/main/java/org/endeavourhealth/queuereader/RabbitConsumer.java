@@ -25,10 +25,15 @@ import java.util.UUID;
 public class RabbitConsumer extends DefaultConsumer {
 	private static final Logger LOG = LoggerFactory.getLogger(RabbitConsumer.class);
 
+	private static final int DEFAULT_MAX_ATTEMPTS = 10;
+
 	private final QueueReaderConfiguration configuration;
 	private final RabbitHandler handler;
 	private final PipelineProcessor pipeline;
-	private UUID lastExchangeRejected;
+	private final int attemptsBeforeFailure;
+
+	private UUID lastExchangeAttempted;
+	private int lastExchangeAttempts;
 
 	public RabbitConsumer(Channel channel, QueueReaderConfiguration configuration, RabbitHandler handler) {
 		super(channel);
@@ -36,6 +41,12 @@ public class RabbitConsumer extends DefaultConsumer {
 		this.configuration = configuration;
 		this.handler = handler;
 		this.pipeline = new PipelineProcessor(configuration.getPipeline());
+
+		if (configuration.getAttemptsPermitted() == null) {
+			this.attemptsBeforeFailure = DEFAULT_MAX_ATTEMPTS;
+		} else {
+			this.attemptsBeforeFailure = configuration.getAttemptsPermitted().intValue();
+		}
 	}
 
 	@Override
@@ -85,37 +96,52 @@ public class RabbitConsumer extends DefaultConsumer {
 		} else {
 			//LOG.error("Failed to process exchange {}", exchange.getExchangeId());
 			this.getChannel().basicReject(envelope.getDeliveryTag(), true);
-			sendSlackAlert(exchange);
 			LOG.error("Have sent REJECT for exchange {}", exchange.getId());
+
+			//keep track of rejections
+			updateAttemptsOnFailure(exchange);
 		}
 
 		//see if we've been told to finish
 		if (checkIfKilled()) {
-			try {
-				handler.stop();
-			} catch (Exception ex) {
-				LOG.error("Failed to close Rabbit channel or connection", ex);
-			}
-			LOG.info("Queue Reader " + ConfigManager.getAppId() + " exiting");
-			System.exit(0);
+			stop();
 		}
 	}
 
-	private void sendSlackAlert(Exchange exchange) {
+	private void updateAttemptsOnFailure(Exchange exchange) {
+		UUID exchangeIdAttempted = exchange.getId();
 
-		String queueName = configuration.getQueue();
-		UUID exchangeId = exchange.getId();
+		//if it's the same exchange ID as last time, increment the number of attempts
+		if (lastExchangeAttempted != null
+				&& lastExchangeAttempted.equals(exchangeIdAttempted)) {
+			this.lastExchangeAttempts ++;
 
-		//it'll just keep failing the same exchange repeatedly, so only send the alert the first time
-		if (lastExchangeRejected != null
-			&& lastExchangeRejected.equals(exchangeId)) {
-			return;
+		} else {
+			//if it's a different change to last time, reset the attempt to one
+			this.lastExchangeAttempted = exchangeIdAttempted;
+			this.lastExchangeAttempts = 1;
+
+			//send a slack message for the first failure
+			String queueName = configuration.getQueue();
+			String s = "Exchange " + exchangeIdAttempted + " rejected in " + queueName;
+			SlackHelper.sendSlackMessage(SlackHelper.Channel.QueueReaderAlerts, s, exchange.getException());
 		}
-		lastExchangeRejected = exchangeId;
 
-		String s = "Exchange " + exchangeId + " rejected in " + queueName;
+		//if we've failed on the same exchange X times, then halt the queue reader
+		if (lastExchangeAttempts >= attemptsBeforeFailure) {
+			LOG.info("Failed " + lastExchangeAttempts + " times on exchange " + lastExchangeAttempted + " so halting queue reader");
+			stop();
+		}
+	}
 
-		SlackHelper.sendSlackMessage(SlackHelper.Channel.QueueReaderAlerts, s, exchange.getException());
+	private void stop() {
+		try {
+			handler.stop();
+		} catch (Exception ex) {
+			LOG.error("Failed to close Rabbit channel or connection", ex);
+		}
+		LOG.info("Queue Reader " + ConfigManager.getAppId() + " exiting");
+		System.exit(0);
 	}
 
 	/**
