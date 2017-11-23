@@ -336,9 +336,9 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    @Timed(absolute = true, name="EDS-UI.ExchangeAuditEndpoint.GetTransformErrorDetails")
-    @Path("/getTransformErrorDetails")
-    public Response getTransformErrorDetails(@Context SecurityContext sc,
+    @Timed(absolute = true, name="EDS-UI.ExchangeAuditEndpoint.GetInboundTransformAudits")
+    @Path("/getInboundTransformAudits")
+    public Response getInboundTransformAudits(@Context SecurityContext sc,
                                     @QueryParam("serviceId") String serviceIdStr,
                                     @QueryParam("systemId") String systemIdStr,
                                     @QueryParam("exchangeId") String exchangeIdStr,
@@ -350,7 +350,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
                 "Error Details",
                 "Exchange Id", exchangeIdStr);
 
-        LOG.trace("getErrorDetails for exchange ID " + exchangeIdStr);
+        LOG.trace("getInboundTransformAudits for exchange ID " + exchangeIdStr);
 
         UUID exchangeId = UUID.fromString(exchangeIdStr);
         UUID serviceId = UUID.fromString(serviceIdStr);
@@ -383,7 +383,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
             ret.add(jsonObj);
 
             if (getErrorLines) {
-                List<String> lines = formatTransformAuditError(transformAudit);
+                List<String> lines = formatTransformAuditErrorLines(transformAudit);
                 jsonObj.setLines(lines);
             }
         }
@@ -396,11 +396,15 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
                 .build();
     }
 
-    private List<String> formatTransformAuditError(ExchangeTransformAudit transformAudit) throws Exception {
+    private List<String> formatTransformAuditErrorLines(ExchangeTransformAudit transformAudit) throws Exception {
 
         //until we need something more powerful, I'm displaying the errors just as a string, to
         //save sending complex JSON objects back to the client
         List<String> lines = new ArrayList<>();
+
+        if (Strings.isNullOrEmpty(transformAudit.getErrorXml())) {
+            return lines;
+        }
 
         TransformError errors = TransformErrorSerializer.readFromXml(transformAudit.getErrorXml());
 
@@ -588,7 +592,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
 
         ExchangeTransformAudit transformAudit = auditRepository.getExchangeTransformAudit(serviceId, systemId, exchangeId, version);
 
-        List<String> lines = formatTransformAuditError(transformAudit);
+        List<String> lines = formatTransformAuditErrorLines(transformAudit);
 
         clearLogbackMarkers();
 

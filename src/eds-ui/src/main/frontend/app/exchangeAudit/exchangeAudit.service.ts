@@ -66,7 +66,7 @@ export class ExchangeAuditService extends BaseHttp2Service {
         return this.httpGet('api/exchangeAudit/getTransformErrorSummaries');
     }
 
-    getTransformErrorDetail(serviceId:string, systemId:string, exchangeId:string,
+    getInboundTransformAudits(serviceId:string, systemId:string, exchangeId:string,
                             getMostRecent:boolean, getErrorLines:boolean) : Observable<TransformErrorDetail[]> {
         var params = new URLSearchParams();
         params.append('serviceId', serviceId);
@@ -75,7 +75,7 @@ export class ExchangeAuditService extends BaseHttp2Service {
         params.append('getMostRecent', '' + getMostRecent);
         params.append('getErrorLines', '' + getErrorLines);
 
-        return this.httpGet('api/exchangeAudit/getTransformErrorDetails', { search : params});
+        return this.httpGet('api/exchangeAudit/getInboundTransformAudits', { search : params});
     }
 
     rerunFirstExchangeInError(serviceId: string, systemId: string):Observable<TransformErrorSummary> {
