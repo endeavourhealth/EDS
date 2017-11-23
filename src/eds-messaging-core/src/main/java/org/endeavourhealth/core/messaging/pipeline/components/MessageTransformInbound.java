@@ -147,9 +147,7 @@ public class MessageTransformInbound extends PipelineComponent {
 				//for bulk transforms, I want them to fail gracefully, but that mechanism doesn't work for the
 				//thousands of ADT messages, so for transaction-type messages just throw the exception to halt all inbound processing
 				//(i.e. it'll reject the message in rabbit, then pull it out again)
-				if (software.equalsIgnoreCase(MessageFormat.EMIS_OPEN)
-						|| software.equalsIgnoreCase(MessageFormat.EMIS_OPEN_HR)
-						|| software.equalsIgnoreCase(MessageFormat.HL7V2)) {
+				if (!software.equalsIgnoreCase(MessageFormat.EMIS_CSV)) {
 					throw new Exception("Failing transform");
 				}
 			}
