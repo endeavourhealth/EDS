@@ -147,9 +147,7 @@ public class MessageTransformInbound extends PipelineComponent {
 				//for bulk transforms, I want them to fail gracefully, but that mechanism doesn't work for the
 				//thousands of ADT messages, so for transaction-type messages just throw the exception to halt all inbound processing
 				//(i.e. it'll reject the message in rabbit, then pull it out again)
-				if (software.equalsIgnoreCase(MessageFormat.EMIS_OPEN)
-						|| software.equalsIgnoreCase(MessageFormat.EMIS_OPEN_HR)
-						|| software.equalsIgnoreCase(MessageFormat.HL7V2)) {
+				if (!software.equalsIgnoreCase(MessageFormat.EMIS_CSV)) {
 					throw new Exception("Failing transform");
 				}
 			}
@@ -182,12 +180,8 @@ public class MessageTransformInbound extends PipelineComponent {
 		String xmlPayload = exchange.getBody();
 		UUID exchangeId = exchange.getId();
 
-		//transform from XML -> FHIR
-		List<Resource> resources = AdastraXmlToFhirTransformer.toFhirFullRecord(xmlPayload);
-
-		//map IDs, compute delta and file
-		//FhirDeltaResourceFilter filer = new FhirDeltaResourceFilter(serviceId, systemId, maxFilingThreads);
-		//filer.process(resources, exchangeId, currentErrors, batchIds);
+		AdastraXmlToFhirTransformer.transform(exchangeId, xmlPayload, serviceId, systemId,
+				currentErrors, batchIds, previousErrors, null, maxFilingThreads, messageVersion);
 	}
 
 	private void sendSlackAlert(Exchange exchange, String software, TransformError currentErrors) {

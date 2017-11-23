@@ -143,23 +143,12 @@ export class ProtocolEditComponent {
 		this.libraryItem.protocol.serviceContract.push(this.selectedContract);
 	}
 
-	removeContract(contract: ServiceContract) {
-
-		var list = this.libraryItem.protocol.serviceContract;
-		var index = list.indexOf(contract);
-		list.splice(index, 1);
-
-		if (this.selectedContract === contract) {
-			this.selectedContract = null;
-		}
-	}
-
-	/*removeContract(scope : any) {
-		this.libraryItem.protocol.serviceContract.splice(scope.$index, 1);
+	removeContract(index: number, scope : any) {
+		this.libraryItem.protocol.serviceContract.splice(index, 1);
 		if (this.selectedContract === scope.item) {
 			this.selectedContract = null;
 		}
-	}*/
+	}
 
 	setService() {
 		var serviceName = $("#service>option:selected").html()

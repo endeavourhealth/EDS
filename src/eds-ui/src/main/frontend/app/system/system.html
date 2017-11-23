@@ -44,7 +44,7 @@
 								</thead>
 								<tbody>
 								<tr class="hover-box show-child-on-hover"
-									*ngFor="let item of getTechnicalInterface()"
+									*ngFor="let item of getTechnicalInterface(); let i = index;"
 									(click)="selectedInterface = item;"
 									[ngClass]="{'selection': item == selectedInterface}">
 									<td>{{item.name}}</td>
@@ -52,7 +52,7 @@
 									<td>{{item.messageFormat}}</td>
 									<td>
 										<div class="child-to-show">
-											<button type="button" class="btn btn-danger btn-xs pull-right" (click)="removeInterface(this)">
+											<button type="button" class="btn btn-danger btn-xs pull-right" (click)="removeInterface(i, this)">
 												<span class="fa fa-remove"></span>
 											</button>
 										</div>

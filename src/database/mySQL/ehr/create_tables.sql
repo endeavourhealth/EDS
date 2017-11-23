@@ -45,3 +45,4 @@ ON resource_current (resource_type, resource_id);*/
 
 CREATE INDEX ix_resource_current_id_type_checksum
 ON resource_current (resource_id, resource_type, resource_checksum);
+

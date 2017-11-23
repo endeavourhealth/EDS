@@ -174,7 +174,7 @@ export class ExchangeAuditComponent {
 		}
 
 		var vm = this;
-		vm.exchangeAuditService.getTransformErrorDetail(serviceId, systemId, exchangeId, false, false).subscribe(
+		vm.exchangeAuditService.getInboundTransformAudits(serviceId, systemId, exchangeId, false, false).subscribe(
 			(result) => {
 				exchange.transformAudits = result;
 			},

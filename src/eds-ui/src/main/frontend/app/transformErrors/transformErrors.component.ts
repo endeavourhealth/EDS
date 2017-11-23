@@ -132,7 +132,7 @@ export class TransformErrorsComponent {
 		var systemId = vm.selectedSummary.systemId;
 		var exchangeId = vm.selectedSummary.exchangeIds[vm.selectedExchangeIndex - 1];
 
-		vm.exchangeAuditService.getTransformErrorDetail(serviceId, systemId, exchangeId, true, true)
+		vm.exchangeAuditService.getInboundTransformAudits(serviceId, systemId, exchangeId, true, true)
 			.subscribe(
 				(data) => {
 					vm.selectExchangeErrorDetail = data[0];

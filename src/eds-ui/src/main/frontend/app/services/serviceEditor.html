@@ -35,7 +35,7 @@
 								</thead>
 								<tbody>
 									<tr class="hover-box show-child-on-hover"
-											*ngFor="let item of service?.endpoints"
+											*ngFor="let item of service?.endpoints; let i = index;"
 											(click)="selectedEndpoint = item;"
 											[ngClass]="{'selection': item == selectedEndpoint}">
 										<td>{{ getSystem(item?.systemUuid)?.name}}</td>
@@ -43,7 +43,7 @@
 										<td>{{ item?.endpoint }}</td>
 										<td>
 											<div class="child-to-show">
-												<button type="button" class="btn btn-danger btn-xs pull-right" (click)="removeEndpoint(this)">
+												<button type="button" class="btn btn-danger btn-xs pull-right" (click)="removeEndpoint(i, this)">
 													<span class="fa fa-remove"></span>
 												</button>
 											</div>
