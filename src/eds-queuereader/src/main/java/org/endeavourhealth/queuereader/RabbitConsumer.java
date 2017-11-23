@@ -104,7 +104,8 @@ public class RabbitConsumer extends DefaultConsumer {
 
 		//see if we've been told to finish
 		if (checkIfKilled()) {
-			stop();
+			String reason = "Detected kill file";
+			stop(reason);
 		}
 	}
 
@@ -129,18 +130,25 @@ public class RabbitConsumer extends DefaultConsumer {
 
 		//if we've failed on the same exchange X times, then halt the queue reader
 		if (lastExchangeAttempts >= attemptsBeforeFailure) {
-			LOG.info("Failed " + lastExchangeAttempts + " times on exchange " + lastExchangeAttempted + " so halting queue reader");
-			stop();
+			String reason = "Failed " + lastExchangeAttempts + " times on exchange " + lastExchangeAttempted + " so halting queue reader";
+			stop(reason);
 		}
 	}
 
-	private void stop() {
+	private void stop(String reason) {
+
+		//close down the rabbit connection and channel
 		try {
 			handler.stop();
 		} catch (Exception ex) {
 			LOG.error("Failed to close Rabbit channel or connection", ex);
 		}
-		LOG.info("Queue Reader " + ConfigManager.getAppId() + " exiting");
+
+		//tell us this has happened
+		SlackHelper.sendSlackMessage(SlackHelper.Channel.QueueReaderAlerts, "Queue Reader " + ConfigManager.getAppId() + " Stopping:\r\n" + reason);
+
+		//and halt
+		LOG.info("Queue Reader " + ConfigManager.getAppId() + " exiting: " + reason);
 		System.exit(0);
 	}
 
