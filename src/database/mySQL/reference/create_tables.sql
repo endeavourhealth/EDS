@@ -136,8 +136,9 @@ CREATE TABLE ctv3_to_snomed_map
 CREATE INDEX ix_ctv3_to_snomed_map_ctv3_concept_id_sct_concept_id
 ON ctv3_to_snomed_map (ctv3_concept_id, sct_concept_id);
 
-CREATE TABLE reference.snomed_lookup (
+
+CREATE TABLE snomed_lookup (
   concept_id varchar (18) NOT NULL PRIMARY KEY,
-  term text,
+  term text NOT NULL,
   type_id int NOT NULL
 )
