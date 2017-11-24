@@ -28,6 +28,7 @@ public class RabbitConsumer extends DefaultConsumer {
 	private static final int DEFAULT_MAX_ATTEMPTS = 10;
 
 	private final QueueReaderConfiguration configuration;
+	private final String configId;
 	private final RabbitHandler handler;
 	private final PipelineProcessor pipeline;
 	private final int attemptsBeforeFailure;
@@ -35,10 +36,11 @@ public class RabbitConsumer extends DefaultConsumer {
 	private UUID lastExchangeAttempted;
 	private int lastExchangeAttempts;
 
-	public RabbitConsumer(Channel channel, QueueReaderConfiguration configuration, RabbitHandler handler) {
+	public RabbitConsumer(Channel channel, QueueReaderConfiguration configuration, String configId, RabbitHandler handler) {
 		super(channel);
 
 		this.configuration = configuration;
+		this.configId = configId;
 		this.handler = handler;
 		this.pipeline = new PipelineProcessor(configuration.getPipeline());
 
@@ -162,8 +164,7 @@ public class RabbitConsumer extends DefaultConsumer {
 			return false;
 		}
 
-		String appId = ConfigManager.getAppId();
-		File killFile = new File(killFileLocation, appId + ".kill");
+		File killFile = new File(killFileLocation, configId + ".kill");
 		if (killFile.exists()) {
 			LOG.info("Kill file detected: " + killFile);
 			return true;

@@ -103,8 +103,11 @@ CREATE TABLE service
     CONSTRAINT pk_service PRIMARY KEY (id)
 );
 
-CREATE UNIQUE INDEX ix_service_local_id
-ON service (local_id, id);
+-- would ideally like this index to be unique, to prevent us inserting the same service
+-- more than once, but the UPSERT syntax means that this wouldn't fail the SQL but cause
+-- an update on the existing service
+CREATE INDEX ix_service_local_id
+ON service (local_id);
 
 
 CREATE TABLE organisation
@@ -116,8 +119,11 @@ CREATE TABLE organisation
     CONSTRAINT pk_organisation PRIMARY KEY (id)
 );
 
-CREATE UNIQUE INDEX ix_organisation_national_identifier
-ON organisation (national_id, id);
+-- would ideally like this index to be unique, to prevent us inserting the same organization
+-- more than once, but the UPSERT syntax means that this wouldn't fail the SQL but cause
+-- an update on the existing service
+CREATE INDEX ix_organisation_national_identifier
+ON organisation (national_id);
 
 
  CREATE TABLE patient_cohort (

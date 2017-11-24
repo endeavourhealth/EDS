@@ -115,7 +115,7 @@ public class Main {
 
 		// Instantiate rabbit handler
 		LOG.info("Creating EDS queue reader");
-		RabbitHandler rabbitHandler = new RabbitHandler(configuration);
+		RabbitHandler rabbitHandler = new RabbitHandler(configuration, configId);
 
 		// Begin consume
 		LOG.info("Starting message consumption");
