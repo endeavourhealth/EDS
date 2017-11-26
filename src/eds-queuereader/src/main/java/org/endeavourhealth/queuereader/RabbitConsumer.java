@@ -147,7 +147,7 @@ public class RabbitConsumer extends DefaultConsumer {
 		}
 
 		//tell us this has happened
-		SlackHelper.sendSlackMessage(SlackHelper.Channel.QueueReaderAlerts, "Queue Reader " + ConfigManager.getAppId() + " Stopping:\r\n" + reason);
+		SlackHelper.sendSlackMessage(SlackHelper.Channel.QueueReaderAlerts, "Queue Reader " + configId + " Stopping:\r\n" + reason);
 
 		//and halt
 		LOG.info("Queue Reader " + ConfigManager.getAppId() + " exiting: " + reason);
