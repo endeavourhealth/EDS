@@ -22,6 +22,7 @@ import org.endeavourhealth.core.xml.transformError.TransformError;
 import org.endeavourhealth.transform.adastra.AdastraXmlToFhirTransformer;
 import org.endeavourhealth.transform.barts.BartsCsvToFhirTransformer;
 import org.endeavourhealth.transform.common.FhirDeltaResourceFilter;
+import org.endeavourhealth.transform.common.IdHelper;
 import org.endeavourhealth.transform.common.MessageFormat;
 import org.endeavourhealth.transform.common.exceptions.SoftwareNotSupportedException;
 import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
@@ -167,6 +168,9 @@ public class MessageTransformInbound extends PipelineComponent {
 
 		//save the audit of this transform, including errors
 		createTransformAudit(serviceId, systemId, exchange.getId(), transformStarted, currentErrors, batchIds);
+
+		//may as well clear down the cache of reference mappings since they won't be of much use for the next Exchange
+		IdHelper.clearCache();
 
 		return batchIds;
 	}
