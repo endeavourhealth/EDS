@@ -35,6 +35,10 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.nio.charset.Charset;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.Statement;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
@@ -45,6 +49,17 @@ public class Main {
 
 		LOG.info("Initialising config manager");
 		ConfigManager.Initialize("queuereader");
+
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("RunSql")) {
+
+			String host = args[1];
+			String username = args[2];
+			String password = args[3];
+			String sqlFile = args[4];
+			runSql(host, username, password, sqlFile);
+			System.exit(0);
+		}
 
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("PopulateProtocolQueue")) {
@@ -77,11 +92,11 @@ public class Main {
 			System.exit(0);
 		}
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("FixExchangeBatches")) {
 			fixExchangeBatches();
 			System.exit(0);
-		}
+		}*/
 
 		/*if (args.length >= 0
 				&& args[0].equalsIgnoreCase("FindCodes")) {
@@ -123,7 +138,104 @@ public class Main {
 		LOG.info("EDS Queue reader running");
 	}
 
-	private static void fixExchangeBatches() {
+	private static void runSql(String host, String username, String password, String sqlFile) {
+		LOG.info("Running SQL on " + host + " from " + sqlFile);
+
+		Connection conn = null;
+		Statement statement = null;
+
+
+		try {
+			File f = new File(sqlFile);
+			if (!f.exists()) {
+				LOG.error("" + f + " doesn't exist");
+				return;
+			}
+
+			String sql = FileUtils.readFileToString(f);
+			LOG.info("Going to run SQL");
+			LOG.info(sql);
+
+			//load driver
+			Class.forName("com.mysql.cj.jdbc.Driver");
+
+			//create connection
+			Properties props = new Properties();
+			props.setProperty("user", username);
+			props.setProperty("password", password);
+
+			conn = DriverManager.getConnection(host, props);
+			LOG.info("Opened connection");
+			statement = conn.createStatement();
+
+			//run SQL
+			boolean hasResultSet = statement.execute(sql);
+			if (hasResultSet) {
+
+				while (true) {
+					ResultSet rs = statement.getResultSet();
+					int cols = rs.getMetaData().getColumnCount();
+
+					List<String> colHeaders = new ArrayList<>();
+					for (int i=0; i<cols; i++) {
+						String header = rs.getMetaData().getColumnName(i+1);
+						colHeaders.add(header);
+					}
+					String colHeaderStr = String.join(", ", colHeaders);
+					LOG.info(colHeaderStr);
+
+					while (rs.next()) {
+						List<String> row = new ArrayList<>();
+						for (int i=0; i<cols; i++) {
+							Object o = rs.getObject(i+1);
+							if (rs.wasNull()) {
+								row.add("<null>");
+							} else {
+								row.add(o.toString());
+							}
+						}
+						String rowStr = String.join(", ", row);
+						LOG.info(rowStr);
+					}
+
+					if (!statement.getMoreResults()) {
+						break;
+					}
+				}
+
+			} else {
+				int updateCount = statement.getUpdateCount();
+				LOG.info("Updated " + updateCount + " Row(s)");
+			}
+
+			LOG.info("Closed connection");
+
+		} catch (Throwable t) {
+			LOG.error("", t);
+		} finally {
+
+			if (statement != null) {
+				try {
+					statement.close();
+				} catch (Exception ex) {
+
+				}
+			}
+			if (conn != null) {
+				try {
+					conn.close();
+				} catch (Exception ex) {
+
+				}
+			}
+		}
+
+		LOG.info("Finished Testing DB Size Limit");
+	}
+
+
+
+	/*private static void fixExchangeBatches() {
 		LOG.info("Starting Fixing Exchange Batches");
 
 		try {
@@ -169,7 +281,7 @@ public class Main {
 		} catch (Exception ex) {
 			LOG.error("", ex);
 		}
-	}
+	}*/
 
 	/**
 	 * exports ADT Encounters for patients based on a CSV file produced using the below SQL
