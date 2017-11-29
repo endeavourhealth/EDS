@@ -72,7 +72,10 @@ public class Main {
 
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("PopulateProtocolQueue")) {
-			String serviceId = args[1];
+			String serviceId = null;
+			if (args.length > 1) {
+				serviceId = args[1];
+			}
 			populateProtocolQueue(serviceId);
 			System.exit(0);
 		}
@@ -161,9 +164,11 @@ public class Main {
 				return;
 			}
 
-			String sql = FileUtils.readFileToString(f);
+			List<String> lines = FileUtils.readLines(f);
+			/*String combined = String.join("\n", lines);
+
 			LOG.info("Going to run SQL");
-			LOG.info(sql);
+			LOG.info(combined);*/
 
 			//load driver
 			Class.forName("com.mysql.cj.jdbc.Driver");
@@ -177,47 +182,70 @@ public class Main {
 			LOG.info("Opened connection");
 			statement = conn.createStatement();
 
-			//run SQL
-			boolean hasResultSet = statement.execute(sql);
-			if (hasResultSet) {
+			long totalStart = System.currentTimeMillis();
 
-				while (true) {
-					ResultSet rs = statement.getResultSet();
-					int cols = rs.getMetaData().getColumnCount();
+			for (String sql: lines) {
 
-					List<String> colHeaders = new ArrayList<>();
-					for (int i=0; i<cols; i++) {
-						String header = rs.getMetaData().getColumnName(i+1);
-						colHeaders.add(header);
-					}
-					String colHeaderStr = String.join(", ", colHeaders);
-					LOG.info(colHeaderStr);
+				sql = sql.trim();
 
-					while (rs.next()) {
-						List<String> row = new ArrayList<>();
-						for (int i=0; i<cols; i++) {
-							Object o = rs.getObject(i+1);
-							if (rs.wasNull()) {
-								row.add("<null>");
-							} else {
-								row.add(o.toString());
-							}
-						}
-						String rowStr = String.join(", ", row);
-						LOG.info(rowStr);
-					}
-
-					if (!statement.getMoreResults()) {
-						break;
-					}
+				if (sql.startsWith("--")
+						|| sql.startsWith("/*")
+						|| Strings.isNullOrEmpty(sql)) {
+					continue;
 				}
 
-			} else {
-				int updateCount = statement.getUpdateCount();
-				LOG.info("Updated " + updateCount + " Row(s)");
+				LOG.info("");
+				LOG.info(sql);
+
+				long start = System.currentTimeMillis();
+
+				boolean hasResultSet = statement.execute(sql);
+
+				long end = System.currentTimeMillis();
+				LOG.info("SQL took " + (end - start) + "ms");
+
+				if (hasResultSet) {
+
+					while (true) {
+						ResultSet rs = statement.getResultSet();
+						int cols = rs.getMetaData().getColumnCount();
+
+						List<String> colHeaders = new ArrayList<>();
+						for (int i = 0; i < cols; i++) {
+							String header = rs.getMetaData().getColumnName(i + 1);
+							colHeaders.add(header);
+						}
+						String colHeaderStr = String.join(", ", colHeaders);
+						LOG.info(colHeaderStr);
+
+						while (rs.next()) {
+							List<String> row = new ArrayList<>();
+							for (int i = 0; i < cols; i++) {
+								Object o = rs.getObject(i + 1);
+								if (rs.wasNull()) {
+									row.add("<null>");
+								} else {
+									row.add(o.toString());
+								}
+							}
+							String rowStr = String.join(", ", row);
+							LOG.info(rowStr);
+						}
+
+						if (!statement.getMoreResults()) {
+							break;
+						}
+					}
+
+				} else {
+					int updateCount = statement.getUpdateCount();
+					LOG.info("Updated " + updateCount + " Row(s)");
+				}
 			}
 
-			LOG.info("Closed connection");
+			long totalEnd = System.currentTimeMillis();
+			LOG.info("");
+			LOG.info("Total time taken " + (totalEnd - totalStart) + "ms");
 
 		} catch (Throwable t) {
 			LOG.error("", t);
@@ -237,6 +265,7 @@ public class Main {
 
 				}
 			}
+			LOG.info("Closed connection");
 		}
 
 		LOG.info("Finished Testing DB Size Limit");
@@ -1045,19 +1074,27 @@ public class Main {
 	private static void populateProtocolQueue(String serviceIdStr) {
 		LOG.info("Starting Populating Protocol Queue for " + serviceIdStr);
 
-		UUID serviceId = UUID.fromString(serviceIdStr);
-
 		ServiceDalI serviceRepository = DalProvider.factoryServiceDal();
 		ExchangeDalI auditRepository = DalProvider.factoryExchangeDal();
 
 		try {
-			Service service = serviceRepository.getById(serviceId);
 
-			//for (Service service: serviceRepository.getAll()) {
-			List<UUID> exchangeIds = auditRepository.getExchangeIdsForService(service.getId());
-			LOG.info("Found " + exchangeIds.size() + " exchangeIds");
+			List<Service> services = new ArrayList<>();
+			if (Strings.isNullOrEmpty(serviceIdStr)) {
+				services = serviceRepository.getAll();
+			} else {
+				UUID serviceId = UUID.fromString(serviceIdStr);
+				Service service = serviceRepository.getById(serviceId);
+				services.add(service);
+			}
 
-			QueueHelper.postToExchange(exchangeIds, "edsProtocol", null, true);
+			for (Service service: services) {
+
+				List<UUID> exchangeIds = auditRepository.getExchangeIdsForService(service.getId());
+				LOG.info("Found " + exchangeIds.size() + " exchangeIds for " + service.getName());
+
+				QueueHelper.postToExchange(exchangeIds, "edsProtocol", null, true);
+			}
 
 		} catch (Exception ex) {
 			LOG.error("", ex);
