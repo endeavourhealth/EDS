@@ -10,7 +10,7 @@ CREATE TABLE resource_history (
   resource_id varchar(36),
   created_at timestamp,
   patient_id varchar(36),
-  resource_data text,
+  resource_data mediumtext,
   resource_checksum bigint,
   is_deleted boolean,
   exchange_batch_id varchar(36),
@@ -28,7 +28,7 @@ CREATE TABLE resource_current (
   resource_id varchar(36),
   updated_at datetime,
   patient_id varchar(36),
-  resource_data text,
+  resource_data mediumtext,
   resource_checksum bigint,
   resource_metadata varchar(1000),
   CONSTRAINT pk_resource_current PRIMARY KEY (service_id, system_id, patient_id, resource_type, resource_id)

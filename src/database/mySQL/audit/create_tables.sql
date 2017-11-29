@@ -16,7 +16,7 @@ CREATE TABLE exchange
     timestamp datetime,
     headers text,
     service_id varchar(36),
-    body text,
+    body mediumtext,
     CONSTRAINT pk_exchange PRIMARY KEY (id)
 );
 
@@ -40,7 +40,7 @@ CREATE TABLE exchange_transform_audit
   exchange_id varchar(36) NOT NULL,
   started datetime,
   ended datetime,
-  error_xml text,
+  error_xml mediumtext,
   resubmitted boolean,
   deleted datetime,
   number_batches_created int,
@@ -80,7 +80,7 @@ ON user_event (module, user_id, organisation_id, timestamp);
 CREATE TABLE queued_message
 (
 	id varchar(36) NOT NULL,
-	message_body text NOT NULL,
+	message_body mediumtext NOT NULL,
     timestamp datetime NOT NULL,
     queued_message_type_id int NOT NULL,
     CONSTRAINT pk_queued_message PRIMARY KEY (id)
@@ -108,7 +108,7 @@ CREATE TABLE exchange_subscriber_transform_audit
     subscriber_config_name varchar(100) NOT NULL,
     started datetime NOT NULL,
     ended datetime,
-    error_xml text,
+    error_xml mediumtext,
     number_resources_transformed int,
     queued_message_id varchar(36),
     CONSTRAINT pk_exchange_transform_audit PRIMARY KEY (exchange_id, exchange_batch_id, subscriber_config_name, started)
