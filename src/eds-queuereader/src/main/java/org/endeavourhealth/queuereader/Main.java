@@ -51,6 +51,15 @@ public class Main {
 		ConfigManager.Initialize("queuereader");
 
 		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("Exit")) {
+
+			String exitCode = args[1];
+			LOG.info("Exiting with error code " + exitCode);
+			int exitCodeInt = Integer.parseInt(exitCode);
+			System.exit(exitCodeInt);
+		}
+
+		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("RunSql")) {
 
 			String host = args[1];
