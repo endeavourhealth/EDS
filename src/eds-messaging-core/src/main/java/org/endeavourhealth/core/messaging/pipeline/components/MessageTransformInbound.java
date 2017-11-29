@@ -7,11 +7,9 @@ import org.endeavourhealth.common.utility.SlackHelper;
 import org.endeavourhealth.core.configuration.MessageTransformInboundConfig;
 import org.endeavourhealth.core.database.dal.DalProvider;
 import org.endeavourhealth.core.database.dal.admin.LibraryDalI;
+import org.endeavourhealth.core.database.dal.audit.ExchangeBatchDalI;
 import org.endeavourhealth.core.database.dal.audit.ExchangeDalI;
-import org.endeavourhealth.core.database.dal.audit.models.Exchange;
-import org.endeavourhealth.core.database.dal.audit.models.ExchangeTransformAudit;
-import org.endeavourhealth.core.database.dal.audit.models.ExchangeTransformErrorState;
-import org.endeavourhealth.core.database.dal.audit.models.HeaderKeys;
+import org.endeavourhealth.core.database.dal.audit.models.*;
 import org.endeavourhealth.core.messaging.pipeline.PipelineComponent;
 import org.endeavourhealth.core.messaging.pipeline.PipelineException;
 import org.endeavourhealth.core.xml.TransformErrorSerializer;
@@ -44,6 +42,7 @@ public class MessageTransformInbound extends PipelineComponent {
 	//private static final ServiceRepository serviceRepository = new ServiceRepository();
 	private static final LibraryDalI libraryRepository = DalProvider.factoryLibraryDal();
 	private static final ExchangeDalI auditRepository = DalProvider.factoryExchangeDal();
+	private static final ExchangeBatchDalI exchangeBatchRepository = DalProvider.factoryExchangeBatchDal();
 
 	private MessageTransformInboundConfig config;
 
@@ -85,6 +84,11 @@ public class MessageTransformInbound extends PipelineComponent {
 								String messageVersion) throws Exception {
 
 		List<UUID> batchIds = new ArrayList<>();
+
+		//if we're re-running an exchange (either due to a past failure or killing and restarting the queue reader),
+		//then we need to make sure we've got all our pre-existing batch IDs from last time, so they
+		//all go on the Protocol queue when the transform completes
+		findExistingBatchIds(batchIds, exchange.getId());
 
 		//create the object that audits the transform and stores any errors
 		Date transformStarted = new Date();
@@ -172,7 +176,21 @@ public class MessageTransformInbound extends PipelineComponent {
 		//may as well clear down the cache of reference mappings since they won't be of much use for the next Exchange
 		IdHelper.clearCache();
 
+		//if we had any errors, don't return any batch IDs, so we don't send anything on to the protocol queue yet
+		//when we do successfully re-process the exchange, it will pick up any batch IDs we created this time around
+		if (currentErrors.getError().size() > 0) {
+			return new ArrayList<>();
+		}
+
 		return batchIds;
+	}
+
+	private void findExistingBatchIds(List<UUID> batchIds, UUID exchangeId) throws Exception {
+		List<ExchangeBatch> batches = exchangeBatchRepository.retrieveForExchangeId(exchangeId);
+		for (ExchangeBatch batch: batches) {
+			UUID batchId = batch.getBatchId();
+			batchIds.add(batchId);
+		}
 	}
 
 	private void processAdastraXml(Exchange exchange, UUID serviceId, UUID systemId, String messageVersion,
