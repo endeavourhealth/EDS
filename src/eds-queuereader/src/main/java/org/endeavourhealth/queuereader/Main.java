@@ -22,6 +22,7 @@ import org.endeavourhealth.core.database.dal.audit.models.Exchange;
 import org.endeavourhealth.core.database.dal.audit.models.ExchangeBatch;
 import org.endeavourhealth.core.database.dal.audit.models.ExchangeTransformAudit;
 import org.endeavourhealth.core.database.dal.audit.models.HeaderKeys;
+import org.endeavourhealth.core.database.dal.eds.PatientSearchDalI;
 import org.endeavourhealth.core.database.dal.ehr.ResourceDalI;
 import org.endeavourhealth.core.database.dal.ehr.models.ResourceWrapper;
 import org.endeavourhealth.core.fhirStorage.FhirResourceHelper;
@@ -49,6 +50,13 @@ public class Main {
 
 		LOG.info("Initialising config manager");
 		ConfigManager.Initialize("queuereader");
+
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("FixPatientSearch")) {
+			String serviceId = args[1];
+			fixPatientSearch(serviceId);
+			System.exit(0);
+		}
 
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("Exit")) {
@@ -148,6 +156,66 @@ public class Main {
 		LOG.info("Starting message consumption");
 		rabbitHandler.start();
 		LOG.info("EDS Queue reader running");
+	}
+
+	private static void fixPatientSearch(String serviceId) {
+		LOG.info("Fixing patient search for " + serviceId);
+
+		try {
+
+			UUID serviceUuid = UUID.fromString(serviceId);
+
+			ExchangeDalI exchangeDalI = DalProvider.factoryExchangeDal();
+			ExchangeBatchDalI exchangeBatchDalI = DalProvider.factoryExchangeBatchDal();
+			ResourceDalI resourceDalI = DalProvider.factoryResourceDal();
+			PatientSearchDalI patientSearchDal = DalProvider.factoryPatientSearchDal();
+			ParserPool parser = new ParserPool();
+
+			Set<UUID> patientsDone = new HashSet<>();
+
+			List<UUID> exchanges = exchangeDalI.getExchangeIdsForService(serviceUuid);
+			LOG.info("Found " + exchanges.size() + " exchanges");
+
+			for (UUID exchangeId: exchanges) {
+				List<ExchangeBatch> batches = exchangeBatchDalI.retrieveForExchangeId(exchangeId);
+				LOG.info("Found " + batches.size() + " batches in exchange " + exchangeId);
+
+				for (ExchangeBatch batch: batches) {
+					UUID patientId = batch.getEdsPatientId();
+					if (patientId == null) {
+						continue;
+					}
+
+					if (patientsDone.contains(patientId)) {
+						continue;
+					}
+
+					ResourceWrapper wrapper = resourceDalI.getCurrentVersion(ResourceType.Patient.toString(), patientId);
+					if (wrapper != null) {
+						String json = wrapper.getResourceData();
+						if (!Strings.isNullOrEmpty(json)) {
+
+							Patient fhirPatient = (Patient) parser.parse(json);
+							UUID systemUuid = wrapper.getSystemId();
+
+							patientSearchDal.update(serviceUuid, systemUuid, fhirPatient);
+						}
+					}
+
+					patientsDone.add(patientId);
+
+					if (patientsDone.size() % 1000 == 0) {
+						LOG.info("Done " + patientsDone.size());
+					}
+				}
+
+			}
+
+		} catch (Exception ex) {
+			LOG.error("", ex);
+		}
+
+		LOG.info("Finished fixing patient search for " + serviceId);
 	}
 
 	private static void runSql(String host, String username, String password, String sqlFile) {
