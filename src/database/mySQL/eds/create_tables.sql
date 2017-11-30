@@ -22,6 +22,7 @@ CREATE TABLE patient_search
 	patient_id varchar(36) NOT NULL,
 	last_updated timestamp NOT NULL,
 	organisation_type_code varchar(10),
+	registration_type_code varchar(10),
 	CONSTRAINT pk_patient_search PRIMARY KEY (service_id, system_id, patient_id)
 );
 
