@@ -8,17 +8,17 @@ import {RabbitQueue} from "../queueing/models/RabbitQueue";
 	<div class="progress">
 		<div class="small">{{getName(queue?.name)}} ({{queue?.messages_ready}} @ {{queue?.message_stats?.publish_details?.rate}}/s)</div>
 		<ngb-progressbar 
-		min="0" 
-		max="{{queueRateMax}}" 
-		value="{{item?.publish_details?.rate}}" 
-		[ngClass]="getQueueRateAsWidthStylePercent(queue)"></ngb-progressbar>
+			min="0" 
+			max="{{queueRateMax}}" 
+			value="{{queue?.message_stats?.publish_details?.rate}}" 
+			[ngClass]="getQueueRateAsWidthStylePercent(queue)"></ngb-progressbar>
 	</div>
 `
 })
 export class QueueComponent {
 	@Input() queue : RabbitQueue;
 
-	queueRateMax : number = 100;
+	queueRateMax : number = 50;
 
 	getQueueRateAsWidthStylePercent(queue : RabbitQueue){
 		if (!queue || !queue.message_stats || !queue.message_stats.publish_details || !queue.message_stats.publish_details.rate)
