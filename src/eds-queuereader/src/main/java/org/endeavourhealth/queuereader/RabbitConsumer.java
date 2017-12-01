@@ -95,6 +95,10 @@ public class RabbitConsumer extends DefaultConsumer {
 			//LOG.info("Successfully processed exchange {}", exchange.getExchangeId());
 			this.getChannel().basicAck(envelope.getDeliveryTag(), false);
 			//LOG.info("Have sent ACK for exchange {}", exchange.getExchangeId());
+
+			//when we successfully process something, clear this
+			lastExchangeAttempted = null;
+
 		} else {
 			//LOG.error("Failed to process exchange {}", exchange.getExchangeId());
 			this.getChannel().basicReject(envelope.getDeliveryTag(), true);

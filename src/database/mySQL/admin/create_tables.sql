@@ -43,7 +43,7 @@ CREATE TABLE item
 (
     id varchar(36),
     audit_id varchar(36),
-    xml_content text,
+    xml_content longtext,
     title varchar(250),
     description varchar(500),
     is_deleted boolean,

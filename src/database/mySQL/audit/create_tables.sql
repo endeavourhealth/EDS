@@ -67,7 +67,7 @@ CREATE TABLE user_event
     sub_module varchar(50),
     action varchar(250),
     timestamp datetime,
-    data text,
+    data longtext,
     CONSTRAINT pk_user_event PRIMARY KEY (user_id, module, timestamp DESC, organisation_id, id)
 );
 
