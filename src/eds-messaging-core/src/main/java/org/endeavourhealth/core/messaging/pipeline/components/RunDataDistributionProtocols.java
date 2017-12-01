@@ -3,10 +3,16 @@ package org.endeavourhealth.core.messaging.pipeline.components;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.base.Strings;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
+import org.endeavourhealth.common.cache.ParserPool;
+import org.endeavourhealth.common.fhir.IdentifierHelper;
+import org.endeavourhealth.common.fhir.ReferenceComponents;
+import org.endeavourhealth.common.fhir.ReferenceHelper;
 import org.endeavourhealth.core.configuration.RunDataDistributionProtocolsConfig;
 import org.endeavourhealth.core.database.dal.DalProvider;
 import org.endeavourhealth.core.database.dal.admin.LibraryRepositoryHelper;
+import org.endeavourhealth.core.database.dal.admin.OrganisationDalI;
 import org.endeavourhealth.core.database.dal.admin.PatientCohortDalI;
+import org.endeavourhealth.core.database.dal.admin.models.Organisation;
 import org.endeavourhealth.core.database.dal.audit.ExchangeBatchDalI;
 import org.endeavourhealth.core.database.dal.audit.models.Exchange;
 import org.endeavourhealth.core.database.dal.audit.models.ExchangeBatch;
@@ -20,6 +26,9 @@ import org.endeavourhealth.core.messaging.pipeline.PipelineComponent;
 import org.endeavourhealth.core.messaging.pipeline.PipelineException;
 import org.endeavourhealth.core.messaging.pipeline.TransformBatch;
 import org.endeavourhealth.core.xml.QueryDocument.*;
+import org.hl7.fhir.instance.model.Organization;
+import org.hl7.fhir.instance.model.Patient;
+import org.hl7.fhir.instance.model.Reference;
 import org.hl7.fhir.instance.model.ResourceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,6 +49,8 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 	private static final ExchangeBatchDalI exchangeBatchRepository = DalProvider.factoryExchangeBatchDal();
 	private static final PatientLinkDalI patientLInkDal = DalProvider.factoryPatientLinkDal();
 	private static final PatientSearchDalI patientSearchDal = DalProvider.factoryPatientSearchDal();
+	private static final OrganisationDalI organisationRepository = DalProvider.factoryOrganisationDal();
+	private static final ParserPool parser = new ParserPool();
 	//private static final PatientIdentifierRepository patientIdentifierRepository = new PatientIdentifierRepository();
 	//private static JCS protocolCache = null;
 
@@ -202,6 +213,50 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 			//LOG.trace("No patient ID for batch " + batchId + " in exchange " + exchangeId + " so passing protocol " + protocolId + " check");
 			return true;
 		}
+
+		//rewriting to avoid using the patient_search table, which means we need the GP data to have
+		//been processed by Discovery first, which isn't necessarily the case
+		try {
+			Patient fhirPatient = (Patient)retrieveNonDeletedResource(ResourceType.Patient, patientUuid);
+			if (fhirPatient != null
+				&& fhirPatient.hasCareProvider()) {
+
+				for (Reference careProviderReference: fhirPatient.getCareProvider()) {
+					ReferenceComponents comps = ReferenceHelper.getReferenceComponents(careProviderReference);
+					if (comps.getResourceType() == ResourceType.Organization) {
+
+						UUID organisationUuid = UUID.fromString(comps.getId());
+						Organization fhirOrganization = (Organization)retrieveNonDeletedResource(ResourceType.Organization, organisationUuid);
+
+						if (fhirOrganization != null) {
+							String odsCode = IdentifierHelper.findOdsCode(fhirOrganization);
+							if (!Strings.isNullOrEmpty(odsCode)) {
+								Organisation organisation = organisationRepository.getByNationalId(odsCode);
+								if (organisation != null
+										&& organisation.getServices() != null) {
+
+									for (UUID orgServiceId : organisation.getServices().keySet()) {
+										String orgServiceIdStr = orgServiceId.toString();
+										if (serviceIdsDefiningCohort.contains(orgServiceIdStr)) {
+
+											return true;
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+
+		} catch (Exception ex) {
+			throw new PipelineException("Failed to retrieve patient or organisation resources for patient ID " + patientUuid, ex);
+		}
+
+		return false;
+
+
+		/*
 		String patientId = patientUuid.toString();
 
 		//find the global person ID our patient belongs to
@@ -249,7 +304,29 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 			}
 		}
 
-		return false;
+		return false;*/
+	}
+
+	private org.hl7.fhir.instance.model.Resource retrieveNonDeletedResource(ResourceType resourceType, UUID resourceId) throws Exception {
+
+		//get the current instance from the DB
+		org.hl7.fhir.instance.model.Resource fhirResource = resourceRepository.getCurrentVersionAsResource(resourceType, resourceId.toString());
+
+		//if the resource has been deleted, then we have to go back and find a non-deleted instance
+		if (fhirResource == null) {
+			List<ResourceWrapper> history = resourceRepository.getResourceHistory(resourceType.toString(), resourceId);
+
+			//most recent is first
+			for (ResourceWrapper historyItem: history) {
+				if (!historyItem.isDeleted()) {
+					String json = historyItem.getResourceData();
+					fhirResource = parser.parse(json);
+					break;
+				}
+			}
+		}
+
+		return fhirResource;
 	}
 
 	private boolean checkExplicitCohort(UUID protocolId, UUID serviceId, UUID exchangeId, UUID batchId) throws PipelineException {
