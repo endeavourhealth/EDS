@@ -84,7 +84,11 @@ public class Main {
 			if (args.length > 1) {
 				serviceId = args[1];
 			}
-			populateProtocolQueue(serviceId);
+			String startingExchangeId = null;
+			if (args.length > 2) {
+				startingExchangeId = args[2];
+			}
+			populateProtocolQueue(serviceId, startingExchangeId);
 			System.exit(0);
 		}
 
@@ -1139,11 +1143,15 @@ public class Main {
 		return null;
 	}
 
-	private static void populateProtocolQueue(String serviceIdStr) {
+	private static void populateProtocolQueue(String serviceIdStr, String startingExchangeId) {
 		LOG.info("Starting Populating Protocol Queue for " + serviceIdStr);
 
 		ServiceDalI serviceRepository = DalProvider.factoryServiceDal();
 		ExchangeDalI auditRepository = DalProvider.factoryExchangeDal();
+
+		if (serviceIdStr.equalsIgnoreCase("All")) {
+			serviceIdStr = null;
+		}
 
 		try {
 
@@ -1160,6 +1168,24 @@ public class Main {
 
 				List<UUID> exchangeIds = auditRepository.getExchangeIdsForService(service.getId());
 				LOG.info("Found " + exchangeIds.size() + " exchangeIds for " + service.getName());
+
+				if (startingExchangeId != null) {
+					UUID startingExchangeUuid = UUID.fromString(startingExchangeId);
+					if (exchangeIds.contains(startingExchangeUuid)) {
+						//if in the list, remove everything up to and including the starting exchange
+						int index = exchangeIds.indexOf(startingExchangeUuid);
+						LOG.info("Found starting exchange " + startingExchangeId + " at " + index + " so removing up to this point");
+						for (int i=index; i>=0; i--) {
+							exchangeIds.remove(i);
+						}
+						startingExchangeId = null;
+
+					} else {
+						//if not in the list, skip all these exchanges
+						LOG.info("List doesn't contain starting exchange " + startingExchangeId + " so skipping");
+						continue;
+					}
+				}
 
 				QueueHelper.postToExchange(exchangeIds, "edsProtocol", null, true);
 			}
