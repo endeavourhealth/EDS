@@ -147,52 +147,14 @@ public class OpenEnvelope extends PipelineComponent {
 		exchange.setServiceId(service.getId());
 
 		//commit what we've just added to the DB
-		try {
+		//removing, since we write the exchange just after this function call, so no need to do it twice
+		/*try {
 			AuditWriter.writeExchange(exchange);
 		} catch (Exception ex) {
 			throw new PipelineException("Failed to write exchange to database", ex);
-		}
+		}*/
 	}
 
-
-	/*private void getSenderUuid(Exchange exchange) throws PipelineException {
-
-		// Get service id
-		String senderId = exchange.getHeader(HeaderKeys.SenderLocalIdentifier);
-
-		//the sender ID is composed of the service ID and the organisation ODS code
-		String[] tokens = senderId.split("//");
-		String serviceLocalIdentifier = tokens[0];
-		String organisationOds = tokens[1];
-
-		// Get service id from sender id
-		ServiceRepository serviceRepository = new ServiceRepository();
-		Service service = serviceRepository.getByLocalIdentifier(serviceLocalIdentifier);
-
-		if (service == null) {
-			throw new PipelineException("No service found for local identifier " + senderId);
-		}
-
-		//the service retrieved by local identifier only contains the ID, so we need to re-retrieve using
-		//that ID to get the name, orgs etc.
-		service = serviceRepository.getById(service.getId());
-
-		//validate that the organisation is a member of the service
-		Set<UUID> orgIds = service.getOrganisations().keySet();
-		Set<Organisation> orgs = new OrganisationRepository().getByIds(orgIds);
-		Organisation organisation = orgs
-				.stream()
-				.filter(t -> t.getNationalId().equalsIgnoreCase(organisationOds))
-				.collect(StreamExtension.firstOrNullCollector());
-
-		if (organisation == null) {
-			throw new PipelineException("Organisation " + organisationOds + " is not a member of service " + service.getName());
-		}
-
-		exchange.setHeader(HeaderKeys.SenderServiceUuid, service.getId().toString());
-		exchange.setHeader(HeaderKeys.SenderOrganisationUuid, organisation.getId().toString());
-
-	}*/
 
 	private UUID findSystemId(Service service, String software, String messageVersion) throws PipelineException {
 
