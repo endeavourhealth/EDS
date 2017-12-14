@@ -78,7 +78,7 @@ public class DeprivationUpdater {
         try {
             //the postcode CSV file doesn't contain headers, so we must just pass in the headers we know should be there
             parser = CSVParser.parse(f, Charset.defaultCharset(), format.withHeader());
-            CsvHelper.validateCsvHeaders(parser, f, getCsvHeadings());
+            CsvHelper.validateCsvHeaders(parser, f.getAbsolutePath(), getCsvHeadings());
 
             Iterator<CSVRecord> iterator = parser.iterator();
 

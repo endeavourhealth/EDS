@@ -144,7 +144,7 @@ public class LsoaUpdater {
 
             //validate the headers are what we expect
             String[] expectedHeaders = new String[]{codeCol, nameCol};
-            CsvHelper.validateCsvHeaders(parser, src, expectedHeaders);
+            CsvHelper.validateCsvHeaders(parser, src.getAbsolutePath(), expectedHeaders);
 
             while (iterator.hasNext()) {
                 CSVRecord record = iterator.next();

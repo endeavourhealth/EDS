@@ -48,8 +48,10 @@ public class Main {
 
 	public static void main(String[] args) throws Exception {
 
+		String configId = args[0];
+
 		LOG.info("Initialising config manager");
-		ConfigManager.Initialize("queuereader");
+		ConfigManager.initialize("queuereader", configId);
 
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("FixPatientSearch")) {
@@ -138,8 +140,6 @@ public class Main {
 			LOG.error("Usage: queuereader config_id");
 			return;
 		}
-
-		String configId = args[0];
 
 		LOG.info("--------------------------------------------------");
 		LOG.info("EDS Queue Reader " + configId);
