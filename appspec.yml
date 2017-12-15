@@ -1,0 +1,10 @@
+version: 0.0
+os: linux
+files:
+  - source: /src/eds-ui/target/eds-ui-1.0-SNAPSHOT.war
+    destination: /opt/tomcat/webapps/dds-ui.war
+hooks:
+  BeforeInstall:
+    - location: aws_scripts/cleanup
+      timeout: 300
+      runas: root
