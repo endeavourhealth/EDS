@@ -1,1 +1,1 @@
-rm -rf /opt/tomcat/webapps/dds-ui
+rm -f /opt/tomcat/webapps/dds-ui.war
