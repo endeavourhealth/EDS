@@ -77,18 +77,18 @@
 
     <repositories>
         <repository>
+            <snapshots />
+            <id>snapshots</id>
+            <name>libs-snapshot</name>
+            <url>http://maven.endeavourhealth.net:8081/artifactory/libs-snapshot</url>
+        </repository>
+        <repository>
             <snapshots>
                 <enabled>false</enabled>
             </snapshots>
             <id>central</id>
             <name>libs-release</name>
             <url>http://maven.endeavourhealth.net:8081/artifactory/libs-release-local</url>
-        </repository>
-        <repository>
-            <snapshots />
-            <id>snapshots</id>
-            <name>libs-snapshot</name>
-            <url>http://maven.endeavourhealth.net:8081/artifactory/libs-snapshot-local</url>
         </repository>
     </repositories>
 
