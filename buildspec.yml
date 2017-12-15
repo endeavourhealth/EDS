@@ -8,7 +8,7 @@ phases:
   build:
     commands:
       - echo Build started on `date`
-      - mvn -B package
+      - mvn -version
   post_build:
     commands:
       - IP=$(curl http://checkip.amazonaws.com)/32
