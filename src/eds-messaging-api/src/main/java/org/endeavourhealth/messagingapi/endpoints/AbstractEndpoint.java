@@ -13,6 +13,7 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.UUID;
 
 public abstract class AbstractEndpoint {
 
@@ -20,8 +21,10 @@ public abstract class AbstractEndpoint {
 
 	protected Response Process(HttpHeaders headers, String body, Pipeline pipeline) {
 
+		UUID exchangeId = UUIDs.timeBased(); //use a time-based UUID, so exchanges can easily be sorted by Cassandra
+
 		Exchange exchange = new Exchange();
-		exchange.setId(UUIDs.timeBased()); //use a time-based UUID, so exchanges can easily be sorted by Cassandra
+		exchange.setId(exchangeId);
 		exchange.setBody(body);
 		exchange.setTimestamp(new Date());
 		exchange.setHeaders(new HashMap<>());
@@ -39,10 +42,17 @@ public abstract class AbstractEndpoint {
 
 		PipelineProcessor processor = new PipelineProcessor(pipeline);
 		if (processor.execute(exchange)) {
+
+			//changed to return the exchange ID to the poster, so they can log that against what they sent
 			return Response
 					.ok()
-					.entity(exchange.getBody())
+					.entity(exchangeId.toString())
 					.build();
+
+			/*return Response
+					.ok()
+					.entity(exchange.getBody())
+					.build();*/
 		} else {
 
 			//possibly take out later, but for testing purposes, having visibility of these is useful

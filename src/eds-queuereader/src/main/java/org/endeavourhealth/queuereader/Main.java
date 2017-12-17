@@ -18,10 +18,7 @@ import org.endeavourhealth.core.database.dal.admin.ServiceDalI;
 import org.endeavourhealth.core.database.dal.admin.models.Service;
 import org.endeavourhealth.core.database.dal.audit.ExchangeBatchDalI;
 import org.endeavourhealth.core.database.dal.audit.ExchangeDalI;
-import org.endeavourhealth.core.database.dal.audit.models.Exchange;
-import org.endeavourhealth.core.database.dal.audit.models.ExchangeBatch;
-import org.endeavourhealth.core.database.dal.audit.models.ExchangeTransformAudit;
-import org.endeavourhealth.core.database.dal.audit.models.HeaderKeys;
+import org.endeavourhealth.core.database.dal.audit.models.*;
 import org.endeavourhealth.core.database.dal.eds.PatientSearchDalI;
 import org.endeavourhealth.core.database.dal.ehr.ResourceDalI;
 import org.endeavourhealth.core.database.dal.ehr.models.ResourceWrapper;
@@ -52,6 +49,13 @@ public class Main {
 
 		LOG.info("Initialising config manager");
 		ConfigManager.initialize("queuereader", configId);
+
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("PostToInbound")) {
+			String serviceId = args[1];
+			postToInbound(UUID.fromString(serviceId));
+			System.exit(0);
+		}
 
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("FixPatientSearch")) {
@@ -160,6 +164,47 @@ public class Main {
 		LOG.info("Starting message consumption");
 		rabbitHandler.start();
 		LOG.info("EDS Queue reader running");
+	}
+
+	private static void postToInbound(UUID serviceId) {
+		LOG.info("Posting to inbound for " + serviceId);
+
+		try {
+
+			ServiceDalI serviceDalI = DalProvider.factoryServiceDal();
+			ExchangeDalI auditRepository = DalProvider.factoryExchangeDal();
+
+			Service service = serviceDalI.getById(serviceId);
+
+			List<UUID> systemIds = findSystemIds(service);
+			UUID systemId = systemIds.get(0);
+
+			ExchangeTransformErrorState errorState = auditRepository.getErrorState(serviceId, systemId);
+
+			for (UUID exchangeId: errorState.getExchangeIdsInError()) {
+
+				//update the transform audit, so EDS UI knows we've re-queued this exchange
+				ExchangeTransformAudit audit = auditRepository.getMostRecentExchangeTransform(serviceId, systemId, exchangeId);
+
+				//skip any exchange IDs we've already re-queued up to be processed again
+				if (audit.isResubmitted()) {
+					LOG.debug("Not re-posting " + audit.getExchangeId() + " as it's already been resubmitted");
+					continue;
+				}
+
+				LOG.debug("Re-posting " + audit.getExchangeId());
+				audit.setResubmitted(true);
+				auditRepository.save(audit);
+
+				//then re-submit the exchange to Rabbit MQ for the queue reader to pick up
+				QueueHelper.postToExchange(exchangeId, "EdsInbound", null, false);
+			}
+
+		} catch (Exception ex) {
+			LOG.error("", ex);
+		}
+
+		LOG.info("Finished Posting to inbound for " + serviceId);
 	}
 
 	private static void fixPatientSearch(String serviceId) {
