@@ -1,6 +1,9 @@
 version: 0.2
 
 phases:
+  install:
+    commands:
+      - rm /root/.m2/settings.xml
   pre_build:
     commands:
       - IP=$(curl http://checkip.amazonaws.com)/32
