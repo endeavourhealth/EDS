@@ -15,7 +15,11 @@
     <version>1.0-SNAPSHOT</version>
 
     <dependencies>
-
+        <dependency>
+            <groupId>org.openpseudonymiser</groupId>
+            <artifactId>cryptolib</artifactId>
+            <version>${crypto-lib.version}</version>
+        </dependency>
         <!-- dependent on EDS-core -->
         <dependency>
             <groupId>org.endeavourhealth.common</groupId>
