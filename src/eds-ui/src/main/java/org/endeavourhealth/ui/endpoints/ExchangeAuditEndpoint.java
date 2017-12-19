@@ -313,6 +313,13 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
         List<UUID> exchangeIdsInError = new ArrayList<>();
         for (UUID exchangeId: errorState.getExchangeIdsInError()) {
             ExchangeTransformAudit audit = auditRepository.getMostRecentExchangeTransform(errorState.getServiceId(), errorState.getSystemId(), exchangeId);
+
+            //adding logging to investigate bug in AWS
+            if (audit == null) {
+                LOG.error("Failed to find most recent transform audit for service " + errorState.getServiceId() + " + system " + errorState.getSystemId() + " and exchange " + exchangeId);
+                continue;
+            }
+
             if (!audit.isResubmitted()) {
                 exchangeIdsInError.add(exchangeId);
             }
