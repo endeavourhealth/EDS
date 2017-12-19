@@ -315,12 +315,13 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
             ExchangeTransformAudit audit = auditRepository.getMostRecentExchangeTransform(errorState.getServiceId(), errorState.getSystemId(), exchangeId);
 
             //adding logging to investigate bug in AWS
-            if (audit == null) {
+            /*if (audit == null) {
                 LOG.error("Failed to find most recent transform audit for service " + errorState.getServiceId() + " + system " + errorState.getSystemId() + " and exchange " + exchangeId);
                 continue;
-            }
+            }*/
 
-            if (!audit.isResubmitted()) {
+            if (audit != null
+                && !audit.isResubmitted()) {
                 exchangeIdsInError.add(exchangeId);
             }
         }
@@ -551,18 +552,20 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
 
             //update the transform audit, so EDS UI knows we've re-queued this exchange
             ExchangeTransformAudit audit = auditRepository.getMostRecentExchangeTransform(serviceId, systemId, exchangeId);
+            if (audit != null) {
 
-            //skip any exchange IDs we've already re-queued up to be processed again
-            if (audit.isResubmitted()) {
-                LOG.debug("Not re-posting " + audit.getExchangeId() + " as it's already been resubmitted");
-                continue;
+                //skip any exchange IDs we've already re-queued up to be processed again
+                if (audit.isResubmitted()) {
+                    LOG.debug("Not re-posting " + audit.getExchangeId() + " as it's already been resubmitted");
+                    continue;
+                }
+
+                audit.setResubmitted(true);
+                auditRepository.save(audit);
             }
 
-            LOG.debug("Re-posting " + audit.getExchangeId());
-            audit.setResubmitted(true);
-            auditRepository.save(audit);
-
             //then re-submit the exchange to Rabbit MQ for the queue reader to pick up
+            LOG.debug("Re-posting " + exchangeId);
             QueueHelper.postToExchange(exchangeId, "EdsInbound", null, false);
 
             //if we only want to re-queue the first exchange, then break out
