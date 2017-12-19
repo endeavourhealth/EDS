@@ -53,7 +53,8 @@ public class Main {
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("PostToInbound")) {
 			String serviceId = args[1];
-			postToInbound(UUID.fromString(serviceId));
+			boolean all = Boolean.parseBoolean(args[2]);
+			postToInbound(UUID.fromString(serviceId), all);
 			System.exit(0);
 		}
 
@@ -166,7 +167,7 @@ public class Main {
 		LOG.info("EDS Queue reader running");
 	}
 
-	private static void postToInbound(UUID serviceId) {
+	private static void postToInbound(UUID serviceId, boolean all) {
 		LOG.info("Posting to inbound for " + serviceId);
 
 		try {
@@ -198,6 +199,11 @@ public class Main {
 
 				//then re-submit the exchange to Rabbit MQ for the queue reader to pick up
 				QueueHelper.postToExchange(exchangeId, "EdsInbound", null, false);
+
+				if (!all) {
+					LOG.info("Posted first exchange, so stopping");
+					break;
+				}
 			}
 
 		} catch (Exception ex) {
