@@ -148,13 +148,6 @@ public class MessageTransformInbound extends PipelineComponent {
 			//send an alert if we've had an error while trying to process an exchange
 			if (currentErrors.getError().size() > 0) {
 				sendSlackAlert(exchange, software, currentErrors);
-
-				//for bulk transforms, I want them to fail gracefully, but that mechanism doesn't work for the
-				//thousands of ADT messages, so for transaction-type messages just throw the exception to halt all inbound processing
-				//(i.e. it'll reject the message in rabbit, then pull it out again)
-				if (!software.equalsIgnoreCase(MessageFormat.EMIS_CSV) && !software.equalsIgnoreCase(MessageFormat.VISION_CSV) && !software.equalsIgnoreCase(MessageFormat.BARTS_CSV)) {
-					throw new Exception("Failing transform");
-				}
 			}
 
 		} else {
@@ -176,9 +169,19 @@ public class MessageTransformInbound extends PipelineComponent {
 		//may as well clear down the cache of reference mappings since they won't be of much use for the next Exchange
 		IdHelper.clearCache();
 
-		//if we had any errors, don't return any batch IDs, so we don't send anything on to the protocol queue yet
-		//when we do successfully re-process the exchange, it will pick up any batch IDs we created this time around
 		if (currentErrors.getError().size() > 0) {
+
+			//for bulk transforms, I want them to fail gracefully, but that mechanism doesn't work for the
+			//thousands of ADT messages, so for transaction-type messages just throw the exception to halt all inbound processing
+			//(i.e. it'll reject the message in rabbit, then pull it out again)
+			if (!software.equalsIgnoreCase(MessageFormat.EMIS_CSV)
+					&& !software.equalsIgnoreCase(MessageFormat.VISION_CSV)
+					&& !software.equalsIgnoreCase(MessageFormat.BARTS_CSV)) {
+				throw new Exception("Failing transform");
+			}
+
+			//if we had any errors, don't return any batch IDs, so we don't send anything on to the protocol queue yet
+			//when we do successfully re-process the exchange, it will pick up any batch IDs we created this time around
 			return new ArrayList<>();
 		}
 

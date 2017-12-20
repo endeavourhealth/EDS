@@ -109,7 +109,7 @@ public class RabbitConsumer extends DefaultConsumer {
 		}
 
 		//see if we've been told to finish
-		if (checkIfKilled()) {
+		if (checkIfKillFileExists()) {
 			String reason = "Detected kill file";
 			stop(reason);
 		}
@@ -161,7 +161,8 @@ public class RabbitConsumer extends DefaultConsumer {
 	/**
 	 * checks to see if a file exists that tells us to finish processing and stop
      */
-	private boolean checkIfKilled() {
+	private boolean checkIfKillFileExists() {
+
 		String killFileLocation = configuration.getKillFileLocation();
 		if (Strings.isNullOrEmpty(killFileLocation)) {
 			LOG.error("No kill file location set in app configuration XML");
@@ -171,6 +172,8 @@ public class RabbitConsumer extends DefaultConsumer {
 		File killFile = new File(killFileLocation, configId + ".kill");
 		if (killFile.exists()) {
 			LOG.info("Kill file detected: " + killFile);
+			//and delete so we don't need to manually delete it
+			killFile.delete();
 			return true;
 
 		} else {
