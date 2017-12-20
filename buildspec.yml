@@ -21,4 +21,4 @@ artifacts:
   files:
     - appspec.yml
     - aws_scripts/**/*
-    - src/eds-ui/target/eds-ui-1.0-SNAPSHOT.war
+    - src/eds-ui/target/dds-ui.war
