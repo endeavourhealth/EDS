@@ -37,7 +37,7 @@ module.exports = {
 		'shim' : 'core-js/fn/object/assign'
 	},
 	output: {
-		filename: './[name].bundle.js',
+		filename: './[name].[hash].bundle.js',
 		path: __dirname + '/../webapp'
 	},
 	resolve: {
