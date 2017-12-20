@@ -169,9 +169,8 @@ public class Main {
 		RabbitHandler rabbitHandler = new RabbitHandler(configuration, configId);
 
 		// Begin consume
-		LOG.info("Starting message consumption (kill file location " + configuration.getKillFileLocation() + ")");
 		rabbitHandler.start();
-		LOG.info("EDS Queue reader running");
+		LOG.info("EDS Queue reader running (kill file location " + configuration.getKillFileLocation() + ")");
 	}
 
 	private static void testSlack() {
