@@ -331,13 +331,19 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
             return null;
         }
 
+        UUID serviceId = errorState.getServiceId();
+        Service service = serviceRepository.getById(serviceId);
+        String serviceName = service.getName();
+        String serviceLocalIdentifier = service.getLocalId();
+
         JsonTransformServiceErrorSummary summary = new JsonTransformServiceErrorSummary();
-        summary.setServiceId(errorState.getServiceId());
-        summary.setServiceName(getServiceNameForId(errorState.getServiceId()));
+        summary.setServiceId(serviceId);
+        summary.setServiceName(serviceName);
         summary.setSystemId(errorState.getSystemId());
         summary.setSystemName(getSystemNameForId(errorState.getSystemId()));
         summary.setCountExchanges(exchangeIdsInError.size());
         summary.setExchangeIds(exchangeIdsInError);
+        summary.setServiceLocalIdentifier(serviceLocalIdentifier);
         return summary;
     }
 
@@ -467,16 +473,6 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
         }
 
         return lines;
-    }
-
-    private static String getServiceNameForId(UUID serviceId) throws Exception {
-        try {
-            Service service = serviceRepository.getById(serviceId);
-            return service.getName();
-        } catch (NullPointerException ex ) {
-            LOG.error("Failed to find service for ID " + serviceId, ex);
-            return "UNKNOWN";
-        }
     }
 
     private static String getSystemNameForId(UUID systemId) throws Exception {

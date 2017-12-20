@@ -20,6 +20,7 @@
                             <thead>
                                 <tr>
                                     <th class="col-md-2">Service</th>
+                                    <th class="col-md-1">Local ID</th>
                                     <th class="col-md-2">System</th>
                                     <th class="col-md-1">Exchanges in Error</th>
                                     <!--<th class="col-md-1">Rerun Exchange</th>-->
@@ -32,6 +33,7 @@
                                     [ngClass]="{'selection': summary == selectedSummary}">
 
                                     <td>{{summary.serviceName}}</td>
+                                    <td>{{summary.serviceLocalIdentifier}}</td>
                                     <td>{{summary.systemName}}</td>
                                     <td>{{summary.countExchanges}}</td>
                                     <!--<td>

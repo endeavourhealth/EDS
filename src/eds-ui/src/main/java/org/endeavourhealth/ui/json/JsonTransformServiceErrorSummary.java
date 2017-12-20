@@ -14,6 +14,7 @@ public class JsonTransformServiceErrorSummary {
     private String systemName = null;
     private int countExchanges = -1;
     private List<UUID> exchangeIds = null;
+    private String serviceLocalIdentifier = null;
 
     public JsonTransformServiceErrorSummary() {
 
@@ -65,5 +66,13 @@ public class JsonTransformServiceErrorSummary {
 
     public void setExchangeIds(List<UUID> exchangeIds) {
         this.exchangeIds = exchangeIds;
+    }
+
+    public String getServiceLocalIdentifier() {
+        return serviceLocalIdentifier;
+    }
+
+    public void setServiceLocalIdentifier(String serviceLocalIdentifier) {
+        this.serviceLocalIdentifier = serviceLocalIdentifier;
     }
 }
