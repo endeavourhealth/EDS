@@ -1,16 +1,18 @@
-import {Component} from "@angular/core";
+import {Component, OnDestroy, OnInit} from '@angular/core';
 import {NgbModal} from "@ng-bootstrap/ng-bootstrap";
 import {StateService} from "ui-router-ng2";
 import {Service} from "./models/Service";
 import {ServiceService} from "./service.service";
 import {linq, LoggerService, MessageBoxDialog} from "eds-common-js";
 import {Observable} from "rxjs";
+import {Subscription} from 'rxjs/Subscription';
 
 @Component({
 	template: require('./serviceList.html')
 })
-export class ServiceListComponent {
+export class ServiceListComponent implements OnInit, OnDestroy{
 	services : Service[];
+	timer: Subscription = null;
 
 	static $inject = ['$uibModal', 'ServiceService', 'LoggerService','$state'];
 
@@ -18,7 +20,17 @@ export class ServiceListComponent {
 							private serviceService : ServiceService,
 							private log : LoggerService,
 							protected $state : StateService) {
+	}
+
+	ngOnInit() {
 		this.initialize();
+	}
+
+	ngOnDestroy() {
+		if (this.timer) {
+			this.timer.unsubscribe();
+			this.timer = null;
+		}
 	}
 
 	initialize() {
@@ -117,7 +129,7 @@ export class ServiceListComponent {
 
 	private startRefreshTimer() {
 		var vm = this;
-		Observable.interval(2000).subscribe(() => vm.refreshServicesWithAdditionalInfo());
+		this.timer = Observable.interval(2000).subscribe(() => vm.refreshServicesWithAdditionalInfo());
 	}
 
 	private refreshServicesWithAdditionalInfo() {
