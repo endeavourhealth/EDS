@@ -55,7 +55,7 @@ public class RoutingManager implements ICache {
 
 			try {
 				RouteGroup[] arr = ObjectMapperPool.getInstance().readValue(routings, RouteGroup[].class);
-				LOG.debug("Routing table loaded : " + routings);
+				//LOG.debug("Routing table loaded : " + routings);
 				for (RouteGroup r: arr) {
 
 					List<RouteGroup> list = map.get(r.getExchangeName());

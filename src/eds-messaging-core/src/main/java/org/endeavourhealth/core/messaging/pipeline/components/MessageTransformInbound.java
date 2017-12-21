@@ -89,14 +89,16 @@ public class MessageTransformInbound extends PipelineComponent {
 		//then we need to make sure we've got all our pre-existing batch IDs from last time, so they
 		//all go on the Protocol queue when the transform completes
 		findExistingBatchIds(batchIds, exchange.getId());
+		int startingBatchIdCount = batchIds.size();
 
 		//create the object that audits the transform and stores any errors
-		Date transformStarted = new Date();
 		TransformError currentErrors = new TransformError();
 
 		//find the current error state for the source of our data
 		ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
 		ExchangeTransformErrorState errorState = exchangeDal.getErrorState(serviceId, systemId);
+
+		ExchangeTransformAudit transformAudit = createTransformAudit(serviceId, systemId, exchange.getId());
 
 		if (canTransformExchange(errorState, exchange.getId())) {
 
@@ -147,7 +149,7 @@ public class MessageTransformInbound extends PipelineComponent {
 
 			//send an alert if we've had an error while trying to process an exchange
 			if (currentErrors.getError().size() > 0) {
-				sendSlackAlert(exchange, software, currentErrors);
+				sendSlackAlert(exchange, software, serviceId, currentErrors);
 			}
 
 		} else {
@@ -164,7 +166,8 @@ public class MessageTransformInbound extends PipelineComponent {
 		updateErrorState(errorState, serviceId, systemId, exchange.getId(), currentErrors);
 
 		//save the audit of this transform, including errors
-		createTransformAudit(serviceId, systemId, exchange.getId(), transformStarted, currentErrors, batchIds);
+		int newBatchIdCount = batchIds.size() - startingBatchIdCount;
+		updateTransformAudit(transformAudit, currentErrors, newBatchIdCount);
 
 		//may as well clear down the cache of reference mappings since they won't be of much use for the next Exchange
 		IdHelper.clearCache();
@@ -188,6 +191,8 @@ public class MessageTransformInbound extends PipelineComponent {
 		return batchIds;
 	}
 
+
+
 	private void findExistingBatchIds(List<UUID> batchIds, UUID exchangeId) throws Exception {
 		List<ExchangeBatch> batches = exchangeBatchRepository.retrieveForExchangeId(exchangeId);
 		for (ExchangeBatch batch: batches) {
@@ -209,7 +214,7 @@ public class MessageTransformInbound extends PipelineComponent {
 				currentErrors, batchIds, previousErrors, null, maxFilingThreads, messageVersion);
 	}
 
-	private void sendSlackAlert(Exchange exchange, String software, TransformError currentErrors) {
+	private void sendSlackAlert(Exchange exchange, String software, UUID serviceId, TransformError currentErrors) {
 
 		int countErrors = currentErrors.getError().size();
 
@@ -217,7 +222,7 @@ public class MessageTransformInbound extends PipelineComponent {
 		if (countErrors > 1) {
 			message += "1 of " + countErrors + " ";
 		}
-		message += "in inbound transform from " + software + " for exchange " + exchange.getId() + "\n";
+		message += "in inbound transform from " + software + " for exchange " + exchange.getId() + " and service " + serviceId + "\n";
 		message += "view the full error details on the Transform Errors page of EDS-UI";
 
 		Error error = currentErrors.getError().get(0);
@@ -342,21 +347,27 @@ public class MessageTransformInbound extends PipelineComponent {
 		return false;
 	}
 
-	private static void createTransformAudit(UUID serviceId, UUID systemId, UUID exchangeId, Date transformStarted, TransformError transformError, List<UUID> batchIds) throws Exception {
+	private static ExchangeTransformAudit createTransformAudit(UUID serviceId, UUID systemId, UUID exchangeId) throws Exception {
+
 		ExchangeTransformAudit transformAudit = new ExchangeTransformAudit();
 		transformAudit.setServiceId(serviceId);
 		transformAudit.setSystemId(systemId);
 		transformAudit.setExchangeId(exchangeId);
 		transformAudit.setId(UUIDs.timeBased());
-		transformAudit.setStarted(transformStarted);
+		transformAudit.setStarted(new Date());
+
+		auditRepository.save(transformAudit);
+
+		return transformAudit;
+	}
+
+	private void updateTransformAudit(ExchangeTransformAudit transformAudit, TransformError errors, int newBatchIdCount) throws Exception {
+
 		transformAudit.setEnded(new Date());
+		transformAudit.setNumberBatchesCreated(new Integer(newBatchIdCount));
 
-		if (!batchIds.isEmpty()) {
-			transformAudit.setNumberBatchesCreated(batchIds.size());
-		}
-
-		if (transformError.getError().size() > 0) {
-			transformAudit.setErrorXml(TransformErrorSerializer.writeToXml(transformError));
+		if (errors.getError().size() > 0) {
+			transformAudit.setErrorXml(TransformErrorSerializer.writeToXml(errors));
 		}
 
 		auditRepository.save(transformAudit);

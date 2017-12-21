@@ -177,6 +177,7 @@ public class RabbitConsumer extends DefaultConsumer {
 			return true;
 
 		} else {
+			LOG.trace("Kill file not found: " + killFile); //for investigation
 			return false;
 		}
 	}
