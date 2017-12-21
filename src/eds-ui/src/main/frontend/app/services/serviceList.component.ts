@@ -11,7 +11,6 @@ import {Observable} from "rxjs";
 })
 export class ServiceListComponent {
 	services : Service[];
-	timerSubscription : any;
 
 	static $inject = ['$uibModal', 'ServiceService', 'LoggerService','$state'];
 
@@ -19,16 +18,16 @@ export class ServiceListComponent {
 							private serviceService : ServiceService,
 							private log : LoggerService,
 							protected $state : StateService) {
-		this.getAll();
+		this.initialize();
 	}
 
-	getAll() {
+	initialize() {
 		var vm = this;
 		vm.serviceService.getAll()
 			.subscribe(
 				(result) => {
 					vm.services = linq(result).OrderBy(s => s.name).ToArray();
-					vm.startRefreshTimersIfNecessary();
+					vm.startRefreshTimer();
 				},
 				(error) => vm.log.error('Failed to load services', error, 'Load services')
 			)
@@ -110,62 +109,27 @@ export class ServiceListComponent {
 					var index = vm.services.indexOf(oldService);
 					if (index > -1) {
 						vm.services[index] = result;
-						vm.startRefreshTimersIfNecessary();
 					}
 				},
 				(error) => vm.log.error('Failed to refresh service', error, 'Refresh Service')
 			)
 	}
 
-	private startRefreshTimersIfNecessary() {
+	private startRefreshTimer() {
 		var vm = this;
-
-		//if we already have a timer, unsubscribe from it
-		vm.stopTimer();
-
-		//check to see if any service has additional info. If any does, start the timer
-		if (vm.anyServiceWithAdditionalInfo()) {
-
-			vm.timerSubscription = Observable.interval(2000).subscribe(x => {
-				vm.refreshServiceAdditionalInfo();
-			});
-		}
+		Observable.interval(2000).subscribe(() => vm.refreshServicesWithAdditionalInfo());
 	}
 
-	private refreshServiceAdditionalInfo() {
+	private refreshServicesWithAdditionalInfo() {
 		var vm = this;
 		var arrayLength = vm.services.length;
+		console.log('Refreshing ' + arrayLength + ' services');
 		for (var i = 0; i < arrayLength; i++) {
 			var service = vm.services[i];
 			if (service.additionalInfo) {
 				vm.refreshService(service);
 			}
 		}
-
-		//if no services have additional info we may as well stop the timer
-		if (!vm.anyServiceWithAdditionalInfo()) {
-			vm.stopTimer();
-		}
-	}
-
-	private stopTimer() {
-		var vm = this;
-		if (vm.timerSubscription) {
-			vm.timerSubscription.unsubscribe();
-			vm.timerSubscription = null;
-		}
-	}
-
-	private anyServiceWithAdditionalInfo() : boolean {
-		var vm = this;
-		var arrayLength = vm.services.length;
-		for (var i = 0; i < arrayLength; i++) {
-			var service = vm.services[i];
-			if (service.additionalInfo) {
-				return true;
-			}
-		}
-		return false;
 	}
 
 	viewExchanges(selectedService: Service) {
