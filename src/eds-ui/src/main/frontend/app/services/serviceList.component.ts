@@ -123,7 +123,6 @@ export class ServiceListComponent {
 	private refreshServicesWithAdditionalInfo() {
 		var vm = this;
 		var arrayLength = vm.services.length;
-		console.log('Refreshing ' + arrayLength + ' services');
 		for (var i = 0; i < arrayLength; i++) {
 			var service = vm.services[i];
 			if (service.additionalInfo) {
