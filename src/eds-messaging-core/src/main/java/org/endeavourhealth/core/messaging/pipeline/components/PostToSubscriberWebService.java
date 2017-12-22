@@ -57,6 +57,9 @@ public class PostToSubscriberWebService extends PipelineComponent {
 			String payload = queuedMessageDal.getById(queuedMessageId);
 
 			sendToSubscriber(payload, exchangeId, batchId, software, softwareVersion, endpoint);
+
+			queuedMessageDal.delete(queuedMessageId);
+
 		} catch (Exception ex) {
 			throw new PipelineException("Failed to send to " + software + " for exchange " + exchangeId + " and batch " + batchId + " and queued message " + queuedMessageId, ex);
 		}
