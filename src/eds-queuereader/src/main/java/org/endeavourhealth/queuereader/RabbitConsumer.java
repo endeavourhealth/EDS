@@ -88,7 +88,7 @@ public class RabbitConsumer extends DefaultConsumer {
 					.filter(headerKey -> headers.get(headerKey) != null)
 					.forEach(headerKey -> exchange.setHeader(headerKey, headers.get(headerKey).toString()));
 		}
-		LOG.info("Received exchange {} from Rabbit", exchange.getId());
+		LOG.info("Received " + configId + " exchange " + exchange.getId() + " from Rabbit");
 
 		// Process the message
 		if (pipeline.execute(exchange)) {
