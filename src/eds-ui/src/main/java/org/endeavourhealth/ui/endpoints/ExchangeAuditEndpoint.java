@@ -308,17 +308,14 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
             return null;
         }
 
-        //the error state has a list of all exchange IDs that are currently in error, but we only
+        //too confusing to return only the audits that haven't been resubmitted, so just return all of them
+        List<UUID> exchangeIdsInError = errorState.getExchangeIdsInError();
+
+        /*//the error state has a list of all exchange IDs that are currently in error, but we only
         //want to return to EDS UI those that haven't yet been resubmitted
         List<UUID> exchangeIdsInError = new ArrayList<>();
         for (UUID exchangeId: errorState.getExchangeIdsInError()) {
             ExchangeTransformAudit audit = auditRepository.getMostRecentExchangeTransform(errorState.getServiceId(), errorState.getSystemId(), exchangeId);
-
-            //adding logging to investigate bug in AWS
-            /*if (audit == null) {
-                LOG.error("Failed to find most recent transform audit for service " + errorState.getServiceId() + " + system " + errorState.getSystemId() + " and exchange " + exchangeId);
-                continue;
-            }*/
 
             if (audit != null
                 && !audit.isResubmitted()) {
@@ -329,7 +326,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
         //if all of the exchanges have been resubmitted, then the error state is effectively cleared for now
         if (exchangeIdsInError.isEmpty()) {
             return null;
-        }
+        }*/
 
         UUID serviceId = errorState.getServiceId();
         Service service = serviceRepository.getById(serviceId);

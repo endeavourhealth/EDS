@@ -67,6 +67,9 @@
                                 <div *ngIf="selectExchangeErrorDetail.numberBatchIdsCreated">
                                     {{selectExchangeErrorDetail.numberBatchIdsCreated}} batch IDs created and saved, despite the error(s)
                                 </div>
+                                <div *ngIf="selectExchangeErrorDetail.resubmitted">
+                                    Has been resubmitted, so should be in inbound queue
+                                </div>
 
                                 <code>
                                     <div *ngFor="let line of selectExchangeErrorDetail.lines">

@@ -49,6 +49,9 @@ public class RabbitConsumer extends DefaultConsumer {
 		} else {
 			this.attemptsBeforeFailure = configuration.getAttemptsPermitted().intValue();
 		}
+
+		//call this to delete any pre-existing kill file
+		checkIfKillFileExists();
 	}
 
 	@Override
@@ -171,8 +174,8 @@ public class RabbitConsumer extends DefaultConsumer {
 
 		File killFile = new File(killFileLocation, configId + ".kill");
 		if (killFile.exists()) {
-			LOG.info("Kill file detected: " + killFile);
-			//and delete so we don't need to manually delete it
+
+			//delete so we don't need to manually delete it
 			killFile.delete();
 			return true;
 
