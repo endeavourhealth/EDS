@@ -124,14 +124,19 @@
                             Post to Exchange:
                             <div>
                                 <button type="button" class="btn btn-sm btn-success" [disabled]="busyPostingToExchange" (click)="postToExchange('edsInbound')">Inbound</button>
-                                <button type="button" class="btn btn-sm btn-success" [disabled]="busyPostingToExchange" (click)="postToExchange('edsResponse')">Response</button>
+                                <!--<button type="button" class="btn btn-sm btn-success" [disabled]="busyPostingToExchange" (click)="postToExchange('edsResponse')">Response</button>-->
                                 <button type="button" class="btn btn-sm btn-success" [disabled]="busyPostingToExchange" (click)="postToExchange('edsProtocol')">Protocol</button>
-                                <button type="button" class="btn btn-sm btn-success" [disabled]="busyPostingToExchange" (click)="postToExchange('edsTransform')">Transform</button>
-                                <button type="button" class="btn btn-sm btn-success" [disabled]="busyPostingToExchange" (click)="postToExchange('edsSubscriber')">Subscriber</button>
+                                <!--<button type="button" class="btn btn-sm btn-success" [disabled]="busyPostingToExchange" (click)="postToExchange('edsTransform')">Transform</button>
+                                <button type="button" class="btn btn-sm btn-success" [disabled]="busyPostingToExchange" (click)="postToExchange('edsSubscriber')">Subscriber</button>-->
 
-                                <input type="checkbox" [(ngModel)]="postAllExchanges" [disabled]="busyPostingToExchange" (click)="checkboxChanged()">
-                                Do ALL Exchanges
+                                Exchanges to post:
+                                <select id="postMode" [(ngModel)]="postMode">
+                                    <option value="This">This Exchange Only</option>
+                                    <option value="Onwards">This Exchange and Onwards</option>
+                                    <option value="All">All Exchanges</option>
+                                </select>
 
+                                Protocol to apply:
                                 <!--<select id="protocol" class="form-control" [(ngModel)]="postSpecificProtocol" name="protocolId">-->
                                 <select id="protocol" [(ngModel)]="postSpecificProtocol" name="protocolId">
                                     <option value="">--All Protocols--</option>

@@ -230,22 +230,36 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
                 "Exchange ID", request.getExchangeId(),
                 "Service ID", request.getServiceId(),
                 "Exchange Name", request.getExchangeName(),
-                "Post All", request.isPostAllExchanges(),
+                "Post Mode", request.getPostMode(),
                 "Protocol ID", request.getSpecificProtocolId());
 
         UUID selectedExchangeId = request.getExchangeId();
         UUID serviceId = request.getServiceId();
         String exchangeName = request.getExchangeName();
-        boolean postAllExchanges = request.isPostAllExchanges();
+        String postMode = request.getPostMode();
         UUID specificProtocolId = request.getSpecificProtocolId();
 
-        if (postAllExchanges) {
+        if (postMode.equalsIgnoreCase("This")) {
+            QueueHelper.postToExchange(selectedExchangeId, exchangeName, specificProtocolId, true);
 
+        } else if (postMode.equalsIgnoreCase("Onwards")) {
+            List<UUID> exchangeIds = new ArrayList<>();
+
+            List<UUID> allExchangeIds = auditRepository.getExchangeIdsForService(serviceId);
+            int index = allExchangeIds.indexOf(selectedExchangeId);
+            for (int i=index; i<allExchangeIds.size(); i++) {
+                UUID exchangeId = allExchangeIds.get(i);
+                exchangeIds.add(exchangeId);
+            }
+
+            QueueHelper.postToExchange(exchangeIds, exchangeName, specificProtocolId, true);
+
+        } else if (postMode.equalsIgnoreCase("All")) {
             List<UUID> exchangeIds = auditRepository.getExchangeIdsForService(serviceId);
             QueueHelper.postToExchange(exchangeIds, exchangeName, specificProtocolId, true);
 
         } else {
-            QueueHelper.postToExchange(selectedExchangeId, exchangeName, specificProtocolId, true);
+            throw new IllegalArgumentException("Invalid post mode [" + postMode + "]");
         }
 
         clearLogbackMarkers();

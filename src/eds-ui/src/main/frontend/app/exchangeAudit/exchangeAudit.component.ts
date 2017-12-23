@@ -30,7 +30,8 @@ export class ExchangeAuditComponent {
 	protocols: Protocol[];
 	selectedExchange: Exchange;
 	busyPostingToExchange: Subscription;
-	postAllExchanges: boolean;
+	//postAllExchanges: boolean;
+	postMode: string;
 	postSpecificProtocol: string;
 
 
@@ -43,7 +44,8 @@ export class ExchangeAuditComponent {
 
 		this.service = new Service();
 		this.exchangesToShow = 100;
-		this.postAllExchanges = false;
+		//this.postAllExchanges = false;
+		this.postMode = 'This';
 
 		var uuid = transition.params()['serviceUuid'];
 
@@ -209,7 +211,7 @@ export class ExchangeAuditComponent {
 		var exchangeId = vm.selectedExchange.exchangeId;
 		var serviceId = this.service.uuid;
 
-		this.busyPostingToExchange = vm.exchangeAuditService.postToExchange(exchangeId, serviceId, exchangeName, this.postAllExchanges, this.postSpecificProtocol).subscribe(
+		this.busyPostingToExchange = vm.exchangeAuditService.postToExchange(exchangeId, serviceId, exchangeName, this.postMode, this.postSpecificProtocol).subscribe(
 			(result) => {
 				vm.log.success('Successfully posted to ' + exchangeName + ' exchange', 'Post to Exchange');
 
@@ -248,9 +250,9 @@ export class ExchangeAuditComponent {
 
 	}
 
-	checkboxChanged() {
+	/*checkboxChanged() {
 		console.log('checkbox changed = ' + this.postAllExchanges);
-	}
+	}*/
 
 	copyBodyToClipboard() {
 		//join the body lines into a single string
