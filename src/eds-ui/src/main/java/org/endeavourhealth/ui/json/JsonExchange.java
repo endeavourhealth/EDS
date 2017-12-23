@@ -15,13 +15,15 @@ public class JsonExchange {
     private Date timestamp;
     private Map<String, String> headers;
     private List<String> bodyLines;
+    private boolean isInError;
 
-    public JsonExchange(UUID exchangeId, UUID serviceId, Date timestamp, Map<String, String> headers, List<String> bodyLines) {
+    public JsonExchange(UUID exchangeId, UUID serviceId, Date timestamp, Map<String, String> headers, List<String> bodyLines, boolean isInError) {
         this.exchangeId = exchangeId;
         this.serviceId = serviceId;
         this.timestamp = timestamp;
         this.headers = headers;
         this.bodyLines = bodyLines;
+        this.isInError = isInError;
     }
 
     public UUID getExchangeId() {
@@ -62,5 +64,13 @@ public class JsonExchange {
 
     public void setBodyLines(List<String> bodyLines) {
         this.bodyLines = bodyLines;
+    }
+
+    public boolean isInError() {
+        return isInError;
+    }
+
+    public void setInError(boolean inError) {
+        isInError = inError;
     }
 }

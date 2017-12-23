@@ -97,8 +97,8 @@ export class ExchangeAuditComponent {
 				return;
 			}
 
-			console.log("Search from " + this.exchangeSearchFrom);
-			console.log("Search to " + this.exchangeSearchTo);
+			/*console.log("Search from " + this.exchangeSearchFrom);
+			console.log("Search to " + this.exchangeSearchTo);*/
 
 			vm.exchangeAuditService.getExchangeList(serviceId, vm.exchangesToShow, this.exchangeSearchFrom, this.exchangeSearchTo).subscribe(
 				(result) => {
@@ -127,7 +127,6 @@ export class ExchangeAuditComponent {
 				(error) => vm.log.error('Failed to retrieve exchanges', error, 'View Exchanges')
 			)
 		}
-
 	}
 
 

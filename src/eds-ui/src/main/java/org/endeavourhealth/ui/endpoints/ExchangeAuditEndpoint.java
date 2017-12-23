@@ -88,6 +88,9 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
         }
 
         List<Exchange> exchangeByServices = auditRepository.getExchangesByService(serviceUuid, maxRows, dateFrom, dateTo);
+
+        Set<UUID> exchangeIdsInError = findAllExchangeIdsInErrorForService(serviceUuid);
+
         for (Exchange exchangeByService: exchangeByServices) {
 
             UUID exchangeId = exchangeByService.getId();
@@ -95,8 +98,9 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
             Date timestamp = exchange.getTimestamp();
             Map<String, String> headers = exchange.getHeaders();
             List<String> bodyLines = getExchangeBodyLines(exchange);
+            boolean inError = exchangeIdsInError.contains(exchangeId);
 
-            JsonExchange jsonExchange = new JsonExchange(exchangeId, serviceUuid, timestamp, headers, bodyLines);
+            JsonExchange jsonExchange = new JsonExchange(exchangeId, serviceUuid, timestamp, headers, bodyLines, inError);
             ret.add(jsonExchange);
         }
 
@@ -106,6 +110,20 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
                 .ok()
                 .entity(ret)
                 .build();
+    }
+
+    private Set<UUID> findAllExchangeIdsInErrorForService(UUID serviceId) throws Exception {
+
+        Set<UUID> ret = new HashSet<>();
+        List<ExchangeTransformErrorState> errorStates = auditRepository.getErrorStatesForService(serviceId);
+        for (ExchangeTransformErrorState errorState: errorStates) {
+            List<UUID> exchangeIds = errorState.getExchangeIdsInError();
+            for (UUID exchangeId: exchangeIds) {
+                ret.add(exchangeId);
+            }
+        }
+
+        return ret;
     }
 
     @GET
@@ -156,7 +174,10 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
             throw new BadRequestException(err);
         }
 
-        JsonExchange jsonExchange = new JsonExchange(exchangeUuid, serviceUuid, timestamp, headers, bodyLines);
+        Set<UUID> exchangeIdsInError = findAllExchangeIdsInErrorForService(serviceUuid);
+        boolean inError = exchangeIdsInError.contains(exchangeUuid);
+
+        JsonExchange jsonExchange = new JsonExchange(exchangeUuid, serviceUuid, timestamp, headers, bodyLines, inError);
         ret.add(jsonExchange);
 
         clearLogbackMarkers();
