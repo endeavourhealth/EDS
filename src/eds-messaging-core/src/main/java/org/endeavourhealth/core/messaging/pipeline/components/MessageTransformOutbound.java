@@ -357,6 +357,29 @@ public class MessageTransformOutbound extends PipelineComponent {
 			List<UUID> extraIds = extraReourcesByType.get(resourceType);
 			for (UUID extraId: extraIds) {
 				ResourceWrapper extraResource = resourceDal.getCurrentVersion(resourceType.toString(), extraId);
+
+				//if the resource is null then it means the resource has been deleted and our subscriber transform
+				//is running behind. So we need to find the a non-deleted instance of the resource and send that over,
+				//so everything is valid in this batch. The delete for the resource will then be sent later, when
+				//we process the exchange batch containing its delete
+				if (extraResource == null) {
+					List<ResourceWrapper> history = resourceDal.getResourceHistory(resourceType.toString(), exchangeId);
+
+					//most recent is first, so go backwards
+					for (int i=history.size()-1; i>=0; i--) {
+						ResourceWrapper historyItem = history.get(i);
+						if (!historyItem.isDeleted()) {
+							extraResource = historyItem;
+							break;
+						}
+					}
+
+					//if the resource is STILL null, then we've never received a non-deleted instance of it, so just skip sending it to the subscriber
+					if (extraResource == null) {
+						continue;
+					}
+				}
+
 				resources.add(extraResource);
 			}
 		}
