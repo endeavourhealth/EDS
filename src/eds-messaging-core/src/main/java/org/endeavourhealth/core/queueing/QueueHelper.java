@@ -158,6 +158,7 @@ public class QueueHelper {
             List<TransformBatch> transformBatches = new ArrayList<>();
 
             String[] protocolIds = exchange.getHeaderAsStringArray(HeaderKeys.ProtocolIds);
+            UUID serviceId = exchange.getHeaderAsUuid(HeaderKeys.SenderServiceUuid);
 
             for (String protocolId: protocolIds) {
 
@@ -178,7 +179,7 @@ public class QueueHelper {
                 for (ExchangeBatch batch: batches) {
 
                     String batchId = batch.getBatchId().toString();
-                    Map<ResourceType, List<UUID>> filteredResources = RunDataDistributionProtocols.filterResources(libraryItem.getProtocol(), batchId);
+                    Map<ResourceType, List<UUID>> filteredResources = RunDataDistributionProtocols.filterResources(serviceId, libraryItem.getProtocol(), batchId);
                     if (filteredResources.isEmpty()) {
                         continue;
                     }

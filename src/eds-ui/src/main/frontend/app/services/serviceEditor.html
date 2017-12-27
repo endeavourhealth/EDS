@@ -23,6 +23,12 @@
 					</div>
 				</div>
 				<div class="row">
+					<div class="form-group col-md-12">
+						<label class="control-label">Publisher Config Name</label>
+						<input type="text" class="form-control" placeholder="Config name for publisher DB" [(ngModel)]="service.publisherConfigName" name="publisherConfigName">
+					</div>
+				</div>
+				<div class="row">
 					<div class="form-group col-md-8">
 						<label class="control-label">Endpoints</label> <button type="button" class="btn btn-xs btn-success" (click)="addEndpoint()">Add</button>
 						<div class="table scroll-box-200">

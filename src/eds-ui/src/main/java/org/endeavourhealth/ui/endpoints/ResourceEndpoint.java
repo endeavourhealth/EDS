@@ -105,6 +105,7 @@ public class ResourceEndpoint extends AbstractEndpoint {
     @Timed(absolute = true, name="EDS-UI.ResourceEndpoint.GetForId")
     @Path("/forId")
     public Response forId(@Context SecurityContext sc,
+                          @QueryParam("serviceId") String serviceId,
                           @QueryParam("resourceType") String resourceType,
                           @QueryParam("resourceId") String resourceId) throws Exception {
         super.setLogbackMarkers(sc);
@@ -123,7 +124,7 @@ public class ResourceEndpoint extends AbstractEndpoint {
 
         List<JsonResourceContainer> ret = new ArrayList<>();
 
-        ResourceWrapper resourceHistory = resourceRepository.getCurrentVersion(resourceType, UUID.fromString(resourceId));
+        ResourceWrapper resourceHistory = resourceRepository.getCurrentVersion(UUID.fromString(serviceId), resourceType, UUID.fromString(resourceId));
         if (resourceHistory != null) {
             ret.add(new JsonResourceContainer(resourceHistory));
         }
@@ -142,6 +143,7 @@ public class ResourceEndpoint extends AbstractEndpoint {
     @Timed(absolute = true, name="EDS-UI.ResourceEndpoint.GetForPatient")
     @Path("/forPatient")
     public Response forPatient(@Context SecurityContext sc,
+                               @QueryParam("serviceId") String serviceId,
                                @QueryParam("resourceType") String resourceType,
                                @QueryParam("patientId") String patientIdStr) throws Exception {
         userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
@@ -162,13 +164,12 @@ public class ResourceEndpoint extends AbstractEndpoint {
 
         List<JsonResourceContainer> ret = new ArrayList<>();
 
-        ResourceWrapper patientResource = resourceRepository.getCurrentVersion(ResourceType.Patient.toString(), patientId);
+        ResourceWrapper patientResource = resourceRepository.getCurrentVersion(UUID.fromString(serviceId), ResourceType.Patient.toString(), patientId);
         if (patientResource != null) {
 
-            UUID serviceId = patientResource.getServiceId();
             UUID systemId = patientResource.getSystemId();
 
-            List<ResourceWrapper> resourceHistories = resourceRepository.getResourcesByPatient(serviceId, systemId, patientId, resourceType);
+            List<ResourceWrapper> resourceHistories = resourceRepository.getResourcesByPatient(UUID.fromString(serviceId), systemId, patientId, resourceType);
             for (ResourceWrapper resourceHistory: resourceHistories) {
                 ret.add(new JsonResourceContainer(resourceHistory));
             }
@@ -188,6 +189,7 @@ public class ResourceEndpoint extends AbstractEndpoint {
     @Timed(absolute = true, name="EDS-UI.ResourceEndpoint.GetResourceHistory")
     @Path("/resourceHistory")
     public Response resourceHistory(@Context SecurityContext sc,
+                                    @QueryParam("serviceId") String serviceId,
                                     @QueryParam("resourceType") String resourceType,
                                     @QueryParam("resourceId") String resourceId) throws Exception {
         super.setLogbackMarkers(sc);
@@ -206,7 +208,7 @@ public class ResourceEndpoint extends AbstractEndpoint {
 
         List<JsonResourceContainer> ret = new ArrayList<>();
 
-        List<ResourceWrapper> resourceHistories = resourceRepository.getResourceHistory(resourceType, UUID.fromString(resourceId));
+        List<ResourceWrapper> resourceHistories = resourceRepository.getResourceHistory(UUID.fromString(serviceId), resourceType, UUID.fromString(resourceId));
         for (ResourceWrapper resourceHistory: resourceHistories) {
             ret.add(new JsonResourceContainer(resourceHistory));
         }

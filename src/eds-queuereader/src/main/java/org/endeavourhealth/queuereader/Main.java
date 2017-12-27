@@ -263,7 +263,7 @@ public class Main {
 						continue;
 					}
 
-					ResourceWrapper wrapper = resourceDalI.getCurrentVersion(ResourceType.Patient.toString(), patientId);
+					ResourceWrapper wrapper = resourceDalI.getCurrentVersion(serviceUuid, ResourceType.Patient.toString(), patientId);
 					if (wrapper != null) {
 						String json = wrapper.getResourceData();
 						if (!Strings.isNullOrEmpty(json)) {
@@ -615,7 +615,7 @@ public class Main {
 
 						//get encounters for exchange batch
 						UUID batchId = exchangeBatch.getBatchId();
-						List<ResourceWrapper> resourceWrappers = resourceDalI.getResourcesForBatch(batchId);
+						List<ResourceWrapper> resourceWrappers = resourceDalI.getResourcesForBatch(serviceId, batchId);
 						for (ResourceWrapper resourceWrapper: resourceWrappers) {
 							if (resourceWrapper.isDeleted()) {
 								continue;
@@ -641,7 +641,7 @@ public class Main {
 							if (fhirEncounter.hasEpisodeOfCare()) {
 								Reference episodeReference = fhirEncounter.getEpisodeOfCare().get(0);
 								ReferenceComponents comps = ReferenceHelper.getReferenceComponents(episodeReference);
-								EpisodeOfCare fhirEpisode = (EpisodeOfCare)resourceDalI.getCurrentVersionAsResource(comps.getResourceType(), comps.getId());
+								EpisodeOfCare fhirEpisode = (EpisodeOfCare)resourceDalI.getCurrentVersionAsResource(serviceId, comps.getResourceType(), comps.getId());
 								if (fhirEpisode != null) {
 									if (fhirEpisode.hasIdentifier()) {
 										episodeId = IdentifierHelper.findIdentifierValue(fhirEpisode.getIdentifier(), FhirUri.IDENTIFIER_SYSTEM_BARTS_FIN_EPISODE_ID);
@@ -731,7 +731,7 @@ public class Main {
 								if (encounterLocation.hasLocation()) {
 									Reference locationReference = encounterLocation.getLocation();
 									ReferenceComponents comps = ReferenceHelper.getReferenceComponents(locationReference);
-									Location fhirLocation = (Location)resourceDalI.getCurrentVersionAsResource(comps.getResourceType(), comps.getId());
+									Location fhirLocation = (Location)resourceDalI.getCurrentVersionAsResource(serviceId, comps.getResourceType(), comps.getId());
 									if (fhirLocation != null) {
 										if (fhirLocation.hasName()) {
 											location = fhirLocation.getName();
@@ -755,7 +755,7 @@ public class Main {
 								if (encounterParticipant.hasIndividual()) {
 									Reference practitionerReference = encounterParticipant.getIndividual();
 									ReferenceComponents comps = ReferenceHelper.getReferenceComponents(practitionerReference);
-									Practitioner fhirPractitioner = (Practitioner)resourceDalI.getCurrentVersionAsResource(comps.getResourceType(), comps.getId());
+									Practitioner fhirPractitioner = (Practitioner)resourceDalI.getCurrentVersionAsResource(serviceId, comps.getResourceType(), comps.getId());
 									if (fhirPractitioner != null) {
 										if (fhirPractitioner.hasName()) {
 											HumanName name = fhirPractitioner.getName();

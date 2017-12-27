@@ -217,7 +217,7 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 		//rewriting to avoid using the patient_search table, which means we need the GP data to have
 		//been processed by Discovery first, which isn't necessarily the case
 		try {
-			Patient fhirPatient = (Patient)retrieveNonDeletedResource(ResourceType.Patient, patientUuid);
+			Patient fhirPatient = (Patient)retrieveNonDeletedResource(serviceId, ResourceType.Patient, patientUuid);
 			if (fhirPatient != null
 				&& fhirPatient.hasCareProvider()) {
 
@@ -226,7 +226,7 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 					if (comps.getResourceType() == ResourceType.Organization) {
 
 						UUID organisationUuid = UUID.fromString(comps.getId());
-						Organization fhirOrganization = (Organization)retrieveNonDeletedResource(ResourceType.Organization, organisationUuid);
+						Organization fhirOrganization = (Organization)retrieveNonDeletedResource(serviceId, ResourceType.Organization, organisationUuid);
 
 						if (fhirOrganization != null) {
 							String odsCode = IdentifierHelper.findOdsCode(fhirOrganization);
@@ -307,14 +307,14 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 		return false;*/
 	}
 
-	private org.hl7.fhir.instance.model.Resource retrieveNonDeletedResource(ResourceType resourceType, UUID resourceId) throws Exception {
+	private org.hl7.fhir.instance.model.Resource retrieveNonDeletedResource(UUID serviceId, ResourceType resourceType, UUID resourceId) throws Exception {
 
 		//get the current instance from the DB
-		org.hl7.fhir.instance.model.Resource fhirResource = resourceRepository.getCurrentVersionAsResource(resourceType, resourceId.toString());
+		org.hl7.fhir.instance.model.Resource fhirResource = resourceRepository.getCurrentVersionAsResource(serviceId, resourceType, resourceId.toString());
 
 		//if the resource has been deleted, then we have to go back and find a non-deleted instance
 		if (fhirResource == null) {
-			List<ResourceWrapper> history = resourceRepository.getResourceHistory(resourceType.toString(), resourceId);
+			List<ResourceWrapper> history = resourceRepository.getResourceHistory(serviceId, resourceType.toString(), resourceId);
 
 			//most recent is first
 			for (ResourceWrapper historyItem: history) {
@@ -435,13 +435,13 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 	 * filters down resources in the batch to just those that match the protocol data set
 	 * //TODO - apply protocol dataset filtering
      */
-	public static Map<ResourceType, List<UUID>> filterResources(Protocol protocol, String batchId) throws Exception {
+	public static Map<ResourceType, List<UUID>> filterResources(UUID serviceId, Protocol protocol, String batchId) throws Exception {
 
 		Map<ResourceType, List<UUID>> ret = new HashMap<>();
 
 		UUID batchUuid = UUID.fromString(batchId);
 		ResourceDalI resourceDal = DalProvider.factoryResourceDal();
-		List<ResourceWrapper> resourcesByExchangeBatch = resourceDal.getResourcesForBatch(batchUuid);
+		List<ResourceWrapper> resourcesByExchangeBatch = resourceDal.getResourcesForBatch(batchUuid, serviceId);
 		for (ResourceWrapper resourceByExchangeBatch: resourcesByExchangeBatch) {
 			String resourceType = resourceByExchangeBatch.getResourceType();
 			ResourceType fhirResourceType = ResourceType.valueOf(resourceType);

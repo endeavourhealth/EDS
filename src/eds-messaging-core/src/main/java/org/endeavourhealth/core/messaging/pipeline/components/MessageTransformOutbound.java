@@ -95,14 +95,16 @@ public class MessageTransformOutbound extends PipelineComponent {
 			Integer resourceCount = null;
 			String outboundData = null;
 			try {
+				UUID serviceId = exchange.getHeaderAsUuid(HeaderKeys.SenderServiceUuid);
+
 				//retrieve our resources. Do this for each protocol, rather than once, so there's no risk of
 				//losing resources if a transform removes elements from the list
-				List<ResourceWrapper> filteredResources = getResources(exchangeId, batchId, resourceIds, endpoint);
+				List<ResourceWrapper> filteredResources = getResources(serviceId, exchangeId, batchId, resourceIds, endpoint);
 				resourceCount = new Integer(filteredResources.size());
 
 				//if we have resources, then perform the transform
 				if (!filteredResources.isEmpty()) {
-					outboundData = transform(exchange, batchId, software, softwareVersion, filteredResources, endpoint, protocolId);
+					outboundData = transform(serviceId, exchange, batchId, software, softwareVersion, filteredResources, endpoint, protocolId);
 				}
 
 				//if we've got data to send to our subscriber, then store it
@@ -156,7 +158,8 @@ public class MessageTransformOutbound extends PipelineComponent {
 		//LOG.trace("Message transformed (outbound)");
 	}
 
-	private String transform(Exchange exchange,
+	private String transform(UUID serviceId,
+							 Exchange exchange,
 							 UUID batchId,
 							 String software,
 							 String softwareVersion,
@@ -168,7 +171,6 @@ public class MessageTransformOutbound extends PipelineComponent {
 
 		if (software.equals(MessageFormat.ENTERPRISE_CSV)) {
 
-			UUID serviceId = exchange.getHeaderAsUuid(HeaderKeys.SenderServiceUuid);
 			UUID systemId = exchange.getHeaderAsUuid(HeaderKeys.SenderSystemUuid);
 
 			//have to pass in the exchange body now
@@ -176,7 +178,7 @@ public class MessageTransformOutbound extends PipelineComponent {
 			return FhirToEnterpriseCsvTransformer.transformFromFhir(serviceId, systemId, exchangeId, batchId, filteredResources, endpoint, protocolId, body);
 
 		} else if (software.equals(MessageFormat.VITRUICARE_XML)) {
-			return FhirToVitruCareXmlTransformer.transformFromFhir(batchId, filteredResources, endpoint);
+			return FhirToVitruCareXmlTransformer.transformFromFhir(serviceId, batchId, filteredResources, endpoint);
 
 		} else {
 			throw new PipelineException("Unsupported outbound software " + software + " for exchange " + exchange.getId());
@@ -344,11 +346,11 @@ public class MessageTransformOutbound extends PipelineComponent {
 	}
 
 
-	private static List<ResourceWrapper> getResources(UUID exchangeId, UUID batchId, Map<ResourceType, List<UUID>> resourceIds, String subscriberConfigName) throws Exception {
+	private static List<ResourceWrapper> getResources(UUID serviceId, UUID exchangeId, UUID batchId, Map<ResourceType, List<UUID>> resourceIds, String subscriberConfigName) throws Exception {
 
 		//get the resources actually in the batch we're transforming
 		ResourceDalI resourceDal = DalProvider.factoryResourceDal();
-		List<ResourceWrapper> resources = resourceDal.getResourcesForBatch(batchId);
+		List<ResourceWrapper> resources = resourceDal.getResourcesForBatch(serviceId, batchId);
 
 		//then add in any EXTRA resources we've previously calculated we'll need to include
 		ExchangeBatchExtraResourceDalI exchangeBatchExtraResourceDalI = DalProvider.factoryExchangeBatchExtraResourceDal(subscriberConfigName);
@@ -356,14 +358,14 @@ public class MessageTransformOutbound extends PipelineComponent {
 		for (ResourceType resourceType: extraReourcesByType.keySet()) {
 			List<UUID> extraIds = extraReourcesByType.get(resourceType);
 			for (UUID extraId: extraIds) {
-				ResourceWrapper extraResource = resourceDal.getCurrentVersion(resourceType.toString(), extraId);
+				ResourceWrapper extraResource = resourceDal.getCurrentVersion(serviceId, resourceType.toString(), extraId);
 
 				//if the resource is null then it means the resource has been deleted and our subscriber transform
 				//is running behind. So we need to find the a non-deleted instance of the resource and send that over,
 				//so everything is valid in this batch. The delete for the resource will then be sent later, when
 				//we process the exchange batch containing its delete
 				if (extraResource == null) {
-					List<ResourceWrapper> history = resourceDal.getResourceHistory(resourceType.toString(), exchangeId);
+					List<ResourceWrapper> history = resourceDal.getResourceHistory(serviceId, resourceType.toString(), exchangeId);
 
 					//most recent is first, so go backwards
 					for (int i=history.size()-1; i>=0; i--) {

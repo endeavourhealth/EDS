@@ -10,6 +10,7 @@ public class JsonTransformServiceErrorSummary {
 
     private UUID serviceId = null;
     private String serviceName = null;
+    private String servicePublisherConfigName = null;
     private UUID systemId = null;
     private String systemName = null;
     private int countExchanges = -1;
@@ -34,6 +35,14 @@ public class JsonTransformServiceErrorSummary {
 
     public void setServiceName(String serviceName) {
         this.serviceName = serviceName;
+    }
+
+    public String getServicePublisherConfigName() {
+        return servicePublisherConfigName;
+    }
+
+    public void setServicePublisherConfigName(String servicePublisherConfigName) {
+        this.servicePublisherConfigName = servicePublisherConfigName;
     }
 
     public UUID getSystemId() {

@@ -16,6 +16,7 @@ import java.util.UUID;
 public final class JsonService {
     private UUID uuid = null;
     private String localIdentifier = null;
+    private String publisherConfigName = null;
     private boolean hasInboundError;
     private String name = null;
     private List<JsonServiceInterfaceEndpoint> endpoints = null;
@@ -35,6 +36,7 @@ public final class JsonService {
         this.hasInboundError = hasInboundError;
         this.name = service.getName();
         this.organisations = service.getOrganisations();
+        this.publisherConfigName = service.getPublisherConfigName();
         this.additionalInfo = additionalInfo;
 
         String endpointJson = service.getEndpoints();
@@ -62,6 +64,14 @@ public final class JsonService {
 
     public void setLocalIdentifier(String localIdentifier) {
         this.localIdentifier = localIdentifier;
+    }
+
+    public String getPublisherConfigName() {
+        return publisherConfigName;
+    }
+
+    public void setPublisherConfigName(String publisherConfigName) {
+        this.publisherConfigName = publisherConfigName;
     }
 
     public boolean isHasInboundError() {
