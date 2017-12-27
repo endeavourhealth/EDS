@@ -16,6 +16,7 @@ import java.util.UUID;
 public final class JsonService {
     private UUID uuid = null;
     private String localIdentifier = null;
+    private boolean hasInboundError;
     private String name = null;
     private List<JsonServiceInterfaceEndpoint> endpoints = null;
     private Map<UUID, String> organisations = null;
@@ -25,11 +26,13 @@ public final class JsonService {
     }
 
     public JsonService(Service service) throws IOException {
-        this(service, null);
+        this(service, null, false);
     }
-    public JsonService(Service service, String additionalInfo) throws IOException {
+
+    public JsonService(Service service, String additionalInfo, boolean hasInboundError) throws IOException {
         this.uuid = service.getId();
         this.localIdentifier = service.getLocalId();
+        this.hasInboundError = hasInboundError;
         this.name = service.getName();
         this.organisations = service.getOrganisations();
         this.additionalInfo = additionalInfo;
@@ -59,6 +62,14 @@ public final class JsonService {
 
     public void setLocalIdentifier(String localIdentifier) {
         this.localIdentifier = localIdentifier;
+    }
+
+    public boolean isHasInboundError() {
+        return hasInboundError;
+    }
+
+    public void setHasInboundError(boolean hasInboundError) {
+        this.hasInboundError = hasInboundError;
     }
 
     public String getName() {
