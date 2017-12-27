@@ -16,12 +16,10 @@ import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.math.BigDecimal;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.Timestamp;
-import java.sql.Types;
+import java.sql.*;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.Date;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -38,6 +36,8 @@ public class EnterpriseFiler {
 
     private static final String UPSERT = "Upsert";
     private static final String DELETE = "Delete";
+
+    private static final int UPSERT_ATTEMPTS = 10;
 
     //private static final String ZIP_ENTRY = "EnterpriseData.xml";
 
@@ -215,14 +215,13 @@ public class EnterpriseFiler {
 
             //in testing, batches of 20000 seemed best, although there wasn't much difference between batches of 5000 up to 100000
             if (batch.size() >= 20000) {
-                fileUpserts(batch, columns, columnClasses, tableName, connection, keywordEscapeChar);
+                fileUpsertsWithRetry(batch, columns, columnClasses, tableName, connection, keywordEscapeChar);
                 batch = new ArrayList<>();
             }
         }
         if (!batch.isEmpty()) {
-            fileUpserts(batch, columns, columnClasses, tableName, connection, keywordEscapeChar);
+            fileUpsertsWithRetry(batch, columns, columnClasses, tableName, connection, keywordEscapeChar);
         }
-        //fileUpserts(upserts, columns, columnClasses, tableName, connection);
     }
 
     private static void createHeaderColumnMap(Map<String, Integer> csvHeaderMap,
@@ -431,6 +430,44 @@ public class EnterpriseFiler {
         return connection.prepareStatement(sql.toString());
     }
 
+    /**
+     * When multiple subscriber queue readers are writing to the same subscriber DB, we regularly see one of them
+     * killed due to a deadlock. This seems to be a transient issue, so backing off for a few seconds and trying
+     * again should mitigate it
+     */
+    private static void fileUpsertsWithRetry(List<CSVRecord> csvRecords, List<String> columns, HashMap<String, Class> columnClasses,
+                                    String tableName, Connection connection, String keywordEscapeChar) throws Exception {
+
+        int attemptsMade = 0;
+        while (true) {
+
+            try {
+                fileUpserts(csvRecords, columns, columnClasses, tableName, connection, keywordEscapeChar);
+
+                //if we execute without error, break out
+                break;
+
+            } catch (BatchUpdateException ex) {
+                String msg = ex.getMessage();
+                if (attemptsMade < UPSERT_ATTEMPTS
+                        && msg != null
+                        && msg.startsWith("Deadlock found when trying to get lock; try restarting transaction")) {
+
+                    //if the message matches the deadlock one, then wait a while and try again
+                    attemptsMade ++;
+                    LOG.error("Upsert to " + tableName + " failed due to deadlock, so will try again in " + attemptsMade + " seconds");
+                    Thread.sleep(1000 & attemptsMade);
+                    continue;
+
+                } else {
+                    //if the message isn't exactly the one we're looking for, just throw the exception as normal
+                    throw ex;
+                }
+            }
+
+        }
+    }
+
     private static void fileUpserts(List<CSVRecord> csvRecords, List<String> columns, HashMap<String, Class> columnClasses,
                                     String tableName, Connection connection, String keywordEscapeChar) throws Exception {
 
@@ -460,205 +497,7 @@ public class EnterpriseFiler {
         connection.commit();
     }
 
-    /*private static void fileUpserts(List<CSVRecord> csvRecords, List<String> columns, HashMap<String, Class> columnClasses,
-                                    String tableName, Connection connection, String keywordEscapeChar) throws Exception {
 
-        if (csvRecords.isEmpty()) {
-            return;
-        }
-
-        //first try treating all the objects as inserts as most transactions will be inserts
-        try {
-            fileInserts(csvRecords, columns, columnClasses, tableName, connection, keywordEscapeChar);
-            //if we made it here, all the records were inserted ok
-            return;
-
-        } catch (SQLException ex) {
-            //if we get a SQL Exception, then it's probably because one of the upserts should be an update
-            connection.rollback();
-        }
-
-        //run all the CSV records through as updates
-        int[] recordsUpdated = fileUpdates(csvRecords, columns, columnClasses, tableName, connection, keywordEscapeChar);
-
-        //find all the csv records where the update didn't affect any rows and treat them as inserts
-        //Note: we have some batches containing the SAME record more than once. So the first instance should
-        //be treated as an insert, and the second as an update
-        Set<String> trueInsertIds = new HashSet<>();
-        List<CSVRecord> trueInserts = new ArrayList<>();
-        List<CSVRecord> laterUpdates = new ArrayList<>();
-
-        for (int i=0; i<recordsUpdated.length; i++) {
-            if (recordsUpdated[i] == 0) {
-                CSVRecord record = csvRecords.get(i);
-                String id = record.get(COL_ID);
-                if (!trueInsertIds.contains(id)) {
-                    trueInserts.add(record);
-                    trueInsertIds.add(id);
-
-                } else {
-                    laterUpdates.add(record);
-                }
-            }
-        }
-
-        //if the updates all went through ok, just return out
-        if (trueInserts.isEmpty()
-                && laterUpdates.isEmpty()) {
-            return;
-        }
-
-        //file the true inserts
-        try {
-            fileInserts(trueInserts, columns, columnClasses, tableName, connection, keywordEscapeChar);
-
-        } catch (SQLException ex) {
-            StringBuffer s = new StringBuffer();
-            s.append("Failed to insert into " + tableName + " record(s): ");
-            for (CSVRecord record: trueInserts) {
-                s.append("\n");
-                for (String column: columns) {
-                    s.append(record.get(column) + ", ");
-                }
-            }
-
-            throw new Exception(s.toString(), ex);
-        }
-
-        //then do the updates to records we're also inserting
-        recordsUpdated = fileUpdates(laterUpdates, columns, columnClasses, tableName, connection, keywordEscapeChar);
-
-        for (int i=0; i<recordsUpdated.length; i++) {
-            if (recordsUpdated[i] == 0) {
-                CSVRecord record = laterUpdates.get(i);
-
-                StringBuffer s = new StringBuffer();
-                s.append("Failed to insert or update " + tableName + " record: ");
-                for (String column: columns) {
-                    s.append(record.get(column) + ", ");
-                }
-
-                throw new Exception(s.toString());
-            }
-        }
-    }
-
-
-    private static void fileInserts(List<CSVRecord> csvRecords, List<String> columns, HashMap<String, Class> columnClasses,
-                                    String tableName, Connection connection, String keywordEscapeChar) throws Exception {
-
-        if (csvRecords.isEmpty()) {
-            return;
-        }
-
-        int tableColumns = columns.size()-1; //substract one because we don't save the save_mode
-        String parameters = createParameters(tableColumns);
-
-        StringBuilder sb = new StringBuilder();
-        for (String column: columns) {
-            if (!column.equals(COL_SAVE_MODE)) {
-                if (sb.length() > 0) {
-                    sb.append(", ");
-                }
-                sb.append(keywordEscapeChar + column + keywordEscapeChar);
-            }
-        }
-        String columnStr = sb.toString();
-
-        PreparedStatement insert = connection.prepareStatement("insert into " + tableName + " (" + columnStr + ") values (" + parameters + ")");
-
-        for (CSVRecord csvRecord: csvRecords) {
-
-            int index = 1;
-            for (String column: columns) {
-                if (!column.equals(COL_SAVE_MODE)) {
-                    addToStatement(insert, csvRecord, column, columnClasses, index);
-                    index ++;
-                }
-            }
-
-            insert.addBatch();
-        }
-
-        insert.executeBatch();
-        insert.close(); //was forgetting to do this
-        connection.commit();
-    }
-
-    private static String createParameters(int num) {
-        StringBuilder sb = new StringBuilder();
-        for (int i=0; i<num; i++) {
-            if (i > 0) {
-                sb.append(",");
-            }
-            sb.append("?");
-        }
-        return sb.toString();
-    }
-
-    private static int[] fileUpdates(List<CSVRecord> csvRecords, List<String> columns, HashMap<String, Class> columnClasses,
-                                    String tableName, Connection connection, String keywordEscapeChar) throws Exception {
-
-        if (csvRecords.isEmpty()) {
-            return new int[0];
-        }
-
-        //build the update statement
-        StringBuilder sb = new StringBuilder();
-        sb.append("update " + tableName + " set ");
-
-        boolean addComma = false;
-        for (String column: columns) {
-
-            if (column.equals(COL_SAVE_MODE)
-                    || column.equals(COL_ID)) {
-                continue;
-            }
-
-            if (addComma) {
-                sb.append(", ");
-            }
-            addComma = true;
-
-            sb.append(keywordEscapeChar + column + keywordEscapeChar + " = ?");
-        }
-        sb.append(" where " + COL_ID + " = ?");
-
-        PreparedStatement update = connection.prepareStatement(sb.toString());
-
-        //populate the statement with the updates
-        for (CSVRecord csvRecord: csvRecords) {
-
-            //add all the updated columns
-            int index = 1;
-            for (String column: columns) {
-
-                if (column.equals(COL_SAVE_MODE)
-                        || column.equals(COL_ID)) {
-                    continue;
-                }
-
-                addToStatement(update, csvRecord, column, columnClasses, index);
-                index ++;
-            }
-
-            //then add the ID
-            addToStatement(update, csvRecord, COL_ID, columnClasses, index);
-            update.addBatch();
-        }
-
-        //execute the update, making sure the update count is what we ex[ect
-        int[] updateCounts = update.executeBatch();
-        update.close(); //was forgetting to do this
-
-        if (updateCounts.length != csvRecords.size()) {
-            throw new Exception("Batch results length " + updateCounts.length + " doesn't match number of batches " + csvRecords.size());
-        }
-
-        connection.commit();
-
-        return updateCounts;
-    }*/
 
 
 
