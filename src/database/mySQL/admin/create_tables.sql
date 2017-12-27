@@ -100,6 +100,7 @@ CREATE TABLE service
 	local_id varchar(50),
 	endpoints text,
 	organisations text,
+	publisher_config_name text,
     CONSTRAINT pk_service PRIMARY KEY (id)
 );
 

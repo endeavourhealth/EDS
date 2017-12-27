@@ -1,1 +1,1 @@
-create database publisher_transform;
+create database publisher_transform_???; -- database name varies
