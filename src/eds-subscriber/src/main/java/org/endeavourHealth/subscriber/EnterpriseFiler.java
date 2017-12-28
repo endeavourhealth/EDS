@@ -56,7 +56,7 @@ public class EnterpriseFiler {
 
         JsonNode columnClassMappings = null;
 
-        JsonNode config = ConfigManager.getConfigurationAsJson(configName, "subscriber");
+        JsonNode config = ConfigManager.getConfigurationAsJson(configName, "db_subscriber");
         String url = config.get("enterprise_url").asText();
         Connection connection = openConnection(url, config);
         String keywordEscapeChar = getKeywordEscapeChar(url);
@@ -455,8 +455,9 @@ public class EnterpriseFiler {
 
                     //if the message matches the deadlock one, then wait a while and try again
                     attemptsMade ++;
-                    LOG.error("Upsert to " + tableName + " failed due to deadlock, so will try again in " + attemptsMade + " seconds");
-                    Thread.sleep(1000 & attemptsMade);
+                    long secondsWait = attemptsMade;
+                    LOG.error("Upsert to " + tableName + " failed due to deadlock, so will try again in " + secondsWait + " seconds");
+                    Thread.sleep(1000 * secondsWait);
                     continue;
 
                 } else {
