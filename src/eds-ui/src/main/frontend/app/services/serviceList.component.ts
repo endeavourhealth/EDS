@@ -11,8 +11,17 @@ import {Subscription} from 'rxjs/Subscription';
 	template: require('./serviceList.html')
 })
 export class ServiceListComponent implements OnInit, OnDestroy{
+
 	services : Service[];
 	timer: Subscription = null;
+
+	//filtering
+	filteredServices: Service[];
+	showFilters: boolean;
+	serviceNameFilter: string;
+	servicePublisherConfigFilter: string;
+	serviceHasErrorsFilter: boolean;
+	allPublisherConfigNames: string[];
 
 	static $inject = ['$uibModal', 'ServiceService', 'LoggerService','$state'];
 
@@ -40,6 +49,8 @@ export class ServiceListComponent implements OnInit, OnDestroy{
 				(result) => {
 					vm.services = linq(result).OrderBy(s => s.name).ToArray();
 					vm.startRefreshTimer();
+					vm.applyFiltering();
+					vm.findAllPublisherConfigNames();
 				},
 				(error) => vm.log.error('Failed to load services', error, 'Load services')
 			)
@@ -118,9 +129,16 @@ export class ServiceListComponent implements OnInit, OnDestroy{
 		vm.serviceService.get(oldService.uuid)
 			.subscribe(
 				(result) => {
+					//sub into the services list
 					var index = vm.services.indexOf(oldService);
 					if (index > -1) {
 						vm.services[index] = result;
+					}
+
+					//sub into the filtered services list too
+					index = vm.filteredServices.indexOf(oldService);
+					if (index > -1) {
+						vm.filteredServices[index] = result;
 					}
 				},
 				(error) => vm.log.error('Failed to refresh service', error, 'Refresh Service')
@@ -145,5 +163,88 @@ export class ServiceListComponent implements OnInit, OnDestroy{
 
 	viewExchanges(selectedService: Service) {
 		this.$state.go('app.exchangeAudit', {serviceUuid: selectedService.uuid});
+	}
+
+	applyFiltering() {
+		var vm = this;
+
+		//if we've not loaded our services yet, just return out
+		if (!vm.services) {
+			return;
+		}
+
+		vm.filteredServices = [];
+
+		//work out if the name/ID search text is valid regex and force it to lower case if so
+		var validNameFilterRegex;
+		if (vm.serviceNameFilter) {
+			try {
+				new RegExp(vm.serviceNameFilter);
+				validNameFilterRegex = vm.serviceNameFilter.toLowerCase();
+			} catch (e) {
+				//do nothing
+			}
+		}
+
+		var arrayLength = vm.services.length;
+		for (var i = 0; i < arrayLength; i++) {
+			var service = vm.services[i];
+
+			//only apply the filters if we're showing the panel
+			if (vm.showFilters) {
+
+				if (vm.serviceHasErrorsFilter) {
+					if (!service.hasInboundError) {
+						continue;
+					}
+				}
+
+				if (vm.servicePublisherConfigFilter) {
+					var publisherConfigName = service.publisherConfigName;
+					if (!publisherConfigName || publisherConfigName != vm.servicePublisherConfigFilter) {
+						continue;
+					}
+				}
+
+				//only apply the name filter if it's valid regex
+				if (validNameFilterRegex) {
+					var name = service.name;
+					var id = service.localIdentifier;
+					if ((!name || !name.toLowerCase().match(vm.serviceNameFilter))
+						&& (!id || !id.toLowerCase().match(vm.serviceNameFilter))) {
+						continue;
+					}
+				}
+			}
+
+			vm.filteredServices.push(service);
+		}
+
+	}
+
+	toggleFilters() {
+		var vm = this;
+		vm.showFilters = !vm.showFilters;
+		//call the filtered changed method to remove the applied filtering
+		vm.applyFiltering();
+	}
+
+	private findAllPublisherConfigNames() {
+		var vm = this;
+		vm.allPublisherConfigNames = [];
+
+		var arrayLength = vm.services.length;
+		for (var i = 0; i < arrayLength; i++) {
+			var service = vm.services[i];
+			var publisherConfigName = service.publisherConfigName;
+			if (publisherConfigName) {
+				var index = vm.allPublisherConfigNames.indexOf(publisherConfigName);
+				if (index == -1) {
+					vm.allPublisherConfigNames.push(publisherConfigName);
+				}
+			}
+		}
+
+		vm.allPublisherConfigNames.sort();
 	}
 }

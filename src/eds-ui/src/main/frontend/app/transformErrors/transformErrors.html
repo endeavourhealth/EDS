@@ -50,6 +50,12 @@
                 </div>
             </div>
 
+            <div class="row" *ngIf="transformErrorSummaries">
+                <div class="form-group col-md-12">
+                    {{transformErrorSummaries.length}} services in error
+                </div>
+            </div>
+
             <div class="row" *ngIf="selectedSummary">
                 <div class="col-md-12">
                     <div class="panel panel-primary">

@@ -64,7 +64,10 @@ public class RabbitHandler {
 				false, 	// Exclusive
 				false, 	// Auto delete
 				null);
-		channel.basicConsume(configuration.getQueue(), false, consumer);
+
+		//pass true for the exclusive parameter, so we can only have one consumer per queue
+		//channel.basicConsume(configuration.getQueue(), false, consumer);
+		channel.basicConsume(configuration.getQueue(), false, configId, false, true, null, consumer);
 	}
 
 	public void stop() throws IOException, TimeoutException {

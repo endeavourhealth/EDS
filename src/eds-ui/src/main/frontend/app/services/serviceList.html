@@ -3,13 +3,40 @@
 		<div class="module-heading">
 			Services
 			<div class="pull-right">
-				<button class="btn btn-sm btn-success"
-								(click)="add()"
-								title="Add">Add new
-				</button>
+				<button class="btn btn-sm btn-default" (click)="toggleFilters()" title="Toggle Filters">Toggle Filters</button>
+				<button class="btn btn-sm btn-success" (click)="add()" title="Add">Add new</button>
 			</div>
 		</div>
 		<div class="module-body">
+
+			<div class="panel panel-primary" *ngIf="showFilters">
+				<div class="panel-body">
+					<form class="form-horizontal" role="form">
+						<div class="form-group">
+
+							<label for="inputType" class="col-sm-2 control-label">Name/ID</label>
+							<div class="col-sm-2">
+								<input type="text" class="form-control" id="inputType" placeholder="Regex" [(ngModel)]="serviceNameFilter" name="serviceNameFilter" (ngModelChange)="applyFiltering()">
+							</div>
+
+							<label for="inputType2" class="col-sm-2 control-label">Publisher Config</label>
+							<div class="col-sm-2">
+								<select id="inputType2" class="form-control" [(ngModel)]="servicePublisherConfigFilter" name="servicePublisherConfigFilter" (ngModelChange)="applyFiltering()">
+									<option value=""></option>
+									<option *ngFor="let publisherConfigName of allPublisherConfigNames" value="{{publisherConfigName}}">{{publisherConfigName}}</option>
+								</select>
+							</div>
+
+							<label for="inputType3" class="col-sm-2 control-label">In Error</label>
+							<div class="col-sm-2">
+								<input type="checkbox" class="form-control" id="inputType3" [(ngModel)]="serviceHasErrorsFilter" name="serviceHasErrorsFilter" (ngModelChange)="applyFiltering()">
+							</div>
+
+						</div>
+					</form>
+				</div>
+			</div>
+
 			<form>
 				<div class="row">
 					<div class="form-group col-md-12">
@@ -18,14 +45,14 @@
 								<thead>
 									<tr>
 										<th class="col-md-4">Name</th>
-										<th class="col-md-1">Local Identifier</th>
+										<th class="col-md-1">Local ID</th>
 										<th class="col-md-2">Publisher Config</th>
 										<th class="col-md-1">Inbound Err</th>
 										<th class="col-md-4"></th>
 									</tr>
 								</thead>
 								<tbody>
-									<tr class="hover-box show-child-on-hover" *ngFor="let item of services">
+									<tr class="hover-box show-child-on-hover" *ngFor="let item of filteredServices">
 										<td>
 											<a (click)="edit(item)">{{item.name}}</a>
 											<span class="fa fa-info-circle fa-right-pad text-muted" ngbTooltip="{{item.description}}" *ngIf="item.description"></span>
@@ -55,6 +82,13 @@
 						</div>
 					</div>
 				</div>
+
+				<div class="row" *ngIf="filteredServices">
+					<div class="form-group col-md-12">
+						{{filteredServices.length}} services found
+					</div>
+				</div>
+
 			</form>
 		</div>
 	</div>
