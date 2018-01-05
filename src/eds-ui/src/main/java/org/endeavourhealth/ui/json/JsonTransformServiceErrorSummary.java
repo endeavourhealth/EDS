@@ -8,41 +8,22 @@ import java.util.UUID;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class JsonTransformServiceErrorSummary {
 
-    private UUID serviceId = null;
-    private String serviceName = null;
-    private String servicePublisherConfigName = null;
+    private JsonService service = null;
     private UUID systemId = null;
     private String systemName = null;
     private int countExchanges = -1;
     private List<UUID> exchangeIds = null;
-    private String serviceLocalIdentifier = null;
 
     public JsonTransformServiceErrorSummary() {
 
     }
 
-    public UUID getServiceId() {
-        return serviceId;
+    public JsonService getService() {
+        return service;
     }
 
-    public void setServiceId(UUID serviceId) {
-        this.serviceId = serviceId;
-    }
-
-    public String getServiceName() {
-        return serviceName;
-    }
-
-    public void setServiceName(String serviceName) {
-        this.serviceName = serviceName;
-    }
-
-    public String getServicePublisherConfigName() {
-        return servicePublisherConfigName;
-    }
-
-    public void setServicePublisherConfigName(String servicePublisherConfigName) {
-        this.servicePublisherConfigName = servicePublisherConfigName;
+    public void setService(JsonService service) {
+        this.service = service;
     }
 
     public UUID getSystemId() {
@@ -75,13 +56,5 @@ public class JsonTransformServiceErrorSummary {
 
     public void setExchangeIds(List<UUID> exchangeIds) {
         this.exchangeIds = exchangeIds;
-    }
-
-    public String getServiceLocalIdentifier() {
-        return serviceLocalIdentifier;
-    }
-
-    public void setServiceLocalIdentifier(String serviceLocalIdentifier) {
-        this.serviceLocalIdentifier = serviceLocalIdentifier;
     }
 }

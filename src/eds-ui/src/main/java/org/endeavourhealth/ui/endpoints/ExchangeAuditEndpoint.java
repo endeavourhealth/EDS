@@ -365,19 +365,16 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
 
         UUID serviceId = errorState.getServiceId();
         Service service = serviceRepository.getById(serviceId);
-        String serviceName = service.getName();
-        String serviceLocalIdentifier = service.getLocalId();
-        String servicePublisherConfigName = service.getPublisherConfigName();
+
+        JsonService jsonService = new JsonService(service);
+        jsonService.setHasInboundError(true); //by definition, all services in this fn as in error
 
         JsonTransformServiceErrorSummary summary = new JsonTransformServiceErrorSummary();
-        summary.setServiceId(serviceId);
-        summary.setServiceName(serviceName);
-        summary.setServicePublisherConfigName(servicePublisherConfigName);
+        summary.setService(jsonService);
         summary.setSystemId(errorState.getSystemId());
         summary.setSystemName(getSystemNameForId(errorState.getSystemId()));
         summary.setCountExchanges(exchangeIdsInError.size());
         summary.setExchangeIds(exchangeIdsInError);
-        summary.setServiceLocalIdentifier(serviceLocalIdentifier);
         return summary;
     }
 

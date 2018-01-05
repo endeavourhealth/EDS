@@ -29,6 +29,12 @@
 					</div>
 				</div>
 				<div class="row">
+					<div class="form-group col-md-12">
+						<label class="control-label">Notes</label>
+						<textarea class="form-control" id="description" [(ngModel)]="service.notes" placeholder="Notes on this service" name="notes"></textarea>
+					</div>
+				</div>
+				<div class="row">
 					<div class="form-group col-md-8">
 						<label class="control-label">Endpoints</label> <button type="button" class="btn btn-xs btn-success" (click)="addEndpoint()">Add</button>
 						<div class="table scroll-box-200">

@@ -69,6 +69,7 @@ public final class ServiceEndpoint extends AbstractEndpoint {
 		dbService.setLocalId(service.getLocalIdentifier());
 		dbService.setOrganisations(service.getOrganisations());
 		dbService.setPublisherConfigName(service.getPublisherConfigName());
+		dbService.setNotes(service.getNotes());
 
 		String endpointsJson = ObjectMapperPool.getInstance().writeValueAsString(service.getEndpoints());
 		dbService.setEndpoints(endpointsJson);

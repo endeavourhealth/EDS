@@ -22,6 +22,7 @@ public final class JsonService {
     private List<JsonServiceInterfaceEndpoint> endpoints = null;
     private Map<UUID, String> organisations = null;
     private String additionalInfo = null; //transient info, such as progress in deleting data
+    private String notes = null;
 
     public JsonService() {
     }
@@ -45,6 +46,8 @@ public final class JsonService {
         } else {
             this.endpoints = new ArrayList<>();
         }
+
+        this.notes = service.getNotes();
     }
 
     /**
@@ -112,5 +115,13 @@ public final class JsonService {
 
     public void setAdditionalInfo(String additionalInfo) {
         this.additionalInfo = additionalInfo;
+    }
+
+    public String getNotes() {
+        return notes;
+    }
+
+    public void setNotes(String notes) {
+        this.notes = notes;
     }
 }

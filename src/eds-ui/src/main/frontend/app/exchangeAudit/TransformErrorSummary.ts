@@ -1,9 +1,8 @@
+import {Service} from "../services/models/Service";
 export class TransformErrorSummary {
-    serviceId: string;
-    serviceName: string;
+    service: Service;
     systemId: string;
     systemName: string;
     countExchanges: number;
     exchangeIds: string[];
-    serviceLocalIdentifier: string;
 }

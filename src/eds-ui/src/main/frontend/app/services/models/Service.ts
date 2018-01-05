@@ -9,6 +9,7 @@ export class Service {
 	endpoints: Endpoint[];
 	organisations:{ [key:string]:string; };
 	additionalInfo: string;
+	notes: string;
 
 	constructor() {}
 }

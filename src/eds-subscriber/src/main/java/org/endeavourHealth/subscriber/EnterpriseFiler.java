@@ -484,6 +484,10 @@ public class EnterpriseFiler {
 
         for (CSVRecord csvRecord: csvRecords) {
 
+            if (tableName.equals("organization")) {
+                LOG.trace("Filing organisation " + csvRecord.get(COL_ID));
+            }
+
             int index = 1;
             for (String column: columns) {
                 addToStatement(insert, csvRecord, column, columnClasses, index);
