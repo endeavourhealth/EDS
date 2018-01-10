@@ -273,6 +273,23 @@ public class Main {
         // *************************************************************************************************************************************************
         // Rules for Barts
         // *************************************************************************************************************************************************
+        // Added 2018-01-10
+        if (channelId == 2
+                && messageType.equals("ADT^A31")
+                && errorMessage.startsWith("[org.endeavourhealth.hl7receiver.model.exceptions.HL7MessageProcessorException]  Transform failure\r\n[org.endeavourhealth.hl7transform.common.TransformException]  More than one patient primary care provider")) {
+
+            Message hapiMsg = parser.parse(inboundPayload);
+            Terser terser = new Terser(hapiMsg);
+            String gpId = terser.get("/PD1-4(1)-1");
+            LOG.info("GP(2):" + gpId);
+
+            // If multiple GPs then move to DLQ
+            //if (!Strings.isNullOrEmpty(gpId)
+              //      || StringUtils.isNumeric(gpId)) {
+                //return "Automatically moved A31 because of multiple GPs";
+            //}
+        }
+
         if (channelId == 2
             && messageType.equals("ADT^A31")
             && errorMessage.startsWith("[org.endeavourhealth.hl7receiver.model.exceptions.HL7MessageProcessorException]  Transform failure\r\n[org.endeavourhealth.hl7transform.common.TransformException]  Could not create organisation ")) {
