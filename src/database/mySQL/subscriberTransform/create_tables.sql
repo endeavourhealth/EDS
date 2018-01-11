@@ -13,8 +13,8 @@ DROP TABLE IF EXISTS vitru_care_patient_id_map;
 
 CREATE TABLE enterprise_id_map
 (
-  resource_type varchar(255) NOT NULL,
-  resource_id varchar(255) NOT NULL,
+  resource_type varchar(50) NOT NULL,
+  resource_id char(36) NOT NULL,
   enterprise_id bigint NOT NULL,
   CONSTRAINT pk_enterprise_id_map PRIMARY KEY (resource_id, resource_type)
 );
@@ -30,9 +30,8 @@ ALTER TABLE enterprise_id_map MODIFY COLUMN enterprise_id INT auto_increment;
 CREATE TABLE enterprise_organisation_id_map
 (
   service_id char(36) NOT NULL,
-  system_id char(36) NOT NULL,
   enterprise_id bigint NOT NULL,
-  CONSTRAINT pk_enterprise_organisation_id_map PRIMARY KEY (service_id, system_id)
+  CONSTRAINT pk_enterprise_organisation_id_map PRIMARY KEY (service_id)
 );
 
 
@@ -54,7 +53,7 @@ ALTER TABLE household_id_map MODIFY COLUMN household_id INT auto_increment;
 
 CREATE TABLE pseudo_id_map
 (
-  patient_id varchar(255) NOT NULL PRIMARY KEY,
+  patient_id char(36) NOT NULL PRIMARY KEY,
   pseudo_id varchar(255) NOT NULL
 );
 
@@ -73,7 +72,7 @@ CREATE INDEX ix_date_next_change
 CREATE TABLE enterprise_person_id_map
 (
   enterprise_person_id bigint NOT NULL,
-  person_id character(36) NOT NULL,
+  person_id char(36) NOT NULL,
   CONSTRAINT pk_enterprise_person_id_map PRIMARY KEY (person_id)
 );
 
@@ -91,9 +90,8 @@ CREATE TABLE enterprise_person_update_history
 );
 
 CREATE TABLE vitru_care_patient_id_map (
-	eds_patient_id varchar(36),
-	service_id varchar(36),
-	system_id varchar(36),
+	eds_patient_id char(36),
+	service_id char(36),
 	created_at datetime,
 	vitrucare_id varchar(250),
     CONSTRAINT pk_resource_id_map PRIMARY KEY (eds_patient_id)
@@ -103,13 +101,13 @@ CREATE TABLE exchange_batch_extra_resources (
 	exchange_id char(36) NOT NULL,
     batch_id char(36) NOT NULL,
     resource_id char(36) NOT NULL,
-    resource_type varchar(100) NOT NULL,
+    resource_type varchar(50) NOT NULL,
     CONSTRAINT pk_exchange_batch_extra_resources PRIMARY KEY (exchange_id, batch_id, resource_id, resource_type)
 );
 
 CREATE TABLE enterprise_instance_map
 (
-	resource_type varchar(100) NOT NULL,
+	resource_type varchar(50) NOT NULL,
 	resource_id_from char(36) NOT NULL,
 	resource_id_to char(36),
 	mapping_value varchar(1000),

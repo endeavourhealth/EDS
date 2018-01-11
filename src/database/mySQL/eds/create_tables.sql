@@ -8,8 +8,7 @@ DROP TABLE IF EXISTS patient_link_person;
 
 CREATE TABLE patient_search
 (
-	service_id varchar(36) NOT NULL,
-	system_id varchar(36) NOT NULL,
+	service_id char(36) NOT NULL,
 	nhs_number varchar(10),
 	forenames varchar(500),
 	surname varchar(500),
@@ -19,29 +18,19 @@ CREATE TABLE patient_search
 	gender varchar(7),
 	registration_start date,
 	registration_end date,
-	patient_id varchar(36) NOT NULL,
+	patient_id char(36) NOT NULL,
 	last_updated timestamp NOT NULL,
 	organisation_type_code varchar(10),
 	registration_type_code varchar(10),
-	CONSTRAINT pk_patient_search PRIMARY KEY (service_id, system_id, patient_id)
+	CONSTRAINT pk_patient_search PRIMARY KEY (service_id, patient_id)
 );
 
 CREATE INDEX ix_patient
   ON patient_search (patient_id);
 
-CREATE INDEX ix_service_system_surname_forenames
-   ON patient_search (service_id, system_id, surname, forenames);
+CREATE INDEX ix_service_patient
+  ON patient_search (service_id, patient_id);
 
-CREATE INDEX ix_service_system_nhs_number
-  ON patient_search (service_id, system_id, nhs_number);
-
-CREATE INDEX ix_service_system_date_of_birth
-  ON patient_search (service_id, system_id, date_of_birth);
-
-CREATE INDEX ix_service_system_patient
-  ON patient_search (service_id, system_id, patient_id);
-
--- Cross-org search indexes (exclude system_id)
 CREATE INDEX ix_service_date_of_birth
   ON patient_search (service_id, date_of_birth);
 
@@ -55,19 +44,15 @@ CREATE INDEX ix_service_surname_forenames
 CREATE TABLE patient_search_local_identifier
 (
 	service_id char(36) NOT NULL,
-	system_id char(36) NOT NULL,
 	local_id varchar(1000),
 	local_id_system varchar(1000),
 	patient_id char(36) NOT NULL,
 	last_updated timestamp NOT NULL,
-	CONSTRAINT pk_patient_search_local_identifier PRIMARY KEY (service_id, system_id, patient_id, local_id_system, local_id),
-	CONSTRAINT fk_patient_search_local_identifier_patient_id FOREIGN KEY (service_id, system_id, patient_id)
-		REFERENCES patient_search (service_id, system_id, patient_id) MATCH SIMPLE
+	CONSTRAINT pk_patient_search_local_identifier PRIMARY KEY (service_id, patient_id, local_id_system, local_id),
+	CONSTRAINT fk_patient_search_local_identifier_patient_id FOREIGN KEY (service_id, patient_id)
+		REFERENCES patient_search (service_id, patient_id) MATCH SIMPLE
 		ON UPDATE NO ACTION ON DELETE NO ACTION
 );
-
-CREATE INDEX ix_service_system_patient_id
-  ON patient_search_local_identifier (service_id, system_id, patient_id);
 
 
 CREATE TABLE patient_link

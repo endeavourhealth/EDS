@@ -4,12 +4,11 @@ DROP TABLE IF EXISTS resource_id_map;
 DROP TABLE IF EXISTS sus_resource_map;
 
 CREATE TABLE resource_id_map (
-	service_id varchar(36),
-	system_id varchar(36),
+	service_id char(36),
 	resource_type varchar(50),
 	source_id varchar(500),
-	eds_id varchar(36),
-    CONSTRAINT pk_resource_id_map PRIMARY KEY (service_id, system_id, resource_type, source_id)
+	eds_id char(36),
+    CONSTRAINT pk_resource_id_map PRIMARY KEY (service_id, resource_type, source_id)
 );
 
 CREATE INDEX ix_resource_id_map_resource_type_eds_id
