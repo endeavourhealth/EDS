@@ -275,7 +275,7 @@ public class Main {
         // *************************************************************************************************************************************************
         // Added 2018-01-10
         if (channelId == 2
-                && messageType.equals("ADT^A31")
+                && messageType.startsWith("ADT^")
                 && errorMessage.startsWith("[org.endeavourhealth.hl7receiver.model.exceptions.HL7MessageProcessorException]  Transform failure\r\n[org.endeavourhealth.hl7transform.common.TransformException]  More than one patient primary care provider")) {
 
             Message hapiMsg = parser.parse(inboundPayload);
@@ -284,10 +284,9 @@ public class Main {
             LOG.info("GP(2):" + gpId);
 
             // If multiple GPs then move to DLQ
-            //if (!Strings.isNullOrEmpty(gpId)
-              //      || StringUtils.isNumeric(gpId)) {
-                //return "Automatically moved A31 because of multiple GPs";
-            //}
+            if (!Strings.isNullOrEmpty(gpId)) {
+                return "Automatically moved ADT because of multiple GPs in PD1:4";
+            }
         }
 
         if (channelId == 2
