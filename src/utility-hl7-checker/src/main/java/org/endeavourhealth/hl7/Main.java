@@ -155,8 +155,8 @@ public class Main {
         // Rules for Homerton
         // *************************************************************************************************************************************************
         if (channelId == 1
-            && messageType.equals("ADT^A44")
-            && errorMessage.equals("[org.endeavourhealth.hl7receiver.model.exceptions.HL7MessageProcessorException]  Transform failure\r\n[java.lang.NullPointerException]  episodeIdentifierValue")) {
+                && messageType.equals("ADT^A44")
+                && errorMessage.equals("[org.endeavourhealth.hl7receiver.model.exceptions.HL7MessageProcessorException]  Transform failure\r\n[java.lang.NullPointerException]  episodeIdentifierValue")) {
 
             Message hapiMsg = parser.parse(inboundPayload);
             Terser terser = new Terser(hapiMsg);
@@ -270,6 +270,22 @@ public class Main {
             }
         }
 
+        // Added 2018-01-10
+        if (channelId == 1
+                && messageType.startsWith("ADT^")
+                && errorMessage.startsWith("[org.endeavourhealth.hl7receiver.model.exceptions.HL7MessageProcessorException]  Transform failure\r\n[org.endeavourhealth.hl7transform.common.TransformException]  Hospital servicing facility of NEWHAM GENERAL not recognised")) {
+
+            Message hapiMsg = parser.parse(inboundPayload);
+            Terser terser = new Terser(hapiMsg);
+            String servicingFacility = terser.get("/PV1-39");
+            LOG.info("servicingFacility(PV1:39):" + servicingFacility);
+
+            // If "NEWHAM GENERAL" then move to DLQ
+            if (servicingFacility.compareToIgnoreCase("NEWHAM GENERAL") == 0) {
+                return "Automatically moved ADT because servicing facility is NEWHAM GENERAL in Homerton channel";
+            }
+        }
+
         // *************************************************************************************************************************************************
         // Rules for Barts
         // *************************************************************************************************************************************************
@@ -290,8 +306,8 @@ public class Main {
         }
 
         if (channelId == 2
-            && messageType.equals("ADT^A31")
-            && errorMessage.startsWith("[org.endeavourhealth.hl7receiver.model.exceptions.HL7MessageProcessorException]  Transform failure\r\n[org.endeavourhealth.hl7transform.common.TransformException]  Could not create organisation ")) {
+                && messageType.equals("ADT^A31")
+                && errorMessage.startsWith("[org.endeavourhealth.hl7receiver.model.exceptions.HL7MessageProcessorException]  Transform failure\r\n[org.endeavourhealth.hl7transform.common.TransformException]  Could not create organisation ")) {
 
             Message hapiMsg = parser.parse(inboundPayload);
             Terser terser = new Terser(hapiMsg);
