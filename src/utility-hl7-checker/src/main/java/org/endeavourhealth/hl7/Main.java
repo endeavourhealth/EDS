@@ -4,7 +4,9 @@ import ca.uhn.hl7v2.DefaultHapiContext;
 import ca.uhn.hl7v2.HL7Exception;
 import ca.uhn.hl7v2.HapiContext;
 import ca.uhn.hl7v2.model.Message;
+import ca.uhn.hl7v2.model.v23.datatype.CX;
 import ca.uhn.hl7v2.model.v23.segment.MRG;
+import ca.uhn.hl7v2.model.v23.segment.PID;
 import ca.uhn.hl7v2.parser.Parser;
 import ca.uhn.hl7v2.util.Terser;
 import ca.uhn.hl7v2.validation.impl.NoValidation;
@@ -283,6 +285,39 @@ public class Main {
             // If "NEWHAM GENERAL" then move to DLQ
             if (servicingFacility.compareToIgnoreCase("NEWHAM GENERAL") == 0) {
                 return "Automatically moved ADT because servicing facility is NEWHAM GENERAL in Homerton channel";
+            }
+        }
+
+        // Added 2018-01-11
+        if (channelId == 1
+                && messageType.startsWith("ADT^")
+                && errorMessage.startsWith("[org.endeavourhealth.hl7receiver.model.exceptions.HL7MessageProcessorException]  Transform failure\r\n[java.lang.NullPointerException]  patientIdentifierValue")) {
+
+            Message hapiMsg = parser.parse(inboundPayload);
+            //Terser terser = new Terser(hapiMsg);
+            //String cnn = terser.get("/PID-3");
+            //LOG.info("PID:3(looking for CNN):" + cnn);
+
+            boolean cnnFound = false;
+            PID pid = (PID) hapiMsg.get("PID");
+            if (pid != null) {
+                CX[] pid3s = pid.getPid3_PatientIDInternalID();
+                if (pid3s != null) {
+                    for (int i = 0; i < pid3s.length; i++) {
+                        LOG.info("PID:3(" + i + "):" + pid3s[i].toString());
+                        if (pid3s[i].toString().indexOf("CNN") == -1) {
+                            LOG.info("CNN NOT FOUND");
+                        } else {
+                            LOG.info("CNN FOUND");
+                            cnnFound = true;
+                        }
+                    }
+                }
+            }
+
+            // If "CNN" not found then move to DLQ
+            if (cnnFound == false) {
+                return "Automatically moved ADT because PID:3 does not contain CNN";
             }
         }
 
