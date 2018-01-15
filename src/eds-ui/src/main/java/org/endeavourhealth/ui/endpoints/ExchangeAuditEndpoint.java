@@ -575,6 +575,8 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
         ExchangeTransformErrorState errorState = auditRepository.getErrorState(serviceId, systemId);
         LOG.debug("Re-running exchanges firstOnly = " + firstOnly);
 
+        List<UUID> exchangeIdsToRePost = new ArrayList<>();
+
         for (UUID exchangeId: errorState.getExchangeIdsInError()) {
 
             //update the transform audit, so EDS UI knows we've re-queued this exchange
@@ -593,13 +595,15 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
 
             //then re-submit the exchange to Rabbit MQ for the queue reader to pick up
             LOG.debug("Re-posting " + exchangeId);
-            QueueHelper.postToExchange(exchangeId, "EdsInbound", null, false);
+            exchangeIdsToRePost.add(exchangeId);
 
             //if we only want to re-queue the first exchange, then break out
             if (firstOnly) {
                 break;
             }
         }
+
+        QueueHelper.postToExchange(exchangeIdsToRePost, "EdsInbound", null, true);
 
     }
 
@@ -682,7 +686,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
 
         List<JsonProtocol> ret = new ArrayList<>();
 
-        List<LibraryItem> libraryItems = LibraryRepositoryHelper.getProtocolsByServiceId(serviceIdStr);
+        List<LibraryItem> libraryItems = LibraryRepositoryHelper.getProtocolsByServiceId(serviceIdStr, null);
         for (LibraryItem libraryItem: libraryItems) {
             Protocol protocol = libraryItem.getProtocol();
 

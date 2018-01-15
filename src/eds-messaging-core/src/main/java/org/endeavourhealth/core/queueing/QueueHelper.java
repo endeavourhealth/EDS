@@ -57,7 +57,9 @@ public class QueueHelper {
             UUID firstExchangeId = exchangeIds.get(0);
             Exchange firstExchange = AuditWriter.readExchange(firstExchangeId);
             String serviceUuid = firstExchange.getHeader(HeaderKeys.SenderServiceUuid);
-            newProtocolIdsJson = DetermineRelevantProtocolIds.getProtocolIdsForPublisherService(serviceUuid);
+            String systemUuid = firstExchange.getHeader(HeaderKeys.SenderSystemUuid);
+
+            newProtocolIdsJson = DetermineRelevantProtocolIds.getProtocolIdsForPublisherService(serviceUuid, systemUuid);
         }
 
         for (int i=0; i<exchangeIds.size(); i++) {

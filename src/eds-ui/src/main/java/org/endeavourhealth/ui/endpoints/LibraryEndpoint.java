@@ -609,7 +609,7 @@ public final class LibraryEndpoint extends AbstractItemEndpoint {
         userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
             "Protocols");
 
-        List<LibraryItem> ret = LibraryRepositoryHelper.getProtocolsByServiceId(serviceId);
+        List<LibraryItem> ret = LibraryRepositoryHelper.getProtocolsByServiceId(serviceId, null);
 
         clearLogbackMarkers();
 

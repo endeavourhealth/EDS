@@ -20,6 +20,7 @@ CREATE TABLE resource_history (
 ROW_FORMAT=COMPRESSED
 KEY_BLOCK_SIZE=8;
 
+-- index used to get data out for subscriber feeds
 CREATE INDEX ix_resource_history_batch_id
 ON resource_history (exchange_batch_id, resource_type, resource_id, created_at);
 
@@ -38,16 +39,17 @@ CREATE TABLE resource_current (
 ROW_FORMAT=COMPRESSED
 KEY_BLOCK_SIZE=8;
 
-
+-- index used to retrieve specific resources for a service
 CREATE INDEX ix_resource_current_service_type_id
 ON resource_current (service_id, resource_type, resource_id);
 
-CREATE INDEX ix_resource_current_service_type_id_system
-ON resource_current (service_id, resource_type, resource_id, system_id);
+/*CREATE INDEX ix_resource_current_service_type_id_system
+ON resource_current (service_id, resource_type, resource_id, system_id);*/
 
 /*CREATE INDEX ix_resource_current_type_id
 ON resource_current (resource_type, resource_id);*/
 
+-- index used to retrieve current version of a resource and get its checksum
 CREATE INDEX ix_resource_current_id_type_checksum
 ON resource_current (resource_id, resource_type, resource_checksum);
 
