@@ -2,9 +2,8 @@ import {Component} from "@angular/core";
 import {NgbModal} from "@ng-bootstrap/ng-bootstrap";
 import {StateService} from "ui-router-ng2";
 import {Organisation} from "./models/Organisation";
-import {LoggerService} from "../common/logger.service";
+import {linq, LoggerService, MessageBoxDialog} from "eds-common-js";
 import {OrganisationService} from "./organisation.service";
-import {MessageBoxDialog} from "../dialogs/messageBox/messageBox.dialog";
 
 @Component({
 	template: require('./organisationList.html')
@@ -23,7 +22,7 @@ export class OrganisationListComponent {
 		var vm = this;
 		vm.organisationService.getOrganisations()
 			.subscribe(
-				result => vm.organisations = result,
+				result => vm.organisations = linq(result).OrderBy(o => o.name).ToArray(),
 				error => vm.log.error('Failed to load organisations', error, 'Load organisations')
 			);
 		console.log(vm.organisations);

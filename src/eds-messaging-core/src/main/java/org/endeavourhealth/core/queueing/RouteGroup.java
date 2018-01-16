@@ -8,14 +8,16 @@ public class RouteGroup {
 	private String routeKey;
 	private String name;
 	private String description;
+	private String exchangeName;
 
 	public RouteGroup() {}
 
-	public RouteGroup(String name, String description, String routeKey, String regex) {
+	public RouteGroup(String name, String description, String routeKey, String regex, String exchangeName) {
 		this.name = name;
 		this.description = description;
 		this.regex = regex;
 		this.routeKey = routeKey;
+		this.exchangeName = exchangeName;
 	}
 
 	public String getRegex() {
@@ -56,5 +58,13 @@ public class RouteGroup {
 
 	public void setUuid(UUID uuid) {
 		this.uuid = uuid;
+	}
+
+	public String getExchangeName() {
+		return exchangeName;
+	}
+
+	public void setExchangeName(String exchangeName) {
+		this.exchangeName = exchangeName;
 	}
 }

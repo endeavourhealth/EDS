@@ -1,0 +1,68 @@
+<div class="module">
+	<div class="container-fluid">
+		<div class="module-heading">
+			Data Service Protocols
+		</div>
+		<div class="module-body">
+			<form>
+				<div class="form-group">
+					<div class="row">
+
+						<div class="col-md-3">
+							<library-folder [showMenu]="true" [actionMenuItems]="actionMenuItems" (selectionChange)="folderChanged($event)" (itemActioned)="actionItem($event)"></library-folder>
+						</div>
+
+						<div class="col-md-9">
+							<div class="table scroll-box-450">
+								<table class="table table-striped table-condensed">
+									<thead>
+										<tr>
+											<th class="col-md-6" (click)="sortField='name'; sortReverse=!sortReverse">Title
+												<span *ngIf="sortField == 'name'"
+															class="fa fa-sm"
+															[ngClass]="{'fa-chevron-down':!sortReverse, 'fa-chevron-up':sortReverse}"></span>
+											</th>
+											<th class="col-md-3" (click)="sortField='lastModified'; sortReverse=!sortReverse">Date modified
+												<span *ngIf="sortField == 'lastModified'"
+															class="fa fa-sm"
+															[ngClass]="{'fa-chevron-down':!sortReverse, 'fa-chevron-up':sortReverse}"></span>
+											</th>
+											<th class="col-md-2" (click)="sortField='type'; sortReverse=!sortReverse">Type
+												<span *ngIf="sortField == 'type'"
+															class="fa fa-sm"
+															[ngClass]="{'fa-chevron-down':!sortReverse, 'fa-chevron-up':sortReverse}"></span>
+											</th>
+											<th class="col-md-1"></th>
+										</tr>
+									</thead>
+									<tbody>
+										<tr class="hover-box show-child-on-hover" *ngFor="let item of getSummaryList()">
+											<td>
+												<a style="cursor: pointer" (click)="actionItem({uuid:item.uuid, type:item.type, action:'edit'})">{{item.name}}</a>
+												<span class="fa fa-info-circle fa-right-pad text-muted" ngbTooltip="{{item.description}}" *ngIf="item.description"></span>
+											</td>
+											<td>{{item.lastModified | date:'dd-MMM-yyyy HH:mm:ss'}}</td>
+											<td><span class="fa fa-right-pad {{item.type | itemTypeIdToIcon}} text-muted"></span>{{item.type | itemTypeIdToString}}</td>
+											<td>
+												<div ngbDropdown class="child-to-show">
+													<button type="button" class="btn btn-xs btn-default" ngbDropdownToggle id="itemMenu">...</button>
+													<ul class="dropdown-menu" aria-labelledby="itemMenu">
+														<li class="disabled"><a href="#">Rename</a></li>
+														<li><a (click)="deleteItem(item)">Delete</a></li>
+														<li role="separator" class="divider"></li>
+														<li><a (click)="cutItem(item)">Cut</a></li>
+														<li><a (click)="copyItem(item)">Copy</a></li>
+													</ul>
+												</div>
+											</td>
+										</tr>
+									</tbody>
+								</table>
+							</div>
+						</div>
+					</div>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>

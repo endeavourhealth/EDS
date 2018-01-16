@@ -1,9 +1,9 @@
 package org.endeavourhealth.core.messaging.pipeline.components;
 
 import org.endeavourhealth.core.configuration.ValidateMessageTypeConfig;
-import org.endeavourhealth.core.data.admin.LibraryRepositoryHelper;
-import org.endeavourhealth.core.messaging.exchange.Exchange;
-import org.endeavourhealth.core.messaging.exchange.HeaderKeys;
+import org.endeavourhealth.core.database.dal.admin.LibraryRepositoryHelper;
+import org.endeavourhealth.core.database.dal.audit.models.Exchange;
+import org.endeavourhealth.core.database.dal.audit.models.HeaderKeys;
 import org.endeavourhealth.core.messaging.pipeline.PipelineComponent;
 import org.endeavourhealth.core.messaging.pipeline.PipelineException;
 import org.endeavourhealth.core.xml.QueryDocument.*;
@@ -31,18 +31,15 @@ public class ValidateMessageType extends PipelineComponent {
 		String formatVersion = exchange.getHeader(HeaderKeys.SystemVersion);
 
 		// Get the (publisher) protocols
-		String[] protocolIds = exchange.getHeaderAsStringArray(HeaderKeys.ProtocolIds);
-		/*String protocolIdJson = exchange.getHeader(HeaderKeys.ProtocolIds);
 		String[] protocolIds = null;
 		try {
-			protocolIds = ObjectMapperPool.getInstance().readValue(protocolIdJson, String[].class);
-		} catch (Exception e) {
-			throw new PipelineException("Failed to read protocol IDs from json " + protocolIdJson, e);
-		}*/
+			protocolIds = exchange.getHeaderAsStringArray(HeaderKeys.ProtocolIds);
+		} catch (Exception ex) {
+			throw new PipelineException("Failed to read protocol IDs from exchange " + exchange.getId());
+		}
 
 		// Ensure at least one of the publisher protocols is for this system/format
 		boolean senderIsValid = false;
-
 
 		for (String protocolId: protocolIds) {
 

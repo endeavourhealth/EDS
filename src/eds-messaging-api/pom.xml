@@ -26,9 +26,27 @@
         </dependency>
 
         <dependency>
-            <groupId>com.github.endeavourhealth.Common</groupId>
+            <groupId>org.endeavourhealth.common</groupId>
             <artifactId>api</artifactId>
-            <version>${eds-common.version}</version>
+            <version>${eds-api.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.endeavourhealth.common</groupId>
+            <artifactId>security</artifactId>
+            <version>${eds-security.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.endeavourhealth.configmanager</groupId>
+            <artifactId>configmanager</artifactId>
+            <version>${eds-config.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.endeavourhealth.dataSharingManager</groupId>
+            <artifactId>Models</artifactId>
+            <version>${eds-datasharing.version}</version>
         </dependency>
 
         <dependency>
@@ -74,6 +92,22 @@
             <version>${jersey.version}</version>
         </dependency>
         <!-- End Jersey -->
+
+        <dependency>
+            <groupId>commons-fileupload</groupId>
+            <artifactId>commons-fileupload</artifactId>
+            <version>1.3.3</version>
+        </dependency>
+        <dependency>
+            <groupId>com.amazonaws</groupId>
+            <artifactId>aws-java-sdk</artifactId>
+            <version>1.11.163</version>
+        </dependency>
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <version>${postgresql.version}</version>
+        </dependency>
 
     </dependencies>
 

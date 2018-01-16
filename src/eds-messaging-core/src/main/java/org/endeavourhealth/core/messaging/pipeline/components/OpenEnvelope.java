@@ -1,22 +1,21 @@
 package org.endeavourhealth.core.messaging.pipeline.components;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import org.endeavourhealth.core.audit.AuditWriter;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.common.cache.ParserPool;
+import org.endeavourhealth.core.audit.AuditWriter;
 import org.endeavourhealth.core.configuration.OpenEnvelopeConfig;
-import org.endeavourhealth.core.data.admin.LibraryRepository;
-import org.endeavourhealth.core.data.admin.OrganisationRepository;
-import org.endeavourhealth.core.data.admin.ServiceRepository;
-import org.endeavourhealth.core.data.admin.models.ActiveItem;
-import org.endeavourhealth.core.data.admin.models.Item;
-import org.endeavourhealth.core.data.admin.models.Organisation;
-import org.endeavourhealth.core.data.admin.models.Service;
-import org.endeavourhealth.core.data.audit.AuditRepository;
-import org.endeavourhealth.core.data.audit.models.ExchangeByService;
+import org.endeavourhealth.core.database.dal.DalProvider;
+import org.endeavourhealth.core.database.dal.admin.LibraryDalI;
+import org.endeavourhealth.core.database.dal.admin.OrganisationDalI;
+import org.endeavourhealth.core.database.dal.admin.ServiceDalI;
+import org.endeavourhealth.core.database.dal.admin.models.ActiveItem;
+import org.endeavourhealth.core.database.dal.admin.models.Item;
+import org.endeavourhealth.core.database.dal.admin.models.Organisation;
+import org.endeavourhealth.core.database.dal.admin.models.Service;
+import org.endeavourhealth.core.database.dal.audit.models.Exchange;
+import org.endeavourhealth.core.database.dal.audit.models.HeaderKeys;
 import org.endeavourhealth.core.fhirStorage.JsonServiceInterfaceEndpoint;
-import org.endeavourhealth.core.messaging.exchange.Exchange;
-import org.endeavourhealth.core.messaging.exchange.HeaderKeys;
 import org.endeavourhealth.core.messaging.pipeline.PipelineComponent;
 import org.endeavourhealth.core.messaging.pipeline.PipelineException;
 import org.endeavourhealth.core.xml.QueryDocument.LibraryItem;
@@ -31,7 +30,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
@@ -105,8 +103,14 @@ public class OpenEnvelope extends PipelineComponent {
 		String organisationOds = exchange.getHeader(HeaderKeys.SenderLocalIdentifier);
 
 		//get the organisation
-		OrganisationRepository organisationRepository = new OrganisationRepository();
-		Organisation organisation = organisationRepository.getByNationalId(organisationOds);
+		OrganisationDalI organisationRepository = DalProvider.factoryOrganisationDal();
+		Organisation organisation = null;
+		try {
+			organisation = organisationRepository.getByNationalId(organisationOds);
+		} catch (Exception ex) {
+			throw new PipelineException("Failed to retrieve organisation for " + organisationOds, ex);
+		}
+
 		if (organisation == null) {
 			throw new PipelineException("Organisation for national ID " + organisationOds + " could not be found");
 		}
@@ -114,13 +118,17 @@ public class OpenEnvelope extends PipelineComponent {
 		//get the service
 		Service service = null;
 		//TODO - fix assumption that orgs can only have one service
-		ServiceRepository serviceRepository = new ServiceRepository();
+		ServiceDalI serviceRepository = DalProvider.factoryServiceDal();
 		for (UUID serviceId: organisation.getServices().keySet()) {
-			service = serviceRepository.getById(serviceId);
+			try {
+				service = serviceRepository.getById(serviceId);
+			} catch (Exception ex) {
+				throw new PipelineException("Failed to retrieve service " + serviceId);
+			}
 		}
 
 		if (service == null) {
-			throw new PipelineException("No service found for organisation " + organisation.getId() + " opening exchange " + exchange.getExchangeId());
+			throw new PipelineException("No service found for organisation " + organisation.getId() + " opening exchange " + exchange.getId());
 		}
 
 		String software = exchange.getHeader(HeaderKeys.SourceSystem);
@@ -128,61 +136,25 @@ public class OpenEnvelope extends PipelineComponent {
 		UUID systemUuid = findSystemId(service, software, version);
 
 		if (systemUuid == null) {
-			throw new PipelineException("No service found for service " + service.getId() + " software " + software + " version " + version + " opening exchange " + exchange.getExchangeId());
+			throw new PipelineException("No system found for service " + service.getId() + " software " + software + " version " + version + " opening exchange " + exchange.getId());
 		}
-
-		//record the service-exchange linkage, so we can retrieve exchanges by service
-		ExchangeByService exchangeByService = new ExchangeByService();
-		exchangeByService.setExchangeId(exchange.getExchangeId());
-		exchangeByService.setServiceId(service.getId());
-		exchangeByService.setTimestamp(new Date());
-		new AuditRepository().save(exchangeByService);
 
 		exchange.setHeader(HeaderKeys.SenderServiceUuid, service.getId().toString());
 		exchange.setHeader(HeaderKeys.SenderOrganisationUuid, organisation.getId().toString());
 		exchange.setHeader(HeaderKeys.SenderSystemUuid, systemUuid.toString());
 
+		//set this on the exchange to forice it to write to the exchange_by_service table in Cassandra
+		exchange.setServiceId(service.getId());
+
 		//commit what we've just added to the DB
-		AuditWriter.writeExchange(exchange);
+		//removing, since we write the exchange just after this function call, so no need to do it twice
+		/*try {
+			AuditWriter.writeExchange(exchange);
+		} catch (Exception ex) {
+			throw new PipelineException("Failed to write exchange to database", ex);
+		}*/
 	}
-	/*private void getSenderUuid(Exchange exchange) throws PipelineException {
 
-		// Get service id
-		String senderId = exchange.getHeader(HeaderKeys.SenderLocalIdentifier);
-
-		//the sender ID is composed of the service ID and the organisation ODS code
-		String[] tokens = senderId.split("//");
-		String serviceLocalIdentifier = tokens[0];
-		String organisationOds = tokens[1];
-
-		// Get service id from sender id
-		ServiceRepository serviceRepository = new ServiceRepository();
-		Service service = serviceRepository.getByLocalIdentifier(serviceLocalIdentifier);
-
-		if (service == null) {
-			throw new PipelineException("No service found for local identifier " + senderId);
-		}
-
-		//the service retrieved by local identifier only contains the ID, so we need to re-retrieve using
-		//that ID to get the name, orgs etc.
-		service = serviceRepository.getById(service.getId());
-
-		//validate that the organisation is a member of the service
-		Set<UUID> orgIds = service.getOrganisations().keySet();
-		Set<Organisation> orgs = new OrganisationRepository().getByIds(orgIds);
-		Organisation organisation = orgs
-				.stream()
-				.filter(t -> t.getNationalId().equalsIgnoreCase(organisationOds))
-				.collect(StreamExtension.firstOrNullCollector());
-
-		if (organisation == null) {
-			throw new PipelineException("Organisation " + organisationOds + " is not a member of service " + service.getName());
-		}
-
-		exchange.setHeader(HeaderKeys.SenderServiceUuid, service.getId().toString());
-		exchange.setHeader(HeaderKeys.SenderOrganisationUuid, organisation.getId().toString());
-
-	}*/
 
 	private UUID findSystemId(Service service, String software, String messageVersion) throws PipelineException {
 
@@ -195,7 +167,7 @@ public class OpenEnvelope extends PipelineComponent {
 				UUID endpointSystemId = endpoint.getSystemUuid();
 				String endpointInterfaceId = endpoint.getTechnicalInterfaceUuid().toString();
 
-				LibraryRepository libraryRepository = new LibraryRepository();
+				LibraryDalI libraryRepository = DalProvider.factoryLibraryDal();
 				ActiveItem activeItem = libraryRepository.getActiveItemByItemId(endpointSystemId);
 				Item item = libraryRepository.getItemByKey(endpointSystemId, activeItem.getAuditId());
 				LibraryItem libraryItem = QueryDocumentSerializer.readLibraryItemFromXml(item.getXmlContent());

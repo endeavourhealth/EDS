@@ -6,8 +6,9 @@
     <xs:element name="QueueReaderConfiguration">
         <xs:complexType>
             <xs:sequence>
-                <xs:element name="Queue" type="nonEmptyString" minOccurs="0" maxOccurs="1"/>
-                <xs:element name="RejectionSlackAlertUrl" type="nonEmptyString" minOccurs="0"/>
+                <xs:element name="Queue" type="nonEmptyString" minOccurs="1" maxOccurs="1"/>
+                <xs:element name="AttemptsPermitted" type="xs:int" minOccurs="0" maxOccurs="1"/>
+                <xs:element name="KillFileLocation" type="nonEmptyString" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="Pipeline" type="Pipeline" minOccurs="1" maxOccurs="1"/>
             </xs:sequence>
         </xs:complexType>

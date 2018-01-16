@@ -1,5 +1,5 @@
 import {Component, Input} from "@angular/core";
-import {LoggerService} from "../common/logger.service";
+import {LoggerService} from "eds-common-js";
 import {ExchangeAuditService} from "./exchangeAudit.service";
 import {NgbModal, NgbActiveModal, NgbModalOptions} from "@ng-bootstrap/ng-bootstrap";
 import {TransformErrorDetail} from "./TransformErrorDetail";

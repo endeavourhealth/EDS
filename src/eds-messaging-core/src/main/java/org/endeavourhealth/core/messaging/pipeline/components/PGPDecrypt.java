@@ -1,7 +1,7 @@
 package org.endeavourhealth.core.messaging.pipeline.components;
 
 import org.endeavourhealth.core.configuration.PGPDecryptConfig;
-import org.endeavourhealth.core.messaging.exchange.Exchange;
+import org.endeavourhealth.core.database.dal.audit.models.Exchange;
 import org.endeavourhealth.core.messaging.pipeline.PipelineComponent;
 import org.endeavourhealth.core.messaging.pipeline.PipelineException;
 import org.slf4j.Logger;

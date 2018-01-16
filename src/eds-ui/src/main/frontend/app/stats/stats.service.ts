@@ -1,4 +1,4 @@
-import {BaseHttp2Service} from "../core/baseHttp2.service";
+import {BaseHttp2Service} from "eds-common-js";
 import {Service} from "../services/models/Service";
 import {StorageStatistics} from "./StorageStatistics";
 import {Injectable} from "@angular/core";

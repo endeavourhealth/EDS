@@ -1,19 +1,16 @@
-import {LibraryItem} from "../library/models/LibraryItem";
-import {LibraryService} from "../library/library.service";
-import {LoggerService} from "../common/logger.service";
-import {AdminService} from "../administration/admin.service";
 import {Component} from "@angular/core";
 import {Transition, StateService} from "ui-router-ng2";
 import {NgbModal} from "@ng-bootstrap/ng-bootstrap";
 import {CountReport} from "./models/CountReport";
-import {MessageBoxDialog} from "../dialogs/messageBox/messageBox.dialog";
 import {CountReportService} from "./countReport.service";
+import {AdminService, LibraryService, LoggerService, MessageBoxDialog} from "eds-common-js";
+import {EdsLibraryItem} from "../edsLibrary/models/EdsLibraryItem";
 
 @Component({
 	template : require('./countReportEditor.html')
 })
 export class CountReportEditComponent {
-	libraryItem : LibraryItem;
+	libraryItem : EdsLibraryItem;
 	termCache : any;
 
 	constructor(
@@ -66,13 +63,13 @@ export class CountReportEditComponent {
 				count : 0,
 				status : 'Not Run'
 			} as CountReport
-		} as LibraryItem;
+		} as EdsLibraryItem;
 	}
 
 	load(uuid : string) {
 		var vm = this;
 		this.create(null);
-		vm.libraryService.getLibraryItem(uuid)
+		vm.libraryService.getLibraryItem<EdsLibraryItem>(uuid)
 			.subscribe(
 				(libraryItem) => vm.libraryItem = libraryItem,
 				(data) => vm.logger.error('Error loading', data, 'Error')

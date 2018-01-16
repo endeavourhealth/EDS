@@ -2,7 +2,7 @@ package org.endeavourhealth.core.messaging.pipeline.components;
 
 import org.endeavourhealth.core.audit.AuditWriter;
 import org.endeavourhealth.core.configuration.PostMessageToLogConfig;
-import org.endeavourhealth.core.messaging.exchange.Exchange;
+import org.endeavourhealth.core.database.dal.audit.models.Exchange;
 import org.endeavourhealth.core.messaging.pipeline.PipelineComponent;
 import org.endeavourhealth.core.messaging.pipeline.PipelineException;
 import org.slf4j.Logger;
@@ -25,7 +25,7 @@ public class PostMessageToLog extends PipelineComponent {
 			AuditWriter.writeExchangeEvent(exchange, eventType);
 
 		} catch (Exception e) {
-			throw new PipelineException("Failed to write exchange " + exchange.getExchangeId() + " " + eventType + " to audit DB", e);
+			throw new PipelineException("Failed to write exchange " + exchange.getId() + " " + eventType + " to audit DB", e);
 		}
 	}
 

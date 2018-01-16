@@ -13,7 +13,8 @@
 
     <properties>
 
-        <eds-common.version>1.32</eds-common.version>
+        <eds-core.version>1.0-SNAPSHOT</eds-core.version>
+        <eds-security.version>1.0-SNAPSHOT</eds-security.version>
 
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <shrinkwrap-resolver.version>2.2.2</shrinkwrap-resolver.version>
@@ -24,6 +25,15 @@
         <version.org.jboss.arquillian.graphene>2.1.0.Final</version.org.jboss.arquillian.graphene>
         <keycloak.version>2.0.0.Final</keycloak.version>
     </properties>
+
+    <repositories>
+        <repository>
+            <snapshots />
+            <id>snapshots</id>
+            <name>libs-snapshot</name>
+            <url>http://maven.endeavourhealth.net:8081/artifactory/libs-snapshot</url>
+        </repository>
+    </repositories>
 
     <build>
         <plugins>
@@ -59,20 +69,19 @@
         </profile>
     </profiles>
 
-    <repositories>
-        <repository>
-            <id>jitpack.io</id>
-            <url>https://jitpack.io</url>
-        </repository>
-    </repositories>
-
     <dependencies>
 
         <!-- EDS -->
         <dependency>
-            <groupId>com.github.endeavourhealth.Common</groupId>
-            <artifactId>eds-core</artifactId>
-            <version>${eds-common.version}</version>
+            <groupId>org.endeavourhealth.common</groupId>
+            <artifactId>core</artifactId>
+            <version>${eds-core.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.endeavourhealth.common</groupId>
+            <artifactId>security</artifactId>
+            <version>${eds-security.version}</version>
         </dependency>
 
         <dependency>

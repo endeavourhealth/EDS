@@ -15,14 +15,16 @@ import java.util.concurrent.TimeoutException;
 public class RabbitHandler {
 	private static final Logger LOG = LoggerFactory.getLogger(RabbitHandler.class);
 
+	private String configId = null;
 	private QueueReaderConfiguration configuration;
 	private Connection connection;
 	private Channel channel;
 	private RabbitConsumer consumer;
 
-	public RabbitHandler(QueueReaderConfiguration configuration) throws Exception {
+	public RabbitHandler(QueueReaderConfiguration configuration, String configId) throws Exception {
 		LOG.info("Connecting to Rabbit queue {} at {}", configuration.getQueue(), RabbitConfig.getInstance().getNodes());
 
+		this.configId = configId;
 		this.configuration = configuration;
 
 		// Connect to rabbit cluster
@@ -33,7 +35,7 @@ public class RabbitHandler {
 		channel.basicQos(1);
 
 		// Create consumer
-		consumer = new RabbitConsumer(channel, configuration);
+		consumer = new RabbitConsumer(channel, configuration, configId, this);
 	}
 
 	private Connection createRabbitConnection(QueueReaderConfiguration configuration) throws IOException, TimeoutException {
@@ -62,7 +64,10 @@ public class RabbitHandler {
 				false, 	// Exclusive
 				false, 	// Auto delete
 				null);
-		channel.basicConsume(configuration.getQueue(), false, consumer);
+
+		//pass true for the exclusive parameter, so we can only have one consumer per queue
+		//channel.basicConsume(configuration.getQueue(), false, consumer);
+		channel.basicConsume(configuration.getQueue(), false, configId, false, true, null, consumer);
 	}
 
 	public void stop() throws IOException, TimeoutException {

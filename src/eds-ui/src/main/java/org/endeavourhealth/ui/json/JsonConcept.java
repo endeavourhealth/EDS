@@ -1,12 +1,12 @@
 package org.endeavourhealth.ui.json;
 
-import org.endeavourhealth.ui.database.models.ConceptEntity;
+import org.endeavourhealth.core.database.dal.reference.models.Concept;
 
 public final class JsonConcept {
     private String id;
     private String preferredTerm;
 
-    public JsonConcept(ConceptEntity conceptEntity) {
+    public JsonConcept(Concept conceptEntity) {
         this.id = conceptEntity.getCode();
         this.preferredTerm = conceptEntity.getDisplay();
     }

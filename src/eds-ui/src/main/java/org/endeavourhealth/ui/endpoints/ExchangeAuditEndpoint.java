@@ -1,43 +1,30 @@
 
 package org.endeavourhealth.ui.endpoints;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
+import com.codahale.metrics.annotation.Timed;
 import com.google.common.base.Strings;
-import org.endeavourhealth.common.cache.ObjectMapperPool;
-import org.endeavourhealth.common.config.ConfigManager;
+import io.astefanutti.metrics.aspectj.Metrics;
 import org.endeavourhealth.common.security.SecurityUtils;
 import org.endeavourhealth.common.security.annotations.RequiresAdmin;
-import org.endeavourhealth.common.utility.StreamExtension;
-import org.endeavourhealth.core.audit.AuditWriter;
-import org.endeavourhealth.core.configuration.*;
-import org.endeavourhealth.core.data.admin.LibraryRepository;
-import org.endeavourhealth.core.data.admin.LibraryRepositoryHelper;
-import org.endeavourhealth.core.data.admin.ServiceRepository;
-import org.endeavourhealth.core.data.admin.models.ActiveItem;
-import org.endeavourhealth.core.data.admin.models.Item;
-import org.endeavourhealth.core.data.admin.models.Service;
-import org.endeavourhealth.core.data.audit.AuditRepository;
-import org.endeavourhealth.core.data.audit.UserAuditRepository;
-import org.endeavourhealth.core.data.audit.models.*;
-import org.endeavourhealth.core.data.ehr.ExchangeBatchRepository;
-import org.endeavourhealth.core.data.ehr.models.ExchangeBatch;
-import org.endeavourhealth.core.messaging.exchange.HeaderKeys;
-import org.endeavourhealth.core.messaging.pipeline.TransformBatch;
-import org.endeavourhealth.core.messaging.pipeline.components.DetermineRelevantProtocolIds;
-import org.endeavourhealth.core.messaging.pipeline.components.PostMessageToExchange;
-import org.endeavourhealth.core.messaging.pipeline.components.RunDataDistributionProtocols;
-import org.endeavourhealth.core.xml.QueryDocument.LibraryItem;
-import org.endeavourhealth.core.xml.QueryDocument.ServiceContract;
-import org.endeavourhealth.core.xml.QueryDocument.ServiceContractType;
+import org.endeavourhealth.core.database.dal.DalProvider;
+import org.endeavourhealth.core.database.dal.admin.LibraryDalI;
+import org.endeavourhealth.core.database.dal.admin.LibraryRepositoryHelper;
+import org.endeavourhealth.core.database.dal.admin.ServiceDalI;
+import org.endeavourhealth.core.database.dal.admin.models.ActiveItem;
+import org.endeavourhealth.core.database.dal.admin.models.Item;
+import org.endeavourhealth.core.database.dal.admin.models.Service;
+import org.endeavourhealth.core.database.dal.audit.ExchangeDalI;
+import org.endeavourhealth.core.database.dal.audit.UserAuditDalI;
+import org.endeavourhealth.core.database.dal.audit.models.*;
+import org.endeavourhealth.core.queueing.QueueHelper;
+import org.endeavourhealth.core.xml.QueryDocument.*;
 import org.endeavourhealth.core.xml.TransformErrorSerializer;
 import org.endeavourhealth.core.xml.transformError.Arg;
 import org.endeavourhealth.core.xml.transformError.Error;
 import org.endeavourhealth.core.xml.transformError.ExceptionLine;
 import org.endeavourhealth.core.xml.transformError.TransformError;
 import org.endeavourhealth.coreui.endpoints.AbstractEndpoint;
-import org.endeavourhealth.queuereader.ConfigDeserialiser;
 import org.endeavourhealth.ui.json.*;
-import org.hl7.fhir.instance.model.ResourceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,21 +35,22 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Path("/exchangeAudit")
+@Metrics(registry = "EdsRegistry")
 public class ExchangeAuditEndpoint extends AbstractEndpoint {
-    private static final Logger LOG = LoggerFactory.getLogger(ExchangeAuditEndpoint .class);
+    private static final Logger LOG = LoggerFactory.getLogger(ExchangeAuditEndpoint.class);
 
-    private static final UserAuditRepository userAudit = new UserAuditRepository(AuditModule.EdsUiModule.ExchangeAudit);
-    private static final AuditRepository auditRepository = new AuditRepository();
-    private static final ServiceRepository serviceRepository = new ServiceRepository();
-    private static final LibraryRepository libraryRepository = new LibraryRepository();
+    private static final UserAuditDalI userAudit = DalProvider.factoryUserAuditDal(AuditModule.EdsUiModule.ExchangeAudit);
+    private static final ExchangeDalI auditRepository = DalProvider.factoryExchangeDal();
+    private static final ServiceDalI serviceRepository = DalProvider.factoryServiceDal();
+    private static final LibraryDalI libraryRepository = DalProvider.factoryLibraryDal();
 
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.ExchangeAuditEndpoint.GetExchangeList")
     @Path("/getExchangeList")
     public Response getExchangeList(@Context SecurityContext sc, @QueryParam("serviceId") String serviceIdStr,
                                                                  @QueryParam("maxRows") int maxRows,
@@ -99,17 +87,20 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
             }
         }
 
-        List<ExchangeByService> exchangeByServices = auditRepository.getExchangesByService(serviceUuid, maxRows, dateFrom, dateTo);
-        for (ExchangeByService exchangeByService: exchangeByServices) {
+        List<Exchange> exchangeByServices = auditRepository.getExchangesByService(serviceUuid, maxRows, dateFrom, dateTo);
 
-            UUID exchangeId = exchangeByService.getExchangeId();
+        Set<UUID> exchangeIdsInError = findAllExchangeIdsInErrorForService(serviceUuid);
+
+        for (Exchange exchangeByService: exchangeByServices) {
+
+            UUID exchangeId = exchangeByService.getId();
             Exchange exchange = auditRepository.getExchange(exchangeId);
             Date timestamp = exchange.getTimestamp();
-            String headerJson = exchange.getHeaders();
-            HashMap<String, String> headers = ObjectMapperPool.getInstance().readValue(headerJson, HashMap.class);
+            Map<String, String> headers = exchange.getHeaders();
             List<String> bodyLines = getExchangeBodyLines(exchange);
+            boolean inError = exchangeIdsInError.contains(exchangeId);
 
-            JsonExchange jsonExchange = new JsonExchange(exchangeId, serviceUuid, timestamp, headers, bodyLines);
+            JsonExchange jsonExchange = new JsonExchange(exchangeId, serviceUuid, timestamp, headers, bodyLines, inError);
             ret.add(jsonExchange);
         }
 
@@ -121,9 +112,24 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
                 .build();
     }
 
+    private Set<UUID> findAllExchangeIdsInErrorForService(UUID serviceId) throws Exception {
+
+        Set<UUID> ret = new HashSet<>();
+        List<ExchangeTransformErrorState> errorStates = auditRepository.getErrorStatesForService(serviceId);
+        for (ExchangeTransformErrorState errorState: errorStates) {
+            List<UUID> exchangeIds = errorState.getExchangeIdsInError();
+            for (UUID exchangeId: exchangeIds) {
+                ret.add(exchangeId);
+            }
+        }
+
+        return ret;
+    }
+
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.ExchangeAuditEndpoint.GetExchangeById")
     @Path("/getExchangeById")
     public Response getExchangeById(@Context SecurityContext sc, @QueryParam("serviceId") String serviceIdStr, @QueryParam("exchangeId") String exchangeIdStr) throws Exception {
         super.setLogbackMarkers(sc);
@@ -149,18 +155,29 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
         }
 
         Date timestamp = exchange.getTimestamp();
-        String headerJson = exchange.getHeaders();
-        HashMap<String, String> headers = ObjectMapperPool.getInstance().readValue(headerJson, HashMap.class);
+        Map<String, String> headers = exchange.getHeaders();
         List<String> bodyLines = getExchangeBodyLines(exchange);
 
         //validate the exchange is for our service
         String exchangeServiceIdStr = headers.get(HeaderKeys.SenderServiceUuid);
         if (exchangeServiceIdStr == null
                 || !exchangeServiceIdStr.equals(serviceIdStr)) {
-            throw new BadRequestException("Exchange isn't for this service");
+            String err = "Exchange isn't for this service";
+
+            if (!Strings.isNullOrEmpty(exchangeServiceIdStr)) {
+                Service service = serviceRepository.getById(UUID.fromString(serviceIdStr));
+                if (service != null) {
+                    err += " (" + service.getName() + ")";
+                }
+            }
+
+            throw new BadRequestException(err);
         }
 
-        JsonExchange jsonExchange = new JsonExchange(exchangeUuid, serviceUuid, timestamp, headers, bodyLines);
+        Set<UUID> exchangeIdsInError = findAllExchangeIdsInErrorForService(serviceUuid);
+        boolean inError = exchangeIdsInError.contains(exchangeUuid);
+
+        JsonExchange jsonExchange = new JsonExchange(exchangeUuid, serviceUuid, timestamp, headers, bodyLines, inError);
         ret.add(jsonExchange);
 
         clearLogbackMarkers();
@@ -191,6 +208,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.ExchangeAuditEndpoint.GetExchangeEvents")
     @Path("/getExchangeEvents")
     public Response getExchangeEvents(@Context SecurityContext sc, @QueryParam("exchangeId") String exchangeIdStr) throws Exception {
         super.setLogbackMarkers(sc);
@@ -223,6 +241,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.ExchangeAuditEndpoint.PostToExchange")
     @Path("/postToExchange")
     @RequiresAdmin
     public Response postToExchange(@Context SecurityContext sc, JsonPostToExchangeRequest request) throws Exception {
@@ -232,30 +251,36 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
                 "Exchange ID", request.getExchangeId(),
                 "Service ID", request.getServiceId(),
                 "Exchange Name", request.getExchangeName(),
-                "Post All", request.isPostAllExchanges());
-
-        /*LOG.info("-----posting to exchange");
-        Throwable t = new RuntimeException();
-        t.fillInStackTrace();
-        t.printStackTrace();
-        for (int i=0; i<20; i++) {
-            Thread.sleep(1000 * 60);
-            LOG.info("Sleeping " + i);
-        }*/
+                "Post Mode", request.getPostMode(),
+                "Protocol ID", request.getSpecificProtocolId());
 
         UUID selectedExchangeId = request.getExchangeId();
         UUID serviceId = request.getServiceId();
         String exchangeName = request.getExchangeName();
-        boolean postAllExchanges = request.isPostAllExchanges();
-        if (postAllExchanges) {
+        String postMode = request.getPostMode();
+        UUID specificProtocolId = request.getSpecificProtocolId();
 
-            List<UUID> exchangeIds = auditRepository.getExchangeIdsForService(serviceId);
-            for (UUID exchangeId: exchangeIds) {
-                postToExchange(exchangeId, exchangeName);
+        if (postMode.equalsIgnoreCase("This")) {
+            QueueHelper.postToExchange(selectedExchangeId, exchangeName, specificProtocolId, true);
+
+        } else if (postMode.equalsIgnoreCase("Onwards")) {
+            List<UUID> exchangeIds = new ArrayList<>();
+
+            List<UUID> allExchangeIds = auditRepository.getExchangeIdsForService(serviceId);
+            int index = allExchangeIds.indexOf(selectedExchangeId);
+            for (int i=index; i<allExchangeIds.size(); i++) {
+                UUID exchangeId = allExchangeIds.get(i);
+                exchangeIds.add(exchangeId);
             }
 
+            QueueHelper.postToExchange(exchangeIds, exchangeName, specificProtocolId, true);
+
+        } else if (postMode.equalsIgnoreCase("All")) {
+            List<UUID> exchangeIds = auditRepository.getExchangeIdsForService(serviceId);
+            QueueHelper.postToExchange(exchangeIds, exchangeName, specificProtocolId, true);
+
         } else {
-            postToExchange(selectedExchangeId, exchangeName);
+            throw new IllegalArgumentException("Invalid post mode [" + postMode + "]");
         }
 
         clearLogbackMarkers();
@@ -265,187 +290,8 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
                 .build();
     }
 
-    private void postToExchange(UUID exchangeId, String exchangeName) throws Exception {
-
-        PostMessageToExchangeConfig exchangeConfig = findExchangeConfig(exchangeName);
-        if (exchangeConfig == null) {
-            throw new BadRequestException("Failed to find PostMessageToExchange config details for exchange " + exchangeName);
-        }
-
-        org.endeavourhealth.core.messaging.exchange.Exchange exchange = AuditWriter.readExchange(exchangeId);
-        //org.endeavourhealth.core.messaging.exchange.Exchange exchange = retrieveExchange(exchangeId);
-
-        //to make sure the latest setup applies, re-calculate the protocols that apply to this exchange
-        String serviceUuid = exchange.getHeader(HeaderKeys.SenderServiceUuid);
-        String newProtocolIdsJson = DetermineRelevantProtocolIds.getProtocolIdsForPublisherService(serviceUuid);
-        String oldProtocolIdsJson = exchange.getHeader(HeaderKeys.ProtocolIds);
-        if (!newProtocolIdsJson.equals(oldProtocolIdsJson)) {
-            exchange.setHeader(HeaderKeys.ProtocolIds, newProtocolIdsJson);
-            AuditWriter.writeExchange(exchange);
-        }
-
-        //work out what multicast header we need
-        String multicastHeader = exchangeConfig.getMulticastHeader();
-        if (!Strings.isNullOrEmpty(multicastHeader)) {
-            if (exchange.getHeader(multicastHeader) == null) {
-                populateMulticastHeader(exchange, multicastHeader);
-            }
-        }
-
-        postToExchange(exchangeConfig, exchange);
-
-        //write an event for the exchange, so we can see this happened
-        AuditWriter.writeExchangeEvent(exchange, "Manually pushed into " + exchangeName + " exchange");
-    }
-
-    private void populateMulticastHeader(org.endeavourhealth.core.messaging.exchange.Exchange exchange, String multicastHeader) throws Exception {
-
-        UUID exchangeUuid = exchange.getExchangeId();
-
-        if (multicastHeader.equalsIgnoreCase(HeaderKeys.BatchIdsJson)) {
-
-            ExchangeBatchRepository exchangeBatchRepository = new ExchangeBatchRepository();
-            List<ExchangeBatch> batches = exchangeBatchRepository.retrieveForExchangeId(exchangeUuid);
-
-            List<UUID> batchUuids = batches
-                    .stream()
-                    .map(t -> t.getBatchId())
-                    .collect(Collectors.toList());
-            try {
-                String batchUuidsStr = ObjectMapperPool.getInstance().writeValueAsString(batchUuids.toArray());
-                exchange.setHeader(HeaderKeys.BatchIdsJson, batchUuidsStr);
-
-            } catch (JsonProcessingException e) {
-                LOG.error("Failed to populate batch IDs for exchange " + exchangeUuid, e);
-            }
-
-        } else if (multicastHeader.equalsIgnoreCase(HeaderKeys.TransformBatch)) {
-
-            List<TransformBatch> transformBatches = new ArrayList<>();
-
-            String[] protocolIds = exchange.getHeaderAsStringArray(HeaderKeys.ProtocolIds);
-
-            ExchangeBatchRepository exchangeBatchRepository = new ExchangeBatchRepository();
-            List<ExchangeBatch> batches = exchangeBatchRepository.retrieveForExchangeId(exchangeUuid);
-
-            for (String protocolId: protocolIds) {
-
-                UUID protocolUuid = UUID.fromString(protocolId);
-                LibraryItem libraryItem = LibraryRepositoryHelper.getLibraryItem(protocolUuid);
-                List<ServiceContract> subscribers = libraryItem
-                        .getProtocol()
-                        .getServiceContract()
-                        .stream()
-                        .filter(sc -> sc.getType().equals(ServiceContractType.SUBSCRIBER))
-                        .collect(Collectors.toList());
-
-                //if there's no subscribers on this protocol, just skip it
-                if (subscribers.isEmpty()) {
-                    continue;
-                }
-
-                for (ExchangeBatch batch: batches) {
-
-                    String batchId = batch.getBatchId().toString();
-                    Map<ResourceType, List<UUID>> filteredResources = RunDataDistributionProtocols.filterResources(libraryItem.getProtocol(), batchId);
-                    if (filteredResources.isEmpty()) {
-                        continue;
-                    }
-
-                    //the only bit of data we can populate is the batch ID
-                    TransformBatch transformBatch = new TransformBatch();
-                    transformBatch.setBatchId(batch.getBatchId());
-                    transformBatch.setProtocolId(UUID.fromString(protocolId));
-                    transformBatch.setSubscribers(subscribers);
-                    transformBatch.setResourceIds(filteredResources);
-
-                    transformBatches.add(transformBatch);
-                }
-            }
-
-            try {
-                String transformBatchesJson = ObjectMapperPool.getInstance().writeValueAsString(transformBatches);
-                exchange.setHeader(HeaderKeys.TransformBatch, transformBatchesJson);
-
-            } catch (JsonProcessingException e) {
-                LOG.error("Failed to populate batch IDs for exchange " + exchangeUuid, e);
-            }
-
-        } else if (multicastHeader.equalsIgnoreCase(HeaderKeys.SubscriberBatch)) {
-
-            throw new BadRequestException("Mutlicasting using subscriber batch not supported");
-
-        } else {
-            throw new BadRequestException("Unsupported multicast header: " + multicastHeader);
-        }
-
-    }
 
 
-
-    private PostMessageToExchangeConfig findExchangeConfig(String exchangeName) throws Exception {
-
-        //go through all the known app configs to find config for posting to the Rabbit Exchange we're interested in
-        PostMessageToExchangeConfig config = findExchangeConfig("messaging-api", "api-configuration", exchangeName);
-        if (config != null) {
-            return config;
-        }
-
-        config = findExchangeConfig("queuereader", "inbound", exchangeName);
-        if (config != null) {
-            return config;
-        }
-
-        config = findExchangeConfig("queuereader", "protocol", exchangeName);
-        if (config != null) {
-            return config;
-        }
-
-        config = findExchangeConfig("queuereader", "response", exchangeName);
-        if (config != null) {
-            return config;
-        }
-
-        config = findExchangeConfig("queuereader", "subscriber", exchangeName);
-        if (config != null) {
-            return config;
-        }
-
-        config = findExchangeConfig("queuereader", "transform", exchangeName);
-        if (config != null) {
-            return config;
-        }
-
-        return null;
-    }
-
-    private PostMessageToExchangeConfig findExchangeConfig(String appId, String configId, String exchangeName) throws Exception {
-
-        //we access the messaging API config directly, to find out how it posts new incoming exchanges to rabbit
-        String configXml = ConfigManager.getConfiguration(configId, appId);
-
-        Pipeline pipeline = null;
-
-        //the config XML may be one of two serialised classes, so we use a try/catch to safely try both if necessary
-        try {
-            ApiConfiguration config = ConfigWrapper.deserialise(configXml);
-            ApiConfiguration.PostMessageAsync postConfig = config.getPostMessageAsync();
-            pipeline = postConfig.getPipeline();
-
-        } catch (Exception e) {
-
-            QueueReaderConfiguration configuration = ConfigDeserialiser.deserialise(configXml);
-            pipeline = configuration.getPipeline();
-        }
-
-        return pipeline
-                .getPipelineComponents()
-                .stream()
-                .filter(t -> t instanceof PostMessageToExchangeConfig)
-                .map(t -> (PostMessageToExchangeConfig)t)
-                .filter(t -> t.getExchange().equalsIgnoreCase(exchangeName))
-                .collect(StreamExtension.singleOrNullCollector());
-    }
 
     /*private org.endeavourhealth.core.messaging.exchange.Exchange retrieveExchange(UUID exchangeId) throws Exception {
 
@@ -462,18 +308,11 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
         return exchange;
     }*/
 
-    private void postToExchange(PostMessageToExchangeConfig exchangeConfig, org.endeavourhealth.core.messaging.exchange.Exchange exchange) throws Exception {
-
-        //re-post back into Rabbit using the same pipeline component as used by the messaging API
-        PostMessageToExchange component = new PostMessageToExchange(exchangeConfig);
-        component.process(exchange);
-
-    }
-
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.ExchangeAuditEndpoint.GetTransformErrorSummaries")
     @Path("/getTransformErrorSummaries")
     public Response getTransformErrorSummaries(@Context SecurityContext sc) throws Exception {
         super.setLogbackMarkers(sc);
@@ -498,18 +337,23 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
     }
 
 
-    private static JsonTransformServiceErrorSummary convertErrorStateToJson(ExchangeTransformErrorState errorState) {
+    private static JsonTransformServiceErrorSummary convertErrorStateToJson(ExchangeTransformErrorState errorState) throws Exception {
 
         if (errorState == null) {
             return null;
         }
 
-        //the error state has a list of all exchange IDs that are currently in error, but we only
+        //too confusing to return only the audits that haven't been resubmitted, so just return all of them
+        List<UUID> exchangeIdsInError = errorState.getExchangeIdsInError();
+
+        /*//the error state has a list of all exchange IDs that are currently in error, but we only
         //want to return to EDS UI those that haven't yet been resubmitted
         List<UUID> exchangeIdsInError = new ArrayList<>();
         for (UUID exchangeId: errorState.getExchangeIdsInError()) {
             ExchangeTransformAudit audit = auditRepository.getMostRecentExchangeTransform(errorState.getServiceId(), errorState.getSystemId(), exchangeId);
-            if (!audit.isResubmitted()) {
+
+            if (audit != null
+                && !audit.isResubmitted()) {
                 exchangeIdsInError.add(exchangeId);
             }
         }
@@ -517,11 +361,16 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
         //if all of the exchanges have been resubmitted, then the error state is effectively cleared for now
         if (exchangeIdsInError.isEmpty()) {
             return null;
-        }
+        }*/
+
+        UUID serviceId = errorState.getServiceId();
+        Service service = serviceRepository.getById(serviceId);
+
+        JsonService jsonService = new JsonService(service);
+        jsonService.setHasInboundError(true); //by definition, all services in this fn as in error
 
         JsonTransformServiceErrorSummary summary = new JsonTransformServiceErrorSummary();
-        summary.setServiceId(errorState.getServiceId());
-        summary.setServiceName(getServiceNameForId(errorState.getServiceId()));
+        summary.setService(jsonService);
         summary.setSystemId(errorState.getSystemId());
         summary.setSystemName(getSystemNameForId(errorState.getSystemId()));
         summary.setCountExchanges(exchangeIdsInError.size());
@@ -532,8 +381,9 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    @Path("/getTransformErrorDetails")
-    public Response getTransformErrorDetails(@Context SecurityContext sc,
+    @Timed(absolute = true, name="EDS-UI.ExchangeAuditEndpoint.GetInboundTransformAudits")
+    @Path("/getInboundTransformAudits")
+    public Response getInboundTransformAudits(@Context SecurityContext sc,
                                     @QueryParam("serviceId") String serviceIdStr,
                                     @QueryParam("systemId") String systemIdStr,
                                     @QueryParam("exchangeId") String exchangeIdStr,
@@ -545,7 +395,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
                 "Error Details",
                 "Exchange Id", exchangeIdStr);
 
-        LOG.trace("getErrorDetails for exchange ID " + exchangeIdStr);
+        LOG.trace("getInboundTransformAudits for exchange ID " + exchangeIdStr);
 
         UUID exchangeId = UUID.fromString(exchangeIdStr);
         UUID serviceId = UUID.fromString(serviceIdStr);
@@ -568,7 +418,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
 
             JsonTransformExchangeError jsonObj = new JsonTransformExchangeError();
             jsonObj.setExchangeId(exchangeId);
-            jsonObj.setVersion(transformAudit.getVersion());
+            jsonObj.setVersion(transformAudit.getId());
             jsonObj.setTransformStart(transformAudit.getStarted());
             jsonObj.setTransformEnd(transformAudit.getEnded());
             jsonObj.setNumberBatchIdsCreated(transformAudit.getNumberBatchesCreated());
@@ -578,7 +428,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
             ret.add(jsonObj);
 
             if (getErrorLines) {
-                List<String> lines = formatTransformAuditError(transformAudit);
+                List<String> lines = formatTransformAuditErrorLines(transformAudit);
                 jsonObj.setLines(lines);
             }
         }
@@ -591,11 +441,15 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
                 .build();
     }
 
-    private List<String> formatTransformAuditError(ExchangeTransformAudit transformAudit) throws Exception {
+    private List<String> formatTransformAuditErrorLines(ExchangeTransformAudit transformAudit) throws Exception {
 
         //until we need something more powerful, I'm displaying the errors just as a string, to
         //save sending complex JSON objects back to the client
         List<String> lines = new ArrayList<>();
+
+        if (Strings.isNullOrEmpty(transformAudit.getErrorXml())) {
+            return lines;
+        }
 
         TransformError errors = TransformErrorSerializer.readFromXml(transformAudit.getErrorXml());
 
@@ -652,17 +506,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
         return lines;
     }
 
-    private static String getServiceNameForId(UUID serviceId) {
-        try {
-            Service service = serviceRepository.getById(serviceId);
-            return service.getName();
-        } catch (NullPointerException ex ) {
-            LOG.error("Failed to find service for ID " + serviceId, ex);
-            return "UNKNOWN";
-        }
-    }
-
-    private static String getSystemNameForId(UUID systemId) {
+    private static String getSystemNameForId(UUID systemId) throws Exception {
         try {
             ActiveItem activeItem = libraryRepository.getActiveItemByItemId(systemId);
             Item item = libraryRepository.getItemByKey(systemId, activeItem.getAuditId());
@@ -676,6 +520,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.ExchangeAuditEndpoint.RerunFirstExchangeInError")
     @Path("/rerunFirstExchangeInError")
     @RequiresAdmin
     public Response rerunFirstExchangeInError(@Context SecurityContext sc, JsonTransformRerunRequest request) throws Exception {
@@ -702,6 +547,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.ExchangeAuditEndpoint.RerunAllExchangeInError")
     @Path("/rerunAllExchangesInError")
     @RequiresAdmin
     public Response rerunAllExchangesInError(@Context SecurityContext sc, JsonTransformRerunRequest request) throws Exception {
@@ -729,23 +575,27 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
         ExchangeTransformErrorState errorState = auditRepository.getErrorState(serviceId, systemId);
         LOG.debug("Re-running exchanges firstOnly = " + firstOnly);
 
+        List<UUID> exchangeIdsToRePost = new ArrayList<>();
+
         for (UUID exchangeId: errorState.getExchangeIdsInError()) {
 
             //update the transform audit, so EDS UI knows we've re-queued this exchange
             ExchangeTransformAudit audit = auditRepository.getMostRecentExchangeTransform(serviceId, systemId, exchangeId);
+            if (audit != null) {
 
-            //skip any exchange IDs we've already re-queued up to be processed again
-            if (audit.isResubmitted()) {
-                LOG.debug("Not re-posting " + audit.getExchangeId() + " as it's already been resubmitted");
-                continue;
+                //skip any exchange IDs we've already re-queued up to be processed again
+                if (audit.isResubmitted()) {
+                    LOG.debug("Not re-posting " + audit.getExchangeId() + " as it's already been resubmitted");
+                    continue;
+                }
+
+                audit.setResubmitted(true);
+                auditRepository.save(audit);
             }
 
-            LOG.debug("Re-posting " + audit.getExchangeId());
-            audit.setResubmitted(true);
-            auditRepository.save(audit);
-
             //then re-submit the exchange to Rabbit MQ for the queue reader to pick up
-            postToExchange(exchangeId, "EdsInbound");
+            LOG.debug("Re-posting " + exchangeId);
+            exchangeIdsToRePost.add(exchangeId);
 
             //if we only want to re-queue the first exchange, then break out
             if (firstOnly) {
@@ -753,11 +603,14 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
             }
         }
 
+        QueueHelper.postToExchange(exchangeIdsToRePost, "EdsInbound", null, true);
+
     }
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.ExchangeAuditEndpoint.GetTransformErrorLines")
     @Path("/getTransformErrorLines")
     public Response getTransformErrorLines(@Context SecurityContext sc,
                                              @QueryParam("serviceId") String serviceIdStr,
@@ -780,7 +633,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
 
         ExchangeTransformAudit transformAudit = auditRepository.getExchangeTransformAudit(serviceId, systemId, exchangeId, version);
 
-        List<String> lines = formatTransformAuditError(transformAudit);
+        List<String> lines = formatTransformAuditErrorLines(transformAudit);
 
         clearLogbackMarkers();
 
@@ -789,5 +642,80 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
                 .entity(lines)
                 .build();
     }
+
+    /*@POST
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Path("/postTest")
+    @RequiresAdmin
+    public Response postTest(@Context SecurityContext sc, JsonPostToExchangeRequest request) throws Exception {
+        super.setLogbackMarkers(sc);
+
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Save, "Testing Post Rerequesting");
+
+        LOG.info("-----posting to exchange for service " + request.getServiceId());
+        Throwable t = new RuntimeException();
+        t.fillInStackTrace();
+        LOG.error("", t);
+
+        for (int i=0; i<20; i++) {
+            LOG.info("Sleeping " + i);
+            Thread.sleep(1000 * 60);
+        }
+        LOG.info("Done");
+
+        clearLogbackMarkers();
+
+        return Response
+                .ok()
+                .build();
+    }*/
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.ExchangeAuditEndpoint.GetProtocolsForService")
+    @Path("/getProtocolsForService")
+    public Response getProtocolsForService(@Context SecurityContext sc,
+                                           @QueryParam("serviceId") String serviceIdStr) throws Exception {
+        super.setLogbackMarkers(sc);
+
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
+                "Get Protocols For Service",
+                "Service Id", serviceIdStr);
+
+        List<JsonProtocol> ret = new ArrayList<>();
+
+        List<LibraryItem> libraryItems = LibraryRepositoryHelper.getProtocolsByServiceId(serviceIdStr, null);
+        for (LibraryItem libraryItem: libraryItems) {
+            Protocol protocol = libraryItem.getProtocol();
+
+            //only return active protocols
+            if (protocol.getEnabled() == ProtocolEnabled.TRUE) {
+
+                //only return protocols with an active service contract for our service
+                for (ServiceContract serviceContract : protocol.getServiceContract()) {
+                    if (serviceContract.getService().getUuid().equals(serviceIdStr)
+                        && serviceContract.getActive() == ServiceContractActive.TRUE) {
+
+                        JsonProtocol json = new JsonProtocol();
+                        json.setId(UUID.fromString(libraryItem.getUuid()));
+                        json.setName(libraryItem.getName());
+                        ret.add(json);
+                        break;
+                    }
+                }
+            }
+        }
+
+        clearLogbackMarkers();
+
+        return Response
+                .ok()
+                .entity(ret)
+                .build();
+    }
+
+
 }
 

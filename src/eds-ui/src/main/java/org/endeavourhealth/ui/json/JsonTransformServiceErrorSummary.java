@@ -8,8 +8,7 @@ import java.util.UUID;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class JsonTransformServiceErrorSummary {
 
-    private UUID serviceId = null;
-    private String serviceName = null;
+    private JsonService service = null;
     private UUID systemId = null;
     private String systemName = null;
     private int countExchanges = -1;
@@ -19,20 +18,12 @@ public class JsonTransformServiceErrorSummary {
 
     }
 
-    public UUID getServiceId() {
-        return serviceId;
+    public JsonService getService() {
+        return service;
     }
 
-    public void setServiceId(UUID serviceId) {
-        this.serviceId = serviceId;
-    }
-
-    public String getServiceName() {
-        return serviceName;
-    }
-
-    public void setServiceName(String serviceName) {
-        this.serviceName = serviceName;
+    public void setService(JsonService service) {
+        this.service = service;
     }
 
     public UUID getSystemId() {

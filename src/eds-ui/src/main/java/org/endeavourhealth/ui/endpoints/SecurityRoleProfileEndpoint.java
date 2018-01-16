@@ -1,15 +1,18 @@
 package org.endeavourhealth.ui.endpoints;
 
+import com.codahale.metrics.annotation.Timed;
+import io.astefanutti.metrics.aspectj.Metrics;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.Authorization;
 import org.apache.commons.lang3.StringUtils;
-import org.endeavourhealth.core.data.audit.UserAuditRepository;
-import org.endeavourhealth.core.data.audit.models.AuditModule;
 import org.endeavourhealth.common.security.OrgRoles;
 import org.endeavourhealth.common.security.annotations.RequiresAdmin;
 import org.endeavourhealth.common.security.keycloak.client.KeycloakAdminClient;
+import org.endeavourhealth.core.database.dal.DalProvider;
+import org.endeavourhealth.core.database.dal.audit.UserAuditDalI;
+import org.endeavourhealth.core.database.dal.audit.models.AuditModule;
 import org.endeavourhealth.coreui.endpoints.AbstractEndpoint;
 import org.endeavourhealth.ui.json.security.JsonRole;
 import org.endeavourhealth.ui.json.security.JsonRoleProfile;
@@ -30,13 +33,15 @@ import java.util.stream.Collectors;
         @Authorization(value="oauth", scopes = {})
 })
 @Path("/security/roleProfiles")
+@Metrics(registry = "EdsRegistry")
 public final class SecurityRoleProfileEndpoint extends AbstractEndpoint {
     private static final Logger LOG = LoggerFactory.getLogger(SecurityRoleProfileEndpoint.class);
 
-    private static final UserAuditRepository userAudit = new UserAuditRepository(AuditModule.EdsUiModule.Security);
+    private static final UserAuditDalI userAudit = DalProvider.factoryUserAuditDal(AuditModule.EdsUiModule.Security);
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.SecurityRoleProfileEndpoint.ListAvailableRoles")
     @Path("availableRoles")
     @RequiresAdmin
     @ApiOperation(value = "List roles that can be added to role profiles")
@@ -65,6 +70,7 @@ public final class SecurityRoleProfileEndpoint extends AbstractEndpoint {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.SecurityRoleProfileEndpoint.ListRolesProfiles")
     @Path("")
     @RequiresAdmin
     @ApiOperation(value = "List role profiles")
@@ -99,6 +105,7 @@ public final class SecurityRoleProfileEndpoint extends AbstractEndpoint {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.SecurityRoleProfileEndpoint.GetRoleProfile")
     @Path("/{role-profile-name}")
     @RequiresAdmin
     @ApiOperation(value = "Get a role profile")
@@ -129,6 +136,7 @@ public final class SecurityRoleProfileEndpoint extends AbstractEndpoint {
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.SecurityRoleProfileEndpoint.CreateRoleProfile")
     @Path("")
     @RequiresAdmin
     @ApiOperation(value = "Create a role profile")
@@ -159,6 +167,7 @@ public final class SecurityRoleProfileEndpoint extends AbstractEndpoint {
     @PUT
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.SecurityRoleProfileEndpoint.UpdateRoleProfile")
     @Path("/{role-profile-name}")
     @RequiresAdmin
     @ApiOperation(value = "Update a role profile")
@@ -193,6 +202,7 @@ public final class SecurityRoleProfileEndpoint extends AbstractEndpoint {
     }
 
     @DELETE
+    @Timed(absolute = true, name="EDS-UI.SecurityRoleProfileEndpoint.DeleteRoleProfile")
     @Path("/{role-profile-name}")
     @RequiresAdmin
     @ApiOperation(value = "Delete a role profile")

@@ -1,15 +1,15 @@
 import {Injectable} from "@angular/core";
 import {URLSearchParams, Http} from "@angular/http";
-import {BaseHttp2Service} from "../core/baseHttp2.service";
+import {BaseHttp2Service} from "eds-common-js";
 import {Observable} from "rxjs";
-import {LibraryItem} from "../library/models/LibraryItem";
 import {Cohort} from "./models/Cohort";
+import {EdsLibraryItem} from "../edsLibrary/models/EdsLibraryItem";
 
 @Injectable()
 export class ProtocolService extends BaseHttp2Service {
 	constructor(http : Http) { super(http); }
 
-	getProtocols(serviceId: string): Observable<LibraryItem[]> {
+	getProtocols(serviceId: string): Observable<EdsLibraryItem[]> {
 		let params = new URLSearchParams();
 		params.set('serviceId', serviceId);
 

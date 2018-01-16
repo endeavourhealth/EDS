@@ -1,20 +1,23 @@
-import {Component} from "@angular/core";
+import {Component, OnDestroy, OnInit} from '@angular/core';
 import {NgbModal} from "@ng-bootstrap/ng-bootstrap";
 import {StateService} from "ui-router-ng2";
 import {Service} from "./models/Service";
 import {ServiceService} from "./service.service";
-import {LoggerService} from "../common/logger.service";
-import {MessageBoxDialog} from "../dialogs/messageBox/messageBox.dialog";
-import {services} from "ui-router-ng2/ng2";
-/*import {Observable} from 'rxjs/Rx';*/
+import {linq, LoggerService, MessageBoxDialog} from "eds-common-js";
 import {Observable} from "rxjs";
+import {Subscription} from 'rxjs/Subscription';
 
 @Component({
 	template: require('./serviceList.html')
 })
-export class ServiceListComponent {
+export class ServiceListComponent implements OnInit, OnDestroy{
+
 	services : Service[];
-	timerSubscription : any;
+	timer: Subscription = null;
+
+	//filtering
+	filteredServices: Service[];
+	allPublisherConfigNames: string[];
 
 	static $inject = ['$uibModal', 'ServiceService', 'LoggerService','$state'];
 
@@ -22,16 +25,30 @@ export class ServiceListComponent {
 							private serviceService : ServiceService,
 							private log : LoggerService,
 							protected $state : StateService) {
-		this.getAll();
+
+
 	}
 
-	getAll() {
+	ngOnInit() {
+		this.initialize();
+	}
+
+	ngOnDestroy() {
+		if (this.timer) {
+			this.timer.unsubscribe();
+			this.timer = null;
+		}
+	}
+
+	initialize() {
 		var vm = this;
 		vm.serviceService.getAll()
 			.subscribe(
 				(result) => {
-					vm.services = result;
-					vm.startRefreshTimersIfNecessary();
+					vm.services = linq(result).OrderBy(s => s.name).ToArray();
+					vm.startRefreshTimer();
+					vm.applyFiltering();
+					vm.findAllPublisherConfigNames();
 				},
 				(error) => vm.log.error('Failed to load services', error, 'Load services')
 			)
@@ -110,30 +127,28 @@ export class ServiceListComponent {
 		vm.serviceService.get(oldService.uuid)
 			.subscribe(
 				(result) => {
+					//sub into the services list
 					var index = vm.services.indexOf(oldService);
 					if (index > -1) {
 						vm.services[index] = result;
+					}
+
+					//sub into the filtered services list too
+					index = vm.filteredServices.indexOf(oldService);
+					if (index > -1) {
+						vm.filteredServices[index] = result;
 					}
 				},
 				(error) => vm.log.error('Failed to refresh service', error, 'Refresh Service')
 			)
 	}
 
-	private startRefreshTimersIfNecessary() {
+	private startRefreshTimer() {
 		var vm = this;
-
-		//if we already have a timer, unsubscribe from it
-		vm.stopTimer();
-
-		//check to see if any service has additional info. If any does, start the timer
-		if (vm.anyServiceWithAdditionalInfo()) {
-			vm.timerSubscription = Observable.interval(2000).subscribe(x => {
-				vm.refreshServiceAdditionalInfo();
-			});
-		}
+		this.timer = Observable.interval(2000).subscribe(() => vm.refreshServicesWithAdditionalInfo());
 	}
 
-	private refreshServiceAdditionalInfo() {
+	private refreshServicesWithAdditionalInfo() {
 		var vm = this;
 		var arrayLength = vm.services.length;
 		for (var i = 0; i < arrayLength; i++) {
@@ -142,34 +157,52 @@ export class ServiceListComponent {
 				vm.refreshService(service);
 			}
 		}
-
-		//if no services have additional info we may as well stop the timer
-		if (!vm.anyServiceWithAdditionalInfo()) {
-			vm.stopTimer();
-		}
-	}
-
-	private stopTimer() {
-		var vm = this;
-		if (vm.timerSubscription) {
-			vm.timerSubscription.unsubscribe();
-			vm.timerSubscription = null;
-		}
-	}
-
-	private anyServiceWithAdditionalInfo() : boolean {
-		var vm = this;
-		var arrayLength = vm.services.length;
-		for (var i = 0; i < arrayLength; i++) {
-			var service = vm.services[i];
-			if (service.additionalInfo) {
-				return true;
-			}
-		}
-		return false;
 	}
 
 	viewExchanges(selectedService: Service) {
 		this.$state.go('app.exchangeAudit', {serviceUuid: selectedService.uuid});
+	}
+
+	applyFiltering() {
+		var vm = this;
+		vm.filteredServices = vm.serviceService.applyFiltering(vm.services);
+	}
+
+	toggleFilters() {
+		var vm = this;
+		vm.serviceService.toggleFiltering();
+
+		//call the filtered changed method to remove the applied filtering
+		vm.applyFiltering();
+	}
+
+	private findAllPublisherConfigNames() {
+		var vm = this;
+		vm.allPublisherConfigNames = [];
+
+		var arrayLength = vm.services.length;
+		for (var i = 0; i < arrayLength; i++) {
+			var service = vm.services[i];
+			var publisherConfigName = service.publisherConfigName;
+			if (publisherConfigName) {
+				var index = vm.allPublisherConfigNames.indexOf(publisherConfigName);
+				if (index == -1) {
+					vm.allPublisherConfigNames.push(publisherConfigName);
+				}
+			}
+		}
+
+		vm.allPublisherConfigNames.sort();
+	}
+
+	getNotesPrefix(service: Service) : string {
+
+		if (service.notes
+			&& service.notes.length > 10) {
+			return service.notes.substr(0, 10) + '...';
+
+		} else {
+			return service.notes;
+		}
 	}
 }

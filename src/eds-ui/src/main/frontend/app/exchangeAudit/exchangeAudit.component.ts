@@ -2,23 +2,14 @@ import {Component} from "@angular/core";
 import {NgbModal} from "@ng-bootstrap/ng-bootstrap";
 import {StateService, Transition} from "ui-router-ng2";
 import {Service} from "../services/models/Service";
-import {Organisation} from "../organisations/models/Organisation";
-import {System} from "../system/models/System";
-import {TechnicalInterface} from "../system/models/TechnicalInterface";
-import {AdminService} from "../administration/admin.service";
-import {OrganisationPickerDialog} from "../organisations/organisationPicker.dialog";
-import {MessageBoxDialog} from "../dialogs/messageBox/messageBox.dialog";
-import {LoggerService} from "../common/logger.service";
-import {SystemService} from "../system/system.service";
-
-import {ExchangeAuditTransformErrorSummary} from "./ExchangeAuditTransformErrorSummary";
-import {ExchangeAuditTransformErrorDetail} from "./ExchangeAuditTransformErrorDetail";
+import {LoggerService} from "eds-common-js";
 import {ExchangeAuditService} from "./exchangeAudit.service";
 import {Exchange} from "./Exchange";
 import {ServiceService} from "../services/service.service";
 import {Subscription} from "rxjs/Subscription";
 import {TransformErrorDetail} from "./TransformErrorDetail";
 import {TransformErrorsDialog} from "./transformErrors.dialog";
+import {Protocol} from "./Protocol";
 
 @Component({
 	template : require('./exchangeAudit.html')
@@ -36,10 +27,12 @@ export class ExchangeAuditComponent {
 
 	//results
 	exchanges: Exchange[];
+	protocols: Protocol[];
 	selectedExchange: Exchange;
 	busyPostingToExchange: Subscription;
-
-	postAllExchanges: boolean;
+	//postAllExchanges: boolean;
+	postMode: string;
+	postSpecificProtocol: string;
 
 
 	constructor(private $modal : NgbModal,
@@ -51,7 +44,8 @@ export class ExchangeAuditComponent {
 
 		this.service = new Service();
 		this.exchangesToShow = 100;
-		this.postAllExchanges = false;
+		//this.postAllExchanges = false;
+		this.postMode = 'This';
 
 		var uuid = transition.params()['serviceUuid'];
 
@@ -60,6 +54,7 @@ export class ExchangeAuditComponent {
 				(result) => {
 					this.service = result;
 					this.refreshExchanges();
+					this.refreshProtocols();
 				},
 				(error) => log.error('Failed to retrieve service', error, 'Refresh Service')
 			)
@@ -69,6 +64,18 @@ export class ExchangeAuditComponent {
 
 	close() {
 		this.$window.go(this.transition.from());
+	}
+
+	refreshProtocols() {
+		var vm = this;
+		var serviceId = vm.service.uuid;
+
+		this.exchangeAuditService.getProtocolsList(serviceId).subscribe(
+			(result) => {
+				vm.protocols = result;
+			},
+			(error) => vm.log.error('Failed to retrieve protocols', error, 'Get Protocols')
+		);
 	}
 
 	refreshExchanges() {
@@ -90,8 +97,8 @@ export class ExchangeAuditComponent {
 				return;
 			}
 
-			console.log("Search from " + this.exchangeSearchFrom);
-			console.log("Search to " + this.exchangeSearchTo);
+			/*console.log("Search from " + this.exchangeSearchFrom);
+			console.log("Search to " + this.exchangeSearchTo);*/
 
 			vm.exchangeAuditService.getExchangeList(serviceId, vm.exchangesToShow, this.exchangeSearchFrom, this.exchangeSearchTo).subscribe(
 				(result) => {
@@ -120,7 +127,6 @@ export class ExchangeAuditComponent {
 				(error) => vm.log.error('Failed to retrieve exchanges', error, 'View Exchanges')
 			)
 		}
-
 	}
 
 
@@ -169,7 +175,7 @@ export class ExchangeAuditComponent {
 		}
 
 		var vm = this;
-		vm.exchangeAuditService.getTransformErrorDetail(serviceId, systemId, exchangeId, false, false).subscribe(
+		vm.exchangeAuditService.getInboundTransformAudits(serviceId, systemId, exchangeId, false, false).subscribe(
 			(result) => {
 				exchange.transformAudits = result;
 			},
@@ -190,11 +196,11 @@ export class ExchangeAuditComponent {
 	getSelectedExchangeHBodyLines(): string[] {
 
 		if (!this.selectedExchange) {
-			console.log('No selected exchange');
+			//console.log('No selected exchange');
 			return null;
 		}
-		console.log('Got selected exchange');
-		console.log('Body = ' + this.selectedExchange.bodyLines);
+		//console.log('Got selected exchange');
+		//console.log('Body = ' + this.selectedExchange.bodyLines);
 
 		return this.selectedExchange.bodyLines;
 	}
@@ -204,7 +210,7 @@ export class ExchangeAuditComponent {
 		var exchangeId = vm.selectedExchange.exchangeId;
 		var serviceId = this.service.uuid;
 
-		this.busyPostingToExchange = vm.exchangeAuditService.postToExchange(exchangeId, serviceId, exchangeName, this.postAllExchanges).subscribe(
+		this.busyPostingToExchange = vm.exchangeAuditService.postToExchange(exchangeId, serviceId, exchangeName, this.postMode, this.postSpecificProtocol).subscribe(
 			(result) => {
 				vm.log.success('Successfully posted to ' + exchangeName + ' exchange', 'Post to Exchange');
 
@@ -243,7 +249,42 @@ export class ExchangeAuditComponent {
 
 	}
 
-	checkboxChanged() {
+	/*checkboxChanged() {
 		console.log('checkbox changed = ' + this.postAllExchanges);
+	}*/
+
+	copyBodyToClipboard() {
+		//join the body lines into a single string
+		var lines = this.getSelectedExchangeHBodyLines();
+		var joined = lines.join('\r\n');
+
+		//create a text area containing the text and insert into the document
+		var txtArea = document.createElement("textarea");
+		txtArea.style.position = 'fixed';
+		txtArea.value = joined;
+		document.body.appendChild(txtArea);
+		txtArea.select();
+
+		var vm = this;
+
+		//invoke the copy action on the text area
+		try {
+			var successful = document.execCommand('copy');
+			if (successful) {
+				this.log.success('Copied to clipboard');
+			} else {
+				this.log.error('Failed to copy to clipboard');
+			}
+
+		} catch (err) {
+			console.log('Failed to copy text to clipboard');
+			console.log(err);
+
+			this.log.error('Failed to copy to clipboard', err, 'Copy');
+		}
+
+		//remove from the document
+		document.body.removeChild(txtArea);
 	}
+
 }

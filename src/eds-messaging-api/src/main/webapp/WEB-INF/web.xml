@@ -39,6 +39,11 @@
             org.endeavourhealth.coreui.framework.StartupConfig
         </listener-class>
     </listener>
+    <listener>
+        <listener-class>
+            org.apache.commons.fileupload.servlet.FileCleanerCleanup
+        </listener-class>
+    </listener>
 
     <!-- ============================================ -->
     <!-- JEE security settings - Keycloak integration -->

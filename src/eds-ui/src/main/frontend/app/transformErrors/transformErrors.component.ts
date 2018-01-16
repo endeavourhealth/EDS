@@ -1,10 +1,11 @@
 import {TransformErrorSummary} from "./../exchangeAudit/TransformErrorSummary";
 import {TransformErrorDetail} from "./../exchangeAudit/TransformErrorDetail";
-import {LoggerService} from "../common/logger.service";
+import {linq, LoggerService} from "eds-common-js";
 import {StateService} from "ui-router-ng2";
 import {Component} from "@angular/core";
 import {ExchangeAuditService} from "../exchangeAudit/exchangeAudit.service";
 import {Subscription} from "rxjs/Subscription";
+import {ServiceService} from "../services/service.service";
 
 @Component({
 	template : require('./transformErrors.html')
@@ -17,18 +18,22 @@ export class TransformErrorsComponent {
 	selectExchangeErrorDetail:TransformErrorDetail;
 	busyPostingToExchange: Subscription;
 
-	constructor(protected exchangeAuditService:ExchangeAuditService,
+	//filtering
+	filteredErrorSummaries: TransformErrorSummary[];
+	allPublisherConfigNames: string[];
+
+
+	constructor(private serviceService : ServiceService,
+				protected exchangeAuditService:ExchangeAuditService,
 				protected logger:LoggerService,
 				protected $state : StateService) {
 
+
+	}
+
+	ngOnInit() {
 		this.refreshSummaries();
 	}
-	/*constructor(protected transformErrorService:TransformErrorsService,
-				protected logger:LoggerService,
-				protected $state : StateService) {
-
-		this.refreshSummaries();
-	}*/
 
 	refreshSummaries() {
 		var vm = this;
@@ -37,9 +42,13 @@ export class TransformErrorsComponent {
 
 		vm.exchangeAuditService.getTransformErrorSummaries()
 			.subscribe(
-				(data) => {
-					vm.transformErrorSummaries = data;
-					if (data.length == 0) {
+				(result) => {
+					//vm.transformErrorSummaries = result;
+					vm.transformErrorSummaries = linq(result).OrderBy(s => s.service.name).ToArray();
+					vm.applyFiltering();
+					vm.findAllPublisherConfigNames();
+
+					if (result.length == 0) {
 						vm.logger.success('No transform errors found');
 					}
 				});
@@ -56,7 +65,7 @@ export class TransformErrorsComponent {
 
 	rerunFirst(summary:TransformErrorSummary) {
 		var vm = this;
-		var serviceId = summary.serviceId;
+		var serviceId = summary.service.uuid;
 		var systemId = summary.systemId;
 
 		this.busyPostingToExchange = vm.exchangeAuditService.rerunFirstExchangeInError(serviceId, systemId).subscribe(
@@ -75,7 +84,7 @@ export class TransformErrorsComponent {
 
 	rerunAll(summary:TransformErrorSummary) {
 		var vm = this;
-		var serviceId = summary.serviceId;
+		var serviceId = summary.service.uuid;
 		var systemId = summary.systemId;
 
 		this.busyPostingToExchange = vm.exchangeAuditService.rerunAllExchangesInError(serviceId, systemId).subscribe(
@@ -105,17 +114,19 @@ export class TransformErrorsComponent {
 
 		}
 
+		vm.applyFiltering();
+
 		var previouslySelectedSummary = vm.selectedSummary;
 		vm.selectedSummary = null;
 
 		//if we had a selected summary, re-select it
 		if (previouslySelectedSummary) {
-			var serviceId = previouslySelectedSummary.serviceId;
+			var serviceId = previouslySelectedSummary.service.uuid;
 			var systemId = previouslySelectedSummary.systemId;
 
 			for (var i=0; i<vm.transformErrorSummaries.length; i++) {
 				var summary = vm.transformErrorSummaries[i];
-				if (summary.serviceId == serviceId
+				if (summary.service.uuid == serviceId
 					&& summary.systemId == systemId) {
 
 					vm.selectedSummary = summary;
@@ -128,11 +139,11 @@ export class TransformErrorsComponent {
 	loadExchange() {
 
 		var vm = this;
-		var serviceId = vm.selectedSummary.serviceId;
+		var serviceId = vm.selectedSummary.service.uuid;
 		var systemId = vm.selectedSummary.systemId;
 		var exchangeId = vm.selectedSummary.exchangeIds[vm.selectedExchangeIndex - 1];
 
-		vm.exchangeAuditService.getTransformErrorDetail(serviceId, systemId, exchangeId, true, true)
+		vm.exchangeAuditService.getInboundTransformAudits(serviceId, systemId, exchangeId, true, true)
 			.subscribe(
 				(data) => {
 					vm.selectExchangeErrorDetail = data[0];
@@ -143,5 +154,77 @@ export class TransformErrorsComponent {
 
 	actionItem(uuid : string, action : string) {
 		this.$state.go('app.resources', {itemUuid: uuid, itemAction: action});
+	}
+
+
+	applyFiltering() {
+		var vm = this;
+
+		//if we've not loaded our services yet, just return out
+		if (!vm.transformErrorSummaries) {
+			return;
+		}
+
+		vm.filteredErrorSummaries = [];
+
+		//the filtering function works on Service objects, so we need to get the list of services and filter that first
+		var services = [];
+
+		var arrayLength = vm.transformErrorSummaries.length;
+		for (var i = 0; i < arrayLength; i++) {
+			var transformErrorSummary = vm.transformErrorSummaries[i];
+			var service = transformErrorSummary.service;
+			if (services.indexOf(service) == -1) {
+				services.push(service);
+			}
+		}
+
+		var filteredServices = vm.serviceService.applyFiltering(services);
+
+		for (var i = 0; i < arrayLength; i++) {
+			var transformErrorSummary = vm.transformErrorSummaries[i];
+			var service = transformErrorSummary.service;
+			if (filteredServices.indexOf(service) > -1) {
+				vm.filteredErrorSummaries.push(transformErrorSummary);
+			}
+		}
+	}
+
+	toggleFilters() {
+		var vm = this;
+		vm.serviceService.toggleFiltering();
+
+		//call the filtered changed method to remove the applied filtering
+		vm.applyFiltering();
+	}
+
+	private findAllPublisherConfigNames() {
+		var vm = this;
+		vm.allPublisherConfigNames = [];
+
+		var arrayLength = vm.transformErrorSummaries.length;
+		for (var i = 0; i < arrayLength; i++) {
+			var transformErrorSummary = vm.transformErrorSummaries[i];
+			var publisherConfigName = transformErrorSummary.service.publisherConfigName;
+			if (publisherConfigName) {
+				var index = vm.allPublisherConfigNames.indexOf(publisherConfigName);
+				if (index == -1) {
+					vm.allPublisherConfigNames.push(publisherConfigName);
+				}
+			}
+		}
+
+		vm.allPublisherConfigNames.sort();
+	}
+
+	getNotesPrefix(transformErrorSummary: TransformErrorSummary) : string {
+
+		if (transformErrorSummary.service.notes
+			&& transformErrorSummary.service.notes.length > 10) {
+			return transformErrorSummary.service.notes.substr(0, 10) + '...';
+
+		} else {
+			return transformErrorSummary.service.notes;
+		}
 	}
 }

@@ -1,20 +1,25 @@
 package org.endeavourhealth.ui.endpoints;
 
+import com.codahale.metrics.annotation.Timed;
 import com.fasterxml.jackson.core.type.TypeReference;
+import io.astefanutti.metrics.aspectj.Metrics;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.common.security.SecurityUtils;
 import org.endeavourhealth.common.security.annotations.RequiresAdmin;
-import org.endeavourhealth.core.data.admin.LibraryRepository;
-import org.endeavourhealth.core.data.admin.OrganisationRepository;
-import org.endeavourhealth.core.data.admin.ServiceRepository;
-import org.endeavourhealth.core.data.admin.models.ActiveItem;
-import org.endeavourhealth.core.data.admin.models.Item;
-import org.endeavourhealth.core.data.admin.models.Organisation;
-import org.endeavourhealth.core.data.admin.models.Service;
-import org.endeavourhealth.core.data.audit.UserAuditRepository;
-import org.endeavourhealth.core.data.audit.models.AuditAction;
-import org.endeavourhealth.core.data.audit.models.AuditModule;
-import org.endeavourhealth.core.data.ehr.ResourceRepository;
+import org.endeavourhealth.core.database.dal.DalProvider;
+import org.endeavourhealth.core.database.dal.admin.LibraryDalI;
+import org.endeavourhealth.core.database.dal.admin.OrganisationDalI;
+import org.endeavourhealth.core.database.dal.admin.ServiceDalI;
+import org.endeavourhealth.core.database.dal.admin.models.ActiveItem;
+import org.endeavourhealth.core.database.dal.admin.models.Item;
+import org.endeavourhealth.core.database.dal.admin.models.Organisation;
+import org.endeavourhealth.core.database.dal.admin.models.Service;
+import org.endeavourhealth.core.database.dal.audit.ExchangeDalI;
+import org.endeavourhealth.core.database.dal.audit.UserAuditDalI;
+import org.endeavourhealth.core.database.dal.audit.models.AuditAction;
+import org.endeavourhealth.core.database.dal.audit.models.AuditModule;
+import org.endeavourhealth.core.database.dal.audit.models.ExchangeTransformErrorState;
+import org.endeavourhealth.core.database.dal.ehr.ResourceDalI;
 import org.endeavourhealth.core.fhirStorage.FhirDeletionService;
 import org.endeavourhealth.core.fhirStorage.JsonServiceInterfaceEndpoint;
 import org.endeavourhealth.core.xml.QueryDocument.LibraryItem;
@@ -31,42 +36,45 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Path("/service")
+@Metrics(registry = "EdsRegistry")
 public final class ServiceEndpoint extends AbstractEndpoint {
 	private static final Logger LOG = LoggerFactory.getLogger(ServiceEndpoint.class);
 
-	private static final ServiceRepository repository = new ServiceRepository();
-	private static final OrganisationRepository organisationRepository = new OrganisationRepository();
-	private static final UserAuditRepository userAudit = new UserAuditRepository(AuditModule.EdsUiModule.Service);
+	private static final ServiceDalI serviceRepository = DalProvider.factoryServiceDal();
+	private static final OrganisationDalI organisationRepository = DalProvider.factoryOrganisationDal();
+	private static final UserAuditDalI userAuditRepository = DalProvider.factoryUserAuditDal(AuditModule.EdsUiModule.Service);
+	private static final ExchangeDalI exchangeAuditRepository = DalProvider.factoryExchangeDal();
+
 	private static final Map<UUID, FhirDeletionService> dataBeingDeleted = new ConcurrentHashMap<>();
 
 	@POST
 	@Produces(MediaType.APPLICATION_JSON)
 	@Consumes(MediaType.APPLICATION_JSON)
+	@Timed(absolute = true, name="EDS-UI.ServiceEndpoint.Post")
 	@Path("/")
 	@RequiresAdmin
 	public Response post(@Context SecurityContext sc, JsonService service) throws Exception {
 		super.setLogbackMarkers(sc);
-		userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Save,
+		userAuditRepository.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Save,
 				"Service",
 				"Service", service);
 
 		Service dbService = new Service();
 		dbService.setId(service.getUuid());
 		dbService.setName(service.getName());
-		dbService.setLocalIdentifier(service.getLocalIdentifier());
+		dbService.setLocalId(service.getLocalIdentifier());
 		dbService.setOrganisations(service.getOrganisations());
+		dbService.setPublisherConfigName(service.getPublisherConfigName());
+		dbService.setNotes(service.getNotes());
 
 		String endpointsJson = ObjectMapperPool.getInstance().writeValueAsString(service.getEndpoints());
 		dbService.setEndpoints(endpointsJson);
 
-		UUID serviceId = repository.save(dbService);
+		UUID serviceId = serviceRepository.save(dbService);
 
 		if (service.getUuid() == null)
 			service.setUuid(serviceId);
@@ -82,19 +90,20 @@ public final class ServiceEndpoint extends AbstractEndpoint {
 	@DELETE
 	@Produces(MediaType.APPLICATION_JSON)
 	@Consumes(MediaType.APPLICATION_JSON)
+	@Timed(absolute = true, name="EDS-UI.ServiceEndpoint.DeleteService")
 	@Path("/")
 	@RequiresAdmin
 	public Response deleteService(@Context SecurityContext sc, @QueryParam("uuid") String uuid) throws Exception {
 		super.setLogbackMarkers(sc);
-		userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Delete,
+		userAuditRepository.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Delete,
 				"Service",
 				"Service Id", uuid);
 
 		UUID serviceUuid = UUID.fromString(uuid);
-		Service service = repository.getById(serviceUuid);
+		Service service = serviceRepository.getById(serviceUuid);
 
 		//validate that there's no data in the EHR repo before allowing a delete
-		ResourceRepository resourceRepository = new ResourceRepository();
+		ResourceDalI resourceRepository = DalProvider.factoryResourceDal();
 		List<JsonServiceInterfaceEndpoint> endpoints = ObjectMapperPool.getInstance().readValue(service.getEndpoints(), new TypeReference<List<JsonServiceInterfaceEndpoint>>() {});
 		for (JsonServiceInterfaceEndpoint endpoint: endpoints) {
 			UUID systemId = endpoint.getSystemUuid();
@@ -104,7 +113,7 @@ public final class ServiceEndpoint extends AbstractEndpoint {
 			}
 		}
 
-		repository.delete(service);
+		serviceRepository.delete(service);
 
 		clearLogbackMarkers();
 		return Response
@@ -115,11 +124,12 @@ public final class ServiceEndpoint extends AbstractEndpoint {
 	@DELETE
 	@Produces(MediaType.APPLICATION_JSON)
 	@Consumes(MediaType.APPLICATION_JSON)
+	@Timed(absolute = true, name="EDS-UI.ServiceEndpoint.DeleteServiceData")
 	@Path("/data")
 	@RequiresAdmin
 	public Response deleteServiceData(@Context SecurityContext sc, @QueryParam("uuid") String uuid) throws Exception {
 		super.setLogbackMarkers(sc);
-		userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Delete,
+		userAuditRepository.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Delete,
 				"Service Data",
 				"Service Id", uuid);
 
@@ -128,7 +138,7 @@ public final class ServiceEndpoint extends AbstractEndpoint {
 			throw new BadRequestException("Data deletion already in progress");
 		}
 
-		final Service dbService = repository.getById(serviceUuid);
+		final Service dbService = serviceRepository.getById(serviceUuid);
 
 		//the delete will take some time, so do the delete in a separate thread
 		Runnable task = () -> {
@@ -158,15 +168,16 @@ public final class ServiceEndpoint extends AbstractEndpoint {
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
 	@Consumes(MediaType.APPLICATION_JSON)
+	@Timed(absolute = true, name="EDS-UI.ServiceEndpoint.GetServiceOrganisations")
 	@Path("/organisations")
 	public Response getServiceOrganisations(@Context SecurityContext sc, @QueryParam("uuid") String uuid) throws Exception {
 		super.setLogbackMarkers(sc);
-		userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
+		userAuditRepository.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
 				"Service Organisations",
 				"ServiceId", uuid);
 
 		UUID serviceUuid = UUID.fromString(uuid);
-		Service service = repository.getById(serviceUuid);
+		Service service = serviceRepository.getById(serviceUuid);
 
 		List<JsonOrganisation> ret = new ArrayList<>();
 		for (UUID organisationId : service.getOrganisations().keySet()) {
@@ -184,33 +195,42 @@ public final class ServiceEndpoint extends AbstractEndpoint {
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
 	@Consumes(MediaType.APPLICATION_JSON)
+	@Timed(absolute = true, name="EDS-UI.ServiceEndpoint.GetServiceList")
 	@Path("/")
 	public Response get(@Context SecurityContext sc, @QueryParam("uuid") String uuid, @QueryParam("searchData") String searchData) throws Exception {
 		super.setLogbackMarkers(sc);
-		userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
+		userAuditRepository.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
 				"Service(s)",
 				"Service Id", uuid,
 				"Search Data", searchData);
 
 		if (uuid == null && searchData == null) {
 			LOG.trace("Get Service list");
-			return getList();
+			return getServiceList();
+
 		} else if (uuid != null) {
 			LOG.trace("Get Service single - " + uuid);
-			return get(uuid);
+			return getSingleService(uuid);
+
 		} else {
 			LOG.trace("Search services - " + searchData);
-			return search(searchData);
+			return getServicesMatchingText(searchData);
 		}
 	}
 
-	private Response getList() throws Exception {
-		Iterable<Service> services = repository.getAll();
+	private Response getServiceList() throws Exception {
+		List<Service> services = serviceRepository.getAll();
+
+		//we want to indicate if any service has inbound errors
+		Set<UUID> servicesInError = calculateServicesInError(services);
 
 		List<JsonService> ret = new ArrayList<>();
 
 		for (Service service: services) {
-			ret.add(new JsonService(service, getAdditionalInfo(service)));
+			UUID serviceId = service.getId();
+			boolean isInError = servicesInError.contains(serviceId);
+			String additionalInfo = getAdditionalInfo(service);
+			ret.add(new JsonService(service, additionalInfo, isInError));
 		}
 
 		clearLogbackMarkers();
@@ -220,11 +240,18 @@ public final class ServiceEndpoint extends AbstractEndpoint {
 				.build();
 	}
 
-	private Response get(String uuid) throws Exception {
+	private Response getSingleService(String uuid) throws Exception {
 		UUID serviceUuid = UUID.fromString(uuid);
-		Service service = repository.getById(serviceUuid);
+		Service service = serviceRepository.getById(serviceUuid);
 
-		JsonService ret = new JsonService(service, getAdditionalInfo(service));
+		List<Service> services = new ArrayList<>();
+		services.add(service);
+		Set<UUID> servicesInError = calculateServicesInError(services);
+
+		UUID serviceId = service.getId();
+		boolean isInError = servicesInError.contains(serviceId);
+		String additionalInfo = getAdditionalInfo(service);
+		JsonService ret = new JsonService(service, additionalInfo, isInError);
 
 		clearLogbackMarkers();
 		return Response
@@ -233,13 +260,18 @@ public final class ServiceEndpoint extends AbstractEndpoint {
 				.build();
 	}
 
-	private Response search(String searchData) throws Exception {
-		Iterable<Service> services = repository.search(searchData);
+	private Response getServicesMatchingText(String searchData) throws Exception {
+		List<Service> services = serviceRepository.search(searchData);
+
+		Set<UUID> servicesInError = calculateServicesInError(services);
 
 		List<JsonService> ret = new ArrayList<>();
 
 		for (Service service: services) {
-			ret.add(new JsonService(service, getAdditionalInfo(service)));
+			UUID serviceId = service.getId();
+			boolean isInError = servicesInError.contains(serviceId);
+			String additionalInfo = getAdditionalInfo(service);
+			ret.add(new JsonService(service, additionalInfo, isInError));
 		}
 
 		clearLogbackMarkers();
@@ -247,6 +279,59 @@ public final class ServiceEndpoint extends AbstractEndpoint {
 				.ok()
 				.entity(ret)
 				.build();
+	}
+
+	private Set<UUID> calculateServicesInError(List<Service> services) throws Exception {
+		Set<UUID> ret = new HashSet<>();
+
+		if (services.isEmpty()) {
+			return ret;
+		}
+
+		//if we've less than X services, hit the DB one at a time, rather than loading the full error list
+		if (services.size() < 5) {
+
+			for (Service service: services) {
+				UUID serviceId = service.getId();
+				List<UUID> systemIds = findSystemIdsFromService(service);
+				for (UUID systemId: systemIds) {
+					ExchangeTransformErrorState errorState = exchangeAuditRepository.getErrorState(serviceId, systemId);
+					if (errorState != null) {
+						ret.add(serviceId);
+						//no need to check the other systems for this service, so break out
+						break;
+					}
+				}
+			}
+
+		} else {
+			//if we're lots of services, it's easier to load all the error states
+			List<ExchangeTransformErrorState> errorStates = exchangeAuditRepository.getAllErrorStates();
+			for (ExchangeTransformErrorState errorState: errorStates) {
+				UUID serviceId = errorState.getServiceId();
+				ret.add(serviceId);
+			}
+		}
+
+		return ret;
+	}
+
+	private static List<UUID> findSystemIdsFromService(Service service) throws Exception {
+
+		List<UUID> ret = new ArrayList<>();
+
+		List<JsonServiceInterfaceEndpoint> endpoints = null;
+		try {
+			endpoints = ObjectMapperPool.getInstance().readValue(service.getEndpoints(), new TypeReference<List<JsonServiceInterfaceEndpoint>>() {});
+			for (JsonServiceInterfaceEndpoint endpoint: endpoints) {
+				UUID endpointSystemId = endpoint.getSystemUuid();
+				ret.add(endpointSystemId);
+			}
+		} catch (Exception e) {
+			throw new Exception("Failed to process endpoints from service " + service.getId());
+		}
+
+		return ret;
 	}
 
 	/**
@@ -267,17 +352,20 @@ public final class ServiceEndpoint extends AbstractEndpoint {
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
 	@Consumes(MediaType.APPLICATION_JSON)
+	@Timed(absolute = true, name="EDS-UI.ServiceEndpoint.GetSystemsForService")
 	@Path("/systemsForService")
 	public Response getSystemsForService(@Context SecurityContext sc, @QueryParam("serviceId") String serviceIdStr) throws Exception {
 		super.setLogbackMarkers(sc);
-		userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
+		userAuditRepository.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
 				"Service Systems",
 				"ServiceId", serviceIdStr);
 
 		UUID serviceId = UUID.fromString(serviceIdStr);
-		org.endeavourhealth.core.data.admin.models.Service service = new ServiceRepository().getById(serviceId);
 
-		LibraryRepository libraryRepository = new LibraryRepository();
+		ServiceDalI serviceDal = DalProvider.factoryServiceDal();
+		Service service = serviceDal.getById(serviceId);
+
+		LibraryDalI libraryRepository = DalProvider.factoryLibraryDal();
 
 		List<System> ret = new ArrayList<>();
 

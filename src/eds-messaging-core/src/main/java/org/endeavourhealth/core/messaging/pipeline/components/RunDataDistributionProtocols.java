@@ -3,23 +3,32 @@ package org.endeavourhealth.core.messaging.pipeline.components;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.base.Strings;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
+import org.endeavourhealth.common.cache.ParserPool;
+import org.endeavourhealth.common.fhir.IdentifierHelper;
+import org.endeavourhealth.common.fhir.ReferenceComponents;
+import org.endeavourhealth.common.fhir.ReferenceHelper;
 import org.endeavourhealth.core.configuration.RunDataDistributionProtocolsConfig;
-import org.endeavourhealth.core.data.admin.LibraryRepositoryHelper;
-import org.endeavourhealth.core.data.admin.PatientCohortRepository;
-import org.endeavourhealth.core.data.ehr.ExchangeBatchRepository;
-import org.endeavourhealth.core.data.ehr.ResourceRepository;
-import org.endeavourhealth.core.data.ehr.models.ExchangeBatch;
-import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
-import org.endeavourhealth.core.data.ehr.models.ResourceHistory;
-import org.endeavourhealth.core.messaging.exchange.Exchange;
-import org.endeavourhealth.core.messaging.exchange.HeaderKeys;
+import org.endeavourhealth.core.database.dal.DalProvider;
+import org.endeavourhealth.core.database.dal.admin.LibraryRepositoryHelper;
+import org.endeavourhealth.core.database.dal.admin.OrganisationDalI;
+import org.endeavourhealth.core.database.dal.admin.PatientCohortDalI;
+import org.endeavourhealth.core.database.dal.admin.models.Organisation;
+import org.endeavourhealth.core.database.dal.audit.ExchangeBatchDalI;
+import org.endeavourhealth.core.database.dal.audit.models.Exchange;
+import org.endeavourhealth.core.database.dal.audit.models.ExchangeBatch;
+import org.endeavourhealth.core.database.dal.audit.models.HeaderKeys;
+import org.endeavourhealth.core.database.dal.eds.PatientLinkDalI;
+import org.endeavourhealth.core.database.dal.eds.PatientSearchDalI;
+import org.endeavourhealth.core.database.dal.eds.models.PatientSearch;
+import org.endeavourhealth.core.database.dal.ehr.ResourceDalI;
+import org.endeavourhealth.core.database.dal.ehr.models.ResourceWrapper;
 import org.endeavourhealth.core.messaging.pipeline.PipelineComponent;
 import org.endeavourhealth.core.messaging.pipeline.PipelineException;
 import org.endeavourhealth.core.messaging.pipeline.TransformBatch;
-import org.endeavourhealth.core.rdbms.eds.PatientLinkHelper;
-import org.endeavourhealth.core.rdbms.eds.PatientSearch;
-import org.endeavourhealth.core.rdbms.eds.PatientSearchHelper;
 import org.endeavourhealth.core.xml.QueryDocument.*;
+import org.hl7.fhir.instance.model.Organization;
+import org.hl7.fhir.instance.model.Patient;
+import org.hl7.fhir.instance.model.Reference;
 import org.hl7.fhir.instance.model.ResourceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,9 +44,13 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 	private static final String COHORT_DEFINING_SERVICES = "Defining Services";
 
 	private RunDataDistributionProtocolsConfig config;
-	private static final PatientCohortRepository cohortRepository = new PatientCohortRepository();
-	private static final ResourceRepository resourceRepository = new ResourceRepository();
-	private static final ExchangeBatchRepository exchangeBatchRepository = new ExchangeBatchRepository();
+	private static final PatientCohortDalI cohortRepository = DalProvider.factoryPatientCohortDal();
+	private static final ResourceDalI resourceRepository = DalProvider.factoryResourceDal();
+	private static final ExchangeBatchDalI exchangeBatchRepository = DalProvider.factoryExchangeBatchDal();
+	private static final PatientLinkDalI patientLInkDal = DalProvider.factoryPatientLinkDal();
+	private static final PatientSearchDalI patientSearchDal = DalProvider.factoryPatientSearchDal();
+	private static final OrganisationDalI organisationRepository = DalProvider.factoryOrganisationDal();
+	private static final ParserPool parser = new ParserPool();
 	//private static final PatientIdentifierRepository patientIdentifierRepository = new PatientIdentifierRepository();
 	//private static JCS protocolCache = null;
 
@@ -71,7 +84,7 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 			throw new PipelineException("Error reading from JSON " + batchIdJson, ex);
 		}
 
-		UUID exchangeId = exchange.getExchangeId();
+		UUID exchangeId = exchange.getId();
 
 		List<LibraryItem> protocolsToRun = getProtocols(exchange);
 		//LibraryItem[] protocolsToRun = getProtocols(exchange);
@@ -175,8 +188,10 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 			}
 		}
 
+		//if we've not activated any service contracts yet, this will be empty, which is fine
 		if (serviceIdsDefiningCohort.isEmpty()) {
-			throw new PipelineException("Protocol " + protocolId + " has cohort to be service-defined, but has no service contracts that define it");
+			return false;
+			//throw new PipelineException("Protocol " + protocolId + " has cohort to be service-defined, but has no service contracts that define it");
 		}
 
 		//check to see if our service is one of the defining service contracts
@@ -195,15 +210,59 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 
 		//if there's no patient ID, then this is admin resources batch, so return true so it goes through unfiltered
 		if (patientUuid == null) {
-			LOG.trace("No patient ID for batch " + batchId + " in exchange " + exchangeId + " so passing protocol " + protocolId + " check");
+			//LOG.trace("No patient ID for batch " + batchId + " in exchange " + exchangeId + " so passing protocol " + protocolId + " check");
 			return true;
 		}
+
+		//rewriting to avoid using the patient_search table, which means we need the GP data to have
+		//been processed by Discovery first, which isn't necessarily the case
+		try {
+			Patient fhirPatient = (Patient)retrieveNonDeletedResource(serviceId, ResourceType.Patient, patientUuid);
+			if (fhirPatient != null
+				&& fhirPatient.hasCareProvider()) {
+
+				for (Reference careProviderReference: fhirPatient.getCareProvider()) {
+					ReferenceComponents comps = ReferenceHelper.getReferenceComponents(careProviderReference);
+					if (comps.getResourceType() == ResourceType.Organization) {
+
+						UUID organisationUuid = UUID.fromString(comps.getId());
+						Organization fhirOrganization = (Organization)retrieveNonDeletedResource(serviceId, ResourceType.Organization, organisationUuid);
+
+						if (fhirOrganization != null) {
+							String odsCode = IdentifierHelper.findOdsCode(fhirOrganization);
+							if (!Strings.isNullOrEmpty(odsCode)) {
+								Organisation organisation = organisationRepository.getByNationalId(odsCode);
+								if (organisation != null
+										&& organisation.getServices() != null) {
+
+									for (UUID orgServiceId : organisation.getServices().keySet()) {
+										String orgServiceIdStr = orgServiceId.toString();
+										if (serviceIdsDefiningCohort.contains(orgServiceIdStr)) {
+
+											return true;
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+
+		} catch (Exception ex) {
+			throw new PipelineException("Failed to retrieve patient or organisation resources for patient ID " + patientUuid, ex);
+		}
+
+		return false;
+
+
+		/*
 		String patientId = patientUuid.toString();
 
 		//find the global person ID our patient belongs to
 		String personId = null;
 		try {
-			personId = PatientLinkHelper.getPersonId(patientId);
+			personId = patientLInkDal.getPersonId(patientId);
 		} catch (Exception ex) {
 			throw new PipelineException("Failed to find person ID for batch " + batchId + " and patientId " + patientId, ex);
 		}
@@ -211,12 +270,12 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 		//get all the patient IDs our person is matched to
 		List<String> patientIds = null;
 		try {
-			patientIds = PatientLinkHelper.getPatientIds(personId);
+			patientIds = patientLInkDal.getPatientIds(personId);
 		} catch (Exception ex) {
 			throw new PipelineException("Failed to find person ID for batch " + batchId + " and personId " + personId, ex);
 		}
 
-		LOG.trace("Found " + patientIds.size() + " for patient " + patientId + " and person " + personId + " for batch " + batchId + " in exchange " + exchangeId + " so passing protocol " + protocolId + " check");
+		//LOG.trace("Found " + patientIds.size() + " patient IDs for patient " + patientId + " and person " + personId + " for batch " + batchId + " in exchange " + exchangeId + " for protocol " + protocolId + " check");
 
 		for (String otherPatientId: patientIds) {
 
@@ -225,9 +284,15 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 				continue;
 			}
 
-			ResourceHistory resourceHistory = resourceRepository.getCurrentVersion(ResourceType.Patient.toString(), UUID.fromString(otherPatientId));
+			ResourceWrapper resourceHistory = null;
+			try {
+				resourceHistory = resourceRepository.getCurrentVersion(ResourceType.Patient.toString(), UUID.fromString(otherPatientId));
+			} catch (Exception ex) {
+				throw new PipelineException("Failed to retrieve resource from database", ex);
+			}
+
 			if (resourceHistory == null
-					|| resourceHistory.getIsDeleted()) {
+					|| resourceHistory.isDeleted()) {
 				continue;
 			}
 
@@ -239,7 +304,29 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 			}
 		}
 
-		return false;
+		return false;*/
+	}
+
+	private org.hl7.fhir.instance.model.Resource retrieveNonDeletedResource(UUID serviceId, ResourceType resourceType, UUID resourceId) throws Exception {
+
+		//get the current instance from the DB
+		org.hl7.fhir.instance.model.Resource fhirResource = resourceRepository.getCurrentVersionAsResource(serviceId, resourceType, resourceId.toString());
+
+		//if the resource has been deleted, then we have to go back and find a non-deleted instance
+		if (fhirResource == null) {
+			List<ResourceWrapper> history = resourceRepository.getResourceHistory(serviceId, resourceType.toString(), resourceId);
+
+			//most recent is first
+			for (ResourceWrapper historyItem: history) {
+				if (!historyItem.isDeleted()) {
+					String json = historyItem.getResourceData();
+					fhirResource = parser.parse(json);
+					break;
+				}
+			}
+		}
+
+		return fhirResource;
 	}
 
 	private boolean checkExplicitCohort(UUID protocolId, UUID serviceId, UUID exchangeId, UUID batchId) throws PipelineException {
@@ -275,7 +362,7 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 
 	private String findPatientNhsNumber(UUID patientId) throws Exception {
 
-		PatientSearch patientSearchResult = PatientSearchHelper.searchByPatientId(patientId);
+		PatientSearch patientSearchResult = patientSearchDal.searchByPatientId(patientId);
 		if (patientSearchResult != null) {
 			return patientSearchResult.getNhsNumber();
 		} else {
@@ -348,13 +435,14 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 	 * filters down resources in the batch to just those that match the protocol data set
 	 * //TODO - apply protocol dataset filtering
      */
-	public static Map<ResourceType, List<UUID>> filterResources(Protocol protocol, String batchId) {
+	public static Map<ResourceType, List<UUID>> filterResources(UUID serviceId, Protocol protocol, String batchId) throws Exception {
 
 		Map<ResourceType, List<UUID>> ret = new HashMap<>();
 
 		UUID batchUuid = UUID.fromString(batchId);
-		List<ResourceByExchangeBatch> resourcesByExchangeBatch = new ResourceRepository().getResourcesForBatch(batchUuid);
-		for (ResourceByExchangeBatch resourceByExchangeBatch: resourcesByExchangeBatch) {
+		ResourceDalI resourceDal = DalProvider.factoryResourceDal();
+		List<ResourceWrapper> resourcesByExchangeBatch = resourceDal.getResourcesForBatch(batchUuid, serviceId);
+		for (ResourceWrapper resourceByExchangeBatch: resourcesByExchangeBatch) {
 			String resourceType = resourceByExchangeBatch.getResourceType();
 			ResourceType fhirResourceType = ResourceType.valueOf(resourceType);
 			UUID resourceId = resourceByExchangeBatch.getResourceId();
@@ -375,13 +463,20 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 
 		List<LibraryItem> ret = new ArrayList<>();
 
-		String[] protocolIds = exchange.getHeaderAsStringArray(HeaderKeys.ProtocolIds);
+		String[] protocolIds = null;
+		try {
+			protocolIds = exchange.getHeaderAsStringArray(HeaderKeys.ProtocolIds);
+		} catch (Exception ex) {
+			throw new PipelineException("Failed to read protocol IDs from exchange " + exchange.getId());
+		}
 
 		for (String protocolId: protocolIds) {
 			UUID protocolUuid = UUID.fromString(protocolId);
 
 			try {
-				LibraryItem libraryItem = LibraryRepositoryHelper.getLibraryItem(protocolUuid);
+				//changed to use cached version
+				LibraryItem libraryItem = LibraryRepositoryHelper.getLibraryItemUsingCache(protocolUuid);
+				//LibraryItem libraryItem = LibraryRepositoryHelper.getLibraryItem(protocolUuid);
 				ret.add(libraryItem);
 			} catch (Exception e) {
 				throw new PipelineException("Failed to read protocol item for " + protocolId, e);

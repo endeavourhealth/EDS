@@ -16,7 +16,7 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.protocol.HttpContext;
-import org.endeavourhealth.core.security.keycloak.client.resources.HttpDeleteWithBody;
+import org.endeavourhealth.common.security.keycloak.client.resources.HttpDeleteWithBody;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.jboss.shrinkwrap.api.Archive;
 import org.jboss.shrinkwrap.resolver.api.maven.Maven;

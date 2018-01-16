@@ -1,0 +1,1 @@
+CREATE DATABASE ehr_??; -- we can have multiple EHR databases

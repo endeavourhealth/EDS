@@ -3,38 +3,46 @@ package org.endeavourhealth.core.messaging.pipeline.components;
 import com.datastax.driver.core.utils.UUIDs;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
+import org.endeavourhealth.common.utility.SlackHelper;
 import org.endeavourhealth.core.configuration.MessageTransformInboundConfig;
-import org.endeavourhealth.core.data.admin.LibraryRepository;
-import org.endeavourhealth.core.data.audit.AuditRepository;
-import org.endeavourhealth.core.data.audit.models.ExchangeTransformAudit;
-import org.endeavourhealth.core.data.audit.models.ExchangeTransformErrorState;
-import org.endeavourhealth.core.messaging.exchange.Exchange;
-import org.endeavourhealth.core.messaging.exchange.HeaderKeys;
+import org.endeavourhealth.core.database.dal.DalProvider;
+import org.endeavourhealth.core.database.dal.admin.LibraryDalI;
+import org.endeavourhealth.core.database.dal.audit.ExchangeBatchDalI;
+import org.endeavourhealth.core.database.dal.audit.ExchangeDalI;
+import org.endeavourhealth.core.database.dal.audit.models.*;
 import org.endeavourhealth.core.messaging.pipeline.PipelineComponent;
 import org.endeavourhealth.core.messaging.pipeline.PipelineException;
-import org.endeavourhealth.core.messaging.slack.SlackHelper;
 import org.endeavourhealth.core.xml.TransformErrorSerializer;
 import org.endeavourhealth.core.xml.TransformErrorUtility;
 import org.endeavourhealth.core.xml.transformError.Error;
 import org.endeavourhealth.core.xml.transformError.ExceptionLine;
 import org.endeavourhealth.core.xml.transformError.TransformError;
+import org.endeavourhealth.transform.adastra.AdastraXmlToFhirTransformer;
+import org.endeavourhealth.transform.barts.BartsCsvToFhirTransformer;
 import org.endeavourhealth.transform.common.FhirDeltaResourceFilter;
+import org.endeavourhealth.transform.common.IdHelper;
 import org.endeavourhealth.transform.common.MessageFormat;
 import org.endeavourhealth.transform.common.exceptions.SoftwareNotSupportedException;
 import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
 import org.endeavourhealth.transform.emis.EmisOpenToFhirTransformer;
 import org.endeavourhealth.transform.fhirhl7v2.FhirHl7v2Filer;
+import org.endeavourhealth.transform.homerton.HomertonCsvToFhirTransformer;
+import org.endeavourhealth.transform.vision.VisionCsvToFhirTransformer;
 import org.hl7.fhir.instance.model.Resource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
+//import org.endeavourhealth.transform.barts.BartsCsvToFhirTransformer;
+
 public class MessageTransformInbound extends PipelineComponent {
 	private static final Logger LOG = LoggerFactory.getLogger(MessageTransformInbound.class);
 
 	//private static final ServiceRepository serviceRepository = new ServiceRepository();
-	private static final LibraryRepository libraryRepository = new LibraryRepository();
+	private static final LibraryDalI libraryRepository = DalProvider.factoryLibraryDal();
+	private static final ExchangeDalI auditRepository = DalProvider.factoryExchangeDal();
+	private static final ExchangeBatchDalI exchangeBatchRepository = DalProvider.factoryExchangeBatchDal();
 
 	private MessageTransformInboundConfig config;
 
@@ -77,17 +85,25 @@ public class MessageTransformInbound extends PipelineComponent {
 
 		List<UUID> batchIds = new ArrayList<>();
 
+		//if we're re-running an exchange (either due to a past failure or killing and restarting the queue reader),
+		//then we need to make sure we've got all our pre-existing batch IDs from last time, so they
+		//all go on the Protocol queue when the transform completes
+		findExistingBatchIds(batchIds, exchange.getId());
+		int startingBatchIdCount = batchIds.size();
+
 		//create the object that audits the transform and stores any errors
-		Date transformStarted = new Date();
 		TransformError currentErrors = new TransformError();
 
 		//find the current error state for the source of our data
-		ExchangeTransformErrorState errorState = new AuditRepository().getErrorState(serviceId, systemId);
+		ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
+		ExchangeTransformErrorState errorState = exchangeDal.getErrorState(serviceId, systemId);
 
-		if (canTransformExchange(errorState, exchange.getExchangeId())) {
+		ExchangeTransformAudit transformAudit = createTransformAudit(serviceId, systemId, exchange.getId());
+
+		if (canTransformExchange(errorState, exchange.getId())) {
 
 			//retrieve the audit of any errors from the last time we processed this exchange ID
-			TransformError previousErrors = findPreviousErrors(serviceId, systemId, exchange.getExchangeId());
+			TransformError previousErrors = findPreviousErrors(serviceId, systemId, exchange.getId());
 
 			try {
 
@@ -106,13 +122,24 @@ public class MessageTransformInbound extends PipelineComponent {
                 } else if (software.equalsIgnoreCase(MessageFormat.HL7V2)) {
                     processHL7V2Filer(exchange, serviceId, systemId, messageVersion, software, currentErrors, batchIds, previousErrors);
 
-				} else {
+				} else if (software.equalsIgnoreCase(MessageFormat.ADASTRA_XML)) {
+					processAdastraXml(exchange, serviceId, systemId, messageVersion, software, currentErrors, batchIds, previousErrors);
+
+				} else if (software.equalsIgnoreCase(MessageFormat.BARTS_CSV)) {
+					processBartsCsvTransform(exchange, serviceId, systemId, messageVersion, software, currentErrors, batchIds, previousErrors);
+
+				} else if (software.equalsIgnoreCase(MessageFormat.HOMERTON_CSV)) {
+					processHomertonCsvTransform(exchange, serviceId, systemId, messageVersion, software, currentErrors, batchIds, previousErrors);
+
+				} else if (software.equalsIgnoreCase(MessageFormat.VISION_CSV)) {
+					processVisionCsvTransform(exchange, serviceId, systemId, messageVersion, software, currentErrors, batchIds, previousErrors);
+				}
+				else {
 					throw new SoftwareNotSupportedException(software, messageVersion);
 				}
 			}
 			catch (Exception ex) {
-
-				LOG.error("Error processing exchange " + exchange.getExchangeId() + " from service " + serviceId + " and system " + systemId, ex);
+				LOG.error("Error processing exchange " + exchange.getId() + " from service " + serviceId + " and system " + systemId, ex);
 
 				//record the exception as a fatal error with the exchange
 				Map<String, String> args = new HashMap<>();
@@ -122,13 +149,11 @@ public class MessageTransformInbound extends PipelineComponent {
 
 			//send an alert if we've had an error while trying to process an exchange
 			if (currentErrors.getError().size() > 0) {
-				//sendSlackAlert(exchange, software, currentErrors);
-
-                throw new Exception("Failing transform");
+				sendSlackAlert(exchange, software, serviceId, currentErrors);
 			}
 
 		} else {
-			LOG.info("NOT performing transform for Exchange {} because previous Exchange went into error", exchange.getExchangeId());
+			LOG.info("NOT performing transform for Exchange {} because previous Exchange went into error", exchange.getId());
 
 			//record the exception as a fatal error with the exchange
 			Map<String, String> args = new HashMap<>();
@@ -138,15 +163,58 @@ public class MessageTransformInbound extends PipelineComponent {
 
 		//if we had any errors with the transform, update the error state for this service and system, so
 		//we don't attempt to run any further exchanges from the same source until the error is resolved
-		updateErrorState(errorState, serviceId, systemId, exchange.getExchangeId(), currentErrors);
+		updateErrorState(errorState, serviceId, systemId, exchange.getId(), currentErrors);
 
 		//save the audit of this transform, including errors
-		createTransformAudit(serviceId, systemId, exchange.getExchangeId(), transformStarted, currentErrors, batchIds);
+		int newBatchIdCount = batchIds.size() - startingBatchIdCount;
+		updateTransformAudit(transformAudit, currentErrors, newBatchIdCount);
+
+		//may as well clear down the cache of reference mappings since they won't be of much use for the next Exchange
+		IdHelper.clearCache();
+
+		if (currentErrors.getError().size() > 0) {
+
+			//for bulk transforms, I want them to fail gracefully, but that mechanism doesn't work for the
+			//thousands of ADT messages, so for transaction-type messages just throw the exception to halt all inbound processing
+			//(i.e. it'll reject the message in rabbit, then pull it out again)
+			if (!software.equalsIgnoreCase(MessageFormat.EMIS_CSV)
+					&& !software.equalsIgnoreCase(MessageFormat.VISION_CSV)
+					&& !software.equalsIgnoreCase(MessageFormat.BARTS_CSV)) {
+				throw new Exception("Failing transform");
+			}
+
+			//if we had any errors, don't return any batch IDs, so we don't send anything on to the protocol queue yet
+			//when we do successfully re-process the exchange, it will pick up any batch IDs we created this time around
+			return new ArrayList<>();
+		}
 
 		return batchIds;
 	}
 
-	private void sendSlackAlert(Exchange exchange, String software, TransformError currentErrors) {
+
+
+	private void findExistingBatchIds(List<UUID> batchIds, UUID exchangeId) throws Exception {
+		List<ExchangeBatch> batches = exchangeBatchRepository.retrieveForExchangeId(exchangeId);
+		for (ExchangeBatch batch: batches) {
+			UUID batchId = batch.getBatchId();
+			batchIds.add(batchId);
+		}
+	}
+
+	private void processAdastraXml(Exchange exchange, UUID serviceId, UUID systemId, String messageVersion,
+								   String software, TransformError currentErrors, List<UUID> batchIds, TransformError previousErrors) throws Exception {
+
+		int maxFilingThreads = config.getFilingThreadLimit();
+
+		//payload
+		String xmlPayload = exchange.getBody();
+		UUID exchangeId = exchange.getId();
+
+		AdastraXmlToFhirTransformer.transform(exchangeId, xmlPayload, serviceId, systemId,
+				currentErrors, batchIds, previousErrors, null, maxFilingThreads, messageVersion);
+	}
+
+	private void sendSlackAlert(Exchange exchange, String software, UUID serviceId, TransformError currentErrors) {
 
 		int countErrors = currentErrors.getError().size();
 
@@ -154,7 +222,7 @@ public class MessageTransformInbound extends PipelineComponent {
 		if (countErrors > 1) {
 			message += "1 of " + countErrors + " ";
 		}
-		message += "in inbound transform from " + software + " for exchange " + exchange.getExchangeId() + "\n";
+		message += "in inbound transform from " + software + " for exchange " + exchange.getId() + " and service " + serviceId + "\n";
 		message += "view the full error details on the Transform Errors page of EDS-UI";
 
 		Error error = currentErrors.getError().get(0);
@@ -183,7 +251,7 @@ public class MessageTransformInbound extends PipelineComponent {
 
 		String attachment = String.join("\n", lines);
 
-		SlackHelper.sendSlackMessage(message, attachment);
+		SlackHelper.sendSlackMessage(SlackHelper.Channel.QueueReaderAlerts, message, attachment);
 	}
 
 	/**
@@ -194,7 +262,7 @@ public class MessageTransformInbound extends PipelineComponent {
 								  UUID serviceId,
 								  UUID systemId,
 								  UUID exchangeId,
-								  TransformError currentErrors) {
+								  TransformError currentErrors) throws Exception {
 
 		boolean hadError = currentErrors.getError().size() > 0;
 
@@ -209,8 +277,9 @@ public class MessageTransformInbound extends PipelineComponent {
 				errorState = new ExchangeTransformErrorState();
 				errorState.setServiceId(serviceId);
 				errorState.setSystemId(systemId);
+				errorState.setExchangeIdsInError(new ArrayList<>());
 				errorState.getExchangeIdsInError().add(exchangeId);
-				new AuditRepository().save(errorState);
+				auditRepository.save(errorState);
 			}
 
 		} else {
@@ -228,16 +297,16 @@ public class MessageTransformInbound extends PipelineComponent {
 
 			//if the error state object is now empty, delete it
 			if (errorState.getExchangeIdsInError().isEmpty()) {
-				new AuditRepository().delete(errorState);
+				auditRepository.delete(errorState);
 			} else {
-				new AuditRepository().save(errorState);
+				auditRepository.save(errorState);
 			}
 		}
 	}
 
-	private TransformError findPreviousErrors(UUID serviceId, UUID systemId, UUID exchangeId) {
+	private TransformError findPreviousErrors(UUID serviceId, UUID systemId, UUID exchangeId) throws Exception {
 
-		ExchangeTransformAudit previous = new AuditRepository().getMostRecentExchangeTransform(serviceId, systemId, exchangeId);
+		ExchangeTransformAudit previous = auditRepository.getMostRecentExchangeTransform(serviceId, systemId, exchangeId);
 		if (previous == null
 				|| previous.getErrorXml() == null
 				|| previous.getDeleted() != null) {
@@ -278,24 +347,30 @@ public class MessageTransformInbound extends PipelineComponent {
 		return false;
 	}
 
-	private static void createTransformAudit(UUID serviceId, UUID systemId, UUID exchangeId, Date transformStarted, TransformError transformError, List<UUID> batchIds) {
+	private static ExchangeTransformAudit createTransformAudit(UUID serviceId, UUID systemId, UUID exchangeId) throws Exception {
+
 		ExchangeTransformAudit transformAudit = new ExchangeTransformAudit();
 		transformAudit.setServiceId(serviceId);
 		transformAudit.setSystemId(systemId);
 		transformAudit.setExchangeId(exchangeId);
-		transformAudit.setVersion(UUIDs.timeBased());
-		transformAudit.setStarted(transformStarted);
+		transformAudit.setId(UUIDs.timeBased());
+		transformAudit.setStarted(new Date());
+
+		auditRepository.save(transformAudit);
+
+		return transformAudit;
+	}
+
+	private void updateTransformAudit(ExchangeTransformAudit transformAudit, TransformError errors, int newBatchIdCount) throws Exception {
+
 		transformAudit.setEnded(new Date());
+		transformAudit.setNumberBatchesCreated(new Integer(newBatchIdCount));
 
-		if (!batchIds.isEmpty()) {
-			transformAudit.setNumberBatchesCreated(batchIds.size());
+		if (errors.getError().size() > 0) {
+			transformAudit.setErrorXml(TransformErrorSerializer.writeToXml(errors));
 		}
 
-		if (transformError.getError().size() > 0) {
-			transformAudit.setErrorXml(TransformErrorSerializer.writeToXml(transformError));
-		}
-
-		new AuditRepository().save(transformAudit);
+		auditRepository.save(transformAudit);
 	}
 
 	private static String convertUUidsToStrings(List<UUID> uuids) throws PipelineException {
@@ -321,10 +396,55 @@ public class MessageTransformInbound extends PipelineComponent {
 		int maxFilingThreads = config.getFilingThreadLimit();
 
 		String exchangeBody = exchange.getBody();
-		UUID exchangeId = exchange.getExchangeId();
+		UUID exchangeId = exchange.getId();
 
 		EmisCsvToFhirTransformer.transform(exchangeId, exchangeBody, serviceId, systemId, currentErrors,
 									batchIds, previousErrors, sharedStoragePath, maxFilingThreads);
+	}
+
+	private void processBartsCsvTransform(Exchange exchange, UUID serviceId, UUID systemId, String version,
+										 String software, TransformError currentErrors, List<UUID> batchIds,
+										 TransformError previousErrors) throws Exception {
+
+		//get our configuration options
+		String sharedStoragePath = config.getSharedStoragePath();
+		int maxFilingThreads = config.getFilingThreadLimit();
+
+		String exchangeBody = exchange.getBody();
+		UUID exchangeId = exchange.getId();
+
+		BartsCsvToFhirTransformer.transform(exchangeId, exchangeBody, serviceId, systemId, currentErrors,
+				batchIds, previousErrors, sharedStoragePath, maxFilingThreads, version);
+	}
+
+	private void processHomertonCsvTransform(Exchange exchange, UUID serviceId, UUID systemId, String version,
+										  String software, TransformError currentErrors, List<UUID> batchIds,
+										  TransformError previousErrors) throws Exception {
+
+		//get our configuration options
+		String sharedStoragePath = config.getSharedStoragePath();
+		int maxFilingThreads = config.getFilingThreadLimit();
+
+		String exchangeBody = exchange.getBody();
+		UUID exchangeId = exchange.getId();
+
+		HomertonCsvToFhirTransformer.transform(exchangeId, exchangeBody, serviceId, systemId, currentErrors,
+				batchIds, previousErrors, sharedStoragePath, maxFilingThreads, version);
+	}
+
+	private void processVisionCsvTransform(Exchange exchange, UUID serviceId, UUID systemId, String version,
+											 String software, TransformError currentErrors, List<UUID> batchIds,
+											 TransformError previousErrors) throws Exception {
+
+		//get our configuration options
+		String sharedStoragePath = config.getSharedStoragePath();
+		int maxFilingThreads = config.getFilingThreadLimit();
+
+		String exchangeBody = exchange.getBody();
+		UUID exchangeId = exchange.getId();
+
+		VisionCsvToFhirTransformer.transform(exchangeId, exchangeBody, serviceId, systemId, currentErrors,
+				batchIds, previousErrors, sharedStoragePath, maxFilingThreads, version);
 	}
 
 	private void processTppXmlTransform(Exchange exchange, UUID serviceId, UUID systemId, String version,
@@ -342,7 +462,7 @@ public class MessageTransformInbound extends PipelineComponent {
 
 		//payload
 		String xmlPayload = exchange.getBody();
-		UUID exchangeId = exchange.getExchangeId();
+		UUID exchangeId = exchange.getId();
 
 		//transform from XML -> FHIR
 		List<Resource> resources = EmisOpenToFhirTransformer.toFhirFullRecord(xmlPayload);
@@ -362,7 +482,7 @@ public class MessageTransformInbound extends PipelineComponent {
                                           String software, TransformError currentErrors, List<UUID> batchIds,
                                           TransformError previousErrors) throws Exception {
 
-        UUID exchangeId = exchange.getExchangeId();
+        UUID exchangeId = exchange.getId();
 	    String exchangeBody = exchange.getBody();
 
         FhirHl7v2Filer fhirHl7v2Filer = new FhirHl7v2Filer();

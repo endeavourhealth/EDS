@@ -11,9 +11,10 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.core.configuration.PostToSubscriberWebServiceConfig;
-import org.endeavourhealth.core.data.admin.QueuedMessageRepository;
-import org.endeavourhealth.core.messaging.exchange.Exchange;
-import org.endeavourhealth.core.messaging.exchange.HeaderKeys;
+import org.endeavourhealth.core.database.dal.DalProvider;
+import org.endeavourhealth.core.database.dal.audit.QueuedMessageDalI;
+import org.endeavourhealth.core.database.dal.audit.models.Exchange;
+import org.endeavourhealth.core.database.dal.audit.models.HeaderKeys;
 import org.endeavourhealth.core.messaging.pipeline.PipelineComponent;
 import org.endeavourhealth.core.messaging.pipeline.PipelineException;
 import org.endeavourhealth.core.messaging.pipeline.SubscriberBatch;
@@ -44,17 +45,21 @@ public class PostToSubscriberWebService extends PipelineComponent {
 		UUID batchId = transformBatch.getBatchId();
 
 		SubscriberBatch subscriberBatch = getSubscriberBatch(exchange);
-		UUID exchangeId = exchange.getExchangeId();
+		UUID exchangeId = exchange.getId();
 
 		UUID queuedMessageId = subscriberBatch.getQueuedMessageId();
 		String software = subscriberBatch.getSoftware();
 		String softwareVersion = subscriberBatch.getSoftwareVersion();
 		String endpoint = subscriberBatch.getEndpoint();
 
-		String payload = new QueuedMessageRepository().getById(queuedMessageId).getMessageBody();
-
 		try {
+			QueuedMessageDalI queuedMessageDal = DalProvider.factoryQueuedMessageDal();
+			String payload = queuedMessageDal.getById(queuedMessageId);
+
 			sendToSubscriber(payload, exchangeId, batchId, software, softwareVersion, endpoint);
+
+			queuedMessageDal.delete(queuedMessageId);
+
 		} catch (Exception ex) {
 			throw new PipelineException("Failed to send to " + software + " for exchange " + exchangeId + " and batch " + batchId + " and queued message " + queuedMessageId, ex);
 		}
@@ -63,8 +68,7 @@ public class PostToSubscriberWebService extends PipelineComponent {
 	private void sendToSubscriber(String payload, UUID exchangeId, UUID batchId, String software, String softwareVersion, String endpoint) throws Exception {
 
 		if (software.equals(MessageFormat.ENTERPRISE_CSV)) {
-			JsonNode config = ConfigManager.getConfigurationAsJson(endpoint, "enterprise");
-			EnterpriseFiler.file(batchId, payload, config);
+			EnterpriseFiler.file(batchId, payload, endpoint);
 
 		} else if (software.equals(MessageFormat.VITRUICARE_XML)) {
 			sendHttpPost(payload, endpoint);
@@ -74,11 +78,14 @@ public class PostToSubscriberWebService extends PipelineComponent {
 		}
 	}
 
-	private static void sendHttpPost(String payload, String url) throws Exception {
+	private static void sendHttpPost(String payload, String configName) throws Exception {
 
 		//String url = "http://127.0.0.1:8002/notify";
 		//String url = "http://localhost:8002";
 		//String url = "http://posttestserver.com/post.php";
+
+		JsonNode config = ConfigManager.getConfigurationAsJson(configName, "vitruCare");
+		String url = config.get("url").asText();
 
 		if (url == null || url.length() <= "http://".length()) {
 			LOG.trace("No/invalid url : [" + url + "]");

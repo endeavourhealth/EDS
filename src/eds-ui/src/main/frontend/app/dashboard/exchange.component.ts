@@ -18,7 +18,7 @@ import {RabbitExchange} from "../queueing/models/RabbitExchange";
 export class ExchangeComponent {
 	@Input() exchange : any;
 
-	exchangeRateMax : number = 100;
+	exchangeRateMax : number = 50;
 
 	getExchangeRateAsWidthStylePercent(exchange : RabbitExchange){
 		if (!exchange || !exchange.message_stats || !exchange.message_stats.publish_in_details || !exchange.message_stats.publish_in_details.rate)

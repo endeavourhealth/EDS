@@ -1,5 +1,5 @@
 import {ExpressionType} from "../query/models/ExpressionType";
-import {LoggerService} from "../common/logger.service";
+import {LoggerService} from "eds-common-js";
 import {Restriction} from "./models/Restriction";
 import {VariableType} from "./models/VariableType";
 import {NgbModal, NgbActiveModal} from "@ng-bootstrap/ng-bootstrap";

@@ -2,8 +2,8 @@ package org.endeavour.eds.test;
 
 import org.apache.http.Header;
 import org.apache.http.message.BasicHeader;
-import org.endeavourhealth.core.security.OrgRoles;
-import org.endeavourhealth.core.security.keycloak.client.KeycloakClient;
+import org.endeavourhealth.common.security.OrgRoles;
+import org.endeavourhealth.common.security.keycloak.client.KeycloakClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

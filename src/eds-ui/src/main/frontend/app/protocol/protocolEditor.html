@@ -70,7 +70,7 @@
 				</div>
 				<div class="row">
 					<div class="form-group col-md-8">
-						<label>Publishers & Subscribers</label>
+						<label>{{publisherCount()}} Publishers & {{subscriberCount()}} Subscribers</label>
 						<button type="button" class="btn btn-xs btn-success" style="margin-left: 20px" (click)="addContract()">
 							<span class="fa fa-plus"></span>
 						</button>
@@ -89,7 +89,7 @@
 								</thead>
 								<tbody>
 								<tr class="hover-box show-child-on-hover"
-									*ngFor="let item of libraryItem.protocol.serviceContract"
+									*ngFor="let item of getServiceContracts(); let i = index;"
 									(click)="selectedContract = item;"
 									[ngClass]="{'selection': item == selectedContract}">
 									<td>{{item.type}}</td>
@@ -100,7 +100,7 @@
 									<td *ngIf="isCohortDefinedByServices()">{{item.definesCohort}}</td>
 									<td>
 										<div class="child-to-show">
-											<button type="button" class="btn btn-danger btn-xs pull-right" (click)="removeContract(this)">
+											<button type="button" class="btn btn-danger btn-xs pull-right" (click)="removeContract(i, item)">
 												<span class="fa fa-remove"></span>
 											</button>
 										</div>

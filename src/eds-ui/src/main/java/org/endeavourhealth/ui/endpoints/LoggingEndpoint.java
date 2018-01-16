@@ -1,12 +1,15 @@
 package org.endeavourhealth.ui.endpoints;
 
-import org.endeavourhealth.core.data.audit.UserAuditRepository;
-import org.endeavourhealth.core.data.audit.models.AuditAction;
-import org.endeavourhealth.core.data.audit.models.AuditModule;
+import com.codahale.metrics.annotation.Timed;
+import io.astefanutti.metrics.aspectj.Metrics;
 import org.endeavourhealth.common.security.SecurityUtils;
+import org.endeavourhealth.core.database.dal.DalProvider;
+import org.endeavourhealth.core.database.dal.audit.UserAuditDalI;
+import org.endeavourhealth.core.database.dal.audit.models.AuditAction;
+import org.endeavourhealth.core.database.dal.audit.models.AuditModule;
+import org.endeavourhealth.core.database.dal.logback.LogbackDalI;
+import org.endeavourhealth.core.database.dal.logback.models.LoggingEvent;
 import org.endeavourhealth.coreui.endpoints.AbstractEndpoint;
-import org.endeavourhealth.ui.database.LoggingManager;
-import org.endeavourhealth.ui.database.models.LoggingEventEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,16 +18,19 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
-import java.util.*;
+import java.util.List;
 
 @Path("/logging")
+@Metrics(registry = "EdsRegistry")
 public final class LoggingEndpoint extends AbstractEndpoint {
     private static final Logger LOG = LoggerFactory.getLogger(LoggingEndpoint.class);
-    private static final UserAuditRepository userAudit = new UserAuditRepository(AuditModule.EdsUiModule.Monitoring);
+    private static final UserAuditDalI userAudit = DalProvider.factoryUserAuditDal(AuditModule.EdsUiModule.Monitoring);
+    private static final LogbackDalI logbackDal = DalProvider.factoryLogbackDal();
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.LoggingEndpoint.GetLoggingEvents")
     @Path("/getLoggingEvents")
     public Response getLoggingEvents(
         @Context SecurityContext sc,
@@ -37,9 +43,7 @@ public final class LoggingEndpoint extends AbstractEndpoint {
             "Service", serviceId,
             "Level",level);
 
-        LoggingManager db = new LoggingManager();
-
-        List<LoggingEventEntity> events = db.getLoggingEvents(page, serviceId, level);
+        List<LoggingEvent> events = logbackDal.getLoggingEvents(page, serviceId, level);
 
         clearLogbackMarkers();
 
@@ -52,6 +56,7 @@ public final class LoggingEndpoint extends AbstractEndpoint {
     @GET
     @Produces(MediaType.TEXT_PLAIN)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.LoggingEndpoint.GetStackTrace")
     @Path("/getStackTrace")
     public Response getStackTrace(@Context SecurityContext sc, @QueryParam("eventId") Long eventId) throws Exception {
         super.setLogbackMarkers(sc);
@@ -59,9 +64,7 @@ public final class LoggingEndpoint extends AbstractEndpoint {
             "Stack Trace",
             "EventId", eventId);
 
-        LoggingManager db = new LoggingManager();
-
-        String stackTrace = db.getStackTrace(eventId);
+        String stackTrace = logbackDal.getStackTrace(eventId);
 
         clearLogbackMarkers();
 

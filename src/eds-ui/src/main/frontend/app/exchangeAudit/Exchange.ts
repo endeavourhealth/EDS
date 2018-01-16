@@ -6,6 +6,7 @@ export class Exchange {
     timestamp: number;
     headers: {};
     bodyLines: string[];
+    inError: boolean;
     events: ExchangeEvent[];
     transformAudits: TransformErrorDetail[];
 }

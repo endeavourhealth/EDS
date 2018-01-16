@@ -1,20 +1,17 @@
 package org.endeavourhealth.enterprise;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import org.endeavourhealth.common.config.ConfigManager;
-import org.endeavourhealth.core.rdbms.transform.EnterpriseAge;
-import org.endeavourhealth.core.rdbms.transform.EnterpriseAgeUpdater;
-import org.endeavourhealth.core.rdbms.transform.TransformConnection;
+import org.endeavourhealth.common.utility.SlackHelper;
+import org.endeavourhealth.core.database.dal.DalProvider;
+import org.endeavourhealth.core.database.dal.subscriberTransform.EnterpriseAgeUpdaterlDalI;
+import org.endeavourhealth.core.database.dal.subscriberTransform.models.EnterpriseAge;
+import org.endeavourhealth.core.database.rdbms.enterprise.EnterpriseConnector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.persistence.EntityManager;
-import javax.persistence.Query;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.Types;
-import java.util.Date;
 import java.util.List;
 
 public class Main {
@@ -32,46 +29,31 @@ public class Main {
         ConfigManager.Initialize("EnterpriseAgeUpdater");
 
         try {
-            if (args.length != 0) {
-                LOG.error("No parameters required.");
+            if (args.length != 1) {
+                LOG.error("Parameter required: <enterprise config name>");
                 return;
             }
 
-            LOG.info("Age updater starting");
+            String enterpriseConfigName = args[0];
+            LOG.info("Age updater starting for " + enterpriseConfigName);
 
-            EntityManager entityManager = TransformConnection.getEntityManager();
-            List<EnterpriseAge> agesToUpdate = findAgesToUpdate(entityManager);
+            EnterpriseAgeUpdaterlDalI enterpriseAgeUpdaterlDal = DalProvider.factoryEnterpriseAgeUpdaterlDal(enterpriseConfigName);
+            List<EnterpriseAge> agesToUpdate = enterpriseAgeUpdaterlDal.findAgesToUpdate();
             LOG.info("Found " + agesToUpdate.size() + " ages to update");
 
-            String currentConfigName = null;
-            Connection currentConnection = null;
+            Connection enterpriseConnection = EnterpriseConnector.openConnection(enterpriseConfigName);
 
             int progress = 0;
             for (EnterpriseAge ageToUpdate: agesToUpdate) {
 
-                Integer[] ages = EnterpriseAgeUpdater.calculateAgeValues(ageToUpdate);
+                Integer[] ages = enterpriseAgeUpdaterlDal.calculateAgeValues(ageToUpdate);
 
-                //see if we're on a different enterprise DB yet, loading the config if needed
-                if (currentConfigName == null
-                        || !currentConfigName.equalsIgnoreCase(ageToUpdate.getEnterpriseConfigName())) {
-
-                    if (currentConnection != null) {
-                        currentConnection.close();
-                    }
-
-                    currentConfigName = ageToUpdate.getEnterpriseConfigName();
-                    JsonNode config = ConfigManager.getConfigurationAsJson(currentConfigName, "enterprise");
-                    currentConnection = openConnection(config);
-                    LOG.info("Updating ages on " + currentConfigName);
-                }
-
-                updateEnterprise(ageToUpdate.getEnterprisePatientId(), ages, currentConnection);
+                updateEnterprisePatient(ageToUpdate.getEnterprisePatientId(), ages, enterpriseConnection);
+                updateEnterprisePerson(ageToUpdate.getEnterprisePatientId(), ages, enterpriseConnection);
 
                 //if we've successfully updated Enterprise, then it's time to save our updated map object
                 //with the newly calculated date of next update
-                entityManager.getTransaction().begin();
-                entityManager.persist(ageToUpdate);
-                entityManager.getTransaction().commit();
+                enterpriseAgeUpdaterlDal.save(ageToUpdate);
 
                 progress ++;
                 if (progress % 100 == 0) {
@@ -79,36 +61,22 @@ public class Main {
                 }
             }
 
-            if (currentConnection != null) {
-                currentConnection.close();
+            if (enterpriseConnection != null) {
+                enterpriseConnection.close();
             }
-
-            entityManager.close();
 
             LOG.info("Age updates complete");
 
         } catch (Exception ex) {
             LOG.error("", ex);
+            SlackHelper.sendSlackMessage(SlackHelper.Channel.EnterpriseAgeUpdaterAlerts, "Exception in Enterprise Age Updater", ex);
         }
+
+        System.exit(0);
     }
 
-    private static Connection openConnection(JsonNode config) throws Exception {
 
-        String driverClass = config.get("driverClass").asText();
-        String url = config.get("url").asText();
-        String username = config.get("username").asText();
-        String password = config.get("password").asText();
-
-        //force the driver to be loaded
-        Class.forName(driverClass);
-
-        Connection conn = DriverManager.getConnection(url, username, password);
-        conn.setAutoCommit(false);
-
-        return conn;
-    }
-
-    private static void updateEnterprise(long enterprisePatientId, Integer[] ages, Connection connection) throws Exception {
+    private static void updateEnterprisePatient(long enterprisePatientId, Integer[] ages, Connection connection) throws Exception {
 
         //the enterprise patient database isn't managed using hibernate, so we need to simply write a simple update statement
         StringBuilder sb = new StringBuilder();
@@ -120,22 +88,22 @@ public class Main {
 
         PreparedStatement update = connection.prepareStatement(sb.toString());
 
-        if (ages[EnterpriseAgeUpdater.UNIT_YEARS] == null) {
+        if (ages[EnterpriseAge.UNIT_YEARS] == null) {
             update.setNull(1, Types.INTEGER);
         } else {
-            update.setInt(1, ages[EnterpriseAgeUpdater.UNIT_YEARS]);
+            update.setInt(1, ages[EnterpriseAge.UNIT_YEARS]);
         }
 
-        if (ages[EnterpriseAgeUpdater.UNIT_MONTHS] == null) {
+        if (ages[EnterpriseAge.UNIT_MONTHS] == null) {
             update.setNull(2, Types.INTEGER);
         } else {
-            update.setInt(2, ages[EnterpriseAgeUpdater.UNIT_MONTHS]);
+            update.setInt(2, ages[EnterpriseAge.UNIT_MONTHS]);
         }
 
-        if (ages[EnterpriseAgeUpdater.UNIT_WEEKS] == null) {
+        if (ages[EnterpriseAge.UNIT_WEEKS] == null) {
             update.setNull(3, Types.INTEGER);
         } else {
-            update.setInt(3, ages[EnterpriseAgeUpdater.UNIT_WEEKS]);
+            update.setInt(3, ages[EnterpriseAge.UNIT_WEEKS]);
         }
 
         update.setLong(4, enterprisePatientId);
@@ -145,22 +113,49 @@ public class Main {
 
         connection.commit();
 
-        LOG.info("Updated patient " + enterprisePatientId + " to ages " + ages[EnterpriseAgeUpdater.UNIT_YEARS] + "y, " + ages[EnterpriseAgeUpdater.UNIT_MONTHS] + "m " + ages[EnterpriseAgeUpdater.UNIT_WEEKS] + " wks");
+        LOG.info("Updated patient " + enterprisePatientId + " to ages " + ages[EnterpriseAge.UNIT_YEARS] + " y, " + ages[EnterpriseAge.UNIT_MONTHS] + " m " + ages[EnterpriseAge.UNIT_WEEKS] + " wks");
     }
 
-    private static List<EnterpriseAge> findAgesToUpdate(EntityManager entityManager) {
+    private static void updateEnterprisePerson(long enterprisePatientId, Integer[] ages, Connection connection) throws Exception {
 
-        String sql = "select c"
-                + " from"
-                + " EnterpriseAge c"
-                + " where c.dateNextChange <= :dateNextChange"
-                + " order by c.enterpriseConfigName";
+        //update the age fields on the person table where the person is for our patient and their pseudo IDs match
+        StringBuilder sb = new StringBuilder();
+        sb.append("UPDATE patient, person SET ");
+        sb.append("person.age_years = ?, ");
+        sb.append("person.age_months = ?, ");
+        sb.append("person.age_weeks = ? ");
+        sb.append("WHERE patient.id = ? ");
+        sb.append("AND patient.person_id = person.id ");
+        sb.append("AND patient.pseudo_id = person.pseudo_id");
 
+        PreparedStatement update = connection.prepareStatement(sb.toString());
 
-        Query query = entityManager.createQuery(sql, EnterpriseAge.class)
-                .setParameter("dateNextChange", new Date());
+        if (ages[EnterpriseAge.UNIT_YEARS] == null) {
+            update.setNull(1, Types.INTEGER);
+        } else {
+            update.setInt(1, ages[EnterpriseAge.UNIT_YEARS]);
+        }
 
-        return query.getResultList();
+        if (ages[EnterpriseAge.UNIT_MONTHS] == null) {
+            update.setNull(2, Types.INTEGER);
+        } else {
+            update.setInt(2, ages[EnterpriseAge.UNIT_MONTHS]);
+        }
+
+        if (ages[EnterpriseAge.UNIT_WEEKS] == null) {
+            update.setNull(3, Types.INTEGER);
+        } else {
+            update.setInt(3, ages[EnterpriseAge.UNIT_WEEKS]);
+        }
+
+        update.setLong(4, enterprisePatientId);
+
+        update.addBatch();
+        update.executeBatch();
+
+        connection.commit();
     }
+
+
 
 }

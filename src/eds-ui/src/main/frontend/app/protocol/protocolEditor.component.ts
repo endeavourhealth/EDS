@@ -2,32 +2,30 @@ import {Protocol} from "./models/Protocol";
 import {ServiceContract} from "./models/ServiceContract";
 import {Service} from "../services/models/Service";
 import {System} from "../system/models/System";
-import {Cohort} from "./models/Cohort";
-import {LibraryItem} from "../library/models/LibraryItem";
 import {TechnicalInterface} from "../system/models/TechnicalInterface";
-import {LibraryService} from "../library/library.service";
 import {DataSet} from "../dataSet/models/Dataset";
 import {ServiceService} from "../services/service.service";
-import {LoggerService} from "../common/logger.service";
-import {AdminService} from "../administration/admin.service";
+import {AdminService, LibraryService, linq, LoggerService} from "eds-common-js";
 import {NgbModal} from "@ng-bootstrap/ng-bootstrap";
 import {Transition, StateService} from "ui-router-ng2";
 import {Component} from "@angular/core";
 import {SystemService} from "../system/system.service";
 import {DataSetService} from "../dataSet/dataSet.service";
 import {ProtocolService} from "./protocol.service";
+import {EdsLibraryItem} from "../edsLibrary/models/EdsLibraryItem";
+import {LibraryItem} from "eds-common-js/dist/library/models/LibraryItem";
 
 @Component({
 	template : require('./protocolEditor.html')
 })
 export class ProtocolEditComponent {
-	libraryItem : LibraryItem;
+	libraryItem : EdsLibraryItem;
 	protected protocol : Protocol;
 	selectedContract : ServiceContract;
 	services : Service[];
 	systems : System[];
 	dataSets : DataSet[];
-	protocols : LibraryItem[];
+	protocols : EdsLibraryItem[];
 	technicalInterfaces : TechnicalInterface[];
 
 	//hard-code two cohort strings until the cohort editor is implemented
@@ -50,7 +48,7 @@ export class ProtocolEditComponent {
 		protected state : StateService,
 		protected transition : Transition) {
 
-		this.libraryItem = <LibraryItem>{
+		this.libraryItem = <EdsLibraryItem>{
 			protocol: {}
 		};
 
@@ -81,7 +79,7 @@ export class ProtocolEditComponent {
 
 	load(uuid : string) {
 		var vm = this;
-		vm.libraryService.getLibraryItem(uuid)
+		vm.libraryService.getLibraryItem<EdsLibraryItem>(uuid)
 			.subscribe(
 				(libraryItem) => vm.libraryItem = libraryItem,
 				(data) => vm.logger.error('Error loading', data, 'Error')
@@ -124,7 +122,7 @@ export class ProtocolEditComponent {
 			description: '',
 			folderUuid: folderUuid,
 			protocol: this.protocol
-		} as LibraryItem;
+		} as EdsLibraryItem;
 
 	}
 
@@ -145,8 +143,8 @@ export class ProtocolEditComponent {
 		this.libraryItem.protocol.serviceContract.push(this.selectedContract);
 	}
 
-	removeContract(scope : any) {
-		this.libraryItem.protocol.serviceContract.splice(scope.$index, 1);
+	removeContract(index: number, scope : any) {
+		this.libraryItem.protocol.serviceContract.splice(index, 1);
 		if (this.selectedContract === scope.item) {
 			this.selectedContract = null;
 		}
@@ -171,7 +169,7 @@ export class ProtocolEditComponent {
 		var vm = this;
 		vm.serviceService.getAll()
 			.subscribe(
-				(result) => vm.services = result,
+				(result) => vm.services = linq(result).OrderBy(s => s.name).ToArray(),
 				(error) => vm.logger.error('Failed to load services', error, 'Load services')
 			);
 	}
@@ -189,7 +187,7 @@ export class ProtocolEditComponent {
 		var vm = this;
 		vm.dataSetService.getDatasets()
 			.subscribe(
-				(result) => vm.dataSets = result,
+				(result) => vm.dataSets = linq(result).OrderBy(ds => ds.name).ToArray(),
 				(error) => vm.logger.error('Failed to load dataSets', error, 'Load dataSets')
 			);
 
@@ -211,9 +209,9 @@ export class ProtocolEditComponent {
 			);
 	}
 
-	private processSystems(systems) {
+	private processSystems(systems:System[]) {
 		var vm = this;
-		vm.systems = systems;
+		vm.systems = linq(systems).OrderBy(s => s.name).ToArray();
 		vm.technicalInterfaces = [];
 		console.log(vm.systems[0].technicalInterface.length);
 		console.log(vm.systems[0].technicalInterface[0].name);
@@ -230,11 +228,41 @@ export class ProtocolEditComponent {
 				vm.technicalInterfaces.push(technicalInterface);
 			}
 		}
+		vm.technicalInterfaces = linq(vm.technicalInterfaces).OrderBy(ti => ti.name).ToArray();
 	}
 
 	isCohortDefinedByServices(): boolean {
 		var p = this.libraryItem.protocol;
 		var cohort = p.cohort;
 		return cohort == 'Defining Services';
+	}
+
+	getServiceContracts() {
+		return linq(this.libraryItem.protocol.serviceContract)
+			.OrderBy(sc => sc.type)
+			.ThenBy(sc => sc.service.name)
+			.ToArray();
+	}
+
+	publisherCount(): number {
+		return this.getServiceContractCount("PUBLISHER");
+	}
+
+	subscriberCount(): number {
+		return this.getServiceContractCount("SUBSCRIBER");
+	}
+
+	private getServiceContractCount(typeToCheck: string): number {
+		var contracts = this.getServiceContracts();
+		var count = 0;
+
+		for (var i=0; i<contracts.length; i++) {
+			var contract = contracts[i];
+			if (contract.type == typeToCheck) {
+				count ++;
+			}
+		}
+
+		return count;
 	}
 }

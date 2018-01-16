@@ -15,25 +15,40 @@
     <version>1.0-SNAPSHOT</version>
 
     <dependencies>
-
+        <dependency>
+            <groupId>org.openpseudonymiser</groupId>
+            <artifactId>cryptolib</artifactId>
+            <version>${crypto-lib.version}</version>
+        </dependency>
         <!-- dependent on EDS-core -->
         <dependency>
-            <groupId>org.endeavourhealth</groupId>
-            <artifactId>eds-core</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <groupId>org.endeavourhealth.common</groupId>
+            <artifactId>core</artifactId>
+            <version>${eds-core.version}</version>
         </dependency>
 
         <dependency>
-            <groupId>com.github.endeavourhealth.Common</groupId>
+            <groupId>org.endeavourhealth.common</groupId>
             <artifactId>cache</artifactId>
-            <version>${eds-common.version}</version>
+            <version>${eds-cache.version}</version>
         </dependency>
 
-        <!--Slack-->
         <dependency>
-            <groupId>net.gpedro.integrations.slack</groupId>
-            <artifactId>slack-webhook</artifactId>
-            <version>${slack-integration.version}</version>
+            <groupId>org.endeavourhealth.configmanager</groupId>
+            <artifactId>configmanager</artifactId>
+            <version>${eds-config.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.endeavourhealth.common</groupId>
+            <artifactId>transforms</artifactId>
+            <version>${eds-transform.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.endeavourhealth.common</groupId>
+            <artifactId>utility</artifactId>
+            <version>${eds-utility.version}</version>
         </dependency>
 
         <dependency>
@@ -78,13 +93,15 @@
         </dependency>
         <dependency>
             <groupId>org.endeavourhealth</groupId>
-            <artifactId>eds-transforms</artifactId>
-            <version>1.0-SNAPSHOT</version>
-        </dependency>
-        <dependency>
-            <groupId>org.endeavourhealth</groupId>
             <artifactId>eds-subscriber</artifactId>
             <version>1.0-SNAPSHOT</version>
+        </dependency>
+
+        <!-- DropWizard -->
+        <dependency>
+            <groupId>io.dropwizard.metrics</groupId>
+            <artifactId>metrics-core</artifactId>
+            <version>${dropwizard-metrics.version}</version>
         </dependency>
     </dependencies>
 

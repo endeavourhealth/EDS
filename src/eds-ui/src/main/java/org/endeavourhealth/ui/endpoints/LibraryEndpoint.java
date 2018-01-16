@@ -1,16 +1,16 @@
 package org.endeavourhealth.ui.endpoints;
 
-import org.endeavourhealth.core.data.admin.LibraryRepository;
-import org.endeavourhealth.core.data.admin.LibraryRepositoryHelper;
-import org.endeavourhealth.core.data.admin.models.ActiveItem;
-import org.endeavourhealth.core.data.admin.models.DefinitionItemType;
-import org.endeavourhealth.core.data.admin.models.Item;
-import org.endeavourhealth.core.data.admin.models.ItemDependency;
-import org.endeavourhealth.core.data.audit.UserAuditRepository;
-import org.endeavourhealth.core.data.audit.models.AuditAction;
-import org.endeavourhealth.core.data.audit.models.AuditModule;
+import com.codahale.metrics.annotation.Timed;
+import io.astefanutti.metrics.aspectj.Metrics;
 import org.endeavourhealth.common.security.SecurityUtils;
 import org.endeavourhealth.common.security.annotations.RequiresAdmin;
+import org.endeavourhealth.core.database.dal.DalProvider;
+import org.endeavourhealth.core.database.dal.admin.LibraryDalI;
+import org.endeavourhealth.core.database.dal.admin.LibraryRepositoryHelper;
+import org.endeavourhealth.core.database.dal.admin.models.*;
+import org.endeavourhealth.core.database.dal.audit.UserAuditDalI;
+import org.endeavourhealth.core.database.dal.audit.models.AuditAction;
+import org.endeavourhealth.core.database.dal.audit.models.AuditModule;
 import org.endeavourhealth.core.xml.QueryDocument.*;
 import org.endeavourhealth.core.xml.QueryDocument.System;
 import org.endeavourhealth.core.xml.QueryDocumentSerializer;
@@ -18,33 +18,126 @@ import org.endeavourhealth.ui.DependencyType;
 import org.endeavourhealth.ui.json.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-import org.xml.sax.InputSource;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import java.io.StringReader;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 @Path("/library")
+@Metrics(registry = "EdsRegistry")
 public final class LibraryEndpoint extends AbstractItemEndpoint {
 
     private static final Logger LOG = LoggerFactory.getLogger(LibraryEndpoint.class);
-    private static final UserAuditRepository userAudit = new UserAuditRepository(AuditModule.EdsUiModule.Library);
+    private static final UserAuditDalI userAudit = DalProvider.factoryUserAuditDal(AuditModule.EdsUiModule.Library);
 
-    @GET
+
+	@GET
+	@Produces(MediaType.APPLICATION_JSON)
+	@Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.LibraryEndpoint.GetFolderContents")
+	@Path("/getFolderContents")
+	public Response getFolderContents(@Context SecurityContext sc, @QueryParam("folderUuid") String uuidStr) throws Exception {
+		super.setLogbackMarkers(sc);
+		userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
+				"FolderContents",
+				"Folder Id", uuidStr);
+
+		LibraryDalI repository = DalProvider.factoryLibraryDal();
+
+		UUID folderUuid = UUID.fromString(uuidStr);
+
+		LOG.trace("GettingFolderContents for folder {}", folderUuid);
+
+		JsonFolderContentsList ret = new JsonFolderContentsList();
+
+		List<ActiveItem> childActiveItems = new ArrayList();
+
+		Iterable<ItemDependency> itemDependency = repository.getItemDependencyByDependentItemId(folderUuid, DependencyType.IsContainedWithin.getValue());
+
+		for (ItemDependency dependency: itemDependency) {
+			Iterable<ActiveItem> item = repository.getActiveItemByAuditId(dependency.getAuditId());
+			for (ActiveItem activeItem: item) {
+				if (!activeItem.isDeleted()) {
+                    childActiveItems.add(activeItem);
+                }
+			}
+		}
+
+		HashMap<UUID, Audit> hmAuditsByAuditUuid = new HashMap<>();
+		List<Audit> audits = new ArrayList<>();
+		for (ActiveItem activeItem: childActiveItems) {
+			Audit audit = repository.getAuditByKey(activeItem.getAuditId());
+			audits.add(audit);
+		}
+
+		for (Audit audit: audits) {
+			hmAuditsByAuditUuid.put(audit.getId(), audit);
+		}
+
+		HashMap<UUID, Item> hmItemsByItemUuid = new HashMap<>();
+		List<Item> items = new ArrayList<>();
+		for (ActiveItem activeItem: childActiveItems) {
+			Item item = repository.getItemByKey(activeItem.getItemId(), activeItem.getAuditId());
+			items.add(item);
+		}
+
+		for (Item item: items) {
+			hmItemsByItemUuid.put(item.getId(), item);
+		}
+
+		for (int i = 0; i < childActiveItems.size(); i++) {
+
+			ActiveItem activeItem = childActiveItems.get(i);
+			Item item = hmItemsByItemUuid.get(activeItem.getItemId());
+
+			DefinitionItemType itemType = DefinitionItemType.get(activeItem.getItemTypeId());
+			Audit audit = hmAuditsByAuditUuid.get(item.getAuditId());
+
+			JsonFolderContent c = new JsonFolderContent(activeItem, item, audit);
+			ret.addContent(c);
+
+			//and set any extra data we need
+			if (itemType == DefinitionItemType.Query) {
+
+			} else if (itemType == DefinitionItemType.Test) {
+
+			} else if (itemType == DefinitionItemType.Resource) {
+
+			} else if (itemType == DefinitionItemType.CodeSet) {
+
+			} else if (itemType == DefinitionItemType.DataSet) {
+
+			} else if (itemType == DefinitionItemType.Protocol) {
+
+			} else if (itemType == DefinitionItemType.System) {
+
+			} else if (itemType == DefinitionItemType.CountReport) {
+
+			} else {
+				throw new RuntimeException("Unexpected content " + item + " in folder");
+			}
+		}
+
+		if (ret.getContents() != null) {
+			Collections.sort(ret.getContents());
+		}
+
+		clearLogbackMarkers();
+
+		return Response
+				.ok()
+				.entity(ret)
+				.build();
+	}
+
+
+	@GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.LibraryEndpoint.GetLibraryItem")
     @Path("/getLibraryItem")
     public Response getLibraryItem(@Context SecurityContext sc, @QueryParam("uuid") String uuidStr) throws Exception {
         super.setLogbackMarkers(sc);
@@ -55,7 +148,7 @@ public final class LibraryEndpoint extends AbstractItemEndpoint {
         UUID libraryItemUuid = UUID.fromString(uuidStr);
 
         LOG.trace("GettingLibraryItem for UUID {}", libraryItemUuid);
-        LibraryRepository repository = new LibraryRepository();
+        LibraryDalI repository = DalProvider.factoryLibraryDal();
 
         ActiveItem activeItem = repository.getActiveItemByItemId(libraryItemUuid);
 
@@ -75,6 +168,7 @@ public final class LibraryEndpoint extends AbstractItemEndpoint {
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.LibraryEndpoint.SaveLibraryItem")
     @Path("/saveLibraryItem")
     @RequiresAdmin
     public Response saveLibraryItem(@Context SecurityContext sc, LibraryItem libraryItem) throws Exception {
@@ -83,7 +177,7 @@ public final class LibraryEndpoint extends AbstractItemEndpoint {
             "LibraryItem",
             "Item", libraryItem);
 
-        LibraryRepository repository = new LibraryRepository();
+        LibraryDalI repository = DalProvider.factoryLibraryDal();
 
         UUID orgUuid = getOrganisationUuidFromToken(sc);
         UUID userUuid = SecurityUtils.getCurrentUserId(sc);
@@ -175,6 +269,7 @@ public final class LibraryEndpoint extends AbstractItemEndpoint {
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.LibraryEndpoint.DeleteLibraryItem")
     @Path("/deleteLibraryItem")
     @RequiresAdmin
     public Response deleteLibraryItem(@Context SecurityContext sc, LibraryItem libraryItem) throws Exception {
@@ -202,6 +297,7 @@ public final class LibraryEndpoint extends AbstractItemEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.LibraryEndpoint.GetContentNamesForReportLibraryItem")
     @Path("/getContentNamesForReportLibraryItem")
     public Response getContentNamesForReportLibraryItem(@Context SecurityContext sc, @QueryParam("uuid") String uuidStr) throws Exception {
         super.setLogbackMarkers(sc);
@@ -209,7 +305,7 @@ public final class LibraryEndpoint extends AbstractItemEndpoint {
             "ContentForReport",
             "ReportId", uuidStr);
 
-        LibraryRepository repository = new LibraryRepository();
+        LibraryDalI repository = DalProvider.factoryLibraryDal();
 
         UUID itemUuid = UUID.fromString(uuidStr);
 
@@ -241,6 +337,7 @@ public final class LibraryEndpoint extends AbstractItemEndpoint {
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.LibraryEndpoint.MoveLibraryItems")
     @Path("/moveLibraryItems")
     @RequiresAdmin
     public Response moveLibraryItems(@Context SecurityContext sc, JsonMoveItems parameters) throws Exception {
@@ -266,8 +363,62 @@ public final class LibraryEndpoint extends AbstractItemEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.LibraryEndpoint.GetSystems")
     @Path("/getSystems")
     public Response getSystems(@Context SecurityContext sc) throws Exception {
+        super.setLogbackMarkers(sc);
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
+                "Systems");
+
+        DefinitionItemType itemType = DefinitionItemType.System;
+
+        UUID orgUuid = getOrganisationUuidFromToken(sc);
+
+        Iterable<ActiveItem> activeItems = null;
+        List<Item> items = new ArrayList();
+        Iterable<ItemDependency> itemDependency = null;
+
+        LibraryDalI repository = DalProvider.factoryLibraryDal();
+
+        activeItems = repository.getActiveItemByOrgAndTypeId(orgUuid, itemType.getValue(), false);
+
+        for (ActiveItem activeItem: activeItems) {
+            Item item = repository.getItemByKey(activeItem.getItemId(), activeItem.getAuditId());
+            if (!item.isDeleted()) {
+                items.add(item);
+            }
+        }
+
+        List<System> ret = new ArrayList<>();
+
+        for (int i = 0; i < items.size(); i++) {
+            Item item = items.get(i);
+
+            String xml = item.getXmlContent();
+
+            LibraryItem libraryItem = null;
+            try {
+                libraryItem = QueryDocumentSerializer.readLibraryItemFromXml(xml);
+            } catch (Exception ex) {
+                LOG.error(xml, ex);
+                throw ex;
+            }
+
+            System system = libraryItem.getSystem();
+            if (system != null) {
+                ret.add(system);
+            }
+        }
+
+        clearLogbackMarkers();
+
+        return Response
+                .ok()
+                .entity(ret)
+                .build();
+    }
+
+    /*public Response getSystems(@Context SecurityContext sc) throws Exception {
         super.setLogbackMarkers(sc);
         userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
             "Systems");
@@ -345,12 +496,13 @@ public final class LibraryEndpoint extends AbstractItemEndpoint {
                 .ok()
                 .entity(ret)
                 .build();
-    }
+    }*/
 
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.LibraryEndpoint.GetQueries")
     @Path("/getQueries") // queries define cohorts
     public Response getQueries(@Context SecurityContext sc) throws Exception {
         super.setLogbackMarkers(sc);
@@ -365,14 +517,16 @@ public final class LibraryEndpoint extends AbstractItemEndpoint {
         List<Item> items = new ArrayList();
         Iterable<ItemDependency> itemDependency = null;
 
-        LibraryRepository repository = new LibraryRepository();
+        LibraryDalI repository = DalProvider.factoryLibraryDal();
 
         activeItems = repository.getActiveItemByOrgAndTypeId(orgUuid, itemType.getValue(), false);
 
         for (ActiveItem activeItem: activeItems) {
             Item item = repository.getItemByKey(activeItem.getItemId(), activeItem.getAuditId());
-            if (item.getIsDeleted()==false)
+            if (!item.isDeleted()) {
                 items.add(item);
+            }
+
         }
 
         List<JsonQuery> ret = new ArrayList<>();
@@ -398,6 +552,7 @@ public final class LibraryEndpoint extends AbstractItemEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.LibraryEndpoint.GetDataSets")
     @Path("/getDataSets")
     public Response getDataSets(@Context SecurityContext sc) throws Exception {
         super.setLogbackMarkers(sc);
@@ -412,14 +567,16 @@ public final class LibraryEndpoint extends AbstractItemEndpoint {
         List<Item> items = new ArrayList();
         Iterable<ItemDependency> itemDependency = null;
 
-        LibraryRepository repository = new LibraryRepository();
+        LibraryDalI repository = DalProvider.factoryLibraryDal();
 
         activeItems = repository.getActiveItemByOrgAndTypeId(orgUuid, itemType.getValue(), false);
 
         for (ActiveItem activeItem: activeItems) {
             Item item = repository.getItemByKey(activeItem.getItemId(), activeItem.getAuditId());
-            if (item.getIsDeleted()==false)
+            if (!item.isDeleted()) {
                 items.add(item);
+            }
+
         }
 
         List<JsonDataSet> ret = new ArrayList<>();
@@ -445,13 +602,14 @@ public final class LibraryEndpoint extends AbstractItemEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.LibraryEndpoint.GetProtocols")
     @Path("/getProtocols")
     public Response getProtocols(@Context SecurityContext sc, @QueryParam("serviceId") String serviceId) throws Exception {
         super.setLogbackMarkers(sc);
         userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
             "Protocols");
 
-        List<LibraryItem> ret = LibraryRepositoryHelper.getProtocolsByServiceId(serviceId);
+        List<LibraryItem> ret = LibraryRepositoryHelper.getProtocolsByServiceId(serviceId, null);
 
         clearLogbackMarkers();
 

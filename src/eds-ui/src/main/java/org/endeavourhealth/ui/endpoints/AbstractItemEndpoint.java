@@ -1,7 +1,8 @@
 package org.endeavourhealth.ui.endpoints;
 
-import org.endeavourhealth.core.data.admin.LibraryRepository;
-import org.endeavourhealth.core.data.admin.models.*;
+import org.endeavourhealth.core.database.dal.DalProvider;
+import org.endeavourhealth.core.database.dal.admin.LibraryDalI;
+import org.endeavourhealth.core.database.dal.admin.models.*;
 import org.endeavourhealth.core.xml.QueryDocument.QueryDocument;
 import org.endeavourhealth.core.xml.QueryDocumentSerializer;
 import org.endeavourhealth.coreui.endpoints.AbstractEndpoint;
@@ -18,6 +19,8 @@ public abstract class AbstractItemEndpoint extends AbstractEndpoint {
 
     private static final int MAX_VALIDATION_ERRORS_FOR_DELETE = 5;
 
+    private static final LibraryDalI repository = DalProvider.factoryLibraryDal();
+
     protected ActiveItem retrieveActiveItem(UUID itemUuid, UUID orgUuid, DefinitionItemType itemTypeDesired) throws Exception {
 
         ActiveItem activeItem = retrieveActiveItem(itemUuid, orgUuid);
@@ -29,7 +32,7 @@ public abstract class AbstractItemEndpoint extends AbstractEndpoint {
     }
 
     protected ActiveItem retrieveActiveItem(UUID itemUuid, UUID orgUuid) throws Exception {
-        LibraryRepository repository = new LibraryRepository();
+
         ActiveItem activeItem = repository.getActiveItemByItemId(itemUuid);
 
         if (activeItem == null) {
@@ -45,7 +48,6 @@ public abstract class AbstractItemEndpoint extends AbstractEndpoint {
 
     protected JsonDeleteResponse deleteItem(UUID itemUuid, UUID orgUuid, UUID userUuid) throws Exception {
         ActiveItem activeItem = retrieveActiveItem(itemUuid, orgUuid);
-        LibraryRepository repository = new LibraryRepository();
         Item item = repository.getItemByKey(activeItem.getItemId(), activeItem.getAuditId());
 
         //recursively build up the full list of items we want to delete
@@ -64,13 +66,13 @@ public abstract class AbstractItemEndpoint extends AbstractEndpoint {
 
         for (Item itemToDelete: itemsToDelete) {
             itemToDelete.setAuditId(auditUuid);
-            itemToDelete.setIsDeleted(true);
+            itemToDelete.setDeleted(true);
             toSave.add(itemToDelete);
         }
 
         for (ActiveItem activeItemToDelete: activeItemsToDelete) {
             activeItemToDelete.setAuditId(auditUuid);
-            activeItemToDelete.setIsDeleted(true);
+            activeItemToDelete.setDeleted(true);
             toSave.add(activeItemToDelete);
         }
 
@@ -85,7 +87,6 @@ public abstract class AbstractItemEndpoint extends AbstractEndpoint {
         itemsToDelete.add(item);
         activeItemsToDelete.add(activeItem);
 
-        LibraryRepository repository = new LibraryRepository();
         Iterable<ItemDependency> dependencies = repository.getItemDependencyByItemId(item.getId());
         for (ItemDependency dependency: dependencies) {
 
@@ -113,10 +114,7 @@ public abstract class AbstractItemEndpoint extends AbstractEndpoint {
             return;
         }
 
-        LibraryRepository repository = new LibraryRepository();
-
         ActiveItem containingFolderActiveItem = repository.getActiveItemByItemId(containingFolderUuid);
-
         DefinitionItemType containingFolderType = DefinitionItemType.get(containingFolderActiveItem.getItemTypeId());
 
         if (containingFolderType == DefinitionItemType.LibraryFolder) {
@@ -138,7 +136,6 @@ public abstract class AbstractItemEndpoint extends AbstractEndpoint {
     protected void saveItem(boolean insert, UUID itemUuid, UUID orgUuid, UUID userUuid, DefinitionItemType itemType,
                             String name, String description, QueryDocument queryDocument, UUID containingFolderUuid) throws Exception {
 
-        LibraryRepository repository = new LibraryRepository();
 
         //validate the containing folder type matches the itemType we're saving
         validateItemTypeMatchesContainingFolder(insert, itemType, containingFolderUuid);
@@ -164,11 +161,11 @@ public abstract class AbstractItemEndpoint extends AbstractEndpoint {
             activeItem.setOrganisationId(orgUuid);
             activeItem.setItemId(itemUuid);
             activeItem.setItemTypeId(itemType.getValue());
-            activeItem.setIsDeleted(false);
+            activeItem.setDeleted(false);
 
             item = new Item();
             item.setId(itemUuid);
-            item.setIsDeleted(false);
+            item.setDeleted(false);
             item.setXmlContent(""); //when creating folders, we don't store XML, so this needs to be non-null
         } else {
             activeItem = retrieveActiveItem(itemUuid, orgUuid, itemType);
@@ -193,9 +190,9 @@ public abstract class AbstractItemEndpoint extends AbstractEndpoint {
             item.setXmlContent(xmlContent);
         }
 
-        if (activeItem.getId()==null) {
+        /*if (activeItem.getId()==null) {
             activeItem.setId(UUID.randomUUID());
-        }
+        }*/
 
         //build up a list of entities to save, so they can all be inserted atomically
         List<Object> toSave = new ArrayList<>();
@@ -246,7 +243,6 @@ public abstract class AbstractItemEndpoint extends AbstractEndpoint {
      * when a libraryItem, or folder is saved, link it to the containing folder
      */
     private static ItemDependency createFolderDependency(boolean insert, DefinitionItemType itemType, Item item, UUID previousAuditUuid, UUID containingFolderUuid, List<Object> toSave) throws Exception {
-        LibraryRepository repository = new LibraryRepository();
 
         //work out the dependency type, based on what item type we're saving
         DependencyType dependencyType = null;
@@ -294,7 +290,6 @@ public abstract class AbstractItemEndpoint extends AbstractEndpoint {
 
     protected void moveItems(UUID userUuid, UUID orgUuid, JsonMoveItems parameters) throws Exception {
 
-        LibraryRepository repository = new LibraryRepository();
 
         UUID folderUuid = parameters.getDestinationFolder();
         if (folderUuid == null) {
@@ -315,7 +310,7 @@ public abstract class AbstractItemEndpoint extends AbstractEndpoint {
             UUID itemUuid = itemParameter.getUuid();
 
             ActiveItem activeItem = repository.getActiveItemByItemId(itemUuid);
-            Item item = repository.getItemByKey(activeItem.getId(), activeItem.getAuditId());
+            Item item = repository.getItemByKey(activeItem.getItemId(), activeItem.getAuditId());
 
             if (!activeItem.getOrganisationId().equals(orgUuid)) {
                 throw new BadRequestException("Cannot move items belonging to another organisation");

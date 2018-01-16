@@ -3,7 +3,7 @@ package org.endeavourhealth.ui.json;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
-import org.endeavourhealth.core.data.admin.models.Service;
+import org.endeavourhealth.core.database.dal.admin.models.Service;
 import org.endeavourhealth.core.fhirStorage.JsonServiceInterfaceEndpoint;
 
 import java.io.IOException;
@@ -16,22 +16,28 @@ import java.util.UUID;
 public final class JsonService {
     private UUID uuid = null;
     private String localIdentifier = null;
+    private String publisherConfigName = null;
+    private boolean hasInboundError;
     private String name = null;
     private List<JsonServiceInterfaceEndpoint> endpoints = null;
     private Map<UUID, String> organisations = null;
     private String additionalInfo = null; //transient info, such as progress in deleting data
+    private String notes = null;
 
     public JsonService() {
     }
 
     public JsonService(Service service) throws IOException {
-        this(service, null);
+        this(service, null, false);
     }
-    public JsonService(Service service, String additionalInfo) throws IOException {
+
+    public JsonService(Service service, String additionalInfo, boolean hasInboundError) throws IOException {
         this.uuid = service.getId();
-        this.localIdentifier = service.getLocalIdentifier();
+        this.localIdentifier = service.getLocalId();
+        this.hasInboundError = hasInboundError;
         this.name = service.getName();
         this.organisations = service.getOrganisations();
+        this.publisherConfigName = service.getPublisherConfigName();
         this.additionalInfo = additionalInfo;
 
         String endpointJson = service.getEndpoints();
@@ -40,6 +46,8 @@ public final class JsonService {
         } else {
             this.endpoints = new ArrayList<>();
         }
+
+        this.notes = service.getNotes();
     }
 
     /**
@@ -59,6 +67,22 @@ public final class JsonService {
 
     public void setLocalIdentifier(String localIdentifier) {
         this.localIdentifier = localIdentifier;
+    }
+
+    public String getPublisherConfigName() {
+        return publisherConfigName;
+    }
+
+    public void setPublisherConfigName(String publisherConfigName) {
+        this.publisherConfigName = publisherConfigName;
+    }
+
+    public boolean isHasInboundError() {
+        return hasInboundError;
+    }
+
+    public void setHasInboundError(boolean hasInboundError) {
+        this.hasInboundError = hasInboundError;
     }
 
     public String getName() {
@@ -91,5 +115,13 @@ public final class JsonService {
 
     public void setAdditionalInfo(String additionalInfo) {
         this.additionalInfo = additionalInfo;
+    }
+
+    public String getNotes() {
+        return notes;
+    }
+
+    public void setNotes(String notes) {
+        this.notes = notes;
     }
 }

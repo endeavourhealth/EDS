@@ -1,20 +1,25 @@
 package org.endeavourhealth.enterprise;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import org.apache.commons.io.FilenameUtils;
 import org.endeavourhealth.common.config.ConfigManager;
-import org.endeavourhealth.core.rdbms.eds.PatientLinkHelper;
-import org.endeavourhealth.core.rdbms.eds.PatientLinkPair;
-import org.endeavourhealth.core.rdbms.transform.EnterpriseIdHelper;
-import org.endeavourhealth.core.rdbms.transform.EnterprisePersonIdMap;
-import org.endeavourhealth.core.rdbms.transform.EnterprisePersonUpdateHelper;
+import org.endeavourhealth.common.utility.SlackHelper;
+import org.endeavourhealth.core.database.dal.DalProvider;
+import org.endeavourhealth.core.database.dal.eds.PatientLinkDalI;
+import org.endeavourhealth.core.database.dal.eds.models.PatientLinkPair;
+import org.endeavourhealth.core.database.dal.subscriberTransform.EnterpriseIdDalI;
+import org.endeavourhealth.core.database.dal.subscriberTransform.EnterprisePersonUpdaterHistoryDalI;
+import org.endeavourhealth.core.database.rdbms.enterprise.EnterpriseConnector;
+import org.endeavourhealth.transform.enterprise.outputModels.AbstractEnterpriseCsvWriter;
+import org.endeavourhealth.transform.enterprise.outputModels.OutputContainer;
 import org.hl7.fhir.instance.model.ResourceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.PreparedStatement;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
 
 public class Main {
     private static final Logger LOG = LoggerFactory.getLogger(Main.class);
@@ -31,19 +36,23 @@ public class Main {
         ConfigManager.Initialize("EnterprisePersonUpdater");
 
         try {
-            if (args.length != 0) {
-                LOG.error("No parameters required.");
+            if (args.length != 1) {
+                LOG.error("Parameter required: <enterprise config name>");
                 return;
             }
 
-            LOG.info("Person updater starting");
+            String enterpriseConfigName = args[0];
+            LOG.info("Person updater starting for " + enterpriseConfigName);
 
             //create this date BEFORE we get the date we last run, so there's no risk of a gap
             Date dateNextRun = new Date();
 
-            Date dateLastRun = EnterprisePersonUpdateHelper.findDatePersonUpdaterLastRun();
+            EnterprisePersonUpdaterHistoryDalI enterprisePersonUpdaterHistoryDal = DalProvider.factoryEnterprisePersonUpdateHistoryDal(enterpriseConfigName);
+            Date dateLastRun = enterprisePersonUpdaterHistoryDal.findDatePersonUpdaterLastRun();
             LOG.info("Looking for Person ID changes since " + dateLastRun);
-            List<PatientLinkPair> changes = PatientLinkHelper.getChangesSince(dateLastRun);
+
+            PatientLinkDalI patientLinkDal = DalProvider.factoryPatientLinkDal();
+            List<PatientLinkPair> changes = patientLinkDal.getChangesSince(dateLastRun);
 
             //strip out any that are just telling us NEW person IDs
             for (int i=changes.size()-1; i>=0; i--) {
@@ -55,87 +64,93 @@ public class Main {
             LOG.info("Found " + changes.size() + " changes in Person ID");
 
             //find the Enterprise Person ID for each of the changes, hashing them by the enterprise instance they're on
-            Map<String, List<UpdateJob>> changesMap = convertChangesToEnterprise(changes);
+            List<UpdateJob> updates = convertChangesToEnterprise(enterpriseConfigName, changes);
 
-            for (String enterpriseConfigName: changesMap.keySet()) {
+            Connection connection = EnterpriseConnector.openConnection(enterpriseConfigName);
 
-                List<UpdateJob> updates = changesMap.get(enterpriseConfigName);
-                JsonNode config = ConfigManager.getConfigurationAsJson(enterpriseConfigName, "enterprise");
-                Connection connection = openConnection(config);
+            LOG.info("Updating " + updates.size() + " person IDs on " + enterpriseConfigName);
 
-                LOG.info("Updating " + updates.size() + " person IDs on " + enterpriseConfigName);
-
-                try {
-                    for (UpdateJob update: updates) {
-                        changePersonId(update, connection);
-                    }
-
-                } finally {
-                    connection.close();
+            try {
+                for (UpdateJob update: updates) {
+                    changePersonId(update, connection);
                 }
+
+            } finally {
+                connection.close();
             }
 
-            EnterprisePersonUpdateHelper.updatePersonUpdaterLastRun(dateNextRun);
+            enterprisePersonUpdaterHistoryDal.updatePersonUpdaterLastRun(dateNextRun);
 
             LOG.info("Person updates complete");
 
         } catch (Exception ex) {
             LOG.error("", ex);
+            SlackHelper.sendSlackMessage(SlackHelper.Channel.EnterprisePersonUpdaterAlerts, "Exception in Enterprise Person Updater", ex);
         }
+
+        System.exit(0);
     }
 
-    private static Connection openConnection(JsonNode config) throws Exception {
 
-        String driverClass = config.get("driverClass").asText();
-        String url = config.get("url").asText();
-        String username = config.get("username").asText();
-        String password = config.get("password").asText();
+    private static List<UpdateJob> convertChangesToEnterprise(String enterpriseConfigName, List<PatientLinkPair> changes) throws Exception {
+        List<UpdateJob> updatesForConfig = new ArrayList<>();
 
-        //force the driver to be loaded
-        Class.forName(driverClass);
-
-        Connection conn = DriverManager.getConnection(url, username, password);
-        conn.setAutoCommit(false);
-
-        return conn;
-    }
-
-    private static Map<String, List<UpdateJob>> convertChangesToEnterprise(List<PatientLinkPair> changes) throws Exception {
-        Map<String, List<UpdateJob>> map = new HashMap<>();
         for (PatientLinkPair change: changes) {
 
             String oldDiscoveryPersonId = change.getPreviousPersonId();
             String newDiscoveryPersonId = change.getNewPersonId();
             String discoveryPatientId = change.getPatientId();
 
-            Long enterprisePatientId = EnterpriseIdHelper.findEnterpriseId("patient", ResourceType.Patient.toString(), discoveryPatientId);
+            EnterpriseIdDalI enterpriseIdDalI = DalProvider.factoryEnterpriseIdDal(enterpriseConfigName);
+            Long enterprisePatientId = enterpriseIdDalI.findEnterpriseId(ResourceType.Patient.toString(), discoveryPatientId);
 
             //if this patient has never gone to enterprise, then skip it
             if (enterprisePatientId == null) {
                 continue;
             }
 
-            List<EnterprisePersonIdMap> mappings = EnterpriseIdHelper.findEnterprisePersonMapsForPersonId(oldDiscoveryPersonId);
-            for (EnterprisePersonIdMap mapping: mappings) {
-
-                String enterpriseConfigName = mapping.getEnterpriseConfigName();
-                Long oldEnterprisePersonId = mapping.getEnterprisePersonId();
-                Long newEnterprisePersonId = EnterpriseIdHelper.findOrCreateEnterprisePersonId(newDiscoveryPersonId, enterpriseConfigName);
-
-                List<UpdateJob> updatesForConfig = map.get(enterpriseConfigName);
-                if (updatesForConfig == null) {
-                    updatesForConfig = new ArrayList<>();
-                    map.put(enterpriseConfigName, updatesForConfig);
-                }
+            List<Long> mappings = enterpriseIdDalI.findEnterprisePersonIdsForPersonId(oldDiscoveryPersonId);
+            for (Long oldEnterprisePersonId: mappings) {
+                Long newEnterprisePersonId = enterpriseIdDalI.findOrCreateEnterprisePersonId(newDiscoveryPersonId);
 
                 updatesForConfig.add(new UpdateJob(enterprisePatientId, oldEnterprisePersonId, newEnterprisePersonId));
             }
         }
 
-        return map;
+        return updatesForConfig;
     }
 
     private static void changePersonId(UpdateJob change, Connection connection) throws Exception {
+
+        OutputContainer outputContainer = new OutputContainer(true, true); //doesn't matter what we pass into the constructor
+
+        //the csv writers are mapped to the tables in the database, so we can use them to discover
+        //what tables have person and patient ID columns
+        List<AbstractEnterpriseCsvWriter> csvWriters = outputContainer.getCsvWriters();
+
+        //the writers are in dependency order (least dependent -> most) so we need to go backwards to avoid
+        //upsetting any foreign key constraints
+        for (int i=csvWriters.size()-1; i>=0; i--) {
+            AbstractEnterpriseCsvWriter csvWriter = csvWriters.get(i);
+
+            String[] csvHeaders = csvWriter.getCsvHeaders();
+            for (String header: csvHeaders) {
+                if (header.equalsIgnoreCase("person_id")) {
+
+                    String fileName = csvWriter.getFileName();
+                    String tableName = FilenameUtils.removeExtension(fileName);
+                    changePersonIdOnTable(tableName, change, connection);
+                    break;
+                }
+            }
+        }
+
+        connection.commit();
+
+        LOG.info("Updated person ID from " + change.getOldEnterprisePersonId() + " to " + change.getNewEnterprisePersonId() + " for patient " + change.getEnterprisePatientId());
+    }
+
+    /*private static void changePersonId(UpdateJob change, Connection connection) throws Exception {
 
         //can't think of a good way to make this list dynamic
         changePersonIdOnTable("allergy_intolerance", change, connection);
@@ -152,7 +167,7 @@ public class Main {
         connection.commit();
 
         LOG.info("Updated person ID from " + change.getOldEnterprisePersonId() + " to " + change.getNewEnterprisePersonId() + " for patient " + change.getEnterprisePatientId());
-    }
+    }*/
 
 
     private static void changePersonIdOnTable(String tableName, UpdateJob change, Connection connection) throws Exception {
@@ -184,27 +199,3 @@ public class Main {
 }
 
 
-class UpdateJob {
-    private Long enterprisePatientId = null;
-    private Long oldEnterprisePersonId = null;
-    private Long newEnterprisePersonId = null;
-
-    public UpdateJob(Long enterprisePatientId, Long oldEnterprisePersonId, Long newEnterprisePersonId) {
-        this.enterprisePatientId = enterprisePatientId;
-        this.oldEnterprisePersonId = oldEnterprisePersonId;
-        this.newEnterprisePersonId = newEnterprisePersonId;
-
-    }
-
-    public Long getEnterprisePatientId() {
-        return enterprisePatientId;
-    }
-
-    public Long getOldEnterprisePersonId() {
-        return oldEnterprisePersonId;
-    }
-
-    public Long getNewEnterprisePersonId() {
-        return newEnterprisePersonId;
-    }
-}
