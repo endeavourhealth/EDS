@@ -19,7 +19,7 @@ phases:
       - echo Build completed on `date`
 artifacts:
   files:
-    - **/appspec.yml
-    - **/aws_scripts/**/*
-    - **/target/*.war
-    - **/target/*.jar
+    - src/**/appspec.yml
+    - src/**/aws_scripts/**/*
+    - src/**/target/*.war
+    - src/**/target/*.jar
