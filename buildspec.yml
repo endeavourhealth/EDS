@@ -20,6 +20,7 @@ phases:
 artifacts:
   files:
     - src/**/appspec.yml
-    - src/**/aws_scripts/**/*
+    - src/**/aws_scripts/*
     - src/**/target/*.war
     - src/**/target/*.jar
+  discard-paths: yes
