@@ -18,7 +18,6 @@ You will need the following:
 * Typescript
 * TSLint
 
-
 ### Java
 Download and install the Java SDK (minimum required is 8u102) from [here] (http://www.oracle.com/technetwork/java/javase/downloads/index.html "Java Download")
 
