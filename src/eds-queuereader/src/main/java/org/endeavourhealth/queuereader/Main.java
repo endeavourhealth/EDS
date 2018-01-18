@@ -46,6 +46,8 @@ public class Main {
 
 	public static void main(String[] args) throws Exception {
 
+		// test new guys can commit
+
 		String configId = args[0];
 
 		LOG.info("Initialising config manager");
