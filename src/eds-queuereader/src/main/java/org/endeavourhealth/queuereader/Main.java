@@ -2,15 +2,18 @@ package org.endeavourhealth.queuereader;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.base.Strings;
+import com.google.common.collect.Lists;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.common.cache.ParserPool;
 import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.common.fhir.*;
+import org.endeavourhealth.common.utility.FileHelper;
 import org.endeavourhealth.common.utility.SlackHelper;
 import org.endeavourhealth.core.configuration.ConfigDeserialiser;
 import org.endeavourhealth.core.configuration.QueueReaderConfiguration;
@@ -26,6 +29,7 @@ import org.endeavourhealth.core.database.dal.ehr.models.ResourceWrapper;
 import org.endeavourhealth.core.fhirStorage.FhirResourceHelper;
 import org.endeavourhealth.core.fhirStorage.JsonServiceInterfaceEndpoint;
 import org.endeavourhealth.core.queueing.QueueHelper;
+import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
 import org.hl7.fhir.instance.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,6 +37,7 @@ import org.slf4j.LoggerFactory;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
+import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -46,12 +51,18 @@ public class Main {
 
 	public static void main(String[] args) throws Exception {
 
-		// test new guys can commit
-
 		String configId = args[0];
 
 		LOG.info("Initialising config manager");
 		ConfigManager.initialize("queuereader", configId);
+
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("FixDisabledExtract")) {
+			String serviceId = args[1];
+			String sharedStoragePath = args[2];
+			fixDisabledEmisExtract(serviceId, sharedStoragePath);
+			System.exit(0);
+		}
 
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("TestSlack")) {
@@ -174,6 +185,181 @@ public class Main {
 		rabbitHandler.start();
 		LOG.info("EDS Queue reader running (kill file location " + configuration.getKillFileLocation() + ")");
 	}
+
+	/**
+	 * fixes Emis extract(s) when a practice was disabled then subsequently re-bulked, by
+	 * replacing the "delete" extracts with newly generated deltas that can be processed
+	 * before the re-bulk is done
+	 */
+	private static void fixDisabledEmisExtract(String serviceId, String sharedStoragePath) {
+
+		LOG.info("Fixing Disabled Emis Extracts Prior to Re-bulk for service " + serviceId);
+
+		try {
+
+			UUID serviceUuid = UUID.fromString(serviceId);
+			ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
+
+			//get all the exchanges, which are returned in reverse order
+			List<Exchange> exchanges = exchangeDal.getExchangesByService(serviceUuid, Integer.MAX_VALUE);
+
+			//find the files for each exchange
+			Map<Exchange, List<String>> hmExchangeFiles = new HashMap<>();
+			for (Exchange exchange: exchanges) {
+
+				String exchangeBody = exchange.getBody();
+				String[] files = exchangeBody.split("\n");
+				for (int i=0; i<files.length; i++) {
+					String file = files[i].trim();
+					String filePath = FilenameUtils.concat(sharedStoragePath, file);
+					files[i] = filePath;
+				}
+				List<String> fileList = Lists.newArrayList(files);
+				hmExchangeFiles.put(exchange, fileList);
+			}
+
+			//back through them to find the extract where the re-bulk is and when it was disabled
+			int indexDisabled = -1;
+			int indexRebulked = -1;
+
+			for (int i=0; i<=exchanges.size(); i++) {
+				Exchange exchange = exchanges.get(i);
+				List<String> files = hmExchangeFiles.get(exchange);
+				String file = findSharingAgreementFile(files);
+
+				InputStreamReader reader = FileHelper.readFileReaderFromSharedStorage(file);
+				CSVParser csvParser = new CSVParser(reader, EmisCsvToFhirTransformer.CSV_FORMAT);
+
+				Iterator<CSVRecord> iterator = csvParser.iterator();
+				CSVRecord record = iterator.next();
+
+				String s = record.get("Disabled");
+				boolean disabled = Boolean.parseBoolean(s);
+
+				csvParser.close();
+
+				if (disabled) {
+					indexDisabled = i;
+
+				} else {
+					if (indexDisabled == -1) {
+						indexRebulked = i;
+					} else {
+						//if we've found a non-disabled extract older than the disabled ones,
+						//then we've gone far enough back
+						break;
+					}
+				}
+			}
+
+			if (indexDisabled == -1
+					|| indexRebulked == -1) {
+				throw new Exception("Failed to find exchanges for disabling (" + indexDisabled + ") and re-buiking (" + indexRebulked + ")");
+			}
+
+			Exchange rebulkExchange = exchanges.get(indexRebulked);
+			List<String> rebulkFiles = hmExchangeFiles.get(rebulkExchange);
+
+			for (String rebulkFile: rebulkFiles) {
+				if (isPatientFile(rebulkFile)) {
+
+					//find all the guids in the re-bulk
+					Set<String> guidsInRebulk = new HashSet<>();
+
+					InputStreamReader reader = FileHelper.readFileReaderFromSharedStorage(rebulkFile);
+					CSVParser csvParser = new CSVParser(reader, EmisCsvToFhirTransformer.CSV_FORMAT);
+
+					Iterator<CSVRecord> iterator = csvParser.iterator();
+
+					while (iterator.hasNext()) {
+						CSVRecord record = iterator.next();
+
+						String guid = record.get(0); //guid is always the first column
+						guidsInRebulk.add(guid);
+					}
+
+					/*Map<String, Integer> headers = csvParser.getHeaderMap();
+					if (headers.containsKey("Deleted")) {
+
+						Iterator<CSVRecord> iterator = csvParser.iterator();
+						CSVRecord record = iterator.next();
+
+						String guid = record.get(0);
+						String deletedStr = record.get("Deleted");
+						boolean deleted = Boolean.parseBoolean(deletedStr);
+
+						if (deleted) {
+							guidsInRebulk.remove(guid);
+						} else {
+
+						}
+					}*/
+
+					csvParser.close();
+
+
+
+
+
+
+				}
+			}
+
+
+
+			/**
+			 1. Start with path to re-bulk
+			 2. Find all past extracts
+			 3. For each file in the re-bulk
+			 4. Go through all past files to find GUIDs that aren't deleted
+			 5. Go through re-bulk file to find GUIDs
+			 6. Move old extract file to a sub-dir
+			 7. Create new delta of just the deletes
+			 8. Replace all sharing agreement files with the non-deleted version
+			 ONLY for patient files (not admin stuff)
+
+			 */
+
+			LOG.info("Finished Fixing Disabled Emis Extracts Prior to Re-bulk for service " + serviceId);
+
+		} catch (Exception ex) {
+			LOG.error("", ex);
+		}
+	}
+
+
+
+	private static boolean isPatientFile(String file) {
+
+		if (file.contains("_Admin_Patient_")
+				|| file.contains("_CareRecord_Consultation_")
+				|| file.contains("_CareRecord_Diary_")
+				|| file.contains("_CareRecord_Observation_")
+				|| file.contains("_CareRecord_ObservationReferral_")
+				|| file.contains("_CareRecord_Problem_")
+				|| file.contains("_Prescribing_DrugRecord_")
+				|| file.contains("_Prescribing_IssueRecord_")) {
+
+			return true;
+
+		} else {
+			return false;
+		}
+	}
+
+	private static String findSharingAgreementFile(List<String> files) throws Exception {
+
+		for (String file : files) {
+			String name = FilenameUtils.getName(file);
+			if (name.indexOf("_Agreements_SharingOrganisation_") > -1) {
+				return file;
+			}
+		}
+
+		throw new Exception("Failed to find sharing agreement file in " + files.get(0));
+	}
+
+
 
 	private static void testSlack() {
 		LOG.info("Testing slack");
@@ -541,7 +727,7 @@ public class Main {
 	 where nhs_number is not null
 	 and count is not null
 	 order by count desc limit 1000;
-     */
+	 */
 	private static void exportHl7Encounters(String sourceCsvPath, String outputPath) {
 		LOG.info("Exporting HL7 Encounters from " + sourceCsvPath + " to " + outputPath);
 
@@ -609,7 +795,7 @@ public class Main {
 					for (ExchangeBatch exchangeBatch: exchangeBatches) {
 						UUID patientId = exchangeBatch.getEdsPatientId();
 						if (patientId != null
-							&& !patientIds.containsKey(patientId)) {
+								&& !patientIds.containsKey(patientId)) {
 							continue;
 						}
 
