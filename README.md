@@ -6,17 +6,17 @@
 
 You will need the following:
 
-* Java 1.8
+* Java 8
 * RabbitMQ 3.6
-* Cassandra 3.5
+* MySQL and MySQL Workbench
 * Tomcat 8 or 9
 * Git
 * Node.js
-* postgreSQL
 * IntelliJ (Ultimate edition)
 * Bower
 * Typescript
 * TSLint
+
 
 ### Java
 Download and install the Java SDK (minimum required is 8u102) from [here] (http://www.oracle.com/technetwork/java/javase/downloads/index.html "Java Download")
@@ -37,45 +37,37 @@ rabbitmq-service.bat start
 ```
 Finally, navigate to [here] (http://localhost:15672/#/ "Rabbit MQ") and use a username and password of 'guest' to login and you should see an overview page.  This means RabbitMQ is installed correctly.
 
-### Cassandra
-Download and install or run Cassandra (latest version). You can either run it as a standalone application [download from Apache] (http://cassandra.apache.org/download/ "Apache version") or as a service [download from Datastax] (https://academy.datastax.com/planet-cassandra//cassandra/ "Datastax"). The service seems to work better, as it has a controlled shutdown process – running standalone works fine, but when you close the process, it can leave it in a broken state.
+### MySQL and MySQL Workbench
+Download MySQL and MySQL Workbench from https://dev.mysql.com/downloads/installer/ then install it
 
-Once you have Cassandra running, get a client that will allow you to run CQL against it. Apache Cassandra comes with a command line client (CQLSH), DBeaver works ok too, and the Datastax Dev Centre works well too.  The datastax version comes with Datastax Dev centre which is a nice GUI CQL editor.
-
-**Note:** If the datastax service will not start, try amending the cassandra.yaml file [as described here] (http://stackoverflow.com/questions/40261374/datastax-ddc-service-will-not-start/40265395#40265395 "cassandra.yaml edit")
-
-With a CQL client, go through the CQL scripts in ..\EDS\src\database\cql to set up your database.
+Once installed, restore the sample databases found at https://1drv.ms/u/s!AhdraGkSN4_agdYZB2A9tSB_lotG8w
+Inside this zip file is an "Instructions.txt" file, which contains steps on how to restore the DBs from the zip - follow this
 
 ### Tomcat
 To use KeyCloak, a modified version of Tomcat is available [here] (https://drive.google.com/file/d/0B7zLWmSZKB2LY2J0TV9kZW5Vd0k/view?pref=2&pli=1 "key cloak modified tomcat")
 
 Download this zip file and unzip somewhere and remove all the sample webapps, including `ROOT`
 
-###Git
+### Git
 [Download Git] (http://git-scm.com/ "Get Git")
 
 ### Node.Js
 [Download NodeJS] (https://nodejs.org/en/ "Get Node")
 
-### postgreSQL
-Download and install PostgreSQL from [here] (https://www.postgresql.org/download/ "postgreSQL") , leaving it using the default username (postgres) but set the password to whatever you want.
-You should also now have pgAdmin III installed, which is a PostgreSQL client. Use this to connect and run through the **all** SQL scripts in ..\EDS\src\database\sql to set up your database.
-
 ### IntelliJ
+Note, you will need a GitHub account with permissions to view our two repos (https://github.com/endeavourhealth-discovery and https://github.com/endeavourhealth), so create a GitHub account if you don't already have one, and ask a team member to invite you into the repos.
+ 
 * [Download IntelliJ] (https://www.jetbrains.com/idea/ "IntelliJ")
-* Start up IntelliJ and select Check out from Version Control
-* Select GitHub, then select the Enterprise repo
-* Select the destination folder on the local machine and click Clone
-* **Important** Make sure you are using the develop branch.  Switch either using VCS - Branches in IntelliJ or by running the following command 
-```bash
-git checkout -b develop origin/develop
-```
-* It will then ask if you want to create a project for the source – answer NO
-* Back on the startup screen, select Open then select …Enterprise\src as the project folder
-* This will now open the Enterprise project, if you don’t see source, press Alt+1 to change the view
-* Open File->Project Structure and select your Java udpated SDK
-* Open the Maven Projects view and click the refresh button to download all the required libraries
-* Open VCS->Enable Version Control Integration
+* Start up IntelliJ and select Check out from Version Control -> GitHub
+* Enter your Git username and password if prompted
+* Select GitHub, then enter the URL for the "EDS" repo (found on GitHub by viewing the repo and clicking the "Clone or Download" button)
+* Select the destination folder on your local machine and click Clone
+* It should now clone the repo
+* It will ask if you want to create it as a Maven Project - answer yes to this
+* It may ask if you want to enable auto imports - answer yes to this too
+* It should then download all the dependent libraries, which may take some time on slow internet connections
+* Once complete, you should be able to view the source code in the "Project" pane (Alt+1 to display if not already shown)
+* You can repeat the above few steps from within IntellI using New -> Project from Version Control -> GitHub
 
 ### Bower
 use cmd to run the following.
