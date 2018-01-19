@@ -204,14 +204,12 @@ public class MessageTransformInbound extends PipelineComponent {
 	private void processAdastraXml(Exchange exchange, UUID serviceId, UUID systemId, String messageVersion,
 								   String software, TransformError currentErrors, List<UUID> batchIds, TransformError previousErrors) throws Exception {
 
-		int maxFilingThreads = config.getFilingThreadLimit();
-
 		//payload
 		String xmlPayload = exchange.getBody();
 		UUID exchangeId = exchange.getId();
 
 		AdastraXmlToFhirTransformer.transform(exchangeId, xmlPayload, serviceId, systemId,
-				currentErrors, batchIds, previousErrors, null, maxFilingThreads, messageVersion);
+				currentErrors, batchIds, previousErrors, null, messageVersion);
 	}
 
 	private void sendSlackAlert(Exchange exchange, String software, UUID serviceId, TransformError currentErrors) {
@@ -393,13 +391,12 @@ public class MessageTransformInbound extends PipelineComponent {
 
 		//get our configuration options
 		String sharedStoragePath = config.getSharedStoragePath();
-		int maxFilingThreads = config.getFilingThreadLimit();
 
 		String exchangeBody = exchange.getBody();
 		UUID exchangeId = exchange.getId();
 
 		EmisCsvToFhirTransformer.transform(exchangeId, exchangeBody, serviceId, systemId, currentErrors,
-									batchIds, previousErrors, sharedStoragePath, maxFilingThreads);
+									batchIds, previousErrors, sharedStoragePath);
 	}
 
 	private void processBartsCsvTransform(Exchange exchange, UUID serviceId, UUID systemId, String version,
@@ -408,13 +405,12 @@ public class MessageTransformInbound extends PipelineComponent {
 
 		//get our configuration options
 		String sharedStoragePath = config.getSharedStoragePath();
-		int maxFilingThreads = config.getFilingThreadLimit();
 
 		String exchangeBody = exchange.getBody();
 		UUID exchangeId = exchange.getId();
 
 		BartsCsvToFhirTransformer.transform(exchangeId, exchangeBody, serviceId, systemId, currentErrors,
-				batchIds, previousErrors, sharedStoragePath, maxFilingThreads, version);
+				batchIds, previousErrors, sharedStoragePath, version);
 	}
 
 	private void processHomertonCsvTransform(Exchange exchange, UUID serviceId, UUID systemId, String version,
@@ -423,13 +419,12 @@ public class MessageTransformInbound extends PipelineComponent {
 
 		//get our configuration options
 		String sharedStoragePath = config.getSharedStoragePath();
-		int maxFilingThreads = config.getFilingThreadLimit();
 
 		String exchangeBody = exchange.getBody();
 		UUID exchangeId = exchange.getId();
 
 		HomertonCsvToFhirTransformer.transform(exchangeId, exchangeBody, serviceId, systemId, currentErrors,
-				batchIds, previousErrors, sharedStoragePath, maxFilingThreads, version);
+				batchIds, previousErrors, sharedStoragePath, version);
 	}
 
 	private void processVisionCsvTransform(Exchange exchange, UUID serviceId, UUID systemId, String version,
@@ -438,13 +433,12 @@ public class MessageTransformInbound extends PipelineComponent {
 
 		//get our configuration options
 		String sharedStoragePath = config.getSharedStoragePath();
-		int maxFilingThreads = config.getFilingThreadLimit();
 
 		String exchangeBody = exchange.getBody();
 		UUID exchangeId = exchange.getId();
 
 		VisionCsvToFhirTransformer.transform(exchangeId, exchangeBody, serviceId, systemId, currentErrors,
-				batchIds, previousErrors, sharedStoragePath, maxFilingThreads, version);
+				batchIds, previousErrors, sharedStoragePath, version);
 	}
 
 	private void processTppXmlTransform(Exchange exchange, UUID serviceId, UUID systemId, String version,
@@ -457,9 +451,6 @@ public class MessageTransformInbound extends PipelineComponent {
 												String software, TransformError currentErrors, List<UUID> batchIds,
 												TransformError previousErrors) throws Exception {
 
-		//config
-		int maxFilingThreads = config.getFilingThreadLimit();
-
 		//payload
 		String xmlPayload = exchange.getBody();
 		UUID exchangeId = exchange.getId();
@@ -468,7 +459,7 @@ public class MessageTransformInbound extends PipelineComponent {
 		List<Resource> resources = EmisOpenToFhirTransformer.toFhirFullRecord(xmlPayload);
 
 		//map IDs, compute delta and file
-		FhirDeltaResourceFilter filer = new FhirDeltaResourceFilter(serviceId, systemId, maxFilingThreads);
+		FhirDeltaResourceFilter filer = new FhirDeltaResourceFilter(serviceId, systemId);
 		filer.process(resources, exchangeId, currentErrors, batchIds);
 	}
 
