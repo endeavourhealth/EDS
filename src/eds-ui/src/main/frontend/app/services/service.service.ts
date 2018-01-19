@@ -115,8 +115,8 @@ export class ServiceService extends BaseHttp2Service {
 				if (validNameFilterRegex) {
 					var name = service.name;
 					var id = service.localIdentifier;
-					if ((!name || !name.toLowerCase().match(vm.serviceNameFilter))
-						&& (!id || !id.toLowerCase().match(vm.serviceNameFilter))) {
+					if ((!name || !name.toLowerCase().match(validNameFilterRegex))
+						&& (!id || !id.toLowerCase().match(validNameFilterRegex))) {
 						continue;
 					}
 				}
