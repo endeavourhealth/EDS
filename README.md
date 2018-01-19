@@ -115,10 +115,7 @@ Ok the dialog
 
 Clone this code repository to your local machine. The instructions below assume the target directory for Tomcat and artifacts is `/opt/eds`.
 
-**Important** Make sure you are using the develop branch.  Switch either using VCS - Branches in IntelliJ or by running the following command 
-```bash
-git checkout -b develop origin/develop
-```
+
 
 1. Install all pre-requisites as described above
 
