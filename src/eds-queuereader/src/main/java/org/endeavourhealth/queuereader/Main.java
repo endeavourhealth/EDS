@@ -17,6 +17,7 @@ import org.endeavourhealth.common.utility.FileHelper;
 import org.endeavourhealth.common.utility.SlackHelper;
 import org.endeavourhealth.core.configuration.ConfigDeserialiser;
 import org.endeavourhealth.core.configuration.QueueReaderConfiguration;
+import org.endeavourhealth.core.csv.CsvHelper;
 import org.endeavourhealth.core.database.dal.DalProvider;
 import org.endeavourhealth.core.database.dal.admin.ServiceDalI;
 import org.endeavourhealth.core.database.dal.admin.models.Service;
@@ -34,11 +35,9 @@ import org.hl7.fhir.instance.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.nio.charset.Charset;
+import java.nio.file.Files;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -60,7 +59,8 @@ public class Main {
 				&& args[0].equalsIgnoreCase("FixDisabledExtract")) {
 			String serviceId = args[1];
 			String sharedStoragePath = args[2];
-			fixDisabledEmisExtract(serviceId, sharedStoragePath);
+			String tempDir = args[3];
+			fixDisabledEmisExtract(serviceId, sharedStoragePath, tempDir);
 			System.exit(0);
 		}
 
@@ -191,7 +191,7 @@ public class Main {
 	 * replacing the "delete" extracts with newly generated deltas that can be processed
 	 * before the re-bulk is done
 	 */
-	private static void fixDisabledEmisExtract(String serviceId, String sharedStoragePath) {
+	private static void fixDisabledEmisExtract(String serviceId, String sharedStoragePath, String tempDir) {
 
 		LOG.info("Fixing Disabled Emis Extracts Prior to Re-bulk for service " + serviceId);
 
@@ -200,8 +200,24 @@ public class Main {
 			UUID serviceUuid = UUID.fromString(serviceId);
 			ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
 
-			//get all the exchanges, which are returned in reverse order
+			File tempDirFile = new File(tempDir);
+			if (!tempDirFile.exists()) {
+				if (!tempDirFile.mkdirs()) {
+					throw new Exception("Failed to create temp dir " + tempDirFile);
+				}
+			}
+
+			//get all the exchanges, which are returned in reverse order, so reverse for simplicity
 			List<Exchange> exchanges = exchangeDal.getExchangesByService(serviceUuid, Integer.MAX_VALUE);
+
+			exchanges.sort((o1, o2) -> {
+				Date d1 = o1.getTimestamp();
+				Date d2 = o2.getTimestamp();
+				return d1.compareTo(d2);
+			});
+
+			LOG.info("Found " + exchanges + " exchanges");
+			continueOrQuit();
 
 			//find the files for each exchange
 			Map<Exchange, List<String>> hmExchangeFiles = new HashMap<>();
@@ -217,26 +233,16 @@ public class Main {
 				List<String> fileList = Lists.newArrayList(files);
 				hmExchangeFiles.put(exchange, fileList);
 			}
+			LOG.info("Cached files for each exchange");
 
-			//back through them to find the extract where the re-bulk is and when it was disabled
 			int indexDisabled = -1;
 			int indexRebulked = -1;
+			int indexOriginallyBulked = -1;
 
-			for (int i=0; i<=exchanges.size(); i++) {
+			//go back through them to find the extract where the re-bulk is and when it was disabled
+			for (int i=exchanges.size()-1; i>=0; i--) {
 				Exchange exchange = exchanges.get(i);
-				List<String> files = hmExchangeFiles.get(exchange);
-				String file = findSharingAgreementFile(files);
-
-				InputStreamReader reader = FileHelper.readFileReaderFromSharedStorage(file);
-				CSVParser csvParser = new CSVParser(reader, EmisCsvToFhirTransformer.CSV_FORMAT);
-
-				Iterator<CSVRecord> iterator = csvParser.iterator();
-				CSVRecord record = iterator.next();
-
-				String s = record.get("Disabled");
-				boolean disabled = Boolean.parseBoolean(s);
-
-				csvParser.close();
+				boolean disabled = isDisabledInSharingAgreementFile(exchange, hmExchangeFiles);
 
 				if (disabled) {
 					indexDisabled = i;
@@ -252,93 +258,372 @@ public class Main {
 				}
 			}
 
-			if (indexDisabled == -1
-					|| indexRebulked == -1) {
-				throw new Exception("Failed to find exchanges for disabling (" + indexDisabled + ") and re-buiking (" + indexRebulked + ")");
+			//go back from when disabled to find the previous bulk load (i.e. the first one or one after it was previously not disabled)
+			for (int i=indexDisabled-1; i>=0; i--) {
+				Exchange exchange = exchanges.get(i);
+				boolean disabled = isDisabledInSharingAgreementFile(exchange, hmExchangeFiles);
+				if (disabled) {
+					break;
+				}
+
+				indexOriginallyBulked = i;
 			}
 
-			Exchange rebulkExchange = exchanges.get(indexRebulked);
-			List<String> rebulkFiles = hmExchangeFiles.get(rebulkExchange);
+			if (indexDisabled == -1
+					|| indexRebulked == -1
+					|| indexOriginallyBulked == -1) {
+				throw new Exception("Failed to find exchanges for disabling (" + indexDisabled + "), re-bulking (" + indexRebulked + ") or original bulk (" + indexOriginallyBulked + ")");
+			}
+
+			Exchange exchangeDisabled = exchanges.get(indexDisabled);
+			LOG.info("Disabled on " + exchangeDisabled.getTimestamp());
+
+			Exchange exchangeRebuilked = exchanges.get(indexRebulked);
+			LOG.info("Rebulked on " + exchangeRebuilked.getTimestamp());
+
+			Exchange exchangeOriginallyBulked = exchanges.get(indexOriginallyBulked);
+			LOG.info("Originally bulked on " + exchangeOriginallyBulked.getTimestamp());
+
+			continueOrQuit();
+
+			List<String> rebulkFiles = hmExchangeFiles.get(exchangeRebuilked);
+
+			List<String> tempFilesCreated = new ArrayList<>();
 
 			for (String rebulkFile: rebulkFiles) {
-				if (isPatientFile(rebulkFile)) {
+				String fileType = findFileType(rebulkFile);
+				if (!isPatientFile(fileType)) {
+					continue;
+				}
 
-					//find all the guids in the re-bulk
-					Set<String> guidsInRebulk = new HashSet<>();
+				LOG.info("Doing " + fileType);
 
-					InputStreamReader reader = FileHelper.readFileReaderFromSharedStorage(rebulkFile);
-					CSVParser csvParser = new CSVParser(reader, EmisCsvToFhirTransformer.CSV_FORMAT);
+				String guidColumnName = getGuidColumnName(fileType);
+
+				//find all the guids in the re-bulk
+				Set<String> idsInRebulk = new HashSet<>();
+
+				InputStreamReader reader = FileHelper.readFileReaderFromSharedStorage(rebulkFile);
+				CSVParser csvParser = new CSVParser(reader, EmisCsvToFhirTransformer.CSV_FORMAT);
+
+				String[] headers = null;
+				try {
+					CsvHelper.getHeaderMapAsArray(csvParser);
 
 					Iterator<CSVRecord> iterator = csvParser.iterator();
 
 					while (iterator.hasNext()) {
 						CSVRecord record = iterator.next();
 
-						String guid = record.get(0); //guid is always the first column
-						guidsInRebulk.add(guid);
+						//get the patient and row guid out of the file and cache in our set
+						String id = record.get("PatientGuid");
+						if (!Strings.isNullOrEmpty(guidColumnName)) {
+							id += "//" + record.get(guidColumnName);
+						}
+
+						idsInRebulk.add(id);
+					}
+				} finally {
+					csvParser.close();
+				}
+
+				LOG.info("Found " + idsInRebulk + " IDs in re-bulk file");
+
+				String tempFile = FilenameUtils.concat(tempDir, fileType + ".csv");
+
+				FileWriter fileWriter = new FileWriter(tempFile);
+				BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
+				CSVPrinter csvPrinter = new CSVPrinter(bufferedWriter, EmisCsvToFhirTransformer.CSV_FORMAT.withHeader(headers));
+
+				Set<String> idsAddedToNewFile = new HashSet<>();
+
+				//now go through all files of the same type PRIOR to the service was disabled
+				//to find any rows that we'll need to explicitly delete because they were deleted while
+				//the extract was disabled
+				for (int i=indexDisabled-1; i>=indexOriginallyBulked; i--) {
+					Exchange exchange = exchanges.get(i);
+					List<String> files = hmExchangeFiles.get(exchange);
+					for (String originalFile: files) {
+						String originalFileType = findFileType(originalFile);
+						if (!originalFileType.equals(fileType)) {
+							continue;
+						}
 					}
 
-					/*Map<String, Integer> headers = csvParser.getHeaderMap();
-					if (headers.containsKey("Deleted")) {
-
+					reader = FileHelper.readFileReaderFromSharedStorage(rebulkFile);
+					csvParser = new CSVParser(reader, EmisCsvToFhirTransformer.CSV_FORMAT);
+					try {
 						Iterator<CSVRecord> iterator = csvParser.iterator();
-						CSVRecord record = iterator.next();
 
-						String guid = record.get(0);
-						String deletedStr = record.get("Deleted");
-						boolean deleted = Boolean.parseBoolean(deletedStr);
+						while (iterator.hasNext()) {
+							CSVRecord record = iterator.next();
 
-						if (deleted) {
-							guidsInRebulk.remove(guid);
-						} else {
+							//get the patient and row guid out of the file and cache in our set
+							String id = record.get("PatientGuid");
+							if (!Strings.isNullOrEmpty(guidColumnName)) {
+								id += "//" + record.get(guidColumnName);
+							}
 
+							//if we're already generated a delete for this ID, skip it
+							if (idsAddedToNewFile.contains(id)) {
+								continue;
+							}
+
+							boolean deleted = Boolean.parseBoolean(record.get("Deleted"));
+
+							//if this ID isn't deleted and isn't in the re-bulk then it means
+							//it WAS deleted in Emis Web but we didn't receive the delete, because it was deleted
+							//from Emis Web while the extract feed was disabled
+							if (!deleted
+									&& !idsInRebulk.contains(id)) {
+
+								//populate a new CSV record, carrying over the GUIDs from the original but marking as deleted
+								String[] newRecord = new String[headers.length];
+
+								for (int j=0; j<newRecord.length; j++) {
+									String header = headers[j];
+									if (header.equals("PatientGuid")
+											|| header.equals("OrganisationGuid")
+											|| (!Strings.isNullOrEmpty(guidColumnName)
+											&& header.equals(guidColumnName))) {
+
+										String val = record.get(header);
+										newRecord[j] = val;
+
+									} else if (header.equals("Deleted")) {
+										newRecord[j] = "true";
+
+									} else {
+										newRecord[j] = "";
+									}
+								}
+
+								csvPrinter.printRecord((Object[])newRecord);
+								csvPrinter.flush();
+
+								idsAddedToNewFile.add(id);
+							}
 						}
-					}*/
+					} finally {
+						csvParser.close();
+					}
+				}
 
-					csvParser.close();
+				csvPrinter.flush();
+				csvPrinter.close();
 
+				tempFilesCreated.add(tempFile);
+				LOG.info("Created replacement file " + tempFile);
 
+				//also create a version of the CSV file with just the header and nothing else in
+				String emptyTempFile = FilenameUtils.concat(tempDir, fileType + ".empty");
 
+				fileWriter = new FileWriter(tempFile);
+				bufferedWriter = new BufferedWriter(fileWriter);
+				csvPrinter = new CSVPrinter(bufferedWriter, EmisCsvToFhirTransformer.CSV_FORMAT.withHeader(headers));
+				csvPrinter.close();
 
+				tempFilesCreated.add(emptyTempFile);
+				LOG.info("Created empty file " + emptyTempFile);
+			}
 
+			continueOrQuit();
 
+			//back up every file where the service was disabled
+			for (int i=indexDisabled; i<indexRebulked; i++) {
+				Exchange exchange = exchanges.get(i);
+				List<String> files = hmExchangeFiles.get(exchange);
+				for (String file: files) {
+					//first download from S3 to the local temp dir
+					InputStream inputStream = FileHelper.readFileFromSharedStorage(file);
+					String fileName = FilenameUtils.getName(file);
+					String tempPath = FilenameUtils.concat(tempDir, fileName);
+					File downloadDestination = new File(tempPath);
+
+					Files.copy(inputStream, downloadDestination.toPath());
+
+					//then write back to S3 in a sub-dir of the original file
+					String backupPath = FilenameUtils.getPath(file);
+					backupPath = FilenameUtils.concat(backupPath, "Original");
+					backupPath = FilenameUtils.concat(backupPath, fileName);
+
+					FileHelper.writeFileToSharedStorage(backupPath, downloadDestination);
+					LOG.info("Backed up " + file + "   ->   " + backupPath);
+
+					//delete from temp dir
+					downloadDestination.delete();
 				}
 			}
 
+			continueOrQuit();
 
+			//copy the new CSV files into the dir where it was disabled
+			List<String> disabledFiles = hmExchangeFiles.get(exchangeDisabled);
+			for (String disabledFile: disabledFiles) {
+				String fileType = findFileType(disabledFile);
+				if (!isPatientFile(fileType)) {
+					continue;
+				}
 
-			/**
-			 1. Start with path to re-bulk
-			 2. Find all past extracts
-			 3. For each file in the re-bulk
-			 4. Go through all past files to find GUIDs that aren't deleted
-			 5. Go through re-bulk file to find GUIDs
-			 6. Move old extract file to a sub-dir
-			 7. Create new delta of just the deletes
-			 8. Replace all sharing agreement files with the non-deleted version
-			 ONLY for patient files (not admin stuff)
+				String tempFile = FilenameUtils.concat(tempDir, fileType + ".csv");
+				File f = new File(tempFile);
+				if (!f.exists()) {
+					throw new Exception("Failed to find expected temp file " + f);
+				}
 
-			 */
+				FileHelper.writeFileToSharedStorage(disabledFile, f);
+				LOG.info("Copied " + tempFile + "   ->   " + disabledFile);
+			}
+
+			continueOrQuit();
+
+			//empty the patient files for any extracts while the service was disabled
+			for (int i=indexDisabled+1; i<indexRebulked; i++) {
+				Exchange otherExchangeDisabled = exchanges.get(i);
+				List<String> otherDisabledFiles = hmExchangeFiles.get(otherExchangeDisabled);
+				for (String otherDisabledFile: otherDisabledFiles) {
+					String fileType = findFileType(otherDisabledFile);
+					if (!isPatientFile(fileType)) {
+						continue;
+					}
+
+					String tempFile = FilenameUtils.concat(tempDir, fileType + ".empty");
+					File f = new File(tempFile);
+					if (!f.exists()) {
+						throw new Exception("Failed to find expected empty file " + f);
+					}
+
+					FileHelper.writeFileToSharedStorage(otherDisabledFile, f);
+					LOG.info("Copied " + tempFile + "   ->   " + otherDisabledFile);
+				}
+			}
+
+			continueOrQuit();
+
+			//copy the content of the sharing agreement file from when it was re-bulked
+			for (String rebulkFile: rebulkFiles) {
+				String fileType = findFileType(rebulkFile);
+				if (fileType.equals("Agreements_SharingOrganisation")) {
+
+					String tempFile = FilenameUtils.concat(tempDir, fileType + ".csv");
+					File downloadDestination = new File(tempFile);
+
+					InputStream inputStream = FileHelper.readFileFromSharedStorage(rebulkFile);
+					Files.copy(inputStream, downloadDestination.toPath());
+
+					tempFilesCreated.add(tempFile);
+				}
+			}
+
+			//replace the sharing agreement file for all disabled extracts with the non-disabled one
+			for (int i=indexDisabled; i<indexRebulked; i++) {
+				Exchange exchange = exchanges.get(i);
+				List<String> files = hmExchangeFiles.get(exchange);
+				for (String file: files) {
+					String fileType = findFileType(file);
+					if (fileType.equals("Agreements_SharingOrganisation")) {
+
+						String tempFile = FilenameUtils.concat(tempDir, fileType + ".csv");
+						File f = new File(tempFile);
+						if (!f.exists()) {
+							throw new Exception("Failed to find expected empty file " + f);
+						}
+
+						FileHelper.writeFileToSharedStorage(file, f);
+						LOG.info("Copied " + tempFile + "   ->   " + file);
+					}
+				}
+			}
 
 			LOG.info("Finished Fixing Disabled Emis Extracts Prior to Re-bulk for service " + serviceId);
+			continueOrQuit();
+
+			for (String tempFileCreated: tempFilesCreated) {
+				File f = new File(tempFileCreated);
+				if (f.exists()) {
+					f.delete();
+				}
+			}
 
 		} catch (Exception ex) {
 			LOG.error("", ex);
 		}
 	}
 
+	private static boolean isDisabledInSharingAgreementFile(Exchange exchange, Map<Exchange, List<String>> fileMap) throws Exception {
+		List<String> files = fileMap.get(exchange);
+		String file = findSharingAgreementFile(files);
 
+		InputStreamReader reader = FileHelper.readFileReaderFromSharedStorage(file);
+		CSVParser csvParser = new CSVParser(reader, EmisCsvToFhirTransformer.CSV_FORMAT);
+		try {
+			Iterator<CSVRecord> iterator = csvParser.iterator();
+			CSVRecord record = iterator.next();
 
-	private static boolean isPatientFile(String file) {
+			String s = record.get("Disabled");
+			boolean disabled = Boolean.parseBoolean(s);
+			return disabled;
 
-		if (file.contains("_Admin_Patient_")
-				|| file.contains("_CareRecord_Consultation_")
-				|| file.contains("_CareRecord_Diary_")
-				|| file.contains("_CareRecord_Observation_")
-				|| file.contains("_CareRecord_ObservationReferral_")
-				|| file.contains("_CareRecord_Problem_")
-				|| file.contains("_Prescribing_DrugRecord_")
-				|| file.contains("_Prescribing_IssueRecord_")) {
+		} finally {
+			csvParser.close();
+		}
+	}
+
+	private static void continueOrQuit() throws Exception {
+		LOG.info("Enter y to continue, anything else to quit");
+		char c = (char)System.in.read();
+		if (c != 'y' && c != 'Y') {
+			System.exit(1);
+		}
+	}
+
+	private static String getGuidColumnName(String fileType) {
+		if (fileType.equals("Admin_Patient")) {
+			//patient file just has patient GUID, nothing extra
+			return null;
+
+		} else if (fileType.equals("CareRecord_Consultation")) {
+			return "ConsultationGuid";
+
+		} else if (fileType.equals("CareRecord_Diary")) {
+			return "DiaryGuid";
+
+		} else if (fileType.equals("CareRecord_Observation")) {
+			return "ObservationGuid";
+
+		} else if (fileType.equals("CareRecord_Problem")) {
+			//there is no separate problem GUID, as it's just a modified observation
+			return "ObservationGuid";
+
+		} else if (fileType.equals("Prescribing_DrugRecord")) {
+			return "DrugRecordGuid";
+
+		} else if (fileType.equals("Prescribing_IssueRecord")) {
+			return "IssueRecordGuid";
+
+		} else {
+			throw new IllegalArgumentException(fileType);
+		}
+	}
+
+	private static String findFileType(String filePath) {
+		String fileName = FilenameUtils.getName(filePath);
+		String[] toks = fileName.split("_");
+		String domain = toks[1];
+		String name = toks[2];
+
+		return domain + "_" + name;
+	}
+
+	private static boolean isPatientFile(String fileType) {
+		if (fileType.equals("Admin_Patient")
+				|| fileType.equals("CareRecord_Consultation")
+				|| fileType.equals("CareRecord_Diary")
+				|| fileType.equals("CareRecord_Observation")
+				|| fileType.equals("CareRecord_Problem")
+				|| fileType.equals("Prescribing_DrugRecord")
+				|| fileType.equals("Prescribing_IssueRecord")) {
+			//note the referral file doesn't have a Deleted column, so isn't in this list
 
 			return true;
 
@@ -350,8 +635,8 @@ public class Main {
 	private static String findSharingAgreementFile(List<String> files) throws Exception {
 
 		for (String file : files) {
-			String name = FilenameUtils.getName(file);
-			if (name.indexOf("_Agreements_SharingOrganisation_") > -1) {
+			String fileType = findFileType(file);
+			if (fileType.equals("Agreements_SharingOrganisation")) {
 				return file;
 			}
 		}
