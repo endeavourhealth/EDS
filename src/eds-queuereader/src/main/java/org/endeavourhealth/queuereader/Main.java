@@ -420,6 +420,7 @@ public class Main {
 				fileWriter = new FileWriter(tempFile);
 				bufferedWriter = new BufferedWriter(fileWriter);
 				csvPrinter = new CSVPrinter(bufferedWriter, EmisCsvToFhirTransformer.CSV_FORMAT.withHeader(headers));
+				csvPrinter.flush();
 				csvPrinter.close();
 
 				tempFilesCreated.add(emptyTempFile);
