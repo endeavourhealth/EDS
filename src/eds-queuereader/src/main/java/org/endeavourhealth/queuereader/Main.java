@@ -429,7 +429,7 @@ public class Main {
 			continueOrQuit();
 
 			//back up every file where the service was disabled
-			for (int i=indexDisabled; i<indexRebulked; i++) {
+			/*for (int i=indexDisabled; i<indexRebulked; i++) {
 				Exchange exchange = exchanges.get(i);
 				List<String> files = hmExchangeFiles.get(exchange);
 				for (String file: files) {
@@ -454,7 +454,7 @@ public class Main {
 				}
 			}
 
-			continueOrQuit();
+			continueOrQuit();*/
 
 			//copy the new CSV files into the dir where it was disabled
 			List<String> disabledFiles = hmExchangeFiles.get(exchangeDisabled);
