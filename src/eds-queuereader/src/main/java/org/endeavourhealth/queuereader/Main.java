@@ -334,6 +334,7 @@ public class Main {
 				FileWriter fileWriter = new FileWriter(tempFile);
 				BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
 				CSVPrinter csvPrinter = new CSVPrinter(bufferedWriter, EmisCsvToFhirTransformer.CSV_FORMAT.withHeader(headers));
+				csvPrinter.flush();
 
 				Set<String> pastIdsProcessed = new HashSet<>();
 
