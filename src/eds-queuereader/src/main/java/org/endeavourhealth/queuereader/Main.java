@@ -570,8 +570,12 @@ public class Main {
 
 	private static void continueOrQuit() throws Exception {
 		LOG.info("Enter y to continue, anything else to quit");
-		char c = (char)System.in.read();
+
+		byte[] bytes = new byte[10];
+		System.in.read(bytes);
+		char c = (char)bytes[0];
 		if (c != 'y' && c != 'Y') {
+			System.out.println("Read " + c);
 			System.exit(1);
 		}
 	}
