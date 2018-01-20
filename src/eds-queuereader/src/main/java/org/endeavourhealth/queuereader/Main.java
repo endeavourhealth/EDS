@@ -335,7 +335,7 @@ public class Main {
 				BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
 				CSVPrinter csvPrinter = new CSVPrinter(bufferedWriter, EmisCsvToFhirTransformer.CSV_FORMAT.withHeader(headers));
 
-				Set<String> idsAddedToNewFile = new HashSet<>();
+				Set<String> pastIdsProcessed = new HashSet<>();
 
 				//now go through all files of the same type PRIOR to the service was disabled
 				//to find any rows that we'll need to explicitly delete because they were deleted while
@@ -365,9 +365,10 @@ public class Main {
 							}
 
 							//if we're already generated a delete for this ID, skip it
-							if (idsAddedToNewFile.contains(id)) {
+							if (pastIdsProcessed.contains(id)) {
 								continue;
 							}
+							pastIdsProcessed.add(id);
 
 							boolean deleted = Boolean.parseBoolean(record.get("Deleted"));
 
@@ -400,8 +401,6 @@ public class Main {
 
 								csvPrinter.printRecord((Object[])newRecord);
 								csvPrinter.flush();
-
-								idsAddedToNewFile.add(id);
 							}
 						}
 					} finally {
