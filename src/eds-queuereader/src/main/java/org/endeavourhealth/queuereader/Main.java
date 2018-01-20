@@ -308,7 +308,7 @@ public class Main {
 
 				String[] headers = null;
 				try {
-					CsvHelper.getHeaderMapAsArray(csvParser);
+					headers = CsvHelper.getHeaderMapAsArray(csvParser);
 
 					Iterator<CSVRecord> iterator = csvParser.iterator();
 
