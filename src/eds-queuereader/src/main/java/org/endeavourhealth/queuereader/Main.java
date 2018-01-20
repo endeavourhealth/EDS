@@ -418,7 +418,7 @@ public class Main {
 				//also create a version of the CSV file with just the header and nothing else in
 				String emptyTempFile = FilenameUtils.concat(tempDir, fileType + ".empty");
 
-				fileWriter = new FileWriter(tempFile);
+				fileWriter = new FileWriter(emptyTempFile);
 				bufferedWriter = new BufferedWriter(fileWriter);
 				csvPrinter = new CSVPrinter(bufferedWriter, EmisCsvToFhirTransformer.CSV_FORMAT.withHeader(headers));
 				csvPrinter.flush();
