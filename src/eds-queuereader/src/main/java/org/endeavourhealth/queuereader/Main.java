@@ -217,7 +217,7 @@ public class Main {
 			});
 
 			LOG.info("Found " + exchanges.size() + " exchanges");
-			continueOrQuit();
+			//continueOrQuit();
 
 			//find the files for each exchange
 			Map<Exchange, List<String>> hmExchangeFiles = new HashMap<>();
@@ -284,7 +284,7 @@ public class Main {
 			Exchange exchangeOriginallyBulked = exchanges.get(indexOriginallyBulked);
 			LOG.info("Originally bulked on " + exchangeOriginallyBulked.getTimestamp());
 
-			continueOrQuit();
+			//continueOrQuit();
 
 			List<String> rebulkFiles = hmExchangeFiles.get(exchangeRebuilked);
 
@@ -327,7 +327,7 @@ public class Main {
 					csvParser.close();
 				}
 
-				LOG.info("Found " + idsInRebulk + " IDs in re-bulk file");
+				LOG.info("Found " + idsInRebulk.size() + " IDs in re-bulk file");
 
 				String tempFile = FilenameUtils.concat(tempDir, fileType + ".csv");
 
