@@ -276,17 +276,17 @@ public class Main {
 			}
 
 			Exchange exchangeDisabled = exchanges.get(indexDisabled);
-			LOG.info("Disabled on " + exchangeDisabled.getTimestamp());
+			LOG.info("Disabled on " + findExtractDate(exchangeDisabled, hmExchangeFiles) + " " + exchangeDisabled.getId());
 
-			Exchange exchangeRebuilked = exchanges.get(indexRebulked);
-			LOG.info("Rebulked on " + exchangeRebuilked.getTimestamp());
+			Exchange exchangeRebulked = exchanges.get(indexRebulked);
+			LOG.info("Rebulked on " + findExtractDate(exchangeRebulked, hmExchangeFiles) + " " + exchangeRebulked.getId());
 
 			Exchange exchangeOriginallyBulked = exchanges.get(indexOriginallyBulked);
-			LOG.info("Originally bulked on " + exchangeOriginallyBulked.getTimestamp());
+			LOG.info("Originally bulked on " + findExtractDate(exchangeOriginallyBulked, hmExchangeFiles) + " " + exchangeOriginallyBulked.getId());
 
 			//continueOrQuit();
 
-			List<String> rebulkFiles = hmExchangeFiles.get(exchangeRebuilked);
+			List<String> rebulkFiles = hmExchangeFiles.get(exchangeRebulked);
 
 			List<String> tempFilesCreated = new ArrayList<>();
 
@@ -327,7 +327,7 @@ public class Main {
 					csvParser.close();
 				}
 
-				LOG.info("Found " + idsInRebulk.size() + " IDs in re-bulk file");
+				LOG.info("Found " + idsInRebulk.size() + " IDs in re-bulk file: " + rebulkFile);
 
 				String tempFile = FilenameUtils.concat(tempDir, fileType + ".csv");
 
@@ -549,6 +549,14 @@ public class Main {
 		} catch (Exception ex) {
 			LOG.error("", ex);
 		}
+	}
+
+	private static String findExtractDate(Exchange exchange, Map<Exchange, List<String>> fileMap) throws Exception {
+		List<String> files = fileMap.get(exchange);
+		String file = findSharingAgreementFile(files);
+		String name = FilenameUtils.getBaseName(file);
+		String[] toks = name.split("_");
+		return toks[3];
 	}
 
 	private static boolean isDisabledInSharingAgreementFile(Exchange exchange, Map<Exchange, List<String>> fileMap) throws Exception {
