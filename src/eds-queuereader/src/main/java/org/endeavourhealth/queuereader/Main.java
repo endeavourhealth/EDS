@@ -210,11 +210,18 @@ public class Main {
 			//get all the exchanges, which are returned in reverse order, so reverse for simplicity
 			List<Exchange> exchanges = exchangeDal.getExchangesByService(serviceUuid, Integer.MAX_VALUE);
 
-			exchanges.sort((o1, o2) -> {
+			//sorting by timestamp seems unreliable when exchanges were posted close together?
+			List<Exchange> tmp = new ArrayList<>();
+			for (int i=exchanges.size()-1; i>=0; i--) {
+				Exchange exchange = exchanges.get(i);
+				tmp.add(exchange);
+			}
+			exchanges = tmp;
+			/*exchanges.sort((o1, o2) -> {
 				Date d1 = o1.getTimestamp();
 				Date d2 = o2.getTimestamp();
 				return d1.compareTo(d2);
-			});
+			});*/
 
 			LOG.info("Found " + exchanges.size() + " exchanges");
 			//continueOrQuit();
