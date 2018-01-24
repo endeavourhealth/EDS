@@ -21,3 +21,12 @@ CREATE TABLE sus_resource_map (
   destination_resource_id char(36),
   CONSTRAINT pk_sus_resource_map PRIMARY KEY (service_id, source_row_id, destination_resource_type, destination_resource_id)
 );
+
+CREATE TABLE resource_merge_map (
+  service_id char(36),
+	resource_type varchar(50),
+  source_resource_id char(36),
+  destination_resource_id char(36),
+  updated_at datetime,
+  CONSTRAINT pk_resource_merge_map PRIMARY KEY (service_id, source_resource_id)
+);
