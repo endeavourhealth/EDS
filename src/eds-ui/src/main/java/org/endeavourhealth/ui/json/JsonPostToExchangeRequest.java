@@ -9,6 +9,7 @@ public class JsonPostToExchangeRequest {
 
     private UUID exchangeId;
     private UUID serviceId;
+    private UUID systemId;
     private String exchangeName;
     private String postMode;
     private UUID specificProtocolId;
@@ -29,6 +30,14 @@ public class JsonPostToExchangeRequest {
 
     public void setServiceId(UUID serviceId) {
         this.serviceId = serviceId;
+    }
+
+    public UUID getSystemId() {
+        return systemId;
+    }
+
+    public void setSystemId(UUID systemId) {
+        this.systemId = systemId;
     }
 
     public String getExchangeName() {

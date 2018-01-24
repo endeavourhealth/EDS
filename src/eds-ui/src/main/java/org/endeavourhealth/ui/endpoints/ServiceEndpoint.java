@@ -127,15 +127,20 @@ public final class ServiceEndpoint extends AbstractEndpoint {
 	@Timed(absolute = true, name="EDS-UI.ServiceEndpoint.DeleteServiceData")
 	@Path("/data")
 	@RequiresAdmin
-	public Response deleteServiceData(@Context SecurityContext sc, @QueryParam("uuid") String uuid) throws Exception {
+	public Response deleteServiceData(@Context SecurityContext sc,
+									  @QueryParam("serviceId") String serviceIdStr,
+									  @QueryParam("systemId") String systemIdStr) throws Exception {
 		super.setLogbackMarkers(sc);
 		userAuditRepository.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Delete,
 				"Service Data",
-				"Service Id", uuid);
+				"Service Id", serviceIdStr,
+				"System Id", systemIdStr);
 
-		UUID serviceUuid = UUID.fromString(uuid);
+		UUID serviceUuid = UUID.fromString(serviceIdStr);
+		UUID systemUuid = UUID.fromString(systemIdStr);
+
 		if (dataBeingDeleted.get(serviceUuid) != null) {
-			throw new BadRequestException("Data deletion already in progress");
+			throw new BadRequestException("Data deletion already in progress for this service");
 		}
 
 		final Service dbService = serviceRepository.getById(serviceUuid);
@@ -143,7 +148,7 @@ public final class ServiceEndpoint extends AbstractEndpoint {
 		//the delete will take some time, so do the delete in a separate thread
 		Runnable task = () -> {
 			LOG.info("Deleting all data for service " + dbService.getName() + " " + dbService.getId());
-			FhirDeletionService deletor = new FhirDeletionService(dbService);
+			FhirDeletionService deletor = new FhirDeletionService(dbService, systemUuid);
 			dataBeingDeleted.put(dbService.getId(), deletor);
 
 			try {

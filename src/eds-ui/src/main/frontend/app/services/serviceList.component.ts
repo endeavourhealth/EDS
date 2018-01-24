@@ -6,6 +6,8 @@ import {ServiceService} from "./service.service";
 import {linq, LoggerService, MessageBoxDialog} from "eds-common-js";
 import {Observable} from "rxjs";
 import {Subscription} from 'rxjs/Subscription';
+import {SystemService} from "../system/system.service";
+import {SystemPickerDialog} from "../system/systemPicker.dialog";
 
 @Component({
 	template: require('./serviceList.html')
@@ -101,22 +103,44 @@ export class ServiceListComponent implements OnInit, OnDestroy{
 			);
 	}
 
-	deleteData(item : Service) {
+	deleteData(service: Service) {
 		var vm = this;
-		MessageBoxDialog.open(vm.$modal, 'Delete Data', 'Are you sure you want to delete all data for this Service?', 'Yes', 'No')
-			.result.then(
-			() => vm.doDeleteData(item),
-			() => vm.log.info('Delete data cancelled')
-		);
+		vm.selectSystemId(service, function(service: Service, systemId: string) {
+
+			MessageBoxDialog.open(vm.$modal, 'Delete Data', 'Are you sure you want to delete all data for this Service?', 'Yes', 'No')
+				.result.then(
+				() => vm.doDeleteData(service, systemId),
+				() => vm.log.info('Delete data cancelled')
+			);
+		});
 	}
 
-	doDeleteData(item : Service) {
+	private selectSystemId(service: Service, callback) {
 		var vm = this;
-		vm.serviceService.deleteData(item.uuid)
+
+		var endpoints = service.endpoints;
+		if (endpoints.length == 0) {
+			vm.log.error('No systems in this serviec');
+
+		} else if (endpoints.length == 1) {
+			console.log('servvice = ' + service.name + ' only one endpoint');
+			var endpoint = endpoints[0];
+			var systemId = endpoint.systemUuid;
+			callback(service, systemId);
+
+		} else {
+			SystemPickerDialog.open(vm.$modal, service, callback);
+		}
+	}
+
+
+	private doDeleteData(service: Service, systemId: string) {
+		var vm = this;
+		vm.serviceService.deleteData(service.uuid, systemId)
 			.subscribe(
 				() => {
-					vm.log.success('Data deletion started', item, 'Delete Data');
-					vm.refreshService(item);
+					vm.log.success('Data deletion started', service, 'Delete Data');
+					vm.refreshService(service);
 				},
 				(error) => vm.log.error('Failed to delete data', error, 'Delete Data')
 			);
@@ -159,8 +183,15 @@ export class ServiceListComponent implements OnInit, OnDestroy{
 		}
 	}
 
-	viewExchanges(selectedService: Service) {
-		this.$state.go('app.exchangeAudit', {serviceUuid: selectedService.uuid});
+	viewExchanges(service: Service) {
+
+		/*var vm = this;
+		vm.selectSystemId(selectedService, vm.viewExchangesForServiceAndSystem);*/
+
+		var vm = this;
+		vm.selectSystemId(service, function(service: Service, systemId: string) {
+			vm.$state.go('app.exchangeAudit', {serviceId: service.uuid, systemId: systemId});
+		});
 	}
 
 	applyFiltering() {

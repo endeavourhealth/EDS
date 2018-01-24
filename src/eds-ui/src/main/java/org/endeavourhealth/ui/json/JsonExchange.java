@@ -12,14 +12,16 @@ public class JsonExchange {
 
     private UUID exchangeId;
     private UUID serviceId;
+    private UUID systemId;
     private Date timestamp;
     private Map<String, String> headers;
     private List<String> bodyLines;
     private boolean isInError;
 
-    public JsonExchange(UUID exchangeId, UUID serviceId, Date timestamp, Map<String, String> headers, List<String> bodyLines, boolean isInError) {
+    public JsonExchange(UUID exchangeId, UUID serviceId, UUID systemId, Date timestamp, Map<String, String> headers, List<String> bodyLines, boolean isInError) {
         this.exchangeId = exchangeId;
         this.serviceId = serviceId;
+        this.systemId = systemId;
         this.timestamp = timestamp;
         this.headers = headers;
         this.bodyLines = bodyLines;
@@ -40,6 +42,14 @@ public class JsonExchange {
 
     public void setServiceId(UUID serviceId) {
         this.serviceId = serviceId;
+    }
+
+    public UUID getSystemId() {
+        return systemId;
+    }
+
+    public void setSystemId(UUID systemId) {
+        this.systemId = systemId;
     }
 
     public Date getTimestamp() {

@@ -52,10 +52,12 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
     @Consumes(MediaType.APPLICATION_JSON)
     @Timed(absolute = true, name="EDS-UI.ExchangeAuditEndpoint.GetExchangeList")
     @Path("/getExchangeList")
-    public Response getExchangeList(@Context SecurityContext sc, @QueryParam("serviceId") String serviceIdStr,
-                                                                 @QueryParam("maxRows") int maxRows,
-                                                                 @QueryParam("dateFrom") Long dateFromMillis,
-                                                                 @QueryParam("dateTo") Long dateToMillis) throws Exception {
+    public Response getExchangeList(@Context SecurityContext sc,
+                                    @QueryParam("serviceId") String serviceIdStr,
+                                    @QueryParam("systemId") String systemIdStr,
+                                    @QueryParam("maxRows") int maxRows,
+                                    @QueryParam("dateFrom") Long dateFromMillis,
+                                    @QueryParam("dateTo") Long dateToMillis) throws Exception {
         super.setLogbackMarkers(sc);
 
         userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load, "Get Exchange List",
@@ -65,6 +67,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
         List<JsonExchange> ret = new ArrayList<>();
 
         UUID serviceUuid = UUID.fromString(serviceIdStr);
+        UUID systemUuid = UUID.fromString(systemIdStr);
         Date dateFrom = new Date(0);
         Date dateTo = new Date();
 
@@ -87,9 +90,9 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
             }
         }
 
-        List<Exchange> exchangeByServices = auditRepository.getExchangesByService(serviceUuid, maxRows, dateFrom, dateTo);
+        List<Exchange> exchangeByServices = auditRepository.getExchangesByService(serviceUuid, systemUuid, maxRows, dateFrom, dateTo);
 
-        Set<UUID> exchangeIdsInError = findAllExchangeIdsInErrorForService(serviceUuid);
+        Set<UUID> exchangeIdsInError = findAllExchangeIdsInErrorForService(serviceUuid, systemUuid);
 
         for (Exchange exchangeByService: exchangeByServices) {
 
@@ -100,7 +103,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
             List<String> bodyLines = getExchangeBodyLines(exchange);
             boolean inError = exchangeIdsInError.contains(exchangeId);
 
-            JsonExchange jsonExchange = new JsonExchange(exchangeId, serviceUuid, timestamp, headers, bodyLines, inError);
+            JsonExchange jsonExchange = new JsonExchange(exchangeId, serviceUuid, systemUuid, timestamp, headers, bodyLines, inError);
             ret.add(jsonExchange);
         }
 
@@ -112,10 +115,10 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
                 .build();
     }
 
-    private Set<UUID> findAllExchangeIdsInErrorForService(UUID serviceId) throws Exception {
+    private Set<UUID> findAllExchangeIdsInErrorForService(UUID serviceId, UUID systemId) throws Exception {
 
         Set<UUID> ret = new HashSet<>();
-        List<ExchangeTransformErrorState> errorStates = auditRepository.getErrorStatesForService(serviceId);
+        List<ExchangeTransformErrorState> errorStates = auditRepository.getErrorStatesForService(serviceId, systemId);
         for (ExchangeTransformErrorState errorState: errorStates) {
             List<UUID> exchangeIds = errorState.getExchangeIdsInError();
             for (UUID exchangeId: exchangeIds) {
@@ -131,11 +134,15 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
     @Consumes(MediaType.APPLICATION_JSON)
     @Timed(absolute = true, name="EDS-UI.ExchangeAuditEndpoint.GetExchangeById")
     @Path("/getExchangeById")
-    public Response getExchangeById(@Context SecurityContext sc, @QueryParam("serviceId") String serviceIdStr, @QueryParam("exchangeId") String exchangeIdStr) throws Exception {
+    public Response getExchangeById(@Context SecurityContext sc,
+                                    @QueryParam("serviceId") String serviceIdStr,
+                                    @QueryParam("systemId") String systemIdStr,
+                                    @QueryParam("exchangeId") String exchangeIdStr) throws Exception {
         super.setLogbackMarkers(sc);
 
         userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load, "Get Exchange For ID",
                 "Service Id", serviceIdStr,
+                "System Id", systemIdStr,
                 "Exchange Id", exchangeIdStr);
 
         List<JsonExchange> ret = new ArrayList<>();
@@ -148,6 +155,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
         }
 
         UUID serviceUuid = UUID.fromString(serviceIdStr);
+        UUID systemUuid = UUID.fromString(systemIdStr);
 
         Exchange exchange = auditRepository.getExchange(exchangeUuid);
         if (exchange == null) {
@@ -159,13 +167,14 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
         List<String> bodyLines = getExchangeBodyLines(exchange);
 
         //validate the exchange is for our service
-        String exchangeServiceIdStr = headers.get(HeaderKeys.SenderServiceUuid);
-        if (exchangeServiceIdStr == null
-                || !exchangeServiceIdStr.equals(serviceIdStr)) {
+        UUID exchangeServiceId = exchange.getServiceId();
+        if (exchangeServiceId == null
+                || !exchangeServiceId.equals(serviceUuid)) {
+
             String err = "Exchange isn't for this service";
 
-            if (!Strings.isNullOrEmpty(exchangeServiceIdStr)) {
-                Service service = serviceRepository.getById(UUID.fromString(serviceIdStr));
+            if (exchangeServiceId != null) {
+                Service service = serviceRepository.getById(exchangeServiceId);
                 if (service != null) {
                     err += " (" + service.getName() + ")";
                 }
@@ -174,10 +183,18 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
             throw new BadRequestException(err);
         }
 
-        Set<UUID> exchangeIdsInError = findAllExchangeIdsInErrorForService(serviceUuid);
+        //validate the exchange is for the right system
+        UUID exchangeSystemId = exchange.getSystemId();
+        if (exchangeSystemId == null
+                || !exchangeSystemId.equals(systemUuid)) {
+            String err = "Exchange isn't for this system";
+            throw new BadRequestException(err);
+        }
+
+        Set<UUID> exchangeIdsInError = findAllExchangeIdsInErrorForService(serviceUuid, systemUuid);
         boolean inError = exchangeIdsInError.contains(exchangeUuid);
 
-        JsonExchange jsonExchange = new JsonExchange(exchangeUuid, serviceUuid, timestamp, headers, bodyLines, inError);
+        JsonExchange jsonExchange = new JsonExchange(exchangeUuid, serviceUuid, systemUuid, timestamp, headers, bodyLines, inError);
         ret.add(jsonExchange);
 
         clearLogbackMarkers();
@@ -250,12 +267,14 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
         userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Save, "Post to exchange",
                 "Exchange ID", request.getExchangeId(),
                 "Service ID", request.getServiceId(),
+                "System ID", request.getSystemId(),
                 "Exchange Name", request.getExchangeName(),
                 "Post Mode", request.getPostMode(),
                 "Protocol ID", request.getSpecificProtocolId());
 
         UUID selectedExchangeId = request.getExchangeId();
         UUID serviceId = request.getServiceId();
+        UUID systemId = request.getSystemId();
         String exchangeName = request.getExchangeName();
         String postMode = request.getPostMode();
         UUID specificProtocolId = request.getSpecificProtocolId();
@@ -266,7 +285,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
         } else if (postMode.equalsIgnoreCase("Onwards")) {
             List<UUID> exchangeIds = new ArrayList<>();
 
-            List<UUID> allExchangeIds = auditRepository.getExchangeIdsForService(serviceId);
+            List<UUID> allExchangeIds = auditRepository.getExchangeIdsForService(serviceId, systemId);
             int index = allExchangeIds.indexOf(selectedExchangeId);
             for (int i=index; i<allExchangeIds.size(); i++) {
                 UUID exchangeId = allExchangeIds.get(i);
@@ -276,7 +295,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
             QueueHelper.postToExchange(exchangeIds, exchangeName, specificProtocolId, true);
 
         } else if (postMode.equalsIgnoreCase("All")) {
-            List<UUID> exchangeIds = auditRepository.getExchangeIdsForService(serviceId);
+            List<UUID> exchangeIds = auditRepository.getExchangeIdsForService(serviceId, systemId);
             QueueHelper.postToExchange(exchangeIds, exchangeName, specificProtocolId, true);
 
         } else {
@@ -677,16 +696,18 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
     @Timed(absolute = true, name="EDS-UI.ExchangeAuditEndpoint.GetProtocolsForService")
     @Path("/getProtocolsForService")
     public Response getProtocolsForService(@Context SecurityContext sc,
-                                           @QueryParam("serviceId") String serviceIdStr) throws Exception {
+                                           @QueryParam("serviceId") String serviceIdStr,
+                                           @QueryParam("systemId") String systemIdStr) throws Exception {
         super.setLogbackMarkers(sc);
 
         userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
                 "Get Protocols For Service",
-                "Service Id", serviceIdStr);
+                "Service Id", serviceIdStr,
+                "System Id", systemIdStr);
 
         List<JsonProtocol> ret = new ArrayList<>();
 
-        List<LibraryItem> libraryItems = LibraryRepositoryHelper.getProtocolsByServiceId(serviceIdStr, null);
+        List<LibraryItem> libraryItems = LibraryRepositoryHelper.getProtocolsByServiceId(serviceIdStr, systemIdStr);
         for (LibraryItem libraryItem: libraryItems) {
             Protocol protocol = libraryItem.getProtocol();
 

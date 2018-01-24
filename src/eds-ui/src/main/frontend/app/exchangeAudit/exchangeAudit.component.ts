@@ -17,6 +17,7 @@ import {Protocol} from "./Protocol";
 export class ExchangeAuditComponent {
 
 	service: Service;
+	systemId: string;
 
 	//exchange filters
 	searchTab: string;
@@ -47,9 +48,10 @@ export class ExchangeAuditComponent {
 		//this.postAllExchanges = false;
 		this.postMode = 'This';
 
-		var uuid = transition.params()['serviceUuid'];
+		this.systemId = transition.params()['systemId'];
+		var serviceId = transition.params()['serviceId'];
 
-		serviceService.get(uuid)
+		serviceService.get(serviceId)
 			.subscribe(
 				(result) => {
 					this.service = result;
@@ -70,7 +72,7 @@ export class ExchangeAuditComponent {
 		var vm = this;
 		var serviceId = vm.service.uuid;
 
-		this.exchangeAuditService.getProtocolsList(serviceId).subscribe(
+		this.exchangeAuditService.getProtocolsList(serviceId, vm.systemId).subscribe(
 			(result) => {
 				vm.protocols = result;
 			},
@@ -100,7 +102,7 @@ export class ExchangeAuditComponent {
 			/*console.log("Search from " + this.exchangeSearchFrom);
 			console.log("Search to " + this.exchangeSearchTo);*/
 
-			vm.exchangeAuditService.getExchangeList(serviceId, vm.exchangesToShow, this.exchangeSearchFrom, this.exchangeSearchTo).subscribe(
+			vm.exchangeAuditService.getExchangeList(serviceId, vm.systemId, vm.exchangesToShow, this.exchangeSearchFrom, this.exchangeSearchTo).subscribe(
 				(result) => {
 					vm.exchanges = result;
 					if (result.length == 0) {
@@ -117,7 +119,7 @@ export class ExchangeAuditComponent {
 				return;
 			}
 
-			vm.exchangeAuditService.getExchangeById(serviceId, this.exchangeIdSearch).subscribe(
+			vm.exchangeAuditService.getExchangeById(serviceId, vm.systemId, this.exchangeIdSearch).subscribe(
 				(result) => {
 					vm.exchanges = result;
 					if (result.length == 0) {
@@ -210,7 +212,7 @@ export class ExchangeAuditComponent {
 		var exchangeId = vm.selectedExchange.exchangeId;
 		var serviceId = this.service.uuid;
 
-		this.busyPostingToExchange = vm.exchangeAuditService.postToExchange(exchangeId, serviceId, exchangeName, this.postMode, this.postSpecificProtocol).subscribe(
+		this.busyPostingToExchange = vm.exchangeAuditService.postToExchange(exchangeId, serviceId, vm.systemId, exchangeName, this.postMode, this.postSpecificProtocol).subscribe(
 			(result) => {
 				vm.log.success('Successfully posted to ' + exchangeName + ' exchange', 'Post to Exchange');
 
