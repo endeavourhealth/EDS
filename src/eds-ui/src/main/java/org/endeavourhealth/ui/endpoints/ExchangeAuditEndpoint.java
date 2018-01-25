@@ -279,11 +279,15 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
         String postMode = request.getPostMode();
         UUID specificProtocolId = request.getSpecificProtocolId();
 
+        //work out the exchange IDs to post
+        List<UUID> exchangeIds = null;
+
         if (postMode.equalsIgnoreCase("This")) {
-            QueueHelper.postToExchange(selectedExchangeId, exchangeName, specificProtocolId, true);
+            exchangeIds = new ArrayList<>();
+            exchangeIds.add(selectedExchangeId);
 
         } else if (postMode.equalsIgnoreCase("Onwards")) {
-            List<UUID> exchangeIds = new ArrayList<>();
+            exchangeIds = new ArrayList<>();
 
             List<UUID> allExchangeIds = auditRepository.getExchangeIdsForService(serviceId, systemId);
             int index = allExchangeIds.indexOf(selectedExchangeId);
@@ -292,14 +296,27 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
                 exchangeIds.add(exchangeId);
             }
 
-            QueueHelper.postToExchange(exchangeIds, exchangeName, specificProtocolId, true);
-
         } else if (postMode.equalsIgnoreCase("All")) {
-            List<UUID> exchangeIds = auditRepository.getExchangeIdsForService(serviceId, systemId);
-            QueueHelper.postToExchange(exchangeIds, exchangeName, specificProtocolId, true);
+            exchangeIds = auditRepository.getExchangeIdsForService(serviceId, systemId);
 
         } else {
             throw new IllegalArgumentException("Invalid post mode [" + postMode + "]");
+        }
+
+        //post the exchanges to RabbitMQ
+        QueueHelper.postToExchange(exchangeIds, exchangeName, specificProtocolId, true);
+
+        //and update any past transform audits to say we've resubmitted them to rabbit, if it's the inbound queue
+        if (exchangeName.equals("edsInbound")) {
+            for (UUID exchangeId : exchangeIds) {
+                ExchangeTransformAudit audit = auditRepository.getMostRecentExchangeTransform(serviceId, systemId, exchangeId);
+                if (audit != null) {
+                    if (!audit.isResubmitted()) {
+                        audit.setResubmitted(true);
+                        auditRepository.save(audit);
+                    }
+                }
+            }
         }
 
         clearLogbackMarkers();

@@ -17,14 +17,11 @@ import org.endeavourhealth.core.configuration.ConfigDeserialiser;
 import org.endeavourhealth.core.configuration.QueueReaderConfiguration;
 import org.endeavourhealth.core.csv.CsvHelper;
 import org.endeavourhealth.core.database.dal.DalProvider;
-import org.endeavourhealth.core.database.dal.admin.ServiceDalI;
 import org.endeavourhealth.core.database.dal.admin.models.Service;
 import org.endeavourhealth.core.database.dal.audit.ExchangeDalI;
 import org.endeavourhealth.core.database.dal.audit.models.Exchange;
 import org.endeavourhealth.core.database.dal.audit.models.ExchangeTransformAudit;
-import org.endeavourhealth.core.database.dal.audit.models.ExchangeTransformErrorState;
 import org.endeavourhealth.core.fhirStorage.JsonServiceInterfaceEndpoint;
-import org.endeavourhealth.core.queueing.QueueHelper;
 import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -65,13 +62,13 @@ public class Main {
 			System.exit(0);
 		}
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("PostToInbound")) {
 			String serviceId = args[1];
 			boolean all = Boolean.parseBoolean(args[2]);
 			postToInbound(UUID.fromString(serviceId), all);
 			System.exit(0);
-		}
+		}*/
 
 		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("FixPatientSearch")) {
@@ -674,7 +671,7 @@ public class Main {
 		}
 	}
 
-	private static void postToInbound(UUID serviceId, boolean all) {
+	/*private static void postToInbound(UUID serviceId, boolean all) {
 		LOG.info("Posting to inbound for " + serviceId);
 
 		try {
@@ -718,7 +715,7 @@ public class Main {
 		}
 
 		LOG.info("Finished Posting to inbound for " + serviceId);
-	}
+	}*/
 
 	/*private static void fixPatientSearch(String serviceId) {
 		LOG.info("Fixing patient search for " + serviceId);

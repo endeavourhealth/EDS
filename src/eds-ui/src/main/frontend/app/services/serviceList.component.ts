@@ -32,7 +32,7 @@ export class ServiceListComponent implements OnInit, OnDestroy{
 	}
 
 	ngOnInit() {
-		this.initialize();
+		this.refreshAllServices();
 	}
 
 	ngOnDestroy() {
@@ -42,7 +42,7 @@ export class ServiceListComponent implements OnInit, OnDestroy{
 		}
 	}
 
-	initialize() {
+	refreshAllServices() {
 		var vm = this;
 		vm.serviceService.getAll()
 			.subscribe(
