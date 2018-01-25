@@ -47,7 +47,8 @@ export class ServiceListComponent implements OnInit, OnDestroy{
 		vm.serviceService.getAll()
 			.subscribe(
 				(result) => {
-					vm.services = linq(result).OrderBy(s => s.name).ToArray();
+					/*vm.services = linq(result).OrderBy(s => s.name).ToArray();*/
+					vm.services = linq(result).OrderBy(s => s.name.toLowerCase()).ToArray();
 					vm.startRefreshTimer();
 					vm.applyFiltering();
 					vm.findAllPublisherConfigNames();

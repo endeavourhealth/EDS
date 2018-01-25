@@ -43,8 +43,8 @@ export class TransformErrorsComponent {
 		vm.exchangeAuditService.getTransformErrorSummaries()
 			.subscribe(
 				(result) => {
-					//vm.transformErrorSummaries = result;
-					vm.transformErrorSummaries = linq(result).OrderBy(s => s.service.name).ToArray();
+					vm.transformErrorSummaries = linq(result).OrderBy(s => s.service.name.toLowerCase()).ToArray();
+					/*vm.transformErrorSummaries = linq(result).OrderBy(s => s.service.name).ToArray();*/
 					vm.applyFiltering();
 					vm.findAllPublisherConfigNames();
 
