@@ -223,7 +223,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
         return ret;
     }
 
-    @GET
+    /*@GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     @Timed(absolute = true, name="EDS-UI.ExchangeAuditEndpoint.GetExchangeEvents")
@@ -254,7 +254,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
                 .ok()
                 .entity(ret)
                 .build();
-    }
+    }*/
 
     @POST
     @Produces(MediaType.APPLICATION_JSON)
@@ -426,11 +426,10 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
     @Timed(absolute = true, name="EDS-UI.ExchangeAuditEndpoint.GetInboundTransformAudits")
     @Path("/getInboundTransformAudits")
     public Response getInboundTransformAudits(@Context SecurityContext sc,
-                                    @QueryParam("serviceId") String serviceIdStr,
-                                    @QueryParam("systemId") String systemIdStr,
-                                    @QueryParam("exchangeId") String exchangeIdStr,
-                                     @QueryParam("getMostRecent") boolean getMostRecent,
-                                     @QueryParam("getErrorLines") boolean getErrorLines) throws Exception {
+                                            @QueryParam("serviceId") String serviceIdStr,
+                                            @QueryParam("systemId") String systemIdStr,
+                                            @QueryParam("exchangeId") String exchangeIdStr,
+                                            @QueryParam("getAllAuditsAndEvents") boolean getAllAuditsAndEvents) throws Exception {
         super.setLogbackMarkers(sc);
 
         userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
@@ -447,13 +446,13 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
 
         List<ExchangeTransformAudit> transformAudits = null;
 
-        if (getMostRecent) {
+        if (getAllAuditsAndEvents) {
+            transformAudits = auditRepository.getAllExchangeTransformAudits(serviceId, systemId, exchangeId);
+
+        } else {
             ExchangeTransformAudit transformAudit = auditRepository.getMostRecentExchangeTransform(serviceId, systemId, exchangeId);
             transformAudits = new ArrayList<>();
             transformAudits.add(transformAudit);
-
-        } else {
-            transformAudits = auditRepository.getAllExchangeTransformAudits(serviceId, systemId, exchangeId);
         }
 
         for (ExchangeTransformAudit transformAudit: transformAudits) {
@@ -461,6 +460,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
             JsonTransformExchangeError jsonObj = new JsonTransformExchangeError();
             jsonObj.setExchangeId(exchangeId);
             jsonObj.setVersion(transformAudit.getId());
+            jsonObj.setEventDesc("Transform");
             jsonObj.setTransformStart(transformAudit.getStarted());
             jsonObj.setTransformEnd(transformAudit.getEnded());
             jsonObj.setNumberBatchIdsCreated(transformAudit.getNumberBatchesCreated());
@@ -469,9 +469,26 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
             jsonObj.setDeleted(transformAudit.getDeleted());
             ret.add(jsonObj);
 
-            if (getErrorLines) {
+            //if we're NOT getting everything for this exchange, include any error lines we had
+            if (!getAllAuditsAndEvents) {
                 List<String> lines = formatTransformAuditErrorLines(transformAudit);
                 jsonObj.setLines(lines);
+            }
+        }
+
+        //if we want everything, also include the exchange_event records for the exchange
+        if (getAllAuditsAndEvents) {
+            List<ExchangeEvent> exchangeEvents = auditRepository.getExchangeEvents(exchangeId);
+            for (ExchangeEvent event: exchangeEvents) {
+                String eventDesc = event.getEventDesc();
+                Date eventTimestamp = event.getTimestamp();
+
+                //we can only populate a few fields on the json proxy, but the javascript handles this
+                JsonTransformExchangeError jsonObj = new JsonTransformExchangeError();
+                jsonObj.setExchangeId(exchangeId);
+                jsonObj.setEventDesc(eventDesc);
+                jsonObj.setTransformStart(eventTimestamp);
+                ret.add(jsonObj);
             }
         }
 

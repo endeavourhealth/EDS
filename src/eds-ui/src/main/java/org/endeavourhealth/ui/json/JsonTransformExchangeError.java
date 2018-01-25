@@ -11,6 +11,7 @@ public class JsonTransformExchangeError {
 
     private UUID exchangeId = null;
     private UUID version = null;
+    private String eventDesc = null;
     private Date transformStart = null;
     private Date transformEnd = null;
     private Integer numberBatchIdsCreated = null;
@@ -33,6 +34,14 @@ public class JsonTransformExchangeError {
 
     public void setVersion(UUID version) {
         this.version = version;
+    }
+
+    public String getEventDesc() {
+        return eventDesc;
+    }
+
+    public void setEventDesc(String eventDesc) {
+        this.eventDesc = eventDesc;
     }
 
     public Date getTransformStart() {

@@ -3,7 +3,6 @@ import {Http, URLSearchParams} from "@angular/http";
 import {Observable} from "rxjs";
 import {Injectable} from "@angular/core";
 import {Exchange} from "./Exchange";
-import {ExchangeEvent} from "./ExchangeEvent";
 import {TransformErrorSummary} from "./TransformErrorSummary";
 import {TransformErrorDetail} from "./TransformErrorDetail";
 import {Protocol} from "./Protocol";
@@ -44,12 +43,12 @@ export class ExchangeAuditService extends BaseHttp2Service {
         return this.httpGet('api/exchangeAudit/getExchangeById', { search : params});
     }
 
-    getExchangeEvents(exchangeId:string) : Observable<ExchangeEvent[]> {
+    /*getExchangeEvents(exchangeId:string) : Observable<ExchangeEvent[]> {
         var params = new URLSearchParams();
         params.append('exchangeId', exchangeId);
 
         return this.httpGet('api/exchangeAudit/getExchangeEvents', { search : params});
-    }
+    }*/
 
     postToExchange(exchangeId: string, serviceId: string, systemId: string, exchangeName: string, postMode: string, postSpecificProtocol: string):Observable<any> {
         var request = {
@@ -70,13 +69,12 @@ export class ExchangeAuditService extends BaseHttp2Service {
     }
 
     getInboundTransformAudits(serviceId:string, systemId:string, exchangeId:string,
-                            getMostRecent:boolean, getErrorLines:boolean) : Observable<TransformErrorDetail[]> {
+                              getAllAuditsAndEvents:boolean) : Observable<TransformErrorDetail[]> {
         var params = new URLSearchParams();
         params.append('serviceId', serviceId);
         params.append('systemId', systemId);
         params.append('exchangeId', exchangeId);
-        params.append('getMostRecent', '' + getMostRecent);
-        params.append('getErrorLines', '' + getErrorLines);
+        params.append('getAllAuditsAndEvents', '' + getAllAuditsAndEvents);
 
         return this.httpGet('api/exchangeAudit/getInboundTransformAudits', { search : params});
     }

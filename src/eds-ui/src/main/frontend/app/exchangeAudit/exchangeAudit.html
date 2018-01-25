@@ -155,7 +155,7 @@
                     </div>
 
                     <!--exchange events table-->
-                    <div class="table">
+                    <!--<div class="table">
                         <table class="table table-striped table-condensed">
                             <thead>
                                 <tr>
@@ -171,23 +171,25 @@
 
                             </tbody>
                         </table>
-                    </div>
+                    </div>-->
 
                     <!--transform audits table-->
                     <div class="table" *ngIf="selectedExchange.transformAudits">
                         <table class="table table-striped table-condensed">
                             <thead>
                                 <tr>
+                                    <th class="col-md-4">Event</th>
                                     <th class="col-md-2">Started</th>
                                     <th class="col-md-2">Ended</th>
                                     <th class="col-md-1">#Batch IDs</th>
                                     <th class="col-md-1">Errors</th>
                                     <th class="col-md-1">Resubmitted</th>
-                                    <th class="col-md-2">Deleted</th>
+                                    <th class="col-md-1">Deleted</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <tr class="hover-box show-child-on-hover" *ngFor="let transformAudit of selectedExchange.transformAudits" (click)="showTransformErrors(transformAudit);">
+                                    <td>{{transformAudit.eventDesc}}</td>
                                     <td>{{transformAudit.transformStart | date:'dd-MMM-yyyy HH:mm:ss'}}</td>
                                     <td>{{transformAudit.transformEnd | date:'dd-MMM-yyyy HH:mm:ss'}}</td>
                                     <td>{{transformAudit.numberBatchIdsCreated}}</td>
