@@ -17,10 +17,10 @@
         <eds-cache.version>1.1-SNAPSHOT</eds-cache.version>
         <eds-cassandra.version>1.0-SNAPSHOT</eds-cassandra.version>
         <eds-config.version>1.17-SNAPSHOT</eds-config.version>
-        <eds-core.version>1.88-SNAPSHOT</eds-core.version>
+        <eds-core.version>1.92-SNAPSHOT</eds-core.version>
         <eds-fhir.version>1.22-SNAPSHOT</eds-fhir.version>
         <eds-security.version>1.4-SNAPSHOT</eds-security.version>
-        <eds-transform.version>1.148-SNAPSHOT</eds-transform.version>
+        <eds-transform.version>1.149-SNAPSHOT</eds-transform.version>
         <eds-utility.version>1.19-SNAPSHOT</eds-utility.version>
         <eds-datasharing.version>0.0.2-SNAPSHOT</eds-datasharing.version>
 
