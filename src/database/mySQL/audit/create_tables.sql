@@ -10,6 +10,7 @@ DROP TABLE IF EXISTS queued_message_type;
 DROP TABLE IF EXISTS exchange_batch;
 DROP TABLE IF EXISTS exchange_subscriber_transform_audit;
 
+
 CREATE TABLE exchange
 (
     id char(36) NOT NULL,
