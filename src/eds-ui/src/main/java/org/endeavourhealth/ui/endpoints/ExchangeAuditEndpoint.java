@@ -46,6 +46,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
     private static final ServiceDalI serviceRepository = DalProvider.factoryServiceDal();
     private static final LibraryDalI libraryRepository = DalProvider.factoryLibraryDal();
 
+    private static final String INBOUND_EXCHANGE = "EdsInbound";
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
@@ -303,20 +304,25 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
             throw new IllegalArgumentException("Invalid post mode [" + postMode + "]");
         }
 
+        //work out if there are any transform audits to mark as resubmitted, which we need to do before posting to Rabbit
+        //as that will start the transforms and create new audits
+        List<ExchangeTransformAudit> auditsToFlagAsResubmited = new ArrayList<>();
+        if (exchangeName.equals(INBOUND_EXCHANGE)) {
+            for (UUID exchangeId : exchangeIds) {
+                ExchangeTransformAudit audit = auditRepository.getMostRecentExchangeTransform(serviceId, systemId, exchangeId);
+                if (audit != null) {
+                    auditsToFlagAsResubmited.add(audit);
+                }
+            }
+        }
+
         //post the exchanges to RabbitMQ
         QueueHelper.postToExchange(exchangeIds, exchangeName, specificProtocolId, true);
 
         //and update any past transform audits to say we've resubmitted them to rabbit, if it's the inbound queue
-        if (exchangeName.equals("edsInbound")) {
-            for (UUID exchangeId : exchangeIds) {
-                ExchangeTransformAudit audit = auditRepository.getMostRecentExchangeTransform(serviceId, systemId, exchangeId);
-                if (audit != null) {
-                    if (!audit.isResubmitted()) {
-                        audit.setResubmitted(true);
-                        auditRepository.save(audit);
-                    }
-                }
-            }
+        for (ExchangeTransformAudit audit: auditsToFlagAsResubmited) {
+            audit.setResubmitted(true);
+            auditRepository.save(audit);
         }
 
         clearLogbackMarkers();
@@ -612,6 +618,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
         LOG.debug("Re-running exchanges firstOnly = " + firstOnly);
 
         List<UUID> exchangeIdsToRePost = new ArrayList<>();
+        List<ExchangeTransformAudit> auditsToMarkAsResubmitted = new ArrayList<>();
 
         for (UUID exchangeId: errorState.getExchangeIdsInError()) {
 
@@ -625,8 +632,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
                     continue;
                 }
 
-                audit.setResubmitted(true);
-                auditRepository.save(audit);
+                auditsToMarkAsResubmitted.add(audit);
             }
 
             //then re-submit the exchange to Rabbit MQ for the queue reader to pick up
@@ -639,8 +645,14 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
             }
         }
 
-        QueueHelper.postToExchange(exchangeIdsToRePost, "EdsInbound", null, true);
+        //post to rabbit
+        QueueHelper.postToExchange(exchangeIdsToRePost, INBOUND_EXCHANGE, null, true);
 
+        //after posting to rabbit, mark those audits as resubmitted
+        for (ExchangeTransformAudit audit: auditsToMarkAsResubmitted) {
+            audit.setResubmitted(true);
+            auditRepository.save(audit);
+        }
     }
 
     @GET
