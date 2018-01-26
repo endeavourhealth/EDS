@@ -17,11 +17,13 @@ import org.endeavourhealth.core.configuration.ConfigDeserialiser;
 import org.endeavourhealth.core.configuration.QueueReaderConfiguration;
 import org.endeavourhealth.core.csv.CsvHelper;
 import org.endeavourhealth.core.database.dal.DalProvider;
+import org.endeavourhealth.core.database.dal.admin.ServiceDalI;
 import org.endeavourhealth.core.database.dal.admin.models.Service;
 import org.endeavourhealth.core.database.dal.audit.ExchangeDalI;
 import org.endeavourhealth.core.database.dal.audit.models.Exchange;
 import org.endeavourhealth.core.database.dal.audit.models.ExchangeTransformAudit;
 import org.endeavourhealth.core.fhirStorage.JsonServiceInterfaceEndpoint;
+import org.endeavourhealth.core.queueing.QueueHelper;
 import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,6 +47,15 @@ public class Main {
 
 		LOG.info("Initialising config manager");
 		ConfigManager.initialize("queuereader", configId);
+
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("PostToInbound")) {
+			String serviceId = args[1];
+			String systemId = args[2];
+			String filePath = args[3];
+			postToInboundFromFile(UUID.fromString(serviceId), UUID.fromString(systemId), filePath);
+			System.exit(0);
+		}
 
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("FixDisabledExtract")) {
@@ -669,6 +680,61 @@ public class Main {
 		} catch (Exception ex) {
 			LOG.error("", ex);
 		}
+	}
+
+	private static void postToInboundFromFile(UUID serviceId, UUID systemId, String filePath) {
+
+		try {
+
+			ServiceDalI serviceDalI = DalProvider.factoryServiceDal();
+			ExchangeDalI auditRepository = DalProvider.factoryExchangeDal();
+
+			Service service = serviceDalI.getById(serviceId);
+			LOG.info("Posting to inbound exchange for " + service.getName() + " from file " + filePath);
+
+			FileReader fr = new FileReader(filePath);
+			BufferedReader br = new BufferedReader(fr);
+
+			int count = 0;
+			List<UUID> exchangeIdBatch = new ArrayList<>();
+
+			while (true) {
+				String line = br.readLine();
+				if (line == null) {
+					break;
+				}
+
+				UUID exchangeId = UUID.fromString(line);
+
+				//update the transform audit, so EDS UI knows we've re-queued this exchange
+				ExchangeTransformAudit audit = auditRepository.getMostRecentExchangeTransform(serviceId, systemId, exchangeId);
+				if (audit != null
+						&& !audit.isResubmitted()) {
+					audit.setResubmitted(true);
+					auditRepository.save(audit);
+				}
+
+				count ++;
+				exchangeIdBatch.add(exchangeId);
+				if (exchangeIdBatch.size() >= 1000) {
+					QueueHelper.postToExchange(exchangeIdBatch, "EdsInbound", null, false);
+					exchangeIdBatch = new ArrayList<>();
+					LOG.info("Done " + count);
+				}
+			}
+
+			if (!exchangeIdBatch.isEmpty()) {
+				QueueHelper.postToExchange(exchangeIdBatch, "EdsInbound", null, false);
+				LOG.info("Done " + count);
+			}
+
+			br.close();
+
+		} catch (Exception ex) {
+			LOG.error("", ex);
+		}
+
+		LOG.info("Finished Posting to inbound for " + serviceId);
 	}
 
 	/*private static void postToInbound(UUID serviceId, boolean all) {
