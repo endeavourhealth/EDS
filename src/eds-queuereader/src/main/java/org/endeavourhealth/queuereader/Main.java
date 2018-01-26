@@ -10,28 +10,19 @@ import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
-import org.endeavourhealth.common.cache.ParserPool;
 import org.endeavourhealth.common.config.ConfigManager;
-import org.endeavourhealth.common.fhir.*;
 import org.endeavourhealth.common.utility.FileHelper;
 import org.endeavourhealth.common.utility.SlackHelper;
 import org.endeavourhealth.core.configuration.ConfigDeserialiser;
 import org.endeavourhealth.core.configuration.QueueReaderConfiguration;
 import org.endeavourhealth.core.csv.CsvHelper;
 import org.endeavourhealth.core.database.dal.DalProvider;
-import org.endeavourhealth.core.database.dal.admin.ServiceDalI;
 import org.endeavourhealth.core.database.dal.admin.models.Service;
-import org.endeavourhealth.core.database.dal.audit.ExchangeBatchDalI;
 import org.endeavourhealth.core.database.dal.audit.ExchangeDalI;
-import org.endeavourhealth.core.database.dal.audit.models.*;
-import org.endeavourhealth.core.database.dal.eds.PatientSearchDalI;
-import org.endeavourhealth.core.database.dal.ehr.ResourceDalI;
-import org.endeavourhealth.core.database.dal.ehr.models.ResourceWrapper;
-import org.endeavourhealth.core.fhirStorage.FhirResourceHelper;
+import org.endeavourhealth.core.database.dal.audit.models.Exchange;
+import org.endeavourhealth.core.database.dal.audit.models.ExchangeTransformAudit;
 import org.endeavourhealth.core.fhirStorage.JsonServiceInterfaceEndpoint;
-import org.endeavourhealth.core.queueing.QueueHelper;
 import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
-import org.hl7.fhir.instance.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -58,9 +49,10 @@ public class Main {
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("FixDisabledExtract")) {
 			String serviceId = args[1];
-			String sharedStoragePath = args[2];
-			String tempDir = args[3];
-			fixDisabledEmisExtract(serviceId, sharedStoragePath, tempDir);
+			String systemId = args[2];
+			String sharedStoragePath = args[3];
+			String tempDir = args[4];
+			fixDisabledEmisExtract(serviceId, systemId, sharedStoragePath, tempDir);
 			System.exit(0);
 		}
 
@@ -70,20 +62,20 @@ public class Main {
 			System.exit(0);
 		}
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("PostToInbound")) {
 			String serviceId = args[1];
 			boolean all = Boolean.parseBoolean(args[2]);
 			postToInbound(UUID.fromString(serviceId), all);
 			System.exit(0);
-		}
+		}*/
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("FixPatientSearch")) {
 			String serviceId = args[1];
 			fixPatientSearch(serviceId);
 			System.exit(0);
-		}
+		}*/
 
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("Exit")) {
@@ -105,7 +97,7 @@ public class Main {
 			System.exit(0);
 		}
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("PopulateProtocolQueue")) {
 			String serviceId = null;
 			if (args.length > 1) {
@@ -117,7 +109,7 @@ public class Main {
 			}
 			populateProtocolQueue(serviceId, startingExchangeId);
 			System.exit(0);
-		}
+		}*/
 
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("FindEncounterTerms")) {
@@ -135,13 +127,13 @@ public class Main {
 			System.exit(0);
 		}
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("ExportHl7Encounters")) {
 			String sourceCsvPpath = args[1];
 			String outputPath = args[2];
 			exportHl7Encounters(sourceCsvPpath, outputPath);
 			System.exit(0);
-		}
+		}*/
 
 		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("FixExchangeBatches")) {
@@ -191,13 +183,14 @@ public class Main {
 	 * replacing the "delete" extracts with newly generated deltas that can be processed
 	 * before the re-bulk is done
 	 */
-	private static void fixDisabledEmisExtract(String serviceId, String sharedStoragePath, String tempDir) {
+	private static void fixDisabledEmisExtract(String serviceId, String systemId, String sharedStoragePath, String tempDir) {
 
 		LOG.info("Fixing Disabled Emis Extracts Prior to Re-bulk for service " + serviceId);
 
 		try {
 
 			UUID serviceUuid = UUID.fromString(serviceId);
+			UUID systemUuid = UUID.fromString(systemId);
 			ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
 
 			File tempDirFile = new File(tempDir);
@@ -208,7 +201,7 @@ public class Main {
 			}
 
 			//get all the exchanges, which are returned in reverse order, so reverse for simplicity
-			List<Exchange> exchanges = exchangeDal.getExchangesByService(serviceUuid, Integer.MAX_VALUE);
+			List<Exchange> exchanges = exchangeDal.getExchangesByService(serviceUuid, systemUuid, Integer.MAX_VALUE);
 
 			//sorting by timestamp seems unreliable when exchanges were posted close together?
 			List<Exchange> tmp = new ArrayList<>();
@@ -678,7 +671,7 @@ public class Main {
 		}
 	}
 
-	private static void postToInbound(UUID serviceId, boolean all) {
+	/*private static void postToInbound(UUID serviceId, boolean all) {
 		LOG.info("Posting to inbound for " + serviceId);
 
 		try {
@@ -722,9 +715,9 @@ public class Main {
 		}
 
 		LOG.info("Finished Posting to inbound for " + serviceId);
-	}
+	}*/
 
-	private static void fixPatientSearch(String serviceId) {
+	/*private static void fixPatientSearch(String serviceId) {
 		LOG.info("Fixing patient search for " + serviceId);
 
 		try {
@@ -782,7 +775,7 @@ public class Main {
 		}
 
 		LOG.info("Finished fixing patient search for " + serviceId);
-	}
+	}*/
 
 	private static void runSql(String host, String username, String password, String sqlFile) {
 		LOG.info("Running SQL on " + host + " from " + sqlFile);
@@ -1033,7 +1026,7 @@ public class Main {
 	 and count is not null
 	 order by count desc limit 1000;
 	 */
-	private static void exportHl7Encounters(String sourceCsvPath, String outputPath) {
+	/*private static void exportHl7Encounters(String sourceCsvPath, String outputPath) {
 		LOG.info("Exporting HL7 Encounters from " + sourceCsvPath + " to " + outputPath);
 
 		try {
@@ -1329,7 +1322,7 @@ public class Main {
 		}
 
 		LOG.info("Finished Exporting Encounters from " + sourceCsvPath + " to " + outputPath);
-	}
+	}*/
 
 	/*private static void registerShutdownHook() {
 
@@ -1705,7 +1698,7 @@ public class Main {
 		return null;
 	}
 
-	private static void populateProtocolQueue(String serviceIdStr, String startingExchangeId) {
+	/*private static void populateProtocolQueue(String serviceIdStr, String startingExchangeId) {
 		LOG.info("Starting Populating Protocol Queue for " + serviceIdStr);
 
 		ServiceDalI serviceRepository = DalProvider.factoryServiceDal();
@@ -1757,9 +1750,9 @@ public class Main {
 		}
 
 		LOG.info("Finished Populating Protocol Queue for " + serviceIdStr);
-	}
+	}*/
 
-	private static void findDeletedOrgs() {
+	/*private static void findDeletedOrgs() {
 		LOG.info("Starting finding deleted orgs");
 
 		ServiceDalI serviceRepository = DalProvider.factoryServiceDal();
@@ -1838,7 +1831,7 @@ public class Main {
 		}
 
 		LOG.info("Finished finding deleted orgs");
-	}
+	}*/
 
 	private static int countBatches(UUID exchangeId, UUID serviceId, UUID systemId) throws Exception {
 		int batches = 0;

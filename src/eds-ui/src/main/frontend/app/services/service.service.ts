@@ -40,9 +40,10 @@ export class ServiceService extends BaseHttp2Service {
 		return this.httpDelete('api/service/', { search : params });
 	}
 
-	deleteData(uuid : string) : Observable<any> {
+	deleteData(serviceUuid : string, systemUuid : string) : Observable<any> {
 		let params = new URLSearchParams();
-		params.set('uuid',uuid);
+		params.set('serviceId', serviceUuid);
+		params.set('systemId', systemUuid);
 		return this.httpDelete('api/service/data', { search : params });
 	}
 

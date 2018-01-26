@@ -3,7 +3,6 @@ import {Http, URLSearchParams} from "@angular/http";
 import {Observable} from "rxjs";
 import {Injectable} from "@angular/core";
 import {Exchange} from "./Exchange";
-import {ExchangeEvent} from "./ExchangeEvent";
 import {TransformErrorSummary} from "./TransformErrorSummary";
 import {TransformErrorDetail} from "./TransformErrorDetail";
 import {Protocol} from "./Protocol";
@@ -13,11 +12,12 @@ export class ExchangeAuditService extends BaseHttp2Service {
     constructor(http:Http) { super(http); }
 
 
-    getExchangeList(serviceId:string, maxRows:number, dateFrom:Date, dateTo:Date) : Observable<Exchange[]> {
-        console.log('Getting for service id ' + serviceId + ' and ' + maxRows + ' from ' + dateFrom + ' to ' + dateTo);
+    getExchangeList(serviceId: string, systemId: string, maxRows: number, dateFrom: Date, dateTo: Date) : Observable<Exchange[]> {
+        console.log('Getting for service ' + serviceId + ' system ' + systemId + ' and ' + maxRows + ' from ' + dateFrom + ' to ' + dateTo);
 
         var params = new URLSearchParams();
         params.append('serviceId', serviceId);
+        params.append('systemId', systemId);
         params.append('maxRows', '' + maxRows);
         if (dateFrom) {
             params.append('dateFrom', '' + dateFrom.getTime());
@@ -33,26 +33,28 @@ export class ExchangeAuditService extends BaseHttp2Service {
         return this.httpGet('api/exchangeAudit/getExchangeList', { search : params});
     }
 
-    getExchangeById(serviceId:string, exchangeId:string) : Observable<Exchange[]> {
+    getExchangeById(serviceId: string, systemId: string, exchangeId:string) : Observable<Exchange[]> {
         var params = new URLSearchParams();
         console.log('Getting for service id ' + serviceId + ' and exchange id ' + exchangeId);
         params.append('serviceId', serviceId);
+        params.append('systemId', systemId);
         params.append('exchangeId', exchangeId);
 
         return this.httpGet('api/exchangeAudit/getExchangeById', { search : params});
     }
 
-    getExchangeEvents(exchangeId:string) : Observable<ExchangeEvent[]> {
+    /*getExchangeEvents(exchangeId:string) : Observable<ExchangeEvent[]> {
         var params = new URLSearchParams();
         params.append('exchangeId', exchangeId);
 
         return this.httpGet('api/exchangeAudit/getExchangeEvents', { search : params});
-    }
+    }*/
 
-    postToExchange(exchangeId: string, serviceId: string, exchangeName: string, postMode: string, postSpecificProtocol: string):Observable<any> {
+    postToExchange(exchangeId: string, serviceId: string, systemId: string, exchangeName: string, postMode: string, postSpecificProtocol: string):Observable<any> {
         var request = {
             'exchangeId': exchangeId,
             'serviceId': serviceId,
+            'systemId': systemId,
             'exchangeName': exchangeName,
             'postMode': postMode,
             'specificProtocolId': postSpecificProtocol
@@ -67,13 +69,12 @@ export class ExchangeAuditService extends BaseHttp2Service {
     }
 
     getInboundTransformAudits(serviceId:string, systemId:string, exchangeId:string,
-                            getMostRecent:boolean, getErrorLines:boolean) : Observable<TransformErrorDetail[]> {
+                              getAllAuditsAndEvents:boolean) : Observable<TransformErrorDetail[]> {
         var params = new URLSearchParams();
         params.append('serviceId', serviceId);
         params.append('systemId', systemId);
         params.append('exchangeId', exchangeId);
-        params.append('getMostRecent', '' + getMostRecent);
-        params.append('getErrorLines', '' + getErrorLines);
+        params.append('getAllAuditsAndEvents', '' + getAllAuditsAndEvents);
 
         return this.httpGet('api/exchangeAudit/getInboundTransformAudits', { search : params});
     }
@@ -112,10 +113,11 @@ export class ExchangeAuditService extends BaseHttp2Service {
         return this.httpPost('api/exchangeAudit/postTest', request);
     }*/
 
-    getProtocolsList(serviceId:string) : Observable<Protocol[]> {
+    getProtocolsList(serviceId:string, systemId:string) : Observable<Protocol[]> {
 
         var params = new URLSearchParams();
         params.append('serviceId', serviceId);
+        params.append('systemId', systemId);
 
         return this.httpGet('api/exchangeAudit/getProtocolsForService', { search : params});
     }

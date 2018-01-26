@@ -85,7 +85,7 @@ import {DataSetEditComponent} from "./dataSet/dataSetEditor.component";
 			{name: 'app.dataSetEdit', url: '/dataSetEdit/:itemAction/:itemUuid', component: DataSetEditComponent},
 			{name: 'app.codeSetEdit', url: '/codeSetEdit/:itemAction/:itemUuid', component: CodeSetEditComponent},
 			{name: 'app.transformErrors', url: '/transformErrors', component: TransformErrorsComponent},
-			{name: 'app.exchangeAudit', url: '/exchangeAudit/:serviceUuid', component: ExchangeAuditComponent},
+			{name: 'app.exchangeAudit', url: '/exchangeAudit/:serviceId/:systemId', component: ExchangeAuditComponent},
 			{name: 'app.countReportEdit', url: '/countReportEdit/:itemAction/:itemUuid', component: CountReportEditComponent}
 		],
 		defaultState : { state: 'app.dashboard', params: {} },

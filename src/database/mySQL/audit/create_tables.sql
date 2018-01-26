@@ -10,18 +10,22 @@ DROP TABLE IF EXISTS queued_message_type;
 DROP TABLE IF EXISTS exchange_batch;
 DROP TABLE IF EXISTS exchange_subscriber_transform_audit;
 
+
 CREATE TABLE exchange
 (
-    id varchar(36) NOT NULL,
+    id char(36) NOT NULL,
     timestamp datetime,
     headers text,
-    service_id varchar(36),
+    service_id char(36),
+    system_id char(36),
     body mediumtext,
     CONSTRAINT pk_exchange PRIMARY KEY (id)
-);
+)
+ROW_FORMAT=COMPRESSED
+KEY_BLOCK_SIZE=8;
 
 CREATE INDEX ix_exchange_service_id
-ON exchange (service_id, timestamp);
+ON exchange (service_id, system_id, timestamp);
 
 CREATE TABLE exchange_event
 (
@@ -45,7 +49,10 @@ CREATE TABLE exchange_transform_audit
   deleted datetime,
   number_batches_created int,
   CONSTRAINT pk_exchange_transform_audit PRIMARY KEY (service_id, system_id, exchange_id, id)
-);
+)
+ROW_FORMAT=COMPRESSED
+KEY_BLOCK_SIZE=8;
+
 
 CREATE INDEX ix_exchange_transform_audit_service_system_started
 ON exchange_transform_audit (service_id, system_id, started);
@@ -112,4 +119,7 @@ CREATE TABLE exchange_subscriber_transform_audit
     number_resources_transformed int,
     queued_message_id varchar(36),
     CONSTRAINT pk_exchange_transform_audit PRIMARY KEY (exchange_id, exchange_batch_id, subscriber_config_name, started)
-);
+)
+ROW_FORMAT=COMPRESSED
+KEY_BLOCK_SIZE=8;
+

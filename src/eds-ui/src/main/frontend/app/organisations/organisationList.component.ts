@@ -22,7 +22,10 @@ export class OrganisationListComponent {
 		var vm = this;
 		vm.organisationService.getOrganisations()
 			.subscribe(
-				result => vm.organisations = linq(result).OrderBy(o => o.name).ToArray(),
+				result => {
+					vm.organisations = linq(result).OrderBy(o => o.name.toLowerCase()).ToArray();
+					/*vm.organisations = linq(result).OrderBy(o => o.name).ToArray();*/
+				},
 				error => vm.log.error('Failed to load organisations', error, 'Load organisations')
 			);
 		console.log(vm.organisations);

@@ -126,15 +126,19 @@ Clone this code repository to your local machine. The instructions below assume 
     
     For each of the three artifacts (**eds-ui:war exploded**, **eds-patient-explorer:war exploded** and **eds-messaging-api:war exploded**), do the following:
     * Open Run->Edit Configurations.
+    *
+    * The first time you will need to register your Tomcat install. 
+    * Click the "edit defaults" icon (spanner) and scroll down to Tomcat.  Expand Tomcat and select "Local". 
+    * Click "Configure" on the "Application server" item to point it at the keycloak install. Then click OK. 
     * Click +, then Tomcat Server->Local to create the configuration. 
     * Name the configuration
     * In the Application Server field, select the Tomcat folder you unzipped
     * Select the Deployment tab 
     * Click + and select the relevant artifact
     * Select the Startup/Connection tab
-    * Add the environment variable CONFIG_JDBC_USERNAME with your PostgreSQL user (postgres) for both Debug and Run configurations    
-    * Add the environment variable CONFIG_JDBC_PASSWORD with your PostgreSQL password for both Debug and Run configurations
-    * Add the environment variable CONFIG_JDBC_URL with the value jdbc:postgresql://localhost:5432/config
+    * Add the environment variable CONFIG_JDBC_USERNAME with your MySQL user (postgres) for both Debug and Run configurations    
+    * Add the environment variable CONFIG_JDBC_PASSWORD with your MySQL password for both Debug and Run configurations
+    * Add the environment variable CONFIG_JDBC_URL with the value jdbc:mysql://localhost:5432/config
     * Click OK
 
 4. Create Run Configuration for SFTP Reader
@@ -144,14 +148,14 @@ Clone this code repository to your local machine. The instructions below assume 
     * Add a new Application configuration
     * Select org.endeavourhealth.sftpreader.Main as the main class
     * Select eds-sftpreader as the module
-    * Add the environment variable CONFIG_JDBC_USERNAME with your PostgreSQL user (postgres) for both Debug and Run configurations    
-    * Add the environment variable CONFIG_JDBC_PASSWORD with your PostgreSQL password for both Debug and Run configurations
-    * Add the environment variable CONFIG_JDBC_URL with the value jdbc:postgresql://localhost:5432/config    
-    * set the VM Options to -DINSTANCE_NAME=TEST001    
+    * Add the environment variable CONFIG_JDBC_USERNAME with your MySQL user (postgres) for both Debug and Run configurations    
+    * Add the environment variable CONFIG_JDBC_PASSWORD with your MySQL password for both Debug and Run configurations
+    * Add the environment variable CONFIG_JDBC_URL with the value jdbc:mysql://localhost:5432/config    
+    * set the VM Options to -DINSTANCE_NAME=sftpreader    
     * Click OK.
 
 5. Additional steps to get SFTP Reader running
-    Get the instance name used above by running the following in the sftpreader DB in postgreSQL (TEST001 is default)
+    Get the instance name used above by running the following in the sftpreader DB in MySQL 
     ```sql
     select * from configuration.configuration
     ```
@@ -159,9 +163,9 @@ Clone this code repository to your local machine. The instructions below assume 
     ```sql
     update configuration.configuration set local_root_path = 'C:\Endeavour\sftpData'     
     ```    
-    Set the postgres password in the config table in the config DB
+    Set the MySql password in the config table in the config DB
     ```sql
-    update config set config_data = 'xxxxx' where app_id = 'sftpreader' and config_id = 'postgres-password'
+    update config set config_data = 'xxxxx' where app_id = 'sftpreader' and config_id = 'sql-password'
     ```
     If you get errors when you run the application relating to audit, this is because the data we have does not have any audit information in it.  To get around this temporarily, delete the file_type_identifiers from the configuration.interface_file_type table in the sftpreader DB.
     ```sql
@@ -175,9 +179,9 @@ Clone this code repository to your local machine. The instructions below assume 
      * Add a new Application configuration
      * Select org.endeavourhealth.queuereader.Main as the main class
      * Select eds-queuereader as the module
-     * Add the environment variable CONFIG_JDBC_USERNAME with your PostgreSQL user (postgres) for both Debug and Run configurations    
-     * Add the environment variable CONFIG_JDBC_PASSWORD with your PostgreSQL password for both Debug and Run configurations
-     * Add the environment variable CONFIG_JDBC_URL with the value jdbc:postgresql://localhost:5432/config    
+     * Add the environment variable CONFIG_JDBC_USERNAME with your MySQL user (root) for both Debug and Run configurations    
+     * Add the environment variable CONFIG_JDBC_PASSWORD with your MySQL password for both Debug and Run configurations
+     * Add the environment variable CONFIG_JDBC_URL with the value jdbc:mysql://localhost:5432/config    
      * set the program arguments to inbound    
      * Click OK.
 

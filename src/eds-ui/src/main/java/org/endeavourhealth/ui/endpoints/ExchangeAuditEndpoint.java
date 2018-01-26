@@ -46,16 +46,19 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
     private static final ServiceDalI serviceRepository = DalProvider.factoryServiceDal();
     private static final LibraryDalI libraryRepository = DalProvider.factoryLibraryDal();
 
+    private static final String INBOUND_EXCHANGE = "EdsInbound";
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     @Timed(absolute = true, name="EDS-UI.ExchangeAuditEndpoint.GetExchangeList")
     @Path("/getExchangeList")
-    public Response getExchangeList(@Context SecurityContext sc, @QueryParam("serviceId") String serviceIdStr,
-                                                                 @QueryParam("maxRows") int maxRows,
-                                                                 @QueryParam("dateFrom") Long dateFromMillis,
-                                                                 @QueryParam("dateTo") Long dateToMillis) throws Exception {
+    public Response getExchangeList(@Context SecurityContext sc,
+                                    @QueryParam("serviceId") String serviceIdStr,
+                                    @QueryParam("systemId") String systemIdStr,
+                                    @QueryParam("maxRows") int maxRows,
+                                    @QueryParam("dateFrom") Long dateFromMillis,
+                                    @QueryParam("dateTo") Long dateToMillis) throws Exception {
         super.setLogbackMarkers(sc);
 
         userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load, "Get Exchange List",
@@ -65,6 +68,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
         List<JsonExchange> ret = new ArrayList<>();
 
         UUID serviceUuid = UUID.fromString(serviceIdStr);
+        UUID systemUuid = UUID.fromString(systemIdStr);
         Date dateFrom = new Date(0);
         Date dateTo = new Date();
 
@@ -87,9 +91,9 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
             }
         }
 
-        List<Exchange> exchangeByServices = auditRepository.getExchangesByService(serviceUuid, maxRows, dateFrom, dateTo);
+        List<Exchange> exchangeByServices = auditRepository.getExchangesByService(serviceUuid, systemUuid, maxRows, dateFrom, dateTo);
 
-        Set<UUID> exchangeIdsInError = findAllExchangeIdsInErrorForService(serviceUuid);
+        Set<UUID> exchangeIdsInError = findAllExchangeIdsInErrorForService(serviceUuid, systemUuid);
 
         for (Exchange exchangeByService: exchangeByServices) {
 
@@ -100,7 +104,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
             List<String> bodyLines = getExchangeBodyLines(exchange);
             boolean inError = exchangeIdsInError.contains(exchangeId);
 
-            JsonExchange jsonExchange = new JsonExchange(exchangeId, serviceUuid, timestamp, headers, bodyLines, inError);
+            JsonExchange jsonExchange = new JsonExchange(exchangeId, serviceUuid, systemUuid, timestamp, headers, bodyLines, inError);
             ret.add(jsonExchange);
         }
 
@@ -112,10 +116,10 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
                 .build();
     }
 
-    private Set<UUID> findAllExchangeIdsInErrorForService(UUID serviceId) throws Exception {
+    private Set<UUID> findAllExchangeIdsInErrorForService(UUID serviceId, UUID systemId) throws Exception {
 
         Set<UUID> ret = new HashSet<>();
-        List<ExchangeTransformErrorState> errorStates = auditRepository.getErrorStatesForService(serviceId);
+        List<ExchangeTransformErrorState> errorStates = auditRepository.getErrorStatesForService(serviceId, systemId);
         for (ExchangeTransformErrorState errorState: errorStates) {
             List<UUID> exchangeIds = errorState.getExchangeIdsInError();
             for (UUID exchangeId: exchangeIds) {
@@ -131,11 +135,15 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
     @Consumes(MediaType.APPLICATION_JSON)
     @Timed(absolute = true, name="EDS-UI.ExchangeAuditEndpoint.GetExchangeById")
     @Path("/getExchangeById")
-    public Response getExchangeById(@Context SecurityContext sc, @QueryParam("serviceId") String serviceIdStr, @QueryParam("exchangeId") String exchangeIdStr) throws Exception {
+    public Response getExchangeById(@Context SecurityContext sc,
+                                    @QueryParam("serviceId") String serviceIdStr,
+                                    @QueryParam("systemId") String systemIdStr,
+                                    @QueryParam("exchangeId") String exchangeIdStr) throws Exception {
         super.setLogbackMarkers(sc);
 
         userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load, "Get Exchange For ID",
                 "Service Id", serviceIdStr,
+                "System Id", systemIdStr,
                 "Exchange Id", exchangeIdStr);
 
         List<JsonExchange> ret = new ArrayList<>();
@@ -148,6 +156,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
         }
 
         UUID serviceUuid = UUID.fromString(serviceIdStr);
+        UUID systemUuid = UUID.fromString(systemIdStr);
 
         Exchange exchange = auditRepository.getExchange(exchangeUuid);
         if (exchange == null) {
@@ -159,13 +168,14 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
         List<String> bodyLines = getExchangeBodyLines(exchange);
 
         //validate the exchange is for our service
-        String exchangeServiceIdStr = headers.get(HeaderKeys.SenderServiceUuid);
-        if (exchangeServiceIdStr == null
-                || !exchangeServiceIdStr.equals(serviceIdStr)) {
+        UUID exchangeServiceId = exchange.getServiceId();
+        if (exchangeServiceId == null
+                || !exchangeServiceId.equals(serviceUuid)) {
+
             String err = "Exchange isn't for this service";
 
-            if (!Strings.isNullOrEmpty(exchangeServiceIdStr)) {
-                Service service = serviceRepository.getById(UUID.fromString(serviceIdStr));
+            if (exchangeServiceId != null) {
+                Service service = serviceRepository.getById(exchangeServiceId);
                 if (service != null) {
                     err += " (" + service.getName() + ")";
                 }
@@ -174,10 +184,18 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
             throw new BadRequestException(err);
         }
 
-        Set<UUID> exchangeIdsInError = findAllExchangeIdsInErrorForService(serviceUuid);
+        //validate the exchange is for the right system
+        UUID exchangeSystemId = exchange.getSystemId();
+        if (exchangeSystemId == null
+                || !exchangeSystemId.equals(systemUuid)) {
+            String err = "Exchange isn't for this system";
+            throw new BadRequestException(err);
+        }
+
+        Set<UUID> exchangeIdsInError = findAllExchangeIdsInErrorForService(serviceUuid, systemUuid);
         boolean inError = exchangeIdsInError.contains(exchangeUuid);
 
-        JsonExchange jsonExchange = new JsonExchange(exchangeUuid, serviceUuid, timestamp, headers, bodyLines, inError);
+        JsonExchange jsonExchange = new JsonExchange(exchangeUuid, serviceUuid, systemUuid, timestamp, headers, bodyLines, inError);
         ret.add(jsonExchange);
 
         clearLogbackMarkers();
@@ -205,7 +223,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
         return ret;
     }
 
-    @GET
+    /*@GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     @Timed(absolute = true, name="EDS-UI.ExchangeAuditEndpoint.GetExchangeEvents")
@@ -236,7 +254,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
                 .ok()
                 .entity(ret)
                 .build();
-    }
+    }*/
 
     @POST
     @Produces(MediaType.APPLICATION_JSON)
@@ -250,37 +268,61 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
         userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Save, "Post to exchange",
                 "Exchange ID", request.getExchangeId(),
                 "Service ID", request.getServiceId(),
+                "System ID", request.getSystemId(),
                 "Exchange Name", request.getExchangeName(),
                 "Post Mode", request.getPostMode(),
                 "Protocol ID", request.getSpecificProtocolId());
 
         UUID selectedExchangeId = request.getExchangeId();
         UUID serviceId = request.getServiceId();
+        UUID systemId = request.getSystemId();
         String exchangeName = request.getExchangeName();
         String postMode = request.getPostMode();
         UUID specificProtocolId = request.getSpecificProtocolId();
 
+        //work out the exchange IDs to post
+        List<UUID> exchangeIds = null;
+
         if (postMode.equalsIgnoreCase("This")) {
-            QueueHelper.postToExchange(selectedExchangeId, exchangeName, specificProtocolId, true);
+            exchangeIds = new ArrayList<>();
+            exchangeIds.add(selectedExchangeId);
 
         } else if (postMode.equalsIgnoreCase("Onwards")) {
-            List<UUID> exchangeIds = new ArrayList<>();
+            exchangeIds = new ArrayList<>();
 
-            List<UUID> allExchangeIds = auditRepository.getExchangeIdsForService(serviceId);
+            List<UUID> allExchangeIds = auditRepository.getExchangeIdsForService(serviceId, systemId);
             int index = allExchangeIds.indexOf(selectedExchangeId);
             for (int i=index; i<allExchangeIds.size(); i++) {
                 UUID exchangeId = allExchangeIds.get(i);
                 exchangeIds.add(exchangeId);
             }
 
-            QueueHelper.postToExchange(exchangeIds, exchangeName, specificProtocolId, true);
-
         } else if (postMode.equalsIgnoreCase("All")) {
-            List<UUID> exchangeIds = auditRepository.getExchangeIdsForService(serviceId);
-            QueueHelper.postToExchange(exchangeIds, exchangeName, specificProtocolId, true);
+            exchangeIds = auditRepository.getExchangeIdsForService(serviceId, systemId);
 
         } else {
             throw new IllegalArgumentException("Invalid post mode [" + postMode + "]");
+        }
+
+        //work out if there are any transform audits to mark as resubmitted, which we need to do before posting to Rabbit
+        //as that will start the transforms and create new audits
+        List<ExchangeTransformAudit> auditsToFlagAsResubmited = new ArrayList<>();
+        if (exchangeName.equals(INBOUND_EXCHANGE)) {
+            for (UUID exchangeId : exchangeIds) {
+                ExchangeTransformAudit audit = auditRepository.getMostRecentExchangeTransform(serviceId, systemId, exchangeId);
+                if (audit != null) {
+                    auditsToFlagAsResubmited.add(audit);
+                }
+            }
+        }
+
+        //post the exchanges to RabbitMQ
+        QueueHelper.postToExchange(exchangeIds, exchangeName, specificProtocolId, true);
+
+        //and update any past transform audits to say we've resubmitted them to rabbit, if it's the inbound queue
+        for (ExchangeTransformAudit audit: auditsToFlagAsResubmited) {
+            audit.setResubmitted(true);
+            auditRepository.save(audit);
         }
 
         clearLogbackMarkers();
@@ -384,11 +426,10 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
     @Timed(absolute = true, name="EDS-UI.ExchangeAuditEndpoint.GetInboundTransformAudits")
     @Path("/getInboundTransformAudits")
     public Response getInboundTransformAudits(@Context SecurityContext sc,
-                                    @QueryParam("serviceId") String serviceIdStr,
-                                    @QueryParam("systemId") String systemIdStr,
-                                    @QueryParam("exchangeId") String exchangeIdStr,
-                                     @QueryParam("getMostRecent") boolean getMostRecent,
-                                     @QueryParam("getErrorLines") boolean getErrorLines) throws Exception {
+                                            @QueryParam("serviceId") String serviceIdStr,
+                                            @QueryParam("systemId") String systemIdStr,
+                                            @QueryParam("exchangeId") String exchangeIdStr,
+                                            @QueryParam("getAllAuditsAndEvents") boolean getAllAuditsAndEvents) throws Exception {
         super.setLogbackMarkers(sc);
 
         userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
@@ -405,13 +446,13 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
 
         List<ExchangeTransformAudit> transformAudits = null;
 
-        if (getMostRecent) {
+        if (getAllAuditsAndEvents) {
+            transformAudits = auditRepository.getAllExchangeTransformAudits(serviceId, systemId, exchangeId);
+
+        } else {
             ExchangeTransformAudit transformAudit = auditRepository.getMostRecentExchangeTransform(serviceId, systemId, exchangeId);
             transformAudits = new ArrayList<>();
             transformAudits.add(transformAudit);
-
-        } else {
-            transformAudits = auditRepository.getAllExchangeTransformAudits(serviceId, systemId, exchangeId);
         }
 
         for (ExchangeTransformAudit transformAudit: transformAudits) {
@@ -419,6 +460,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
             JsonTransformExchangeError jsonObj = new JsonTransformExchangeError();
             jsonObj.setExchangeId(exchangeId);
             jsonObj.setVersion(transformAudit.getId());
+            jsonObj.setEventDesc("Transform");
             jsonObj.setTransformStart(transformAudit.getStarted());
             jsonObj.setTransformEnd(transformAudit.getEnded());
             jsonObj.setNumberBatchIdsCreated(transformAudit.getNumberBatchesCreated());
@@ -427,9 +469,26 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
             jsonObj.setDeleted(transformAudit.getDeleted());
             ret.add(jsonObj);
 
-            if (getErrorLines) {
+            //if we're NOT getting everything for this exchange, include any error lines we had
+            if (!getAllAuditsAndEvents) {
                 List<String> lines = formatTransformAuditErrorLines(transformAudit);
                 jsonObj.setLines(lines);
+            }
+        }
+
+        //if we want everything, also include the exchange_event records for the exchange
+        if (getAllAuditsAndEvents) {
+            List<ExchangeEvent> exchangeEvents = auditRepository.getExchangeEvents(exchangeId);
+            for (ExchangeEvent event: exchangeEvents) {
+                String eventDesc = event.getEventDesc();
+                Date eventTimestamp = event.getTimestamp();
+
+                //we can only populate a few fields on the json proxy, but the javascript handles this
+                JsonTransformExchangeError jsonObj = new JsonTransformExchangeError();
+                jsonObj.setExchangeId(exchangeId);
+                jsonObj.setEventDesc(eventDesc);
+                jsonObj.setTransformStart(eventTimestamp);
+                ret.add(jsonObj);
             }
         }
 
@@ -576,6 +635,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
         LOG.debug("Re-running exchanges firstOnly = " + firstOnly);
 
         List<UUID> exchangeIdsToRePost = new ArrayList<>();
+        List<ExchangeTransformAudit> auditsToMarkAsResubmitted = new ArrayList<>();
 
         for (UUID exchangeId: errorState.getExchangeIdsInError()) {
 
@@ -589,8 +649,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
                     continue;
                 }
 
-                audit.setResubmitted(true);
-                auditRepository.save(audit);
+                auditsToMarkAsResubmitted.add(audit);
             }
 
             //then re-submit the exchange to Rabbit MQ for the queue reader to pick up
@@ -603,8 +662,14 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
             }
         }
 
-        QueueHelper.postToExchange(exchangeIdsToRePost, "EdsInbound", null, true);
+        //post to rabbit
+        QueueHelper.postToExchange(exchangeIdsToRePost, INBOUND_EXCHANGE, null, true);
 
+        //after posting to rabbit, mark those audits as resubmitted
+        for (ExchangeTransformAudit audit: auditsToMarkAsResubmitted) {
+            audit.setResubmitted(true);
+            auditRepository.save(audit);
+        }
     }
 
     @GET
@@ -677,16 +742,18 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
     @Timed(absolute = true, name="EDS-UI.ExchangeAuditEndpoint.GetProtocolsForService")
     @Path("/getProtocolsForService")
     public Response getProtocolsForService(@Context SecurityContext sc,
-                                           @QueryParam("serviceId") String serviceIdStr) throws Exception {
+                                           @QueryParam("serviceId") String serviceIdStr,
+                                           @QueryParam("systemId") String systemIdStr) throws Exception {
         super.setLogbackMarkers(sc);
 
         userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
                 "Get Protocols For Service",
-                "Service Id", serviceIdStr);
+                "Service Id", serviceIdStr,
+                "System Id", systemIdStr);
 
         List<JsonProtocol> ret = new ArrayList<>();
 
-        List<LibraryItem> libraryItems = LibraryRepositoryHelper.getProtocolsByServiceId(serviceIdStr, null);
+        List<LibraryItem> libraryItems = LibraryRepositoryHelper.getProtocolsByServiceId(serviceIdStr, systemIdStr);
         for (LibraryItem libraryItem: libraryItems) {
             Protocol protocol = libraryItem.getProtocol();
 

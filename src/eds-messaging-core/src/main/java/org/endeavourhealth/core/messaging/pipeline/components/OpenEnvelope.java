@@ -145,14 +145,7 @@ public class OpenEnvelope extends PipelineComponent {
 
 		//set this on the exchange to forice it to write to the exchange_by_service table in Cassandra
 		exchange.setServiceId(service.getId());
-
-		//commit what we've just added to the DB
-		//removing, since we write the exchange just after this function call, so no need to do it twice
-		/*try {
-			AuditWriter.writeExchange(exchange);
-		} catch (Exception ex) {
-			throw new PipelineException("Failed to write exchange to database", ex);
-		}*/
+		exchange.setSystemId(systemUuid);
 	}
 
 

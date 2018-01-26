@@ -2,7 +2,7 @@ import {Component} from "@angular/core";
 import {NgbModal} from "@ng-bootstrap/ng-bootstrap";
 import {StateService, Transition} from "ui-router-ng2";
 import {Service} from "../services/models/Service";
-import {LoggerService} from "eds-common-js";
+import {linq, LoggerService} from "eds-common-js";
 import {ExchangeAuditService} from "./exchangeAudit.service";
 import {Exchange} from "./Exchange";
 import {ServiceService} from "../services/service.service";
@@ -17,6 +17,7 @@ import {Protocol} from "./Protocol";
 export class ExchangeAuditComponent {
 
 	service: Service;
+	systemId: string;
 
 	//exchange filters
 	searchTab: string;
@@ -47,9 +48,10 @@ export class ExchangeAuditComponent {
 		//this.postAllExchanges = false;
 		this.postMode = 'This';
 
-		var uuid = transition.params()['serviceUuid'];
+		this.systemId = transition.params()['systemId'];
+		var serviceId = transition.params()['serviceId'];
 
-		serviceService.get(uuid)
+		serviceService.get(serviceId)
 			.subscribe(
 				(result) => {
 					this.service = result;
@@ -70,7 +72,7 @@ export class ExchangeAuditComponent {
 		var vm = this;
 		var serviceId = vm.service.uuid;
 
-		this.exchangeAuditService.getProtocolsList(serviceId).subscribe(
+		this.exchangeAuditService.getProtocolsList(serviceId, vm.systemId).subscribe(
 			(result) => {
 				vm.protocols = result;
 			},
@@ -100,7 +102,7 @@ export class ExchangeAuditComponent {
 			/*console.log("Search from " + this.exchangeSearchFrom);
 			console.log("Search to " + this.exchangeSearchTo);*/
 
-			vm.exchangeAuditService.getExchangeList(serviceId, vm.exchangesToShow, this.exchangeSearchFrom, this.exchangeSearchTo).subscribe(
+			vm.exchangeAuditService.getExchangeList(serviceId, vm.systemId, vm.exchangesToShow, this.exchangeSearchFrom, this.exchangeSearchTo).subscribe(
 				(result) => {
 					vm.exchanges = result;
 					if (result.length == 0) {
@@ -117,7 +119,7 @@ export class ExchangeAuditComponent {
 				return;
 			}
 
-			vm.exchangeAuditService.getExchangeById(serviceId, this.exchangeIdSearch).subscribe(
+			vm.exchangeAuditService.getExchangeById(serviceId, vm.systemId, this.exchangeIdSearch).subscribe(
 				(result) => {
 					vm.exchanges = result;
 					if (result.length == 0) {
@@ -134,11 +136,11 @@ export class ExchangeAuditComponent {
 
 		var vm = this;
 		vm.selectedExchange = exchange;
-		vm.loadExchangeEventsIfRequired(exchange);
+		/*vm.loadExchangeEventsIfRequired(exchange);*/
 		vm.loadTransformAuditsIfRequired(exchange);
 	}
 
-	private loadExchangeEventsIfRequired(exchange: Exchange) {
+	/*private loadExchangeEventsIfRequired(exchange: Exchange) {
 
 		//if they're already loaded, just return out
 		if (exchange.events) {
@@ -146,9 +148,9 @@ export class ExchangeAuditComponent {
 		}
 
 		this.loadExchangeEvents(exchange);
-	}
+	}*/
 
-	private loadExchangeEvents(exchange: Exchange) {
+	/*private loadExchangeEvents(exchange: Exchange) {
 		var vm = this;
 		vm.exchangeAuditService.getExchangeEvents(exchange.exchangeId).subscribe(
 			(result) => {
@@ -156,7 +158,7 @@ export class ExchangeAuditComponent {
 			},
 			(error) => vm.log.error('Failed to retrieve exchange events', error, 'View Exchanges')
 		)
-	}
+	}*/
 
 	private loadTransformAuditsIfRequired(exchange: Exchange) {
 
@@ -164,6 +166,11 @@ export class ExchangeAuditComponent {
 		if (exchange.transformAudits) {
 			return;
 		}
+
+		this.loadTransformAudits(exchange);
+	}
+
+	private loadTransformAudits(exchange: Exchange) {
 
 		var serviceId = exchange.headers['SenderServiceUuid'];
 		var systemId = exchange.headers['SenderSystemUuid'];
@@ -175,9 +182,11 @@ export class ExchangeAuditComponent {
 		}
 
 		var vm = this;
-		vm.exchangeAuditService.getInboundTransformAudits(serviceId, systemId, exchangeId, false, false).subscribe(
+		vm.exchangeAuditService.getInboundTransformAudits(serviceId, systemId, exchangeId, true).subscribe(
 			(result) => {
-				exchange.transformAudits = result;
+				//sort the events/audits in REVERSE date, so the most recent is at the top
+				exchange.transformAudits = linq(result).OrderByDescending(s => s.transformStart).ToArray();
+				//exchange.transformAudits = result;
 			},
 			(error) => vm.log.error('Failed to retrieve transform audits', error, 'View Exchanges')
 		);
@@ -210,12 +219,13 @@ export class ExchangeAuditComponent {
 		var exchangeId = vm.selectedExchange.exchangeId;
 		var serviceId = this.service.uuid;
 
-		this.busyPostingToExchange = vm.exchangeAuditService.postToExchange(exchangeId, serviceId, exchangeName, this.postMode, this.postSpecificProtocol).subscribe(
+		this.busyPostingToExchange = vm.exchangeAuditService.postToExchange(exchangeId, serviceId, vm.systemId, exchangeName, this.postMode, this.postSpecificProtocol).subscribe(
 			(result) => {
 				vm.log.success('Successfully posted to ' + exchangeName + ' exchange', 'Post to Exchange');
 
 				//re-load the events for the exchange, as we'll have added to them
-				this.loadExchangeEvents(vm.selectedExchange);
+				this.loadTransformAudits(vm.selectedExchange);
+				//this.loadExchangeEvents(vm.selectedExchange);
 				this.busyPostingToExchange = null;
 			},
 			(error) => {

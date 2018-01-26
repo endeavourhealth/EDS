@@ -18,7 +18,9 @@ CREATE TABLE emis_csv_code_map (
 	national_code_description varchar(500),
 	parent_code_id bigint,
     CONSTRAINT pk_emis_csv_code_map PRIMARY KEY (medication, code_id)
-);
+)
+ROW_FORMAT=COMPRESSED
+KEY_BLOCK_SIZE=8;
 
 CREATE TABLE emis_admin_resource_cache (
 	data_sharing_agreement_guid varchar(36),
@@ -26,6 +28,8 @@ CREATE TABLE emis_admin_resource_cache (
 	resource_type varchar(50),
 	resource_data text,
     CONSTRAINT pk_emis_admin_resource_cache PRIMARY KEY (data_sharing_agreement_guid, emis_guid, resource_type)
-);
+)
+ROW_FORMAT=COMPRESSED
+KEY_BLOCK_SIZE=8;
 
 
