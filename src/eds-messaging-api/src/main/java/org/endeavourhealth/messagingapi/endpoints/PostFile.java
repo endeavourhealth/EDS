@@ -2,8 +2,8 @@ package org.endeavourhealth.messagingapi.endpoints;
 
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.SdkBaseException;
-import com.amazonaws.auth.AWSStaticCredentialsProvider;
-import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
+import com.amazonaws.regions.Regions;
 import com.amazonaws.retry.PredefinedRetryPolicies;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.ObjectMetadata;
@@ -89,18 +89,18 @@ public class PostFile extends AbstractEndpoint {
 			}
 
 			String awsBucketName = apiAWSConfig.findValue("s3-bucket").textValue();
-			String awsAccessKeyId = apiAWSConfig.findValue("access-key-id").textValue();
-			String awsSecretKey = apiAWSConfig.findValue("secret-access-key").textValue();
-			String awsRegion = apiAWSConfig.findValue("region").textValue();
-			BasicAWSCredentials awsCreds = new BasicAWSCredentials(awsAccessKeyId, awsSecretKey);
+			String awsKeyPathPrefix = apiAWSConfig.findValue("keypath-prefix").textValue();
+			//String awsAccessKeyId = apiAWSConfig.findValue("access-key-id").textValue();
+			//String awsSecretKey = apiAWSConfig.findValue("secret-access-key").textValue();
 			ClientConfiguration clientConfig = new ClientConfiguration();
 			clientConfig.setConnectionTimeout(7200000); clientConfig.setSocketTimeout(7200000); clientConfig.setRequestTimeout(7200000);
 			clientConfig.setRetryPolicy(PredefinedRetryPolicies.getDefaultRetryPolicyWithCustomMaxRetries(5));
 
 			AmazonS3ClientBuilder s3 = AmazonS3ClientBuilder.standard()
 					.withClientConfiguration(clientConfig)
-					.withCredentials(new AWSStaticCredentialsProvider(awsCreds))
-					.withRegion(awsRegion);
+					.withCredentials(DefaultAWSCredentialsProviderChain.getInstance())   //default will use servers IAM implementation
+					.withRegion(Regions.EU_WEST_2);
+
 			TransferManagerBuilder tx = TransferManagerBuilder.standard().withS3Client(s3.build());
 			try {
 				for (FileItem fileItem: fileItems) {
@@ -113,7 +113,7 @@ public class PostFile extends AbstractEndpoint {
 						metaData.setContentLength(sizeInBytes);
 
 						// create the AWS object key from the inbound filename
-						String keyPath = createFileKey(organisationId, fileItem.getName());
+						String keyPath = createFileKey(awsKeyPathPrefix, organisationId, fileItem.getName());
 						System.out.println("keyPath: " + keyPath + " available received bytes: " + sizeInBytes);
 
 						// upload the file stream to AWS
@@ -154,8 +154,10 @@ public class PostFile extends AbstractEndpoint {
 		}
 	}
 
-	private static String createFileKey(String organisationId, String filePath) {
-		return organisationId.concat("/data/" + filePath.replace("\\", "/"));
+
+	private static String createFileKey(String keyPathPrefix, String organisationId, String filePath) {
+		// will create something like endeavour/sftpReader/TPP001/<folder>/<filename>
+		return keyPathPrefix.concat("/"+organisationId).concat(filePath.replace("\\", "/"));
 	}
 
 	private static boolean publisherHasDPA(String organisationId)  {
