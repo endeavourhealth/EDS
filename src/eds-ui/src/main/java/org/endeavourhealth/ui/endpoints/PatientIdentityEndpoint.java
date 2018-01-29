@@ -151,16 +151,16 @@ public final class PatientIdentityEndpoint extends AbstractEndpoint {
         for (PatientSearch identifier: identifiers) {
 
             UUID serviceId = identifier.getServiceId();
-            UUID systemId = identifier.getSystemId();
+            //UUID systemId = identifier.getSystemId();
 
             String serviceName = getServiceNameForId(serviceId);
-            String systemName = getSystemNameForId(systemId);
+            //String systemName = getSystemNameForId(systemId);
 
             JsonPatientIdentifier json = new JsonPatientIdentifier();
             json.setServiceId(serviceId);
             json.setServiceName(serviceName);
-            json.setSystemId(systemId);
-            json.setSystemName(systemName);
+            //json.setSystemId(systemId);
+            //json.setSystemName(systemName);
             json.setNhsNumber(identifier.getNhsNumber());
             json.setForenames(identifier.getForenames());
             json.setSurname(identifier.getSurname());
@@ -241,16 +241,16 @@ public final class PatientIdentityEndpoint extends AbstractEndpoint {
             if (identifier != null) {
 
                 UUID serviceId = identifier.getServiceId();
-                UUID systemId = identifier.getSystemId();
+                //UUID systemId = identifier.getSystemId();
 
                 String serviceName = getServiceNameForId(serviceId);
-                String systemName = getSystemNameForId(systemId);
+                //String systemName = getSystemNameForId(systemId);
 
                 JsonPatientIdentifier json = new JsonPatientIdentifier();
                 json.setServiceId(serviceId);
                 json.setServiceName(serviceName);
-                json.setSystemId(systemId);
-                json.setSystemName(systemName);
+                //json.setSystemId(systemId);
+                //json.setSystemName(systemName);
                 json.setNhsNumber(identifier.getNhsNumber());
                 json.setForenames(identifier.getForenames());
                 json.setSurname(identifier.getSurname());
