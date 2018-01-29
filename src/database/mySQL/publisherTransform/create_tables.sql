@@ -2,6 +2,12 @@ use publisher_transform_???;
 
 DROP TABLE IF EXISTS resource_id_map;
 DROP TABLE IF EXISTS sus_resource_map;
+DROP TABLE IF EXISTS resource_merge_map;
+DROP TABLE IF EXISTS source_file_type;
+DROP TABLE IF EXISTS source_file_type_column;
+DROP TABLE IF EXISTS source_file;
+DROP TABLE IF EXISTS source_file_field;
+DROP TABLE IF EXISTS resource_field_mapping;
 
 CREATE TABLE resource_id_map (
 	service_id char(36),
@@ -30,3 +36,66 @@ CREATE TABLE resource_merge_map (
   updated_at datetime,
   CONSTRAINT pk_resource_merge_map PRIMARY KEY (service_id, source_resource_id)
 );
+
+
+
+CREATE TABLE source_file_type (
+	id int NOT NULL,
+  description varchar(255) NOT NULL,
+  CONSTRAINT pk_source_file_type PRIMARY KEY (id)
+);
+
+ALTER TABLE source_file_type MODIFY COLUMN id INT auto_increment;
+
+CREATE INDEX ix_source_file_type_description ON source_file_type (description);
+
+
+CREATE TABLE source_file_type_column (
+	source_file_type_id int NOT NULL,
+    column_index tinyint NOT NULL,
+    column_name varchar(255) NOT NULL,
+    CONSTRAINT pk_source_file_type_column PRIMARY KEY (source_file_type_id, column_index)
+);
+
+
+CREATE TABLE source_file (
+	id int NOT NULL,
+  service_id char(36) NOT NULL,
+  system_id char(36) NOT NULL,
+  file_path varchar(1000),
+  inserted_at datetime NOT NULL,
+  source_file_type_id int NOT NULL,
+  exchange_id char(36),
+  CONSTRAINT pk_source_file PRIMARY KEY (id)
+);
+
+ALTER TABLE source_file MODIFY COLUMN id INT auto_increment;
+
+
+CREATE INDEX ix_source_file ON source_file (service_id, system_id, inserted_at);
+
+
+CREATE TABLE source_file_field (
+  id bigint,
+	source_file_id int NOT NULL,
+  row_index int,
+  column_index tinyint,
+  source_location varchar(255),
+  value mediumtext,
+  CONSTRAINT pk_source_file_field PRIMARY KEY (id)
+)
+ROW_FORMAT=COMPRESSED
+KEY_BLOCK_SIZE=8;
+
+ALTER TABLE source_file_field MODIFY COLUMN id INT auto_increment;
+
+CREATE TABLE resource_field_mapping (
+  resource_id char(36) NOT NULL,
+  resource_type varchar(50) NOT NULL,
+  created_at datetime NOT NULL,
+  version char(36) NOT NULL,
+  resource_field varchar(255) NOT NULL,
+  source_file_field_id bigint NOT NULL,
+  CONSTRAINT pk_resource_field_mapping PRIMARY KEY (resource_id, resource_type, created_at, resource_field)
+);
+
