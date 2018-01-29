@@ -104,31 +104,10 @@
 
     <filter>
         <filter-name>CorsFilter</filter-name>
-        <filter-class>org.apache.catalina.filters.CorsFilter</filter-class>
-        <init-param>
-            <param-name>cors.allowed.origins</param-name>
-            <param-value>https://n3portal.endeavourhealth.net,http://10.44.112.51:8080,https://eds.endeavourhealth.net,http://35.177.247.26:8080,https://deveds.endeavourhealth.net,http://localhost:4200</param-value>
-        </init-param>
-        <init-param>
-            <param-name>cors.allowed.methods</param-name>
-            <param-value>GET,POST,HEAD,OPTIONS,PUT,DELETE</param-value>
-        </init-param>
+        <filter-class>org.endeavourhealth.coreui.framework.CORSFilter</filter-class>
     </filter>
     <filter-mapping>
         <filter-name>CorsFilter</filter-name>
-        <url-pattern>/*</url-pattern>
-    </filter-mapping>
-
-    <filter>
-        <filter-name>HttpHeaderSecurityFilter</filter-name>
-        <filter-class>org.apache.catalina.filters.HttpHeaderSecurityFilter</filter-class>
-        <init-param>
-            <param-name>xssProtectionEnabled</param-name>
-            <param-value>1</param-value>
-        </init-param>
-    </filter>
-    <filter-mapping>
-        <filter-name>HttpHeaderSecurityFilter</filter-name>
         <url-pattern>/*</url-pattern>
     </filter-mapping>
 
