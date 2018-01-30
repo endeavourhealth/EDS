@@ -20,7 +20,7 @@ export class ExchangeAuditComponent {
 	systemId: string;
 
 	//exchange filters
-	searchTab: string;
+	searchMode: string;
 	exchangesToShow: number;
 	exchangeIdSearch: string;
 	exchangeSearchFrom: Date;
@@ -47,6 +47,7 @@ export class ExchangeAuditComponent {
 		this.exchangesToShow = 100;
 		//this.postAllExchanges = false;
 		this.postMode = 'This';
+		this.searchMode = 'Recent';
 
 		this.systemId = transition.params()['systemId'];
 		var serviceId = transition.params()['serviceId'];
@@ -85,24 +86,13 @@ export class ExchangeAuditComponent {
 		var serviceId = vm.service.uuid;
 
 		//make sure to clear this down, so it's clear we've got new content
-		this.selectedExchange = null;
+		vm.selectedExchange = null;
 
-		console.log('tab = ' + this.searchTab);
+		console.log('searchMode = ' + this.searchMode);
 
-		if (!this.searchTab
-			|| this.searchTab == 'tabDates') {
+		if (vm.searchMode == 'Recent') {
 
-			if (this.exchangeSearchFrom
-				&& this.exchangeSearchTo
-				&& this.exchangeSearchTo.getTime() < this.exchangeSearchFrom.getTime()) {
-				this.log.error('Search date range is invalid');
-				return;
-			}
-
-			/*console.log("Search from " + this.exchangeSearchFrom);
-			console.log("Search to " + this.exchangeSearchTo);*/
-
-			vm.exchangeAuditService.getExchangeList(serviceId, vm.systemId, vm.exchangesToShow, this.exchangeSearchFrom, this.exchangeSearchTo).subscribe(
+			vm.exchangeAuditService.getRecentExchanges(serviceId, vm.systemId, vm.exchangesToShow).subscribe(
 				(result) => {
 					vm.exchanges = result;
 					if (result.length == 0) {
@@ -112,7 +102,38 @@ export class ExchangeAuditComponent {
 				(error) => vm.log.error('Failed to retrieve exchanges', error, 'View Exchanges')
 			)
 
-		} else {
+		} else if (vm.searchMode == 'DateRange') {
+
+			if (this.exchangeSearchFrom
+				&& this.exchangeSearchTo
+				&& this.exchangeSearchTo.getTime() < this.exchangeSearchFrom.getTime()) {
+				this.log.error('Search date range is invalid');
+				return;
+			}
+
+			vm.exchangeAuditService.getExchangesByDate(serviceId, vm.systemId, vm.exchangesToShow, this.exchangeSearchFrom, this.exchangeSearchTo).subscribe(
+				(result) => {
+					vm.exchanges = result;
+					if (result.length == 0) {
+						vm.log.success('No exchanges found');
+					}
+				},
+				(error) => vm.log.error('Failed to retrieve exchanges', error, 'View Exchanges')
+			)
+
+		} else if (vm.searchMode == 'FirstError') {
+
+			vm.exchangeAuditService.getExchangesFromFirstError(serviceId, vm.systemId, vm.exchangesToShow).subscribe(
+				(result) => {
+					vm.exchanges = result;
+					if (result.length == 0) {
+						vm.log.success('No exchanges found');
+					}
+				},
+				(error) => vm.log.error('Failed to retrieve exchanges', error, 'View Exchanges')
+			)
+
+		} else if (vm.searchMode == 'ExchangeId') {
 
 			if (!this.exchangeIdSearch) {
 				this.log.error('Enter an exchange ID to search');
@@ -128,6 +149,9 @@ export class ExchangeAuditComponent {
 				},
 				(error) => vm.log.error('Failed to retrieve exchanges', error, 'View Exchanges')
 			)
+
+		} else {
+			vm.log.error('Unknown search mode ' + vm.searchMode);
 		}
 	}
 
@@ -253,15 +277,9 @@ export class ExchangeAuditComponent {
 
 
 
-	tabSelected(tab: string) {
-		this.searchTab = tab;
-		console.log("Tab: " + tab);
 
-	}
 
-	/*checkboxChanged() {
-		console.log('checkbox changed = ' + this.postAllExchanges);
-	}*/
+
 
 	copyBodyToClipboard() {
 		//join the body lines into a single string

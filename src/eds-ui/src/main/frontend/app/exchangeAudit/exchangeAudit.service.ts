@@ -12,7 +12,7 @@ export class ExchangeAuditService extends BaseHttp2Service {
     constructor(http:Http) { super(http); }
 
 
-    getExchangeList(serviceId: string, systemId: string, maxRows: number, dateFrom: Date, dateTo: Date) : Observable<Exchange[]> {
+    getExchangesByDate(serviceId: string, systemId: string, maxRows: number, dateFrom: Date, dateTo: Date) : Observable<Exchange[]> {
         console.log('Getting for service ' + serviceId + ' system ' + systemId + ' and ' + maxRows + ' from ' + dateFrom + ' to ' + dateTo);
 
         var params = new URLSearchParams();
@@ -30,7 +30,29 @@ export class ExchangeAuditService extends BaseHttp2Service {
             params.append('dateTo', '');
         }
 
-        return this.httpGet('api/exchangeAudit/getExchangeList', { search : params});
+        return this.httpGet('api/exchangeAudit/getExchangesByDate', { search : params});
+    }
+
+    getRecentExchanges(serviceId: string, systemId: string, maxRows: number) : Observable<Exchange[]> {
+        console.log('Getting for service ' + serviceId + ' system ' + systemId + ' and ' + maxRows);
+
+        var params = new URLSearchParams();
+        params.append('serviceId', serviceId);
+        params.append('systemId', systemId);
+        params.append('maxRows', '' + maxRows);
+
+        return this.httpGet('api/exchangeAudit/getRecentExchanges', { search : params});
+    }
+
+    getExchangesFromFirstError(serviceId: string, systemId: string, maxRows: number) : Observable<Exchange[]> {
+        console.log('Getting for service ' + serviceId + ' system ' + systemId + ' and ' + maxRows);
+
+        var params = new URLSearchParams();
+        params.append('serviceId', serviceId);
+        params.append('systemId', systemId);
+        params.append('maxRows', '' + maxRows);
+
+        return this.httpGet('api/exchangeAudit/getExchangesFromFirstError', { search : params});
     }
 
     getExchangeById(serviceId: string, systemId: string, exchangeId:string) : Observable<Exchange[]> {

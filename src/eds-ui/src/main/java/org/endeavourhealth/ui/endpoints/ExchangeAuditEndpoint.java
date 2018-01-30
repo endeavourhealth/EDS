@@ -52,8 +52,8 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     @Timed(absolute = true, name="EDS-UI.ExchangeAuditEndpoint.GetExchangeList")
-    @Path("/getExchangeList")
-    public Response getExchangeList(@Context SecurityContext sc,
+    @Path("/getExchangesByDate")
+    public Response getExchangesByDate(@Context SecurityContext sc,
                                     @QueryParam("serviceId") String serviceIdStr,
                                     @QueryParam("systemId") String systemIdStr,
                                     @QueryParam("maxRows") int maxRows,
@@ -63,9 +63,6 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
 
         userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load, "Get Exchange List",
                 "Service Id", serviceIdStr);
-
-
-        List<JsonExchange> ret = new ArrayList<>();
 
         UUID serviceUuid = UUID.fromString(serviceIdStr);
         UUID systemUuid = UUID.fromString(systemIdStr);
@@ -91,14 +88,129 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
             }
         }
 
-        List<Exchange> exchangeByServices = auditRepository.getExchangesByService(serviceUuid, systemUuid, maxRows, dateFrom, dateTo);
+        List<Exchange> exchanges = auditRepository.getExchangesByService(serviceUuid, systemUuid, maxRows, dateFrom, dateTo);
+        List<JsonExchange> ret = convertExchangesToJson(serviceUuid, systemUuid, exchanges);
+
+        clearLogbackMarkers();
+
+        return Response
+                .ok()
+                .entity(ret)
+                .build();
+    }
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.ExchangeAuditEndpoint.GetExchangeList")
+    @Path("/getRecentExchanges")
+    public Response getRecentExchanges(@Context SecurityContext sc,
+                                          @QueryParam("serviceId") String serviceIdStr,
+                                          @QueryParam("systemId") String systemIdStr,
+                                          @QueryParam("maxRows") int maxRows) throws Exception {
+        super.setLogbackMarkers(sc);
+
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load, "Get Recent Exchanges",
+                "Service Id", serviceIdStr,
+                "System Id", systemIdStr,
+                "Max Rows", maxRows);
+
+        UUID serviceUuid = UUID.fromString(serviceIdStr);
+        UUID systemUuid = UUID.fromString(systemIdStr);
+
+        //just use the date search function, but passing in the full date range of start of time to now
+        Date dateFrom = new Date(0);
+        Date dateTo = new Date();
+
+        List<Exchange> exchanges = auditRepository.getExchangesByService(serviceUuid, systemUuid, maxRows, dateFrom, dateTo);
+        List<JsonExchange> ret = convertExchangesToJson(serviceUuid, systemUuid, exchanges);
 
         Set<UUID> exchangeIdsInError = findAllExchangeIdsInErrorForService(serviceUuid, systemUuid);
 
-        for (Exchange exchangeByService: exchangeByServices) {
+        clearLogbackMarkers();
 
-            UUID exchangeId = exchangeByService.getId();
-            Exchange exchange = auditRepository.getExchange(exchangeId);
+        return Response
+                .ok()
+                .entity(ret)
+                .build();
+    }
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.ExchangeAuditEndpoint.GetExchangeList")
+    @Path("/getExchangesFromFirstError")
+    public Response getExchangesFromFirstError(@Context SecurityContext sc,
+                                       @QueryParam("serviceId") String serviceIdStr,
+                                       @QueryParam("systemId") String systemIdStr,
+                                       @QueryParam("maxRows") int maxRows) throws Exception {
+        super.setLogbackMarkers(sc);
+
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load, "Get Exchanges From Error",
+                "Service Id", serviceIdStr,
+                "System Id", systemIdStr,
+                "Max Rows", maxRows);
+
+        UUID serviceUuid = UUID.fromString(serviceIdStr);
+        UUID systemUuid = UUID.fromString(systemIdStr);
+
+        Date dateFrom = null;
+        Date dateTo = null;
+
+        ExchangeTransformErrorState errorState = auditRepository.getErrorState(serviceUuid, systemUuid);
+        if (errorState == null) {
+            //if there's no error state, then there's no errors, so just return the last maxRows over the full time period possible
+            dateFrom = new Date(0);
+            dateTo = new Date();
+
+        } else {
+            //if there is an error state, then we know the exchange ID of the first one in error
+            UUID firstExchangeIdInError = errorState.getExchangeIdsInError().get(0);
+            Exchange firstExchangeInError = auditRepository.getExchange(firstExchangeIdInError);
+            Date errorDate = firstExchangeInError.getTimestamp();
+
+            //we want to return the previous exchange, to clearly show it did transform OK, and also the "maxRows"
+            //exchanges after. To do this, we need to just search using date, making an assumption that the exchanges
+            //are one a day at least.
+            Calendar cal = Calendar.getInstance();
+            cal.setTime(errorDate);
+            cal.set(Calendar.HOUR_OF_DAY, 0);
+            cal.set(Calendar.MINUTE, 0);
+            cal.set(Calendar.SECOND, 0);
+
+            //go back a day to get the previous exchange
+            cal.add(Calendar.DAY_OF_YEAR, -1);
+            dateFrom = cal.getTime();
+
+            //go forward maxRows plus 2 (one day to put us back on the original date and one date for luck)
+            cal.add(Calendar.DAY_OF_YEAR, maxRows+1);
+            dateTo = cal.getTime();
+        }
+
+        List<Exchange> exchanges = auditRepository.getExchangesByService(serviceUuid, systemUuid, maxRows, dateFrom, dateTo);
+        List<JsonExchange> ret = convertExchangesToJson(serviceUuid, systemUuid, exchanges);
+
+        clearLogbackMarkers();
+
+        return Response
+                .ok()
+                .entity(ret)
+                .build();
+    }
+
+    private List<JsonExchange> convertExchangesToJson(UUID serviceUuid, UUID systemUuid, List<Exchange> exchanges) throws Exception {
+
+        List<JsonExchange> ret = new ArrayList<>();
+
+        Set<UUID> exchangeIdsInError = findAllExchangeIdsInErrorForService(serviceUuid, systemUuid);
+
+        for (Exchange exchange: exchanges) {
+
+            UUID exchangeId = exchange.getId();
+
+            //don't need to re-retrieve, since MySQL gives us all the content. It's only Cassandra that doesn't give everything
+            //exchange = auditRepository.getExchange(exchangeId);
+
             Date timestamp = exchange.getTimestamp();
             Map<String, String> headers = exchange.getHeaders();
             List<String> bodyLines = getExchangeBodyLines(exchange);
@@ -108,12 +220,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
             ret.add(jsonExchange);
         }
 
-        clearLogbackMarkers();
-
-        return Response
-                .ok()
-                .entity(ret)
-                .build();
+        return ret;
     }
 
     private Set<UUID> findAllExchangeIdsInErrorForService(UUID serviceId, UUID systemId) throws Exception {
@@ -146,8 +253,6 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
                 "System Id", systemIdStr,
                 "Exchange Id", exchangeIdStr);
 
-        List<JsonExchange> ret = new ArrayList<>();
-
         UUID exchangeUuid = null;
         try {
             exchangeUuid = UUID.fromString(exchangeIdStr);
@@ -162,10 +267,6 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
         if (exchange == null) {
             throw new BadRequestException("No exchange found for " + exchangeIdStr);
         }
-
-        Date timestamp = exchange.getTimestamp();
-        Map<String, String> headers = exchange.getHeaders();
-        List<String> bodyLines = getExchangeBodyLines(exchange);
 
         //validate the exchange is for our service
         UUID exchangeServiceId = exchange.getServiceId();
@@ -192,11 +293,10 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
             throw new BadRequestException(err);
         }
 
-        Set<UUID> exchangeIdsInError = findAllExchangeIdsInErrorForService(serviceUuid, systemUuid);
-        boolean inError = exchangeIdsInError.contains(exchangeUuid);
+        List<Exchange> exchanges = new ArrayList<>();
+        exchanges.add(exchange);
 
-        JsonExchange jsonExchange = new JsonExchange(exchangeUuid, serviceUuid, systemUuid, timestamp, headers, bodyLines, inError);
-        ret.add(jsonExchange);
+        List<JsonExchange> ret = convertExchangesToJson(serviceUuid, systemUuid, exchanges);
 
         clearLogbackMarkers();
 
