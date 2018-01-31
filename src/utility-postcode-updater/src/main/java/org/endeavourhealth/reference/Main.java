@@ -37,6 +37,12 @@ public class Main {
             } else if (type.equalsIgnoreCase("deprivation")) {
                 DeprivationUpdater.updateDeprivationScores(args);
 
+            } else if (type.equalsIgnoreCase("opcs4")) {
+                Opcs4Updater.updateOpcs4Lookup(args);
+
+            } else if (type.equalsIgnoreCase("icd10")) {
+                Icd10Updater.updateIcd10Lookup(args);
+
             } else if (type.equalsIgnoreCase("copy_all")) {
 
                 if (args.length != 2) {

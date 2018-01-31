@@ -108,6 +108,9 @@ CREATE TABLE exchange_batch (
   CONSTRAINT pk_exchange_batch PRIMARY KEY (exchange_id, batch_id)
 );
 
+create index ix_exchange_batch_batch_id on exchange_batch (batch_id);
+
+
 CREATE TABLE exchange_subscriber_transform_audit
 (
     exchange_id varchar(36) NOT NULL,

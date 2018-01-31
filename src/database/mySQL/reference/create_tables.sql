@@ -8,7 +8,8 @@ DROP TABLE IF EXISTS encounter_code;
 DROP TABLE IF EXISTS snomed_lookup;
 DROP TABLE IF EXISTS trm_concept_pc_link;
 DROP TABLE IF EXISTS trm_concept;
-
+DROP TABLE IF EXISTS opcs4_lookup;
+DROP TABLE IF EXISTS icd10_lookup;
 
 CREATE TABLE postcode_lookup
 (
@@ -142,3 +143,16 @@ CREATE TABLE snomed_lookup (
   term text NOT NULL,
   type_id int NOT NULL
 )
+
+create table opcs4_lookup (
+  procedure_code varchar(10),
+  procedure_name varchar(255),
+  CONSTRAINT pk_postcode_lookup PRIMARY KEY (procedure_code)
+);
+
+
+create table icd10_lookup (
+  code varchar(10),
+  description varchar(255),
+  CONSTRAINT pk_postcode_lookup PRIMARY KEY (code)
+);
