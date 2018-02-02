@@ -70,12 +70,7 @@
 
     <xs:complexType name="MessageTransformInboundConfig">
         <xs:complexContent>
-            <xs:extension base="ComponentConfig">
-                <xs:sequence>
-                    <xs:element name="SharedStoragePath" type="xs:string" minOccurs="1" maxOccurs="1"/>
-                    <xs:element name="FilingThreadLimit" type="xs:int" minOccurs="1" maxOccurs="1"/>
-                </xs:sequence>
-            </xs:extension>
+            <xs:extension base="ComponentConfig"/>
         </xs:complexContent>
     </xs:complexType>
 

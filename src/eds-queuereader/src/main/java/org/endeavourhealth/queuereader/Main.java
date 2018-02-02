@@ -24,6 +24,7 @@ import org.endeavourhealth.core.database.dal.audit.models.Exchange;
 import org.endeavourhealth.core.database.dal.audit.models.ExchangeTransformAudit;
 import org.endeavourhealth.core.fhirStorage.JsonServiceInterfaceEndpoint;
 import org.endeavourhealth.core.queueing.QueueHelper;
+import org.endeavourhealth.transform.common.TransformConfig;
 import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -186,7 +187,7 @@ public class Main {
 
 		// Begin consume
 		rabbitHandler.start();
-		LOG.info("EDS Queue reader running (kill file location " + configuration.getKillFileLocation() + ")");
+		LOG.info("EDS Queue reader running (kill file location " + TransformConfig.instance().getKillFileLocation() + ")");
 	}
 
 	/**

@@ -19,8 +19,6 @@ import javax.xml.bind.annotation.XmlType;
  *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
  *       &lt;sequence>
  *         &lt;element name="Queue" type="{}nonEmptyString"/>
- *         &lt;element name="AttemptsPermitted" type="{http://www.w3.org/2001/XMLSchema}int" minOccurs="0"/>
- *         &lt;element name="KillFileLocation" type="{}nonEmptyString" minOccurs="0"/>
  *         &lt;element name="Pipeline" type="{}Pipeline"/>
  *       &lt;/sequence>
  *     &lt;/restriction>
@@ -33,8 +31,6 @@ import javax.xml.bind.annotation.XmlType;
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "", propOrder = {
     "queue",
-    "attemptsPermitted",
-    "killFileLocation",
     "pipeline"
 })
 @XmlRootElement(name = "QueueReaderConfiguration")
@@ -42,10 +38,6 @@ public class QueueReaderConfiguration {
 
     @XmlElement(name = "Queue", required = true)
     protected String queue;
-    @XmlElement(name = "AttemptsPermitted")
-    protected Integer attemptsPermitted;
-    @XmlElement(name = "KillFileLocation")
-    protected String killFileLocation;
     @XmlElement(name = "Pipeline", required = true)
     protected Pipeline pipeline;
 
@@ -71,54 +63,6 @@ public class QueueReaderConfiguration {
      */
     public void setQueue(String value) {
         this.queue = value;
-    }
-
-    /**
-     * Gets the value of the attemptsPermitted property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link Integer }
-     *     
-     */
-    public Integer getAttemptsPermitted() {
-        return attemptsPermitted;
-    }
-
-    /**
-     * Sets the value of the attemptsPermitted property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link Integer }
-     *     
-     */
-    public void setAttemptsPermitted(Integer value) {
-        this.attemptsPermitted = value;
-    }
-
-    /**
-     * Gets the value of the killFileLocation property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
-     */
-    public String getKillFileLocation() {
-        return killFileLocation;
-    }
-
-    /**
-     * Sets the value of the killFileLocation property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
-     */
-    public void setKillFileLocation(String value) {
-        this.killFileLocation = value;
     }
 
     /**

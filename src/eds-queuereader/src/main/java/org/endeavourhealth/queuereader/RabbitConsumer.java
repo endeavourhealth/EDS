@@ -12,6 +12,7 @@ import org.endeavourhealth.core.database.dal.DalProvider;
 import org.endeavourhealth.core.database.dal.audit.QueuedMessageDalI;
 import org.endeavourhealth.core.database.dal.audit.models.Exchange;
 import org.endeavourhealth.core.messaging.pipeline.PipelineProcessor;
+import org.endeavourhealth.transform.common.TransformConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,13 +26,10 @@ import java.util.UUID;
 public class RabbitConsumer extends DefaultConsumer {
 	private static final Logger LOG = LoggerFactory.getLogger(RabbitConsumer.class);
 
-	private static final int DEFAULT_MAX_ATTEMPTS = 10;
-
 	private final QueueReaderConfiguration configuration;
 	private final String configId;
 	private final RabbitHandler handler;
 	private final PipelineProcessor pipeline;
-	private final int attemptsBeforeFailure;
 
 	private UUID lastExchangeAttempted;
 	private int lastExchangeAttempts;
@@ -43,12 +41,6 @@ public class RabbitConsumer extends DefaultConsumer {
 		this.configId = configId;
 		this.handler = handler;
 		this.pipeline = new PipelineProcessor(configuration.getPipeline());
-
-		if (configuration.getAttemptsPermitted() == null) {
-			this.attemptsBeforeFailure = DEFAULT_MAX_ATTEMPTS;
-		} else {
-			this.attemptsBeforeFailure = configuration.getAttemptsPermitted().intValue();
-		}
 
 		//call this to delete any pre-existing kill file
 		checkIfKillFileExists();
@@ -138,7 +130,7 @@ public class RabbitConsumer extends DefaultConsumer {
 		}
 
 		//if we've failed on the same exchange X times, then halt the queue reader
-		if (lastExchangeAttempts >= attemptsBeforeFailure) {
+		if (lastExchangeAttempts >= TransformConfig.instance().getAttemptsPermmitedPerExchange()) {
 			String reason = "Failed " + lastExchangeAttempts + " times on exchange " + lastExchangeAttempted + " so halting queue reader";
 			stop(reason);
 		}
@@ -166,7 +158,7 @@ public class RabbitConsumer extends DefaultConsumer {
      */
 	private boolean checkIfKillFileExists() {
 
-		String killFileLocation = configuration.getKillFileLocation();
+		String killFileLocation = TransformConfig.instance().getKillFileLocation();
 		if (Strings.isNullOrEmpty(killFileLocation)) {
 			LOG.error("No kill file location set in app configuration XML");
 			return false;

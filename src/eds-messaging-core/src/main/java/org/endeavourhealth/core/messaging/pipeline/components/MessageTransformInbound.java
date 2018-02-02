@@ -22,6 +22,7 @@ import org.endeavourhealth.transform.barts.BartsCsvToFhirTransformer;
 import org.endeavourhealth.transform.common.FhirDeltaResourceFilter;
 import org.endeavourhealth.transform.common.IdHelper;
 import org.endeavourhealth.transform.common.MessageFormat;
+import org.endeavourhealth.transform.common.TransformConfig;
 import org.endeavourhealth.transform.common.exceptions.SoftwareNotSupportedException;
 import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
 import org.endeavourhealth.transform.emis.EmisOpenToFhirTransformer;
@@ -172,20 +173,22 @@ public class MessageTransformInbound extends PipelineComponent {
 		//may as well clear down the cache of reference mappings since they won't be of much use for the next Exchange
 		IdHelper.clearCache();
 
+		//if we had any errors during the transform
 		if (currentErrors.getError().size() > 0) {
 
-			//for bulk transforms, I want them to fail gracefully, but that mechanism doesn't work for the
-			//thousands of ADT messages, so for transaction-type messages just throw the exception to halt all inbound processing
-			//(i.e. it'll reject the message in rabbit, then pull it out again)
-			if (!software.equalsIgnoreCase(MessageFormat.EMIS_CSV)
-					&& !software.equalsIgnoreCase(MessageFormat.VISION_CSV)
-					&& !software.equalsIgnoreCase(MessageFormat.BARTS_CSV)) {
+			//for some message formats (e.g. daily non-transactional formats), and in certain environements (e.g. live) we don't want a transform
+			//failure to block the queue until fixed, so check if we're supposed to ACK or reject the message from rabbit or not
+			Set<String> softwareToDrainQueueOnError = TransformConfig.instance().getSoftwareFormatsToDrainQueueOnFailure();
+			if (softwareToDrainQueueOnError.contains(software)) {
+				//if we had any errors, don't return any batch IDs, so we don't send anything on to the protocol queue yet
+				//when we do successfully re-process the exchange, it will pick up any batch IDs we created this time around
+				return new ArrayList<>();
+
+			} else {
+				//if our config says to not drain the queue, then throw an exception which will mean
+				//we don't remove the exchange from Rabbit and it'll just block any further processing on that queue
 				throw new Exception("Failing transform");
 			}
-
-			//if we had any errors, don't return any batch IDs, so we don't send anything on to the protocol queue yet
-			//when we do successfully re-process the exchange, it will pick up any batch IDs we created this time around
-			return new ArrayList<>();
 		}
 
 		return batchIds;
@@ -209,7 +212,7 @@ public class MessageTransformInbound extends PipelineComponent {
 		UUID exchangeId = exchange.getId();
 
 		AdastraXmlToFhirTransformer.transform(exchangeId, xmlPayload, serviceId, systemId,
-				currentErrors, batchIds, previousErrors, null, messageVersion);
+				currentErrors, batchIds, previousErrors, messageVersion);
 	}
 
 	private void sendSlackAlert(Exchange exchange, String software, UUID serviceId, TransformError currentErrors) {
@@ -389,56 +392,43 @@ public class MessageTransformInbound extends PipelineComponent {
 											   String software, TransformError currentErrors, List<UUID> batchIds,
 											   TransformError previousErrors) throws Exception {
 
-		//get our configuration options
-		String sharedStoragePath = config.getSharedStoragePath();
-
 		String exchangeBody = exchange.getBody();
 		UUID exchangeId = exchange.getId();
 
 		EmisCsvToFhirTransformer.transform(exchangeId, exchangeBody, serviceId, systemId, currentErrors,
-									batchIds, previousErrors, sharedStoragePath);
+									batchIds, previousErrors);
 	}
 
 	private void processBartsCsvTransform(Exchange exchange, UUID serviceId, UUID systemId, String version,
 										 String software, TransformError currentErrors, List<UUID> batchIds,
 										 TransformError previousErrors) throws Exception {
 
-		//get our configuration options
-		String sharedStoragePath = config.getSharedStoragePath();
-
 		String exchangeBody = exchange.getBody();
 		UUID exchangeId = exchange.getId();
 
 		BartsCsvToFhirTransformer.transform(exchangeId, exchangeBody, serviceId, systemId, currentErrors,
-				batchIds, previousErrors, sharedStoragePath, version);
+				batchIds, previousErrors, version);
 	}
 
 	private void processHomertonCsvTransform(Exchange exchange, UUID serviceId, UUID systemId, String version,
 										  String software, TransformError currentErrors, List<UUID> batchIds,
 										  TransformError previousErrors) throws Exception {
 
-		//get our configuration options
-		String sharedStoragePath = config.getSharedStoragePath();
-
 		String exchangeBody = exchange.getBody();
 		UUID exchangeId = exchange.getId();
 
 		HomertonCsvToFhirTransformer.transform(exchangeId, exchangeBody, serviceId, systemId, currentErrors,
-				batchIds, previousErrors, sharedStoragePath, version);
+				batchIds, previousErrors, version);
 	}
 
 	private void processVisionCsvTransform(Exchange exchange, UUID serviceId, UUID systemId, String version,
 											 String software, TransformError currentErrors, List<UUID> batchIds,
 											 TransformError previousErrors) throws Exception {
-
-		//get our configuration options
-		String sharedStoragePath = config.getSharedStoragePath();
-
 		String exchangeBody = exchange.getBody();
 		UUID exchangeId = exchange.getId();
 
 		VisionCsvToFhirTransformer.transform(exchangeId, exchangeBody, serviceId, systemId, currentErrors,
-				batchIds, previousErrors, sharedStoragePath, version);
+				batchIds, previousErrors, version);
 	}
 
 	private void processTppXmlTransform(Exchange exchange, UUID serviceId, UUID systemId, String version,
