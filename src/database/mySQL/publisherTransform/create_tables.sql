@@ -99,3 +99,12 @@ CREATE TABLE resource_field_mapping (
   CONSTRAINT pk_resource_field_mapping PRIMARY KEY (resource_id, resource_type, created_at, resource_field)
 );
 
+
+CREATE TABLE internal_id_map (
+  service_id char(36),
+	id_type varchar(100),
+  source_id char(100),
+  destination_id char(100),
+  updated_at datetime,
+  CONSTRAINT pk_internal_id_map PRIMARY KEY (service_id, id_type, source_id)
+);
