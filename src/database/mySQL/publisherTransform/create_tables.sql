@@ -8,6 +8,7 @@ DROP TABLE IF EXISTS source_file_type_column;
 DROP TABLE IF EXISTS source_file;
 DROP TABLE IF EXISTS source_file_field;
 DROP TABLE IF EXISTS resource_field_mapping;
+DROP TABLE IF EXISTS cerner_code_value_ref;
 
 CREATE TABLE resource_id_map (
 	service_id char(36),
@@ -107,4 +108,21 @@ CREATE TABLE internal_id_map (
   destination_id varchar(255),
   updated_at datetime,
   CONSTRAINT pk_internal_id_map PRIMARY KEY (service_id, id_type, source_id)
+);
+
+create table cerner_code_value_ref (
+	code_value_cd bigint(20) not null auto_increment comment 'The value of the code',
+    date date not null comment 'Date of the reference',
+    active_ind boolean not null comment 'Whether the reference is active or not',
+    code_desc_txt varchar(1000) not null comment 'Description of the code',
+    code_disp_txt varchar(1000) not null comment 'Display term of the code',
+    code_meaning_txt varchar(1000) not null comment 'The meaning of the code',
+    code_set_nbr bigint(20) null comment 'Code set number',
+    code_set_desc_txt varchar(1000) not null comment 'Description of the code set',
+    alias_nhs_cd_alias varchar(1000) not null comment 'NHS alias',
+    service_id varchar(36) null comment 'The service the code value ref corresponds to',
+    audit_json mediumtext null comment 'Used for Audit Purposes',
+    
+    constraint cerner_code_value_ref_pk primary key (code_value_cd),
+    index cerner_code_value_ref_code_value_cd_code_set_nbr_idx (code_value_cd,code_set_nbr)
 );
