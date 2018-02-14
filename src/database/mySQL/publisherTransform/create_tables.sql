@@ -104,13 +104,15 @@ KEY_BLOCK_SIZE=8;
 
 
 CREATE TABLE internal_id_map (
-  service_id char(36),
-  id_type varchar(255),
-  source_id varchar(255),
-  destination_id varchar(255),
+  service_id char(36) NOT NULL,
+  id_type varchar(255) NOT NULL,
+  source_id varchar(255) NOT NULL,
+  destination_id varchar(255) NOT NULL,
   updated_at datetime,
   CONSTRAINT pk_internal_id_map PRIMARY KEY (service_id, id_type, source_id)
 );
+
+CREATE INDEX ix_internal_id_map_destination_id ON internal_id_map (service_id, id_type, destination_id, source_id);
 
 create table cerner_code_value_ref (
   code_value_cd bigint(20) not null auto_increment comment 'The value of the code',
