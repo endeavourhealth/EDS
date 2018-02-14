@@ -6,8 +6,9 @@ DROP TABLE IF EXISTS resource_merge_map;
 DROP TABLE IF EXISTS source_file_type;
 DROP TABLE IF EXISTS source_file_type_column;
 DROP TABLE IF EXISTS source_file;
-DROP TABLE IF EXISTS source_file_field;
-DROP TABLE IF EXISTS resource_field_mapping;
+DROP TABLE IF EXISTS source_file_record;
+DROP TABLE IF EXISTS resource_field_mappings;
+DROP TABLE IF EXISTS internal_id_map;
 DROP TABLE IF EXISTS cerner_code_value_ref;
 
 CREATE TABLE resource_id_map (
@@ -72,15 +73,13 @@ CREATE TABLE source_file (
 
 ALTER TABLE source_file MODIFY COLUMN id INT auto_increment;
 
+CREATE INDEX ix_source_file_service_system_type_exchange_path ON source_file (service_id, system_id, source_file_type_id, exchange_id, file_path);
 
-CREATE INDEX ix_source_file ON source_file (service_id, system_id, inserted_at);
+CREATE INDEX ix_source_file_service_system_date ON source_file (service_id, system_id, inserted_at);
 
-
-CREATE TABLE source_file_field (
+CREATE TABLE source_file_record (
   id bigint,
 	source_file_id int NOT NULL,
-  row_index int,
-  column_index tinyint,
   source_location varchar(255),
   value mediumtext,
   CONSTRAINT pk_source_file_field PRIMARY KEY (id)
@@ -88,22 +87,25 @@ CREATE TABLE source_file_field (
 ROW_FORMAT=COMPRESSED
 KEY_BLOCK_SIZE=8;
 
-ALTER TABLE source_file_field MODIFY COLUMN id INT auto_increment;
+ALTER TABLE source_file_record MODIFY COLUMN id INT auto_increment;
 
-CREATE TABLE resource_field_mapping (
+CREATE INDEX ix_source_file_record_file_location ON source_file_record (source_file_id, source_location);
+
+CREATE TABLE resource_field_mappings (
   resource_id char(36) NOT NULL,
   resource_type varchar(50) NOT NULL,
   created_at datetime NOT NULL,
   version char(36) NOT NULL,
-  resource_field varchar(255) NOT NULL,
-  source_file_field_id bigint NOT NULL,
-  CONSTRAINT pk_resource_field_mapping PRIMARY KEY (resource_id, resource_type, created_at, resource_field)
-);
+  mappings_json MEDIUMTEXT,
+  CONSTRAINT pk_resource_field_mapping PRIMARY KEY (resource_id, resource_type, created_at, version)
+)
+ROW_FORMAT=COMPRESSED
+KEY_BLOCK_SIZE=8;
 
 
 CREATE TABLE internal_id_map (
   service_id char(36),
-	id_type varchar(255),
+  id_type varchar(255),
   source_id varchar(255),
   destination_id varchar(255),
   updated_at datetime,
@@ -111,18 +113,18 @@ CREATE TABLE internal_id_map (
 );
 
 create table cerner_code_value_ref (
-	code_value_cd bigint(20) not null auto_increment comment 'The value of the code',
-    date date not null comment 'Date of the reference',
-    active_ind boolean not null comment 'Whether the reference is active or not',
-    code_desc_txt varchar(1000) not null comment 'Description of the code',
-    code_disp_txt varchar(1000) not null comment 'Display term of the code',
-    code_meaning_txt varchar(1000) not null comment 'The meaning of the code',
-    code_set_nbr bigint(20) null comment 'Code set number',
-    code_set_desc_txt varchar(1000) not null comment 'Description of the code set',
-    alias_nhs_cd_alias varchar(1000) not null comment 'NHS alias',
-    service_id varchar(36) null comment 'The service the code value ref corresponds to',
-    audit_json mediumtext null comment 'Used for Audit Purposes',
-    
-    constraint cerner_code_value_ref_pk primary key (code_value_cd),
-    index cerner_code_value_ref_code_value_cd_code_set_nbr_idx (code_value_cd,code_set_nbr)
+  code_value_cd bigint(20) not null auto_increment comment 'The value of the code',
+  date date not null comment 'Date of the reference',
+  active_ind boolean not null comment 'Whether the reference is active or not',
+  code_desc_txt varchar(1000) not null comment 'Description of the code',
+  code_disp_txt varchar(1000) not null comment 'Display term of the code',
+  code_meaning_txt varchar(1000) not null comment 'The meaning of the code',
+  code_set_nbr bigint(20) null comment 'Code set number',
+  code_set_desc_txt varchar(1000) not null comment 'Description of the code set',
+  alias_nhs_cd_alias varchar(1000) not null comment 'NHS alias',
+  service_id varchar(36) null comment 'The service the code value ref corresponds to',
+  audit_json mediumtext null comment 'Used for Audit Purposes',
+
+  constraint cerner_code_value_ref_pk primary key (code_value_cd),
+  index cerner_code_value_ref_code_value_cd_code_set_nbr_idx (code_value_cd,code_set_nbr)
 );

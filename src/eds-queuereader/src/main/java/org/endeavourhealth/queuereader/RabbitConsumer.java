@@ -160,7 +160,7 @@ public class RabbitConsumer extends DefaultConsumer {
 
 		String killFileLocation = TransformConfig.instance().getKillFileLocation();
 		if (Strings.isNullOrEmpty(killFileLocation)) {
-			LOG.error("No kill file location set in app configuration XML");
+			LOG.error("No kill file location set in common queue reader config");
 			return false;
 		}
 
