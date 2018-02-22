@@ -122,7 +122,7 @@ public class Main {
 
     private static void changePersonId(UpdateJob change, Connection connection) throws Exception {
 
-        OutputContainer outputContainer = new OutputContainer(true, true); //doesn't matter what we pass into the constructor
+        OutputContainer outputContainer = new OutputContainer(true); //doesn't matter what we pass into the constructor
 
         //the csv writers are mapped to the tables in the database, so we can use them to discover
         //what tables have person and patient ID columns
