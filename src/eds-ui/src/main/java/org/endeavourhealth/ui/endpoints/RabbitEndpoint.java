@@ -442,7 +442,7 @@ public final class RabbitEndpoint extends AbstractEndpoint {
 
 		response = request.put(Entity.json(optionsJson));
 		if (response.getStatusInfo().getFamily() != Response.Status.Family.SUCCESSFUL) {
-			throw new Exception("Unable do declare the dead letter exchange");
+			throw new Exception("Unable do declare the " + pipeline + " exchange");
 		}
 		response.close();
 		client.close();
