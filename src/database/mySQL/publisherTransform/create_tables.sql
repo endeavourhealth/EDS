@@ -128,5 +128,6 @@ create table cerner_code_value_ref (
   audit_json mediumtext null comment 'Used for Audit Purposes',
 
   constraint cerner_code_value_ref_pk primary key (service_id, code_set_nbr, code_value_cd)
-
 );
+
+CREATE INDEX ix_cerner_code_value_ref ON cerner_code_value_ref (code_value_cd);
