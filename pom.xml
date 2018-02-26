@@ -20,7 +20,7 @@
         <eds-core.version>1.145-SNAPSHOT</eds-core.version>
         <eds-fhir.version>1.41-SNAPSHOT</eds-fhir.version>
         <eds-security.version>1.7-SNAPSHOT</eds-security.version>
-        <eds-transform.version>1.240-SNAPSHOT</eds-transform.version>
+        <eds-transform.version>1.241-SNAPSHOT</eds-transform.version>
         <eds-utility.version>1.22-SNAPSHOT</eds-utility.version>
         <eds-datasharing.version>0.0.2-SNAPSHOT</eds-datasharing.version>
 
