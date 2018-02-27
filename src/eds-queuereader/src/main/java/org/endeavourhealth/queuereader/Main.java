@@ -232,6 +232,8 @@ public class Main {
 				FileReader fr = new FileReader(f);
 				BufferedReader br = new BufferedReader(fr);
 
+				boolean fixed = false;
+
 				while (true) {
 
 					String line = br.readLine();
@@ -242,6 +244,8 @@ public class Main {
 					while (line.indexOf("\"") > -1) {
 						int start = line.indexOf("\"");
 						int end = line.indexOf("\"", start+1);
+
+						fixed = true;
 
 						String prefix = line.substring(0, start);
 						String middle = line.substring(start+1, end);
@@ -258,11 +262,13 @@ public class Main {
 				bw.close();
 				br.close();
 
-				//rename files
-				File backupFile = new File(dir, name + ".OLD");
-				f.renameTo(backupFile);
+				if (fixed) {
+					f.delete();
+					newFile.renameTo(f);
 
-				newFile.renameTo(f);
+				} else {
+					newFile.delete();
+				}
 			}
 		}
 	}
