@@ -50,6 +50,13 @@ public class Main {
 		ConfigManager.initialize("queuereader", configId);
 
 		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("FixBartsEscapes")) {
+			String filePath = args[0];
+			fixBartsEscapedFiles(filePath);
+			System.exit(0);
+		}
+
+		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("PostToInbound")) {
 			String serviceId = args[1];
 			String systemId = args[2];
@@ -188,6 +195,76 @@ public class Main {
 		// Begin consume
 		rabbitHandler.start();
 		LOG.info("EDS Queue reader running (kill file location " + TransformConfig.instance().getKillFileLocation() + ")");
+	}
+
+	private static void fixBartsEscapedFiles(String filePath) {
+		LOG.info("Fixing Barts Escaped Files in " + filePath);
+
+		try {
+			fixBartsEscapedFilesInDir(new File(filePath));
+
+			LOG.info("Finished fixing Barts Escaped Files in " + filePath);
+
+		} catch (Throwable t) {
+			LOG.error("", t);
+		}
+	}
+
+	private static void fixBartsEscapedFilesInDir(File dir) throws Exception {
+		File[] arr = dir.listFiles();
+		for (File f: arr) {
+			if (f.isDirectory()) {
+				fixBartsEscapedFilesInDir(dir);
+
+			} else {
+
+				String name = FilenameUtils.getBaseName(f.getName());
+				if (name.indexOf("COMBINED") == -1) {
+					continue;
+				}
+
+				LOG.info("Fixing " + f);
+
+				File newFile = new File(dir, name + ".NEW");
+				PrintWriter fw = new PrintWriter(newFile);
+				BufferedWriter bw = new BufferedWriter(fw);
+
+				FileReader fr = new FileReader(f);
+				BufferedReader br = new BufferedReader(fr);
+
+				while (true) {
+
+					String line = br.readLine();
+					if (line == null) {
+						break;
+					}
+
+					while (line.indexOf("\"") > -1) {
+						int start = line.indexOf("\"");
+						int end = line.indexOf("\"", start+1);
+
+						String prefix = line.substring(0, start);
+						String middle = line.substring(start+1, end);
+						String suffix = line.substring(end+1);
+
+						middle = middle.replace("|", "^|");
+
+						line = prefix + middle + suffix;
+					}
+
+					fw.println(line);
+				}
+
+				bw.close();
+				br.close();
+
+				//rename files
+				File backupFile = new File(dir, name + ".OLD");
+				f.renameTo(backupFile);
+
+				newFile.renameTo(f);
+			}
+		}
 	}
 
 	/**
