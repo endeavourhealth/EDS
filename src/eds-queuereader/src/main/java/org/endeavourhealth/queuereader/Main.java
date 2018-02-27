@@ -51,7 +51,7 @@ public class Main {
 
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("FixBartsEscapes")) {
-			String filePath = args[0];
+			String filePath = args[1];
 			fixBartsEscapedFiles(filePath);
 			System.exit(0);
 		}
