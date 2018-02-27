@@ -233,7 +233,7 @@ public class Main {
 				BufferedReader br = new BufferedReader(fr);
 
 				boolean fixed = false;
-				int lineIndex = -1;
+				int lineIndex = 0;
 
 				while (true) {
 
@@ -251,6 +251,9 @@ public class Main {
 							while (line.indexOf("\"") > -1) {
 								int start = line.indexOf("\"");
 								int end = line.indexOf("\"", start + 1);
+								if (end == -1) {
+									break;
+								}
 
 								fixed = true;
 
