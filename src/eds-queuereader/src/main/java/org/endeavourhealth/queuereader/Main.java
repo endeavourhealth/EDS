@@ -214,7 +214,7 @@ public class Main {
 		File[] arr = dir.listFiles();
 		for (File f: arr) {
 			if (f.isDirectory()) {
-				fixBartsEscapedFilesInDir(dir);
+				fixBartsEscapedFilesInDir(f);
 
 			} else {
 
