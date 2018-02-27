@@ -233,6 +233,7 @@ public class Main {
 				BufferedReader br = new BufferedReader(fr);
 
 				boolean fixed = false;
+				int lineIndex = -1;
 
 				while (true) {
 
@@ -240,23 +241,36 @@ public class Main {
 					if (line == null) {
 						break;
 					}
+					lineIndex ++;
 
-					while (line.indexOf("\"") > -1) {
-						int start = line.indexOf("\"");
-						int end = line.indexOf("\"", start+1);
+					try {
+						if (line.indexOf("\"") > -1) {
 
-						fixed = true;
+							line = line.replace("\"\"", "¬¬");
 
-						String prefix = line.substring(0, start);
-						String middle = line.substring(start+1, end);
-						String suffix = line.substring(end+1);
+							while (line.indexOf("\"") > -1) {
+								int start = line.indexOf("\"");
+								int end = line.indexOf("\"", start + 1);
 
-						middle = middle.replace("|", "^|");
+								fixed = true;
 
-						line = prefix + middle + suffix;
+								String prefix = line.substring(0, start);
+								String middle = line.substring(start + 1, end);
+								String suffix = line.substring(end + 1);
+
+								middle = middle.replace("|", "^|");
+
+								line = prefix + middle + suffix;
+							}
+
+							line = line.replace("¬¬", "\"");
+						}
+
+						fw.println(line);
+
+					} catch (Throwable t) {
+						throw new RuntimeException("Failed on line " + lineIndex + " [" + line + "]", t);
 					}
-
-					fw.println(line);
 				}
 
 				bw.close();
