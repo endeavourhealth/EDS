@@ -38,7 +38,7 @@ import java.util.List;
 public class PostFile extends AbstractEndpoint {
 	@POST
 	@Path("/PostFile")
-	@RolesAllowed({"tpp-bulk-extract-provider", "homerton-bulk-extract-provider"})
+	@RolesAllowed({"dds_messaging_post_file"})
 	@Consumes(MediaType.MULTIPART_FORM_DATA)
 	public Response uploadFiles(@Context final HttpServletRequest request) {
 		String organisationId = request.getQueryString().replaceAll("organisationId=","");
