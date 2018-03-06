@@ -2,11 +2,15 @@ package org.endeavourhealth.core.messaging.pipeline.components;
 
 import com.datastax.driver.core.utils.UUIDs;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.google.common.base.Strings;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
+import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.common.utility.SlackHelper;
 import org.endeavourhealth.core.configuration.MessageTransformInboundConfig;
 import org.endeavourhealth.core.database.dal.DalProvider;
 import org.endeavourhealth.core.database.dal.admin.LibraryDalI;
+import org.endeavourhealth.core.database.dal.admin.ServiceDalI;
+import org.endeavourhealth.core.database.dal.admin.models.Service;
 import org.endeavourhealth.core.database.dal.audit.ExchangeBatchDalI;
 import org.endeavourhealth.core.database.dal.audit.ExchangeDalI;
 import org.endeavourhealth.core.database.dal.audit.models.*;
@@ -44,6 +48,7 @@ public class MessageTransformInbound extends PipelineComponent {
 	private static final LibraryDalI libraryRepository = DalProvider.factoryLibraryDal();
 	private static final ExchangeDalI auditRepository = DalProvider.factoryExchangeDal();
 	private static final ExchangeBatchDalI exchangeBatchRepository = DalProvider.factoryExchangeBatchDal();
+
 
 	private MessageTransformInboundConfig config;
 
@@ -217,13 +222,26 @@ public class MessageTransformInbound extends PipelineComponent {
 
 	private void sendSlackAlert(Exchange exchange, String software, UUID serviceId, TransformError currentErrors) {
 
-		int countErrors = currentErrors.getError().size();
+		String serviceDesc = null;
+		ServiceDalI serviceDal = DalProvider.factoryServiceDal();
+		try {
+			Service service = serviceDal.getById(serviceId);
+			if (service != null) {
+				serviceDesc = service.getName() + " (" + service.getLocalId() + ")";
+			}
+		} catch (Throwable t) {
+			//suppress any errors getting the service
+		}
+		if (Strings.isNullOrEmpty(serviceDesc)) {
+			serviceDesc = serviceId.toString();
+		}
 
-		String message = "Error ";
+		String message = ConfigManager.getAppSubId() + " error ";
+		int countErrors = currentErrors.getError().size();
 		if (countErrors > 1) {
 			message += "1 of " + countErrors + " ";
 		}
-		message += "in inbound transform from " + software + " for exchange " + exchange.getId() + " and service " + serviceId + "\n";
+		message += "in transform from " + software + " for exchange " + exchange.getId() + " and service " + serviceDesc + "\n";
 		message += "view the full error details on the Transform Errors page of EDS-UI";
 
 		Error error = currentErrors.getError().get(0);

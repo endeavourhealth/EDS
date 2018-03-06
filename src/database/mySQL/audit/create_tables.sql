@@ -9,6 +9,8 @@ DROP TABLE IF EXISTS queued_message;
 DROP TABLE IF EXISTS queued_message_type;
 DROP TABLE IF EXISTS exchange_batch;
 DROP TABLE IF EXISTS exchange_subscriber_transform_audit;
+DROP TABLE IF EXISTS transform_warning_type;
+DROP TABLE IF EXISTS transform_warning;
 
 
 CREATE TABLE exchange
@@ -125,4 +127,46 @@ CREATE TABLE exchange_subscriber_transform_audit
 )
 ROW_FORMAT=COMPRESSED
 KEY_BLOCK_SIZE=8;
+
+
+CREATE TABLE transform_warning_type (
+  id int,
+  warning varchar(255),
+  last_used_at datetime,
+  CONSTRAINT pk_transform_warning_type PRIMARY KEY (id)
+)
+  ROW_FORMAT=COMPRESSED
+  KEY_BLOCK_SIZE=8;
+
+ALTER TABLE transform_warning_type MODIFY COLUMN id INT auto_increment;
+
+CREATE UNIQUE INDEX uix_transform_warning_type ON transform_warning_type (warning);
+
+
+CREATE TABLE transform_warning (
+  id int,
+  service_id char(36),
+  system_id char(36),
+  exchange_id char(36),
+  source_file_record_id long,
+  inserted_at datetime,
+  transform_warning_type_id int,
+  param_1 varchar(255),
+  param_2 varchar(255),
+  param_3 varchar(255),
+  param_4 varchar(255),
+  CONSTRAINT pk_transform_warning_type PRIMARY KEY (id)
+)
+  ROW_FORMAT=COMPRESSED
+  KEY_BLOCK_SIZE=8;
+
+ALTER TABLE transform_warning MODIFY COLUMN id INT auto_increment;
+
+CREATE INDEX ix_transform_warning_type ON transform_warning (transform_warning_type_id);
+
+CREATE INDEX ix_transform_warning_exchange ON transform_warning (exchange_id);
+
+
+
+
 

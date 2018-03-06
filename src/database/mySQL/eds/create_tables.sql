@@ -54,6 +54,8 @@ CREATE TABLE patient_search_local_identifier
 		ON UPDATE NO ACTION ON DELETE NO ACTION
 );
 
+-- index so patient search by local ID works in timely fashion
+CREATE INDEX ix_patient_search_local_identifier_id_service_patient ON patient_search_local_identifier (local_id, service_id, patient_id);
 
 CREATE TABLE patient_link
 (
