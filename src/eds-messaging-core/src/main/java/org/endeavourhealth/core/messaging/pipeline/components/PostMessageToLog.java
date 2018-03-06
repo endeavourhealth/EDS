@@ -1,10 +1,10 @@
 package org.endeavourhealth.core.messaging.pipeline.components;
 
-import org.endeavourhealth.core.audit.AuditWriter;
 import org.endeavourhealth.core.configuration.PostMessageToLogConfig;
 import org.endeavourhealth.core.database.dal.audit.models.Exchange;
 import org.endeavourhealth.core.messaging.pipeline.PipelineComponent;
 import org.endeavourhealth.core.messaging.pipeline.PipelineException;
+import org.endeavourhealth.transform.common.AuditWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

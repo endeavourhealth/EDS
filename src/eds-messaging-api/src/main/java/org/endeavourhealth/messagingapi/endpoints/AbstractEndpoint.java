@@ -2,10 +2,10 @@ package org.endeavourhealth.messagingapi.endpoints;
 
 import com.datastax.driver.core.utils.UUIDs;
 import org.apache.http.HttpStatus;
-import org.endeavourhealth.core.audit.AuditWriter;
 import org.endeavourhealth.core.configuration.Pipeline;
 import org.endeavourhealth.core.database.dal.audit.models.Exchange;
 import org.endeavourhealth.core.messaging.pipeline.PipelineProcessor;
+import org.endeavourhealth.transform.common.AuditWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
