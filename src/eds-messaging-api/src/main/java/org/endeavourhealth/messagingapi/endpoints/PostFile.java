@@ -9,7 +9,6 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.transfer.Transfer;
 import com.amazonaws.services.s3.transfer.TransferManagerBuilder;
-import com.amazonaws.services.s3.transfer.TransferProgress;
 import com.amazonaws.services.s3.transfer.Upload;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.apache.commons.fileupload.FileItem;
@@ -114,29 +113,31 @@ public class PostFile extends AbstractEndpoint {
 
 						// create the AWS object key from the inbound filename
 						String keyPath = createFileKey(awsKeyPathPrefix, organisationId, fileItem.getName());
-						System.out.println("keyPath: " + keyPath + " available received bytes: " + sizeInBytes);
+						System.out.println("keyPath: " + keyPath + " available to upload. Received bytes: " + sizeInBytes);
 
 						// upload the file stream to AWS
 						try {
 							Upload upload = tx.build().upload(awsBucketName, keyPath, uploadedInputStream, metaData);
+							upload.waitForCompletion();
 
-							long megaBytes = -1;
-							while (!upload.isDone()) {
-								TransferProgress progress = upload.getProgress();
-								double pct = progress.getPercentTransferred();
-								long mBytes = progress.getBytesTransferred() / 1000000;
-								if (megaBytes != mBytes) {
-									megaBytes = mBytes;
-									if (pct > 0)
-										System.out.format(keyPath+": %.2f percent: ("+mBytes+" mb)",pct).println();
-								}
-
+//							long megaBytes = -1;
+//							while (!upload.isDone()) {
+//								TransferProgress progress = upload.getProgress();
+//								double pct = progress.getPercentTransferred();
+//								long mBytes = progress.getBytesTransferred() / 1000000;
+//								if (megaBytes != mBytes) {
+//									megaBytes = mBytes;
+//									if (pct > 0)
+//										System.out.format(keyPath+": %.2f percent: ("+mBytes+" mb)",pct).println();
+//								}
+//
 								if (upload.getState() == Transfer.TransferState.Canceled)
 								{
 									uploadedInputStream.close();
+									System.out.println("Upload cancelled");
 									throw new SdkBaseException("Upload cancelled");
 								}
-							}
+							//}
 
 							uploadedInputStream.close();
 							System.out.println("File: " + keyPath + " received and uploaded to AWS bucket: " + awsBucketName);
@@ -156,7 +157,7 @@ public class PostFile extends AbstractEndpoint {
 
 
 	private static String createFileKey(String keyPathPrefix, String organisationId, String filePath) {
-		// will create something like endeavour/sftpReader/TPP001/<folder>/<filename>
+		// will create something like sftp01/sftp/YGM24/<folder>/<filename>
 		return keyPathPrefix.concat("/"+organisationId).concat(filePath.replace("\\", "/"));
 	}
 
