@@ -321,6 +321,7 @@ public class Main {
 							BufferedWriter bw = new BufferedWriter(fw);
 							pw = new PrintWriter(bw);
 
+
 						} else {
 							//filter on personID
 							String[] toks = line.split("\\|");
