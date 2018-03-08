@@ -502,7 +502,7 @@ public class Main {
 
 					EmisCsvHelper csvHelper = new EmisCsvHelper(fhirResourceFiler.getServiceId(), fhirResourceFiler.getSystemId(),
 																		fhirResourceFiler.getExchangeId(), sharingAgreementGuid,
-																		false, false);
+																		true);
 
 					ExchangeTransformAudit transformAudit = new ExchangeTransformAudit();
 					transformAudit.setServiceId(serviceId);
@@ -573,85 +573,6 @@ public class Main {
 		}
 	}
 
-	private static void fixBartsEscapedFilesInDir(File dir) throws Exception {
-		File[] arr = dir.listFiles();
-		for (File f: arr) {
-			if (f.isDirectory()) {
-				fixBartsEscapedFilesInDir(f);
-
-			} else {
-
-				String name = FilenameUtils.getBaseName(f.getName());
-				if (name.indexOf("COMBINED") == -1) {
-					continue;
-				}
-
-				LOG.info("Fixing " + f);
-
-				File newFile = new File(dir, name + ".NEW");
-				PrintWriter fw = new PrintWriter(newFile);
-				BufferedWriter bw = new BufferedWriter(fw);
-
-				FileReader fr = new FileReader(f);
-				BufferedReader br = new BufferedReader(fr);
-
-				boolean fixed = false;
-				int lineIndex = 0;
-
-				while (true) {
-
-					String line = br.readLine();
-					if (line == null) {
-						break;
-					}
-					lineIndex ++;
-
-					try {
-						if (line.indexOf("\"") > -1) {
-
-							line = line.replace("\"\"", "¬¬");
-
-							while (line.indexOf("\"") > -1) {
-								int start = line.indexOf("\"");
-								int end = line.indexOf("\"", start + 1);
-								if (end == -1) {
-									break;
-								}
-
-								fixed = true;
-
-								String prefix = line.substring(0, start);
-								String middle = line.substring(start + 1, end);
-								String suffix = line.substring(end + 1);
-
-								middle = middle.replace("|", "^|");
-
-								line = prefix + middle + suffix;
-							}
-
-							line = line.replace("¬¬", "\"");
-						}
-
-						fw.println(line);
-
-					} catch (Throwable t) {
-						throw new RuntimeException("Failed on line " + lineIndex + " [" + line + "]", t);
-					}
-				}
-
-				bw.close();
-				br.close();
-
-				if (fixed) {
-					f.delete();
-					newFile.renameTo(f);
-
-				} else {
-					newFile.delete();
-				}
-			}
-		}
-	}*/
 
 	/**
 	 * fixes Emis extract(s) when a practice was disabled then subsequently re-bulked, by
