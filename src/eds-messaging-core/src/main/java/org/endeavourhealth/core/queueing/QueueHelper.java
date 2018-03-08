@@ -215,7 +215,7 @@ public class QueueHelper {
 
     }
 
-    private static PostMessageToExchangeConfig findExchangeConfig(String exchangeName) throws Exception {
+    public static PostMessageToExchangeConfig findExchangeConfig(String exchangeName) throws Exception {
 
         //go through all the known app configs to find config for posting to the Rabbit Exchange we're interested in
         String messagingApiConfigXml = ConfigManager.getConfiguration("api-configuration", "messaging-api");

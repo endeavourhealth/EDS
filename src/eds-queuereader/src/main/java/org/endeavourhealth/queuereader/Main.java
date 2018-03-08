@@ -1,5 +1,6 @@
 package org.endeavourhealth.queuereader;
 
+import com.datastax.driver.core.utils.UUIDs;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
@@ -14,6 +15,7 @@ import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.common.utility.FileHelper;
 import org.endeavourhealth.common.utility.SlackHelper;
 import org.endeavourhealth.core.configuration.ConfigDeserialiser;
+import org.endeavourhealth.core.configuration.PostMessageToExchangeConfig;
 import org.endeavourhealth.core.configuration.QueueReaderConfiguration;
 import org.endeavourhealth.core.csv.CsvHelper;
 import org.endeavourhealth.core.database.dal.DalProvider;
@@ -21,11 +23,19 @@ import org.endeavourhealth.core.database.dal.admin.ServiceDalI;
 import org.endeavourhealth.core.database.dal.admin.models.Service;
 import org.endeavourhealth.core.database.dal.audit.ExchangeDalI;
 import org.endeavourhealth.core.database.dal.audit.models.Exchange;
+import org.endeavourhealth.core.database.dal.audit.models.ExchangeEvent;
 import org.endeavourhealth.core.database.dal.audit.models.ExchangeTransformAudit;
+import org.endeavourhealth.core.database.dal.audit.models.HeaderKeys;
+import org.endeavourhealth.core.exceptions.TransformException;
 import org.endeavourhealth.core.fhirStorage.JsonServiceInterfaceEndpoint;
+import org.endeavourhealth.core.messaging.pipeline.components.PostMessageToExchange;
 import org.endeavourhealth.core.queueing.QueueHelper;
-import org.endeavourhealth.transform.common.TransformConfig;
+import org.endeavourhealth.core.xml.TransformErrorSerializer;
+import org.endeavourhealth.core.xml.transformError.TransformError;
+import org.endeavourhealth.transform.barts.BartsCsvToFhirTransformer;
+import org.endeavourhealth.transform.common.*;
 import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
+import org.endeavourhealth.transform.emis.csv.helpers.EmisCsvHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,11 +60,26 @@ public class Main {
 		ConfigManager.initialize("queuereader", configId);
 
 		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("CreateBartsSubset")) {
+			String sourceDirPath = args[1];
+			String destDirPath = args[2];
+			String samplePatientsFile = args[3];
+			createBartsSubset(sourceDirPath, destDirPath, samplePatientsFile);
+			System.exit(0);
+		}
+
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("ApplyEmisAdminCaches")) {
+			applyEmisAdminCaches();
+			System.exit(0);
+		}
+
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("FixBartsEscapes")) {
 			String filePath = args[1];
 			fixBartsEscapedFiles(filePath);
 			System.exit(0);
-		}
+		}*/
 
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("PostToInbound")) {
@@ -75,11 +100,11 @@ public class Main {
 			System.exit(0);
 		}
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("TestSlack")) {
 			testSlack();
 			System.exit(0);
-		}
+		}*/
 
 		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("PostToInbound")) {
@@ -96,16 +121,16 @@ public class Main {
 			System.exit(0);
 		}*/
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("Exit")) {
 
 			String exitCode = args[1];
 			LOG.info("Exiting with error code " + exitCode);
 			int exitCodeInt = Integer.parseInt(exitCode);
 			System.exit(exitCodeInt);
-		}
+		}*/
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("RunSql")) {
 
 			String host = args[1];
@@ -114,7 +139,7 @@ public class Main {
 			String sqlFile = args[4];
 			runSql(host, username, password, sqlFile);
 			System.exit(0);
-		}
+		}*/
 
 		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("PopulateProtocolQueue")) {
@@ -130,21 +155,21 @@ public class Main {
 			System.exit(0);
 		}*/
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("FindEncounterTerms")) {
 			String path = args[1];
 			String outputPath = args[2];
 			findEncounterTerms(path, outputPath);
 			System.exit(0);
-		}
+		}*/
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("FindEmisStartDates")) {
 			String path = args[1];
 			String outputPath = args[2];
 			findEmisStartDates(path, outputPath);
 			System.exit(0);
-		}
+		}*/
 
 		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("ExportHl7Encounters")) {
@@ -197,7 +222,339 @@ public class Main {
 		LOG.info("EDS Queue reader running (kill file location " + TransformConfig.instance().getKillFileLocation() + ")");
 	}
 
-	private static void fixBartsEscapedFiles(String filePath) {
+	private static void createBartsSubset(String sourceDirPath, String destDirPath, String samplePatientsFile) {
+		LOG.info("Creating Barts Subset");
+
+		try {
+
+			Set<String> personIds = new HashSet<>();
+			List<String> lines = Files.readAllLines(new File(samplePatientsFile).toPath());
+			for (String line: lines) {
+				personIds.add(line);
+			}
+
+			File sourceDir = new File(sourceDirPath);
+			File destDir = new File(destDirPath);
+
+			if (!destDir.exists()) {
+				destDir.mkdirs();
+			}
+
+			createBartsSubsetForFile(sourceDir, destDir, personIds);
+
+			LOG.info("Finished Creating Barts Subset");
+
+		} catch (Throwable t) {
+			LOG.error("", t);
+		}
+	}
+
+	private static void createBartsSubsetForFile(File sourceDir, File destDir, Set<String> personIds) throws Exception {
+
+		for (File sourceFile: sourceDir.listFiles()) {
+
+			String name = sourceFile.getName();
+			File destFile = new File(destDir, name);
+
+			if (sourceFile.isDirectory()) {
+
+				if (!destFile.exists()) {
+					destFile.mkdirs();
+				}
+
+				LOG.info("Doing dir " + sourceFile);
+				createBartsSubsetForFile(sourceFile, destFile, personIds);
+
+			} else {
+
+				if (destFile.exists()) {
+					destFile.delete();
+				}
+
+				if (isCerner22File(name)) {
+					LOG.info("Doing dir " + sourceFile);
+
+					FileReader fr = new FileReader(sourceFile);
+					BufferedReader br = new BufferedReader(fr);
+					int lineIndex = -1;
+
+					PrintWriter pw = null;
+					int personIdColIndex = -1;
+
+					while (true) {
+
+						String line = br.readLine();
+						if (line == null) {
+							break;
+						}
+
+						lineIndex ++;
+
+						if (lineIndex == 0) {
+
+							//check headings for PersonID col
+							String[] toks = line.split("\\|");
+
+							for (int i=0; i<toks.length; i++) {
+								String col = toks[i];
+								if (col.equalsIgnoreCase("PERSON_ID")
+										|| col.equalsIgnoreCase("#PERSON_ID")) {
+									personIdColIndex = i;
+									break;
+								}
+							}
+
+							//if no person ID, then just copy the entire file
+							if (personIdColIndex == -1) {
+								br.close();
+								LOG.info("Copying 2.2 file " + sourceFile);
+								copyFile(sourceFile, destFile);
+								break;
+
+							} else {
+								LOG.info("Filtering 2.2 file " + sourceFile);
+							}
+
+							PrintWriter fw = new PrintWriter(destFile);
+							BufferedWriter bw = new BufferedWriter(fw);
+							pw = new PrintWriter(bw);
+
+						} else {
+							//filter on personID
+							String[] toks = line.split("\\|");
+							String personId = toks[personIdColIndex];
+							if (!personIds.contains(personId)) {
+								continue;
+							}
+						}
+
+						pw.println(line);
+					}
+
+					br.close();
+
+				} else {
+					//the 2.1 files are going to be a pain to split by patient, so just copy them over
+					LOG.info("Copying 2.1 file " + sourceFile);
+					copyFile(sourceFile, destFile);
+				}
+			}
+		}
+	}
+
+	private static void copyFile(File src, File dst) throws Exception {
+		FileInputStream fis = new FileInputStream(src);
+		BufferedInputStream bis = new BufferedInputStream(fis);
+		Files.copy(bis, dst.toPath());
+		bis.close();
+	}
+	
+	private static boolean isCerner22File(String fileName) throws Exception {
+
+		String baseName = FilenameUtils.getBaseName(fileName);
+		String fileType = BartsCsvToFhirTransformer.identifyFileType(baseName);
+
+		if (fileType.equalsIgnoreCase("PPATI")
+				|| fileType.equalsIgnoreCase("PPREL")
+				|| fileType.equalsIgnoreCase("CDSEV")
+				|| fileType.equalsIgnoreCase("PPATH")
+				|| fileType.equalsIgnoreCase("RTTPE")
+				|| fileType.equalsIgnoreCase("AEATT")
+				|| fileType.equalsIgnoreCase("AEINV")
+				|| fileType.equalsIgnoreCase("AETRE")
+				|| fileType.equalsIgnoreCase("OPREF")
+				|| fileType.equalsIgnoreCase("OPATT")
+				|| fileType.equalsIgnoreCase("EALEN")
+				|| fileType.equalsIgnoreCase("EALSU")
+				|| fileType.equalsIgnoreCase("EALOF")
+				|| fileType.equalsIgnoreCase("HPSSP")
+				|| fileType.equalsIgnoreCase("IPEPI")
+				|| fileType.equalsIgnoreCase("IPWDS")
+				|| fileType.equalsIgnoreCase("DELIV")
+				|| fileType.equalsIgnoreCase("BIRTH")
+				|| fileType.equalsIgnoreCase("SCHAC")
+				|| fileType.equalsIgnoreCase("APPSL")
+				|| fileType.equalsIgnoreCase("DIAGN")
+				|| fileType.equalsIgnoreCase("PROCE")
+				|| fileType.equalsIgnoreCase("ORDER")
+				|| fileType.equalsIgnoreCase("DOCRP")
+				|| fileType.equalsIgnoreCase("DOCREF")
+				|| fileType.equalsIgnoreCase("CNTRQ")
+				|| fileType.equalsIgnoreCase("LETRS")
+				|| fileType.equalsIgnoreCase("LOREF")
+				|| fileType.equalsIgnoreCase("ORGREF")
+				|| fileType.equalsIgnoreCase("PRSNLREF")
+				|| fileType.equalsIgnoreCase("CVREF")
+				|| fileType.equalsIgnoreCase("NOMREF")
+				|| fileType.equalsIgnoreCase("EALIP")
+				|| fileType.equalsIgnoreCase("CLEVE")
+				|| fileType.equalsIgnoreCase("ENCNT")
+				|| fileType.equalsIgnoreCase("RESREF")
+				|| fileType.equalsIgnoreCase("PPNAM")
+				|| fileType.equalsIgnoreCase("PPADD")
+				|| fileType.equalsIgnoreCase("PPPHO")
+				|| fileType.equalsIgnoreCase("PPALI")
+				|| fileType.equalsIgnoreCase("PPINF")
+				|| fileType.equalsIgnoreCase("PPAGP")
+				|| fileType.equalsIgnoreCase("SURCC")
+				|| fileType.equalsIgnoreCase("SURCP")
+				|| fileType.equalsIgnoreCase("SURCA")
+				|| fileType.equalsIgnoreCase("SURCD")
+				|| fileType.equalsIgnoreCase("PDRES")
+				|| fileType.equalsIgnoreCase("PDREF")
+				|| fileType.equalsIgnoreCase("ABREF")
+				|| fileType.equalsIgnoreCase("CEPRS")
+				|| fileType.equalsIgnoreCase("ORDDT")
+				|| fileType.equalsIgnoreCase("STATREF")
+				|| fileType.equalsIgnoreCase("STATA")
+				|| fileType.equalsIgnoreCase("ENCINF")
+				|| fileType.equalsIgnoreCase("SCHDETAIL")
+				|| fileType.equalsIgnoreCase("SCHOFFER")
+				|| fileType.equalsIgnoreCase("PPGPORG")) {
+			return true;
+
+		} else {
+			return false;
+		}
+	}
+
+	private static void applyEmisAdminCaches() {
+		LOG.info("Applying Emis Admin Caches");
+
+		try {
+			ServiceDalI serviceDal = DalProvider.factoryServiceDal();
+			ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
+			UUID emisSystem = UUID.fromString("991a9068-01d3-4ff2-86ed-249bd0541fb3");
+			UUID emisSystemDev = UUID.fromString("55c08fa5-ef1e-4e94-aadc-e3d6adc80774");
+
+			List<Service> services = serviceDal.getAll();
+
+			for (Service service: services) {
+
+				String endpointsJson = service.getEndpoints();
+				if (Strings.isNullOrEmpty(endpointsJson)) {
+					continue;
+				}
+
+				UUID serviceId = service.getId();
+				LOG.info("Checking " + service.getName() + " " + serviceId);
+
+				List<JsonServiceInterfaceEndpoint> endpoints = ObjectMapperPool.getInstance().readValue(service.getEndpoints(), new TypeReference<List<JsonServiceInterfaceEndpoint>>() {});
+				for (JsonServiceInterfaceEndpoint endpoint: endpoints) {
+					UUID endpointSystemId = endpoint.getSystemUuid();
+					if (!endpointSystemId.equals(emisSystem)
+							&& !endpointSystemId.equals(emisSystemDev)) {
+						LOG.info("    Skipping system ID " + endpointSystemId + " as not Emis");
+						continue;
+					}
+
+					if (!exchangeDal.isServiceStarted(serviceId, endpointSystemId)) {
+						LOG.info("    Service not started, so skipping");
+						continue;
+					}
+
+					//get exchanges
+					List<UUID> exchangeIds = exchangeDal.getExchangeIdsForService(serviceId, endpointSystemId);
+					if (exchangeIds.isEmpty()) {
+						LOG.info("    No exchanges found, so skipping");
+						continue;
+					}
+					UUID firstExchangeId = exchangeIds.get(0);
+
+					List<ExchangeEvent> events = exchangeDal.getExchangeEvents(firstExchangeId);
+					boolean appliedAdminCache = false;
+					for (ExchangeEvent event: events) {
+						if (event.getEventDesc().equals("Applied Emis Admin Resource Cache")) {
+							appliedAdminCache = true;
+						}
+					}
+
+					if (appliedAdminCache) {
+						LOG.info("    Have already applied admin cache, so skipping");
+						continue;
+					}
+
+					Exchange exchange = exchangeDal.getExchange(firstExchangeId);
+					String body = exchange.getBody();
+					String[] files = ExchangeHelper.parseExchangeBodyIntoFileList(body);
+					if (files.length == 0) {
+						LOG.info("    No files in exchange " + firstExchangeId + " so skipping");
+						continue;
+					}
+
+					String firstFilePath = files[0];
+					String name = FilenameUtils.getBaseName(firstFilePath); //file name without extension
+					String[] toks = name.split("_");
+					if (toks.length != 5) {
+						throw new TransformException("Failed to extract data sharing agreement GUID from filename " + firstFilePath);
+					}
+					String sharingAgreementGuid = toks[4];
+
+					List<UUID> batchIds = new ArrayList<>();
+					TransformError transformError = new TransformError();
+					FhirResourceFiler fhirResourceFiler = new FhirResourceFiler(firstExchangeId, serviceId, endpointSystemId, transformError, batchIds);
+
+					EmisCsvHelper csvHelper = new EmisCsvHelper(fhirResourceFiler.getServiceId(), fhirResourceFiler.getSystemId(),
+																		fhirResourceFiler.getExchangeId(), sharingAgreementGuid,
+																		false, false);
+
+					ExchangeTransformAudit transformAudit = new ExchangeTransformAudit();
+					transformAudit.setServiceId(serviceId);
+					transformAudit.setSystemId(endpointSystemId);
+					transformAudit.setExchangeId(firstExchangeId);
+					transformAudit.setId(UUIDs.timeBased());
+					transformAudit.setStarted(new Date());
+
+					LOG.info("    Going to apply admin resource cache");
+					csvHelper.applyAdminResourceCache(fhirResourceFiler);
+
+					fhirResourceFiler.waitToFinish();
+
+					for (UUID batchId: batchIds) {
+						LOG.info("   Created batch ID " + batchId + " for exchange " + firstExchangeId);
+					}
+
+					transformAudit.setEnded(new Date());
+					transformAudit.setNumberBatchesCreated(new Integer(batchIds.size()));
+
+					boolean hadError = false;
+					if (transformError.getError().size() > 0) {
+						transformAudit.setErrorXml(TransformErrorSerializer.writeToXml(transformError));
+						hadError = true;
+					}
+
+					exchangeDal.save(transformAudit);
+
+					//clear down the cache of reference mappings since they won't be of much use for the next Exchange
+					IdHelper.clearCache();
+
+					if (hadError) {
+						LOG.error("   <<<<<<Error applying resource cache!");
+						continue;
+					}
+
+					//add the event to say we've applied the cache
+					AuditWriter.writeExchangeEvent(firstExchangeId, "Applied Emis Admin Resource Cache");
+
+					//post that ONE new batch ID onto the protocol queue
+					String batchUuidsStr = ObjectMapperPool.getInstance().writeValueAsString(batchIds.toArray());
+					exchange.setHeader(HeaderKeys.BatchIdsJson, batchUuidsStr);
+
+					PostMessageToExchangeConfig exchangeConfig = QueueHelper.findExchangeConfig("EdsProtocol");
+
+					PostMessageToExchange component = new PostMessageToExchange(exchangeConfig);
+					component.process(exchange);
+				}
+			}
+
+			LOG.info("Finished Applying Emis Admin Caches");
+
+		} catch (Throwable t) {
+			LOG.error("", t);
+		}
+	}
+
+	/*private static void fixBartsEscapedFiles(String filePath) {
 		LOG.info("Fixing Barts Escaped Files in " + filePath);
 
 		try {
@@ -288,7 +645,7 @@ public class Main {
 				}
 			}
 		}
-	}
+	}*/
 
 	/**
 	 * fixes Emis extract(s) when a practice was disabled then subsequently re-bulked, by
