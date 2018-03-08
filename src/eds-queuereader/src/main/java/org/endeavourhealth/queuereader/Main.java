@@ -321,16 +321,23 @@ public class Main {
 							BufferedWriter bw = new BufferedWriter(fw);
 							pw = new PrintWriter(bw);
 
-
 						} else {
+
 							//filter on personID
 							String[] toks = line.split("\\|");
-							if (toks.length != expectedCols) {
-								throw new Exception("Line " + lineIndex + " has " + toks.length + " cols but expecting " + expectedCols);
-							}
-							String personId = toks[personIdColIndex];
-							if (!personIds.contains(personId)) {
-								continue;
+							if (toks.length > expectedCols) {
+								throw new Exception("Line " + (lineIndex+1) + " has " + toks.length + " cols but expecting " + expectedCols);
+
+							} else if (toks.length < expectedCols) {
+								//if there are FEWER rows, then it'll be because it's an inactive row, where we're just
+								//sent the Cerner ID, active indicator and date - no patient ID, so we DO want to let these through
+								//since they may relate to our interesting patients
+
+							} else {
+								String personId = toks[personIdColIndex];
+								if (!personIds.contains(personId)) {
+									continue;
+								}
 							}
 						}
 
