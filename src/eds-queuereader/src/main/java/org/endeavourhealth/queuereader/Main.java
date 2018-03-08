@@ -309,6 +309,8 @@ public class Main {
 							//if no person ID, then just copy the entire file
 							if (personIdColIndex == -1) {
 								br.close();
+								br = null;
+
 								LOG.info("   Copying 2.2 file to " + destFile);
 								copyFile(sourceFile, destFile);
 								break;
@@ -344,7 +346,13 @@ public class Main {
 						pw.println(line);
 					}
 
-					br.close();
+					if (br != null) {
+						br.close();
+					}
+					if (pw != null) {
+						pw.flush();
+						pw.close();
+					}
 
 				} else {
 					//the 2.1 files are going to be a pain to split by patient, so just copy them over
