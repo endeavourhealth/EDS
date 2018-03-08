@@ -294,7 +294,7 @@ public class Main {
 						if (lineIndex == 0) {
 
 							//check headings for PersonID col
-							String[] toks = line.split("\\|");
+							String[] toks = line.split("\\|", -1);
 							expectedCols = toks.length;
 
 							for (int i=0; i<expectedCols; i++) {
@@ -326,18 +326,14 @@ public class Main {
 						} else {
 
 							//filter on personID
-							String[] toks = line.split("\\|");
-							if (toks.length > expectedCols) {
+							String[] toks = line.split("\\|", -1);
+							if (toks.length != expectedCols) {
 								throw new Exception("Line " + (lineIndex+1) + " has " + toks.length + " cols but expecting " + expectedCols);
-
-							} else if (toks.length < expectedCols) {
-								//if there are FEWER rows, then it'll be because it's an inactive row, where we're just
-								//sent the Cerner ID, active indicator and date - no patient ID, so we DO want to let these through
-								//since they may relate to our interesting patients
 
 							} else {
 								String personId = toks[personIdColIndex];
-								if (!personIds.contains(personId)) {
+								if (!Strings.isNullOrEmpty(personId) //always carry over rows with empty person ID, as Cerner won't send the person ID for deletes
+									&& !personIds.contains(personId)) {
 									continue;
 								}
 							}
