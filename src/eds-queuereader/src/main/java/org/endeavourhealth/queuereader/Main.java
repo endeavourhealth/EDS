@@ -272,7 +272,7 @@ public class Main {
 				}
 
 				if (isCerner22File(name)) {
-					LOG.info("Doing dir " + sourceFile);
+					LOG.info("Checking 2.2 file " + sourceFile);
 
 					FileReader fr = new FileReader(sourceFile);
 					BufferedReader br = new BufferedReader(fr);
@@ -280,6 +280,7 @@ public class Main {
 
 					PrintWriter pw = null;
 					int personIdColIndex = -1;
+					int expectedCols = -1;
 
 					while (true) {
 
@@ -294,8 +295,9 @@ public class Main {
 
 							//check headings for PersonID col
 							String[] toks = line.split("\\|");
+							expectedCols = toks.length;
 
-							for (int i=0; i<toks.length; i++) {
+							for (int i=0; i<expectedCols; i++) {
 								String col = toks[i];
 								if (col.equalsIgnoreCase("PERSON_ID")
 										|| col.equalsIgnoreCase("#PERSON_ID")) {
@@ -307,12 +309,12 @@ public class Main {
 							//if no person ID, then just copy the entire file
 							if (personIdColIndex == -1) {
 								br.close();
-								LOG.info("Copying 2.2 file " + sourceFile);
+								LOG.info("   Copying 2.2 file to " + destFile);
 								copyFile(sourceFile, destFile);
 								break;
 
 							} else {
-								LOG.info("Filtering 2.2 file " + sourceFile);
+								LOG.info("   Filtering 2.2 file to " + destFile + ", person ID col at " + personIdColIndex);
 							}
 
 							PrintWriter fw = new PrintWriter(destFile);
@@ -322,6 +324,9 @@ public class Main {
 						} else {
 							//filter on personID
 							String[] toks = line.split("\\|");
+							if (toks.length != expectedCols) {
+								throw new Exception("Line " + lineIndex + " has " + toks.length + " cols but expecting " + expectedCols);
+							}
 							String personId = toks[personIdColIndex];
 							if (!personIds.contains(personId)) {
 								continue;
