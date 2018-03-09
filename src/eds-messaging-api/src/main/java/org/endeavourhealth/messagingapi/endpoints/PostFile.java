@@ -2,8 +2,7 @@ package org.endeavourhealth.messagingapi.endpoints;
 
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.SdkBaseException;
-import com.amazonaws.auth.AWSStaticCredentialsProvider;
-import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.auth.InstanceProfileCredentialsProvider;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.retry.PredefinedRetryPolicies;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
@@ -90,10 +89,10 @@ public class PostFile extends AbstractEndpoint {
 
 			String awsBucketName = apiAWSConfig.findValue("s3-bucket").textValue();
 			String awsKeyPathPrefix = apiAWSConfig.findValue("keypath-prefix").textValue();
-			String awsAccessKeyId = apiAWSConfig.findValue("access-key-id").textValue();
-			String awsSecretKey = apiAWSConfig.findValue("secret-access-key").textValue();
+			//String awsAccessKeyId = apiAWSConfig.findValue("access-key-id").textValue();
+			//String awsSecretKey = apiAWSConfig.findValue("secret-access-key").textValue();
 
-			BasicAWSCredentials awsCreds = new BasicAWSCredentials(awsAccessKeyId, awsSecretKey);
+			//BasicAWSCredentials awsCreds = new BasicAWSCredentials(awsAccessKeyId, awsSecretKey);
 
 			ClientConfiguration clientConfig = new ClientConfiguration();
 			clientConfig.setConnectionTimeout(7200000); clientConfig.setSocketTimeout(7200000); clientConfig.setRequestTimeout(7200000);
@@ -101,7 +100,8 @@ public class PostFile extends AbstractEndpoint {
 
 			AmazonS3ClientBuilder s3 = AmazonS3ClientBuilder.standard()
 					.withClientConfiguration(clientConfig)
-					.withCredentials(new AWSStaticCredentialsProvider(awsCreds))
+					//.withCredentials(new AWSStaticCredentialsProvider(awsCreds))
+					.withCredentials(InstanceProfileCredentialsProvider.getInstance())   //default will use servers IAM implementation
 					//.withCredentials(DefaultAWSCredentialsProviderChain.getInstance())   //default will use servers IAM implementation
 					.withRegion(Regions.EU_WEST_2);
 
