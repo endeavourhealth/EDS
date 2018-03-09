@@ -1,13 +1,16 @@
 package org.endeavourhealth.messagingapi.endpoints;
 
 import com.amazonaws.ClientConfiguration;
-import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
+import com.amazonaws.SdkBaseException;
+import com.amazonaws.auth.AWSStaticCredentialsProvider;
+import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.retry.PredefinedRetryPolicies;
-import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.ObjectMetadata;
+import com.amazonaws.services.s3.transfer.Transfer;
 import com.amazonaws.services.s3.transfer.TransferManagerBuilder;
+import com.amazonaws.services.s3.transfer.Upload;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.fileupload.disk.DiskFileItemFactory;
@@ -87,20 +90,23 @@ public class PostFile extends AbstractEndpoint {
 
 			String awsBucketName = apiAWSConfig.findValue("s3-bucket").textValue();
 			String awsKeyPathPrefix = apiAWSConfig.findValue("keypath-prefix").textValue();
-			//String awsAccessKeyId = apiAWSConfig.findValue("access-key-id").textValue();
-			//String awsSecretKey = apiAWSConfig.findValue("secret-access-key").textValue();
+			String awsAccessKeyId = apiAWSConfig.findValue("access-key-id").textValue();
+			String awsSecretKey = apiAWSConfig.findValue("secret-access-key").textValue();
+
+			BasicAWSCredentials awsCreds = new BasicAWSCredentials(awsAccessKeyId, awsSecretKey);
+
 			ClientConfiguration clientConfig = new ClientConfiguration();
 			clientConfig.setConnectionTimeout(7200000); clientConfig.setSocketTimeout(7200000); clientConfig.setRequestTimeout(7200000);
 			clientConfig.setRetryPolicy(PredefinedRetryPolicies.getDefaultRetryPolicyWithCustomMaxRetries(5));
 
 			AmazonS3ClientBuilder s3 = AmazonS3ClientBuilder.standard()
 					.withClientConfiguration(clientConfig)
-					.withCredentials(DefaultAWSCredentialsProviderChain.getInstance())   //default will use servers IAM implementation
+					.withCredentials(new AWSStaticCredentialsProvider(awsCreds))
+					//.withCredentials(DefaultAWSCredentialsProviderChain.getInstance())   //default will use servers IAM implementation
 					.withRegion(Regions.EU_WEST_2);
 
-
 			// try s3 client
-			AmazonS3 s3Client = s3.build();
+			//AmazonS3 s3Client = s3.build();
 
 			TransferManagerBuilder tx = TransferManagerBuilder.standard().withS3Client(s3.build());
 			try {
@@ -121,10 +127,10 @@ public class PostFile extends AbstractEndpoint {
 						try {
 
 							//files are <=10mb in size, so a simple put will suffice
-							s3Client.putObject(awsBucketName, keyPath, uploadedInputStream, metaData);
+							//s3Client.putObject(awsBucketName, keyPath, uploadedInputStream, metaData);
 
-							//Upload upload = tx.build().upload(awsBucketName, keyPath, uploadedInputStream, metaData);
-							//upload.waitForCompletion();
+							Upload upload = tx.build().upload(awsBucketName, keyPath, uploadedInputStream, metaData);
+							upload.waitForCompletion();
 
 //							long megaBytes = -1;
 //							while (!upload.isDone()) {
@@ -137,12 +143,12 @@ public class PostFile extends AbstractEndpoint {
 //										System.out.format(keyPath+": %.2f percent: ("+mBytes+" mb)",pct).println();
 //								}
 //
-//								if (upload.getState() == Transfer.TransferState.Canceled)
-//								{
-//									uploadedInputStream.close();
-//									System.out.println("Upload cancelled");
-//									throw new SdkBaseException("Upload cancelled");
-//								}
+							if (upload.getState() == Transfer.TransferState.Canceled)
+							{
+								uploadedInputStream.close();
+								System.out.println("Upload cancelled");
+								throw new SdkBaseException("Upload cancelled");
+							}
 							//}
 
 							uploadedInputStream.close();
