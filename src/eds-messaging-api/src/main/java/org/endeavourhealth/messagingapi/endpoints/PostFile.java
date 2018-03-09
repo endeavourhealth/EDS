@@ -164,7 +164,7 @@ public class PostFile extends AbstractEndpoint {
 
 	private static String createFileKey(String keyPathPrefix, String organisationId, String filePath) {
 		// will create something like sftp01/sftp/YGM24/<folder>/<filename>
-		return keyPathPrefix.concat("/"+organisationId).concat(filePath.replace("\\", "/"));
+		return keyPathPrefix.concat("/"+organisationId+"/").concat(filePath.replace("\\", "/"));
 	}
 
 	private static boolean publisherHasDPA(String organisationId)  {
