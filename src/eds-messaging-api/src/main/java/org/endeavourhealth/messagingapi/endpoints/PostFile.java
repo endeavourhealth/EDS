@@ -1,17 +1,13 @@
 package org.endeavourhealth.messagingapi.endpoints;
 
 import com.amazonaws.ClientConfiguration;
-import com.amazonaws.SdkBaseException;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.retry.PredefinedRetryPolicies;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.s3.model.Bucket;
 import com.amazonaws.services.s3.model.ObjectMetadata;
-import com.amazonaws.services.s3.transfer.Transfer;
 import com.amazonaws.services.s3.transfer.TransferManagerBuilder;
-import com.amazonaws.services.s3.transfer.Upload;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.fileupload.disk.DiskFileItemFactory;
@@ -123,16 +119,12 @@ public class PostFile extends AbstractEndpoint {
 
 						// upload the file stream to AWS
 						try {
-							List<Bucket> buckets = s3Client.listBuckets();
-							if (buckets != null) {
-								System.out.println("Buckets found using s3Client....");
-								for (Bucket bucket : buckets ) {
-									System.out.println("Bucket: " +bucket.getName());
-								}
-							}
 
-							Upload upload = tx.build().upload(awsBucketName, keyPath, uploadedInputStream, metaData);
-							upload.waitForCompletion();
+							//files are <=10mb in size, so a simple put will suffice
+							s3Client.putObject(awsBucketName, keyPath, uploadedInputStream, metaData);
+
+							//Upload upload = tx.build().upload(awsBucketName, keyPath, uploadedInputStream, metaData);
+							//upload.waitForCompletion();
 
 //							long megaBytes = -1;
 //							while (!upload.isDone()) {
@@ -145,12 +137,12 @@ public class PostFile extends AbstractEndpoint {
 //										System.out.format(keyPath+": %.2f percent: ("+mBytes+" mb)",pct).println();
 //								}
 //
-								if (upload.getState() == Transfer.TransferState.Canceled)
-								{
-									uploadedInputStream.close();
-									System.out.println("Upload cancelled");
-									throw new SdkBaseException("Upload cancelled");
-								}
+//								if (upload.getState() == Transfer.TransferState.Canceled)
+//								{
+//									uploadedInputStream.close();
+//									System.out.println("Upload cancelled");
+//									throw new SdkBaseException("Upload cancelled");
+//								}
 							//}
 
 							uploadedInputStream.close();
