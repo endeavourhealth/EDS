@@ -1,6 +1,7 @@
 USE eds;
 
 DROP TABLE IF EXISTS patient_search_local_identifier;
+DROP TABLE IF EXISTS patient_search_episode;
 DROP TABLE IF EXISTS patient_search;
 DROP TABLE IF EXISTS patient_link;
 DROP TABLE IF EXISTS patient_link_history;
@@ -40,6 +41,30 @@ CREATE INDEX ix_service_nhs_number
 CREATE INDEX ix_service_surname_forenames
   ON patient_search (service_id, surname, forenames);
 
+CREATE TABLE patient_search_episode
+(
+	service_id char(36) NOT NULL,
+	patient_id char(36) NOT NULL,
+
+	registration_start date,
+	registration_end date,
+	last_updated timestamp NOT NULL,
+
+	organisation_type_code varchar(10),
+	registration_type_code varchar(10),
+	CONSTRAINT pk_patient_search PRIMARY KEY (service_id, patient_id)
+);
+
+-- patient
+-- registered GP Practice
+-- registered GP
+-- address line 1
+-- address line 2
+-- address city
+
+-- episode
+-- care manager reference
+-- populate registration type from TYPE element too?
 
 CREATE TABLE patient_search_local_identifier
 (
