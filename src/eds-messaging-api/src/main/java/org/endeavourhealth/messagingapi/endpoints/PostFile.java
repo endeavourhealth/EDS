@@ -89,10 +89,6 @@ public class PostFile extends AbstractEndpoint {
 
 			String awsBucketName = apiAWSConfig.findValue("s3-bucket").textValue();
 			String awsKeyPathPrefix = apiAWSConfig.findValue("keypath-prefix").textValue();
-			//String awsAccessKeyId = apiAWSConfig.findValue("access-key-id").textValue();
-			//String awsSecretKey = apiAWSConfig.findValue("secret-access-key").textValue();
-
-			//BasicAWSCredentials awsCreds = new BasicAWSCredentials(awsAccessKeyId, awsSecretKey);
 
 			ClientConfiguration clientConfig = new ClientConfiguration();
 			clientConfig.setConnectionTimeout(7200000); clientConfig.setSocketTimeout(7200000); clientConfig.setRequestTimeout(7200000);
@@ -100,13 +96,8 @@ public class PostFile extends AbstractEndpoint {
 
 			AmazonS3ClientBuilder s3 = AmazonS3ClientBuilder.standard()
 					.withClientConfiguration(clientConfig)
-					//.withCredentials(new AWSStaticCredentialsProvider(awsCreds))
-					//.withCredentials(InstanceProfileCredentialsProvider.getInstance())   //default will use servers IAM implementation
 					.withCredentials(DefaultAWSCredentialsProviderChain.getInstance())   //default will use servers IAM implementation
 					.withRegion(Regions.EU_WEST_2);
-
-			// try s3 client
-			//AmazonS3 s3Client = s3.build();
 
 			TransferManagerBuilder tx = TransferManagerBuilder.standard().withS3Client(s3.build());
 			try {
@@ -125,10 +116,6 @@ public class PostFile extends AbstractEndpoint {
 
 						// upload the file stream to AWS
 						try {
-
-							//files are <=10mb in size, so a simple put will suffice
-							//s3Client.putObject(awsBucketName, keyPath, uploadedInputStream, metaData);
-
 							Upload upload = tx.build().upload(awsBucketName, keyPath, uploadedInputStream, metaData);
 							upload.waitForCompletion();
 
@@ -142,14 +129,13 @@ public class PostFile extends AbstractEndpoint {
 //									if (pct > 0)
 //										System.out.format(keyPath+": %.2f percent: ("+mBytes+" mb)",pct).println();
 //								}
-//
+
 							if (upload.getState() == Transfer.TransferState.Canceled)
 							{
 								uploadedInputStream.close();
 								System.out.println("Upload cancelled");
 								throw new SdkBaseException("Upload cancelled");
 							}
-							//}
 
 							uploadedInputStream.close();
 							System.out.println("File: " + keyPath + " received and uploaded to AWS bucket: " + awsBucketName);
