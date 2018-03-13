@@ -45,13 +45,12 @@ CREATE TABLE patient_search_episode
 (
 	service_id char(36) NOT NULL,
 	patient_id char(36) NOT NULL,
-
+	episode_id char(36) NOT NULL,
 	registration_start date,
 	registration_end date,
-	last_updated timestamp NOT NULL,
-
 	organisation_type_code varchar(10),
 	registration_type_code varchar(10),
+	last_updated timestamp NOT NULL,
 	CONSTRAINT pk_patient_search PRIMARY KEY (service_id, patient_id)
 );
 
