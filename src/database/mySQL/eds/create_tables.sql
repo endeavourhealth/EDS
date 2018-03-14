@@ -15,14 +15,14 @@ CREATE TABLE patient_search
 	surname varchar(500),
 	date_of_birth date,
 	date_of_death date,
+	address_line_1 VARCHAR(255),
+	address_line_2 VARCHAR(255),
+	city VARCHAR(255),
 	postcode varchar(8),
 	gender varchar(7),
-	registration_start date,
-	registration_end date,
 	patient_id char(36) NOT NULL,
 	last_updated timestamp NOT NULL,
-	organisation_type_code varchar(10),
-	registration_type_code varchar(10),
+	registered_practice_ods_code VARCHAR(50),
 	CONSTRAINT pk_patient_search PRIMARY KEY (service_id, patient_id)
 );
 
@@ -48,22 +48,18 @@ CREATE TABLE patient_search_episode
 	episode_id char(36) NOT NULL,
 	registration_start date,
 	registration_end date,
+	organisation_name VARCHAR(255),
+	care_mananger VARCHAR(255),
 	organisation_type_code varchar(10),
 	registration_type_code varchar(10),
 	last_updated timestamp NOT NULL,
-	CONSTRAINT pk_patient_search PRIMARY KEY (service_id, patient_id)
+	CONSTRAINT pk_patient_search PRIMARY KEY (service_id, patient_id, episode_id)
 );
 
--- patient
--- registered GP Practice
--- registered GP
--- address line 1
--- address line 2
--- address city
+-- unique index required so patient merges trigger a change in patient_id
+CREATE UNIQUE INDEX uix_patient_search_episode_id
+  ON patient_search_episode (episode_id);
 
--- episode
--- care manager reference
--- populate registration type from TYPE element too?
 
 CREATE TABLE patient_search_local_identifier
 (
