@@ -596,16 +596,24 @@ public class Main {
 
 		try {
 
+			File tempDirLast = new File(tempDir, "last");
+			if (!tempDirLast.exists()) {
+				if (!tempDirLast.mkdirs()) {
+					throw new Exception("Failed to create temp dir " + tempDirLast);
+				}
+				tempDirLast.mkdirs();
+			}
+			File tempDirEmpty = new File(tempDir, "empty");
+			if (!tempDirEmpty.exists()) {
+				if (!tempDirEmpty.mkdirs()) {
+					throw new Exception("Failed to create temp dir " + tempDirEmpty);
+				}
+				tempDirEmpty.mkdirs();
+			}
+
 			UUID serviceUuid = UUID.fromString(serviceId);
 			UUID systemUuid = UUID.fromString(systemId);
 			ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
-
-			File tempDirFile = new File(tempDir);
-			if (!tempDirFile.exists()) {
-				if (!tempDirFile.mkdirs()) {
-					throw new Exception("Failed to create temp dir " + tempDirFile);
-				}
-			}
 
 			//get all the exchanges, which are returned in reverse order, so reverse for simplicity
 			List<Exchange> exchanges = exchangeDal.getExchangesByService(serviceUuid, systemUuid, Integer.MAX_VALUE);
@@ -736,7 +744,7 @@ public class Main {
 
 				LOG.info("Found " + idsInRebulk.size() + " IDs in re-bulk file: " + rebulkFile);
 
-				String tempFile = FilenameUtils.concat(tempDir, fileType + ".csv");
+				String tempFile = FilenameUtils.concat(tempDirLast.getAbsolutePath(), fileType + ".csv");
 
 				FileWriter fileWriter = new FileWriter(tempFile);
 				BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
@@ -823,7 +831,7 @@ public class Main {
 				LOG.info("Created replacement file " + tempFile);
 
 				//also create a version of the CSV file with just the header and nothing else in
-				String emptyTempFile = FilenameUtils.concat(tempDir, fileType + ".empty");
+				String emptyTempFile = FilenameUtils.concat(tempDirEmpty.getAbsolutePath(), fileType + ".csv");
 
 				fileWriter = new FileWriter(emptyTempFile);
 				bufferedWriter = new BufferedWriter(fileWriter);
@@ -873,7 +881,7 @@ public class Main {
 					continue;
 				}
 
-				String tempFile = FilenameUtils.concat(tempDir, fileType + ".csv");
+				String tempFile = FilenameUtils.concat(tempDirLast.getAbsolutePath(), fileType + ".csv");
 				File f = new File(tempFile);
 				if (!f.exists()) {
 					throw new Exception("Failed to find expected temp file " + f);
@@ -895,7 +903,7 @@ public class Main {
 						continue;
 					}
 
-					String tempFile = FilenameUtils.concat(tempDir, fileType + ".empty");
+					String tempFile = FilenameUtils.concat(tempDirEmpty.getAbsolutePath(), fileType + ".csv");
 					File f = new File(tempFile);
 					if (!f.exists()) {
 						throw new Exception("Failed to find expected empty file " + f);
