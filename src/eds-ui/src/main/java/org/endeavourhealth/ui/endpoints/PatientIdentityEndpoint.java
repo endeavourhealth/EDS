@@ -239,19 +239,13 @@ public final class PatientIdentityEndpoint extends AbstractEndpoint {
             //do nothing if it's not a valid UUID
         }
 
-        Set<String> serviceIds = new HashSet<>();
-        //TODO - the patient search data access layer has been changed, but this hasn't been changed to match,
-        //so is just going to throw an exception if this is used (which I don't think it is)
-        if (true) {
-            throw new RuntimeException("Function needs fixing to use updated patient search DAL");
-        }
 
         List<JsonPatientIdentifier> ret = new ArrayList<>();
 
         if (patientId != null) {
 
             PatientSearchDalI patientSearchDal = DalProvider.factoryPatientSearchDal();
-            PatientSearch identifier = patientSearchDal.searchByPatientId(serviceIds, patientId);
+            PatientSearch identifier = patientSearchDal.searchByPatientId(patientId);
             if (identifier != null) {
 
                 UUID serviceId = identifier.getServiceId();
