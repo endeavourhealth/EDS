@@ -344,7 +344,7 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 		}
 
 		try {
-			String nhsNumber = findPatientNhsNumber(patientId);
+			String nhsNumber = findPatientNhsNumber(serviceId, patientId);
 			//LOG.trace("patient ID " + patientId + " -> nhs number " + nhsNumber);
 
 			if (Strings.isNullOrEmpty(nhsNumber)) {
@@ -360,9 +360,12 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 	}
 
 
-	private String findPatientNhsNumber(UUID patientId) throws Exception {
+	private String findPatientNhsNumber(UUID serviceId, UUID patientId) throws Exception {
 
-		PatientSearch patientSearchResult = patientSearchDal.searchByPatientId(patientId);
+		Set<String> serviceIds = new HashSet<>();
+		serviceIds.add(serviceId.toString());
+
+		PatientSearch patientSearchResult = patientSearchDal.searchByPatientId(serviceIds, patientId);
 		if (patientSearchResult != null) {
 			return patientSearchResult.getNhsNumber();
 		} else {
