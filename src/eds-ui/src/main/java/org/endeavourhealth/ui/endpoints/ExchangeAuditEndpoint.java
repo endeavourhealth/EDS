@@ -617,7 +617,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
             //the error will only be null for older errors, from before the field was introduced
             if (error.getDatetime() != null) {
                 Calendar calendar = error.getDatetime().toGregorianCalendar();
-                SimpleDateFormat formatter = new SimpleDateFormat("yyyy/MM/dd/ HH:mm");
+                SimpleDateFormat formatter = new SimpleDateFormat("yyyy/MM/dd HH:mm");
                 formatter.setTimeZone(calendar.getTimeZone());
                 String dateString = formatter.format(calendar.getTime());
                 lines.add(dateString);

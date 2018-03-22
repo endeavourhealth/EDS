@@ -29,10 +29,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 @Path("/patientIdentity")
 @Metrics(registry = "EdsRegistry")
@@ -78,8 +75,11 @@ public final class PatientIdentityEndpoint extends AbstractEndpoint {
 
         List<JsonPatientIdentifier> ret = new ArrayList<>();
 
+        Set<String> serviceIds = new HashSet<>();
+        serviceIds.add(serviceId.toString());
+
         PatientSearchDalI patientSearchDal = DalProvider.factoryPatientSearchDal();
-        List<PatientSearch> identifiers = patientSearchDal.searchByLocalId(serviceId, systemId, localId);
+        List<PatientSearch> identifiers = patientSearchDal.searchByLocalId(serviceIds, localId);
         for (PatientSearch identifier: identifiers) {
 
             JsonPatientIdentifier json = new JsonPatientIdentifier();
@@ -146,8 +146,15 @@ public final class PatientIdentityEndpoint extends AbstractEndpoint {
 
         List<JsonPatientIdentifier> ret = new ArrayList<>();
 
+        Set<String> serviceIds = new HashSet<>();
+        //TODO - the patient search data access layer has been changed, but this hasn't been changed to match,
+        //so is just going to throw an exception if this is used (which I don't think it is)
+        if (true) {
+            throw new RuntimeException("Function needs fixing to use updated patient search DAL");
+        }
+
         PatientSearchDalI patientSearchDal = DalProvider.factoryPatientSearchDal();
-        List<PatientSearch> identifiers = patientSearchDal.searchByNhsNumber(nhsNumber);
+        List<PatientSearch> identifiers = patientSearchDal.searchByNhsNumber(serviceIds, nhsNumber);
         for (PatientSearch identifier: identifiers) {
 
             UUID serviceId = identifier.getServiceId();
@@ -231,6 +238,7 @@ public final class PatientIdentityEndpoint extends AbstractEndpoint {
         } catch (IllegalArgumentException ex) {
             //do nothing if it's not a valid UUID
         }
+
 
         List<JsonPatientIdentifier> ret = new ArrayList<>();
 

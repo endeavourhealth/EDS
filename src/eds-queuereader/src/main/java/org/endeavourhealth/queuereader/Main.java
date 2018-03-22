@@ -26,7 +26,12 @@ import org.endeavourhealth.core.database.dal.audit.models.Exchange;
 import org.endeavourhealth.core.database.dal.audit.models.ExchangeEvent;
 import org.endeavourhealth.core.database.dal.audit.models.ExchangeTransformAudit;
 import org.endeavourhealth.core.database.dal.audit.models.HeaderKeys;
+import org.endeavourhealth.core.database.dal.eds.PatientSearchDalI;
+import org.endeavourhealth.core.database.dal.ehr.ResourceDalI;
+import org.endeavourhealth.core.database.dal.ehr.models.ResourceWrapper;
+import org.endeavourhealth.core.database.rdbms.ConnectionManager;
 import org.endeavourhealth.core.exceptions.TransformException;
+import org.endeavourhealth.core.fhirStorage.FhirSerializationHelper;
 import org.endeavourhealth.core.fhirStorage.JsonServiceInterfaceEndpoint;
 import org.endeavourhealth.core.messaging.pipeline.components.PostMessageToExchange;
 import org.endeavourhealth.core.queueing.QueueHelper;
@@ -36,9 +41,14 @@ import org.endeavourhealth.transform.barts.BartsCsvToFhirTransformer;
 import org.endeavourhealth.transform.common.*;
 import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
 import org.endeavourhealth.transform.emis.csv.helpers.EmisCsvHelper;
+import org.hibernate.internal.SessionImpl;
+import org.hl7.fhir.instance.model.EpisodeOfCare;
+import org.hl7.fhir.instance.model.Patient;
+import org.hl7.fhir.instance.model.ResourceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.persistence.EntityManager;
 import java.io.*;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
@@ -58,6 +68,12 @@ public class Main {
 
 		LOG.info("Initialising config manager");
 		ConfigManager.initialize("queuereader", configId);
+
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("PopulateNewSearchTable")) {
+			populateNewSearchTable();
+			System.exit(0);
+		}
 
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("CreateBartsSubset")) {
@@ -220,6 +236,82 @@ public class Main {
 		// Begin consume
 		rabbitHandler.start();
 		LOG.info("EDS Queue reader running (kill file location " + TransformConfig.instance().getKillFileLocation() + ")");
+	}
+
+	private static void populateNewSearchTable() {
+		LOG.info("Populating New Search Table");
+
+		try {
+
+			EntityManager entityManager = ConnectionManager.getEdsEntityManager();
+			SessionImpl session = (SessionImpl)entityManager.getDelegate();
+			Connection connection = session.connection();
+			Statement statement = connection.createStatement();
+
+			List<String> patientIds = new ArrayList<>();
+			Map<String, String> serviceIds = new HashMap<>();
+
+			String sql = "SELECT patient_id, service_id FROM patients_to_do WHERE done = 0";
+			ResultSet rs = statement.executeQuery(sql);
+			while (rs.next()) {
+				String patientId = rs.getString(1);
+				String serviceId = rs.getString(2);
+				patientIds.add(patientId);
+				serviceIds.put(patientId, serviceId);
+			}
+			rs.close();
+			statement.close();
+			entityManager.close();
+
+			ResourceDalI resourceDal = DalProvider.factoryResourceDal();
+			PatientSearchDalI patientSearchDal = DalProvider.factoryPatientSearch2Dal();
+
+			LOG.info("Found " + patientIds.size() + " to do");
+
+			for (int i=0; i<patientIds.size(); i++) {
+
+				String patientIdStr = patientIds.get(i);
+				UUID patientId = UUID.fromString(patientIdStr);
+				String serviceIdStr = serviceIds.get(patientIdStr);
+				UUID serviceId = UUID.fromString(serviceIdStr);
+
+				Patient patient = (Patient)resourceDal.getCurrentVersionAsResource(serviceId, ResourceType.Patient, patientIdStr);
+				if (patient != null) {
+					patientSearchDal.update(serviceId, patient);
+
+					//find episode of care
+					List<ResourceWrapper> wrappers = resourceDal.getResourcesByPatient(serviceId, null, patientId, ResourceType.EpisodeOfCare.toString());
+					for (ResourceWrapper wrapper: wrappers) {
+						if (!wrapper.isDeleted()) {
+							EpisodeOfCare episodeOfCare = (EpisodeOfCare)FhirSerializationHelper.deserializeResource(wrapper.getResourceData());
+							patientSearchDal.update(serviceId, episodeOfCare);
+						}
+					}
+				}
+
+
+
+				String updateSql = "UPDATE patients_to_do SET done = 1 WHERE patient_id = '" + patientIdStr + "' AND service_id = '" + serviceIdStr + "';";
+				entityManager = ConnectionManager.getEdsEntityManager();
+				session = (SessionImpl)entityManager.getDelegate();
+				connection = session.connection();
+				statement = connection.createStatement();
+				entityManager.getTransaction().begin();
+				statement.executeUpdate(updateSql);
+				entityManager.getTransaction().commit();
+
+				if (i % 5000 == 0) {
+					LOG.info("Done " + (i+1) + " of " + patientIds.size());
+				}
+			}
+
+			entityManager.close();
+
+			LOG.info("Finished Populating New Search Table");
+
+		} catch (Exception ex) {
+			LOG.error("", ex);
+		}
 	}
 
 	private static void createBartsSubset(String sourceDirPath, String destDirPath, String samplePatientsFile) {
