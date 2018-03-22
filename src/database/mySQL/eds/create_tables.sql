@@ -163,7 +163,7 @@ CREATE TABLE patient_search_local_identifier_2
 	last_updated timestamp NOT NULL,
 	CONSTRAINT pk_patient_search_local_identifier PRIMARY KEY (service_id, patient_id, local_id_system, local_id),
 	CONSTRAINT fk_patient_search_local_identifier_2_patient_id FOREIGN KEY (service_id, patient_id)
-		REFERENCES patient_search (service_id, patient_id) MATCH SIMPLE
+		REFERENCES patient_search_2 (service_id, patient_id) MATCH SIMPLE
 		ON UPDATE NO ACTION ON DELETE NO ACTION
 );
 

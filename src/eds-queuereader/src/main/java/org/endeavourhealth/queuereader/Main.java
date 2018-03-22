@@ -71,7 +71,8 @@ public class Main {
 
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("PopulateNewSearchTable")) {
-			populateNewSearchTable();
+			String table = args[1];
+			populateNewSearchTable(table);
 			System.exit(0);
 		}
 
@@ -238,7 +239,7 @@ public class Main {
 		LOG.info("EDS Queue reader running (kill file location " + TransformConfig.instance().getKillFileLocation() + ")");
 	}
 
-	private static void populateNewSearchTable() {
+	private static void populateNewSearchTable(String table) {
 		LOG.info("Populating New Search Table");
 
 		try {
@@ -251,7 +252,7 @@ public class Main {
 			List<String> patientIds = new ArrayList<>();
 			Map<String, String> serviceIds = new HashMap<>();
 
-			String sql = "SELECT patient_id, service_id FROM patients_to_do WHERE done = 0";
+			String sql = "SELECT patient_id, service_id FROM " + table + " WHERE done = 0";
 			ResultSet rs = statement.executeQuery(sql);
 			while (rs.next()) {
 				String patientId = rs.getString(1);
@@ -291,7 +292,7 @@ public class Main {
 
 
 
-				String updateSql = "UPDATE patients_to_do SET done = 1 WHERE patient_id = '" + patientIdStr + "' AND service_id = '" + serviceIdStr + "';";
+				String updateSql = "UPDATE " + table + " SET done = 1 WHERE patient_id = '" + patientIdStr + "' AND service_id = '" + serviceIdStr + "';";
 				entityManager = ConnectionManager.getEdsEntityManager();
 				session = (SessionImpl)entityManager.getDelegate();
 				connection = session.connection();
