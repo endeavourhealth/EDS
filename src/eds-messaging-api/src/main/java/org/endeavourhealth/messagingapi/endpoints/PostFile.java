@@ -168,6 +168,7 @@ public class PostFile extends AbstractEndpoint {
 		}
 		catch (Exception Ex) {
 			System.out.println("Exception in publisherHasDPA for organisationId ("+organisationId+") : " + Ex.getMessage());
+            Ex.printStackTrace();
 			return false;
 		}
 	}
