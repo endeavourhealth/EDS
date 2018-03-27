@@ -18,7 +18,6 @@ import org.apache.commons.fileupload.servlet.ServletFileUpload;
 import org.apache.commons.io.FileCleaningTracker;
 import org.apache.http.entity.ContentType;
 import org.endeavourhealth.common.config.ConfigManager;
-import org.endeavourhealth.datasharingmanagermodel.models.database.DataProcessingAgreementEntity;
 
 import javax.annotation.security.RolesAllowed;
 import javax.servlet.ServletContext;
@@ -162,9 +161,11 @@ public class PostFile extends AbstractEndpoint {
 	private static boolean publisherHasDPA(String organisationId)  {
 		// check DPA in place for data publishing org
 		try {
-			List<DataProcessingAgreementEntity> matchingDpa = DataProcessingAgreementEntity.getDataProcessingAgreementsForOrganisation(organisationId);
+			return true;   //temp
 
-			return matchingDpa.size()>0;
+			//List<DataProcessingAgreementEntity> matchingDpa = DataProcessingAgreementEntity.getDataProcessingAgreementsForOrganisation(organisationId);
+
+			//return matchingDpa.size()>0;
 		}
 		catch (Exception Ex) {
 			System.out.println("Exception in publisherHasDPA for organisationId ("+organisationId+") : " + Ex.getMessage());
