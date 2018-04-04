@@ -10,6 +10,8 @@ DROP TABLE IF EXISTS source_file_record;
 DROP TABLE IF EXISTS resource_field_mappings;
 DROP TABLE IF EXISTS internal_id_map;
 DROP TABLE IF EXISTS cerner_code_value_ref;
+DROP TABLE IF EXISTS tpp_mapping_ref;
+DROP TABLE IF EXISTS tpp_config_list_option;
 
 CREATE TABLE resource_id_map (
 	service_id char(36),
@@ -131,3 +133,30 @@ create table cerner_code_value_ref (
 );
 
 CREATE INDEX ix_cerner_code_value_ref ON cerner_code_value_ref (code_value_cd);
+
+
+create table tpp_mapping_ref (
+  row_id bigint(20) not null comment 'The value of RowIdentifier',
+  group_id bigint(20) not null comment 'Mapping group identifier',
+  mapped_term varchar(1000) not null comment 'The mapped term of the RowIdentifier',
+  service_id varchar(36) not null comment 'The service the mapping corresponds to',
+  audit_json mediumtext null comment 'Used for Audit Purposes',
+
+  constraint tpp_mapping_ref_pk primary key (service_id, group_id, row_id)
+);
+
+CREATE INDEX ix_tpp_mapping_ref ON tpp_mapping_ref (row_id);
+
+
+create table tpp_config_list_option (
+  row_id bigint(20) not null comment 'The value of RowIdentifier',
+  config_list_id bigint(20) not null comment 'Configuration list identifier',
+  list_option_name varchar(1000) not null comment 'The configuration list option name',
+  service_id varchar(36) not null comment 'The service the mapping corresponds to',
+  audit_json mediumtext null comment 'Used for Audit Purposes',
+
+  constraint tpp_config_list_option_pk primary key (service_id, config_list_id, row_id)
+);
+
+CREATE INDEX ix_tpp_config_list_option ON tpp_config_list_option (row_id);
+
