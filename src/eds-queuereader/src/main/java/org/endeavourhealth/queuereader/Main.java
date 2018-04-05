@@ -26,12 +26,7 @@ import org.endeavourhealth.core.database.dal.audit.models.Exchange;
 import org.endeavourhealth.core.database.dal.audit.models.ExchangeEvent;
 import org.endeavourhealth.core.database.dal.audit.models.ExchangeTransformAudit;
 import org.endeavourhealth.core.database.dal.audit.models.HeaderKeys;
-import org.endeavourhealth.core.database.dal.eds.PatientSearchDalI;
-import org.endeavourhealth.core.database.dal.ehr.ResourceDalI;
-import org.endeavourhealth.core.database.dal.ehr.models.ResourceWrapper;
-import org.endeavourhealth.core.database.rdbms.ConnectionManager;
 import org.endeavourhealth.core.exceptions.TransformException;
-import org.endeavourhealth.core.fhirStorage.FhirSerializationHelper;
 import org.endeavourhealth.core.fhirStorage.JsonServiceInterfaceEndpoint;
 import org.endeavourhealth.core.messaging.pipeline.components.PostMessageToExchange;
 import org.endeavourhealth.core.queueing.QueueHelper;
@@ -41,14 +36,9 @@ import org.endeavourhealth.transform.barts.BartsCsvToFhirTransformer;
 import org.endeavourhealth.transform.common.*;
 import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
 import org.endeavourhealth.transform.emis.csv.helpers.EmisCsvHelper;
-import org.hibernate.internal.SessionImpl;
-import org.hl7.fhir.instance.model.EpisodeOfCare;
-import org.hl7.fhir.instance.model.Patient;
-import org.hl7.fhir.instance.model.ResourceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.persistence.EntityManager;
 import java.io.*;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
@@ -69,12 +59,7 @@ public class Main {
 		LOG.info("Initialising config manager");
 		ConfigManager.initialize("queuereader", configId);
 
-		if (args.length >= 1
-				&& args[0].equalsIgnoreCase("PopulateNewSearchTable")) {
-			String table = args[1];
-			populateNewSearchTable(table);
-			System.exit(0);
-		}
+
 
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("CreateBartsSubset")) {
@@ -90,6 +75,13 @@ public class Main {
 			applyEmisAdminCaches();
 			System.exit(0);
 		}
+
+		/*if (args.length >= 1
+				&& args[0].equalsIgnoreCase("PopulateNewSearchTable")) {
+			String table = args[1];
+			populateNewSearchTable(table);
+			System.exit(0);
+		}*/
 
 		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("FixBartsEscapes")) {
@@ -239,7 +231,7 @@ public class Main {
 		LOG.info("EDS Queue reader running (kill file location " + TransformConfig.instance().getKillFileLocation() + ")");
 	}
 
-	private static void populateNewSearchTable(String table) {
+	/*private static void populateNewSearchTable(String table) {
 		LOG.info("Populating New Search Table");
 
 		try {
@@ -313,7 +305,7 @@ public class Main {
 		} catch (Exception ex) {
 			LOG.error("", ex);
 		}
-	}
+	}*/
 
 	private static void createBartsSubset(String sourceDirPath, String destDirPath, String samplePatientsFile) {
 		LOG.info("Creating Barts Subset");
