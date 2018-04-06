@@ -309,6 +309,7 @@ public class Main {
 
 				for (UUID exchangeId: exchangeIdsToProcess) {
 					Exchange exchange = exchangeDal.getExchange(exchangeId);
+
 					String[] files = ExchangeHelper.parseExchangeBodyIntoFileList(exchange.getBody());
 					String version = EmisCsvToFhirTransformer.determineVersion(files);
 
@@ -368,8 +369,9 @@ public class Main {
 
 						UUID obUuid = IdHelper.getEdsResourceId(serviceId, systemId, resourceType, obSourceId);
 						if (obUuid == null) {
-							LOG.error("Null observation UUID for resource type " + resourceType + " and source ID " + obSourceId);
-							resourceType = ObservationTransformer.getTargetResourceType(observationParser, csvHelper);
+							continue;
+							//LOG.error("Null observation UUID for resource type " + resourceType + " and source ID " + obSourceId);
+							//resourceType = ObservationTransformer.getTargetResourceType(observationParser, csvHelper);
 						}
 						Reference obReference = ReferenceHelper.createReference(resourceType, obUuid.toString());
 
@@ -418,7 +420,8 @@ public class Main {
 							String diarySourceId = EmisCsvHelper.createUniqueId(patientGuid, diaryGuid);
 							UUID diaryUuid = IdHelper.getEdsResourceId(serviceId, systemId, ResourceType.ProcedureRequest, diarySourceId);
 							if (diaryUuid == null) {
-								LOG.error("Null observation UUID for resource type " + ResourceType.ProcedureRequest + " and source ID " + diarySourceId);
+								continue;
+								//LOG.error("Null observation UUID for resource type " + ResourceType.ProcedureRequest + " and source ID " + diarySourceId);
 							}
 							Reference diaryReference = ReferenceHelper.createReference(ResourceType.ProcedureRequest, diaryUuid.toString());
 
@@ -443,7 +446,8 @@ public class Main {
 							String issueRecordSourceId = EmisCsvHelper.createUniqueId(patientGuid, issueRecordGuid);
 							UUID issueRecordUuid = IdHelper.getEdsResourceId(serviceId, systemId, ResourceType.MedicationOrder, issueRecordSourceId);
 							if (issueRecordUuid == null) {
-								LOG.error("Null observation UUID for resource type " + ResourceType.MedicationOrder + " and source ID " + issueRecordSourceId);
+								continue;
+								//LOG.error("Null observation UUID for resource type " + ResourceType.MedicationOrder + " and source ID " + issueRecordSourceId);
 							}
 							Reference issueRecordReference = ReferenceHelper.createReference(ResourceType.MedicationOrder, issueRecordUuid.toString());
 
@@ -468,7 +472,8 @@ public class Main {
 							String drugRecordSourceId = EmisCsvHelper.createUniqueId(patientGuid, drugRecordGuid);
 							UUID drugRecordUuid = IdHelper.getEdsResourceId(serviceId, systemId, ResourceType.MedicationStatement, drugRecordSourceId);
 							if (drugRecordUuid == null) {
-								LOG.error("Null observation UUID for resource type " + ResourceType.MedicationStatement + " and source ID " + drugRecordSourceId);
+								continue;
+								//LOG.error("Null observation UUID for resource type " + ResourceType.MedicationStatement + " and source ID " + drugRecordSourceId);
 							}
 							Reference drugRecordReference = ReferenceHelper.createReference(ResourceType.MedicationStatement, drugRecordUuid.toString());
 
@@ -500,6 +505,9 @@ public class Main {
 
 					//map to UUID
 					UUID encounterId = IdHelper.getEdsResourceId(serviceId, systemId, ResourceType.Encounter, encounterSourceId);
+					if (encounterId == null) {
+						continue;
+					}
 
 					//get history, which is most recent FIRST
 					List<ResourceWrapper> history = resourceDal.getResourceHistory(serviceId, ResourceType.Encounter.toString(), encounterId);
@@ -517,15 +525,14 @@ public class Main {
 					for (ResourceWrapper wrapper: history) {
 						Date d = wrapper.getCreatedAt();
 						if (!d.after(cutoff)) {
-							if (wrapper.getResourceData() == null) {
-								throw new Exception("Null resource data for Encounter " + encounterId + " and version " + wrapper.getVersion());
-							}
-							Encounter encounter = (Encounter)FhirSerializationHelper.deserializeResource(wrapper.getResourceData());
-							EncounterBuilder encounterBuilder = new EncounterBuilder(encounter);
-							ContainedListBuilder containedListBuilder = new ContainedListBuilder(encounterBuilder);
+							if (wrapper.getResourceData() != null) {
+								Encounter encounter = (Encounter) FhirSerializationHelper.deserializeResource(wrapper.getResourceData());
+								EncounterBuilder encounterBuilder = new EncounterBuilder(encounter);
+								ContainedListBuilder containedListBuilder = new ContainedListBuilder(encounterBuilder);
 
-							List<Reference> previousChildren = containedListBuilder.getContainedListItems();
-							childReferences.add(previousChildren);
+								List<Reference> previousChildren = containedListBuilder.getContainedListItems();
+								childReferences.add(previousChildren);
+							}
 
 							break;
 						}
@@ -590,19 +597,23 @@ public class Main {
 						if (!d.after(cutoff)) {
 
 							if (resourceType == ResourceType.Observation) {
-								Observation observation = (Observation)FhirSerializationHelper.deserializeResource(wrapper.getResourceData());
-								if (observation.hasRelated()) {
-									for (Observation.ObservationRelatedComponent related: observation.getRelated()) {
-										Reference reference = related.getTarget();
-										childReferences.add(reference);
+								if (wrapper.getResourceData() != null) {
+									Observation observation = (Observation) FhirSerializationHelper.deserializeResource(wrapper.getResourceData());
+									if (observation.hasRelated()) {
+										for (Observation.ObservationRelatedComponent related : observation.getRelated()) {
+											Reference reference = related.getTarget();
+											childReferences.add(reference);
+										}
 									}
 								}
 
 							} else {
-								DiagnosticReport report = (DiagnosticReport)FhirSerializationHelper.deserializeResource(wrapper.getResourceData());
-								if (report.hasResult()) {
-									for (Reference reference: report.getResult()) {
-										childReferences.add(reference);
+								if (wrapper.getResourceData() != null) {
+									DiagnosticReport report = (DiagnosticReport) FhirSerializationHelper.deserializeResource(wrapper.getResourceData());
+									if (report.hasResult()) {
+										for (Reference reference : report.getResult()) {
+											childReferences.add(reference);
+										}
 									}
 								}
 							}
@@ -654,6 +665,9 @@ public class Main {
 
 					//map to UUID
 					UUID conditionId = IdHelper.getEdsResourceId(serviceId, systemId, ResourceType.Condition, sourceId);
+					if (conditionId == null) {
+						continue;
+					}
 
 					//get history, which is most recent FIRST
 					List<ResourceWrapper> history = resourceDal.getResourceHistory(serviceId, ResourceType.Condition.toString(), conditionId);
@@ -671,12 +685,14 @@ public class Main {
 					for (ResourceWrapper wrapper: history) {
 						Date d = wrapper.getCreatedAt();
 						if (!d.after(cutoff)) {
-							Condition previousVersion = (Condition)FhirSerializationHelper.deserializeResource(wrapper.getResourceData());
-							ConditionBuilder conditionBuilder = new ConditionBuilder(previousVersion);
-							ContainedListBuilder containedListBuilder = new ContainedListBuilder(conditionBuilder);
+							if (wrapper.getResourceData() != null) {
+								Condition previousVersion = (Condition) FhirSerializationHelper.deserializeResource(wrapper.getResourceData());
+								ConditionBuilder conditionBuilder = new ConditionBuilder(previousVersion);
+								ContainedListBuilder containedListBuilder = new ContainedListBuilder(conditionBuilder);
 
-							List<Reference> previousChildren = containedListBuilder.getContainedListItems();
-							childReferences.add(previousChildren);
+								List<Reference> previousChildren = containedListBuilder.getContainedListItems();
+								childReferences.add(previousChildren);
+							}
 
 							break;
 						}
