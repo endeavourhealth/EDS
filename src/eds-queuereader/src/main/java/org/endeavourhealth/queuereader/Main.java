@@ -49,6 +49,7 @@ import org.endeavourhealth.transform.emis.csv.schema.careRecord.Diary;
 import org.endeavourhealth.transform.emis.csv.schema.careRecord.Problem;
 import org.endeavourhealth.transform.emis.csv.schema.prescribing.DrugRecord;
 import org.endeavourhealth.transform.emis.csv.schema.prescribing.IssueRecord;
+import org.endeavourhealth.transform.emis.csv.transforms.careRecord.ObservationPreTransformer;
 import org.endeavourhealth.transform.emis.csv.transforms.careRecord.ObservationTransformer;
 import org.hibernate.internal.SessionImpl;
 import org.hl7.fhir.instance.model.*;
@@ -311,6 +312,19 @@ public class Main {
 					String[] files = ExchangeHelper.parseExchangeBodyIntoFileList(exchange.getBody());
 					String version = EmisCsvToFhirTransformer.determineVersion(files);
 
+					List<String> interestingFiles = new ArrayList<>();
+					for (String file: files) {
+						if (file.indexOf("CareRecord_Consultation") > -1
+								|| file.indexOf("CareRecord_Observation") > -1
+								|| file.indexOf("CareRecord_Diary") > -1
+								|| file.indexOf("Prescribing_DrugRecord") > -1
+								|| file.indexOf("Prescribing_IssueRecord") > -1
+								|| file.indexOf("CareRecord_Problem") > -1) {
+							interestingFiles.add(file);
+						}
+					}
+					files = interestingFiles.toArray(new String[0]);
+
 					Map<Class, AbstractCsvParser> parsers = new HashMap<>();
 					EmisCsvToFhirTransformer.createParsers(serviceId, systemId, exchangeId, files, version, parsers);
 
@@ -334,8 +348,12 @@ public class Main {
 						newProblemChildren.put(sourceId, new ReferenceList());
 					}
 
+					//run this pre-transformer to pre-cache some stuff in the csv helper, which
+					//is needed when working out the resource type that each observation would be saved as
+					ObservationPreTransformer.transform(version, parsers, null, csvHelper);
 
 					org.endeavourhealth.transform.emis.csv.schema.careRecord.Observation observationParser = (org.endeavourhealth.transform.emis.csv.schema.careRecord.Observation)parsers.get(org.endeavourhealth.transform.emis.csv.schema.careRecord.Observation.class);
+
 					while (observationParser.nextRecord()) {
 						CsvCell observationGuid = observationParser.getObservationGuid();
 						CsvCell patientGuid = observationParser.getPatientGuid();
@@ -344,6 +362,10 @@ public class Main {
 						ResourceType resourceType = ObservationTransformer.getTargetResourceType(observationParser, csvHelper);
 
 						UUID obUuid = IdHelper.getEdsResourceId(serviceId, systemId, resourceType, obSourceId);
+						if (obUuid == null) {
+							LOG.error("Null observation UUID for resource type " + resourceType + " and source ID " + obSourceId);
+							resourceType = ObservationTransformer.getTargetResourceType(observationParser, csvHelper);
+						}
 						Reference obReference = ReferenceHelper.createReference(resourceType, obUuid.toString());
 
 						CsvCell consultationGuid = observationParser.getConsultationGuid();
@@ -383,13 +405,16 @@ public class Main {
 					Diary diaryParser = (Diary)parsers.get(Diary.class);
 					while (diaryParser.nextRecord()) {
 
-						CsvCell consultationGuid = consultationParser.getConsultationGuid();
+						CsvCell consultationGuid = diaryParser.getConsultationGuid();
 						if (!consultationGuid.isEmpty()) {
 
 							CsvCell diaryGuid = diaryParser.getDiaryGuid();
-							CsvCell patientGuid = consultationParser.getPatientGuid();
+							CsvCell patientGuid = diaryParser.getPatientGuid();
 							String diarySourceId = EmisCsvHelper.createUniqueId(patientGuid, diaryGuid);
 							UUID diaryUuid = IdHelper.getEdsResourceId(serviceId, systemId, ResourceType.ProcedureRequest, diarySourceId);
+							if (diaryUuid == null) {
+								LOG.error("Null observation UUID for resource type " + ResourceType.ProcedureRequest + " and source ID " + diarySourceId);
+							}
 							Reference diaryReference = ReferenceHelper.createReference(ResourceType.ProcedureRequest, diaryUuid.toString());
 
 							String sourceId = EmisCsvHelper.createUniqueId(patientGuid, consultationGuid);
@@ -409,9 +434,12 @@ public class Main {
 						if (!problemGuid.isEmpty()) {
 
 							CsvCell issueRecordGuid = issueRecordParser.getIssueRecordGuid();
-							CsvCell patientGuid = consultationParser.getPatientGuid();
+							CsvCell patientGuid = issueRecordParser.getPatientGuid();
 							String issueRecordSourceId = EmisCsvHelper.createUniqueId(patientGuid, issueRecordGuid);
 							UUID issueRecordUuid = IdHelper.getEdsResourceId(serviceId, systemId, ResourceType.MedicationOrder, issueRecordSourceId);
+							if (issueRecordUuid == null) {
+								LOG.error("Null observation UUID for resource type " + ResourceType.MedicationOrder + " and source ID " + issueRecordSourceId);
+							}
 							Reference issueRecordReference = ReferenceHelper.createReference(ResourceType.MedicationOrder, issueRecordUuid.toString());
 
 							String sourceId = EmisCsvHelper.createUniqueId(patientGuid, problemGuid);
@@ -431,9 +459,12 @@ public class Main {
 						if (!problemGuid.isEmpty()) {
 
 							CsvCell drugRecordGuid = drugRecordParser.getDrugRecordGuid();
-							CsvCell patientGuid = consultationParser.getPatientGuid();
+							CsvCell patientGuid = drugRecordParser.getPatientGuid();
 							String drugRecordSourceId = EmisCsvHelper.createUniqueId(patientGuid, drugRecordGuid);
 							UUID drugRecordUuid = IdHelper.getEdsResourceId(serviceId, systemId, ResourceType.MedicationStatement, drugRecordSourceId);
+							if (drugRecordUuid == null) {
+								LOG.error("Null observation UUID for resource type " + ResourceType.MedicationStatement + " and source ID " + drugRecordSourceId);
+							}
 							Reference drugRecordReference = ReferenceHelper.createReference(ResourceType.MedicationStatement, drugRecordUuid.toString());
 
 							String sourceId = EmisCsvHelper.createUniqueId(patientGuid, problemGuid);
@@ -468,7 +499,8 @@ public class Main {
 					//get history, which is most recent FIRST
 					List<ResourceWrapper> history = resourceDal.getResourceHistory(serviceId, ResourceType.Encounter.toString(), encounterId);
 					if (history.isEmpty()) {
-						throw new Exception("Empty history for Encounter " + encounterId);
+						continue;
+						//throw new Exception("Empty history for Encounter " + encounterId);
 					}
 
 					ResourceWrapper currentState = history.get(0);
@@ -505,7 +537,7 @@ public class Main {
 					currentState.setResourceData(newJson);
 					currentState.setResourceChecksum(FhirStorageService.generateChecksum(newJson));
 
-					resourceDal.save(currentState);
+					saveResourceWrapper(serviceId, currentState);
 				}
 
 
@@ -535,7 +567,8 @@ public class Main {
 					//get history, which is most recent FIRST
 					List<ResourceWrapper> history = resourceDal.getResourceHistory(serviceId, resourceType.toString(), resourceId);
 					if (history.isEmpty()) {
-						throw new Exception("Empty history for " + resourceType + " " + resourceId);
+						//throw new Exception("Empty history for " + resourceType + " " + resourceId);
+						continue;
 					}
 
 					ResourceWrapper currentState = history.get(0);
@@ -576,26 +609,34 @@ public class Main {
 
 					Resource resource = FhirSerializationHelper.deserializeResource(currentState.getResourceData());
 
+					boolean changed = false;
+
 					if (resourceType == ResourceType.Observation) {
 						ObservationBuilder resourceBuilder = new ObservationBuilder((Observation)resource);
 						for (int i=0; i<childReferences.size(); i++) {
 							Reference reference = childReferences.getReference(i);
-							resourceBuilder.addChildObservation(reference);
+							if (resourceBuilder.addChildObservation(reference)) {
+								changed = true;
+							}
 						}
 
 					} else {
 						DiagnosticReportBuilder resourceBuilder = new DiagnosticReportBuilder((DiagnosticReport)resource);
 						for (int i=0; i<childReferences.size(); i++) {
 							Reference reference = childReferences.getReference(i);
-							resourceBuilder.addResult(reference);
+							if (resourceBuilder.addResult(reference)) {
+								changed = true;
+							}
 						}
 					}
 
-					String newJson = FhirSerializationHelper.serializeResource(resource);
-					currentState.setResourceData(newJson);
-					currentState.setResourceChecksum(FhirStorageService.generateChecksum(newJson));
+					if (changed) {
+						String newJson = FhirSerializationHelper.serializeResource(resource);
+						currentState.setResourceData(newJson);
+						currentState.setResourceChecksum(FhirStorageService.generateChecksum(newJson));
 
-					resourceDal.save(currentState);
+						saveResourceWrapper(serviceId, currentState);
+					}
 				}
 
 				LOG.info("Found " + newProblemChildren.size() + " Problems to fix");
@@ -609,7 +650,8 @@ public class Main {
 					//get history, which is most recent FIRST
 					List<ResourceWrapper> history = resourceDal.getResourceHistory(serviceId, ResourceType.Condition.toString(), conditionId);
 					if (history.isEmpty()) {
-						throw new Exception("Empty history for Condition " + conditionId);
+						continue;
+						//throw new Exception("Empty history for Condition " + conditionId);
 					}
 
 					ResourceWrapper currentState = history.get(0);
@@ -646,12 +688,12 @@ public class Main {
 					currentState.setResourceData(newJson);
 					currentState.setResourceChecksum(FhirStorageService.generateChecksum(newJson));
 
-					resourceDal.save(currentState);
+					saveResourceWrapper(serviceId, currentState);
 				}
 
 				//mark as done
 				String updateSql = "UPDATE " + table + " SET done = 1 WHERE service_id = '" + serviceId + "';";
-				entityManager = ConnectionManager.getEdsEntityManager();
+				entityManager = ConnectionManager.getAdminEntityManager();
 				session = (SessionImpl)entityManager.getDelegate();
 				connection = session.connection();
 				statement = connection.createStatement();
@@ -686,6 +728,41 @@ public class Main {
 		} catch (Throwable t) {
 			LOG.error("", t);
 		}
+	}
+
+	private static void saveResourceWrapper(UUID serviceId, ResourceWrapper wrapper) throws Exception {
+		EntityManager entityManager = ConnectionManager.getEhrEntityManager(serviceId);
+		SessionImpl session = (SessionImpl)entityManager.getDelegate();
+		Connection connection = session.connection();
+		Statement statement = connection.createStatement();
+
+		entityManager.getTransaction().begin();
+
+		String json = wrapper.getResourceData();
+		json = json.replace("'", "''");
+
+		String updateSql = "UPDATE resource_current"
+						+ " SET resource_data = '" + json + "',"
+						+ " resource_checksum = " + wrapper.getResourceChecksum()
+						+ " WHERE service_id = '" + wrapper.getServiceId() + "'"
+						+ " AND patient_id = '" + wrapper.getPatientId() + "'"
+						+ " AND resource_type = '" + wrapper.getResourceType() + "'"
+						+ " AND resource_id = '" + wrapper.getResourceId() + "'";
+		statement.executeUpdate(updateSql);
+
+		//SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:SS");
+		//String createdAtStr = sdf.format(wrapper.getCreatedAt());
+
+		updateSql = "UPDATE resource_history"
+				+ " SET resource_data = '" + json + "',"
+				+ " resource_checksum = " + wrapper.getResourceChecksum()
+				+ " WHERE resource_id = '" + wrapper.getResourceId() + "'"
+				+ " AND resource_type = '" + wrapper.getResourceType() + "'"
+				//+ " AND created_at = '" + createdAtStr + "'"
+				+ " AND version = '" + wrapper.getVersion() + "'";
+		statement.executeUpdate(updateSql);
+
+		entityManager.getTransaction().commit();
 	}
 
 	/*private static void populateNewSearchTable(String table) {
