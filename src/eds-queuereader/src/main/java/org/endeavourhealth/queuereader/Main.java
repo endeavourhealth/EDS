@@ -517,6 +517,9 @@ public class Main {
 					for (ResourceWrapper wrapper: history) {
 						Date d = wrapper.getCreatedAt();
 						if (!d.after(cutoff)) {
+							if (wrapper.getResourceData() == null) {
+								throw new Exception("Null resource data for Encounter " + encounterId + " and version " + wrapper.getVersion());
+							}
 							Encounter encounter = (Encounter)FhirSerializationHelper.deserializeResource(wrapper.getResourceData());
 							EncounterBuilder encounterBuilder = new EncounterBuilder(encounter);
 							ContainedListBuilder containedListBuilder = new ContainedListBuilder(encounterBuilder);
