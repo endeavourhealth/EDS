@@ -12,6 +12,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.common.config.ConfigManager;
+import org.endeavourhealth.common.fhir.ReferenceHelper;
 import org.endeavourhealth.common.utility.FileHelper;
 import org.endeavourhealth.common.utility.SlackHelper;
 import org.endeavourhealth.core.configuration.ConfigDeserialiser;
@@ -26,7 +27,12 @@ import org.endeavourhealth.core.database.dal.audit.models.Exchange;
 import org.endeavourhealth.core.database.dal.audit.models.ExchangeEvent;
 import org.endeavourhealth.core.database.dal.audit.models.ExchangeTransformAudit;
 import org.endeavourhealth.core.database.dal.audit.models.HeaderKeys;
+import org.endeavourhealth.core.database.dal.ehr.ResourceDalI;
+import org.endeavourhealth.core.database.dal.ehr.models.ResourceWrapper;
+import org.endeavourhealth.core.database.rdbms.ConnectionManager;
 import org.endeavourhealth.core.exceptions.TransformException;
+import org.endeavourhealth.core.fhirStorage.FhirSerializationHelper;
+import org.endeavourhealth.core.fhirStorage.FhirStorageService;
 import org.endeavourhealth.core.fhirStorage.JsonServiceInterfaceEndpoint;
 import org.endeavourhealth.core.messaging.pipeline.components.PostMessageToExchange;
 import org.endeavourhealth.core.queueing.QueueHelper;
@@ -34,11 +40,22 @@ import org.endeavourhealth.core.xml.TransformErrorSerializer;
 import org.endeavourhealth.core.xml.transformError.TransformError;
 import org.endeavourhealth.transform.barts.BartsCsvToFhirTransformer;
 import org.endeavourhealth.transform.common.*;
+import org.endeavourhealth.transform.common.resourceBuilders.*;
 import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
 import org.endeavourhealth.transform.emis.csv.helpers.EmisCsvHelper;
+import org.endeavourhealth.transform.emis.csv.helpers.ReferenceList;
+import org.endeavourhealth.transform.emis.csv.schema.careRecord.Consultation;
+import org.endeavourhealth.transform.emis.csv.schema.careRecord.Diary;
+import org.endeavourhealth.transform.emis.csv.schema.careRecord.Problem;
+import org.endeavourhealth.transform.emis.csv.schema.prescribing.DrugRecord;
+import org.endeavourhealth.transform.emis.csv.schema.prescribing.IssueRecord;
+import org.endeavourhealth.transform.emis.csv.transforms.careRecord.ObservationTransformer;
+import org.hibernate.internal.SessionImpl;
+import org.hl7.fhir.instance.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.persistence.EntityManager;
 import java.io.*;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
@@ -59,7 +76,12 @@ public class Main {
 		LOG.info("Initialising config manager");
 		ConfigManager.initialize("queuereader", configId);
 
-
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("FixEncounters")) {
+			String table = args[1];
+			fixEncounters(table);
+			System.exit(0);
+		}
 
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("CreateBartsSubset")) {
@@ -229,6 +251,441 @@ public class Main {
 		// Begin consume
 		rabbitHandler.start();
 		LOG.info("EDS Queue reader running (kill file location " + TransformConfig.instance().getKillFileLocation() + ")");
+	}
+
+	private static void fixEncounters(String table) {
+		LOG.info("Fixing encounters from " + table);
+
+		try {
+
+			SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm");
+			Date cutoff = sdf.parse("2018-03-14 11:42");
+
+			EntityManager entityManager = ConnectionManager.getAdminEntityManager();
+			SessionImpl session = (SessionImpl)entityManager.getDelegate();
+			Connection connection = session.connection();
+			Statement statement = connection.createStatement();
+
+			List<UUID> serviceIds = new ArrayList<>();
+			Map<UUID, UUID> hmSystems = new HashMap<>();
+
+			String sql = "SELECT service_id, system_id FROM " + table + " WHERE done = 0";
+			ResultSet rs = statement.executeQuery(sql);
+			while (rs.next()) {
+				UUID serviceId = UUID.fromString(rs.getString(1));
+				UUID systemId = UUID.fromString(rs.getString(2));
+				serviceIds.add(serviceId);
+				hmSystems.put(serviceId, systemId);
+			}
+			rs.close();
+			statement.close();
+			entityManager.close();
+
+			for (UUID serviceId: serviceIds) {
+				UUID systemId = hmSystems.get(serviceId);
+				LOG.info("Doing service " + serviceId + " and system " + systemId);
+
+				ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
+				List<UUID> exchangeIds = exchangeDal.getExchangeIdsForService(serviceId, systemId);
+
+				List<UUID> exchangeIdsToProcess = new ArrayList<>();
+
+				for (UUID exchangeId: exchangeIds) {
+
+					List<ExchangeTransformAudit> audits = exchangeDal.getAllExchangeTransformAudits(serviceId, systemId, exchangeId);
+					for (ExchangeTransformAudit audit: audits) {
+						Date d = audit.getStarted();
+						if (d.after(cutoff)) {
+							exchangeIdsToProcess.add(exchangeId);
+							break;
+						}
+					}
+				}
+
+				Map<String, ReferenceList> consultationNewChildMap = new HashMap<>();
+				Map<String, ReferenceList> observationChildMap = new HashMap<>();
+				Map<String, ReferenceList> newProblemChildren = new HashMap<>();
+
+				for (UUID exchangeId: exchangeIdsToProcess) {
+					Exchange exchange = exchangeDal.getExchange(exchangeId);
+					String[] files = ExchangeHelper.parseExchangeBodyIntoFileList(exchange.getBody());
+					String version = EmisCsvToFhirTransformer.determineVersion(files);
+
+					Map<Class, AbstractCsvParser> parsers = new HashMap<>();
+					EmisCsvToFhirTransformer.createParsers(serviceId, systemId, exchangeId, files, version, parsers);
+
+					String dataSharingAgreementGuid = EmisCsvToFhirTransformer.findDataSharingAgreementGuid(parsers);
+					EmisCsvHelper csvHelper = new EmisCsvHelper(serviceId, systemId, exchangeId, dataSharingAgreementGuid, true);
+
+
+					Consultation consultationParser = (Consultation)parsers.get(Consultation.class);
+					while (consultationParser.nextRecord()) {
+						CsvCell consultationGuid = consultationParser.getConsultationGuid();
+						CsvCell patientGuid = consultationParser.getPatientGuid();
+						String sourceId = EmisCsvHelper.createUniqueId(patientGuid, consultationGuid);
+						consultationNewChildMap.put(sourceId, new ReferenceList());
+					}
+
+					Problem problemParser = (Problem)parsers.get(Problem.class);
+					while (problemParser.nextRecord()) {
+						CsvCell problemGuid = problemParser.getObservationGuid();
+						CsvCell patientGuid = problemParser.getPatientGuid();
+						String sourceId = EmisCsvHelper.createUniqueId(patientGuid, problemGuid);
+						newProblemChildren.put(sourceId, new ReferenceList());
+					}
+
+
+					org.endeavourhealth.transform.emis.csv.schema.careRecord.Observation observationParser = (org.endeavourhealth.transform.emis.csv.schema.careRecord.Observation)parsers.get(org.endeavourhealth.transform.emis.csv.schema.careRecord.Observation.class);
+					while (observationParser.nextRecord()) {
+						CsvCell observationGuid = observationParser.getObservationGuid();
+						CsvCell patientGuid = observationParser.getPatientGuid();
+						String obSourceId = EmisCsvHelper.createUniqueId(patientGuid, observationGuid);
+
+						ResourceType resourceType = ObservationTransformer.getTargetResourceType(observationParser, csvHelper);
+
+						UUID obUuid = IdHelper.getEdsResourceId(serviceId, systemId, resourceType, obSourceId);
+						Reference obReference = ReferenceHelper.createReference(resourceType, obUuid.toString());
+
+						CsvCell consultationGuid = observationParser.getConsultationGuid();
+						if (!consultationGuid.isEmpty()) {
+							String sourceId = EmisCsvHelper.createUniqueId(patientGuid, consultationGuid);
+							ReferenceList referenceList = consultationNewChildMap.get(sourceId);
+							if (referenceList == null) {
+								referenceList = new ReferenceList();
+								consultationNewChildMap.put(sourceId, referenceList);
+							}
+							referenceList.add(obReference);
+						}
+
+						CsvCell problemGuid = observationParser.getProblemGuid();
+						if (!problemGuid.isEmpty()) {
+							String sourceId = EmisCsvHelper.createUniqueId(patientGuid, problemGuid);
+							ReferenceList referenceList = newProblemChildren.get(sourceId);
+							if (referenceList == null) {
+								referenceList = new ReferenceList();
+								newProblemChildren.put(sourceId, referenceList);
+							}
+							referenceList.add(obReference);
+						}
+
+						CsvCell parentObGuid = observationParser.getParentObservationGuid();
+						if (!parentObGuid.isEmpty()) {
+							String sourceId = EmisCsvHelper.createUniqueId(patientGuid, parentObGuid);
+							ReferenceList referenceList = observationChildMap.get(sourceId);
+							if (referenceList == null) {
+								referenceList = new ReferenceList();
+								observationChildMap.put(sourceId, referenceList);
+							}
+							referenceList.add(obReference);
+						}
+					}
+
+					Diary diaryParser = (Diary)parsers.get(Diary.class);
+					while (diaryParser.nextRecord()) {
+
+						CsvCell consultationGuid = consultationParser.getConsultationGuid();
+						if (!consultationGuid.isEmpty()) {
+
+							CsvCell diaryGuid = diaryParser.getDiaryGuid();
+							CsvCell patientGuid = consultationParser.getPatientGuid();
+							String diarySourceId = EmisCsvHelper.createUniqueId(patientGuid, diaryGuid);
+							UUID diaryUuid = IdHelper.getEdsResourceId(serviceId, systemId, ResourceType.ProcedureRequest, diarySourceId);
+							Reference diaryReference = ReferenceHelper.createReference(ResourceType.ProcedureRequest, diaryUuid.toString());
+
+							String sourceId = EmisCsvHelper.createUniqueId(patientGuid, consultationGuid);
+							ReferenceList referenceList = consultationNewChildMap.get(sourceId);
+							if (referenceList == null) {
+								referenceList = new ReferenceList();
+								consultationNewChildMap.put(sourceId, referenceList);
+							}
+							referenceList.add(diaryReference);
+						}
+					}
+
+					IssueRecord issueRecordParser = (IssueRecord)parsers.get(IssueRecord.class);
+					while (issueRecordParser.nextRecord()) {
+						
+						CsvCell problemGuid = issueRecordParser.getProblemObservationGuid();
+						if (!problemGuid.isEmpty()) {
+
+							CsvCell issueRecordGuid = issueRecordParser.getIssueRecordGuid();
+							CsvCell patientGuid = consultationParser.getPatientGuid();
+							String issueRecordSourceId = EmisCsvHelper.createUniqueId(patientGuid, issueRecordGuid);
+							UUID issueRecordUuid = IdHelper.getEdsResourceId(serviceId, systemId, ResourceType.MedicationOrder, issueRecordSourceId);
+							Reference issueRecordReference = ReferenceHelper.createReference(ResourceType.MedicationOrder, issueRecordUuid.toString());
+
+							String sourceId = EmisCsvHelper.createUniqueId(patientGuid, problemGuid);
+							ReferenceList referenceList = newProblemChildren.get(sourceId);
+							if (referenceList == null) {
+								referenceList = new ReferenceList();
+								newProblemChildren.put(sourceId, referenceList);
+							}
+							referenceList.add(issueRecordReference);
+						}
+					}
+
+					DrugRecord drugRecordParser = (DrugRecord)parsers.get(DrugRecord.class);
+					while (drugRecordParser.nextRecord()) {
+
+						CsvCell problemGuid = drugRecordParser.getProblemObservationGuid();
+						if (!problemGuid.isEmpty()) {
+
+							CsvCell drugRecordGuid = drugRecordParser.getDrugRecordGuid();
+							CsvCell patientGuid = consultationParser.getPatientGuid();
+							String drugRecordSourceId = EmisCsvHelper.createUniqueId(patientGuid, drugRecordGuid);
+							UUID drugRecordUuid = IdHelper.getEdsResourceId(serviceId, systemId, ResourceType.MedicationStatement, drugRecordSourceId);
+							Reference drugRecordReference = ReferenceHelper.createReference(ResourceType.MedicationStatement, drugRecordUuid.toString());
+
+							String sourceId = EmisCsvHelper.createUniqueId(patientGuid, problemGuid);
+							ReferenceList referenceList = newProblemChildren.get(sourceId);
+							if (referenceList == null) {
+								referenceList = new ReferenceList();
+								newProblemChildren.put(sourceId, referenceList);
+							}
+							referenceList.add(drugRecordReference);
+						}
+					}
+
+					for (AbstractCsvParser parser : parsers.values()) {
+						try {
+							parser.close();
+						} catch (IOException ex) {
+							//don't worry if this fails, as we're done anyway
+						}
+					}
+				}
+
+				ResourceDalI resourceDal = DalProvider.factoryResourceDal();
+
+				LOG.info("Found " + consultationNewChildMap.size() + " Encounters to fix");
+				for (String encounterSourceId: consultationNewChildMap.keySet()) {
+
+					ReferenceList childReferences = consultationNewChildMap.get(encounterSourceId);
+
+					//map to UUID
+					UUID encounterId = IdHelper.getEdsResourceId(serviceId, systemId, ResourceType.Encounter, encounterSourceId);
+
+					//get history, which is most recent FIRST
+					List<ResourceWrapper> history = resourceDal.getResourceHistory(serviceId, ResourceType.Encounter.toString(), encounterId);
+					if (history.isEmpty()) {
+						throw new Exception("Empty history for Encounter " + encounterId);
+					}
+
+					ResourceWrapper currentState = history.get(0);
+					if (currentState.isDeleted()) {
+						continue;
+					}
+
+					//find last instance prior to cutoff and get its linked children
+					for (ResourceWrapper wrapper: history) {
+						Date d = wrapper.getCreatedAt();
+						if (!d.after(cutoff)) {
+							Encounter encounter = (Encounter)FhirSerializationHelper.deserializeResource(wrapper.getResourceData());
+							EncounterBuilder encounterBuilder = new EncounterBuilder(encounter);
+							ContainedListBuilder containedListBuilder = new ContainedListBuilder(encounterBuilder);
+
+							List<Reference> previousChildren = containedListBuilder.getContainedListItems();
+							childReferences.add(previousChildren);
+
+							break;
+						}
+					}
+
+					if (childReferences.size() == 0) {
+						continue;
+					}
+
+					Encounter encounter = (Encounter)FhirSerializationHelper.deserializeResource(currentState.getResourceData());
+					EncounterBuilder encounterBuilder = new EncounterBuilder(encounter);
+					ContainedListBuilder containedListBuilder = new ContainedListBuilder(encounterBuilder);
+
+					containedListBuilder.addReferences(childReferences);
+
+					String newJson = FhirSerializationHelper.serializeResource(encounter);
+					currentState.setResourceData(newJson);
+					currentState.setResourceChecksum(FhirStorageService.generateChecksum(newJson));
+
+					resourceDal.save(currentState);
+				}
+
+
+				LOG.info("Found " + observationChildMap.size() + " Parent Observations to fix");
+				for (String sourceId: observationChildMap.keySet()) {
+
+					ReferenceList childReferences = observationChildMap.get(sourceId);
+
+					//map to UUID
+					ResourceType resourceType = null;
+
+					UUID resourceId = IdHelper.getEdsResourceId(serviceId, systemId, ResourceType.Observation, sourceId);
+					if (resourceId != null) {
+						resourceType = ResourceType.Observation;
+
+					} else {
+						resourceId = IdHelper.getEdsResourceId(serviceId, systemId, ResourceType.DiagnosticReport, sourceId);
+						if (resourceId != null) {
+							resourceType = ResourceType.DiagnosticReport;
+
+						} else {
+							continue;
+						}
+					}
+
+
+					//get history, which is most recent FIRST
+					List<ResourceWrapper> history = resourceDal.getResourceHistory(serviceId, resourceType.toString(), resourceId);
+					if (history.isEmpty()) {
+						throw new Exception("Empty history for " + resourceType + " " + resourceId);
+					}
+
+					ResourceWrapper currentState = history.get(0);
+					if (currentState.isDeleted()) {
+						continue;
+					}
+
+					//find last instance prior to cutoff and get its linked children
+					for (ResourceWrapper wrapper: history) {
+						Date d = wrapper.getCreatedAt();
+						if (!d.after(cutoff)) {
+
+							if (resourceType == ResourceType.Observation) {
+								Observation observation = (Observation)FhirSerializationHelper.deserializeResource(wrapper.getResourceData());
+								if (observation.hasRelated()) {
+									for (Observation.ObservationRelatedComponent related: observation.getRelated()) {
+										Reference reference = related.getTarget();
+										childReferences.add(reference);
+									}
+								}
+
+							} else {
+								DiagnosticReport report = (DiagnosticReport)FhirSerializationHelper.deserializeResource(wrapper.getResourceData());
+								if (report.hasResult()) {
+									for (Reference reference: report.getResult()) {
+										childReferences.add(reference);
+									}
+								}
+							}
+
+							break;
+						}
+					}
+
+					if (childReferences.size() == 0) {
+						continue;
+					}
+
+					Resource resource = FhirSerializationHelper.deserializeResource(currentState.getResourceData());
+
+					if (resourceType == ResourceType.Observation) {
+						ObservationBuilder resourceBuilder = new ObservationBuilder((Observation)resource);
+						for (int i=0; i<childReferences.size(); i++) {
+							Reference reference = childReferences.getReference(i);
+							resourceBuilder.addChildObservation(reference);
+						}
+
+					} else {
+						DiagnosticReportBuilder resourceBuilder = new DiagnosticReportBuilder((DiagnosticReport)resource);
+						for (int i=0; i<childReferences.size(); i++) {
+							Reference reference = childReferences.getReference(i);
+							resourceBuilder.addResult(reference);
+						}
+					}
+
+					String newJson = FhirSerializationHelper.serializeResource(resource);
+					currentState.setResourceData(newJson);
+					currentState.setResourceChecksum(FhirStorageService.generateChecksum(newJson));
+
+					resourceDal.save(currentState);
+				}
+
+				LOG.info("Found " + newProblemChildren.size() + " Problems to fix");
+				for (String sourceId: newProblemChildren.keySet()) {
+
+					ReferenceList childReferences = newProblemChildren.get(sourceId);
+
+					//map to UUID
+					UUID conditionId = IdHelper.getEdsResourceId(serviceId, systemId, ResourceType.Condition, sourceId);
+
+					//get history, which is most recent FIRST
+					List<ResourceWrapper> history = resourceDal.getResourceHistory(serviceId, ResourceType.Condition.toString(), conditionId);
+					if (history.isEmpty()) {
+						throw new Exception("Empty history for Condition " + conditionId);
+					}
+
+					ResourceWrapper currentState = history.get(0);
+					if (currentState.isDeleted()) {
+						continue;
+					}
+
+					//find last instance prior to cutoff and get its linked children
+					for (ResourceWrapper wrapper: history) {
+						Date d = wrapper.getCreatedAt();
+						if (!d.after(cutoff)) {
+							Condition previousVersion = (Condition)FhirSerializationHelper.deserializeResource(wrapper.getResourceData());
+							ConditionBuilder conditionBuilder = new ConditionBuilder(previousVersion);
+							ContainedListBuilder containedListBuilder = new ContainedListBuilder(conditionBuilder);
+
+							List<Reference> previousChildren = containedListBuilder.getContainedListItems();
+							childReferences.add(previousChildren);
+
+							break;
+						}
+					}
+
+					if (childReferences.size() == 0) {
+						continue;
+					}
+
+					Condition condition = (Condition)FhirSerializationHelper.deserializeResource(currentState.getResourceData());
+					ConditionBuilder conditionBuilder = new ConditionBuilder(condition);
+					ContainedListBuilder containedListBuilder = new ContainedListBuilder(conditionBuilder);
+
+					containedListBuilder.addReferences(childReferences);
+
+					String newJson = FhirSerializationHelper.serializeResource(condition);
+					currentState.setResourceData(newJson);
+					currentState.setResourceChecksum(FhirStorageService.generateChecksum(newJson));
+
+					resourceDal.save(currentState);
+				}
+
+				//mark as done
+				String updateSql = "UPDATE " + table + " SET done = 1 WHERE service_id = '" + serviceId + "';";
+				entityManager = ConnectionManager.getEdsEntityManager();
+				session = (SessionImpl)entityManager.getDelegate();
+				connection = session.connection();
+				statement = connection.createStatement();
+				entityManager.getTransaction().begin();
+				statement.executeUpdate(updateSql);
+				entityManager.getTransaction().commit();
+			}
+
+			/**
+			 * For each practice:
+			 Go through all files processed since 14 March
+			 Cache all links as above
+			 Cache all Encounters saved too
+
+			 For each Encounter referenced at all:
+			 Retrieve latest version from resource current
+			 Retrieve version prior to 14 March
+			 Update current version with old references plus new ones
+
+			 For each parent observation:
+			 Retrieve latest version (could be observation or diagnostic report)
+
+			 For each problem:
+			 Retrieve latest version from resource current
+			 Check if still a problem:
+			 Retrieve version prior to 14 March
+			 Update current version with old references plus new ones
+
+			 */
+
+			LOG.info("Finished Fixing encounters from " + table);
+		} catch (Throwable t) {
+			LOG.error("", t);
+		}
 	}
 
 	/*private static void populateNewSearchTable(String table) {
