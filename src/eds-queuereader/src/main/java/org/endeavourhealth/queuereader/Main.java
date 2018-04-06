@@ -359,6 +359,11 @@ public class Main {
 						CsvCell patientGuid = observationParser.getPatientGuid();
 						String obSourceId = EmisCsvHelper.createUniqueId(patientGuid, observationGuid);
 
+						CsvCell codeId = observationParser.getCodeId();
+						if (codeId.isEmpty()) {
+							continue;
+						}
+
 						ResourceType resourceType = ObservationTransformer.getTargetResourceType(observationParser, csvHelper);
 
 						UUID obUuid = IdHelper.getEdsResourceId(serviceId, systemId, resourceType, obSourceId);
