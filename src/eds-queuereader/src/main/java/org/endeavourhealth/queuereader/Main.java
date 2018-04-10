@@ -40,7 +40,9 @@ import org.endeavourhealth.core.xml.TransformErrorSerializer;
 import org.endeavourhealth.core.xml.transformError.TransformError;
 import org.endeavourhealth.transform.barts.BartsCsvToFhirTransformer;
 import org.endeavourhealth.transform.common.*;
-import org.endeavourhealth.transform.common.resourceBuilders.*;
+import org.endeavourhealth.transform.common.resourceBuilders.ConditionBuilder;
+import org.endeavourhealth.transform.common.resourceBuilders.ContainedListBuilder;
+import org.endeavourhealth.transform.common.resourceBuilders.EncounterBuilder;
 import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
 import org.endeavourhealth.transform.emis.csv.helpers.EmisCsvHelper;
 import org.endeavourhealth.transform.emis.csv.helpers.ReferenceList;
@@ -542,7 +544,17 @@ public class Main {
 						continue;
 					}
 
-					Encounter encounter = (Encounter)FhirSerializationHelper.deserializeResource(currentState.getResourceData());
+					String json = currentState.getResourceData();
+					Resource resource = FhirSerializationHelper.deserializeResource(json);
+					String newJson = FhirSerializationHelper.serializeResource(resource);
+					if (!json.equals(newJson)) {
+						currentState.setResourceData(newJson);
+						currentState.setResourceChecksum(FhirStorageService.generateChecksum(newJson));
+
+						saveResourceWrapper(serviceId, currentState);
+					}
+
+					/*Encounter encounter = (Encounter)FhirSerializationHelper.deserializeResource(currentState.getResourceData());
 					EncounterBuilder encounterBuilder = new EncounterBuilder(encounter);
 					ContainedListBuilder containedListBuilder = new ContainedListBuilder(encounterBuilder);
 
@@ -552,7 +564,7 @@ public class Main {
 					currentState.setResourceData(newJson);
 					currentState.setResourceChecksum(FhirStorageService.generateChecksum(newJson));
 
-					saveResourceWrapper(serviceId, currentState);
+					saveResourceWrapper(serviceId, currentState);*/
 				}
 
 
@@ -626,7 +638,17 @@ public class Main {
 						continue;
 					}
 
-					Resource resource = FhirSerializationHelper.deserializeResource(currentState.getResourceData());
+					String json = currentState.getResourceData();
+					Resource resource = FhirSerializationHelper.deserializeResource(json);
+					String newJson = FhirSerializationHelper.serializeResource(resource);
+					if (!json.equals(newJson)) {
+						currentState.setResourceData(newJson);
+						currentState.setResourceChecksum(FhirStorageService.generateChecksum(newJson));
+
+						saveResourceWrapper(serviceId, currentState);
+					}
+
+					/*Resource resource = FhirSerializationHelper.deserializeResource(currentState.getResourceData());
 
 					boolean changed = false;
 
@@ -655,7 +677,7 @@ public class Main {
 						currentState.setResourceChecksum(FhirStorageService.generateChecksum(newJson));
 
 						saveResourceWrapper(serviceId, currentState);
-					}
+					}*/
 				}
 
 				LOG.info("Found " + newProblemChildren.size() + " Problems to fix");
@@ -702,7 +724,17 @@ public class Main {
 						continue;
 					}
 
-					Condition condition = (Condition)FhirSerializationHelper.deserializeResource(currentState.getResourceData());
+					String json = currentState.getResourceData();
+					Resource resource = FhirSerializationHelper.deserializeResource(json);
+					String newJson = FhirSerializationHelper.serializeResource(resource);
+					if (!json.equals(newJson)) {
+						currentState.setResourceData(newJson);
+						currentState.setResourceChecksum(FhirStorageService.generateChecksum(newJson));
+
+						saveResourceWrapper(serviceId, currentState);
+					}
+
+					/*Condition condition = (Condition)FhirSerializationHelper.deserializeResource(currentState.getResourceData());
 					ConditionBuilder conditionBuilder = new ConditionBuilder(condition);
 					ContainedListBuilder containedListBuilder = new ContainedListBuilder(conditionBuilder);
 
@@ -712,7 +744,7 @@ public class Main {
 					currentState.setResourceData(newJson);
 					currentState.setResourceChecksum(FhirStorageService.generateChecksum(newJson));
 
-					saveResourceWrapper(serviceId, currentState);
+					saveResourceWrapper(serviceId, currentState);*/
 				}
 
 				//mark as done
@@ -764,6 +796,7 @@ public class Main {
 
 		String json = wrapper.getResourceData();
 		json = json.replace("'", "''");
+		json = json.replace("\\", "\\\\");
 
 		String updateSql = "UPDATE resource_current"
 						+ " SET resource_data = '" + json + "',"
