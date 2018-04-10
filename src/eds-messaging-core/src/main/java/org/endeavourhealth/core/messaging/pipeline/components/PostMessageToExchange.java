@@ -19,9 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.TimeoutException;
 
 public class PostMessageToExchange extends PipelineComponent {
@@ -160,23 +158,25 @@ public class PostMessageToExchange extends PipelineComponent {
 			throw new PipelineException("Connection to rabbit timed out : " + e.getMessage(), e);
 		}
 	}
-	/*private Connection getConnection() throws PipelineException {
-		try {
-			return ConnectionManager.getConnection(
-							config.getCredentials().getUsername(),
-							config.getCredentials().getPassword(),
-							config.getNodes()
-					);
-		} catch (IOException e) {
-			LOG.error("Unable to connect to rabbit", e);
-			throw new PipelineException("Unable to connect to Rabbit : " + e.getMessage(), e);
-		} catch (TimeoutException e) {
-			LOG.error("Connection to Rabbit timed out", e);
-			throw new PipelineException("Connection to rabbit timed out : " + e.getMessage(), e);
-		}
-	}*/
 
 	private String getRoutingKey(Exchange exchange) throws PipelineException {
+
+		//get the value we're routing on, which will be one or more headers from the exchange
+		List<String> routingValues = new ArrayList<>();
+		List<String> routingHeaders = config.getRoutingHeader();
+		for (String routingHeader: routingHeaders) {
+			String routingValue = exchange.getHeader(routingHeader);
+			if (Strings.isNullOrEmpty(routingValue)) {
+				throw new PipelineException("Failed to find routing value for " + routingHeader + " in exchange " + exchange);
+			}
+			routingValues.add(routingValue);
+		}
+
+		String fullRoutingValue = String.join(":", routingValues);
+		String exchangeName = config.getExchange();
+		return RoutingManager.getInstance().getRoutingKeyForIdentifier(exchangeName, fullRoutingValue);
+	}
+	/*private String getRoutingKey(Exchange exchange) throws PipelineException {
 
 		//get the value we're routing on
 		String routingValue = null;
@@ -192,13 +192,6 @@ public class PostMessageToExchange extends PipelineComponent {
 
 		String exchangeName = config.getExchange();
 		return RoutingManager.getInstance().getRoutingKeyForIdentifier(exchangeName, routingValue);
-	}
-	/*private String getRoutingKey(Exchange exchange) {
-		String routingIdentifier = "Unknown";
-
-		if (config.getRoutingHeader() != null && !config.getRoutingHeader().isEmpty())
-			routingIdentifier = exchange.getHeader(config.getRoutingHeader());
-
-		return RoutingManager.getInstance().getRoutingKeyForIdentifier(routingIdentifier);
 	}*/
+
 }

@@ -16,7 +16,12 @@ import java.util.regex.Pattern;
 
 public class RoutingManager implements ICache {
 	private static final Logger LOG = LoggerFactory.getLogger(RoutingManager.class);
+
 	private static RoutingManager instance;
+
+	//private RouteGroup[] routingMap;
+	private Map<String, List<RouteGroup>> cachedRoutingsByExchangeName;
+
 
 	public static RoutingManager getInstance() {
 		if (instance == null) {
@@ -26,11 +31,8 @@ public class RoutingManager implements ICache {
 		return instance;
 	}
 
-	//private RouteGroup[] routingMap;
-	private Map<String, List<RouteGroup>> cachedRoutings;
-
 	public String getRoutingKeyForIdentifier(String exchangeName, String identifier) throws PipelineException {
-		List<RouteGroup> routings = getRoutingMap(exchangeName);
+		List<RouteGroup> routings = getRoutingMapForExchange(exchangeName);
 		if (routings == null) {
 			throw new PipelineException("No routings found for exchange " + exchangeName);
 		}
@@ -46,8 +48,8 @@ public class RoutingManager implements ICache {
 		throw new PipelineException("No routing key found for value [" + identifier + "] and exchange name " + exchangeName);
 	}
 
-	private List<RouteGroup> getRoutingMap(String exchangeName) throws PipelineException {
-		if (cachedRoutings == null) {
+	private List<RouteGroup> getRoutingMapForExchange(String exchangeName) throws PipelineException {
+		if (cachedRoutingsByExchangeName == null) {
 
 			Map<String, List<RouteGroup>> map = new HashMap<>();
 
@@ -70,22 +72,26 @@ public class RoutingManager implements ICache {
 				throw new PipelineException("Failed to populate routing map from JSON " + routings, ex);
 			}
 
-			this.cachedRoutings = map;
+			this.cachedRoutingsByExchangeName = map;
 		}
 
-		return cachedRoutings.get(exchangeName);
+		return cachedRoutingsByExchangeName.get(exchangeName);
 	}
 
 	@Override
-	public String getName() { return "RoutingManager"; }
+	public String getName() {
+		return "RoutingManager";
+	}
 
 	@Override
 	public
-	long getSize() { return cachedRoutings == null ? 0 : cachedRoutings.size(); }
+	long getSize() {
+		return cachedRoutingsByExchangeName == null ? 0 : cachedRoutingsByExchangeName.size();
+	}
 
 	@Override
 	public void clearCache() {
-		cachedRoutings = null;
+		cachedRoutingsByExchangeName = null;
 	}
 
 	/*public String getRoutingKeyForIdentifier(String identifier) {
