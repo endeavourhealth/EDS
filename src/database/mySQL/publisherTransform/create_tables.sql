@@ -117,7 +117,7 @@ CREATE TABLE internal_id_map (
 CREATE INDEX ix_internal_id_map_destination_id ON internal_id_map (service_id, id_type, destination_id, source_id);
 
 create table cerner_code_value_ref (
-  code_value_cd bigint(20) not null comment 'The value of the code',
+  code_value_cd varchar(100) not null comment 'The value of the code',
   date date not null comment 'Date of the reference',
   active_ind boolean not null comment 'Whether the reference is active or not',
   code_desc_txt varchar(1000) not null comment 'Description of the code',
