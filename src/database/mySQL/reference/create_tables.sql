@@ -156,15 +156,3 @@ create table icd10_lookup (
   description varchar(255),
   CONSTRAINT pk_postcode_lookup PRIMARY KEY (code)
 );
-
-
-CREATE TABLE multilex_to_ctv3_map
-(
-  row_id bigint NOT NULL PRIMARY KEY,
-  multilex_product_id bigint NOT NULL,
-  ctv3_read_code varchar(5) NOT NULL,
-  ctv3_read_term text NOT NULL
-);
-
-CREATE INDEX ix_multilex_to_ctv3_map_multilex_product_id
-  ON multilex_to_ctv3_map (multilex_product_id);
