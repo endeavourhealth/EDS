@@ -172,3 +172,14 @@ CREATE TABLE multilex_to_ctv3_map
 CREATE INDEX ix_multilex_to_ctv3_map_multilex_product_id
   ON multilex_to_ctv3_map (multilex_product_id);
 
+
+CREATE TABLE ctv3_hierarchy_ref
+(
+  row_id bigint NOT NULL PRIMARY KEY,
+  ctv3_parent_read_code varchar(5) NOT NULL,
+  ctv3_child_read_code varchar(5) NOT NULL,
+  child_level integer NOT NULL
+);
+
+CREATE INDEX ix_ctv3_hierarchy_parent_read_code_child_read_code
+  ON ctv3_hierarchy (ctv3_parent_read_code, ctv3_child_read_code);
