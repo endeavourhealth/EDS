@@ -12,6 +12,7 @@ DROP TABLE IF EXISTS internal_id_map;
 DROP TABLE IF EXISTS cerner_code_value_ref;
 DROP TABLE IF EXISTS tpp_mapping_ref;
 DROP TABLE IF EXISTS tpp_config_list_option;
+DROP TABLE IF EXISTS tpp_immunisation_content;
 
 CREATE TABLE resource_id_map (
 	service_id char(36),
@@ -183,3 +184,12 @@ CREATE TABLE ctv3_hierarchy_ref
 
 CREATE INDEX ix_ctv3_hierarchy_parent_read_code_child_read_code
   ON ctv3_hierarchy (ctv3_parent_read_code, ctv3_child_read_code);
+
+create table tpp_immunisation_content (
+  row_id bigint(20) not null comment 'The value of RowIdentifier',
+  name varchar(100) not null comment 'The name of the immunisation',
+  content varchar(255) not null comment 'The contents of the immunisation',
+  date_deleted datetime null comment 'The date the vaccination was deleted',
+
+  constraint tpp_immunisation_content_pk primary key (row_id)
+);
