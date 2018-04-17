@@ -189,7 +189,9 @@ create table tpp_immunisation_content (
   row_id bigint(20) not null comment 'The value of RowIdentifier',
   name varchar(100) not null comment 'The name of the immunisation',
   content varchar(255) not null comment 'The contents of the immunisation',
+  service_id varchar(36) not null comment 'The service the imumnisation content corresponds to',
   date_deleted datetime null comment 'The date the vaccination was deleted',
+  audit_json mediumtext null comment 'Used for Audit Purposes',
 
   constraint tpp_immunisation_content_pk primary key (row_id)
 );
