@@ -182,8 +182,8 @@ CREATE TABLE ctv3_hierarchy_ref
   child_level integer NOT NULL
 );
 
-CREATE INDEX ix_ctv3_hierarchy_parent_read_code_child_read_code
-  ON ctv3_hierarchy (ctv3_parent_read_code, ctv3_child_read_code);
+CREATE INDEX ix_ctv3_hierarchy_ref_parent_read_code_child_read_code
+  ON ctv3_hierarchy_ref (ctv3_parent_read_code, ctv3_child_read_code);
 
 create table tpp_immunisation_content (
   row_id bigint(20) not null comment 'The value of RowIdentifier',
