@@ -4,10 +4,7 @@ import com.datastax.driver.core.utils.UUIDs;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
-import org.apache.commons.csv.CSVFormat;
-import org.apache.commons.csv.CSVParser;
-import org.apache.commons.csv.CSVPrinter;
-import org.apache.commons.csv.CSVRecord;
+import org.apache.commons.csv.*;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
@@ -79,10 +76,19 @@ public class Main {
 		LOG.info("Initialising config manager");
 		ConfigManager.initialize("queuereader", configId);
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("FixEncounters")) {
 			String table = args[1];
 			fixEncounters(table);
+			System.exit(0);
+		}*/
+
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("CreateTppSubset")) {
+			String sourceDirPath = args[1];
+			String destDirPath = args[2];
+			String samplePatientsFile = args[3];
+			createTppSubset(sourceDirPath, destDirPath, samplePatientsFile);
 			System.exit(0);
 		}
 
@@ -906,6 +912,12 @@ public class Main {
 			Set<String> personIds = new HashSet<>();
 			List<String> lines = Files.readAllLines(new File(samplePatientsFile).toPath());
 			for (String line: lines) {
+				line = line.trim();
+
+				//ignore comments
+				if (line.startsWith("#")) {
+					continue;
+				}
 				personIds.add(line);
 			}
 
@@ -1434,15 +1446,24 @@ public class Main {
 				//the extract was disabled
 				for (int i=indexDisabled-1; i>=indexOriginallyBulked; i--) {
 					Exchange exchange = exchanges.get(i);
+
+					String originalFile = null;
+
 					List<String> files = hmExchangeFiles.get(exchange);
-					for (String originalFile: files) {
+					for (String s: files) {
 						String originalFileType = findFileType(originalFile);
-						if (!originalFileType.equals(fileType)) {
-							continue;
+						if (originalFileType.equals(fileType)) {
+							originalFile = s;
+							break;
 						}
 					}
 
-					reader = FileHelper.readFileReaderFromSharedStorage(rebulkFile);
+					if (originalFile == null) {
+						continue;
+					}
+
+					LOG.info("    Reading " + originalFile);
+					reader = FileHelper.readFileReaderFromSharedStorage(originalFile);
 					csvParser = new CSVParser(reader, EmisCsvToFhirTransformer.CSV_FORMAT);
 					try {
 						Iterator<CSVRecord> iterator = csvParser.iterator();
@@ -5410,6 +5431,123 @@ public class Main {
 
 		LOG.info("Finished finding missing codes");
 	}*/
+
+	private static void createTppSubset(String sourceDirPath, String destDirPath, String samplePatientsFile) {
+		LOG.info("Creating TPP Subset");
+
+		try {
+
+			Set<String> personIds = new HashSet<>();
+			List<String> lines = Files.readAllLines(new File(samplePatientsFile).toPath());
+			for (String line: lines) {
+				line = line.trim();
+
+				//ignore comments
+				if (line.startsWith("#")) {
+					continue;
+				}
+				personIds.add(line);
+			}
+
+			File sourceDir = new File(sourceDirPath);
+			File destDir = new File(destDirPath);
+
+			if (!destDir.exists()) {
+				destDir.mkdirs();
+			}
+
+			createTppSubsetForFile(sourceDir, destDir, personIds);
+
+			LOG.info("Finished Creating TPP Subset");
+
+		} catch (Throwable t) {
+			LOG.error("", t);
+		}
+	}
+
+	private static void createTppSubsetForFile(File sourceDir, File destDir, Set<String> personIds) throws Exception {
+
+		for (File sourceFile: sourceDir.listFiles()) {
+
+			String name = sourceFile.getName();
+			File destFile = new File(destDir, name);
+
+			if (sourceFile.isDirectory()) {
+
+				if (!destFile.exists()) {
+					destFile.mkdirs();
+				}
+
+				LOG.info("Doing dir " + sourceFile);
+				createTppSubsetForFile(sourceFile, destFile, personIds);
+
+			} else {
+
+				if (destFile.exists()) {
+					destFile.delete();
+				}
+
+				LOG.info("Checking file " + sourceFile);
+
+				FileReader fr = new FileReader(sourceFile);
+				BufferedReader br = new BufferedReader(fr);
+
+				CSVFormat format = CSVFormat.DEFAULT.withQuoteMode(QuoteMode.ALL);
+
+				CSVParser parser = new CSVParser(br, format);
+
+				String filterColumn = null;
+
+				Map<String, Integer> headerMap = parser.getHeaderMap();
+				if (headerMap.containsKey("PatientID")) {
+					filterColumn = "PatientID";
+				} else if (sourceFile.getName().equalsIgnoreCase("SRPatient.csv")) {
+					filterColumn = "RowIdentifier";
+				} else {
+					//if no patient column, just copy the file
+					parser.close();
+
+					LOG.info("Copying non-patient file " + sourceFile);
+					copyFile(sourceFile, destFile);
+					return;
+				}
+
+				String[] columnHeaders = new String[headerMap.size()];
+				Iterator<String> headerIterator = headerMap.keySet().iterator();
+				while (headerIterator.hasNext()) {
+					String headerName = headerIterator.next();
+					int headerIndex = headerMap.get(headerName);
+					columnHeaders[headerIndex] = headerName;
+				}
+
+				PrintWriter fw = new PrintWriter(destFile);
+				BufferedWriter bw = new BufferedWriter(fw);
+
+				CSVPrinter printer = new CSVPrinter(bw, format.withHeader(columnHeaders));
+
+				Iterator<CSVRecord> csvIterator = parser.iterator();
+				while (csvIterator.hasNext()) {
+					CSVRecord csvRecord = csvIterator.next();
+
+					String patientId = csvRecord.get(filterColumn);
+					if (personIds.contains(patientId)) {
+
+						printer.printRecord(csvRecord);
+						printer.flush();
+					}
+				}
+
+				parser.close();
+				printer.close();
+
+				/*} else {
+					//the 2.1 files are going to be a pain to split by patient, so just copy them over
+					LOG.info("Copying 2.1 file " + sourceFile);
+					copyFile(sourceFile, destFile);
+				}*/
+			}
+		}
+	}
 }
 
 /*class ResourceFiler extends FhirResourceFiler {
