@@ -5467,7 +5467,10 @@ public class Main {
 
 	private static void createTppSubsetForFile(File sourceDir, File destDir, Set<String> personIds) throws Exception {
 
-		for (File sourceFile: sourceDir.listFiles()) {
+		File[] files = sourceDir.listFiles();
+		LOG.info("Found " + files.length + " files in " + sourceDir);
+
+		for (File sourceFile: files) {
 
 			String name = sourceFile.getName();
 			File destFile = new File(destDir, name);
@@ -5478,7 +5481,7 @@ public class Main {
 					destFile.mkdirs();
 				}
 
-				LOG.info("Doing dir " + sourceFile);
+				//LOG.info("Doing dir " + sourceFile);
 				createTppSubsetForFile(sourceFile, destFile, personIds);
 
 			} else {
@@ -5518,7 +5521,7 @@ public class Main {
 
 					LOG.info("Copying non-patient file " + sourceFile);
 					copyFile(sourceFile, destFile);
-					return;
+					continue;
 				}
 
 				String[] columnHeaders = new String[headerMap.size()];
