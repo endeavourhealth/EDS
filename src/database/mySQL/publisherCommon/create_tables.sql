@@ -34,4 +34,15 @@ CREATE TABLE emis_admin_resource_cache (
 ROW_FORMAT=COMPRESSED
 KEY_BLOCK_SIZE=8;
 
+CREATE TABLE tpp_ctv3_lookup (
+	row_id bigint(20) not null comment 'The value of RowIdentifier',
+	ctv3_code varchar(5) null,
+	ctv3_text varchar(255) null,
+	CONSTRAINT pk_tpp_ctv3_lookup PRIMARY KEY (row_id)
+)
+ROW_FORMAT=COMPRESSED
+KEY_BLOCK_SIZE=8;
+
+CREATE INDEX ix_tpp_ctv3_lookup_ctv3_code
+  ON tpp_ctv3_lookup (ctv3_code);
 
