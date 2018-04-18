@@ -5489,6 +5489,13 @@ public class Main {
 
 				LOG.info("Checking file " + sourceFile);
 
+				//skip any non-CSV file
+				String ext = FilenameUtils.getExtension(name);
+				if (!ext.equalsIgnoreCase("csv")) {
+					LOG.info("Skipping as not a CSV file");
+					continue;
+				}
+
 				FileReader fr = new FileReader(sourceFile);
 				BufferedReader br = new BufferedReader(fr);
 
