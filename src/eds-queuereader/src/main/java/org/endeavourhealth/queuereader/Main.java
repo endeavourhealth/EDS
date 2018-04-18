@@ -5499,17 +5499,19 @@ public class Main {
 				FileReader fr = new FileReader(sourceFile);
 				BufferedReader br = new BufferedReader(fr);
 
-				CSVFormat format = CSVFormat.DEFAULT.withQuoteMode(QuoteMode.ALL);
+				CSVFormat format = CSVFormat.DEFAULT.withQuoteMode(QuoteMode.ALL).withHeader();
 
 				CSVParser parser = new CSVParser(br, format);
 
 				String filterColumn = null;
 
 				Map<String, Integer> headerMap = parser.getHeaderMap();
-				if (headerMap.containsKey("PatientID")) {
-					filterColumn = "PatientID";
-				} else if (sourceFile.getName().equalsIgnoreCase("SRPatient.csv")) {
+				if (headerMap.containsKey("IDPatient")) {
+					filterColumn = "IDPatient";
+
+				} else if (name.equalsIgnoreCase("SRPatient.csv")) {
 					filterColumn = "RowIdentifier";
+
 				} else {
 					//if no patient column, just copy the file
 					parser.close();
