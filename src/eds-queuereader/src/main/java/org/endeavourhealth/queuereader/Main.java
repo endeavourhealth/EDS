@@ -1451,7 +1451,7 @@ public class Main {
 
 					List<String> files = hmExchangeFiles.get(exchange);
 					for (String s: files) {
-						String originalFileType = findFileType(originalFile);
+						String originalFileType = findFileType(s);
 						if (originalFileType.equals(fileType)) {
 							originalFile = s;
 							break;
