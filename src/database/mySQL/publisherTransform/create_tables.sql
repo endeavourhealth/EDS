@@ -13,7 +13,6 @@ DROP TABLE IF EXISTS cerner_code_value_ref;
 DROP TABLE IF EXISTS tpp_mapping_ref;
 DROP TABLE IF EXISTS tpp_config_list_option;
 DROP TABLE IF EXISTS tpp_immunisation_content;
-DROP TABLE IF EXISTS tpp_profile_role;
 
 CREATE TABLE resource_id_map (
 	service_id char(36),
@@ -195,13 +194,4 @@ create table tpp_immunisation_content (
   audit_json mediumtext null comment 'Used for Audit Purposes',
 
   constraint tpp_immunisation_content_pk primary key (row_id)
-);
-
-create table tpp_profile_role (
-  row_id bigint(20) not null comment 'The value of RowIdentifier',
-  role_description varchar(100) not null comment 'The name of the role profile',
-  service_id varchar(36) not null comment 'The service the imumnisation content corresponds to',
-  audit_json mediumtext null comment 'Used for Audit Purposes',
-
-  constraint tpp_profile_role_pk primary key (row_id)
 );
