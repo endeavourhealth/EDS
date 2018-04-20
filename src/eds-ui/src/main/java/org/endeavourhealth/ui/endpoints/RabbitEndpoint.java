@@ -425,8 +425,9 @@ public final class RabbitEndpoint extends AbstractEndpoint {
 		optionsJson.setDurable(true);
 
 		Response response = request.put(Entity.json(optionsJson));
-		if (response.getStatusInfo().getFamily() != Response.Status.Family.SUCCESSFUL) {
-			throw new Exception("Unable do declare the dead letter exchange");
+		Response.StatusType status = response.getStatusInfo();
+		if (status.getFamily() != Response.Status.Family.SUCCESSFUL) {
+			throw new Exception("Unable do declare the dead letter exchange, HTTP code " + status.getStatusCode() + " " + status.getReasonPhrase());
 		}
 		response.close();
 
@@ -441,8 +442,9 @@ public final class RabbitEndpoint extends AbstractEndpoint {
 		optionsJson.getArguments().put("alternate-exchange", pipeline+"-DLE");
 
 		response = request.put(Entity.json(optionsJson));
-		if (response.getStatusInfo().getFamily() != Response.Status.Family.SUCCESSFUL) {
-			throw new Exception("Unable do declare the " + pipeline + " exchange");
+		status = response.getStatusInfo();
+		if (status.getFamily() != Response.Status.Family.SUCCESSFUL) {
+			throw new Exception("Unable do declare the " + pipeline + " exchange, HTTP code " + status.getStatusCode() + " " + status.getReasonPhrase());
 		}
 		response.close();
 		client.close();
@@ -469,8 +471,9 @@ public final class RabbitEndpoint extends AbstractEndpoint {
 		optionsJson.setDurable(true);
 
 		Response response = request.put(Entity.json(optionsJson));
-		if (response.getStatusInfo().getFamily() != Response.Status.Family.SUCCESSFUL) {
-			throw new Exception("Unable do declare the queue");
+		Response.StatusType status = response.getStatusInfo();
+		if (status.getFamily() != Response.Status.Family.SUCCESSFUL) {
+			throw new Exception("Unable do declare the queue, HTTP code " + status.getStatusCode() + " " + status.getReasonPhrase());
 		}
 		response.close();
 	}
@@ -487,8 +490,9 @@ public final class RabbitEndpoint extends AbstractEndpoint {
 			optionsJson.setRouting_key(routeGroup.getRouteKey());
 
 			Response response = request.post(Entity.json(optionsJson));
-			if (response.getStatusInfo().getFamily() != Response.Status.Family.SUCCESSFUL) {
-				throw new Exception("Unable do declare the queue");
+			Response.StatusType status = response.getStatusInfo();
+			if (status.getFamily() != Response.Status.Family.SUCCESSFUL) {
+				throw new Exception("Unable do declare the queue, HTTP code " + status.getStatusCode() + " " + status.getReasonPhrase());
 			}
 			response.close();
 		}
@@ -517,8 +521,9 @@ public final class RabbitEndpoint extends AbstractEndpoint {
 		Invocation.Builder request = resource.request();
 
 		Response response = request.delete();
-		if (response.getStatusInfo().getFamily() != Response.Status.Family.SUCCESSFUL) {
-			throw new Exception("Unable do declare the queue");
+		Response.StatusType status = response.getStatusInfo();
+		if (status.getFamily() != Response.Status.Family.SUCCESSFUL) {
+			throw new Exception("Unable do declare the queue, HTTP code " + status.getStatusCode() + " " + status.getReasonPhrase());
 		}
 		response.close();
 	}
