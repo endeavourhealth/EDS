@@ -195,3 +195,11 @@ create table tpp_immunisation_content (
 
   constraint tpp_immunisation_content_pk primary key (row_id)
 );
+
+create table tpp_profile_role (
+  row_id bigint(20) not null comment 'The value of RowIdentifier',
+  role_description varchar(100) not null comment 'The name of the role profile',
+  audit_json mediumtext null comment 'Used for Audit Purposes',
+
+  constraint tpp_profile_role_pk primary key (row_id)
+);
