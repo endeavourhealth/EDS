@@ -2,6 +2,9 @@ use publisher_common;
 
 DROP TABLE IF EXISTS emis_csv_code_map;
 DROP TABLE IF EXISTS emis_admin_resource_cache;
+DROP TABLE IF EXISTS tpp_immunisation_content;
+DROP TABLE IF EXISTS tpp_ctv3_hierarchy_ref;
+DROP TABLE IF EXISTS tpp_multilex_to_ctv3_map;
 
 CREATE TABLE emis_csv_code_map (
 	medication boolean,
@@ -46,3 +49,37 @@ KEY_BLOCK_SIZE=8;
 CREATE INDEX ix_tpp_ctv3_lookup_ctv3_code
   ON tpp_ctv3_lookup (ctv3_code);
 
+
+CREATE TABLE tpp_multilex_to_ctv3_map
+(
+  row_id bigint NOT NULL PRIMARY KEY,
+  multilex_product_id bigint NOT NULL,
+  ctv3_read_code varchar(5) NOT NULL,
+  ctv3_read_term text NOT NULL
+);
+
+CREATE INDEX ix_tpp_multilex_to_ctv3_map_multilex_product_id
+  ON tpp_multilex_to_ctv3_map (multilex_product_id);
+
+
+CREATE TABLE tpp_ctv3_hierarchy_ref
+(
+  row_id bigint NOT NULL PRIMARY KEY,
+  ctv3_parent_read_code varchar(5) NOT NULL,
+  ctv3_child_read_code varchar(5) NOT NULL,
+  child_level integer NOT NULL
+);
+
+CREATE INDEX ix_tpp_ctv3_hierarchy_ref_parent_read_code_child_read_code
+  ON tpp_ctv3_hierarchy_ref (ctv3_parent_read_code, ctv3_child_read_code);
+
+create table tpp_immunisation_content (
+  row_id bigint(20) not null comment 'The value of RowIdentifier',
+  name varchar(100) not null comment 'The name of the immunisation',
+  content varchar(255) not null comment 'The contents of the immunisation',
+  service_id varchar(36) not null comment 'The service the imumnisation content corresponds to',
+  date_deleted datetime null comment 'The date the vaccination was deleted',
+  audit_json mediumtext null comment 'Used for Audit Purposes',
+
+  constraint tpp_immunisation_content_pk primary key (row_id)
+);
