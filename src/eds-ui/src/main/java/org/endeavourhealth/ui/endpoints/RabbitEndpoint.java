@@ -428,7 +428,7 @@ public final class RabbitEndpoint extends AbstractEndpoint {
 		Response.StatusType status = response.getStatusInfo();
 		if (status.getFamily() != Response.Status.Family.SUCCESSFUL) {
 			throw new Exception("Unable to declare the dead letter exchange, URI: " + resource.getUri().toString() +
-                    "HTTP code: " + status.getStatusCode() + " " + status.getReasonPhrase());
+                    ", HTTP code: " + status.getStatusCode() + " " + status.getReasonPhrase());
 		}
 		response.close();
 
@@ -446,7 +446,7 @@ public final class RabbitEndpoint extends AbstractEndpoint {
 		status = response.getStatusInfo();
 		if (status.getFamily() != Response.Status.Family.SUCCESSFUL) {
 			throw new Exception("Unable to declare the " + pipeline + " exchange, URI: " + resource.getUri().toString() +
-                    "HTTP code: " + status.getStatusCode() + " " + status.getReasonPhrase());
+                    ", HTTP code: " + status.getStatusCode() + " " + status.getReasonPhrase());
 		}
 		response.close();
 		client.close();

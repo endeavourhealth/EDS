@@ -148,6 +148,7 @@ public class PostMessageToExchange extends PipelineComponent {
 			String username = RabbitConfig.getInstance().getUsername();
 			String password = RabbitConfig.getInstance().getPassword();
 
+			LOG.debug("Rabbit -> ConnectionManager.getConnection using: nodes: "+nodes+" username: "+username+" password: "+password);
 			return ConnectionManager.getConnection(username, password, nodes);
 
 		} catch (IOException e) {
@@ -156,6 +157,9 @@ public class PostMessageToExchange extends PipelineComponent {
 		} catch (TimeoutException e) {
 			LOG.error("Connection to Rabbit timed out", e);
 			throw new PipelineException("Connection to rabbit timed out : " + e.getMessage(), e);
+		} catch (Exception e) {
+			LOG.error("Connection to Rabbit failed", e);
+			throw new PipelineException("Connection to rabbit failed : " + e.getMessage(), e);
 		}
 	}
 
