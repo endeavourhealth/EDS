@@ -15,19 +15,17 @@
 
         <eds-api.version>1.12-SNAPSHOT</eds-api.version>
         <eds-cache.version>1.1-SNAPSHOT</eds-cache.version>
-        <eds-cassandra.version>1.3-SNAPSHOT</eds-cassandra.version>
         <eds-config.version>1.21-SNAPSHOT</eds-config.version>
-        <eds-core.version>1.190-SNAPSHOT</eds-core.version>
+        <eds-core.version>1.191-SNAPSHOT</eds-core.version>
         <eds-fhir.version>1.51-SNAPSHOT</eds-fhir.version>
         <eds-security.version>1.7-SNAPSHOT</eds-security.version>
-        <eds-transform.version>1.425-SNAPSHOT</eds-transform.version>
+        <eds-transform.version>1.427-SNAPSHOT</eds-transform.version>
         <eds-utility.version>1.22-SNAPSHOT</eds-utility.version>
         <eds-datasharing.version>0.0.4-SNAPSHOT</eds-datasharing.version>
 
         <amqp-client.version>3.6.2</amqp-client.version>
         <aspectj-metrics.version>1.2.0</aspectj-metrics.version>
         <aspectj.version>1.8.9</aspectj.version>
-        <cassandra-driver.version>3.1.1</cassandra-driver.version>
         <commons-codec.version>1.10</commons-codec.version>
         <commons-collections4.version>4.0</commons-collections4.version>
         <commons-csv.version>1.3</commons-csv.version>

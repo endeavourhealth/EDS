@@ -1,6 +1,5 @@
 package org.endeavourhealth.messagingapi.endpoints;
 
-import com.datastax.driver.core.utils.UUIDs;
 import org.apache.http.HttpStatus;
 import org.endeavourhealth.core.configuration.Pipeline;
 import org.endeavourhealth.core.database.dal.audit.models.Exchange;
@@ -19,9 +18,9 @@ public abstract class AbstractEndpoint {
 
 	private static final Logger LOG = LoggerFactory.getLogger(AbstractEndpoint.class);
 
-	protected Response Process(HttpHeaders headers, String body, Pipeline pipeline) {
+	protected Response process(HttpHeaders headers, String body, Pipeline pipeline) {
 
-		UUID exchangeId = UUIDs.timeBased(); //use a time-based UUID, so exchanges can easily be sorted by Cassandra
+		UUID exchangeId = UUID.randomUUID();
 
 		Exchange exchange = new Exchange();
 		exchange.setId(exchangeId);

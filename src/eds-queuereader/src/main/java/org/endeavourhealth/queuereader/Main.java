@@ -1,6 +1,5 @@
 package org.endeavourhealth.queuereader;
 
-import com.datastax.driver.core.utils.UUIDs;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
@@ -1207,7 +1206,7 @@ public class Main {
 					transformAudit.setServiceId(serviceId);
 					transformAudit.setSystemId(endpointSystemId);
 					transformAudit.setExchangeId(firstExchangeId);
-					transformAudit.setId(UUIDs.timeBased());
+					transformAudit.setId(UUID.randomUUID());
 					transformAudit.setStarted(new Date());
 
 					LOG.info("    Going to apply admin resource cache");

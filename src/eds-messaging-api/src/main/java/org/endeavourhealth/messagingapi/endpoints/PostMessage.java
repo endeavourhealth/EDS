@@ -23,7 +23,7 @@ public class PostMessage extends AbstractEndpoint {
 	@RolesAllowed({"eds_messaging_post"})
 	public Response postMessage(@Context HttpHeaders headers, String body) {
 		Pipeline pipeline = ConfigWrapper.getInstance().getPostMessage().getPipeline();
-		return Process(headers, body, pipeline);
+		return process(headers, body, pipeline);
 	}
 
 	@POST
@@ -33,6 +33,6 @@ public class PostMessage extends AbstractEndpoint {
 	@RolesAllowed({"eds_messaging_post"})
 	public Response postMessageAsync(@Context HttpHeaders headers, String body) {
 		Pipeline pipeline = ConfigWrapper.getInstance().getPostMessageAsync().getPipeline();
-		return Process(headers, body, pipeline);
+		return process(headers, body, pipeline);
 	}
 }

@@ -18,17 +18,21 @@ public class GetData extends AbstractEndpoint {
 	@Produces(MediaType.APPLICATION_JSON)
 	@Path("/GetData")
 	@RolesAllowed({"eds_messaging_get"})
-	public Response GetData(@Context HttpHeaders headers) {
+	public Response getData(@Context HttpHeaders headers) {
 		Pipeline pipeline = ConfigWrapper.getInstance().getGetData().getPipeline();
-		return Process(headers, null, pipeline);
+		//super-class process function is for posting data, so commenting this out until properly implemented
+		return null;
+		//return process(headers, null, pipeline);
 	}
 
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
 	@Path("/GetDataAsync")
 	@RolesAllowed({"eds_messaging_get"})
-	public Response GetDataAsync(@Context HttpHeaders headers) {
+	public Response getDataAsync(@Context HttpHeaders headers) {
 		Pipeline pipeline = ConfigWrapper.getInstance().getGetDataAsync().getPipeline();
-		return Process(headers, null, pipeline);
+		//super-class process function is for posting data, so commenting this out until properly implemented
+		return null;
+		//return process(headers, null, pipeline);
 	}
 }

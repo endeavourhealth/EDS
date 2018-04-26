@@ -1,6 +1,5 @@
 package org.endeavourhealth.core.messaging.pipeline.components;
 
-import com.datastax.driver.core.utils.UUIDs;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.base.Strings;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
@@ -383,7 +382,7 @@ public class MessageTransformInbound extends PipelineComponent {
 		transformAudit.setServiceId(serviceId);
 		transformAudit.setSystemId(systemId);
 		transformAudit.setExchangeId(exchangeId);
-		transformAudit.setId(UUIDs.timeBased());
+		transformAudit.setId(UUID.randomUUID());
 		transformAudit.setStarted(new Date());
 
 		auditRepository.save(transformAudit);
