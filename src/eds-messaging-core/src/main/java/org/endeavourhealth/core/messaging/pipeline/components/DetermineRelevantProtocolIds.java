@@ -47,8 +47,9 @@ public class DetermineRelevantProtocolIds extends PipelineComponent {
 	public static String getProtocolIdsForPublisherService(String serviceUuid, String systemUuid) throws PipelineException {
 
 		List<String> protocolIds = getProtocolsForPublisherService(serviceUuid, systemUuid);
-		if (protocolIds.size() == 0)
+		if (protocolIds.size() == 0) {
 			throw new PipelineException("No publisher protocols found for service " + serviceUuid + " and system " + systemUuid);
+		}
 
 		try {
 			return ObjectMapperPool.getInstance().writeValueAsString(protocolIds.toArray());

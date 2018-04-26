@@ -4,6 +4,7 @@ import io.swagger.annotations.ApiParam;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.security.RolesAllowed;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
@@ -17,6 +18,7 @@ public class SubscriberApi {
     @GET
     @Path("/{resourceType}")
     @Produces(MediaType.APPLICATION_JSON)
+    @RolesAllowed({"eds_read", "eds_read_write"})
     public Response uploadFiles(@Context HttpServletRequest request,
                                 @ApiParam(value="Resource Type") @PathParam(value = "resourceType") String orgRoleId,
                                 @ApiParam(value="ODS Code") @HeaderParam(value = "OdsCode") String headerOdsCode) throws Exception{
