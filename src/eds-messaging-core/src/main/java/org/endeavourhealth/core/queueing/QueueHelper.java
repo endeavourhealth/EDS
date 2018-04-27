@@ -59,7 +59,7 @@ public class QueueHelper {
             String serviceUuid = firstExchange.getHeader(HeaderKeys.SenderServiceUuid);
             String systemUuid = firstExchange.getHeader(HeaderKeys.SenderSystemUuid);
 
-            newProtocolIdsJson = DetermineRelevantProtocolIds.getProtocolIdsForPublisherService(serviceUuid, systemUuid);
+            newProtocolIdsJson = DetermineRelevantProtocolIds.getProtocolIdsForPublisherService(serviceUuid, systemUuid, firstExchangeId);
         }
 
         for (int i=0; i<exchangeIds.size(); i++) {

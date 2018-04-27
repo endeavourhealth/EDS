@@ -18,9 +18,7 @@ public abstract class AbstractEndpoint {
 
 	private static final Logger LOG = LoggerFactory.getLogger(AbstractEndpoint.class);
 
-	protected Response process(HttpHeaders headers, String body, Pipeline pipeline) {
-
-		UUID exchangeId = UUID.randomUUID();
+	protected Response process(HttpHeaders headers, String body, Pipeline pipeline, UUID exchangeId) {
 
 		Exchange exchange = new Exchange();
 		exchange.setId(exchangeId);

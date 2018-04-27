@@ -42,6 +42,13 @@
             <version>${eds-transform.version}</version>
         </dependency>
 
+        <!-- Dashboard Information for json and enums-->
+        <dependency>
+            <groupId>org.endeavourhealth.discoveryDashboard</groupId>
+            <artifactId>DashboardInformation</artifactId>
+            <version>${discovery-information.version}</version>
+        </dependency>
+
         <!-- Jersey -->
         <dependency>
             <groupId>org.glassfish.jersey.core</groupId>

@@ -665,7 +665,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
         return lines;
     }
 
-    private static String getSystemNameForId(UUID systemId) throws Exception {
+    public static String getSystemNameForId(UUID systemId) throws Exception {
         try {
             ActiveItem activeItem = libraryRepository.getActiveItemByItemId(systemId);
             Item item = libraryRepository.getItemByKey(systemId, activeItem.getAuditId());

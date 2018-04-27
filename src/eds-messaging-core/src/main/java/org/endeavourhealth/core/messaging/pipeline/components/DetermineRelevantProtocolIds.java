@@ -3,7 +3,9 @@ package org.endeavourhealth.core.messaging.pipeline.components;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.core.configuration.DetermineRelevantProtocolIdsConfig;
+import org.endeavourhealth.core.database.dal.DalProvider;
 import org.endeavourhealth.core.database.dal.admin.LibraryRepositoryHelper;
+import org.endeavourhealth.core.database.dal.audit.ExchangeProtocolErrorDalI;
 import org.endeavourhealth.core.database.dal.audit.models.Exchange;
 import org.endeavourhealth.core.database.dal.audit.models.HeaderKeys;
 import org.endeavourhealth.core.messaging.pipeline.PipelineComponent;
@@ -15,6 +17,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 public class DetermineRelevantProtocolIds extends PipelineComponent {
 	private static final Logger LOG = LoggerFactory.getLogger(DetermineRelevantProtocolIds.class);
@@ -31,7 +34,7 @@ public class DetermineRelevantProtocolIds extends PipelineComponent {
 		String systemUuid = exchange.getHeader(HeaderKeys.SenderSystemUuid);
 
 		// Determine relevant publisher protocols
-		String protocolIdsJson = getProtocolIdsForPublisherService(serviceUuid, systemUuid);
+		String protocolIdsJson = getProtocolIdsForPublisherService(serviceUuid, systemUuid, exchange.getId());
 		exchange.setHeader(HeaderKeys.ProtocolIds, protocolIdsJson);
 
 		//commit what we've just received to the DB
@@ -44,10 +47,16 @@ public class DetermineRelevantProtocolIds extends PipelineComponent {
 		LOG.debug("Data distribution protocols identified");
 	}
 
-	public static String getProtocolIdsForPublisherService(String serviceUuid, String systemUuid) throws PipelineException {
+	public static String getProtocolIdsForPublisherService(String serviceUuid, String systemUuid, UUID exchangeId) throws PipelineException {
 
+		ExchangeProtocolErrorDalI errorDal = DalProvider.factoryExchangeProtocolErrorDal();
 		List<String> protocolIds = getProtocolsForPublisherService(serviceUuid, systemUuid);
 		if (protocolIds.size() == 0) {
+			try {
+				errorDal.save(exchangeId);
+			} catch (Exception e) {
+				throw new PipelineException("Error saving exchange protocol error for exchange " + exchangeId);
+			}
 			throw new PipelineException("No publisher protocols found for service " + serviceUuid + " and system " + systemUuid);
 		}
 
