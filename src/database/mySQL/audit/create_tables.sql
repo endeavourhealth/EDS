@@ -11,7 +11,8 @@ DROP TABLE IF EXISTS exchange_batch;
 DROP TABLE IF EXISTS exchange_subscriber_transform_audit;
 DROP TABLE IF EXISTS transform_warning_type;
 DROP TABLE IF EXISTS transform_warning;
-
+DROP TABLE IF EXISTS exchange_general_error;
+DROP TABLE IF EXISTS exchange_protocol_error;
 
 CREATE TABLE exchange
 (
@@ -166,7 +167,24 @@ CREATE INDEX ix_transform_warning_type ON transform_warning (transform_warning_t
 
 CREATE INDEX ix_transform_warning_exchange ON transform_warning (exchange_id);
 
+create table exchange_general_error (
+	exchange_id char(36) not null,
+	inserted_at datetime not null default current_timestamp on update current_timestamp,
+    error_message mediumtext null,
+    
+    CONSTRAINT pk_exchange_general_error_exchange_id PRIMARY KEY (exchange_id)
+);
 
+CREATE INDEX ix_exchange_general_error_inserted_at ON exchange_general_error (inserted_at);
+
+create table exchange_protocol_error (
+	exchange_id char(36) not null,
+	inserted_at datetime not null default current_timestamp on update current_timestamp,
+    
+    CONSTRAINT pk_exchange_protocol_error_exchange_id PRIMARY KEY (exchange_id)
+);
+
+CREATE INDEX ix_exchange_protocol_error_inserted_at ON exchange_protocol_error (inserted_at);
 
 
 
