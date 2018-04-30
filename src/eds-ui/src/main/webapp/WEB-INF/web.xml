@@ -68,10 +68,6 @@
             org.endeavourhealth.coreui.framework.StartupConfig
         </listener-class>
     </listener>
-    
-    <listener>
-        <listener-class>org.endeavourhealth.common.cassandra.CassandraShutdownListener</listener-class>
-    </listener>
 
     <listener>
         <listener-class>org.endeavourhealth.ui.metrics.EdsUIMetricListener</listener-class>
