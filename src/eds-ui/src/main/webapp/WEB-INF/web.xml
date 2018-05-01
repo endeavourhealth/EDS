@@ -131,6 +131,7 @@
         <web-resource-collection>
             <web-resource-name>api</web-resource-name>
             <url-pattern>/api/*</url-pattern>
+            <http-method-omission>OPTIONS</http-method-omission>
         </web-resource-collection>
         <auth-constraint>
             <role-name>eds_user</role-name>

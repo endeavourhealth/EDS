@@ -26,7 +26,7 @@ import javax.ws.rs.core.SecurityContext;
 import java.util.ArrayList;
 import java.util.List;
 
-@Path("/dashboard")
+@Path("/externalDashboard")
 @Metrics(registry = "EdsRegistry")
 public class ExternalDashboardEndpoint extends AbstractEndpoint {
     private static final Logger LOG = LoggerFactory.getLogger(ExternalDashboardEndpoint.class);
@@ -64,15 +64,21 @@ public class ExternalDashboardEndpoint extends AbstractEndpoint {
             Service service = serviceRepository.getById(exchange.getServiceId());
             String systemName = ExchangeAuditEndpoint.getSystemNameForId(exchange.getSystemId());
 
-            appInfo.add(getGenericCountInformation("Service : " + service.getName() + "(" + systemName
-                    + ")", null, HealthStatus.PRIMARY.getHealthStatus()));
+            appInfo.add(getGenericCountInformation("Service : " + service.getName() + " (" + systemName
+                    + ")", null, HealthStatus.DANGER.getHealthStatus()));
         }
+
+        if (protocolErrors.size() == 0) {
+            appInfo.add(getGenericCountInformation("No protocol errors", null,HealthStatus.SUCCESS.getHealthStatus()) );
+        }
+
+        dashboardInformation.setApplicationInformation(appInfo);
 
         clearLogbackMarkers();
 
         return Response
                 .ok()
-                .entity(appInfo)
+                .entity(dashboardInformation)
                 .build();
     }
 
@@ -85,7 +91,7 @@ public class ExternalDashboardEndpoint extends AbstractEndpoint {
         JsonDashboardInformation dashboardInformation = new JsonDashboardInformation();
         super.setLogbackMarkers(sc);
 
-        LOG.trace("getProtocolErrors");
+        LOG.trace("getGeneralErrors");
 
         List<ExchangeGeneralError> generalErrors = generalRepository.getGeneralErrors();
 
@@ -105,15 +111,21 @@ public class ExternalDashboardEndpoint extends AbstractEndpoint {
             Service service = serviceRepository.getById(exchange.getServiceId());
             String systemName = ExchangeAuditEndpoint.getSystemNameForId(exchange.getSystemId());
 
-            appInfo.add(getGenericCountInformation("Service : " + service.getName() + "(" + systemName
+            appInfo.add(getGenericCountInformation("Service : " + service.getName() + " (" + systemName
                     + "). Error : " + err.getErrorMessage(), null, HealthStatus.PRIMARY.getHealthStatus()));
         }
+
+        if (generalErrors.size() == 0) {
+            appInfo.add(getGenericCountInformation("No general errors", null,HealthStatus.SUCCESS.getHealthStatus()) );
+        }
+
+        dashboardInformation.setApplicationInformation(appInfo);
 
         clearLogbackMarkers();
 
         return Response
                 .ok()
-                .entity(appInfo)
+                .entity(dashboardInformation)
                 .build();
     }
 
