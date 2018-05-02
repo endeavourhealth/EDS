@@ -56,7 +56,7 @@ CREATE INDEX ix_source_file_type_description ON source_file_type (description);
 
 CREATE TABLE source_file_type_column (
 	source_file_type_id int NOT NULL,
-    column_index tinyint NOT NULL,
+    column_index int NOT NULL,
     column_name varchar(255) NOT NULL,
     CONSTRAINT pk_source_file_type_column PRIMARY KEY (source_file_type_id, column_index)
 );
