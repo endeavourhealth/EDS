@@ -15,61 +15,61 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-public class LsoaUpdater {
-    private static final Logger LOG = LoggerFactory.getLogger(LsoaUpdater.class);
+public class WardUpdater {
+    private static final Logger LOG = LoggerFactory.getLogger(WardUpdater.class);
 
-    private static final String LSOA_MAP_CODE = "LSOA11CD";
-    private static final String LSOA_MAP_NAME = "LSOA11NM";
+    private static final String COL_CODE = "WD16CD";
+    private static final String COL_NAME = "WD16NM";
 
     /**
-     * updates the lsoa_lookup table in the reference DB from ONS data
+     * utility to update the ward_lookup table in the reference DB from ONS data
      *
      * Usage
      * =================================================================================
      * 1. Download the "NHS Postcode Directory UK Full" dataset from the ONS
      * http://ons.maps.arcgis.com/home/item.html?id=dc23a64fa2e34e1289901b27d91c335b
      * 2. Then extract the archive
-     * 3. Locate the 2011 LSOA names and codes TXT file in the Documents\Names and Codes folder,
+     * 3. Locate the "Ward names and codes as ..." TXT file in the Documents\Names and Codes directory,
      * 4. Then run this utility as:
-     *      Main lsoa <lsoa txt file>
+     *      Main ward <txt file>
      */
-    public static void updateLsoas(String[] args) throws Exception {
+    public static void updateWards(String[] args) throws Exception {
 
         if (args.length != 2) {
             LOG.error("Incorrect number of parameters");
-            LOG.error("Usage: lsoa <lsoa txt file>");
+            LOG.error("Usage: ward <txt file>");
             return;
         }
 
-        LOG.info("LSOA Update Starting");
+        LOG.info("Ward Update Starting");
 
-        File lsoaMapFile = new File(args[1]);
+        File mapFile = new File(args[1]);
 
-        if (!lsoaMapFile.exists()) {
-            LOG.error("" + lsoaMapFile + " doesn't exist");
+        if (!mapFile.exists()) {
+            LOG.error("" + mapFile + " doesn't exist");
         }
 
-        LOG.info("Processing LSOA map");
-        saveLsoaMappings(lsoaMapFile);
-        LOG.info("Finished LSOA map");
+        LOG.info("Processing Ward map");
+        saveMappings(mapFile);
+        LOG.info("Finished Ward map");
     }
 
 
-    private static void saveLsoaMappings(File lsoaMapFile) throws Exception {
+    private static void saveMappings(File mapFile) throws Exception {
 
-        Map<String, String> lsoaMap = readFile(lsoaMapFile);
+        Map<String, String> map = readFile(mapFile);
         int done = 0;
 
         ReferenceUpdaterDalI referenceUpdaterDal = DalProvider.factoryReferenceUpdaterDal();
 
-        for (String lsoaCode: lsoaMap.keySet()) {
-            String lsoaName = lsoaMap.get(lsoaCode);
+        for (String code: map.keySet()) {
+            String name = map.get(code);
 
-            referenceUpdaterDal.updateLosaMap(lsoaCode, lsoaName);
+            referenceUpdaterDal.updateWardMap(code, name);
 
             done ++;
             if (done % 1000 == 0) {
-                LOG.info("Done " + done + " LSOA mappings (out of approx 35K)");
+                LOG.info("Done " + done + " Ward mappings (out of approx 9k)");
             }
         }
     }
@@ -87,14 +87,14 @@ public class LsoaUpdater {
             Iterator<CSVRecord> iterator = parser.iterator();
 
             //validate the headers are what we expect
-            String[] expectedHeaders = new String[]{LSOA_MAP_CODE, LSOA_MAP_NAME};
+            String[] expectedHeaders = new String[]{COL_CODE, COL_NAME};
             CsvHelper.validateCsvHeaders(parser, src.getAbsolutePath(), expectedHeaders);
 
             while (iterator.hasNext()) {
                 CSVRecord record = iterator.next();
 
-                String code = record.get(LSOA_MAP_CODE);
-                String name = record.get(LSOA_MAP_NAME);
+                String code = record.get(COL_CODE);
+                String name = record.get(COL_NAME);
                 map.put(code, name);
             }
 
@@ -106,5 +106,6 @@ public class LsoaUpdater {
 
         return map;
     }
+
 
 }

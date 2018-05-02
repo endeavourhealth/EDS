@@ -29,7 +29,16 @@ public class Main {
                 LsoaUpdater.updateLsoas(args);
 
             } else if (type.equalsIgnoreCase("msoa")) {
-                LsoaUpdater.updateMsoas(args);
+                MsoaUpdater.updateMsoas(args);
+
+            } else if (type.equalsIgnoreCase("ccg")) {
+                CcgUpdater.updateCcgs(args);
+
+            } else if (type.equalsIgnoreCase("ward")) {
+                WardUpdater.updateWards(args);
+
+            } else if (type.equalsIgnoreCase("localAuthority")) {
+                LocalAuthorityUpdater.updateLocalAuthorities(args);
 
             } else if (type.equalsIgnoreCase("postcode")) {
                 PostcodeUpdater.updatePostcodes(args);
@@ -47,7 +56,7 @@ public class Main {
 
                 if (args.length != 2) {
                     LOG.error("Incorrect number of parameters");
-                    LOG.error("Usage: copy_msoa <enterprise config name>");
+                    LOG.error("Usage: copy_all <enterprise config name>");
                     return;
                 }
                 String enterpriseConfigName = args[1];

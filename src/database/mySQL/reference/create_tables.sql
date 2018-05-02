@@ -3,6 +3,9 @@ USE reference;
 DROP TABLE IF EXISTS postcode_lookup;
 DROP TABLE IF EXISTS lsoa_lookup;
 DROP TABLE IF EXISTS msoa_lookup;
+DROP TABLE IF EXISTS local_authority_lookup;
+DROP TABLE IF EXISTS ccg_lookup;
+DROP TABLE IF EXISTS ward_lookup;
 DROP TABLE IF EXISTS deprivation_lookup;
 DROP TABLE IF EXISTS encounter_code;
 DROP TABLE IF EXISTS snomed_lookup;
@@ -17,10 +20,32 @@ CREATE TABLE postcode_lookup
   postcode varchar(8) NOT NULL,
   lsoa_code varchar(9),
   msoa_code varchar(9),
-  ward varchar(9),
-  ward_1998 varchar(6),
-  ccg varchar(3),
+  ward_code varchar(9),
+  ccg_code varchar(3),
+  local_authority_code varchar(9) COMMENT 'london borough, local authority',
   CONSTRAINT pk_postcode_lookup PRIMARY KEY (postcode_no_space)
+);
+
+CREATE TABLE local_authority_lookup
+(
+  local_authority_code varchar(9) NOT NULL,
+  local_authority_name varchar(255),
+  CONSTRAINT pk_local_authority_lookup PRIMARY KEY (local_authority_code)
+);
+
+
+CREATE TABLE ccg_lookup
+(
+  ccg_code varchar(9) NOT NULL,
+  ccg_name varchar(255),
+  CONSTRAINT pk_ccg_lookup PRIMARY KEY (ccg_code)
+);
+
+CREATE TABLE ward_lookup
+(
+  ward_code varchar(9) NOT NULL,
+  ward_name varchar(255),
+  CONSTRAINT pk_ward_lookup PRIMARY KEY (ward_code)
 );
 
 

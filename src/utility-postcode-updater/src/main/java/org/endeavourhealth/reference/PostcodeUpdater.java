@@ -19,10 +19,6 @@ import java.util.concurrent.Callable;
 public class PostcodeUpdater {
     private static final Logger LOG = LoggerFactory.getLogger(PostcodeUpdater.class);
 
-    /*private static final String TOWNSEND_MAP_WARD_CODE = "Ward-Code";
-    private static final String TOWNSEND_MAP_WARD_NAME = "Ward-Name";
-    private static final String TOWNSEND_MAP_SCORE = "Townsend01";
-    private static final String TOWNSEND_MAP_QUINTILES = "Quintiles";*/
 
     private static final String POSTCODE_8_CHAR_FIXED = "PCD2";
     private static final String POSTCODE_SINGLE_SPACE = "PCDS";
@@ -32,7 +28,7 @@ public class PostcodeUpdater {
     private static final String POSTCODE_100M_NORTHING = "OSNRTH100M";
     private static final String POSTCODE_COUNTY_CODE = "OSCTY";
     private static final String POSTCODE_LA_ORGANISATION = "ODSLAUA";
-    private static final String POSTCODE_LA_DISTRICT = "OSLAUA";
+    private static final String POSTCODE_LA_DISTRICT = "OSLAUA"; //Local authority district (LAD)/unitary authority (UA)/ metropolitan district (MD)/ London borough (LB)/ council area (CA)/district council area (DCA)
     private static final String POSTCODE_WARD = "OSWARD";
     private static final String POSTCODE_USER_TYPE = "USERTYPE";
     private static final String POSTCODE_GRID_REFERENCE_QUALITY = "OSGRDIND";
@@ -270,11 +266,11 @@ public class PostcodeUpdater {
             String lsoaCode = record.get(POSTCODE_2011_CENSUS_LSOA);
             String msoaCode = record.get(POSTCODE_2011_CENSUS_MSOA);
             String ward = record.get(POSTCODE_WARD);
-            String ward1998 = record.get(POSTCODE_1998_WARD);
             String ccgCode = record.get(POSTCODE_CCG_CODE);
+            String localAuthority = record.get(POSTCODE_LA_DISTRICT);
 
             ReferenceUpdaterDalI referenceUpdaterDal = DalProvider.factoryReferenceUpdaterDal();
-            referenceUpdaterDal.updatePostcodeMap(postcode, lsoaCode, msoaCode, ward, ward1998, ccgCode);
+            referenceUpdaterDal.updatePostcodeMap(postcode, lsoaCode, msoaCode, ward, ccgCode, localAuthority);
 
             return null;
         }

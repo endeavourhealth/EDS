@@ -16,7 +16,7 @@ import java.util.Iterator;
 public class DeprivationUpdater {
     private static final Logger LOG = LoggerFactory.getLogger(DeprivationUpdater.class);
 
-    private static final String LSOA_CODE = "\uFEFFLSOA code (2011)"; //the raw file seems to have this weird character at the start
+    private static final String LSOA_CODE = "\uFEFFLSOA code (2011)"; //the raw file seems to have a weird character at the start
     private static final String LSOA_NAME = "LSOA name (2011)";
     private static final String LA_CODE = "Local Authority District code (2013)";
     private static final String LA_NAME = "Local Authority District name (2013)";

@@ -15,61 +15,61 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-public class LsoaUpdater {
-    private static final Logger LOG = LoggerFactory.getLogger(LsoaUpdater.class);
+public class MsoaUpdater {
+    private static final Logger LOG = LoggerFactory.getLogger(MsoaUpdater.class);
 
-    private static final String LSOA_MAP_CODE = "LSOA11CD";
-    private static final String LSOA_MAP_NAME = "LSOA11NM";
+    private static final String MSOA_MAP_CODE = "MSOA11CD";
+    private static final String MSOA_MAP_NAME = "MSOA11NM";
 
     /**
-     * updates the lsoa_lookup table in the reference DB from ONS data
+     * utility to update the msoa_lookup table in the reference DB from ONS data
      *
      * Usage
      * =================================================================================
      * 1. Download the "NHS Postcode Directory UK Full" dataset from the ONS
      * http://ons.maps.arcgis.com/home/item.html?id=dc23a64fa2e34e1289901b27d91c335b
      * 2. Then extract the archive
-     * 3. Locate the 2011 LSOA names and codes TXT file in the Documents\Names and Codes folder,
+     * 3. Locate the 2011 MSOA names and codes TXT file in the Documents\Names and Codes folder,
      * 4. Then run this utility as:
-     *      Main lsoa <lsoa txt file>
+     *      Main msoa <msoa txt file>
      */
-    public static void updateLsoas(String[] args) throws Exception {
+    public static void updateMsoas(String[] args) throws Exception {
 
         if (args.length != 2) {
             LOG.error("Incorrect number of parameters");
-            LOG.error("Usage: lsoa <lsoa txt file>");
+            LOG.error("Usage: msoa <msoa txt file>");
             return;
         }
 
-        LOG.info("LSOA Update Starting");
+        LOG.info("MSOA Update Starting");
 
-        File lsoaMapFile = new File(args[1]);
+        File msoaMapFile = new File(args[1]);
 
-        if (!lsoaMapFile.exists()) {
-            LOG.error("" + lsoaMapFile + " doesn't exist");
+        if (!msoaMapFile.exists()) {
+            LOG.error("" + msoaMapFile + " doesn't exist");
         }
 
-        LOG.info("Processing LSOA map");
-        saveLsoaMappings(lsoaMapFile);
-        LOG.info("Finished LSOA map");
+        LOG.info("Processing MSOA map");
+        saveMsoaMappings(msoaMapFile);
+        LOG.info("Finished MSOA map");
     }
 
 
-    private static void saveLsoaMappings(File lsoaMapFile) throws Exception {
+    private static void saveMsoaMappings(File msoaMapFile) throws Exception {
 
-        Map<String, String> lsoaMap = readFile(lsoaMapFile);
+        Map<String, String> msoaMap = readFile(msoaMapFile);
         int done = 0;
 
         ReferenceUpdaterDalI referenceUpdaterDal = DalProvider.factoryReferenceUpdaterDal();
 
-        for (String lsoaCode: lsoaMap.keySet()) {
-            String lsoaName = lsoaMap.get(lsoaCode);
+        for (String msoaCode: msoaMap.keySet()) {
+            String msoaName = msoaMap.get(msoaCode);
 
-            referenceUpdaterDal.updateLosaMap(lsoaCode, lsoaName);
+            referenceUpdaterDal.updateMosaMap(msoaCode, msoaName);
 
             done ++;
             if (done % 1000 == 0) {
-                LOG.info("Done " + done + " LSOA mappings (out of approx 35K)");
+                LOG.info("Done " + done + " MSOA mappings (out of approx 7K)");
             }
         }
     }
@@ -87,14 +87,14 @@ public class LsoaUpdater {
             Iterator<CSVRecord> iterator = parser.iterator();
 
             //validate the headers are what we expect
-            String[] expectedHeaders = new String[]{LSOA_MAP_CODE, LSOA_MAP_NAME};
+            String[] expectedHeaders = new String[]{MSOA_MAP_CODE, MSOA_MAP_NAME};
             CsvHelper.validateCsvHeaders(parser, src.getAbsolutePath(), expectedHeaders);
 
             while (iterator.hasNext()) {
                 CSVRecord record = iterator.next();
 
-                String code = record.get(LSOA_MAP_CODE);
-                String name = record.get(LSOA_MAP_NAME);
+                String code = record.get(MSOA_MAP_CODE);
+                String name = record.get(MSOA_MAP_NAME);
                 map.put(code, name);
             }
 
@@ -106,5 +106,6 @@ public class LsoaUpdater {
 
         return map;
     }
+
 
 }
