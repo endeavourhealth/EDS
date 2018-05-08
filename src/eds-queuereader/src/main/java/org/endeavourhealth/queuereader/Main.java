@@ -83,6 +83,15 @@ public class Main {
 		}*/
 
 		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("CreateVisionSubset")) {
+			String sourceDirPath = args[1];
+			String destDirPath = args[2];
+			String samplePatientsFile = args[3];
+			createVisionSubset(sourceDirPath, destDirPath, samplePatientsFile);
+			System.exit(0);
+		}
+
+		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("CreateTppSubset")) {
 			String sourceDirPath = args[1];
 			String destDirPath = args[2];
@@ -5556,6 +5565,117 @@ public class Main {
 					LOG.info("Copying 2.1 file " + sourceFile);
 					copyFile(sourceFile, destFile);
 				}*/
+			}
+		}
+	}
+
+	private static void createVisionSubset(String sourceDirPath, String destDirPath, String samplePatientsFile) {
+		LOG.info("Creating Vision Subset");
+
+		try {
+
+			Set<String> personIds = new HashSet<>();
+			List<String> lines = Files.readAllLines(new File(samplePatientsFile).toPath());
+			for (String line: lines) {
+				line = line.trim();
+
+				//ignore comments
+				if (line.startsWith("#")) {
+					continue;
+				}
+				personIds.add(line);
+			}
+
+			File sourceDir = new File(sourceDirPath);
+			File destDir = new File(destDirPath);
+
+			if (!destDir.exists()) {
+				destDir.mkdirs();
+			}
+
+			createTppVisionSubsetForFile(sourceDir, destDir, personIds);
+
+			LOG.info("Finished Creating TPP Subset");
+
+		} catch (Throwable t) {
+			LOG.error("", t);
+		}
+	}
+
+	private static void createTppVisionSubsetForFile(File sourceDir, File destDir, Set<String> personIds) throws Exception {
+
+		File[] files = sourceDir.listFiles();
+		LOG.info("Found " + files.length + " files in " + sourceDir);
+
+		for (File sourceFile: files) {
+
+			String name = sourceFile.getName();
+			File destFile = new File(destDir, name);
+
+			if (sourceFile.isDirectory()) {
+
+				if (!destFile.exists()) {
+					destFile.mkdirs();
+				}
+
+				createTppVisionSubsetForFile(sourceFile, destFile, personIds);
+
+			} else {
+
+				if (destFile.exists()) {
+					destFile.delete();
+				}
+
+				LOG.info("Checking file " + sourceFile);
+
+				//skip any non-CSV file
+				String ext = FilenameUtils.getExtension(name);
+				if (!ext.equalsIgnoreCase("csv")) {
+					LOG.info("Skipping as not a CSV file");
+					continue;
+				}
+
+				FileReader fr = new FileReader(sourceFile);
+				BufferedReader br = new BufferedReader(fr);
+
+				CSVFormat format = CSVFormat.DEFAULT.withQuoteMode(QuoteMode.ALL);
+
+				CSVParser parser = new CSVParser(br, format);
+
+				int filterColumn = -1;
+
+				if (name.contains("encounter_data") || name.contains("journal_data") ||
+						name.contains("patient_data") || name.contains("referral_data")) {
+
+					filterColumn = 0;
+				} else {
+					//if no patient column, just copy the file
+					parser.close();
+
+					LOG.info("Copying non-patient file " + sourceFile);
+					copyFile(sourceFile, destFile);
+					continue;
+				}
+
+				PrintWriter fw = new PrintWriter(destFile);
+				BufferedWriter bw = new BufferedWriter(fw);
+
+				CSVPrinter printer = new CSVPrinter(bw, format);
+
+				Iterator<CSVRecord> csvIterator = parser.iterator();
+				while (csvIterator.hasNext()) {
+					CSVRecord csvRecord = csvIterator.next();
+
+					String patientId = csvRecord.get(filterColumn);
+					if (personIds.contains(patientId)) {
+
+						printer.printRecord(csvRecord);
+						printer.flush();
+					}
+				}
+
+				parser.close();
+				printer.close();
 			}
 		}
 	}
