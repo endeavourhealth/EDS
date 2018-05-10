@@ -28,7 +28,7 @@ public class SubscriberApi {
 
     private static final String FRAILTY_CODE = "289999999105";
     private static final String FRAILTY_TERM = "Potentially frail";
-    private static final String SUBSCRBER_SYSTEM_NAME = "JSON_API"; //"Subscriber_Rest_API";
+    private static final String SUBSCRIBER_SYSTEM_NAME = "JSON_API"; //"Subscriber_Rest_API";
 
     @GET
     @Path("/{resourceType}")
@@ -97,9 +97,9 @@ public class SubscriberApi {
         }
         UUID serviceId = requestingService.getId();
 
-        UUID systemId = SystemHelper.findSystemUuid(requestingService, SUBSCRBER_SYSTEM_NAME);
+        UUID systemId = SystemHelper.findSystemUuid(requestingService, SUBSCRIBER_SYSTEM_NAME);
         if (systemId == null) {
-            return createErrorResponse(OperationOutcome.IssueType.VALUE, "Requesting organisation not configured for " + SUBSCRBER_SYSTEM_NAME);
+            return createErrorResponse(OperationOutcome.IssueType.VALUE, "Requesting organisation not configured for " + SUBSCRIBER_SYSTEM_NAME);
         }
 
         //ensure the service is a valid subscriber to at least one protocol
