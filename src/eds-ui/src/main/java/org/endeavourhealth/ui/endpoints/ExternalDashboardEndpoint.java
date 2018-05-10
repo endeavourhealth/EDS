@@ -15,6 +15,8 @@ import org.endeavourhealth.coreui.endpoints.AbstractEndpoint;
 import org.endeavourhealth.dashboardinformation.enums.HealthStatus;
 import org.endeavourhealth.dashboardinformation.json.JsonApplicationInformation;
 import org.endeavourhealth.dashboardinformation.json.JsonDashboardInformation;
+import org.endeavourhealth.dashboardinformation.json.JsonGraphOptions;
+import org.endeavourhealth.dashboardinformation.json.JsonGraphResults;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,10 +43,62 @@ public class ExternalDashboardEndpoint extends AbstractEndpoint {
     @Timed(absolute = true, name="EDS-UI.ExternalDashboardEndpoint.GetProtocolErrors")
     @Path("/getProtocolErrors")
     public Response getProtocolErrors(@Context SecurityContext sc) throws Exception {
-        JsonDashboardInformation dashboardInformation = new JsonDashboardInformation();
         super.setLogbackMarkers(sc);
 
         LOG.trace("getProtocolErrors");
+
+
+        clearLogbackMarkers();
+
+        return getProtocolErrorDetails();
+    }
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.ExternalDashboardEndpoint.GetGeneralErrors")
+    @Path("/getGeneralErrors")
+    public Response getGeneralErrors(@Context SecurityContext sc) throws Exception {
+        super.setLogbackMarkers(sc);
+
+        LOG.trace("getGeneralErrors");
+
+        clearLogbackMarkers();
+
+        return getGeneralErrorDetails();
+    }
+
+    @POST
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.ExternalDashboardEndpoint.getErrorGraph")
+    @Path("/getErrorGraph")
+    public Response getErrorGraph(@Context SecurityContext sc, JsonGraphOptions options) throws Exception {
+        super.setLogbackMarkers(sc);
+
+        LOG.trace("getGeneralErrors");
+
+        clearLogbackMarkers();
+
+       return getGraphInformation(options);
+    }
+
+     private Response getGraphInformation(JsonGraphOptions options) throws Exception {
+         JsonDashboardInformation dashboardInformation = new JsonDashboardInformation();
+         dashboardInformation.setAppHealth(HealthStatus.INFO.getHealthStatus());
+
+         List<JsonGraphResults> results = generalRepository.getGraphData(options);
+
+         dashboardInformation.setGraphResults(results);
+
+         return Response
+                 .ok()
+                 .entity(dashboardInformation)
+                 .build();
+     }
+
+    private Response getProtocolErrorDetails() throws Exception {
+        JsonDashboardInformation dashboardInformation = new JsonDashboardInformation();
 
         List<ExchangeProtocolError> protocolErrors = protocolRepository.getProtocolErrors();
 
@@ -74,24 +128,14 @@ public class ExternalDashboardEndpoint extends AbstractEndpoint {
 
         dashboardInformation.setApplicationInformation(appInfo);
 
-        clearLogbackMarkers();
-
         return Response
                 .ok()
                 .entity(dashboardInformation)
                 .build();
     }
 
-    @GET
-    @Produces(MediaType.APPLICATION_JSON)
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Timed(absolute = true, name="EDS-UI.ExternalDashboardEndpoint.GetGeneralErrors")
-    @Path("/getGeneralErrors")
-    public Response getGeneralErrors(@Context SecurityContext sc) throws Exception {
+    private Response getGeneralErrorDetails() throws Exception {
         JsonDashboardInformation dashboardInformation = new JsonDashboardInformation();
-        super.setLogbackMarkers(sc);
-
-        LOG.trace("getGeneralErrors");
 
         List<ExchangeGeneralError> generalErrors = generalRepository.getGeneralErrors();
 
@@ -120,8 +164,6 @@ public class ExternalDashboardEndpoint extends AbstractEndpoint {
         }
 
         dashboardInformation.setApplicationInformation(appInfo);
-
-        clearLogbackMarkers();
 
         return Response
                 .ok()
