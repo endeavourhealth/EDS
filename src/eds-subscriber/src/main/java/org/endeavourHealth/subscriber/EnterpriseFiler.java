@@ -497,7 +497,14 @@ public class EnterpriseFiler {
             insert.addBatch();
         }
 
-        insert.executeBatch();
+        //wrap in try/catch so we can log out the SQL that failed
+        try {
+            insert.executeBatch();
+
+        } catch (Exception ex) {
+            LOG.info(insert.toString());
+        }
+
         insert.close();
         connection.commit();
     }
