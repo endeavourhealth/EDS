@@ -1401,7 +1401,7 @@ public class Main {
 
 			List<String> tempFilesCreated = new ArrayList<>();
 
-			Set<String> patientGuidsDeleted = new HashSet<>();
+			Set<String> patientGuidsDeletedOrTooOld = new HashSet<>();
 
 			for (String rebulkFile: rebulkFiles) {
 				String fileType = findFileType(rebulkFile);
@@ -1482,27 +1482,14 @@ public class Main {
 							CSVRecord record = iterator.next();
 							String patientGuid = record.get("PatientGuid");
 
-							if (patientGuid.equals("{59FE7D36-BF59-4673-B957-F8282B3FB484}")) {
-								LOG.info("Found record for patient " + patientGuid);
-							}
-
 							//get the patient and row guid out of the file and cache in our set
 							String uniqueId = patientGuid;
 							if (!Strings.isNullOrEmpty(guidColumnName)) {
 								uniqueId += "//" + record.get(guidColumnName);
 							}
 
-							if (patientGuid.equals("{59FE7D36-BF59-4673-B957-F8282B3FB484}")) {
-								LOG.info("Unique ID is " + uniqueId);
-							}
-
 							//if we're already handled this record in a more recent extract, then skip it
 							if (pastIdsProcessed.contains(uniqueId)) {
-
-								if (patientGuid.equals("{59FE7D36-BF59-4673-B957-F8282B3FB484}")) {
-									LOG.info("Already processed a row with this unique ID");
-								}
-
 								continue;
 							}
 							pastIdsProcessed.add(uniqueId);
@@ -1513,17 +1500,11 @@ public class Main {
 
 							//if the record is deleted, then we won't expect it in the re-bulk
 							boolean deleted = Boolean.parseBoolean(record.get("Deleted"));
-
-							if (patientGuid.equals("{59FE7D36-BF59-4673-B957-F8282B3FB484}")) {
-								LOG.info("Deleted = " + deleted);
-								LOG.info("In rebulk = " + idsInRebulk.contains(uniqueId));
-							}
-
 							if (deleted) {
 
 								//if it's the Patient file, stick the patient GUID in a set so we know full patient record deletes
 								if (fileType.equals("Admin_Patient")) {
-									patientGuidsDeleted.add(patientGuid);
+									patientGuidsDeletedOrTooOld.add(patientGuid);
 								}
 
 								continue;
@@ -1531,22 +1512,20 @@ public class Main {
 
 							//if it's not the patient file and we refer to a patient that we know
 							//has been deleted, then skip this row, since we know we're deleting the entire patient record
-							if (patientGuidsDeleted.contains(patientGuid)) {
-
-								if (patientGuid.equals("{59FE7D36-BF59-4673-B957-F8282B3FB484}")) {
-									LOG.info("Patient whole record has already been deleted");
-								}
-
+							if (patientGuidsDeletedOrTooOld.contains(patientGuid)) {
 								continue;
 							}
 
 							//if the re-bulk contains a record matching this one, then it's OK
 							if (idsInRebulk.contains(uniqueId)) {
+								continue;
+							}
 
-								if (patientGuid.equals("{59FE7D36-BF59-4673-B957-F8282B3FB484}")) {
-									LOG.info("This row is OK");
-								}
-
+							//the rebulk won't contain any data for patients that are now too old to appear
+							//in the extract, so any patient ID in the original files but not in the rebulk
+							//can be treated like this and any data for them can be skipped
+							if (fileType.equals("Admin_Patient")) {
+								patientGuidsDeletedOrTooOld.add(patientGuid);
 								continue;
 							}
 
