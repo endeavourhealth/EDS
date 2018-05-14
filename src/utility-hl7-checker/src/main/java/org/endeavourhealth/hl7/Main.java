@@ -3,7 +3,6 @@ package org.endeavourhealth.hl7;
 import ca.uhn.hl7v2.DefaultHapiContext;
 import ca.uhn.hl7v2.HL7Exception;
 import ca.uhn.hl7v2.HapiContext;
-import ca.uhn.hl7v2.model.GenericGroup;
 import ca.uhn.hl7v2.model.Message;
 import ca.uhn.hl7v2.model.v23.datatype.CX;
 import ca.uhn.hl7v2.model.v23.group.ADT_A44_PATIENT;
@@ -14,18 +13,26 @@ import ca.uhn.hl7v2.util.Terser;
 import ca.uhn.hl7v2.validation.impl.NoValidation;
 import com.google.common.base.Strings;
 import com.zaxxer.hikari.HikariDataSource;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.common.utility.SlackHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class Main {
     private static final Logger LOG = LoggerFactory.getLogger(Main.class);
+
+    private static final String STATE_FILE = "Hl7CheckerState.txt";
 
     private static HikariDataSource connectionPool = null;
     private static HapiContext context;
@@ -73,6 +80,9 @@ public class Main {
             Connection connection = getConnection();
             ResultSet resultSet = executeQuery(connection, sql);
 
+            Map<Integer, Integer> previousMessagesInError = readState();
+            Map<Integer, Integer> currentMessagesInError = new HashMap<>();
+
             try {
                 while (resultSet.next()) {
                     int messageId = resultSet.getInt(1);
@@ -94,7 +104,17 @@ public class Main {
                         moveToDlq(messageId, ignoreReason);
 
                         //and notify Slack that we've done so
-                        sendSlackMessage(channelId, messageId, ignoreReason, localPatientId);
+                        sendSuccessSlackMessage(channelId, messageId, ignoreReason, localPatientId);
+
+                    } else {
+                        //if we can't ignore it, we need to raise an alert because the queue will now be backing up
+                        Integer lastMessageId = previousMessagesInError.get(new Integer(channelId));
+                        if (lastMessageId == null
+                                || lastMessageId.intValue() != messageId) {
+
+                            currentMessagesInError.put(new Integer(channelId), new Integer(messageId));
+                            sendFailureSlackMessage(channelId, messageId);
+                        }
                     }
                 }
 
@@ -103,10 +123,12 @@ public class Main {
                 connection.close();
             }
 
+            writeState(currentMessagesInError);
+
         } catch (Exception ex) {
             LOG.error("", ex);
             //although the error may be related to Homerton, just send to one channel for simplicity
-            SlackHelper.sendSlackMessage(SlackHelper.Channel.Hl7ReceiverAlertsBarts, "Exception in HL7 Checker", ex);
+            SlackHelper.sendSlackMessage(SlackHelper.Channel.Hl7Receiver, "Exception in HL7 Checker", ex);
             System.exit(0);
         }
 
@@ -114,7 +136,55 @@ public class Main {
         System.exit(0);
     }
 
-    private static void sendSlackMessage(int channelId, int messageId, String ignoreReason, String localPatientId) throws Exception {
+    private static void writeState(Map<Integer, Integer> currentMessages) throws Exception {
+
+        List<String> lines = new ArrayList<>();
+        for (Integer channelId: currentMessages.keySet()) {
+            Integer messageId = currentMessages.get(channelId);
+            lines.add("" + channelId + ":" + messageId);
+        }
+
+        File f = new File(STATE_FILE);
+
+        FileUtils.writeLines(f, null, lines);
+    }
+
+    private static Map<Integer, Integer> readState() throws Exception {
+
+        Map<Integer, Integer> ret = new HashMap<>();
+
+        File f = new File(STATE_FILE);
+        if (f.exists()) {
+            List<String> lines = FileUtils.readLines(f, null);
+            for (String line: lines) {
+                String[] toks = line.split(":");
+                String channelId = toks[0];
+                String messageId = toks[1];
+                ret.put(Integer.valueOf(channelId), Integer.valueOf(messageId));
+            }
+        }
+
+        return ret;
+    }
+
+    private static void sendFailureSlackMessage(int channelId, int messageId) throws Exception {
+
+        String channelName = null;
+        if (channelId == 1) {
+            channelName = "Homerton";
+
+        } else if (channelId == 2) {
+            channelName = "Barts";
+
+        } else {
+            throw new Exception("Unknown channel " + channelId);
+        }
+
+        String msg = channelName + " HL7 feed is stuck on message " + messageId;
+        SlackHelper.sendSlackMessage(SlackHelper.Channel.Hl7Receiver, msg);
+    }
+
+    private static void sendSuccessSlackMessage(int channelId, int messageId, String ignoreReason, String localPatientId) throws Exception {
 
         SlackHelper.Channel channel = null;
         if (channelId == 1) {
