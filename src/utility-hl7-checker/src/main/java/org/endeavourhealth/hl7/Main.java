@@ -107,9 +107,9 @@ public class Main {
 
                     } else {
                         //if we can't ignore it, we need to raise an alert because the queue will now be backing up
-                        Integer lastMessageId = previousMessagesInError.get(new Integer(channelId));
-                        if (lastMessageId == null
-                                || lastMessageId.intValue() != messageId) {
+                        Integer lastMessageIdInError = previousMessagesInError.get(new Integer(channelId));
+                        if (lastMessageIdInError == null
+                                || lastMessageIdInError.intValue() != messageId) {
                             sendFailureSlackMessage(channelId, messageId, errorMessage);
                         }
 
@@ -121,6 +121,8 @@ public class Main {
                 resultSet.close();
                 connection.close();
             }
+
+            checkForErrorsBeingCleared(previousMessagesInError, currentMessagesInError);
 
             writeState(currentMessagesInError, stateFile);
 
@@ -134,6 +136,24 @@ public class Main {
         LOG.info("Completed HL7 Check on " + url);
         System.exit(0);
     }
+
+    private static void checkForErrorsBeingCleared(Map<Integer, Integer> previousMessagesInError, Map<Integer, Integer> currentMessagesInError) throws Exception {
+        for (Integer channelId: previousMessagesInError.keySet()) {
+            Integer previousMessageIdInError = previousMessagesInError.get(channelId);
+            Integer currentMessageIdInError = currentMessagesInError.get(channelId);
+
+            //only send this Slack alert if the current error message ID is null, since if it's non-null, we'll
+            //have already send a Slack message with the details on the new message we're stuck on
+            /*if (currentMessageIdInError == null
+                    || currentMessageIdInError.intValue() != previousMessageIdInError.intValue()) {*/
+            if (currentMessageIdInError == null) {
+
+                String msg = getChannelName(channelId.intValue()) + " HL7 feed is no longer stuck on message " + previousMessageIdInError;
+                SlackHelper.sendSlackMessage(SlackHelper.Channel.Hl7Receiver, msg);
+            }
+        }
+    }
+
 
     private static void writeState(Map<Integer, Integer> currentMessages, String stateFile) throws Exception {
 
@@ -176,20 +196,22 @@ public class Main {
         return ret;
     }
 
-    private static void sendFailureSlackMessage(int channelId, int messageId, String errorMessage) throws Exception {
-
+    private static String getChannelName(int channelId) throws Exception {
         String channelName = null;
         if (channelId == 1) {
-            channelName = "Homerton";
+            return "Homerton";
 
         } else if (channelId == 2) {
-            channelName = "Barts";
+            return "Barts";
 
         } else {
             throw new Exception("Unknown channel " + channelId);
         }
+    }
 
-        String msg = channelName + " HL7 feed is stuck on message " + messageId + "\n```" + errorMessage + "```";
+    private static void sendFailureSlackMessage(int channelId, int messageId, String errorMessage) throws Exception {
+
+        String msg = getChannelName(channelId) + " HL7 feed is stuck on message " + messageId + "\n```" + errorMessage + "```";
         SlackHelper.sendSlackMessage(SlackHelper.Channel.Hl7Receiver, msg);
     }
 
