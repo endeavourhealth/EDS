@@ -1517,31 +1517,35 @@ public class Main {
 								LOG.info("In rebulk = " + idsInRebulk.contains(uniqueId));
 							}
 
-							if (deleted
-									|| idsInRebulk.contains(uniqueId)) {
+							if (deleted) {
+
+								//if it's the Patient file, stick the patient GUID in a set so we know full patient record deletes
+								if (fileType.equals("Admin_Patient")) {
+									patientGuidsDeleted.add(patientGuid);
+								}
+
+								continue;
+							}
+
+							//if it's not the patient file and we refer to a patient that we know
+							//has been deleted, then skip this row, since we know we're deleting the entire patient record
+							if (patientGuidsDeleted.contains(patientGuid)) {
+
+								if (patientGuid.equals("{59FE7D36-BF59-4673-B957-F8282B3FB484}")) {
+									LOG.info("Patient whole record has already been deleted");
+								}
+
+								continue;
+							}
+
+							//if the re-bulk contains a record matching this one, then it's OK
+							if (idsInRebulk.contains(uniqueId)) {
 
 								if (patientGuid.equals("{59FE7D36-BF59-4673-B957-F8282B3FB484}")) {
 									LOG.info("This row is OK");
 								}
 
 								continue;
-							}
-
-							//if it's the Patient file, stick the patient GUID in a set
-							if (fileType.equals(" Admin_Patient")) {
-								patientGuidsDeleted.add(patientGuid);
-
-							} else {
-								//if it's not the patient file and we refer to a patient that we know
-								//has been deleted, then skip this row, since we know we're deleting the entire patient record
-								if (patientGuidsDeleted.contains(patientGuid)) {
-
-									if (patientGuid.equals("{59FE7D36-BF59-4673-B957-F8282B3FB484}")) {
-										LOG.info("Patient whole record has already been deleted");
-									}
-
-									continue;
-								}
 							}
 
 							//create a new CSV record, carrying over the GUIDs from the original but marking as deleted
