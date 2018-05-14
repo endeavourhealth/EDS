@@ -1496,7 +1496,7 @@ public class Main {
 								LOG.info("Unique ID is " + uniqueId);
 							}
 
-							//if we're already generated a delete for this ID, skip it
+							//if we're already handled this record in a more recent extract, then skip it
 							if (pastIdsProcessed.contains(uniqueId)) {
 
 								if (patientGuid.equals("{59FE7D36-BF59-4673-B957-F8282B3FB484}")) {
@@ -1510,6 +1510,8 @@ public class Main {
 							//if this ID isn't deleted and isn't in the re-bulk then it means
 							//it WAS deleted in Emis Web but we didn't receive the delete, because it was deleted
 							//from Emis Web while the extract feed was disabled
+
+							//if the record is deleted, then we won't expect it in the re-bulk
 							boolean deleted = Boolean.parseBoolean(record.get("Deleted"));
 
 							if (patientGuid.equals("{59FE7D36-BF59-4673-B957-F8282B3FB484}")) {

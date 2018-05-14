@@ -32,8 +32,6 @@ import java.util.Map;
 public class Main {
     private static final Logger LOG = LoggerFactory.getLogger(Main.class);
 
-    private static final String STATE_FILE = "Hl7CheckerState.txt";
-
     private static HikariDataSource connectionPool = null;
     private static HapiContext context;
     private static Parser parser;
@@ -48,9 +46,9 @@ public class Main {
 
         ConfigManager.Initialize("Hl7Checker");
 
-        if (args.length < 4) {
+        if (args.length < 5) {
             LOG.error("Expecting four parameters:");
-            LOG.error("<db_connection_url> <driver_class> <db_username> <db_password>");
+            LOG.error("<db_connection_url> <driver_class> <db_username> <db_password> <state_file>");
             System.exit(0);
             return;
         }
@@ -59,6 +57,7 @@ public class Main {
         String driverClass = args[1];
         String user = args[2];
         String pass = args[3];
+        String stateFile = args[4];
 
         //optional fifth parameter puts it in read only mode
         boolean readOnly = false;
@@ -80,7 +79,7 @@ public class Main {
             Connection connection = getConnection();
             ResultSet resultSet = executeQuery(connection, sql);
 
-            Map<Integer, Integer> previousMessagesInError = readState();
+            Map<Integer, Integer> previousMessagesInError = readState(stateFile);
             Map<Integer, Integer> currentMessagesInError = new HashMap<>();
 
             try {
@@ -123,7 +122,7 @@ public class Main {
                 connection.close();
             }
 
-            writeState(currentMessagesInError);
+            writeState(currentMessagesInError, stateFile);
 
         } catch (Exception ex) {
             LOG.error("", ex);
@@ -136,33 +135,43 @@ public class Main {
         System.exit(0);
     }
 
-    private static void writeState(Map<Integer, Integer> currentMessages) throws Exception {
+    private static void writeState(Map<Integer, Integer> currentMessages, String stateFile) throws Exception {
+
+        LOG.info("Writing state to " + stateFile);
 
         List<String> lines = new ArrayList<>();
         for (Integer channelId: currentMessages.keySet()) {
             Integer messageId = currentMessages.get(channelId);
-            lines.add("" + channelId + ":" + messageId);
+            String line = "" + channelId + ":" + messageId;
+            lines.add(line);
+            LOG.info("Writing line: " + line);
         }
 
-        File f = new File(STATE_FILE);
-
+        File f = new File(stateFile);
         FileUtils.writeLines(f, null, lines);
+
+        LOG.info("Written");
     }
 
-    private static Map<Integer, Integer> readState() throws Exception {
+    private static Map<Integer, Integer> readState(String stateFile) throws Exception {
+        LOG.info("Reading state file from " + stateFile);
 
         Map<Integer, Integer> ret = new HashMap<>();
 
-        File f = new File(STATE_FILE);
+        File f = new File(stateFile);
         if (f.exists()) {
+            LOG.info("File exists");
             List<String> lines = FileUtils.readLines(f, null);
             for (String line: lines) {
+                LOG.info("Line: " + line);
                 String[] toks = line.split(":");
                 String channelId = toks[0];
                 String messageId = toks[1];
                 ret.put(Integer.valueOf(channelId), Integer.valueOf(messageId));
             }
         }
+
+        LOG.info("Read from file into map size " + ret.size());
 
         return ret;
     }
