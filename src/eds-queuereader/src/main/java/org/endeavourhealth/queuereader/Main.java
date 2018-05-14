@@ -1401,6 +1401,8 @@ public class Main {
 
 			List<String> tempFilesCreated = new ArrayList<>();
 
+			Set<String> patientGuidsDeleted = new HashSet<>();
+
 			for (String rebulkFile: rebulkFiles) {
 				String fileType = findFileType(rebulkFile);
 				if (!isPatientFile(fileType)) {
@@ -1491,38 +1493,62 @@ public class Main {
 							}
 							pastIdsProcessed.add(id);
 
-							boolean deleted = Boolean.parseBoolean(record.get("Deleted"));
-
 							//if this ID isn't deleted and isn't in the re-bulk then it means
 							//it WAS deleted in Emis Web but we didn't receive the delete, because it was deleted
 							//from Emis Web while the extract feed was disabled
-							if (!deleted
-									&& !idsInRebulk.contains(id)) {
-
-								//populate a new CSV record, carrying over the GUIDs from the original but marking as deleted
-								String[] newRecord = new String[headers.length];
-
-								for (int j=0; j<newRecord.length; j++) {
-									String header = headers[j];
-									if (header.equals("PatientGuid")
-											|| header.equals("OrganisationGuid")
-											|| (!Strings.isNullOrEmpty(guidColumnName)
-											&& header.equals(guidColumnName))) {
-
-										String val = record.get(header);
-										newRecord[j] = val;
-
-									} else if (header.equals("Deleted")) {
-										newRecord[j] = "true";
-
-									} else {
-										newRecord[j] = "";
-									}
-								}
-
-								csvPrinter.printRecord((Object[])newRecord);
-								csvPrinter.flush();
+							boolean deleted = Boolean.parseBoolean(record.get("Deleted"));
+							if (deleted
+									|| idsInRebulk.contains(id)) {
+								continue;
 							}
+
+							//if it's the Patient file, stick the patient GUID in a set
+							String patientGuid = record.get("PatientGuid");
+							if (fileType.equals(" Admin_Patient")) {
+								patientGuidsDeleted.add(patientGuid);
+
+							} else {
+								//if it's not the patient file and we refer to a patient that we know
+								//has been deleted, then skip this row, since we know we're deleting the entire patient record
+								if (patientGuidsDeleted.contains(patientGuid)) {
+									continue;
+								}
+							}
+
+							//create a new CSV record, carrying over the GUIDs from the original but marking as deleted
+							String[] newRecord = new String[headers.length];
+
+							for (int j=0; j<newRecord.length; j++) {
+								String header = headers[j];
+								if (header.equals("PatientGuid")
+										|| header.equals("OrganisationGuid")
+										|| (!Strings.isNullOrEmpty(guidColumnName)
+										&& header.equals(guidColumnName))) {
+
+									String val = record.get(header);
+									newRecord[j] = val;
+
+								} else if (header.equals("Deleted")) {
+									newRecord[j] = "true";
+
+								} else {
+									newRecord[j] = "";
+								}
+							}
+
+							csvPrinter.printRecord((Object[])newRecord);
+							csvPrinter.flush();
+
+							//log out the raw record that's missing from the original
+							StringBuffer sb = new StringBuffer();
+							sb.append("Record not in re-bulk: ");
+							for (int j=0; j<record.size(); j++) {
+								if (i > 0) {
+									sb.append(",");
+								}
+								sb.append(record.get(j));
+							}
+							LOG.info(sb.toString());
 						}
 					} finally {
 						csvParser.close();
