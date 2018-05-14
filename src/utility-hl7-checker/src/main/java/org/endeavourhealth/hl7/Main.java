@@ -112,7 +112,7 @@ public class Main {
                                 || lastMessageId.intValue() != messageId) {
 
                             currentMessagesInError.put(new Integer(channelId), new Integer(messageId));
-                            sendFailureSlackMessage(channelId, messageId);
+                            sendFailureSlackMessage(channelId, messageId, errorMessage);
                         }
                     }
                 }
@@ -176,7 +176,7 @@ public class Main {
         return ret;
     }
 
-    private static void sendFailureSlackMessage(int channelId, int messageId) throws Exception {
+    private static void sendFailureSlackMessage(int channelId, int messageId, String errorMessage) throws Exception {
 
         String channelName = null;
         if (channelId == 1) {
@@ -189,7 +189,7 @@ public class Main {
             throw new Exception("Unknown channel " + channelId);
         }
 
-        String msg = channelName + " HL7 feed is stuck on message " + messageId;
+        String msg = channelName + " HL7 feed is stuck on message " + messageId + "\n```" + errorMessage + "```";
         SlackHelper.sendSlackMessage(SlackHelper.Channel.Hl7Receiver, msg);
     }
 
