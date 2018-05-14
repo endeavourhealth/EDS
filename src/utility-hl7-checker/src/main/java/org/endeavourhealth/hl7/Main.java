@@ -47,7 +47,7 @@ public class Main {
         ConfigManager.Initialize("Hl7Checker");
 
         if (args.length < 5) {
-            LOG.error("Expecting four parameters:");
+            LOG.error("Expecting five parameters:");
             LOG.error("<db_connection_url> <driver_class> <db_username> <db_password> <state_file>");
             System.exit(0);
             return;
@@ -110,10 +110,10 @@ public class Main {
                         Integer lastMessageId = previousMessagesInError.get(new Integer(channelId));
                         if (lastMessageId == null
                                 || lastMessageId.intValue() != messageId) {
-
-                            currentMessagesInError.put(new Integer(channelId), new Integer(messageId));
                             sendFailureSlackMessage(channelId, messageId, errorMessage);
                         }
+
+                        currentMessagesInError.put(new Integer(channelId), new Integer(messageId));
                     }
                 }
 
@@ -137,33 +137,33 @@ public class Main {
 
     private static void writeState(Map<Integer, Integer> currentMessages, String stateFile) throws Exception {
 
-        LOG.info("Writing state to " + stateFile);
+        //LOG.info("Writing state to " + stateFile);
 
         List<String> lines = new ArrayList<>();
         for (Integer channelId: currentMessages.keySet()) {
             Integer messageId = currentMessages.get(channelId);
             String line = "" + channelId + ":" + messageId;
             lines.add(line);
-            LOG.info("Writing line: " + line);
+            //LOG.info("Writing line: " + line);
         }
 
         File f = new File(stateFile);
         FileUtils.writeLines(f, null, lines);
 
-        LOG.info("Written");
+        //LOG.info("Written");
     }
 
     private static Map<Integer, Integer> readState(String stateFile) throws Exception {
-        LOG.info("Reading state file from " + stateFile);
+        //LOG.info("Reading state file from " + stateFile);
 
         Map<Integer, Integer> ret = new HashMap<>();
 
         File f = new File(stateFile);
         if (f.exists()) {
-            LOG.info("File exists");
+            //LOG.info("File exists");
             List<String> lines = FileUtils.readLines(f, null);
             for (String line: lines) {
-                LOG.info("Line: " + line);
+                //LOG.info("Line: " + line);
                 String[] toks = line.split(":");
                 String channelId = toks[0];
                 String messageId = toks[1];
@@ -171,7 +171,7 @@ public class Main {
             }
         }
 
-        LOG.info("Read from file into map size " + ret.size());
+        //LOG.info("Read from file into map size " + ret.size());
 
         return ret;
     }
