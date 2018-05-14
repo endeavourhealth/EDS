@@ -1480,30 +1480,54 @@ public class Main {
 
 						while (iterator.hasNext()) {
 							CSVRecord record = iterator.next();
+							String patientGuid = record.get("PatientGuid");
+
+							if (patientGuid.equals("{59FE7D36-BF59-4673-B957-F8282B3FB484}")) {
+								LOG.info("Found record for patient " + patientGuid);
+							}
 
 							//get the patient and row guid out of the file and cache in our set
-							String id = record.get("PatientGuid");
+							String uniqueId = patientGuid;
 							if (!Strings.isNullOrEmpty(guidColumnName)) {
-								id += "//" + record.get(guidColumnName);
+								uniqueId += "//" + record.get(guidColumnName);
+							}
+
+							if (patientGuid.equals("{59FE7D36-BF59-4673-B957-F8282B3FB484}")) {
+								LOG.info("Unique ID is " + uniqueId);
 							}
 
 							//if we're already generated a delete for this ID, skip it
-							if (pastIdsProcessed.contains(id)) {
+							if (pastIdsProcessed.contains(uniqueId)) {
+
+								if (patientGuid.equals("{59FE7D36-BF59-4673-B957-F8282B3FB484}")) {
+									LOG.info("Already processed a row with this unique ID");
+								}
+
 								continue;
 							}
-							pastIdsProcessed.add(id);
+							pastIdsProcessed.add(uniqueId);
 
 							//if this ID isn't deleted and isn't in the re-bulk then it means
 							//it WAS deleted in Emis Web but we didn't receive the delete, because it was deleted
 							//from Emis Web while the extract feed was disabled
 							boolean deleted = Boolean.parseBoolean(record.get("Deleted"));
+
+							if (patientGuid.equals("{59FE7D36-BF59-4673-B957-F8282B3FB484}")) {
+								LOG.info("Deleted = " + deleted);
+								LOG.info("In rebulk = " + idsInRebulk.contains(uniqueId));
+							}
+
 							if (deleted
-									|| idsInRebulk.contains(id)) {
+									|| idsInRebulk.contains(uniqueId)) {
+
+								if (patientGuid.equals("{59FE7D36-BF59-4673-B957-F8282B3FB484}")) {
+									LOG.info("This row is OK");
+								}
+
 								continue;
 							}
 
 							//if it's the Patient file, stick the patient GUID in a set
-							String patientGuid = record.get("PatientGuid");
 							if (fileType.equals(" Admin_Patient")) {
 								patientGuidsDeleted.add(patientGuid);
 
@@ -1511,6 +1535,11 @@ public class Main {
 								//if it's not the patient file and we refer to a patient that we know
 								//has been deleted, then skip this row, since we know we're deleting the entire patient record
 								if (patientGuidsDeleted.contains(patientGuid)) {
+
+									if (patientGuid.equals("{59FE7D36-BF59-4673-B957-F8282B3FB484}")) {
+										LOG.info("Patient whole record has already been deleted");
+									}
+
 									continue;
 								}
 							}
@@ -1543,7 +1572,7 @@ public class Main {
 							StringBuffer sb = new StringBuffer();
 							sb.append("Record not in re-bulk: ");
 							for (int j=0; j<record.size(); j++) {
-								if (i > 0) {
+								if (j > 0) {
 									sb.append(",");
 								}
 								sb.append(record.get(j));
