@@ -17,6 +17,7 @@ import org.slf4j.LoggerFactory;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -75,6 +76,10 @@ public class Main {
                     changePersonId(update, connection);
                 }
 
+                //and delete any person records that no longer have any references to them
+                LOG.info("Going to delete orphaned persons");
+                deleteOrphanedPersons(connection);
+
             } finally {
                 connection.close();
             }
@@ -91,6 +96,47 @@ public class Main {
         System.exit(0);
     }
 
+    private static void deleteOrphanedPersons(Connection connection) throws Exception {
+
+        String sql = "SELECT id FROM person"
+                + " WHERE NOT EXISTS ("
+                + " SELECT 1"
+                + " FROM patient"
+                + " WHERE patient.person_id = person.id);";
+
+        PreparedStatement ps = connection.prepareStatement(sql);
+        ResultSet rs = ps.executeQuery();
+
+        List<Long> ids = new ArrayList<>();
+        while (rs.next()) {
+            long id = rs.getLong(1);
+            ids.add(new Long(id));
+        }
+        LOG.info("Found " + ids.size() + " orphaned persons to delete");
+
+        rs.close();
+        ps.close();
+
+        sql = "DELETE FROM person WHERE id = ?;";
+
+
+        ps = connection.prepareStatement(sql);
+
+        for (int i=0; i<ids.size(); i++) {
+
+            Long id = ids.get(i);
+            ps.setLong(1, id);
+            ps.addBatch();
+
+            //execute the batch every 50 and at the end
+            if (i % 50 == 0
+                    || i+1 == ids.size()) {
+                ps.executeBatch();
+            }
+        }
+
+        connection.commit();
+    }
 
     private static List<UpdateJob> convertChangesToEnterprise(String enterpriseConfigName, List<PatientLinkPair> changes) throws Exception {
         List<UpdateJob> updatesForConfig = new ArrayList<>();
