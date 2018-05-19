@@ -5635,7 +5635,7 @@ public class Main {
 
 			createTppVisionSubsetForFile(sourceDir, destDir, personIds);
 
-			LOG.info("Finished Creating TPP Subset");
+			LOG.info("Finished Creating Vision Subset");
 
 		} catch (Throwable t) {
 			LOG.error("", t);
