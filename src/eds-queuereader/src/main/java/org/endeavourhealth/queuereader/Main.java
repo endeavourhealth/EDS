@@ -1148,9 +1148,7 @@ public class Main {
 
 			PostMessageToExchangeConfig exchangeConfig = QueueHelper.findExchangeConfig("EdsProtocol");
 
-			//TODO - change back
-			//Date dateError = new SimpleDateFormat("yyyy-MM-dd").parse("2018-04-24");
-			Date dateError = new SimpleDateFormat("yyyy-MM-dd").parse("2018-04-10");
+			Date dateError = new SimpleDateFormat("yyyy-MM-dd").parse("2018-04-24");
 
 			List<Service> services = serviceDal.getAll();
 
