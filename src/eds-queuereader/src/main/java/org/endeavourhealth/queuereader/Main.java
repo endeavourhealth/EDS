@@ -18,11 +18,9 @@ import org.endeavourhealth.core.csv.CsvHelper;
 import org.endeavourhealth.core.database.dal.DalProvider;
 import org.endeavourhealth.core.database.dal.admin.ServiceDalI;
 import org.endeavourhealth.core.database.dal.admin.models.Service;
+import org.endeavourhealth.core.database.dal.audit.ExchangeBatchDalI;
 import org.endeavourhealth.core.database.dal.audit.ExchangeDalI;
-import org.endeavourhealth.core.database.dal.audit.models.Exchange;
-import org.endeavourhealth.core.database.dal.audit.models.ExchangeEvent;
-import org.endeavourhealth.core.database.dal.audit.models.ExchangeTransformAudit;
-import org.endeavourhealth.core.database.dal.audit.models.HeaderKeys;
+import org.endeavourhealth.core.database.dal.audit.models.*;
 import org.endeavourhealth.core.database.dal.ehr.ResourceDalI;
 import org.endeavourhealth.core.database.dal.ehr.models.ResourceWrapper;
 import org.endeavourhealth.core.database.rdbms.ConnectionManager;
@@ -112,6 +110,12 @@ public class Main {
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("ApplyEmisAdminCaches")) {
 			applyEmisAdminCaches();
+			System.exit(0);
+		}
+
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("FixReferrals")) {
+			fixReferralRequests();
 			System.exit(0);
 		}
 
@@ -1128,6 +1132,144 @@ public class Main {
 
 		} else {
 			return false;
+		}
+	}
+
+	private static void fixReferralRequests() {
+		LOG.info("Fixing Referral Requests");
+
+		try {
+			ServiceDalI serviceDal = DalProvider.factoryServiceDal();
+			ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
+			ExchangeBatchDalI exchangeBatchDal = DalProvider.factoryExchangeBatchDal();
+			ResourceDalI resourceDal = DalProvider.factoryResourceDal();
+			UUID emisSystem = UUID.fromString("991a9068-01d3-4ff2-86ed-249bd0541fb3");
+			UUID emisSystemDev = UUID.fromString("55c08fa5-ef1e-4e94-aadc-e3d6adc80774");
+
+			PostMessageToExchangeConfig exchangeConfig = QueueHelper.findExchangeConfig("EdsProtocol");
+
+			//TODO - change back
+			//Date dateError = new SimpleDateFormat("yyyy-MM-dd").parse("2018-04-24");
+			Date dateError = new SimpleDateFormat("yyyy-MM-dd").parse("2018-04-10");
+
+			List<Service> services = serviceDal.getAll();
+
+			for (Service service: services) {
+
+				String endpointsJson = service.getEndpoints();
+				if (Strings.isNullOrEmpty(endpointsJson)) {
+					continue;
+				}
+
+				UUID serviceId = service.getId();
+				LOG.info("Checking " + service.getName() + " " + serviceId);
+
+				List<JsonServiceInterfaceEndpoint> endpoints = ObjectMapperPool.getInstance().readValue(service.getEndpoints(), new TypeReference<List<JsonServiceInterfaceEndpoint>>() {});
+				for (JsonServiceInterfaceEndpoint endpoint: endpoints) {
+					UUID endpointSystemId = endpoint.getSystemUuid();
+					if (!endpointSystemId.equals(emisSystem)
+							&& !endpointSystemId.equals(emisSystemDev)) {
+						LOG.info("    Skipping system ID " + endpointSystemId + " as not Emis");
+						continue;
+					}
+
+					List<UUID> exchangeIds = exchangeDal.getExchangeIdsForService(serviceId, endpointSystemId);
+
+					boolean needsFixing = false;
+					Set<UUID> patientIdsToPost = new HashSet<>();
+
+					for (UUID exchangeId: exchangeIds) {
+
+						if (!needsFixing) {
+							List<ExchangeTransformAudit> transformAudits = exchangeDal.getAllExchangeTransformAudits(serviceId, endpointSystemId, exchangeId);
+							for (ExchangeTransformAudit audit: transformAudits) {
+								Date transfromStart = audit.getStarted();
+								if (!transfromStart.before(dateError)) {
+									needsFixing = true;
+									break;
+								}
+							}
+						}
+
+						if (!needsFixing) {
+							continue;
+						}
+
+						List<ExchangeBatch> batches = exchangeBatchDal.retrieveForExchangeId(exchangeId);
+						Exchange exchange = exchangeDal.getExchange(exchangeId);
+						LOG.info("Checking exchange " + exchangeId + " with " + batches.size() + " batches");
+
+						for (ExchangeBatch batch: batches) {
+
+							UUID patientId = batch.getEdsPatientId();
+							if (patientId == null) {
+								continue;
+							}
+
+							UUID batchId = batch.getBatchId();
+
+							List<ResourceWrapper> wrappers = resourceDal.getResourcesForBatch(serviceId, batchId);
+
+							for (ResourceWrapper wrapper: wrappers) {
+								String resourceType = wrapper.getResourceType();
+								if (!resourceType.equals(ResourceType.ReferralRequest.toString())
+										|| wrapper.isDeleted()) {
+									continue;
+								}
+
+								String json = wrapper.getResourceData();
+								ReferralRequest referral = (ReferralRequest)FhirSerializationHelper.deserializeResource(json);
+
+								/*if (!referral.hasServiceRequested()) {
+									continue;
+								}
+
+								CodeableConcept reason = referral.getServiceRequested().get(0);
+								referral.setReason(reason);
+								referral.getServiceRequested().clear();*/
+
+								if (!referral.hasReason()) {
+									continue;
+								}
+
+								CodeableConcept reason = referral.getReason();
+								referral.setReason(null);
+								referral.addServiceRequested(reason);
+
+								json = FhirSerializationHelper.serializeResource(referral);
+								wrapper.setResourceData(json);
+
+								saveResourceWrapper(serviceId, wrapper);
+
+								//add to the set of patients we know need sending on to the protocol queue
+								patientIdsToPost.add(patientId);
+
+								LOG.info("Fixed " + resourceType + " " + wrapper.getResourceId() + " in batch " + batchId);
+							}
+
+							//if our patient has just been fixed or was fixed before, post onto the protocol queue
+							if (patientIdsToPost.contains(patientId)) {
+
+								List<UUID> batchIds = new ArrayList<>();
+								batchIds.add(batchId);
+
+								String batchUuidsStr = ObjectMapperPool.getInstance().writeValueAsString(batchIds.toArray());
+								exchange.setHeader(HeaderKeys.BatchIdsJson, batchUuidsStr);
+
+
+								PostMessageToExchange component = new PostMessageToExchange(exchangeConfig);
+								component.process(exchange);
+
+							}
+						}
+					}
+				}
+			}
+
+			LOG.info("Finished Fixing Referral Requests");
+
+		} catch (Throwable t) {
+			LOG.error("", t);
 		}
 	}
 
