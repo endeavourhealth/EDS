@@ -49,7 +49,6 @@ KEY_BLOCK_SIZE=8;
 CREATE INDEX ix_tpp_ctv3_lookup_ctv3_code
   ON tpp_ctv3_lookup (ctv3_code);
 
-
 CREATE TABLE tpp_multilex_to_ctv3_map
 (
   row_id bigint NOT NULL PRIMARY KEY,
