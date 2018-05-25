@@ -5,6 +5,7 @@ DROP TABLE IF EXISTS emis_admin_resource_cache;
 DROP TABLE IF EXISTS tpp_immunisation_content;
 DROP TABLE IF EXISTS tpp_ctv3_hierarchy_ref;
 DROP TABLE IF EXISTS tpp_multilex_to_ctv3_map;
+DROP TABLE IF EXISTS tpp_mapping_ref;
 
 CREATE TABLE emis_csv_code_map (
 	medication boolean,
@@ -82,3 +83,14 @@ create table tpp_immunisation_content (
 
   constraint tpp_immunisation_content_pk primary key (row_id)
 );
+
+create table tpp_mapping_ref (
+	row_id bigint(20) not null comment 'The value of RowIdentifier',
+	group_id bigint(20) not null comment 'Mapping group identifier',
+	mapped_term varchar(1000) not null comment 'The mapped term of the RowIdentifier',
+	audit_json mediumtext null comment 'Used for Audit Purposes',
+
+	constraint tpp_mapping_ref_pk primary key (service_id, group_id, row_id)
+);
+
+CREATE INDEX ix_tpp_mapping_ref ON tpp_mapping_ref (row_id);
