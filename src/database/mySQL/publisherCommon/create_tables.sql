@@ -90,7 +90,7 @@ create table tpp_mapping_ref (
 	mapped_term varchar(1000) not null comment 'The mapped term of the RowIdentifier',
 	audit_json mediumtext null comment 'Used for Audit Purposes',
 
-	constraint tpp_mapping_ref_pk primary key (service_id, group_id, row_id)
+	constraint tpp_mapping_ref_pk primary key (group_id, row_id)
 );
 
 CREATE INDEX ix_tpp_mapping_ref ON tpp_mapping_ref (row_id);
