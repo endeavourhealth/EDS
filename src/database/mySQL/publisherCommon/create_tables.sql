@@ -4,6 +4,7 @@ DROP TABLE IF EXISTS emis_csv_code_map;
 DROP TABLE IF EXISTS emis_admin_resource_cache;
 DROP TABLE IF EXISTS tpp_immunisation_content;
 DROP TABLE IF EXISTS tpp_ctv3_hierarchy_ref;
+DROP TABLE IF EXISTS tpp_ctv3_lookup;
 DROP TABLE IF EXISTS tpp_multilex_to_ctv3_map;
 DROP TABLE IF EXISTS tpp_mapping_ref;
 
@@ -42,6 +43,7 @@ CREATE TABLE tpp_ctv3_lookup (
 	row_id bigint(20) not null comment 'The value of RowIdentifier',
 	ctv3_code varchar(5) null,
 	ctv3_text varchar(255) null,
+	audit_json mediumtext null comment 'Used for Audit Purposes',
 	CONSTRAINT pk_tpp_ctv3_lookup PRIMARY KEY (row_id)
 )
 ROW_FORMAT=COMPRESSED
