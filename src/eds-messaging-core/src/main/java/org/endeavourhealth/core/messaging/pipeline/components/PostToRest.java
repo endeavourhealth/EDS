@@ -63,7 +63,8 @@ public class PostToRest extends PipelineComponent {
 
 			Response response = invocationBuilder.post(entity);
 
-			exchange.setBody(response.readEntity(String.class));
+			//TODO - handle response properly (do not overwrite Exchange body)
+			//exchange.setBody(response.readEntity(String.class));
 
 			if (response.getStatus() == HttpStatus.SC_OK)
 				LOG.debug("Message posted to REST endpoint");

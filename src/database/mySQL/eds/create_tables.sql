@@ -63,6 +63,9 @@ CREATE TABLE patient_search
 	patient_id char(36) NOT NULL,
 	last_updated timestamp NOT NULL,
 	registered_practice_ods_code VARCHAR(50),
+	uprn bigint COMMENT 'not automatically populated as of yet',
+  uprn_match_qualifier varchar(50) COMMENT 'not automatically populated as of yet',
+  uprn_matched_address varchar(1024) COMMENT 'not automatically populated as of yet',
 	CONSTRAINT pk_patient_search PRIMARY KEY (service_id, patient_id)
 );
 

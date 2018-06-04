@@ -36,13 +36,12 @@ public class EnvelopMessage extends PipelineComponent {
 			String contentType = exchange.getHeader(HeaderKeys.ContentType);
 
 			String bundleXml = new ParserPool().composeString(contentType, bundle);
-			exchange.setBody(bundleXml);
+
+			//TODO - handle response properly (do not overwrite Exchange body)
+			//exchange.setBody(bundleXml);
 		} catch (Exception e) {
 			throw new PipelineException("Unable to serialize message bundle", e);
 		}
-
-
-		LOG.debug("Message wrapped in envelope");
 	}
 
 	private MessageHeader buildMessageHeader(Exchange exchange) {

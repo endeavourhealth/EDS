@@ -33,7 +33,9 @@ public class ReturnResponseAcknowledgement extends PipelineComponent {
 			String contentType = exchange.getHeader(HeaderKeys.ContentType);
 
 			String message = new ParserPool().composeString(contentType, messageHeader);
-			exchange.setBody(message);
+
+			//TODO - handle response properly (do not overwrite Exchange body)
+			//exchange.setBody(message);
 		} catch (Exception e) {
 			throw new PipelineException("Unable to serialize message header", e);
 		}

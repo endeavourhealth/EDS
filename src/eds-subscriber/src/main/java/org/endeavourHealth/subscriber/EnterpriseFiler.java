@@ -503,6 +503,7 @@ public class EnterpriseFiler {
 
         } catch (Exception ex) {
             LOG.info(insert.toString());
+            throw ex;
         }
 
         insert.close();
