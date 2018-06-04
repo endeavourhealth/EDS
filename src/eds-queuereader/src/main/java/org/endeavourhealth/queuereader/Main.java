@@ -114,10 +114,17 @@ public class Main {
 		}
 
 		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("FixSubscribers")) {
+			fixSubscriberDbs();
+			System.exit(0);
+		}
+
+
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("FixReferrals")) {
 			fixReferralRequests();
 			System.exit(0);
-		}
+		}*/
 
 		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("PopulateNewSearchTable")) {
@@ -1135,7 +1142,97 @@ public class Main {
 		}
 	}
 
-	private static void fixReferralRequests() {
+	private static void fixSubscriberDbs() {
+		LOG.info("Fixing Subscriber DBs");
+
+		try {
+			ServiceDalI serviceDal = DalProvider.factoryServiceDal();
+			ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
+			ExchangeBatchDalI exchangeBatchDal = DalProvider.factoryExchangeBatchDal();
+			ResourceDalI resourceDal = DalProvider.factoryResourceDal();
+			UUID emisSystem = UUID.fromString("991a9068-01d3-4ff2-86ed-249bd0541fb3");
+			UUID emisSystemDev = UUID.fromString("55c08fa5-ef1e-4e94-aadc-e3d6adc80774");
+
+			PostMessageToExchangeConfig exchangeConfig = QueueHelper.findExchangeConfig("EdsProtocol");
+
+			Date dateError = new SimpleDateFormat("yyyy-MM-dd").parse("2018-05-11");
+
+			List<Service> services = serviceDal.getAll();
+
+			for (Service service: services) {
+
+				String endpointsJson = service.getEndpoints();
+				if (Strings.isNullOrEmpty(endpointsJson)) {
+					continue;
+				}
+
+				UUID serviceId = service.getId();
+				LOG.info("Checking " + service.getName() + " " + serviceId);
+
+				List<JsonServiceInterfaceEndpoint> endpoints = ObjectMapperPool.getInstance().readValue(service.getEndpoints(), new TypeReference<List<JsonServiceInterfaceEndpoint>>() {});
+				for (JsonServiceInterfaceEndpoint endpoint: endpoints) {
+					UUID endpointSystemId = endpoint.getSystemUuid();
+					if (!endpointSystemId.equals(emisSystem)
+							&& !endpointSystemId.equals(emisSystemDev)) {
+						LOG.info("    Skipping system ID " + endpointSystemId + " as not Emis");
+						continue;
+					}
+
+					List<UUID> exchangeIds = exchangeDal.getExchangeIdsForService(serviceId, endpointSystemId);
+
+					boolean needsFixing = false;
+
+					for (UUID exchangeId: exchangeIds) {
+
+						if (!needsFixing) {
+							List<ExchangeTransformAudit> transformAudits = exchangeDal.getAllExchangeTransformAudits(serviceId, endpointSystemId, exchangeId);
+							for (ExchangeTransformAudit audit: transformAudits) {
+								Date transfromStart = audit.getStarted();
+								if (!transfromStart.before(dateError)) {
+									needsFixing = true;
+									break;
+								}
+							}
+						}
+
+						if (!needsFixing) {
+							continue;
+						}
+
+						List<ExchangeBatch> batches = exchangeBatchDal.retrieveForExchangeId(exchangeId);
+						Exchange exchange = exchangeDal.getExchange(exchangeId);
+						LOG.info("    Posting exchange " + exchangeId + " with " + batches.size() + " batches");
+
+						List<UUID> batchIds = new ArrayList<>();
+
+						for (ExchangeBatch batch: batches) {
+
+							UUID patientId = batch.getEdsPatientId();
+							if (patientId == null) {
+								continue;
+							}
+
+							UUID batchId = batch.getBatchId();
+							batchIds.add(batchId);
+						}
+
+						String batchUuidsStr = ObjectMapperPool.getInstance().writeValueAsString(batchIds.toArray());
+						exchange.setHeader(HeaderKeys.BatchIdsJson, batchUuidsStr);
+
+						PostMessageToExchange component = new PostMessageToExchange(exchangeConfig);
+						component.process(exchange);
+					}
+				}
+			}
+
+			LOG.info("Finished Fixing Subscriber DBs");
+
+		} catch (Throwable t) {
+			LOG.error("", t);
+		}
+	}
+
+	/*private static void fixReferralRequests() {
 		LOG.info("Fixing Referral Requests");
 
 		try {
@@ -1218,13 +1315,13 @@ public class Main {
 								String json = wrapper.getResourceData();
 								ReferralRequest referral = (ReferralRequest)FhirSerializationHelper.deserializeResource(json);
 
-								/*if (!referral.hasServiceRequested()) {
+								*//*if (!referral.hasServiceRequested()) {
 									continue;
 								}
 
 								CodeableConcept reason = referral.getServiceRequested().get(0);
 								referral.setReason(reason);
-								referral.getServiceRequested().clear();*/
+								referral.getServiceRequested().clear();*//*
 
 								if (!referral.hasReason()) {
 									continue;
@@ -1269,7 +1366,7 @@ public class Main {
 		} catch (Throwable t) {
 			LOG.error("", t);
 		}
-	}
+	}*/
 
 	private static void applyEmisAdminCaches() {
 		LOG.info("Applying Emis Admin Caches");
