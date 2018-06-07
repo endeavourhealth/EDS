@@ -24,7 +24,7 @@ public class PostcodeUpdater {
     private static final String POSTCODE_SINGLE_SPACE = "PCDS";
     private static final String POSTCODE_DATE_ADDED = "DOINTR";
     private static final String POSTCODE_DATE_REMOVED = "DOTERM";
-    private static final String POSTCODE_100M_EATING = "OSEAST100M";
+    private static final String POSTCODE_100M_EASTING = "OSEAST100M";
     private static final String POSTCODE_100M_NORTHING = "OSNRTH100M";
     private static final String POSTCODE_COUNTY_CODE = "OSCTY";
     private static final String POSTCODE_LA_ORGANISATION = "ODSLAUA";
@@ -67,8 +67,12 @@ public class PostcodeUpdater {
      *
      * Usage
      * =================================================================================
-     * 1. Download the "NHS Postcode Directory UK Full" dataset from the ONS
-     * http://ons.maps.arcgis.com/home/item.html?id=dc23a64fa2e34e1289901b27d91c335b
+     * 1. Download the latest "NHS Postcode Directory UK Full" dataset from the ONS:
+     * https://ons.maps.arcgis.com/home/search.html?q=NHS%20Postcode%20Directory%20UK%20Full&start=1&sortOrder=desc&sortField=modified#content
+     *
+     * May 2018 data at: https://ons.maps.arcgis.com/home/item.html?id=726532de7e62432dbc0d443c22ad810f
+     * Aug 2016 data at: http://ons.maps.arcgis.com/home/item.html?id=dc23a64fa2e34e1289901b27d91c335b
+     *
      * 2. Then extract the archive
      * 3. Locate the large (800MB+) CSV file - this is the raw postcode data file
      * 4. Then run this utility as:
@@ -206,7 +210,7 @@ public class PostcodeUpdater {
                 POSTCODE_SINGLE_SPACE,
                 POSTCODE_DATE_ADDED,
                 POSTCODE_DATE_REMOVED,
-                POSTCODE_100M_EATING,
+                POSTCODE_100M_EASTING,
                 POSTCODE_100M_NORTHING,
                 POSTCODE_COUNTY_CODE,
                 POSTCODE_LA_ORGANISATION,

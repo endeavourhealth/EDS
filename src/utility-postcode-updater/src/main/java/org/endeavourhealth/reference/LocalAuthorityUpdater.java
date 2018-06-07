@@ -18,16 +18,18 @@ import java.util.Map;
 public class LocalAuthorityUpdater {
     private static final Logger LOG = LoggerFactory.getLogger(LocalAuthorityUpdater.class);
 
-    private static final String COL_CODE = "LAD16CD";
-    private static final String COL_NAME = "LAD16NM";
+    private static final String COL_CODE = "\uFEFFLAD18CD";
+    private static final String COL_NAME = "LAD18NM";
+    private static final String COL_NAME_WELSH = "LAD18NMW";
+
+
 
     /**
      * utility to update the local_authority_lookup table in the reference DB from ONS data
      *
      * Usage
      * =================================================================================
-     * 1. Download the "NHS Postcode Directory UK Full" dataset from the ONS
-     * http://ons.maps.arcgis.com/home/item.html?id=dc23a64fa2e34e1289901b27d91c335b
+     * 1. See comment in PostcodeUpdater on where to download data from
      * 2. Then extract the archive
      * 3. Locate the "LA_UA names and codes UK as ..." TXT file in the Documents\Names and Codes directory,
      * 4. Then run this utility as:
@@ -79,7 +81,9 @@ public class LocalAuthorityUpdater {
         Map<String, String> map = new HashMap<>();
 
         //this map file is TAB delimied
-        CSVFormat format = CSVFormat.TDF;
+        //changed to CSV in May 2018
+        //CSVFormat format = CSVFormat.TDF;
+        CSVFormat format = CSVFormat.DEFAULT;
 
         CSVParser parser = null;
         try {
@@ -87,7 +91,7 @@ public class LocalAuthorityUpdater {
             Iterator<CSVRecord> iterator = parser.iterator();
 
             //validate the headers are what we expect
-            String[] expectedHeaders = new String[]{COL_CODE, COL_NAME};
+            String[] expectedHeaders = new String[]{COL_CODE, COL_NAME, COL_NAME_WELSH};
             CsvHelper.validateCsvHeaders(parser, src.getAbsolutePath(), expectedHeaders);
 
             while (iterator.hasNext()) {

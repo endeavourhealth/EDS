@@ -18,17 +18,18 @@ import java.util.Map;
 public class CcgUpdater {
     private static final Logger LOG = LoggerFactory.getLogger(CcgUpdater.class);
 
-    private static final String COL_UNKNOWN = "CCG15CD"; //not sure what this code is, but we don't use it
-    private static final String COL_CODE = "CCG15CDH";
-    private static final String COL_NAME = "CCG15NM";
+    private static final String COL_UNKNOWN = "\uFEFFCCG18CD"; //not sure what this code is, but we don't use it
+    private static final String COL_CODE = "CCG18CDH";
+    private static final String COL_NAME = "CCG18NM";
+    private static final String COL_NAME_WELSH = "CCG18NMW";
+
 
     /**
      * utility to update the ccg_lookup table in the reference DB from ONS data
      *
      * Usage
      * =================================================================================
-     * 1. Download the "NHS Postcode Directory UK Full" dataset from the ONS
-     * http://ons.maps.arcgis.com/home/item.html?id=dc23a64fa2e34e1289901b27d91c335b
+     * 1. See comment in PostcodeUpdater on where to download data from
      * 2. Then extract the archive
      * 3. Locate the "CCG names and codes as ..." TXT file in the Documents\Names and Codes directory,
      * 4. Then run this utility as:
@@ -80,7 +81,9 @@ public class CcgUpdater {
         Map<String, String> map = new HashMap<>();
 
         //this map file is TAB delimied
-        CSVFormat format = CSVFormat.TDF;
+        //changed to CSV in May 2018
+        CSVFormat format = CSVFormat.DEFAULT;
+        //CSVFormat format = CSVFormat1.TDF;
 
         CSVParser parser = null;
         try {
@@ -88,7 +91,7 @@ public class CcgUpdater {
             Iterator<CSVRecord> iterator = parser.iterator();
 
             //validate the headers are what we expect
-            String[] expectedHeaders = new String[]{COL_UNKNOWN, COL_CODE, COL_NAME};
+            String[] expectedHeaders = new String[]{COL_UNKNOWN, COL_CODE, COL_NAME, COL_NAME_WELSH};
             CsvHelper.validateCsvHeaders(parser, src.getAbsolutePath(), expectedHeaders);
 
             while (iterator.hasNext()) {
