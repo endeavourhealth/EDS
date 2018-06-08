@@ -18,7 +18,7 @@ import java.util.Map;
 public class MsoaUpdater {
     private static final Logger LOG = LoggerFactory.getLogger(MsoaUpdater.class);
 
-    private static final String MSOA_MAP_CODE = "MSOA11CD";
+    private static final String MSOA_MAP_CODE = "\uFEFFMSOA11CD"; //note the weird leading char in the raw file
     private static final String MSOA_MAP_NAME = "MSOA11NM";
 
     /**
@@ -26,8 +26,7 @@ public class MsoaUpdater {
      *
      * Usage
      * =================================================================================
-     * 1. Download the "NHS Postcode Directory UK Full" dataset from the ONS
-     * http://ons.maps.arcgis.com/home/item.html?id=dc23a64fa2e34e1289901b27d91c335b
+     * 1. See comment in PostcodeUpdater on where to download data from
      * 2. Then extract the archive
      * 3. Locate the 2011 MSOA names and codes TXT file in the Documents\Names and Codes folder,
      * 4. Then run this utility as:
@@ -79,7 +78,9 @@ public class MsoaUpdater {
         Map<String, String> map = new HashMap<>();
 
         //this map file is TAB delimied
-        CSVFormat format = CSVFormat.TDF;
+        //comma delimited since May 2018
+        CSVFormat format = CSVFormat.DEFAULT;
+        //CSVFormat format = CSVFormat.TDF;
 
         CSVParser parser = null;
         try {

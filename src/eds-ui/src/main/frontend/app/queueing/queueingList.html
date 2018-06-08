@@ -56,11 +56,12 @@
 												<a (click)="edit(item)">{{item.description}}</a>
 											</td>
 											<td>
-												{{item.routeKey}}
-											</td>
-											<td>
 												{{item.regex}}
 											</td>
+											<td>
+												{{item.routeKey}}
+											</td>
+
 											<td>
 												<button type="button" class="btn btn-default btn-xs child-to-show" (click)="moveUp(item)"><span class="fa fa-arrow-up"></span></button>
 												<button type="button" class="btn btn-default btn-xs child-to-show" (click)="moveDown(item)"><span class="fa fa-arrow-down"></span></button>

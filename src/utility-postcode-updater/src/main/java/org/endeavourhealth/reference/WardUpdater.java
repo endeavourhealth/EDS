@@ -18,8 +18,11 @@ import java.util.Map;
 public class WardUpdater {
     private static final Logger LOG = LoggerFactory.getLogger(WardUpdater.class);
 
-    private static final String COL_CODE = "WD16CD";
-    private static final String COL_NAME = "WD16NM";
+    private static final String COL_CODE = "\uFEFFWD18CD";
+    private static final String COL_NAME = "WD18NM";
+    private static final String COL_NAME_WELSH = "WD18NMW";
+
+
 
     /**
      * utility to update the ward_lookup table in the reference DB from ONS data
@@ -79,7 +82,9 @@ public class WardUpdater {
         Map<String, String> map = new HashMap<>();
 
         //this map file is TAB delimied
-        CSVFormat format = CSVFormat.TDF;
+        //changed to CSV in May 2018
+        CSVFormat format = CSVFormat.DEFAULT;
+        //CSVFormat format = CSVFormat.TDF;
 
         CSVParser parser = null;
         try {
@@ -87,7 +92,7 @@ public class WardUpdater {
             Iterator<CSVRecord> iterator = parser.iterator();
 
             //validate the headers are what we expect
-            String[] expectedHeaders = new String[]{COL_CODE, COL_NAME};
+            String[] expectedHeaders = new String[]{COL_CODE, COL_NAME, COL_NAME_WELSH};
             CsvHelper.validateCsvHeaders(parser, src.getAbsolutePath(), expectedHeaders);
 
             while (iterator.hasNext()) {
