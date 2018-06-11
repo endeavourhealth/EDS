@@ -394,7 +394,7 @@ public class Main {
 
 						ResourceType resourceType = ObservationTransformer.getTargetResourceType(observationParser, csvHelper);
 
-						UUID obUuid = IdHelper.getEdsResourceId(serviceId, systemId, resourceType, obSourceId);
+						UUID obUuid = IdHelper.getEdsResourceId(serviceId, resourceType, obSourceId);
 						if (obUuid == null) {
 							continue;
 							//LOG.error("Null observation UUID for resource type " + resourceType + " and source ID " + obSourceId);
@@ -445,7 +445,7 @@ public class Main {
 							CsvCell diaryGuid = diaryParser.getDiaryGuid();
 							CsvCell patientGuid = diaryParser.getPatientGuid();
 							String diarySourceId = EmisCsvHelper.createUniqueId(patientGuid, diaryGuid);
-							UUID diaryUuid = IdHelper.getEdsResourceId(serviceId, systemId, ResourceType.ProcedureRequest, diarySourceId);
+							UUID diaryUuid = IdHelper.getEdsResourceId(serviceId, ResourceType.ProcedureRequest, diarySourceId);
 							if (diaryUuid == null) {
 								continue;
 								//LOG.error("Null observation UUID for resource type " + ResourceType.ProcedureRequest + " and source ID " + diarySourceId);
@@ -471,7 +471,7 @@ public class Main {
 							CsvCell issueRecordGuid = issueRecordParser.getIssueRecordGuid();
 							CsvCell patientGuid = issueRecordParser.getPatientGuid();
 							String issueRecordSourceId = EmisCsvHelper.createUniqueId(patientGuid, issueRecordGuid);
-							UUID issueRecordUuid = IdHelper.getEdsResourceId(serviceId, systemId, ResourceType.MedicationOrder, issueRecordSourceId);
+							UUID issueRecordUuid = IdHelper.getEdsResourceId(serviceId, ResourceType.MedicationOrder, issueRecordSourceId);
 							if (issueRecordUuid == null) {
 								continue;
 								//LOG.error("Null observation UUID for resource type " + ResourceType.MedicationOrder + " and source ID " + issueRecordSourceId);
@@ -497,7 +497,7 @@ public class Main {
 							CsvCell drugRecordGuid = drugRecordParser.getDrugRecordGuid();
 							CsvCell patientGuid = drugRecordParser.getPatientGuid();
 							String drugRecordSourceId = EmisCsvHelper.createUniqueId(patientGuid, drugRecordGuid);
-							UUID drugRecordUuid = IdHelper.getEdsResourceId(serviceId, systemId, ResourceType.MedicationStatement, drugRecordSourceId);
+							UUID drugRecordUuid = IdHelper.getEdsResourceId(serviceId, ResourceType.MedicationStatement, drugRecordSourceId);
 							if (drugRecordUuid == null) {
 								continue;
 								//LOG.error("Null observation UUID for resource type " + ResourceType.MedicationStatement + " and source ID " + drugRecordSourceId);
@@ -531,7 +531,7 @@ public class Main {
 					ReferenceList childReferences = consultationNewChildMap.get(encounterSourceId);
 
 					//map to UUID
-					UUID encounterId = IdHelper.getEdsResourceId(serviceId, systemId, ResourceType.Encounter, encounterSourceId);
+					UUID encounterId = IdHelper.getEdsResourceId(serviceId, ResourceType.Encounter, encounterSourceId);
 					if (encounterId == null) {
 						continue;
 					}
@@ -601,12 +601,12 @@ public class Main {
 					//map to UUID
 					ResourceType resourceType = null;
 
-					UUID resourceId = IdHelper.getEdsResourceId(serviceId, systemId, ResourceType.Observation, sourceId);
+					UUID resourceId = IdHelper.getEdsResourceId(serviceId, ResourceType.Observation, sourceId);
 					if (resourceId != null) {
 						resourceType = ResourceType.Observation;
 
 					} else {
-						resourceId = IdHelper.getEdsResourceId(serviceId, systemId, ResourceType.DiagnosticReport, sourceId);
+						resourceId = IdHelper.getEdsResourceId(serviceId, ResourceType.DiagnosticReport, sourceId);
 						if (resourceId != null) {
 							resourceType = ResourceType.DiagnosticReport;
 
@@ -711,7 +711,7 @@ public class Main {
 					ReferenceList childReferences = newProblemChildren.get(sourceId);
 
 					//map to UUID
-					UUID conditionId = IdHelper.getEdsResourceId(serviceId, systemId, ResourceType.Condition, sourceId);
+					UUID conditionId = IdHelper.getEdsResourceId(serviceId, ResourceType.Condition, sourceId);
 					if (conditionId == null) {
 						continue;
 					}
