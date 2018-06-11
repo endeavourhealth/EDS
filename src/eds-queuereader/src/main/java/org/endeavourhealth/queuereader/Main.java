@@ -978,6 +978,12 @@ public class Main {
 					destFile.delete();
 				}
 
+				//we have some bad partial files in, so ignore them
+				String ext = FilenameUtils.getExtension(name);
+				if (ext.equalsIgnoreCase(".filepart")) {
+					continue;
+				}
+
 				if (isCerner22File(name)) {
 					LOG.info("Checking 2.2 file " + sourceFile);
 
