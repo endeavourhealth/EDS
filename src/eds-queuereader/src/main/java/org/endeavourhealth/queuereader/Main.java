@@ -47,6 +47,7 @@ import org.endeavourhealth.transform.emis.csv.schema.prescribing.DrugRecord;
 import org.endeavourhealth.transform.emis.csv.schema.prescribing.IssueRecord;
 import org.endeavourhealth.transform.emis.csv.transforms.careRecord.ObservationPreTransformer;
 import org.endeavourhealth.transform.emis.csv.transforms.careRecord.ObservationTransformer;
+import org.endeavourhealth.transform.enterprise.transforms.PatientTransformer;
 import org.hibernate.internal.SessionImpl;
 import org.hl7.fhir.instance.model.*;
 import org.slf4j.Logger;
@@ -116,6 +117,14 @@ public class Main {
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("FixSubscribers")) {
 			fixSubscriberDbs();
+			System.exit(0);
+		}
+
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("linkDistributor")) {
+			String configName = args[1];
+			Integer batchSize = Integer.parseInt(args[2]);
+			populteLinkDistributorTable(configName, batchSize);
 			System.exit(0);
 		}
 
@@ -5960,6 +5969,18 @@ public class Main {
 				parser.close();
 				printer.close();
 			}
+		}
+	}
+
+	private static void populteLinkDistributorTable(String configName, Integer batchSize) {
+		LOG.info("Populating link distributor table from link_distributor_populator");
+
+		try {
+
+			PatientTransformer.processPatientsInBatches(configName, batchSize);
+
+		} catch (Throwable t) {
+			LOG.error("", t);
 		}
 	}
 }
