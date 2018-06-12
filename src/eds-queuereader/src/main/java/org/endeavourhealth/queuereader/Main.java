@@ -980,7 +980,7 @@ public class Main {
 
 				//we have some bad partial files in, so ignore them
 				String ext = FilenameUtils.getExtension(name);
-				if (ext.equalsIgnoreCase(".filepart")) {
+				if (ext.equalsIgnoreCase("filepart")) {
 					continue;
 				}
 
