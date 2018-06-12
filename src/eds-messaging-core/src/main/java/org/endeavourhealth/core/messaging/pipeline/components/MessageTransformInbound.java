@@ -20,6 +20,7 @@ import org.endeavourhealth.core.xml.TransformErrorUtility;
 import org.endeavourhealth.core.xml.transformError.Error;
 import org.endeavourhealth.core.xml.transformError.ExceptionLine;
 import org.endeavourhealth.core.xml.transformError.TransformError;
+import org.endeavourhealth.transform.adastra.AdastraCsvToFhirTransformer;
 import org.endeavourhealth.transform.adastra.AdastraXmlToFhirTransformer;
 import org.endeavourhealth.transform.barts.BartsCsvToFhirTransformer;
 import org.endeavourhealth.transform.common.FhirDeltaResourceFilter;
@@ -142,6 +143,9 @@ public class MessageTransformInbound extends PipelineComponent {
 
 				} else if (software.equalsIgnoreCase(MessageFormat.VISION_CSV)) {
 					processVisionCsvTransform(exchange, serviceId, systemId, messageVersion, currentErrors, batchIds, previousErrors);
+
+				} else if (software.equalsIgnoreCase(MessageFormat.ADASTRA_CSV)) {
+					processAdastraCsvTransform(exchange, serviceId, systemId, messageVersion, currentErrors, batchIds, previousErrors);
 				}
 				else {
 					throw new SoftwareNotSupportedException(software, messageVersion);
@@ -457,6 +461,17 @@ public class MessageTransformInbound extends PipelineComponent {
 		String exchangeBody = exchange.getBody();
 
 		VisionCsvToFhirTransformer.transform(exchangeId, exchangeBody, serviceId, systemId, currentErrors,
+				batchIds, previousErrors, version);
+	}
+
+	private void processAdastraCsvTransform(Exchange exchange, UUID serviceId, UUID systemId, String version,
+										   TransformError currentErrors, List<UUID> batchIds,
+										   TransformError previousErrors) throws Exception {
+
+		UUID exchangeId = exchange.getId();
+		String exchangeBody = exchange.getBody();
+
+		AdastraCsvToFhirTransformer.transform(exchangeId, exchangeBody, serviceId, systemId, currentErrors,
 				batchIds, previousErrors, version);
 	}
 
