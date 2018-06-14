@@ -82,6 +82,15 @@ public class Main {
 		}*/
 
 		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("CreateAdastraSubset")) {
+			String sourceDirPath = args[1];
+			String destDirPath = args[2];
+			String samplePatientsFile = args[3];
+			createAdastraSubset(sourceDirPath, destDirPath, samplePatientsFile);
+			System.exit(0);
+		}
+
+		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("CreateVisionSubset")) {
 			String sourceDirPath = args[1];
 			String destDirPath = args[2];
@@ -5885,7 +5894,7 @@ public class Main {
 				destDir.mkdirs();
 			}
 
-			createTppVisionSubsetForFile(sourceDir, destDir, personIds);
+			createVisionSubsetForFile(sourceDir, destDir, personIds);
 
 			LOG.info("Finished Creating Vision Subset");
 
@@ -5894,7 +5903,7 @@ public class Main {
 		}
 	}
 
-	private static void createTppVisionSubsetForFile(File sourceDir, File destDir, Set<String> personIds) throws Exception {
+	private static void createVisionSubsetForFile(File sourceDir, File destDir, Set<String> personIds) throws Exception {
 
 		File[] files = sourceDir.listFiles();
 		LOG.info("Found " + files.length + " files in " + sourceDir);
@@ -5910,7 +5919,7 @@ public class Main {
 					destFile.mkdirs();
 				}
 
-				createTppVisionSubsetForFile(sourceFile, destFile, personIds);
+				createVisionSubsetForFile(sourceFile, destFile, personIds);
 
 			} else {
 
@@ -5960,6 +5969,132 @@ public class Main {
 
 					String patientId = csvRecord.get(filterColumn);
 					if (personIds.contains(patientId)) {
+
+						printer.printRecord(csvRecord);
+						printer.flush();
+					}
+				}
+
+				parser.close();
+				printer.close();
+			}
+		}
+	}
+
+	private static void createAdastraSubset(String sourceDirPath, String destDirPath, String samplePatientsFile) {
+		LOG.info("Creating Adastra Subset");
+
+		try {
+
+			Set<String> caseIds = new HashSet<>();
+			List<String> lines = Files.readAllLines(new File(samplePatientsFile).toPath());
+			for (String line: lines) {
+				line = line.trim();
+
+				//ignore comments
+				if (line.startsWith("#")) {
+					continue;
+				}
+
+				//adastra extract files are all keyed on caseId
+				caseIds.add(line);
+			}
+
+			File sourceDir = new File(sourceDirPath);
+			File destDir = new File(destDirPath);
+
+			if (!destDir.exists()) {
+				destDir.mkdirs();
+			}
+
+			createAdastraSubsetForFile(sourceDir, destDir, caseIds);
+
+			LOG.info("Finished Creating Adastra Subset");
+
+		} catch (Throwable t) {
+			LOG.error("", t);
+		}
+	}
+
+	private static void createAdastraSubsetForFile(File sourceDir, File destDir, Set<String> caseIds) throws Exception {
+
+		File[] files = sourceDir.listFiles();
+		LOG.info("Found " + files.length + " files in " + sourceDir);
+
+		for (File sourceFile: files) {
+
+			String name = sourceFile.getName();
+			File destFile = new File(destDir, name);
+
+			if (sourceFile.isDirectory()) {
+
+				if (!destFile.exists()) {
+					destFile.mkdirs();
+				}
+
+				createAdastraSubsetForFile(sourceFile, destFile, caseIds);
+
+			} else {
+
+				if (destFile.exists()) {
+					destFile.delete();
+				}
+
+				LOG.info("Checking file " + sourceFile);
+
+				//skip any non-CSV file
+				String ext = FilenameUtils.getExtension(name);
+				if (!ext.equalsIgnoreCase("csv")) {
+					LOG.info("Skipping as not a CSV file");
+					continue;
+				}
+
+				FileReader fr = new FileReader(sourceFile);
+				BufferedReader br = new BufferedReader(fr);
+
+				//fully quote destination file to fix CRLF in columns
+				CSVFormat format = CSVFormat.DEFAULT.withDelimiter('|').withQuoteMode(QuoteMode.ALL);
+
+				CSVParser parser = new CSVParser(br, format);
+
+				int filterColumn = -1;
+
+				//CaseRef column at 0
+				if (name.contains("NOTES") || name.contains("CASEQUESTIONS") ||
+						name.contains("OUTCOMES") || name.contains("CONSULTATION") ||
+						name.contains("CLINICALCODES") || name.contains("PRESCRIPTIONS") ||
+						name.contains("PATIENT")) {
+
+					filterColumn = 0;
+
+				} else if (name.contains("CASE")) {
+					//CaseRef column at 2
+					filterColumn = 2;
+
+				} else if (name.contains("PROVIDER")) {
+					//CaseRef column at 7
+					filterColumn = 7;
+
+				} else {
+					//if no patient column, just copy the file
+					parser.close();
+
+					LOG.info("Copying non-patient file " + sourceFile);
+					copyFile(sourceFile, destFile);
+					continue;
+				}
+
+				PrintWriter fw = new PrintWriter(destFile);
+				BufferedWriter bw = new BufferedWriter(fw);
+
+				CSVPrinter printer = new CSVPrinter(bw, format);
+
+				Iterator<CSVRecord> csvIterator = parser.iterator();
+				while (csvIterator.hasNext()) {
+					CSVRecord csvRecord = csvIterator.next();
+
+					String patientId = csvRecord.get(filterColumn);
+					if (caseIds.contains(patientId)) {
 
 						printer.printRecord(csvRecord);
 						printer.flush();
