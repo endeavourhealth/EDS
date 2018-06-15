@@ -6053,7 +6053,7 @@ public class Main {
 				BufferedReader br = new BufferedReader(fr);
 
 				//fully quote destination file to fix CRLF in columns
-				CSVFormat format = CSVFormat.DEFAULT.withDelimiter('|').withQuoteMode(QuoteMode.ALL);
+				CSVFormat format = CSVFormat.DEFAULT.withDelimiter('|');
 
 				CSVParser parser = new CSVParser(br, format);
 
@@ -6093,8 +6093,8 @@ public class Main {
 				while (csvIterator.hasNext()) {
 					CSVRecord csvRecord = csvIterator.next();
 
-					String patientId = csvRecord.get(filterColumn);
-					if (caseIds.contains(patientId)) {
+					String caseId = csvRecord.get(filterColumn);
+					if (caseIds.contains(caseId)) {
 
 						printer.printRecord(csvRecord);
 						printer.flush();
