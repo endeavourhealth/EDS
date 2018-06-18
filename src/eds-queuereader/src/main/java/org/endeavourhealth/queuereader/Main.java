@@ -1158,7 +1158,8 @@ public class Main {
 				|| fileType.equalsIgnoreCase("ENCINF")
 				|| fileType.equalsIgnoreCase("SCHDETAIL")
 				|| fileType.equalsIgnoreCase("SCHOFFER")
-				|| fileType.equalsIgnoreCase("PPGPORG")) {
+				|| fileType.equalsIgnoreCase("PPGPORG")
+				|| fileType.equalsIgnoreCase("FAMILYHISTORY")) {
 			return true;
 
 		} else {
