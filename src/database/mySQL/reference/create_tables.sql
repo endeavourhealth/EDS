@@ -136,7 +136,7 @@ CREATE TABLE trm_concept_pc_link
 CREATE TABLE read2_to_snomed_map
 (
   map_id varchar (38) NOT NULL PRIMARY KEY,
-  read_code varchar (5) NOT NULL,
+  read_code varchar (5) NOT NULL COLLATE utf8_bin,
   term_code varchar (2) NOT NULL,
   concept_id varchar (18) NOT NULL,
   effective_date date NOT NULL,
@@ -149,7 +149,7 @@ ON read2_to_snomed_map (read_code, concept_id);
 CREATE TABLE ctv3_to_snomed_map
 (
   map_id varchar(38) NOT NULL PRIMARY KEY,
-  ctv3_concept_id varchar (12) NOT NULL,
+  ctv3_concept_id varchar (12) NOT NULL COLLATE utf8_bin,
   ctv3_term_id varchar(6) NOT NULL,
   ctv3_term_type varchar (1),
   sct_concept_id varchar (18) NOT NULL,
