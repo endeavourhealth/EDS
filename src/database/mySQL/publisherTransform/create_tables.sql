@@ -10,6 +10,7 @@ DROP TABLE IF EXISTS source_file_record;
 DROP TABLE IF EXISTS resource_field_mappings;
 DROP TABLE IF EXISTS internal_id_map;
 DROP TABLE IF EXISTS cerner_code_value_ref;
+DROP TABLE IF EXISTS cerner_nomenclature_ref;
 DROP TABLE IF EXISTS tpp_config_list_option;
 
 CREATE TABLE resource_id_map (
@@ -132,6 +133,25 @@ create table cerner_code_value_ref (
 );
 
 CREATE INDEX ix_cerner_code_value_ref ON cerner_code_value_ref (code_value_cd);
+
+create table cerner_nomenclature_ref (
+
+  service_id char(36) not null,
+  nomenclature_id bigint not null,
+  active bool,
+  mneomonic_text text,
+  value_text text,
+  display_text text,
+  description_text text,
+  nomenclature_type_code bigint,
+  vocabulary_code bigint,
+  concept_identifier text,
+  audit_json mediumtext,
+  constraint cerner_code_value_ref_pk primary key (service_id, nomenclature_id)
+);
+
+CREATE INDEX ix_cerner_nomenclature_ref ON cerner_nomenclature_ref (nomenclature_id);
+
 
 
 create table tpp_config_list_option (
