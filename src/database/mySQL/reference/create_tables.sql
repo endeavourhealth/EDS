@@ -9,11 +9,12 @@ DROP TABLE IF EXISTS ward_lookup;
 DROP TABLE IF EXISTS deprivation_lookup;
 DROP TABLE IF EXISTS encounter_code;
 DROP TABLE IF EXISTS snomed_lookup;
+DROP TABLE IF EXISTS snomed_description_lookup;
 DROP TABLE IF EXISTS trm_concept_pc_link;
 DROP TABLE IF EXISTS trm_concept;
 DROP TABLE IF EXISTS opcs4_lookup;
 DROP TABLE IF EXISTS icd10_lookup;
-DROP TABLE IF EXISTS snomed_description_lookup;
+
 
 CREATE TABLE postcode_lookup
 (
@@ -108,6 +109,11 @@ CREATE TABLE snomed_lookup (
     CONSTRAINT pk_encounter_code PRIMARY KEY (concept_id)
 );
 
+CREATE TABLE snomed_description_lookup (
+	description_id varchar(50) NOT NULL,
+	concept_id varchar(50) NOT NULL,
+  CONSTRAINT pk_snomed_description_lookup PRIMARY KEY (description_id, concept_id)
+);
 
 CREATE TABLE trm_concept
 (
@@ -183,8 +189,3 @@ create table icd10_lookup (
   CONSTRAINT pk_postcode_lookup PRIMARY KEY (code)
 );
 
-CREATE TABLE snomed_description_lookup (
-	description_id bigint NOT NULL,
-	concept_id bigint NOT NULL,
-    CONSTRAINT pk_snomed_description_lookup PRIMARY KEY (description_id)
-);
