@@ -13,6 +13,7 @@ DROP TABLE IF EXISTS trm_concept_pc_link;
 DROP TABLE IF EXISTS trm_concept;
 DROP TABLE IF EXISTS opcs4_lookup;
 DROP TABLE IF EXISTS icd10_lookup;
+DROP TABLE IF EXISTS snomed_description_lookup;
 
 CREATE TABLE postcode_lookup
 (
@@ -180,4 +181,10 @@ create table icd10_lookup (
   code varchar(10),
   description varchar(255),
   CONSTRAINT pk_postcode_lookup PRIMARY KEY (code)
+);
+
+CREATE TABLE snomed_description_lookup (
+	description_id bigint NOT NULL,
+	concept_id bigint NOT NULL,
+    CONSTRAINT pk_snomed_description_lookup PRIMARY KEY (description_id)
 );
