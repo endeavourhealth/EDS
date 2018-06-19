@@ -17,7 +17,7 @@ DROP TABLE IF EXISTS exchange_protocol_error;
 CREATE TABLE exchange
 (
     id char(36) NOT NULL,
-    timestamp datetime,
+    timestamp datetime(3) comment 'precision 3 gives us ms-level, which is sufficient for accurate sorting',
     headers text,
     service_id char(36),
     system_id char(36),
@@ -34,7 +34,7 @@ CREATE TABLE exchange_event
 (
   id varchar(36) NOT NULL,
   exchange_id varchar(36) NOT NULL,
-  timestamp datetime NOT NULL,
+  timestamp datetime(3) NOT NULL,
   event_desc varchar(250),
   CONSTRAINT pk_exchange_event PRIMARY KEY (exchange_id, timestamp ASC, id)
 );
