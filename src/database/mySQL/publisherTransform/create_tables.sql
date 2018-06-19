@@ -140,12 +140,12 @@ create table cerner_nomenclature_ref (
   nomenclature_id bigint not null,
   active bool,
   mneomonic_text text,
-  value_text text,
+  value_text text comment 'for SNOMED this the description ID',
   display_text text,
-  description_text text,
+  description_text text comment 'for SNOMED this is the term',
   nomenclature_type_code bigint,
-  vocabulary_code bigint,
-  concept_identifier text,
+  vocabulary_code bigint comment 'links to cerner_code_value_ref and gives the code type, but this is also in the below field',
+  concept_identifier text comment 'contains the SNOMED concept ID',
   audit_json mediumtext,
   constraint cerner_code_value_ref_pk primary key (service_id, nomenclature_id)
 );
