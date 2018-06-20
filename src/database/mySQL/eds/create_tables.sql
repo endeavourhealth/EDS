@@ -11,6 +11,7 @@ DROP TABLE IF EXISTS patient_search;
 CREATE TABLE patient_link
 (
   patient_id character(36) NOT NULL,
+  service_id character(36) NOT NULL,
   person_id character(36) NOT NULL,
   CONSTRAINT pk_patient_link PRIMARY KEY (patient_id)
 );
@@ -22,6 +23,7 @@ CREATE INDEX ix_person_id
 CREATE TABLE patient_link_history
 (
   patient_id character(36) NOT NULL,
+  service_id character(36) NOT NULL,
   updated timestamp NOT NULL,
   new_person_id character(36) NOT NULL,
   previous_person_id character(36),

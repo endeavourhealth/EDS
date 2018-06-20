@@ -350,7 +350,12 @@ public class MessageTransformOutbound extends PipelineComponent {
 
 		//get the resources actually in the batch we're transforming
 		ResourceDalI resourceDal = DalProvider.factoryResourceDal();
-		List<ResourceWrapper> resources = resourceDal.getResourcesForBatch(serviceId, batchId);
+
+		//changed to use a fn that returns the most recent version of the resources we're interested in, rather than
+		//whatever they were like when we did our transform. Means we don't need to worry about sending older
+		//versions of our resources to subscribers.
+		//List<ResourceWrapper> resources = resourceDal.getResourcesForBatch(serviceId, batchId);
+		List<ResourceWrapper> resources = resourceDal.getCurrentVersionOfResourcesForBatch(serviceId, batchId);
 
 		//then add in any EXTRA resources we've previously calculated we'll need to include
 		ExchangeBatchExtraResourceDalI exchangeBatchExtraResourceDalI = DalProvider.factoryExchangeBatchExtraResourceDal(subscriberConfigName);
@@ -388,7 +393,7 @@ public class MessageTransformOutbound extends PipelineComponent {
 
 		//then filter to remove duplicates and ones the data set has filtered out
 		resources = filterResources(resources, resourceIds);
-		resources = pruneOlderDuplicates(resources);
+		//resources = pruneOlderDuplicates(resources);
 
 		return resources;
 	}
@@ -397,8 +402,10 @@ public class MessageTransformOutbound extends PipelineComponent {
 	 * we can end up with multiple instances of the same resource in a batch (or at least the Emis test data can)
 	 * so strip out all but the latest version of each resource, so we're not wasting time sending over
 	 * data that will immediately be overwritten and also we don't need to make sure to process them in order
+	 *
+	 * no longer required, as the new getCurrentVersionOfResourcesForBatch(..) already filters out duplicates
 	 */
-	private static List<ResourceWrapper> pruneOlderDuplicates(List<ResourceWrapper> resources) {
+	/*private static List<ResourceWrapper> pruneOlderDuplicates(List<ResourceWrapper> resources) {
 
 		HashMap<UUID, UUID> hmLatestVersion = new HashMap<>();
 		List<ResourceWrapper> ret = new ArrayList<>();
@@ -446,7 +453,7 @@ public class MessageTransformOutbound extends PipelineComponent {
 		}
 
 		return ret;
-	}
+	}*/
 
 	private static List<ResourceWrapper> filterResources(List<ResourceWrapper> allResources,
 														 Map<ResourceType, List<UUID>> resourceIdsToKeep) throws Exception {
