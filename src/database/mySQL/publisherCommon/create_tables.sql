@@ -41,7 +41,7 @@ KEY_BLOCK_SIZE=8;
 
 CREATE TABLE tpp_ctv3_lookup (
 	row_id bigint(20) not null comment 'The value of RowIdentifier',
-	ctv3_code varchar(5) null,
+	ctv3_code varchar(5) null COLLATE utf8_bin,
 	ctv3_text varchar(255) null,
 	audit_json mediumtext null comment 'Used for Audit Purposes',
 	CONSTRAINT pk_tpp_ctv3_lookup PRIMARY KEY (row_id)
@@ -68,8 +68,8 @@ CREATE INDEX ix_tpp_multilex_to_ctv3_map_multilex_product_id
 CREATE TABLE tpp_ctv3_hierarchy_ref
 (
   row_id bigint NOT NULL PRIMARY KEY,
-  ctv3_parent_read_code varchar(5) NOT NULL,
-  ctv3_child_read_code varchar(5) NOT NULL,
+  ctv3_parent_read_code varchar(5) NOT NULL COLLATE utf8_bin,
+  ctv3_child_read_code varchar(5) NOT NULL COLLATE utf8_bin,
   child_level integer NOT NULL
 );
 
