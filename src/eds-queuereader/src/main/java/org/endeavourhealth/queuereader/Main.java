@@ -1068,7 +1068,8 @@ public class Main {
 
 							//filter on personID
 							String[] toks = line.split("\\|", -1);
-							if (toks.length != expectedCols) {
+							if (expectedCols != -1
+									&& toks.length != expectedCols) {
 								throw new Exception("Line " + (lineIndex+1) + " has " + toks.length + " cols but expecting " + expectedCols);
 
 							} else {
