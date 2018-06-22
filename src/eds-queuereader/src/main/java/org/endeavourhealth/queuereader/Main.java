@@ -1269,11 +1269,6 @@ public class Main {
 					int personIdColIndex = -1;
 					int expectedCols = -1;
 
-					//this file has no headers, so needs hard-coding
-					if (fileType.equalsIgnoreCase("FAMILYHISTORY")) {
-						personIdColIndex = 5;
-					}
-
 					while (true) {
 
 						String line = br.readLine();
@@ -1283,33 +1278,39 @@ public class Main {
 
 						lineIndex ++;
 
-						if (lineIndex == 0
-								&& !fileType.equalsIgnoreCase("FAMILYHISTORY")) {
+						if (lineIndex == 0) {
 
-							//check headings for PersonID col
-							String[] toks = line.split("\\|", -1);
-							expectedCols = toks.length;
-
-							for (int i=0; i<expectedCols; i++) {
-								String col = toks[i];
-								if (col.equalsIgnoreCase("PERSON_ID")
-										|| col.equalsIgnoreCase("#PERSON_ID")) {
-									personIdColIndex = i;
-									break;
-								}
-							}
-
-							//if no person ID, then just copy the entire file
-							if (personIdColIndex == -1) {
-								br.close();
-								br = null;
-
-								LOG.info("   Copying 2.2 file to " + destFile);
-								copyFile(sourceFile, destFile);
-								break;
+							if (fileType.equalsIgnoreCase("FAMILYHISTORY")) {
+								//this file has no headers, so needs hard-coding
+								personIdColIndex = 5;
 
 							} else {
-								LOG.info("   Filtering 2.2 file to " + destFile + ", person ID col at " + personIdColIndex);
+
+								//check headings for PersonID col
+								String[] toks = line.split("\\|", -1);
+								expectedCols = toks.length;
+
+								for (int i=0; i<expectedCols; i++) {
+									String col = toks[i];
+									if (col.equalsIgnoreCase("PERSON_ID")
+											|| col.equalsIgnoreCase("#PERSON_ID")) {
+										personIdColIndex = i;
+										break;
+									}
+								}
+
+								//if no person ID, then just copy the entire file
+								if (personIdColIndex == -1) {
+									br.close();
+									br = null;
+
+									LOG.info("   Copying 2.2 file to " + destFile);
+									copyFile(sourceFile, destFile);
+									break;
+
+								} else {
+									LOG.info("   Filtering 2.2 file to " + destFile + ", person ID col at " + personIdColIndex);
+								}
 							}
 
 							PrintWriter fw = new PrintWriter(destFile);
