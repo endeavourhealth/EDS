@@ -81,8 +81,6 @@ public class Main {
 			System.exit(0);
 		}*/
 
-
-
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("CreateAdastraSubset")) {
 			String sourceDirPath = args[1];
@@ -116,24 +114,6 @@ public class Main {
 			String destDirPath = args[2];
 			String samplePatientsFile = args[3];
 			createBartsSubset(sourceDirPath, destDirPath, samplePatientsFile);
-			System.exit(0);
-		}
-
-		if (args.length >= 1
-				&& args[0].equalsIgnoreCase("ExtractAberfeldyPatients")) {
-			String destFile = args[1];
-			String all = args[2];
-			extractAberfeldyPatients(destFile, all);
-			System.exit(0);
-		}
-
-		if (args.length >= 1
-				&& args[0].equalsIgnoreCase("FixExchangeTimestamps")) {
-			String serviceId = null;
-			if (args.length > 1) {
-				serviceId = args[1];
-			}
-			fixExchangeTimestamps(serviceId);
 			System.exit(0);
 		}
 
@@ -317,230 +297,6 @@ public class Main {
 		// Begin consume
 		rabbitHandler.start();
 		LOG.info("EDS Queue reader running (kill file location " + TransformConfig.instance().getKillFileLocation() + ")");
-	}
-
-	private static void fixExchangeTimestamps(String optionalServiceId) {
-		LOG.info("Fixing Exchange Timestamps");
-		try {
-
-			ServiceDalI serviceDal = DalProvider.factoryServiceDal();
-			ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
-			UUID emisSystem = UUID.fromString("991a9068-01d3-4ff2-86ed-249bd0541fb3");
-			UUID emisSystemDev = UUID.fromString("55c08fa5-ef1e-4e94-aadc-e3d6adc80774");
-
-			List<Service> services = serviceDal.getAll();
-
-			for (Service service: services) {
-
-				if (!Strings.isNullOrEmpty(optionalServiceId)) {
-					UUID filterServiceUuid = UUID.fromString(optionalServiceId);
-					if (!service.getId().equals(filterServiceUuid)) {
-						continue;
-					}
-				}
-
-				String endpointsJson = service.getEndpoints();
-				if (Strings.isNullOrEmpty(endpointsJson)) {
-					continue;
-				}
-
-				UUID serviceId = service.getId();
-				LOG.info("Checking " + service.getName() + " " + serviceId);
-
-				List<JsonServiceInterfaceEndpoint> endpoints = ObjectMapperPool.getInstance().readValue(service.getEndpoints(), new TypeReference<List<JsonServiceInterfaceEndpoint>>() {});
-				for (JsonServiceInterfaceEndpoint endpoint : endpoints) {
-					UUID endpointSystemId = endpoint.getSystemUuid();
-					if (!endpointSystemId.equals(emisSystem)
-							&& !endpointSystemId.equals(emisSystemDev)) {
-						LOG.info("    Skipping system ID " + endpointSystemId + " as not Emis");
-						continue;
-					}
-
-					List<Exchange> allExchanges = exchangeDal.getExchangesByService(serviceId, endpointSystemId, Integer.MAX_VALUE);
-
-					//hash them by timestamp
-					Map<Date, List<Exchange>> hmByTimestamp = new HashMap<>();
-
-					for (int i=allExchanges.size()-1; i>=0; i--) {
-						Exchange exchange = allExchanges.get(i);
-						Date d = exchange.getTimestamp();
-
-						List<Exchange> list = hmByTimestamp.get(d);
-						if (list == null) {
-							list = new ArrayList<>();
-							hmByTimestamp.put(d, list);
-						}
-						list.add(exchange);
-					}
-
-					for (Date timestamp: hmByTimestamp.keySet()) {
-						List<Exchange> exchanges = hmByTimestamp.get(timestamp);
-
-						exchanges.sort((o1, o2) -> {
-							Date d1 = getExtractDate(o1);
-							Date d2 = getExtractDate(o2);
-							return d1.compareTo(d2);
-						});
-
-						Date d = null;
-						for (Exchange exchange: exchanges) {
-							if (d == null) {
-								d = exchange.getTimestamp();;
-
-							} else {
-								d = new Date(d.getTime() + 1);
-								exchange.setTimestamp(d);
-								exchangeDal.save(exchange);
-							}
-						}
-					}
-				}
-			}
-
-			LOG.info("Finished Fixing Exchange Timestamps");
-		} catch (Throwable t) {
-			LOG.error("", t);
-		}
-	}
-
-	private static Date getExtractDate(Exchange exchange) {
-		String body = exchange.getBody();
-		String[] files = ExchangeHelper.parseExchangeBodyIntoFileList(body);
-		String file = files[0];
-
-		String baseName = FilenameUtils.getBaseName(file);
-		String[] nameToks = baseName.split("_");
-		String dateTok = nameToks[3];
-		SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMddHHmmss");
-		try {
-			return sdf.parse(dateTok);
-		} catch (Exception ex) {
-			throw new RuntimeException(ex);
-		}
-	}
-
-	private static void extractAberfeldyPatients(String destFile, String all) {
-		LOG.info("Extracting Aberfeldy patients to " + destFile);
-
-		try {
-			File f = new File(destFile);
-			if (f.exists()) {
-				f.delete();
-			}
-
-			boolean doAll = all.equalsIgnoreCase("All");
-
-			Date bulkDate = new SimpleDateFormat("dd/MM/yyyy").parse("15/10/2017");
-
-			UUID serviceId = UUID.fromString("d3a3f02c-805f-4c5e-b92d-d6b8234013ec");
-
-			ServiceDalI serviceDal = DalProvider.factoryServiceDal();
-			ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
-
-			Service service = serviceDal.getById(serviceId);
-			List<UUID> systemIds = findSystemIds(service);
-
-			Map<String, List<List<String>>> hmPatientRecords = new HashMap<>();
-
-			String[] headers = null;
-
-			for (UUID systemId: systemIds) {
-				List<Exchange> exchanges = exchangeDal.getExchangesByService(serviceId, systemId, Integer.MAX_VALUE);
-				for (int i=exchanges.size()-1; i>=0; i--) {
-					Exchange exchange = exchanges.get(i);
-
-					LOG.info("Doing exchange " + exchange.getId());
-
-					String exchangeBody = exchange.getBody();
-					String patientFile = null;
-					String[] files = ExchangeHelper.parseExchangeBodyIntoFileList(exchangeBody);
-					for (String file: files) {
-						if (file.indexOf("_Admin_Patient_") > -1) {
-							patientFile = file;
-							break;
-						}
-					}
-					if (patientFile == null)  {
-						throw new Exception("Failed to find patient file in exchange " + exchange.getId());
-					}
-
-					String baseName = FilenameUtils.getBaseName(patientFile);
-					String[] nameToks = baseName.split("_");
-					String dateTok = nameToks[3];
-					SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMddHHmmss");
-					Date extractDate = sdf.parse(dateTok);
-
-					if (extractDate.before(bulkDate)) {
-						LOG.info("Skipping as " + extractDate + " is before bulk date of " + bulkDate);
-						continue;
-					}
-
-					InputStreamReader reader = FileHelper.readFileReaderFromSharedStorage(patientFile);
-					CSVParser parser = new CSVParser(reader, EmisCsvToFhirTransformer.CSV_FORMAT.withHeader());
-
-					if (headers == null) {
-						headers = CsvHelper.getHeaderMapAsArray(parser);
-					}
-
-					Iterator<CSVRecord> iterator = parser.iterator();
-					while (iterator.hasNext()) {
-						CSVRecord record = iterator.next();
-
-						List<String> list = new ArrayList<>();
-						list.add(patientFile);
-						for (String value: record) {
-							list.add(value);
-						}
-
-						String patientGuid = record.get("PatientGuid");
-
-						List<List<String>> records = hmPatientRecords.get(patientGuid);
-						if (records == null) {
-							records = new ArrayList<>();
-							hmPatientRecords.put(patientGuid, records);
-						}
-						if (doAll) {
-							records.add(list);
-						} else {
-							records.clear();
-							records.add(list);
-						}
-					}
-
-					parser.close();
-				}
-			}
-
-			LOG.info("Writing to " + destFile);
-
-			String[] updatedHeaders = new String[headers.length + 1];
-			updatedHeaders[0] = "FileName";
-			for (int i=0; i<headers.length; i++) {
-				String header = headers[i];
-				updatedHeaders[i+1] = header;
-			}
-
-			//write all patient records to CSV
-			FileWriter fileWriter = new FileWriter(destFile);
-			BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
-			CSVPrinter csvPrinter = new CSVPrinter(bufferedWriter, EmisCsvToFhirTransformer.CSV_FORMAT.withHeader(updatedHeaders));
-			csvPrinter.flush();
-
-			for (String patientGuid: hmPatientRecords.keySet()) {
-				List<List<String>> records = hmPatientRecords.get(patientGuid);
-				for (List<String> record: records) {
-					csvPrinter.printRecord(record);
-					csvPrinter.flush();
-				}
-			}
-
-			csvPrinter.flush();
-			csvPrinter.close();
-
-			LOG.info("Finish Extracting Aberfeldy patients to " + destFile);
-		} catch (Throwable t) {
-			LOG.error("", t);
-		}
 	}
 
 	private static void fixEncounters(String table) {
@@ -1236,30 +992,18 @@ public class Main {
 
 			} else {
 
+				if (destFile.exists()) {
+					destFile.delete();
+				}
+
 				//we have some bad partial files in, so ignore them
 				String ext = FilenameUtils.getExtension(name);
 				if (ext.equalsIgnoreCase("filepart")) {
 					continue;
 				}
 
-				//if the file is empty, we still need the empty file in the filtered directory, so just copy it
-				if (sourceFile.length() == 0) {
-					LOG.info("Copying empty file " + sourceFile);
-					if (!destFile.exists()) {
-						copyFile(sourceFile, destFile);
-					}
-					continue;
-				}
-
-				String baseName = FilenameUtils.getBaseName(name);
-				String fileType = BartsCsvToFhirTransformer.identifyFileType(baseName);
-
-				if (isCerner22File(fileType)) {
+				if (isCerner22File(name)) {
 					LOG.info("Checking 2.2 file " + sourceFile);
-
-					if (destFile.exists()) {
-						destFile.delete();
-					}
 
 					FileReader fr = new FileReader(sourceFile);
 					BufferedReader br = new BufferedReader(fr);
@@ -1321,8 +1065,7 @@ public class Main {
 
 							//filter on personID
 							String[] toks = line.split("\\|", -1);
-							if (expectedCols != -1
-								&& toks.length != expectedCols) {
+							if (toks.length != expectedCols) {
 								throw new Exception("Line " + (lineIndex+1) + " has " + toks.length + " cols but expecting " + expectedCols);
 
 							} else {
@@ -1348,9 +1091,7 @@ public class Main {
 				} else {
 					//the 2.1 files are going to be a pain to split by patient, so just copy them over
 					LOG.info("Copying 2.1 file " + sourceFile);
-					if (!destFile.exists()) {
-						copyFile(sourceFile, destFile);
-					}
+					copyFile(sourceFile, destFile);
 				}
 			}
 		}
@@ -1363,7 +1104,10 @@ public class Main {
 		bis.close();
 	}
 	
-	private static boolean isCerner22File(String fileType) throws Exception {
+	private static boolean isCerner22File(String fileName) throws Exception {
+
+		String baseName = FilenameUtils.getBaseName(fileName);
+		String fileType = BartsCsvToFhirTransformer.identifyFileType(baseName);
 
 		if (fileType.equalsIgnoreCase("PPATI")
 				|| fileType.equalsIgnoreCase("PPREL")
