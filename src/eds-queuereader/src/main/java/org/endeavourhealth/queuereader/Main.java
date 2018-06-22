@@ -327,7 +327,7 @@ public class Main {
 			Service service = serviceDal.getById(serviceId);
 			List<UUID> systemIds = findSystemIds(service);
 
-			Map<String, CSVRecord> hmPatientRecords = new HashMap<>();
+			Map<String, List<String>> hmPatientRecords = new HashMap<>();
 
 			String[] headers = null;
 
@@ -372,8 +372,14 @@ public class Main {
 					while (iterator.hasNext()) {
 						CSVRecord record = iterator.next();
 
+						List<String> list = new ArrayList<>();
+						list.add(patientFile);
+						for (String value: record) {
+							list.add(value);
+						}
+
 						String patientGuid = record.get("PatientGuid");
-						hmPatientRecords.put(patientGuid, record);
+						hmPatientRecords.put(patientGuid, list);
 					}
 
 					parser.close();
@@ -382,14 +388,21 @@ public class Main {
 
 			LOG.info("Writing to " + destFile);
 
+			String[] updatedHeaders = new String[headers.length + 1];
+			updatedHeaders[0] = "FileName";
+			for (int i=0; i<headers.length; i++) {
+				String header = headers[i];
+				updatedHeaders[i+1] = header;
+			}
+
 			//write all patient records to CSV
 			FileWriter fileWriter = new FileWriter(destFile);
 			BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
-			CSVPrinter csvPrinter = new CSVPrinter(bufferedWriter, EmisCsvToFhirTransformer.CSV_FORMAT.withHeader(headers));
+			CSVPrinter csvPrinter = new CSVPrinter(bufferedWriter, EmisCsvToFhirTransformer.CSV_FORMAT.withHeader(updatedHeaders));
 			csvPrinter.flush();
 
 			for (String patientGuid: hmPatientRecords.keySet()) {
-				CSVRecord record = hmPatientRecords.get(patientGuid);
+				List<String> record = hmPatientRecords.get(patientGuid);
 				csvPrinter.printRecord(record);
 				csvPrinter.flush();
 			}
@@ -1113,7 +1126,10 @@ public class Main {
 					continue;
 				}
 
-				if (isCerner22File(name)) {
+				String baseName = FilenameUtils.getBaseName(name);
+				String fileType = BartsCsvToFhirTransformer.identifyFileType(baseName);
+
+				if (isCerner22File(fileType)) {
 					LOG.info("Checking 2.2 file " + sourceFile);
 
 					FileReader fr = new FileReader(sourceFile);
@@ -1124,6 +1140,11 @@ public class Main {
 					int personIdColIndex = -1;
 					int expectedCols = -1;
 
+					//this file has no headers, so needs hard-coding
+					if (fileType.equalsIgnoreCase("FAMILYHISTORY")) {
+						personIdColIndex = 5;
+					}
+
 					while (true) {
 
 						String line = br.readLine();
@@ -1133,7 +1154,8 @@ public class Main {
 
 						lineIndex ++;
 
-						if (lineIndex == 0) {
+						if (lineIndex == 0
+								&& !fileType.equalsIgnoreCase("FAMILYHISTORY")) {
 
 							//check headings for PersonID col
 							String[] toks = line.split("\\|", -1);
@@ -1208,10 +1230,7 @@ public class Main {
 		bis.close();
 	}
 	
-	private static boolean isCerner22File(String fileName) throws Exception {
-
-		String baseName = FilenameUtils.getBaseName(fileName);
-		String fileType = BartsCsvToFhirTransformer.identifyFileType(baseName);
+	private static boolean isCerner22File(String fileType) throws Exception {
 
 		if (fileType.equalsIgnoreCase("PPATI")
 				|| fileType.equalsIgnoreCase("PPREL")
