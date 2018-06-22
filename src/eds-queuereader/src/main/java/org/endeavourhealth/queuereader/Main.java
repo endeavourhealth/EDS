@@ -317,6 +317,8 @@ public class Main {
 				f.delete();
 			}
 
+			Date bulkDate = new SimpleDateFormat("dd/MM/yyyy").parse("15/10/2017");
+
 			UUID serviceId = UUID.fromString("d3a3f02c-805f-4c5e-b92d-d6b8234013ec");
 
 			ServiceDalI serviceDal = DalProvider.factoryServiceDal();
@@ -346,6 +348,17 @@ public class Main {
 					}
 					if (patientFile == null)  {
 						throw new Exception("Failed to find patient file in exchange " + exchange.getId());
+					}
+
+					String baseName = FilenameUtils.getBaseName(patientFile);
+					String[] nameToks = baseName.split("_");
+					String dateTok = nameToks[3];
+					SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMddHHmmss");
+					Date extractDate = sdf.parse(dateTok);
+
+					if (extractDate.before(bulkDate)) {
+						LOG.info("Skipping as " + extractDate + " is before bulk date of " + bulkDate);
+						continue;
 					}
 
 					InputStreamReader reader = FileHelper.readFileReaderFromSharedStorage(patientFile);
