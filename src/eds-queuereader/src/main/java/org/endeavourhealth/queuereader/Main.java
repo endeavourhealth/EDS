@@ -122,7 +122,8 @@ public class Main {
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("ExtractAberfeldyPatients")) {
 			String destFile = args[1];
-			extractAberfeldyPatients(destFile);
+			String all = args[2];
+			extractAberfeldyPatients(destFile, all);
 			System.exit(0);
 		}
 
@@ -308,7 +309,7 @@ public class Main {
 		LOG.info("EDS Queue reader running (kill file location " + TransformConfig.instance().getKillFileLocation() + ")");
 	}
 
-	private static void extractAberfeldyPatients(String destFile) {
+	private static void extractAberfeldyPatients(String destFile, String all) {
 		LOG.info("Extracting Aberfeldy patients to " + destFile);
 
 		try {
@@ -316,6 +317,8 @@ public class Main {
 			if (f.exists()) {
 				f.delete();
 			}
+
+			boolean doAll = all.equalsIgnoreCase("All");
 
 			Date bulkDate = new SimpleDateFormat("dd/MM/yyyy").parse("15/10/2017");
 
@@ -327,7 +330,7 @@ public class Main {
 			Service service = serviceDal.getById(serviceId);
 			List<UUID> systemIds = findSystemIds(service);
 
-			Map<String, List<String>> hmPatientRecords = new HashMap<>();
+			Map<String, List<List<String>>> hmPatientRecords = new HashMap<>();
 
 			String[] headers = null;
 
@@ -379,7 +382,18 @@ public class Main {
 						}
 
 						String patientGuid = record.get("PatientGuid");
-						hmPatientRecords.put(patientGuid, list);
+
+						List<List<String>> records = hmPatientRecords.get(patientGuid);
+						if (records == null) {
+							records = new ArrayList<>();
+							hmPatientRecords.put(patientGuid, records);
+						}
+						if (doAll) {
+							records.add(list);
+						} else {
+							records.clear();
+							records.add(list);
+						}
 					}
 
 					parser.close();
@@ -402,9 +416,11 @@ public class Main {
 			csvPrinter.flush();
 
 			for (String patientGuid: hmPatientRecords.keySet()) {
-				List<String> record = hmPatientRecords.get(patientGuid);
-				csvPrinter.printRecord(record);
-				csvPrinter.flush();
+				List<List<String>> records = hmPatientRecords.get(patientGuid);
+				for (List<String> record: records) {
+					csvPrinter.printRecord(record);
+					csvPrinter.flush();
+				}
 			}
 
 			csvPrinter.flush();
