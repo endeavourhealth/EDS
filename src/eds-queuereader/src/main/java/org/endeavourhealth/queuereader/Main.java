@@ -128,6 +128,16 @@ public class Main {
 		}
 
 		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("FixExchangeTimestamps")) {
+			String serviceId = null;
+			if (args.length > 1) {
+				serviceId = args[1];
+			}
+			fixExchangeTimestamps(serviceId);
+			System.exit(0);
+		}
+
+		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("ApplyEmisAdminCaches")) {
 			applyEmisAdminCaches();
 			System.exit(0);
@@ -309,6 +319,106 @@ public class Main {
 		LOG.info("EDS Queue reader running (kill file location " + TransformConfig.instance().getKillFileLocation() + ")");
 	}
 
+	private static void fixExchangeTimestamps(String optionalServiceId) {
+		LOG.info("Fixing Exchange Timestamps");
+		try {
+
+			ServiceDalI serviceDal = DalProvider.factoryServiceDal();
+			ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
+			UUID emisSystem = UUID.fromString("991a9068-01d3-4ff2-86ed-249bd0541fb3");
+			UUID emisSystemDev = UUID.fromString("55c08fa5-ef1e-4e94-aadc-e3d6adc80774");
+
+			List<Service> services = serviceDal.getAll();
+
+			for (Service service: services) {
+
+				if (!Strings.isNullOrEmpty(optionalServiceId)) {
+					UUID filterServiceUuid = UUID.fromString(optionalServiceId);
+					if (!service.getId().equals(filterServiceUuid)) {
+						continue;
+					}
+				}
+
+				String endpointsJson = service.getEndpoints();
+				if (Strings.isNullOrEmpty(endpointsJson)) {
+					continue;
+				}
+
+				UUID serviceId = service.getId();
+				LOG.info("Checking " + service.getName() + " " + serviceId);
+
+				List<JsonServiceInterfaceEndpoint> endpoints = ObjectMapperPool.getInstance().readValue(service.getEndpoints(), new TypeReference<List<JsonServiceInterfaceEndpoint>>() {});
+				for (JsonServiceInterfaceEndpoint endpoint : endpoints) {
+					UUID endpointSystemId = endpoint.getSystemUuid();
+					if (!endpointSystemId.equals(emisSystem)
+							&& !endpointSystemId.equals(emisSystemDev)) {
+						LOG.info("    Skipping system ID " + endpointSystemId + " as not Emis");
+						continue;
+					}
+
+					List<Exchange> allExchanges = exchangeDal.getExchangesByService(serviceId, endpointSystemId, Integer.MAX_VALUE);
+
+					//hash them by timestamp
+					Map<Date, List<Exchange>> hmByTimestamp = new HashMap<>();
+
+					for (int i=allExchanges.size()-1; i>=0; i--) {
+						Exchange exchange = allExchanges.get(i);
+						Date d = exchange.getTimestamp();
+
+						List<Exchange> list = hmByTimestamp.get(d);
+						if (list == null) {
+							list = new ArrayList<>();
+							hmByTimestamp.put(d, list);
+						}
+						list.add(exchange);
+					}
+
+					for (Date timestamp: hmByTimestamp.keySet()) {
+						List<Exchange> exchanges = hmByTimestamp.get(timestamp);
+
+						exchanges.sort((o1, o2) -> {
+							Date d1 = getExtractDate(o1);
+							Date d2 = getExtractDate(o2);
+							return d1.compareTo(d2);
+						});
+
+						Date d = null;
+						for (Exchange exchange: exchanges) {
+							if (d == null) {
+								d = exchange.getTimestamp();;
+
+							} else {
+								d = new Date(d.getTime() + 1);
+								exchange.setTimestamp(d);
+								exchangeDal.save(exchange);
+							}
+						}
+					}
+				}
+			}
+
+			LOG.info("Finished Fixing Exchange Timestamps");
+		} catch (Throwable t) {
+			LOG.error("", t);
+		}
+	}
+
+	private static Date getExtractDate(Exchange exchange) {
+		String body = exchange.getBody();
+		String[] files = ExchangeHelper.parseExchangeBodyIntoFileList(body);
+		String file = files[0];
+
+		String baseName = FilenameUtils.getBaseName(file);
+		String[] nameToks = baseName.split("_");
+		String dateTok = nameToks[3];
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMddHHmmss");
+		try {
+			return sdf.parse(dateTok);
+		} catch (Exception ex) {
+			throw new RuntimeException(ex);
+		}
+	}
+
 	private static void extractAberfeldyPatients(String destFile, String all) {
 		LOG.info("Extracting Aberfeldy patients to " + destFile);
 
@@ -336,7 +446,8 @@ public class Main {
 
 			for (UUID systemId: systemIds) {
 				List<Exchange> exchanges = exchangeDal.getExchangesByService(serviceId, systemId, Integer.MAX_VALUE);
-				for (Exchange exchange: exchanges) {
+				for (int i=exchanges.size()-1; i>=0; i--) {
+					Exchange exchange = exchanges.get(i);
 
 					LOG.info("Doing exchange " + exchange.getId());
 
@@ -1207,7 +1318,8 @@ public class Main {
 
 							//filter on personID
 							String[] toks = line.split("\\|", -1);
-							if (toks.length != expectedCols) {
+							if (expectedCols != -1
+								&& toks.length != expectedCols) {
 								throw new Exception("Line " + (lineIndex+1) + " has " + toks.length + " cols but expecting " + expectedCols);
 
 							} else {
