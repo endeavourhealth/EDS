@@ -1236,10 +1236,6 @@ public class Main {
 
 			} else {
 
-				if (destFile.exists()) {
-					destFile.delete();
-				}
-
 				//we have some bad partial files in, so ignore them
 				String ext = FilenameUtils.getExtension(name);
 				if (ext.equalsIgnoreCase("filepart")) {
@@ -1249,7 +1245,9 @@ public class Main {
 				//if the file is empty, we still need the empty file in the filtered directory, so just copy it
 				if (sourceFile.length() == 0) {
 					LOG.info("Copying empty file " + sourceFile);
-					copyFile(sourceFile, destFile);
+					if (!destFile.exists()) {
+						copyFile(sourceFile, destFile);
+					}
 					continue;
 				}
 
@@ -1258,6 +1256,10 @@ public class Main {
 
 				if (isCerner22File(fileType)) {
 					LOG.info("Checking 2.2 file " + sourceFile);
+
+					if (destFile.exists()) {
+						destFile.delete();
+					}
 
 					FileReader fr = new FileReader(sourceFile);
 					BufferedReader br = new BufferedReader(fr);
@@ -1345,7 +1347,9 @@ public class Main {
 				} else {
 					//the 2.1 files are going to be a pain to split by patient, so just copy them over
 					LOG.info("Copying 2.1 file " + sourceFile);
-					copyFile(sourceFile, destFile);
+					if (!destFile.exists()) {
+						copyFile(sourceFile, destFile);
+					}
 				}
 			}
 		}
