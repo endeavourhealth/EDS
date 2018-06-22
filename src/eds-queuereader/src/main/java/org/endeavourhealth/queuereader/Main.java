@@ -82,6 +82,7 @@ public class Main {
 		}*/
 
 
+
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("CreateAdastraSubset")) {
 			String sourceDirPath = args[1];
@@ -115,6 +116,13 @@ public class Main {
 			String destDirPath = args[2];
 			String samplePatientsFile = args[3];
 			createBartsSubset(sourceDirPath, destDirPath, samplePatientsFile);
+			System.exit(0);
+		}
+
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("ExtractAberfeldyPatients")) {
+			String destFile = args[1];
+			extractAberfeldyPatients(destFile);
 			System.exit(0);
 		}
 
@@ -298,6 +306,88 @@ public class Main {
 		// Begin consume
 		rabbitHandler.start();
 		LOG.info("EDS Queue reader running (kill file location " + TransformConfig.instance().getKillFileLocation() + ")");
+	}
+
+	private static void extractAberfeldyPatients(String destFile) {
+		LOG.info("Extracting Aberfeldy patients to " + destFile);
+
+		try {
+			File f = new File(destFile);
+			if (f.exists()) {
+				f.delete();
+			}
+
+			UUID serviceId = UUID.fromString("d3a3f02c-805f-4c5e-b92d-d6b8234013ec");
+
+			ServiceDalI serviceDal = DalProvider.factoryServiceDal();
+			ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
+
+			Service service = serviceDal.getById(serviceId);
+			List<UUID> systemIds = findSystemIds(service);
+
+			Map<String, CSVRecord> hmPatientRecords = new HashMap<>();
+
+			String[] headers = null;
+
+			for (UUID systemId: systemIds) {
+				List<Exchange> exchanges = exchangeDal.getExchangesByService(serviceId, systemId, Integer.MAX_VALUE);
+				for (Exchange exchange: exchanges) {
+
+					LOG.info("Doing exchange " + exchange.getId());
+
+					String exchangeBody = exchange.getBody();
+					String patientFile = null;
+					String[] files = ExchangeHelper.parseExchangeBodyIntoFileList(exchangeBody);
+					for (String file: files) {
+						if (file.indexOf("_Admin_Patient_") > -1) {
+							patientFile = file;
+							break;
+						}
+					}
+					if (patientFile == null)  {
+						throw new Exception("Failed to find patient file in exchange " + exchange.getId());
+					}
+
+					InputStreamReader reader = FileHelper.readFileReaderFromSharedStorage(patientFile);
+					CSVParser parser = new CSVParser(reader, EmisCsvToFhirTransformer.CSV_FORMAT.withHeader());
+
+					if (headers == null) {
+						headers = CsvHelper.getHeaderMapAsArray(parser);
+					}
+
+					Iterator<CSVRecord> iterator = parser.iterator();
+					while (iterator.hasNext()) {
+						CSVRecord record = iterator.next();
+
+						String patientGuid = record.get("PatientGuid");
+						hmPatientRecords.put(patientGuid, record);
+					}
+
+					parser.close();
+				}
+			}
+
+			LOG.info("Writing to " + destFile);
+
+			//write all patient records to CSV
+			FileWriter fileWriter = new FileWriter(destFile);
+			BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
+			CSVPrinter csvPrinter = new CSVPrinter(bufferedWriter, EmisCsvToFhirTransformer.CSV_FORMAT.withHeader(headers));
+			csvPrinter.flush();
+
+			for (String patientGuid: hmPatientRecords.keySet()) {
+				CSVRecord record = hmPatientRecords.get(patientGuid);
+				csvPrinter.printRecord(record);
+				csvPrinter.flush();
+			}
+
+			csvPrinter.flush();
+			csvPrinter.close();
+
+			LOG.info("Finish Extracting Aberfeldy patients to " + destFile);
+		} catch (Throwable t) {
+			LOG.error("", t);
+		}
 	}
 
 	private static void fixEncounters(String table) {
@@ -1000,6 +1090,13 @@ public class Main {
 				//we have some bad partial files in, so ignore them
 				String ext = FilenameUtils.getExtension(name);
 				if (ext.equalsIgnoreCase("filepart")) {
+					continue;
+				}
+
+				//if the file is empty, we still need the empty file in the filtered directory, so just copy it
+				if (sourceFile.length() == 0) {
+					LOG.info("Copying empty file " + sourceFile);
+					copyFile(sourceFile, destFile);
 					continue;
 				}
 
