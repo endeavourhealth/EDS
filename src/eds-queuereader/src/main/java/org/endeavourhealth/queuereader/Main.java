@@ -1001,9 +1001,11 @@ public class Main {
 				if (ext.equalsIgnoreCase("filepart")) {
 					continue;
 				}
+
 				String baseName = FilenameUtils.getBaseName(name);
 				String fileType = BartsCsvToFhirTransformer.identifyFileType(baseName);
-				if (isCerner22File(name)) {
+
+				if (isCerner22File(fileType)) {
 					LOG.info("Checking 2.2 file " + sourceFile);
 
 					FileReader fr = new FileReader(sourceFile);
@@ -1105,10 +1107,7 @@ public class Main {
 		bis.close();
 	}
 	
-	private static boolean isCerner22File(String fileName) throws Exception {
-
-		String baseName = FilenameUtils.getBaseName(fileName);
-		String fileType = BartsCsvToFhirTransformer.identifyFileType(baseName);
+	private static boolean isCerner22File(String fileType) throws Exception {
 
 		if (fileType.equalsIgnoreCase("PPATI")
 				|| fileType.equalsIgnoreCase("PPREL")
