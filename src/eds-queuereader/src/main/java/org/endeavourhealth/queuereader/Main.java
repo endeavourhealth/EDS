@@ -992,19 +992,30 @@ public class Main {
 
 			} else {
 
-				if (destFile.exists()) {
-					destFile.delete();
-				}
-
 				//we have some bad partial files in, so ignore them
 				String ext = FilenameUtils.getExtension(name);
 				if (ext.equalsIgnoreCase("filepart")) {
 					continue;
 				}
+
+				//if the file is empty, we still need the empty file in the filtered directory, so just copy it
+				if (sourceFile.length() == 0) {
+					LOG.info("Copying empty file " + sourceFile);
+					if (!destFile.exists()) {
+						copyFile(sourceFile, destFile);
+					}
+					continue;
+				}
+
 				String baseName = FilenameUtils.getBaseName(name);
 				String fileType = BartsCsvToFhirTransformer.identifyFileType(baseName);
-				if (isCerner22File(name)) {
+
+				if (isCerner22File(fileType)) {
 					LOG.info("Checking 2.2 file " + sourceFile);
+
+					if (destFile.exists()) {
+						destFile.delete();
+					}
 
 					FileReader fr = new FileReader(sourceFile);
 					BufferedReader br = new BufferedReader(fr);
@@ -1066,7 +1077,8 @@ public class Main {
 
 							//filter on personID
 							String[] toks = line.split("\\|", -1);
-							if (toks.length != expectedCols) {
+							if (expectedCols != -1
+									&& toks.length != expectedCols) {
 								throw new Exception("Line " + (lineIndex+1) + " has " + toks.length + " cols but expecting " + expectedCols);
 
 							} else {
@@ -1092,7 +1104,9 @@ public class Main {
 				} else {
 					//the 2.1 files are going to be a pain to split by patient, so just copy them over
 					LOG.info("Copying 2.1 file " + sourceFile);
-					copyFile(sourceFile, destFile);
+					if (!destFile.exists()) {
+						copyFile(sourceFile, destFile);
+					}
 				}
 			}
 		}
@@ -1105,10 +1119,7 @@ public class Main {
 		bis.close();
 	}
 	
-	private static boolean isCerner22File(String fileName) throws Exception {
-
-		String baseName = FilenameUtils.getBaseName(fileName);
-		String fileType = BartsCsvToFhirTransformer.identifyFileType(baseName);
+	private static boolean isCerner22File(String fileType) throws Exception {
 
 		if (fileType.equalsIgnoreCase("PPATI")
 				|| fileType.equalsIgnoreCase("PPREL")
