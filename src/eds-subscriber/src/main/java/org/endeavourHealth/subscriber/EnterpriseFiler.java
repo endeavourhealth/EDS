@@ -45,6 +45,7 @@ public class EnterpriseFiler {
 
     private static Map<String, HikariDataSource> connectionPools = new ConcurrentHashMap<>();
     private static Map<String, String> escapeCharacters = new ConcurrentHashMap<>();
+    private static Map<String, Integer> batchSizes = new ConcurrentHashMap<>();
 
     public static void file(UUID batchId, String base64, String configName) throws Exception {
 
@@ -60,6 +61,7 @@ public class EnterpriseFiler {
         String url = config.get("enterprise_url").asText();
         Connection connection = openConnection(url, config);
         String keywordEscapeChar = getKeywordEscapeChar(url);
+        int batchSize = getBatchSize(url);
 
         try {
             List<DeleteWrapper> deletes = new ArrayList<>();
@@ -78,7 +80,7 @@ public class EnterpriseFiler {
                     columnClassMappings = ObjectMapperPool.getInstance().readTree(jsonStr);
 
                 } else {
-                    processCsvData(entryFileName, entryBytes, columnClassMappings, connection, keywordEscapeChar, deletes);
+                    processCsvData(entryFileName, entryBytes, columnClassMappings, connection, keywordEscapeChar, batchSize, deletes);
                 }
             }
 
@@ -172,7 +174,7 @@ public class EnterpriseFiler {
         return baos.toByteArray();
     }
 
-    private static void processCsvData(String entryFileName, byte[] csvBytes, JsonNode allColumnClassMappings, Connection connection, String keywordEscapeChar, List<DeleteWrapper> deletes) throws Exception {
+    private static void processCsvData(String entryFileName, byte[] csvBytes, JsonNode allColumnClassMappings, Connection connection, String keywordEscapeChar, int batchSize, List<DeleteWrapper> deletes) throws Exception {
 
         String tableName = Files.getNameWithoutExtension(entryFileName);
 
@@ -214,7 +216,7 @@ public class EnterpriseFiler {
             batch.add(record);
 
             //in testing, batches of 20000 seemed best, although there wasn't much difference between batches of 5000 up to 100000
-            if (batch.size() >= 20000) {
+            if (batch.size() >= batchSize) {
                 fileUpsertsWithRetry(batch, columns, columnClasses, tableName, connection, keywordEscapeChar);
                 batch = new ArrayList<>();
             }
@@ -461,6 +463,22 @@ public class EnterpriseFiler {
                     continue;
 
                 } else {
+                    //log the records we failed on
+                    LOG.error("Failed on batch:");
+                    try {
+                        LOG.error("" + String.join(", ", columns));
+                        for (CSVRecord record : csvRecords) {
+                            List<String> recordList = new ArrayList<>();
+                            for (String col : columns) {
+                                String val = record.get(col);
+                                recordList.add(val);
+                            }
+                            LOG.error("" + String.join(", ", recordList));
+                        }
+                    } catch (Throwable t) {
+                        LOG.error("ERROR LOGGING FAILED BATCH", t);
+                    }
+
                     //if the message isn't exactly the one we're looking for, just throw the exception as normal
                     throw ex;
                 }
@@ -508,7 +526,9 @@ public class EnterpriseFiler {
 
 
 
-
+    private static int getBatchSize(String url) {
+        return batchSizes.get(url).intValue();
+    }
 
     private static String getKeywordEscapeChar(String url) {
         return escapeCharacters.get(url);
@@ -546,6 +566,16 @@ public class EnterpriseFiler {
                     String escapeStr = conn.getMetaData().getIdentifierQuoteString();
                     escapeCharacters.put(url, escapeStr);
                     conn.close();
+
+                    //and catch the batch size
+                    int batchSize = 20000;
+                    if (config.has("batch_size")) {
+                        batchSize = config.get("batch_size").asInt();
+                        if (batchSize <= 0) {
+                            throw new Exception("Invalid batch size");
+                        }
+                    }
+                    batchSizes.put(url, new Integer(batchSize));
                 }
             }
         }
