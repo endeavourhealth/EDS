@@ -134,6 +134,8 @@ create table cerner_code_value_ref (
 
 CREATE INDEX ix_cerner_code_value_ref ON cerner_code_value_ref (code_value_cd);
 
+CREATE INDEX ix_cerner_code_value_ref_set ON cerner_code_value_ref (service_id, code_set_nbr);
+
 create table cerner_nomenclature_ref (
 
   service_id char(36) not null,
