@@ -13,10 +13,10 @@
         <maven-compiler-plugin.version>3.1</maven-compiler-plugin.version>
         <frontend-maven-plugin.version>1.4</frontend-maven-plugin.version>
 
-        <eds-transform.version>1.721-SNAPSHOT</eds-transform.version>
-        <eds-core.version>1.233-SNAPSHOT</eds-core.version>
+        <eds-transform.version>1.722-SNAPSHOT</eds-transform.version>
+        <eds-core.version>1.234-SNAPSHOT</eds-core.version>
         <eds-fhir.version>1.61-SNAPSHOT</eds-fhir.version>
-        <eds-utility.version>1.29-SNAPSHOT</eds-utility.version>
+        <eds-utility.version>1.30-SNAPSHOT</eds-utility.version>
         <eds-api.version>1.13-SNAPSHOT</eds-api.version>
         <eds-cache.version>1.1-SNAPSHOT</eds-cache.version>
         <eds-config.version>1.21-SNAPSHOT</eds-config.version>
