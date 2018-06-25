@@ -108,7 +108,7 @@ public final class ServiceEndpoint extends AbstractEndpoint {
 		for (JsonServiceInterfaceEndpoint endpoint: endpoints) {
 			UUID systemId = endpoint.getSystemUuid();
 
-			if (resourceRepository.dataExists(serviceUuid, systemId)) {
+			if (resourceRepository.dataExists(serviceUuid)) {
 				throw new BadRequestException("Cannot delete service without deleting data first");
 			}
 		}

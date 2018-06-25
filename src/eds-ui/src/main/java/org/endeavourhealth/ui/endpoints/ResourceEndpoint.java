@@ -169,7 +169,7 @@ public class ResourceEndpoint extends AbstractEndpoint {
 
             UUID systemId = patientResource.getSystemId();
 
-            List<ResourceWrapper> resourceHistories = resourceRepository.getResourcesByPatient(UUID.fromString(serviceId), systemId, patientId, resourceType);
+            List<ResourceWrapper> resourceHistories = resourceRepository.getResourcesByPatient(UUID.fromString(serviceId), patientId, resourceType);
             for (ResourceWrapper resourceHistory: resourceHistories) {
                 ret.add(new JsonResourceContainer(resourceHistory));
             }
