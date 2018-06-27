@@ -227,7 +227,7 @@ public class QueueHelper {
 
         Map<String, String> queueReadConfigs = ConfigManager.getConfigurations("queuereader");
         for (String configId: queueReadConfigs.keySet()) {
-            //LOG.debug("Checking config XML for " + configId);
+            LOG.debug("Checking config XML for " + configId + " for exchangeName = "+exchangeName);
             String queueReaderConfigXml = queueReadConfigs.get(configId);
 
             config = findExchangeConfig(queueReaderConfigXml, exchangeName);
@@ -246,7 +246,7 @@ public class QueueHelper {
         //the config XML may be one of two serialised classes, so we use a try/catch to safely try both if necessary
         try {
             ApiConfiguration config = ConfigWrapper.deserialise(configXml);
-            //LOG.debug("Deserialised as messaging API XML");
+            LOG.debug("Deserialised as messaging API XML");
             ApiConfiguration.PostMessageAsync postConfig = config.getPostMessageAsync();
             pipeline = postConfig.getPipeline();
 
@@ -254,7 +254,7 @@ public class QueueHelper {
 
             try {
                 QueueReaderConfiguration configuration = ConfigDeserialiser.deserialise(configXml);
-                //LOG.debug("Deserialised as Queue Reader XML");
+                LOG.debug("Deserialised as Queue Reader XML");
                 pipeline = configuration.getPipeline();
 
             } catch (Exception ex2) {
@@ -262,15 +262,15 @@ public class QueueHelper {
                 return null;
             }
         }
-        //LOG.debug("Got pipeline " + pipeline.getPipelineComponents());
+        LOG.debug("Got pipeline " + pipeline.getPipelineComponents());
 
         for (ComponentConfig comp: pipeline.getPipelineComponents()) {
-            //LOG.debug("Got component " + comp.getClass().getName());
+            LOG.debug("Got component " + comp.getClass().getName());
             if (comp instanceof PostMessageToExchangeConfig) {
                 PostMessageToExchangeConfig exchangeConfig = (PostMessageToExchangeConfig)comp;
-                //LOG.debug("Config exchange name = [" + exchangeConfig.getExchange() + "]");
+                LOG.debug("Config exchange name = [" + exchangeConfig.getExchange() + "]");
                 if (exchangeConfig.getExchange().equalsIgnoreCase(exchangeName)) {
-                    //LOG.debug("Found match!");
+                    LOG.debug("Found match!");
                     return exchangeConfig;
                 }
             }
