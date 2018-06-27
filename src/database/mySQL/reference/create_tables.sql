@@ -14,7 +14,7 @@ DROP TABLE IF EXISTS trm_concept_pc_link;
 DROP TABLE IF EXISTS trm_concept;
 DROP TABLE IF EXISTS opcs4_lookup;
 DROP TABLE IF EXISTS icd10_lookup;
-
+DROP TABLE IF EXISTS cerner_clinical_event_map;
 
 CREATE TABLE postcode_lookup
 (
@@ -189,3 +189,13 @@ create table icd10_lookup (
   CONSTRAINT pk_postcode_lookup PRIMARY KEY (code)
 );
 
+CREATE TABLE cerner_clinical_event_map (
+	cerner_cvref_code varchar(10),
+    cerner_cvref_term varchar(50),
+    snomed_concept_id varchar(50),
+    snomed_preferred_term varchar(255),
+    snomed_description_id varchar(50),
+    snomed_description_term varchar(255),
+    match_algorithm varchar(50),
+    CONSTRAINT pk_internal_id_map PRIMARY KEY (cerner_cvref_code)
+);

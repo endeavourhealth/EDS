@@ -11,6 +11,7 @@ DROP TABLE IF EXISTS resource_field_mappings;
 DROP TABLE IF EXISTS internal_id_map;
 DROP TABLE IF EXISTS cerner_code_value_ref;
 DROP TABLE IF EXISTS cerner_nomenclature_ref;
+DROP TABLE IF EXISTS cerner_clinical_event_mapping_state;
 DROP TABLE IF EXISTS tpp_config_list_option;
 
 CREATE TABLE resource_id_map (
@@ -154,7 +155,22 @@ create table cerner_nomenclature_ref (
 
 CREATE INDEX ix_cerner_nomenclature_ref ON cerner_nomenclature_ref (nomenclature_id);
 
-
+CREATE TABLE cerner_clinical_event_mapping_state (
+  service_id char(36),
+  event_id bigint,
+  event_cd varchar(10) comment 'Almost all are numeric but there are a small number of non-numeric ones',
+  event_cd_term varchar(50),
+  event_class_cd varchar(10),
+  event_class_cd_term varchar(50),
+  event_results_units_cd varchar(10),
+  event_results_units_cd_term varchar(50),
+  event_result_text varchar(255),
+  event_title_text varchar(255),
+  event_tag_text varchar(255),
+  mapped_snomed_concept_id varchar(50),
+  dt_mapping_updated datetime,
+  CONSTRAINT pk_internal_id_map PRIMARY KEY (service_id, event_id)
+);
 
 create table tpp_config_list_option (
   row_id bigint(20) not null comment 'The value of RowIdentifier',
