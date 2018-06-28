@@ -1,1 +1,610 @@
-OK
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8">
+		<title>API Test</title>
+		<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/css/bootstrap.min.css" integrity="sha384-WskhaSGFgHYWDcbwN70/dfYBj47jz9qbsMId/iRN3ewGhXQFZCSftd1LZCfmhktB" crossorigin="anonymous">
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+	</head>
+	<body class="bg-light">
+
+		<main role="main">
+			<section class="jumbotron text-center">
+				<div class="container">
+					<h1 class="jumbotron-heading">Discovery API</h1>
+				</div>
+			</section>
+
+			<div class="container">
+				<div class="row">
+
+					<div class="col-md-12">
+						<div class="card">
+							<div class="card-header">
+								<h3>Authentication
+									<div class="pull-right">
+										<button class="btn btn-sm btn-info" onclick="exampleAuthToken()">Example</button>
+										<button class="btn btn-sm btn-success" onclick="getAuthToken()">Run</button>
+									</div>
+								</h3>
+							</div>
+							<div class="card-body">
+								<div class="card-title">
+									<table class="table table-sm table-bordered">
+										<tr class="d-flex"><td class="col-3"><b>Method</b></td>  <td class="col-9">POST</td></tr>
+										<tr class="d-flex"><td class="col-3"><b>Path</b></td>    <td class="col-9"><b>&lt;auth host&gt;</b>/auth/realms/endeavour/protocol/openid-connect/token</td></tr>
+										<tr class="d-flex"><td class="col-3"><b>Header</b></td>  <td class="col-9">Content-Type: application/x-www-form-urlencoded</td></tr>
+										<tr class="d-flex"><td class="col-3"><b>Body</b></td>    <td class="col-9">
+											client_id  = <b>&lt;client&gt;</b><br>
+											username   = <b>&lt;username&gt;</b><br>
+											password   = <b>&lt;password&gt;</b><br>
+											grant_type = password</td></tr>
+									</table>
+								</div>
+								<hr>
+								<div class="card-text">
+									<div class="row">
+										<div class="col-md-12">
+											<div class="input-group mb-3">
+												<div class="input-group-prepend">
+													<span class="input-group-text" id="basic-addon1"><i class="fa fa-fw fa-globe"></i></span>
+												</div>
+												<input id="authhost" type="text" class="form-control" placeholder="Authorization host" aria-label="Host" aria-describedby="basic-addon1">
+											</div>
+										</div>
+										<div class="col-md-4">
+											<div class="input-group mb-3">
+												<div class="input-group-prepend">
+													<span class="input-group-text" id="client-addon"><i class="fa fa-fw fa-laptop"></i></span>
+												</div>
+												<input id="client" type="text" class="form-control" placeholder="Client name" aria-label="Username" aria-describedby="client-addon">
+											</div>
+										</div>
+										<div class="col-md-4">
+											<div class="input-group mb-3">
+												<div class="input-group-prepend">
+													<span class="input-group-text" id="basic-addon2"><i class="fa fa-fw fa-user"></i></span>
+												</div>
+												<input id="user" type="text" class="form-control" placeholder="User name" aria-label="Username" aria-describedby="basic-addon2">
+											</div>
+										</div>
+										<div class="col-md-4">
+											<div class="input-group mb-3">
+												<div class="input-group-prepend">
+													<span class="input-group-text" id="basic-addon3"><i class="fa fa-fw fa-lock"></i></span>
+												</div>
+												<input id="pass" type="password" class="form-control" placeholder="Password" aria-label="Password" aria-describedby="basic-addon3">
+											</div>
+										</div>
+										<div class="col-md-4"></div>
+									</div>
+									<hr>
+									<div class="row">
+										<div class="col-md-12">
+											<div class="input-group mb-3">
+												<div class="input-group-prepend">
+													<span class="input-group-text" id="basic-addon4"><i class="fa fa-fw fa-reply"></i></span>
+												</div>
+												<textarea id="authresponse" type="text" class="form-control" placeholder="Example response: -
+{
+  'access_token':      <Access token (used for API calls below)>,
+  'expires_in':        <token expiry time (seconds)>,
+  'refresh_expires':   <refresh expiry time (seconds)>,
+  'refresh_token':     <refresh token>,
+  'token_type':        'bearer',
+  'id_token':          <id_token>,
+  'not-before-policy': <timestamp the access token is valid from>,
+  'session_state':     <session state id>
+}
+" aria-label="Response" aria-describedby="basic-addon4" rows="10" style="font-family: monospace; font-size: 10pt"></textarea>
+											</div>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+				<br>
+				<div class="row">
+					<div class="col-md-12">
+						<div class="card">
+							<div class="card-header">
+								<h3>Get FHIR resource types
+									<div class="pull-right">
+										<button class="btn btn-sm btn-info" onclick="exampleResourceTypes()">Example</button>
+										<button class="btn btn-sm btn-success" onclick="getResourceTypes()">Run</button>
+									</div>
+								</h3>
+							</div>
+							<div class="card-body">
+								<div class="card-title">
+									<table class="table table-sm table-bordered">
+										<tr class="d-flex"><td class="col-3"><b>Method</b></td>  <td class="col-9">GET</td></tr>
+										<tr class="d-flex"><td class="col-3"><b>Path</b></td>    <td class="col-9"><b>&lt;api host&gt;</b>/api/fhir/resourceType</tr>
+										<tr class="d-flex"><td class="col-3"><b>Header</b></td>  <td class="col-9">Authorization: Bearer <b>&lt;Token&gt;</b><small class="pull-right">(for client eds-data-checker)</small></td></tr>
+									</table>
+								</div>
+								<hr>
+								<div class="card-text">
+									<div class="row">
+										<div class="col-md-12">
+											<div class="input-group mb-3">
+												<div class="input-group-prepend">
+													<span class="input-group-text" id="basic-addon5"><i class="fa fa-fw fa-globe"></i></span>
+												</div>
+												<input id="apihost" type="text" class="form-control" placeholder="API host" aria-label="Host" aria-describedby="basic-addon5">
+											</div>
+										</div>
+										<div class="col-md-12">
+											<div class="input-group mb-3">
+												<div class="input-group-prepend">
+													<span class="input-group-text" id="token1-addon"><i class="fa fa-fw fa-key"></i></span>
+												</div>
+												<input id="token1" type="text" class="form-control" placeholder="Token" aria-label="Token" aria-describedby="token1-addon">
+											</div>
+										</div>
+									</div>
+									<hr>
+									<div class="row">
+										<div class="col-md-12">
+											<div class="input-group mb-3">
+												<div class="input-group-prepend">
+													<span class="input-group-text" id="basic-addon6"><i class="fa fa-fw fa-reply"></i></span>
+												</div>
+												<textarea id="typesresponse" type="text" class="form-control" placeholder="Example response: -
+[
+  { 'id': 'AllergyIntolerance', 'name': 'Allergy/Intolerance'},
+  { 'id': 'Appointment', 'name': 'Appointment' },
+  ...
+]
+" aria-label="Response" aria-describedby="basic-addon6" rows="10" style="font-family: monospace; font-size: 10pt"></textarea>
+											</div>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+				<br>
+				<div class="row">
+					<div class="col-md-12">
+						<div class="card">
+							<div class="card-header">
+								<h3>Get patients for NHS Number
+									<div class="pull-right">
+										<button class="btn btn-sm btn-info" onclick="examplePatients()">Example</button>
+										<button class="btn btn-sm btn-success" onclick="getPatients()">Run</button>
+									</div>
+								</h3>
+							</div>
+							<div class="card-body">
+								<div class="card-title">
+									<table class="table table-sm table-bordered">
+										<tr class="d-flex"><td class="col-3"><b>Method</b></td>            <td class="col-9">GET</td></tr>
+										<tr class="d-flex"><td class="col-3"><b>Path</b></td>              <td class="col-9"><b>&lt;api host&gt;</b>/api/fhir/patients
+										<tr class="d-flex"><td class="col-3"><b>Header</b></td>            <td class="col-9">Authorization: Bearer <b>&lt;Token&gt;</b><small class="pull-right">(for client eds-data-checker)</small></td></tr>
+										<tr class="d-flex"><td class="col-3"><b>Query parameters</b></td>  <td class="col-9">nhsNumber=<b>&lt;NHS number&gt;</b></td></tr>
+									</table>
+								</div>
+								<hr>
+								<div class="card-text">
+									<div class="row">
+										<div class="col-md-12">
+											<div class="input-group mb-3">
+												<div class="input-group-prepend">
+													<span class="input-group-text" id="basic-addon7"><i class="fa fa-fw fa-globe"></i></span>
+												</div>
+												<input id="apihost2" type="text" class="form-control" placeholder="API host" aria-label="Host" aria-describedby="basic-addon7">
+											</div>
+										</div>
+										<div class="col-md-12">
+											<div class="input-group mb-3">
+												<div class="input-group-prepend">
+													<span class="input-group-text" id="token2-addon"><i class="fa fa-fw fa-key"></i></span>
+												</div>
+												<input id="token2" type="text" class="form-control" placeholder="Token" aria-label="Token" aria-describedby="token2-addon">
+											</div>
+										</div>
+										<div class="col-md-4">
+											<div class="input-group mb-3">
+												<div class="input-group-prepend">
+													<span class="input-group-text" id="basic-addon8"><i class="fa fa-fw fa-id-card"></i></span>
+												</div>
+												<input id="nhsnumber" type="text" class="form-control" placeholder="NHS Number" aria-label="Host" aria-describedby="basic-addon8">
+											</div>
+										</div>
+									</div>
+									<hr>
+									<div class="row">
+										<div class="col-md-12">
+											<div class="input-group mb-3">
+												<div class="input-group-prepend">
+													<span class="input-group-text" id="basic-addon9"><i class="fa fa-fw fa-reply"></i></span>
+												</div>
+												<textarea id="patientresponse" type="text" class="form-control" placeholder="Example response: -
+{
+  'resourceType': 'Bundle',
+  'entry': [
+    {
+      'resource': {
+        'resourceType': 'Patient',
+        'id': '<Patient ID>',
+        'identifier': [
+          { 'system': 'patient-number', 'value': '1234' },
+          ...
+        ],
+        'name': [
+          {
+            'text': '<Patient name>'
+          }
+        ],
+        'birthDate': '<Birth date (yyyy-mm-dd)>',
+        'managingOrganization': {
+          'reference': 'Organization/<Organisation ID>'
+        }
+      }
+    }
+  ]
+}
+" aria-label="Response" aria-describedby="basic-addon9" rows="10" style="font-family: monospace; font-size: 10pt"></textarea>
+											</div>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+				<br>
+				<div class="row">
+					<div class="col-md-12">
+						<div class="card">
+							<div class="card-header">
+								<h3>Get resources for patients
+									<div class="pull-right">
+										<button class="btn btn-sm btn-info" onclick="exampleResources()">Example</button>
+										<button class="btn btn-sm btn-success" onclick="getResources()">Run</button>
+									</div>
+								</h3>
+							</div>
+							<div class="card-body">
+								<div class="card-title">
+									<table class="table table-sm table-bordered">
+										<tr class="d-flex"><td class="col-3"><b>Method</b></td>            <td class="col-9">GET</td></tr>
+										<tr class="d-flex"><td class="col-3"><b>Path</b></td>              <td class="col-9"><b>&lt;api host&gt;</b>/api/fhir/resources
+										<tr class="d-flex"><td class="col-3"><b>Headers</b></td>           <td class="col-9">Authorization: Bearer <b>&lt;Token&gt;</b><small class="pull-right">(for client eds-data-checker)</small><br>Content-Type: Application/Json</td></tr>
+										<tr class="d-flex"><td class="col-3"><b>Body</b></td>              <td class="col-9">
+											{<br>
+											&nbsp;&nbsp;&nbsp;&nbsp;resources: [<b>&lt;resource&gt;, ...],</b><br>
+											&nbsp;&nbsp;&nbsp;&nbsp;patients:  <b>&lt;patient bundle&gt;</b><br>
+											}</td></tr>
+									</table>
+								</div>
+								<hr>
+								<div class="card-text">
+									<div class="row">
+										<div class="col-md-12">
+											<div class="input-group mb-3">
+												<div class="input-group-prepend">
+													<span class="input-group-text" id="basic-addon10"><i class="fa fa-fw fa-globe"></i></span>
+												</div>
+												<input id="apihost3" type="text" class="form-control" placeholder="API host" aria-label="Host" aria-describedby="basic-addon10">
+											</div>
+										</div>
+										<div class="col-md-12">
+											<div class="input-group mb-3">
+												<div class="input-group-prepend">
+													<span class="input-group-text" id="token3-addon"><i class="fa fa-fw fa-key"></i></span>
+												</div>
+												<input id="token3" type="text" class="form-control" placeholder="Token" aria-label="Token" aria-describedby="token3-addon">
+											</div>
+										</div>
+										<div class="col-md-12">
+											<div class="input-group mb-3">
+												<div class="input-group-prepend">
+													<span class="input-group-text" id="basic-addon11"><i class="fa fa-fw fa-list-ol"></i></span>
+												</div>
+												<input id="resources" type="text" class="form-control" placeholder='List of FHIR resource types' aria-label="Host" aria-describedby="basic-addon11">
+											</div>
+										</div>
+										<div class="col-md-12">
+											<div class="input-group mb-3">
+												<div class="input-group-prepend">
+													<span class="input-group-text" id="basic-addon12"><i class="fa fa-fw fa-users"></i></span>
+												</div>
+												<textarea id="patients" type="text" class="form-control" placeholder="<Patient bundle JSON>" aria-label="Response" aria-describedby="basic-addon12" rows="10" style="font-family: monospace; font-size: 10pt"></textarea>
+											</div>
+										</div>
+									</div>
+									<hr>
+									<div class="row">
+										<div class="col-md-12">
+											<div class="input-group mb-3">
+												<div class="input-group-prepend">
+													<span class="input-group-text" id="basic-addon13"><i class="fa fa-fw fa-reply"></i></span>
+												</div>
+												<textarea id="resourceresponse" type="text" class="form-control" placeholder="Example response: -
+{
+  'resourceType': 'Bundle',
+  'entry': [
+    {<FHIR Resource data>},
+    {<FHIR Resource data>},
+    ...
+  ]
+}
+" aria-label="Response" aria-describedby="basic-addon13" rows="10" style="font-family: monospace; font-size: 10pt"></textarea>
+											</div>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+				<br>
+				<div class="row">
+					<div class="col-md-12">
+						<div class="card">
+							<div class="card-header">
+								<h3>Get flag for patient
+									<div class="pull-right">
+										<button class="btn btn-sm btn-info" onclick="exampleFlag()">Example</button>
+										<button class="btn btn-sm btn-success" onclick="getFlag()">Run</button>
+									</div>
+								</h3>
+							</div>
+							<div class="card-body">
+								<div class="card-title">
+									<table class="table table-sm table-bordered">
+										<tr class="d-flex"><td class="col-3"><b>Method</b></td>            <td class="col-9">GET</td></tr>
+										<tr class="d-flex"><td class="col-3"><b>Path</b></td>              <td class="col-9"><b>&lt;api host&gt;</b>/api/subscriber/flag
+										<tr class="d-flex"><td class="col-3"><b>Headers</b></td>           <td class="col-9">
+											Authorization: Bearer <b>&lt;Token&gt;</b><small class="pull-right">(for client eds-subscriber)</small><br>
+											OdsCode: <b>&lt;ODS Code&gt;</b>
+										<tr class="d-flex"><td class="col-3"><b>Query parameters</b></td>  <td class="col-9">
+											code=<b>&lt;Flag code&gt;</b><br>
+											subject=<b>&lt;NHS number&gt;</b>
+										</td></tr>
+									</table>
+								</div>
+								<hr>
+								<div class="card-text">
+									<div class="row">
+										<div class="col-md-12">
+											<div class="input-group mb-3">
+												<div class="input-group-prepend">
+													<span class="input-group-text" id="apihost4-addon"><i class="fa fa-fw fa-globe"></i></span>
+												</div>
+												<input id="apihost4" type="text" class="form-control" placeholder="API host" aria-label="Host" aria-describedby="apihost4-addon">
+											</div>
+										</div>
+										<div class="col-md-12">
+											<div class="input-group mb-3">
+												<div class="input-group-prepend">
+													<span class="input-group-text" id="token4-addon"><i class="fa fa-fw fa-key"></i></span>
+												</div>
+												<input id="token4" type="text" class="form-control" placeholder="Token" aria-label="Token" aria-describedby="token4-addon">
+											</div>
+										</div>
+										<div class="col-md-4">
+											<div class="input-group mb-3">
+												<div class="input-group-prepend">
+													<span class="input-group-text" id="requester-addon"><i class="fa fa-fw fa-hospital-o"></i></span>
+												</div>
+												<input id="requester" type="text" class="form-control" placeholder="ODS Code" aria-label="Host" aria-describedby="requester-addon">
+											</div>
+										</div>
+										<div class="col-md-4">
+											<div class="input-group mb-3">
+												<div class="input-group-prepend">
+													<span class="input-group-text" id="flag-addon"><i class="fa fa-fw fa-flag-o"></i></span>
+												</div>
+												<input id="flag" type="text" class="form-control" placeholder="Flag code" aria-label="Host" aria-describedby="flag-addon">
+											</div>
+										</div>
+										<div class="col-md-4">
+											<div class="input-group mb-3">
+												<div class="input-group-prepend">
+													<span class="input-group-text" id="nhs2-addon"><i class="fa fa-fw fa-id-card-o"></i></span>
+												</div>
+												<input id="nhs2" type="text" class="form-control" placeholder="NHS Number" aria-label="Host" aria-describedby="nhs2-addon">
+											</div>
+										</div>
+									</div>
+									<hr>
+									<div class="row">
+										<div class="col-md-12">
+											<div class="input-group mb-3">
+												<div class="input-group-prepend">
+													<span class="input-group-text" id="flagresponse-addon"><i class="fa fa-fw fa-reply"></i></span>
+												</div>
+												<textarea id="flagresponse" type="text" class="form-control" placeholder="Example response: -
+{
+  'resourceType': 'Parameters',
+  'parameter': [
+    { 'name': 'code', 'valueString': <Flag code> },
+    { 'name': 'subject', 'valueString': <NHS Number> },
+    { 'name': 'return', 'resource': {
+        'resourceType': 'Flag',
+        'status': 'active',
+        'code': {
+          'coding': [
+            { 'code': '289999999105', 'display': 'Potentially frail'}
+          ],
+          'text': 'Potentially frail'
+        }
+      }
+    }
+  ]
+}
+" aria-label="Response" aria-describedby="flagresponse-addon" rows="10" style="font-family: monospace; font-size: 10pt"></textarea>
+											</div>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</main>
+	</body>
+	<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49" crossorigin="anonymous"></script>
+	<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/js/bootstrap.min.js" integrity="sha384-smHYKdLADwkXOn1EmN1qk/HfnUcbVRZyYmZ4qpPea6sjB/pTJ0euyQp0Mk8ck+5T" crossorigin="anonymous"></script>
+	<script type="application/javascript">
+		var token;
+
+		function exampleAuthToken() {
+			document.getElementById('authhost').value = "https://devauth.endeavourhealth.net";
+			document.getElementById('client').value = "eds-data-checker";
+			document.getElementById('user').value = "FredBloggs";
+			document.getElementById('pass').value = "Pa55w0rd";
+		}
+
+		function getAuthToken() {
+			var host = document.getElementById('authhost').value;
+			var client = encodeURIComponent(document.getElementById('client').value);
+			var user = encodeURIComponent(document.getElementById('user').value);
+			var pass = encodeURIComponent(document.getElementById('pass').value);
+			var xhttp = new XMLHttpRequest();
+			xhttp.open("POST", host + "/auth/realms/endeavour/protocol/openid-connect/token", false);
+			xhttp.withCredentials = true;
+			xhttp.setRequestHeader("Accept", "*/*");
+			xhttp.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+			try {
+				xhttp.send("client_id="+client+"&username=" + user + "&password=" + pass + "&grant_type=password");
+				try {
+					var response = JSON.parse(xhttp.responseText);
+					token = response.access_token;
+					document.getElementById('authresponse').value = JSON.stringify(response, null, 2);
+				} catch (error) {
+					document.getElementById('authresponse').value = xhttp.responseText;
+				}
+			} catch (error) {
+				document.getElementById('authresponse').value = error;
+			}
+		}
+
+		function exampleResourceTypes() {
+			document.getElementById('apihost').value = "https://deveds.endeavourhealth.net/data-assurance";
+			document.getElementById('token1').value = token;
+		}
+
+		function getResourceTypes() {
+			var host = document.getElementById('apihost').value;
+			var token1 = document.getElementById('token1').value;
+			var xhttp = new XMLHttpRequest();
+			xhttp.open("GET", host + "/api/fhir/resourceType", false);
+			xhttp.withCredentials = true;
+			xhttp.setRequestHeader("Authorization", "Bearer " + token1);
+			try {
+				xhttp.send();
+				try {
+					var response = JSON.parse(xhttp.responseText);
+					document.getElementById('typesresponse').value = JSON.stringify(response, null, 2);
+				} catch (error) {
+					document.getElementById('typesresponse').value = xhttp.responseText;
+				}
+			} catch (error) {
+				document.getElementById('typesresponse').value = error;
+			}
+		}
+
+		function examplePatients() {
+			document.getElementById('apihost2').value = "https://deveds.endeavourhealth.net/data-assurance";
+			document.getElementById('token2').value = token;
+			document.getElementById('nhsnumber').value = "8111119275";
+		}
+
+		function getPatients() {
+			var host = document.getElementById('apihost2').value;
+			var nhs = encodeURIComponent(document.getElementById('nhsnumber').value);
+			var token2 = document.getElementById('token2').value;
+			var xhttp = new XMLHttpRequest();
+			xhttp.open("GET", host + "/api/fhir/patients?nhsNumber="+nhs, false);
+			xhttp.withCredentials = true;
+			xhttp.setRequestHeader("Authorization", "Bearer " + token2);
+			try {
+				xhttp.send();
+				try {
+					var response = JSON.parse(xhttp.responseText);
+					document.getElementById('patientresponse').value = JSON.stringify(response, null, 2);
+					document.getElementById('patients').value = JSON.stringify(response, null, 2);
+				} catch (error) {
+					document.getElementById('patientresponse').value = xhttp.responseText;
+				}
+			} catch (error) {
+				document.getElementById('patientresponse').value = error;
+			}
+		}
+
+		function exampleResources() {
+			document.getElementById('apihost3').value = "https://deveds.endeavourhealth.net/data-assurance";
+			document.getElementById('token3').value = token;
+			document.getElementById('resources').value = '"Patient", "Condition"';
+			document.getElementById('patients').value = document.getElementById('patientresponse').value;
+		}
+
+		function getResources() {
+			var host = document.getElementById('apihost3').value;
+			var token3 = document.getElementById('token3').value;
+			var types = document.getElementById('resources').value;
+			var pats = document.getElementById('patients').value;
+
+			var request = "{ \"resources\": [" + types + "], \"patients\": " + pats + "}";
+
+			var xhttp = new XMLHttpRequest();
+			xhttp.open("POST", host + "/api/fhir/resources", false);
+			xhttp.withCredentials = true;
+			xhttp.setRequestHeader("Authorization", "Bearer " + token3);
+			xhttp.setRequestHeader("Content-Type", "Application/Json");
+			try {
+				xhttp.send(request);
+				try {
+					var response = JSON.parse(xhttp.responseText);
+					document.getElementById('resourceresponse').value = JSON.stringify(response, null, 2);
+				} catch (error) {
+					document.getElementById('resourceresponse').value = xhttp.responseText;
+				}
+			} catch (error) {
+				document.getElementById('resourceresponse').value = error;
+			}
+		}
+
+		function exampleFlag() {
+			document.getElementById('apihost4').value = "https://deveds.endeavourhealth.net/eds-api";
+			document.getElementById('token4').value = token;
+			document.getElementById('nhs2').value = "8111146787";
+			document.getElementById('requester').value = "111TESTORG";
+			document.getElementById('flag').value = "289999999105";
+		}
+
+		function getFlag() {
+			var api4 = document.getElementById('apihost4').value;
+			var token4 = document.getElementById('token4').value;
+			var nhs2 = encodeURIComponent(document.getElementById('nhs2').value);
+			var req = document.getElementById('requester').value;
+			var flag = encodeURIComponent(document.getElementById('flag').value);
+
+			var xhttp = new XMLHttpRequest();
+			xhttp.open("GET", api4 + "/api/subscriber/flag?code=" + flag + "&subject=" + nhs2, false);
+			xhttp.withCredentials = true;
+			xhttp.setRequestHeader("Authorization", "Bearer " + token4);
+			xhttp.setRequestHeader("OdsCode", req);
+			try {
+				xhttp.send();
+				try {
+					var response = JSON.parse(xhttp.responseText);
+					document.getElementById('flagresponse').value = JSON.stringify(response, null, 2);
+				} catch (error) {
+					document.getElementById('flagresponse').value = xhttp.responseText;
+				}
+			} catch (error) {
+				document.getElementById('flagresponse').value = error;
+			}
+		}
+	</script>
+</html>
