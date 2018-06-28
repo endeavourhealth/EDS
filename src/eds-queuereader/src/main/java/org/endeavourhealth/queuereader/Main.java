@@ -57,12 +57,10 @@ import javax.persistence.EntityManager;
 import java.io.*;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.Statement;
+import java.sql.*;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.Date;
 
 public class Main {
 	private static final Logger LOG = LoggerFactory.getLogger(Main.class);
@@ -114,6 +112,16 @@ public class Main {
 			String destDirPath = args[2];
 			String samplePatientsFile = args[3];
 			createBartsSubset(sourceDirPath, destDirPath, samplePatientsFile);
+			System.exit(0);
+		}
+
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("TestPreparedStatements")) {
+			String url = args[1];
+			String user = args[2];
+			String pass = args[3];
+			String serviceId = args[4];
+			testPreparedStatements(url, user, pass, serviceId);
 			System.exit(0);
 		}
 
@@ -297,6 +305,59 @@ public class Main {
 		// Begin consume
 		rabbitHandler.start();
 		LOG.info("EDS Queue reader running (kill file location " + TransformConfig.instance().getKillFileLocation() + ")");
+	}
+
+	private static void testPreparedStatements(String url, String user, String pass, String serviceId) {
+		try {
+			LOG.info("Testing Prepared Statements");
+			LOG.info("Url: " + url);
+			LOG.info("user: " + user);
+			LOG.info("pass: " + pass);
+
+			//open connection
+			Class.forName("com.mysql.cj.jdbc.Driver");
+
+			//create connection
+			Properties props = new Properties();
+			props.setProperty("user", user);
+			props.setProperty("password", pass);
+
+			Connection conn = DriverManager.getConnection(url, props);
+
+			String sql = "SELECT * FROM internal_id_map WHERE service_id = ? AND id_type = ? AND source_id = ?";
+
+			long start = System.currentTimeMillis();
+
+			for (int i=0; i<10000; i++) {
+
+				PreparedStatement ps = null;
+				try {
+					ps = conn.prepareStatement(sql);
+					ps.setString(1, serviceId);
+					ps.setString(2, "MILLPERSIDtoMRN");
+					ps.setString(3, UUID.randomUUID().toString());
+
+					ResultSet rs = ps.executeQuery();
+					while (rs.next()) {
+						//do nothing
+					}
+
+				} finally {
+					if (ps != null) {
+						ps.close();
+					}
+				}
+			}
+
+			long end = System.currentTimeMillis();
+			LOG.info("Took " + (end-start) + " ms");
+
+			//close connection
+			conn.close();
+
+		} catch (Exception ex) {
+			LOG.error("", ex);
+		}
 	}
 
 	private static void fixEncounters(String table) {
