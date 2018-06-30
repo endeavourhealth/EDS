@@ -184,11 +184,13 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 
 		//if we've not activated any service contracts yet, this will be empty, which is fine
 		if (serviceIdsDefiningCohort.isEmpty()) {
+			LOG.debug("FAIL - No services defining cohort found for batch ID " + batchId);
 			return false;
 		}
 
 		//check to see if our service is one of the defining service contracts, in which case it automatically passes
 		if (serviceIdsDefiningCohort.contains(serviceId.toString())) {
+			LOG.debug("PASS - This service is in defining list for batch ID " + batchId);
 			return true;
 		}
 
@@ -204,11 +206,18 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 		//if there's no patient ID, then this is admin resources batch, so return true so it goes through unfiltered
 		if (patientUuid == null) {
 			//LOG.trace("No patient ID for batch " + batchId + " in exchange " + exchangeId + " so passing protocol " + protocolId + " check");
+			LOG.debug("PASS - No patient ID found for batch ID " + batchId);
 			return true;
 		}
 
 		try {
-			return checkPatientIsRegisteredAtServices(serviceId, patientUuid, serviceIdsDefiningCohort);
+			boolean ret = checkPatientIsRegisteredAtServices(serviceId, patientUuid, serviceIdsDefiningCohort);
+			if (ret) {
+				LOG.debug("PASS - Patient " + patientUuid + " matches protocol for batch ID " + batchId);
+			} else {
+				LOG.debug("FAIL - Patient " + patientUuid + " doesn't match protocol for batch ID " + batchId);
+			}
+			return ret;
 
 		} catch (Exception ex) {
 			throw new PipelineException("Failed to retrieve patient or organisation resources for patient ID " + patientUuid, ex);
@@ -261,6 +270,7 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 
 		if (fhirPatient == null
 				|| !fhirPatient.hasCareProvider()) {
+			LOG.debug("      Patient " + patientUuid + " has no care provider, returning false");
 			return false;
 		}
 
@@ -269,11 +279,13 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 			if (comps.getResourceType() == ResourceType.Organization) {
 
 				UUID organisationUuid = UUID.fromString(comps.getId());
+				LOG.debug("      Patient " + patientUuid + ", refers to organization " + organisationUuid);
 				Organization fhirOrganization = (Organization)retrieveNonDeletedResource(serviceId, ResourceType.Organization, organisationUuid);
 
 				if (fhirOrganization != null) {
 					String odsCode = IdentifierHelper.findOdsCode(fhirOrganization);
 					if (!Strings.isNullOrEmpty(odsCode)) {
+						LOG.debug("      Organization has ODS code " + odsCode);
 						Organisation organisation = organisationRepository.getByNationalId(odsCode);
 						if (organisation != null
 								&& organisation.getServices() != null) {
@@ -281,7 +293,7 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 							for (UUID orgServiceId : organisation.getServices().keySet()) {
 								String orgServiceIdStr = orgServiceId.toString();
 								if (serviceIdsDefiningCohort.contains(orgServiceIdStr)) {
-
+									LOG.debug("      Matches sevice list");
 									return true;
 								}
 							}
