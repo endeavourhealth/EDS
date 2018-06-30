@@ -4,9 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.base.Strings;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.common.cache.ParserPool;
-import org.endeavourhealth.common.fhir.IdentifierHelper;
-import org.endeavourhealth.common.fhir.ReferenceComponents;
-import org.endeavourhealth.common.fhir.ReferenceHelper;
+import org.endeavourhealth.common.fhir.*;
 import org.endeavourhealth.core.configuration.RunDataDistributionProtocolsConfig;
 import org.endeavourhealth.core.database.dal.DalProvider;
 import org.endeavourhealth.core.database.dal.admin.LibraryRepositoryHelper;
@@ -26,10 +24,7 @@ import org.endeavourhealth.core.messaging.pipeline.PipelineComponent;
 import org.endeavourhealth.core.messaging.pipeline.PipelineException;
 import org.endeavourhealth.core.messaging.pipeline.TransformBatch;
 import org.endeavourhealth.core.xml.QueryDocument.*;
-import org.hl7.fhir.instance.model.Organization;
-import org.hl7.fhir.instance.model.Patient;
-import org.hl7.fhir.instance.model.Reference;
-import org.hl7.fhir.instance.model.ResourceType;
+import org.hl7.fhir.instance.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -270,46 +265,109 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 
 		if (fhirPatient == null
 				|| !fhirPatient.hasCareProvider()) {
-			LOG.debug("      Patient " + patientUuid + " has no care provider, returning false");
+			//LOG.debug("      Patient " + patientUuid + " has no care provider, returning false");
 			return false;
 		}
 
 		for (Reference careProviderReference : fhirPatient.getCareProvider()) {
-			ReferenceComponents comps = ReferenceHelper.getReferenceComponents(careProviderReference);
-			if (comps.getResourceType() == ResourceType.Organization) {
 
-				UUID organisationUuid = UUID.fromString(comps.getId());
-				LOG.debug("      Patient " + patientUuid + ", refers to organization " + organisationUuid);
-				Organization fhirOrganization = (Organization)retrieveNonDeletedResource(serviceId, ResourceType.Organization, organisationUuid);
+			String odsCode = findOdsCodeFromReference(careProviderReference, serviceId);
 
-				if (fhirOrganization != null) {
-					String odsCode = IdentifierHelper.findOdsCode(fhirOrganization);
-					LOG.debug("      Organization was found and has ODS code [" + odsCode + "] and name " + fhirOrganization.getName());
-					if (!Strings.isNullOrEmpty(odsCode)) {
-						Organisation organisation = organisationRepository.getByNationalId(odsCode);
-						if (organisation != null
-								&& organisation.getServices() != null) {
-							LOG.debug("      Admin organisation was found with services " + organisation.getServices().size());
+			if (!Strings.isNullOrEmpty(odsCode)) {
+				Organisation organisation = organisationRepository.getByNationalId(odsCode);
+				if (organisation != null
+						&& organisation.getServices() != null) {
+					//LOG.debug("      Admin organisation was found with services " + organisation.getServices().size());
 
-							for (UUID orgServiceId : organisation.getServices().keySet()) {
-								String orgServiceIdStr = orgServiceId.toString();
-								LOG.debug("      Org admin service ID = " + orgServiceIdStr);
-								if (serviceIdsDefiningCohort.contains(orgServiceIdStr)) {
-									LOG.debug("      Matches sevice list");
-									return true;
-								}
-							}
-						} else {
-							LOG.debug("      No admin organisation was found with services");
+					for (UUID orgServiceId : organisation.getServices().keySet()) {
+						String orgServiceIdStr = orgServiceId.toString();
+						//LOG.debug("      Org admin service ID = " + orgServiceIdStr);
+						if (serviceIdsDefiningCohort.contains(orgServiceIdStr)) {
+							LOG.debug("      Matches sevice list");
+							return true;
 						}
-					} else {
-						LOG.debug("      Organisation could not be found");
 					}
+				} else {
+					//LOG.debug("      No admin organisation was found with services");
 				}
+			} else {
+				//LOG.debug("      Organisation could not be found");
 			}
 		}
 
 		return false;
+	}
+
+	private String findOdsCodeFromReference(Reference careProviderReference, UUID serviceId) throws Exception {
+		ReferenceComponents comps = ReferenceHelper.getReferenceComponents(careProviderReference);
+		if (comps.getResourceType() == ResourceType.Organization) {
+			return findOdsCodeFromOrgReference(comps.getId(), serviceId);
+
+		} else if (comps.getResourceType() == ResourceType.Practitioner) {
+			return findOdsCodeFromPractitionerReference(comps.getId(), serviceId);
+
+		} else {
+			return null;
+		}
+	}
+
+	private String findOdsCodeFromPractitionerReference(String practitionerId, UUID serviceId) throws Exception {
+
+		UUID practitionerUuid = UUID.fromString(practitionerId);
+		Practitioner fhirPractitioner = (Practitioner)retrieveNonDeletedResource(serviceId, ResourceType.Practitioner, practitionerUuid);
+
+		if (fhirPractitioner == null
+				|| !fhirPractitioner.hasPractitionerRole()) {
+			return null;
+		}
+
+		for (Practitioner.PractitionerPractitionerRoleComponent role: fhirPractitioner.getPractitionerRole()) {
+			if (role.hasPeriod()
+					&& !PeriodHelper.isActive(role.getPeriod())) {
+				continue;
+			}
+
+			if (!role.hasManagingOrganization()) {
+				continue;
+			}
+
+			Reference orgReference = role.getManagingOrganization();
+			String orgId = ReferenceHelper.getReferenceId(orgReference);
+			String orgOds = findOdsCodeFromOrgReference(orgId, serviceId);
+			if (!Strings.isNullOrEmpty(orgOds)) {
+				return orgOds;
+			}
+		}
+
+		return null;
+	}
+
+	private String findOdsCodeFromOrgReference(String organisationId, UUID serviceId) throws Exception {
+
+		UUID organisationUuid = UUID.fromString(organisationId);
+		//LOG.debug("      Patient " + patientUuid + ", refers to organization " + organisationUuid);
+		Organization fhirOrganization = (Organization)retrieveNonDeletedResource(serviceId, ResourceType.Organization, organisationUuid);
+
+		if (fhirOrganization == null) {
+			return null;
+		}
+
+		String odsCode = IdentifierHelper.findOdsCode(fhirOrganization);
+		//LOG.debug("      Organization was found and has ODS code [" + odsCode + "] and name " + fhirOrganization.getName());
+
+		//TODO - remove this when FHIR resources are fixed
+		if (Strings.isNullOrEmpty(odsCode)
+				&& fhirOrganization.hasIdentifier()) {
+			for (Identifier identifier: fhirOrganization.getIdentifier()) {
+				if (identifier.getSystem().equals(FhirIdentifierUri.IDENTIFIER_SYSTEM_ODS_CODE)
+						&& identifier.hasId()) {
+					odsCode = identifier.getId();
+					break;
+				}
+			}
+		}
+
+		return odsCode;
 	}
 
 	private static Set<String> getServiceIdsForServiceDefinedProtocol(Protocol protocol) {
