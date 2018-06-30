@@ -215,7 +215,7 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 			if (ret) {
 				LOG.debug("PASS - Patient " + patientUuid + " matches protocol for batch ID " + batchId);
 			} else {
-				LOG.debug("FAIL - Patient " + patientUuid + " doesn't match protocol for batch ID " + batchId);
+				LOG.debug("FAIL - Patient " + patientUuid + " doesn't match protocol for batch ID " + batchId + " over " + serviceIdsDefiningCohort.size() + " services");
 			}
 			return ret;
 
@@ -284,20 +284,26 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 
 				if (fhirOrganization != null) {
 					String odsCode = IdentifierHelper.findOdsCode(fhirOrganization);
+					LOG.debug("      Organization was found and has ODS code [" + odsCode + "] and name " + fhirOrganization.getName());
 					if (!Strings.isNullOrEmpty(odsCode)) {
-						LOG.debug("      Organization has ODS code " + odsCode);
 						Organisation organisation = organisationRepository.getByNationalId(odsCode);
 						if (organisation != null
 								&& organisation.getServices() != null) {
+							LOG.debug("      Admin organisation was found with services " + organisation.getServices().size());
 
 							for (UUID orgServiceId : organisation.getServices().keySet()) {
 								String orgServiceIdStr = orgServiceId.toString();
+								LOG.debug("      Org admin service ID = " + orgServiceIdStr);
 								if (serviceIdsDefiningCohort.contains(orgServiceIdStr)) {
 									LOG.debug("      Matches sevice list");
 									return true;
 								}
 							}
+						} else {
+							LOG.debug("      No admin organisation was found with services");
 						}
+					} else {
+						LOG.debug("      Organisation could not be found");
 					}
 				}
 			}
