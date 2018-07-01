@@ -179,13 +179,13 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 
 		//if we've not activated any service contracts yet, this will be empty, which is fine
 		if (serviceIdsDefiningCohort.isEmpty()) {
-			LOG.debug("FAIL - No services defining cohort found for batch ID " + batchId);
+			//LOG.debug("FAIL - No services defining cohort found for batch ID " + batchId);
 			return false;
 		}
 
 		//check to see if our service is one of the defining service contracts, in which case it automatically passes
 		if (serviceIdsDefiningCohort.contains(serviceId.toString())) {
-			LOG.debug("PASS - This service is in defining list for batch ID " + batchId);
+			//LOG.debug("PASS - This service is in defining list for batch ID " + batchId);
 			return true;
 		}
 
@@ -201,17 +201,17 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 		//if there's no patient ID, then this is admin resources batch, so return true so it goes through unfiltered
 		if (patientUuid == null) {
 			//LOG.trace("No patient ID for batch " + batchId + " in exchange " + exchangeId + " so passing protocol " + protocolId + " check");
-			LOG.debug("PASS - No patient ID found for batch ID " + batchId);
+			//LOG.debug("PASS - No patient ID found for batch ID " + batchId);
 			return true;
 		}
 
 		try {
 			boolean ret = checkPatientIsRegisteredAtServices(serviceId, patientUuid, serviceIdsDefiningCohort);
-			if (ret) {
+			/*if (ret) {
 				LOG.debug("PASS - Patient " + patientUuid + " matches protocol for batch ID " + batchId);
 			} else {
 				LOG.debug("FAIL - Patient " + patientUuid + " doesn't match protocol for batch ID " + batchId + " over " + serviceIdsDefiningCohort.size() + " services");
-			}
+			}*/
 			return ret;
 
 		} catch (Exception ex) {
@@ -283,7 +283,7 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 						String orgServiceIdStr = orgServiceId.toString();
 						//LOG.debug("      Org admin service ID = " + orgServiceIdStr);
 						if (serviceIdsDefiningCohort.contains(orgServiceIdStr)) {
-							LOG.debug("      Matches sevice list");
+							//LOG.debug("      Matches sevice list");
 							return true;
 						}
 					}
