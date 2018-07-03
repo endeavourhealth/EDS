@@ -328,7 +328,11 @@ public class Main {
 			for (ResourceWrapper wrapper: wrappers) {
 
 				if (!wrapper.isDeleted()) {
-					String json = wrapper.getResourceData();
+
+					List<ResourceWrapper> history = dal.getResourceHistory(UUID.fromString(serviceId), wrapper.getResourceType(), wrapper.getResourceId());
+					ResourceWrapper mostRecent = history.get(0);
+
+					String json = mostRecent.getResourceData();
 					Organization org = (Organization)FhirSerializationHelper.deserializeResource(json);
 
 					String odsCode = IdentifierHelper.findOdsCode(org);
@@ -350,13 +354,13 @@ public class Main {
 
 						if (hasBeenFixed) {
 							String newJson = FhirSerializationHelper.serializeResource(org);
-							wrapper.setResourceData(newJson);
+							mostRecent.setResourceData(newJson);
 
 							LOG.debug("Fixed Organization " + org.getId());
 							/*LOG.debug(json);
 							LOG.debug(newJson);*/
 
-							saveResourceWrapper(UUID.fromString(serviceId), wrapper);
+							saveResourceWrapper(UUID.fromString(serviceId), mostRecent);
 
 							fixed ++;
 						}
@@ -979,11 +983,16 @@ public class Main {
 		json = json.replace("'", "''");
 		json = json.replace("\\", "\\\\");
 
+		String patientId = "";
+		if (wrapper.getPatientId() != null) {
+			patientId = wrapper.getPatientId().toString();
+		}
+
 		String updateSql = "UPDATE resource_current"
 						+ " SET resource_data = '" + json + "',"
 						+ " resource_checksum = " + wrapper.getResourceChecksum()
 						+ " WHERE service_id = '" + wrapper.getServiceId() + "'"
-						+ " AND patient_id = '" + wrapper.getPatientId() + "'"
+						+ " AND patient_id = '" + patientId + "'"
 						+ " AND resource_type = '" + wrapper.getResourceType() + "'"
 						+ " AND resource_id = '" + wrapper.getResourceId() + "'";
 		statement.executeUpdate(updateSql);
