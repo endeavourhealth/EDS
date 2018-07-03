@@ -353,8 +353,8 @@ public class Main {
 							wrapper.setResourceData(newJson);
 
 							LOG.debug("Fixed Organization " + org.getId());
-							LOG.debug(json);
-							LOG.debug(newJson);
+							/*LOG.debug(json);
+							LOG.debug(newJson);*/
 
 							saveResourceWrapper(UUID.fromString(serviceId), wrapper);
 
@@ -964,7 +964,8 @@ public class Main {
 	private static void saveResourceWrapper(UUID serviceId, ResourceWrapper wrapper) throws Exception {
 
 		if (wrapper.getResourceData() != null) {
-			wrapper.setResourceChecksum(FhirStorageService.generateChecksum(wrapper.getResourceData()));
+			long checksum = FhirStorageService.generateChecksum(wrapper.getResourceData());
+			wrapper.setResourceChecksum(new Long(checksum));
 		}
 
 		EntityManager entityManager = ConnectionManager.getEhrEntityManager(serviceId);
@@ -987,6 +988,8 @@ public class Main {
 						+ " AND resource_id = '" + wrapper.getResourceId() + "'";
 		statement.executeUpdate(updateSql);
 
+		LOG.debug(updateSql);
+
 		//SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:SS");
 		//String createdAtStr = sdf.format(wrapper.getCreatedAt());
 
@@ -998,6 +1001,8 @@ public class Main {
 				//+ " AND created_at = '" + createdAtStr + "'"
 				+ " AND version = '" + wrapper.getVersion() + "'";
 		statement.executeUpdate(updateSql);
+
+		LOG.debug(updateSql);
 
 		entityManager.getTransaction().commit();
 	}
