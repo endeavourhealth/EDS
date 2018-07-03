@@ -8,6 +8,8 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.common.config.ConfigManager;
+import org.endeavourhealth.common.fhir.FhirIdentifierUri;
+import org.endeavourhealth.common.fhir.IdentifierHelper;
 import org.endeavourhealth.common.fhir.ReferenceHelper;
 import org.endeavourhealth.common.utility.FileHelper;
 import org.endeavourhealth.common.utility.SlackHelper;
@@ -112,6 +114,13 @@ public class Main {
 			String destDirPath = args[2];
 			String samplePatientsFile = args[3];
 			createBartsSubset(sourceDirPath, destDirPath, samplePatientsFile);
+			System.exit(0);
+		}
+
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("FixBartsOrgs")) {
+			String serviceId = args[1];
+			fixBartsOrgs(serviceId);
 			System.exit(0);
 		}
 
@@ -305,6 +314,64 @@ public class Main {
 		// Begin consume
 		rabbitHandler.start();
 		LOG.info("EDS Queue reader running (kill file location " + TransformConfig.instance().getKillFileLocation() + ")");
+	}
+
+	private static void fixBartsOrgs(String serviceId) {
+		try {
+			LOG.info("Fixing Barts orgs");
+
+			ResourceDalI dal = DalProvider.factoryResourceDal();
+			List<ResourceWrapper> wrappers = dal.getResourcesByService(UUID.fromString(serviceId), ResourceType.Organization.toString());
+			LOG.debug("Found " + wrappers.size() + " resources");
+			int done = 0;
+			int fixed = 0;
+			for (ResourceWrapper wrapper: wrappers) {
+
+				if (!wrapper.isDeleted()) {
+					String json = wrapper.getResourceData();
+					Organization org = (Organization)FhirSerializationHelper.deserializeResource(json);
+
+					String odsCode = IdentifierHelper.findOdsCode(org);
+					if (Strings.isNullOrEmpty(odsCode)
+							&& org.hasIdentifier()) {
+
+						boolean hasBeenFixed = false;
+
+						for (Identifier identifier: org.getIdentifier()) {
+							if (identifier.getSystem().equals(FhirIdentifierUri.IDENTIFIER_SYSTEM_ODS_CODE)
+									&& identifier.hasId()) {
+
+								odsCode = identifier.getId();
+								identifier.setValue(odsCode);
+								identifier.setId(null);
+								hasBeenFixed = true;
+							}
+						}
+
+						if (hasBeenFixed) {
+							json = FhirSerializationHelper.serializeResource(org);
+							wrapper.setResourceData(json);
+
+							saveResourceWrapper(UUID.fromString(serviceId), wrapper);
+
+							fixed ++;
+						}
+					}
+
+				}
+
+				done ++;
+				if (done % 100 == 0) {
+					LOG.debug("Done " + done + ", Fixed " + fixed);
+				}
+			}
+			LOG.debug("Done " + done + ", Fixed " + fixed);
+
+			LOG.info("Finished Barts orgs");
+
+		} catch (Throwable t) {
+			LOG.error("", t);
+		}
 	}
 
 	private static void testPreparedStatements(String url, String user, String pass, String serviceId) {
@@ -891,6 +958,11 @@ public class Main {
 	}
 
 	private static void saveResourceWrapper(UUID serviceId, ResourceWrapper wrapper) throws Exception {
+
+		if (wrapper.getResourceData() != null) {
+			wrapper.setResourceChecksum(FhirStorageService.generateChecksum(wrapper.getResourceData()));
+		}
+
 		EntityManager entityManager = ConnectionManager.getEhrEntityManager(serviceId);
 		SessionImpl session = (SessionImpl)entityManager.getDelegate();
 		Connection connection = session.connection();
