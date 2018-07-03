@@ -349,8 +349,12 @@ public class Main {
 						}
 
 						if (hasBeenFixed) {
-							json = FhirSerializationHelper.serializeResource(org);
-							wrapper.setResourceData(json);
+							String newJson = FhirSerializationHelper.serializeResource(org);
+							wrapper.setResourceData(newJson);
+
+							LOG.debug("Fixed Organization " + org.getId());
+							LOG.debug(json);
+							LOG.debug(newJson);
 
 							saveResourceWrapper(UUID.fromString(serviceId), wrapper);
 
