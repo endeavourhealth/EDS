@@ -4,7 +4,10 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.base.Strings;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.common.cache.ParserPool;
-import org.endeavourhealth.common.fhir.*;
+import org.endeavourhealth.common.fhir.IdentifierHelper;
+import org.endeavourhealth.common.fhir.PeriodHelper;
+import org.endeavourhealth.common.fhir.ReferenceComponents;
+import org.endeavourhealth.common.fhir.ReferenceHelper;
 import org.endeavourhealth.core.configuration.RunDataDistributionProtocolsConfig;
 import org.endeavourhealth.core.database.dal.DalProvider;
 import org.endeavourhealth.core.database.dal.admin.LibraryRepositoryHelper;
@@ -354,19 +357,6 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 
 		String odsCode = IdentifierHelper.findOdsCode(fhirOrganization);
 		//LOG.debug("      Organization was found and has ODS code [" + odsCode + "] and name " + fhirOrganization.getName());
-
-		//TODO - remove this when FHIR resources are fixed
-		if (Strings.isNullOrEmpty(odsCode)
-				&& fhirOrganization.hasIdentifier()) {
-			for (Identifier identifier: fhirOrganization.getIdentifier()) {
-				if (identifier.getSystem().equals(FhirIdentifierUri.IDENTIFIER_SYSTEM_ODS_CODE)
-						&& identifier.hasId()) {
-					odsCode = identifier.getId();
-					break;
-				}
-			}
-		}
-
 		return odsCode;
 	}
 

@@ -997,7 +997,7 @@ public class Main {
 						+ " AND resource_id = '" + wrapper.getResourceId() + "'";
 		statement.executeUpdate(updateSql);
 
-		LOG.debug(updateSql);
+		//LOG.debug(updateSql);
 
 		//SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:SS");
 		//String createdAtStr = sdf.format(wrapper.getCreatedAt());
@@ -1011,7 +1011,7 @@ public class Main {
 				+ " AND version = '" + wrapper.getVersion() + "'";
 		statement.executeUpdate(updateSql);
 
-		LOG.debug(updateSql);
+		//LOG.debug(updateSql);
 
 		entityManager.getTransaction().commit();
 	}
