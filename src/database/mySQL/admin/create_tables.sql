@@ -9,6 +9,8 @@ DROP TABLE IF EXISTS active_item;
 DROP TABLE IF EXISTS service;
 DROP TABLE IF EXISTS organisation;
 DROP TABLE IF EXISTS patient_cohort;
+DROP TABLE IF EXISTS link_distributor_populator;
+DROP TABLE IF EXISTS link_distributor_task_list;
 
 
 CREATE TABLE dependency_type
@@ -134,6 +136,22 @@ ON organisation (national_id);
     inserted datetime,
     in_cohort boolean,
     CONSTRAINT pk_patient_cohort PRIMARY KEY (protocol_id, service_id, nhs_number, inserted DESC)
+);
+
+CREATE TABLE link_distributor_populator
+(
+    patient_id varchar(36),
+    nhs_number varchar(10),
+    date_of_birth date,
+    done boolean,
+    CONSTRAINT pk_link_distributor_populator_patient_id PRIMARY KEY (patient_id)
+);
+
+CREATE TABLE link_distributor_task_list
+(
+	config_name varchar(100) not null,
+    process_status tinyint not null comment '0 - to do, 1 - in progress, 2 - complete, 3 - error',
+    CONSTRAINT pk_link_distributor_task_list_config_name PRIMARY KEY (config_name)
 );
 
 
