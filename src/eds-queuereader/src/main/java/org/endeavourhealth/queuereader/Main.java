@@ -6283,7 +6283,7 @@ public class Main {
 
 		try {
 
-			PatientTransformer.processPatientsInBatches(configName, batchSize);
+		//	PatientTransformer.processPatientsInBatches(configName, batchSize);
 
 		} catch (Throwable t) {
 			LOG.error("", t);
