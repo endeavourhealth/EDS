@@ -146,14 +146,6 @@ public class Main {
 			System.exit(0);
 		}
 
-		if (args.length >= 1
-				&& args[0].equalsIgnoreCase("linkDistributor")) {
-			String configName = args[1];
-			Integer batchSize = Integer.parseInt(args[2]);
-			populteLinkDistributorTable(configName, batchSize);
-			System.exit(0);
-		}
-
 
 		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("FixReferrals")) {
@@ -6275,18 +6267,6 @@ public class Main {
 				parser.close();
 				printer.close();
 			}
-		}
-	}
-
-	private static void populteLinkDistributorTable(String configName, Integer batchSize) {
-		LOG.info("Populating link distributor table from link_distributor_populator");
-
-		try {
-
-		//	PatientTransformer.processPatientsInBatches(configName, batchSize);
-
-		} catch (Throwable t) {
-			LOG.error("", t);
 		}
 	}
 }
