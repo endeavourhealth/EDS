@@ -1864,6 +1864,9 @@ public class Main {
 						if (!dir.exists()) {
 							dir.mkdirs();
 						}
+
+						tempFilesCreated.add(s);
+						LOG.info("Created replacement file " + replacementDisabledFile);
 					}
 				}
 
@@ -1995,8 +1998,7 @@ public class Main {
 				csvPrinter.flush();
 				csvPrinter.close();
 
-				tempFilesCreated.add(replacementDisabledFile);
-				LOG.info("Created replacement file " + replacementDisabledFile);
+
 
 				//also create a version of the CSV file with just the header and nothing else in
 				for (int i=indexDisabled+1; i<indexRebulked; i++) {
@@ -2019,7 +2021,7 @@ public class Main {
 							csvPrinter.flush();
 							csvPrinter.close();
 
-							tempFilesCreated.add(emptyTempFile);
+							tempFilesCreated.add(s);
 							LOG.info("Created empty file " + emptyTempFile);
 						}
 					}
@@ -2047,10 +2049,23 @@ public class Main {
 						InputStream inputStream = FileHelper.readFileFromSharedStorage(rebulkedSharingAgreementFile);
 						Files.copy(inputStream, new File(replacementFile).toPath());
 						inputStream.close();
+
+						tempFilesCreated.add(s);
 					}
 				}
 			}
 
+			//create a script to copy the files into S3
+			List<String> copyScript = new ArrayList<>();
+			copyScript.add("#!/bin/bash");
+			copyScript.add("");
+			for (String s: tempFilesCreated) {
+				String localFile = FilenameUtils.concat(tempDir, s);
+				copyScript.add("sudo aws s3 cp " + localFile + " s3://discoverysftplanding/endeavour/" + s);
+			}
+
+			String scriptFile = FilenameUtils.concat(tempDir, "copy.sh");
+			FileUtils.writeLines(new File(scriptFile), copyScript);
 
 			/*continueOrQuit();
 
