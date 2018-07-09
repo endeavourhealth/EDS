@@ -8,9 +8,6 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.common.config.ConfigManager;
-import org.endeavourhealth.common.fhir.FhirIdentifierUri;
-import org.endeavourhealth.common.fhir.IdentifierHelper;
-import org.endeavourhealth.common.fhir.ReferenceHelper;
 import org.endeavourhealth.common.utility.FileHelper;
 import org.endeavourhealth.common.utility.SlackHelper;
 import org.endeavourhealth.core.configuration.ConfigDeserialiser;
@@ -27,7 +24,6 @@ import org.endeavourhealth.core.database.dal.ehr.ResourceDalI;
 import org.endeavourhealth.core.database.dal.ehr.models.ResourceWrapper;
 import org.endeavourhealth.core.database.rdbms.ConnectionManager;
 import org.endeavourhealth.core.exceptions.TransformException;
-import org.endeavourhealth.core.fhirStorage.FhirSerializationHelper;
 import org.endeavourhealth.core.fhirStorage.FhirStorageService;
 import org.endeavourhealth.core.fhirStorage.JsonServiceInterfaceEndpoint;
 import org.endeavourhealth.core.messaging.pipeline.components.PostMessageToExchange;
@@ -36,22 +32,9 @@ import org.endeavourhealth.core.xml.TransformErrorSerializer;
 import org.endeavourhealth.core.xml.transformError.TransformError;
 import org.endeavourhealth.transform.barts.BartsCsvToFhirTransformer;
 import org.endeavourhealth.transform.common.*;
-import org.endeavourhealth.transform.common.resourceBuilders.ConditionBuilder;
-import org.endeavourhealth.transform.common.resourceBuilders.ContainedListBuilder;
-import org.endeavourhealth.transform.common.resourceBuilders.EncounterBuilder;
 import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
 import org.endeavourhealth.transform.emis.csv.helpers.EmisCsvHelper;
-import org.endeavourhealth.transform.emis.csv.helpers.ReferenceList;
-import org.endeavourhealth.transform.emis.csv.schema.careRecord.Consultation;
-import org.endeavourhealth.transform.emis.csv.schema.careRecord.Diary;
-import org.endeavourhealth.transform.emis.csv.schema.careRecord.Problem;
-import org.endeavourhealth.transform.emis.csv.schema.prescribing.DrugRecord;
-import org.endeavourhealth.transform.emis.csv.schema.prescribing.IssueRecord;
-import org.endeavourhealth.transform.emis.csv.transforms.careRecord.ObservationPreTransformer;
-import org.endeavourhealth.transform.emis.csv.transforms.careRecord.ObservationTransformer;
-import org.endeavourhealth.transform.enterprise.transforms.PatientTransformer;
 import org.hibernate.internal.SessionImpl;
-import org.hl7.fhir.instance.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -59,10 +42,12 @@ import javax.persistence.EntityManager;
 import java.io.*;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.Statement;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.Date;
 
 public class Main {
 	private static final Logger LOG = LoggerFactory.getLogger(Main.class);
@@ -117,14 +102,14 @@ public class Main {
 			System.exit(0);
 		}
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("FixBartsOrgs")) {
 			String serviceId = args[1];
 			fixBartsOrgs(serviceId);
 			System.exit(0);
-		}
+		}*/
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("TestPreparedStatements")) {
 			String url = args[1];
 			String user = args[2];
@@ -132,7 +117,7 @@ public class Main {
 			String serviceId = args[4];
 			testPreparedStatements(url, user, pass, serviceId);
 			System.exit(0);
-		}
+		}*/
 
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("ApplyEmisAdminCaches")) {
@@ -308,7 +293,7 @@ public class Main {
 		LOG.info("EDS Queue reader running (kill file location " + TransformConfig.instance().getKillFileLocation() + ")");
 	}
 
-	private static void fixBartsOrgs(String serviceId) {
+	/*private static void fixBartsOrgs(String serviceId) {
 		try {
 			LOG.info("Fixing Barts orgs");
 
@@ -349,8 +334,8 @@ public class Main {
 							mostRecent.setResourceData(newJson);
 
 							LOG.debug("Fixed Organization " + org.getId());
-							/*LOG.debug(json);
-							LOG.debug(newJson);*/
+							*//*LOG.debug(json);
+							LOG.debug(newJson);*//*
 
 							saveResourceWrapper(UUID.fromString(serviceId), mostRecent);
 
@@ -372,9 +357,9 @@ public class Main {
 		} catch (Throwable t) {
 			LOG.error("", t);
 		}
-	}
+	}*/
 
-	private static void testPreparedStatements(String url, String user, String pass, String serviceId) {
+	/*private static void testPreparedStatements(String url, String user, String pass, String serviceId) {
 		try {
 			LOG.info("Testing Prepared Statements");
 			LOG.info("Url: " + url);
@@ -425,9 +410,9 @@ public class Main {
 		} catch (Exception ex) {
 			LOG.error("", ex);
 		}
-	}
+	}*/
 
-	private static void fixEncounters(String table) {
+	/*private static void fixEncounters(String table) {
 		LOG.info("Fixing encounters from " + table);
 
 		try {
@@ -725,7 +710,7 @@ public class Main {
 						saveResourceWrapper(serviceId, currentState);
 					}
 
-					/*Encounter encounter = (Encounter)FhirSerializationHelper.deserializeResource(currentState.getResourceData());
+					*//*Encounter encounter = (Encounter)FhirSerializationHelper.deserializeResource(currentState.getResourceData());
 					EncounterBuilder encounterBuilder = new EncounterBuilder(encounter);
 					ContainedListBuilder containedListBuilder = new ContainedListBuilder(encounterBuilder);
 
@@ -735,7 +720,7 @@ public class Main {
 					currentState.setResourceData(newJson);
 					currentState.setResourceChecksum(FhirStorageService.generateChecksum(newJson));
 
-					saveResourceWrapper(serviceId, currentState);*/
+					saveResourceWrapper(serviceId, currentState);*//*
 				}
 
 
@@ -819,7 +804,7 @@ public class Main {
 						saveResourceWrapper(serviceId, currentState);
 					}
 
-					/*Resource resource = FhirSerializationHelper.deserializeResource(currentState.getResourceData());
+					*//*Resource resource = FhirSerializationHelper.deserializeResource(currentState.getResourceData());
 
 					boolean changed = false;
 
@@ -848,7 +833,7 @@ public class Main {
 						currentState.setResourceChecksum(FhirStorageService.generateChecksum(newJson));
 
 						saveResourceWrapper(serviceId, currentState);
-					}*/
+					}*//*
 				}
 
 				LOG.info("Found " + newProblemChildren.size() + " Problems to fix");
@@ -905,7 +890,7 @@ public class Main {
 						saveResourceWrapper(serviceId, currentState);
 					}
 
-					/*Condition condition = (Condition)FhirSerializationHelper.deserializeResource(currentState.getResourceData());
+					*//*Condition condition = (Condition)FhirSerializationHelper.deserializeResource(currentState.getResourceData());
 					ConditionBuilder conditionBuilder = new ConditionBuilder(condition);
 					ContainedListBuilder containedListBuilder = new ContainedListBuilder(conditionBuilder);
 
@@ -915,7 +900,7 @@ public class Main {
 					currentState.setResourceData(newJson);
 					currentState.setResourceChecksum(FhirStorageService.generateChecksum(newJson));
 
-					saveResourceWrapper(serviceId, currentState);*/
+					saveResourceWrapper(serviceId, currentState);*//*
 				}
 
 				//mark as done
@@ -929,7 +914,7 @@ public class Main {
 				entityManager.getTransaction().commit();
 			}
 
-			/**
+			*//**
 			 * For each practice:
 			 Go through all files processed since 14 March
 			 Cache all links as above
@@ -949,13 +934,13 @@ public class Main {
 			 Retrieve version prior to 14 March
 			 Update current version with old references plus new ones
 
-			 */
+			 *//*
 
 			LOG.info("Finished Fixing encounters from " + table);
 		} catch (Throwable t) {
 			LOG.error("", t);
 		}
-	}
+	}*/
 
 	private static void saveResourceWrapper(UUID serviceId, ResourceWrapper wrapper) throws Exception {
 
