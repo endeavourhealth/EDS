@@ -1701,7 +1701,7 @@ public class Main {
 
 		try {
 
-			File tempDirLast = new File(tempDir, "last");
+			/*File tempDirLast = new File(tempDir, "last");
 			if (!tempDirLast.exists()) {
 				if (!tempDirLast.mkdirs()) {
 					throw new Exception("Failed to create temp dir " + tempDirLast);
@@ -1714,7 +1714,7 @@ public class Main {
 					throw new Exception("Failed to create temp dir " + tempDirEmpty);
 				}
 				tempDirEmpty.mkdirs();
-			}
+			}*/
 
 			UUID serviceUuid = UUID.fromString(serviceId);
 			UUID systemUuid = UUID.fromString(systemId);
@@ -1851,9 +1851,23 @@ public class Main {
 
 				LOG.info("Found " + idsInRebulk.size() + " IDs in re-bulk file: " + rebulkFile);
 
-				String tempFile = FilenameUtils.concat(tempDirLast.getAbsolutePath(), fileType + ".csv");
+				//create a replacement file for the exchange the service was disabled
+				String replacementDisabledFile = null;
+				List<String> disabledFiles = hmExchangeFiles.get(exchangeDisabled);
+				for (String s: disabledFiles) {
+					String disabledFileType = findFileType(s);
+					if (disabledFileType.equals(fileType)) {
 
-				FileWriter fileWriter = new FileWriter(tempFile);
+						replacementDisabledFile = FilenameUtils.concat(tempDir, s);
+
+						File dir = new File(FilenameUtils.getPath(replacementDisabledFile));
+						if (!dir.exists()) {
+							dir.mkdirs();
+						}
+					}
+				}
+
+				FileWriter fileWriter = new FileWriter(replacementDisabledFile);
 				BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
 				CSVPrinter csvPrinter = new CSVPrinter(bufferedWriter, EmisCsvToFhirTransformer.CSV_FORMAT.withHeader(headers));
 				csvPrinter.flush();
@@ -1981,23 +1995,64 @@ public class Main {
 				csvPrinter.flush();
 				csvPrinter.close();
 
-				tempFilesCreated.add(tempFile);
-				LOG.info("Created replacement file " + tempFile);
+				tempFilesCreated.add(replacementDisabledFile);
+				LOG.info("Created replacement file " + replacementDisabledFile);
 
 				//also create a version of the CSV file with just the header and nothing else in
-				String emptyTempFile = FilenameUtils.concat(tempDirEmpty.getAbsolutePath(), fileType + ".csv");
+				for (int i=indexDisabled+1; i<indexRebulked; i++) {
+					Exchange ex = exchanges.get(i);
+					List<String> exchangeFiles = hmExchangeFiles.get(ex);
+					for (String s: exchangeFiles) {
+						String exchangeFileType = findFileType(s);
+						if (exchangeFileType.equals(fileType)) {
 
-				fileWriter = new FileWriter(emptyTempFile);
-				bufferedWriter = new BufferedWriter(fileWriter);
-				csvPrinter = new CSVPrinter(bufferedWriter, EmisCsvToFhirTransformer.CSV_FORMAT.withHeader(headers));
-				csvPrinter.flush();
-				csvPrinter.close();
+							String emptyTempFile = FilenameUtils.concat(tempDir, s);
 
-				tempFilesCreated.add(emptyTempFile);
-				LOG.info("Created empty file " + emptyTempFile);
+							File dir = new File(FilenameUtils.getPath(emptyTempFile));
+							if (!dir.exists()) {
+								dir.mkdirs();
+							}
+
+							fileWriter = new FileWriter(emptyTempFile);
+							bufferedWriter = new BufferedWriter(fileWriter);
+							csvPrinter = new CSVPrinter(bufferedWriter, EmisCsvToFhirTransformer.CSV_FORMAT.withHeader(headers));
+							csvPrinter.flush();
+							csvPrinter.close();
+
+							tempFilesCreated.add(emptyTempFile);
+							LOG.info("Created empty file " + emptyTempFile);
+						}
+					}
+				}
 			}
 
-			continueOrQuit();
+			//we also need to copy the restored sharing agreement file to replace all the period it was disabled
+			String rebulkedSharingAgreementFile = null;
+			for (String s: rebulkFiles) {
+				String fileType = findFileType(s);
+				if (fileType.equals("Agreements_SharingOrganisation")) {
+					rebulkedSharingAgreementFile = s;
+				}
+			}
+
+			for (int i=indexDisabled; i<indexRebulked; i++) {
+				Exchange ex = exchanges.get(i);
+				List<String> exchangeFiles = hmExchangeFiles.get(ex);
+				for (String s: exchangeFiles) {
+					String exchangeFileType = findFileType(s);
+					if (exchangeFileType.equals("Agreements_SharingOrganisation")) {
+
+						String replacementFile = FilenameUtils.concat(tempDir, s);
+
+						InputStream inputStream = FileHelper.readFileFromSharedStorage(rebulkedSharingAgreementFile);
+						Files.copy(inputStream, new File(replacementFile).toPath());
+						inputStream.close();
+					}
+				}
+			}
+
+
+			/*continueOrQuit();
 
 			//back up every file where the service was disabled
 			for (int i=indexDisabled; i<indexRebulked; i++) {
@@ -2113,7 +2168,7 @@ public class Main {
 				if (f.exists()) {
 					f.delete();
 				}
-			}
+			}*/
 
 		} catch (Exception ex) {
 			LOG.error("", ex);
