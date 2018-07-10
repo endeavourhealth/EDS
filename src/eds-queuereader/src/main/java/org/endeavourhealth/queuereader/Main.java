@@ -1741,8 +1741,10 @@ public class Main {
 
 			//find the files for each exchange
 			Map<Exchange, List<String>> hmExchangeFiles = new HashMap<>();
+			Map<Exchange, List<String>> hmExchangeFilesWithoutStoragePrefix = new HashMap<>();
 			for (Exchange exchange: exchanges) {
 
+				//populate a map of the files with the shared storage prefix
 				String exchangeBody = exchange.getBody();
 				String[] files = exchangeBody.split("\n");
 				for (int i=0; i<files.length; i++) {
@@ -1752,6 +1754,15 @@ public class Main {
 				}
 				List<String> fileList = Lists.newArrayList(files);
 				hmExchangeFiles.put(exchange, fileList);
+
+				//populate a map of the same files without the prefix
+				files = exchangeBody.split("\n");
+				for (int i=0; i<files.length; i++) {
+					String file = files[i].trim();
+					files[i] = file;
+				}
+				fileList = Lists.newArrayList(files);
+				hmExchangeFilesWithoutStoragePrefix.put(exchange, fileList);
 			}
 			LOG.info("Cached files for each exchange");
 
@@ -1853,20 +1864,18 @@ public class Main {
 
 				//create a replacement file for the exchange the service was disabled
 				String replacementDisabledFile = null;
-				List<String> disabledFiles = hmExchangeFiles.get(exchangeDisabled);
+				List<String> disabledFiles = hmExchangeFilesWithoutStoragePrefix.get(exchangeDisabled);
 				for (String s: disabledFiles) {
 					String disabledFileType = findFileType(s);
 					if (disabledFileType.equals(fileType)) {
 
 						replacementDisabledFile = FilenameUtils.concat(tempDir, s);
 
-						File dir = new File(FilenameUtils.getPath(replacementDisabledFile));
-						LOG.info("Checking " + dir + " exists " + dir.exists());
+						File dir = new File(replacementDisabledFile).getParentFile();
 						if (!dir.exists()) {
 							if (!dir.mkdirs()) {
 								throw new Exception("Failed to create directory " + dir);
 							}
-							LOG.info("NOW Checking " + dir + " exists " + dir.exists());
 						}
 
 						tempFilesCreated.add(s);
@@ -2007,14 +2016,14 @@ public class Main {
 				//also create a version of the CSV file with just the header and nothing else in
 				for (int i=indexDisabled+1; i<indexRebulked; i++) {
 					Exchange ex = exchanges.get(i);
-					List<String> exchangeFiles = hmExchangeFiles.get(ex);
+					List<String> exchangeFiles = hmExchangeFilesWithoutStoragePrefix.get(ex);
 					for (String s: exchangeFiles) {
 						String exchangeFileType = findFileType(s);
 						if (exchangeFileType.equals(fileType)) {
 
 							String emptyTempFile = FilenameUtils.concat(tempDir, s);
 
-							File dir = new File(FilenameUtils.getPath(emptyTempFile));
+							File dir = new File(emptyTempFile).getParentFile();
 							if (!dir.exists()) {
 								if (!dir.mkdirs()) {
 									throw new Exception("Failed to create directory " + dir);
@@ -2045,7 +2054,7 @@ public class Main {
 
 			for (int i=indexDisabled; i<indexRebulked; i++) {
 				Exchange ex = exchanges.get(i);
-				List<String> exchangeFiles = hmExchangeFiles.get(ex);
+				List<String> exchangeFiles = hmExchangeFilesWithoutStoragePrefix.get(ex);
 				for (String s: exchangeFiles) {
 					String exchangeFileType = findFileType(s);
 					if (exchangeFileType.equals("Agreements_SharingOrganisation")) {
