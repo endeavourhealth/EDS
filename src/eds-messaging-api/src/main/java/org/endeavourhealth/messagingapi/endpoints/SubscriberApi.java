@@ -7,10 +7,13 @@ import io.swagger.annotations.ApiParam;
 import org.apache.http.HttpStatus;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.common.config.ConfigManager;
+import org.endeavourhealth.common.security.SecurityUtils;
 import org.endeavourhealth.core.database.dal.DalProvider;
 import org.endeavourhealth.core.database.dal.admin.LibraryRepositoryHelper;
 import org.endeavourhealth.core.database.dal.admin.ServiceDalI;
 import org.endeavourhealth.core.database.dal.admin.SystemHelper;
+import org.endeavourhealth.core.database.dal.audit.SubscriberApiAuditDalI;
+import org.endeavourhealth.core.database.dal.audit.models.SubscriberApiAudit;
 import org.endeavourhealth.core.database.dal.eds.PatientLinkDalI;
 import org.endeavourhealth.core.database.dal.eds.PatientSearchDalI;
 import org.endeavourhealth.core.database.dal.eds.models.PatientSearch;
@@ -40,11 +43,14 @@ public class SubscriberApi {
     private static final String FRAILTY_TERM = "Potentially frail";
     private static final String SUBSCRIBER_SYSTEM_NAME = "JSON_API"; //"Subscriber_Rest_API";
 
+    private static SubscriberApiAuditDalI apiAuditDal = DalProvider.factorySubscriberAuditApiDal();
+
     @GET
     @Path("/{resourceType}")
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed({"eds_read", "eds_read_only", "eds_read_write"})
     public Response getResources(@Context HttpServletRequest request,
+                                 @Context SecurityContext sc,
                                 @Context UriInfo uriInfo,
                                 @ApiParam(value="Resource Type") @PathParam(value = "resourceType") String resourceTypeRequested,
                                 @ApiParam(value="ODS Code") @HeaderParam(value = "OdsCode") String headerOdsCode,
@@ -52,108 +58,150 @@ public class SubscriberApi {
 
         LOG.info("Subscriber API request received with resource type = [" + resourceTypeRequested + "] and ODS code [" + headerOdsCode + "]");
 
-        MultivaluedMap<String, String> params = uriInfo.getQueryParameters();
+        SubscriberApiAudit audit = createAudit(request, sc, uriInfo);
 
-        String subjectNhsNumber = null;
-        String code = null;
-
-        for (String key: params.keySet()) {
-            String value = params.getFirst(key);
-            LOG.info("Request parameter [" + key + "] = [" + value + "]");
-
-            if (key.equalsIgnoreCase("subject")) {
-                subjectNhsNumber = value;
-
-            } else if (key.equalsIgnoreCase("code")) {
-                code = value;
-
-            } else {
-                return createErrorResponse(OperationOutcome.IssueType.STRUCTURE, "Invalid parameter '" + key + "'");
-            }
-        }
-
-        //validate all expected parameters and headers are there
-        if (Strings.isNullOrEmpty(resourceTypeRequested)) {
-            return createErrorResponse(OperationOutcome.IssueType.REQUIRED, "Missing resource type requested from URL path");
-        }
-
-        if (Strings.isNullOrEmpty(headerOdsCode)) {
-            return createErrorResponse(OperationOutcome.IssueType.REQUIRED, "Missing OdsCode from request headers");
-        }
-
-        if (Strings.isNullOrEmpty(subjectNhsNumber)) {
-            return createErrorResponse(OperationOutcome.IssueType.REQUIRED, "Missing subject parameter");
-        }
-
-        if (Strings.isNullOrEmpty(code)) {
-            return createErrorResponse(OperationOutcome.IssueType.REQUIRED, "Missing code parameter");
-        }
-
-        //validate the parameters match what we're expecting
-        if (!resourceTypeRequested.equalsIgnoreCase("flag")) {
-            return createErrorResponse(OperationOutcome.IssueType.NOTSUPPORTED, "Only flag FHIR resource types can be requested");
-        }
-
-        if (!code.equalsIgnoreCase(FRAILTY_CODE)) {
-            return createErrorResponse(OperationOutcome.IssueType.NOTSUPPORTED, "Only code " + FRAILTY_CODE + " can be requested");
-        }
-
-        //find the service the request is being made for
-        ServiceDalI serviceDalI = DalProvider.factoryServiceDal();
-        org.endeavourhealth.core.database.dal.admin.models.Service requestingService = serviceDalI.getByLocalIdentifier(headerOdsCode);
-        if (requestingService == null) {
-            return createErrorResponse(OperationOutcome.IssueType.VALUE, "Unknown requesting ODS code '" + headerOdsCode + "'");
-        }
-        UUID serviceId = requestingService.getId();
-
-        UUID systemId = SystemHelper.findSystemUuid(requestingService, SUBSCRIBER_SYSTEM_NAME);
-        if (systemId == null) {
-            return createErrorResponse(OperationOutcome.IssueType.VALUE, "Requesting organisation not configured for " + SUBSCRIBER_SYSTEM_NAME);
-        }
-
-        //ensure the service is a valid subscriber to at least one protocol
-        List<Protocol> protocols = getProtocolsForSubscriberService(serviceId.toString(), systemId.toString());
-        if (protocols.isEmpty()) {
-            return createErrorResponse(OperationOutcome.IssueType.VALUE, "No valid subscriber agreement found for requesting ODS code '" + headerOdsCode + "' and system " + SUBSCRIBER_SYSTEM_NAME);
-        }
-
-        //the below only works properly if there's a single protocol. To support multiple protocols,
-        //it'll need to calculate the frailty against EACH subscriber DB and then return the one with the highest risk
-        if (protocols.size() > 1) {
-            return createErrorResponse(OperationOutcome.IssueType.PROCESSING, "No support for multiple subscriber protocols in frailty calculation");
-        }
-
-        Protocol protocol = protocols.get(0);
-        Set<String> publisherServiceIds = getPublisherServiceIdsForProtocol(protocol);
-
-        //find patient
-        PatientSearchDalI patientSearchDal = DalProvider.factoryPatientSearchDal();
-        List<PatientSearch> results = patientSearchDal.searchByNhsNumber(publisherServiceIds, subjectNhsNumber);
-
-        if (results.isEmpty()) {
-            return createErrorResponse(OperationOutcome.IssueType.NOTFOUND, "No patient record could be found for NHS number " + subjectNhsNumber);
-        }
-
-        //calculate the flag (note that returning a NULL flag is a valid result if the patient isn't frail)
         try {
+            String subjectNhsNumber = null;
+            String code = null;
 
-            String enterpriseEndpoint = getEnterpriseEndpoint(requestingService, systemId);
-            if (!Strings.isNullOrEmpty(enterpriseEndpoint)) {
-                LOG.debug("Calculating frailty using " + enterpriseEndpoint);
-                return calculateFrailtyFlagLive(enterpriseEndpoint, results, params, headerAuthToken);
+            MultivaluedMap<String, String> params = uriInfo.getQueryParameters();
+            for (String key : params.keySet()) {
+                String value = params.getFirst(key);
+                LOG.info("Request parameter [" + key + "] = [" + value + "]");
 
-            } else {
-                LOG.debug("Using DUMMY mechanism to calculate Frailty");
-                return calculateFrailtyFlagDummy(results, params);
+                if (key.equalsIgnoreCase("subject")) {
+                    subjectNhsNumber = value;
+
+                } else if (key.equalsIgnoreCase("code")) {
+                    code = value;
+
+                } else {
+                    return createErrorResponse(OperationOutcome.IssueType.STRUCTURE, "Invalid parameter '" + key + "'", audit);
+                }
             }
 
-        } catch (Exception ex) {
-            //any exception from calculating the flag should be returned as a processing error
-            String err = ex.getMessage();
-            return createErrorResponse(OperationOutcome.IssueType.PROCESSING, err);
+            //validate all expected parameters and headers are there
+            if (Strings.isNullOrEmpty(resourceTypeRequested)) {
+                return createErrorResponse(OperationOutcome.IssueType.REQUIRED, "Missing resource type requested from URL path", audit);
+            }
+
+            if (Strings.isNullOrEmpty(headerOdsCode)) {
+                return createErrorResponse(OperationOutcome.IssueType.REQUIRED, "Missing OdsCode from request headers", audit);
+            }
+
+            if (Strings.isNullOrEmpty(subjectNhsNumber)) {
+                return createErrorResponse(OperationOutcome.IssueType.REQUIRED, "Missing subject parameter", audit);
+            }
+
+            if (Strings.isNullOrEmpty(code)) {
+                return createErrorResponse(OperationOutcome.IssueType.REQUIRED, "Missing code parameter", audit);
+            }
+
+            //validate the parameters match what we're expecting
+            if (!resourceTypeRequested.equalsIgnoreCase("flag")) {
+                return createErrorResponse(OperationOutcome.IssueType.NOTSUPPORTED, "Only flag FHIR resource types can be requested", audit);
+            }
+
+            if (!code.equalsIgnoreCase(FRAILTY_CODE)) {
+                return createErrorResponse(OperationOutcome.IssueType.NOTSUPPORTED, "Only code " + FRAILTY_CODE + " can be requested", audit);
+            }
+
+            //find the service the request is being made for
+            ServiceDalI serviceDalI = DalProvider.factoryServiceDal();
+            org.endeavourhealth.core.database.dal.admin.models.Service requestingService = serviceDalI.getByLocalIdentifier(headerOdsCode);
+            if (requestingService == null) {
+                return createErrorResponse(OperationOutcome.IssueType.VALUE, "Unknown requesting ODS code '" + headerOdsCode + "'", audit);
+            }
+            UUID serviceId = requestingService.getId();
+
+            UUID systemId = SystemHelper.findSystemUuid(requestingService, SUBSCRIBER_SYSTEM_NAME);
+            if (systemId == null) {
+                return createErrorResponse(OperationOutcome.IssueType.VALUE, "Requesting organisation not configured for " + SUBSCRIBER_SYSTEM_NAME, audit);
+            }
+
+            //ensure the service is a valid subscriber to at least one protocol
+            List<Protocol> protocols = getProtocolsForSubscriberService(serviceId.toString(), systemId.toString());
+            if (protocols.isEmpty()) {
+                return createErrorResponse(OperationOutcome.IssueType.VALUE, "No valid subscriber agreement found for requesting ODS code '" + headerOdsCode + "' and system " + SUBSCRIBER_SYSTEM_NAME, audit);
+            }
+
+            //the below only works properly if there's a single protocol. To support multiple protocols,
+            //it'll need to calculate the frailty against EACH subscriber DB and then return the one with the highest risk
+            if (protocols.size() > 1) {
+                return createErrorResponse(OperationOutcome.IssueType.PROCESSING, "No support for multiple subscriber protocols in frailty calculation", audit);
+            }
+
+            Protocol protocol = protocols.get(0);
+            Set<String> publisherServiceIds = getPublisherServiceIdsForProtocol(protocol);
+
+            //find patient
+            PatientSearchDalI patientSearchDal = DalProvider.factoryPatientSearchDal();
+            List<PatientSearch> results = patientSearchDal.searchByNhsNumber(publisherServiceIds, subjectNhsNumber);
+
+            if (results.isEmpty()) {
+                return createErrorResponse(OperationOutcome.IssueType.NOTFOUND, "No patient record could be found for NHS number " + subjectNhsNumber, audit);
+            }
+
+            //calculate the flag (note that returning a NULL flag is a valid result if the patient isn't frail)
+            try {
+
+                String enterpriseEndpoint = getEnterpriseEndpoint(requestingService, systemId);
+                if (!Strings.isNullOrEmpty(enterpriseEndpoint)) {
+                    LOG.debug("Calculating frailty using " + enterpriseEndpoint);
+                    return calculateFrailtyFlagLive(enterpriseEndpoint, results, params, headerAuthToken, audit);
+
+                } else {
+                    LOG.debug("Using DUMMY mechanism to calculate Frailty");
+                    return calculateFrailtyFlagDummy(results, params, audit);
+                }
+
+            } catch (Exception ex) {
+                //any exception from calculating the flag should be returned as a processing error
+                String err = ex.getMessage();
+                return createErrorResponse(OperationOutcome.IssueType.PROCESSING, err, audit);
+            }
+
+        } finally {
+            //save the audit, but if there's an error saving, catch and log here, so the API response isn't affected
+            try {
+                apiAuditDal.saveSubscriberApiAudit(audit);
+            } catch (Exception ex) {
+                LOG.error("Error saving audit", ex);
+            }
         }
     }
 
+    private static SubscriberApiAudit createAudit(HttpServletRequest request, SecurityContext sc, UriInfo uriInfo) {
+        SubscriberApiAudit audit = new SubscriberApiAudit();
+        audit.setTimestmp(new Date());
+
+        UUID userUuid = SecurityUtils.getCurrentUserId(sc);
+        audit.setUserUuid(userUuid);
+
+        String requestPath = uriInfo.getRequestUri().toString();
+        audit.setRequestPath(requestPath);
+
+        String requestAddress = request.getRemoteAddr();
+        audit.setRemoteAddress(requestAddress);
+
+        List<String> headerTokens = new ArrayList<>();
+        java.util.Enumeration<String> headers = request.getHeaderNames();
+        while (headers.hasMoreElements()) {
+            String header = headers.nextElement();
+
+            //ignore these two headers, as they don't give us anything useful
+            if (header.equals("host")
+                    || header.equals("authorization")) {
+                continue;
+            }
+            String headerVal = request.getHeader(header);
+            headerTokens.add(header + "=" + headerVal);
+        }
+        String headerStr = String.join(";", headerTokens);
+        audit.setRequestHeaders(headerStr);
+
+        return audit;
+    }
 
     private String getEnterpriseEndpoint(org.endeavourhealth.core.database.dal.admin.models.Service service, UUID systemId) throws Exception {
 
@@ -167,7 +215,7 @@ public class SubscriberApi {
         return null;
     }
 
-    private Response createSuccessResponse(Flag frailtyFlag, MultivaluedMap<String, String> requestParams) throws Exception {
+    private Response createSuccessResponse(Flag frailtyFlag, MultivaluedMap<String, String> requestParams, SubscriberApiAudit audit) throws Exception {
 
         //the response object is a parameters resource, containing the
         //original request parameters, plus a special parameter containing the
@@ -189,13 +237,17 @@ public class SubscriberApi {
         String json = FhirSerializationHelper.serializeResource(parameters);
         LOG.info("Returning success response: " + json);
 
-        return Response
+        Response response = Response
                 .ok()
                 .entity(json)
                 .build();
+
+        updateAudit(audit, response);
+
+        return response;
     }
 
-    private Response createErrorResponse(OperationOutcome.IssueType issueType, String message) throws Exception {
+    private Response createErrorResponse(OperationOutcome.IssueType issueType, String message, SubscriberApiAudit audit) throws Exception {
 
         OperationOutcome outcome = new OperationOutcome();
         OperationOutcome.OperationOutcomeIssueComponent issue = outcome.addIssue();
@@ -209,14 +261,28 @@ public class SubscriberApi {
         String json = FhirSerializationHelper.serializeResource(outcome);
         LOG.info("Returning error response: " + json);
 
-        return Response
+        Response response = Response
                 .status(Response.Status.BAD_REQUEST)
                 .entity(json)
                 .build();
+
+        updateAudit(audit, response);
+
+        return response;
+    }
+
+    private void updateAudit(SubscriberApiAudit audit, Response response) {
+        int statusCode = response.getStatus();
+        audit.setResponseCode(new Integer(statusCode));
+
+        if (response.hasEntity()) {
+            String json = (String)response.getEntity();
+            audit.setResponseBody(json);
+        }
     }
 
 
-    private Response calculateFrailtyFlagLive(String enterpriseEndpoint, List<PatientSearch> results, MultivaluedMap<String, String> requestParams, String headerAuthToken) throws Exception {
+    private Response calculateFrailtyFlagLive(String enterpriseEndpoint, List<PatientSearch> results, MultivaluedMap<String, String> requestParams, String headerAuthToken, SubscriberApiAudit audit) throws Exception {
 
         //find a single pseudo ID for the patient IDs found from the NHS number
         String matchedPseudoId = null;
@@ -232,7 +298,7 @@ public class SubscriberApi {
                     matchedPseudoId = pseudoId;
 
                 } else if (!matchedPseudoId.equals(pseudoId)) {
-                    return createErrorResponse(OperationOutcome.IssueType.PROCESSING, "Multiple IDs found for patients with NHS number " + result.getNhsNumber());
+                    return createErrorResponse(OperationOutcome.IssueType.PROCESSING, "Multiple IDs found for patients with NHS number " + result.getNhsNumber(), audit);
                 }
             }
         }
@@ -256,7 +322,7 @@ public class SubscriberApi {
             if (response.getStatus() == HttpStatus.SC_OK) {
                 String calculatedFrailty = response.readEntity(String.class);
                 if (calculatedFrailty.equalsIgnoreCase("NONE")) {
-                    return createSuccessResponse(null, requestParams);
+                    return createSuccessResponse(null, requestParams, audit);
 
                 } else if (calculatedFrailty.equalsIgnoreCase("MILD")
                         || calculatedFrailty.equalsIgnoreCase("MODERATE")
@@ -271,7 +337,7 @@ public class SubscriberApi {
                     Flag flag = new Flag();
                     flag.setStatus(Flag.FlagStatus.ACTIVE);
                     flag.setCode(codeableConcept);
-                    return createSuccessResponse(null, requestParams);
+                    return createSuccessResponse(null, requestParams, audit);
 
                 } else {
                     throw new Exception("Unsupported frailty calculated value [" + calculatedFrailty + "]");
@@ -279,12 +345,12 @@ public class SubscriberApi {
 
             } else {
                 String msg = "HTTP error " + response.getStatus() + " calling into frailty calculation service";
-                return createErrorResponse(OperationOutcome.IssueType.PROCESSING, msg);
+                return createErrorResponse(OperationOutcome.IssueType.PROCESSING, msg, audit);
             }
 
         } catch (Exception ex) {
             String msg = ex.getMessage();
-            return createErrorResponse(OperationOutcome.IssueType.EXCEPTION, msg);
+            return createErrorResponse(OperationOutcome.IssueType.EXCEPTION, msg, audit);
         }
 
     }
@@ -297,7 +363,7 @@ public class SubscriberApi {
      * Note: this returns a Flag from the DSTU2 FHIR library, but this is compatible with STU3,
      * so receivers of this flag shouldn't need to worry about it being DSTU2.
      */
-    private Response calculateFrailtyFlagDummy(List<PatientSearch> searchResults, MultivaluedMap<String, String> requestParams) throws Exception {
+    private Response calculateFrailtyFlagDummy(List<PatientSearch> searchResults, MultivaluedMap<String, String> requestParams, SubscriberApiAudit audit) throws Exception {
 
         //ensure all results, map to the same PERSON
         PatientLinkDalI patientLinkDal = DalProvider.factoryPatientLinkDal();
@@ -313,7 +379,7 @@ public class SubscriberApi {
 
             } else {
                 //this shouldn't happen while we continue to match patient-person on NHS number, but if that changes, this will be relevant
-                return createErrorResponse(OperationOutcome.IssueType.PROCESSING, "Multiple person records exist for patients with NHS number " + result.getNhsNumber());
+                return createErrorResponse(OperationOutcome.IssueType.PROCESSING, "Multiple person records exist for patients with NHS number " + result.getNhsNumber(), audit);
             }
         }
 
@@ -332,7 +398,7 @@ public class SubscriberApi {
 
         } else if (result == 2) {
             //not frail
-            return createSuccessResponse(null, requestParams);
+            return createSuccessResponse(null, requestParams, audit);
 
         } else {
             //potentially frail
@@ -346,7 +412,7 @@ public class SubscriberApi {
             flag.setStatus(Flag.FlagStatus.ACTIVE);
             flag.setCode(codeableConcept);
 
-            return createSuccessResponse(flag, requestParams);
+            return createSuccessResponse(flag, requestParams, audit);
         }
     }
 

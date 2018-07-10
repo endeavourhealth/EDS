@@ -1861,10 +1861,12 @@ public class Main {
 						replacementDisabledFile = FilenameUtils.concat(tempDir, s);
 
 						File dir = new File(FilenameUtils.getPath(replacementDisabledFile));
+						LOG.info("Checking " + dir + " exists " + dir.exists());
 						if (!dir.exists()) {
 							if (!dir.mkdirs()) {
 								throw new Exception("Failed to create directory " + dir);
 							}
+							LOG.info("NOW Checking " + dir + " exists " + dir.exists());
 						}
 
 						tempFilesCreated.add(s);
