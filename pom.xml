@@ -14,7 +14,7 @@
         <frontend-maven-plugin.version>1.4</frontend-maven-plugin.version>
 
         <eds-transform.version>1.841-SNAPSHOT</eds-transform.version>
-        <eds-core.version>1.246-SNAPSHOT</eds-core.version>
+        <eds-core.version>1.248-SNAPSHOT</eds-core.version>
         <eds-fhir.version>1.65-SNAPSHOT</eds-fhir.version>
         <eds-utility.version>1.30-SNAPSHOT</eds-utility.version>
         <eds-api.version>1.13-SNAPSHOT</eds-api.version>

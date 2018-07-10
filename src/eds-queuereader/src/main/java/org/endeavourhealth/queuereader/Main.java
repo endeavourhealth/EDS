@@ -1862,7 +1862,9 @@ public class Main {
 
 						File dir = new File(FilenameUtils.getPath(replacementDisabledFile));
 						if (!dir.exists()) {
-							dir.mkdirs();
+							if (!dir.mkdirs()) {
+								throw new Exception("Failed to create directory " + dir);
+							}
 						}
 
 						tempFilesCreated.add(s);
@@ -2012,7 +2014,9 @@ public class Main {
 
 							File dir = new File(FilenameUtils.getPath(emptyTempFile));
 							if (!dir.exists()) {
-								dir.mkdirs();
+								if (!dir.mkdirs()) {
+									throw new Exception("Failed to create directory " + dir);
+								}
 							}
 
 							fileWriter = new FileWriter(emptyTempFile);
