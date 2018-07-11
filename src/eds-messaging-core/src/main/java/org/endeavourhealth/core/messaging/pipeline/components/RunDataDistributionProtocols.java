@@ -259,7 +259,7 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 		Patient fhirPatient = null;
 		if (checkCurrentVersionOnly) {
 			//when checking patient resources at other services, it makes sense to only count them if they're non-deleted
-			resourceRepository.getCurrentVersionAsResource(serviceId, ResourceType.Patient, patientUuid.toString());
+			fhirPatient = (Patient)resourceRepository.getCurrentVersionAsResource(serviceId, ResourceType.Patient, patientUuid.toString());
 
 		} else {
 			//when checking the patient resource at our own service, check using the most recent non-deleted instance
@@ -298,7 +298,7 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 					LOG.debug("      No admin organisation was found with services for " + odsCode);
 				}
 			} else {
-				LOG.debug("      ODS Code could not be found for " + careProviderReference);
+				LOG.debug("      ODS Code could not be found for " + careProviderReference.getReference());
 			}
 		}
 
