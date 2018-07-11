@@ -106,6 +106,19 @@ public class SubscriberApi {
                 return createErrorResponse(OperationOutcome.IssueType.NOTSUPPORTED, "Only code " + FRAILTY_CODE + " can be requested", audit);
             }
 
+            //TODO - need to validate that the keycloak user (from the token) is permitted to make requests on behalf of the ODS code being requested for
+            //Until the above is solved, this will ensure they only use appropriate ODS codes
+            if (!headerOdsCode.equalsIgnoreCase("111TESTORG")
+                    && !headerOdsCode.equalsIgnoreCase("YGMX6")
+                    && !headerOdsCode.equalsIgnoreCase("ADASTRA")
+                    && !headerOdsCode.equalsIgnoreCase("NTP")
+                    && !headerOdsCode.equalsIgnoreCase("NKB")
+                    && !headerOdsCode.equalsIgnoreCase("8HD62")
+                    && !headerOdsCode.equalsIgnoreCase("RRU")
+                    && !headerOdsCode.equalsIgnoreCase("NLO")) {
+                return createErrorResponse(OperationOutcome.IssueType.BUSINESSRULE, "You are not permitted to request for ODS code " + headerOdsCode, audit);
+            }
+
             //find the service the request is being made for
             ServiceDalI serviceDalI = DalProvider.factoryServiceDal();
             org.endeavourhealth.core.database.dal.admin.models.Service requestingService = serviceDalI.getByLocalIdentifier(headerOdsCode);

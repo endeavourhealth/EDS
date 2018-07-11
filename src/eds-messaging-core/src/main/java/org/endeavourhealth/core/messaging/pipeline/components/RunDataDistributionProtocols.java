@@ -179,16 +179,17 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 
 		//find the list of service UUIDs that define the cohort
 		Set<String> serviceIdsDefiningCohort = getServiceIdsForServiceDefinedProtocol(protocol);
+		LOG.debug("Found " + serviceIdsDefiningCohort.size() + " services that define the cohort");
 
 		//if we've not activated any service contracts yet, this will be empty, which is fine
 		if (serviceIdsDefiningCohort.isEmpty()) {
-			//LOG.debug("FAIL - No services defining cohort found for batch ID " + batchId);
+			LOG.debug("FAIL - No services defining cohort found for batch ID " + batchId);
 			return false;
 		}
 
 		//check to see if our service is one of the defining service contracts, in which case it automatically passes
 		if (serviceIdsDefiningCohort.contains(serviceId.toString())) {
-			//LOG.debug("PASS - This service is in defining list for batch ID " + batchId);
+			LOG.debug("PASS - This service (" + serviceId + ") is in defining list for batch ID " + batchId);
 			return true;
 		}
 
@@ -203,19 +204,12 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 
 		//if there's no patient ID, then this is admin resources batch, so return true so it goes through unfiltered
 		if (patientUuid == null) {
-			//LOG.trace("No patient ID for batch " + batchId + " in exchange " + exchangeId + " so passing protocol " + protocolId + " check");
-			//LOG.debug("PASS - No patient ID found for batch ID " + batchId);
+			LOG.debug("PASS - No patient ID found for batch ID " + batchId);
 			return true;
 		}
 
 		try {
-			boolean ret = checkPatientIsRegisteredAtServices(serviceId, patientUuid, serviceIdsDefiningCohort);
-			/*if (ret) {
-				LOG.debug("PASS - Patient " + patientUuid + " matches protocol for batch ID " + batchId);
-			} else {
-				LOG.debug("FAIL - Patient " + patientUuid + " doesn't match protocol for batch ID " + batchId + " over " + serviceIdsDefiningCohort.size() + " services");
-			}*/
-			return ret;
+			return checkPatientIsRegisteredAtServices(serviceId, patientUuid, serviceIdsDefiningCohort);
 
 		} catch (Exception ex) {
 			throw new PipelineException("Failed to retrieve patient or organisation resources for patient ID " + patientUuid, ex);
@@ -225,7 +219,9 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 	private boolean checkPatientIsRegisteredAtServices(UUID serviceId, UUID patientUuid, Set<String> serviceIdsDefiningCohort) throws Exception {
 
 		//first check the patient resource at our own service
+		LOG.debug("Checking patient " + patientUuid + " at service " + serviceId);
 		if (checkPatientIsRegisteredAtServices(patientUuid, serviceId, false, serviceIdsDefiningCohort)) {
+			LOG.debug("PASS - Patient " + patientUuid + " is registered at one of defining services");
 			return true;
 		}
 
@@ -233,6 +229,7 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 		//that match to the same person record
 		String personId = patientLInkDal.getPersonId(patientUuid.toString());
 		Map<String, String> patientAndServiceIds = patientLInkDal.getPatientAndServiceIdsForPerson(personId);
+		LOG.debug("Found " + patientAndServiceIds.size() + " patient IDs for person ID " + personId);
 
 		for (String otherPatientId: patientAndServiceIds.keySet()) {
 
@@ -246,11 +243,14 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 				continue;
 			}
 
+			LOG.debug("Checking patient " + otherPatientId + " at service " + otherServiceUuidStr);
 			if (checkPatientIsRegisteredAtServices(otherPatientUuid, otherServiceUuid, true, serviceIdsDefiningCohort)) {
+				LOG.debug("PASS - Patient " + otherPatientId + " is registered at one of defining services");
 				return true;
 			}
 		}
 
+		LOG.debug("FAIL - Patient " + patientUuid + " is NOT registered at one of defining services");
 		return false;
 	}
 
@@ -266,9 +266,13 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 			fhirPatient = (Patient)retrieveNonDeletedResource(serviceId, ResourceType.Patient, patientUuid);
 		}
 
-		if (fhirPatient == null
-				|| !fhirPatient.hasCareProvider()) {
-			//LOG.debug("      Patient " + patientUuid + " has no care provider, returning false");
+		if (fhirPatient == null) {
+			LOG.debug("      Patient " + patientUuid + " is null, returning false");
+			return false;
+		}
+
+		if (!fhirPatient.hasCareProvider()) {
+			LOG.debug("      Patient " + patientUuid + " has no care provider, returning false");
 			return false;
 		}
 
@@ -280,21 +284,21 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 				Organisation organisation = organisationRepository.getByNationalId(odsCode);
 				if (organisation != null
 						&& organisation.getServices() != null) {
-					//LOG.debug("      Admin organisation was found with services " + organisation.getServices().size());
+					LOG.debug("      Admin organisation was found with services " + organisation.getServices().size());
 
 					for (UUID orgServiceId : organisation.getServices().keySet()) {
 						String orgServiceIdStr = orgServiceId.toString();
-						//LOG.debug("      Org admin service ID = " + orgServiceIdStr);
+						LOG.debug("      Org admin service ID = " + orgServiceIdStr);
 						if (serviceIdsDefiningCohort.contains(orgServiceIdStr)) {
-							//LOG.debug("      Matches sevice list");
+							LOG.debug("      Matches sevice list");
 							return true;
 						}
 					}
 				} else {
-					//LOG.debug("      No admin organisation was found with services");
+					LOG.debug("      No admin organisation was found with services for " + odsCode);
 				}
 			} else {
-				//LOG.debug("      Organisation could not be found");
+				LOG.debug("      ODS Code could not be found for " + careProviderReference);
 			}
 		}
 

@@ -8,6 +8,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.common.config.ConfigManager;
+import org.endeavourhealth.common.fhir.PeriodHelper;
 import org.endeavourhealth.common.utility.FileHelper;
 import org.endeavourhealth.common.utility.SlackHelper;
 import org.endeavourhealth.core.configuration.ConfigDeserialiser;
@@ -35,6 +36,9 @@ import org.endeavourhealth.transform.common.*;
 import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
 import org.endeavourhealth.transform.emis.csv.helpers.EmisCsvHelper;
 import org.hibernate.internal.SessionImpl;
+import org.hl7.fhir.instance.model.EpisodeOfCare;
+import org.hl7.fhir.instance.model.Patient;
+import org.hl7.fhir.instance.model.ResourceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -1960,12 +1964,28 @@ public class Main {
 								continue;
 							}
 
-							//the rebulk won't contain any data for patients that are now too old to appear
-							//in the extract, so any patient ID in the original files but not in the rebulk
-							//can be treated like this and any data for them can be skipped
+							//the rebulk won't contain any data for patients that are now too old (i.e. deducted or deceased > 2 yrs ago),
+							//so any patient ID in the original files but not in the rebulk can be treated like this and any data for them can be skipped
 							if (fileType.equals("Admin_Patient")) {
-								patientGuidsDeletedOrTooOld.add(patientGuid);
-								continue;
+
+								//retrieve the Patient and EpisodeOfCare resource for the patient so we can confirm they are deceased or deducted
+								ResourceDalI resourceDal = DalProvider.factoryResourceDal();
+								UUID patientUuid = IdHelper.getEdsResourceId(serviceUuid, ResourceType.Patient, patientGuid);
+
+								Patient patientResource = (Patient)resourceDal.getCurrentVersionAsResource(serviceUuid, ResourceType.Patient, patientUuid.toString());
+								if (patientResource.hasDeceased()) {
+									patientGuidsDeletedOrTooOld.add(patientGuid);
+									continue;
+								}
+
+								UUID episodeUuid = IdHelper.getEdsResourceId(serviceUuid, ResourceType.EpisodeOfCare, patientGuid); //we use the patient GUID for the episode too
+								EpisodeOfCare episodeResource = (EpisodeOfCare)resourceDal.getCurrentVersionAsResource(serviceUuid, ResourceType.EpisodeOfCare, episodeUuid.toString());
+								if (episodeResource.hasPeriod()
+										&& !PeriodHelper.isActive(episodeResource.getPeriod())) {
+
+									patientGuidsDeletedOrTooOld.add(patientGuid);
+									continue;
+								}
 							}
 
 							//create a new CSV record, carrying over the GUIDs from the original but marking as deleted
