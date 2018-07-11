@@ -13,6 +13,7 @@ DROP TABLE IF EXISTS transform_warning_type;
 DROP TABLE IF EXISTS transform_warning;
 DROP TABLE IF EXISTS exchange_general_error;
 DROP TABLE IF EXISTS exchange_protocol_error;
+DROP TABLE IF EXISTS subscriber_api_audit;
 
 CREATE TABLE exchange
 (
@@ -186,5 +187,13 @@ create table exchange_protocol_error (
 
 CREATE INDEX ix_exchange_protocol_error_inserted_at ON exchange_protocol_error (inserted_at);
 
-
-
+CREATE TABLE subscriber_api_audit (
+  timestmp datetime(3) not null,
+  user_uuid char(36) comment 'keycloak user UUID of the requester',
+  remote_address varchar(50) comment 'IP address of the requester',
+  request_path varchar(1024) comment 'the URL of the requested service, including parameters',
+  request_headers varchar(255) comment 'any non-keycloak headers in the request',
+  response_code int comment 'HTTP response code we sent back',
+  response_body varchar(2048) comment 'response sent back'
+) ROW_FORMAT=COMPRESSED
+  KEY_BLOCK_SIZE=8;

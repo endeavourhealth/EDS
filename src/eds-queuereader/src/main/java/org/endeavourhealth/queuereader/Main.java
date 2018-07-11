@@ -8,7 +8,6 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.common.config.ConfigManager;
-import org.endeavourhealth.common.fhir.ReferenceHelper;
 import org.endeavourhealth.common.utility.FileHelper;
 import org.endeavourhealth.common.utility.SlackHelper;
 import org.endeavourhealth.core.configuration.ConfigDeserialiser;
@@ -25,7 +24,6 @@ import org.endeavourhealth.core.database.dal.ehr.ResourceDalI;
 import org.endeavourhealth.core.database.dal.ehr.models.ResourceWrapper;
 import org.endeavourhealth.core.database.rdbms.ConnectionManager;
 import org.endeavourhealth.core.exceptions.TransformException;
-import org.endeavourhealth.core.fhirStorage.FhirSerializationHelper;
 import org.endeavourhealth.core.fhirStorage.FhirStorageService;
 import org.endeavourhealth.core.fhirStorage.JsonServiceInterfaceEndpoint;
 import org.endeavourhealth.core.messaging.pipeline.components.PostMessageToExchange;
@@ -34,22 +32,9 @@ import org.endeavourhealth.core.xml.TransformErrorSerializer;
 import org.endeavourhealth.core.xml.transformError.TransformError;
 import org.endeavourhealth.transform.barts.BartsCsvToFhirTransformer;
 import org.endeavourhealth.transform.common.*;
-import org.endeavourhealth.transform.common.resourceBuilders.ConditionBuilder;
-import org.endeavourhealth.transform.common.resourceBuilders.ContainedListBuilder;
-import org.endeavourhealth.transform.common.resourceBuilders.EncounterBuilder;
 import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
 import org.endeavourhealth.transform.emis.csv.helpers.EmisCsvHelper;
-import org.endeavourhealth.transform.emis.csv.helpers.ReferenceList;
-import org.endeavourhealth.transform.emis.csv.schema.careRecord.Consultation;
-import org.endeavourhealth.transform.emis.csv.schema.careRecord.Diary;
-import org.endeavourhealth.transform.emis.csv.schema.careRecord.Problem;
-import org.endeavourhealth.transform.emis.csv.schema.prescribing.DrugRecord;
-import org.endeavourhealth.transform.emis.csv.schema.prescribing.IssueRecord;
-import org.endeavourhealth.transform.emis.csv.transforms.careRecord.ObservationPreTransformer;
-import org.endeavourhealth.transform.emis.csv.transforms.careRecord.ObservationTransformer;
-import org.endeavourhealth.transform.enterprise.transforms.PatientTransformer;
 import org.hibernate.internal.SessionImpl;
-import org.hl7.fhir.instance.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -57,10 +42,12 @@ import javax.persistence.EntityManager;
 import java.io.*;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.Statement;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.Date;
 
 public class Main {
 	private static final Logger LOG = LoggerFactory.getLogger(Main.class);
@@ -115,7 +102,14 @@ public class Main {
 			System.exit(0);
 		}
 
-		if (args.length >= 1
+		/*if (args.length >= 1
+				&& args[0].equalsIgnoreCase("FixBartsOrgs")) {
+			String serviceId = args[1];
+			fixBartsOrgs(serviceId);
+			System.exit(0);
+		}*/
+
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("TestPreparedStatements")) {
 			String url = args[1];
 			String user = args[2];
@@ -123,7 +117,7 @@ public class Main {
 			String serviceId = args[4];
 			testPreparedStatements(url, user, pass, serviceId);
 			System.exit(0);
-		}
+		}*/
 
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("ApplyEmisAdminCaches")) {
@@ -134,14 +128,6 @@ public class Main {
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("FixSubscribers")) {
 			fixSubscriberDbs();
-			System.exit(0);
-		}
-
-		if (args.length >= 1
-				&& args[0].equalsIgnoreCase("linkDistributor")) {
-			String configName = args[1];
-			Integer batchSize = Integer.parseInt(args[2]);
-			populteLinkDistributorTable(configName, batchSize);
 			System.exit(0);
 		}
 
@@ -307,7 +293,73 @@ public class Main {
 		LOG.info("EDS Queue reader running (kill file location " + TransformConfig.instance().getKillFileLocation() + ")");
 	}
 
-	private static void testPreparedStatements(String url, String user, String pass, String serviceId) {
+	/*private static void fixBartsOrgs(String serviceId) {
+		try {
+			LOG.info("Fixing Barts orgs");
+
+			ResourceDalI dal = DalProvider.factoryResourceDal();
+			List<ResourceWrapper> wrappers = dal.getResourcesByService(UUID.fromString(serviceId), ResourceType.Organization.toString());
+			LOG.debug("Found " + wrappers.size() + " resources");
+			int done = 0;
+			int fixed = 0;
+			for (ResourceWrapper wrapper: wrappers) {
+
+				if (!wrapper.isDeleted()) {
+
+					List<ResourceWrapper> history = dal.getResourceHistory(UUID.fromString(serviceId), wrapper.getResourceType(), wrapper.getResourceId());
+					ResourceWrapper mostRecent = history.get(0);
+
+					String json = mostRecent.getResourceData();
+					Organization org = (Organization)FhirSerializationHelper.deserializeResource(json);
+
+					String odsCode = IdentifierHelper.findOdsCode(org);
+					if (Strings.isNullOrEmpty(odsCode)
+							&& org.hasIdentifier()) {
+
+						boolean hasBeenFixed = false;
+
+						for (Identifier identifier: org.getIdentifier()) {
+							if (identifier.getSystem().equals(FhirIdentifierUri.IDENTIFIER_SYSTEM_ODS_CODE)
+									&& identifier.hasId()) {
+
+								odsCode = identifier.getId();
+								identifier.setValue(odsCode);
+								identifier.setId(null);
+								hasBeenFixed = true;
+							}
+						}
+
+						if (hasBeenFixed) {
+							String newJson = FhirSerializationHelper.serializeResource(org);
+							mostRecent.setResourceData(newJson);
+
+							LOG.debug("Fixed Organization " + org.getId());
+							*//*LOG.debug(json);
+							LOG.debug(newJson);*//*
+
+							saveResourceWrapper(UUID.fromString(serviceId), mostRecent);
+
+							fixed ++;
+						}
+					}
+
+				}
+
+				done ++;
+				if (done % 100 == 0) {
+					LOG.debug("Done " + done + ", Fixed " + fixed);
+				}
+			}
+			LOG.debug("Done " + done + ", Fixed " + fixed);
+
+			LOG.info("Finished Barts orgs");
+
+		} catch (Throwable t) {
+			LOG.error("", t);
+		}
+	}*/
+
+	/*private static void testPreparedStatements(String url, String user, String pass, String serviceId) {
 		try {
 			LOG.info("Testing Prepared Statements");
 			LOG.info("Url: " + url);
@@ -358,9 +410,9 @@ public class Main {
 		} catch (Exception ex) {
 			LOG.error("", ex);
 		}
-	}
+	}*/
 
-	private static void fixEncounters(String table) {
+	/*private static void fixEncounters(String table) {
 		LOG.info("Fixing encounters from " + table);
 
 		try {
@@ -658,7 +710,7 @@ public class Main {
 						saveResourceWrapper(serviceId, currentState);
 					}
 
-					/*Encounter encounter = (Encounter)FhirSerializationHelper.deserializeResource(currentState.getResourceData());
+					*//*Encounter encounter = (Encounter)FhirSerializationHelper.deserializeResource(currentState.getResourceData());
 					EncounterBuilder encounterBuilder = new EncounterBuilder(encounter);
 					ContainedListBuilder containedListBuilder = new ContainedListBuilder(encounterBuilder);
 
@@ -668,7 +720,7 @@ public class Main {
 					currentState.setResourceData(newJson);
 					currentState.setResourceChecksum(FhirStorageService.generateChecksum(newJson));
 
-					saveResourceWrapper(serviceId, currentState);*/
+					saveResourceWrapper(serviceId, currentState);*//*
 				}
 
 
@@ -752,7 +804,7 @@ public class Main {
 						saveResourceWrapper(serviceId, currentState);
 					}
 
-					/*Resource resource = FhirSerializationHelper.deserializeResource(currentState.getResourceData());
+					*//*Resource resource = FhirSerializationHelper.deserializeResource(currentState.getResourceData());
 
 					boolean changed = false;
 
@@ -781,7 +833,7 @@ public class Main {
 						currentState.setResourceChecksum(FhirStorageService.generateChecksum(newJson));
 
 						saveResourceWrapper(serviceId, currentState);
-					}*/
+					}*//*
 				}
 
 				LOG.info("Found " + newProblemChildren.size() + " Problems to fix");
@@ -838,7 +890,7 @@ public class Main {
 						saveResourceWrapper(serviceId, currentState);
 					}
 
-					/*Condition condition = (Condition)FhirSerializationHelper.deserializeResource(currentState.getResourceData());
+					*//*Condition condition = (Condition)FhirSerializationHelper.deserializeResource(currentState.getResourceData());
 					ConditionBuilder conditionBuilder = new ConditionBuilder(condition);
 					ContainedListBuilder containedListBuilder = new ContainedListBuilder(conditionBuilder);
 
@@ -848,7 +900,7 @@ public class Main {
 					currentState.setResourceData(newJson);
 					currentState.setResourceChecksum(FhirStorageService.generateChecksum(newJson));
 
-					saveResourceWrapper(serviceId, currentState);*/
+					saveResourceWrapper(serviceId, currentState);*//*
 				}
 
 				//mark as done
@@ -862,7 +914,7 @@ public class Main {
 				entityManager.getTransaction().commit();
 			}
 
-			/**
+			*//**
 			 * For each practice:
 			 Go through all files processed since 14 March
 			 Cache all links as above
@@ -882,15 +934,21 @@ public class Main {
 			 Retrieve version prior to 14 March
 			 Update current version with old references plus new ones
 
-			 */
+			 *//*
 
 			LOG.info("Finished Fixing encounters from " + table);
 		} catch (Throwable t) {
 			LOG.error("", t);
 		}
-	}
+	}*/
 
 	private static void saveResourceWrapper(UUID serviceId, ResourceWrapper wrapper) throws Exception {
+
+		if (wrapper.getResourceData() != null) {
+			long checksum = FhirStorageService.generateChecksum(wrapper.getResourceData());
+			wrapper.setResourceChecksum(new Long(checksum));
+		}
+
 		EntityManager entityManager = ConnectionManager.getEhrEntityManager(serviceId);
 		SessionImpl session = (SessionImpl)entityManager.getDelegate();
 		Connection connection = session.connection();
@@ -902,14 +960,21 @@ public class Main {
 		json = json.replace("'", "''");
 		json = json.replace("\\", "\\\\");
 
+		String patientId = "";
+		if (wrapper.getPatientId() != null) {
+			patientId = wrapper.getPatientId().toString();
+		}
+
 		String updateSql = "UPDATE resource_current"
 						+ " SET resource_data = '" + json + "',"
 						+ " resource_checksum = " + wrapper.getResourceChecksum()
 						+ " WHERE service_id = '" + wrapper.getServiceId() + "'"
-						+ " AND patient_id = '" + wrapper.getPatientId() + "'"
+						+ " AND patient_id = '" + patientId + "'"
 						+ " AND resource_type = '" + wrapper.getResourceType() + "'"
 						+ " AND resource_id = '" + wrapper.getResourceId() + "'";
 		statement.executeUpdate(updateSql);
+
+		//LOG.debug(updateSql);
 
 		//SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:SS");
 		//String createdAtStr = sdf.format(wrapper.getCreatedAt());
@@ -922,6 +987,8 @@ public class Main {
 				//+ " AND created_at = '" + createdAtStr + "'"
 				+ " AND version = '" + wrapper.getVersion() + "'";
 		statement.executeUpdate(updateSql);
+
+		//LOG.debug(updateSql);
 
 		entityManager.getTransaction().commit();
 	}
@@ -1634,7 +1701,7 @@ public class Main {
 
 		try {
 
-			File tempDirLast = new File(tempDir, "last");
+			/*File tempDirLast = new File(tempDir, "last");
 			if (!tempDirLast.exists()) {
 				if (!tempDirLast.mkdirs()) {
 					throw new Exception("Failed to create temp dir " + tempDirLast);
@@ -1647,7 +1714,7 @@ public class Main {
 					throw new Exception("Failed to create temp dir " + tempDirEmpty);
 				}
 				tempDirEmpty.mkdirs();
-			}
+			}*/
 
 			UUID serviceUuid = UUID.fromString(serviceId);
 			UUID systemUuid = UUID.fromString(systemId);
@@ -1674,8 +1741,10 @@ public class Main {
 
 			//find the files for each exchange
 			Map<Exchange, List<String>> hmExchangeFiles = new HashMap<>();
+			Map<Exchange, List<String>> hmExchangeFilesWithoutStoragePrefix = new HashMap<>();
 			for (Exchange exchange: exchanges) {
 
+				//populate a map of the files with the shared storage prefix
 				String exchangeBody = exchange.getBody();
 				String[] files = exchangeBody.split("\n");
 				for (int i=0; i<files.length; i++) {
@@ -1685,6 +1754,15 @@ public class Main {
 				}
 				List<String> fileList = Lists.newArrayList(files);
 				hmExchangeFiles.put(exchange, fileList);
+
+				//populate a map of the same files without the prefix
+				files = exchangeBody.split("\n");
+				for (int i=0; i<files.length; i++) {
+					String file = files[i].trim();
+					files[i] = file;
+				}
+				fileList = Lists.newArrayList(files);
+				hmExchangeFilesWithoutStoragePrefix.put(exchange, fileList);
 			}
 			LOG.info("Cached files for each exchange");
 
@@ -1784,9 +1862,28 @@ public class Main {
 
 				LOG.info("Found " + idsInRebulk.size() + " IDs in re-bulk file: " + rebulkFile);
 
-				String tempFile = FilenameUtils.concat(tempDirLast.getAbsolutePath(), fileType + ".csv");
+				//create a replacement file for the exchange the service was disabled
+				String replacementDisabledFile = null;
+				List<String> disabledFiles = hmExchangeFilesWithoutStoragePrefix.get(exchangeDisabled);
+				for (String s: disabledFiles) {
+					String disabledFileType = findFileType(s);
+					if (disabledFileType.equals(fileType)) {
 
-				FileWriter fileWriter = new FileWriter(tempFile);
+						replacementDisabledFile = FilenameUtils.concat(tempDir, s);
+
+						File dir = new File(replacementDisabledFile).getParentFile();
+						if (!dir.exists()) {
+							if (!dir.mkdirs()) {
+								throw new Exception("Failed to create directory " + dir);
+							}
+						}
+
+						tempFilesCreated.add(s);
+						LOG.info("Created replacement file " + replacementDisabledFile);
+					}
+				}
+
+				FileWriter fileWriter = new FileWriter(replacementDisabledFile);
 				BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
 				CSVPrinter csvPrinter = new CSVPrinter(bufferedWriter, EmisCsvToFhirTransformer.CSV_FORMAT.withHeader(headers));
 				csvPrinter.flush();
@@ -1914,23 +2011,78 @@ public class Main {
 				csvPrinter.flush();
 				csvPrinter.close();
 
-				tempFilesCreated.add(tempFile);
-				LOG.info("Created replacement file " + tempFile);
+
 
 				//also create a version of the CSV file with just the header and nothing else in
-				String emptyTempFile = FilenameUtils.concat(tempDirEmpty.getAbsolutePath(), fileType + ".csv");
+				for (int i=indexDisabled+1; i<indexRebulked; i++) {
+					Exchange ex = exchanges.get(i);
+					List<String> exchangeFiles = hmExchangeFilesWithoutStoragePrefix.get(ex);
+					for (String s: exchangeFiles) {
+						String exchangeFileType = findFileType(s);
+						if (exchangeFileType.equals(fileType)) {
 
-				fileWriter = new FileWriter(emptyTempFile);
-				bufferedWriter = new BufferedWriter(fileWriter);
-				csvPrinter = new CSVPrinter(bufferedWriter, EmisCsvToFhirTransformer.CSV_FORMAT.withHeader(headers));
-				csvPrinter.flush();
-				csvPrinter.close();
+							String emptyTempFile = FilenameUtils.concat(tempDir, s);
 
-				tempFilesCreated.add(emptyTempFile);
-				LOG.info("Created empty file " + emptyTempFile);
+							File dir = new File(emptyTempFile).getParentFile();
+							if (!dir.exists()) {
+								if (!dir.mkdirs()) {
+									throw new Exception("Failed to create directory " + dir);
+								}
+							}
+
+							fileWriter = new FileWriter(emptyTempFile);
+							bufferedWriter = new BufferedWriter(fileWriter);
+							csvPrinter = new CSVPrinter(bufferedWriter, EmisCsvToFhirTransformer.CSV_FORMAT.withHeader(headers));
+							csvPrinter.flush();
+							csvPrinter.close();
+
+							tempFilesCreated.add(s);
+							LOG.info("Created empty file " + emptyTempFile);
+						}
+					}
+				}
 			}
 
-			continueOrQuit();
+			//we also need to copy the restored sharing agreement file to replace all the period it was disabled
+			String rebulkedSharingAgreementFile = null;
+			for (String s: rebulkFiles) {
+				String fileType = findFileType(s);
+				if (fileType.equals("Agreements_SharingOrganisation")) {
+					rebulkedSharingAgreementFile = s;
+				}
+			}
+
+			for (int i=indexDisabled; i<indexRebulked; i++) {
+				Exchange ex = exchanges.get(i);
+				List<String> exchangeFiles = hmExchangeFilesWithoutStoragePrefix.get(ex);
+				for (String s: exchangeFiles) {
+					String exchangeFileType = findFileType(s);
+					if (exchangeFileType.equals("Agreements_SharingOrganisation")) {
+
+						String replacementFile = FilenameUtils.concat(tempDir, s);
+
+						InputStream inputStream = FileHelper.readFileFromSharedStorage(rebulkedSharingAgreementFile);
+						Files.copy(inputStream, new File(replacementFile).toPath());
+						inputStream.close();
+
+						tempFilesCreated.add(s);
+					}
+				}
+			}
+
+			//create a script to copy the files into S3
+			List<String> copyScript = new ArrayList<>();
+			copyScript.add("#!/bin/bash");
+			copyScript.add("");
+			for (String s: tempFilesCreated) {
+				String localFile = FilenameUtils.concat(tempDir, s);
+				copyScript.add("sudo aws s3 cp " + localFile + " s3://discoverysftplanding/endeavour/" + s);
+			}
+
+			String scriptFile = FilenameUtils.concat(tempDir, "copy.sh");
+			FileUtils.writeLines(new File(scriptFile), copyScript);
+
+			/*continueOrQuit();
 
 			//back up every file where the service was disabled
 			for (int i=indexDisabled; i<indexRebulked; i++) {
@@ -2046,7 +2198,7 @@ public class Main {
 				if (f.exists()) {
 					f.delete();
 				}
-			}
+			}*/
 
 		} catch (Exception ex) {
 			LOG.error("", ex);
@@ -6185,18 +6337,6 @@ public class Main {
 				parser.close();
 				printer.close();
 			}
-		}
-	}
-
-	private static void populteLinkDistributorTable(String configName, Integer batchSize) {
-		LOG.info("Populating link distributor table from link_distributor_populator");
-
-		try {
-
-			PatientTransformer.processPatientsInBatches(configName, batchSize);
-
-		} catch (Throwable t) {
-			LOG.error("", t);
 		}
 	}
 }
