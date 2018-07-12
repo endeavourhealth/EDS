@@ -1602,7 +1602,7 @@ public class Main {
 
 					Exchange exchange = exchangeDal.getExchange(firstExchangeId);
 					String body = exchange.getBody();
-					String[] files = ExchangeHelper.parseExchangeBodyIntoFileList(body);
+					String[] files = ExchangeHelper.parseExchangeBodyOldWay(body);
 					if (files.length == 0) {
 						LOG.info("    No files in exchange " + firstExchangeId + " so skipping");
 						continue;
@@ -1750,19 +1750,14 @@ public class Main {
 
 				//populate a map of the files with the shared storage prefix
 				String exchangeBody = exchange.getBody();
-				String[] files = exchangeBody.split("\n");
-				for (int i=0; i<files.length; i++) {
-					String file = files[i].trim();
-					String filePath = FilenameUtils.concat(sharedStoragePath, file);
-					files[i] = filePath;
-				}
+				String[] files = ExchangeHelper.parseExchangeBodyOldWay(exchangeBody);
 				List<String> fileList = Lists.newArrayList(files);
 				hmExchangeFiles.put(exchange, fileList);
 
 				//populate a map of the same files without the prefix
-				files = exchangeBody.split("\n");
+				files = ExchangeHelper.parseExchangeBodyOldWay(exchangeBody);
 				for (int i=0; i<files.length; i++) {
-					String file = files[i].trim();
+					String file = files[i].substring(sharedStoragePath.length() + 1);
 					files[i] = file;
 				}
 				fileList = Lists.newArrayList(files);
