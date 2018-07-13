@@ -3,6 +3,7 @@ package org.endeavourhealth.queuereader;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
+import com.google.gson.JsonSyntaxException;
 import org.apache.commons.csv.*;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
@@ -10,6 +11,8 @@ import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.common.fhir.PeriodHelper;
 import org.endeavourhealth.common.utility.FileHelper;
+import org.endeavourhealth.common.utility.FileInfo;
+import org.endeavourhealth.common.utility.JsonSerializer;
 import org.endeavourhealth.common.utility.SlackHelper;
 import org.endeavourhealth.core.configuration.ConfigDeserialiser;
 import org.endeavourhealth.core.configuration.PostMessageToExchangeConfig;
@@ -100,9 +103,10 @@ public class Main {
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("CreateBartsSubset")) {
 			String sourceDirPath = args[1];
-			String destDirPath = args[2];
-			String samplePatientsFile = args[3];
-			createBartsSubset(sourceDirPath, destDirPath, samplePatientsFile);
+			UUID serviceUuid = UUID.fromString(args[2]);
+			UUID systemUuid = UUID.fromString(args[3]);
+			String samplePatientsFile = args[4];
+			createBartsSubset(sourceDirPath, serviceUuid, systemUuid, samplePatientsFile);
 			System.exit(0);
 		}
 
@@ -132,6 +136,13 @@ public class Main {
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("FixSubscribers")) {
 			fixSubscriberDbs();
+			System.exit(0);
+		}
+
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("ConvertExchangeBody")) {
+			String systemId = args[1];
+			convertExchangeBody(UUID.fromString(systemId));
 			System.exit(0);
 		}
 
@@ -295,6 +306,87 @@ public class Main {
 		// Begin consume
 		rabbitHandler.start();
 		LOG.info("EDS Queue reader running (kill file location " + TransformConfig.instance().getKillFileLocation() + ")");
+	}
+
+	private static void convertExchangeBody(UUID systemUuid) {
+		try {
+			LOG.info("Converting exchange bodies for system " + systemUuid);
+
+			ServiceDalI serviceDal = DalProvider.factoryServiceDal();
+			ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
+
+			List<Service> services = serviceDal.getAll();
+			for (Service service: services) {
+
+				List<Exchange> exchanges = exchangeDal.getExchangesByService(service.getId(), systemUuid, Integer.MAX_VALUE);
+				if (exchanges.isEmpty()) {
+					continue;
+				}
+
+				LOG.debug("doing " + service.getName() + " with " + exchanges.size() + " exchanges");
+
+				for (Exchange exchange: exchanges) {
+
+					String exchangeBody = exchange.getBody();
+					try {
+						//already done
+						ExchangePayloadFile[] files = JsonSerializer.deserialize(exchangeBody, ExchangePayloadFile[].class);
+						continue;
+					} catch (JsonSyntaxException ex) {
+						//if the JSON can't be parsed, then it'll be the old format of body that isn't JSON
+					}
+
+					List<ExchangePayloadFile> newFiles = new ArrayList<>();
+
+					String[] files = ExchangeHelper.parseExchangeBodyOldWay(exchangeBody);
+					for (String file: files) {
+						ExchangePayloadFile fileObj = new ExchangePayloadFile();
+						fileObj.setPath(file);
+
+						//size
+						String filePath = FilenameUtils.concat(TransformConfig.instance().getSharedStoragePath(), file);
+						List<FileInfo> fileInfos = FileHelper.listFilesInSharedStorageWithInfo(filePath);
+						for (FileInfo info: fileInfos) {
+							if (info.getFilePath().equals(filePath)) {
+								long size = info.getSize();
+								fileObj.setSize(new Long(size));
+							}
+						}
+
+						//type
+						if (systemUuid.toString().equalsIgnoreCase("991a9068-01d3-4ff2-86ed-249bd0541fb3")) {
+							//emis
+							String name = FilenameUtils.getName(file);
+							String[] toks = name.split("_");
+
+							String first = toks[1];
+							String second = toks[2];
+							fileObj.setType(first + "_" + second);
+
+						} else if (systemUuid.toString().equalsIgnoreCase("e517fa69-348a-45e9-a113-d9b59ad13095")) {
+							//cerner
+							String name = FilenameUtils.getName(file);
+							String type = BartsCsvToFhirTransformer.identifyFileType(name);
+							fileObj.setType(type);
+
+						} else {
+							throw new Exception("Unknown system ID " + systemUuid);
+						}
+
+						newFiles.add(fileObj);
+					}
+
+					String json = JsonSerializer.serialize(newFiles);
+					exchange.setBody(json);
+
+					exchangeDal.save(exchange);
+				}
+			}
+
+			LOG.info("Finished Converting exchange bodies for system " + systemUuid);
+		} catch (Exception ex) {
+			LOG.error("", ex);
+		}
 	}
 
 	/*private static void fixBartsOrgs(String serviceId) {
@@ -1073,7 +1165,7 @@ public class Main {
 		}
 	}*/
 
-	private static void createBartsSubset(String sourceDirPath, String destDirPath, String samplePatientsFile) {
+	private static void createBartsSubset(String sourceDir, UUID serviceUuid, UUID systemUuid, String samplePatientsFile) {
 		LOG.info("Creating Barts Subset");
 
 		try {
@@ -1090,14 +1182,7 @@ public class Main {
 				personIds.add(line);
 			}
 
-			File sourceDir = new File(sourceDirPath);
-			File destDir = new File(destDirPath);
-
-			if (!destDir.exists()) {
-				destDir.mkdirs();
-			}
-
-			createBartsSubsetForFile(sourceDir, destDir, personIds);
+			createBartsSubsetForFile(sourceDir, serviceUuid, systemUuid, personIds);
 
 			LOG.info("Finished Creating Barts Subset");
 
@@ -1106,7 +1191,7 @@ public class Main {
 		}
 	}
 
-	private static void createBartsSubsetForFile(File sourceDir, File destDir, Set<String> personIds) throws Exception {
+	/*private static void createBartsSubsetForFile(File sourceDir, File destDir, Set<String> personIds) throws Exception {
 
 		for (File sourceFile: sourceDir.listFiles()) {
 
@@ -1217,6 +1302,136 @@ public class Main {
 								String personId = toks[personIdColIndex];
 								if (!Strings.isNullOrEmpty(personId) //always carry over rows with empty person ID, as Cerner won't send the person ID for deletes
 									&& !personIds.contains(personId)) {
+									continue;
+								}
+							}
+						}
+
+						pw.println(line);
+					}
+
+					if (br != null) {
+						br.close();
+					}
+					if (pw != null) {
+						pw.flush();
+						pw.close();
+					}
+
+				} else {
+					//the 2.1 files are going to be a pain to split by patient, so just copy them over
+					LOG.info("Copying 2.1 file " + sourceFile);
+					if (!destFile.exists()) {
+						copyFile(sourceFile, destFile);
+					}
+				}
+			}
+		}
+	}*/
+
+	private static void createBartsSubsetForFile(String sourceDir, UUID serviceUuid, UUID systemUuid, Set<String> personIds) throws Exception {
+
+		ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
+		List<Exchange> exchanges = exchangeDal.getExchangesByService(serviceUuid, systemUuid, Integer.MAX_VALUE);
+
+		for (Exchange exchange: exchanges) {
+
+			List<ExchangePayloadFile> files = ExchangeHelper.parseExchangeBody(exchange.getBody());
+
+			for (ExchangePayloadFile fileObj : files) {
+
+				String sourceFilePath = FilenameUtils.concat(sourceDir, fileObj.getPath());
+				File sourceFile = new File(sourceFilePath);
+
+				String destFilePath = FilenameUtils.concat(TransformConfig.instance().getSharedStoragePath(), fileObj.getPath());
+				File destFile = new File(destFilePath);
+
+				//if the file is empty, we still need the empty file in the filtered directory, so just copy it
+				if (sourceFile.length() == 0) {
+					LOG.info("Copying empty file " + sourceFile);
+					if (!destFile.exists()) {
+						copyFile(sourceFile, destFile);
+					}
+					continue;
+				}
+
+				String fileType = fileObj.getType();
+
+				if (isCerner22File(fileType)) {
+					LOG.info("Checking 2.2 file " + sourceFile);
+
+					if (destFile.exists()) {
+						destFile.delete();
+					}
+
+					FileReader fr = new FileReader(sourceFile);
+					BufferedReader br = new BufferedReader(fr);
+					int lineIndex = -1;
+
+					PrintWriter pw = null;
+					int personIdColIndex = -1;
+					int expectedCols = -1;
+
+					while (true) {
+
+						String line = br.readLine();
+						if (line == null) {
+							break;
+						}
+
+						lineIndex++;
+
+						if (lineIndex == 0) {
+
+							if (fileType.equalsIgnoreCase("FAMILYHISTORY")) {
+								//this file has no headers, so needs hard-coding
+								personIdColIndex = 5;
+
+							} else {
+
+								//check headings for PersonID col
+								String[] toks = line.split("\\|", -1);
+								expectedCols = toks.length;
+
+								for (int i = 0; i < expectedCols; i++) {
+									String col = toks[i];
+									if (col.equalsIgnoreCase("PERSON_ID")
+											|| col.equalsIgnoreCase("#PERSON_ID")) {
+										personIdColIndex = i;
+										break;
+									}
+								}
+
+								//if no person ID, then just copy the entire file
+								if (personIdColIndex == -1) {
+									br.close();
+									br = null;
+
+									LOG.info("   Copying 2.2 file to " + destFile);
+									copyFile(sourceFile, destFile);
+									break;
+
+								} else {
+									LOG.info("   Filtering 2.2 file to " + destFile + ", person ID col at " + personIdColIndex);
+								}
+							}
+
+							PrintWriter fw = new PrintWriter(destFile);
+							BufferedWriter bw = new BufferedWriter(fw);
+							pw = new PrintWriter(bw);
+
+						} else {
+
+							//filter on personID
+							String[] toks = line.split("\\|", -1);
+							if (expectedCols != -1
+									&& toks.length != expectedCols) {
+								throw new Exception("Line " + (lineIndex + 1) + " has " + toks.length + " cols but expecting " + expectedCols);
+
+							} else {
+								String personId = toks[personIdColIndex];
+								if (!Strings.isNullOrEmpty(personId) //always carry over rows with empty person ID, as Cerner won't send the person ID for deletes
+										&& !personIds.contains(personId)) {
 									continue;
 								}
 							}
@@ -1602,7 +1817,7 @@ public class Main {
 
 					Exchange exchange = exchangeDal.getExchange(firstExchangeId);
 					String body = exchange.getBody();
-					String[] files = ExchangeHelper.parseExchangeBodyIntoFileList(body);
+					String[] files = ExchangeHelper.parseExchangeBodyOldWay(body);
 					if (files.length == 0) {
 						LOG.info("    No files in exchange " + firstExchangeId + " so skipping");
 						continue;
@@ -1750,19 +1965,14 @@ public class Main {
 
 				//populate a map of the files with the shared storage prefix
 				String exchangeBody = exchange.getBody();
-				String[] files = exchangeBody.split("\n");
-				for (int i=0; i<files.length; i++) {
-					String file = files[i].trim();
-					String filePath = FilenameUtils.concat(sharedStoragePath, file);
-					files[i] = filePath;
-				}
+				String[] files = ExchangeHelper.parseExchangeBodyOldWay(exchangeBody);
 				List<String> fileList = Lists.newArrayList(files);
 				hmExchangeFiles.put(exchange, fileList);
 
 				//populate a map of the same files without the prefix
-				files = exchangeBody.split("\n");
+				files = ExchangeHelper.parseExchangeBodyOldWay(exchangeBody);
 				for (int i=0; i<files.length; i++) {
-					String file = files[i].trim();
+					String file = files[i].substring(sharedStoragePath.length() + 1);
 					files[i] = file;
 				}
 				fileList = Lists.newArrayList(files);
