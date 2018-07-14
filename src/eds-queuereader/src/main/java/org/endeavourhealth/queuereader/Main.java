@@ -341,20 +341,22 @@ public class Main {
 					String[] files = ExchangeHelper.parseExchangeBodyOldWay(exchangeBody);
 					for (String file: files) {
 						ExchangePayloadFile fileObj = new ExchangePayloadFile();
+
+						String fileWithoutSharedStorage = file.substring(TransformConfig.instance().getSharedStoragePath().length()+1);
 						fileObj.setPath(file);
 
 						//size
-						String filePath = FilenameUtils.concat(TransformConfig.instance().getSharedStoragePath(), file);
-						List<FileInfo> fileInfos = FileHelper.listFilesInSharedStorageWithInfo(filePath);
+						List<FileInfo> fileInfos = FileHelper.listFilesInSharedStorageWithInfo(file);
 						for (FileInfo info: fileInfos) {
-							if (info.getFilePath().equals(filePath)) {
+							if (info.getFilePath().equals(file)) {
 								long size = info.getSize();
 								fileObj.setSize(new Long(size));
 							}
 						}
 
 						//type
-						if (systemUuid.toString().equalsIgnoreCase("991a9068-01d3-4ff2-86ed-249bd0541fb3")) {
+						if (systemUuid.toString().equalsIgnoreCase("991a9068-01d3-4ff2-86ed-249bd0541fb3") //live
+								|| systemUuid.toString().equalsIgnoreCase("55c08fa5-ef1e-4e94-aadc-e3d6adc80774")) { //dev
 							//emis
 							String name = FilenameUtils.getName(file);
 							String[] toks = name.split("_");
