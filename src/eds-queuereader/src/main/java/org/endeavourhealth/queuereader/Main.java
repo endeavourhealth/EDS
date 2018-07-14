@@ -343,7 +343,7 @@ public class Main {
 						ExchangePayloadFile fileObj = new ExchangePayloadFile();
 
 						String fileWithoutSharedStorage = file.substring(TransformConfig.instance().getSharedStoragePath().length()+1);
-						fileObj.setPath(file);
+						fileObj.setPath(fileWithoutSharedStorage);
 
 						//size
 						List<FileInfo> fileInfos = FileHelper.listFilesInSharedStorageWithInfo(file);
