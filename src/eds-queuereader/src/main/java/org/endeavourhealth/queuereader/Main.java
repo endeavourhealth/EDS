@@ -1342,10 +1342,11 @@ public class Main {
 
 			for (ExchangePayloadFile fileObj : files) {
 
-				String sourceFilePath = FilenameUtils.concat(sourceDir, fileObj.getPath());
+				String filePathWithoutSharedStorage = fileObj.getPath().substring(TransformConfig.instance().getSharedStoragePath().length()+1);
+				String sourceFilePath = FilenameUtils.concat(sourceDir, filePathWithoutSharedStorage);
 				File sourceFile = new File(sourceFilePath);
 
-				String destFilePath = FilenameUtils.concat(TransformConfig.instance().getSharedStoragePath(), fileObj.getPath());
+				String destFilePath = fileObj.getPath();
 				File destFile = new File(destFilePath);
 
 				File destDir = destFile.getParentFile();
