@@ -1348,6 +1348,11 @@ public class Main {
 				String destFilePath = FilenameUtils.concat(TransformConfig.instance().getSharedStoragePath(), fileObj.getPath());
 				File destFile = new File(destFilePath);
 
+				File destDir = destFile.getParentFile();
+				if (!destDir.exists()) {
+					destDir.mkdirs();
+				}
+
 				//if the file is empty, we still need the empty file in the filtered directory, so just copy it
 				if (sourceFile.length() == 0) {
 					LOG.info("Copying empty file " + sourceFile);
