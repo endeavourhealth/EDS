@@ -34,7 +34,6 @@ import org.endeavourhealth.core.messaging.pipeline.components.PostMessageToExcha
 import org.endeavourhealth.core.queueing.QueueHelper;
 import org.endeavourhealth.core.xml.TransformErrorSerializer;
 import org.endeavourhealth.core.xml.transformError.TransformError;
-import org.endeavourhealth.transform.barts.BartsCsvToFhirTransformer;
 import org.endeavourhealth.transform.common.*;
 import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
 import org.endeavourhealth.transform.emis.csv.helpers.EmisCsvHelper;
@@ -365,7 +364,7 @@ public class Main {
 							String second = toks[2];
 							fileObj.setType(first + "_" + second);
 
-						} else if (systemUuid.toString().equalsIgnoreCase("e517fa69-348a-45e9-a113-d9b59ad13095")
+/*						} else if (systemUuid.toString().equalsIgnoreCase("e517fa69-348a-45e9-a113-d9b59ad13095")
 							|| systemUuid.toString().equalsIgnoreCase("b0277098-0b6c-4d9d-86ef-5f399fb25f34")) { //dev
 
 							//cerner
@@ -378,7 +377,7 @@ public class Main {
 								fileObj.setType(type);
 							} catch (Exception ex2) {
 								throw new Exception("Failed to parse file name " + name + " on exchange " + exchange.getId());
-							}
+							}*/
 
 						} else {
 							throw new Exception("Unknown system ID " + systemUuid);

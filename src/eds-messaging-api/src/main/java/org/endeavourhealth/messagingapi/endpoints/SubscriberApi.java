@@ -116,7 +116,11 @@ public class SubscriberApi {
 
             //validate that the keycloak user (from the token) is permitted to make requests on behalf of the ODS code being requested for
             Set<String> serviceIds = SecurityUtils.getUserAllowedOrganisationIdsFromSecurityContext(sc);
-            if (!serviceIds.contains(serviceId)) {
+            LOG.debug("Found " + serviceIds + " services IDs from Keycloak and our service ID = " + serviceId.toString());
+            for (String s: serviceIds) {
+                LOG.debug("ServiceId = " + s + " match = " + (s.equals(serviceId.toString())));
+            }
+            if (!serviceIds.contains(serviceId.toString())) {
                 return createErrorResponse(OperationOutcome.IssueType.BUSINESSRULE, "You are not permitted to request for ODS code " + headerOdsCode, audit);
             }
             /*if (!headerOdsCode.equalsIgnoreCase("111TESTORG")
