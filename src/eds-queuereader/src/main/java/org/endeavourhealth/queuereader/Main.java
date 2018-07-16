@@ -374,7 +374,7 @@ public class Main {
 								String type = BartsCsvToFhirTransformer.identifyFileType(name);
 								fileObj.setType(type);
 							} catch (Exception ex2) {
-								throw new Exception("Failed to parse file name " + name);
+								throw new Exception("Failed to parse file name " + name + " on exchange " + exchange.getId());
 							}
 
 						} else {
