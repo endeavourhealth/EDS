@@ -370,6 +370,9 @@ public class Main {
 
 							//cerner
 							String name = FilenameUtils.getName(file);
+							if (Strings.isNullOrEmpty(name)) {
+								continue;
+							}
 							try {
 								String type = BartsCsvToFhirTransformer.identifyFileType(name);
 								fileObj.setType(type);
