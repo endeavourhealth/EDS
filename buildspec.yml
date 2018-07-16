@@ -19,8 +19,8 @@ phases:
       - echo Build completed on `date`
 artifacts:
   files:
-    - src/**/appspec.yml
-    - src/**/aws_scripts/*
+    - appspec.yml
+    - aws_scripts/*
     - src/**/target/*.war
     - src/**/target/*.jar
   discard-paths: yes
