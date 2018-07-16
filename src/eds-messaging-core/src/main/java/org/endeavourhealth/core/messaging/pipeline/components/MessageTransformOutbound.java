@@ -180,6 +180,10 @@ public class MessageTransformOutbound extends PipelineComponent {
 		} else if (software.equals(MessageFormat.VITRUICARE_XML)) {
 			return FhirToVitruCareXmlTransformer.transformFromFhir(serviceId, batchId, filteredResources, endpoint);
 
+		} else if (software.equals(MessageFormat.JSON_API)) {
+			//this is a pull-request message format, so there's no outbound transformation required
+			return null;
+
 		} else {
 			throw new PipelineException("Unsupported outbound software " + software + " for exchange " + exchange.getId());
 		}
