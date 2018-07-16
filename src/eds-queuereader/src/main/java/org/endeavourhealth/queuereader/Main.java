@@ -365,7 +365,9 @@ public class Main {
 							String second = toks[2];
 							fileObj.setType(first + "_" + second);
 
-						} else if (systemUuid.toString().equalsIgnoreCase("e517fa69-348a-45e9-a113-d9b59ad13095")) {
+						} else if (systemUuid.toString().equalsIgnoreCase("e517fa69-348a-45e9-a113-d9b59ad13095")
+							|| systemUuid.toString().equalsIgnoreCase("b0277098-0b6c-4d9d-86ef-5f399fb25f34")) { //dev
+
 							//cerner
 							String name = FilenameUtils.getName(file);
 							String type = BartsCsvToFhirTransformer.identifyFileType(name);
