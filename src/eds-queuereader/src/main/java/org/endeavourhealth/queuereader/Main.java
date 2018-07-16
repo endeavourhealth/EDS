@@ -370,8 +370,12 @@ public class Main {
 
 							//cerner
 							String name = FilenameUtils.getName(file);
-							String type = BartsCsvToFhirTransformer.identifyFileType(name);
-							fileObj.setType(type);
+							try {
+								String type = BartsCsvToFhirTransformer.identifyFileType(name);
+								fileObj.setType(type);
+							} catch (Exception ex2) {
+								throw new Exception("Failed to parse file name " + name);
+							}
 
 						} else {
 							throw new Exception("Unknown system ID " + systemUuid);
