@@ -1,0 +1,2 @@
+rm -f /opt/tomcat/webapps/dds-ui.war
+rm -f /opt/tomcat/webapps/eds-api.war

@@ -3,6 +3,8 @@ os: linux
 files:
   - source: /dds-ui.war
     destination: /opt/tomcat/webapps
+  - source: /eds-api.war
+    destination: /opt/tomcat/webapps
 hooks:
   BeforeInstall:
     - location: cleanup
