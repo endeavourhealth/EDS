@@ -343,6 +343,7 @@ public class SubscriberApi {
 
         Client client = ClientBuilder.newClient();
         WebTarget target = client.target(serverUrl).path(enterprisePath);
+        LOG.debug("Making call to " + target.getUri());
         target = target.queryParam("pseudoId", matchedPseudoId);
 
         try {
