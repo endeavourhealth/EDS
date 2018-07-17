@@ -120,10 +120,9 @@ public class SubscriberApi {
             for (String s: serviceIds) {
                 LOG.debug("ServiceId = " + s + " match = " + (s.equals(serviceId.toString())));
             }*/
-//TODO - restore
-/*            if (!serviceIds.contains(serviceId.toString())) {
+            if (!serviceIds.contains(serviceId.toString())) {
                 return createErrorResponse(OperationOutcome.IssueType.BUSINESSRULE, "You are not permitted to request for ODS code " + headerOdsCode, audit);
-            }*/
+            }
             /*if (!headerOdsCode.equalsIgnoreCase("111TESTORG")
                     && !headerOdsCode.equalsIgnoreCase("YGMX6")
                     && !headerOdsCode.equalsIgnoreCase("ADASTRA")
