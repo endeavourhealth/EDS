@@ -20,7 +20,7 @@
         <eds-api.version>1.13-SNAPSHOT</eds-api.version>
         <eds-cache.version>1.1-SNAPSHOT</eds-cache.version>
         <eds-config.version>1.21-SNAPSHOT</eds-config.version>
-        <eds-security.version>1.8-SNAPSHOT</eds-security.version>
+        <eds-security.version>1.11-SNAPSHOT</eds-security.version>
         <eds-datasharing.version>0.0.4-SNAPSHOT</eds-datasharing.version>
         <discovery-information.version>1.1-SNAPSHOT</discovery-information.version>
 

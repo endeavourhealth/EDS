@@ -27,6 +27,7 @@
     <servlet-mapping>
         <servlet-name>Endeavour Data Service</servlet-name>
         <url-pattern>/api/*</url-pattern>
+        <url-pattern>/machine-api/*</url-pattern>
     </servlet-mapping>
 
     <!--register our Startup class as a servlet listener so we can perform one-time setup-->
@@ -60,6 +61,7 @@
         <web-resource-collection>
             <web-resource-name>api</web-resource-name>
             <url-pattern>/api/*</url-pattern>
+            <url-pattern>/machine-api/*</url-pattern>
         </web-resource-collection>
         <auth-constraint>
             <role-name>eds_service</role-name>

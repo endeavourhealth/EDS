@@ -34,6 +34,7 @@
     <servlet-mapping>
         <servlet-name>Endeavour Data Service</servlet-name>
         <url-pattern>/api/*</url-pattern>
+        <url-pattern>/machine-api/*</url-pattern>
     </servlet-mapping>
 
     <!-- public resources, no auth needed -->
@@ -131,6 +132,7 @@
         <web-resource-collection>
             <web-resource-name>api</web-resource-name>
             <url-pattern>/api/*</url-pattern>
+            <url-pattern>/machine-api/*</url-pattern>
             <http-method-omission>OPTIONS</http-method-omission>
         </web-resource-collection>
         <auth-constraint>

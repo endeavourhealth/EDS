@@ -48,7 +48,7 @@ public class SubscriberApi {
     @GET
     @Path("/{resourceType}")
     @Produces(MediaType.APPLICATION_JSON)
-    @RolesAllowed({"eds_read", "eds_read_only", "eds_read_write"})
+    @RolesAllowed({"dds_api_read_only"})
     public Response getResources(@Context HttpServletRequest request,
                                  @Context SecurityContext sc,
                                 @Context UriInfo uriInfo,
@@ -120,9 +120,10 @@ public class SubscriberApi {
             for (String s: serviceIds) {
                 LOG.debug("ServiceId = " + s + " match = " + (s.equals(serviceId.toString())));
             }*/
-            if (!serviceIds.contains(serviceId.toString())) {
+//TODO - restore
+/*            if (!serviceIds.contains(serviceId.toString())) {
                 return createErrorResponse(OperationOutcome.IssueType.BUSINESSRULE, "You are not permitted to request for ODS code " + headerOdsCode, audit);
-            }
+            }*/
             /*if (!headerOdsCode.equalsIgnoreCase("111TESTORG")
                     && !headerOdsCode.equalsIgnoreCase("YGMX6")
                     && !headerOdsCode.equalsIgnoreCase("ADASTRA")
@@ -168,7 +169,7 @@ public class SubscriberApi {
                 String enterpriseEndpoint = getEnterpriseEndpoint(requestingService, systemId);
                 if (!Strings.isNullOrEmpty(enterpriseEndpoint)) {
                     LOG.debug("Calculating frailty using " + enterpriseEndpoint);
-                    return calculateFrailtyFlagLive(enterpriseEndpoint, results, params, headerAuthToken, audit);
+                    return calculateFrailtyFlagLive(enterpriseEndpoint, results, uriInfo, params, headerAuthToken, audit);
 
                 } else {
                     LOG.debug("Using DUMMY mechanism to calculate Frailty");
@@ -304,7 +305,7 @@ public class SubscriberApi {
     }
 
 
-    private Response calculateFrailtyFlagLive(String enterpriseEndpoint, List<PatientSearch> results, MultivaluedMap<String, String> requestParams, String headerAuthToken, SubscriberApiAudit audit) throws Exception {
+    private Response calculateFrailtyFlagLive(String enterpriseEndpoint, List<PatientSearch> results, UriInfo uriInfo, MultivaluedMap<String, String> requestParams, String headerAuthToken, SubscriberApiAudit audit) throws Exception {
 
         //find a single pseudo ID for the patient IDs found from the NHS number
         String matchedPseudoId = null;
@@ -330,9 +331,19 @@ public class SubscriberApi {
         JsonNode jsonServer = jsonConfig.get("web_server");
         String serverUrl = jsonServer.asText();
 
+        //work out the path we should call on the Enterprise server based on our path
+        //this is only necessary because this endpoint may be called with either realm, so we need
+        //to ensure the down-stream call uses the same realm, since we just pass through the original Keycloak token
+        String enterprisePath = null;
+        String requestPath = uriInfo.getRequestUri().toString();
+        if (requestPath.indexOf("machine-api") > -1) {
+            enterprisePath = "machine-api/cohort/getFrailty";
+        } else {
+            enterprisePath = "api/cohort/getFrailty";
+        }
 
         Client client = ClientBuilder.newClient();
-        WebTarget target = client.target(serverUrl).path("api/cohort/getFrailty");
+        WebTarget target = client.target(serverUrl).path(enterprisePath);
         target = target.queryParam("pseudoId", matchedPseudoId);
 
         try {
@@ -367,6 +378,16 @@ public class SubscriberApi {
 
             } else {
                 String msg = "HTTP error " + response.getStatus() + " calling into frailty calculation service";
+
+                try {
+                    String errResponse = response.readEntity(String.class);
+                    if (!Strings.isNullOrEmpty(errResponse)) {
+                        msg += " (" + errResponse + ")";
+                    }
+                } catch (Exception ex) {
+                    //do nothing
+                }
+
                 return createErrorResponse(OperationOutcome.IssueType.PROCESSING, msg, audit);
             }
 
