@@ -354,6 +354,8 @@ public class SubscriberApi {
 
             if (response.getStatus() == HttpStatus.SC_OK) {
                 String calculatedFrailty = response.readEntity(String.class);
+                LOG.debug("Received response [" + calculatedFrailty + "]");
+
                 if (calculatedFrailty.equalsIgnoreCase("NONE")) {
                     return createSuccessResponse(null, requestParams, audit);
 
@@ -425,6 +427,9 @@ public class SubscriberApi {
                 return createErrorResponse(OperationOutcome.IssueType.PROCESSING, "Multiple person records exist for patients with NHS number " + result.getNhsNumber(), audit);
             }
         }
+
+        //add something to make it clear that the response is a dummy response and not live
+        requestParams.add("comment", "This result is NOT a LIVE calculation");
 
         //there are four potential outcomes, so use the hashcode of the person ID to determine
         //which result should be returned, so it's consistent for NHS numbers
