@@ -363,6 +363,7 @@ public class SubscriberApi {
                         || calculatedFrailty.equalsIgnoreCase("MODERATE")
                         || calculatedFrailty.equalsIgnoreCase("SEVERE")) {
 
+
                     CodeableConcept codeableConcept = new CodeableConcept();
                     Coding coding = codeableConcept.addCoding();
                     coding.setCode(FRAILTY_CODE);
