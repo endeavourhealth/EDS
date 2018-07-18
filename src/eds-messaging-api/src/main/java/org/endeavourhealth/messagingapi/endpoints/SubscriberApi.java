@@ -428,9 +428,6 @@ public class SubscriberApi {
             }
         }
 
-        //add something to make it clear that the response is a dummy response and not live
-        requestParams.add("comment", "This result is NOT a LIVE calculation");
-
         //there are four potential outcomes, so use the hashcode of the person ID to determine
         //which result should be returned, so it's consistent for NHS numbers
         long hashCode = UUID.fromString(personId).hashCode();
