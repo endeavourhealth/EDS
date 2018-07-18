@@ -343,6 +343,7 @@ public class SubscriberApi {
 
         Client client = ClientBuilder.newClient();
         WebTarget target = client.target(serverUrl).path(enterprisePath);
+        LOG.debug("Making call to " + target.getUri());
         target = target.queryParam("pseudoId", matchedPseudoId);
 
         try {
@@ -353,12 +354,15 @@ public class SubscriberApi {
 
             if (response.getStatus() == HttpStatus.SC_OK) {
                 String calculatedFrailty = response.readEntity(String.class);
+                LOG.debug("Received response [" + calculatedFrailty + "]");
+
                 if (calculatedFrailty.equalsIgnoreCase("NONE")) {
                     return createSuccessResponse(null, requestParams, audit);
 
                 } else if (calculatedFrailty.equalsIgnoreCase("MILD")
                         || calculatedFrailty.equalsIgnoreCase("MODERATE")
                         || calculatedFrailty.equalsIgnoreCase("SEVERE")) {
+
 
                     CodeableConcept codeableConcept = new CodeableConcept();
                     Coding coding = codeableConcept.addCoding();
@@ -369,7 +373,8 @@ public class SubscriberApi {
                     Flag flag = new Flag();
                     flag.setStatus(Flag.FlagStatus.ACTIVE);
                     flag.setCode(codeableConcept);
-                    return createSuccessResponse(null, requestParams, audit);
+
+                    return createSuccessResponse(flag, requestParams, audit);
 
                 } else {
                     throw new Exception("Unsupported frailty calculated value [" + calculatedFrailty + "]");
