@@ -372,7 +372,8 @@ public class SubscriberApi {
                     Flag flag = new Flag();
                     flag.setStatus(Flag.FlagStatus.ACTIVE);
                     flag.setCode(codeableConcept);
-                    return createSuccessResponse(null, requestParams, audit);
+
+                    return createSuccessResponse(flag, requestParams, audit);
 
                 } else {
                     throw new Exception("Unsupported frailty calculated value [" + calculatedFrailty + "]");
