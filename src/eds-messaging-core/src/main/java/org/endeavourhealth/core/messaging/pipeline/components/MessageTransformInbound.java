@@ -211,7 +211,7 @@ public class MessageTransformInbound extends PipelineComponent {
 		UUID exchangeId = exchange.getId();
 		String exchangeBody = exchange.getBody();
 
-		TppCsvToFhirTransformer.transform(exchangeId, exchangeBody, serviceId, systemId, currentErrors, batchIds, previousErrors);
+		TppCsvToFhirTransformer.transform(exchangeId, exchangeBody, serviceId, systemId, currentErrors, batchIds);
 	}
 
 
@@ -231,7 +231,7 @@ public class MessageTransformInbound extends PipelineComponent {
 		UUID exchangeId = exchange.getId();
 
 		AdastraXmlToFhirTransformer.transform(exchangeId, xmlPayload, serviceId, systemId,
-				currentErrors, batchIds, previousErrors, messageVersion);
+				currentErrors, batchIds, messageVersion);
 	}
 
 	private void sendSlackAlert(Exchange exchange, String software, UUID serviceId, TransformError currentErrors) {
@@ -428,7 +428,7 @@ public class MessageTransformInbound extends PipelineComponent {
 		UUID exchangeId = exchange.getId();
 
 		EmisCsvToFhirTransformer.transform(exchangeId, exchangeBody, serviceId, systemId, currentErrors,
-									batchIds, previousErrors);
+									batchIds);
 	}
 
 	private void processBartsCsvTransform(Exchange exchange, UUID serviceId, UUID systemId, String version,
@@ -439,7 +439,7 @@ public class MessageTransformInbound extends PipelineComponent {
 		UUID exchangeId = exchange.getId();
 
 		BartsCsvToFhirTransformer.transform(exchangeId, exchangeBody, serviceId, systemId, currentErrors,
-				batchIds, previousErrors, version);
+				batchIds, version);
 	}
 
 	private void processHomertonCsvTransform(Exchange exchange, UUID serviceId, UUID systemId, String version,
@@ -450,7 +450,7 @@ public class MessageTransformInbound extends PipelineComponent {
 		UUID exchangeId = exchange.getId();
 
 		HomertonCsvToFhirTransformer.transform(exchangeId, exchangeBody, serviceId, systemId, currentErrors,
-				batchIds, previousErrors, version);
+				batchIds, version);
 	}
 
 	private void processVisionCsvTransform(Exchange exchange, UUID serviceId, UUID systemId, String version,
@@ -461,7 +461,7 @@ public class MessageTransformInbound extends PipelineComponent {
 		String exchangeBody = exchange.getBody();
 
 		VisionCsvToFhirTransformer.transform(exchangeId, exchangeBody, serviceId, systemId, currentErrors,
-				batchIds, previousErrors, version);
+				batchIds,  version);
 	}
 
 	private void processAdastraCsvTransform(Exchange exchange, UUID serviceId, UUID systemId, String version,
@@ -472,7 +472,7 @@ public class MessageTransformInbound extends PipelineComponent {
 		String exchangeBody = exchange.getBody();
 
 		AdastraCsvToFhirTransformer.transform(exchangeId, exchangeBody, serviceId, systemId, currentErrors,
-				batchIds, previousErrors, version);
+				batchIds,  version);
 	}
 
 	private void processTppXmlTransform(Exchange exchange, UUID serviceId, UUID systemId, String version,
@@ -511,6 +511,6 @@ public class MessageTransformInbound extends PipelineComponent {
 	    String exchangeBody = exchange.getBody();
 
         FhirHl7v2Filer fhirHl7v2Filer = new FhirHl7v2Filer();
-        fhirHl7v2Filer.file(exchangeId, exchangeBody, serviceId, systemId, currentErrors, batchIds, previousErrors);
+        fhirHl7v2Filer.file(exchangeId, exchangeBody, serviceId, systemId, currentErrors, batchIds);
     }
 }
