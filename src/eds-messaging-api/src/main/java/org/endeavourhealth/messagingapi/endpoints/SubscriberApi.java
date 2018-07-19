@@ -115,7 +115,9 @@ public class SubscriberApi {
             UUID serviceId = requestingService.getId();
 
             //validate that the keycloak user (from the token) is permitted to make requests on behalf of the ODS code being requested for
+            LOG.debug("Getting service IDs for security context");
             Set<String> serviceIds = SecurityUtils.getUserAllowedOrganisationIdsFromSecurityContext(sc);
+            LOG.debug("Got service IDs for security context");
             /*LOG.debug("Found " + serviceIds + " services IDs from Keycloak and our service ID = " + serviceId.toString());
             for (String s: serviceIds) {
                 LOG.debug("ServiceId = " + s + " match = " + (s.equals(serviceId.toString())));
@@ -306,6 +308,112 @@ public class SubscriberApi {
 
     private Response calculateFrailtyFlagLive(String enterpriseEndpoint, List<PatientSearch> results, UriInfo uriInfo, MultivaluedMap<String, String> requestParams, String headerAuthToken, SubscriberApiAudit audit) throws Exception {
 
+        //there are cases where we've had different dates of birth for the same patient, resulting
+        //in multiple pseudo IDs, so we need to perform the test for EACH pseudo ID and return the "best" result (i.e. worst)
+        Set<String> pseudoIds = new HashSet<>();
+
+        PseudoIdDalI pseudoIdDal = DalProvider.factoryPseudoIdDal(enterpriseEndpoint);
+
+        for (PatientSearch result: results) {
+            UUID patientId = result.getPatientId();
+            String pseudoId = pseudoIdDal.findPseudoId(patientId.toString());
+            pseudoIds.add(pseudoId);
+        }
+
+        //make the call to the Enterprise web server
+        JsonNode jsonConfig = ConfigManager.getConfigurationAsJson(enterpriseEndpoint, "db_subscriber");
+        JsonNode jsonServer = jsonConfig.get("web_server");
+        String serverUrl = jsonServer.asText();
+
+        Map<String, String> hmResults = new HashMap<>();
+
+        //work out the path we should call on the Enterprise server based on our path
+        //this is only necessary because this endpoint may be called with either realm, so we need
+        //to ensure the down-stream call uses the same realm, since we just pass through the original Keycloak token
+        String enterprisePath = null;
+        String requestPath = uriInfo.getRequestUri().toString();
+        if (requestPath.indexOf("machine-api") > -1) {
+            enterprisePath = "machine-api/cohort/getFrailty";
+        } else {
+            enterprisePath = "api/cohort/getFrailty";
+        }
+
+        Client client = ClientBuilder.newClient();
+
+        for (String pseudoId: pseudoIds) {
+
+            WebTarget target = client.target(serverUrl).path(enterprisePath);
+            LOG.debug("Making call to " + target.getUri());
+            target = target.queryParam("pseudoId", pseudoId);
+
+            try {
+                Response response = target
+                        .request()
+                        .header("Authorization", headerAuthToken)
+                        .get();
+
+                if (response.getStatus() == HttpStatus.SC_OK) {
+                    String calculatedFrailty = response.readEntity(String.class);
+                    LOG.debug("Received response [" + calculatedFrailty + "] for pseudo ID " + pseudoId);
+
+                    hmResults.put(pseudoId, calculatedFrailty);
+
+                } else {
+                    String msg = "HTTP error " + response.getStatus() + " calling into frailty calculation service";
+
+                    try {
+                        String errResponse = response.readEntity(String.class);
+                        if (!Strings.isNullOrEmpty(errResponse)) {
+                            msg += " (" + errResponse + ")";
+                        }
+                    } catch (Exception ex) {
+                        //do nothing
+                    }
+
+                    return createErrorResponse(OperationOutcome.IssueType.PROCESSING, msg, audit);
+                }
+
+            } catch (Exception ex) {
+                String msg = ex.getMessage();
+                return createErrorResponse(OperationOutcome.IssueType.EXCEPTION, msg, audit);
+            }
+        }
+
+        //now check the results to find the most appropriate result to return
+        for (String pseudoId: hmResults.keySet()) {
+            String result = hmResults.get(pseudoId);
+
+            if (result.equalsIgnoreCase("NONE")) {
+                //if we got "none" back, then it's a valid result, but not one we're interested in
+
+            } else if (result.equalsIgnoreCase("MILD")
+                    || result.equalsIgnoreCase("MODERATE")
+                    || result.equalsIgnoreCase("SEVERE")) {
+
+                //if we got any of these back, then this is something we want to use as our result for the Flag
+                CodeableConcept codeableConcept = new CodeableConcept();
+                Coding coding = codeableConcept.addCoding();
+                coding.setCode(FRAILTY_CODE);
+                coding.setDisplay(FRAILTY_TERM);
+                codeableConcept.setText(FRAILTY_TERM);
+
+                Flag flag = new Flag();
+                flag.setStatus(Flag.FlagStatus.ACTIVE);
+                flag.setCode(codeableConcept);
+
+                return createSuccessResponse(flag, requestParams, audit);
+
+            } else {
+                throw new Exception("Unsupported frailty calculated value [" + result + "] from pseudo ID " + pseudoId);
+            }
+        }
+
+        //if we get here, we only got "none" back for all our results, so return a positive response without a flag
+        return createSuccessResponse(null, requestParams, audit);
+    }
+
+    /*private Response calculateFrailtyFlagLive(String enterpriseEndpoint, List<PatientSearch> results, UriInfo uriInfo, MultivaluedMap<String, String> requestParams, String headerAuthToken, SubscriberApiAudit audit) throws Exception {
+
         //find a single pseudo ID for the patient IDs found from the NHS number
         String matchedPseudoId = null;
 
@@ -320,7 +428,7 @@ public class SubscriberApi {
                     matchedPseudoId = pseudoId;
 
                 } else if (!matchedPseudoId.equals(pseudoId)) {
-                    return createErrorResponse(OperationOutcome.IssueType.PROCESSING, "Multiple IDs found for patients with NHS number " + result.getNhsNumber(), audit);
+                    return createErrorResponse(OperationOutcome.IssueType.PROCESSING, "Multiple unlinked records found for patients with NHS number " + result.getNhsNumber(), audit);
                 }
             }
         }
@@ -400,7 +508,7 @@ public class SubscriberApi {
             return createErrorResponse(OperationOutcome.IssueType.EXCEPTION, msg, audit);
         }
 
-    }
+    }*/
 
     /**
      * function to calculate the frailty flag of a person in Discovery, using only data held
