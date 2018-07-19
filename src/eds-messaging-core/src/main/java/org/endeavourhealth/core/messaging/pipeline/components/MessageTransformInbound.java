@@ -85,10 +85,10 @@ public class MessageTransformInbound extends PipelineComponent {
 	}
 
 	private List<UUID> transform(UUID serviceId,
-								UUID systemId,
-								Exchange exchange,
-								String software,
-								String messageVersion) throws Exception {
+								 UUID systemId,
+								 Exchange exchange,
+								 String software,
+								 String messageVersion) throws Exception {
 
 		List<UUID> batchIds = new ArrayList<>();
 
@@ -110,42 +110,42 @@ public class MessageTransformInbound extends PipelineComponent {
 		if (canTransformExchange(errorState, exchange.getId())) {
 
 			//retrieve the audit of any errors from the last time we processed this exchange ID
-			TransformError previousErrors = findPreviousErrors(serviceId, systemId, exchange.getId());
+			//TransformError previousErrors = findPreviousErrors(serviceId, systemId, exchange.getId());
 
 			try {
 
 				if (software.equalsIgnoreCase(MessageFormat.EMIS_CSV)) {
-					processEmisCsvTransform(exchange, serviceId, systemId, messageVersion, currentErrors, batchIds, previousErrors);
+					processEmisCsvTransform(exchange, serviceId, systemId, messageVersion, currentErrors, batchIds);
 
 				} else if (software.equalsIgnoreCase(MessageFormat.EMIS_OPEN)) {
-					processEmisOpenTransform(exchange, serviceId, systemId, messageVersion, currentErrors, batchIds, previousErrors);
+					processEmisOpenTransform(exchange, serviceId, systemId, messageVersion, currentErrors, batchIds);
 
 				} else if (software.equalsIgnoreCase(MessageFormat.EMIS_OPEN_HR)) {
-					processEmisOpenHrTransform(exchange, serviceId, systemId, messageVersion, currentErrors, batchIds, previousErrors);
+					processEmisOpenHrTransform(exchange, serviceId, systemId, messageVersion, currentErrors, batchIds);
 
 				} else if (software.equalsIgnoreCase(MessageFormat.TPP_CSV)) {
-					processTppCsvTransform(exchange, serviceId, systemId, messageVersion, currentErrors, batchIds, previousErrors);
-					
-				} else if (software.equalsIgnoreCase(MessageFormat.TPP_XML)) {
-                    processTppXmlTransform(exchange, serviceId, systemId, messageVersion, currentErrors, batchIds, previousErrors);
+					processTppCsvTransform(exchange, serviceId, systemId, messageVersion, currentErrors, batchIds);
 
-                } else if (software.equalsIgnoreCase(MessageFormat.HL7V2)) {
-                    processHL7V2Filer(exchange, serviceId, systemId, messageVersion, currentErrors, batchIds, previousErrors);
+				} else if (software.equalsIgnoreCase(MessageFormat.TPP_XML)) {
+					processTppXmlTransform(exchange, serviceId, systemId, messageVersion, currentErrors, batchIds);
+
+				} else if (software.equalsIgnoreCase(MessageFormat.HL7V2)) {
+					processHL7V2Filer(exchange, serviceId, systemId, messageVersion, currentErrors, batchIds);
 
 				} else if (software.equalsIgnoreCase(MessageFormat.ADASTRA_XML)) {
-					processAdastraXml(exchange, serviceId, systemId, messageVersion, currentErrors, batchIds, previousErrors);
+					processAdastraXml(exchange, serviceId, systemId, messageVersion, currentErrors, batchIds);
 
 				} else if (software.equalsIgnoreCase(MessageFormat.BARTS_CSV)) {
-					processBartsCsvTransform(exchange, serviceId, systemId, messageVersion, currentErrors, batchIds, previousErrors);
+					processBartsCsvTransform(exchange, serviceId, systemId, messageVersion, currentErrors, batchIds);
 
 				} else if (software.equalsIgnoreCase(MessageFormat.HOMERTON_CSV)) {
-					processHomertonCsvTransform(exchange, serviceId, systemId, messageVersion, currentErrors, batchIds, previousErrors);
+					processHomertonCsvTransform(exchange, serviceId, systemId, messageVersion, currentErrors, batchIds);
 
 				} else if (software.equalsIgnoreCase(MessageFormat.VISION_CSV)) {
-					processVisionCsvTransform(exchange, serviceId, systemId, messageVersion, currentErrors, batchIds, previousErrors);
+					processVisionCsvTransform(exchange, serviceId, systemId, messageVersion, currentErrors, batchIds);
 
 				} else if (software.equalsIgnoreCase(MessageFormat.ADASTRA_CSV)) {
-					processAdastraCsvTransform(exchange, serviceId, systemId, messageVersion, currentErrors, batchIds, previousErrors);
+					processAdastraCsvTransform(exchange, serviceId, systemId, messageVersion, currentErrors, batchIds);
 				}
 				else {
 					throw new SoftwareNotSupportedException(software, messageVersion);
@@ -207,7 +207,7 @@ public class MessageTransformInbound extends PipelineComponent {
 	}
 
 	private void processTppCsvTransform(Exchange exchange, UUID serviceId, UUID systemId, String messageVersion,
-										TransformError currentErrors, List<UUID> batchIds, TransformError previousErrors) throws Exception {
+										TransformError currentErrors, List<UUID> batchIds) throws Exception {
 		UUID exchangeId = exchange.getId();
 		String exchangeBody = exchange.getBody();
 
@@ -224,7 +224,7 @@ public class MessageTransformInbound extends PipelineComponent {
 	}
 
 	private void processAdastraXml(Exchange exchange, UUID serviceId, UUID systemId, String messageVersion,
-								   TransformError currentErrors, List<UUID> batchIds, TransformError previousErrors) throws Exception {
+								   TransformError currentErrors, List<UUID> batchIds) throws Exception {
 
 		//payload
 		String xmlPayload = exchange.getBody();
@@ -337,7 +337,7 @@ public class MessageTransformInbound extends PipelineComponent {
 		}
 	}
 
-	private TransformError findPreviousErrors(UUID serviceId, UUID systemId, UUID exchangeId) throws Exception {
+	/*private TransformError findPreviousErrors(UUID serviceId, UUID systemId, UUID exchangeId) throws Exception {
 
 		ExchangeTransformAudit previous = auditRepository.getMostRecentExchangeTransform(serviceId, systemId, exchangeId);
 		if (previous == null
@@ -354,13 +354,13 @@ public class MessageTransformInbound extends PipelineComponent {
 			LOG.error("Error parsing XML " + previous.getErrorXml(), ex);
 			return null;
 		}
-	}
+	}*/
 
 	/**
 	 * checks the last received exchange for this service and system and sees if it completed without errors or not
 	 * If the last one didn't have errors (or is the same exchange as we're running now), then it'll let this
 	 * new exchange be processed.
-     */
+	 */
 	private static boolean canTransformExchange(ExchangeTransformErrorState errorState, UUID exchangeId) {
 
 		//if our service and system aren't in error, then run the transform
@@ -421,19 +421,17 @@ public class MessageTransformInbound extends PipelineComponent {
 	}
 
 	private void processEmisCsvTransform(Exchange exchange, UUID serviceId, UUID systemId, String version,
-											   TransformError currentErrors, List<UUID> batchIds,
-											   TransformError previousErrors) throws Exception {
+										 TransformError currentErrors, List<UUID> batchIds) throws Exception {
 
 		String exchangeBody = exchange.getBody();
 		UUID exchangeId = exchange.getId();
 
 		EmisCsvToFhirTransformer.transform(exchangeId, exchangeBody, serviceId, systemId, currentErrors,
-									batchIds);
+				batchIds);
 	}
 
 	private void processBartsCsvTransform(Exchange exchange, UUID serviceId, UUID systemId, String version,
-										 TransformError currentErrors, List<UUID> batchIds,
-										 TransformError previousErrors) throws Exception {
+										  TransformError currentErrors, List<UUID> batchIds) throws Exception {
 
 		String exchangeBody = exchange.getBody();
 		UUID exchangeId = exchange.getId();
@@ -443,8 +441,7 @@ public class MessageTransformInbound extends PipelineComponent {
 	}
 
 	private void processHomertonCsvTransform(Exchange exchange, UUID serviceId, UUID systemId, String version,
-										  TransformError currentErrors, List<UUID> batchIds,
-										  TransformError previousErrors) throws Exception {
+											 TransformError currentErrors, List<UUID> batchIds) throws Exception {
 
 		String exchangeBody = exchange.getBody();
 		UUID exchangeId = exchange.getId();
@@ -454,36 +451,32 @@ public class MessageTransformInbound extends PipelineComponent {
 	}
 
 	private void processVisionCsvTransform(Exchange exchange, UUID serviceId, UUID systemId, String version,
-											 TransformError currentErrors, List<UUID> batchIds,
-											 TransformError previousErrors) throws Exception {
-		
+										   TransformError currentErrors, List<UUID> batchIds) throws Exception {
+
 		UUID exchangeId = exchange.getId();
 		String exchangeBody = exchange.getBody();
 
 		VisionCsvToFhirTransformer.transform(exchangeId, exchangeBody, serviceId, systemId, currentErrors,
-				batchIds,  version);
+				batchIds, version);
 	}
 
 	private void processAdastraCsvTransform(Exchange exchange, UUID serviceId, UUID systemId, String version,
-										   TransformError currentErrors, List<UUID> batchIds,
-										   TransformError previousErrors) throws Exception {
+											TransformError currentErrors, List<UUID> batchIds) throws Exception {
 
 		UUID exchangeId = exchange.getId();
 		String exchangeBody = exchange.getBody();
 
 		AdastraCsvToFhirTransformer.transform(exchangeId, exchangeBody, serviceId, systemId, currentErrors,
-				batchIds,  version);
+				batchIds, version);
 	}
 
 	private void processTppXmlTransform(Exchange exchange, UUID serviceId, UUID systemId, String version,
-											  TransformError currentErrors, List<UUID> batchIds,
-											  TransformError previousErrors) throws Exception {
+										TransformError currentErrors, List<UUID> batchIds) throws Exception {
 		//TODO - plug in TPP XML transform
 	}
 
 	private void processEmisOpenTransform(Exchange exchange, UUID serviceId, UUID systemId, String version,
-												TransformError currentErrors, List<UUID> batchIds,
-												TransformError previousErrors) throws Exception {
+										  TransformError currentErrors, List<UUID> batchIds) throws Exception {
 
 		//payload
 		String xmlPayload = exchange.getBody();
@@ -498,19 +491,17 @@ public class MessageTransformInbound extends PipelineComponent {
 	}
 
 	private void processEmisOpenHrTransform(Exchange exchange, UUID serviceId, UUID systemId, String version,
-												  TransformError currentErrors, List<UUID> batchIds,
-												  TransformError previousErrors) throws Exception {
+											TransformError currentErrors, List<UUID> batchIds) throws Exception {
 		//TODO - plug in OpenHR transform
 	}
 
-    private void processHL7V2Filer(Exchange exchange, UUID serviceId, UUID systemId, String version,
-                                          TransformError currentErrors, List<UUID> batchIds,
-                                          TransformError previousErrors) throws Exception {
+	private void processHL7V2Filer(Exchange exchange, UUID serviceId, UUID systemId, String version,
+								   TransformError currentErrors, List<UUID> batchIds) throws Exception {
 
-        UUID exchangeId = exchange.getId();
-	    String exchangeBody = exchange.getBody();
+		UUID exchangeId = exchange.getId();
+		String exchangeBody = exchange.getBody();
 
-        FhirHl7v2Filer fhirHl7v2Filer = new FhirHl7v2Filer();
-        fhirHl7v2Filer.file(exchangeId, exchangeBody, serviceId, systemId, currentErrors, batchIds);
-    }
+		FhirHl7v2Filer fhirHl7v2Filer = new FhirHl7v2Filer();
+		fhirHl7v2Filer.file(exchangeId, exchangeBody, serviceId, systemId, currentErrors, batchIds);
+	}
 }
