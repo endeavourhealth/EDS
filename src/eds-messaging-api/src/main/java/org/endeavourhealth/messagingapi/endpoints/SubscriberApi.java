@@ -142,10 +142,12 @@ public class SubscriberApi {
             }
 
             //ensure the service is a valid subscriber to at least one protocol
+            LOG.debug("Getting protocols");
             List<Protocol> protocols = getProtocolsForSubscriberService(serviceId.toString(), systemId.toString());
             if (protocols.isEmpty()) {
                 return createErrorResponse(OperationOutcome.IssueType.VALUE, "No valid subscriber agreement found for requesting ODS code '" + headerOdsCode + "' and system " + SUBSCRIBER_SYSTEM_NAME, audit);
             }
+            LOG.debug("Got protocols");
 
             //the below only works properly if there's a single protocol. To support multiple protocols,
             //it'll need to calculate the frailty against EACH subscriber DB and then return the one with the highest risk
@@ -157,8 +159,10 @@ public class SubscriberApi {
             Set<String> publisherServiceIds = getPublisherServiceIdsForProtocol(protocol);
 
             //find patient
+            LOG.debug("Searching on NHS number");
             PatientSearchDalI patientSearchDal = DalProvider.factoryPatientSearchDal();
             List<PatientSearch> results = patientSearchDal.searchByNhsNumber(publisherServiceIds, subjectNhsNumber);
+            LOG.debug("Done searching on NHS number");
 
             if (results.isEmpty()) {
                 return createErrorResponse(OperationOutcome.IssueType.NOTFOUND, "No patient record could be found for NHS number " + subjectNhsNumber, audit);
