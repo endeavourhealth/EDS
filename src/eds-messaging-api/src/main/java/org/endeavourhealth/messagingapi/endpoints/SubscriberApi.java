@@ -321,7 +321,9 @@ public class SubscriberApi {
         for (PatientSearch result: results) {
             UUID patientId = result.getPatientId();
             String pseudoId = pseudoIdDal.findPseudoId(patientId.toString());
-            pseudoIds.add(pseudoId);
+            if (!Strings.isNullOrEmpty(pseudoId)) {
+                pseudoIds.add(pseudoId);
+            }
         }
 
         //make the call to the Enterprise web server

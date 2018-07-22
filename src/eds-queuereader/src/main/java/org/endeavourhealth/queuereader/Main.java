@@ -2197,6 +2197,9 @@ public class Main {
 								//retrieve the Patient and EpisodeOfCare resource for the patient so we can confirm they are deceased or deducted
 								ResourceDalI resourceDal = DalProvider.factoryResourceDal();
 								UUID patientUuid = IdHelper.getEdsResourceId(serviceUuid, ResourceType.Patient, patientGuid);
+								if (patientUuid == null) {
+									throw new Exception("Failed to find patient UUID from GUID [" + patientGuid + "]");
+								}
 
 								Patient patientResource = (Patient)resourceDal.getCurrentVersionAsResource(serviceUuid, ResourceType.Patient, patientUuid.toString());
 								if (patientResource.hasDeceased()) {
