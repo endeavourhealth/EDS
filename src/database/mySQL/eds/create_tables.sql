@@ -80,8 +80,12 @@ CREATE INDEX ix_service_patient
 CREATE INDEX ix_service_date_of_birth
   ON patient_search (service_id, date_of_birth);
 
-CREATE INDEX ix_service_nhs_number
-  ON patient_search (service_id, nhs_number);
+-- swap index to be NHS Number first, since that's more selective than a long list of service IDs
+/*CREATE INDEX ix_service_nhs_number
+  ON patient_search (service_id, nhs_number);*/
+
+CREATE INDEX ix_service_nhs_number_2
+  ON patient_search (nhs_number, service_id);
 
 CREATE INDEX ix_service_surname_forenames
   ON patient_search (service_id, surname, forenames);
