@@ -190,6 +190,9 @@ public class SubscriberApi {
         } finally {
             //save the audit, but if there's an error saving, catch and log here, so the API response isn't affected
             try {
+                long duration = java.lang.System.currentTimeMillis() - audit.getTimestmp().getTime();
+                audit.setDurationMs(new Long(duration));
+
                 apiAuditDal.saveSubscriberApiAudit(audit);
             } catch (Exception ex) {
                 LOG.error("Error saving audit", ex);

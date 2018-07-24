@@ -194,6 +194,7 @@ CREATE TABLE subscriber_api_audit (
   request_path varchar(1024) comment 'the URL of the requested service, including parameters',
   request_headers varchar(255) comment 'any non-keycloak headers in the request',
   response_code int comment 'HTTP response code we sent back',
-  response_body varchar(2048) comment 'response sent back'
+  response_body varchar(2048) comment 'response sent back',
+  duration_ms bigint comment 'how long the call took'
 ) ROW_FORMAT=COMPRESSED
   KEY_BLOCK_SIZE=8;
