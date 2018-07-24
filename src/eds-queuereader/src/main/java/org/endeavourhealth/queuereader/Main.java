@@ -73,6 +73,15 @@ public class Main {
 		}*/
 
 		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("CreateHomertonSubset")) {
+			String sourceDirPath = args[1];
+			String destDirPath = args[2];
+			String samplePatientsFile = args[3];
+			createHomertonSubset(sourceDirPath, destDirPath, samplePatientsFile);
+			System.exit(0);
+		}
+
+		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("CreateAdastraSubset")) {
 			String sourceDirPath = args[1];
 			String destDirPath = args[2];
@@ -6451,6 +6460,129 @@ public class Main {
 
 					String patientId = csvRecord.get(filterColumn);
 					if (personIds.contains(patientId)) {
+
+						printer.printRecord(csvRecord);
+						printer.flush();
+					}
+				}
+
+				parser.close();
+				printer.close();
+			}
+		}
+	}
+
+	private static void createHomertonSubset(String sourceDirPath, String destDirPath, String samplePatientsFile) {
+		LOG.info("Creating Homerton Subset");
+
+		try {
+
+			Set<String> PersonIds = new HashSet<>();
+			List<String> lines = Files.readAllLines(new File(samplePatientsFile).toPath());
+			for (String line: lines) {
+				line = line.trim();
+
+				//ignore comments
+				if (line.startsWith("#")) {
+					continue;
+				}
+
+				PersonIds.add(line);
+			}
+
+			File sourceDir = new File(sourceDirPath);
+			File destDir = new File(destDirPath);
+
+			if (!destDir.exists()) {
+				destDir.mkdirs();
+			}
+
+			createHomertonSubsetForFile(sourceDir, destDir, PersonIds);
+
+			LOG.info("Finished Creating Homerton Subset");
+
+		} catch (Throwable t) {
+			LOG.error("", t);
+		}
+	}
+
+	private static void createHomertonSubsetForFile(File sourceDir, File destDir, Set<String> personIds) throws Exception {
+
+		File[] files = sourceDir.listFiles();
+		LOG.info("Found " + files.length + " files in " + sourceDir);
+
+		for (File sourceFile: files) {
+
+			String name = sourceFile.getName();
+			File destFile = new File(destDir, name);
+
+			if (sourceFile.isDirectory()) {
+
+				if (!destFile.exists()) {
+					destFile.mkdirs();
+				}
+
+				createHomertonSubsetForFile(sourceFile, destFile, personIds);
+
+			} else {
+
+				if (destFile.exists()) {
+					destFile.delete();
+				}
+
+				LOG.info("Checking file " + sourceFile);
+
+				//skip any non-CSV file
+				String ext = FilenameUtils.getExtension(name);
+				if (!ext.equalsIgnoreCase("csv")) {
+					LOG.info("Skipping as not a CSV file");
+					continue;
+				}
+
+				FileReader fr = new FileReader(sourceFile);
+				BufferedReader br = new BufferedReader(fr);
+
+				//fully quote destination file to fix CRLF in columns
+				CSVFormat format = CSVFormat.DEFAULT.withDelimiter('|');
+
+				CSVParser parser = new CSVParser(br, format);
+
+				int filterColumn = -1;
+
+				//PersonId column at 1
+				if (name.contains("ENCOUNTER") || name.contains("PATIENT")) {
+					filterColumn = 1;
+
+				} else if (name.contains("DIAGNOSIS")) {
+					//PersonId column at 13
+					filterColumn = 13;
+				} else if (name.contains("ALLERGY")) {
+						//PersonId column at 2
+						filterColumn = 2;
+
+				} else if (name.contains("PROBLEM")) {
+					//PersonId column at 4
+					filterColumn = 4;
+				} else {
+					//if no patient column, just copy the file (i.e. PROCEDURE)
+					parser.close();
+
+					LOG.info("Copying file without PatientId " + sourceFile);
+					copyFile(sourceFile, destFile);
+					continue;
+				}
+
+				PrintWriter fw = new PrintWriter(destFile);
+				BufferedWriter bw = new BufferedWriter(fw);
+
+				CSVPrinter printer = new CSVPrinter(bw, format);
+
+				Iterator<CSVRecord> csvIterator = parser.iterator();
+				while (csvIterator.hasNext()) {
+					CSVRecord csvRecord = csvIterator.next();
+
+					String personId = csvRecord.get(filterColumn);
+					if (personIds.contains(personId)) {
 
 						printer.printRecord(csvRecord);
 						printer.flush();
