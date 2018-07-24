@@ -6543,7 +6543,7 @@ public class Main {
 				BufferedReader br = new BufferedReader(fr);
 
 				//fully quote destination file to fix CRLF in columns
-				CSVFormat format = CSVFormat.DEFAULT.withDelimiter('|');
+				CSVFormat format = CSVFormat.DEFAULT.withHeader();
 
 				CSVParser parser = new CSVParser(br, format);
 
@@ -6572,17 +6572,26 @@ public class Main {
 					continue;
 				}
 
+				Map<String, Integer> headerMap = parser.getHeaderMap();
+				String[] columnHeaders = new String[headerMap.size()];
+				Iterator<String> headerIterator = headerMap.keySet().iterator();
+				while (headerIterator.hasNext()) {
+					String headerName = headerIterator.next();
+					int headerIndex = headerMap.get(headerName);
+					columnHeaders[headerIndex] = headerName;
+				}
+
 				PrintWriter fw = new PrintWriter(destFile);
 				BufferedWriter bw = new BufferedWriter(fw);
 
-				CSVPrinter printer = new CSVPrinter(bw, format);
+				CSVPrinter printer = new CSVPrinter(bw, format.withHeader(columnHeaders));
 
 				Iterator<CSVRecord> csvIterator = parser.iterator();
 				while (csvIterator.hasNext()) {
 					CSVRecord csvRecord = csvIterator.next();
 
-					String personId = csvRecord.get(filterColumn);
-					if (personIds.contains(personId)) {
+					String patientId = csvRecord.get(filterColumn);
+					if (personIds.contains(patientId)) {
 
 						printer.printRecord(csvRecord);
 						printer.flush();
