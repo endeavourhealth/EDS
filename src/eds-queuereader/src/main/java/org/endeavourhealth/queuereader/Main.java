@@ -50,12 +50,10 @@ import javax.persistence.EntityManager;
 import java.io.*;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.Statement;
+import java.sql.*;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.Date;
 
 public class Main {
 	private static final Logger LOG = LoggerFactory.getLogger(Main.class);
@@ -136,6 +134,16 @@ public class Main {
 			testPreparedStatements(url, user, pass, serviceId);
 			System.exit(0);
 		}*/
+
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("TestBatchInserts")) {
+			String url = args[1];
+			String user = args[2];
+			String pass = args[3];
+			String num = args[4];
+			testBatchInserts(url, user, pass, num);
+			System.exit(0);
+		}
 
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("ApplyEmisAdminCaches")) {
@@ -324,6 +332,73 @@ public class Main {
 		// Begin consume
 		rabbitHandler.start();
 		LOG.info("EDS Queue reader running (kill file location " + TransformConfig.instance().getKillFileLocation() + ")");
+	}
+
+	private static void testBatchInserts(String url, String user, String pass, String num) {
+		LOG.info("Testing Batch Inserts");
+		try {
+			int inserts = Integer.parseInt(num);
+
+			LOG.info("Openning Connection");
+			Properties props = new Properties();
+			props.setProperty("user", user);
+			props.setProperty("password", pass);
+
+			Connection conn = DriverManager.getConnection(url, props);
+			String sql = "INSERT INTO drewtest.insert_test VALUES (?, ?, ?);";
+			PreparedStatement ps = conn.prepareStatement(sql);
+
+			LOG.info("Testing non-batched inserts");
+
+			long start = System.currentTimeMillis();
+			for (int i=0; i<inserts; i++) {
+				int col = 1;
+				ps.setString(col++, UUID.randomUUID().toString());
+				ps.setString(col++, UUID.randomUUID().toString());
+				ps.setString(col++, randomStr());
+				ps.execute();
+				if (i%1000 == 0) {
+					LOG.info("Done " + i);
+				}
+			}
+			long end = System.currentTimeMillis();
+			LOG.info("Done " + inserts + " in " + (end-start) + " ms");
+
+			LOG.info("Testing batched inserts");
+
+			start = System.currentTimeMillis();
+			for (int i=0; i<inserts; i++) {
+				int col = 1;
+				ps.setString(col++, UUID.randomUUID().toString());
+				ps.setString(col++, UUID.randomUUID().toString());
+				ps.setString(col++, randomStr());
+				ps.addBatch();
+
+				if (i%1000 == 0
+						|| i+1 >= inserts) {
+					LOG.info("Done " + i);
+					ps.execute();
+				}
+			}
+
+			end = System.currentTimeMillis();
+			LOG.info("Done " + inserts + " in " + (end-start) + " ms");
+
+			ps.close();
+			conn.close();
+			LOG.info("Finished Testing Batch Inserts");
+		} catch (Exception ex) {
+			LOG.error("", ex);
+		}
+	}
+
+	private static String randomStr() {
+		StringBuffer sb = new StringBuffer();
+		Random r = new Random(System.currentTimeMillis());
+		while (sb.length() < 1100) {
+			sb.append(r.nextLong());
+		}
+		return sb.toString();
 	}
 
 	private static void fixEmisProblems(UUID serviceId, UUID systemId) {
