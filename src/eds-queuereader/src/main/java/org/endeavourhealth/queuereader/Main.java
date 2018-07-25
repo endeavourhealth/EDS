@@ -3,16 +3,16 @@ package org.endeavourhealth.queuereader;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
-import com.google.gson.JsonSyntaxException;
 import org.apache.commons.csv.*;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.common.config.ConfigManager;
+import org.endeavourhealth.common.fhir.ExtensionConverter;
+import org.endeavourhealth.common.fhir.FhirExtensionUri;
 import org.endeavourhealth.common.fhir.PeriodHelper;
+import org.endeavourhealth.common.fhir.ReferenceHelper;
 import org.endeavourhealth.common.utility.FileHelper;
-import org.endeavourhealth.common.utility.FileInfo;
-import org.endeavourhealth.common.utility.JsonSerializer;
 import org.endeavourhealth.common.utility.SlackHelper;
 import org.endeavourhealth.core.configuration.ConfigDeserialiser;
 import org.endeavourhealth.core.configuration.PostMessageToExchangeConfig;
@@ -28,6 +28,7 @@ import org.endeavourhealth.core.database.dal.ehr.ResourceDalI;
 import org.endeavourhealth.core.database.dal.ehr.models.ResourceWrapper;
 import org.endeavourhealth.core.database.rdbms.ConnectionManager;
 import org.endeavourhealth.core.exceptions.TransformException;
+import org.endeavourhealth.core.fhirStorage.FhirSerializationHelper;
 import org.endeavourhealth.core.fhirStorage.FhirStorageService;
 import org.endeavourhealth.core.fhirStorage.JsonServiceInterfaceEndpoint;
 import org.endeavourhealth.core.messaging.pipeline.components.PostMessageToExchange;
@@ -35,12 +36,13 @@ import org.endeavourhealth.core.queueing.QueueHelper;
 import org.endeavourhealth.core.xml.TransformErrorSerializer;
 import org.endeavourhealth.core.xml.transformError.TransformError;
 import org.endeavourhealth.transform.common.*;
+import org.endeavourhealth.transform.common.resourceBuilders.ConditionBuilder;
+import org.endeavourhealth.transform.common.resourceBuilders.ContainedListBuilder;
 import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
 import org.endeavourhealth.transform.emis.csv.helpers.EmisCsvHelper;
+import org.endeavourhealth.transform.emis.csv.transforms.careRecord.ObservationTransformer;
 import org.hibernate.internal.SessionImpl;
-import org.hl7.fhir.instance.model.EpisodeOfCare;
-import org.hl7.fhir.instance.model.Patient;
-import org.hl7.fhir.instance.model.ResourceType;
+import org.hl7.fhir.instance.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -148,11 +150,19 @@ public class Main {
 		}
 
 		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("FixEmisProblems")) {
+			String serviceId = args[1];
+			String systemId = args[2];
+			fixEmisProblems(UUID.fromString(serviceId), UUID.fromString(systemId));
+			System.exit(0);
+		}
+
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("ConvertExchangeBody")) {
 			String systemId = args[1];
 			convertExchangeBody(UUID.fromString(systemId));
 			System.exit(0);
-		}
+		}*/
 
 
 		/*if (args.length >= 1
@@ -316,7 +326,227 @@ public class Main {
 		LOG.info("EDS Queue reader running (kill file location " + TransformConfig.instance().getKillFileLocation() + ")");
 	}
 
-	private static void convertExchangeBody(UUID systemUuid) {
+	private static void fixEmisProblems(UUID serviceId, UUID systemId) {
+		LOG.info("Fixing Emis Problems for " + serviceId);
+		try {
+			Map<String, List<String>> hmReferences = new HashMap<>();
+			Set<String> patientIds = new HashSet<>();
+
+			ResourceDalI resourceDal = DalProvider.factoryResourceDal();
+			FhirResourceFiler filer = new FhirResourceFiler(null, serviceId, systemId, null, null);
+
+			LOG.info("Caching problem links");
+
+			//Go through all files to work out problem children for every problem
+			ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
+			List<Exchange> exchanges = exchangeDal.getExchangesByService(serviceId, systemId, Integer.MAX_VALUE);
+			for (int i=exchanges.size()-1; i>=0; i--) {
+				Exchange exchange = exchanges.get(i);
+				List<ExchangePayloadFile> payload = ExchangeHelper.parseExchangeBody(exchange.getBody());
+				//String version = EmisCsvToFhirTransformer.determineVersion(payload);
+
+				ExchangePayloadFile firstItem = payload.get(0);
+				String name = FilenameUtils.getBaseName(firstItem.getPath());
+				String[] toks = name.split("_");
+				String agreementId = toks[4];
+
+				LOG.info("Doing exchange containing " + firstItem.getPath());
+
+				EmisCsvHelper csvHelper = new EmisCsvHelper(serviceId, systemId, exchange.getId(), agreementId, true);
+
+				for (ExchangePayloadFile item: payload) {
+					String type = item.getType();
+					if (type.equals("CareRecord_Observation")) {
+						InputStreamReader isr = FileHelper.readFileReaderFromSharedStorage(item.getPath());
+						CSVParser parser = new CSVParser(isr, EmisCsvToFhirTransformer.CSV_FORMAT);
+						Iterator<CSVRecord> iterator = parser.iterator();
+						while (iterator.hasNext()) {
+							CSVRecord record = iterator.next();
+
+							String parentProblemId = record.get("ProblemGuid");
+							String patientId = record.get("PatientGuid");
+							patientIds.add(patientId);
+
+							if (!Strings.isNullOrEmpty(parentProblemId)) {
+
+								String observationId = record.get("ObservationGuid");
+								String localId = patientId + ":" + observationId;
+								ResourceType resourceType = ObservationTransformer.findOriginalTargetResourceType(filer, CsvCell.factoryDummyWrapper(patientId), CsvCell.factoryDummyWrapper(observationId));
+
+								Reference localReference = ReferenceHelper.createReference(resourceType, localId);
+								Reference globalReference = IdHelper.convertLocallyUniqueReferenceToEdsReference(localReference, csvHelper);
+
+								String localProblemId = patientId + ":" + parentProblemId;
+								Reference localProblemReference = ReferenceHelper.createReference(ResourceType.Condition, localProblemId);
+								Reference globalProblemReference = IdHelper.convertLocallyUniqueReferenceToEdsReference(localProblemReference, csvHelper);
+
+								String globalProblemId = ReferenceHelper.getReferenceId(globalProblemReference);
+								List<String> problemChildren = hmReferences.get(globalProblemId);
+								if (problemChildren == null) {
+									problemChildren = new ArrayList<>();
+									hmReferences.put(globalProblemId, problemChildren);
+								}
+								problemChildren.add(globalReference.getReference());
+							}
+						}
+						parser.close();
+
+					} else if (type.equals("Prescribing_DrugRecord")) {
+						InputStreamReader isr = FileHelper.readFileReaderFromSharedStorage(item.getPath());
+						CSVParser parser = new CSVParser(isr, EmisCsvToFhirTransformer.CSV_FORMAT);
+						Iterator<CSVRecord> iterator = parser.iterator();
+						while (iterator.hasNext()) {
+							CSVRecord record = iterator.next();
+
+							String parentProblemId = record.get("ProblemObservationGuid");
+							String patientId = record.get("PatientGuid");
+							patientIds.add(patientId);
+
+							if (!Strings.isNullOrEmpty(parentProblemId)) {
+								String observationId = record.get("DrugRecordGuid");
+								String localId = patientId + ":" + observationId;
+								Reference localReference = ReferenceHelper.createReference(ResourceType.MedicationStatement, localId);
+								Reference globalReference = IdHelper.convertLocallyUniqueReferenceToEdsReference(localReference, csvHelper);
+
+								String localProblemId = patientId + ":" + parentProblemId;
+								Reference localProblemReference = ReferenceHelper.createReference(ResourceType.Condition, localProblemId);
+								Reference globalProblemReference = IdHelper.convertLocallyUniqueReferenceToEdsReference(localProblemReference, csvHelper);
+
+								String globalProblemId = ReferenceHelper.getReferenceId(globalProblemReference);
+								List<String> problemChildren = hmReferences.get(globalProblemId);
+								if (problemChildren == null) {
+									problemChildren = new ArrayList<>();
+									hmReferences.put(globalProblemId, problemChildren);
+								}
+								problemChildren.add(globalReference.getReference());
+							}
+						}
+						parser.close();
+
+					} else if (type.equals("Prescribing_IssueRecord")) {
+						InputStreamReader isr = FileHelper.readFileReaderFromSharedStorage(item.getPath());
+						CSVParser parser = new CSVParser(isr, EmisCsvToFhirTransformer.CSV_FORMAT);
+						Iterator<CSVRecord> iterator = parser.iterator();
+						while (iterator.hasNext()) {
+							CSVRecord record = iterator.next();
+
+							String parentProblemId = record.get("ProblemObservationGuid");
+							String patientId = record.get("PatientGuid");
+							patientIds.add(patientId);
+
+							if (!Strings.isNullOrEmpty(parentProblemId)) {
+								String observationId = record.get("IssueRecordGuid");
+								String localId = patientId + ":" + observationId;
+								Reference localReference = ReferenceHelper.createReference(ResourceType.MedicationOrder, localId);
+
+								String localProblemId = patientId + ":" + parentProblemId;
+								Reference localProblemReference = ReferenceHelper.createReference(ResourceType.Condition, localProblemId);
+								Reference globalProblemReference = IdHelper.convertLocallyUniqueReferenceToEdsReference(localProblemReference, csvHelper);
+								Reference globalReference = IdHelper.convertLocallyUniqueReferenceToEdsReference(localReference, csvHelper);
+
+								String globalProblemId = ReferenceHelper.getReferenceId(globalProblemReference);
+								List<String> problemChildren = hmReferences.get(globalProblemId);
+								if (problemChildren == null) {
+									problemChildren = new ArrayList<>();
+									hmReferences.put(globalProblemId, problemChildren);
+								}
+								problemChildren.add(globalReference.getReference());
+							}
+						}
+						parser.close();
+
+					} else {
+						//no problem link
+					}
+				}
+			}
+
+			LOG.info("Finished caching problem links, finding " + patientIds.size() + " patients");
+
+			int done = 0;
+			int fixed = 0;
+			for (String localPatientId: patientIds) {
+
+				Reference localPatientReference = ReferenceHelper.createReference(ResourceType.Patient, localPatientId);
+				Reference globalPatientReference = IdHelper.convertLocallyUniqueReferenceToEdsReference(localPatientReference, filer);
+				String patientUuid = ReferenceHelper.getReferenceId(globalPatientReference);
+
+				List<ResourceWrapper> wrappers = resourceDal.getResourcesByPatient(serviceId, UUID.fromString(patientUuid), ResourceType.Condition.toString());
+				for (ResourceWrapper wrapper: wrappers) {
+					if (wrapper.isDeleted()) {
+						continue;
+					}
+
+					String originalJson = wrapper.getResourceData();
+					Condition condition = (Condition)FhirSerializationHelper.deserializeResource(originalJson);
+					ConditionBuilder conditionBuilder = new ConditionBuilder(condition);
+
+					//sort out the nested extension references
+					Extension outerExtension = ExtensionConverter.findExtension(condition, FhirExtensionUri.PROBLEM_LAST_REVIEWED);
+					if (outerExtension != null) {
+						Extension innerExtension = ExtensionConverter.findExtension(outerExtension, FhirExtensionUri._PROBLEM_LAST_REVIEWED__PERFORMER);
+						if (innerExtension != null) {
+							Reference performerReference = (Reference)innerExtension.getValue();
+							String value = performerReference.getReference();
+							if (value.endsWith("}")) {
+
+								Reference globalPerformerReference = IdHelper.convertLocallyUniqueReferenceToEdsReference(performerReference, filer);
+								innerExtension.setValue(globalPerformerReference);
+							}
+						}
+					}
+
+					//sort out the contained list of children
+					ContainedListBuilder listBuilder = new ContainedListBuilder(conditionBuilder);
+
+					//remove any existing children
+					listBuilder.removeContainedList();
+
+					//add all the new ones we've found
+					List<String> localChildReferences = hmReferences.get(wrapper.getResourceId().toString());
+					if (localChildReferences != null) {
+						for (String localChildReference: localChildReferences) {
+							Reference reference = ReferenceHelper.createReference(localChildReference);
+							listBuilder.addContainedListItem(reference);
+						}
+					}
+
+					//save the updated condition
+					String newJson = FhirSerializationHelper.serializeResource(condition);
+					if (!newJson.equals(originalJson)) {
+
+						wrapper.setResourceData(newJson);
+						saveResourceWrapper(serviceId, wrapper);
+						fixed ++;
+					}
+				}
+
+
+				done ++;
+				if (done % 1000 == 0) {
+					LOG.info("Done " + done + " patients and fixed " + fixed + " problems");
+				}
+			}
+			LOG.info("Done " + done + " patients and fixed " + fixed + " problems");
+
+
+			/**
+			 b. Go through all files to work out problem children for every problem
+			 DONE c. Get every patient
+			 DONE d. For each patient
+			 DONE e. Get every Condition
+			 DONE f. ID map any references in nested extensions and contained list
+			 DONE g. Ensure all children are present (ID map ones from hash map)
+			 DONE h. Save Condition
+			 */
+
+			LOG.info("Finished Emis Problems for " + serviceId);
+		} catch (Exception ex) {
+			LOG.error("", ex);
+		}
+	}
+
+	/*private static void convertExchangeBody(UUID systemUuid) {
 		try {
 			LOG.info("Converting exchange bodies for system " + systemUuid);
 
@@ -373,7 +603,7 @@ public class Main {
 							String second = toks[2];
 							fileObj.setType(first + "_" + second);
 
-/*						} else if (systemUuid.toString().equalsIgnoreCase("e517fa69-348a-45e9-a113-d9b59ad13095")
+*//*						} else if (systemUuid.toString().equalsIgnoreCase("e517fa69-348a-45e9-a113-d9b59ad13095")
 							|| systemUuid.toString().equalsIgnoreCase("b0277098-0b6c-4d9d-86ef-5f399fb25f34")) { //dev
 
 							//cerner
@@ -386,7 +616,7 @@ public class Main {
 								fileObj.setType(type);
 							} catch (Exception ex2) {
 								throw new Exception("Failed to parse file name " + name + " on exchange " + exchange.getId());
-							}*/
+							}*//*
 
 						} else {
 							throw new Exception("Unknown system ID " + systemUuid);
@@ -406,7 +636,7 @@ public class Main {
 		} catch (Exception ex) {
 			LOG.error("", ex);
 		}
-	}
+	}*/
 
 	/*private static void fixBartsOrgs(String serviceId) {
 		try {

@@ -16,7 +16,6 @@ import org.endeavourhealth.core.database.dal.audit.SubscriberApiAuditDalI;
 import org.endeavourhealth.core.database.dal.audit.models.SubscriberApiAudit;
 import org.endeavourhealth.core.database.dal.eds.PatientLinkDalI;
 import org.endeavourhealth.core.database.dal.eds.PatientSearchDalI;
-import org.endeavourhealth.core.database.dal.eds.models.PatientSearch;
 import org.endeavourhealth.core.database.dal.subscriberTransform.PseudoIdDalI;
 import org.endeavourhealth.core.fhirStorage.FhirSerializationHelper;
 import org.endeavourhealth.core.fhirStorage.JsonServiceInterfaceEndpoint;
@@ -161,7 +160,8 @@ public class SubscriberApi {
             //find patient
             LOG.debug("Searching on NHS number");
             PatientSearchDalI patientSearchDal = DalProvider.factoryPatientSearchDal();
-            List<PatientSearch> results = patientSearchDal.searchByNhsNumber(publisherServiceIds, subjectNhsNumber);
+            Map<UUID, UUID> results = patientSearchDal.findPatientIdsForNhsNumber(publisherServiceIds, subjectNhsNumber);
+            //List<PatientSearch> results = patientSearchDal.searchByNhsNumber(publisherServiceIds, subjectNhsNumber);
             LOG.debug("Done searching on NHS number");
 
             if (results.isEmpty()) {
@@ -313,7 +313,7 @@ public class SubscriberApi {
     }
 
 
-    private Response calculateFrailtyFlagLive(String enterpriseEndpoint, List<PatientSearch> results, UriInfo uriInfo, MultivaluedMap<String, String> requestParams, String headerAuthToken, SubscriberApiAudit audit) throws Exception {
+    private Response calculateFrailtyFlagLive(String enterpriseEndpoint, Map<UUID, UUID> results, UriInfo uriInfo, MultivaluedMap<String, String> requestParams, String headerAuthToken, SubscriberApiAudit audit) throws Exception {
 
         //there are cases where we've had different dates of birth for the same patient, resulting
         //in multiple pseudo IDs, so we need to perform the test for EACH pseudo ID and return the "best" result (i.e. worst)
@@ -321,9 +321,8 @@ public class SubscriberApi {
 
         PseudoIdDalI pseudoIdDal = DalProvider.factoryPseudoIdDal(enterpriseEndpoint);
 
-        for (PatientSearch result: results) {
-            UUID patientId = result.getPatientId();
-            String pseudoId = pseudoIdDal.findPseudoId(patientId.toString());
+        for (UUID patientUuid: results.keySet()) {
+            String pseudoId = pseudoIdDal.findPseudoId(patientUuid.toString());
             if (!Strings.isNullOrEmpty(pseudoId)) {
                 pseudoIds.add(pseudoId);
             }
@@ -527,14 +526,14 @@ public class SubscriberApi {
      * Note: this returns a Flag from the DSTU2 FHIR library, but this is compatible with STU3,
      * so receivers of this flag shouldn't need to worry about it being DSTU2.
      */
-    private Response calculateFrailtyFlagDummy(List<PatientSearch> searchResults, MultivaluedMap<String, String> requestParams, SubscriberApiAudit audit) throws Exception {
+    private Response calculateFrailtyFlagDummy(Map<UUID, UUID> searchResults, MultivaluedMap<String, String> requestParams, SubscriberApiAudit audit) throws Exception {
 
         //ensure all results, map to the same PERSON
         PatientLinkDalI patientLinkDal = DalProvider.factoryPatientLinkDal();
 
         String personId = null;
-        for (PatientSearch result: searchResults) {
-            String patientId = result.getPatientId().toString();
+        for (UUID patientUuid: searchResults.keySet()) {
+            String patientId = patientUuid.toString();
 
             String thisPersonId = patientLinkDal.getPersonId(patientId);
             if (personId == null
@@ -543,7 +542,7 @@ public class SubscriberApi {
 
             } else {
                 //this shouldn't happen while we continue to match patient-person on NHS number, but if that changes, this will be relevant
-                return createErrorResponse(OperationOutcome.IssueType.PROCESSING, "Multiple person records exist for patients with NHS number " + result.getNhsNumber(), audit);
+                return createErrorResponse(OperationOutcome.IssueType.PROCESSING, "Multiple person records exist for patients with NHS number", audit);
             }
         }
 
