@@ -359,14 +359,14 @@ public class Main {
 				ps.setString(col++, UUID.randomUUID().toString());
 				ps.setString(col++, randomStr());
 				ps.execute();
-				if (i%batchSize == 0) {
-					LOG.info("Done " + i);
+				if ((i+1)%batchSize == 0) {
+					LOG.info("Done " + (i+1));
 				}
 			}
 			long end = System.currentTimeMillis();
 			LOG.info("Done " + inserts + " in " + (end-start) + " ms");
 
-			LOG.info("Testing batched inserts");
+			LOG.info("Testing batched inserts with batch size " + batchSize);
 
 			start = System.currentTimeMillis();
 			for (int i=0; i<inserts; i++) {
@@ -376,9 +376,9 @@ public class Main {
 				ps.setString(col++, randomStr());
 				ps.addBatch();
 
-				if (i%batchSize == 0
+				if ((i+1)%batchSize == 0
 						|| i+1 >= inserts) {
-					LOG.info("Done " + i);
+					LOG.info("Done " + (i+1));
 					ps.executeBatch();
 				}
 			}
