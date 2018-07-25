@@ -141,7 +141,8 @@ public class Main {
 			String user = args[2];
 			String pass = args[3];
 			String num = args[4];
-			testBatchInserts(url, user, pass, num);
+			String batchSize = args[5];
+			testBatchInserts(url, user, pass, num, batchSize);
 			System.exit(0);
 		}
 
@@ -334,10 +335,11 @@ public class Main {
 		LOG.info("EDS Queue reader running (kill file location " + TransformConfig.instance().getKillFileLocation() + ")");
 	}
 
-	private static void testBatchInserts(String url, String user, String pass, String num) {
+	private static void testBatchInserts(String url, String user, String pass, String num, String batchSizeStr) {
 		LOG.info("Testing Batch Inserts");
 		try {
 			int inserts = Integer.parseInt(num);
+			int batchSize = Integer.parseInt(batchSizeStr);
 
 			LOG.info("Openning Connection");
 			Properties props = new Properties();
@@ -357,7 +359,7 @@ public class Main {
 				ps.setString(col++, UUID.randomUUID().toString());
 				ps.setString(col++, randomStr());
 				ps.execute();
-				if (i%1000 == 0) {
+				if (i%batchSize == 0) {
 					LOG.info("Done " + i);
 				}
 			}
@@ -374,10 +376,10 @@ public class Main {
 				ps.setString(col++, randomStr());
 				ps.addBatch();
 
-				if (i%1000 == 0
+				if (i%batchSize == 0
 						|| i+1 >= inserts) {
 					LOG.info("Done " + i);
-					ps.execute();
+					ps.executeBatch();
 				}
 			}
 
