@@ -347,7 +347,8 @@ public class Main {
 			props.setProperty("password", pass);
 
 			Connection conn = DriverManager.getConnection(url, props);
-			String sql = "INSERT INTO drewtest.insert_test VALUES (?, ?, ?);";
+			//String sql = "INSERT INTO drewtest.insert_test VALUES (?, ?, ?);";
+			String sql = "INSERT INTO drewtest.insert_test VALUES (?, ?, ?)";
 			PreparedStatement ps = conn.prepareStatement(sql);
 
 			if (batchSize == 1) {
