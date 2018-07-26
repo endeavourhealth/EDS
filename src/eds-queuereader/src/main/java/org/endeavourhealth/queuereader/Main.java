@@ -350,41 +350,42 @@ public class Main {
 			String sql = "INSERT INTO drewtest.insert_test VALUES (?, ?, ?);";
 			PreparedStatement ps = conn.prepareStatement(sql);
 
-			LOG.info("Testing non-batched inserts");
+			if (batchSize == 1) {
 
-			long start = System.currentTimeMillis();
-			for (int i=0; i<inserts; i++) {
-				int col = 1;
-				ps.setString(col++, UUID.randomUUID().toString());
-				ps.setString(col++, UUID.randomUUID().toString());
-				ps.setString(col++, randomStr());
-				ps.execute();
-				if ((i+1)%batchSize == 0) {
-					LOG.info("Done " + (i+1));
+				LOG.info("Testing non-batched inserts");
+
+				long start = System.currentTimeMillis();
+				for (int i=0; i<inserts; i++) {
+					int col = 1;
+					ps.setString(col++, UUID.randomUUID().toString());
+					ps.setString(col++, UUID.randomUUID().toString());
+					ps.setString(col++, randomStr());
+					ps.execute();
 				}
-			}
-			long end = System.currentTimeMillis();
-			LOG.info("Done " + inserts + " in " + (end-start) + " ms");
+				long end = System.currentTimeMillis();
+				LOG.info("Done " + inserts + " in " + (end-start) + " ms");
 
-			LOG.info("Testing batched inserts with batch size " + batchSize);
+			} else {
 
-			start = System.currentTimeMillis();
-			for (int i=0; i<inserts; i++) {
-				int col = 1;
-				ps.setString(col++, UUID.randomUUID().toString());
-				ps.setString(col++, UUID.randomUUID().toString());
-				ps.setString(col++, randomStr());
-				ps.addBatch();
+				LOG.info("Testing batched inserts with batch size " + batchSize);
 
-				if ((i+1)%batchSize == 0
-						|| i+1 >= inserts) {
-					LOG.info("Done " + (i+1));
-					ps.executeBatch();
+				long start = System.currentTimeMillis();
+				for (int i = 0; i < inserts; i++) {
+					int col = 1;
+					ps.setString(col++, UUID.randomUUID().toString());
+					ps.setString(col++, UUID.randomUUID().toString());
+					ps.setString(col++, randomStr());
+					ps.addBatch();
+
+					if ((i + 1) % batchSize == 0
+							|| i + 1 >= inserts) {
+						ps.executeBatch();
+					}
 				}
-			}
 
-			end = System.currentTimeMillis();
-			LOG.info("Done " + inserts + " in " + (end-start) + " ms");
+				long end = System.currentTimeMillis();
+				LOG.info("Done " + inserts + " in " + (end - start) + " ms");
+			}
 
 			ps.close();
 			conn.close();
