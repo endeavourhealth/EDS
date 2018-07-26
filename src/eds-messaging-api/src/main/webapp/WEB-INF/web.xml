@@ -68,6 +68,17 @@
         </auth-constraint>
     </security-constraint>
 
+    <security-constraint>
+        <web-resource-collection>
+            <web-resource-name>dev_test_api</web-resource-name>
+            <url-pattern>/api/subscriber/*</url-pattern>
+        </web-resource-collection>
+        <auth-constraint>
+            <role-name>eds_service</role-name>
+            <role-name>dev_test_api</role-name>
+        </auth-constraint>
+    </security-constraint>
+
     <!-- use Keycloak authentication valve installed in the container -->
     <login-config>
         <auth-method>KEYCLOAK</auth-method>
@@ -77,6 +88,9 @@
     <!-- all roles in the system MUST be specified here -->
     <security-role>
         <role-name>eds_service</role-name>
+    </security-role>
+    <security-role>
+        <role-name>dev_test_api</role-name>
     </security-role>
 
 </web-app>
