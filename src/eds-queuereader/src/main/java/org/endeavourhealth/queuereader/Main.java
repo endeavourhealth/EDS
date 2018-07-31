@@ -136,6 +136,15 @@ public class Main {
 		}*/
 
 		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("ExportFhirToCsv")) {
+			UUID serviceId = UUID.fromString(args[1]);
+			String path = args[2];
+			exportFhirToCsv(serviceId, path);
+			System.exit(0);
+		}
+
+
+		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("TestBatchInserts")) {
 			String url = args[1];
 			String user = args[2];
@@ -7036,6 +7045,62 @@ public class Main {
 				parser.close();
 				printer.close();
 			}
+		}
+	}
+
+	private static void exportFhirToCsv(UUID serviceId, String destinationPath) {
+		try {
+
+			File dir = new File(destinationPath);
+
+			Map<String, CSVPrinter> hmPrinters = new HashMap<>();
+
+			EntityManager entityManager = ConnectionManager.getEhrEntityManager(serviceId);
+			SessionImpl session = (SessionImpl) entityManager.getDelegate();
+			Connection connection = session.connection();
+
+			PreparedStatement ps = connection.prepareStatement("SELECT resource_id, resource_type, resource_data FROM resource_current");
+			LOG.debug("Running query");
+			ResultSet rs = ps.executeQuery();
+			LOG.debug("Got result set");
+
+			while (rs.next()) {
+				String id = rs.getString(1);
+				String type = rs.getString(2);
+				String json = rs.getString(3);
+
+				CSVPrinter printer = hmPrinters.get(type);
+				if (printer == null) {
+
+					String path = FilenameUtils.concat(dir.getAbsolutePath(), type + ".tsv");
+					FileWriter fileWriter = new FileWriter(new File(path));
+					BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
+
+					CSVFormat format = CSVFormat.DEFAULT
+							.withHeader("resource_id", "resource_json")
+							.withDelimiter('\t')
+							.withEscape((Character) null)
+							.withQuote((Character) null)
+							.withQuoteMode(QuoteMode.MINIMAL);
+
+					printer = new CSVPrinter(bufferedWriter, format);
+					hmPrinters.put(type, printer);
+				}
+
+				printer.printRecord(id, json);
+			}
+
+			for (String type : hmPrinters.keySet()) {
+				CSVPrinter printer = hmPrinters.get(type);
+				printer.flush();
+				printer.close();
+			}
+
+			ps.close();
+			entityManager.close();
+
+		} catch (Throwable t) {
+			LOG.error("", t);
 		}
 	}
 }
