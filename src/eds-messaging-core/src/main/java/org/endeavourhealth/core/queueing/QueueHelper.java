@@ -76,13 +76,24 @@ public class QueueHelper {
                 }
             }
 
+            String[] protocolIds = null;
+            try {
+                protocolIds = exchange.getHeaderAsStringArray(HeaderKeys.ProtocolIds);
+            } catch (Exception ex) {
+                //if an exchange has no valid protocols, then don't let it go into the queue.
+                //If a publishing service isn't in a protocol, then whenever the SFTP Reader tries to post data for it,
+                //it'll still create the exchange, but without any protocols. So we don't want these exchanges
+                //then accidentally going into the inbound queues.
+                LOG.debug("Skipping exchange " + exchangeId + " as it has no publisher protocol ID");
+                continue;
+            }
+
             //if we want to restrict the protocols applied (e.g. only want to populate a specific subscriber)
             //then filter the protocols in the header
             if (specificProtocolId != null) {
 
                 //validate the selected protocol does apply to this exchange
                 boolean foundInHeader = false;
-                String[] protocolIds = exchange.getHeaderAsStringArray(HeaderKeys.ProtocolIds);
                 for (String protocolId : protocolIds) {
                     if (protocolId.equals(specificProtocolId.toString())) {
                         foundInHeader = true;

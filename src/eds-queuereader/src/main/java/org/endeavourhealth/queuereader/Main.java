@@ -7052,6 +7052,9 @@ public class Main {
 		try {
 
 			File dir = new File(destinationPath);
+			if (dir.exists()) {
+				dir.mkdirs();
+			}
 
 			Map<String, CSVPrinter> hmPrinters = new HashMap<>();
 
