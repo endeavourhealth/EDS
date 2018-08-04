@@ -175,6 +175,14 @@ public class Main {
 			System.exit(0);
 		}
 
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("FixEmisProblems2")) {
+			String serviceId = args[1];
+			String systemId = args[2];
+			fixEmisProblems2(UUID.fromString(serviceId), UUID.fromString(systemId));
+			System.exit(0);
+		}
+
 		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("ConvertExchangeBody")) {
 			String systemId = args[1];
@@ -629,6 +637,97 @@ public class Main {
 			 */
 
 			LOG.info("Finished Emis Problems for " + serviceId);
+		} catch (Exception ex) {
+			LOG.error("", ex);
+		}
+	}
+
+	private static void fixEmisProblems2(UUID serviceId, UUID systemId) {
+		LOG.info("Fixing Emis Problems 2 for " + serviceId);
+		try {
+			Set<String> patientIds = new HashSet<>();
+
+			ResourceDalI resourceDal = DalProvider.factoryResourceDal();
+			FhirResourceFiler filer = new FhirResourceFiler(null, serviceId, systemId, null, null);
+
+			LOG.info("Finding patients");
+
+			//Go through all files to work out problem children for every problem
+			ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
+			List<Exchange> exchanges = exchangeDal.getExchangesByService(serviceId, systemId, Integer.MAX_VALUE);
+			for (int i=exchanges.size()-1; i>=0; i--) {
+				Exchange exchange = exchanges.get(i);
+				List<ExchangePayloadFile> payload = ExchangeHelper.parseExchangeBody(exchange.getBody());
+
+				for (ExchangePayloadFile item: payload) {
+					String type = item.getType();
+					if (type.equals("Admin_Patient")) {
+						InputStreamReader isr = FileHelper.readFileReaderFromSharedStorage(item.getPath());
+						CSVParser parser = new CSVParser(isr, EmisCsvToFhirTransformer.CSV_FORMAT);
+						Iterator<CSVRecord> iterator = parser.iterator();
+						while (iterator.hasNext()) {
+							CSVRecord record = iterator.next();
+							String patientId = record.get("PatientGuid");
+							patientIds.add(patientId);
+						}
+						parser.close();
+					}
+				}
+			}
+
+			LOG.info("Finished checking files, finding " + patientIds.size() + " patients");
+
+			int done = 0;
+			int fixed = 0;
+			for (String localPatientId: patientIds) {
+
+				Reference localPatientReference = ReferenceHelper.createReference(ResourceType.Patient, localPatientId);
+				Reference globalPatientReference = IdHelper.convertLocallyUniqueReferenceToEdsReference(localPatientReference, filer);
+				String patientUuid = ReferenceHelper.getReferenceId(globalPatientReference);
+
+				List<ResourceWrapper> wrappers = resourceDal.getResourcesByPatient(serviceId, UUID.fromString(patientUuid), ResourceType.Condition.toString());
+				for (ResourceWrapper wrapper: wrappers) {
+					if (wrapper.isDeleted()) {
+						continue;
+					}
+
+					String originalJson = wrapper.getResourceData();
+					Condition condition = (Condition)FhirSerializationHelper.deserializeResource(originalJson);
+
+					//sort out the nested extension references
+					Extension outerExtension = ExtensionConverter.findExtension(condition, FhirExtensionUri.PROBLEM_RELATED);
+					if (outerExtension != null) {
+						Extension innerExtension = ExtensionConverter.findExtension(outerExtension, FhirExtensionUri._PROBLEM_RELATED__TARGET);
+						if (innerExtension != null) {
+							Reference performerReference = (Reference)innerExtension.getValue();
+							String value = performerReference.getReference();
+							if (value.endsWith("}")) {
+
+								Reference globalPerformerReference = IdHelper.convertLocallyUniqueReferenceToEdsReference(performerReference, filer);
+								innerExtension.setValue(globalPerformerReference);
+							}
+						}
+					}
+
+					//save the updated condition
+					String newJson = FhirSerializationHelper.serializeResource(condition);
+					if (!newJson.equals(originalJson)) {
+
+						wrapper.setResourceData(newJson);
+						saveResourceWrapper(serviceId, wrapper);
+						fixed ++;
+					}
+				}
+
+
+				done ++;
+				if (done % 1000 == 0) {
+					LOG.info("Done " + done + " patients and fixed " + fixed + " problems");
+				}
+			}
+			LOG.info("Done " + done + " patients and fixed " + fixed + " problems");
+
+			LOG.info("Finished Emis Problems 2 for " + serviceId);
 		} catch (Exception ex) {
 			LOG.error("", ex);
 		}
