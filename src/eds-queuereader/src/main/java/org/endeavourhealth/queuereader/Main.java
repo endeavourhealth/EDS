@@ -8,10 +8,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.common.config.ConfigManager;
-import org.endeavourhealth.common.fhir.ExtensionConverter;
-import org.endeavourhealth.common.fhir.FhirExtensionUri;
-import org.endeavourhealth.common.fhir.PeriodHelper;
-import org.endeavourhealth.common.fhir.ReferenceHelper;
+import org.endeavourhealth.common.fhir.*;
 import org.endeavourhealth.common.utility.FileHelper;
 import org.endeavourhealth.common.utility.SlackHelper;
 import org.endeavourhealth.core.configuration.ConfigDeserialiser;
@@ -36,11 +33,8 @@ import org.endeavourhealth.core.queueing.QueueHelper;
 import org.endeavourhealth.core.xml.TransformErrorSerializer;
 import org.endeavourhealth.core.xml.transformError.TransformError;
 import org.endeavourhealth.transform.common.*;
-import org.endeavourhealth.transform.common.resourceBuilders.ConditionBuilder;
-import org.endeavourhealth.transform.common.resourceBuilders.ContainedListBuilder;
 import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
 import org.endeavourhealth.transform.emis.csv.helpers.EmisCsvHelper;
-import org.endeavourhealth.transform.emis.csv.transforms.careRecord.ObservationTransformer;
 import org.hibernate.internal.SessionImpl;
 import org.hl7.fhir.instance.model.*;
 import org.slf4j.Logger;
@@ -167,11 +161,19 @@ public class Main {
 			System.exit(0);
 		}
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("FixEmisProblems")) {
 			String serviceId = args[1];
 			String systemId = args[2];
 			fixEmisProblems(UUID.fromString(serviceId), UUID.fromString(systemId));
+			System.exit(0);
+		}*/
+
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("FixEmisProblems3")) {
+			String serviceId = args[1];
+			String systemId = args[2];
+			fixEmisProblems3(UUID.fromString(serviceId), UUID.fromString(systemId));
 			System.exit(0);
 		}
 
@@ -422,7 +424,7 @@ public class Main {
 		return sb.toString();
 	}
 
-	private static void fixEmisProblems(UUID serviceId, UUID systemId) {
+	/*private static void fixEmisProblems(UUID serviceId, UUID systemId) {
 		LOG.info("Fixing Emis Problems for " + serviceId);
 		try {
 			Map<String, List<String>> hmReferences = new HashMap<>();
@@ -626,21 +628,12 @@ public class Main {
 			LOG.info("Done " + done + " patients and fixed " + fixed + " problems");
 
 
-			/**
-			 b. Go through all files to work out problem children for every problem
-			 DONE c. Get every patient
-			 DONE d. For each patient
-			 DONE e. Get every Condition
-			 DONE f. ID map any references in nested extensions and contained list
-			 DONE g. Ensure all children are present (ID map ones from hash map)
-			 DONE h. Save Condition
-			 */
 
 			LOG.info("Finished Emis Problems for " + serviceId);
 		} catch (Exception ex) {
 			LOG.error("", ex);
 		}
-	}
+	}*/
 
 	private static void fixEmisProblems2(UUID serviceId, UUID systemId) {
 		LOG.info("Fixing Emis Problems 2 for " + serviceId);
@@ -731,6 +724,148 @@ public class Main {
 		} catch (Exception ex) {
 			LOG.error("", ex);
 		}
+	}
+
+	private static void fixEmisProblems3(UUID serviceId, UUID systemId) {
+		LOG.info("Fixing Emis Problems 2 for " + serviceId);
+		try {
+			Set<String> patientIds = new HashSet<>();
+
+			ResourceDalI resourceDal = DalProvider.factoryResourceDal();
+			FhirResourceFiler filer = new FhirResourceFiler(null, serviceId, systemId, null, null);
+
+			LOG.info("Finding patients");
+
+			//Go through all files to work out problem children for every problem
+			ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
+			List<Exchange> exchanges = exchangeDal.getExchangesByService(serviceId, systemId, Integer.MAX_VALUE);
+			for (int i=exchanges.size()-1; i>=0; i--) {
+				Exchange exchange = exchanges.get(i);
+				List<ExchangePayloadFile> payload = ExchangeHelper.parseExchangeBody(exchange.getBody());
+
+				for (ExchangePayloadFile item: payload) {
+					String type = item.getType();
+					if (type.equals("Admin_Patient")) {
+						InputStreamReader isr = FileHelper.readFileReaderFromSharedStorage(item.getPath());
+						CSVParser parser = new CSVParser(isr, EmisCsvToFhirTransformer.CSV_FORMAT);
+						Iterator<CSVRecord> iterator = parser.iterator();
+						while (iterator.hasNext()) {
+							CSVRecord record = iterator.next();
+							String patientId = record.get("PatientGuid");
+							patientIds.add(patientId);
+						}
+						parser.close();
+					}
+				}
+			}
+
+			LOG.info("Finished checking files, finding " + patientIds.size() + " patients");
+
+			int done = 0;
+			int fixed = 0;
+			for (String localPatientId: patientIds) {
+
+				Reference localPatientReference = ReferenceHelper.createReference(ResourceType.Patient, localPatientId);
+				Reference globalPatientReference = IdHelper.convertLocallyUniqueReferenceToEdsReference(localPatientReference, filer);
+				String patientUuid = ReferenceHelper.getReferenceId(globalPatientReference);
+
+				List<ResourceType> potentialResourceTypes = new ArrayList<>();
+				potentialResourceTypes.add(ResourceType.Observation);
+				potentialResourceTypes.add(ResourceType.Condition);
+				potentialResourceTypes.add(ResourceType.Procedure);
+				potentialResourceTypes.add(ResourceType.AllergyIntolerance);
+				potentialResourceTypes.add(ResourceType.FamilyMemberHistory);
+				potentialResourceTypes.add(ResourceType.Immunization);
+				potentialResourceTypes.add(ResourceType.DiagnosticOrder);
+				potentialResourceTypes.add(ResourceType.Specimen);
+				potentialResourceTypes.add(ResourceType.DiagnosticReport);
+				potentialResourceTypes.add(ResourceType.ReferralRequest);
+
+				for (ResourceType resourceType: potentialResourceTypes) {
+
+					List<ResourceWrapper> wrappers = resourceDal.getResourcesByPatient(serviceId, UUID.fromString(patientUuid), resourceType.toString());
+					for (ResourceWrapper wrapper : wrappers) {
+						if (wrapper.isDeleted()) {
+							continue;
+						}
+
+						String originalJson = wrapper.getResourceData();
+						DomainResource resource = (DomainResource)FhirSerializationHelper.deserializeResource(originalJson);
+
+						//Also go through all observation records and any that have parent observations - these need fixing too???
+						Extension extension = ExtensionConverter.findExtension(resource, FhirExtensionUri.PARENT_RESOURCE);
+						if (extension != null) {
+							Reference reference = (Reference)extension.getValue();
+							fixReference(serviceId, reference, potentialResourceTypes);
+						}
+
+						//Go through all patients, go through all problems, for any child that's Observation, find the true resource type then update and save
+						if (resource instanceof Condition) {
+							if (resource.hasContained()) {
+								for (Resource contained: resource.getContained()) {
+									if (contained.getId().equals("Items")) {
+										List_ containedList = (List_)contained;
+										if (containedList.hasEntry()) {
+
+											for (List_.ListEntryComponent entry: containedList.getEntry()) {
+												Reference reference = entry.getItem();
+												fixReference(serviceId, reference, potentialResourceTypes);
+											}
+										}
+									}
+								}
+							}
+						}
+
+						//save the updated condition
+						String newJson = FhirSerializationHelper.serializeResource(resource);
+						if (!newJson.equals(originalJson)) {
+
+							wrapper.setResourceData(newJson);
+							saveResourceWrapper(serviceId, wrapper);
+							fixed++;
+						}
+					}
+				}
+
+				done ++;
+				if (done % 1000 == 0) {
+					LOG.info("Done " + done + " patients and fixed " + fixed + " problems");
+				}
+			}
+			LOG.info("Done " + done + " patients and fixed " + fixed + " problems");
+
+			LOG.info("Finished Emis Problems 2 for " + serviceId);
+		} catch (Exception ex) {
+			LOG.error("", ex);
+		}
+	}
+
+	private static void fixReference(UUID serviceId, Reference reference, List<ResourceType> potentialResourceTypes) throws Exception {
+		ReferenceComponents comps = ReferenceHelper.getReferenceComponents(reference);
+		if (comps.getResourceType() != ResourceType.Observation) {
+			return;
+		}
+
+		String edsId = comps.getId();
+		ResourceType newResourceType = findTrueResourceType(serviceId, potentialResourceTypes, edsId);
+		if (newResourceType != null) {
+			String newValue = ReferenceHelper.createResourceReference(newResourceType, edsId);
+			reference.setReference(newValue);
+		}
+	}
+
+	private static ResourceType findTrueResourceType(UUID serviceId, List<ResourceType> potentials, String edsId) throws Exception {
+		UUID edsUuid = UUID.fromString(edsId);
+		ResourceDalI dal = DalProvider.factoryResourceDal();
+		for (ResourceType resourceType: potentials) {
+			ResourceWrapper wrapper = dal.getCurrentVersion(serviceId, resourceType.toString(), edsUuid);
+			if (wrapper != null) {
+				return resourceType;
+			}
+		}
+
+		return null;
 	}
 
 	/*private static void convertExchangeBody(UUID systemUuid) {
