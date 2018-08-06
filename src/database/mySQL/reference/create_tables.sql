@@ -15,6 +15,9 @@ DROP TABLE IF EXISTS trm_concept;
 DROP TABLE IF EXISTS opcs4_lookup;
 DROP TABLE IF EXISTS icd10_lookup;
 DROP TABLE IF EXISTS cerner_clinical_event_map;
+DROP TABLE IF EXISTS ctv3_to_snomed_map;
+DROP TABLE IF EXISTS read2_to_snomed_map;
+
 
 CREATE TABLE postcode_lookup
 (
