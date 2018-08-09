@@ -23,6 +23,7 @@ import org.endeavourhealth.core.database.dal.audit.ExchangeDalI;
 import org.endeavourhealth.core.database.dal.audit.models.*;
 import org.endeavourhealth.core.database.dal.ehr.ResourceDalI;
 import org.endeavourhealth.core.database.dal.ehr.models.ResourceWrapper;
+import org.endeavourhealth.core.database.dal.subscriberTransform.EnterpriseIdDalI;
 import org.endeavourhealth.core.database.rdbms.ConnectionManager;
 import org.endeavourhealth.core.exceptions.TransformException;
 import org.endeavourhealth.core.fhirStorage.FhirSerializationHelper;
@@ -44,6 +45,7 @@ import javax.persistence.EntityManager;
 import java.io.*;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
+import java.nio.file.StandardOpenOption;
 import java.sql.*;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -178,12 +180,13 @@ public class Main {
 		}
 
 		if (args.length >= 1
-				&& args[0].equalsIgnoreCase("FixEmisProblems2")) {
+				&& args[0].equalsIgnoreCase("CheckDeletedObs")) {
 			String serviceId = args[1];
 			String systemId = args[2];
-			fixEmisProblems2(UUID.fromString(serviceId), UUID.fromString(systemId));
+			checkDeletedObs(UUID.fromString(serviceId), UUID.fromString(systemId));
 			System.exit(0);
 		}
+
 
 		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("ConvertExchangeBody")) {
@@ -352,6 +355,147 @@ public class Main {
 		// Begin consume
 		rabbitHandler.start();
 		LOG.info("EDS Queue reader running (kill file location " + TransformConfig.instance().getKillFileLocation() + ")");
+	}
+
+	private static void checkDeletedObs(UUID serviceId, UUID systemId) {
+		LOG.info("Checking Observations for " + serviceId);
+		try {
+			ResourceDalI resourceDal = DalProvider.factoryResourceDal();
+			ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
+			ExchangeBatchDalI exchangeBatchDal = DalProvider.factoryExchangeBatchDal();
+
+			List<ResourceType> potentialResourceTypes = new ArrayList<>();
+			potentialResourceTypes.add(ResourceType.Procedure);
+			potentialResourceTypes.add(ResourceType.AllergyIntolerance);
+			potentialResourceTypes.add(ResourceType.FamilyMemberHistory);
+			potentialResourceTypes.add(ResourceType.Immunization);
+			potentialResourceTypes.add(ResourceType.DiagnosticOrder);
+			potentialResourceTypes.add(ResourceType.Specimen);
+			potentialResourceTypes.add(ResourceType.DiagnosticReport);
+			potentialResourceTypes.add(ResourceType.ReferralRequest);
+			potentialResourceTypes.add(ResourceType.Condition);
+			potentialResourceTypes.add(ResourceType.Observation);
+
+			List<String> subscriberConfigs = new ArrayList<>();
+			subscriberConfigs.add("ceg_data_checking");
+			subscriberConfigs.add("ceg_enterprise");
+			subscriberConfigs.add("hurley_data_checking");
+			subscriberConfigs.add("hurley_deidentified");
+
+
+			List<Exchange> exchanges = exchangeDal.getExchangesByService(serviceId, systemId, Integer.MAX_VALUE);
+			for (Exchange exchange: exchanges) {
+				List<ExchangePayloadFile> payload = ExchangeHelper.parseExchangeBody(exchange.getBody());
+				//String version = EmisCsvToFhirTransformer.determineVersion(payload);
+
+				//if we've reached the point before we process data for this practice, break out
+				if (!EmisCsvToFhirTransformer.shouldProcessPatientData(payload)) {
+					break;
+				}
+
+				ExchangePayloadFile firstItem = payload.get(0);
+				String name = FilenameUtils.getBaseName(firstItem.getPath());
+				String[] toks = name.split("_");
+				String agreementId = toks[4];
+
+				LOG.info("Doing exchange containing " + firstItem.getPath());
+
+				EmisCsvHelper csvHelper = new EmisCsvHelper(serviceId, systemId, exchange.getId(), agreementId, true);
+
+				Map<UUID, ExchangeBatch> hmBatchesByPatient = new HashMap<>();
+				List<ExchangeBatch> batches = exchangeBatchDal.retrieveForExchangeId(exchange.getId());
+				for (ExchangeBatch batch: batches) {
+					if (batch.getEdsPatientId() != null) {
+						hmBatchesByPatient.put(batch.getEdsPatientId(), batch);
+					}
+				}
+
+				for (ExchangePayloadFile item: payload) {
+					String type = item.getType();
+					if (type.equals("CareRecord_Observation")) {
+						InputStreamReader isr = FileHelper.readFileReaderFromSharedStorage(item.getPath());
+						CSVParser parser = new CSVParser(isr, EmisCsvToFhirTransformer.CSV_FORMAT);
+						Iterator<CSVRecord> iterator = parser.iterator();
+						while (iterator.hasNext()) {
+							CSVRecord record = iterator.next();
+
+							String deleted = record.get("Deleted");
+							if (deleted.equalsIgnoreCase("true")) {
+
+								String patientId = record.get("PatientGuid");
+								String observationId = record.get("ObservationGuid");
+
+								//find observation UUID
+								UUID uuid = IdHelper.getEdsResourceId(serviceId, ResourceType.Observation, patientId + ":" + observationId);
+								if (uuid == null) {
+									continue;
+								}
+
+								//find TRUE resource type
+								Reference edsReference = ReferenceHelper.createReference(ResourceType.Observation, uuid.toString());
+
+								if (fixReference(serviceId, csvHelper, edsReference, potentialResourceTypes)) {
+									ReferenceComponents comps = ReferenceHelper.getReferenceComponents(edsReference);
+									ResourceType newType = comps.getResourceType();
+									String newId = comps.getId();
+
+									//delete resource if not already done
+									ResourceWrapper resourceWrapper = resourceDal.getCurrentVersion(serviceId, newType.toString(), UUID.fromString(newId));
+									if (resourceWrapper.isDeleted()) {
+										continue;
+									}
+
+									LOG.debug("Fixing " + edsReference.getReference());
+
+									//create file of IDs to delete for each subscriber DB
+									for (String subscriberConfig: subscriberConfigs) {
+										EnterpriseIdDalI subscriberDal = DalProvider.factoryEnterpriseIdDal(subscriberConfig);
+										Long enterpriseId = subscriberDal.findEnterpriseId(newType.toString(), newId);
+										if (enterpriseId == null) {
+											continue;
+										}
+
+										String sql = null;
+										if (newType == ResourceType.AllergyIntolerance) {
+											sql = "DELETE FROM allergy_intolerance WHERE id = " + enterpriseId;
+
+										} else if (newType == ResourceType.ReferralRequest) {
+											sql = "DELETE FROM referral_request WHERE id = " + enterpriseId;
+
+										} else {
+											sql = "DELETE FROM observation WHERE id = " + enterpriseId;
+										}
+										sql += "\n";
+
+										File f = new File(subscriberConfig + ".sql");
+										Files.write(f.toPath(), sql.getBytes(), StandardOpenOption.APPEND);
+									}
+
+
+									ExchangeBatch batch = hmBatchesByPatient.get(resourceWrapper.getPatientId());
+									resourceWrapper.setDeleted(true);
+									resourceWrapper.setResourceData(null);
+									resourceWrapper.setExchangeBatchId(batch.getBatchId());
+									resourceWrapper.setVersion(UUID.randomUUID());
+									resourceWrapper.setCreatedAt(new Date());
+									resourceWrapper.setExchangeId(exchange.getId());
+
+									resourceDal.delete(resourceWrapper);
+								}
+							}
+						}
+						parser.close();
+
+					} else {
+						//no problem link
+					}
+				}
+			}
+
+			LOG.info("Finished Checking Observations for " + serviceId);
+		} catch (Exception ex) {
+			LOG.error("", ex);
+		}
 	}
 
 	private static void testBatchInserts(String url, String user, String pass, String num, String batchSizeStr) {
@@ -635,99 +779,9 @@ public class Main {
 		}
 	}*/
 
-	private static void fixEmisProblems2(UUID serviceId, UUID systemId) {
-		LOG.info("Fixing Emis Problems 2 for " + serviceId);
-		try {
-			Set<String> patientIds = new HashSet<>();
-
-			ResourceDalI resourceDal = DalProvider.factoryResourceDal();
-			FhirResourceFiler filer = new FhirResourceFiler(null, serviceId, systemId, null, null);
-
-			LOG.info("Finding patients");
-
-			//Go through all files to work out problem children for every problem
-			ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
-			List<Exchange> exchanges = exchangeDal.getExchangesByService(serviceId, systemId, Integer.MAX_VALUE);
-			for (int i=exchanges.size()-1; i>=0; i--) {
-				Exchange exchange = exchanges.get(i);
-				List<ExchangePayloadFile> payload = ExchangeHelper.parseExchangeBody(exchange.getBody());
-
-				for (ExchangePayloadFile item: payload) {
-					String type = item.getType();
-					if (type.equals("Admin_Patient")) {
-						InputStreamReader isr = FileHelper.readFileReaderFromSharedStorage(item.getPath());
-						CSVParser parser = new CSVParser(isr, EmisCsvToFhirTransformer.CSV_FORMAT);
-						Iterator<CSVRecord> iterator = parser.iterator();
-						while (iterator.hasNext()) {
-							CSVRecord record = iterator.next();
-							String patientId = record.get("PatientGuid");
-							patientIds.add(patientId);
-						}
-						parser.close();
-					}
-				}
-			}
-
-			LOG.info("Finished checking files, finding " + patientIds.size() + " patients");
-
-			int done = 0;
-			int fixed = 0;
-			for (String localPatientId: patientIds) {
-
-				Reference localPatientReference = ReferenceHelper.createReference(ResourceType.Patient, localPatientId);
-				Reference globalPatientReference = IdHelper.convertLocallyUniqueReferenceToEdsReference(localPatientReference, filer);
-				String patientUuid = ReferenceHelper.getReferenceId(globalPatientReference);
-
-				List<ResourceWrapper> wrappers = resourceDal.getResourcesByPatient(serviceId, UUID.fromString(patientUuid), ResourceType.Condition.toString());
-				for (ResourceWrapper wrapper: wrappers) {
-					if (wrapper.isDeleted()) {
-						continue;
-					}
-
-					String originalJson = wrapper.getResourceData();
-					Condition condition = (Condition)FhirSerializationHelper.deserializeResource(originalJson);
-
-					//sort out the nested extension references
-					Extension outerExtension = ExtensionConverter.findExtension(condition, FhirExtensionUri.PROBLEM_RELATED);
-					if (outerExtension != null) {
-						Extension innerExtension = ExtensionConverter.findExtension(outerExtension, FhirExtensionUri._PROBLEM_RELATED__TARGET);
-						if (innerExtension != null) {
-							Reference performerReference = (Reference)innerExtension.getValue();
-							String value = performerReference.getReference();
-							if (value.endsWith("}")) {
-
-								Reference globalPerformerReference = IdHelper.convertLocallyUniqueReferenceToEdsReference(performerReference, filer);
-								innerExtension.setValue(globalPerformerReference);
-							}
-						}
-					}
-
-					//save the updated condition
-					String newJson = FhirSerializationHelper.serializeResource(condition);
-					if (!newJson.equals(originalJson)) {
-
-						wrapper.setResourceData(newJson);
-						saveResourceWrapper(serviceId, wrapper);
-						fixed ++;
-					}
-				}
-
-
-				done ++;
-				if (done % 1000 == 0) {
-					LOG.info("Done " + done + " patients and fixed " + fixed + " problems");
-				}
-			}
-			LOG.info("Done " + done + " patients and fixed " + fixed + " problems");
-
-			LOG.info("Finished Emis Problems 2 for " + serviceId);
-		} catch (Exception ex) {
-			LOG.error("", ex);
-		}
-	}
 
 	private static void fixEmisProblems3(UUID serviceId, UUID systemId) {
-		LOG.info("Fixing Emis Problems 2 for " + serviceId);
+		LOG.info("Fixing Emis Problems 3 for " + serviceId);
 		try {
 			Set<String> patientIds = new HashSet<>();
 
@@ -770,8 +824,6 @@ public class Main {
 				String patientUuid = ReferenceHelper.getReferenceId(globalPatientReference);
 
 				List<ResourceType> potentialResourceTypes = new ArrayList<>();
-				potentialResourceTypes.add(ResourceType.Observation);
-				potentialResourceTypes.add(ResourceType.Condition);
 				potentialResourceTypes.add(ResourceType.Procedure);
 				potentialResourceTypes.add(ResourceType.AllergyIntolerance);
 				potentialResourceTypes.add(ResourceType.FamilyMemberHistory);
@@ -780,6 +832,8 @@ public class Main {
 				potentialResourceTypes.add(ResourceType.Specimen);
 				potentialResourceTypes.add(ResourceType.DiagnosticReport);
 				potentialResourceTypes.add(ResourceType.ReferralRequest);
+				potentialResourceTypes.add(ResourceType.Condition);
+				potentialResourceTypes.add(ResourceType.Observation);
 
 				for (ResourceType resourceType: potentialResourceTypes) {
 
@@ -796,7 +850,7 @@ public class Main {
 						Extension extension = ExtensionConverter.findExtension(resource, FhirExtensionUri.PARENT_RESOURCE);
 						if (extension != null) {
 							Reference reference = (Reference)extension.getValue();
-							fixReference(serviceId, reference, potentialResourceTypes);
+							fixReference(serviceId, filer, reference, potentialResourceTypes);
 						}
 
 						//Go through all patients, go through all problems, for any child that's Observation, find the true resource type then update and save
@@ -809,9 +863,24 @@ public class Main {
 
 											for (List_.ListEntryComponent entry: containedList.getEntry()) {
 												Reference reference = entry.getItem();
-												fixReference(serviceId, reference, potentialResourceTypes);
+												fixReference(serviceId, filer, reference, potentialResourceTypes);
 											}
 										}
+									}
+								}
+							}
+
+							//sort out the nested extension references
+							Extension outerExtension = ExtensionConverter.findExtension(resource, FhirExtensionUri.PROBLEM_RELATED);
+							if (outerExtension != null) {
+								Extension innerExtension = ExtensionConverter.findExtension(outerExtension, FhirExtensionUri._PROBLEM_RELATED__TARGET);
+								if (innerExtension != null) {
+									Reference performerReference = (Reference)innerExtension.getValue();
+									String value = performerReference.getReference();
+									if (value.endsWith("}")) {
+
+										Reference globalPerformerReference = IdHelper.convertLocallyUniqueReferenceToEdsReference(performerReference, filer);
+										innerExtension.setValue(globalPerformerReference);
 									}
 								}
 							}
@@ -835,33 +904,45 @@ public class Main {
 			}
 			LOG.info("Done " + done + " patients and fixed " + fixed + " problems");
 
-			LOG.info("Finished Emis Problems 2 for " + serviceId);
+			LOG.info("Finished Emis Problems 3 for " + serviceId);
 		} catch (Exception ex) {
 			LOG.error("", ex);
 		}
 	}
 
-	private static void fixReference(UUID serviceId, Reference reference, List<ResourceType> potentialResourceTypes) throws Exception {
+	private static boolean fixReference(UUID serviceId, HasServiceSystemAndExchangeIdI csvHelper, Reference reference, List<ResourceType> potentialResourceTypes) throws Exception {
+
+		//if it's already something other than observation, we're OK
 		ReferenceComponents comps = ReferenceHelper.getReferenceComponents(reference);
 		if (comps.getResourceType() != ResourceType.Observation) {
-			return;
+			return false;
 		}
 
-		String edsId = comps.getId();
-		ResourceType newResourceType = findTrueResourceType(serviceId, potentialResourceTypes, edsId);
-		if (newResourceType != null) {
-			String newValue = ReferenceHelper.createResourceReference(newResourceType, edsId);
-			reference.setReference(newValue);
+		Reference sourceReference = IdHelper.convertEdsReferenceToLocallyUniqueReference(csvHelper, reference);
+		String sourceId = ReferenceHelper.getReferenceId(sourceReference);
+
+		String newReferenceValue = findTrueResourceType(serviceId, potentialResourceTypes, sourceId);
+		if (newReferenceValue == null) {
+			return false;
 		}
+
+		reference.setReference(newReferenceValue);
+		return true;
 	}
 
-	private static ResourceType findTrueResourceType(UUID serviceId, List<ResourceType> potentials, String edsId) throws Exception {
-		UUID edsUuid = UUID.fromString(edsId);
+	private static String findTrueResourceType(UUID serviceId, List<ResourceType> potentials, String sourceId) throws Exception {
+
 		ResourceDalI dal = DalProvider.factoryResourceDal();
 		for (ResourceType resourceType: potentials) {
-			ResourceWrapper wrapper = dal.getCurrentVersion(serviceId, resourceType.toString(), edsUuid);
+
+			UUID uuid = IdHelper.getEdsResourceId(serviceId, resourceType, sourceId);
+			if (uuid == null) {
+				continue;
+			}
+
+			ResourceWrapper wrapper = dal.getCurrentVersion(serviceId, resourceType.toString(), uuid);
 			if (wrapper != null) {
-				return resourceType;
+				return ReferenceHelper.createResourceReference(resourceType, uuid.toString());
 			}
 		}
 
