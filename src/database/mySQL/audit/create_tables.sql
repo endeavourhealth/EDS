@@ -192,7 +192,7 @@ CREATE TABLE subscriber_api_audit (
   user_uuid char(36) comment 'keycloak user UUID of the requester',
   remote_address varchar(50) comment 'IP address of the requester',
   request_path varchar(1024) comment 'the URL of the requested service, including parameters',
-  request_headers varchar(255) comment 'any non-keycloak headers in the request',
+  request_headers varchar(1024) comment 'any non-keycloak headers in the request',
   response_code int comment 'HTTP response code we sent back',
   response_body varchar(2048) comment 'response sent back',
   duration_ms bigint comment 'how long the call took'

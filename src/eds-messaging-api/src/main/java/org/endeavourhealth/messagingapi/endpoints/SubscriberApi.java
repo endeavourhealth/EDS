@@ -12,8 +12,8 @@ import org.endeavourhealth.core.database.dal.DalProvider;
 import org.endeavourhealth.core.database.dal.admin.LibraryRepositoryHelper;
 import org.endeavourhealth.core.database.dal.admin.ServiceDalI;
 import org.endeavourhealth.core.database.dal.admin.SystemHelper;
-import org.endeavourhealth.core.database.dal.audit.SubscriberApiAuditDalI;
 import org.endeavourhealth.core.database.dal.audit.models.SubscriberApiAudit;
+import org.endeavourhealth.core.database.dal.audit.models.SubscriberApiAuditHelper;
 import org.endeavourhealth.core.database.dal.eds.PatientLinkDalI;
 import org.endeavourhealth.core.database.dal.eds.PatientSearchDalI;
 import org.endeavourhealth.core.database.dal.subscriberTransform.PseudoIdDalI;
@@ -42,8 +42,6 @@ public class SubscriberApi {
     private static final String FRAILTY_TERM = "Potentially frail";
     private static final String SUBSCRIBER_SYSTEM_NAME = "JSON_API"; //"Subscriber_Rest_API";
 
-    private static SubscriberApiAuditDalI apiAuditDal = DalProvider.factorySubscriberAuditApiDal();
-
     @GET
     @Path("/{resourceType}")
     @Produces(MediaType.APPLICATION_JSON)
@@ -58,7 +56,7 @@ public class SubscriberApi {
         LOG.info("Subscriber API request received with resource type = [" + resourceTypeRequested + "] and ODS code [" + headerOdsCode + "]");
 
         UUID userUuid = SecurityUtils.getCurrentUserId(sc);
-        SubscriberApiAudit audit = SubscriberApiAudit.factory(userUuid, request, uriInfo);
+        SubscriberApiAudit audit = SubscriberApiAuditHelper.factory(userUuid, request, uriInfo);
 
         try {
             String subjectNhsNumber = null;
@@ -191,7 +189,7 @@ public class SubscriberApi {
         } finally {
             //save the audit, but if there's an error saving, catch and log here, so the API response isn't affected
             try {
-                apiAuditDal.saveSubscriberApiAudit(audit);
+                SubscriberApiAuditHelper.save(audit);
             } catch (Exception ex) {
                 LOG.error("Error saving audit", ex);
             }
@@ -239,7 +237,7 @@ public class SubscriberApi {
                 .entity(json)
                 .build();
 
-        audit.updateAudit(response);
+        SubscriberApiAuditHelper.updateAudit(audit, response, true);
 
         return response;
     }
@@ -263,7 +261,7 @@ public class SubscriberApi {
                 .entity(json)
                 .build();
 
-        audit.updateAudit(response);
+        SubscriberApiAuditHelper.updateAudit(audit, response, true);
 
         return response;
     }
