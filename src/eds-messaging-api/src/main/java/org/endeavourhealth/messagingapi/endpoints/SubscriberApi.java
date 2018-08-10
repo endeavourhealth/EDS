@@ -57,7 +57,8 @@ public class SubscriberApi {
 
         LOG.info("Subscriber API request received with resource type = [" + resourceTypeRequested + "] and ODS code [" + headerOdsCode + "]");
 
-        SubscriberApiAudit audit = createAudit(request, sc, uriInfo);
+        UUID userUuid = SecurityUtils.getCurrentUserId(sc);
+        SubscriberApiAudit audit = SubscriberApiAudit.factory(userUuid, request, uriInfo);
 
         try {
             String subjectNhsNumber = null;
@@ -190,9 +191,6 @@ public class SubscriberApi {
         } finally {
             //save the audit, but if there's an error saving, catch and log here, so the API response isn't affected
             try {
-                long duration = java.lang.System.currentTimeMillis() - audit.getTimestmp().getTime();
-                audit.setDurationMs(new Long(duration));
-
                 apiAuditDal.saveSubscriberApiAudit(audit);
             } catch (Exception ex) {
                 LOG.error("Error saving audit", ex);
@@ -201,38 +199,6 @@ public class SubscriberApi {
     }
 
 
-
-    private static SubscriberApiAudit createAudit(HttpServletRequest request, SecurityContext sc, UriInfo uriInfo) {
-        SubscriberApiAudit audit = new SubscriberApiAudit();
-        audit.setTimestmp(new Date());
-
-        UUID userUuid = SecurityUtils.getCurrentUserId(sc);
-        audit.setUserUuid(userUuid);
-
-        String requestPath = uriInfo.getRequestUri().toString();
-        audit.setRequestPath(requestPath);
-
-        String requestAddress = request.getRemoteAddr();
-        audit.setRemoteAddress(requestAddress);
-
-        List<String> headerTokens = new ArrayList<>();
-        java.util.Enumeration<String> headers = request.getHeaderNames();
-        while (headers.hasMoreElements()) {
-            String header = headers.nextElement();
-
-            //ignore these two headers, as they don't give us anything useful
-            if (header.equals("host")
-                    || header.equals("authorization")) {
-                continue;
-            }
-            String headerVal = request.getHeader(header);
-            headerTokens.add(header + "=" + headerVal);
-        }
-        String headerStr = String.join(";", headerTokens);
-        audit.setRequestHeaders(headerStr);
-
-        return audit;
-    }
 
     private String getEnterpriseEndpoint(org.endeavourhealth.core.database.dal.admin.models.Service service, UUID systemId) throws Exception {
 
@@ -273,7 +239,7 @@ public class SubscriberApi {
                 .entity(json)
                 .build();
 
-        updateAudit(audit, response);
+        audit.updateAudit(response);
 
         return response;
     }
@@ -297,19 +263,9 @@ public class SubscriberApi {
                 .entity(json)
                 .build();
 
-        updateAudit(audit, response);
+        audit.updateAudit(response);
 
         return response;
-    }
-
-    private void updateAudit(SubscriberApiAudit audit, Response response) {
-        int statusCode = response.getStatus();
-        audit.setResponseCode(new Integer(statusCode));
-
-        if (response.hasEntity()) {
-            String json = (String)response.getEntity();
-            audit.setResponseBody(json);
-        }
     }
 
 
