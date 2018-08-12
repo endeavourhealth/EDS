@@ -172,6 +172,15 @@ public class Main {
 		}*/
 
 		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("FixEmisProblems3ForPublisher")) {
+			String publisherId = args[1];
+			String systemId = args[2];
+			fixEmisProblems3ForPublisher(publisherId, UUID.fromString(systemId));
+			System.exit(0);
+		}
+
+
+		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("FixEmisProblems3")) {
 			String serviceId = args[1];
 			String systemId = args[2];
@@ -384,7 +393,7 @@ public class Main {
 
 
 			List<Exchange> exchanges = exchangeDal.getExchangesByService(serviceId, systemId, Integer.MAX_VALUE);
-			for (Exchange exchange: exchanges) {
+			for (Exchange exchange : exchanges) {
 				List<ExchangePayloadFile> payload = ExchangeHelper.parseExchangeBody(exchange.getBody());
 				//String version = EmisCsvToFhirTransformer.determineVersion(payload);
 
@@ -404,13 +413,13 @@ public class Main {
 
 				Map<UUID, ExchangeBatch> hmBatchesByPatient = new HashMap<>();
 				List<ExchangeBatch> batches = exchangeBatchDal.retrieveForExchangeId(exchange.getId());
-				for (ExchangeBatch batch: batches) {
+				for (ExchangeBatch batch : batches) {
 					if (batch.getEdsPatientId() != null) {
 						hmBatchesByPatient.put(batch.getEdsPatientId(), batch);
 					}
 				}
 
-				for (ExchangePayloadFile item: payload) {
+				for (ExchangePayloadFile item : payload) {
 					String type = item.getType();
 					if (type.equals("CareRecord_Observation")) {
 						InputStreamReader isr = FileHelper.readFileReaderFromSharedStorage(item.getPath());
@@ -448,7 +457,7 @@ public class Main {
 									LOG.debug("Fixing " + edsReference.getReference());
 
 									//create file of IDs to delete for each subscriber DB
-									for (String subscriberConfig: subscriberConfigs) {
+									for (String subscriberConfig : subscriberConfigs) {
 										EnterpriseIdDalI subscriberDal = DalProvider.factoryEnterpriseIdDal(subscriberConfig);
 										Long enterpriseId = subscriberDal.findEnterpriseId(newType.toString(), newId);
 										if (enterpriseId == null) {
@@ -519,7 +528,7 @@ public class Main {
 				LOG.info("Testing non-batched inserts");
 
 				long start = System.currentTimeMillis();
-				for (int i=0; i<inserts; i++) {
+				for (int i = 0; i < inserts; i++) {
 					int col = 1;
 					ps.setString(col++, UUID.randomUUID().toString());
 					ps.setString(col++, UUID.randomUUID().toString());
@@ -527,7 +536,7 @@ public class Main {
 					ps.execute();
 				}
 				long end = System.currentTimeMillis();
-				LOG.info("Done " + inserts + " in " + (end-start) + " ms");
+				LOG.info("Done " + inserts + " in " + (end - start) + " ms");
 
 			} else {
 
@@ -780,6 +789,26 @@ public class Main {
 	}*/
 
 
+	private static void fixEmisProblems3ForPublisher(String publisher, UUID systemId) {
+		try {
+			LOG.info("Doing fix for " + publisher);
+
+			ServiceDalI dal = DalProvider.factoryServiceDal();
+			List<Service> all = dal.getAll();
+			for (Service service: all) {
+				if (service.getPublisherConfigName() != null
+						&& service.getPublisherConfigName().equals(publisher)) {
+
+					fixEmisProblems3(service.getId(), systemId);
+				}
+			}
+
+			LOG.info("Done fix for " + publisher);
+		} catch (Throwable t) {
+			LOG.error("", t);
+		}
+	}
+
 	private static void fixEmisProblems3(UUID serviceId, UUID systemId) {
 		LOG.info("Fixing Emis Problems 3 for " + serviceId);
 		try {
@@ -851,6 +880,27 @@ public class Main {
 						if (extension != null) {
 							Reference reference = (Reference)extension.getValue();
 							fixReference(serviceId, filer, reference, potentialResourceTypes);
+						}
+
+						if (resource instanceof Observation) {
+							Observation obs = (Observation)resource;
+							if (obs.hasRelated()) {
+								for (Observation.ObservationRelatedComponent related: obs.getRelated()) {
+									if (related.hasTarget()) {
+										Reference reference = related.getTarget();
+										fixReference(serviceId, filer, reference, potentialResourceTypes);
+									}
+								}
+							}
+						}
+
+						if (resource instanceof DiagnosticReport) {
+							DiagnosticReport diag = (DiagnosticReport)resource;
+							if (diag.hasResult()) {
+								for (Reference reference: diag.getResult()) {
+									fixReference(serviceId, filer, reference, potentialResourceTypes);
+								}
+							}
 						}
 
 						//Go through all patients, go through all problems, for any child that's Observation, find the true resource type then update and save
