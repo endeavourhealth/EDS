@@ -6982,12 +6982,15 @@ public class Main {
 					continue;
 				}
 
-				FileReader fr = new FileReader(sourceFile);
-				BufferedReader br = new BufferedReader(fr);
+				Charset encoding = Charset.forName("CP1252");
+				InputStreamReader reader =
+						new InputStreamReader(
+								new BufferedInputStream(
+										new FileInputStream(sourceFile)), encoding);
 
 				CSVFormat format = CSVFormat.DEFAULT.withQuoteMode(QuoteMode.ALL).withHeader();
 
-				CSVParser parser = new CSVParser(br, format);
+				CSVParser parser = new CSVParser(reader, format);
 
 				String filterColumn = null;
 
@@ -7015,8 +7018,10 @@ public class Main {
 					columnHeaders[headerIndex] = headerName;
 				}
 
-				PrintWriter fw = new PrintWriter(destFile);
-				BufferedWriter bw = new BufferedWriter(fw);
+				BufferedWriter bw =
+						new BufferedWriter(
+								new OutputStreamWriter(
+										new FileOutputStream(destFile), encoding));
 
 				CSVPrinter printer = new CSVPrinter(bw, format.withHeader(columnHeaders));
 
