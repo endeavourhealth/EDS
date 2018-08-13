@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8">
+		<title>API Access request</title>
+		<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/css/bootstrap.min.css" integrity="sha384-WskhaSGFgHYWDcbwN70/dfYBj47jz9qbsMId/iRN3ewGhXQFZCSftd1LZCfmhktB" crossorigin="anonymous">
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+		<link rel="stylesheet" href="styles.css">
+		<script src="https://www.google.com/recaptcha/api.js" async defer></script>
+		<script src="./scripts.js" async defer></script>
+	</head>
+	<body>
+
+		<main role="main">
+			<section class="jumbotron text-center">
+				<div class="container">
+					<h1 class="jumbotron-heading">Discovery API</h1>
+					Complete the form below to request access to the Discovery API.
+				</div>
+			</section>
+
+			<div class="container">
+
+				<form class="gform" method="post" onsubmit="return validateForm();">
+					<div class="row">
+						<div class="col-md-12">
+							<div class="card">
+								<div class="card-header">
+									<h3>Your details
+										<div class="pull-right">
+											<button type="submit" class="btn btn-sm btn-success" id="submit">Submit request</button>
+										</div>
+									</h3>
+								</div>
+								<div class="card-body">
+									<div class="card-text">
+										<div style="display: none;" id="thankyou_message">
+											<label>Your request for access has been successfully submitted.</label>
+										</div>
+
+										<div class="row" id="entry-form">
+											<div class="col-md-6">
+												<div class="form-group">
+													<label class="label">Forename</label>
+													<input class="form-control" type="text" name="forename" id="forename" required>
+												</div>
+											</div>
+
+											<div class="col-md-6">
+												<div class="form-group">
+													<label class="label">Surname</label>
+													<input class="form-control" type="text" name="surname" id="surname" required>
+												</div>
+											</div>
+
+											<div class="col-md-12">
+												<div class="form-group">
+													<label class="label">Email</label>
+													<input class="form-control" type="email" name="email" id="email" required>
+													<small class="email-invalid text-danger" style="display: none">Invalid email address</small>
+												</div>
+											</div>
+
+											<div class="col-md-12">
+												<div class="form-group">
+													<label class="label">Reason for access</label>
+													<select class="form-control" required name="reason" id="reason" onchange="reasonChanged()">
+														<option value="" selected disabled>Select an option...</option>
+														<option value="PI Existing">Potential integration (existing software)</option>
+														<option value="PI New">Potential integration (new software)</option>
+														<option value="Exploring">Exploring opportunities</option>
+														<option value="OS Research">Researching open source</option>
+														<option value="Other">Other reason</option>
+													</select>
+												</div>
+											</div>
+
+											<div class="col-md-12" style="display:none;" id="otherGroup">
+												<div class="form-group">
+													<label class="label">Give details</label>
+													<input class="form-control" type="text" name="other" id="other">
+												</div>
+											</div>
+
+											<div class="col-md-12">
+												<div class="form-group">
+													<label class="label">Are you a robot?</label>
+													<div class="g-recaptcha" data-sitekey="6LfMXWkUAAAAAPuZhpKrxuCD0FTxR8Iv1M6_Qw5_"></div>
+													<small class="recap-invalid text-danger" style="display: none">Select to confirm that you are not a robot</small>
+												</div>
+											</div>
+											<div class="col-md-12">
+												<small class="text-danger">* All fields are required</small>
+											</div>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</form>
+			</div>
+		</main>
+	</body>
+</html>

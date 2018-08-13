@@ -5,8 +5,10 @@
 		<title>API Test</title>
 		<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/css/bootstrap.min.css" integrity="sha384-WskhaSGFgHYWDcbwN70/dfYBj47jz9qbsMId/iRN3ewGhXQFZCSftd1LZCfmhktB" crossorigin="anonymous">
 		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+		<link rel="stylesheet" href="styles.css">
+		<script src="scripts.js" async defer></script>
 	</head>
-	<body class="bg-light">
+	<body>
 
 		<main role="main">
 			<section class="jumbotron text-center">
@@ -14,7 +16,7 @@
 					<h1 class="jumbotron-heading">Discovery API</h1>
 					<b>Important:</b> You must have a valid discovery username and password to obtain a valid authentication token.<br>
 					You must have a valid authentication token to call the secure APIs.<br>
-					Email <a href="mailto:info@discoverydataservice.org?Subject=API%20access%20request" target="_top">info@discoverydataservice.org</a> for details.
+					Use <a href="access.html">this form</a> to request access.
 				</div>
 			</section>
 
@@ -536,186 +538,4 @@
 	<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49" crossorigin="anonymous"></script>
 	<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/js/bootstrap.min.js" integrity="sha384-smHYKdLADwkXOn1EmN1qk/HfnUcbVRZyYmZ4qpPea6sjB/pTJ0euyQp0Mk8ck+5T" crossorigin="anonymous"></script>
-	<script type="application/javascript">
-		var token;
-
-		function exampleAuthToken() {
-			document.getElementById('authhost').value = "https://devauth.endeavourhealth.net";
-			document.getElementById('client').value = "eds-data-checker";
-			document.getElementById('user').value = "FredBloggs";
-			document.getElementById('pass').value = "Pa55w0rd";
-		}
-
-		function getAuthToken() {
-			var host = document.getElementById('authhost').value;
-			var client = encodeURIComponent(document.getElementById('client').value);
-			var user = encodeURIComponent(document.getElementById('user').value);
-			var pass = encodeURIComponent(document.getElementById('pass').value);
-			var xhttp = new XMLHttpRequest();
-			xhttp.open("POST", host + "/auth/realms/endeavour/protocol/openid-connect/token", false);
-			xhttp.withCredentials = true;
-			xhttp.setRequestHeader("Accept", "*/*");
-			xhttp.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
-			try {
-				xhttp.send("client_id="+client+"&username=" + user + "&password=" + pass + "&grant_type=password");
-				try {
-					var response = JSON.parse(xhttp.responseText);
-					token = response.access_token;
-					document.getElementById('authresponse').value = JSON.stringify(response, null, 2);
-				} catch (error) {
-					document.getElementById('authresponse').value = xhttp.responseText;
-				}
-			} catch (error) {
-				document.getElementById('authresponse').value = error;
-			}
-		}
-
-		function exampleResourceTypes() {
-			document.getElementById('apihost').value = "https://deveds.endeavourhealth.net/data-assurance";
-			document.getElementById('token1').value = token;
-		}
-
-		function getResourceTypes() {
-			var host = document.getElementById('apihost').value;
-			var token1 = document.getElementById('token1').value;
-			var xhttp = new XMLHttpRequest();
-			xhttp.open("GET", host + "/api/fhir/resourceType", false);
-			xhttp.withCredentials = true;
-			xhttp.setRequestHeader("Authorization", "Bearer " + token1);
-			try {
-				xhttp.send();
-				try {
-					var response = JSON.parse(xhttp.responseText);
-					document.getElementById('typesresponse').value = JSON.stringify(response, null, 2);
-				} catch (error) {
-					document.getElementById('typesresponse').value = xhttp.responseText;
-				}
-			} catch (error) {
-				document.getElementById('typesresponse').value = error;
-			}
-		}
-
-		function examplePatients() {
-			document.getElementById('apihost2').value = "https://deveds.endeavourhealth.net/data-assurance";
-			document.getElementById('token2').value = token;
-			document.getElementById('nhsnumber').value = "8111119275";
-		}
-
-		function getPatients() {
-			var host = document.getElementById('apihost2').value;
-			var nhs = encodeURIComponent(document.getElementById('nhsnumber').value);
-			var token2 = document.getElementById('token2').value;
-			var xhttp = new XMLHttpRequest();
-			xhttp.open("GET", host + "/api/fhir/patients?nhsNumber="+nhs, false);
-			xhttp.withCredentials = true;
-			xhttp.setRequestHeader("Authorization", "Bearer " + token2);
-			try {
-				xhttp.send();
-				try {
-					var response = JSON.parse(xhttp.responseText);
-					document.getElementById('patientresponse').value = JSON.stringify(response, null, 2);
-					document.getElementById('patients').value = JSON.stringify(response, null, 2);
-				} catch (error) {
-					document.getElementById('patientresponse').value = xhttp.responseText;
-				}
-			} catch (error) {
-				document.getElementById('patientresponse').value = error;
-			}
-		}
-
-		function exampleResources() {
-			document.getElementById('apihost3').value = "https://deveds.endeavourhealth.net/data-assurance";
-			document.getElementById('token3').value = token;
-			document.getElementById('resources').value = '"Patient", "Condition"';
-			document.getElementById('patients').value = document.getElementById('patientresponse').value;
-		}
-
-		function getResources() {
-			var host = document.getElementById('apihost3').value;
-			var token3 = document.getElementById('token3').value;
-			var types = document.getElementById('resources').value;
-			var pats = document.getElementById('patients').value;
-
-			var request = "{ \"resources\": [" + types + "], \"patients\": " + pats + "}";
-
-			var xhttp = new XMLHttpRequest();
-			xhttp.open("POST", host + "/api/fhir/resources", false);
-			xhttp.withCredentials = true;
-			xhttp.setRequestHeader("Authorization", "Bearer " + token3);
-			xhttp.setRequestHeader("Content-Type", "Application/Json");
-			try {
-				xhttp.send(request);
-				try {
-					var response = JSON.parse(xhttp.responseText);
-					document.getElementById('resourceresponse').value = JSON.stringify(response, null, 2);
-				} catch (error) {
-					document.getElementById('resourceresponse').value = xhttp.responseText;
-				}
-			} catch (error) {
-				document.getElementById('resourceresponse').value = error;
-			}
-		}
-
-		function exampleReference() {
-			document.getElementById('reference-api').value = "https://deveds.endeavourhealth.net/data-assurance";
-			document.getElementById('reference-token').value = token;
-			document.getElementById('reference-reference').value = 'Location/0045c497-11cb-4e64-86b8-1178354dc5ec';
-		}
-
-		function getReference() {
-			var host = document.getElementById('reference-api').value;
-			var token = document.getElementById('reference-token').value;
-			var reference = encodeURIComponent(document.getElementById('reference-reference').value);
-
-			var xhttp = new XMLHttpRequest();
-			xhttp.open("GET", host + "/api/fhir/reference?reference="+reference, false);
-			xhttp.withCredentials = true;
-			xhttp.setRequestHeader("Authorization", "Bearer " + token);
-			xhttp.setRequestHeader("Content-Type", "Application/Json");
-			try {
-				xhttp.send();
-				try {
-					var response = JSON.parse(xhttp.responseText);
-					document.getElementById('reference-response').value = JSON.stringify(response, null, 2);
-				} catch (error) {
-					document.getElementById('reference-response').value = xhttp.responseText;
-				}
-			} catch (error) {
-				document.getElementById('reference-response').value = error;
-			}
-		}
-
-		function exampleFlag() {
-			document.getElementById('apihost4').value = "https://deveds.endeavourhealth.net/eds-api";
-			document.getElementById('token4').value = token;
-			document.getElementById('nhs2').value = "8111146787";
-			document.getElementById('requester').value = "111TESTORG";
-			document.getElementById('flag').value = "289999999105";
-		}
-
-		function getFlag() {
-			var api4 = document.getElementById('apihost4').value;
-			var token4 = document.getElementById('token4').value;
-			var nhs2 = encodeURIComponent(document.getElementById('nhs2').value);
-			var req = document.getElementById('requester').value;
-			var flag = encodeURIComponent(document.getElementById('flag').value);
-
-			var xhttp = new XMLHttpRequest();
-			xhttp.open("GET", api4 + "/api/subscriber/flag?code=" + flag + "&subject=" + nhs2, false);
-			xhttp.withCredentials = true;
-			xhttp.setRequestHeader("Authorization", "Bearer " + token4);
-			xhttp.setRequestHeader("OdsCode", req);
-			try {
-				xhttp.send();
-				try {
-					var response = JSON.parse(xhttp.responseText);
-					document.getElementById('flagresponse').value = JSON.stringify(response, null, 2);
-				} catch (error) {
-					document.getElementById('flagresponse').value = xhttp.responseText;
-				}
-			} catch (error) {
-				document.getElementById('flagresponse').value = error;
-			}
-		}
-	</script>
 </html>
