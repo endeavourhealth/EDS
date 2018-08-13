@@ -196,11 +196,6 @@ function reasonChanged() {
 	var reason = document.querySelector("#reason");
 	var otherGroup = document.querySelector("#otherGroup");
 
-	if (grecaptcha.getResponse() === '')
-		console.log("Robot!");
-	else
-		console.log("Human");
-
 	if (reason.value === "Other")
 		otherGroup.style.display = "block";
 	else
