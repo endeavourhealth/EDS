@@ -451,7 +451,8 @@ public class Main {
 			PatientLinkDalI patientLinkDal = DalProvider.factoryPatientLinkDal();
 			PostcodeDalI postcodeDal = DalProvider.factoryPostcodeDal();
 
-			int done = 0;
+			int checked = 0;
+			int saved = 0;
 
 			String sql = "SELECT service_id, patient_id, uprn, qualifier, abp_address, `algorithm`, `match`, no_address, invalid_address, missing_postcode, invalid_postcode FROM patient_address_uprn";
 
@@ -534,6 +535,7 @@ public class Main {
 
 					psUpsert.addBatch();
 					inBatch++;
+					saved++;
 
 					if (inBatch >= TransformConfig.instance().getResourceSaveBatchSize()) {
 						psUpsert.executeBatch();
@@ -542,9 +544,9 @@ public class Main {
 					}
 				}
 
-				done ++;
-				if (done % 1000 == 0) {
-					LOG.info("Done " + done);
+				checked ++;
+				if (checked % 1000 == 0) {
+					LOG.info("Chcked " + checked + " Saved " + saved);
 				}
 			}
 
@@ -553,7 +555,7 @@ public class Main {
 				subscriberConnection.commit();
 			}
 
-			LOG.info("Done " + done);
+			LOG.info("Chcked " + checked + " Saved " + saved);
 
 			psUpsert.close();
 
