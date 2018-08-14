@@ -219,6 +219,7 @@ public class Main {
                 + " FROM information_schema.tables t"
                 + " INNER JOIN information_schema.columns c"
                 + " ON c.table_name = t.table_name"
+                + " AND c.table_schema = t.table_schema"
                 + " WHERE t.table_schema = '" + dbName + "'"
                 + " AND c.column_name = 'person_id';";
         rs = statement.executeQuery(tableNameSql);
