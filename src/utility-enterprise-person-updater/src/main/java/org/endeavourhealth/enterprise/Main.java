@@ -1,6 +1,5 @@
 package org.endeavourhealth.enterprise;
 
-import org.apache.commons.io.FilenameUtils;
 import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.common.utility.SlackHelper;
 import org.endeavourhealth.core.database.dal.DalProvider;
@@ -9,8 +8,6 @@ import org.endeavourhealth.core.database.dal.eds.models.PatientLinkPair;
 import org.endeavourhealth.core.database.dal.subscriberTransform.EnterpriseIdDalI;
 import org.endeavourhealth.core.database.dal.subscriberTransform.EnterprisePersonUpdaterHistoryDalI;
 import org.endeavourhealth.core.database.rdbms.enterprise.EnterpriseConnector;
-import org.endeavourhealth.transform.enterprise.outputModels.AbstractEnterpriseCsvWriter;
-import org.endeavourhealth.transform.enterprise.outputModels.OutputContainer;
 import org.hl7.fhir.instance.model.ResourceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,6 +15,7 @@ import org.slf4j.LoggerFactory;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -68,12 +66,13 @@ public class Main {
             List<UpdateJob> updates = convertChangesToEnterprise(enterpriseConfigName, changes);
 
             Connection connection = EnterpriseConnector.openConnection(enterpriseConfigName);
+            List<String> tables = findTablesWithPersonId(connection);
 
             LOG.info("Updating " + updates.size() + " person IDs on " + enterpriseConfigName);
 
             try {
                 for (UpdateJob update: updates) {
-                    changePersonId(update, connection);
+                    changePersonId(update, connection, tables);
                 }
 
                 //and delete any person records that no longer have any references to them
@@ -166,7 +165,17 @@ public class Main {
         return updatesForConfig;
     }
 
-    private static void changePersonId(UpdateJob change, Connection connection) throws Exception {
+    private static void changePersonId(UpdateJob change, Connection connection, List<String> tables) throws Exception {
+
+        for (String tableName: tables) {
+            changePersonIdOnTable(tableName, change, connection);
+        }
+
+        connection.commit();
+
+        LOG.info("Updated person ID from " + change.getOldEnterprisePersonId() + " to " + change.getNewEnterprisePersonId() + " for patient " + change.getEnterprisePatientId());
+    }
+    /*private static void changePersonId(UpdateJob change, Connection connection) throws Exception {
 
         OutputContainer outputContainer = new OutputContainer(true); //doesn't matter what we pass into the constructor
 
@@ -194,26 +203,38 @@ public class Main {
         connection.commit();
 
         LOG.info("Updated person ID from " + change.getOldEnterprisePersonId() + " to " + change.getNewEnterprisePersonId() + " for patient " + change.getEnterprisePatientId());
-    }
-
-    /*private static void changePersonId(UpdateJob change, Connection connection) throws Exception {
-
-        //can't think of a good way to make this list dynamic
-        changePersonIdOnTable("allergy_intolerance", change, connection);
-        changePersonIdOnTable("appointment", change, connection);
-        changePersonIdOnTable("encounter", change, connection);
-        changePersonIdOnTable("medication_order", change, connection);
-        changePersonIdOnTable("medication_statement", change, connection);
-        changePersonIdOnTable("observation", change, connection);
-        changePersonIdOnTable("procedure_request", change, connection);
-        changePersonIdOnTable("referral_request", change, connection);
-        changePersonIdOnTable("episode_of_care", change, connection);
-        changePersonIdOnTable("patient", change, connection);
-
-        connection.commit();
-
-        LOG.info("Updated person ID from " + change.getOldEnterprisePersonId() + " to " + change.getNewEnterprisePersonId() + " for patient " + change.getEnterprisePatientId());
     }*/
+
+    private static List<String> findTablesWithPersonId(Connection connection) throws Exception {
+
+        Statement statement = connection.createStatement();
+
+        String dbNameSql = "SELECT DATABASE();";
+        ResultSet rs = statement.executeQuery(dbNameSql);
+        rs.next();
+        String dbName = rs.getString(1);
+        rs.close();
+
+        String tableNameSql = "SELECT t.table_name"
+                + " FROM information_schema.tables t"
+                + " INNER JOIN information_schema.columns c"
+                + " ON c.table_name = t.table_name"
+                + " WHERE t.table_schema = '" + dbName + "'"
+                + " AND c.column_name = 'person_id';";
+        rs = statement.executeQuery(tableNameSql);
+
+        List<String> ret = new ArrayList<>();
+
+        while (rs.next()) {
+            String tableName = rs.getString(1);
+            ret.add(tableName);
+        }
+
+        rs.close();
+        statement.close();
+
+        return ret;
+    }
 
 
     private static void changePersonIdOnTable(String tableName, UpdateJob change, Connection connection) throws Exception {

@@ -58,8 +58,9 @@ public class EnterpriseFiler {
         JsonNode columnClassMappings = null;
 
         JsonNode config = ConfigManager.getConfigurationAsJson(configName, "db_subscriber");
+        Connection connection = openConnection(config);
+
         String url = config.get("enterprise_url").asText();
-        Connection connection = openConnection(url, config);
         String keywordEscapeChar = getKeywordEscapeChar(url);
         int batchSize = getBatchSize(url);
 
@@ -534,8 +535,9 @@ public class EnterpriseFiler {
         return escapeCharacters.get(url);
     }
 
-    private static Connection openConnection(String url, JsonNode config) throws Exception {
+    public static Connection openConnection(JsonNode config) throws Exception {
 
+        String url = config.get("enterprise_url").asText();
         HikariDataSource pool = connectionPools.get(url);
         if (pool == null) {
             synchronized (connectionPools) {

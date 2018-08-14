@@ -6,7 +6,7 @@ DROP TABLE IF EXISTS patient_link_person;
 DROP TABLE IF EXISTS patient_search_local_identifier;
 DROP TABLE IF EXISTS patient_search_episode;
 DROP TABLE IF EXISTS patient_search;
-
+DROP TABLE IF EXISTS patient_address_uprn;
 
 CREATE TABLE patient_link
 (
@@ -126,3 +126,18 @@ CREATE TABLE patient_search_local_identifier
 -- index so patient search by local ID works in timely fashion
 CREATE INDEX ix_patient_search_local_identifier_id_service_patient
   ON patient_search_local_identifier (local_id, service_id, patient_id);
+
+create table patient_address_uprn (
+	service_id char(36) not null,
+    patient_id char(36) not null,
+    uprn bigint,
+    qualifier varchar(50),
+    abp_address varchar(1024),
+    `algorithm` varchar(255),
+    `match` varchar(255),
+    no_address boolean,
+    invalid_address boolean,
+    missing_postcode boolean,
+    invalid_postcode boolean,
+    CONSTRAINT pk_patient_search PRIMARY KEY (service_id, patient_id)
+);

@@ -1,6 +1,8 @@
 package org.endeavourhealth.queuereader;
 
+import OpenPseudonymiser.Crypto;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import org.apache.commons.csv.*;
@@ -21,9 +23,12 @@ import org.endeavourhealth.core.database.dal.admin.models.Service;
 import org.endeavourhealth.core.database.dal.audit.ExchangeBatchDalI;
 import org.endeavourhealth.core.database.dal.audit.ExchangeDalI;
 import org.endeavourhealth.core.database.dal.audit.models.*;
+import org.endeavourhealth.core.database.dal.eds.PatientLinkDalI;
 import org.endeavourhealth.core.database.dal.eds.PatientSearchDalI;
 import org.endeavourhealth.core.database.dal.ehr.ResourceDalI;
 import org.endeavourhealth.core.database.dal.ehr.models.ResourceWrapper;
+import org.endeavourhealth.core.database.dal.reference.PostcodeDalI;
+import org.endeavourhealth.core.database.dal.reference.models.PostcodeLookup;
 import org.endeavourhealth.core.database.dal.subscriberTransform.EnterpriseIdDalI;
 import org.endeavourhealth.core.database.rdbms.ConnectionManager;
 import org.endeavourhealth.core.exceptions.TransformException;
@@ -34,6 +39,7 @@ import org.endeavourhealth.core.messaging.pipeline.components.PostMessageToExcha
 import org.endeavourhealth.core.queueing.QueueHelper;
 import org.endeavourhealth.core.xml.TransformErrorSerializer;
 import org.endeavourhealth.core.xml.transformError.TransformError;
+import org.endeavourhealth.subscriber.EnterpriseFiler;
 import org.endeavourhealth.transform.common.*;
 import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
 import org.endeavourhealth.transform.emis.csv.helpers.EmisCsvHelper;
@@ -200,6 +206,13 @@ public class Main {
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("FixPersonsNoNhsNumber")) {
 			fixPersonsNoNhsNumber();
+			System.exit(0);
+		}
+
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("PopulateSubscriberUprnTable")) {
+			String subscriberConfigName = args[1];
+			populateSubscriberUprnTable(subscriberConfigName);
 			System.exit(0);
 		}
 
@@ -371,6 +384,185 @@ public class Main {
 		// Begin consume
 		rabbitHandler.start();
 		LOG.info("EDS Queue reader running (kill file location " + TransformConfig.instance().getKillFileLocation() + ")");
+	}
+
+	private static void populateSubscriberUprnTable(String subscriberConfigName) throws Exception {
+		LOG.info("Populating Subscriber UPRN Table for " + subscriberConfigName);
+		try {
+
+			JsonNode config = ConfigManager.getConfigurationAsJson(subscriberConfigName, "db_subscriber");
+			boolean pseudonymised = config.get("pseudonymised").asBoolean();
+
+			byte[] saltBytes = null;
+			if (pseudonymised) {
+				JsonNode saltNode = config.get("salt");
+				String base64Salt = saltNode.asText();
+				saltBytes = Base64.getDecoder().decode(base64Salt);
+			}
+
+			Connection subscriberConnection = EnterpriseFiler.openConnection(config);
+
+			String upsertSql;
+			if (pseudonymised) {
+				upsertSql = "INSERT INTO patient_uprn"
+						+ " (patient_id, organization_id, person_id, lsoa_code, pseudo_uprn, qualifier, `algorithm`, `match`, no_address, invalid_address, missing_postcode, invalid_postcode)"
+						+ " VALUES"
+						+ " (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+						+ " ON DUPLICATE KEY UPDATE"
+						+ " organization_id = VALUES(organization_id),"
+						+ " person_id = VALUES(person_id),"
+						+ " lsoa_code = VALUES(lsoa_code),"
+						+ " pseudo_uprn = VALUES(pseudo_uprn),"
+						+ " qualifier = VALUES(qualifier),"
+						+ " `algorithm` = VALUES(`algorithm`),"
+						+ " `match` = VALUES(`match`),"
+						+ " no_address = VALUES(no_address),"
+						+ " invalid_address = VALUES(invalid_address),"
+						+ " missing_postcode = VALUES(missing_postcode),"
+						+ " invalid_postcode = VALUES(invalid_postcode)";
+
+			} else {
+				upsertSql = "INSERT INTO patient_uprn"
+						+ " (patient_id, organization_id, person_id, lsoa_code, uprn, qualifier, `algorithm`, `match`, no_address, invalid_address, missing_postcode, invalid_postcode)"
+						+ " VALUES"
+						+ " (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+						+ " ON DUPLICATE KEY UPDATE"
+						+ " organization_id = VALUES(organization_id),"
+						+ " person_id = VALUES(person_id),"
+						+ " lsoa_code = VALUES(lsoa_code),"
+						+ " uprn = VALUES(uprn),"
+						+ " qualifier = VALUES(qualifier),"
+						+ " `algorithm` = VALUES(`algorithm`),"
+						+ " `match` = VALUES(`match`),"
+						+ " no_address = VALUES(no_address),"
+						+ " invalid_address = VALUES(invalid_address),"
+						+ " missing_postcode = VALUES(missing_postcode),"
+						+ " invalid_postcode = VALUES(invalid_postcode)";
+			}
+
+			PreparedStatement psUpsert = subscriberConnection.prepareStatement(upsertSql);
+			int inBatch = 0;
+
+			EntityManager edsEntityManager = ConnectionManager.getEdsEntityManager();
+			SessionImpl session = (SessionImpl)edsEntityManager.getDelegate();
+			Connection edsConnection = session.connection();
+
+			EnterpriseIdDalI enterpriseIdDal = DalProvider.factoryEnterpriseIdDal(subscriberConfigName);
+			PatientLinkDalI patientLinkDal = DalProvider.factoryPatientLinkDal();
+			PostcodeDalI postcodeDal = DalProvider.factoryPostcodeDal();
+
+			int done = 0;
+
+			String sql = "SELECT * FROM patient_address_uprn";
+			Statement s = edsConnection.createStatement();
+			s.setFetchSize(10000); //don't get all rows at once
+			ResultSet rs = s.executeQuery(sql);
+			while (rs.next()) {
+				int col = 1;
+				String serviceId = rs.getString(col++);
+				String patientId = rs.getString(col++);
+				Long uprn = rs.getLong(col++);
+				if (rs.wasNull()) {
+					uprn = null;
+				}
+				String qualifier = rs.getString(col++);
+				String abpAddress = rs.getString(col++);
+				String algorithm = rs.getString(col++);
+				String match = rs.getString(col++);
+				boolean noAddress = rs.getBoolean(col++);
+				boolean invalidAddress = rs.getBoolean(col++);
+				boolean missingPostcode = rs.getBoolean(col++);
+				boolean invalidPostcode = rs.getBoolean(col++);
+
+				//check if patient ID already exists in the subscriber DB
+				Long subscriberPatientId = enterpriseIdDal.findEnterpriseId(ResourceType.Patient.toString(), patientId);
+				if (subscriberPatientId == null) {
+					//if the patient doesn't exist on this subscriber DB, then don't transform this record
+					continue;
+				}
+
+				Long subscriberOrgId = enterpriseIdDal.findEnterpriseOrganisationId(serviceId);
+
+				String discoveryPersonId = patientLinkDal.getPersonId(patientId);
+				Long subscriberPersonId = enterpriseIdDal.findOrCreateEnterprisePersonId(discoveryPersonId);
+
+				String lsoaCode = null;
+				if (!Strings.isNullOrEmpty(abpAddress)) {
+					String[] toks = abpAddress.split(" ");
+					String postcode = toks[toks.length-1];
+					PostcodeLookup postcodeReference = postcodeDal.getPostcodeReference(postcode);
+					if (postcodeReference != null) {
+						lsoaCode = postcodeReference.getLsoaCode();
+					}
+				}
+
+				col = 1;
+				psUpsert.setLong(col++, subscriberPatientId);
+				psUpsert.setLong(col++, subscriberOrgId);
+				psUpsert.setLong(col++, subscriberPersonId);
+				psUpsert.setString(col++, lsoaCode);
+
+				if (pseudonymised) {
+
+					String pseuoUprn = null;
+					if (uprn != null) {
+						TreeMap<String, String> keys = new TreeMap<>();
+						keys.put("UPRN", "" + uprn);
+
+						Crypto crypto = new Crypto();
+						crypto.SetEncryptedSalt(saltBytes);
+						pseuoUprn = crypto.GetDigest(keys);
+					}
+
+					psUpsert.setString(col++, pseuoUprn);
+				} else {
+					if (uprn != null) {
+						psUpsert.setLong(col++, uprn.longValue());
+					} else {
+						psUpsert.setNull(col++, Types.BIGINT);
+					}
+				}
+				psUpsert.setString(col++, qualifier);
+				psUpsert.setString(col++, algorithm);
+				psUpsert.setString(col++, match);
+				psUpsert.setBoolean(col++, noAddress);
+				psUpsert.setBoolean(col++, invalidAddress);
+				psUpsert.setBoolean(col++, missingPostcode);
+				psUpsert.setBoolean(col++, invalidPostcode);
+
+				//LOG.debug("" + psUpsert);
+
+				psUpsert.addBatch();
+				inBatch ++;
+
+				if (inBatch >= TransformConfig.instance().getResourceSaveBatchSize()) {
+					psUpsert.executeBatch();
+					subscriberConnection.commit();
+					inBatch = 0;
+				}
+
+				done ++;
+				if (done % 1000 == 0) {
+					LOG.info("Done " + done);
+				}
+			}
+
+			if (inBatch > 0) {
+				psUpsert.executeBatch();
+				subscriberConnection.commit();
+			}
+
+			LOG.info("Done " + done);
+
+			psUpsert.close();
+
+			subscriberConnection.close();
+			edsEntityManager.close();
+
+			LOG.info("Finished Populating Subscriber UPRN Table for " + subscriberConfigName);
+		} catch (Throwable t) {
+			LOG.error("", t);
+		}
 	}
 
 	private static void fixPersonsNoNhsNumber() {
