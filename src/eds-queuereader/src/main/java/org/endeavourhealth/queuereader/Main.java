@@ -21,6 +21,7 @@ import org.endeavourhealth.core.database.dal.admin.models.Service;
 import org.endeavourhealth.core.database.dal.audit.ExchangeBatchDalI;
 import org.endeavourhealth.core.database.dal.audit.ExchangeDalI;
 import org.endeavourhealth.core.database.dal.audit.models.*;
+import org.endeavourhealth.core.database.dal.eds.PatientSearchDalI;
 import org.endeavourhealth.core.database.dal.ehr.ResourceDalI;
 import org.endeavourhealth.core.database.dal.ehr.models.ResourceWrapper;
 import org.endeavourhealth.core.database.dal.subscriberTransform.EnterpriseIdDalI;
@@ -157,11 +158,11 @@ public class Main {
 			System.exit(0);
 		}
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("FixSubscribers")) {
 			fixSubscriberDbs();
 			System.exit(0);
-		}
+		}*/
 
 		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("FixEmisProblems")) {
@@ -196,6 +197,12 @@ public class Main {
 			System.exit(0);
 		}
 
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("FixPersonsNoNhsNumber")) {
+			fixPersonsNoNhsNumber();
+			System.exit(0);
+		}
+
 
 		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("ConvertExchangeBody")) {
@@ -225,14 +232,14 @@ public class Main {
 			System.exit(0);
 		}*/
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("PostToInbound")) {
 			String serviceId = args[1];
 			String systemId = args[2];
 			String filePath = args[3];
 			postToInboundFromFile(UUID.fromString(serviceId), UUID.fromString(systemId), filePath);
 			System.exit(0);
-		}
+		}*/
 
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("FixDisabledExtract")) {
@@ -364,6 +371,114 @@ public class Main {
 		// Begin consume
 		rabbitHandler.start();
 		LOG.info("EDS Queue reader running (kill file location " + TransformConfig.instance().getKillFileLocation() + ")");
+	}
+
+	private static void fixPersonsNoNhsNumber() {
+		LOG.info("Fixing persons with no NHS number");
+		try {
+
+			ServiceDalI serviceDal = DalProvider.factoryServiceDal();
+			List<Service> services = serviceDal.getAll();
+
+			EntityManager entityManager = ConnectionManager.getEdsEntityManager();
+			SessionImpl session = (SessionImpl)entityManager.getDelegate();
+			Connection patientSearchConnection = session.connection();
+			Statement patientSearchStatement = patientSearchConnection.createStatement();
+
+			for (Service service: services) {
+				LOG.info("Doing " + service.getName() + " " + service.getId());
+
+				int checked = 0;
+				int fixedPersons = 0;
+				int fixedSearches = 0;
+
+				String sql = "SELECT patient_id, nhs_number FROM patient_search WHERE service_id = '" + service.getId() + "' AND (nhs_number IS NULL or CHAR_LENGTH(nhs_number) != 10)";
+				ResultSet rs = patientSearchStatement.executeQuery(sql);
+
+				while (rs.next()) {
+					String patientId = rs.getString(1);
+					String nhsNumber = rs.getString(2);
+
+					//find matched person ID
+					String personIdSql = "SELECT person_id FROM patient_link WHERE patient_id = '" + patientId + "'";
+					Statement s = patientSearchConnection.createStatement();
+					ResultSet rsPersonId = s.executeQuery(personIdSql);
+					String personId = null;
+					if (rsPersonId.next()) {
+						personId = rsPersonId.getString(1);
+					}
+					rsPersonId.close();
+					s.close();
+					if (Strings.isNullOrEmpty(personId)) {
+						LOG.error("Patient " + patientId + " has no person ID");
+						continue;
+					}
+
+					//see whether person ID used NHS number to match
+					String patientLinkSql = "SELECT nhs_number FROM patient_link_person WHERE person_id = '" + personId + "'";
+					s = patientSearchConnection.createStatement();
+					ResultSet rsPatientLink = s.executeQuery(patientLinkSql);
+					String matchingNhsNumber = null;
+					if (rsPatientLink.next()) {
+						matchingNhsNumber = rsPatientLink.getString(1);
+					}
+					rsPatientLink.close();
+					s.close();
+
+					//if patient link person has a record for this nhs number, update the person link
+					if (!Strings.isNullOrEmpty(matchingNhsNumber)) {
+						String newPersonId = UUID.randomUUID().toString();
+
+						SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+						String createdAtStr = sdf.format(new Date());
+
+
+						s = patientSearchConnection.createStatement();
+
+						//new record in patient link history
+						String patientHistorySql = "INSERT INTO patient_link_history VALUES ('" + patientId + "', '" + service.getId() + "', '" + createdAtStr + "', '" + newPersonId + "', '" + personId + "')";
+						//LOG.debug(patientHistorySql);
+						s.execute(patientHistorySql);
+
+						//update patient link
+						String patientLinkUpdateSql = "UPDATE patient_link SET person_id = '" + newPersonId + "' WHERE patient_id = '" + patientId + "'";
+						s.execute(patientLinkUpdateSql);
+
+						patientSearchConnection.commit();
+						s.close();
+
+						fixedPersons ++;
+					}
+
+					//if patient search has an invalid NHS number, update it
+					if (!Strings.isNullOrEmpty(nhsNumber)) {
+						ResourceDalI resourceDal = DalProvider.factoryResourceDal();
+						Patient patient = (Patient)resourceDal.getCurrentVersionAsResource(service.getId(), ResourceType.Patient, patientId);
+
+						PatientSearchDalI patientSearchDal = DalProvider.factoryPatientSearchDal();
+						patientSearchDal.update(service.getId(), patient);
+
+						fixedSearches ++;
+					}
+
+					checked ++;
+					if (checked % 50 == 0) {
+						LOG.info("Checked " + checked + ", FixedPersons = " + fixedPersons + ", FixedSearches = " + fixedSearches);
+					}
+				}
+
+				LOG.info("Checked " + checked + ", FixedPersons = " + fixedPersons + ", FixedSearches = " + fixedSearches);
+
+				rs.close();
+			}
+
+			patientSearchStatement.close();
+			entityManager.close();
+
+			LOG.info("Finished fixing persons with no NHS number");
+		} catch (Throwable t) {
+			LOG.error("", t);
+		}
 	}
 
 	private static void checkDeletedObs(UUID serviceId, UUID systemId) {
@@ -2241,7 +2356,7 @@ public class Main {
 		}
 	}
 
-	private static void fixSubscriberDbs() {
+	/*private static void fixSubscriberDbs() {
 		LOG.info("Fixing Subscriber DBs");
 
 		try {
@@ -2329,7 +2444,7 @@ public class Main {
 		} catch (Throwable t) {
 			LOG.error("", t);
 		}
-	}
+	}*/
 
 	/*private static void fixReferralRequests() {
 		LOG.info("Fixing Referral Requests");
@@ -3266,7 +3381,7 @@ public class Main {
 		}
 	}
 
-	private static void postToInboundFromFile(UUID serviceId, UUID systemId, String filePath) {
+	/*private static void postToInboundFromFile(UUID serviceId, UUID systemId, String filePath) {
 
 		try {
 
@@ -3319,7 +3434,7 @@ public class Main {
 		}
 
 		LOG.info("Finished Posting to inbound for " + serviceId);
-	}
+	}*/
 
 	/*private static void postToInbound(UUID serviceId, boolean all) {
 		LOG.info("Posting to inbound for " + serviceId);
