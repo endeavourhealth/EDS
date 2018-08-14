@@ -453,10 +453,12 @@ public class Main {
 
 			int done = 0;
 
-			String sql = "SELECT * FROM patient_address_uprn";
+			String sql = "SELECT service_id, patient_id, uprn, qualifier, abp_address, `algorithm`, `match`, no_address, invalid_address, missing_postcode, invalid_postcode FROM patient_address_uprn";
+
 			Statement s = edsConnection.createStatement();
 			s.setFetchSize(10000); //don't get all rows at once
 			ResultSet rs = s.executeQuery(sql);
+			LOG.info("Got raw results back");
 			while (rs.next()) {
 				int col = 1;
 				String serviceId = rs.getString(col++);
@@ -476,69 +478,68 @@ public class Main {
 
 				//check if patient ID already exists in the subscriber DB
 				Long subscriberPatientId = enterpriseIdDal.findEnterpriseId(ResourceType.Patient.toString(), patientId);
-				if (subscriberPatientId == null) {
-					//if the patient doesn't exist on this subscriber DB, then don't transform this record
-					continue;
-				}
 
-				Long subscriberOrgId = enterpriseIdDal.findEnterpriseOrganisationId(serviceId);
+				//if the patient doesn't exist on this subscriber DB, then don't transform this record
+				if (subscriberPatientId != null) {
+					Long subscriberOrgId = enterpriseIdDal.findEnterpriseOrganisationId(serviceId);
 
-				String discoveryPersonId = patientLinkDal.getPersonId(patientId);
-				Long subscriberPersonId = enterpriseIdDal.findOrCreateEnterprisePersonId(discoveryPersonId);
+					String discoveryPersonId = patientLinkDal.getPersonId(patientId);
+					Long subscriberPersonId = enterpriseIdDal.findOrCreateEnterprisePersonId(discoveryPersonId);
 
-				String lsoaCode = null;
-				if (!Strings.isNullOrEmpty(abpAddress)) {
-					String[] toks = abpAddress.split(" ");
-					String postcode = toks[toks.length-1];
-					PostcodeLookup postcodeReference = postcodeDal.getPostcodeReference(postcode);
-					if (postcodeReference != null) {
-						lsoaCode = postcodeReference.getLsoaCode();
-					}
-				}
-
-				col = 1;
-				psUpsert.setLong(col++, subscriberPatientId);
-				psUpsert.setLong(col++, subscriberOrgId);
-				psUpsert.setLong(col++, subscriberPersonId);
-				psUpsert.setString(col++, lsoaCode);
-
-				if (pseudonymised) {
-
-					String pseuoUprn = null;
-					if (uprn != null) {
-						TreeMap<String, String> keys = new TreeMap<>();
-						keys.put("UPRN", "" + uprn);
-
-						Crypto crypto = new Crypto();
-						crypto.SetEncryptedSalt(saltBytes);
-						pseuoUprn = crypto.GetDigest(keys);
+					String lsoaCode = null;
+					if (!Strings.isNullOrEmpty(abpAddress)) {
+						String[] toks = abpAddress.split(" ");
+						String postcode = toks[toks.length - 1];
+						PostcodeLookup postcodeReference = postcodeDal.getPostcodeReference(postcode);
+						if (postcodeReference != null) {
+							lsoaCode = postcodeReference.getLsoaCode();
+						}
 					}
 
-					psUpsert.setString(col++, pseuoUprn);
-				} else {
-					if (uprn != null) {
-						psUpsert.setLong(col++, uprn.longValue());
+					col = 1;
+					psUpsert.setLong(col++, subscriberPatientId);
+					psUpsert.setLong(col++, subscriberOrgId);
+					psUpsert.setLong(col++, subscriberPersonId);
+					psUpsert.setString(col++, lsoaCode);
+
+					if (pseudonymised) {
+
+						String pseuoUprn = null;
+						if (uprn != null) {
+							TreeMap<String, String> keys = new TreeMap<>();
+							keys.put("UPRN", "" + uprn);
+
+							Crypto crypto = new Crypto();
+							crypto.SetEncryptedSalt(saltBytes);
+							pseuoUprn = crypto.GetDigest(keys);
+						}
+
+						psUpsert.setString(col++, pseuoUprn);
 					} else {
-						psUpsert.setNull(col++, Types.BIGINT);
+						if (uprn != null) {
+							psUpsert.setLong(col++, uprn.longValue());
+						} else {
+							psUpsert.setNull(col++, Types.BIGINT);
+						}
 					}
-				}
-				psUpsert.setString(col++, qualifier);
-				psUpsert.setString(col++, algorithm);
-				psUpsert.setString(col++, match);
-				psUpsert.setBoolean(col++, noAddress);
-				psUpsert.setBoolean(col++, invalidAddress);
-				psUpsert.setBoolean(col++, missingPostcode);
-				psUpsert.setBoolean(col++, invalidPostcode);
+					psUpsert.setString(col++, qualifier);
+					psUpsert.setString(col++, algorithm);
+					psUpsert.setString(col++, match);
+					psUpsert.setBoolean(col++, noAddress);
+					psUpsert.setBoolean(col++, invalidAddress);
+					psUpsert.setBoolean(col++, missingPostcode);
+					psUpsert.setBoolean(col++, invalidPostcode);
 
-				//LOG.debug("" + psUpsert);
+					//LOG.debug("" + psUpsert);
 
-				psUpsert.addBatch();
-				inBatch ++;
+					psUpsert.addBatch();
+					inBatch++;
 
-				if (inBatch >= TransformConfig.instance().getResourceSaveBatchSize()) {
-					psUpsert.executeBatch();
-					subscriberConnection.commit();
-					inBatch = 0;
+					if (inBatch >= TransformConfig.instance().getResourceSaveBatchSize()) {
+						psUpsert.executeBatch();
+						subscriberConnection.commit();
+						inBatch = 0;
+					}
 				}
 
 				done ++;
