@@ -29,6 +29,7 @@ import org.endeavourhealth.transform.common.MessageFormat;
 import org.endeavourhealth.transform.common.TransformConfig;
 import org.endeavourhealth.transform.common.exceptions.SoftwareNotSupportedException;
 import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
+import org.endeavourhealth.transform.emis.EmisCustomCsvToFhirTransformer;
 import org.endeavourhealth.transform.emis.EmisOpenToFhirTransformer;
 import org.endeavourhealth.transform.fhirhl7v2.FhirHl7v2Filer;
 import org.endeavourhealth.transform.homerton.HomertonCsvToFhirTransformer;
@@ -426,8 +427,13 @@ public class MessageTransformInbound extends PipelineComponent {
 		String exchangeBody = exchange.getBody();
 		UUID exchangeId = exchange.getId();
 
-		EmisCsvToFhirTransformer.transform(exchangeId, exchangeBody, serviceId, systemId, currentErrors,
-				batchIds);
+		//if the version is this specific string, then invoke the custom transformer, otherwise the regular one
+		if (version.equalsIgnoreCase("CUSTOM")) {
+			EmisCustomCsvToFhirTransformer.transform(exchangeId, exchangeBody, serviceId, systemId, currentErrors, batchIds);
+
+		} else {
+			EmisCsvToFhirTransformer.transform(exchangeId, exchangeBody, serviceId, systemId, currentErrors, batchIds);
+		}
 	}
 
 	private void processBartsCsvTransform(Exchange exchange, UUID serviceId, UUID systemId, String version,

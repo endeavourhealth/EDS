@@ -83,10 +83,6 @@ public class MessageTransformOutbound extends PipelineComponent {
 			} catch (Exception ex) {
 				throw new PipelineException("Failed to retrieve technical interface for system " + systemUuidStr + " and technical interface " + technicalInterfaceUuidStr + " for protocol " + transformBatch.getProtocolId(), ex);
 			}
-			/*LOG.debug("Technical interface found for system " + systemUuidStr + " and interface id " + technicalInterfaceUuidStr + " = " + (technicalInterface != null));
-			LOG.debug("Name {} UUID {} Frequency {} MessageType {} MessageFormat {} MessageFormatVersion {}",
-					technicalInterface.getName(), technicalInterface.getUuid(), technicalInterface.getFrequency(),
-					technicalInterface.getMessageType(), technicalInterface.getMessageFormat(), technicalInterface.getMessageFormatVersion());*/
 
 			String software = technicalInterface.getMessageFormat();
 			String softwareVersion = technicalInterface.getMessageFormatVersion();

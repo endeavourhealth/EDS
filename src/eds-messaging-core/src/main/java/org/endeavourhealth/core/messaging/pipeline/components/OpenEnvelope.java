@@ -32,6 +32,7 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.regex.Pattern;
 
 public class OpenEnvelope extends PipelineComponent {
 	private static final Logger LOG = LoggerFactory.getLogger(OpenEnvelope.class);
@@ -167,12 +168,25 @@ public class OpenEnvelope extends PipelineComponent {
 				System system = libraryItem.getSystem();
 				for (TechnicalInterface technicalInterface: system.getTechnicalInterface()) {
 
-					if (endpointInterfaceId.equals(technicalInterface.getUuid())
+					String technicalInterfaceId = technicalInterface.getUuid();
+					String technicalInterfaceFormat = technicalInterface.getMessageFormat();
+
+					//the system version is now a regex that allows multiple versions to be supported in one system
+					if (endpointInterfaceId.equals(technicalInterfaceId)
+							&& technicalInterfaceFormat.equalsIgnoreCase(software)) {
+
+						String technicalInterfaceVersion = technicalInterface.getMessageFormatVersion();
+						if (Pattern.matches(technicalInterfaceVersion, messageVersion)) {
+							return endpointSystemId;
+						}
+					}
+
+					/*if (endpointInterfaceId.equals(technicalInterface.getUuid())
 							&& technicalInterface.getMessageFormat().equalsIgnoreCase(software)
 							&& technicalInterface.getMessageFormatVersion().equalsIgnoreCase(messageVersion)) {
 
 						return endpointSystemId;
-					}
+					}*/
 				}
 			}
 		} catch (Exception e) {
