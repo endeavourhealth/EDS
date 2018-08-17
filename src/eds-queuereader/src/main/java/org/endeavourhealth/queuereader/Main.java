@@ -216,6 +216,13 @@ public class Main {
 			System.exit(0);
 		}
 
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("PostToProtocol")) {
+			String srcFile = args[1];
+			postToProtocol(srcFile);
+			System.exit(0);
+		}
+
 
 		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("ConvertExchangeBody")) {
@@ -384,6 +391,28 @@ public class Main {
 		// Begin consume
 		rabbitHandler.start();
 		LOG.info("EDS Queue reader running (kill file location " + TransformConfig.instance().getKillFileLocation() + ")");
+	}
+
+	private static void postToProtocol(String srcFile) {
+		LOG.info("Posting to protocol from " + srcFile);
+		try {
+			List<UUID> exchangeIds = new ArrayList<>();
+
+			List<String> lines = Files.readAllLines(new File(srcFile).toPath());
+			for (String line: lines) {
+				if (!Strings.isNullOrEmpty(line)) {
+					UUID uuid = UUID.fromString(line);
+					exchangeIds.add(uuid);
+				}
+			}
+
+			LOG.info("Posting " + exchangeIds.size() + " to Protocol queue");
+			QueueHelper.postToExchange(exchangeIds, "EdsProtocol", null, false);
+
+			LOG.info("Finished Posting to protocol from " + srcFile);
+		} catch (Throwable t) {
+			LOG.error("", t);
+		}
 	}
 
 	private static void populateSubscriberUprnTable(String subscriberConfigName) throws Exception {
