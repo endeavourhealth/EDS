@@ -1134,11 +1134,54 @@ public class Main {
 		try {
 			LOG.info("Doing fix for " + publisher);
 
+			String[] done = new String[]{
+					"01fcfe94-5dfd-4951-b74d-129f874209b0",
+					"07a267d3-189b-4968-b9b0-547de28edef5",
+					"0b9601d1-f7ab-4f5d-9f77-1841050f75ab",
+					"0fd2ff5d-2c25-4707-afe8-707e81a250b8",
+					"14276da8-c344-4841-a36d-aa38940e78e7",
+					"158251ca-0e1d-4471-8fae-250b875911e1",
+					"160131e2-a5ff-49c8-b62e-ae499a096193",
+					"16490f2b-62ce-44c6-9816-528146272340",
+					"18fa1bed-b9a0-4d55-a0cc-dfc31831259a",
+					"19cba169-d41e-424a-812f-575625c72305",
+					"19ff6a03-25df-4e61-9ab1-4573cfd24729",
+					"1b3d1627-f49e-4103-92d6-af6016476da3",
+					"1e198fbb-c9cd-429a-9b50-0f124d0d825c",
+					"20444fbe-0802-46fc-8203-339a36f52215",
+					"21e27bf3-8071-48dd-924f-1d8d21f9216f",
+					"23203e72-a3b0-4577-9942-30f7cdff358e",
+					"23be1f4a-68ec-4a49-b2ec-aa9109c99dcd",
+					"2b56033f-a9b4-4bab-bb53-c619bdb38895",
+					"2ba26f2d-8068-4b77-8e62-431edfc2c2e2",
+					"2ed89931-0ce7-49ea-88ac-7266b6c03be0",
+					"3abf8ded-f1b1-495b-9a2d-5d0223e33fa7",
+					"3b0f6720-2ffd-4f8a-afcd-7e3bb311212d",
+					"415b509a-cf39-45bc-9acf-7f982a00e159",
+					"4221276f-a3b0-4992-b426-ec2d8c7347f2",
+					"49868211-d868-4b55-a201-5acac0be0cc0",
+					"55fdcbd0-9b2d-493a-b874-865ccc93a156",
+					"56124545-d266-4da9-ba1f-b3a16edc7f31",
+					"6c11453b-dbf8-4749-a0ec-ab705920e316"
+			};
+
 			ServiceDalI dal = DalProvider.factoryServiceDal();
 			List<Service> all = dal.getAll();
 			for (Service service: all) {
 				if (service.getPublisherConfigName() != null
 						&& service.getPublisherConfigName().equals(publisher)) {
+
+					boolean alreadyDone = false;
+					String idStr = service.getId().toString();
+					for (String doneId: done) {
+						if (idStr.equalsIgnoreCase(doneId)) {
+							alreadyDone = true;
+							break;
+						}
+					}
+					if (alreadyDone) {
+						continue;
+					}
 
 					fixEmisProblems3(service.getId(), systemId);
 				}
