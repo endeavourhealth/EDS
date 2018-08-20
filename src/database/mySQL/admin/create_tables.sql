@@ -103,7 +103,9 @@ CREATE TABLE service
 	endpoints text,
 	organisations text,
 	publisher_config_name text,
-    CONSTRAINT pk_service PRIMARY KEY (id)
+	postcode varchar(50),
+	ccg_code varchar(50),
+  CONSTRAINT pk_service PRIMARY KEY (id)
 );
 
 -- would ideally like this index to be unique, to prevent us inserting the same service

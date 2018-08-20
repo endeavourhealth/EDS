@@ -64,10 +64,7 @@ CREATE TABLE patient_search
 	gender varchar(7),
 	patient_id char(36) NOT NULL,
 	last_updated timestamp NOT NULL,
-	registered_practice_ods_code VARCHAR(50),
-	uprn bigint COMMENT 'not automatically populated as of yet',
-  uprn_match_qualifier varchar(50) COMMENT 'not automatically populated as of yet',
-  uprn_matched_address varchar(1024) COMMENT 'not automatically populated as of yet',
+	registered_practice_ods_code VARCHAR(50)
 	CONSTRAINT pk_patient_search PRIMARY KEY (service_id, patient_id)
 );
 
@@ -102,6 +99,7 @@ CREATE TABLE patient_search_episode
 	organisation_type_code varchar(10),
 	registration_type_code varchar(10),
 	last_updated timestamp NOT NULL,
+	registration_status_code varchar(10),
 	CONSTRAINT pk_patient_search PRIMARY KEY (service_id, patient_id, episode_id)
 );
 

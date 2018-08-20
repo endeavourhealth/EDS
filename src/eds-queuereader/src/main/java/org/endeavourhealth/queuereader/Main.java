@@ -536,6 +536,7 @@ public class Main {
 
 						String pseuoUprn = null;
 						if (uprn != null) {
+
 							TreeMap<String, String> keys = new TreeMap<>();
 							keys.put("UPRN", "" + uprn);
 
@@ -547,6 +548,7 @@ public class Main {
 						psUpsert.setString(col++, pseuoUprn);
 					} else {
 						if (uprn != null) {
+
 							psUpsert.setLong(col++, uprn.longValue());
 						} else {
 							psUpsert.setNull(col++, Types.BIGINT);
