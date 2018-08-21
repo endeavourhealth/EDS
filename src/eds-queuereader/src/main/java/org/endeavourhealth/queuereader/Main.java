@@ -427,6 +427,10 @@ public class Main {
 				String patientId = rs.getString(1);
 
 				ResourceWrapper wrapper = resourceDal.getCurrentVersion(serviceId, ResourceType.Patient.toString(), UUID.fromString(patientId));
+				if (wrapper == null) {
+					LOG.error("Failed to get recource current for ID " + patientId);
+					continue;
+				}
 				String oldJson = wrapper.getResourceData();
 				Patient patient = (Patient)FhirSerializationHelper.deserializeResource(oldJson);
 
