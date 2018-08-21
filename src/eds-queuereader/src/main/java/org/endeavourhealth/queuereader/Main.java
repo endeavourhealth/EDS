@@ -40,7 +40,11 @@ import org.endeavourhealth.core.queueing.QueueHelper;
 import org.endeavourhealth.core.xml.TransformErrorSerializer;
 import org.endeavourhealth.core.xml.transformError.TransformError;
 import org.endeavourhealth.subscriber.EnterpriseFiler;
+import org.endeavourhealth.transform.barts.transforms.PPADDTransformer;
+import org.endeavourhealth.transform.barts.transforms.PPNAMTransformer;
+import org.endeavourhealth.transform.barts.transforms.PPPHOTransformer;
 import org.endeavourhealth.transform.common.*;
+import org.endeavourhealth.transform.common.resourceBuilders.PatientBuilder;
 import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
 import org.endeavourhealth.transform.emis.csv.helpers.EmisCsvHelper;
 import org.hibernate.internal.SessionImpl;
@@ -223,6 +227,13 @@ public class Main {
 			System.exit(0);
 		}
 
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("FixBartsPatients")) {
+			UUID serviceId = UUID.fromString(args[1]);
+			fixBartsPatients(serviceId);
+			System.exit(0);
+		}
+
 
 		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("ConvertExchangeBody")) {
@@ -391,6 +402,100 @@ public class Main {
 		// Begin consume
 		rabbitHandler.start();
 		LOG.info("EDS Queue reader running (kill file location " + TransformConfig.instance().getKillFileLocation() + ")");
+	}
+
+	private static void fixBartsPatients(UUID serviceId) {
+		LOG.debug("Fixing Barts patients at service " + serviceId);
+		try {
+
+			EntityManager edsEntityManager = ConnectionManager.getEdsEntityManager();
+			SessionImpl session = (SessionImpl)edsEntityManager.getDelegate();
+			Connection edsConnection = session.connection();
+
+			int checked = 0;
+			int fixed = 0;
+
+			ResourceDalI resourceDal = DalProvider.factoryResourceDal();
+
+			String sql = "SELECT patient_id FROM patient_search WHERE service_id = '" + serviceId + "';";
+
+			Statement s = edsConnection.createStatement();
+			s.setFetchSize(10000); //don't get all rows at once
+			ResultSet rs = s.executeQuery(sql);
+			LOG.info("Got raw results back");
+			while (rs.next()) {
+				String patientId = rs.getString(1);
+
+				ResourceWrapper wrapper = resourceDal.getCurrentVersion(serviceId, ResourceType.Patient.toString(), UUID.fromString(patientId));
+				String oldJson = wrapper.getResourceData();
+				Patient patient = (Patient)FhirSerializationHelper.deserializeResource(oldJson);
+
+				PatientBuilder patientBuilder = new PatientBuilder(patient);
+
+				List<String> numbersFromCsv = new ArrayList<>();
+				if (patient.hasTelecom()) {
+					for (ContactPoint contactPoint: patient.getTelecom()) {
+						if (contactPoint.hasId()) {
+							numbersFromCsv.add(contactPoint.getValue());
+						}
+					}
+
+					for (String numberFromCsv: numbersFromCsv) {
+						PPPHOTransformer.removeExistingContactPointWithoutIdByValue(patientBuilder, numberFromCsv);
+					}
+				}
+
+				List<HumanName> namesFromCsv = new ArrayList<>();
+				if (patient.hasName()) {
+					for (HumanName name: patient.getName()) {
+						if (name.hasId()) {
+							namesFromCsv.add(name);
+						}
+					}
+
+					for (HumanName name: namesFromCsv) {
+						PPNAMTransformer.removeExistingNameWithoutIdByValue(patientBuilder, name);
+					}
+				}
+
+				List<Address> addressesFromCsv = new ArrayList<>();
+				if (patient.hasAddress()) {
+					for (Address address: patient.getAddress()) {
+						if (address.hasId()) {
+							addressesFromCsv.add(address);
+						}
+					}
+
+					for (Address address: addressesFromCsv) {
+						PPADDTransformer.removeExistingAddressWithoutIdByValue(patientBuilder, address);
+					}
+				}
+
+
+				String newJson = FhirSerializationHelper.serializeResource(patient);
+				if (!newJson.equals(oldJson)) {
+
+					wrapper.setResourceData(newJson);
+					saveResourceWrapper(serviceId, wrapper);
+					fixed ++;
+				}
+
+				checked ++;
+				if (checked % 1000 == 0) {
+					LOG.debug("Checked " + checked + " fixed " + fixed);
+				}
+			}
+
+			LOG.debug("Checked " + checked + " fixed " + fixed);
+
+			rs.close();
+			s.close();
+			edsEntityManager.close();
+
+			LOG.debug("Finish Fixing Barts patients at service " + serviceId);
+		} catch (Throwable t) {
+			LOG.error("", t);
+		}
 	}
 
 	private static void postToProtocol(String srcFile) {
