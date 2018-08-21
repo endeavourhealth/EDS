@@ -10,6 +10,10 @@ export class Service {
 	organisations:{ [key:string]:string; };
 	additionalInfo: string;
 	notes: string;
+	postcode: string;
+	ccgCode: string;
+	organisationTypeDesc: string;
+	organisationTypeCode: string;
 
 	constructor() {}
 }

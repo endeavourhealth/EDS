@@ -103,8 +103,10 @@ CREATE TABLE service
 	endpoints text,
 	organisations text,
 	publisher_config_name text,
+	notes text,
 	postcode varchar(50),
 	ccg_code varchar(50),
+	organisation_type varchar(50),
   CONSTRAINT pk_service PRIMARY KEY (id)
 );
 

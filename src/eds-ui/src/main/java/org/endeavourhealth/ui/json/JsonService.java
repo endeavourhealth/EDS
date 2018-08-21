@@ -23,6 +23,10 @@ public final class JsonService {
     private Map<UUID, String> organisations = null;
     private String additionalInfo = null; //transient info, such as progress in deleting data
     private String notes = null;
+    private String postcode;
+    private String ccgCode;
+    private String organisationTypeDesc;
+    private String organisationTypeCode;
 
     public JsonService() {
     }
@@ -48,6 +52,12 @@ public final class JsonService {
         }
 
         this.notes = service.getNotes();
+        this.postcode = service.getPostcode();
+        this.ccgCode = service.getCcgCode();
+        if (service.getOrganisationType() != null) {
+            this.organisationTypeDesc = service.getOrganisationType().getDescription();
+            this.organisationTypeCode = service.getOrganisationType().getCode();
+        }
     }
 
     /**
@@ -123,5 +133,37 @@ public final class JsonService {
 
     public void setNotes(String notes) {
         this.notes = notes;
+    }
+
+    public String getPostcode() {
+        return postcode;
+    }
+
+    public void setPostcode(String postcode) {
+        this.postcode = postcode;
+    }
+
+    public String getCcgCode() {
+        return ccgCode;
+    }
+
+    public void setCcgCode(String ccgCode) {
+        this.ccgCode = ccgCode;
+    }
+
+    public String getOrganisationTypeDesc() {
+        return organisationTypeDesc;
+    }
+
+    public void setOrganisationTypeDesc(String organisationTypeDesc) {
+        this.organisationTypeDesc = organisationTypeDesc;
+    }
+
+    public String getOrganisationTypeCode() {
+        return organisationTypeCode;
+    }
+
+    public void setOrganisationTypeCode(String organisationTypeCode) {
+        this.organisationTypeCode = organisationTypeCode;
     }
 }

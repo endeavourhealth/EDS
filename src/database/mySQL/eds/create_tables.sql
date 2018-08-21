@@ -64,7 +64,7 @@ CREATE TABLE patient_search
 	gender varchar(7),
 	patient_id char(36) NOT NULL,
 	last_updated timestamp NOT NULL,
-	registered_practice_ods_code VARCHAR(50)
+	registered_practice_ods_code VARCHAR(50),
 	CONSTRAINT pk_patient_search PRIMARY KEY (service_id, patient_id)
 );
 
