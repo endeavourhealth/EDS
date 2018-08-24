@@ -22,38 +22,10 @@ public class LocalAuthorityUpdater {
     private static final String COL_NAME = "LAD18NM";
     private static final String COL_NAME_WELSH = "LAD18NMW";
 
-
-
-    /**
-     * utility to update the local_authority_lookup table in the reference DB from ONS data
-     *
-     * Usage
-     * =================================================================================
-     * 1. See comment in PostcodeUpdater on where to download data from
-     * 2. Then extract the archive
-     * 3. Locate the "LA_UA names and codes UK as ..." TXT file in the Documents\Names and Codes directory,
-     * 4. Then run this utility as:
-     *      Main localAuthority <txt file>
-     */
-    public static void updateLocalAuthorities(String[] args) throws Exception {
-
-        if (args.length != 2) {
-            LOG.error("Incorrect number of parameters");
-            LOG.error("Usage: localAuthority <txt file>");
-            return;
-        }
-
-        LOG.info("Local Authority Update Starting");
-
-        File mapFile = new File(args[1]);
-
-        if (!mapFile.exists()) {
-            LOG.error("" + mapFile + " doesn't exist");
-        }
-
-        LOG.info("Processing Local Authority map");
+    public static void updateLocalAuthorities(File mapFile) throws Exception {
+        LOG.info("Processing Local Authority map from " + mapFile);
         saveMappings(mapFile);
-        LOG.info("Finished Local Authority map");
+        LOG.info("Finished Local Authority map from " + mapFile);
     }
 
 
@@ -111,5 +83,13 @@ public class LocalAuthorityUpdater {
         return map;
     }
 
+    public static File findFile(String[] args) {
+        if (args.length != 2) {
+            throw new RuntimeException("Incorrect number of parameters, expecting 2");
+        }
 
+        //C:\SFTPData\postcodes\NHSPD_MAY_2018_UK_FULL\Documents\Names and Codes\LA_UA names and codes UK as at 12_18.csv
+        String root = args[1];
+        return Main.findFile("csv", "LA_UA.*UK.*", root, "Documents", "Names and Codes");
+    }
 }

@@ -27,6 +27,8 @@ public class Icd10Updater {
      * 3. Locate the "codes and titles and metadata file" e.g. ICD10_Edition5_CodesAndTitlesAndMetadata_GB_20160401.txt
      * 4. Then run this utility as:
      *      Main icd10 <names and titles and metadata file.txt>
+     *
+     * Verson on AWS Live is 2 November 2015
      */
     public static void updateIcd10Lookup(String[] args) throws Exception {
 

@@ -3,6 +3,7 @@ package org.endeavourhealth.reference;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
+import org.apache.commons.io.FilenameUtils;
 import org.endeavourhealth.common.utility.ThreadPool;
 import org.endeavourhealth.common.utility.ThreadPoolError;
 import org.endeavourhealth.core.database.dal.DalProvider;
@@ -62,52 +63,10 @@ public class PostcodeUpdater {
     private static final String POSTCODE_2011_CENSUS_LSOA = "LSOA11";
     private static final String POSTCODE_2011_CENSUS_MSOA = "MSOA11";
 
-    /**
-     * utility to update the postcode_lookup table in the reference DB from ONS data
-     *
-     * Usage
-     * =================================================================================
-     * 1. Download the latest "NHS Postcode Directory UK Full" dataset from the ONS:
-     * https://ons.maps.arcgis.com/home/search.html?q=NHS%20Postcode%20Directory%20UK%20Full&start=1&sortOrder=desc&sortField=modified#content
-     *
-     * Aug 2018 data at: https://ons.maps.arcgis.com/home/item.html?id=1ad8f296756447bf87b011ec445391fc
-     * May 2018 data at: https://ons.maps.arcgis.com/home/item.html?id=726532de7e62432dbc0d443c22ad810f
-     * Aug 2016 data at: http://ons.maps.arcgis.com/home/item.html?id=dc23a64fa2e34e1289901b27d91c335b
-     *
-     * 2. Then extract the archive
-     * 3. Locate the large (800MB+) CSV file - this is the raw postcode data file
-     * 4. Then run this utility as:
-     *      Main postcode <postcode csv file>
-     */
-    public static void updatePostcodes(String[] args) throws Exception {
-
-        if (args.length != 2) {
-            LOG.error("Incorrect number of parameters");
-            LOG.error("Usage: postcode <postcode csv file> <townsend csv file>");
-            return;
-        }
-
-        LOG.info("Postcode Update Starting");
-
-        File postcodeFile = new File(args[1]);
-        //File townsendMapFile = new File(args[2]);
-
-        if (!postcodeFile.exists()) {
-            LOG.error("" + postcodeFile + " doesn't exist");
-        }
-        /*if (!townsendMapFile.exists()) {
-            LOG.error("" + townsendMapFile + " doesn't exist");
-        }*/
-
-        /*LOG.info("Reading Townsend map");
-        Map<String, BigDecimal> townsendMap = readTownsendMap(townsendMapFile);
-        LOG.info("Finished reading Townsend map");*/
-
-        //now we've got our two small maps ready, start processing the bulk of the data, which will update the DB
-        LOG.info("Processing Postcode file");
-        //readPostcodeFile(postcodeFile, townsendMap);
+    public static void updatePostcodes(File postcodeFile) throws Exception {
+        LOG.info("Processing Postcode file from " + postcodeFile);
         readPostcodeFile(postcodeFile);
-        LOG.info("Postcode Reference Update Complete");
+        LOG.info("Postcode Reference Update Complete from " + postcodeFile);
     }
 
 
@@ -279,6 +238,47 @@ public class PostcodeUpdater {
 
             return null;
         }
+    }
+
+
+    public static File findFile(String[] args) {
+        if (args.length != 2) {
+            throw new RuntimeException("Incorrect number of parameters, expecting 2");
+        }
+
+        //C:\SFTPData\postcodes\NHSPD_MAY_2018_UK_FULL\Data\nhg18may.csv
+        String root = args[1];
+        File dir = new File(root);
+        if (!dir.exists()) {
+            throw new RuntimeException("" + dir + " does not exist");
+        }
+        dir = new File(dir, "Data");
+        if (!dir.exists()) {
+            throw new RuntimeException("" + dir + " does not exist");
+        }
+
+        //it's the largest CSV file in this dir
+        File ret = null;
+        long retSize = -1;
+
+        for (File child: dir.listFiles()) {
+            String ext = FilenameUtils.getExtension(child.getName());
+            if (!ext.equalsIgnoreCase("csv")) {
+                continue;
+            }
+
+            if (ret == null
+                    || child.length() > retSize) {
+                ret = child;
+                retSize = child.length();
+            }
+        }
+
+        if (ret == null) {
+            throw new RuntimeException("Failed to find postcode csv file in " + dir);
+        }
+
+        return ret;
     }
 }
 

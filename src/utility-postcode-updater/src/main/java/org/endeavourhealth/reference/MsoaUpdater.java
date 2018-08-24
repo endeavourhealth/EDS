@@ -21,36 +21,10 @@ public class MsoaUpdater {
     private static final String MSOA_MAP_CODE = "\uFEFFMSOA11CD"; //note the weird leading char in the raw file
     private static final String MSOA_MAP_NAME = "MSOA11NM";
 
-    /**
-     * utility to update the msoa_lookup table in the reference DB from ONS data
-     *
-     * Usage
-     * =================================================================================
-     * 1. See comment in PostcodeUpdater on where to download data from
-     * 2. Then extract the archive
-     * 3. Locate the 2011 MSOA names and codes TXT file in the Documents\Names and Codes folder,
-     * 4. Then run this utility as:
-     *      Main msoa <msoa txt file>
-     */
-    public static void updateMsoas(String[] args) throws Exception {
-
-        if (args.length != 2) {
-            LOG.error("Incorrect number of parameters");
-            LOG.error("Usage: msoa <msoa txt file>");
-            return;
-        }
-
-        LOG.info("MSOA Update Starting");
-
-        File msoaMapFile = new File(args[1]);
-
-        if (!msoaMapFile.exists()) {
-            LOG.error("" + msoaMapFile + " doesn't exist");
-        }
-
-        LOG.info("Processing MSOA map");
+    public static void updateMsoas(File msoaMapFile) throws Exception {
+        LOG.info("Processing MSOA map from " + msoaMapFile);
         saveMsoaMappings(msoaMapFile);
-        LOG.info("Finished MSOA map");
+        LOG.info("Finished MSOA map from " + msoaMapFile);
     }
 
 
@@ -108,5 +82,13 @@ public class MsoaUpdater {
         return map;
     }
 
+    public static File findFile(String[] args) {
+        if (args.length != 2) {
+            throw new RuntimeException("Incorrect number of parameters, expecting 2");
+        }
 
+        //C:\SFTPData\postcodes\NHSPD_MAY_2018_UK_FULL\Documents\Names and Codes\MSOA (2011) names and codes UK as at 12_12.csv
+        String root = args[1];
+        return Main.findFile("csv", "MSOA.*UK.*", root, "Documents", "Names and Codes");
+    }
 }

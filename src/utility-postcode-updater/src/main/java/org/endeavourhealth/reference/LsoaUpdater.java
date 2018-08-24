@@ -21,38 +21,11 @@ public class LsoaUpdater {
     private static final String LSOA_MAP_CODE = "\uFEFFLSOA11CD"; //May 2018 file has a leading weird char
     private static final String LSOA_MAP_NAME = "LSOA11NM";
 
-    /**
-     * updates the lsoa_lookup table in the reference DB from ONS data
-     *
-     * Usage
-     * =================================================================================
-     * 1. See comment in PostcodeUpdater on where to download data from
-     * 2. Then extract the archive
-     * 3. Locate the 2011 LSOA names and codes TXT file in the Documents\Names and Codes folder,
-     * 4. Then run this utility as:
-     *      Main lsoa <lsoa txt file>
-     */
-    public static void updateLsoas(String[] args) throws Exception {
-
-        if (args.length != 2) {
-            LOG.error("Incorrect number of parameters");
-            LOG.error("Usage: lsoa <lsoa txt file>");
-            return;
-        }
-
-        LOG.info("LSOA Update Starting");
-
-        File lsoaMapFile = new File(args[1]);
-
-        if (!lsoaMapFile.exists()) {
-            LOG.error("" + lsoaMapFile + " doesn't exist");
-        }
-
-        LOG.info("Processing LSOA map");
+    public static void updateLsoas(File lsoaMapFile) throws Exception {
+        LOG.info("Processing LSOA map from " + lsoaMapFile);
         saveLsoaMappings(lsoaMapFile);
-        LOG.info("Finished LSOA map");
+        LOG.info("Finished LSOA map from " + lsoaMapFile);
     }
-
 
     private static void saveLsoaMappings(File lsoaMapFile) throws Exception {
 
@@ -108,4 +81,13 @@ public class LsoaUpdater {
         return map;
     }
 
+    public static File findFile(String[] args) {
+        if (args.length != 2) {
+            throw new RuntimeException("Incorrect number of parameters, expecting 2");
+        }
+
+        //C:\SFTPData\postcodes\NHSPD_MAY_2018_UK_FULL\Documents\Names and Codes\LSOA (2011) names and codes UK as at 12_12.csv
+        String root = args[1];
+        return Main.findFile("csv", "LSOA.*UK.*", root, "Documents", "Names and Codes");
+    }
 }

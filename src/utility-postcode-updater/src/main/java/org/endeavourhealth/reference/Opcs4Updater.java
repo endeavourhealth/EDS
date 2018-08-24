@@ -27,6 +27,8 @@ public class Opcs4Updater {
      * 3. Locate the "codes and titles file" e.g. OPCS48 CodesAndTitles Nov 2016 V1.0
      * 4. Then run this utility as:
      *      Main opcs4 <names and titles file.txt>
+     *
+     * Release on AWS Live is 1 November 2016
      */
     public static void updateOpcs4Lookup(String[] args) throws Exception {
 

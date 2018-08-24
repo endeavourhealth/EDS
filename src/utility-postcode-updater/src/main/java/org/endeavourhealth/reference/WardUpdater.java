@@ -22,39 +22,10 @@ public class WardUpdater {
     private static final String COL_NAME = "WD18NM";
     private static final String COL_NAME_WELSH = "WD18NMW";
 
-
-
-    /**
-     * utility to update the ward_lookup table in the reference DB from ONS data
-     *
-     * Usage
-     * =================================================================================
-     * 1. Download the "NHS Postcode Directory UK Full" dataset from the ONS
-     * http://ons.maps.arcgis.com/home/item.html?id=dc23a64fa2e34e1289901b27d91c335b
-     * 2. Then extract the archive
-     * 3. Locate the "Ward names and codes as ..." TXT file in the Documents\Names and Codes directory,
-     * 4. Then run this utility as:
-     *      Main ward <txt file>
-     */
-    public static void updateWards(String[] args) throws Exception {
-
-        if (args.length != 2) {
-            LOG.error("Incorrect number of parameters");
-            LOG.error("Usage: ward <txt file>");
-            return;
-        }
-
-        LOG.info("Ward Update Starting");
-
-        File mapFile = new File(args[1]);
-
-        if (!mapFile.exists()) {
-            LOG.error("" + mapFile + " doesn't exist");
-        }
-
-        LOG.info("Processing Ward map");
+    public static void updateWards(File mapFile) throws Exception {
+        LOG.info("Processing Ward map from " + mapFile);
         saveMappings(mapFile);
-        LOG.info("Finished Ward map");
+        LOG.info("Finished Ward map from " + mapFile);
     }
 
 
@@ -112,5 +83,13 @@ public class WardUpdater {
         return map;
     }
 
+    public static File findFile(String[] args) {
+        if (args.length != 2) {
+            throw new RuntimeException("Incorrect number of parameters, expecting 2");
+        }
 
+        //C:\SFTPData\postcodes\NHSPD_MAY_2018_UK_FULL\Documents\Names and Codes\Ward names and codes UK as at 05_18.csv
+        String root = args[1];
+        return Main.findFile("csv", "Ward.*UK.*[^9].$", root, "Documents", "Names and Codes");
+    }
 }
