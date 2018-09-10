@@ -3141,45 +3141,48 @@ public class Main {
 			ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
 
 			//get all the exchanges, which are returned in reverse order, so reverse for simplicity
-			List<Exchange> exchanges = exchangeDal.getExchangesByService(serviceUuid, systemUuid, Integer.MAX_VALUE);
+			List<Exchange> exchangesDesc = exchangeDal.getExchangesByService(serviceUuid, systemUuid, Integer.MAX_VALUE);
 
-			//sorting by timestamp seems unreliable when exchanges were posted close together?
-			List<Exchange> tmp = new ArrayList<>();
-			for (int i=exchanges.size()-1; i>=0; i--) {
-				Exchange exchange = exchanges.get(i);
-				tmp.add(exchange);
+			Map<Exchange, List<String>> hmExchangeFiles = new HashMap<>();
+			Map<Exchange, List<String>> hmExchangeFilesWithoutStoragePrefix = new HashMap<>();
+
+			//reverse the exchange list and cache the files for each one
+			List<Exchange> exchanges = new ArrayList<>();
+
+			for (int i=exchangesDesc.size()-1; i>=0; i--) {
+				Exchange exchange = exchangesDesc.get(i);
+
+				String exchangeBody = exchange.getBody();
+				String[] files = ExchangeHelper.parseExchangeBodyOldWay(exchangeBody);
+
+				//drop out and ignore any exchanges containing the singular bespoke reg status files
+				if (files.length <= 1) {
+					continue;
+				}
+
+				exchanges.add(exchange);
+
+				//populate the map of the files with the shared storage prefix
+				List<String> fileList = Lists.newArrayList(files);
+				hmExchangeFiles.put(exchange, fileList);
+
+				//populate a map of the same files without the prefix
+				files = ExchangeHelper.parseExchangeBodyOldWay(exchangeBody);
+				for (int j=0; j<files.length; j++) {
+					String file = files[j].substring(sharedStoragePath.length() + 1);
+					files[j] = file;
+				}
+				fileList = Lists.newArrayList(files);
+				hmExchangeFilesWithoutStoragePrefix.put(exchange, fileList);
 			}
-			exchanges = tmp;
+
 			/*exchanges.sort((o1, o2) -> {
 				Date d1 = o1.getTimestamp();
 				Date d2 = o2.getTimestamp();
 				return d1.compareTo(d2);
 			});*/
 
-			LOG.info("Found " + exchanges.size() + " exchanges");
-			//continueOrQuit();
-
-			//find the files for each exchange
-			Map<Exchange, List<String>> hmExchangeFiles = new HashMap<>();
-			Map<Exchange, List<String>> hmExchangeFilesWithoutStoragePrefix = new HashMap<>();
-			for (Exchange exchange: exchanges) {
-
-				//populate a map of the files with the shared storage prefix
-				String exchangeBody = exchange.getBody();
-				String[] files = ExchangeHelper.parseExchangeBodyOldWay(exchangeBody);
-				List<String> fileList = Lists.newArrayList(files);
-				hmExchangeFiles.put(exchange, fileList);
-
-				//populate a map of the same files without the prefix
-				files = ExchangeHelper.parseExchangeBodyOldWay(exchangeBody);
-				for (int i=0; i<files.length; i++) {
-					String file = files[i].substring(sharedStoragePath.length() + 1);
-					files[i] = file;
-				}
-				fileList = Lists.newArrayList(files);
-				hmExchangeFilesWithoutStoragePrefix.put(exchange, fileList);
-			}
-			LOG.info("Cached files for each exchange");
+			LOG.info("Found " + exchanges.size() + " exchanges and cached their files");
 
 			int indexDisabled = -1;
 			int indexRebulked = -1;
@@ -3188,7 +3191,9 @@ public class Main {
 			//go back through them to find the extract where the re-bulk is and when it was disabled
 			for (int i=exchanges.size()-1; i>=0; i--) {
 				Exchange exchange = exchanges.get(i);
-				boolean disabled = isDisabledInSharingAgreementFile(exchange, hmExchangeFiles);
+
+				List<String> files = hmExchangeFiles.get(exchange);
+				boolean disabled = isDisabledInSharingAgreementFile(files);
 
 				if (disabled) {
 					indexDisabled = i;
@@ -3207,7 +3212,9 @@ public class Main {
 			//go back from when disabled to find the previous bulk load (i.e. the first one or one after it was previously not disabled)
 			for (int i=indexDisabled-1; i>=0; i--) {
 				Exchange exchange = exchanges.get(i);
-				boolean disabled = isDisabledInSharingAgreementFile(exchange, hmExchangeFiles);
+
+				List<String> files = hmExchangeFiles.get(exchange);
+				boolean disabled = isDisabledInSharingAgreementFile(files);
 				if (disabled) {
 					break;
 				}
@@ -3314,6 +3321,7 @@ public class Main {
 					String originalFile = null;
 
 					List<String> files = hmExchangeFiles.get(exchange);
+
 					for (String s: files) {
 						String originalFileType = findFileType(s);
 						if (originalFileType.equals(fileType)) {
@@ -3451,6 +3459,7 @@ public class Main {
 				for (int i=indexDisabled+1; i<indexRebulked; i++) {
 					Exchange ex = exchanges.get(i);
 					List<String> exchangeFiles = hmExchangeFilesWithoutStoragePrefix.get(ex);
+
 					for (String s: exchangeFiles) {
 						String exchangeFileType = findFileType(s);
 						if (exchangeFileType.equals(fileType)) {
@@ -3489,6 +3498,7 @@ public class Main {
 			for (int i=indexDisabled; i<indexRebulked; i++) {
 				Exchange ex = exchanges.get(i);
 				List<String> exchangeFiles = hmExchangeFilesWithoutStoragePrefix.get(ex);
+
 				for (String s: exchangeFiles) {
 					String exchangeFileType = findFileType(s);
 					if (exchangeFileType.equals("Agreements_SharingOrganisation")) {
@@ -3647,8 +3657,7 @@ public class Main {
 		return toks[3];
 	}
 
-	private static boolean isDisabledInSharingAgreementFile(Exchange exchange, Map<Exchange, List<String>> fileMap) throws Exception {
-		List<String> files = fileMap.get(exchange);
+	private static boolean isDisabledInSharingAgreementFile(List<String> files) throws Exception {
 		String file = findSharingAgreementFile(files);
 
 		InputStreamReader reader = FileHelper.readFileReaderFromSharedStorage(file);
