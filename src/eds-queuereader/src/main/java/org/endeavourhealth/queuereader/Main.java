@@ -296,12 +296,12 @@ public class Main {
 			System.exit(0);
 		}*/
 
-		/*if (args.length >= 1
+		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("FixPatientSearch")) {
 			String serviceId = args[1];
 			fixPatientSearch(serviceId);
 			System.exit(0);
-		}*/
+		}
 
 		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("Exit")) {
@@ -3869,8 +3869,8 @@ public class Main {
 		LOG.info("Finished Posting to inbound for " + serviceId);
 	}*/
 
-	/*private static void fixPatientSearch(String serviceId) {
-		LOG.info("Fixing patient search for " + serviceId);
+	private static void fixPatientSearch(String serviceId) {
+		LOG.info("Fixing patient search for service " + serviceId);
 
 		try {
 
@@ -3880,54 +3880,56 @@ public class Main {
 			ExchangeBatchDalI exchangeBatchDalI = DalProvider.factoryExchangeBatchDal();
 			ResourceDalI resourceDalI = DalProvider.factoryResourceDal();
 			PatientSearchDalI patientSearchDal = DalProvider.factoryPatientSearchDal();
-			ParserPool parser = new ParserPool();
+			ServiceDalI serviceDal = DalProvider.factoryServiceDal();
 
 			Set<UUID> patientsDone = new HashSet<>();
 
-			List<UUID> exchanges = exchangeDalI.getExchangeIdsForService(serviceUuid);
-			LOG.info("Found " + exchanges.size() + " exchanges");
+			Service service = serviceDal.getById(serviceUuid);
+			List<UUID> systemIds = findSystemIds(service);
+			for (UUID systemId: systemIds) {
 
-			for (UUID exchangeId: exchanges) {
-				List<ExchangeBatch> batches = exchangeBatchDalI.retrieveForExchangeId(exchangeId);
-				LOG.info("Found " + batches.size() + " batches in exchange " + exchangeId);
+				List<UUID> exchanges = exchangeDalI.getExchangeIdsForService(serviceUuid, systemId);
+				LOG.info("Found " + exchanges.size() + " exchanges");
 
-				for (ExchangeBatch batch: batches) {
-					UUID patientId = batch.getEdsPatientId();
-					if (patientId == null) {
-						continue;
-					}
+				for (UUID exchangeId : exchanges) {
+					List<ExchangeBatch> batches = exchangeBatchDalI.retrieveForExchangeId(exchangeId);
+					LOG.info("Found " + batches.size() + " batches in exchange " + exchangeId);
 
-					if (patientsDone.contains(patientId)) {
-						continue;
-					}
+					for (ExchangeBatch batch : batches) {
+						UUID patientId = batch.getEdsPatientId();
+						if (patientId == null) {
+							continue;
+						}
 
-					ResourceWrapper wrapper = resourceDalI.getCurrentVersion(serviceUuid, ResourceType.Patient.toString(), patientId);
-					if (wrapper != null) {
-						String json = wrapper.getResourceData();
-						if (!Strings.isNullOrEmpty(json)) {
+						if (patientsDone.contains(patientId)) {
+							continue;
+						}
+						patientsDone.add(patientId);
 
-							Patient fhirPatient = (Patient) parser.parse(json);
-							UUID systemUuid = wrapper.getSystemId();
+						ResourceWrapper wrapper = resourceDalI.getCurrentVersion(serviceUuid, ResourceType.Patient.toString(), patientId);
+						if (wrapper != null) {
+							String json = wrapper.getResourceData();
+							if (!Strings.isNullOrEmpty(json)) {
 
-							patientSearchDal.update(serviceUuid, systemUuid, fhirPatient);
+								Patient fhirPatient = (Patient)FhirSerializationHelper.deserializeResource(json);
+								patientSearchDal.update(serviceUuid, fhirPatient);
+							}
+						}
+
+						if (patientsDone.size() % 1000 == 0) {
+							LOG.info("Done " + patientsDone.size());
 						}
 					}
-
-					patientsDone.add(patientId);
-
-					if (patientsDone.size() % 1000 == 0) {
-						LOG.info("Done " + patientsDone.size());
-					}
 				}
-
 			}
+			LOG.info("Done " + patientsDone.size());
 
 		} catch (Exception ex) {
 			LOG.error("", ex);
 		}
 
 		LOG.info("Finished fixing patient search for " + serviceId);
-	}*/
+	}
 
 	private static void runSql(String host, String username, String password, String sqlFile) {
 		LOG.info("Running SQL on " + host + " from " + sqlFile);

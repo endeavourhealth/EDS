@@ -570,7 +570,7 @@ public class EnterpriseFiler {
                     conn.close();
 
                     //and catch the batch size
-                    int batchSize = 20000;
+                    int batchSize = 50;
                     if (config.has("batch_size")) {
                         batchSize = config.get("batch_size").asInt();
                         if (batchSize <= 0) {
