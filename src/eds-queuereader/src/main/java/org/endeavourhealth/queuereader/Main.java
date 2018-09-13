@@ -432,32 +432,62 @@ public class Main {
 			SessionImpl session3 = (SessionImpl)ehrEntityManager.getDelegate();
 			Connection ehrConnection = session3.connection();
 
-			String sql = "SELECT resource_type, resource_id, version, mappings_json FROM " + table;
+			String sql = "SELECT resource_type, resource_id, version FROM " + table;
 			Statement statement = mappingConnection.createStatement();
 			statement.setFetchSize(1000);
 			ResultSet rs = statement.executeQuery(sql);
-			LOG.debug("Got mapping JSON records from DB");
+			LOG.debug("Got resource IDs from DB");
 
 			Map<String, Map<String, List<String>>> hm = new HashMap<>();
 			int count = 0;
 
 			//build map up per resource
 			while (rs.next()) {
-				String resourceType = rs.getString(1);
-				String resourceId = rs.getString(2);
-				String resourceVersion  = rs.getString(3);
-				String jsonStr = rs.getString(4);
+				String resourceType = rs.getString("resource_type");
+				String resourceId = rs.getString("resource_id");
+				String resourceVersion  = rs.getString("version");
 
-				sql = "SELECT resource_data FROM resource_history WHERE resource_type = ? AND resource_id = ? AND version = ?";
-				PreparedStatement statement1 = ehrConnection.prepareStatement(sql);
+
+				/*sql = "SELECT * FROM resource_field_mappings WHERE version = 'a905db26-1357-4710-90ef-474f256567ed';";
+				PreparedStatement statement1 = mappingConnection.prepareStatement(sql);*/
+
+				/*sql = "SELECT * FROM resource_field_mappings WHERE version = ?";
+				PreparedStatement statement1 = mappingConnection.prepareStatement(sql);*/
+
+				sql = "SELECT * FROM resource_field_mappings WHERE resource_type = '" + resourceType + "' AND resource_id = '" + resourceId + "' AND version = '" + resourceVersion + "';";
+				PreparedStatement statement1 = mappingConnection.prepareStatement(sql);
+
+				//sql = "SELECT * FROM resource_field_mappings WHERE resource_type = ? AND resource_id = ? AND version = ?";
+				//sql = "SELECT * FROM resource_field_mappings WHERE resource_type = ? AND resource_id = ? AND version = ?";
+
+				//statement1.setString(1, resourceVersion);
+				/*statement1.setString(1, resourceType);
+				statement1.setString(2, resourceId);
+				statement1.setString(3, resourceVersion);*/
+
+				ResultSet rs1 = null;
+				try {
+					rs1 = statement1.executeQuery(sql);
+
+ 				} catch (Exception ex) {
+					LOG.error("" + statement1);
+					throw ex;
+				}
+				rs1.next();
+				String jsonStr = rs1.getString("mappings_json");
+				rs1.close();
+				statement1.close();
+
+				sql = "SELECT * FROM resource_history WHERE resource_type = ? AND resource_id = ? AND version = ?";
+				statement1 = ehrConnection.prepareStatement(sql);
 				statement1.setString(1, resourceType);
 				statement1.setString(2, resourceId);
 				statement1.setString(3, resourceVersion);
-				ResultSet rs1 = statement1.executeQuery();
+				rs1 = statement1.executeQuery();
 				if (!rs1.next()) {
 					throw new Exception("Failed to find resource_history for " + statement1.toString());
 				}
-				String s = rs1.getString(1);
+				String s = rs1.getString("resource_data");
 				rs1.close();
 				statement1.close();
 
