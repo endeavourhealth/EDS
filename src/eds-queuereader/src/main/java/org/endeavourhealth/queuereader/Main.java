@@ -299,7 +299,11 @@ public class Main {
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("FixPatientSearch")) {
 			String serviceId = args[1];
-			fixPatientSearch(serviceId);
+			String systemId = null;
+			if (args.length > 2) {
+				systemId = args[2];
+			}
+			fixPatientSearch(serviceId, systemId);
 			System.exit(0);
 		}
 
@@ -3869,12 +3873,17 @@ public class Main {
 		LOG.info("Finished Posting to inbound for " + serviceId);
 	}*/
 
-	private static void fixPatientSearch(String serviceId) {
+	private static void fixPatientSearch(String serviceId, String filterSystemId) {
 		LOG.info("Fixing patient search for service " + serviceId);
 
 		try {
 
 			UUID serviceUuid = UUID.fromString(serviceId);
+
+			UUID filterSystemUuid = null;
+			if (!Strings.isNullOrEmpty(filterSystemId)) {
+				filterSystemUuid = UUID.fromString(filterSystemId);
+			}
 
 			ExchangeDalI exchangeDalI = DalProvider.factoryExchangeDal();
 			ExchangeBatchDalI exchangeBatchDalI = DalProvider.factoryExchangeBatchDal();
@@ -3887,6 +3896,11 @@ public class Main {
 			Service service = serviceDal.getById(serviceUuid);
 			List<UUID> systemIds = findSystemIds(service);
 			for (UUID systemId: systemIds) {
+
+				if (filterSystemUuid != null
+						&& !filterSystemUuid.equals(systemId)) {
+					continue;
+				}
 
 				List<UUID> exchanges = exchangeDalI.getExchangeIdsForService(serviceUuid, systemId);
 				LOG.info("Found " + exchanges.size() + " exchanges");
