@@ -101,7 +101,7 @@ public class Main {
                 + " WHERE NOT EXISTS ("
                 + " SELECT 1"
                 + " FROM patient"
-                + " WHERE patient.person_id = person.id);";
+                + " WHERE patient.person_id = person.id)";
 
         PreparedStatement ps = connection.prepareStatement(sql);
         ResultSet rs = ps.executeQuery();
@@ -116,7 +116,7 @@ public class Main {
         rs.close();
         ps.close();
 
-        sql = "DELETE FROM person WHERE id = ?;";
+        sql = "DELETE FROM person WHERE id = ?";
 
 
         ps = connection.prepareStatement(sql);
@@ -209,7 +209,7 @@ public class Main {
 
         Statement statement = connection.createStatement();
 
-        String dbNameSql = "SELECT DATABASE();";
+        String dbNameSql = "SELECT DATABASE()";
         ResultSet rs = statement.executeQuery(dbNameSql);
         rs.next();
         String dbName = rs.getString(1);
@@ -221,7 +221,7 @@ public class Main {
                 + " ON c.table_name = t.table_name"
                 + " AND c.table_schema = t.table_schema"
                 + " WHERE t.table_schema = '" + dbName + "'"
-                + " AND c.column_name = 'person_id';";
+                + " AND c.column_name = 'person_id'";
         rs = statement.executeQuery(tableNameSql);
 
         List<String> ret = new ArrayList<>();
