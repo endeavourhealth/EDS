@@ -56,6 +56,7 @@ import javax.persistence.EntityManager;
 import java.io.*;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.sql.*;
 import java.text.SimpleDateFormat;
@@ -141,6 +142,16 @@ public class Main {
 			testPreparedStatements(url, user, pass, serviceId);
 			System.exit(0);
 		}*/
+
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("CreateTransformMap")) {
+			UUID serviceId = UUID.fromString(args[1]);
+			String table = args[2];
+			String dstFile = args[3];
+			createTransforMap(serviceId, table, dstFile);
+			System.exit(0);
+		}
+
 
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("ExportFhirToCsv")) {
@@ -406,6 +417,212 @@ public class Main {
 		// Begin consume
 		rabbitHandler.start();
 		LOG.info("EDS Queue reader running (kill file location " + TransformConfig.instance().getKillFileLocation() + ")");
+	}
+
+	private static void createTransforMap(UUID serviceId, String table, String outputFile) {
+		LOG.debug("Creating transform map for " + serviceId + " from " + table);
+		try {
+
+			//retrieve from table
+			EntityManager transformEntityManager = ConnectionManager.getPublisherTransformEntityManager(serviceId);
+			SessionImpl session2 = (SessionImpl)transformEntityManager.getDelegate();
+			Connection mappingConnection = session2.connection();
+
+			EntityManager ehrEntityManager = ConnectionManager.getEhrEntityManager(serviceId);
+			SessionImpl session3 = (SessionImpl)ehrEntityManager.getDelegate();
+			Connection ehrConnection = session3.connection();
+
+			String sql = "SELECT resource_type, resource_id, version, mappings_json FROM " + table;
+			Statement statement = mappingConnection.createStatement();
+			statement.setFetchSize(1000);
+			ResultSet rs = statement.executeQuery(sql);
+			LOG.debug("Got mapping JSON records from DB");
+
+			Map<String, Map<String, List<String>>> hm = new HashMap<>();
+			int count = 0;
+
+			//build map up per resource
+			while (rs.next()) {
+				String resourceType = rs.getString(1);
+				String resourceId = rs.getString(2);
+				String resourceVersion  = rs.getString(3);
+				String jsonStr = rs.getString(4);
+
+				sql = "SELECT resource_data FROM resource_history WHERE resource_type = ? AND resource_id = ? AND version = ?";
+				PreparedStatement statement1 = ehrConnection.prepareStatement(sql);
+				statement1.setString(1, resourceType);
+				statement1.setString(2, resourceId);
+				statement1.setString(3, resourceVersion);
+				ResultSet rs1 = statement1.executeQuery();
+				if (!rs1.next()) {
+					throw new Exception("Failed to find resource_history for " + statement1.toString());
+				}
+				String s = rs1.getString(1);
+				rs1.close();
+				statement1.close();
+
+				JsonNode resourceJson = ObjectMapperPool.getInstance().readTree(s);
+
+				Map<String, List<String>> hmResourceType = hm.get(resourceType);
+				if (hmResourceType == null) {
+					hmResourceType = new HashMap<>();
+					hm.put(resourceType, hmResourceType);
+				}
+
+				JsonNode json = ObjectMapperPool.getInstance().readTree(jsonStr);
+
+				for (int i=0; i<json.size(); i++) {
+					JsonNode child = json.get(i);
+
+					JsonNode idNode = child.get("auditId");
+					JsonNode colsNode = child.get("cols");
+					if (idNode == null) {
+						throw new Exception("No ID node in " + jsonStr);
+					}
+					if (colsNode == null) {
+						throw new Exception("No cols node in " + jsonStr);
+					}
+
+					long id = idNode.asLong();
+
+					//get source file ID
+					sql = "SELECT * FROM source_file_record WHERE id = ?";
+					statement1 = mappingConnection.prepareStatement(sql);
+					statement1.setLong(1, id);
+					rs1 = statement1.executeQuery();
+					rs1.next();
+					long sourceFileId = rs1.getLong("source_file_id");
+					rs1.close();
+					statement1.close();
+
+					//get source file type
+					sql = "SELECT * FROM source_file WHERE id = ?";
+					statement1 = mappingConnection.prepareStatement(sql);
+					statement1.setLong(1, sourceFileId);
+					rs1 = statement1.executeQuery();
+					rs1.next();
+					long sourceFileType = rs1.getLong("source_file_type_id");
+					rs1.close();
+					statement1.close();
+
+					//get the type desc
+					sql = "SELECT * FROM source_file_type WHERE id = ?";
+					statement1 = mappingConnection.prepareStatement(sql);
+					statement1.setLong(1, sourceFileType);
+					rs1 = statement1.executeQuery();
+					rs1.next();
+					String fileTypeDesc = rs1.getString("description");
+					rs1.close();
+					statement1.close();
+
+					//get the cols
+					Map<Integer, String> hmCols = new HashMap<>();
+
+					sql = "SELECT * FROM source_file_type_column WHERE source_file_type_id = ?";
+					statement1 = mappingConnection.prepareStatement(sql);
+					statement1.setLong(1, sourceFileType);
+					rs1 = statement1.executeQuery();
+					while (rs1.next()) {
+						int index = rs1.getInt("column_index");
+						String name = rs1.getString("column_name");
+						hmCols.put(new Integer(index), name);
+					}
+					rs1.close();
+					statement1.close();
+
+					for (int j=0; j<colsNode.size(); j++) {
+						JsonNode colNode = colsNode.get(j);
+						int col = colNode.get("col").asInt();
+						String jsonField = colNode.get("field").asText();
+
+						int index = jsonField.indexOf("[");
+						while (index > -1) {
+							int endIndex = jsonField.indexOf("]", index);
+							String prefix = jsonField.substring(0, index + 1);
+							String suffix = jsonField.substring(endIndex);
+
+							if (prefix.equals("extension[")) {
+								String val = jsonField.substring(index+1, endIndex);
+								int extensionIndex = Integer.parseInt(val);
+
+								JsonNode extensionArray = resourceJson.get("extension");
+								JsonNode extensionRoot = extensionArray.get(extensionIndex);
+								String extensionUrl = extensionRoot.get("url").asText();
+								extensionUrl = extensionUrl.replace("http://endeavourhealth.org/fhir/StructureDefinition/", "");
+								extensionUrl = extensionUrl.replace("http://hl7.org/fhir/StructureDefinition/", "");
+
+								jsonField = prefix + extensionUrl + suffix;
+
+							} else {
+								jsonField = prefix + "n" + suffix;
+							}
+
+							index = jsonField.indexOf("[", endIndex);
+						}
+
+						String colName = hmCols.get(new Integer(col));
+						String fileTypeAndCol = fileTypeDesc + ":" + colName;
+
+						List<String> fieldNameMappings = hmResourceType.get(jsonField);
+						if (fieldNameMappings == null) {
+							fieldNameMappings = new ArrayList<>();
+							hmResourceType.put(jsonField, fieldNameMappings);
+						}
+
+						if (!fieldNameMappings.contains(fileTypeAndCol)) {
+							fieldNameMappings.add(fileTypeAndCol);
+						}
+					}
+				}
+
+				count ++;
+				if (count % 500 == 0) {
+					LOG.debug("Done " + count);
+				}
+			}
+			LOG.debug("Done " + count);
+
+			rs.close();
+			ehrEntityManager.close();
+
+			//create output file
+			List<String> lines = new ArrayList<>();
+
+			List<String> resourceTypes = new ArrayList<>(hm.keySet());
+			Collections.sort(resourceTypes, String.CASE_INSENSITIVE_ORDER);
+			for (String resourceType: resourceTypes) {
+
+				lines.add("============================================================");
+				lines.add(resourceType);
+				lines.add("============================================================");
+
+				Map<String, List<String>> hmResourceType = hm.get(resourceType);
+				List<String> fields = new ArrayList<>(hmResourceType.keySet());
+				Collections.sort(fields, String.CASE_INSENSITIVE_ORDER);
+
+				for (String field: fields) {
+
+					String linePrefix = field + " = ";
+
+					List<String> sourceRecords = hmResourceType.get(field);
+					for (String sourceRecord: sourceRecords) {
+
+						lines.add(linePrefix + sourceRecord);
+						linePrefix = Strings.repeat(" ", linePrefix.length());
+					}
+					lines.add("");
+				}
+				lines.add("");
+			}
+
+			File f = new File(outputFile);
+			Path p = f.toPath();
+			Files.write(p, lines, Charset.defaultCharset(), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+
+			LOG.debug("Finished creating transform map from " + table);
+		} catch (Throwable t) {
+			LOG.error("", t);
+		}
 	}
 
 	private static void fixBartsPatients(UUID serviceId) {
@@ -3903,7 +4120,7 @@ public class Main {
 				}
 
 				List<UUID> exchanges = exchangeDalI.getExchangeIdsForService(serviceUuid, systemId);
-				LOG.info("Found " + exchanges.size() + " exchanges");
+				LOG.info("Found " + exchanges.size() + " exchanges for system " + systemId);
 
 				for (UUID exchangeId : exchanges) {
 					List<ExchangeBatch> batches = exchangeBatchDalI.retrieveForExchangeId(exchangeId);
