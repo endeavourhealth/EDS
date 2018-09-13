@@ -491,6 +491,10 @@ public class Main {
 				rs1.close();
 				statement1.close();
 
+				if (Strings.isNullOrEmpty(s)) {
+					continue;
+				}
+
 				JsonNode resourceJson = ObjectMapperPool.getInstance().readTree(s);
 
 				Map<String, List<String>> hmResourceType = hm.get(resourceType);
