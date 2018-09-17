@@ -314,7 +314,11 @@ public class Main {
 			if (args.length > 2) {
 				systemId = args[2];
 			}
-			fixPatientSearch(serviceId, systemId);
+			if (serviceId.equalsIgnoreCase("All")) {
+				fixPatientSearchAllServices(systemId);
+			} else {
+				fixPatientSearch(serviceId, systemId);
+			}
 			System.exit(0);
 		}
 
@@ -4123,6 +4127,24 @@ public class Main {
 
 		LOG.info("Finished Posting to inbound for " + serviceId);
 	}*/
+
+	private static void fixPatientSearchAllServices(String filterSystemId) {
+		LOG.info("Fixing patient search for all services and system " + filterSystemId);
+
+		try {
+
+			ServiceDalI serviceDal = DalProvider.factoryServiceDal();
+			List<Service> services = serviceDal.getAll();
+			for (Service service: services) {
+				fixPatientSearch(service.getId().toString(), filterSystemId);
+			}
+
+			LOG.info("Finished Fixing patient search for all services and system " + filterSystemId);
+
+		} catch (Throwable t) {
+			LOG.error("", t);
+		}
+	}
 
 	private static void fixPatientSearch(String serviceId, String filterSystemId) {
 		LOG.info("Fixing patient search for service " + serviceId);
