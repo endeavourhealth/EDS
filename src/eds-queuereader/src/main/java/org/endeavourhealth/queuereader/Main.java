@@ -3395,6 +3395,11 @@ public class Main {
 				tempDirEmpty.mkdirs();
 			}*/
 
+			File f = new File(tempDir);
+			if (f.exists()) {
+				FileUtils.deleteDirectory(f);
+			}
+
 			UUID serviceUuid = UUID.fromString(serviceId);
 			UUID systemUuid = UUID.fromString(systemId);
 			ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
@@ -3772,7 +3777,8 @@ public class Main {
 						String replacementFile = FilenameUtils.concat(tempDir, s);
 
 						InputStream inputStream = FileHelper.readFileFromSharedStorage(rebulkedSharingAgreementFile);
-						Files.copy(inputStream, new File(replacementFile).toPath());
+						File replacementFileObj = new File(replacementFile);
+						Files.copy(inputStream, replacementFileObj.toPath());
 						inputStream.close();
 
 						tempFilesCreated.add(s);
