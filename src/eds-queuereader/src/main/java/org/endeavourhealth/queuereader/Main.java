@@ -3419,6 +3419,13 @@ public class Main {
 					continue;
 				}
 
+				//drop out and ignore any exchanges for the left and dead extracts, since we don't
+				//expect to receive re-bulked data for the dead patients
+				String firstFile = files[0];
+				if (firstFile.indexOf("LEFT_AND_DEAD") > -1) {
+					continue;
+				}
+
 				exchanges.add(exchange);
 
 				//populate the map of the files with the shared storage prefix
