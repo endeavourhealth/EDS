@@ -452,9 +452,9 @@ public class Main {
 
 			GetObjectRequest request = new GetObjectRequest(s3BucketName, keyName);
 
-			int startInt = Integer.parseInt(start);
-			int lenInt = Integer.parseInt(len);
-			int endInt = startInt + lenInt;
+			long startInt = Long.parseLong(start);
+			long lenInt = Long.parseLong(len);
+			long endInt = startInt + lenInt;
 
 			request.setRange(startInt, endInt);
 
