@@ -1,6 +1,12 @@
 package org.endeavourhealth.queuereader;
 
 import OpenPseudonymiser.Crypto;
+import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
+import com.amazonaws.regions.Regions;
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import com.amazonaws.services.s3.model.GetObjectRequest;
+import com.amazonaws.services.s3.model.S3Object;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.base.Strings;
@@ -192,6 +198,16 @@ public class Main {
 			fixEmisProblems(UUID.fromString(serviceId), UUID.fromString(systemId));
 			System.exit(0);
 		}*/
+
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("TestS3Read")) {
+			String s3Bucket = args[1];
+			String s3Key = args[2];
+			String start = args[3];
+			String len = args[3];
+			testS3Read(s3Bucket, s3Key, start, len);
+			System.exit(0);
+		}
 
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("FixEmisProblems3ForPublisher")) {
@@ -421,6 +437,57 @@ public class Main {
 		// Begin consume
 		rabbitHandler.start();
 		LOG.info("EDS Queue reader running (kill file location " + TransformConfig.instance().getKillFileLocation() + ")");
+	}
+
+	private static void testS3Read(String s3BucketName, String keyName, String start, String len) {
+		LOG.debug("Testing S3 Read from " + s3BucketName + " " + keyName + " from " + start + " " + len + " bytes");
+		try {
+
+			AmazonS3ClientBuilder clientBuilder = AmazonS3ClientBuilder
+					.standard()
+					.withCredentials(DefaultAWSCredentialsProviderChain.getInstance())
+					.withRegion(Regions.EU_WEST_2);
+
+			AmazonS3 s3Client = clientBuilder.build();
+
+			GetObjectRequest request = new GetObjectRequest(s3BucketName, keyName);
+
+			int startInt = Integer.parseInt(start);
+			int lenInt = Integer.parseInt(len);
+			int endInt = startInt + lenInt;
+
+			request.setRange(startInt, endInt);
+
+			long startMs = System.currentTimeMillis();
+
+			S3Object object = s3Client.getObject(request);
+			InputStream inputStream = object.getObjectContent();
+
+			InputStreamReader reader = new InputStreamReader(inputStream, Charset.defaultCharset());
+
+			StringBuilder sb = new StringBuilder();
+
+			char[] buf = new char[100];
+			while (true) {
+				int read = reader.read(buf);
+				if (read == -1
+						|| sb.length() >= lenInt) {
+					break;
+				}
+
+				sb.append(buf, 0, read);
+			}
+
+			reader.close();
+
+			long endMs = System.currentTimeMillis();
+
+			LOG.debug("Read " + sb.toString() + " in " + (endMs - startMs) + " ms");
+
+			LOG.debug("Finished Testing S3 Read from " + s3BucketName + " " + keyName + " from " + start + " " + len + " bytes");
+		} catch (Throwable t) {
+			LOG.error("", t);
+		}
 	}
 
 	private static void createTransforMap(UUID serviceId, String table, String outputFile) {
