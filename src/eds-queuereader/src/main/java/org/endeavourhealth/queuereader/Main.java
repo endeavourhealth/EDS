@@ -204,7 +204,7 @@ public class Main {
 			String s3Bucket = args[1];
 			String s3Key = args[2];
 			String start = args[3];
-			String len = args[3];
+			String len = args[4];
 			testS3Read(s3Bucket, s3Key, start, len);
 			System.exit(0);
 		}
