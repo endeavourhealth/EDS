@@ -3,6 +3,7 @@ package org.endeavourhealth.core.messaging.pipeline;
 import org.endeavourhealth.core.configuration.*;
 import org.endeavourhealth.core.database.dal.audit.models.Exchange;
 import org.endeavourhealth.core.messaging.pipeline.components.*;
+import org.endeavourhealth.transform.common.AuditWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,22 +30,40 @@ public class PipelineProcessor {
 		}
 		catch (PipelineException e) {
 			// Gracefully handle pipeline error and send response
-			if (component != null)
+			if (component != null) {
 				LOG.error("Pipeline exception (" + component.toString() + ")", e);
-			else
+			} else {
 				LOG.error("Pipeline exception (null)", e);
+			}
+
 			exchange.setException(e);
+			writeExceptionAsExchangeEvent(exchange, e);
 			return false;
 		}
 		catch (Exception e) {
 			// Fatal error
-			if (component != null)
+			if (component != null) {
 				LOG.error("Fatal error (" + component.toString() + ")", e);
-			else
+			} else {
 				LOG.error("Fatal error (null)", e);
+			}
 
 			exchange.setException(e);
+			writeExceptionAsExchangeEvent(exchange, e);
 			return false;
+		}
+	}
+
+	/**
+	 * writes the message of any exception to as an exchange event, so it's clear an error was raised
+     */
+	private static void writeExceptionAsExchangeEvent(Exchange exchange, Exception ex) {
+		String msg = "Exception: " + ex.getMessage();
+		try {
+			AuditWriter.writeExchangeEvent(exchange, msg);
+
+		} catch (Exception ex2) {
+			LOG.error("Error writing event '" + msg + "' for exchange " + exchange.getId(), ex2);
 		}
 	}
 

@@ -20,59 +20,61 @@ import java.util.UUID;
 @Path("/")
 public class PostMessage extends AbstractEndpoint {
 
-	private static final ExchangeGeneralErrorDalI errorDal = DalProvider.factoryExchangeGeneralErrorDal();
+    private static final ExchangeGeneralErrorDalI errorDal = DalProvider.factoryExchangeGeneralErrorDal();
 
-	@POST
-	@Consumes(MediaType.APPLICATION_JSON)
-	@Produces(MediaType.APPLICATION_JSON)
-	@Path("/PostMessage")
-	@RolesAllowed({"eds_messaging_post"})
-	public Response postMessage(@Context HttpHeaders headers, String body) throws Throwable {
-		UUID exchangeId = UUID.randomUUID();
+    @POST
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/PostMessage")
+    @RolesAllowed({"eds_messaging_post"})
+    public Response postMessage(@Context HttpHeaders headers, String body) throws Throwable {
+        UUID exchangeId = UUID.randomUUID();
 
-		Pipeline pipeline = ConfigWrapper.getInstance().getPostMessage().getPipeline();
+        Pipeline pipeline = ConfigWrapper.getInstance().getPostMessage().getPipeline();
 
-		Response response = null;
-		try {
-			response = process(headers, body, pipeline, exchangeId);
+        Response response = null;
+        try {
+            response = process(headers, body, pipeline, exchangeId);
 
-			if (response.getStatus() != HttpStatus.SC_OK &&
-					response.getStatus() != HttpStatus.SC_ACCEPTED) {
-				errorDal.save(exchangeId, response.getEntity().toString());
-			}
-		} catch (Throwable throwable) {
-			// save the error message in the DB
-			errorDal.save(exchangeId, throwable.getMessage());
-			throw throwable;
-		}
+            if (response.getStatus() != HttpStatus.SC_OK
+                    && response.getStatus() != HttpStatus.SC_ACCEPTED) {
 
-		return response;
-	}
+                errorDal.save(exchangeId, response.getEntity().toString());
+            }
+        } catch (Throwable throwable) {
+            // save the error message in the DB
+            errorDal.save(exchangeId, throwable.getMessage());
+            throw throwable;
+        }
 
-	@POST
-	// @Consumes(MediaType.APPLICATION_JSON)
-	// @Produces(MediaType.APPLICATION_JSON)
-	@Path("/PostMessageAsync")
-	@RolesAllowed({"eds_messaging_post"})
-	public Response postMessageAsync(@Context HttpHeaders headers, String body) throws Throwable {
-		UUID exchangeId = UUID.randomUUID();
+        return response;
+    }
 
-		Pipeline pipeline = ConfigWrapper.getInstance().getPostMessageAsync().getPipeline();
+    @POST
+    // @Consumes(MediaType.APPLICATION_JSON)
+    // @Produces(MediaType.APPLICATION_JSON)
+    @Path("/PostMessageAsync")
+    @RolesAllowed({"eds_messaging_post"})
+    public Response postMessageAsync(@Context HttpHeaders headers, String body) throws Throwable {
+        UUID exchangeId = UUID.randomUUID();
 
-		Response response = null;
-		try {
-			response = process(headers, body, pipeline, exchangeId);
+        Pipeline pipeline = ConfigWrapper.getInstance().getPostMessageAsync().getPipeline();
 
-			if (response.getStatus() != HttpStatus.SC_OK &&
-					response.getStatus() != HttpStatus.SC_ACCEPTED) {
-				errorDal.save(exchangeId, response.getEntity().toString());
-			}
-		} catch (Throwable throwable) {
-			// save the error message in the DB
-			errorDal.save(exchangeId, throwable.getMessage());
-			throw throwable;
-		}
+        Response response = null;
+        try {
+            response = process(headers, body, pipeline, exchangeId);
 
-		return response;
-	}
+            if (response.getStatus() != HttpStatus.SC_OK
+                    && response.getStatus() != HttpStatus.SC_ACCEPTED) {
+
+                errorDal.save(exchangeId, response.getEntity().toString());
+            }
+        } catch (Throwable throwable) {
+            // save the error message in the DB
+            errorDal.save(exchangeId, throwable.getMessage());
+            throw throwable;
+        }
+
+        return response;
+    }
 }
