@@ -2,8 +2,10 @@ package org.endeavourhealth.core.messaging.pipeline.components;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.base.Strings;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
+import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.core.configuration.MessageTransformOutboundConfig;
 import org.endeavourhealth.core.database.dal.DalProvider;
 import org.endeavourhealth.core.database.dal.admin.LibraryRepositoryHelper;
@@ -18,6 +20,7 @@ import org.endeavourhealth.core.database.dal.audit.models.QueuedMessageType;
 import org.endeavourhealth.core.database.dal.ehr.ResourceDalI;
 import org.endeavourhealth.core.database.dal.ehr.models.ResourceWrapper;
 import org.endeavourhealth.core.database.dal.subscriberTransform.ExchangeBatchExtraResourceDalI;
+import org.endeavourhealth.core.fhirStorage.FhirResourceHelper;
 import org.endeavourhealth.core.fhirStorage.JsonServiceInterfaceEndpoint;
 import org.endeavourhealth.core.messaging.pipeline.PipelineComponent;
 import org.endeavourhealth.core.messaging.pipeline.PipelineException;
@@ -31,7 +34,10 @@ import org.endeavourhealth.core.xml.transformError.TransformError;
 import org.endeavourhealth.transform.common.MessageFormat;
 import org.endeavourhealth.transform.enterprise.FhirToEnterpriseCsvTransformer;
 import org.endeavourhealth.transform.vitrucare.FhirToVitruCareXmlTransformer;
+import org.hl7.fhir.instance.model.Patient;
 import org.hl7.fhir.instance.model.ResourceType;
+import org.joda.time.LocalDate;
+import org.joda.time.Years;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,6 +49,9 @@ public class MessageTransformOutbound extends PipelineComponent {
 	private static final Logger LOG = LoggerFactory.getLogger(MessageTransformOutbound.class);
 
 	private static final ExchangeDalI auditRepository = DalProvider.factoryExchangeDal();
+	private static final ResourceDalI resourceRepository = DalProvider.factoryResourceDal();
+	private static Map<String, Date> patientDOBMap = new HashMap<>();
+
 	private MessageTransformOutboundConfig config;
 
 	public MessageTransformOutbound(MessageTransformOutboundConfig config) {
@@ -395,6 +404,10 @@ public class MessageTransformOutbound extends PipelineComponent {
 		resources = filterResources(resources, resourceIds);
 		//resources = pruneOlderDuplicates(resources);
 
+		//finally, filter out any patient resources that do not meet the filterElements configuration if
+		//it is present for the subscriber config.  Used to filter FHIR -> subscriber output
+		resources = filterPatientResources(serviceId, resources, subscriberConfigName);
+
 		return resources;
 	}
 
@@ -488,6 +501,150 @@ public class MessageTransformOutbound extends PipelineComponent {
 
 		return ret;
 	}
+
+	private static List<ResourceWrapper> filterPatientResources(UUID serviceId, List<ResourceWrapper> allResources, String subscriberConfigName) throws Exception {
+
+		//check config for filterElements, if null, return straight back out as no further filtering needed
+		JsonNode subscriberConfigJSON
+				= ConfigManager.getConfigurationAsJson(subscriberConfigName, "db_subscriber");
+		JsonNode filterElementsNodeJSON = subscriberConfigJSON.get("filterElements");
+
+		//there is no resource filtering applied, so return all resources
+		if (filterElementsNodeJSON.isNull()) {
+			return allResources;
+		}
+
+		List<ResourceWrapper> ret = new ArrayList<>();
+		for (ResourceWrapper resource: allResources) {
+
+			// perform filtering on patient resources.  Non patient resources are always included
+			if (isPatientResource(resource) && !includeResource(serviceId, resource, filterElementsNodeJSON))
+			{ continue; }
+
+			//resource is either non patient or passes patient filter criteria so add
+			ret.add(resource);
+		}
+
+		return ret;
+	}
+
+//	"filterElements": {
+//		"patients": {
+//			"ageRangeYears": {["0-19","40-74"]}
+//		},
+//		"resources": {
+// 			["Patient", "Immunization"]
+//		}
+//	}
+	private static boolean includeResource(UUID serviceId, ResourceWrapper resource, JsonNode filterElementsNodeJSON) throws Exception {
+
+		ResourceType resourceType = ResourceType.valueOf(resource.getResourceType());
+
+		//is there a FHIR resource filter?
+		boolean resourceInclude = false;
+		JsonNode filterElementsResourcesNodeJSON = filterElementsNodeJSON.get("resources");
+		if (filterElementsResourcesNodeJSON != null) {
+
+			if (filterElementsResourcesNodeJSON.isArray()) {
+				for (final JsonNode resourceNode : filterElementsResourcesNodeJSON) {
+
+					ResourceType resourceTypeFilter = ResourceType.valueOf(resourceNode.asText());
+					if (resourceTypeFilter != null) {
+
+						//the type of resource matches the filter so it's an inclusion at this point of the filtering
+						if (resourceType == resourceTypeFilter) {
+							resourceInclude = true;
+							break;
+						}
+					}
+				}
+			}
+			//resource failed to match a filter, so return false here as there is no point doing further filter checks
+			if (!resourceInclude)
+				return false;
+		}
+
+		//is there a patient filter?
+		JsonNode filterElementsPatientNodeJSON = filterElementsNodeJSON.get("patients");
+		if (filterElementsPatientNodeJSON != null) {
+
+			JsonNode filterElementsPatientAgeRangeYearNodeJSON = filterElementsPatientNodeJSON.get("ageRangeYears");
+			if (filterElementsPatientAgeRangeYearNodeJSON != null) {
+
+				//check if actual Patient resource
+				if (resourceType == ResourceType.Patient) {
+
+					//this is an actual Patient resource, so validate the resource against the filter
+					Patient fhirPatient = (Patient) FhirResourceHelper.deserialiseResouce(resource);
+					Date dateOfBirth = fhirPatient.getBirthDate();
+					if (dateOfBirth != null) {
+
+						//cache the patient dob for further lookup
+						UUID patientId = resource.getPatientId();
+						patientDOBMap.put(patientId.toString(), dateOfBirth);
+
+						//check to see if patient falls within age range filter
+						resourceInclude = isDOBInAgeRange(filterElementsPatientAgeRangeYearNodeJSON, dateOfBirth);
+
+					} else {
+						return false;  //null DOB, so return false to not include the resource
+					}
+				} else {
+
+					//check patient DOB cache first, else lookup Patient resource from the DB
+					UUID patientId = resource.getPatientId();
+					Date dateOfBirth = patientDOBMap.get(patientId.toString());
+					if (dateOfBirth == null) {
+
+						//this is not a Patient resource so we need to get the Patient DOB from the DB
+						//for the resource and validate against that
+						UUID resourceId = resource.getResourceId();
+						Patient fhirPatient
+								= (Patient) resourceRepository.getCurrentVersionAsResource(serviceId, ResourceType.Patient, resourceId.toString());
+						dateOfBirth = fhirPatient.getBirthDate();
+
+						//null DOB, so return false to not include the resource
+						if (dateOfBirth == null)
+							return false;
+
+						//cache patient dob for future use
+						patientDOBMap.put(patientId.toString(), dateOfBirth);
+					}
+
+					resourceInclude = isDOBInAgeRange(filterElementsPatientAgeRangeYearNodeJSON, dateOfBirth);
+				}
+			}
+		}
+
+		return resourceInclude;
+	}
+
+	private static boolean isDOBInAgeRange(JsonNode filterElementsPatientAgeRangeYearNodeJSON, Date dateOfBirth) {
+
+		Years age = Years.yearsBetween(new LocalDate(dateOfBirth), new LocalDate());
+		int yearsOld = age.getYears();
+		if (filterElementsPatientAgeRangeYearNodeJSON.isArray()) {
+			for (final JsonNode ageRangeNode : filterElementsPatientAgeRangeYearNodeJSON) {
+				String rangeYears = ageRangeNode.asText();  //from-to
+				String ageFrom = rangeYears.substring(0, rangeYears.indexOf("-"));
+				String ageTo = rangeYears.substring(rangeYears.indexOf("-") + 1, rangeYears.length());
+
+				if (yearsOld >= Integer.parseInt(ageFrom) && yearsOld <= Integer.parseInt(ageTo)) {
+
+					//patient matches age range filter so include the resource
+					return true;
+				}
+			}
+		}
+
+		return false;
+	}
+
+	private static boolean isPatientResource(ResourceWrapper resource) {
+
+		return (resource.getPatientId() != null);
+	}
+
 
 	private static void saveTransformAudit(UUID exchangeId, UUID batchId, String subscriberConfigName, Date started,
 										   Exception transformError, Integer resourceCount, UUID queuedMessageId) throws Exception {
