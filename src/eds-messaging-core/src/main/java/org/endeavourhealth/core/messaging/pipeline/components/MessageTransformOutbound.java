@@ -510,7 +510,7 @@ public class MessageTransformOutbound extends PipelineComponent {
 		JsonNode filterElementsNodeJSON = subscriberConfigJSON.get("filterElements");
 
 		//there is no resource filtering applied, so return all resources
-		if (filterElementsNodeJSON.isNull()) {
+		if (filterElementsNodeJSON == null) {
 			return allResources;
 		}
 
