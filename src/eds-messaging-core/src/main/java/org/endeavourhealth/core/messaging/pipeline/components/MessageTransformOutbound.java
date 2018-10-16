@@ -530,12 +530,11 @@ public class MessageTransformOutbound extends PipelineComponent {
 
 //	"filterElements": {
 //		"patients": {
-//			"ageRangeYears": {["0-19","40-74"]}
+//			"ageRangeYears": ["0-19", "40-74"]
 //		},
-//		"resources": {
-// 			["Patient", "Immunization"]
-//		}
+//		"resources": ["Patient", "Immunization", "AllergyIntollerance"]
 //	}
+
 	private static boolean includeResource(UUID serviceId, ResourceWrapper resource, JsonNode filterElementsNodeJSON) throws Exception {
 
 		ResourceType resourceType = ResourceType.valueOf(resource.getResourceType());
@@ -597,10 +596,16 @@ public class MessageTransformOutbound extends PipelineComponent {
 					if (dateOfBirth == null) {
 
 						//this is not a Patient resource so we need to get the Patient DOB from the DB
-						//for the resource and validate against that
+						//for the resource and validate against that.  The patient_id equals the resource_id for Patient resources.
 						UUID resourceId = resource.getResourceId();
 						Patient fhirPatient
-								= (Patient) resourceRepository.getCurrentVersionAsResource(serviceId, ResourceType.Patient, resourceId.toString());
+								= (Patient) resourceRepository.getCurrentVersionAsResource(serviceId, ResourceType.Patient, patientId.toString());
+						if (fhirPatient == null) {
+
+							LOG.error("Patient resource not found for resourceId="+resourceId.toString()+" , processing patientId="+patientId);
+							return false;
+						}
+
 						dateOfBirth = fhirPatient.getBirthDate();
 
 						//null DOB, so return false to not include the resource
