@@ -75,7 +75,7 @@
                     <descriptorRefs><descriptorRef>jar-with-dependencies</descriptorRef></descriptorRefs>
                     <archive>
                         <manifest>
-                            <mainClass>org.endeavourhealth.subscriber.Subscriber</mainClass>
+                            <mainClass>org.endeavourHealth.subscriber.Subscriber</mainClass>
                         </manifest>
                     </archive>
                 </configuration>

@@ -1,4 +1,4 @@
-package org.endeavourhealth.subscriber;
+package org.endeavourHealth.subscriber.filer;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.base.Strings;
@@ -10,7 +10,6 @@ import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.io.FileUtils;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.common.config.ConfigManager;
-import org.endeavourhealth.core.database.rdbms.ConnectionManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,8 +23,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
-public class EnterpriseFiler {
-    private static final Logger LOG = LoggerFactory.getLogger(EnterpriseFiler.class);
+public class PCRFiler {
+    private static final Logger LOG = LoggerFactory.getLogger(PCRFiler.class);
 
     private static final String COLUMN_CLASS_MAPPINGS = "ColumnClassMappings.json";
     private static final String DATE_FORMAT = "yyyy-MM-dd";
@@ -38,10 +37,6 @@ public class EnterpriseFiler {
     private static final String DELETE = "Delete";
 
     private static final int UPSERT_ATTEMPTS = 10;
-
-    //private static final String ZIP_ENTRY = "EnterpriseData.xml";
-
-    //private static String keywordEscapeChar = null; //different DBs use different chars to escape keywords (" on pg, ` on mysql)
 
     private static Map<String, HikariDataSource> connectionPools = new ConcurrentHashMap<>();
     private static Map<String, String> escapeCharacters = new ConcurrentHashMap<>();
@@ -57,10 +52,11 @@ public class EnterpriseFiler {
 
         JsonNode columnClassMappings = null;
 
+        //for example [db_subscriber, subscriber_pophealth_v1]
         JsonNode config = ConfigManager.getConfigurationAsJson(configName, "db_subscriber");
         Connection connection = openConnection(config);
 
-        String url = config.get("enterprise_url").asText();
+        String url = config.get("pcr_url").asText();
         String keywordEscapeChar = getKeywordEscapeChar(url);
         int batchSize = getBatchSize(url);
 
@@ -106,7 +102,7 @@ public class EnterpriseFiler {
 
 
     private static void writeZipFile(byte[] bytes) {
-        File f = new File("EnterpriseFileError.zip");
+        File f = new File("PCRFileError.zip");
         try {
             FileUtils.writeByteArrayToFile(f, bytes);
             LOG.error("Written ZIP file to " + f);
@@ -122,8 +118,6 @@ public class EnterpriseFiler {
         List<CSVRecord> currentRecords = null;
         List<String> currentColumns = null;
         HashMap<String, Class> currentColumnClasses = null;
-
-        //LOG.trace("Got " + deletes.size() + " deletes");
 
         //go backwards, so we delete dependent records first
         for (int i=deletes.size()-1; i>=0; i--) {
@@ -191,7 +185,6 @@ public class EnterpriseFiler {
 
         //since we're dealing with small volumes, we can just read keep all the records in memory
         List<CSVRecord> upserts = new ArrayList<>();
-        //List<CSVRecord> deletes = new ArrayList<>();
 
         Iterator<CSVRecord> csvIterator = csvParser.iterator();
         while (csvIterator.hasNext()) {
@@ -355,80 +348,37 @@ public class EnterpriseFiler {
 
         StringBuilder sql = new StringBuilder();
 
-        if (ConnectionManager.isPostgreSQL(connection)) {
-            sql.append("INSERT INTO " + tableName + "(");
-
-            for (int i = 0; i < columns.size(); i++) {
-                String column = columns.get(i);
-                sql.append(keywordEscapeChar + column + keywordEscapeChar);
-                if (i + 1 < columns.size()) {
-                    sql.append(", ");
-                }
+        sql.append("insert into " + tableName + "(");
+        for (int i = 0; i < columns.size(); i++) {
+            String column = columns.get(i);
+            sql.append(keywordEscapeChar + column + keywordEscapeChar);
+            if (i + 1 < columns.size()) {
+                sql.append(", ");
             }
-
-            sql.append(") VALUES (");
-
-            for (int i = 0; i < columns.size(); i++) {
-                sql.append("?");
-                if (i + 1 < columns.size()) {
-                    sql.append(", ");
-                }
-            }
-
-            sql.append(") ON CONFLICT (");
-            sql.append(COL_ID);
-            sql.append(") DO UPDATE SET ");
-
-            for (int i = 0; i < columns.size(); i++) {
-                String column = columns.get(i);
-                if (column.equals(COL_ID)) {
-                    continue;
-                }
-
-                sql.append(keywordEscapeChar + column + keywordEscapeChar + " = EXCLUDED." + keywordEscapeChar + column + keywordEscapeChar);
-                if (i + 1 < columns.size()) {
-                    sql.append(", ");
-                }
-            }
-
-            sql.append(";");
-
-        } else {
-            sql.append("INSERT INTO " + tableName + "(");
-
-            for (int i = 0; i < columns.size(); i++) {
-                String column = columns.get(i);
-                sql.append(keywordEscapeChar + column + keywordEscapeChar);
-                if (i + 1 < columns.size()) {
-                    sql.append(", ");
-                }
-            }
-
-            sql.append(") VALUES (");
-
-            for (int i = 0; i < columns.size(); i++) {
-                sql.append("?");
-                if (i + 1 < columns.size()) {
-                    sql.append(", ");
-                }
-            }
-
-            sql.append(") ON DUPLICATE KEY UPDATE ");
-
-            for (int i = 0; i < columns.size(); i++) {
-                String column = columns.get(i);
-                if (column.equals(COL_ID)) {
-                    continue;
-                }
-
-                sql.append(keywordEscapeChar + column + keywordEscapeChar + " = VALUES(" + keywordEscapeChar + column + keywordEscapeChar + ")");
-                if (i + 1 < columns.size()) {
-                    sql.append(", ");
-                }
-            }
-
-            sql.append(";");
         }
+
+        sql.append(") values (");
+        for (int i = 0; i < columns.size(); i++) {
+            sql.append("?");
+            if (i + 1 < columns.size()) {
+                sql.append(", ");
+            }
+        }
+
+        sql.append(") on duplicate key update ");
+        for (int i = 0; i < columns.size(); i++) {
+            String column = columns.get(i);
+            if (column.equals(COL_ID)) {
+                continue;
+            }
+
+            sql.append(keywordEscapeChar + column + keywordEscapeChar + " = VALUES(" + keywordEscapeChar + column + keywordEscapeChar + ")");
+            if (i + 1 < columns.size()) {
+                sql.append(", ");
+            }
+        }
+
+        sql.append(";");
 
         return connection.prepareStatement(sql.toString());
     }
@@ -537,7 +487,7 @@ public class EnterpriseFiler {
 
     public static Connection openConnection(JsonNode config) throws Exception {
 
-        String url = config.get("enterprise_url").asText();
+        String url = config.get("pcr_url").asText();
         HikariDataSource pool = connectionPools.get(url);
         if (pool == null) {
             synchronized (connectionPools) {
@@ -545,8 +495,8 @@ public class EnterpriseFiler {
                 if (pool == null) {
 
                     String driverClass = config.get("driverClass").asText();
-                    String username = config.get("enterprise_username").asText();
-                    String password = config.get("enterprise_password").asText();
+                    String username = config.get("pcr_username").asText();
+                    String password = config.get("pcr_password").asText();
 
                     //force the driver to be loaded
                     Class.forName(driverClass);
@@ -558,7 +508,7 @@ public class EnterpriseFiler {
                     pool.setMaximumPoolSize(3);
                     pool.setMinimumIdle(1);
                     pool.setIdleTimeout(60000);
-                    pool.setPoolName("EnterpriseFilerConnectionPool" + url);
+                    pool.setPoolName("PCRFilerConnectionPool" + url);
                     pool.setAutoCommit(false);
 
                     connectionPools.put(url, pool);
@@ -583,36 +533,5 @@ public class EnterpriseFiler {
         }
 
         return pool.getConnection();
-    }
-}
-
-
-class DeleteWrapper {
-    private String tableName = null;
-    private CSVRecord record = null;
-    private List<String> columns = null;
-    private HashMap<String, Class> columnClasses = null;
-
-    public DeleteWrapper(String tableName, CSVRecord record, List<String> columns, HashMap<String, Class> columnClasses) {
-        this.tableName = tableName;
-        this.record = record;
-        this.columns = columns;
-        this.columnClasses = columnClasses;
-    }
-
-    public String getTableName() {
-        return tableName;
-    }
-
-    public CSVRecord getRecord() {
-        return record;
-    }
-
-    public List<String> getColumns() {
-        return columns;
-    }
-
-    public HashMap<String, Class> getColumnClasses() {
-        return columnClasses;
     }
 }

@@ -45,7 +45,7 @@ import org.endeavourhealth.core.messaging.pipeline.components.PostMessageToExcha
 import org.endeavourhealth.core.queueing.QueueHelper;
 import org.endeavourhealth.core.xml.TransformErrorSerializer;
 import org.endeavourhealth.core.xml.transformError.TransformError;
-import org.endeavourhealth.subscriber.EnterpriseFiler;
+import org.endeavourHealth.subscriber.filer.EnterpriseFiler;
 import org.endeavourhealth.transform.barts.transforms.PPADDTransformer;
 import org.endeavourhealth.transform.barts.transforms.PPNAMTransformer;
 import org.endeavourhealth.transform.barts.transforms.PPPHOTransformer;

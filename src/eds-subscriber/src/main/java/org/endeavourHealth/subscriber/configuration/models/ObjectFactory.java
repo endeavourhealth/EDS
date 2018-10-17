@@ -1,5 +1,5 @@
 
-package org.endeavourhealth.subscriber.configuration.models;
+package org.endeavourHealth.subscriber.configuration.models;
 
 import javax.xml.bind.annotation.XmlRegistry;
 

@@ -1,4 +1,4 @@
-package org.endeavourhealth.subscriber;
+package org.endeavourHealth.subscriber;
 
 import com.sun.net.httpserver.HttpServer;
 
