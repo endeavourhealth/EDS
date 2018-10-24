@@ -528,13 +528,17 @@ public class MessageTransformOutbound extends PipelineComponent {
 		return ret;
 	}
 
-//	"filterElements": {
-//		"patients": {
-//			"ageRangeYears": ["0-19", "40-74"]
-//		},
-//		"resources": ["Patient", "Immunization", "AllergyIntollerance"]
-//	}
-
+	// FHIR resources are filtered based on the subscriber configuration "filterElements" JSON
+	// Only resources which match any of the resources AND any of the age ranges will be included,
+	// i.e. A Patient resource who is 44.  An Immunization resource whose patient reference resource is 12.
+	//
+	//  JSON filter structure:
+	//	"filterElements": {
+    //		"patients": {
+	//			"ageRangeYears": ["0-19", "40-74"]
+	//		},
+	//		"resources": ["Patient", "Observation", "Immunization", "Condition", "MedicationStatement", "MedicationOrder", "AllergyIntolerance"]
+	//	}
 	private static boolean includeResource(UUID serviceId, ResourceWrapper resource, JsonNode filterElementsNodeJSON) throws Exception {
 
 		ResourceType resourceType = ResourceType.valueOf(resource.getResourceType());
