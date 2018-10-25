@@ -17,6 +17,7 @@ DROP TABLE IF EXISTS icd10_lookup;
 DROP TABLE IF EXISTS cerner_clinical_event_map;
 DROP TABLE IF EXISTS ctv3_to_snomed_map;
 DROP TABLE IF EXISTS read2_to_snomed_map;
+DROP TABLE IF EXISTS ctv3_to_read2_map;
 
 
 CREATE TABLE postcode_lookup
@@ -202,3 +203,20 @@ CREATE TABLE cerner_clinical_event_map (
     match_algorithm varchar(50),
     CONSTRAINT pk_internal_id_map PRIMARY KEY (cerner_cvref_code)
 );
+
+CREATE TABLE ctv3_to_read2_map
+(
+  map_id varchar(38) NOT NULL PRIMARY KEY,
+  ctv3_concept_id varchar (12) NOT NULL COLLATE utf8_bin,
+  ctv3_term_id varchar(6) NOT NULL,
+  ctv3_term_type varchar (1),
+  read2_concept_id varchar (18) NOT NULL COLLATE utf8_bin,
+  read2_term_id varchar (18),
+  map_type varchar(1),
+  map_status int NOT NULL,
+  effective_date date NOT NULL,
+  is_assured int NOT NULL
+);
+
+CREATE INDEX ix_ctv3_to_read2_map_ctv3_concept_id_read2_concept_id
+  ON ctv3_to_read2_map (ctv3_concept_id, read2_concept_id);
