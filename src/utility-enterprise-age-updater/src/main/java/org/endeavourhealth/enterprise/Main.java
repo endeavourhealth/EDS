@@ -46,7 +46,7 @@ public class Main {
             int progress = 0;
             for (EnterpriseAge ageToUpdate: agesToUpdate) {
 
-                Integer[] ages = enterpriseAgeUpdaterlDal.calculateAgeValues(ageToUpdate);
+                Integer[] ages = enterpriseAgeUpdaterlDal.reCalculateAgeValues(ageToUpdate);
 
                 updateEnterprisePatient(ageToUpdate.getEnterprisePatientId(), ages, enterpriseConnection);
                 updateEnterprisePerson(ageToUpdate.getEnterprisePatientId(), ages, enterpriseConnection);

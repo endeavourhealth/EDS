@@ -14,6 +14,7 @@ import com.google.common.collect.Lists;
 import org.apache.commons.csv.*;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
+import org.endeavourHealth.subscriber.filer.EnterpriseFiler;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.common.fhir.*;
@@ -45,7 +46,6 @@ import org.endeavourhealth.core.messaging.pipeline.components.PostMessageToExcha
 import org.endeavourhealth.core.queueing.QueueHelper;
 import org.endeavourhealth.core.xml.TransformErrorSerializer;
 import org.endeavourhealth.core.xml.transformError.TransformError;
-import org.endeavourHealth.subscriber.filer.EnterpriseFiler;
 import org.endeavourhealth.transform.barts.transforms.PPADDTransformer;
 import org.endeavourhealth.transform.barts.transforms.PPNAMTransformer;
 import org.endeavourhealth.transform.barts.transforms.PPPHOTransformer;
@@ -261,7 +261,6 @@ public class Main {
 			System.exit(0);
 		}
 
-
 		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("ConvertExchangeBody")) {
 			String systemId = args[1];
@@ -438,6 +437,7 @@ public class Main {
 		rabbitHandler.start();
 		LOG.info("EDS Queue reader running (kill file location " + TransformConfig.instance().getKillFileLocation() + ")");
 	}
+
 
 	private static void testS3Read(String s3BucketName, String keyName, String start, String len) {
 		LOG.debug("Testing S3 Read from " + s3BucketName + " " + keyName + " from " + start + " " + len + " bytes");
@@ -1167,18 +1167,24 @@ public class Main {
 			subscriberConfigs.add("hurley_data_checking");
 			subscriberConfigs.add("hurley_deidentified");
 
+			Set<String> observationsNotDeleted = new HashSet<>();
 
 			List<Exchange> exchanges = exchangeDal.getExchangesByService(serviceId, systemId, Integer.MAX_VALUE);
 			for (Exchange exchange : exchanges) {
 				List<ExchangePayloadFile> payload = ExchangeHelper.parseExchangeBody(exchange.getBody());
+				ExchangePayloadFile firstItem = payload.get(0);
 				//String version = EmisCsvToFhirTransformer.determineVersion(payload);
 
 				//if we've reached the point before we process data for this practice, break out
-				if (!EmisCsvToFhirTransformer.shouldProcessPatientData(payload)) {
-					break;
+				try {
+					if (!EmisCsvToFhirTransformer.shouldProcessPatientData(payload)) {
+						break;
+					}
+				} catch (TransformException e) {
+					LOG.info("Skipping exchange containing " + firstItem.getPath());
+					continue;
 				}
 
-				ExchangePayloadFile firstItem = payload.get(0);
 				String name = FilenameUtils.getBaseName(firstItem.getPath());
 				String[] toks = name.split("_");
 				String agreementId = toks[4];
@@ -1205,46 +1211,50 @@ public class Main {
 							CSVRecord record = iterator.next();
 
 							String deleted = record.get("Deleted");
+							String observationId = record.get("ObservationGuid");
+
 							if (deleted.equalsIgnoreCase("true")) {
 
-								String patientId = record.get("PatientGuid");
-								String observationId = record.get("ObservationGuid");
-
-								//find observation UUID
-								UUID uuid = IdHelper.getEdsResourceId(serviceId, ResourceType.Observation, patientId + ":" + observationId);
-								if (uuid == null) {
+								//if observation was reinstated at some point, skip it
+								if (observationsNotDeleted.contains(observationId)) {
 									continue;
 								}
 
-								//find TRUE resource type
-								Reference edsReference = ReferenceHelper.createReference(ResourceType.Observation, uuid.toString());
+								String patientId = record.get("PatientGuid");
 
-								if (fixReference(serviceId, csvHelper, edsReference, potentialResourceTypes)) {
-									ReferenceComponents comps = ReferenceHelper.getReferenceComponents(edsReference);
-									ResourceType newType = comps.getResourceType();
-									String newId = comps.getId();
+								CsvCell patientCell = CsvCell.factoryDummyWrapper(patientId);
+								CsvCell observationCell = CsvCell.factoryDummyWrapper(observationId);
 
-									//delete resource if not already done
-									ResourceWrapper resourceWrapper = resourceDal.getCurrentVersion(serviceId, newType.toString(), UUID.fromString(newId));
-									if (resourceWrapper.isDeleted()) {
+
+								Set<ResourceType> resourceTypes = org.endeavourhealth.transform.emis.csv.transforms.careRecord.ObservationTransformer.findOriginalTargetResourceTypes(csvHelper, patientCell, observationCell);
+								for (ResourceType resourceType: resourceTypes) {
+
+									//will already have been done OK
+									if (resourceType == ResourceType.Observation) {
 										continue;
 									}
 
-									LOG.debug("Fixing " + edsReference.getReference());
+									String sourceId = patientId + ":" + observationId;
+									UUID uuid = IdHelper.getEdsResourceId(serviceId, resourceType, sourceId);
+									if (uuid == null) {
+										throw new Exception("Failed to find UUID for " + resourceType + " " + sourceId);
+									}
+
+									LOG.debug("Fixing " + resourceType + " " + uuid);
 
 									//create file of IDs to delete for each subscriber DB
 									for (String subscriberConfig : subscriberConfigs) {
 										EnterpriseIdDalI subscriberDal = DalProvider.factoryEnterpriseIdDal(subscriberConfig);
-										Long enterpriseId = subscriberDal.findEnterpriseId(newType.toString(), newId);
+										Long enterpriseId = subscriberDal.findEnterpriseId(resourceType.toString(), uuid.toString());
 										if (enterpriseId == null) {
 											continue;
 										}
 
 										String sql = null;
-										if (newType == ResourceType.AllergyIntolerance) {
+										if (resourceType == ResourceType.AllergyIntolerance) {
 											sql = "DELETE FROM allergy_intolerance WHERE id = " + enterpriseId;
 
-										} else if (newType == ResourceType.ReferralRequest) {
+										} else if (resourceType == ResourceType.ReferralRequest) {
 											sql = "DELETE FROM referral_request WHERE id = " + enterpriseId;
 
 										} else {
@@ -1256,23 +1266,27 @@ public class Main {
 										Files.write(f.toPath(), sql.getBytes(), StandardOpenOption.APPEND);
 									}
 
+									//delete resource if not already done
+									ResourceWrapper resourceWrapper = resourceDal.getCurrentVersion(serviceId, resourceType.toString(), uuid);
+									if (!resourceWrapper.isDeleted()) {
 
-									ExchangeBatch batch = hmBatchesByPatient.get(resourceWrapper.getPatientId());
-									resourceWrapper.setDeleted(true);
-									resourceWrapper.setResourceData(null);
-									resourceWrapper.setExchangeBatchId(batch.getBatchId());
-									resourceWrapper.setVersion(UUID.randomUUID());
-									resourceWrapper.setCreatedAt(new Date());
-									resourceWrapper.setExchangeId(exchange.getId());
+										ExchangeBatch batch = hmBatchesByPatient.get(resourceWrapper.getPatientId());
+										resourceWrapper.setDeleted(true);
+										resourceWrapper.setResourceData(null);
+										resourceWrapper.setResourceMetadata("");
+										resourceWrapper.setExchangeBatchId(batch.getBatchId());
+										resourceWrapper.setVersion(UUID.randomUUID());
+										resourceWrapper.setCreatedAt(new Date());
+										resourceWrapper.setExchangeId(exchange.getId());
 
-									resourceDal.delete(resourceWrapper);
+										resourceDal.delete(resourceWrapper);
+									}
 								}
+							} else {
+								observationsNotDeleted.add(observationId);
 							}
 						}
 						parser.close();
-
-					} else {
-						//no problem link
 					}
 				}
 			}
