@@ -36,7 +36,9 @@ import org.endeavourhealth.core.database.dal.ehr.ResourceDalI;
 import org.endeavourhealth.core.database.dal.ehr.models.ResourceWrapper;
 import org.endeavourhealth.core.database.dal.reference.PostcodeDalI;
 import org.endeavourhealth.core.database.dal.reference.models.PostcodeLookup;
+import org.endeavourhealth.core.database.dal.subscriberTransform.EnterpriseAgeUpdaterlDalI;
 import org.endeavourhealth.core.database.dal.subscriberTransform.EnterpriseIdDalI;
+import org.endeavourhealth.core.database.dal.subscriberTransform.models.EnterpriseAge;
 import org.endeavourhealth.core.database.rdbms.ConnectionManager;
 import org.endeavourhealth.core.exceptions.TransformException;
 import org.endeavourhealth.core.fhirStorage.FhirSerializationHelper;
@@ -261,6 +263,13 @@ public class Main {
 			System.exit(0);
 		}
 
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("FixDeceasedPatients")) {
+			String subscriberConfig = args[1];
+			fixDeceasedPatients(subscriberConfig);
+			System.exit(0);
+		}
+
 		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("ConvertExchangeBody")) {
 			String systemId = args[1];
@@ -438,6 +447,160 @@ public class Main {
 		LOG.info("EDS Queue reader running (kill file location " + TransformConfig.instance().getKillFileLocation() + ")");
 	}
 
+	private static void fixDeceasedPatients(String subscriberConfig) {
+		LOG.debug("Fixing Deceased Patients for " + subscriberConfig);
+		try {
+			JsonNode config = ConfigManager.getConfigurationAsJson(subscriberConfig, "db_subscriber");
+
+			Connection subscriberConnection = EnterpriseFiler.openConnection(config);
+
+			Map<Long, Long> patientIds = new HashMap<>();
+			String sql = "SELECT id, organization_id FROM patient WHERE date_of_death IS NOT NULL";
+			Statement statement = subscriberConnection.createStatement();
+			ResultSet rs = statement.executeQuery(sql);
+			while (rs.next()) {
+				long patientId = rs.getLong(1);
+				long orgId = rs.getLong(2);
+				patientIds.put(new Long(patientId), new Long(orgId));
+			}
+			rs.close();
+			statement.close();
+
+			EnterpriseAgeUpdaterlDalI dal = DalProvider.factoryEnterpriseAgeUpdaterlDal(subscriberConfig);
+
+			EntityManager entityManager = ConnectionManager.getSubscriberTransformEntityManager(subscriberConfig);
+			SessionImpl session = (SessionImpl) entityManager.getDelegate();
+			Connection subscriberTransformConnection = session.connection();
+
+			ResourceDalI resourceDal = DalProvider.factoryResourceDal();
+
+			for (Long patientId: patientIds.keySet()) {
+				Long orgId = patientIds.get(patientId);
+
+				statement = subscriberTransformConnection.createStatement();
+
+				sql = "SELECT service_id FROM enterprise_organisation_id_map WHERE enterprise_id = " + orgId;
+				rs = statement.executeQuery(sql);
+				if (!rs.next()) {
+					throw new Exception("Failed to find service iD for patient ID " + patientId + " and org ID " + orgId);
+				}
+				String serviceId = rs.getString(1);
+				rs.close();
+
+				sql = "SELECT resource_type, resource_id FROM enterprise_id_map WHERE enterprise_id = " + patientId;
+				rs = statement.executeQuery(sql);
+				if (!rs.next()) {
+					throw new Exception("Failed to find resource iD for patient ID " + patientId);
+				}
+				String resourceType = rs.getString(1);
+				String resourceId = rs.getString(2);
+				rs.close();
+
+				statement.close();
+
+				Resource resource = resourceDal.getCurrentVersionAsResource(UUID.fromString(serviceId), ResourceType.valueOf(resourceType), resourceId);
+				if (resource == null) {
+					throw new Exception("Failed to find patient resource for " + resourceType + " " + resourceId);
+				}
+				Patient patient = (Patient)resource;
+				Date dob = patient.getBirthDate();
+				Date dod = patient.getDeceasedDateTimeType().getValue();
+
+				Integer[] ages = dal.calculateAgeValuesAndUpdateTable(patientId, dob, dod);
+
+				updateEnterprisePatient(patientId, ages, subscriberConnection);
+				updateEnterprisePerson(patientId, ages, subscriberConnection);
+			}
+
+			subscriberConnection.close();
+			subscriberTransformConnection.close();
+
+			LOG.debug("Finished Fixing Deceased Patients for " + subscriberConfig);
+		} catch (Throwable t) {
+			LOG.error("", t);
+		}
+	}
+
+
+	private static void updateEnterprisePatient(long enterprisePatientId, Integer[] ages, Connection connection) throws Exception {
+
+		//the enterprise patient database isn't managed using hibernate, so we need to simply write a simple update statement
+		StringBuilder sb = new StringBuilder();
+		sb.append("UPDATE patient SET ");
+		sb.append("age_years = ?, ");
+		sb.append("age_months = ?, ");
+		sb.append("age_weeks = ? ");
+		sb.append("WHERE id = ?");
+
+		PreparedStatement update = connection.prepareStatement(sb.toString());
+
+		if (ages[EnterpriseAge.UNIT_YEARS] == null) {
+			update.setNull(1, Types.INTEGER);
+		} else {
+			update.setInt(1, ages[EnterpriseAge.UNIT_YEARS]);
+		}
+
+		if (ages[EnterpriseAge.UNIT_MONTHS] == null) {
+			update.setNull(2, Types.INTEGER);
+		} else {
+			update.setInt(2, ages[EnterpriseAge.UNIT_MONTHS]);
+		}
+
+		if (ages[EnterpriseAge.UNIT_WEEKS] == null) {
+			update.setNull(3, Types.INTEGER);
+		} else {
+			update.setInt(3, ages[EnterpriseAge.UNIT_WEEKS]);
+		}
+
+		update.setLong(4, enterprisePatientId);
+
+		update.addBatch();
+		update.executeBatch();
+
+		connection.commit();
+
+		LOG.info("Updated patient " + enterprisePatientId + " to ages " + ages[EnterpriseAge.UNIT_YEARS] + " y, " + ages[EnterpriseAge.UNIT_MONTHS] + " m " + ages[EnterpriseAge.UNIT_WEEKS] + " wks");
+	}
+
+	private static void updateEnterprisePerson(long enterprisePatientId, Integer[] ages, Connection connection) throws Exception {
+
+		//update the age fields on the person table where the person is for our patient and their pseudo IDs match
+		StringBuilder sb = new StringBuilder();
+		sb.append("UPDATE patient, person SET ");
+		sb.append("person.age_years = ?, ");
+		sb.append("person.age_months = ?, ");
+		sb.append("person.age_weeks = ? ");
+		sb.append("WHERE patient.id = ? ");
+		sb.append("AND patient.person_id = person.id ");
+		sb.append("AND patient.pseudo_id = person.pseudo_id");
+
+		PreparedStatement update = connection.prepareStatement(sb.toString());
+
+		if (ages[EnterpriseAge.UNIT_YEARS] == null) {
+			update.setNull(1, Types.INTEGER);
+		} else {
+			update.setInt(1, ages[EnterpriseAge.UNIT_YEARS]);
+		}
+
+		if (ages[EnterpriseAge.UNIT_MONTHS] == null) {
+			update.setNull(2, Types.INTEGER);
+		} else {
+			update.setInt(2, ages[EnterpriseAge.UNIT_MONTHS]);
+		}
+
+		if (ages[EnterpriseAge.UNIT_WEEKS] == null) {
+			update.setNull(3, Types.INTEGER);
+		} else {
+			update.setInt(3, ages[EnterpriseAge.UNIT_WEEKS]);
+		}
+
+		update.setLong(4, enterprisePatientId);
+
+		update.addBatch();
+		update.executeBatch();
+
+		connection.commit();
+	}
 
 	private static void testS3Read(String s3BucketName, String keyName, String start, String len) {
 		LOG.debug("Testing S3 Read from " + s3BucketName + " " + keyName + " from " + start + " " + len + " bytes");
@@ -1263,7 +1426,7 @@ public class Main {
 										sql += "\n";
 
 										File f = new File(subscriberConfig + ".sql");
-										Files.write(f.toPath(), sql.getBytes(), StandardOpenOption.APPEND);
+										Files.write(f.toPath(), sql.getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND, StandardOpenOption.WRITE);
 									}
 
 									//delete resource if not already done
