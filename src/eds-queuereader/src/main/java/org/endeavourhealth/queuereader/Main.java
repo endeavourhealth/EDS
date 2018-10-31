@@ -1431,7 +1431,7 @@ public class Main {
 
 									//delete resource if not already done
 									ResourceWrapper resourceWrapper = resourceDal.getCurrentVersion(serviceId, resourceType.toString(), uuid);
-									if (!resourceWrapper.isDeleted()) {
+									if (resourceWrapper != null && !resourceWrapper.isDeleted()) {
 
 										ExchangeBatch batch = hmBatchesByPatient.get(resourceWrapper.getPatientId());
 										resourceWrapper.setDeleted(true);
