@@ -500,7 +500,9 @@ public class Main {
 
 				Resource resource = resourceDal.getCurrentVersionAsResource(UUID.fromString(serviceId), ResourceType.valueOf(resourceType), resourceId);
 				if (resource == null) {
-					throw new Exception("Failed to find patient resource for " + resourceType + " " + resourceId + ", service ID = " + serviceId + " and patient ID = " + patientId);
+					LOG.error("Failed to find patient resource for " + resourceType + " " + resourceId + ", service ID = " + serviceId + " and patient ID = " + patientId);
+					continue;
+					//throw new Exception("Failed to find patient resource for " + resourceType + " " + resourceId + ", service ID = " + serviceId + " and patient ID = " + patientId);
 				}
 				Patient patient = (Patient)resource;
 				Date dob = patient.getBirthDate();
