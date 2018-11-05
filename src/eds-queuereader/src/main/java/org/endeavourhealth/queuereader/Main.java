@@ -544,7 +544,13 @@ public class Main {
 				}
 
 				//get patient
-				Resource resource = resourceDal.getCurrentVersionAsResource(UUID.fromString(serviceId), ResourceType.Patient, resourceId);
+				Resource resource = null;
+				try {
+					resource = resourceDal.getCurrentVersionAsResource(UUID.fromString(serviceId), ResourceType.Patient, resourceId);
+				} catch (Exception ex) {
+					throw new Exception("Failed to get patient " + resourceId + " for service " + serviceId);
+				}
+
 				if (resource == null) {
 					LOG.error("Failed to find patient resource for " + ResourceType.Patient + " " + resourceId + ", service ID = " + serviceId + " and patient ID = " + patientId);
 					continue;
