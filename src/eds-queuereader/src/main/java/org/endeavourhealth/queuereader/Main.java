@@ -9,6 +9,7 @@ import com.amazonaws.services.s3.model.GetObjectRequest;
 import com.amazonaws.services.s3.model.S3Object;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import org.apache.commons.csv.*;
@@ -55,6 +56,8 @@ import org.endeavourhealth.transform.common.*;
 import org.endeavourhealth.transform.common.resourceBuilders.PatientBuilder;
 import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
 import org.endeavourhealth.transform.emis.csv.helpers.EmisCsvHelper;
+import org.endeavourhealth.transform.enterprise.json.LinkDistributorConfig;
+import org.endeavourhealth.transform.enterprise.transforms.PatientTransformer;
 import org.hibernate.internal.SessionImpl;
 import org.hl7.fhir.instance.model.*;
 import org.slf4j.Logger;
@@ -270,6 +273,13 @@ public class Main {
 			System.exit(0);
 		}
 
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("FixPseudoIds")) {
+			String subscriberConfig = args[1];
+			fixPseudoIds(subscriberConfig);
+			System.exit(0);
+		}
+
 		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("ConvertExchangeBody")) {
 			String systemId = args[1];
@@ -445,6 +455,154 @@ public class Main {
 		// Begin consume
 		rabbitHandler.start();
 		LOG.info("EDS Queue reader running (kill file location " + TransformConfig.instance().getKillFileLocation() + ")");
+	}
+
+	private static void fixPseudoIds(String subscriberConfig) {
+		LOG.debug("Fixing Pseudo IDs for " + subscriberConfig);
+		try {
+
+			//update psuedo ID on patient table
+			//update psuedo ID on person table
+			//update pseudo ID on subscriber_transform mapping table
+
+			JsonNode config = ConfigManager.getConfigurationAsJson(subscriberConfig, "db_subscriber");
+
+			JsonNode saltNode = config.get("pseudonymisation");
+
+			ObjectMapper mapper = new ObjectMapper();
+			Object json = mapper.readValue(saltNode.toString(), Object.class);
+			String linkDistributors = mapper.writeValueAsString(json);
+			LinkDistributorConfig salt = ObjectMapperPool.getInstance().readValue(linkDistributors, LinkDistributorConfig.class);
+
+			//PseudoIdDalI pseudoIdDal = DalProvider.factoryPseudoIdDal(subscriberConfig);
+			ResourceDalI resourceDal = DalProvider.factoryResourceDal();
+
+			Connection subscriberConnection = EnterpriseFiler.openConnection(config);
+
+			EntityManager entityManager = ConnectionManager.getSubscriberTransformEntityManager(subscriberConfig);
+			SessionImpl session = (SessionImpl) entityManager.getDelegate();
+			Connection subscriberTransformConnection = session.connection();
+
+			Statement subscriberTransformStatement = subscriberTransformConnection.createStatement();
+
+			List<Long> patientIds = new ArrayList<>();
+			Map<Long, Long> hmOrgIds = new HashMap<>();
+			Map<Long, Long> hmPersonIds = new HashMap<>();
+
+			String sql = "SELECT id, organization_id, person_id FROM patient";
+			Statement statement = subscriberConnection.createStatement();
+			statement.setFetchSize(10000);
+			ResultSet rs = statement.executeQuery(sql);
+			while (rs.next()) {
+				long patientId = rs.getLong(1);
+				long orgId = rs.getLong(2);
+				long personId = rs.getLong(3);
+
+				patientIds.add(new Long(patientId));
+				hmOrgIds.put(new Long(patientId), new Long(orgId));
+				hmPersonIds.put(new Long(patientId), new Long(personId));
+			}
+			rs.close();
+
+			LOG.debug("Found " + patientIds.size() + " patients");
+
+			int done = 0;
+
+			for (Long patientId: patientIds) {
+				Long orgId = hmOrgIds.get(patientId);
+				Long personId = hmPersonIds.get(patientId);
+
+				//find service ID
+				sql = "SELECT service_id FROM enterprise_organisation_id_map WHERE enterprise_id = " + orgId;
+				rs = subscriberTransformStatement.executeQuery(sql);
+				if (!rs.next()) {
+					throw new Exception("Failed to find service iD for patient ID " + patientId + " and org ID " + orgId);
+				}
+				String serviceId = rs.getString(1);
+				rs.close();
+
+				//find patient ID
+				sql = "SELECT resource_type, resource_id FROM enterprise_id_map WHERE enterprise_id = " + patientId;
+				rs = subscriberTransformStatement.executeQuery(sql);
+				if (!rs.next()) {
+					throw new Exception("Failed to find resource iD for patient ID " + patientId);
+				}
+				String resourceType = rs.getString(1);
+				String resourceId = rs.getString(2);
+				rs.close();
+
+				if (!resourceType.equals("Patient")) {
+					throw new Exception("Not a patient resource type for enterprise ID " + patientId);
+				}
+
+				//get patient
+				Resource resource = resourceDal.getCurrentVersionAsResource(UUID.fromString(serviceId), ResourceType.Patient, resourceId);
+				if (resource == null) {
+					LOG.error("Failed to find patient resource for " + ResourceType.Patient + " " + resourceId + ", service ID = " + serviceId + " and patient ID = " + patientId);
+					continue;
+					//throw new Exception("Failed to find patient resource for " + resourceType + " " + resourceId + ", service ID = " + serviceId + " and patient ID = " + patientId);
+				}
+				Patient patient = (Patient)resource;
+
+				//generate new pseudo ID
+				String pseudoId = PatientTransformer.pseudonymiseUsingConfig(patient, salt);
+
+				//save to person
+				if (Strings.isNullOrEmpty(pseudoId)) {
+					sql = "UPDATE person"
+							+ " SET pseudo_id = null"
+							+ " WHERE id = " + personId;
+					statement.executeUpdate(sql);
+
+				} else {
+					sql = "UPDATE person"
+							+ " SET pseudo_id = '" + pseudoId + "'"
+							+ " WHERE id = " + personId;
+					statement.executeUpdate(sql);
+				}
+
+				//save to patient
+				if (Strings.isNullOrEmpty(pseudoId)) {
+					sql = "UPDATE patient"
+							+ " SET pseudo_id = null"
+							+ " WHERE id = " + patientId;
+					statement.executeUpdate(sql);
+
+				} else {
+					sql = "UPDATE patient"
+							+ " SET pseudo_id = '" + pseudoId + "'"
+							+ " WHERE id = " + patientId;
+					statement.executeUpdate(sql);
+				}
+
+				//save to subscriber transform
+				sql = "DELETE FROM pseudo_id_map WHERE patient_id = '" + resourceId + "'";
+				subscriberTransformStatement.executeUpdate(sql);
+
+				if (!Strings.isNullOrEmpty(pseudoId)) {
+					sql = "INSERT INTO pseudo_id_map (patient_id, pseudo_id) VALUES ('" + resourceId + "', '" + pseudoId + "')";
+					subscriberTransformStatement.executeUpdate(sql);
+				}
+
+				subscriberConnection.commit();
+				subscriberTransformConnection.commit();
+
+				done ++;
+				if (done % 1000 == 0) {
+					LOG.debug("Done " + done);
+				}
+			}
+
+			statement.close();
+			subscriberTransformStatement.close();
+
+			subscriberConnection.close();
+			subscriberTransformConnection.close();
+
+			LOG.debug("Finished Fixing Pseudo IDs for " + subscriberConfig);
+		} catch (Throwable t) {
+			LOG.error("", t);
+		}
 	}
 
 	private static void fixDeceasedPatients(String subscriberConfig) {
@@ -1020,14 +1178,25 @@ public class Main {
 		try {
 
 			JsonNode config = ConfigManager.getConfigurationAsJson(subscriberConfigName, "db_subscriber");
-			boolean pseudonymised = config.get("pseudonymised").asBoolean();
+
+			//changed the format of the JSON
+			JsonNode pseudoNode = config.get("pseudonymisation");
+			boolean pseudonymised = pseudoNode != null;
+			byte[] saltBytes = null;
+
+			if (pseudonymised) {
+				JsonNode saltNode = pseudoNode.get("salt");
+				String base64Salt = saltNode.asText();
+				saltBytes = Base64.getDecoder().decode(base64Salt);
+			}
+			/*boolean pseudonymised = config.get("pseudonymised").asBoolean();
 
 			byte[] saltBytes = null;
 			if (pseudonymised) {
 				JsonNode saltNode = config.get("salt");
 				String base64Salt = saltNode.asText();
 				saltBytes = Base64.getDecoder().decode(base64Salt);
-			}
+			}*/
 
 			Connection subscriberConnection = EnterpriseFiler.openConnection(config);
 
