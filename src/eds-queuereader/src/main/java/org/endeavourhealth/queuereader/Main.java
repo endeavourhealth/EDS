@@ -15,7 +15,6 @@ import com.google.common.collect.Lists;
 import org.apache.commons.csv.*;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
-import org.endeavourHealth.subscriber.filer.EnterpriseFiler;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.common.fhir.*;
@@ -49,6 +48,7 @@ import org.endeavourhealth.core.messaging.pipeline.components.PostMessageToExcha
 import org.endeavourhealth.core.queueing.QueueHelper;
 import org.endeavourhealth.core.xml.TransformErrorSerializer;
 import org.endeavourhealth.core.xml.transformError.TransformError;
+import org.endeavourhealth.subscriber.filer.EnterpriseFiler;
 import org.endeavourhealth.transform.barts.transforms.PPADDTransformer;
 import org.endeavourhealth.transform.barts.transforms.PPNAMTransformer;
 import org.endeavourhealth.transform.barts.transforms.PPPHOTransformer;
@@ -474,6 +474,14 @@ public class Main {
 			String linkDistributors = mapper.writeValueAsString(json);
 			LinkDistributorConfig salt = ObjectMapperPool.getInstance().readValue(linkDistributors, LinkDistributorConfig.class);
 
+			LinkDistributorConfig[] arr = null;
+			JsonNode linkDistributorsNode = config.get("linkedDistributors");
+			if (linkDistributorsNode != null) {
+				json = mapper.readValue(linkDistributorsNode.toString(), Object.class);
+				linkDistributors = mapper.writeValueAsString(json);
+				arr = ObjectMapperPool.getInstance().readValue(linkDistributors, LinkDistributorConfig[].class);
+			}
+
 			//PseudoIdDalI pseudoIdDal = DalProvider.factoryPseudoIdDal(subscriberConfig);
 			ResourceDalI resourceDal = DalProvider.factoryResourceDal();
 
@@ -575,6 +583,18 @@ public class Main {
 					statement.executeUpdate(sql);
 				}
 
+				//linked distributers
+				if (arr != null) {
+					for (LinkDistributorConfig linked: arr) {
+						String linkedPseudoId = PatientTransformer.pseudonymiseUsingConfig(patient, linked);
+						sql = "INSERT INTO link_distributor (source_skid, target_salt_key_name, target_skid) VALUES ('" + pseudoId + "', '" + linked.getSaltKeyName() + "', '" + linkedPseudoId + "')"
+						+ " ON DUPLICATE KEY UPDATE"
+						+ " target_salt_key_name = VALUES(target_salt_key_name),"
+						+ " target_skid = VALUES(target_skid)";
+						statement.executeUpdate(sql);
+					}
+				}
+
 				//save to subscriber transform
 				sql = "DELETE FROM pseudo_id_map WHERE patient_id = '" + resourceId + "'";
 				subscriberTransformStatement.executeUpdate(sql);
@@ -583,6 +603,8 @@ public class Main {
 					sql = "INSERT INTO pseudo_id_map (patient_id, pseudo_id) VALUES ('" + resourceId + "', '" + pseudoId + "')";
 					subscriberTransformStatement.executeUpdate(sql);
 				}
+
+
 
 				subscriberConnection.commit();
 				subscriberTransformConnection.commit();
