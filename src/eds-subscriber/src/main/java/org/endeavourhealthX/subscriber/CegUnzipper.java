@@ -1,4 +1,4 @@
-package org.endeavourHealth.subscriber;
+package org.endeavourhealthX.subscriber;
 
 import java.io.*;
 import java.util.Base64;

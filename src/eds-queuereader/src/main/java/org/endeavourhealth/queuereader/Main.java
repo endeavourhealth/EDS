@@ -48,7 +48,6 @@ import org.endeavourhealth.core.messaging.pipeline.components.PostMessageToExcha
 import org.endeavourhealth.core.queueing.QueueHelper;
 import org.endeavourhealth.core.xml.TransformErrorSerializer;
 import org.endeavourhealth.core.xml.transformError.TransformError;
-import org.endeavourhealth.subscriber.filer.EnterpriseFiler;
 import org.endeavourhealth.transform.barts.transforms.PPADDTransformer;
 import org.endeavourhealth.transform.barts.transforms.PPNAMTransformer;
 import org.endeavourhealth.transform.barts.transforms.PPPHOTransformer;
@@ -58,6 +57,7 @@ import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
 import org.endeavourhealth.transform.emis.csv.helpers.EmisCsvHelper;
 import org.endeavourhealth.transform.enterprise.json.LinkDistributorConfig;
 import org.endeavourhealth.transform.enterprise.transforms.PatientTransformer;
+import org.endeavourhealthX.subscriber.filer.EnterpriseFiler;
 import org.hibernate.internal.SessionImpl;
 import org.hl7.fhir.instance.model.*;
 import org.slf4j.Logger;

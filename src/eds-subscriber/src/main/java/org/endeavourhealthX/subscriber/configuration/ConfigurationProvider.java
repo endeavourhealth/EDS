@@ -1,7 +1,7 @@
-package org.endeavourhealth.subscriber.configuration;
+package org.endeavourhealthX.subscriber.configuration;
 
 import org.endeavourhealth.common.utility.XmlSerializer;
-import org.endeavourhealth.subscriber.configuration.models.SubscriberConfiguration;
+import org.endeavourhealthX.subscriber.configuration.models.SubscriberConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
