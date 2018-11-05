@@ -1,4 +1,4 @@
-package org.endeavourhealthX.subscriber;
+package org.endeavourhealth.subscriber;
 
 import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;
