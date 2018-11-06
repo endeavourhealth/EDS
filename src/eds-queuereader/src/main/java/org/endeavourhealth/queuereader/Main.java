@@ -277,7 +277,8 @@ public class Main {
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("FixPseudoIds")) {
 			String subscriberConfig = args[1];
-			fixPseudoIds(subscriberConfig);
+			int threads = Integer.parseInt(args[2]);
+			fixPseudoIds(subscriberConfig, threads);
 			System.exit(0);
 		}
 
@@ -458,7 +459,7 @@ public class Main {
 		LOG.info("EDS Queue reader running (kill file location " + TransformConfig.instance().getKillFileLocation() + ")");
 	}
 
-	private static void fixPseudoIds(String subscriberConfig) {
+	private static void fixPseudoIds(String subscriberConfig, int threads) {
 		LOG.debug("Fixing Pseudo IDs for " + subscriberConfig);
 		try {
 
@@ -508,8 +509,6 @@ public class Main {
 			subscriberConnection.close();
 
 			LOG.debug("Found " + patientIds.size() + " patients");
-
-			int threads = 5;
 
 			AtomicInteger done = new AtomicInteger();
 			int pos = 0;
