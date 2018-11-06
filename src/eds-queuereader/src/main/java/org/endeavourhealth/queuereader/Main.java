@@ -73,6 +73,7 @@ import java.sql.*;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.Date;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class Main {
 	private static final Logger LOG = LoggerFactory.getLogger(Main.class);
@@ -482,16 +483,9 @@ public class Main {
 				arr = ObjectMapperPool.getInstance().readValue(linkDistributors, LinkDistributorConfig[].class);
 			}
 
-			//PseudoIdDalI pseudoIdDal = DalProvider.factoryPseudoIdDal(subscriberConfig);
-			ResourceDalI resourceDal = DalProvider.factoryResourceDal();
 
 			Connection subscriberConnection = EnterpriseFiler.openConnection(config);
 
-			EntityManager entityManager = ConnectionManager.getSubscriberTransformEntityManager(subscriberConfig);
-			SessionImpl session = (SessionImpl) entityManager.getDelegate();
-			Connection subscriberTransformConnection = session.connection();
-
-			Statement subscriberTransformStatement = subscriberTransformConnection.createStatement();
 
 			List<Long> patientIds = new ArrayList<>();
 			Map<Long, Long> hmOrgIds = new HashMap<>();
@@ -511,10 +505,119 @@ public class Main {
 				hmPersonIds.put(new Long(patientId), new Long(personId));
 			}
 			rs.close();
+			subscriberConnection.close();
 
 			LOG.debug("Found " + patientIds.size() + " patients");
 
-			int done = 0;
+			int threads = 5;
+
+			AtomicInteger done = new AtomicInteger();
+			int pos = 0;
+
+			List<Thread> threadList = new ArrayList<>();
+			for (int i=0; i<threads; i++) {
+
+				List<Long> patientSubset = new ArrayList<>();
+
+				int count = patientIds.size() / threads;
+				if (i+1 == threads) {
+					count = patientIds.size() - pos;
+				}
+
+				for (int j=0; j<count; j++) {
+					Long patientId = patientIds.get(pos);
+					patientSubset.add(patientId);
+					pos ++;
+				}
+
+				FixPseudoIdRunnable runnable = new FixPseudoIdRunnable(subscriberConfig, patientSubset, hmOrgIds, hmPersonIds, done);
+
+				Thread t = new Thread(runnable);
+				t.start();
+
+				threadList.add(t);
+			}
+
+			while (true) {
+				Thread.sleep(5000);
+
+				boolean allDone = true;
+				for (Thread t: threadList) {
+					if (t.getState() != Thread.State.TERMINATED) {
+					//if (!t.isAlive()) {
+						allDone = false;
+						break;
+					}
+				}
+
+				if (allDone) {
+					break;
+				}
+			}
+
+			LOG.debug("Finished Fixing Pseudo IDs for " + subscriberConfig);
+		} catch (Throwable t) {
+			LOG.error("", t);
+		}
+	}
+
+	static class FixPseudoIdRunnable implements Runnable {
+
+		private String subscriberConfig = null;
+		private List<Long> patientIds = null;
+		private Map<Long, Long> hmOrgIds = null;
+		private Map<Long, Long> hmPersonIds = null;
+		private AtomicInteger done = null;
+
+		public FixPseudoIdRunnable(String subscriberConfig, List<Long> patientIds, Map<Long, Long> hmOrgIds, Map<Long, Long> hmPersonIds, AtomicInteger done) {
+			this.subscriberConfig = subscriberConfig;
+			this.patientIds = patientIds;
+			this.hmOrgIds = hmOrgIds;
+			this.hmPersonIds = hmPersonIds;
+			this.done = done;
+		}
+
+		@Override
+		public void run() {
+			try {
+				doRun();
+			} catch (Throwable t) {
+				LOG.error("", t);
+			}
+		}
+
+		private void doRun() throws Exception {
+			JsonNode config = ConfigManager.getConfigurationAsJson(subscriberConfig, "db_subscriber");
+
+			Connection subscriberConnection = EnterpriseFiler.openConnection(config);
+			Statement statement = subscriberConnection.createStatement();
+
+			JsonNode saltNode = config.get("pseudonymisation");
+
+			ObjectMapper mapper = new ObjectMapper();
+			Object json = mapper.readValue(saltNode.toString(), Object.class);
+			String linkDistributors = mapper.writeValueAsString(json);
+			LinkDistributorConfig salt = ObjectMapperPool.getInstance().readValue(linkDistributors, LinkDistributorConfig.class);
+
+			LinkDistributorConfig[] arr = null;
+			JsonNode linkDistributorsNode = config.get("linkedDistributors");
+			if (linkDistributorsNode != null) {
+				json = mapper.readValue(linkDistributorsNode.toString(), Object.class);
+				linkDistributors = mapper.writeValueAsString(json);
+				arr = ObjectMapperPool.getInstance().readValue(linkDistributors, LinkDistributorConfig[].class);
+			}
+
+			//PseudoIdDalI pseudoIdDal = DalProvider.factoryPseudoIdDal(subscriberConfig);
+			ResourceDalI resourceDal = DalProvider.factoryResourceDal();
+
+			EntityManager entityManager = ConnectionManager.getSubscriberTransformEntityManager(subscriberConfig);
+			SessionImpl session = (SessionImpl) entityManager.getDelegate();
+			Connection subscriberTransformConnection = session.connection();
+
+			Statement subscriberTransformStatement = subscriberTransformConnection.createStatement();
+
+			String sql = null;
+			ResultSet rs = null;
 
 			for (Long patientId: patientIds) {
 				Long orgId = hmOrgIds.get(patientId);
@@ -548,7 +651,7 @@ public class Main {
 				try {
 					resource = resourceDal.getCurrentVersionAsResource(UUID.fromString(serviceId), ResourceType.Patient, resourceId);
 				} catch (Exception ex) {
-					throw new Exception("Failed to get patient " + resourceId + " for service " + serviceId);
+					throw new Exception("Failed to get patient " + resourceId + " for service " + serviceId, ex);
 				}
 
 				if (resource == null) {
@@ -594,9 +697,9 @@ public class Main {
 					for (LinkDistributorConfig linked: arr) {
 						String linkedPseudoId = PatientTransformer.pseudonymiseUsingConfig(patient, linked);
 						sql = "INSERT INTO link_distributor (source_skid, target_salt_key_name, target_skid) VALUES ('" + pseudoId + "', '" + linked.getSaltKeyName() + "', '" + linkedPseudoId + "')"
-						+ " ON DUPLICATE KEY UPDATE"
-						+ " target_salt_key_name = VALUES(target_salt_key_name),"
-						+ " target_skid = VALUES(target_skid)";
+								+ " ON DUPLICATE KEY UPDATE"
+								+ " target_salt_key_name = VALUES(target_salt_key_name),"
+								+ " target_skid = VALUES(target_skid)";
 						statement.executeUpdate(sql);
 					}
 				}
@@ -615,9 +718,9 @@ public class Main {
 				subscriberConnection.commit();
 				subscriberTransformConnection.commit();
 
-				done ++;
-				if (done % 1000 == 0) {
-					LOG.debug("Done " + done);
+				int doneLocal = done.incrementAndGet();
+				if (doneLocal % 1000 == 0) {
+					LOG.debug("Done " + doneLocal);
 				}
 			}
 
@@ -626,10 +729,6 @@ public class Main {
 
 			subscriberConnection.close();
 			subscriberTransformConnection.close();
-
-			LOG.debug("Finished Fixing Pseudo IDs for " + subscriberConfig);
-		} catch (Throwable t) {
-			LOG.error("", t);
 		}
 	}
 
