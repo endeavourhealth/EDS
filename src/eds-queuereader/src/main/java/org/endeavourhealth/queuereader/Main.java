@@ -7729,17 +7729,23 @@ public class Main {
 
 			//for each patient
 			for (UUID patientUuid: patientIds) {
+				LOG.debug("Checking patient " + patientUuid);
 
 				//get all appointment resources
 				List<ResourceWrapper> appointmentWrappers = resourceDal.getResourcesByPatient(serviceId, patientUuid, ResourceType.Appointment.toString());
 				for (ResourceWrapper apptWrapper: appointmentWrappers) {
+					LOG.debug("Checking appointment " + apptWrapper.getResourceId());
+
 					if (apptWrapper.isDeleted()) {
+						LOG.debug("Appointment " + apptWrapper.getResourceId() + " is deleted");
 						continue;
 					}
+
 
 					String json = apptWrapper.getResourceData();
 					Appointment appt = (Appointment)FhirSerializationHelper.deserializeResource(json);
 					if (!appt.hasSlot()) {
+						LOG.debug("Appointment " + apptWrapper.getResourceId() + " has no slot");
 						continue;
 					}
 
@@ -7753,6 +7759,7 @@ public class Main {
 					ReferenceComponents comps = ReferenceHelper.getReferenceComponents(slotRef);
 					Resource slot = resourceDal.getCurrentVersionAsResource(serviceId, comps.getResourceType(), comps.getId());
 					if (slot != null) {
+						LOG.debug("Appointment " + apptWrapper.getResourceId() + " has a valid slot");
 						continue;
 					}
 
@@ -7764,7 +7771,9 @@ public class Main {
 					Reference slotEdsReference = IdHelper.convertLocallyUniqueReferenceToEdsReference(slotLocalReference, csvHelper);
 					String slotEdsReferenceValue = slotEdsReference.getReference();
 
+					String oldSlotRefValue = slotRef.getReference();
 					slotRef.setReference(slotEdsReferenceValue);
+					LOG.debug("Appointment " + apptWrapper.getResourceId() + " slot ref changed from " + oldSlotRefValue + " to " + slotEdsReferenceValue);
 
 					//save appointment
 					json = FhirSerializationHelper.serializeResource(appt);
