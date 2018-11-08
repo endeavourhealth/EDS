@@ -358,6 +358,14 @@ public class Main {
 			System.exit(0);
 		}
 
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("FixSlotReferences")) {
+			String serviceId = args[1];
+			fixSlotReferences(UUID.fromString(serviceId));
+			System.exit(0);
+		}
+
+
 		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("Exit")) {
 
@@ -7692,6 +7700,92 @@ public class Main {
 		}
 	}*/
 
+	private static void fixSlotReferences(UUID serviceId) {
+		LOG.info("Fixing Slot References in Appointments for " + serviceId);
+		try {
+			//get patient IDs from patient search
+			List<UUID> patientIds = new ArrayList<>();
+			EntityManager entityManager = ConnectionManager.getEdsEntityManager();
+			SessionImpl session = (SessionImpl) entityManager.getDelegate();
+			Connection connection = session.connection();
+			Statement statement = connection.createStatement();
+			String sql = "SELECT patient_id FROM patient_search WHERE service_id = '" + serviceId.toString() + "'";
+			ResultSet rs = statement.executeQuery(sql);
+			while (rs.next()) {
+				String patientUuid = rs.getString(1);
+				patientIds.add(UUID.fromString(patientUuid));
+			}
+			rs.close();
+			statement.close();
+			connection.close();
+
+			LOG.debug("Found " + patientIds.size() + " patients");
+			int done = 0;
+			int fixed = 0;
+
+			ResourceDalI resourceDal = DalProvider.factoryResourceDal();
+
+			EmisCsvHelper csvHelper = new EmisCsvHelper(serviceId, null, null, null, true);
+
+			//for each patient
+			for (UUID patientUuid: patientIds) {
+
+				//get all appointment resources
+				List<ResourceWrapper> appointmentWrappers = resourceDal.getResourcesByPatient(serviceId, patientUuid, ResourceType.Appointment.toString());
+				for (ResourceWrapper apptWrapper: appointmentWrappers) {
+					if (apptWrapper.isDeleted()) {
+						continue;
+					}
+
+					String json = apptWrapper.getResourceData();
+					Appointment appt = (Appointment)FhirSerializationHelper.deserializeResource(json);
+					if (!appt.hasSlot()) {
+						continue;
+					}
+
+					if (appt.getSlot().size() != 1) {
+						throw new Exception("Appointment " + appt.getId() + " has " + appt.getSlot().size() + " slot refs");
+					}
+
+					Reference slotRef = appt.getSlot().get(0);
+
+					//test if slot reference exists
+					ReferenceComponents comps = ReferenceHelper.getReferenceComponents(slotRef);
+					Resource slot = resourceDal.getCurrentVersionAsResource(serviceId, comps.getResourceType(), comps.getId());
+					if (slot != null) {
+						continue;
+					}
+
+					//if not, correct slot reference
+					Reference apptEdsReference = ReferenceHelper.createReference(appt.getResourceType(), appt.getId());
+					Reference apptLocalReference = IdHelper.convertEdsReferenceToLocallyUniqueReference(csvHelper, apptEdsReference);
+					String sourceId = ReferenceHelper.getReferenceId(apptLocalReference);
+					Reference slotLocalReference = ReferenceHelper.createReference(ResourceType.Slot, sourceId);
+					Reference slotEdsReference = IdHelper.convertLocallyUniqueReferenceToEdsReference(slotLocalReference, csvHelper);
+					String slotEdsReferenceValue = slotEdsReference.getReference();
+
+					slotRef.setReference(slotEdsReferenceValue);
+
+					//save appointment
+					json = FhirSerializationHelper.serializeResource(appt);
+					apptWrapper.setResourceData(json);
+					saveResourceWrapper(serviceId, apptWrapper);
+
+					fixed ++;
+				}
+
+				done ++;
+				if (done % 1000 == 0) {
+					LOG.debug("Done " + done + " / " + patientIds.size() + " and fixed " + fixed + " appts");
+				}
+			}
+
+			LOG.debug("Done " + done + " / " + patientIds.size() + " and fixed " + fixed + " appts");
+			LOG.info("Finished Fixing Slot References in Appointments for " + serviceId);
+		} catch (Exception ex) {
+			LOG.error("", ex);
+		}
+	}
 
 	/*private static void fixReviews(String sharedStoragePath, UUID justThisService) {
 		LOG.info("Fixing Reviews using path " + sharedStoragePath + " and service " + justThisService);
