@@ -3043,6 +3043,10 @@ public class Main {
 
 	private static void saveResourceWrapper(UUID serviceId, ResourceWrapper wrapper) throws Exception {
 
+		if (wrapper.getVersion() == null) {
+			throw new Exception("Can't update resource history without version UUID");
+		}
+
 		if (wrapper.getResourceData() != null) {
 			long checksum = FhirStorageService.generateChecksum(wrapper.getResourceData());
 			wrapper.setResourceChecksum(new Long(checksum));
@@ -7736,51 +7740,58 @@ public class Main {
 				for (ResourceWrapper apptWrapper: appointmentWrappers) {
 					LOG.debug("Checking appointment " + apptWrapper.getResourceId());
 
-					if (apptWrapper.isDeleted()) {
-						LOG.debug("Appointment " + apptWrapper.getResourceId() + " is deleted");
-						continue;
+					List<ResourceWrapper> historyWrappers = resourceDal.getResourceHistory(serviceId, apptWrapper.getResourceType(), apptWrapper.getResourceId());
+
+					//the above returns most recent first, but we want to do them in order
+					historyWrappers = Lists.reverse(historyWrappers);
+
+					for (ResourceWrapper historyWrapper : historyWrappers) {
+
+						if (historyWrapper.isDeleted()) {
+							LOG.debug("Appointment " + historyWrapper.getResourceId() + " is deleted");
+							continue;
+						}
+
+						String json = historyWrapper.getResourceData();
+						Appointment appt = (Appointment) FhirSerializationHelper.deserializeResource(json);
+						if (!appt.hasSlot()) {
+							LOG.debug("Appointment " + historyWrapper.getResourceId() + " has no slot");
+							continue;
+						}
+
+						if (appt.getSlot().size() != 1) {
+							throw new Exception("Appointment " + appt.getId() + " has " + appt.getSlot().size() + " slot refs");
+						}
+
+						Reference slotRef = appt.getSlot().get(0);
+
+						//test if slot reference exists
+						Reference slotLocalRef = IdHelper.convertEdsReferenceToLocallyUniqueReference(csvHelper, slotRef);
+						String slotSourceId = ReferenceHelper.getReferenceId(slotLocalRef);
+						if (slotSourceId.indexOf(":") > -1) {
+							LOG.debug("Appointment " + historyWrapper.getResourceId() + " has a valid slot");
+							continue;
+						}
+
+						//if not, correct slot reference
+						Reference apptEdsReference = ReferenceHelper.createReference(appt.getResourceType(), appt.getId());
+						Reference apptLocalReference = IdHelper.convertEdsReferenceToLocallyUniqueReference(csvHelper, apptEdsReference);
+						String sourceId = ReferenceHelper.getReferenceId(apptLocalReference);
+						Reference slotLocalReference = ReferenceHelper.createReference(ResourceType.Slot, sourceId);
+						Reference slotEdsReference = IdHelper.convertLocallyUniqueReferenceToEdsReference(slotLocalReference, csvHelper);
+						String slotEdsReferenceValue = slotEdsReference.getReference();
+
+						String oldSlotRefValue = slotRef.getReference();
+						slotRef.setReference(slotEdsReferenceValue);
+						LOG.debug("Appointment " + historyWrapper.getResourceId() + " slot ref changed from " + oldSlotRefValue + " to " + slotEdsReferenceValue);
+
+						//save appointment
+						json = FhirSerializationHelper.serializeResource(appt);
+						historyWrapper.setResourceData(json);
+						saveResourceWrapper(serviceId, historyWrapper);
+
+						fixed++;
 					}
-
-
-					String json = apptWrapper.getResourceData();
-					Appointment appt = (Appointment)FhirSerializationHelper.deserializeResource(json);
-					if (!appt.hasSlot()) {
-						LOG.debug("Appointment " + apptWrapper.getResourceId() + " has no slot");
-						continue;
-					}
-
-					if (appt.getSlot().size() != 1) {
-						throw new Exception("Appointment " + appt.getId() + " has " + appt.getSlot().size() + " slot refs");
-					}
-
-					Reference slotRef = appt.getSlot().get(0);
-
-					//test if slot reference exists
-					ReferenceComponents comps = ReferenceHelper.getReferenceComponents(slotRef);
-					Resource slot = resourceDal.getCurrentVersionAsResource(serviceId, comps.getResourceType(), comps.getId());
-					if (slot != null) {
-						LOG.debug("Appointment " + apptWrapper.getResourceId() + " has a valid slot");
-						continue;
-					}
-
-					//if not, correct slot reference
-					Reference apptEdsReference = ReferenceHelper.createReference(appt.getResourceType(), appt.getId());
-					Reference apptLocalReference = IdHelper.convertEdsReferenceToLocallyUniqueReference(csvHelper, apptEdsReference);
-					String sourceId = ReferenceHelper.getReferenceId(apptLocalReference);
-					Reference slotLocalReference = ReferenceHelper.createReference(ResourceType.Slot, sourceId);
-					Reference slotEdsReference = IdHelper.convertLocallyUniqueReferenceToEdsReference(slotLocalReference, csvHelper);
-					String slotEdsReferenceValue = slotEdsReference.getReference();
-
-					String oldSlotRefValue = slotRef.getReference();
-					slotRef.setReference(slotEdsReferenceValue);
-					LOG.debug("Appointment " + apptWrapper.getResourceId() + " slot ref changed from " + oldSlotRefValue + " to " + slotEdsReferenceValue);
-
-					//save appointment
-					json = FhirSerializationHelper.serializeResource(appt);
-					apptWrapper.setResourceData(json);
-					saveResourceWrapper(serviceId, apptWrapper);
-
-					fixed ++;
 				}
 
 				done ++;
