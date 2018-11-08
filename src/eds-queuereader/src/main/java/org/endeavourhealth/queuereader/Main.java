@@ -361,7 +361,12 @@ public class Main {
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("FixSlotReferences")) {
 			String serviceId = args[1];
-			fixSlotReferences(UUID.fromString(serviceId));
+			try {
+				UUID serviceUuid = UUID.fromString(serviceId);
+				fixSlotReferences(serviceUuid);
+			} catch (Exception ex) {
+				fixSlotReferencesForPublisher(serviceId);
+			}
 			System.exit(0);
 		}
 
@@ -1480,7 +1485,7 @@ public class Main {
 
 				checked ++;
 				if (checked % 1000 == 0) {
-					LOG.info("Chcked " + checked + " Saved " + saved);
+					LOG.info("Checked " + checked + " Saved " + saved);
 				}
 			}
 
@@ -7704,11 +7709,46 @@ public class Main {
 		}
 	}*/
 
+	private static void fixSlotReferencesForPublisher(String publisher) {
+		try {
+			ServiceDalI dal = DalProvider.factoryServiceDal();
+			List<Service> services = dal.getAll();
+			for (Service service: services) {
+				if (service.getPublisherConfigName() != null
+						&& service.getPublisherConfigName().equals(publisher)) {
+
+					fixSlotReferences(service.getId());
+				}
+			}
+
+		} catch (Exception ex) {
+			LOG.error("", ex);
+		}
+	}
+
 	private static void fixSlotReferences(UUID serviceId) {
 		LOG.info("Fixing Slot References in Appointments for " + serviceId);
 		try {
 			//get patient IDs from patient search
 			List<UUID> patientIds = new ArrayList<>();
+
+
+			EntityManager entityManager = ConnectionManager.getPublisherTransformEntityManager(serviceId);
+			SessionImpl session = (SessionImpl) entityManager.getDelegate();
+			Connection connection = session.connection();
+			Statement statement = connection.createStatement();
+
+			String sql = "SELECT eds_id FROM publisher_transform_02.resource_id_map WHERE service_id = '" + serviceId + "'AND resource_type = '" + ResourceType.Patient + "';";
+			ResultSet rs = statement.executeQuery(sql);
+			while (rs.next()) {
+				String patientUuid = rs.getString(1);
+				patientIds.add(UUID.fromString(patientUuid));
+			}
+			rs.close();
+			statement.close();
+			connection.close();
+
+			/*
 			EntityManager entityManager = ConnectionManager.getEdsEntityManager();
 			SessionImpl session = (SessionImpl) entityManager.getDelegate();
 			Connection connection = session.connection();
@@ -7721,7 +7761,7 @@ public class Main {
 			}
 			rs.close();
 			statement.close();
-			connection.close();
+			connection.close();*/
 
 			LOG.debug("Found " + patientIds.size() + " patients");
 			int done = 0;
@@ -7733,12 +7773,12 @@ public class Main {
 
 			//for each patient
 			for (UUID patientUuid: patientIds) {
-				LOG.debug("Checking patient " + patientUuid);
+				//LOG.debug("Checking patient " + patientUuid);
 
 				//get all appointment resources
 				List<ResourceWrapper> appointmentWrappers = resourceDal.getResourcesByPatient(serviceId, patientUuid, ResourceType.Appointment.toString());
 				for (ResourceWrapper apptWrapper: appointmentWrappers) {
-					LOG.debug("Checking appointment " + apptWrapper.getResourceId());
+					//LOG.debug("Checking appointment " + apptWrapper.getResourceId());
 
 					List<ResourceWrapper> historyWrappers = resourceDal.getResourceHistory(serviceId, apptWrapper.getResourceType(), apptWrapper.getResourceId());
 
@@ -7748,14 +7788,14 @@ public class Main {
 					for (ResourceWrapper historyWrapper : historyWrappers) {
 
 						if (historyWrapper.isDeleted()) {
-							LOG.debug("Appointment " + historyWrapper.getResourceId() + " is deleted");
+							//LOG.debug("Appointment " + historyWrapper.getResourceId() + " is deleted");
 							continue;
 						}
 
 						String json = historyWrapper.getResourceData();
 						Appointment appt = (Appointment) FhirSerializationHelper.deserializeResource(json);
 						if (!appt.hasSlot()) {
-							LOG.debug("Appointment " + historyWrapper.getResourceId() + " has no slot");
+							//LOG.debug("Appointment " + historyWrapper.getResourceId() + " has no slot");
 							continue;
 						}
 
@@ -7769,7 +7809,7 @@ public class Main {
 						Reference slotLocalRef = IdHelper.convertEdsReferenceToLocallyUniqueReference(csvHelper, slotRef);
 						String slotSourceId = ReferenceHelper.getReferenceId(slotLocalRef);
 						if (slotSourceId.indexOf(":") > -1) {
-							LOG.debug("Appointment " + historyWrapper.getResourceId() + " has a valid slot");
+							//LOG.debug("Appointment " + historyWrapper.getResourceId() + " has a valid slot");
 							continue;
 						}
 
@@ -7783,7 +7823,7 @@ public class Main {
 
 						String oldSlotRefValue = slotRef.getReference();
 						slotRef.setReference(slotEdsReferenceValue);
-						LOG.debug("Appointment " + historyWrapper.getResourceId() + " slot ref changed from " + oldSlotRefValue + " to " + slotEdsReferenceValue);
+						//LOG.debug("Appointment " + historyWrapper.getResourceId() + " slot ref changed from " + oldSlotRefValue + " to " + slotEdsReferenceValue);
 
 						//save appointment
 						json = FhirSerializationHelper.serializeResource(appt);
