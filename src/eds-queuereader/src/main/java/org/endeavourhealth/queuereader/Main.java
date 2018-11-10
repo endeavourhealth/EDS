@@ -254,11 +254,19 @@ public class Main {
 		}
 
 		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("PostToRabbit")) {
+			String exchangeName = args[1];
+			String srcFile = args[2];
+			postToRabbit(exchangeName, srcFile);
+			System.exit(0);
+		}
+
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("PostToProtocol")) {
 			String srcFile = args[1];
 			postToProtocol(srcFile);
 			System.exit(0);
-		}
+		}*/
 
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("FixBartsPatients")) {
@@ -1290,7 +1298,35 @@ public class Main {
 		}
 	}
 
-	private static void postToProtocol(String srcFile) {
+	private static void postToRabbit(String exchangeName, String srcFile) {
+		LOG.info("Posting to " + exchangeName + " from " + srcFile);
+		try {
+			List<UUID> exchangeIds = new ArrayList<>();
+
+			List<String> lines = Files.readAllLines(new File(srcFile).toPath());
+			for (String line: lines) {
+				if (!Strings.isNullOrEmpty(line)) {
+					try {
+						UUID uuid = UUID.fromString(line);
+						exchangeIds.add(uuid);
+					} catch (Exception ex) {
+						LOG.error("Skipping line " + line);
+					}
+				}
+			}
+			LOG.info("Found " + exchangeIds.size() + " to post to " + exchangeName);
+			continueOrQuit();
+
+			LOG.info("Posting " + exchangeIds.size() + " to " + exchangeName);
+			QueueHelper.postToExchange(exchangeIds, exchangeName, null, false);
+
+			LOG.info("Finished Posting to " + exchangeName+ " from " + srcFile);
+		} catch (Throwable t) {
+			LOG.error("", t);
+		}
+	}
+
+	/*private static void postToProtocol(String srcFile) {
 		LOG.info("Posting to protocol from " + srcFile);
 		try {
 			List<UUID> exchangeIds = new ArrayList<>();
@@ -1310,7 +1346,7 @@ public class Main {
 		} catch (Throwable t) {
 			LOG.error("", t);
 		}
-	}
+	}*/
 
 	private static void populateSubscriberUprnTable(String subscriberConfigName) throws Exception {
 		LOG.info("Populating Subscriber UPRN Table for " + subscriberConfigName);
