@@ -27,6 +27,7 @@ CREATE TABLE organisation
   name                   varchar(255),
   is_active              boolean,
   parent_organisation_id int COMMENT 'refers back to this table',
+  entered_by_practitioner_id    int    NOT NULL,
   type_concept_id        bigint COMMENT 'organisation type, stored as a concept',
   main_location_id       int COMMENT 'refers to location table, giving main address etc for this org',
   PRIMARY KEY (id),
@@ -45,6 +46,7 @@ CREATE TABLE location
   start_date         datetime,
   end_date           datetime,
   is_active          boolean,
+  entered_by_practitioner_id    int    NOT NULL,
   parent_location_id int COMMENT 'refers back to this table to give location hierarchy',
   PRIMARY KEY (id),
   CONSTRAINT location_address_id
@@ -83,6 +85,7 @@ CREATE TABLE practitioner
   is_active             boolean,
   role_concept_id       bigint COMMENT 'refers to staff role, stored as a concept',
   speciality_concept_id bigint COMMENT 'secondary care healthcare specialty (e.g. cardiology)',
+  entered_by_practitioner_id    int    NOT NULL,
   PRIMARY KEY (id),
   CONSTRAINT practitioner_organisation_id
     FOREIGN KEY (organisation_id)
@@ -106,6 +109,7 @@ CREATE TABLE practitioner_identifier
   practitioner_id int          NOT NULL COMMENT 'refers to the practitioner whose ID this is',
   type_concept_id bigint       NOT NULL COMMENT 'refers to identifier type (e.g. Prescribing ID, GMC#, NMC#, Smartcard ID, local code) stored in information model',
   value           varchar(255) NOT NULL COMMENT 'the actual identifier value',
+  entered_by_practitioner_id    int    NOT NULL,
   PRIMARY KEY (practitioner_id, type_concept_id),
   CONSTRAINT practitioner_identifier_practitioner_id
     FOREIGN KEY (practitioner_id)
@@ -129,6 +133,7 @@ CREATE TABLE patient
   last_name                          varchar(255),
   previous_last_name                 varchar(255),
   home_address_id                    int COMMENT 'refers to the patient_address table',
+  entered_by_practitioner_id    int    NOT NULL,
   is_spine_sensitive                 boolean,
   PRIMARY KEY (id)
 ) COMMENT 'represents the patient demographics at an organisational level';
@@ -234,6 +239,7 @@ CREATE TABLE appointment_schedule
   speciality_concept_id bigint COMMENT 'speciality associated with the schedule, used in secondary care',
   schedule_start        datetime COMMENT 'MySQL default datetime is 8 bytes at sec precision',
   schedule_end          datetime,
+  entered_by_practitioner_id    int    NOT NULL,
   PRIMARY KEY (id),
   CONSTRAINT appointment_schedule_organisation_id
     FOREIGN KEY (organisation_id)
@@ -248,6 +254,7 @@ CREATE TABLE appointment_schedule_practitioner
   appointment_schedule_id int     NOT NULL,
   practitioner_id         int     NOT NULL,
   is_main_practitioner    boolean NOT NULL COMMENT 'in the event of multiple practitioners for a schedule, this tells us who is the main one',
+  entered_by_practitioner_id    int    NOT NULL,
   PRIMARY KEY (appointment_schedule_id, practitioner_id),
   CONSTRAINT appointment_schedule_practitioner_appointment_schedule_id
     FOREIGN KEY (appointment_schedule_id)
@@ -328,6 +335,7 @@ CREATE TABLE gp_registration_status
   gp_registration_status_concept_id     bigint   NOT NULL COMMENT 'information model registration status e.g. registered, deducted',
   gp_registration_status_sub_concept_id bigint COMMENT 'information model secondary information (e.g. deduction type - enlistment)',
   is_current                            boolean  NOT NULL,
+  entered_by_practitioner_id    int    NOT NULL,
   PRIMARY KEY (patient_id, id),
   CONSTRAINT gp_registration_status_patient_id
     FOREIGN KEY (patient_id)
@@ -351,6 +359,7 @@ CREATE TABLE care_episode
   type_concept_id               bigint COMMENT 'Describes the type of patient that this care_episode is associated with. Examples may include inpatient, outpatient etc.',
   location_id                   int COMMENT 'refers to location table, stating where this care_episode took place',
   referral_request_id           int COMMENT 'links to a referral that initiated this care_episode',
+  entered_by_practitioner_id    int    NOT NULL,
   is_consent                    boolean  NOT NULL COMMENT 'whether consent or dissent',
   latest_care_episode_status_id int,
   PRIMARY KEY (patient_id, id),
@@ -375,6 +384,7 @@ CREATE TABLE care_episode_status
   start_time                     datetime NOT NULL,
   end_time                       datetime,
   care_episode_status_concept_id bigint   NOT NULL COMMENT 'information model care episode status',
+  entered_by_practitioner_id    int    NOT NULL,
   PRIMARY KEY (patient_id, care_episode_id, start_time),
   CONSTRAINT care_episode_status_patient_id
     FOREIGN KEY (patient_id)
@@ -407,6 +417,7 @@ CREATE TABLE consultation
   appointment_slot_id       int COMMENT 'refers to appointment table, giving the appointment this consultation took place in',
   referral_request_id       int COMMENT 'links to a referral that initiated this consultation',
   is_consent                boolean  NOT NULL COMMENT 'whether consent or dissent',
+  entered_by_practitioner_id    int    NOT NULL,
   PRIMARY KEY (patient_id, id),
   CONSTRAINT consultation_patient_id
     FOREIGN KEY (patient_id)
@@ -440,6 +451,7 @@ CREATE TABLE accident_emergency_attendance
   ambulance_number          varchar(45),
   location_id               int COMMENT 'refers to location table, stating where this attendance took place',
   is_consent                boolean  NOT NULL COMMENT 'whether consent or dissent',
+  entered_by_practitioner_id    int    NOT NULL,
   PRIMARY KEY (patient_id, id),
   CONSTRAINT accident_emergency_attendance_patient_id
     FOREIGN KEY (patient_id)
@@ -559,6 +571,7 @@ CREATE TABLE observation
   data_entry_prompt_id             int COMMENT 'links to the table giving the free-text prompt used to enter this observation',
   significance_concept_id          bigint COMMENT 'refers to information model to define the significance, severity, normality or priority (e.g. minor, significant, abnormal, urgent, severe, normal)',
   is_consent                       boolean  NOT NULL COMMENT 'whether consent or dissent',
+  entered_by_practitioner_id    int    NOT NULL,
   PRIMARY KEY (patient_id, id),
   CONSTRAINT observation_patient_id
     FOREIGN KEY (patient_id)
@@ -661,6 +674,7 @@ CREATE TABLE `procedure`
   original_code                    varchar(20)   DEFAULT NULL,
   original_concept                 varchar(1000) DEFAULT NULL,
   original_code_scheme             int           DEFAULT NULL Comment ' Original code scheme - eg READ2, CTV3 etc',
+  entered_by_practitioner_id    int    NOT NULL,
   is_consent boolean NOT NULL COMMENT 'whether consent or dissent',
   PRIMARY KEY (id)
 );
@@ -707,6 +721,7 @@ CREATE TABLE observation_value
   result_text         text     DEFAULT NULL,
   result_concept_id   bigint(20) DEFAULT NULL,
   reference_range_id  bigint COMMENT 'refers to reference_range table in information model',
+  entered_by_practitioner_id    int    NOT NULL,
   PRIMARY KEY (patient_id, observation_id),
   CONSTRAINT observation_value_patient_id_observation_id
     FOREIGN KEY (patient_id, observation_id)
@@ -737,6 +752,7 @@ CREATE TABLE immunisation
   is_consent                       boolean  NOT NULL COMMENT 'whether consent or dissent',
   original_code                    varchar(20)   DEFAULT NULL,
   original_concept                 varchar(1000) DEFAULT NULL,
+  entered_by_practitioner_id    int    NOT NULL,
   PRIMARY KEY (patient_id, id)
 ) COMMENT 'provide supplementary immunisation information';
 
@@ -759,6 +775,7 @@ CREATE TABLE allergy
   is_consent                       boolean  NOT NULL COMMENT 'whether consent or dissent',
   original_code                    varchar(20)   DEFAULT NULL,
   original_concept                 varchar(1000) DEFAULT NULL,
+  entered_by_practitioner_id       int    NOT NULL COMMENT ' If practitioner who entered -> practitioner table',
   PRIMARY KEY (patient_id, id),
   CONSTRAINT allergy_manifestation_free_text_id
     FOREIGN KEY (patient_id, manifestation_free_text_id)
