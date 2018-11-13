@@ -552,8 +552,8 @@ CREATE TABLE observation
   is_confidential                  boolean  NOT NULL COMMENT 'indicates this is a confidential event',
   original_code                    varchar(20)   DEFAULT NULL,
   original_concept                 varchar(1000) DEFAULT NULL,
-  original_code_scheme             int           DEFAULT NULL ' Original code scheme - eg READ2, CTV3 etc'
-    original_system varchar (255) DEFAULT NULL COMMENT 'Orginal code scheme eg TPP, EMIS etc',
+  original_code_scheme             int           DEFAULT NULL COMMENT ' Original code scheme - eg READ2, CTV3 etc',
+  original_system varchar (255) DEFAULT NULL COMMENT 'Orginal code scheme eg TPP, EMIS etc',
   episodicity_concept_id           bigint COMMENT 'refers to information model, giving episode/review (e.g. new episode, review)',
   free_text_id                     bigint COMMENT 'refers to free text table where comments are stored',
   data_entry_prompt_id             int COMMENT 'links to the table giving the free-text prompt used to enter this observation',
@@ -634,8 +634,8 @@ CREATE TABLE procedure_request
   is_consent                       boolean  NOT NULL COMMENT 'whether consent or dissent',
   original_code                    varchar(20)   DEFAULT NULL,
   original_concept                 varchar(1000) DEFAULT NULL,
-  original_code_scheme             int           DEFAULT NULL ' Original code scheme - eg READ2, CTV3 etc'
-    PRIMARY KEY (patient_id, id),
+  original_code_scheme             int           DEFAULT NULL COMMENT ' Original code scheme - eg READ2, CTV3 etc',
+  PRIMARY KEY (patient_id, id),
   CONSTRAINT procedure_request_recipient_organisation_id
     FOREIGN KEY (recipient_organisation_id)
       REFERENCES organisation (id)
@@ -660,8 +660,8 @@ CREATE TABLE `procedure`
   outcome_concept_id               bigint   NOT NULL,
   original_code                    varchar(20)   DEFAULT NULL,
   original_concept                 varchar(1000) DEFAULT NULL,
-  original_code_scheme             int           DEFAULT NULL ' Original code scheme - eg READ2, CTV3 etc'
-    is_consent boolean NOT NULL COMMENT 'whether consent or dissent',
+  original_code_scheme             int           DEFAULT NULL Comment ' Original code scheme - eg READ2, CTV3 etc',
+  is_consent boolean NOT NULL COMMENT 'whether consent or dissent',
   PRIMARY KEY (id)
 );
 
@@ -1035,7 +1035,7 @@ CREATE TABLE code_scheme_lookup
 (
   id          int          NOT NULL,
   code_scheme VARCHAR(255) NOT NULL COMMENT 'URI of schema eg CSV3, READ2 etc'
-)
+);
 
 CREATE TABLE event_log
 (
