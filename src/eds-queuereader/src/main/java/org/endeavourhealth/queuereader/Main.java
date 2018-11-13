@@ -1318,7 +1318,7 @@ public class Main {
 			continueOrQuit();
 
 			LOG.info("Posting " + exchangeIds.size() + " to " + exchangeName);
-			QueueHelper.postToExchange(exchangeIds, exchangeName, null, false);
+			QueueHelper.postToExchange(exchangeIds, exchangeName, null, true);
 
 			LOG.info("Finished Posting to " + exchangeName+ " from " + srcFile);
 		} catch (Throwable t) {
