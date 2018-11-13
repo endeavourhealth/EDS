@@ -57,6 +57,7 @@ CREATE TABLE pseudo_id_map
   pseudo_id varchar(255) NOT NULL
 );
 
+create index ix_pseudo_id_map_pseudo_id on pseudo_id_map(pseudo_id);
 
 CREATE TABLE enterprise_age
 (

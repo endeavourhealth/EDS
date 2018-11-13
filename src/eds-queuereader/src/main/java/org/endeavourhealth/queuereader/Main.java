@@ -9,12 +9,12 @@ import com.amazonaws.services.s3.model.GetObjectRequest;
 import com.amazonaws.services.s3.model.S3Object;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import org.apache.commons.csv.*;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
-import org.endeavourHealth.subscriber.filer.EnterpriseFiler;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.common.fhir.*;
@@ -48,6 +48,7 @@ import org.endeavourhealth.core.messaging.pipeline.components.PostMessageToExcha
 import org.endeavourhealth.core.queueing.QueueHelper;
 import org.endeavourhealth.core.xml.TransformErrorSerializer;
 import org.endeavourhealth.core.xml.transformError.TransformError;
+import org.endeavourhealth.subscriber.filer.EnterpriseFiler;
 import org.endeavourhealth.transform.barts.transforms.PPADDTransformer;
 import org.endeavourhealth.transform.barts.transforms.PPNAMTransformer;
 import org.endeavourhealth.transform.barts.transforms.PPPHOTransformer;
@@ -55,6 +56,8 @@ import org.endeavourhealth.transform.common.*;
 import org.endeavourhealth.transform.common.resourceBuilders.PatientBuilder;
 import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
 import org.endeavourhealth.transform.emis.csv.helpers.EmisCsvHelper;
+import org.endeavourhealth.transform.enterprise.json.LinkDistributorConfig;
+import org.endeavourhealth.transform.enterprise.transforms.PatientTransformer;
 import org.hibernate.internal.SessionImpl;
 import org.hl7.fhir.instance.model.*;
 import org.slf4j.Logger;
@@ -70,6 +73,7 @@ import java.sql.*;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.Date;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class Main {
 	private static final Logger LOG = LoggerFactory.getLogger(Main.class);
@@ -250,11 +254,19 @@ public class Main {
 		}
 
 		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("PostToRabbit")) {
+			String exchangeName = args[1];
+			String srcFile = args[2];
+			postToRabbit(exchangeName, srcFile);
+			System.exit(0);
+		}
+
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("PostToProtocol")) {
 			String srcFile = args[1];
 			postToProtocol(srcFile);
 			System.exit(0);
-		}
+		}*/
 
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("FixBartsPatients")) {
@@ -267,6 +279,14 @@ public class Main {
 				&& args[0].equalsIgnoreCase("FixDeceasedPatients")) {
 			String subscriberConfig = args[1];
 			fixDeceasedPatients(subscriberConfig);
+			System.exit(0);
+		}
+
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("FixPseudoIds")) {
+			String subscriberConfig = args[1];
+			int threads = Integer.parseInt(args[2]);
+			fixPseudoIds(subscriberConfig, threads);
 			System.exit(0);
 		}
 
@@ -345,6 +365,19 @@ public class Main {
 			}
 			System.exit(0);
 		}
+
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("FixSlotReferences")) {
+			String serviceId = args[1];
+			try {
+				UUID serviceUuid = UUID.fromString(serviceId);
+				fixSlotReferences(serviceUuid);
+			} catch (Exception ex) {
+				fixSlotReferencesForPublisher(serviceId);
+			}
+			System.exit(0);
+		}
+
 
 		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("Exit")) {
@@ -447,6 +480,278 @@ public class Main {
 		LOG.info("EDS Queue reader running (kill file location " + TransformConfig.instance().getKillFileLocation() + ")");
 	}
 
+	private static void fixPseudoIds(String subscriberConfig, int threads) {
+		LOG.debug("Fixing Pseudo IDs for " + subscriberConfig);
+		try {
+
+			//update psuedo ID on patient table
+			//update psuedo ID on person table
+			//update pseudo ID on subscriber_transform mapping table
+
+			JsonNode config = ConfigManager.getConfigurationAsJson(subscriberConfig, "db_subscriber");
+
+			JsonNode saltNode = config.get("pseudonymisation");
+
+			ObjectMapper mapper = new ObjectMapper();
+			Object json = mapper.readValue(saltNode.toString(), Object.class);
+			String linkDistributors = mapper.writeValueAsString(json);
+			LinkDistributorConfig salt = ObjectMapperPool.getInstance().readValue(linkDistributors, LinkDistributorConfig.class);
+
+			LinkDistributorConfig[] arr = null;
+			JsonNode linkDistributorsNode = config.get("linkedDistributors");
+			if (linkDistributorsNode != null) {
+				json = mapper.readValue(linkDistributorsNode.toString(), Object.class);
+				linkDistributors = mapper.writeValueAsString(json);
+				arr = ObjectMapperPool.getInstance().readValue(linkDistributors, LinkDistributorConfig[].class);
+			}
+
+
+			Connection subscriberConnection = EnterpriseFiler.openConnection(config);
+
+
+			List<Long> patientIds = new ArrayList<>();
+			Map<Long, Long> hmOrgIds = new HashMap<>();
+			Map<Long, Long> hmPersonIds = new HashMap<>();
+
+			String sql = "SELECT id, organization_id, person_id FROM patient";
+			Statement statement = subscriberConnection.createStatement();
+			statement.setFetchSize(10000);
+			ResultSet rs = statement.executeQuery(sql);
+			while (rs.next()) {
+				long patientId = rs.getLong(1);
+				long orgId = rs.getLong(2);
+				long personId = rs.getLong(3);
+
+				patientIds.add(new Long(patientId));
+				hmOrgIds.put(new Long(patientId), new Long(orgId));
+				hmPersonIds.put(new Long(patientId), new Long(personId));
+			}
+			rs.close();
+			subscriberConnection.close();
+
+			LOG.debug("Found " + patientIds.size() + " patients");
+
+			AtomicInteger done = new AtomicInteger();
+			int pos = 0;
+
+			List<Thread> threadList = new ArrayList<>();
+			for (int i=0; i<threads; i++) {
+
+				List<Long> patientSubset = new ArrayList<>();
+
+				int count = patientIds.size() / threads;
+				if (i+1 == threads) {
+					count = patientIds.size() - pos;
+				}
+
+				for (int j=0; j<count; j++) {
+					Long patientId = patientIds.get(pos);
+					patientSubset.add(patientId);
+					pos ++;
+				}
+
+				FixPseudoIdRunnable runnable = new FixPseudoIdRunnable(subscriberConfig, patientSubset, hmOrgIds, hmPersonIds, done);
+
+				Thread t = new Thread(runnable);
+				t.start();
+
+				threadList.add(t);
+			}
+
+			while (true) {
+				Thread.sleep(5000);
+
+				boolean allDone = true;
+				for (Thread t: threadList) {
+					if (t.getState() != Thread.State.TERMINATED) {
+					//if (!t.isAlive()) {
+						allDone = false;
+						break;
+					}
+				}
+
+				if (allDone) {
+					break;
+				}
+			}
+
+			LOG.debug("Finished Fixing Pseudo IDs for " + subscriberConfig);
+		} catch (Throwable t) {
+			LOG.error("", t);
+		}
+	}
+
+	static class FixPseudoIdRunnable implements Runnable {
+
+		private String subscriberConfig = null;
+		private List<Long> patientIds = null;
+		private Map<Long, Long> hmOrgIds = null;
+		private Map<Long, Long> hmPersonIds = null;
+		private AtomicInteger done = null;
+
+		public FixPseudoIdRunnable(String subscriberConfig, List<Long> patientIds, Map<Long, Long> hmOrgIds, Map<Long, Long> hmPersonIds, AtomicInteger done) {
+			this.subscriberConfig = subscriberConfig;
+			this.patientIds = patientIds;
+			this.hmOrgIds = hmOrgIds;
+			this.hmPersonIds = hmPersonIds;
+			this.done = done;
+		}
+
+		@Override
+		public void run() {
+			try {
+				doRun();
+			} catch (Throwable t) {
+				LOG.error("", t);
+			}
+		}
+
+		private void doRun() throws Exception {
+			JsonNode config = ConfigManager.getConfigurationAsJson(subscriberConfig, "db_subscriber");
+
+			Connection subscriberConnection = EnterpriseFiler.openConnection(config);
+			Statement statement = subscriberConnection.createStatement();
+
+			JsonNode saltNode = config.get("pseudonymisation");
+
+			ObjectMapper mapper = new ObjectMapper();
+			Object json = mapper.readValue(saltNode.toString(), Object.class);
+			String linkDistributors = mapper.writeValueAsString(json);
+			LinkDistributorConfig salt = ObjectMapperPool.getInstance().readValue(linkDistributors, LinkDistributorConfig.class);
+
+			LinkDistributorConfig[] arr = null;
+			JsonNode linkDistributorsNode = config.get("linkedDistributors");
+			if (linkDistributorsNode != null) {
+				json = mapper.readValue(linkDistributorsNode.toString(), Object.class);
+				linkDistributors = mapper.writeValueAsString(json);
+				arr = ObjectMapperPool.getInstance().readValue(linkDistributors, LinkDistributorConfig[].class);
+			}
+
+			//PseudoIdDalI pseudoIdDal = DalProvider.factoryPseudoIdDal(subscriberConfig);
+			ResourceDalI resourceDal = DalProvider.factoryResourceDal();
+
+			EntityManager entityManager = ConnectionManager.getSubscriberTransformEntityManager(subscriberConfig);
+			SessionImpl session = (SessionImpl) entityManager.getDelegate();
+			Connection subscriberTransformConnection = session.connection();
+
+			Statement subscriberTransformStatement = subscriberTransformConnection.createStatement();
+
+			String sql = null;
+			ResultSet rs = null;
+
+			for (Long patientId: patientIds) {
+				Long orgId = hmOrgIds.get(patientId);
+				Long personId = hmPersonIds.get(patientId);
+
+				//find service ID
+				sql = "SELECT service_id FROM enterprise_organisation_id_map WHERE enterprise_id = " + orgId;
+				rs = subscriberTransformStatement.executeQuery(sql);
+				if (!rs.next()) {
+					throw new Exception("Failed to find service iD for patient ID " + patientId + " and org ID " + orgId);
+				}
+				String serviceId = rs.getString(1);
+				rs.close();
+
+				//find patient ID
+				sql = "SELECT resource_type, resource_id FROM enterprise_id_map WHERE enterprise_id = " + patientId;
+				rs = subscriberTransformStatement.executeQuery(sql);
+				if (!rs.next()) {
+					throw new Exception("Failed to find resource iD for patient ID " + patientId);
+				}
+				String resourceType = rs.getString(1);
+				String resourceId = rs.getString(2);
+				rs.close();
+
+				if (!resourceType.equals("Patient")) {
+					throw new Exception("Not a patient resource type for enterprise ID " + patientId);
+				}
+
+				//get patient
+				Resource resource = null;
+				try {
+					resource = resourceDal.getCurrentVersionAsResource(UUID.fromString(serviceId), ResourceType.Patient, resourceId);
+				} catch (Exception ex) {
+					throw new Exception("Failed to get patient " + resourceId + " for service " + serviceId, ex);
+				}
+
+				if (resource == null) {
+					LOG.error("Failed to find patient resource for " + ResourceType.Patient + " " + resourceId + ", service ID = " + serviceId + " and patient ID = " + patientId);
+					continue;
+					//throw new Exception("Failed to find patient resource for " + resourceType + " " + resourceId + ", service ID = " + serviceId + " and patient ID = " + patientId);
+				}
+				Patient patient = (Patient)resource;
+
+				//generate new pseudo ID
+				String pseudoId = PatientTransformer.pseudonymiseUsingConfig(patient, salt);
+
+				//save to person
+				if (Strings.isNullOrEmpty(pseudoId)) {
+					sql = "UPDATE person"
+							+ " SET pseudo_id = null"
+							+ " WHERE id = " + personId;
+					statement.executeUpdate(sql);
+
+				} else {
+					sql = "UPDATE person"
+							+ " SET pseudo_id = '" + pseudoId + "'"
+							+ " WHERE id = " + personId;
+					statement.executeUpdate(sql);
+				}
+
+				//save to patient
+				if (Strings.isNullOrEmpty(pseudoId)) {
+					sql = "UPDATE patient"
+							+ " SET pseudo_id = null"
+							+ " WHERE id = " + patientId;
+					statement.executeUpdate(sql);
+
+				} else {
+					sql = "UPDATE patient"
+							+ " SET pseudo_id = '" + pseudoId + "'"
+							+ " WHERE id = " + patientId;
+					statement.executeUpdate(sql);
+				}
+
+				//linked distributers
+				if (arr != null) {
+					for (LinkDistributorConfig linked: arr) {
+						String linkedPseudoId = PatientTransformer.pseudonymiseUsingConfig(patient, linked);
+						sql = "INSERT INTO link_distributor (source_skid, target_salt_key_name, target_skid) VALUES ('" + pseudoId + "', '" + linked.getSaltKeyName() + "', '" + linkedPseudoId + "')"
+								+ " ON DUPLICATE KEY UPDATE"
+								+ " target_salt_key_name = VALUES(target_salt_key_name),"
+								+ " target_skid = VALUES(target_skid)";
+						statement.executeUpdate(sql);
+					}
+				}
+
+				//save to subscriber transform
+				sql = "DELETE FROM pseudo_id_map WHERE patient_id = '" + resourceId + "'";
+				subscriberTransformStatement.executeUpdate(sql);
+
+				if (!Strings.isNullOrEmpty(pseudoId)) {
+					sql = "INSERT INTO pseudo_id_map (patient_id, pseudo_id) VALUES ('" + resourceId + "', '" + pseudoId + "')";
+					subscriberTransformStatement.executeUpdate(sql);
+				}
+
+
+
+				subscriberConnection.commit();
+				subscriberTransformConnection.commit();
+
+				int doneLocal = done.incrementAndGet();
+				if (doneLocal % 1000 == 0) {
+					LOG.debug("Done " + doneLocal);
+				}
+			}
+
+			statement.close();
+			subscriberTransformStatement.close();
+
+			subscriberConnection.close();
+			subscriberTransformConnection.close();
+		}
+	}
+
 	private static void fixDeceasedPatients(String subscriberConfig) {
 		LOG.debug("Fixing Deceased Patients for " + subscriberConfig);
 		try {
@@ -500,7 +805,9 @@ public class Main {
 
 				Resource resource = resourceDal.getCurrentVersionAsResource(UUID.fromString(serviceId), ResourceType.valueOf(resourceType), resourceId);
 				if (resource == null) {
-					throw new Exception("Failed to find patient resource for " + resourceType + " " + resourceId + ", service ID = " + serviceId + " and patient ID = " + patientId);
+					LOG.error("Failed to find patient resource for " + resourceType + " " + resourceId + ", service ID = " + serviceId + " and patient ID = " + patientId);
+					continue;
+					//throw new Exception("Failed to find patient resource for " + resourceType + " " + resourceId + ", service ID = " + serviceId + " and patient ID = " + patientId);
 				}
 				Patient patient = (Patient)resource;
 				Date dob = patient.getBirthDate();
@@ -991,7 +1298,35 @@ public class Main {
 		}
 	}
 
-	private static void postToProtocol(String srcFile) {
+	private static void postToRabbit(String exchangeName, String srcFile) {
+		LOG.info("Posting to " + exchangeName + " from " + srcFile);
+		try {
+			List<UUID> exchangeIds = new ArrayList<>();
+
+			List<String> lines = Files.readAllLines(new File(srcFile).toPath());
+			for (String line: lines) {
+				if (!Strings.isNullOrEmpty(line)) {
+					try {
+						UUID uuid = UUID.fromString(line);
+						exchangeIds.add(uuid);
+					} catch (Exception ex) {
+						LOG.error("Skipping line " + line);
+					}
+				}
+			}
+			LOG.info("Found " + exchangeIds.size() + " to post to " + exchangeName);
+			continueOrQuit();
+
+			LOG.info("Posting " + exchangeIds.size() + " to " + exchangeName);
+			QueueHelper.postToExchange(exchangeIds, exchangeName, null, true);
+
+			LOG.info("Finished Posting to " + exchangeName+ " from " + srcFile);
+		} catch (Throwable t) {
+			LOG.error("", t);
+		}
+	}
+
+	/*private static void postToProtocol(String srcFile) {
 		LOG.info("Posting to protocol from " + srcFile);
 		try {
 			List<UUID> exchangeIds = new ArrayList<>();
@@ -1011,21 +1346,32 @@ public class Main {
 		} catch (Throwable t) {
 			LOG.error("", t);
 		}
-	}
+	}*/
 
 	private static void populateSubscriberUprnTable(String subscriberConfigName) throws Exception {
 		LOG.info("Populating Subscriber UPRN Table for " + subscriberConfigName);
 		try {
 
 			JsonNode config = ConfigManager.getConfigurationAsJson(subscriberConfigName, "db_subscriber");
-			boolean pseudonymised = config.get("pseudonymised").asBoolean();
+
+			//changed the format of the JSON
+			JsonNode pseudoNode = config.get("pseudonymisation");
+			boolean pseudonymised = pseudoNode != null;
+			byte[] saltBytes = null;
+
+			if (pseudonymised) {
+				JsonNode saltNode = pseudoNode.get("salt");
+				String base64Salt = saltNode.asText();
+				saltBytes = Base64.getDecoder().decode(base64Salt);
+			}
+			/*boolean pseudonymised = config.get("pseudonymised").asBoolean();
 
 			byte[] saltBytes = null;
 			if (pseudonymised) {
 				JsonNode saltNode = config.get("salt");
 				String base64Salt = saltNode.asText();
 				saltBytes = Base64.getDecoder().decode(base64Salt);
-			}
+			}*/
 
 			Connection subscriberConnection = EnterpriseFiler.openConnection(config);
 
@@ -1175,7 +1521,7 @@ public class Main {
 
 				checked ++;
 				if (checked % 1000 == 0) {
-					LOG.info("Chcked " + checked + " Saved " + saved);
+					LOG.info("Checked " + checked + " Saved " + saved);
 				}
 			}
 
@@ -2737,6 +3083,10 @@ public class Main {
 	}*/
 
 	private static void saveResourceWrapper(UUID serviceId, ResourceWrapper wrapper) throws Exception {
+
+		if (wrapper.getVersion() == null) {
+			throw new Exception("Can't update resource history without version UUID");
+		}
 
 		if (wrapper.getResourceData() != null) {
 			long checksum = FhirStorageService.generateChecksum(wrapper.getResourceData());
@@ -7395,6 +7745,143 @@ public class Main {
 		}
 	}*/
 
+	private static void fixSlotReferencesForPublisher(String publisher) {
+		try {
+			ServiceDalI dal = DalProvider.factoryServiceDal();
+			List<Service> services = dal.getAll();
+			for (Service service: services) {
+				if (service.getPublisherConfigName() != null
+						&& service.getPublisherConfigName().equals(publisher)) {
+
+					fixSlotReferences(service.getId());
+				}
+			}
+
+		} catch (Exception ex) {
+			LOG.error("", ex);
+		}
+	}
+
+	private static void fixSlotReferences(UUID serviceId) {
+		LOG.info("Fixing Slot References in Appointments for " + serviceId);
+		try {
+			//get patient IDs from patient search
+			List<UUID> patientIds = new ArrayList<>();
+
+
+			EntityManager entityManager = ConnectionManager.getPublisherTransformEntityManager(serviceId);
+			SessionImpl session = (SessionImpl) entityManager.getDelegate();
+			Connection connection = session.connection();
+			Statement statement = connection.createStatement();
+
+			String sql = "SELECT eds_id FROM publisher_transform_02.resource_id_map WHERE service_id = '" + serviceId + "'AND resource_type = '" + ResourceType.Patient + "';";
+			ResultSet rs = statement.executeQuery(sql);
+			while (rs.next()) {
+				String patientUuid = rs.getString(1);
+				patientIds.add(UUID.fromString(patientUuid));
+			}
+			rs.close();
+			statement.close();
+			connection.close();
+
+			/*
+			EntityManager entityManager = ConnectionManager.getEdsEntityManager();
+			SessionImpl session = (SessionImpl) entityManager.getDelegate();
+			Connection connection = session.connection();
+			Statement statement = connection.createStatement();
+			String sql = "SELECT patient_id FROM patient_search WHERE service_id = '" + serviceId.toString() + "'";
+			ResultSet rs = statement.executeQuery(sql);
+			while (rs.next()) {
+				String patientUuid = rs.getString(1);
+				patientIds.add(UUID.fromString(patientUuid));
+			}
+			rs.close();
+			statement.close();
+			connection.close();*/
+
+			LOG.debug("Found " + patientIds.size() + " patients");
+			int done = 0;
+			int fixed = 0;
+
+			ResourceDalI resourceDal = DalProvider.factoryResourceDal();
+
+			EmisCsvHelper csvHelper = new EmisCsvHelper(serviceId, null, null, null, true);
+
+			//for each patient
+			for (UUID patientUuid: patientIds) {
+				//LOG.debug("Checking patient " + patientUuid);
+
+				//get all appointment resources
+				List<ResourceWrapper> appointmentWrappers = resourceDal.getResourcesByPatient(serviceId, patientUuid, ResourceType.Appointment.toString());
+				for (ResourceWrapper apptWrapper: appointmentWrappers) {
+					//LOG.debug("Checking appointment " + apptWrapper.getResourceId());
+
+					List<ResourceWrapper> historyWrappers = resourceDal.getResourceHistory(serviceId, apptWrapper.getResourceType(), apptWrapper.getResourceId());
+
+					//the above returns most recent first, but we want to do them in order
+					historyWrappers = Lists.reverse(historyWrappers);
+
+					for (ResourceWrapper historyWrapper : historyWrappers) {
+
+						if (historyWrapper.isDeleted()) {
+							//LOG.debug("Appointment " + historyWrapper.getResourceId() + " is deleted");
+							continue;
+						}
+
+						String json = historyWrapper.getResourceData();
+						Appointment appt = (Appointment) FhirSerializationHelper.deserializeResource(json);
+						if (!appt.hasSlot()) {
+							//LOG.debug("Appointment " + historyWrapper.getResourceId() + " has no slot");
+							continue;
+						}
+
+						if (appt.getSlot().size() != 1) {
+							throw new Exception("Appointment " + appt.getId() + " has " + appt.getSlot().size() + " slot refs");
+						}
+
+						Reference slotRef = appt.getSlot().get(0);
+
+						//test if slot reference exists
+						Reference slotLocalRef = IdHelper.convertEdsReferenceToLocallyUniqueReference(csvHelper, slotRef);
+						String slotSourceId = ReferenceHelper.getReferenceId(slotLocalRef);
+						if (slotSourceId.indexOf(":") > -1) {
+							//LOG.debug("Appointment " + historyWrapper.getResourceId() + " has a valid slot");
+							continue;
+						}
+
+						//if not, correct slot reference
+						Reference apptEdsReference = ReferenceHelper.createReference(appt.getResourceType(), appt.getId());
+						Reference apptLocalReference = IdHelper.convertEdsReferenceToLocallyUniqueReference(csvHelper, apptEdsReference);
+						String sourceId = ReferenceHelper.getReferenceId(apptLocalReference);
+						Reference slotLocalReference = ReferenceHelper.createReference(ResourceType.Slot, sourceId);
+						Reference slotEdsReference = IdHelper.convertLocallyUniqueReferenceToEdsReference(slotLocalReference, csvHelper);
+						String slotEdsReferenceValue = slotEdsReference.getReference();
+
+						String oldSlotRefValue = slotRef.getReference();
+						slotRef.setReference(slotEdsReferenceValue);
+						//LOG.debug("Appointment " + historyWrapper.getResourceId() + " slot ref changed from " + oldSlotRefValue + " to " + slotEdsReferenceValue);
+
+						//save appointment
+						json = FhirSerializationHelper.serializeResource(appt);
+						historyWrapper.setResourceData(json);
+						saveResourceWrapper(serviceId, historyWrapper);
+
+						fixed++;
+					}
+				}
+
+				done ++;
+				if (done % 1000 == 0) {
+					LOG.debug("Done " + done + " / " + patientIds.size() + " and fixed " + fixed + " appts");
+				}
+			}
+
+			LOG.debug("Done " + done + " / " + patientIds.size() + " and fixed " + fixed + " appts");
+			LOG.info("Finished Fixing Slot References in Appointments for " + serviceId);
+		} catch (Exception ex) {
+			LOG.error("", ex);
+		}
+	}
 
 	/*private static void fixReviews(String sharedStoragePath, UUID justThisService) {
 		LOG.info("Fixing Reviews using path " + sharedStoragePath + " and service " + justThisService);

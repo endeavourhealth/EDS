@@ -1,4 +1,4 @@
-package org.endeavourHealth.subscriber.filer;
+package org.endeavourhealth.subscriber.filer;
 
 import org.apache.commons.csv.CSVRecord;
 

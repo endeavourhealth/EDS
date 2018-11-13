@@ -366,6 +366,12 @@ public class MessageTransformOutbound extends PipelineComponent {
 		//List<ResourceWrapper> resources = resourceDal.getResourcesForBatch(serviceId, batchId);
 		List<ResourceWrapper> resources = resourceDal.getCurrentVersionOfResourcesForBatch(serviceId, batchId);
 
+		//if there are no resources, then there won't be any extra resources, so no point wasting time
+		//on looking for them or doing any filtering
+		if (resources.isEmpty()) {
+			return resources;
+		}
+
 		//then add in any EXTRA resources we've previously calculated we'll need to include
 		ExchangeBatchExtraResourceDalI exchangeBatchExtraResourceDalI = DalProvider.factoryExchangeBatchExtraResourceDal(subscriberConfigName);
 		Map<ResourceType, List<UUID>> extraReourcesByType = exchangeBatchExtraResourceDalI.findExtraResources(exchangeId, batchId);

@@ -4,10 +4,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.base.Strings;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.common.cache.ParserPool;
-import org.endeavourhealth.common.fhir.IdentifierHelper;
-import org.endeavourhealth.common.fhir.PeriodHelper;
-import org.endeavourhealth.common.fhir.ReferenceComponents;
-import org.endeavourhealth.common.fhir.ReferenceHelper;
+import org.endeavourhealth.common.fhir.*;
+import org.endeavourhealth.common.fhir.schema.RegistrationType;
 import org.endeavourhealth.core.configuration.RunDataDistributionProtocolsConfig;
 import org.endeavourhealth.core.database.dal.DalProvider;
 import org.endeavourhealth.core.database.dal.admin.LibraryRepositoryHelper;
@@ -23,6 +21,7 @@ import org.endeavourhealth.core.database.dal.eds.PatientSearchDalI;
 import org.endeavourhealth.core.database.dal.eds.models.PatientSearch;
 import org.endeavourhealth.core.database.dal.ehr.ResourceDalI;
 import org.endeavourhealth.core.database.dal.ehr.models.ResourceWrapper;
+import org.endeavourhealth.core.fhirStorage.FhirSerializationHelper;
 import org.endeavourhealth.core.messaging.pipeline.PipelineComponent;
 import org.endeavourhealth.core.messaging.pipeline.PipelineException;
 import org.endeavourhealth.core.messaging.pipeline.TransformBatch;
@@ -281,25 +280,89 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 			String odsCode = findOdsCodeFromReference(careProviderReference, serviceId);
 
 			if (!Strings.isNullOrEmpty(odsCode)) {
-				Organisation organisation = organisationRepository.getByNationalId(odsCode);
-				if (organisation != null
-						&& organisation.getServices() != null) {
-					LOG.debug("      Admin organisation was found with services " + organisation.getServices().size());
-
-					for (UUID orgServiceId : organisation.getServices().keySet()) {
-						String orgServiceIdStr = orgServiceId.toString();
-						LOG.debug("      Org admin service ID = " + orgServiceIdStr);
-						if (serviceIdsDefiningCohort.contains(orgServiceIdStr)) {
-							LOG.debug("      Matches sevice list");
-							return true;
-						}
-					}
-				} else {
-					LOG.debug("      No admin organisation was found with services for " + odsCode);
+				if (isOdsCodeInServiceDefiningServices(odsCode, serviceIdsDefiningCohort)) {
+					return true;
 				}
 			} else {
 				LOG.debug("      ODS Code could not be found for " + careProviderReference.getReference());
 			}
+		}
+
+		//if we couldn't find the registered practice code from the patient resource, see if we can do so via
+		//the EpisodeOfCare resources. We can only look at the current version because we can't search for
+		//past versions by patient ID
+		List<ResourceWrapper> episodeWrappers = resourceRepository.getResourcesByPatient(serviceId, patientUuid, ResourceType.EpisodeOfCare.toString());
+		LOG.debug("      Found " + episodeWrappers.size() + " episodes for patient " + patientUuid);
+		for (ResourceWrapper episodeWrapper: episodeWrappers) {
+
+			//this should only ever return non-deleted resources, but can't hurt to check
+			if (episodeWrapper.isDeleted()) {
+				continue;
+			}
+
+			String json = episodeWrapper.getResourceData();
+			EpisodeOfCare episodeOfCare = (EpisodeOfCare)FhirSerializationHelper.deserializeResource(json);
+
+			//skip if ended
+			if (episodeOfCare.hasPeriod()
+					&& !PeriodHelper.isActive(episodeOfCare.getPeriod())) {
+				LOG.debug("      Episode " + episodeWrapper.getResourceId() + " is ended");
+				continue;
+			}
+
+			//find reg type
+			Coding regTypeCoding = (Coding)ExtensionConverter.findExtensionValue(episodeOfCare, FhirExtensionUri.EPISODE_OF_CARE_REGISTRATION_TYPE);
+			if (regTypeCoding == null
+					|| !regTypeCoding.hasCode()) {
+				LOG.debug("      Episode " + episodeWrapper.getResourceId() + " has no reg type extension");
+				continue;
+			}
+
+			//if not reg GMS
+			String regTypeValue = regTypeCoding.getCode();
+			if (!regTypeValue.equals(RegistrationType.REGULAR_GMS.getCode())) {
+				LOG.debug("      Episode " + episodeWrapper.getResourceId() + " is not reg GMS (is " + regTypeValue + ")");
+				continue;
+			}
+
+			//get mananging org reference
+			if (!episodeOfCare.hasManagingOrganization()) {
+				LOG.debug("      Episode " + episodeWrapper.getResourceId() + " has no managing org reference");
+				continue;
+			}
+
+			//get ODS code for mananging org
+			Reference managingOrgReference = episodeOfCare.getManagingOrganization();
+			String odsCode = findOdsCodeFromReference(managingOrgReference, serviceId);
+
+			if (!Strings.isNullOrEmpty(odsCode)) {
+				if (isOdsCodeInServiceDefiningServices(odsCode, serviceIdsDefiningCohort)) {
+					return true;
+				}
+			} else {
+				LOG.debug("      ODS Code could not be found for " + managingOrgReference.getReference());
+			}
+		}
+
+		return false;
+	}
+
+	private static boolean isOdsCodeInServiceDefiningServices(String odsCode, Set<String> serviceIdsDefiningCohort) throws Exception {
+		Organisation organisation = organisationRepository.getByNationalId(odsCode);
+		if (organisation != null
+				&& organisation.getServices() != null) {
+			LOG.debug("      Admin organisation was found with services " + organisation.getServices().size());
+
+			for (UUID orgServiceId : organisation.getServices().keySet()) {
+				String orgServiceIdStr = orgServiceId.toString();
+				LOG.debug("      Org admin service ID = " + orgServiceIdStr);
+				if (serviceIdsDefiningCohort.contains(orgServiceIdStr)) {
+					LOG.debug("      Matches sevice list");
+					return true;
+				}
+			}
+		} else {
+			LOG.debug("      No admin organisation was found with services for " + odsCode);
 		}
 
 		return false;
