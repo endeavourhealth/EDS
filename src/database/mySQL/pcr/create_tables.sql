@@ -150,14 +150,6 @@ CREATE TABLE event_log (
                              REFERENCES pcr_tables (id)
 ) AUTO_INCREMENT=1 COMMENT 'represents the transaction log of all core table entries';
 
-CREATE TABLE pcr_tables (
-                          id bigint  AUTO_INCREMENT PRIMARY KEY,
-                          table_name VARCHAR(255)
-) COMMENT ''
-
-
-
-
 CREATE TABLE patient_address (
                                id int NOT NULL,
                                patient_id int NOT NULL,
@@ -552,10 +544,9 @@ CREATE TABLE observation (
                            owning_organisation_id int COMMENT 'refers to the organisation that owns/manages the event',
                            is_confidential boolean NOT NULL COMMENT 'indicates this is a confidential event',
                            original_code varchar(20) COLLATE utf8_bin DEFAULT NULL,
-                           original_concept varchar(1000) DEFAULT NULL,
-                           original_code_scheme int DEFAULT NULL ' Original code scheme - eg READ2, CTV3 etc'
-                             original_system varchar(255) DEFAULT NULL COMMENT 'Orginal code scheme eg TPP, EMIS etc',
-                           original_code_scheme varchar(20) DEFAULT NULL,
+                           original_term varchar(1000) DEFAULT NULL,
+                           original_code_scheme tinyint DEFAULT NULL COMMENT 'Original code scheme - 0=READ2, 1=READ3, 2=SnomedCT, 3=ICD-10, 4=OPCS-4, 5=MILLENNIUM',
+                           original_system tinyint DEFAULT NULL COMMENT 'Original system - 0=EMIS, 1=TPP, 2=VISION, 3=CERNER',
                            episodicity_concept_id bigint COMMENT 'refers to information model, giving episode/review (e.g. new episode, review)',
                            free_text_id bigint COMMENT 'refers to free text table where comments are stored',
                            data_entry_prompt_id int COMMENT 'links to the table giving the free-text prompt used to enter this observation',
@@ -627,9 +618,10 @@ CREATE TABLE procedure_request (
                                  owning_organisation_id int COMMENT 'refers to the organisation that owns/manages the event',
                                  status_concept_id bigint NOT NULL COMMENT 'refers to information model, giving the event status (e.g. active, final, pending, amended, corrected, deleted)',
                                  is_confidential boolean NOT NULL COMMENT 'indicates this is a confidential event',
-                                 original_code varchar(20) COLLATE utf8_bin DEFAULT NULL,
-                                 original_concept varchar(1000) DEFAULT NULL,
-                                 original_code_scheme varchar(20) DEFAULT NULL,
+	                           original_code varchar(20) COLLATE utf8_bin DEFAULT NULL,
+    	                       original_term varchar(1000) DEFAULT NULL,
+        	                   original_code_scheme tinyint DEFAULT NULL COMMENT 'Original code scheme - 0=READ2, 1=READ3, 2=SnomedCT, 3=ICD-10, 4=OPCS-4, 5=MILLENNIUM',
+            	               original_system tinyint DEFAULT NULL COMMENT 'Original system - 0=EMIS, 1=TPP, 2=VISION, 3=CERNER',
                                  priority_concept_id bigint COMMENT 'concept giving the priority of this request',
                                  recipient_organisation_id int COMMENT 'to whom the request was made',
                                  request_identifier varchar(255) COMMENT 'local identifier for the request (e.g. order number)',
@@ -658,10 +650,10 @@ CREATE TABLE `procedure` (
                            owning_organisation_id int COMMENT 'refers to the organisation that owns/manages the event',
                            status_concept_id bigint NOT NULL COMMENT 'refers to information model, giving the event status (e.g. active, final, pending, amended, corrected, deleted)',
                            is_confidential boolean NOT NULL COMMENT 'indicates this is a confidential event',
-
                            original_code varchar(20) COLLATE utf8_bin DEFAULT NULL,
-                           original_concept varchar(1000) DEFAULT NULL,
-                           original_code_scheme varchar(20) DEFAULT NULL,
+                           original_term varchar(1000) DEFAULT NULL,
+                           original_code_scheme tinyint DEFAULT NULL COMMENT 'Original code scheme - 0=READ2, 1=READ3, 2=SnomedCT, 3=ICD-10, 4=OPCS-4, 5=MILLENNIUM',
+                           original_system tinyint DEFAULT NULL COMMENT 'Original system - 0=EMIS, 1=TPP, 2=VISION, 3=CERNER',
                            outcome_concept_id bigint NOT NULL,
                            is_consent boolean NOT NULL COMMENT 'whether consent or dissent',
                            PRIMARY KEY (id)
@@ -724,9 +716,10 @@ CREATE TABLE immunisation (
                             owning_organisation_id int COMMENT 'refers to the organisation that owns/manages the event',
                             status_concept_id bigint NOT NULL COMMENT 'refers to information model, giving the event status (e.g. active, final, pending, amended, corrected, deleted)',
                             is_confidential boolean NOT NULL COMMENT 'indicates this is a confidential event',
-                            original_code varchar(20) COLLATE utf8_bin DEFAULT NULL,
-                            original_concept varchar(1000) DEFAULT NULL,
-                            original_code_scheme varchar(20) DEFAULT NULL,
+                           original_code varchar(20) COLLATE utf8_bin DEFAULT NULL,
+                           original_term varchar(1000) DEFAULT NULL,
+                           original_code_scheme tinyint DEFAULT NULL COMMENT 'Original code scheme - 0=READ2, 1=READ3, 2=SnomedCT, 3=ICD-10, 4=OPCS-4, 5=MILLENNIUM',
+                           original_system tinyint DEFAULT NULL COMMENT 'Original system - 0=EMIS, 1=TPP, 2=VISION, 3=CERNER',
                             dose varchar(255),
                             body_location_concept_id bigint COMMENT 'refers to the information model to give the bodily location of the immunisation (e.g. arm)',
                             method_concept_id bigint COMMENT 'refers to the information model to give the method of immunisation (e.g. intramuscular)',
@@ -753,15 +746,14 @@ CREATE TABLE allergy (
                        owning_organisation_id int COMMENT 'refers to the organisation that owns/manages the event',
                        status_concept_id bigint NOT NULL COMMENT 'refers to information model, giving the event status (e.g. active, final, pending, amended, corrected, deleted)',
                        is_confidential boolean NOT NULL COMMENT 'indicates this is a confidential event',
-                       original_code varchar(20) COLLATE utf8_bin DEFAULT NULL,
-                       original_concept varchar(1000) DEFAULT NULL,
-                       original_code_scheme varchar(20) DEFAULT NULL,
+                           original_code varchar(20) COLLATE utf8_bin DEFAULT NULL,
+                           original_term varchar(1000) DEFAULT NULL,
+                           original_code_scheme tinyint DEFAULT NULL COMMENT 'Original code scheme - 0=READ2, 1=READ3, 2=SnomedCT, 3=ICD-10, 4=OPCS-4, 5=MILLENNIUM',
+                           original_system tinyint DEFAULT NULL COMMENT 'Original system - 0=EMIS, 1=TPP, 2=VISION, 3=CERNER',
                        substance_concept_id bigint COMMENT 'concept representing the substance (as opposed to the allergy code, which is on the observation table)',
                        manifestation_concept_id bigint COMMENT 'concept stating how this allergy manifests itself (e.g. rash, anaphylactic shock)',
                        manifestation_free_text_id bigint COMMENT 'links to free text record to give textual description of the manifestation',
                        is_consent boolean NOT NULL COMMENT 'whether consent or dissent',
-
-
                        PRIMARY KEY (patient_id, id),
                        CONSTRAINT allergy_manifestation_free_text_id
                          FOREIGN KEY (patient_id, manifestation_free_text_id)
@@ -780,9 +772,10 @@ CREATE TABLE referral (
                         owning_organisation_id int COMMENT 'refers to the organisation that owns/manages the event',
                         status_concept_id bigint NOT NULL COMMENT 'refers to information model, giving the event status (e.g. active, final, pending, amended, corrected, deleted)',
                         is_confidential boolean NOT NULL COMMENT 'indicates this is a confidential event',
-                        original_code varchar(20) COLLATE utf8_bin DEFAULT NULL,
-                        original_concept varchar(1000) DEFAULT NULL,
-                        original_code_scheme varchar(20) DEFAULT NULL,
+                           original_code varchar(20) COLLATE utf8_bin DEFAULT NULL,
+                           original_term varchar(1000) DEFAULT NULL,
+                           original_code_scheme tinyint DEFAULT NULL COMMENT 'Original code scheme - 0=READ2, 1=READ3, 2=SnomedCT, 3=ICD-10, 4=OPCS-4, 5=MILLENNIUM',
+                           original_system tinyint DEFAULT NULL COMMENT 'Original system - 0=EMIS, 1=TPP, 2=VISION, 3=CERNER',
                         ubrn varchar(255) COMMENT 'e-RS booking number',
                         priority_concept_id bigint COMMENT 'refers to information model to give the priority (e.g. urgent, routing, 2-week wait)',
                         sender_organisation_id int,
@@ -830,9 +823,10 @@ CREATE TABLE medication_statement (
                                     owning_organisation_id int COMMENT 'refers to the organisation that owns/manages the event',
                                     status_concept_id bigint NOT NULL COMMENT 'refers to information model, giving the event status (e.g. active, final, pending, amended, corrected, deleted)',
                                     is_confidential boolean NOT NULL COMMENT 'indicates this is a confidential event',
-                                    original_code varchar(20) COLLATE utf8_bin DEFAULT NULL,
-                                    original_concept varchar(1000) DEFAULT NULL,
-                                    original_code_scheme varchar(20) DEFAULT NULL,
+	                        	   original_code varchar(20) COLLATE utf8_bin DEFAULT NULL,
+    	                	       original_term varchar(1000) DEFAULT NULL,
+        	        	           original_code_scheme tinyint DEFAULT NULL COMMENT 'Original code scheme - 0=READ2, 1=READ3, 2=SnomedCT, 3=ICD-10, 4=OPCS-4, 5=MILLENNIUM',
+            		               original_system tinyint DEFAULT NULL COMMENT 'Original system - 0=EMIS, 1=TPP, 2=VISION, 3=CERNER',
                                     type_concept_id bigint NOT NULL COMMENT 'refers to information model to give the prescription type (e.g. Acute, Repeat, RepeatDispensing)',
                                     medication_amount_id bigint COMMENT 'refers to the medication_amount table for the dose and quantity',
                                     issues_authorised int COMMENT 'total number of issues allowed before review, for acutes this value will be 1',
@@ -874,10 +868,11 @@ CREATE TABLE medication_order (
                                 owning_organisation_id int COMMENT 'refers to the organisation that owns/manages the event',
                                 status_concept_id bigint NOT NULL COMMENT 'refers to information model, giving the event status (e.g. active, final, pending, amended, corrected, deleted)',
                                 is_confidential boolean NOT NULL COMMENT 'indicates this is a confidential event',
-                                original_code varchar(20) COLLATE utf8_bin DEFAULT NULL,
-                                original_concept varchar(1000) DEFAULT NULL,
-                                original_code_scheme varchar(20) DEFAULT NULL,
-                                type_concept_id bigint NOT NULL COMMENT 'refers to information model to give the prescription type (e.g. Acute, Repeat, RepeatDispensing)',
+	                            original_code varchar(20) COLLATE utf8_bin DEFAULT NULL,
+    	                       original_term varchar(1000) DEFAULT NULL,
+        	                   original_code_scheme tinyint DEFAULT NULL COMMENT 'Original code scheme - 0=READ2, 1=READ3, 2=SnomedCT, 3=ICD-10, 4=OPCS-4, 5=MILLENNIUM',
+            	               original_system tinyint DEFAULT NULL COMMENT 'Original system - 0=EMIS, 1=TPP, 2=VISION, 3=CERNER',
+                               type_concept_id bigint NOT NULL COMMENT 'refers to information model to give the prescription type (e.g. Acute, Repeat, RepeatDispensing)',
                                 medication_statement_id bigint COMMENT 'refers to the medication_statement table',
                                 medication_amount_id bigint COMMENT 'refers to the medication_amount table for the dose and quantity',
                                 patient_instructions_free_text_id bigint COMMENT 'links to free text entry giving additional patient instructions',
