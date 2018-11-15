@@ -1,16 +1,8 @@
-DROP
-DATABASE
-pcr;
+DROP DATABASE pcr;
 
-CREATE
-DATABASE
-IF
-NOT
-EXISTS
-pcr;
+CREATE DATABASE IF NOT EXISTS pcr;
 
-USE
-pcr;
+USE pcr;
 
 CREATE TABLE address
 (
@@ -146,32 +138,6 @@ CREATE TABLE patient
   ethnic_code                        char(1),
   PRIMARY KEY (id)
 ) COMMENT 'represents the patient demographics at an organisational level';
-
-CREATE TABLE pcr_tables
-(
-  id         tinyint      NOT NULL,
-  table_name varchar(255) NOT NULL,
-  PRIMARY KEY (id)
-) COMMENT 'lookup of all the table names in this database';
-
-CREATE TABLE event_log
-(
-  id                         bigint   NOT NULL AUTO_INCREMENT,
-  organisation_id            int      NOT NULL,
-  entry_date                 datetime NOT NULL,
-  entered_by_practitioner_id int COMMENT 'who actually recorded the entry into the host system',
-  device_id                  int COMMENT 'refers to the device that may have recorded the data',
-  entry_mode                 tinyint  NOT NULL COMMENT 'entry mode i.e. 0-upsert, 1-delete',
-  table_id                   tinyint  NOT NULL COMMENT 'the table ID relevant to the entry',
-  item_id                    bigint   NOT NULL COMMENT 'the item identifier in the table relevant to to entry',
-  PRIMARY KEY (id),
-  CONSTRAINT event_log_entered_practitioner_id
-    FOREIGN KEY (entered_by_practitioner_id)
-      REFERENCES practitioner (id),
-  CONSTRAINT event_log_table_id
-    FOREIGN KEY (table_id)
-      REFERENCES pcr_tables (id)
-) AUTO_INCREMENT=1 COMMENT 'represents the transaction log of all core table entries';
 
 CREATE TABLE patient_address
 (
@@ -697,8 +663,6 @@ CREATE TABLE procedure_request
   recipient_organisation_id        int COMMENT 'to whom the request was made',
   request_identifier               varchar(255) COMMENT 'local identifier for the request (e.g. order number)',
   is_consent                       boolean  NOT NULL COMMENT 'whether consent or dissent',
-
-
   PRIMARY KEY (patient_id, id),
   CONSTRAINT procedure_request_recipient_organisation_id
     FOREIGN KEY (recipient_organisation_id)
@@ -808,8 +772,6 @@ CREATE TABLE immunisation
   dose_ordinal                     int COMMENT 'number of this immunisation within a series',
   doses_required                   int COMMENT 'number of doses of this immunisation required',
   is_consent                       boolean  NOT NULL COMMENT 'whether consent or dissent',
-
-
   PRIMARY KEY (patient_id, id)
 ) COMMENT 'provide supplementary immunisation information';
 
@@ -868,8 +830,6 @@ CREATE TABLE referral
   service_requested_concept_id     bigint COMMENT 'concept giving the service being requested (e.g. colonoscopy)',
   reason_for_referral_free_text_id bigint COMMENT 'additional free text for the actual reason for referral',
   is_consent                       boolean  NOT NULL COMMENT 'whether consent or dissent',
-
-
   PRIMARY KEY (patient_id, id),
   CONSTRAINT referral_sender_organisation_id
     FOREIGN KEY (sender_organisation_id)
@@ -1114,7 +1074,31 @@ CREATE TABLE care_plan_activity_target
   PRIMARY KEY (patient_id, care_plan_activity_id, id)
 );
 
+CREATE TABLE pcr_tables
+(
+  id         tinyint      NOT NULL,
+  table_name varchar(255) NOT NULL,
+  PRIMARY KEY (id)
+) COMMENT 'lookup of all the table names in this database';
 
+CREATE TABLE event_log
+(
+  id                         bigint   NOT NULL AUTO_INCREMENT,
+  organisation_id            int      NOT NULL,
+  entry_date                 datetime NOT NULL,
+  entered_by_practitioner_id int COMMENT 'who actually recorded the entry into the host system',
+  device_id                  int COMMENT 'refers to the device that may have recorded the data',
+  entry_mode                 tinyint  NOT NULL COMMENT 'entry mode i.e. 0-upsert, 1-delete',
+  table_id                   tinyint  NOT NULL COMMENT 'the table ID relevant to the entry',
+  item_id                    bigint   NOT NULL COMMENT 'the item identifier in the table relevant to to entry',
+  PRIMARY KEY (id),
+  CONSTRAINT event_log_entered_practitioner_id
+  FOREIGN KEY (entered_by_practitioner_id)
+  REFERENCES practitioner (id),
+  CONSTRAINT event_log_table_id
+  FOREIGN KEY (table_id)
+  REFERENCES pcr_tables (id)
+) AUTO_INCREMENT=1 COMMENT 'represents the transaction log of all core table entries';
 
 CREATE TABLE pcr_id_map
 (
@@ -1136,20 +1120,3 @@ CREATE TABLE code_scheme_lookup
   id          int          NOT NULL,
   code_schema VARCHAR(255) NOT NULL COMMENT 'URI of schema eg CSV3, READ2 etc'
 )
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
