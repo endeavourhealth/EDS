@@ -65,6 +65,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.persistence.EntityManager;
 import java.io.*;
+import java.lang.reflect.Constructor;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -290,6 +291,7 @@ public class Main {
 			System.exit(0);
 		}
 
+
 		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("ConvertExchangeBody")) {
 			String systemId = args[1];
@@ -456,6 +458,19 @@ public class Main {
 			System.exit(0);
 		}*/
 
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("LoadBartsData")) {
+			String serviceId = args[1];
+			String systemId = args[2];
+			String sourcePath = args[3];
+			String dbUrl = args[4];
+			String dbUsername = args[5];
+			String dbPassword = args[6];
+			loadBartsData(serviceId, systemId, sourcePath, dbUrl, dbUsername, dbPassword);
+			System.exit(0);
+		}
+
+
 		if (args.length != 1) {
 			LOG.error("Usage: queuereader config_id");
 			return;
@@ -480,6 +495,166 @@ public class Main {
 		rabbitHandler.start();
 		LOG.info("EDS Queue reader running (kill file location " + TransformConfig.instance().getKillFileLocation() + ")");
 	}
+
+
+
+	private static void loadBartsData(String serviceId, String systemId, String sourcePath, String dbUrl, String dbUsername, String dbPassword) {
+		LOG.debug("Loading Barts data from " + sourcePath + " into " + dbUrl);
+		try {
+
+			//hash file type of every file
+			Map<String, String> hmTypes = new HashMap<>();
+			ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
+			List<Exchange> exchanges = exchangeDal.getExchangesByService(UUID.fromString(serviceId), UUID.fromString(systemId), Integer.MAX_VALUE);
+			for (Exchange exchange: exchanges) {
+				String exchangeBody = exchange.getBody();
+				List<ExchangePayloadFile> files = ExchangeHelper.parseExchangeBody(exchangeBody);
+				for (ExchangePayloadFile file: files) {
+					String name = FilenameUtils.getName(file.getPath());
+					String type = file.getType();
+					hmTypes.put(name, type);
+				}
+			}
+
+			//open connection
+			Class.forName("com.mysql.cj.jdbc.Driver");
+			Connection conn = DriverManager.getConnection(dbUrl, dbUsername, dbPassword);
+
+            /*JsonNodeFactory f = JsonNodeFactory.withExactBigDecimals(false);
+            ObjectNode config = new ObjectNode(f);
+            config.put("enterprise_url", dbUrl);
+            config.put("driverClass", "com.mysql.cj.jdbc.Driver");
+            config.put("enterprise_username", dbUsername);
+            config.put("enterprise_password", dbPassword);
+
+            //JsonNode config = ConfigManager.getConfigurationAsJson("mysql_pseudo", "db_subscriber");
+
+            Connection conn = EnterpriseFiler.openConnection(config);*/
+
+			//go through files
+			File src = new File(sourcePath);
+			loadBartsDataFromFile(src, hmTypes, conn);
+
+			conn.close();
+
+			LOG.debug("Finished Loading Barts data from " + sourcePath + " into " + dbUrl);
+		} catch (Throwable t) {
+			LOG.error("", t);
+		}
+	}
+
+	private static void loadBartsDataFromFile(File src, Map<String, String> hmTypes, Connection conn) throws Exception {
+		if (src.isDirectory()) {
+			for (File child: src.listFiles()) {
+				loadBartsDataFromFile(child, hmTypes, conn);
+			}
+			return;
+		}
+
+		LOG.debug("Loading " + src);
+
+		//identify file type
+		String type = hmTypes.get(src.getName());
+
+		if (Strings.isNullOrEmpty(type)) {
+			LOG.debug("Unknown type for " + src);
+		}
+
+		ParserI parser = null;
+		try {
+			String clsName = "org.endeavourhealth.transform.barts.schema." + type;
+			Class cls = Class.forName(clsName);
+
+			//now construct an instance of the parser for the file we've found
+			Constructor<AbstractCsvParser> constructor = cls.getConstructor(UUID.class, UUID.class, UUID.class, String.class, String.class);
+			parser = constructor.newInstance(null, null, null, null, src.getAbsolutePath());
+
+		} catch (ClassNotFoundException cnfe) {
+			throw new TransformException("No parser for file type [" + type + "]");
+		}
+
+		String table = type.replace(" ", "_");
+
+		//check table is there
+		String sql = "SELECT 1 FROM information_schema.tables WHERE table_schema = database() AND table_name = '" + table + "' LIMIT 1";
+		Statement statement = conn.createStatement();
+		ResultSet rs = statement.executeQuery(sql);
+		boolean tableExists = rs.next();
+		rs.close();
+		statement.close();
+
+		if (!tableExists) {
+			LOG.error("No table exists for " + table);
+			return;
+		}
+
+		//create insert statement
+		sql = "INSERT INTO " + table + " (";
+		List<String> cols = parser.getColumnHeaders();
+		for (int i=0; i<cols.size(); i++) {
+			String col = cols.get(i);
+			if (i>0) {
+				sql += ", ";
+			}
+			sql += col.replace(" ", "_");
+		}
+		sql += ") VALUES (";
+		for (int i=0; i<cols.size(); i++) {
+			if (i>0) {
+				sql += ", ";
+			}
+			sql += "?";
+		}
+		sql += ")";
+		PreparedStatement ps = conn.prepareStatement(sql);
+
+		//load table
+		int done = 0;
+		int currentBatchSize = 0;
+		while (parser.nextRecord()) {
+
+			int col = 1;
+
+			//file name is always first
+			ps.setString(col++, src.getName());
+
+			for (int i=0; i<cols.size(); i++) {
+				String colName = cols.get(i);
+				CsvCell cell = parser.getCell(colName);
+				if (cell == null) {
+					ps.setNull(col++, Types.VARCHAR);
+				} else {
+					ps.setString(col++, cell.getString());
+				}
+			}
+
+			ps.addBatch();
+			currentBatchSize ++;
+
+			if (currentBatchSize >= 5) {
+				ps.executeBatch();
+				currentBatchSize = 0;
+			}
+
+			done ++;
+			if (done % 1000 == 0) {
+				LOG.debug("Done " + done);
+			}
+		}
+
+		if (currentBatchSize >= 0) {
+			ps.executeBatch();
+		}
+
+		ps.close();
+
+		if (!src.delete()) {
+			throw new Exception("Failed to delete " + src);
+		}
+
+		LOG.debug("Finished " + src + " with " + done + " rows");
+	}
+
 
 	private static void fixPseudoIds(String subscriberConfig, int threads) {
 		LOG.debug("Fixing Pseudo IDs for " + subscriberConfig);
