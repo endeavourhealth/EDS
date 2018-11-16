@@ -1,8 +1,5 @@
 use pcr;
 
--- TODO
-
-
 drop trigger if exists after_patient_insert;
 
 DELIMITER $$
@@ -189,6 +186,63 @@ CREATE TRIGGER after_patient_identifier_delete
   END$$
 DELIMITER ;
 
+drop trigger if exists after_consultation_insert;
+
+DELIMITER $$
+CREATE TRIGGER after_consultation_insert
+  AFTER INSERT ON consultation
+  FOR EACH ROW
+  BEGIN
+    INSERT INTO event_log
+    set
+      organisation_id = NEW.owning_organisation_id,
+      entry_date = now(),
+      entered_by_practitioner_id  = NEW.entered_by_practitioner_id,
+      device_id = 0,
+      entry_mode = 0,
+      table_id = 26,
+      item_id = NEW.id;
+  END$$
+DELIMITER ;
+
+drop trigger if exists after_consultation_update;
+
+DELIMITER $$
+CREATE TRIGGER after_consultation_update
+  AFTER UPDATE ON consultation
+  FOR EACH ROW
+  BEGIN
+    INSERT INTO event_log
+    set
+      organisation_id = OLD.owning_organisation_id,
+      entry_date = now(),
+      entered_by_practitioner_id  = OLD.entered_by_practitioner_id,
+      device_id = 0,
+      entry_mode = 0,
+      table_id = 26,
+      item_id = OLD.id;
+  END$$
+DELIMITER ;
+
+drop trigger if exists after_consultation_delete;
+
+DELIMITER $$
+CREATE TRIGGER after_consultation_delete
+  AFTER DELETE ON consultation
+  FOR EACH ROW
+  BEGIN
+    INSERT INTO event_log
+    set
+      organisation_id = OLD.owning_organisation_id,
+      entry_date = now(),
+      entered_by_practitioner_id  = OLD.entered_by_practitioner_id,
+      device_id = 0,
+      entry_mode = 1,
+      table_id = 26,
+      item_id = OLD.id;
+  END$$
+DELIMITER ;
+
 drop trigger if exists after_observation_insert;
 
 DELIMITER $$
@@ -242,6 +296,63 @@ CREATE TRIGGER after_observation_delete
       device_id = 0,
       entry_mode = 1,
       table_id = 32,
+      item_id = OLD.id;
+  END$$
+DELIMITER ;
+
+drop trigger if exists after_flag_insert;
+
+DELIMITER $$
+CREATE TRIGGER after_flag_insert
+  AFTER INSERT ON flag
+  FOR EACH ROW
+  BEGIN
+    INSERT INTO event_log
+    set
+      organisation_id = NEW.owning_organisation_id,
+      entry_date = now(),
+      entered_by_practitioner_id  = NEW.entered_by_practitioner_id,
+      device_id = 0,
+      entry_mode = 0,
+      table_id = 33,
+      item_id = NEW.id;
+  END$$
+DELIMITER ;
+
+drop trigger if exists after_flag_update;
+
+DELIMITER $$
+CREATE TRIGGER after_flag_update
+  AFTER UPDATE ON flag
+  FOR EACH ROW
+  BEGIN
+    INSERT INTO event_log
+    set
+      organisation_id = OLD.owning_organisation_id,
+      entry_date = now(),
+      entered_by_practitioner_id  = OLD.entered_by_practitioner_id,
+      device_id = 0,
+      entry_mode = 0,
+      table_id = 33,
+      item_id = OLD.id;
+  END$$
+DELIMITER ;
+
+drop trigger if exists after_flag_delete;
+
+DELIMITER $$
+CREATE TRIGGER after_flag_delete
+  AFTER DELETE ON flag
+  FOR EACH ROW
+  BEGIN
+    INSERT INTO event_log
+    set
+      organisation_id = OLD.owning_organisation_id,
+      entry_date = now(),
+      entered_by_practitioner_id  = OLD.entered_by_practitioner_id,
+      device_id = 0,
+      entry_mode = 1,
+      table_id = 33,
       item_id = OLD.id;
   END$$
 DELIMITER ;
@@ -309,6 +420,120 @@ CREATE TRIGGER after_problem_delete
         OLD.id
       from observation o
       where o.id = OLD.observation_id;    -- use to derive the organisation_id for the event_log
+  END$$
+DELIMITER ;
+
+drop trigger if exists after_procedure_request_insert;
+
+DELIMITER $$
+CREATE TRIGGER after_procedure_request_insert
+  AFTER INSERT ON procedure_request
+  FOR EACH ROW
+  BEGIN
+    INSERT INTO event_log
+    set
+      organisation_id = NEW.owning_organisation_id,
+      entry_date = now(),
+      entered_by_practitioner_id  = NEW.entered_by_practitioner_id,
+      device_id = 0,
+      entry_mode = 0,
+      table_id = 35,
+      item_id = NEW.id;
+  END$$
+DELIMITER ;
+
+drop trigger if exists after_procedure_request_update;
+
+DELIMITER $$
+CREATE TRIGGER after_procedure_request_update
+  AFTER UPDATE ON procedure_request
+  FOR EACH ROW
+  BEGIN
+    INSERT INTO event_log
+    set
+      organisation_id = OLD.owning_organisation_id,
+      entry_date = now(),
+      entered_by_practitioner_id  = OLD.entered_by_practitioner_id,
+      device_id = 0,
+      entry_mode = 0,
+      table_id = 35,
+      item_id = OLD.id;
+  END$$
+DELIMITER ;
+
+drop trigger if exists after_procedure_request_delete;
+
+DELIMITER $$
+CREATE TRIGGER after_procedure_request_delete
+  AFTER DELETE ON procedure_request
+  FOR EACH ROW
+  BEGIN
+    INSERT INTO event_log
+    set
+      organisation_id = OLD.owning_organisation_id,
+      entry_date = now(),
+      entered_by_practitioner_id  = OLD.entered_by_practitioner_id,
+      device_id = 0,
+      entry_mode = 1,
+      table_id = 35,
+      item_id = OLD.id;
+  END$$
+DELIMITER ;
+
+drop trigger if exists after_procedure_insert;
+
+DELIMITER $$
+CREATE TRIGGER after_procedure_insert
+  AFTER INSERT ON `procedure`
+  FOR EACH ROW
+  BEGIN
+    INSERT INTO event_log
+    set
+      organisation_id = NEW.owning_organisation_id,
+      entry_date = now(),
+      entered_by_practitioner_id  = NEW.entered_by_practitioner_id,
+      device_id = 0,
+      entry_mode = 0,
+      table_id = 36,
+      item_id = NEW.id;
+  END$$
+DELIMITER ;
+
+drop trigger if exists after_procedure_update;
+
+DELIMITER $$
+CREATE TRIGGER after_procedure_update
+  AFTER UPDATE ON `procedure`
+  FOR EACH ROW
+  BEGIN
+    INSERT INTO event_log
+    set
+      organisation_id = OLD.owning_organisation_id,
+      entry_date = now(),
+      entered_by_practitioner_id  = OLD.entered_by_practitioner_id,
+      device_id = 0,
+      entry_mode = 0,
+      table_id = 36,
+      item_id = OLD.id;
+  END$$
+DELIMITER ;
+
+drop trigger if exists after_procedure_delete;
+
+DELIMITER $$
+CREATE TRIGGER after_procedure_delete
+  AFTER DELETE ON `procedure`
+  FOR EACH ROW
+  BEGIN
+    INSERT INTO event_log
+    set
+      organisation_id = OLD.owning_organisation_id,
+      entry_date = now(),
+      entered_by_practitioner_id  = OLD.entered_by_practitioner_id,
+      device_id = 0,
+      entry_mode = 1,
+      table_id = 36,
+      item_id = OLD.id;
   END$$
 DELIMITER ;
 
