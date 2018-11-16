@@ -120,6 +120,72 @@ CREATE TRIGGER after_patient_address_delete
   END$$
 DELIMITER ;
 
+drop trigger if exists after_patient_identifier_insert;
+
+DELIMITER $$
+CREATE TRIGGER after_patient_identifier_insert
+  AFTER INSERT ON patient_identifier
+  FOR EACH ROW
+  BEGIN
+    INSERT INTO event_log
+      select
+        null,
+        p.organisation_id,
+        now(),
+        NEW.entered_by_practitioner_id,
+        0,
+        0,
+        11,
+        NEW.id
+      from patient p
+      where p.id = NEW.patient_id;    -- use to derive the organisation_id for the event_log
+  END$$
+DELIMITER ;
+
+drop trigger if exists after_patient_identifier_update;
+
+DELIMITER $$
+CREATE TRIGGER after_patient_identifier_update
+  AFTER UPDATE ON patient_identifier
+  FOR EACH ROW
+  BEGIN
+    INSERT INTO event_log
+      select
+        null,
+        p.organisation_id,
+        now(),
+        OLD.entered_by_practitioner_id,
+        0,
+        0,
+        11,
+        OLD.id
+      from patient p
+      where p.id = OLD.patient_id;    -- use to derive the organisation_id for the event_log
+  END$$
+DELIMITER ;
+
+drop trigger if exists after_patient_identifier_delete;
+
+DELIMITER $$
+CREATE TRIGGER after_patient_identifier_delete
+  AFTER DELETE ON patient_identifier
+  FOR EACH ROW
+  BEGIN
+    INSERT INTO event_log
+      select
+        null,
+        p.organisation_id,
+        now(),
+        OLD.entered_by_practitioner_id,
+        0,
+        1,
+        11,
+        OLD.id
+      from patient p
+      where p.id = OLD.patient_id;    -- use to derive the organisation_id for the event_log
+  END$$
+DELIMITER ;
+
 drop trigger if exists after_observation_insert;
 
 DELIMITER $$
@@ -355,5 +421,71 @@ CREATE TRIGGER after_immunisation_delete
       entry_mode = 1,
       table_id = 40,
       item_id = OLD.id;
+  END$$
+DELIMITER ;
+
+drop trigger if exists after_problem_insert;
+
+DELIMITER $$
+CREATE TRIGGER after_problem_insert
+  AFTER INSERT ON problem
+  FOR EACH ROW
+  BEGIN
+    INSERT INTO event_log
+      select
+        null,
+        o.owning_organisation_id,
+        now(),
+        NEW.entered_by_practitioner_id,
+        0,
+        0,
+        34,
+        NEW.id
+      from observation o
+      where o.id = NEW.observation_id;    -- use to derive the organisation_id for the event_log
+  END$$
+DELIMITER ;
+
+drop trigger if exists after_problem_update;
+
+DELIMITER $$
+CREATE TRIGGER after_problem_update
+  AFTER UPDATE ON problem
+  FOR EACH ROW
+  BEGIN
+    INSERT INTO event_log
+      select
+        null,
+        o.owning_organisation_id,
+        now(),
+        OLD.entered_by_practitioner_id,
+        0,
+        0,
+        34,
+        OLD.id
+      from observation o
+      where o.id = OLD.observation_id;    -- use to derive the organisation_id for the event_log
+  END$$
+DELIMITER ;
+
+drop trigger if exists after_problem_delete;
+
+DELIMITER $$
+CREATE TRIGGER after_problem_delete
+  AFTER DELETE ON problem
+  FOR EACH ROW
+  BEGIN
+    INSERT INTO event_log
+      select
+        null,
+        o.owning_organisation_id,
+        now(),
+        OLD.entered_by_practitioner_id,
+        0,
+        1,
+        34,
+        OLD.id
+      from observation o
+      where o.id = OLD.observation_id;    -- use to derive the organisation_id for the event_log
   END$$
 DELIMITER ;
