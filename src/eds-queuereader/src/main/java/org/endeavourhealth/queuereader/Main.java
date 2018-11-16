@@ -329,11 +329,12 @@ public class Main {
 
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("FixDisabledExtract")) {
-			String serviceId = args[1];
-			String systemId = args[2];
-			String sharedStoragePath = args[3];
-			String tempDir = args[4];
-			fixDisabledEmisExtract(serviceId, systemId, sharedStoragePath, tempDir);
+			String sharedStoragePath = args[1];
+			String tempDir = args[2];
+			String systemId = args[3];
+			String serviceOdsCode = args[4];
+
+			fixDisabledEmisExtract(serviceOdsCode, systemId, sharedStoragePath, tempDir);
 			System.exit(0);
 		}
 
@@ -3968,11 +3969,14 @@ public class Main {
 	 * replacing the "delete" extracts with newly generated deltas that can be processed
 	 * before the re-bulk is done
 	 */
-	private static void fixDisabledEmisExtract(String serviceId, String systemId, String sharedStoragePath, String tempDir) {
+	private static void fixDisabledEmisExtract(String serviceOdsCode, String systemId, String sharedStoragePath, String tempDirParent) {
 
-		LOG.info("Fixing Disabled Emis Extracts Prior to Re-bulk for service " + serviceId);
-
+		LOG.info("Fixing Disabled Emis Extracts Prior to Re-bulk for service " + serviceOdsCode);
 		try {
+
+			ServiceDalI serviceDal = DalProvider.factoryServiceDal();
+			Service service = serviceDal.getByLocalIdentifier(serviceOdsCode);
+			LOG.info("Service " + service.getId() + " " + service.getName());
 
 			/*File tempDirLast = new File(tempDir, "last");
 			if (!tempDirLast.exists()) {
@@ -3989,12 +3993,14 @@ public class Main {
 				tempDirEmpty.mkdirs();
 			}*/
 
+			String tempDir = FilenameUtils.concat(tempDirParent, serviceOdsCode);
+
 			File f = new File(tempDir);
 			if (f.exists()) {
 				FileUtils.deleteDirectory(f);
 			}
 
-			UUID serviceUuid = UUID.fromString(serviceId);
+			UUID serviceUuid = service.getId();
 			UUID systemUuid = UUID.fromString(systemId);
 			ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
 
@@ -4391,6 +4397,8 @@ public class Main {
 
 			String scriptFile = FilenameUtils.concat(tempDir, "copy.sh");
 			FileUtils.writeLines(new File(scriptFile), copyScript);
+
+			LOG.info("Finished - written files to " + tempDir);
 
 			/*continueOrQuit();
 
