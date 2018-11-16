@@ -1,5 +1,8 @@
 use pcr;
 
+-- TODO
+
+
 drop trigger if exists after_patient_insert;
 
 DELIMITER $$
@@ -243,6 +246,71 @@ CREATE TRIGGER after_observation_delete
   END$$
 DELIMITER ;
 
+drop trigger if exists after_problem_insert;
+
+DELIMITER $$
+CREATE TRIGGER after_problem_insert
+  AFTER INSERT ON problem
+  FOR EACH ROW
+  BEGIN
+    INSERT INTO event_log
+      select
+        null,
+        o.owning_organisation_id,
+        now(),
+        NEW.entered_by_practitioner_id,
+        0,
+        0,
+        34,
+        NEW.id
+      from observation o
+      where o.id = NEW.observation_id;    -- use to derive the organisation_id for the event_log
+  END$$
+DELIMITER ;
+
+drop trigger if exists after_problem_update;
+
+DELIMITER $$
+CREATE TRIGGER after_problem_update
+  AFTER UPDATE ON problem
+  FOR EACH ROW
+  BEGIN
+    INSERT INTO event_log
+      select
+        null,
+        o.owning_organisation_id,
+        now(),
+        OLD.entered_by_practitioner_id,
+        0,
+        0,
+        34,
+        OLD.id
+      from observation o
+      where o.id = OLD.observation_id;    -- use to derive the organisation_id for the event_log
+  END$$
+DELIMITER ;
+
+drop trigger if exists after_problem_delete;
+
+DELIMITER $$
+CREATE TRIGGER after_problem_delete
+  AFTER DELETE ON problem
+  FOR EACH ROW
+  BEGIN
+    INSERT INTO event_log
+      select
+        null,
+        o.owning_organisation_id,
+        now(),
+        OLD.entered_by_practitioner_id,
+        0,
+        1,
+        34,
+        OLD.id
+      from observation o
+      where o.id = OLD.observation_id;    -- use to derive the organisation_id for the event_log
+  END$$
+DELIMITER ;
 
 drop trigger if exists after_observation_value_insert;
 
@@ -310,63 +378,6 @@ CREATE TRIGGER after_observation_value_delete
   END$$
 DELIMITER ;
 
-drop trigger if exists after_allergy_insert;
-
-DELIMITER $$
-CREATE TRIGGER after_allergy_insert
-  AFTER INSERT ON allergy
-  FOR EACH ROW
-  BEGIN
-    INSERT INTO event_log
-    set
-      organisation_id = NEW.owning_organisation_id,
-      entry_date = now(),
-      entered_by_practitioner_id  = NEW.entered_by_practitioner_id,
-      device_id = 0,
-      entry_mode = 0,
-      table_id = 41,
-      item_id = NEW.id;
-  END$$
-DELIMITER ;
-
-drop trigger if exists after_allergy_update;
-
-DELIMITER $$
-CREATE TRIGGER after_allergy_update
-  AFTER UPDATE ON allergy
-  FOR EACH ROW
-  BEGIN
-    INSERT INTO event_log
-    set
-      organisation_id = OLD.owning_organisation_id,
-      entry_date = now(),
-      entered_by_practitioner_id  = OLD.entered_by_practitioner_id,
-      device_id = 0,
-      entry_mode = 0,
-      table_id = 41,
-      item_id = OLD.id;
-  END$$
-DELIMITER ;
-
-drop trigger if exists after_allergy_delete;
-
-DELIMITER $$
-CREATE TRIGGER after_allergy_delete
-  AFTER DELETE ON allergy
-  FOR EACH ROW
-  BEGIN
-    INSERT INTO event_log
-    set
-      organisation_id = OLD.owning_organisation_id,
-      entry_date = now(),
-      entered_by_practitioner_id  = OLD.entered_by_practitioner_id,
-      device_id = 0,
-      entry_mode = 1,
-      table_id = 41,
-      item_id = OLD.id;
-  END$$
-DELIMITER ;
-
 drop trigger if exists after_immunisation_insert;
 
 DELIMITER $$
@@ -424,68 +435,296 @@ CREATE TRIGGER after_immunisation_delete
   END$$
 DELIMITER ;
 
-drop trigger if exists after_problem_insert;
+drop trigger if exists after_allergy_insert;
 
 DELIMITER $$
-CREATE TRIGGER after_problem_insert
-  AFTER INSERT ON problem
+CREATE TRIGGER after_allergy_insert
+  AFTER INSERT ON allergy
+  FOR EACH ROW
+  BEGIN
+    INSERT INTO event_log
+    set
+      organisation_id = NEW.owning_organisation_id,
+      entry_date = now(),
+      entered_by_practitioner_id  = NEW.entered_by_practitioner_id,
+      device_id = 0,
+      entry_mode = 0,
+      table_id = 41,
+      item_id = NEW.id;
+  END$$
+DELIMITER ;
+
+drop trigger if exists after_allergy_update;
+
+DELIMITER $$
+CREATE TRIGGER after_allergy_update
+  AFTER UPDATE ON allergy
+  FOR EACH ROW
+  BEGIN
+    INSERT INTO event_log
+    set
+      organisation_id = OLD.owning_organisation_id,
+      entry_date = now(),
+      entered_by_practitioner_id  = OLD.entered_by_practitioner_id,
+      device_id = 0,
+      entry_mode = 0,
+      table_id = 41,
+      item_id = OLD.id;
+  END$$
+DELIMITER ;
+
+drop trigger if exists after_allergy_delete;
+
+DELIMITER $$
+CREATE TRIGGER after_allergy_delete
+  AFTER DELETE ON allergy
+  FOR EACH ROW
+  BEGIN
+    INSERT INTO event_log
+    set
+      organisation_id = OLD.owning_organisation_id,
+      entry_date = now(),
+      entered_by_practitioner_id  = OLD.entered_by_practitioner_id,
+      device_id = 0,
+      entry_mode = 1,
+      table_id = 41,
+      item_id = OLD.id;
+  END$$
+DELIMITER ;
+
+drop trigger if exists after_referral_insert;
+
+DELIMITER $$
+CREATE TRIGGER after_referral_insert
+  AFTER INSERT ON referral
+  FOR EACH ROW
+  BEGIN
+    INSERT INTO event_log
+    set
+      organisation_id = NEW.owning_organisation_id,
+      entry_date = now(),
+      entered_by_practitioner_id  = NEW.entered_by_practitioner_id,
+      device_id = 0,
+      entry_mode = 0,
+      table_id = 42,
+      item_id = NEW.id;
+  END$$
+DELIMITER ;
+
+drop trigger if exists after_referral_update;
+
+DELIMITER $$
+CREATE TRIGGER after_referral_update
+  AFTER UPDATE ON referral
+  FOR EACH ROW
+  BEGIN
+    INSERT INTO event_log
+    set
+      organisation_id = OLD.owning_organisation_id,
+      entry_date = now(),
+      entered_by_practitioner_id  = OLD.entered_by_practitioner_id,
+      device_id = 0,
+      entry_mode = 0,
+      table_id = 42,
+      item_id = OLD.id;
+  END$$
+DELIMITER ;
+
+drop trigger if exists after_referral_delete;
+
+DELIMITER $$
+CREATE TRIGGER after_referral_delete
+  AFTER DELETE ON referral
+  FOR EACH ROW
+  BEGIN
+    INSERT INTO event_log
+    set
+      organisation_id = OLD.owning_organisation_id,
+      entry_date = now(),
+      entered_by_practitioner_id  = OLD.entered_by_practitioner_id,
+      device_id = 0,
+      entry_mode = 1,
+      table_id = 42,
+      item_id = OLD.id;
+  END$$
+DELIMITER ;
+
+drop trigger if exists after_medication_amount_insert;
+
+DELIMITER $$
+CREATE TRIGGER after_medication_amount_insert
+  AFTER INSERT ON medication_amount
   FOR EACH ROW
   BEGIN
     INSERT INTO event_log
       select
         null,
-        o.owning_organisation_id,
+        p.organisation_id,
         now(),
         NEW.entered_by_practitioner_id,
         0,
         0,
-        34,
+        43,
         NEW.id
-      from observation o
-      where o.id = NEW.observation_id;    -- use to derive the organisation_id for the event_log
+      from patient p
+      where p.id = NEW.patient_id;    -- use to derive the organisation_id for the event_log
   END$$
 DELIMITER ;
 
-drop trigger if exists after_problem_update;
+drop trigger if exists after_medication_amount_update;
 
 DELIMITER $$
-CREATE TRIGGER after_problem_update
-  AFTER UPDATE ON problem
+CREATE TRIGGER after_medication_amount_update
+  AFTER UPDATE ON medication_amount
   FOR EACH ROW
   BEGIN
     INSERT INTO event_log
       select
         null,
-        o.owning_organisation_id,
+        p.organisation_id,
         now(),
         OLD.entered_by_practitioner_id,
         0,
         0,
-        34,
+        43,
         OLD.id
-      from observation o
-      where o.id = OLD.observation_id;    -- use to derive the organisation_id for the event_log
+      from patient p
+      where p.id = OLD.patient_id;    -- use to derive the organisation_id for the event_log
   END$$
 DELIMITER ;
 
-drop trigger if exists after_problem_delete;
+drop trigger if exists after_medication_amount_delete;
 
 DELIMITER $$
-CREATE TRIGGER after_problem_delete
-  AFTER DELETE ON problem
+CREATE TRIGGER after_medication_amount_delete
+  AFTER DELETE ON medication_amount
   FOR EACH ROW
   BEGIN
     INSERT INTO event_log
       select
         null,
-        o.owning_organisation_id,
+        p.organisation_id,
         now(),
         OLD.entered_by_practitioner_id,
         0,
         1,
-        34,
+        43,
         OLD.id
-      from observation o
-      where o.id = OLD.observation_id;    -- use to derive the organisation_id for the event_log
+      from patient p
+      where p.id = OLD.patient_id;    -- use to derive the organisation_id for the event_log
+  END$$
+DELIMITER ;
+
+drop trigger if exists after_medication_statement_insert;
+
+DELIMITER $$
+CREATE TRIGGER after_medication_statement_insert
+  AFTER INSERT ON medication_statement
+  FOR EACH ROW
+  BEGIN
+    INSERT INTO event_log
+    set
+      organisation_id = NEW.owning_organisation_id,
+      entry_date = now(),
+      entered_by_practitioner_id  = NEW.entered_by_practitioner_id,
+      device_id = 0,
+      entry_mode = 0,
+      table_id = 44,
+      item_id = NEW.id;
+  END$$
+DELIMITER ;
+
+drop trigger if exists after_medication_statement_update;
+
+DELIMITER $$
+CREATE TRIGGER after_medication_statement_update
+  AFTER UPDATE ON medication_statement
+  FOR EACH ROW
+  BEGIN
+    INSERT INTO event_log
+    set
+      organisation_id = OLD.owning_organisation_id,
+      entry_date = now(),
+      entered_by_practitioner_id  = OLD.entered_by_practitioner_id,
+      device_id = 0,
+      entry_mode = 0,
+      table_id = 44,
+      item_id = OLD.id;
+  END$$
+DELIMITER ;
+
+drop trigger if exists after_medication_statement_delete;
+
+DELIMITER $$
+CREATE TRIGGER after_medication_statement_delete
+  AFTER DELETE ON medication_statement
+  FOR EACH ROW
+  BEGIN
+    INSERT INTO event_log
+    set
+      organisation_id = OLD.owning_organisation_id,
+      entry_date = now(),
+      entered_by_practitioner_id  = OLD.entered_by_practitioner_id,
+      device_id = 0,
+      entry_mode = 1,
+      table_id = 44,
+      item_id = OLD.id;
+  END$$
+DELIMITER ;
+
+drop trigger if exists after_medication_order_insert;
+
+DELIMITER $$
+CREATE TRIGGER after_medication_order_insert
+  AFTER INSERT ON medication_order
+  FOR EACH ROW
+  BEGIN
+    INSERT INTO event_log
+    set
+      organisation_id = NEW.owning_organisation_id,
+      entry_date = now(),
+      entered_by_practitioner_id  = NEW.entered_by_practitioner_id,
+      device_id = 0,
+      entry_mode = 0,
+      table_id = 45,
+      item_id = NEW.id;
+  END$$
+DELIMITER ;
+
+drop trigger if exists after_medication_order_update;
+
+DELIMITER $$
+CREATE TRIGGER after_medication_order_update
+  AFTER UPDATE ON medication_order
+  FOR EACH ROW
+  BEGIN
+    INSERT INTO event_log
+    set
+      organisation_id = OLD.owning_organisation_id,
+      entry_date = now(),
+      entered_by_practitioner_id  = OLD.entered_by_practitioner_id,
+      device_id = 0,
+      entry_mode = 0,
+      table_id = 45,
+      item_id = OLD.id;
+  END$$
+DELIMITER ;
+
+drop trigger if exists after_medication_order_delete;
+
+DELIMITER $$
+CREATE TRIGGER after_medication_order_delete
+  AFTER DELETE ON medication_order
+  FOR EACH ROW
+  BEGIN
+    INSERT INTO event_log
+    set
+      organisation_id = OLD.owning_organisation_id,
+      entry_date = now(),
+      entered_by_practitioner_id  = OLD.entered_by_practitioner_id,
+      device_id = 0,
+      entry_mode = 1,
+      table_id = 45,
+      item_id = OLD.id;
   END$$
 DELIMITER ;
