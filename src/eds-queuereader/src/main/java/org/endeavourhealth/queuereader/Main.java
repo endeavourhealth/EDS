@@ -565,7 +565,28 @@ public class Main {
 
 		if (parser instanceof AbstractFixedParser) {
 
-			System.out.println("-- Can't do fixed parser for " + fileType);
+			AbstractFixedParser fixedParser = (AbstractFixedParser)parser;
+			List<FixedParserField> fields = fixedParser.getFieldList();
+
+			String table = fileType.replace(" ", "_");
+			String sql = "CREATE TABLE " + table + " (";
+
+			sql += "file_name varchar(100)";
+			for (FixedParserField field: fields) {
+				String col = field.getName();
+				int len = field.getFieldlength();
+				sql += ", ";
+				sql += col.replace(" ", "_").replace("#", "");
+				sql += " varchar(";
+				sql += len;
+				sql += ")";
+			}
+
+			sql += ");";
+			/*LOG.debug("-- fileType");
+			LOG.debug(sql);*/
+			System.out.println("-- " + fileType);
+			System.out.println(sql);
 
 		} else {
 			String table = fileType.replace(" ", "_");
@@ -575,7 +596,7 @@ public class Main {
 			List<String> cols = parser.getColumnHeaders();
 			for (String col: cols) {
 				sql += ", ";
-				sql += col.replace(" ", "_");
+				sql += col.replace(" ", "_").replace("#", "");
 				sql += " varchar(100)";
 			}
 
@@ -638,8 +659,9 @@ public class Main {
 					} else {
 
 						File f = new File(path);
-						String parent = f.getParent();
-						Date extractDate = sdf.parse(parent);
+						File parentFile = f.getParentFile();
+						String parentDir = parentFile.getName();
+						Date extractDate = sdf.parse(parentDir);
 						if (!extractDate.before(startDate)
 								&& !extractDate.after(endDate)) {
 							processFile = true;
@@ -699,7 +721,7 @@ public class Main {
 		List<String> cols = parser.getColumnHeaders();
 		for (String col: cols) {
 			sql += ", ";
-			sql += col.replace(" ", "_");
+			sql += col.replace(" ", "_").replace("#", "");
 		}
 		sql += ") VALUES (";
 		sql += "?";
