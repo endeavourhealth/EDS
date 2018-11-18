@@ -563,6 +563,8 @@ public class Main {
 			return;
 		}
 
+		//String dropSql
+
 		if (parser instanceof AbstractFixedParser) {
 
 			AbstractFixedParser fixedParser = (AbstractFixedParser)parser;
@@ -697,7 +699,8 @@ public class Main {
 			parser = constructor.newInstance(null, null, null, null, filePath);
 
 		} catch (ClassNotFoundException cnfe) {
-			throw new TransformException("No parser for file type [" + fileType + "]");
+			LOG.error("No parser for file type [" + fileType + "]");
+			return;
 		}
 
 		String table = fileType.replace(" ", "_");
