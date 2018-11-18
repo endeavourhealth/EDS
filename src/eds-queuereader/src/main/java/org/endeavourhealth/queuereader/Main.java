@@ -462,14 +462,18 @@ public class Main {
 				&& args[0].equalsIgnoreCase("LoadBartsData")) {
 			String serviceId = args[1];
 			String systemId = args[2];
-			String sourcePath = args[3];
-			String dbUrl = args[4];
-			String dbUsername = args[5];
-			String dbPassword = args[6];
-			loadBartsData(serviceId, systemId, sourcePath, dbUrl, dbUsername, dbPassword);
+			String dbUrl = args[3];
+			String dbUsername = args[4];
+			String dbPassword = args[5];
+			loadBartsData(serviceId, systemId, dbUrl, dbUsername, dbPassword);
 			System.exit(0);
 		}
 
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("CreateBartsDataTables")) {
+			createBartsDataTables();
+			System.exit(0);
+		}
 
 		if (args.length != 1) {
 			LOG.error("Usage: queuereader config_id");
@@ -496,25 +500,98 @@ public class Main {
 		LOG.info("EDS Queue reader running (kill file location " + TransformConfig.instance().getKillFileLocation() + ")");
 	}
 
+	private static void createBartsDataTables() {
+		LOG.debug("Creating Barts data tables");
+		try {
+			List<String> fileTypes = new ArrayList<>();
+			fileTypes.add("AEATT");
+			fileTypes.add("Birth");
+			//fileTypes.add("BulkDiagnosis");
+			//fileTypes.add("BulkProblem");
+			//fileTypes.add("BulkProcedure");
+			fileTypes.add("CLEVE");
+			fileTypes.add("CVREF");
+			fileTypes.add("Diagnosis");
+			fileTypes.add("ENCINF");
+			fileTypes.add("ENCNT");
+			fileTypes.add("FamilyHistory");
+			fileTypes.add("IPEPI");
+			fileTypes.add("IPWDS");
+			fileTypes.add("LOREF");
+			fileTypes.add("NOMREF");
+			fileTypes.add("OPATT");
+			fileTypes.add("ORGREF");
+			fileTypes.add("PPADD");
+			fileTypes.add("PPAGP");
+			fileTypes.add("PPALI");
+			fileTypes.add("PPINF");
+			fileTypes.add("PPNAM");
+			fileTypes.add("PPPHO");
+			fileTypes.add("PPREL");
+			fileTypes.add("Pregnancy");
+			fileTypes.add("Problem");
+			fileTypes.add("PROCE");
+			fileTypes.add("Procedure");
+			fileTypes.add("PRSNLREF");
+			fileTypes.add("SusEmergency");
+			fileTypes.add("SusInpatient");
+			fileTypes.add("SusOutpatient");
+			//fileTypes.add("Tails"); TODO - have three separate tails files
 
+			for (String fileType: fileTypes) {
+				createBartsDataTable(fileType);
+			}
 
-	private static void loadBartsData(String serviceId, String systemId, String sourcePath, String dbUrl, String dbUsername, String dbPassword) {
-		LOG.debug("Loading Barts data from " + sourcePath + " into " + dbUrl);
+			LOG.debug("Finished Creating Barts data tables");
+		} catch (Throwable t) {
+			 LOG.error("", t);
+		}
+	}
+
+	private static void createBartsDataTable(String fileType) throws Exception {
+		ParserI parser = null;
+		try {
+			String clsName = "org.endeavourhealth.transform.barts.schema." + fileType;
+			Class cls = Class.forName(clsName);
+
+			//now construct an instance of the parser for the file we've found
+			Constructor<AbstractCsvParser> constructor = cls.getConstructor(UUID.class, UUID.class, UUID.class, String.class, String.class);
+			parser = constructor.newInstance(null, null, null, null, null);
+
+		} catch (ClassNotFoundException cnfe) {
+			System.out.println("-- No parser for file type [" + fileType + "]");
+			return;
+		}
+
+		if (parser instanceof AbstractFixedParser) {
+
+			System.out.println("-- Can't do fixed parser for " + fileType);
+
+		} else {
+			String table = fileType.replace(" ", "_");
+			String sql = "CREATE TABLE " + table + " (";
+
+			sql += "file_name varchar(100)";
+			List<String> cols = parser.getColumnHeaders();
+			for (String col: cols) {
+				sql += ", ";
+				sql += col.replace(" ", "_");
+				sql += " varchar(100)";
+			}
+
+			sql += ");";
+			/*LOG.debug("-- fileType");
+			LOG.debug(sql);*/
+			System.out.println("-- " + fileType);
+			System.out.println(sql);
+		}
+
+	}
+
+	private static void loadBartsData(String serviceId, String systemId, String dbUrl, String dbUsername, String dbPassword) {
+		LOG.debug("Loading Barts data from into " + dbUrl);
 		try {
 
-			//hash file type of every file
-			Map<String, String> hmTypes = new HashMap<>();
-			ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
-			List<Exchange> exchanges = exchangeDal.getExchangesByService(UUID.fromString(serviceId), UUID.fromString(systemId), Integer.MAX_VALUE);
-			for (Exchange exchange: exchanges) {
-				String exchangeBody = exchange.getBody();
-				List<ExchangePayloadFile> files = ExchangeHelper.parseExchangeBody(exchangeBody);
-				for (ExchangePayloadFile file: files) {
-					String name = FilenameUtils.getName(file.getPath());
-					String type = file.getType();
-					hmTypes.put(name, type);
-				}
-			}
 
 			//open connection
 			Class.forName("com.mysql.cj.jdbc.Driver");
@@ -531,49 +608,77 @@ public class Main {
 
             Connection conn = EnterpriseFiler.openConnection(config);*/
 
-			//go through files
-			File src = new File(sourcePath);
-			loadBartsDataFromFile(src, hmTypes, conn);
+			//hash file type of every file
+			ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
+			List<Exchange> exchanges = exchangeDal.getExchangesByService(UUID.fromString(serviceId), UUID.fromString(systemId), Integer.MAX_VALUE);
+
+			SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+			Date startDate = sdf.parse("2018-09-24");
+			Date endDate = sdf.parse("2018-09-30");
+
+
+			for (int i=exchanges.size()-1; i>=0; i--) {
+				Exchange exchange = exchanges.get(i);
+				String exchangeBody = exchange.getBody();
+				List<ExchangePayloadFile> files = ExchangeHelper.parseExchangeBody(exchangeBody);
+
+				if (files.isEmpty()) {
+					continue;
+				}
+
+				for (ExchangePayloadFile file: files) {
+					String type = file.getType();
+					String path = file.getPath();
+
+					boolean processFile = false;
+					if (type.equalsIgnoreCase("CVREF")
+							|| type.equalsIgnoreCase("PRSNLREF")) {
+						processFile = true;
+
+					} else {
+
+						File f = new File(path);
+						String parent = f.getParent();
+						Date extractDate = sdf.parse(parent);
+						if (!extractDate.before(startDate)
+								&& !extractDate.after(endDate)) {
+							processFile = true;
+						}
+					}
+
+					if (processFile) {
+						loadBartsDataFromFile(conn, path, type);
+					}
+				}
+			}
 
 			conn.close();
 
-			LOG.debug("Finished Loading Barts data from " + sourcePath + " into " + dbUrl);
+			LOG.debug("Finished Loading Barts data from into " + dbUrl);
 		} catch (Throwable t) {
 			LOG.error("", t);
 		}
 	}
 
-	private static void loadBartsDataFromFile(File src, Map<String, String> hmTypes, Connection conn) throws Exception {
-		if (src.isDirectory()) {
-			for (File child: src.listFiles()) {
-				loadBartsDataFromFile(child, hmTypes, conn);
-			}
-			return;
-		}
+	private static void loadBartsDataFromFile(Connection conn, String filePath, String fileType) throws Exception {
+		LOG.debug("Loading " + fileType + ": " + filePath);
 
-		LOG.debug("Loading " + src);
-
-		//identify file type
-		String type = hmTypes.get(src.getName());
-
-		if (Strings.isNullOrEmpty(type)) {
-			LOG.debug("Unknown type for " + src);
-		}
+		String fileName = FilenameUtils.getName(filePath);
 
 		ParserI parser = null;
 		try {
-			String clsName = "org.endeavourhealth.transform.barts.schema." + type;
+			String clsName = "org.endeavourhealth.transform.barts.schema." + fileType;
 			Class cls = Class.forName(clsName);
 
 			//now construct an instance of the parser for the file we've found
 			Constructor<AbstractCsvParser> constructor = cls.getConstructor(UUID.class, UUID.class, UUID.class, String.class, String.class);
-			parser = constructor.newInstance(null, null, null, null, src.getAbsolutePath());
+			parser = constructor.newInstance(null, null, null, null, filePath);
 
 		} catch (ClassNotFoundException cnfe) {
-			throw new TransformException("No parser for file type [" + type + "]");
+			throw new TransformException("No parser for file type [" + fileType + "]");
 		}
 
-		String table = type.replace(" ", "_");
+		String table = fileType.replace(" ", "_");
 
 		//check table is there
 		String sql = "SELECT 1 FROM information_schema.tables WHERE table_schema = database() AND table_name = '" + table + "' LIMIT 1";
@@ -590,19 +695,16 @@ public class Main {
 
 		//create insert statement
 		sql = "INSERT INTO " + table + " (";
+		sql += "file_name";
 		List<String> cols = parser.getColumnHeaders();
-		for (int i=0; i<cols.size(); i++) {
-			String col = cols.get(i);
-			if (i>0) {
-				sql += ", ";
-			}
+		for (String col: cols) {
+			sql += ", ";
 			sql += col.replace(" ", "_");
 		}
 		sql += ") VALUES (";
-		for (int i=0; i<cols.size(); i++) {
-			if (i>0) {
-				sql += ", ";
-			}
+		sql += "?";
+		for (String col: cols) {
+			sql += ", ";
 			sql += "?";
 		}
 		sql += ")";
@@ -616,10 +718,9 @@ public class Main {
 			int col = 1;
 
 			//file name is always first
-			ps.setString(col++, src.getName());
+			ps.setString(col++, fileName);
 
-			for (int i=0; i<cols.size(); i++) {
-				String colName = cols.get(i);
+			for (String colName: cols) {
 				CsvCell cell = parser.getCell(colName);
 				if (cell == null) {
 					ps.setNull(col++, Types.VARCHAR);
@@ -648,11 +749,7 @@ public class Main {
 
 		ps.close();
 
-		if (!src.delete()) {
-			throw new Exception("Failed to delete " + src);
-		}
-
-		LOG.debug("Finished " + src + " with " + done + " rows");
+		LOG.debug("Finished " + fileType + ": " + filePath);
 	}
 
 
