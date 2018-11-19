@@ -120,16 +120,16 @@ ON enterprise_instance_map (resource_type, mapping_value);
 
 CREATE TABLE pcr_id_map
 (
-  id            bigint      NOT NULL COMMENT 'ID in PCR',
   resource_id   varchar(36) NOT NULL COMMENT 'resourceId from source',
   resource_type varchar(50) NOT NULL COMMENT 'resource type from source',
-  source_db     int         NOT NULL COMMENT 'Pointer to pcr_db_map reference to source db',
+  pcr_id        bigint      NOT NULL COMMENT 'ID in PCR',
+  -- source_db     int         NOT NULL COMMENT 'Pointer to pcr_db_map reference to source db',
   CONSTRAINT pk_pcr_id_map PRIMARY KEY (resource_id, resource_type)
 )  COMMENT 'To track PCR data back to source';
 
 -- this unique index is required to make the column auto-increment
 CREATE UNIQUE INDEX uix_pcr_id_map_auto_increment
-  ON pcr_id_map (id);
+  ON pcr_id_map (pcr_id);
 
-ALTER TABLE pcr_id_map MODIFY COLUMN id bigint auto_increment;
+ALTER TABLE pcr_id_map MODIFY COLUMN pcr_id bigint auto_increment;
 
