@@ -1100,13 +1100,13 @@ CREATE TABLE event_log
   REFERENCES pcr_tables (id)
 ) AUTO_INCREMENT=1 COMMENT 'represents the transaction log of all core table entries';
 
-CREATE TABLE pcr_id_map
-(
-  id           int          NOT NULL COMMENT 'ID in PCR',
-  resourceId   varchar(255) NOT NULL COMMENT 'resourceId from source',
-  resourceType varchar(255) NOT NULL COMMENT 'resource type from source',
-  sourceDb     int          NOT NULL COMMENT 'Pointer to pcr_db_map reference to source db'
-) COMMENT 'To track PCR data back to source';
+# CREATE TABLE pcr_id_map - MOVED TO SUBSCRIBER_TRANSFORM
+# (
+#   id           int          NOT NULL COMMENT 'ID in PCR',
+#   resourceId   varchar(255) NOT NULL COMMENT 'resourceId from source',
+#   resourceType varchar(255) NOT NULL COMMENT 'resource type from source',
+#   sourceDb     int          NOT NULL COMMENT 'Pointer to pcr_db_map reference to source db'
+# ) COMMENT 'To track PCR data back to source';
 
 CREATE TABLE pcr_db_map
 (
