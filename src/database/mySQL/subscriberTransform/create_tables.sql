@@ -10,6 +10,7 @@ DROP TABLE IF EXISTS enterprise_person_update_history;
 DROP TABLE IF EXISTS exchange_batch_extra_resources;
 DROP TABLE IF EXISTS enterprise_instance_map;
 DROP TABLE IF EXISTS vitru_care_patient_id_map;
+DROP TABLE IF EXISTS pcr_id_map;
 
 CREATE TABLE enterprise_id_map
 (
@@ -131,5 +132,4 @@ CREATE TABLE pcr_id_map
 CREATE UNIQUE INDEX uix_pcr_id_map_auto_increment
   ON pcr_id_map (pcr_id);
 
-ALTER TABLE pcr_id_map MODIFY COLUMN pcr_id bigint auto_increment;
-
+ALTER TABLE pcr_id_map MODIFY COLUMN pcr_id int auto_increment;
