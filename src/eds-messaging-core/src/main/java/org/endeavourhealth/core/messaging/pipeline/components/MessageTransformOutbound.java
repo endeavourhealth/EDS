@@ -33,6 +33,7 @@ import org.endeavourhealth.core.xml.TransformErrorUtility;
 import org.endeavourhealth.core.xml.transformError.TransformError;
 import org.endeavourhealth.transform.common.MessageFormat;
 import org.endeavourhealth.transform.enterprise.FhirToEnterpriseCsvTransformer;
+import org.endeavourhealth.transform.pcr.FhirToPcrCsvTransformer;
 import org.endeavourhealth.transform.vitrucare.FhirToVitruCareXmlTransformer;
 import org.hl7.fhir.instance.model.Patient;
 import org.hl7.fhir.instance.model.ResourceType;
@@ -181,6 +182,13 @@ public class MessageTransformOutbound extends PipelineComponent {
 			//have to pass in the exchange body now
 			String body = exchange.getBody();
 			return FhirToEnterpriseCsvTransformer.transformFromFhir(serviceId, systemId, exchangeId, batchId, filteredResources, endpoint, protocolId, body);
+
+		} else if (software.equals(MessageFormat.PCR_CSV)) {
+
+			UUID systemId = exchange.getHeaderAsUuid(HeaderKeys.SenderSystemUuid);
+			String body = exchange.getBody();
+
+			return FhirToPcrCsvTransformer.transformFromFhir(serviceId, systemId, exchangeId, batchId, filteredResources, endpoint, protocolId, body);
 
 		} else if (software.equals(MessageFormat.VITRUICARE_XML)) {
 			return FhirToVitruCareXmlTransformer.transformFromFhir(serviceId, batchId, filteredResources, endpoint);
