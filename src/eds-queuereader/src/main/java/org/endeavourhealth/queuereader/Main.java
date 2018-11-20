@@ -612,9 +612,7 @@ public class Main {
 		try {
 
 
-			//open connection
-			Class.forName("com.mysql.cj.jdbc.Driver");
-			Connection conn = DriverManager.getConnection(dbUrl, dbUsername, dbPassword);
+
 
             /*JsonNodeFactory f = JsonNodeFactory.withExactBigDecimals(false);
             ObjectNode config = new ObjectNode(f);
@@ -630,6 +628,10 @@ public class Main {
 			//hash file type of every file
 			ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
 			List<Exchange> exchanges = exchangeDal.getExchangesByService(UUID.fromString(serviceId), UUID.fromString(systemId), Integer.MAX_VALUE);
+
+			//open connection
+			Class.forName("com.mysql.cj.jdbc.Driver");
+			Connection conn = DriverManager.getConnection(dbUrl, dbUsername, dbPassword);
 
 			SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
 			Date startDate = sdf.parse("2018-09-24");
