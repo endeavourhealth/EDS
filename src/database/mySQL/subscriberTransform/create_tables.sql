@@ -11,6 +11,13 @@ DROP TABLE IF EXISTS exchange_batch_extra_resources;
 DROP TABLE IF EXISTS enterprise_instance_map;
 DROP TABLE IF EXISTS vitru_care_patient_id_map;
 DROP TABLE IF EXISTS pcr_id_map;
+DROP TABLE IF EXISTS pcr_organisation_id_map;
+DROP TABLE IF EXISTS pcr_person_id_map;
+DROP TABLE IF EXISTS pcr_person_update_history;
+DROP TABLE IF EXISTS pcr_instance_map;
+DROP TABLE IF EXISTS pcr_free_text_id_map;
+DROP TABLE IF EXISTS pcr_practitioner_id_map;
+DROP TABLE IF EXISTS pcr_event_id_map;
 
 CREATE TABLE enterprise_id_map
 (
@@ -132,7 +139,7 @@ CREATE TABLE pcr_id_map
 CREATE UNIQUE INDEX uix_pcr_id_map_auto_increment
   ON pcr_id_map (pcr_id);
 
-ALTER TABLE pcr_id_map MODIFY COLUMN pcr_id int auto_increment;
+ALTER TABLE pcr_id_map MODIFY COLUMN pcr_id bigint auto_increment;
 
 CREATE TABLE pcr_organisation_id_map
 (
@@ -152,7 +159,7 @@ CREATE TABLE pcr_person_id_map
 CREATE UNIQUE INDEX uix_pcr_person_id_map_auto_increment
   ON pcr_person_id_map (pcr_person_id);
 
-ALTER TABLE pcr_person_id_map MODIFY COLUMN pcr_person_id INT auto_increment;
+ALTER TABLE pcr_person_id_map MODIFY COLUMN pcr_person_id bigint auto_increment;
 
 
 CREATE TABLE pcr_person_update_history
@@ -172,3 +179,50 @@ CREATE TABLE pcr_instance_map
 
 CREATE INDEX ix_pcr_instance_map_type_value
   ON pcr_instance_map (resource_type, mapping_value);
+
+
+CREATE TABLE pcr_free_text_id_map
+(
+  resource_id   varchar(36) NOT NULL COMMENT 'resourceId from source',
+  resource_type varchar(50) NOT NULL COMMENT 'resource type from source',
+  pcr_id        bigint      NOT NULL COMMENT 'ID in PCR',
+  -- source_db     int         NOT NULL COMMENT 'Pointer to pcr_db_map reference to source db',
+  CONSTRAINT pk_pcr_free_text_id_map PRIMARY KEY (resource_id, resource_type)
+)  COMMENT 'To track PCR data back to source';
+
+-- this unique index is required to make the column auto-increment
+CREATE UNIQUE INDEX uix_pcr_free_text_id_map_auto_increment
+  ON pcr_free_text_id_map (pcr_id);
+
+ALTER TABLE pcr_free_text_id_map MODIFY COLUMN pcr_id bigint auto_increment;
+
+
+CREATE TABLE pcr_practitioner_id_map
+(
+  resource_id   varchar(36) NOT NULL COMMENT 'resourceId from source',
+  resource_type varchar(50) NOT NULL COMMENT 'resource type from source',
+  pcr_id        bigint      NOT NULL COMMENT 'ID in PCR',
+  -- source_db     int         NOT NULL COMMENT 'Pointer to pcr_db_map reference to source db',
+  CONSTRAINT pk_pcr_practitioner_id_map PRIMARY KEY (resource_id, resource_type)
+)  COMMENT 'To track PCR data back to source';
+
+-- this unique index is required to make the column auto-increment
+CREATE UNIQUE INDEX uix_pcr_practitioner_id_map_auto_increment
+  ON pcr_practitioner_id_map (pcr_id);
+
+ALTER TABLE pcr_practitioner_id_map MODIFY COLUMN pcr_id bigint auto_increment;
+
+CREATE TABLE pcr_event_id_map
+(
+  resource_id   varchar(36) NOT NULL COMMENT 'resourceId from source',
+  resource_type varchar(50) NOT NULL COMMENT 'resource type from source',
+  pcr_id        bigint      NOT NULL COMMENT 'ID in PCR',
+  -- source_db     int         NOT NULL COMMENT 'Pointer to pcr_db_map reference to source db',
+  CONSTRAINT pk_pcr_event_id_map PRIMARY KEY (resource_id, resource_type)
+)  COMMENT 'To track PCR data back to source';
+
+-- this unique index is required to make the column auto-increment
+CREATE UNIQUE INDEX uix_pcr_event_id_map_auto_increment
+  ON pcr_event_id_map (pcr_id);
+
+ALTER TABLE pcr_event_id_map MODIFY COLUMN pcr_id bigint auto_increment;
