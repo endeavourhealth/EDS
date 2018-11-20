@@ -610,21 +610,6 @@ public class Main {
 	private static void loadBartsData(String serviceId, String systemId, String dbUrl, String dbUsername, String dbPassword) {
 		LOG.debug("Loading Barts data from into " + dbUrl);
 		try {
-
-
-
-
-            /*JsonNodeFactory f = JsonNodeFactory.withExactBigDecimals(false);
-            ObjectNode config = new ObjectNode(f);
-            config.put("enterprise_url", dbUrl);
-            config.put("driverClass", "com.mysql.cj.jdbc.Driver");
-            config.put("enterprise_username", dbUsername);
-            config.put("enterprise_password", dbPassword);
-
-            //JsonNode config = ConfigManager.getConfigurationAsJson("mysql_pseudo", "db_subscriber");
-
-            Connection conn = EnterpriseFiler.openConnection(config);*/
-
 			//hash file type of every file
 			ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
 			List<Exchange> exchanges = exchangeDal.getExchangesByService(UUID.fromString(serviceId), UUID.fromString(systemId), Integer.MAX_VALUE);
@@ -634,7 +619,7 @@ public class Main {
 			Connection conn = DriverManager.getConnection(dbUrl, dbUsername, dbPassword);
 
 			SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-			Date startDate = sdf.parse("2018-09-24");
+			Date startDate = sdf.parse("2018-09-17");
 			Date endDate = sdf.parse("2018-09-30");
 
 
@@ -717,7 +702,7 @@ public class Main {
 		}
 
 		//create insert statement
-		sql = "INSERT INTO " + table + " (";
+		sql = "INSERT INTO `" + table + "` (";
 		sql += "file_name";
 		List<String> cols = parser.getColumnHeaders();
 		for (String col: cols) {
