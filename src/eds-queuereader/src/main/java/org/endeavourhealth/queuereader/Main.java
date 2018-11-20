@@ -549,6 +549,7 @@ public class Main {
 	}
 
 	private static void createBartsDataTable(String fileType) throws Exception {
+
 		ParserI parser = null;
 		try {
 			String clsName = "org.endeavourhealth.transform.barts.schema." + fileType;
@@ -563,14 +564,18 @@ public class Main {
 			return;
 		}
 
-		//String dropSql
+		System.out.println("-- " + fileType);
+
+		String table = fileType.replace(" ", "_");
+
+		String dropSql = "DROP TABLE IF EXISTS " + table + ";";
+		System.out.println(dropSql);
 
 		if (parser instanceof AbstractFixedParser) {
 
 			AbstractFixedParser fixedParser = (AbstractFixedParser)parser;
 			List<FixedParserField> fields = fixedParser.getFieldList();
 
-			String table = fileType.replace(" ", "_");
 			String sql = "CREATE TABLE " + table + " (";
 
 			sql += "file_name varchar(100)";
@@ -587,11 +592,10 @@ public class Main {
 			sql += ");";
 			/*LOG.debug("-- fileType");
 			LOG.debug(sql);*/
-			System.out.println("-- " + fileType);
+
 			System.out.println(sql);
 
 		} else {
-			String table = fileType.replace(" ", "_");
 			String sql = "CREATE TABLE " + table + " (";
 
 			sql += "file_name varchar(100)";
@@ -605,7 +609,6 @@ public class Main {
 			sql += ");";
 			/*LOG.debug("-- fileType");
 			LOG.debug(sql);*/
-			System.out.println("-- " + fileType);
 			System.out.println(sql);
 		}
 
@@ -736,43 +739,48 @@ public class Main {
 		PreparedStatement ps = conn.prepareStatement(sql);
 
 		//load table
-		int done = 0;
-		int currentBatchSize = 0;
-		while (parser.nextRecord()) {
+		try {
+			int done = 0;
+			int currentBatchSize = 0;
+			while (parser.nextRecord()) {
 
-			int col = 1;
+				int col = 1;
 
-			//file name is always first
-			ps.setString(col++, fileName);
+				//file name is always first
+				ps.setString(col++, fileName);
 
-			for (String colName: cols) {
-				CsvCell cell = parser.getCell(colName);
-				if (cell == null) {
-					ps.setNull(col++, Types.VARCHAR);
-				} else {
-					ps.setString(col++, cell.getString());
+				for (String colName : cols) {
+					CsvCell cell = parser.getCell(colName);
+					if (cell == null) {
+						ps.setNull(col++, Types.VARCHAR);
+					} else {
+						ps.setString(col++, cell.getString());
+					}
+				}
+
+				ps.addBatch();
+				currentBatchSize++;
+
+				if (currentBatchSize >= 5) {
+					ps.executeBatch();
+					currentBatchSize = 0;
+				}
+
+				done++;
+				if (done % 1000 == 0) {
+					LOG.debug("Done " + done);
 				}
 			}
 
-			ps.addBatch();
-			currentBatchSize ++;
-
-			if (currentBatchSize >= 5) {
+			if (currentBatchSize >= 0) {
 				ps.executeBatch();
-				currentBatchSize = 0;
 			}
 
-			done ++;
-			if (done % 1000 == 0) {
-				LOG.debug("Done " + done);
-			}
+			ps.close();
+		} catch (Throwable t) {
+			LOG.error("Failed on batch with last statement: " + ps);
+			throw t;
 		}
-
-		if (currentBatchSize >= 0) {
-			ps.executeBatch();
-		}
-
-		ps.close();
 
 		LOG.debug("Finished " + fileType + ": " + filePath);
 	}
