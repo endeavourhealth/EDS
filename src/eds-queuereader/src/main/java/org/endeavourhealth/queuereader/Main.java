@@ -4685,6 +4685,8 @@ public class Main {
 
 			LOG.info("Finished - written files to " + tempDir);
 
+			dumpFileSizes(new File(tempDir));
+
 			/*continueOrQuit();
 
 			//back up every file where the service was disabled
@@ -4805,6 +4807,17 @@ public class Main {
 
 		} catch (Exception ex) {
 			LOG.error("", ex);
+		}
+	}
+
+	private static void dumpFileSizes(File f) {
+		if (f.isDirectory()) {
+			for (File child: f.listFiles()) {
+				dumpFileSizes(child);
+			}
+		} else {
+			String totalSizeReadable = FileUtils.byteCountToDisplaySize(f.length());
+			LOG.info("" + f + " = " + totalSizeReadable);
 		}
 	}
 
