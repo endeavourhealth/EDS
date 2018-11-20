@@ -133,3 +133,42 @@ CREATE UNIQUE INDEX uix_pcr_id_map_auto_increment
   ON pcr_id_map (pcr_id);
 
 ALTER TABLE pcr_id_map MODIFY COLUMN pcr_id int auto_increment;
+
+CREATE TABLE pcr_organisation_id_map
+(
+  service_id char(36) NOT NULL,
+  pcr_id bigint NOT NULL,
+  CONSTRAINT pk_pcr_organisation_id_map PRIMARY KEY (service_id)
+);
+
+CREATE TABLE pcr_person_id_map
+(
+  person_id char(36) NOT NULL,
+  pcr_person_id bigint NOT NULL,
+  CONSTRAINT pk_pcr_person_id_map PRIMARY KEY (person_id)
+);
+
+-- this unique index is needed to make the column auto-increment
+CREATE UNIQUE INDEX uix_pcr_person_id_map_auto_increment
+  ON pcr_person_id_map (pcr_person_id);
+
+ALTER TABLE pcr_person_id_map MODIFY COLUMN pcr_person_id INT auto_increment;
+
+
+CREATE TABLE pcr_person_update_history
+(
+  date_run timestamp NOT NULL,
+  CONSTRAINT pk_pcr_person_update_history PRIMARY KEY (date_run)
+);
+
+CREATE TABLE pcr_instance_map
+(
+  resource_type varchar(50) NOT NULL,
+  resource_id_from char(36) NOT NULL,
+  resource_id_to char(36),
+  mapping_value varchar(1000),
+  CONSTRAINT pk_pcr_instance_map PRIMARY KEY (resource_id_from, resource_type)
+);
+
+CREATE INDEX ix_pcr_instance_map_type_value
+  ON pcr_instance_map (resource_type, mapping_value);
