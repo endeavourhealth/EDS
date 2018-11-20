@@ -568,17 +568,18 @@ public class Main {
 
 		String table = fileType.replace(" ", "_");
 
-		String dropSql = "DROP TABLE IF EXISTS " + table + ";";
+		String dropSql = "DROP TABLE IF EXISTS `" + table + "`;";
 		System.out.println(dropSql);
+
+		String sql = "CREATE TABLE `" + table + "` (";
+
+		sql += "file_name varchar(100)";
 
 		if (parser instanceof AbstractFixedParser) {
 
 			AbstractFixedParser fixedParser = (AbstractFixedParser)parser;
 			List<FixedParserField> fields = fixedParser.getFieldList();
 
-			String sql = "CREATE TABLE " + table + " (";
-
-			sql += "file_name varchar(100)";
 			for (FixedParserField field: fields) {
 				String col = field.getName();
 				int len = field.getFieldlength();
@@ -589,28 +590,20 @@ public class Main {
 				sql += ")";
 			}
 
-			sql += ");";
-			/*LOG.debug("-- fileType");
-			LOG.debug(sql);*/
-
-			System.out.println(sql);
-
 		} else {
-			String sql = "CREATE TABLE " + table + " (";
 
-			sql += "file_name varchar(100)";
 			List<String> cols = parser.getColumnHeaders();
 			for (String col: cols) {
 				sql += ", ";
 				sql += col.replace(" ", "_").replace("#", "");
 				sql += " varchar(100)";
 			}
-
-			sql += ");";
-			/*LOG.debug("-- fileType");
-			LOG.debug(sql);*/
-			System.out.println(sql);
 		}
+
+		sql += ");";
+		/*LOG.debug("-- fileType");
+		LOG.debug(sql);*/
+		System.out.println(sql);
 
 	}
 
