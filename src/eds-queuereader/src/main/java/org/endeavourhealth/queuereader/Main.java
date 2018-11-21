@@ -596,7 +596,7 @@ public class Main {
 			for (String col: cols) {
 				sql += ", ";
 				sql += col.replace(" ", "_").replace("#", "");
-				sql += " varchar(100)";
+				sql += " varchar(255)";
 			}
 		}
 

@@ -44,6 +44,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 
 public class MessageTransformOutbound extends PipelineComponent {
@@ -52,6 +53,7 @@ public class MessageTransformOutbound extends PipelineComponent {
 	private static final ExchangeDalI auditRepository = DalProvider.factoryExchangeDal();
 	private static final ResourceDalI resourceRepository = DalProvider.factoryResourceDal();
 	private static Map<String, Date> patientDOBMap = new HashMap<>();
+	private static Map<String, String> cachedEndpoints = new ConcurrentHashMap<>();
 
 	private MessageTransformOutboundConfig config;
 
@@ -315,17 +317,28 @@ public class MessageTransformOutbound extends PipelineComponent {
 			UUID serviceId = UUID.fromString(contract.getService().getUuid());
 			UUID technicalInterfaceId = UUID.fromString(contract.getTechnicalInterface().getUuid());
 
-			ServiceDalI serviceRepository = DalProvider.factoryServiceDal();
+			String cacheKey = serviceId.toString() + ":" + technicalInterfaceId.toString();
+			String endpoint = cachedEndpoints.get(cacheKey);
+			if (endpoint == null) {
 
-			Service service = serviceRepository.getById(serviceId);
-			List<JsonServiceInterfaceEndpoint> serviceEndpoints = ObjectMapperPool.getInstance().readValue(service.getEndpoints(), new TypeReference<List<JsonServiceInterfaceEndpoint>>() {});
-			for (JsonServiceInterfaceEndpoint serviceEndpoint: serviceEndpoints) {
-				if (serviceEndpoint.getTechnicalInterfaceUuid().equals(technicalInterfaceId)) {
-					return serviceEndpoint.getEndpoint();
+				ServiceDalI serviceRepository = DalProvider.factoryServiceDal();
+
+				Service service = serviceRepository.getById(serviceId);
+				List<JsonServiceInterfaceEndpoint> serviceEndpoints = ObjectMapperPool.getInstance().readValue(service.getEndpoints(), new TypeReference<List<JsonServiceInterfaceEndpoint>>() {});
+				for (JsonServiceInterfaceEndpoint serviceEndpoint: serviceEndpoints) {
+					if (serviceEndpoint.getTechnicalInterfaceUuid().equals(technicalInterfaceId)) {
+						endpoint = serviceEndpoint.getEndpoint();
+
+						//concurrent map can't store null values, so only add to the cache if non-null
+						if (endpoint != null) {
+							cachedEndpoints.put(cacheKey, endpoint);
+						}
+						break;
+					}
 				}
 			}
 
-			return null;
+			return endpoint;
 
 		} catch (Exception ex) {
 			throw new PipelineException("Failed to get endpoint for contract", ex);
