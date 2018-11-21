@@ -584,7 +584,7 @@ public class Main {
 				String col = field.getName();
 				int len = field.getFieldlength();
 				sql += ", ";
-				sql += col.replace(" ", "_").replace("#", "");
+				sql += col.replace(" ", "_").replace("#", "").replace("/", "");
 				sql += " varchar(";
 				sql += len;
 				sql += ")";
@@ -595,7 +595,7 @@ public class Main {
 			List<String> cols = parser.getColumnHeaders();
 			for (String col: cols) {
 				sql += ", ";
-				sql += col.replace(" ", "_").replace("#", "");
+				sql += col.replace(" ", "_").replace("#", "").replace("/", "");
 				sql += " varchar(255)";
 			}
 		}
@@ -707,7 +707,7 @@ public class Main {
 		List<String> cols = parser.getColumnHeaders();
 		for (String col: cols) {
 			sql += ", ";
-			sql += col.replace(" ", "_").replace("#", "");
+			sql += col.replace(" ", "_").replace("#", "").replace("/", "");
 		}
 		sql += ") VALUES (";
 		sql += "?";
