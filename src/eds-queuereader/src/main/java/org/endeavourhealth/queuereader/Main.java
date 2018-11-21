@@ -537,6 +537,11 @@ public class Main {
 			fileTypes.add("SusInpatient");
 			fileTypes.add("SusOutpatient");
 			//fileTypes.add("Tails"); TODO - have three separate tails files
+			fileTypes.add("EventCode");
+			fileTypes.add("EventSetCanon");
+			fileTypes.add("EventSet");
+			fileTypes.add("EventSetExplode");
+			fileTypes.add("BlobContent");
 
 			for (String fileType: fileTypes) {
 				createBartsDataTable(fileType);
@@ -619,8 +624,9 @@ public class Main {
 			Connection conn = DriverManager.getConnection(dbUrl, dbUsername, dbPassword);
 
 			SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-			Date startDate = sdf.parse("2018-09-17");
-			Date endDate = sdf.parse("2018-09-30");
+			Date startDate = sdf.parse("2018-11-01");
+			//Date startDate = sdf.parse("2018-09-17");
+			//Date endDate = sdf.parse("2018-09-30");
 
 
 			for (int i=exchanges.size()-1; i>=0; i--) {
@@ -638,6 +644,8 @@ public class Main {
 
 					boolean processFile = false;
 					if (type.equalsIgnoreCase("CVREF")
+							|| type.equalsIgnoreCase("LOREF")
+							|| type.equalsIgnoreCase("ORGREF")
 							|| type.equalsIgnoreCase("PRSNLREF")) {
 						processFile = true;
 
@@ -647,10 +655,13 @@ public class Main {
 						File parentFile = f.getParentFile();
 						String parentDir = parentFile.getName();
 						Date extractDate = sdf.parse(parentDir);
-						if (!extractDate.before(startDate)
-								&& !extractDate.after(endDate)) {
+						if (!extractDate.before(startDate)) {
 							processFile = true;
 						}
+						/*if (!extractDate.before(startDate)
+								&& !extractDate.after(endDate)) {
+							processFile = true;
+						}*/
 					}
 
 					if (processFile) {
