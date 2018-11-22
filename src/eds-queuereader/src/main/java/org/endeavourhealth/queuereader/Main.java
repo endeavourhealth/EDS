@@ -542,6 +542,20 @@ public class Main {
 			fileTypes.add("EventSet");
 			fileTypes.add("EventSetExplode");
 			fileTypes.add("BlobContent");
+			fileTypes.add("SusInpatientTail");
+			fileTypes.add("SusOutpatientTail");
+			fileTypes.add("SusEmergencyTail");
+			fileTypes.add("AEINV");
+			fileTypes.add("AETRE");
+			fileTypes.add("OPREF");
+			fileTypes.add("STATREF");
+			fileTypes.add("RTTPE");
+			fileTypes.add("PPATH");
+			fileTypes.add("DOCRP");
+			fileTypes.add("SCHAC");
+			fileTypes.add("EALEN");
+			fileTypes.add("DELIV");
+			fileTypes.add("EALOF");
 
 			for (String fileType: fileTypes) {
 				createBartsDataTable(fileType);
@@ -601,7 +615,15 @@ public class Main {
 			for (String col: cols) {
 				sql += ", ";
 				sql += col.replace(" ", "_").replace("#", "").replace("/", "");
-				sql += " varchar(255)";
+
+				if (col.equals("BLOB_CONTENTS")
+						|| col.equals("VALUE_LONG_TXT")
+						|| col.equals("COMMENT_TXT")) {
+
+					sql += " mediumtext";
+				} else {
+					sql += " varchar(255)";
+				}
 			}
 		}
 
@@ -729,6 +751,8 @@ public class Main {
 		sql += ")";
 		PreparedStatement ps = conn.prepareStatement(sql);
 
+		List<String> currentBatchStrs = new ArrayList<>();
+
 		//load table
 		try {
 			int done = 0;
@@ -751,14 +775,16 @@ public class Main {
 
 				ps.addBatch();
 				currentBatchSize++;
+				currentBatchStrs.add((ps.toString())); //for error handling
 
 				if (currentBatchSize >= 5) {
 					ps.executeBatch();
 					currentBatchSize = 0;
+					currentBatchStrs.clear();
 				}
 
 				done++;
-				if (done % 1000 == 0) {
+				if (done % 5000 == 0) {
 					LOG.debug("Done " + done);
 				}
 			}
@@ -769,7 +795,10 @@ public class Main {
 
 			ps.close();
 		} catch (Throwable t) {
-			LOG.error("Failed on batch with last statement: " + ps);
+			LOG.error("Failed on batch with statements:");
+			for (String currentBatchStr: currentBatchStrs) {
+				LOG.error(currentBatchStr);
+			}
 			throw t;
 		}
 
