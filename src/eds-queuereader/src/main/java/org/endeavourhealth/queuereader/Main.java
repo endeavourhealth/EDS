@@ -617,7 +617,9 @@ public class Main {
 				sql += col.replace(" ", "_").replace("#", "").replace("/", "");
 
 				if (col.equals("BLOB_CONTENTS")
-						|| col.equals("VALUE_LONG_TXT")) {
+						|| col.equals("VALUE_LONG_TXT")
+						|| col.equals("COMMENT_TXT")) {
+
 					sql += " mediumtext";
 				} else {
 					sql += " varchar(255)";
@@ -749,6 +751,8 @@ public class Main {
 		sql += ")";
 		PreparedStatement ps = conn.prepareStatement(sql);
 
+		List<String> currentBatchStrs = new ArrayList<>();
+
 		//load table
 		try {
 			int done = 0;
@@ -771,10 +775,12 @@ public class Main {
 
 				ps.addBatch();
 				currentBatchSize++;
+				currentBatchStrs.add((ps.toString())); //for error handling
 
 				if (currentBatchSize >= 5) {
 					ps.executeBatch();
 					currentBatchSize = 0;
+					currentBatchStrs.clear();
 				}
 
 				done++;
@@ -789,7 +795,10 @@ public class Main {
 
 			ps.close();
 		} catch (Throwable t) {
-			LOG.error("Failed on batch with last statement: " + ps);
+			LOG.error("Failed on batch with statements:");
+			for (String currentBatchStr: currentBatchStrs) {
+				LOG.error(currentBatchStr);
+			}
 			throw t;
 		}
 
