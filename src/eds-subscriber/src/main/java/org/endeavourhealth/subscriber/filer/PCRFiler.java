@@ -253,6 +253,8 @@ public class PCRFiler {
                 cls = Long.TYPE;
             } else if (className.equals("boolean")) {
                 cls = Boolean.TYPE;
+            } else if (className.equals("char")) {
+                cls = Character.TYPE;
             } else {
                 cls = Class.forName(className);
             }
