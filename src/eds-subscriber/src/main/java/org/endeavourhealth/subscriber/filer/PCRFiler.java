@@ -342,6 +342,14 @@ public class PCRFiler {
                 boolean b = Boolean.parseBoolean(value);
                 statement.setBoolean(index, b);
             }
+        } else if (fieldCls == Character.class
+                    || fieldCls == Character.TYPE) {
+
+                if (Strings.isNullOrEmpty(value)) {
+                    statement.setNull(index, Types.TINYINT);
+                } else {
+                    statement.setString(index, (String) value);
+                }
 
         } else {
             throw new Exception("Unsupported value class " + fieldCls);
