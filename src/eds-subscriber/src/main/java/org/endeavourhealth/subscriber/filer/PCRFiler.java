@@ -255,6 +255,8 @@ public class PCRFiler {
                 cls = Boolean.TYPE;
             } else if (className.equals("char")) {
                 cls = Character.TYPE;
+            } else if (className.equals("double")) {
+                cls = Double.TYPE;
             } else {
                 cls = Class.forName(className);
             }
