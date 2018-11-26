@@ -19,7 +19,6 @@ DROP TABLE IF EXISTS pcr_free_text_id_map;
 DROP TABLE IF EXISTS pcr_practitioner_id_map;
 DROP TABLE IF EXISTS pcr_event_id_map;
 DROP TABLE IF EXISTS code_set_codes;
-DROP TABLE IF EXISTS code_set_exclusions;
 DROP TABLE IF EXISTS code_set;
 
 CREATE TABLE enterprise_id_map
@@ -242,19 +241,9 @@ CREATE TABLE code_set_codes
   code_set_id int NOT NULL,
   read2_concept_id varchar(12) NOT NULL COLLATE utf8_bin,
   ctv3_concept_id varchar(12) NOT NULL COLLATE utf8_bin,
-  CONSTRAINT pk_code_set PRIMARY KEY (code_set_id, read2_concept_id, ctv3_concept_id),
+  sct_concept_id varchar (18),
+  CONSTRAINT pk_code_set PRIMARY KEY (code_set_id, read2_concept_id, ctv3_concept_id, sct_concept_id),
   CONSTRAINT code_set_codes_code_set_id
-  FOREIGN KEY (code_set_id)
-  REFERENCES code_set (id)
-);
-
-CREATE TABLE code_set_exclusions
-(
-  code_set_id int NOT NULL,
-  read2_concept_id varchar(12) NOT NULL COLLATE utf8_bin,
-  ctv3_concept_id varchar(12) NOT NULL COLLATE utf8_bin,
-  CONSTRAINT pk_code_set PRIMARY KEY (code_set_id, read2_concept_id, ctv3_concept_id),
-  CONSTRAINT code_set_exclusions_code_set_id
   FOREIGN KEY (code_set_id)
   REFERENCES code_set (id)
 );
