@@ -14,7 +14,7 @@ export class ServiceService extends BaseHttp2Service {
 	serviceNameFilter: string;
 	servicePublisherConfigFilter: string;
 	serviceHasErrorsFilter: boolean;
-	allPublisherConfigNames: string[];
+	serviceCcgCodeFilter: string;
 
 	constructor(http : Http) {
 		super (http);
@@ -108,6 +108,13 @@ export class ServiceService extends BaseHttp2Service {
 				if (vm.servicePublisherConfigFilter) {
 					var publisherConfigName = service.publisherConfigName;
 					if (!publisherConfigName || publisherConfigName != vm.servicePublisherConfigFilter) {
+						continue;
+					}
+				}
+
+				if (vm.serviceCcgCodeFilter) {
+					var ccgCode = service.ccgCode;
+					if (!ccgCode || ccgCode != vm.serviceCcgCodeFilter) {
 						continue;
 					}
 				}

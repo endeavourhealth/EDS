@@ -10,6 +10,7 @@ import {ServiceService} from "./service.service";
 import {OrganisationPickerDialog} from "../organisations/organisationPicker.dialog";
 import {AdminService, LoggerService, MessageBoxDialog} from "eds-common-js";
 import {SystemService} from "../system/system.service";
+import {OrganisationService} from "../organisations/organisation.service";
 
 @Component({
 	template : require('./serviceEditor.html')
@@ -29,6 +30,7 @@ export class ServiceEditComponent {
 							private adminService : AdminService,
 							private serviceService : ServiceService,
 							private systemService : SystemService,
+							private organisationService : OrganisationService,
 							private transition : Transition) {
 
 		this.loadSystems();
@@ -149,6 +151,75 @@ export class ServiceEditComponent {
 			.result.then(function (result : Organisation[]) {
 			vm.organisations = result;
 		});
+	}
+
+	/**
+	 * attempts to automatically match to an existing organisation or creates one otherwise
+	 */
+	private autoSetOrganisation() {
+
+		//console.log('auto org');
+		//ensure got an ODS code
+		var vm = this;
+
+		if (vm.organisations.length > 0) {
+			vm.log.error('Organisation already set');
+			return;
+		}
+
+		var odsCode = vm.service.localIdentifier;
+		if (!odsCode) {
+			vm.log.error('Need national ID');
+			return;
+		}
+		var name = vm.service.name;
+		if (!name) {
+			vm.log.error('Need name');
+			return;
+		}
+
+		//search for org based on ODS code
+		//console.log('doing search for ' + odsCode);
+		vm.organisationService.search(odsCode)
+			.subscribe(
+				(result) => {
+					if (result.length == 0) {
+						//create new one
+						//console.log('no match found so will create');
+						vm.createOrganisation(odsCode, name);
+
+					} else if (result.length == 1) {
+						//use this one
+						//console.log('matched to one org');
+						vm.organisations = [];
+						vm.organisations.push(result[0]);
+
+					} else {
+						vm.log.error('More than one organisation found for ' + odsCode);
+					}
+				},
+				(error) => vm.log.error(error)
+			);
+	}
+
+	private createOrganisation(odsCode: string, name: string) {
+
+		var vm = this;
+
+		var organisation = <Organisation>{};
+		organisation.name = name;
+		organisation.nationalId = odsCode;
+		organisation.services = {};
+
+		//console.log('saving new org');
+		vm.organisationService.saveOrganisation(organisation)
+			.subscribe(saved => {
+					//console.log('saved OK so will add to orgs with UUID ' + saved.uuid);
+					vm.organisations = [];
+					vm.organisations.push(saved);
+				},
+				error => vm.log.error('Error saving', error, 'Error')
+			);
 	}
 
 	loadSystems() {

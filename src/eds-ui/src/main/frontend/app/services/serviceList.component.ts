@@ -20,6 +20,7 @@ export class ServiceListComponent implements OnInit, OnDestroy{
 	//filtering
 	filteredServices: Service[];
 	allPublisherConfigNames: string[];
+	allCcgCodes: string[];
 
 	static $inject = ['$uibModal', 'ServiceService', 'LoggerService','$state'];
 
@@ -211,6 +212,7 @@ export class ServiceListComponent implements OnInit, OnDestroy{
 	private findAllPublisherConfigNames() {
 		var vm = this;
 		vm.allPublisherConfigNames = [];
+		vm.allCcgCodes = [];
 
 		var arrayLength = vm.services.length;
 		for (var i = 0; i < arrayLength; i++) {
@@ -222,9 +224,18 @@ export class ServiceListComponent implements OnInit, OnDestroy{
 					vm.allPublisherConfigNames.push(publisherConfigName);
 				}
 			}
+
+			var ccgCode = service.ccgCode;
+			if (ccgCode) {
+				var index = vm.allCcgCodes.indexOf(ccgCode);
+				if (index == -1) {
+					vm.allCcgCodes.push(ccgCode);
+				}
+			}
 		}
 
 		vm.allPublisherConfigNames.sort();
+		vm.allCcgCodes.sort();
 	}
 
 	getNotesPrefix(service: Service) : string {
