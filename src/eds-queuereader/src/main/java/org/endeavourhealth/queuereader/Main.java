@@ -2,14 +2,19 @@ package org.endeavourhealth.queuereader;
 
 import OpenPseudonymiser.Crypto;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
+import com.amazonaws.auth.profile.ProfileCredentialsProvider;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.GetObjectRequest;
+import com.amazonaws.services.s3.model.ObjectMetadata;
+import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.services.s3.model.S3Object;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import org.apache.commons.csv.*;
@@ -34,6 +39,7 @@ import org.endeavourhealth.core.database.dal.eds.PatientLinkDalI;
 import org.endeavourhealth.core.database.dal.eds.PatientSearchDalI;
 import org.endeavourhealth.core.database.dal.ehr.ResourceDalI;
 import org.endeavourhealth.core.database.dal.ehr.models.ResourceWrapper;
+import org.endeavourhealth.core.database.dal.publisherTransform.models.ResourceFieldMapping;
 import org.endeavourhealth.core.database.dal.reference.PostcodeDalI;
 import org.endeavourhealth.core.database.dal.reference.models.PostcodeLookup;
 import org.endeavourhealth.core.database.dal.subscriberTransform.EnterpriseAgeUpdaterlDalI;
@@ -75,6 +81,8 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.Date;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 public class Main {
 	private static final Logger LOG = LoggerFactory.getLogger(Main.class);
@@ -381,6 +389,15 @@ public class Main {
 			System.exit(0);
 		}
 
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("TestS3VsMySQL")) {
+			UUID serviceUuid = UUID.fromString(args[1]);
+			int count = Integer.parseInt(args[2]);
+			int sqlBatchSize = Integer.parseInt(args[3]);
+			testS3VsMySql(serviceUuid, count, sqlBatchSize);
+			System.exit(0);
+		}
+
 
 		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("Exit")) {
@@ -465,7 +482,11 @@ public class Main {
 			String dbUrl = args[3];
 			String dbUsername = args[4];
 			String dbPassword = args[5];
-			loadBartsData(serviceId, systemId, dbUrl, dbUsername, dbPassword);
+			String onlyThisFileType = null;
+			if (args.length > 6) {
+				onlyThisFileType = args[6];
+			}
+			loadBartsData(serviceId, systemId, dbUrl, dbUsername, dbPassword, onlyThisFileType);
 			System.exit(0);
 		}
 
@@ -498,6 +519,160 @@ public class Main {
 		// Begin consume
 		rabbitHandler.start();
 		LOG.info("EDS Queue reader running (kill file location " + TransformConfig.instance().getKillFileLocation() + ")");
+	}
+
+	private static void testS3VsMySql(UUID serviceUuid, int count, int sqlBatchSize) {
+		LOG.debug("Testing S3 vs MySQL for service " + serviceUuid);
+		try {
+			//retrieve some audit JSON from the DB
+			EntityManager entityManager = ConnectionManager.getPublisherTransformEntityManager(serviceUuid);
+			SessionImpl session = (SessionImpl) entityManager.getDelegate();
+			Connection connection = session.connection();
+
+			String sql = "select resource_id, resource_type, version, mappings_json"
+					+ " from resource_field_mappings"
+					+ " where mappings_json != '[]'";
+			if (count > -1) {
+				sql += "limit " + count + ";";
+			}
+
+			Statement statement = connection.createStatement();
+			statement.setFetchSize(1000);
+			ResultSet rs = statement.executeQuery(sql);
+
+			List<ResourceFieldMapping> list = new ArrayList<>();
+
+			while (rs.next()) {
+				int col = 1;
+				String resourceId = rs.getString(col++);
+				String resourceType = rs.getString(col++);
+				String version = rs.getString(col++);
+				String json = rs.getString(col++);
+
+				ResourceFieldMapping obj = new ResourceFieldMapping();
+				obj.setResourceId(UUID.fromString(resourceId));
+				obj.setResourceType(resourceType);
+				obj.setVersion(UUID.fromString(version));
+				obj.setResourceField(json);
+				list.add(obj);
+			}
+
+			rs.close();
+			statement.close();
+			entityManager.close();
+
+
+			//test inserting into a DB
+			long sqlStart = System.currentTimeMillis();
+			LOG.debug("Doing SQL test");
+
+			sql = "insert into drewtest.json_speed_test (resource_id, resource_type, created_at, version, mappings_json) values (?, ?, ?, ?, ?)";
+
+			entityManager = ConnectionManager.getPublisherTransformEntityManager(serviceUuid);
+			session = (SessionImpl) entityManager.getDelegate();
+			connection = session.connection();
+			PreparedStatement ps = connection.prepareStatement(sql);
+			entityManager.getTransaction().begin();
+
+			int done = 0;
+
+			int currentBatchSize = 0;
+			for (int i=0; i<list.size(); i++) {
+				ResourceFieldMapping mapping = list.get(i);
+
+				int col = 1;
+				ps.setString(col++, mapping.getResourceId().toString());
+				ps.setString(col++, mapping.getResourceType());
+				ps.setDate(col++, new java.sql.Date(System.currentTimeMillis()));
+				ps.setString(col++, mapping.getVersion().toString());
+				ps.setString(col++, mapping.getResourceField());
+
+				ps.addBatch();
+				currentBatchSize ++;
+
+				if (currentBatchSize >= sqlBatchSize
+						|| i+1 == list.size()) {
+
+					ps.executeBatch();
+
+					entityManager.getTransaction().commit();
+
+					//mirror what would happen normally
+					ps.close();
+
+					entityManager.close();
+
+					if (i+1 < list.size()) {
+
+						entityManager = ConnectionManager.getPublisherTransformEntityManager(serviceUuid);
+						session = (SessionImpl) entityManager.getDelegate();
+						connection = session.connection();
+
+						ps = connection.prepareStatement(sql);
+						entityManager.getTransaction().begin();
+					}
+				}
+
+				done ++;
+				if (done % 1000 == 0) {
+					LOG.debug("Done " + done + " / " + list.size());
+				}
+			}
+
+			long sqlEnd = System.currentTimeMillis();
+			LOG.debug("SQL took " + (sqlEnd - sqlStart) + " ms");
+
+			//test writing to S3
+			long s3Start = System.currentTimeMillis();
+			LOG.debug("Doing S3 test");
+
+			for (int i=0; i<list.size(); i++) {
+				ResourceFieldMapping mapping = list.get(i);
+
+				String bucketName = "bucketfortest123";
+				String entryName = mapping.getVersion().toString() + ".json";
+				String keyName = "audit/" + serviceUuid + "/" + mapping.getResourceType() + "/" + mapping.getResourceId() + "/" + mapping.getVersion() + ".zip";
+				String jsonStr = mapping.getResourceField();
+
+				//may as well zip the data, since it will compress well
+				ByteArrayOutputStream baos = new ByteArrayOutputStream();
+				ZipOutputStream zos = new ZipOutputStream(baos);
+
+				//the first entry is a json file giving us the target class names for each column
+				ObjectNode columnClassMappingJson = new ObjectNode(JsonNodeFactory.instance);
+
+				zos.putNextEntry(new ZipEntry(entryName));
+				zos.write(jsonStr.getBytes());
+				zos.flush();
+				zos.close();
+
+				byte[] bytes = baos.toByteArray();
+				ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(bytes);
+
+				ProfileCredentialsProvider credentialsProvider = new ProfileCredentialsProvider();
+
+				AmazonS3ClientBuilder clientBuilder = AmazonS3ClientBuilder
+						.standard()
+						.withCredentials(credentialsProvider)
+						.withRegion(Regions.EU_WEST_2);
+
+				AmazonS3 s3Client = clientBuilder.build();
+
+				ObjectMetadata objectMetadata = new ObjectMetadata();
+				objectMetadata.setSSEAlgorithm(ObjectMetadata.AES_256_SERVER_SIDE_ENCRYPTION);
+				objectMetadata.setContentLength(bytes.length);
+
+				PutObjectRequest putRequest = new PutObjectRequest(bucketName, keyName, byteArrayInputStream, objectMetadata);
+				s3Client.putObject(putRequest);
+			}
+
+			long s3End = System.currentTimeMillis();
+			LOG.debug("S3 took " + (s3End - s3Start) + " ms");
+
+			LOG.debug("Finished Testing S3 vs MySQL for service " + serviceUuid);
+		} catch (Throwable t) {
+			LOG.error("", t);
+		}
 	}
 
 	private static void createBartsDataTables() {
@@ -618,7 +793,8 @@ public class Main {
 
 				if (col.equals("BLOB_CONTENTS")
 						|| col.equals("VALUE_LONG_TXT")
-						|| col.equals("COMMENT_TXT")) {
+						|| col.equals("COMMENT_TXT")
+						|| col.equals("NONPREG_REL_PROBLM_SCT_CD")) {
 
 					sql += " mediumtext";
 				} else {
@@ -634,7 +810,7 @@ public class Main {
 
 	}
 
-	private static void loadBartsData(String serviceId, String systemId, String dbUrl, String dbUsername, String dbPassword) {
+	private static void loadBartsData(String serviceId, String systemId, String dbUrl, String dbUsername, String dbPassword, String onlyThisFileType) {
 		LOG.debug("Loading Barts data from into " + dbUrl);
 		try {
 			//hash file type of every file
@@ -664,11 +840,18 @@ public class Main {
 					String type = file.getType();
 					String path = file.getPath();
 
+					//if only doing a specific file type, skip all others
+					if (onlyThisFileType != null
+							&& !type.equals(onlyThisFileType)) {
+						continue;
+					}
+
 					boolean processFile = false;
 					if (type.equalsIgnoreCase("CVREF")
 							|| type.equalsIgnoreCase("LOREF")
 							|| type.equalsIgnoreCase("ORGREF")
-							|| type.equalsIgnoreCase("PRSNLREF")) {
+							|| type.equalsIgnoreCase("PRSNLREF")
+							|| type.equalsIgnoreCase("NOMREF")) {
 						processFile = true;
 
 					} else {

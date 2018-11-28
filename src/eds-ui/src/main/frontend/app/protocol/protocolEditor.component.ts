@@ -14,6 +14,7 @@ import {DataSetService} from "../dataSet/dataSet.service";
 import {ProtocolService} from "./protocol.service";
 import {EdsLibraryItem} from "../edsLibrary/models/EdsLibraryItem";
 import {LibraryItem} from "eds-common-js/dist/library/models/LibraryItem";
+import {ServicePickerDialog} from "../services/servicePicker.dialog";
 
 @Component({
 	template : require('./protocolEditor.html')
@@ -151,8 +152,27 @@ export class ProtocolEditComponent {
 	}
 
 	setService() {
-		var serviceName = $("#service>option:selected").html()
-		this.selectedContract.service.name = serviceName;
+
+		//the combo includes the ODS code now, so we can't just carry over the combo display text
+		/*var serviceName = $("#service>option:selected").html()
+		this.selectedContract.service.name = serviceName;*/
+
+		var vm = this;
+
+		vm.selectedContract.service.name = null;
+
+		var selectedServiceUuid = vm.selectedContract.service.uuid;
+		if (selectedServiceUuid) {
+			var i;
+			for (i=0; i<vm.services.length; i++) {
+				var service = vm.services[i];
+				if (service.uuid == selectedServiceUuid) {
+
+					this.selectedContract.service.name = service.name;
+					break;
+				}
+			}
+		}
 	}
 
 	setSystem() {
@@ -169,7 +189,7 @@ export class ProtocolEditComponent {
 		var vm = this;
 		vm.serviceService.getAll()
 			.subscribe(
-				(result) => vm.services = linq(result).OrderBy(s => s.name).ToArray(),
+				(result) => vm.services = linq(result).OrderBy(s => s.name.toLowerCase()).ToArray(),
 				(error) => vm.logger.error('Failed to load services', error, 'Load services')
 			);
 	}
@@ -264,5 +284,25 @@ export class ProtocolEditComponent {
 		}
 
 		return count;
+	}
+
+	searchForService() {
+		var vm = this;
+
+		//don't bother passing in the current selection
+		var currentSelection = [];
+
+		ServicePickerDialog.open(vm.$modal, currentSelection)
+			.result.then(function (result : Service[]) {
+				//the dialog allows multiple selection, so just handle it with an error rather than hack at that
+				if (result.length > 1) {
+					vm.logger.error('Multiple services selected');
+				} else {
+					var selectedService = result[0];
+					vm.selectedContract.service.name = selectedService.name;
+					vm.selectedContract.service.uuid = selectedService.uuid;
+				}
+			}
+		);
 	}
 }

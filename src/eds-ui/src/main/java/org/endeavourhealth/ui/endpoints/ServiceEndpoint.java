@@ -88,9 +88,9 @@ public final class ServiceEndpoint extends AbstractEndpoint {
 
         UUID serviceId = serviceRepository.save(dbService);
 
-        if (service.getUuid() == null)
+        if (service.getUuid() == null) {
             service.setUuid(serviceId);
-
+        }
 
         clearLogbackMarkers();
 

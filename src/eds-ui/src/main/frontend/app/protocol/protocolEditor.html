@@ -126,11 +126,21 @@
 							<div class="form-group col-md-12">
 								<label>Service</label>
 								<div class="input-group">
+									<span class="input-group-addon">
+										<button type="button" class="btn btn-xs btn-success" (click)="searchForService()">Search</button>
+									</span>
+
+									<select id="service" class="form-control" [(ngModel)]="selectedContract.service.uuid" (ngModelChange)="setService()" name="contractServiceUuid">
+										<option *ngFor="let item of services" value="{{item.uuid}}">{{item.localIdentifier}} {{item.name}}</option>
+									</select>
+
+								</div>
+								<!--<div class="input-group">
 									<span class="input-group-addon"><i class="fa fa-hospital-o fa-lg fa-fw"></i></span>
 									<select id="service" class="form-control" [(ngModel)]="selectedContract.service.uuid" (ngModelChange)="setService()" name="contractServiceUuid">
 										<option *ngFor="let item of services" value="{{item.uuid}}">{{item.name}}</option>
 									</select>
-								</div>
+								</div>-->
 							</div>
 						</div>
 						<div class="row">

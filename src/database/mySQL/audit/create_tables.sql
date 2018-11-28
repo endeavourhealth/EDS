@@ -14,6 +14,10 @@ DROP TABLE IF EXISTS transform_warning;
 DROP TABLE IF EXISTS exchange_general_error;
 DROP TABLE IF EXISTS exchange_protocol_error;
 DROP TABLE IF EXISTS subscriber_api_audit;
+DROP TABLE IF EXISTS published_file_type;
+DROP TABLE IF EXISTS published_file_type_column;
+DROP TABLE IF EXISTS published_file;
+DROP TABLE IF EXISTS published_file_record;
 
 CREATE TABLE exchange
 (
@@ -157,6 +161,8 @@ CREATE TABLE transform_warning (
   param_2 varchar(255),
   param_3 varchar(255),
   param_4 varchar(255),
+  published_file_id int,
+  record_number int,
   CONSTRAINT pk_transform_warning_type PRIMARY KEY (id)
 )
   ROW_FORMAT=COMPRESSED
@@ -198,3 +204,60 @@ CREATE TABLE subscriber_api_audit (
   duration_ms bigint comment 'how long the call took'
 ) ROW_FORMAT=COMPRESSED
   KEY_BLOCK_SIZE=8;
+
+
+
+
+
+
+
+CREATE TABLE published_file_type (
+  id int NOT NULL,
+  file_type varchar(255) NOT NULL,
+  variable_column_delimiter char NULL,
+  variable_column_quote char NULL,
+  variable_column_escape char NULL,
+  CONSTRAINT pk_published_file_type PRIMARY KEY (id)
+);
+
+ALTER TABLE published_file_type MODIFY COLUMN id INT auto_increment;
+
+CREATE INDEX ix_published_file_type_description ON published_file_type (file_type, variable_column_delimiter, variable_column_quote, variable_column_escape);
+
+
+
+CREATE TABLE published_file_type_column (
+  published_file_type_id int NOT NULL,
+  column_index tinyint unsigned NOT NULL,
+  column_name varchar(255) NOT NULL,
+  fixed_column_start int NULL,
+  fixed_column_length int NULL,
+  CONSTRAINT pk_published_file_type_column PRIMARY KEY (published_file_type_id, column_index)
+);
+
+
+CREATE TABLE published_file (
+  id int NOT NULL,
+  service_id char(36) NOT NULL,
+  system_id char(36) NOT NULL,
+  file_path varchar(1000),
+  inserted_at datetime NOT NULL,
+  published_file_type_id int NOT NULL,
+  exchange_id char(36),
+  CONSTRAINT pk_published_file PRIMARY KEY (id)
+);
+
+ALTER TABLE published_file MODIFY COLUMN id INT auto_increment;
+
+CREATE INDEX ix_published_file_service_system_type_exchange_path ON published_file (service_id, system_id, published_file_type_id, exchange_id, file_path);
+
+CREATE INDEX ix_published_file_service_system_date ON published_file (service_id, system_id, inserted_at);
+
+
+CREATE TABLE published_file_record (
+  published_file_id int NOT NULL,
+  record_number int NOT NULL,
+  byte_start BIGINT NOT NULL,
+  byte_length int NOT NULL,
+  CONSTRAINT pk_published_file_record PRIMARY KEY (published_file_id, record_number)
+);
