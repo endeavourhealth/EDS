@@ -543,7 +543,7 @@ public class MessageTransformOutbound extends PipelineComponent {
 
 		List<ResourceWrapper> ret = new ArrayList<>();
 		for (ResourceWrapper resource: allResources) {
-			if (isPatientResource(resource)) {
+			if (resource.getResourceType().equalsIgnoreCase("Patient")) {
 				LOG.info("Patient " + resource.getResourceId() + ", inclusion :" + includeResource(serviceId,resource,filterElementsNodeJSON));
 			}
 			// perform filtering on patient resources.  Non patient resources are always included
