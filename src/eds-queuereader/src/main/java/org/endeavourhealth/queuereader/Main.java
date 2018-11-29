@@ -391,7 +391,8 @@ public class Main {
 			UUID serviceUuid = UUID.fromString(args[1]);
 			int count = Integer.parseInt(args[2]);
 			int sqlBatchSize = Integer.parseInt(args[3]);
-			testS3VsMySql(serviceUuid, count, sqlBatchSize);
+			String bucketName = args[4];
+			testS3VsMySql(serviceUuid, count, sqlBatchSize, bucketName);
 			System.exit(0);
 		}
 
@@ -518,7 +519,7 @@ public class Main {
 		LOG.info("EDS Queue reader running (kill file location " + TransformConfig.instance().getKillFileLocation() + ")");
 	}
 
-	private static void testS3VsMySql(UUID serviceUuid, int count, int sqlBatchSize) {
+	private static void testS3VsMySql(UUID serviceUuid, int count, int sqlBatchSize, String bucketName) {
 		LOG.debug("Testing S3 vs MySQL for service " + serviceUuid);
 		try {
 			//retrieve some audit JSON from the DB
@@ -567,9 +568,8 @@ public class Main {
 			for (int i=0; i<list.size(); i++) {
 				ResourceFieldMapping mapping = list.get(i);
 
-				String bucketName = "bucketfortest123";
 				String entryName = mapping.getVersion().toString() + ".json";
-				String keyName = "audit/" + serviceUuid + "/" + mapping.getResourceType() + "/" + mapping.getResourceId() + "/" + mapping.getVersion() + ".zip";
+				String keyName = "auditTest/" + serviceUuid + "/" + mapping.getResourceType() + "/" + mapping.getResourceId() + "/" + mapping.getVersion() + ".zip";
 				String jsonStr = mapping.getResourceField();
 
 				//may as well zip the data, since it will compress well
@@ -734,6 +734,9 @@ public class Main {
 			fileTypes.add("EALEN");
 			fileTypes.add("DELIV");
 			fileTypes.add("EALOF");
+			fileTypes.add("SusEmergencyCareDataSet");
+			fileTypes.add("SusEmergencyCareDataSetTail");
+
 
 			for (String fileType: fileTypes) {
 				createBartsDataTable(fileType);
@@ -800,6 +803,11 @@ public class Main {
 						|| col.equals("NONPREG_REL_PROBLM_SCT_CD")) {
 
 					sql += " mediumtext";
+
+				} else if (col.indexOf("Date") > -1
+						|| col.indexOf("Time") > -1) {
+					sql += " varchar(10)";
+
 				} else {
 					sql += " varchar(255)";
 				}
