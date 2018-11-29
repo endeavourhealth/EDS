@@ -4612,23 +4612,30 @@ public class Main {
 				indexOriginallyBulked = i;
 			}
 
+			if (indexOriginallyBulked > -1) {
+				Exchange exchangeOriginallyBulked = exchanges.get(indexOriginallyBulked);
+				LOG.info("Originally bulked on " + findExtractDate(exchangeOriginallyBulked, hmExchangeFiles) + " " + exchangeOriginallyBulked.getId());
+			}
+
+			if (indexDisabled > -1) {
+				Exchange exchangeDisabled = exchanges.get(indexDisabled);
+				LOG.info("Disabled on " + findExtractDate(exchangeDisabled, hmExchangeFiles) + " " + exchangeDisabled.getId());
+			}
+
+			if (indexRebulked > -1) {
+				Exchange exchangeRebulked = exchanges.get(indexRebulked);
+				LOG.info("Rebulked on " + findExtractDate(exchangeRebulked, hmExchangeFiles) + " " + exchangeRebulked.getId());
+			}
+
 			if (indexDisabled == -1
 					|| indexRebulked == -1
 					|| indexOriginallyBulked == -1) {
-				throw new Exception("Failed to find exchanges for disabling (" + indexDisabled + "), re-bulking (" + indexRebulked + ") or original bulk (" + indexOriginallyBulked + ")");
+				throw new Exception("Failed to find exchanges for original bulk (" + indexOriginallyBulked + ") disabling (" + indexDisabled + ") or re-bulking (" + indexRebulked + ")");
 			}
-
-			Exchange exchangeDisabled = exchanges.get(indexDisabled);
-			LOG.info("Disabled on " + findExtractDate(exchangeDisabled, hmExchangeFiles) + " " + exchangeDisabled.getId());
-
-			Exchange exchangeRebulked = exchanges.get(indexRebulked);
-			LOG.info("Rebulked on " + findExtractDate(exchangeRebulked, hmExchangeFiles) + " " + exchangeRebulked.getId());
-
-			Exchange exchangeOriginallyBulked = exchanges.get(indexOriginallyBulked);
-			LOG.info("Originally bulked on " + findExtractDate(exchangeOriginallyBulked, hmExchangeFiles) + " " + exchangeOriginallyBulked.getId());
 
 			//continueOrQuit();
 
+			Exchange exchangeRebulked = exchanges.get(indexRebulked);
 			List<String> rebulkFiles = hmExchangeFiles.get(exchangeRebulked);
 
 			List<String> tempFilesCreated = new ArrayList<>();
@@ -4676,6 +4683,7 @@ public class Main {
 
 				//create a replacement file for the exchange the service was disabled
 				String replacementDisabledFile = null;
+				Exchange exchangeDisabled = exchanges.get(indexDisabled);
 				List<String> disabledFiles = hmExchangeFilesWithoutStoragePrefix.get(exchangeDisabled);
 				for (String s: disabledFiles) {
 					String disabledFileType = findFileType(s);
