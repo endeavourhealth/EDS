@@ -699,13 +699,16 @@ public class Main {
 				String ods = service.getLocalId();
 				String orgGuid = null;
 
-				List<Exchange> exchanges = exchangeDalI.getExchangesByService(serviceId, systemId, 1);
+				List<Exchange> exchanges = exchangeDalI.getExchangesByService(serviceId, systemId, 5);
 				for (Exchange exchange: exchanges) {
 					String exchangeBody = exchange.getBody();
 					List<ExchangePayloadFile> files = ExchangeHelper.parseExchangeBody(exchangeBody);
 					if (!files.isEmpty()) {
 						ExchangePayloadFile first = files.get(0);
 						String path = first.getPath();
+						if (path.indexOf("EMIS_CUSTOM") > -1) {
+							continue;
+						}
 						File f = new File(path);
 						f = f.getParentFile(); //org GUID
 						orgGuid = f.getName();
@@ -724,7 +727,11 @@ public class Main {
 			for (String orgGuid: map.keySet()) {
 				String dateStr = map.get(orgGuid);
 				String odsCode = hmGuidToOdsMap.get(orgGuid);
-				System.out.println("map.put(\"" + odsCode + "\", \"" + dateStr + "\");");
+				if (Strings.isNullOrEmpty(odsCode)) {
+					LOG.error("Missing ODS code for " + orgGuid);
+				} else {
+					System.out.println("map.put(\"" + odsCode + "\", \"" + dateStr + "\");");
+				}
 			}
 
 			LOG.debug("Finished Converting Emis Guid");
