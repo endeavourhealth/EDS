@@ -2,7 +2,6 @@ package org.endeavourhealth.queuereader;
 
 import OpenPseudonymiser.Crypto;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
-import com.amazonaws.auth.profile.ProfileCredentialsProvider;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
@@ -13,8 +12,6 @@ import com.amazonaws.services.s3.model.S3Object;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import org.apache.commons.csv.*;
@@ -561,6 +558,57 @@ public class Main {
 			statement.close();
 			entityManager.close();
 
+			int done = 0;
+
+			//test writing to S3
+			long s3Start = System.currentTimeMillis();
+			LOG.debug("Doing S3 test");
+
+			for (int i=0; i<list.size(); i++) {
+				ResourceFieldMapping mapping = list.get(i);
+
+				String bucketName = "bucketfortest123";
+				String entryName = mapping.getVersion().toString() + ".json";
+				String keyName = "audit/" + serviceUuid + "/" + mapping.getResourceType() + "/" + mapping.getResourceId() + "/" + mapping.getVersion() + ".zip";
+				String jsonStr = mapping.getResourceField();
+
+				//may as well zip the data, since it will compress well
+				ByteArrayOutputStream baos = new ByteArrayOutputStream();
+				ZipOutputStream zos = new ZipOutputStream(baos);
+
+				zos.putNextEntry(new ZipEntry(entryName));
+				zos.write(jsonStr.getBytes());
+				zos.flush();
+				zos.close();
+
+				byte[] bytes = baos.toByteArray();
+				ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(bytes);
+
+				//ProfileCredentialsProvider credentialsProvider = new ProfileCredentialsProvider();
+				DefaultAWSCredentialsProviderChain credentialsProvider = DefaultAWSCredentialsProviderChain.getInstance();
+
+				AmazonS3ClientBuilder clientBuilder = AmazonS3ClientBuilder
+						.standard()
+						.withCredentials(credentialsProvider)
+						.withRegion(Regions.EU_WEST_2);
+
+				AmazonS3 s3Client = clientBuilder.build();
+
+				ObjectMetadata objectMetadata = new ObjectMetadata();
+				objectMetadata.setSSEAlgorithm(ObjectMetadata.AES_256_SERVER_SIDE_ENCRYPTION);
+				objectMetadata.setContentLength(bytes.length);
+
+				PutObjectRequest putRequest = new PutObjectRequest(bucketName, keyName, byteArrayInputStream, objectMetadata);
+				s3Client.putObject(putRequest);
+
+				done ++;
+				if (done % 1000 == 0) {
+					LOG.debug("Done " + done + " / " + list.size());
+				}
+			}
+
+			long s3End = System.currentTimeMillis();
+			LOG.debug("S3 took " + (s3End - s3Start) + " ms");
 
 			//test inserting into a DB
 			long sqlStart = System.currentTimeMillis();
@@ -574,7 +622,7 @@ public class Main {
 			PreparedStatement ps = connection.prepareStatement(sql);
 			entityManager.getTransaction().begin();
 
-			int done = 0;
+			done = 0;
 
 			int currentBatchSize = 0;
 			for (int i=0; i<list.size(); i++) {
@@ -622,52 +670,7 @@ public class Main {
 			long sqlEnd = System.currentTimeMillis();
 			LOG.debug("SQL took " + (sqlEnd - sqlStart) + " ms");
 
-			//test writing to S3
-			long s3Start = System.currentTimeMillis();
-			LOG.debug("Doing S3 test");
 
-			for (int i=0; i<list.size(); i++) {
-				ResourceFieldMapping mapping = list.get(i);
-
-				String bucketName = "bucketfortest123";
-				String entryName = mapping.getVersion().toString() + ".json";
-				String keyName = "audit/" + serviceUuid + "/" + mapping.getResourceType() + "/" + mapping.getResourceId() + "/" + mapping.getVersion() + ".zip";
-				String jsonStr = mapping.getResourceField();
-
-				//may as well zip the data, since it will compress well
-				ByteArrayOutputStream baos = new ByteArrayOutputStream();
-				ZipOutputStream zos = new ZipOutputStream(baos);
-
-				//the first entry is a json file giving us the target class names for each column
-				ObjectNode columnClassMappingJson = new ObjectNode(JsonNodeFactory.instance);
-
-				zos.putNextEntry(new ZipEntry(entryName));
-				zos.write(jsonStr.getBytes());
-				zos.flush();
-				zos.close();
-
-				byte[] bytes = baos.toByteArray();
-				ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(bytes);
-
-				ProfileCredentialsProvider credentialsProvider = new ProfileCredentialsProvider();
-
-				AmazonS3ClientBuilder clientBuilder = AmazonS3ClientBuilder
-						.standard()
-						.withCredentials(credentialsProvider)
-						.withRegion(Regions.EU_WEST_2);
-
-				AmazonS3 s3Client = clientBuilder.build();
-
-				ObjectMetadata objectMetadata = new ObjectMetadata();
-				objectMetadata.setSSEAlgorithm(ObjectMetadata.AES_256_SERVER_SIDE_ENCRYPTION);
-				objectMetadata.setContentLength(bytes.length);
-
-				PutObjectRequest putRequest = new PutObjectRequest(bucketName, keyName, byteArrayInputStream, objectMetadata);
-				s3Client.putObject(putRequest);
-			}
-
-			long s3End = System.currentTimeMillis();
-			LOG.debug("S3 took " + (s3End - s3Start) + " ms");
 
 			LOG.debug("Finished Testing S3 vs MySQL for service " + serviceUuid);
 		} catch (Throwable t) {
