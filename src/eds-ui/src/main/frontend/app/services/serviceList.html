@@ -28,7 +28,7 @@
 								</select>
 							</div>
 
-							<label for="inputType2" class="col-sm-1 control-label">CCG</label>
+							<label for="inputType2" class="col-sm-1 control-label">Parent</label>
 							<div class="col-sm-1">
 								<select id="inputType4" class="form-control" [(ngModel)]="serviceService.serviceCcgCodeFilter" name="serviceCcgCodeFilter" (ngModelChange)="applyFiltering()">
 									<option value=""></option>
@@ -55,7 +55,7 @@
 									<tr>
 										<th class="col-md-3">Name</th>
 										<th class="col-md-1">Local ID</th>
-										<th class="col-md-1">CCG</th>
+										<th class="col-md-1">Parent</th>
 										<th class="col-md-2">Publisher Config</th>
 										<th class="col-md-1">Inbound Err</th>
 										<th class="col-md-1">Notes</th>

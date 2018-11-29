@@ -114,6 +114,7 @@ public final class ServiceEndpoint extends AbstractEndpoint {
 
         OdsOrganisation org = OdsWebService.lookupOrganisationViaRest(service.getLocalIdentifier());
         if (org == null) {
+            LOG.error("NO ODS record found for [" + service.getLocalIdentifier() + "]");
             return;
         }
         String postcode = org.getPostcode();
@@ -123,11 +124,25 @@ public final class ServiceEndpoint extends AbstractEndpoint {
         service.setOrganisationTypeCode(type.getCode());
 
         Map<String, String> parents = org.getParents();
-        //some orgs have multiple parents, and I can't think of a good way to select the best one, so don't apply this
+
+        String parentCode = null;
         if (parents.size() == 1) {
-            String ccgCode = parents.keySet().iterator().next();
-            service.setCcgCode(ccgCode);
+            parentCode = parents.keySet().iterator().next();
+
+        } else {
+            //some orgs have multiple parents, and the simplest way to choose just one seems to be
+            //to ignore the old SHA hierarchy
+            for (String code: parents.keySet()) {
+                String name = parents.get(code);
+                if (name.toUpperCase().contains("STRATEGIC HEALTH AUTHORITY")) {
+                    continue;
+                }
+
+                parentCode = code;
+            }
         }
+
+        service.setCcgCode(parentCode);
     }
 
     @DELETE
