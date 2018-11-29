@@ -239,8 +239,8 @@ CREATE TABLE code_set
 CREATE TABLE code_set_codes
 (
   code_set_id int NOT NULL,
-  read2_concept_id varchar(12) NOT NULL COLLATE utf8_bin,
-  ctv3_concept_id varchar(12) NOT NULL COLLATE utf8_bin,
+  read2_concept_id varchar(12) COLLATE utf8_bin,
+  ctv3_concept_id varchar(12) COLLATE utf8_bin,
   sct_concept_id varchar (18),
   CONSTRAINT pk_code_set PRIMARY KEY (code_set_id, read2_concept_id, ctv3_concept_id, sct_concept_id),
   CONSTRAINT code_set_codes_code_set_id
