@@ -8,10 +8,7 @@ import org.endeavourhealth.core.messaging.pipeline.PipelineException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.regex.Pattern;
 
 public class RoutingManager implements ICache {
@@ -21,7 +18,7 @@ public class RoutingManager implements ICache {
 
 	//private RouteGroup[] routingMap;
 	private Map<String, List<RouteGroup>> cachedRoutingsByExchangeName;
-
+	private Date cacheExpiry = null;
 
 	public static RoutingManager getInstance() {
 		if (instance == null) {
@@ -49,7 +46,10 @@ public class RoutingManager implements ICache {
 	}
 
 	private List<RouteGroup> getRoutingMapForExchange(String exchangeName) throws PipelineException {
-		if (cachedRoutingsByExchangeName == null) {
+
+		if (cachedRoutingsByExchangeName == null
+				|| cacheExpiry.before(new Date())) {
+			LOG.debug("Re-creating routing map cache");
 
 			Map<String, List<RouteGroup>> map = new HashMap<>();
 
@@ -72,6 +72,7 @@ public class RoutingManager implements ICache {
 				throw new PipelineException("Failed to populate routing map from JSON " + routings, ex);
 			}
 
+			this.cacheExpiry = new Date(System.currentTimeMillis() + (5L * 1000L * 60L)); //expire this cache in five minutes
 			this.cachedRoutingsByExchangeName = map;
 		}
 
