@@ -53,3 +53,6 @@ insert into pcr.pcr_tables (id, table_name) values (48, 'related_person_relation
 insert into pcr.pcr_tables (id, table_name) values (49, 'care_plan');
 insert into pcr.pcr_tables (id, table_name) values (50, 'care_plan_activity');
 insert into pcr.pcr_tables (id, table_name) values (51, 'care_plan_activity_target');
+
+delete from pcr.data_entry_prompt;
+insert into pcr.data_entry_prompt (id, organisation_id, prompt_text) values (-1,1,'Place holder');
