@@ -37,6 +37,8 @@ public class PCRFiler {
     private static final String DELETE = "Delete";
 
     private static final int UPSERT_ATTEMPTS = 10;
+    //TODO maybe more need add to list but only these 2 seem to hit so far
+    private static List<String> dependencyNames = Arrays.asList("medication_statement", "medication_order");
 
     private static Map<String, HikariDataSource> connectionPools = new ConcurrentHashMap<>();
     private static Map<String, String> escapeCharacters = new ConcurrentHashMap<>();
@@ -59,7 +61,8 @@ public class PCRFiler {
         String url = config.get("pcr_url").asText();
         String keywordEscapeChar = getKeywordEscapeChar(url);
         int batchSize = getBatchSize(url);
-
+        List<String> pendingFiles = new ArrayList<>();
+        ZipInputStream zisPend = null;
         try {
             List<DeleteWrapper> deletes = new ArrayList<>();
 
@@ -70,6 +73,12 @@ public class PCRFiler {
                 }
 
                 String entryFileName = entry.getName();
+                // Some tables refer to foreign keys in other tables. We need to file the entries containing foreign
+                // keys (eg MedicationAmount) before the entry that refers to its id (eg MedicationStatement)
+                if (dependencyNames.contains(entryFileName)) {
+                    pendingFiles.add(entryFileName);  //Process at end.
+                    continue;
+                }
                 byte[] entryBytes = readZipEntry(zis);
 
                 if (entryFileName.equals(COLUMN_CLASS_MAPPINGS)) {
@@ -79,6 +88,20 @@ public class PCRFiler {
                 } else {
                     processCsvData(entryFileName, entryBytes, columnClassMappings, connection, keywordEscapeChar, batchSize, deletes);
                 }
+            }
+            //now file pending upserts for pending files
+            zisPend = new ZipInputStream(bais); // new input to reset start
+            while (true) {
+                ZipEntry entry = zisPend.getNextEntry();
+                if (entry == null) {
+                    break;
+                }
+                String entryFileName = entry.getName();
+                if (!pendingFiles.contains(entryFileName)) {
+                    continue;
+                }
+                byte[] entryBytes = readZipEntry(zisPend);
+                processCsvData(entryFileName, entryBytes, columnClassMappings, connection, keywordEscapeChar, batchSize, deletes);
             }
 
             //now files the deletes
@@ -94,12 +117,14 @@ public class PCRFiler {
             if (zis != null) {
                 zis.close();
             }
+            if (zisPend != null) {
+                zisPend.close();
+            }
             if (connection != null) {
                 connection.close();
             }
         }
     }
-
 
     private static void writeZipFile(byte[] bytes) {
         File f = new File("PCRFileError.zip");
