@@ -38,7 +38,7 @@ public class PCRFiler {
 
     private static final int UPSERT_ATTEMPTS = 10;
     //TODO maybe more need add to list but only these 2 seem to hit so far
-    private static List<String> dependencyNames = Arrays.asList("medication_statement", "medication_order");
+    private static List<String> dependencyNames = Arrays.asList("medication_statement.csv", "medication_order.csv");
 
     private static Map<String, HikariDataSource> connectionPools = new ConcurrentHashMap<>();
     private static Map<String, String> escapeCharacters = new ConcurrentHashMap<>();
@@ -197,7 +197,6 @@ public class PCRFiler {
     private static void processCsvData(String entryFileName, byte[] csvBytes, JsonNode allColumnClassMappings, Connection connection, String keywordEscapeChar, int batchSize, List<DeleteWrapper> deletes) throws Exception {
 
         String tableName = Files.getNameWithoutExtension(entryFileName);
-
         ByteArrayInputStream bais = new ByteArrayInputStream(csvBytes);
         InputStreamReader isr = new InputStreamReader(bais);
         CSVParser csvParser = new CSVParser(isr, CSV_FORMAT.withHeader());
