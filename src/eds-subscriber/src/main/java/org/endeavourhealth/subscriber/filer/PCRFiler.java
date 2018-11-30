@@ -91,7 +91,8 @@ public class PCRFiler {
                 }
             }
             //now file pending upserts for pending files
-            zisPend = new ZipInputStream(bais); // new input to reset start
+            ByteArrayInputStream baisPend = new ByteArrayInputStream(bytes);
+            zisPend = new ZipInputStream(baisPend); // new input to reset start
             while (true) {
                 ZipEntry entry = zisPend.getNextEntry();
                 if (entry == null) {
