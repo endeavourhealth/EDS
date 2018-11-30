@@ -180,7 +180,7 @@ public class Main {
 		}
 
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("TestBatchInserts")) {
 			String url = args[1];
 			String user = args[2];
@@ -189,7 +189,7 @@ public class Main {
 			String batchSize = args[5];
 			testBatchInserts(url, user, pass, num, batchSize);
 			System.exit(0);
-		}
+		}*/
 
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("ApplyEmisAdminCaches")) {
@@ -238,13 +238,13 @@ public class Main {
 			System.exit(0);
 		}
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("CheckDeletedObs")) {
 			String serviceId = args[1];
 			String systemId = args[2];
 			checkDeletedObs(UUID.fromString(serviceId), UUID.fromString(systemId));
 			System.exit(0);
-		}
+		}*/
 
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("FixPersonsNoNhsNumber")) {
@@ -259,17 +259,21 @@ public class Main {
 			System.exit(0);
 		}
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("ConvertEmisGuid")) {
 			convertEmisGuids();
 			System.exit(0);
-		}
+		}*/
 
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("PostToRabbit")) {
 			String exchangeName = args[1];
 			String srcFile = args[2];
-			postToRabbit(exchangeName, srcFile);
+			Integer throttle = null;
+			if (args.length > 3) {
+				throttle = Integer.parseInt(args[3]);
+			}
+			postToRabbit(exchangeName, srcFile, throttle);
 			System.exit(0);
 		}
 
@@ -525,7 +529,7 @@ public class Main {
 		LOG.info("EDS Queue reader running (kill file location " + TransformConfig.instance().getKillFileLocation() + ")");
 	}
 
-	private static void convertEmisGuids() {
+	/*private static void convertEmisGuids() {
 		LOG.debug("Converting Emis Guid");
 		try {
 			Map<String, String> map = new HashMap<>();
@@ -738,7 +742,7 @@ public class Main {
 		} catch (Throwable t) {
 			LOG.error("", t);
 		}
-	}
+	}*/
 
 	private static void testS3VsMySql(UUID serviceUuid, int count, int sqlBatchSize, String bucketName) {
 		LOG.debug("Testing S3 vs MySQL for service " + serviceUuid);
@@ -2039,12 +2043,17 @@ public class Main {
 		}
 	}
 
-	private static void postToRabbit(String exchangeName, String srcFile) {
+	private static void postToRabbit(String exchangeName, String srcFile, Integer throttle) {
 		LOG.info("Posting to " + exchangeName + " from " + srcFile);
+		if (throttle != null) {
+			LOG.info("Thrttled to " + throttle + " messages/second");
+		}
+
 		try {
 			List<UUID> exchangeIds = new ArrayList<>();
 
-			List<String> lines = Files.readAllLines(new File(srcFile).toPath());
+			File src = new File(srcFile);
+			List<String> lines = Files.readAllLines(src.toPath());
 			for (String line: lines) {
 				if (!Strings.isNullOrEmpty(line)) {
 					try {
@@ -2056,10 +2065,69 @@ public class Main {
 				}
 			}
 			LOG.info("Found " + exchangeIds.size() + " to post to " + exchangeName);
+
+			//create file of ones done
+			File dir = src.getParentFile();
+			String name = "DONE" + src.getName();
+			File dst = new File(dir, name);
+
+			if (dst.exists()) {
+				lines = Files.readAllLines(dst.toPath());
+				for (String line : lines) {
+					if (!Strings.isNullOrEmpty(line)) {
+						try {
+							UUID uuid = UUID.fromString(line);
+							exchangeIds.remove(uuid);
+						} catch (Exception ex) {
+							LOG.error("Skipping line " + line);
+						}
+					}
+				}
+
+				LOG.info("After removing done ones, now have " + exchangeIds.size());
+			}
+
 			continueOrQuit();
 
+			FileWriter fileWriter = new FileWriter(dst);
+			PrintWriter printWriter = new PrintWriter(fileWriter);
+
+			long startMs = System.currentTimeMillis();
+			int doneThisSecond = 0;
+
 			LOG.info("Posting " + exchangeIds.size() + " to " + exchangeName);
-			QueueHelper.postToExchange(exchangeIds, exchangeName, null, true);
+			for (int i=0; i<exchangeIds.size(); i++) {
+
+				UUID exchangeId = exchangeIds.get(i);
+				List<UUID> tmp = new ArrayList<>();
+				tmp.add(exchangeId);
+				QueueHelper.postToExchange(tmp, exchangeName, null, true);
+
+				printWriter.println(exchangeId.toString());
+				printWriter.flush();
+
+				if (i % 5000 == 0) {
+					LOG.debug("Done " + i + " / " + exchangeIds.size());
+				}
+
+				if (throttle != null) {
+					doneThisSecond ++;
+
+					if (doneThisSecond > throttle.intValue()) {
+						long now = System.currentTimeMillis();
+						long sleep = 1000 - (now - startMs);
+
+						if (sleep > 0) {
+							Thread.sleep(sleep);
+						}
+
+						startMs = now;
+						doneThisSecond = 0;
+					}
+				}
+			}
+
+			printWriter.close();
 
 			LOG.info("Finished Posting to " + exchangeName+ " from " + srcFile);
 		} catch (Throwable t) {
@@ -2392,7 +2460,7 @@ public class Main {
 		}
 	}
 
-	private static void checkDeletedObs(UUID serviceId, UUID systemId) {
+	/*private static void checkDeletedObs(UUID serviceId, UUID systemId) {
 		LOG.info("Checking Observations for " + serviceId);
 		try {
 			ResourceDalI resourceDal = DalProvider.factoryResourceDal();
@@ -2545,9 +2613,9 @@ public class Main {
 		} catch (Exception ex) {
 			LOG.error("", ex);
 		}
-	}
+	}*/
 
-	private static void testBatchInserts(String url, String user, String pass, String num, String batchSizeStr) {
+	/*private static void testBatchInserts(String url, String user, String pass, String num, String batchSizeStr) {
 		LOG.info("Testing Batch Inserts");
 		try {
 			int inserts = Integer.parseInt(num);
@@ -2606,7 +2674,7 @@ public class Main {
 		} catch (Exception ex) {
 			LOG.error("", ex);
 		}
-	}
+	}*/
 
 	private static String randomStr() {
 		StringBuffer sb = new StringBuffer();
