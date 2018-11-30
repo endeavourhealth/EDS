@@ -180,7 +180,7 @@ public class Main {
 		}
 
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("TestBatchInserts")) {
 			String url = args[1];
 			String user = args[2];
@@ -189,7 +189,7 @@ public class Main {
 			String batchSize = args[5];
 			testBatchInserts(url, user, pass, num, batchSize);
 			System.exit(0);
-		}
+		}*/
 
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("ApplyEmisAdminCaches")) {
@@ -238,13 +238,13 @@ public class Main {
 			System.exit(0);
 		}
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("CheckDeletedObs")) {
 			String serviceId = args[1];
 			String systemId = args[2];
 			checkDeletedObs(UUID.fromString(serviceId), UUID.fromString(systemId));
 			System.exit(0);
-		}
+		}*/
 
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("FixPersonsNoNhsNumber")) {
@@ -259,11 +259,11 @@ public class Main {
 			System.exit(0);
 		}
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("ConvertEmisGuid")) {
 			convertEmisGuids();
 			System.exit(0);
-		}
+		}*/
 
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("PostToRabbit")) {
@@ -525,7 +525,7 @@ public class Main {
 		LOG.info("EDS Queue reader running (kill file location " + TransformConfig.instance().getKillFileLocation() + ")");
 	}
 
-	private static void convertEmisGuids() {
+	/*private static void convertEmisGuids() {
 		LOG.debug("Converting Emis Guid");
 		try {
 			Map<String, String> map = new HashMap<>();
@@ -738,7 +738,7 @@ public class Main {
 		} catch (Throwable t) {
 			LOG.error("", t);
 		}
-	}
+	}*/
 
 	private static void testS3VsMySql(UUID serviceUuid, int count, int sqlBatchSize, String bucketName) {
 		LOG.debug("Testing S3 vs MySQL for service " + serviceUuid);
@@ -2392,7 +2392,7 @@ public class Main {
 		}
 	}
 
-	private static void checkDeletedObs(UUID serviceId, UUID systemId) {
+	/*private static void checkDeletedObs(UUID serviceId, UUID systemId) {
 		LOG.info("Checking Observations for " + serviceId);
 		try {
 			ResourceDalI resourceDal = DalProvider.factoryResourceDal();
@@ -2545,9 +2545,9 @@ public class Main {
 		} catch (Exception ex) {
 			LOG.error("", ex);
 		}
-	}
+	}*/
 
-	private static void testBatchInserts(String url, String user, String pass, String num, String batchSizeStr) {
+	/*private static void testBatchInserts(String url, String user, String pass, String num, String batchSizeStr) {
 		LOG.info("Testing Batch Inserts");
 		try {
 			int inserts = Integer.parseInt(num);
@@ -2606,7 +2606,7 @@ public class Main {
 		} catch (Exception ex) {
 			LOG.error("", ex);
 		}
-	}
+	}*/
 
 	private static String randomStr() {
 		StringBuffer sb = new StringBuffer();
