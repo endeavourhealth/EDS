@@ -77,7 +77,6 @@ public class PCRFiler {
                 // keys (eg MedicationAmount) before the entry that refers to its id (eg MedicationStatement)
                 if (dependencyNames.contains(entryFileName)) {
                     pendingFiles.add(entryFileName);  //Process at end.
-                    LOG.info("Adding to pending files" + entryFileName);
                     continue;
                 }
                 byte[] entryBytes = readZipEntry(zis);
@@ -102,7 +101,6 @@ public class PCRFiler {
                 if (!pendingFiles.contains(entryFileName)) {
                     continue;
                 }
-                LOG.info("Processing pending file" + entryFileName);
                 byte[] entryBytes = readZipEntry(zisPend);
                 processCsvData(entryFileName, entryBytes, columnClassMappings, connection, keywordEscapeChar, batchSize, deletes);
             }
