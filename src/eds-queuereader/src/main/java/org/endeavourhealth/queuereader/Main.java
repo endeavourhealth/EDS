@@ -10029,7 +10029,15 @@ class MoveToS3Runnable implements Runnable {
 			Map<ResourceWrapper, ResourceFieldMappingAudit> batch = new HashMap<>();
 			batch.put(wrapper, audit);
 
-			db.saveResourceMappings(batch);
+			try {
+				db.saveResourceMappings(batch);
+			} catch (Exception ex) {
+				String msg = ex.getMessage();
+				if (msg.indexOf("Duplicate entry") == -1) {
+					throw ex;
+				}
+			}
+
 
 			/*if (batch.size() > 5) {
 				db.saveResourceMappings(batch);
