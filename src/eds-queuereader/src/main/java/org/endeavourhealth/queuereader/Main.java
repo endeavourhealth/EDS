@@ -544,7 +544,7 @@ public class Main {
 		LOG.info("Moving S3 to Audit");
 		try {
 			//list S3 contents
-			List<FileInfo> files = FileHelper.listFilesInSharedStorageWithInfo("s3://discoveryaudit/audit/");
+			List<FileInfo> files = FileHelper.listFilesInSharedStorageWithInfo("s3://discoveryaudit/audit");
 			LOG.debug("Found " + files.size() + " audits");
 
 			SourceFileMappingDalI db = DalProvider.factorySourceFileMappingDal();
