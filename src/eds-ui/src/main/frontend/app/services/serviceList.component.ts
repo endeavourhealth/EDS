@@ -248,4 +248,5 @@ export class ServiceListComponent implements OnInit, OnDestroy{
 			return service.notes;
 		}
 	}
+
 }

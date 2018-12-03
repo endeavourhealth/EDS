@@ -162,7 +162,8 @@ export class ServiceEditComponent {
 		//ensure got an ODS code
 		var vm = this;
 
-		if (vm.organisations.length > 0) {
+		if (vm.organisations
+			&& vm.organisations.length > 0) {
 			vm.log.error('Organisation already set');
 			return;
 		}
