@@ -32,7 +32,7 @@
 							<div class="col-sm-1">
 								<select id="inputType4" class="form-control" [(ngModel)]="serviceService.serviceCcgCodeFilter" name="serviceCcgCodeFilter" (ngModelChange)="applyFiltering()">
 									<option value=""></option>
-									<option *ngFor="let ccgCode of allCcgCodes" value="{{ccgCode}}">{{ccgCode}}</option>
+									<option *ngFor="let ccgCode of allCcgCodes" value="{{ccgCode}}">{{ccgCode}} {{serviceService.getCcgName(ccgCode)}}</option>
 								</select>
 							</div>
 
@@ -74,7 +74,13 @@
 
 										</td>
 										<td>{{item.localIdentifier}}</td>
-										<td>{{item.ccgCode}}</td>
+										<td>
+											<span ngbTooltip="{{serviceService.getCcgName(item.ccgCode)}}">
+												{{item.ccgCode}}
+											</span>
+											<!--{{item.ccgCode}}-->
+											<!--<span class="fa fa-info-circle fa-right-pad text-muted" ngbTooltip="{{getCcgName(item.ccgCode)}}"></span>-->
+										</td>
 										<td>{{item.publisherConfigName}}</td>
 										<td>
 											<div *ngIf="item.hasInboundError">

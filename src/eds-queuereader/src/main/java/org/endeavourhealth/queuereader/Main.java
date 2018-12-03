@@ -313,7 +313,8 @@ public class Main {
 
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("MoveS3ToAudit")) {
-			moveS3ToAudit();
+			int threads = Integer.parseInt(args[1]);
+			moveS3ToAudit(threads);
 			System.exit(0);
 		}
 
@@ -540,75 +541,58 @@ public class Main {
 		LOG.info("EDS Queue reader running (kill file location " + TransformConfig.instance().getKillFileLocation() + ")");
 	}
 
-	private static void moveS3ToAudit() {
+	private static void moveS3ToAudit(int threads) {
 		LOG.info("Moving S3 to Audit");
 		try {
 			//list S3 contents
 			List<FileInfo> files = FileHelper.listFilesInSharedStorageWithInfo("s3://discoveryaudit/audit");
 			LOG.debug("Found " + files.size() + " audits");
 
-			SourceFileMappingDalI db = DalProvider.factorySourceFileMappingDal();
+			int countPerThread = files.size() / threads;
+			int pos = 0;
 
-			//write to database
-			int done = 0;
-			Map<ResourceWrapper, ResourceFieldMappingAudit> batch = new HashMap<>();
-			for (FileInfo info: files) {
+			AtomicInteger done = new AtomicInteger();
+			List<Thread> threadList = new ArrayList<>();
 
-				String path = info.getFilePath();
+			for (int i=0; i<threads; i++) {
 
-				InputStream inputStream = FileHelper.readFileFromSharedStorage(path);
-				ZipInputStream zis = new ZipInputStream(inputStream);
+				List<FileInfo> perThread = new ArrayList<>();
 
-				ZipEntry entry = zis.getNextEntry();
-				if (entry == null) {
-					throw new Exception("No entry in zip file " + path);
-				}
-				byte[] entryBytes = IOUtils.toByteArray(zis);
-				String json = new String(entryBytes);
-
-				inputStream.close();
-
-				ResourceFieldMappingAudit audit = ResourceFieldMappingAudit.readFromJson(json);
-
-				ResourceWrapper wrapper = new ResourceWrapper();
-
-				String versionStr = FilenameUtils.getBaseName(path);
-				wrapper.setVersion(UUID.fromString(versionStr));
-
-				Date d = info.getLastModified();
-				wrapper.setCreatedAt(d);
-
-				File f = new File(path);
-				f = f.getParentFile();
-				String resourceIdStr = f.getName();
-				wrapper.setResourceId(UUID.fromString(resourceIdStr));
-
-				f = f.getParentFile();
-				String resourceTypeStr = f.getName();
-				wrapper.setResourceType(resourceTypeStr);
-
-				f = f.getParentFile();
-				String serviceIdStr = f.getName();
-				wrapper.setServiceId(UUID.fromString(serviceIdStr));
-
-				batch.put(wrapper, audit);
-
-
-				if (batch.size() > 5) {
-					db.saveResourceMappings(batch);
-					batch.clear();
+				int countThisThread = countPerThread;
+				if (i+1 == threads) {
+					countThisThread = files.size() - pos;
 				}
 
-				done ++;
-				if (done % 1000 == 0) {
-					LOG.debug("Done " + done + " / " + files.size());
+				for (int j=0; j<countThisThread; j++) {
+					FileInfo fileInfo = files.get(pos);
+					pos ++;
+					perThread.add(fileInfo);
+				}
+
+				MoveToS3Runnable r = new MoveToS3Runnable(perThread, done);
+				Thread t = new Thread(r);
+				threadList.add(t);
+				t.start();
+			}
+
+			while (true) {
+				Thread.sleep(5000);
+
+				boolean allDone = true;
+				for (Thread t: threadList) {
+					if (t.getState() != Thread.State.TERMINATED) {
+						//if (!t.isAlive()) {
+						allDone = false;
+						break;
+					}
+				}
+
+				if (allDone) {
+					break;
 				}
 			}
 
-			if (!batch.isEmpty()) {
-				db.saveResourceMappings(batch);
-				batch.clear();
-			}
+			LOG.debug("Finished with " + done.get() + " / " + files.size());
 
 			LOG.info("Finished Moving S3 to Audit");
 		} catch (Throwable t) {
@@ -9976,3 +9960,92 @@ public class Main {
 		throw new Exception("shouldn't be calling deletePatientResource");
 	}
 }*/
+
+class MoveToS3Runnable implements Runnable {
+	private static final Logger LOG = LoggerFactory.getLogger(MoveToS3Runnable.class);
+
+	private List<FileInfo> files = null;
+	private AtomicInteger done = null;
+
+	public MoveToS3Runnable(List<FileInfo> files, AtomicInteger done) {
+		this.files = files;
+		this.done = done;
+	}
+
+	@Override
+	public void run() {
+		try {
+			doWork();
+		} catch (Exception ex) {
+			LOG.error("", ex);
+		}
+	}
+
+	private void doWork() throws Exception {
+
+		SourceFileMappingDalI db = DalProvider.factorySourceFileMappingDal();
+
+		//write to database
+		//Map<ResourceWrapper, ResourceFieldMappingAudit> batch = new HashMap<>();
+		for (FileInfo info: files) {
+
+			String path = info.getFilePath();
+
+			InputStream inputStream = FileHelper.readFileFromSharedStorage(path);
+			ZipInputStream zis = new ZipInputStream(inputStream);
+
+			ZipEntry entry = zis.getNextEntry();
+			if (entry == null) {
+				throw new Exception("No entry in zip file " + path);
+			}
+			byte[] entryBytes = IOUtils.toByteArray(zis);
+			String json = new String(entryBytes);
+
+			inputStream.close();
+
+			ResourceFieldMappingAudit audit = ResourceFieldMappingAudit.readFromJson(json);
+
+			ResourceWrapper wrapper = new ResourceWrapper();
+
+			String versionStr = FilenameUtils.getBaseName(path);
+			wrapper.setVersion(UUID.fromString(versionStr));
+
+			Date d = info.getLastModified();
+			wrapper.setCreatedAt(d);
+
+			File f = new File(path);
+			f = f.getParentFile();
+			String resourceIdStr = f.getName();
+			wrapper.setResourceId(UUID.fromString(resourceIdStr));
+
+			f = f.getParentFile();
+			String resourceTypeStr = f.getName();
+			wrapper.setResourceType(resourceTypeStr);
+
+			f = f.getParentFile();
+			String serviceIdStr = f.getName();
+			wrapper.setServiceId(UUID.fromString(serviceIdStr));
+
+			Map<ResourceWrapper, ResourceFieldMappingAudit> batch = new HashMap<>();
+			batch.put(wrapper, audit);
+
+			db.saveResourceMappings(batch);
+
+			/*if (batch.size() > 5) {
+				db.saveResourceMappings(batch);
+				batch.clear();
+			}*/
+
+			int nowDone = done.incrementAndGet();
+			if (nowDone % 1000 == 0) {
+				LOG.debug("Done " + nowDone + " / " + files.size());
+			}
+		}
+
+		/*if (!batch.isEmpty()) {
+			db.saveResourceMappings(batch);
+			batch.clear();
+		}*/
+
+	}
+}
