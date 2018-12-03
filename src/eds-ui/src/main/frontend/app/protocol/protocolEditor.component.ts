@@ -260,7 +260,7 @@ export class ProtocolEditComponent {
 	getServiceContracts() {
 		return linq(this.libraryItem.protocol.serviceContract)
 			.OrderBy(sc => sc.type)
-			.ThenBy(sc => sc.service.name)
+			.ThenBy(sc => sc.service.name.toLowerCase())
 			.ToArray();
 	}
 
