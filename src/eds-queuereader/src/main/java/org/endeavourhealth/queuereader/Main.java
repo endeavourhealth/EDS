@@ -17,10 +17,12 @@ import com.google.common.collect.Lists;
 import org.apache.commons.csv.*;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.IOUtils;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.common.fhir.*;
 import org.endeavourhealth.common.utility.FileHelper;
+import org.endeavourhealth.common.utility.FileInfo;
 import org.endeavourhealth.common.utility.SlackHelper;
 import org.endeavourhealth.core.configuration.ConfigDeserialiser;
 import org.endeavourhealth.core.configuration.PostMessageToExchangeConfig;
@@ -36,7 +38,9 @@ import org.endeavourhealth.core.database.dal.eds.PatientLinkDalI;
 import org.endeavourhealth.core.database.dal.eds.PatientSearchDalI;
 import org.endeavourhealth.core.database.dal.ehr.ResourceDalI;
 import org.endeavourhealth.core.database.dal.ehr.models.ResourceWrapper;
+import org.endeavourhealth.core.database.dal.publisherTransform.SourceFileMappingDalI;
 import org.endeavourhealth.core.database.dal.publisherTransform.models.ResourceFieldMapping;
+import org.endeavourhealth.core.database.dal.publisherTransform.models.ResourceFieldMappingAudit;
 import org.endeavourhealth.core.database.dal.reference.PostcodeDalI;
 import org.endeavourhealth.core.database.dal.reference.models.PostcodeLookup;
 import org.endeavourhealth.core.database.dal.subscriberTransform.EnterpriseAgeUpdaterlDalI;
@@ -79,6 +83,7 @@ import java.util.*;
 import java.util.Date;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
 public class Main {
@@ -306,6 +311,12 @@ public class Main {
 			System.exit(0);
 		}
 
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("MoveS3ToAudit")) {
+			moveS3ToAudit();
+			System.exit(0);
+		}
+
 
 		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("ConvertExchangeBody")) {
@@ -527,6 +538,83 @@ public class Main {
 		// Begin consume
 		rabbitHandler.start();
 		LOG.info("EDS Queue reader running (kill file location " + TransformConfig.instance().getKillFileLocation() + ")");
+	}
+
+	private static void moveS3ToAudit() {
+		LOG.info("Moving S3 to Audit");
+		try {
+			//list S3 contents
+			List<FileInfo> files = FileHelper.listFilesInSharedStorageWithInfo("s3://discoveryaudit");
+			LOG.debug("Found " + files.size() + " audits");
+
+			SourceFileMappingDalI db = DalProvider.factorySourceFileMappingDal();
+
+			//write to database
+			int done = 0;
+			Map<ResourceWrapper, ResourceFieldMappingAudit> batch = new HashMap<>();
+			for (FileInfo info: files) {
+
+				String path = info.getFilePath();
+
+				InputStream inputStream = FileHelper.readFileFromSharedStorage(path);
+				ZipInputStream zis = new ZipInputStream(inputStream);
+
+				ZipEntry entry = zis.getNextEntry();
+				if (entry == null) {
+					throw new Exception("No entry in zip file " + path);
+				}
+				byte[] entryBytes = IOUtils.toByteArray(zis);
+				String json = new String(entryBytes);
+
+				inputStream.close();
+
+				ResourceFieldMappingAudit audit = ResourceFieldMappingAudit.readFromJson(json);
+
+				ResourceWrapper wrapper = new ResourceWrapper();
+
+				String versionStr = FilenameUtils.getBaseName(path);
+				wrapper.setVersion(UUID.fromString(versionStr));
+
+				Date d = info.getLastModified();
+				wrapper.setCreatedAt(d);
+
+				File f = new File(path);
+				f = f.getParentFile();
+				String resourceIdStr = f.getName();
+				wrapper.setResourceId(UUID.fromString(resourceIdStr));
+
+				f = f.getParentFile();
+				String resourceTypeStr = f.getName();
+				wrapper.setResourceType(resourceTypeStr);
+
+				f = f.getParentFile();
+				String serviceIdStr = f.getName();
+				wrapper.setServiceId(UUID.fromString(serviceIdStr));
+
+				batch.put(wrapper, audit);
+
+
+				if (batch.size() > 5) {
+					db.saveResourceMappings(batch);
+					batch.clear();
+				}
+
+				done ++;
+				if (done % 1000 == 0) {
+					LOG.debug("Done " + done + " / " + files.size());
+				}
+			}
+
+			if (!batch.isEmpty()) {
+				db.saveResourceMappings(batch);
+				batch.clear();
+			}
+
+			LOG.info("Finished Moving S3 to Audit");
+		} catch (Throwable t) {
+			LOG.error("", t);
+		}
+
 	}
 
 	/*private static void convertEmisGuids() {
@@ -4784,7 +4872,7 @@ public class Main {
 
 			ServiceDalI serviceDal = DalProvider.factoryServiceDal();
 			Service service = serviceDal.getByLocalIdentifier(serviceOdsCode);
-			LOG.info("Service " + service.getId() + " " + service.getName());
+			LOG.info("Service " + service.getId() + " " + service.getName() + " " + service.getLocalId());
 
 			/*File tempDirLast = new File(tempDir, "last");
 			if (!tempDirLast.exists()) {
