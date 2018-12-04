@@ -318,6 +318,13 @@ public class Main {
 			System.exit(0);
 		}
 
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("ConvertFhirAudit")) {
+			UUID serviceId = UUID.fromString(args[1]);
+			int threads = Integer.parseInt(args[2]);
+			convertFhirAudit(serviceId, threads);
+			System.exit(0);
+		}
 
 		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("ConvertExchangeBody")) {
@@ -539,6 +546,32 @@ public class Main {
 		// Begin consume
 		rabbitHandler.start();
 		LOG.info("EDS Queue reader running (kill file location " + TransformConfig.instance().getKillFileLocation() + ")");
+	}
+
+	private static void convertFhirAudit(UUID serviceId, int threads) {
+		LOG.info("Converting FHIR audit for " + serviceId);
+		try {
+
+			//get all systems
+
+			//for each file in publisher transform
+			//	need to create new version in audit
+			//	go through each file and generate the published_file_record entries
+			//  store map of old audit file ID -> new file ID
+
+			//update transform_warning table, to set new file ID
+
+			//for each audit JSON record
+			//	deserialise
+			//	convert to new format
+			//	what about FHIR ones that point to the wrong DB, like the Emis code map ones dp?
+			//	save to new DB
+			//	delete from old DB
+
+			LOG.info("Finished Converting FHIR audit for " + serviceId);
+		} catch (Throwable t) {
+			LOG.error("", t);
+		}
 	}
 
 	private static void moveS3ToAudit(int threads) {
