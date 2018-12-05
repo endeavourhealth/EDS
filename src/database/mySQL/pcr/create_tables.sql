@@ -6,7 +6,7 @@ USE pcr;
 
 CREATE TABLE address
 (
-  id                       int NOT NULL AUTO_INCREMENT ,
+  id                       int NOT NULL,
   address_line_1           varchar(255),
   address_line_2           varchar(255),
   address_line_3           varchar(255),
@@ -16,11 +16,11 @@ CREATE TABLE address
   approximation_concept_id bigint COMMENT 'Approximation qualifier for the UPRN',
   property_type_concept_id bigint COMMENT 'refers to information model to give the property type (e.g. prison)',
   PRIMARY KEY (id)
-)AUTO_INCREMENT =1;
+);
 
 CREATE TABLE organisation
 (
-  id                     int    AUTO_INCREMENT      NOT NULL,
+  id                     int      NOT NULL,
   service_id             varchar(36) NOT NULL COMMENT 'refers to admin database',
   system_id              varchar(36) NOT NULL COMMENT 'refers to admin database',
   ods_code               varchar(255),
@@ -33,11 +33,11 @@ CREATE TABLE organisation
   CONSTRAINT organisation_parent_organisation_id
     FOREIGN KEY (parent_organisation_id)
       REFERENCES organisation (id)
-) AUTO_INCREMENT =1;
+) ;
 
 CREATE TABLE location
 (
-  id                 int NOT NULL AUTO_INCREMENT ,
+  id                 int NOT NULL,
   organisation_id    int NOT NULL,
   name               varchar(255),
   type_concept_id    bigint COMMENT 'refers to information model to give the location type (e.g. branch surgery)',
@@ -56,7 +56,7 @@ CREATE TABLE location
   CONSTRAINT location_parent_location_id
     FOREIGN KEY (parent_location_id)
       REFERENCES location (id)
-) AUTO_INCREMENT =1 COMMENT 'represents a physical location belonging to a healthcare organisation (e.g. GP practice main site or branch site)';
+)  COMMENT 'represents a physical location belonging to a healthcare organisation (e.g. GP practice main site or branch site)';
 
 CREATE TABLE location_contact
 (
@@ -73,7 +73,7 @@ CREATE TABLE location_contact
 
 CREATE TABLE practitioner
 (
-  id                         int NOT NULL AUTO_INCREMENT ,
+  id                         int NOT NULL,
   organisation_id            int NOT NULL,
   title                      varchar(255),
   first_name                 varchar(255),
@@ -89,7 +89,7 @@ CREATE TABLE practitioner
   CONSTRAINT practitioner_organisation_id
     FOREIGN KEY (organisation_id)
       REFERENCES organisation (id)
-)AUTO_INCREMENT =1  COMMENT 'represents a clinician (e.g. doctor or nurse) or non-clinician involved in healthcare';
+) COMMENT 'represents a clinician (e.g. doctor or nurse) or non-clinician involved in healthcare';
 
 CREATE TABLE practitioner_contact
 (
@@ -118,7 +118,7 @@ CREATE TABLE practitioner_identifier
 
 CREATE TABLE patient
 (
-  id                                 int NOT NULL AUTO_INCREMENT ,
+  id                                 int NOT NULL,
   organisation_id                    int NOT NULL,
   nhs_number                         varchar(10),
   nhs_number_verification_concept_id bigint COMMENT 'refers to information model to give status of NHS number',
@@ -137,7 +137,7 @@ CREATE TABLE patient
   is_spine_sensitive                 boolean,
   ethnic_code                        char(1),
   PRIMARY KEY (id)
-)AUTO_INCREMENT = 1 COMMENT 'represents the patient demographics at an organisational level';
+) COMMENT 'represents the patient demographics at an organisational level';
 
 CREATE TABLE patient_address
 (
@@ -240,7 +240,7 @@ CREATE TABLE free_text
 
 CREATE TABLE appointment_schedule
 (
-  id                    int NOT NULL AUTO_INCREMENT ,
+  id                    int NOT NULL,
   organisation_id       int NOT NULL,
   location_id           int NOT NULL,
   description           varchar(255),
@@ -255,7 +255,7 @@ CREATE TABLE appointment_schedule
   CONSTRAINT appointment_schedule_location_id
     FOREIGN KEY (location_id)
       REFERENCES location (id)
-) AUTO_INCREMENT =1 COMMENT 'represents an appointments schedule/session/rota';
+)  COMMENT 'represents an appointments schedule/session/rota';
 
 CREATE TABLE appointment_schedule_practitioner
 (
@@ -356,7 +356,7 @@ CREATE TABLE gp_registration_status
 
 CREATE TABLE care_episode
 (
-  id                            int   AUTO_INCREMENT   NOT NULL,
+  id                            int      NOT NULL,
   patient_id                    int      NOT NULL,
   owning_organisation_id        int COMMENT 'refers to the organisation that owns/manages the care episode',
   effective_date                datetime NOT NULL COMMENT 'clinically significant date and time',
@@ -379,7 +379,7 @@ CREATE TABLE care_episode
    CONSTRAINT care_episode_patient_id
     FOREIGN KEY (patient_id)
       REFERENCES patient (id)
-) AUTO_INCREMENT=1 COMMENT 'groups care events into encounter episodes';
+)  COMMENT 'groups care events into encounter episodes';
 
 CREATE TABLE care_episode_additional_practitioner
 (
@@ -574,7 +574,7 @@ CREATE TABLE event_relationship
 
 CREATE TABLE observation
 (
-  id                               bigint   NOT NULL AUTO_INCREMENT,
+  id                               bigint   NOT NULL,
   patient_id                       int      NOT NULL,
   concept_id                       bigint   NOT NULL COMMENT 'refers to information model, giving the clinical concept of the event',
   effective_date                   datetime NOT NULL COMMENT 'clinically significant date and time',
@@ -605,11 +605,11 @@ CREATE TABLE observation
   CONSTRAINT observation_data_entry_prompt_id
     FOREIGN KEY (data_entry_prompt_id)
       REFERENCES data_entry_prompt (id)
-)AUTO_INCREMENT=1 ;
+) ;
 
 CREATE TABLE flag
 (
-  id                               bigint  NOT NULL AUTO_INCREMENT,
+  id                               bigint  NOT NULL,
   patient_id                       int      NOT NULL,
   type_concept_id                  bigint   NOT NULL COMMENT 'concept to describe the flag (e.g. Do not stop taking this medication without professional advice)',
   effective_date                   datetime NOT NULL COMMENT 'clinically significant date and time',
@@ -629,11 +629,11 @@ CREATE TABLE flag
   CONSTRAINT flag_patient_id
     FOREIGN KEY (patient_id)
       REFERENCES patient (id)
-) AUTO_INCREMENT=1 COMMENT 'store alerts/warnings/flags (things that show warnings in patient records)';
+)  COMMENT 'store alerts/warnings/flags (things that show warnings in patient records)';
 
 CREATE TABLE problem
 (
-  id                          bigint NOT NULL AUTO_INCREMENT ,
+  id                          bigint NOT NULL,
   patient_id                  int    NOT NULL,
   observation_id              bigint NOT NULL,
   type_concept_id             bigint COMMENT 'refers to information model for problem type (e.g. problem, issue, health admin)',
@@ -653,11 +653,11 @@ CREATE TABLE problem
   CONSTRAINT problem_observation_id
     FOREIGN KEY (patient_id, observation_id)
       REFERENCES observation (patient_id, id)
-)AUTO_INCREMENT=1 ;
+) ;
 
 CREATE TABLE procedure_request
 (
-  id                               bigint   NOT NULL AUTO_INCREMENT,
+  id                               bigint   NOT NULL ,
   patient_id                       int      NOT NULL,
   concept_id                       bigint   NOT NULL COMMENT 'refers to information model, giving the clinical concept of the event',
   effective_date                   datetime NOT NULL COMMENT 'clinically significant date and time',
@@ -683,11 +683,11 @@ CREATE TABLE procedure_request
     FOREIGN KEY (recipient_organisation_id)
       REFERENCES organisation (id)
 
-) AUTO_INCREMENT=1 COMMENT 'stores order (e.g. lab tests) and procedure (e.g. operation) requests';
+)  COMMENT 'stores order (e.g. lab tests) and procedure (e.g. operation) requests';
 
 CREATE TABLE `procedure`
 (
-  id                               bigint AUTO_INCREMENT   NOT NULL,
+  id                               bigint    NOT NULL,
   patient_id                       int      NOT NULL,
   concept_id                       bigint   NOT NULL COMMENT 'refers to information model, giving the clinical concept of the event',
   effective_date                   datetime NOT NULL COMMENT 'clinically significant date and time',
@@ -708,7 +708,7 @@ CREATE TABLE `procedure`
   outcome_concept_id               bigint   NOT NULL,
   is_consent                       boolean  NOT NULL COMMENT 'whether consent or dissent',
   PRIMARY KEY (id)
-)AUTO_INCREMENT =1;
+);
 
 CREATE TABLE device
 (
@@ -762,7 +762,7 @@ CREATE TABLE observation_value
 
 CREATE TABLE immunisation
 (
-  id                               bigint   NOT NULL AUTO_INCREMENT ,
+  id                               bigint   NOT NULL,
   patient_id                       int      NOT NULL,
   concept_id                       bigint   NOT NULL COMMENT 'refers to information model, giving the clinical concept of the event',
   effective_date                   datetime NOT NULL COMMENT 'clinically significant date and time',
@@ -789,11 +789,11 @@ CREATE TABLE immunisation
   is_consent                       boolean  NOT NULL COMMENT 'whether consent or dissent',
     PRIMARY KEY (id),
   UNIQUE KEY ix_patidid (patient_id, id)
-)  AUTO_INCREMENT=1 COMMENT 'provide supplementary immunisation information';
+)   COMMENT 'provide supplementary immunisation information';
 
 CREATE TABLE allergy
 (
-  id                               bigint   NOT NULL AUTO_INCREMENT,
+  id                               bigint   NOT NULL,
   patient_id                       int      NOT NULL,
   concept_id                       bigint   NOT NULL COMMENT 'refers to information model, giving the clinical concept of the event',
   effective_date                   datetime NOT NULL COMMENT 'clinically significant date and time',
@@ -818,11 +818,11 @@ CREATE TABLE allergy
   CONSTRAINT allergy_manifestation_free_text_id
     FOREIGN KEY (patient_id, manifestation_free_text_id)
       REFERENCES free_text (patient_id, id)
-) AUTO_INCREMENT=1 COMMENT 'table to provide allergy information';
+)  COMMENT 'table to provide allergy information';
 
 CREATE TABLE referral
 (
-  id                               bigint   NOT NULL AUTO_INCREMENT,
+  id                               bigint   NOT NULL,
   patient_id                       int      NOT NULL,
   concept_id                       bigint   NOT NULL COMMENT 'refers to information model, giving the clinical concept of the event',
   effective_date                   datetime NOT NULL COMMENT 'clinically significant date and time',
@@ -858,11 +858,11 @@ CREATE TABLE referral
   CONSTRAINT referral_reason_for_referral_free_text_id
     FOREIGN KEY (patient_id, reason_for_referral_free_text_id)
       REFERENCES free_text (patient_id, id)
-) AUTO_INCREMENT=1 COMMENT 'table to provide referral information';
+)  COMMENT 'table to provide referral information';
 
 CREATE TABLE medication_amount
 (
-  id                         bigint NOT NULL AUTO_INCREMENT,
+  id                         bigint NOT NULL,
   patient_id                 int    NOT NULL,
   dose                       varchar(255),
   quantity_value             double,
@@ -873,11 +873,11 @@ CREATE TABLE medication_amount
   CONSTRAINT medication_amount_patient_id
     FOREIGN KEY (patient_id)
       REFERENCES patient (id)
-) AUTO_INCREMENT=1  COMMENT 'Table to store medication dose and quantity information';
+)   COMMENT 'Table to store medication dose and quantity information';
 
 CREATE TABLE medication_statement
 (
-  id                                 bigint   NOT NULL AUTO_INCREMENT,
+  id                                 bigint   NOT NULL,
   patient_id                         int      NOT NULL,
   drug_concept_id                    bigint   NOT NULL COMMENT 'refers to information model, giving the clinical concept of the event',
   effective_date                     datetime NOT NULL COMMENT 'clinically significant date and time',
@@ -921,11 +921,11 @@ CREATE TABLE medication_statement
     FOREIGN KEY (patient_id, medication_amount_id)
       REFERENCES medication_amount (patient_id, id)
 
-) AUTO_INCREMENT=1 COMMENT 'stores the prescribed medications/authorisations';
+)  COMMENT 'stores the prescribed medications/authorisations';
 
 CREATE TABLE medication_order
 (
-  id                                 bigint   NOT NULL AUTO_INCREMENT ,
+  id                                 bigint   NOT NULL,
   patient_id                         int      NOT NULL,
   drug_concept_id                    bigint   NOT NULL COMMENT 'refers to information model, giving the clinical concept of the event',
   effective_date                     datetime NOT NULL COMMENT 'clinically significant date and time',
@@ -965,11 +965,11 @@ CREATE TABLE medication_order
     FOREIGN KEY (patient_id, medication_amount_id)
       REFERENCES medication_amount (patient_id, id)
 
-)  AUTO_INCREMENT=1 COMMENT 'stores the medication actually issued to the patient';
+)  COMMENT 'stores the medication actually issued to the patient';
 
 CREATE TABLE related_person
 (
-  id                         bigint NOT NULL AUTO_INCREMENT ,
+  id                         bigint NOT NULL,
   patient_id                 int    NOT NULL,
   title                      varchar(255),
   first_name                 varchar(255),
@@ -991,7 +991,7 @@ CREATE TABLE related_person
     FOREIGN KEY (address_id)
       REFERENCES address (id)
 
-) AUTO_INCREMENT =1 COMMENT 'stores details of a patients family and carers';
+)  COMMENT 'stores details of a patients family and carers';
 
 CREATE TABLE related_person_contact
 (
