@@ -106,7 +106,7 @@ CREATE TABLE practitioner_contact
 
 CREATE TABLE practitioner_identifier
 (
-  practitioner_id            int          NOT NULL  AUTO_INCREMENT COMMENT 'refers to the practitioner whose ID this is',
+  practitioner_id            int          NOT NULL COMMENT 'refers to the practitioner whose ID this is',
   type_concept_id            bigint       NOT NULL COMMENT 'refers to identifier type (e.g. Prescribing ID, GMC#, NMC#, Smartcard ID, local code) stored in information model',
   value                      varchar(255) NOT NULL COMMENT 'the actual identifier value',
   entered_by_practitioner_id int COMMENT 'id in practitioner table. ',
@@ -114,7 +114,7 @@ CREATE TABLE practitioner_identifier
   CONSTRAINT practitioner_identifier_practitioner_id
     FOREIGN KEY (practitioner_id)
       REFERENCES practitioner (id)
-)  AUTO_INCREMENT=1 COMMENT 'stores various IDs for a practitioner (e.g. GMC number, prescribing code)';
+) COMMENT 'stores various IDs for a practitioner (e.g. GMC number, prescribing code)';
 
 CREATE TABLE patient
 (
@@ -188,7 +188,7 @@ CREATE TABLE patient_identifier
 
 CREATE TABLE additional_attribute
 (
-  patient_id                int    AUTO_INCREMENT  NOT NULL,
+  patient_id                int    NOT NULL,
   item_type                 tinyint NOT NULL COMMENT 'valueset telling us which table type the item_id refers to (observation, procedure, referral, medication etc.)',
   item_id                   bigint  NOT NULL,
   concept_id                bigint COMMENT 'information model concept for the field/attribute label',
@@ -201,7 +201,7 @@ CREATE TABLE additional_attribute
   CONSTRAINT additional_attribute_patient_id
     FOREIGN KEY (patient_id)
       REFERENCES patient (id)
-) AUTO_INCREMENT=1 COMMENT 'Extension table to store additional attributes for tables that dont have a specific column to go in';
+)  COMMENT 'Extension table to store additional attributes for tables that dont have a specific column to go in';
 
 CREATE TABLE additional_relationship
 (
@@ -259,7 +259,7 @@ CREATE TABLE appointment_schedule
 
 CREATE TABLE appointment_schedule_practitioner
 (
-  appointment_schedule_id    int  AUTO_INCREMENT NOT NULL,
+  appointment_schedule_id    int  NOT NULL,
   practitioner_id            int     NOT NULL,
   entered_by_practitioner_id int COMMENT 'id in practitioner table. ',
   is_main_practitioner       boolean NOT NULL COMMENT 'in the event of multiple practitioners for a schedule, this tells us who is the main one',
@@ -270,7 +270,7 @@ CREATE TABLE appointment_schedule_practitioner
   CONSTRAINT appointment_schedule_practitioner_practitioner_id
     FOREIGN KEY (practitioner_id)
       REFERENCES practitioner (id)
-) AUTO_INCREMENT=1 COMMENT 'stores the practitioners linked to an appointments schedule';
+)  COMMENT 'stores the practitioners linked to an appointments schedule';
 
 CREATE TABLE appointment_slot
 (
@@ -289,7 +289,7 @@ CREATE TABLE appointment_slot
 
 CREATE TABLE appointment_booking
 (
-  appointment_slot_id        int  AUTO_INCREMENT  NOT NULL,
+  appointment_slot_id        int  NOT NULL,
   booking_time               datetime NOT NULL COMMENT 'when this booking event took place',
   patient_id                 int COMMENT 'patient booked into the slot, or null if not patient related',
   entered_by_practitioner_id int COMMENT 'id in practitioner table. ',
@@ -302,11 +302,11 @@ CREATE TABLE appointment_booking
   CONSTRAINT appointment_booking_patient_id
     FOREIGN KEY (patient_id)
       REFERENCES patient (id)
-) AUTO_INCREMENT=1 COMMENT 'represents the history of bookings into an appointment_slot';
+)  COMMENT 'represents the history of bookings into an appointment_slot';
 
 CREATE TABLE appointment_attendance
 (
-  appointment_slot_id        int NOT NULL AUTO_INCREMENT ,
+  appointment_slot_id        int NOT NULL  ,
   patient_id                 int NOT NULL,
   entered_by_practitioner_id int COMMENT 'id in practitioner table. ',
   actual_start_time          datetime,
@@ -319,11 +319,11 @@ CREATE TABLE appointment_attendance
   CONSTRAINT appointment_attendance_patient_id
     FOREIGN KEY (patient_id)
       REFERENCES patient (id)
-)AUTO_INCREMENT=1 COMMENT 'stores data created during an appointment';
+) COMMENT 'stores data created during an appointment';
 
 CREATE TABLE appointment_attendance_event
 (
-  appointment_slot_id        int AUTO_INCREMENT  NOT NULL,
+  appointment_slot_id        int NOT NULL,
   event_time                 datetime NOT NULL,
   event_concept_id           bigint   NOT NULL COMMENT 'concept to give the status of the attendance (e.g. arrived, sent in)',
   entered_by_practitioner_id int COMMENT 'id in practitioner table. ',
@@ -331,7 +331,7 @@ CREATE TABLE appointment_attendance_event
   CONSTRAINT appointment_attendance_event_appointment_slot_id
     FOREIGN KEY (appointment_slot_id)
       REFERENCES appointment_slot (id)
-)AUTO_INCREMENT=1  COMMENT 'records the various timestamps during an appointment (e.g. arrival, sent in, finished)';
+)   COMMENT 'records the various timestamps during an appointment (e.g. arrival, sent in, finished)';
 
 CREATE TABLE gp_registration_status
 (
@@ -383,16 +383,16 @@ CREATE TABLE care_episode
 
 CREATE TABLE care_episode_additional_practitioner
 (
-  patient_id                 int  NOT NULL AUTO_INCREMENT,
+  patient_id                 int  NOT NULL,
   care_episode_id            bigint NOT NULL,
   practitioner_id            int    NOT NULL,
   entered_by_practitioner_id int COMMENT 'id in practitioner table. ',
   PRIMARY KEY (patient_id, care_episode_id, practitioner_id)
-) AUTO_INCREMENT=1 COMMENT 'provides additional practitioners for a care episode';
+)   COMMENT 'provides additional practitioners for a care episode';
 
 CREATE TABLE care_episode_status
 (
-  patient_id                     int   AUTO_INCREMENT   NOT NULL,
+  patient_id                     int NOT NULL,
   owning_organisation_id         int COMMENT 'refers to the organisation that owns/manages the care episode status',
   entered_by_practitioner_id     int COMMENT 'id in practitioner table. ',
   care_episode_id                int      NOT NULL,
@@ -406,7 +406,7 @@ CREATE TABLE care_episode_status
   CONSTRAINT care_episode_status_care_episode_id_patient_id
     FOREIGN KEY (patient_id, care_episode_id)
       REFERENCES care_episode (patient_id, id)
-)AUTO_INCREMENT=1 COMMENT 'stores status/state events for a care episode';
+) COMMENT 'stores status/state events for a care episode';
 
 CREATE TABLE consultation
 (
@@ -565,12 +565,12 @@ CREATE TABLE hospital_discharge
 
 CREATE TABLE event_relationship
 (
-  item_id                             bigint  NOT NULL AUTO_INCREMENT,
+  item_id                             bigint  NOT NULL,
   item_type                           tinyint NOT NULL COMMENT 'valueset telling us whether linked_item_id refers to an observation, an allergy, medication etc.',
   linked_item_id                      bigint  NOT NULL,
   linked_item_relationship_concept_id bigint COMMENT 'refers to information model to define how this event relates to another event (e.g. child of, reason for, related complication, related result, related reaction, cause of, grouped with, evolved from)',
   PRIMARY KEY (item_id, linked_item_id)
-)AUTO_INCREMENT=1 COMMENT 'defines how a clinical event relates to another event (e.g. child of, reason for, related complication, related result, related reaction, cause of, grouped with, evolved from)';
+)  COMMENT 'defines how a clinical event relates to another event (e.g. child of, reason for, related complication, related result, related reaction, cause of, grouped with, evolved from)';
 
 CREATE TABLE observation
 (
@@ -744,7 +744,7 @@ CREATE TABLE procedure_device
 
 CREATE TABLE observation_value
 (
-  patient_id                 int  AUTO_INCREMENT  NOT NULL,
+  patient_id                 int    NOT NULL,
   observation_id             bigint NOT NULL COMMENT 'refers to the observation this belongs to',
   operator_concept_id        bigint COMMENT 'refers to information model, giving operator (e.g. =, <, <=, >, >=)',
   entered_by_practitioner_id int COMMENT 'id in practitioner table. ',
@@ -758,7 +758,7 @@ CREATE TABLE observation_value
   CONSTRAINT observation_value_patient_id_observation_id
     FOREIGN KEY (patient_id, observation_id)
       REFERENCES observation (patient_id, id)
-)AUTO_INCREMENT=1 COMMENT 'provides columns for an observation value';
+) COMMENT 'provides columns for an observation value';
 
 CREATE TABLE immunisation
 (
@@ -995,7 +995,7 @@ CREATE TABLE related_person
 
 CREATE TABLE related_person_contact
 (
-  patient_id                 int          NOT NULL AUTO_INCREMENT,
+  patient_id                 int          NOT NULL,
   related_person_id          bigint       NOT NULL,
   type_concept_id            bigint       NOT NULL COMMENT 'type of contact (e.g. home phone, mobile phone, email)',
   value                      varchar(255) NOT NULL COMMENT 'the actual phone number or email address',
@@ -1004,11 +1004,11 @@ CREATE TABLE related_person_contact
   CONSTRAINT related_person_contact_patient_id_related_person_id
     FOREIGN KEY (patient_id, related_person_id)
       REFERENCES related_person (patient_id, id)
-) AUTO_INCREMENT=1 COMMENT 'stores contact method(s) for a related person (e.g. phone number)';
+)   COMMENT 'stores contact method(s) for a related person (e.g. phone number)';
 
 CREATE TABLE related_person_relationship
 (
-  patient_id                 int    NOT NULL AUTO_INCREMENT,
+  patient_id                 int    NOT NULL,
   related_person_id          bigint NOT NULL,
   type_concept_id            bigint NOT NULL COMMENT 'refers to the information model, to give the type of relationship (e.g. brother, friend)',
   entered_by_practitioner_id int COMMENT 'id in practitioner table. ',
@@ -1019,7 +1019,7 @@ CREATE TABLE related_person_relationship
   CONSTRAINT related_person_relationship_related_person_id
     FOREIGN KEY (patient_id, related_person_id)
       REFERENCES related_person (patient_id, id)
-)AUTO_INCREMENT=1 COMMENT 'Table to provide the type(s) of relationship between a person and related_person (e.g. carer, brother, next of kin, key holder)';
+) COMMENT 'Table to provide the type(s) of relationship between a person and related_person (e.g. carer, brother, next of kin, key holder)';
 
 CREATE TABLE care_plan
 (
