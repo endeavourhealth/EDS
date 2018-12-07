@@ -186,6 +186,63 @@ CREATE TRIGGER after_patient_identifier_delete
   END$$
 DELIMITER ;
 
+drop trigger if exists after_gp_registration_status_insert;
+
+DELIMITER $$
+CREATE TRIGGER after_gp_registration_status_insert
+  AFTER INSERT ON gp_registration_status
+  FOR EACH ROW
+  BEGIN
+    INSERT INTO event_log
+    set
+      organisation_id = NEW.owning_organisation_id,
+      entry_date = now(),
+      entered_by_practitioner_id  = coalesce(NEW.entered_by_practitioner_id,'-1'),
+      device_id = 0,
+      entry_mode = 0,
+      table_id = 22,
+      item_id = NEW.id;
+  END$$
+DELIMITER ;
+
+drop trigger if exists after_gp_registration_status_update;
+
+DELIMITER $$
+CREATE TRIGGER after_gp_registration_status_update
+  AFTER UPDATE ON gp_registration_status
+  FOR EACH ROW
+  BEGIN
+    INSERT INTO event_log
+    set
+      organisation_id = OLD.owning_organisation_id,
+      entry_date = now(),
+      entered_by_practitioner_id  = coalesce(OLD.entered_by_practitioner_id,NEW.entered_by_practitioner_id,'-1'),
+      device_id = 0,
+      entry_mode = 0,
+      table_id = 22,
+      item_id = OLD.id;
+  END$$
+DELIMITER ;
+
+drop trigger if exists after_gp_registration_status_delete;
+
+DELIMITER $$
+CREATE TRIGGER after_gp_registration_status_delete
+  AFTER DELETE ON gp_registration_status
+  FOR EACH ROW
+  BEGIN
+    INSERT INTO event_log
+    set
+      organisation_id = OLD.owning_organisation_id,
+      entry_date = now(),
+      entered_by_practitioner_id  = coalesce(OLD.entered_by_practitioner_id,'-1'),
+      device_id = 0,
+      entry_mode = 1,
+      table_id = 22,
+      item_id = OLD.id;
+  END$$
+DELIMITER ;
+
 drop trigger if exists after_consultation_insert;
 
 DELIMITER $$
