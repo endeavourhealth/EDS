@@ -7,6 +7,7 @@ DROP PROCEDURE IF EXISTS `patient_medications`;
 DROP PROCEDURE IF EXISTS `patient_allergies`;
 DROP PROCEDURE IF EXISTS `practice_diabetics_count_over_12s`;
 DROP PROCEDURE IF EXISTS `practice_asthma_count`;
+DROP PROCEDURE IF EXISTS `practice_pcr_data_count`;
 
 DELIMITER $$
 CREATE PROCEDURE `patient_demographics`(
@@ -127,12 +128,14 @@ CREATE PROCEDURE `practice_diabetics_count_over_12s`(
 )
     BEGIN
 
-        select count(distinct(patient_id)) as 'Diabetics 12+ count' from pcr.observation o
+        select count(distinct(p.nhs_number)) as 'Diabetics 12+ count' from pcr.observation o
             join pcr.organisation org on org.id = o.owning_organisation_id
             join pcr.patient p on p.id = o.patient_id
+            join pcr.gp_registration_status reg on reg.patient_id = p.id
         where o.original_code in (select read2_concept_id from subscriber_transform_pcr.code_set_codes where code_set_id in (3,5))
               and org.ods_code = _odscode
               and p.date_of_birth < DATE(NOW()-INTERVAL 12 year)
+              and (reg.gp_registration_status_concept_id = 2 and reg.is_current = true)
               and p.date_of_death is null;
 
     END$$
@@ -144,12 +147,59 @@ CREATE PROCEDURE `practice_asthma_count`(
 )
     BEGIN
 
-        select count(distinct(patient_id)) as 'Asthma patients' from pcr.observation o
+        select count(distinct(p.nhs_number)) as 'Asthma patients' from pcr.observation o
             join pcr.organisation org on org.id = o.owning_organisation_id
             join pcr.patient p on p.id = o.patient_id
+            join pcr.gp_registration_status reg on reg.patient_id = p.id
         where o.original_code in (select read2_concept_id from subscriber_transform_pcr.code_set_codes where code_set_id in (0))
               and org.ods_code = _odscode
+              and (reg.gp_registration_status_concept_id = 2 and reg.is_current = true)
               and p.date_of_death is null;
+
+    END$$
+DELIMITER ;
+
+DELIMITER $$
+CREATE PROCEDURE `practice_pcr_data_count`(
+    IN _odscode varchar(10)
+)
+    BEGIN
+
+        select
+            count(*) as 'Count', '' 'pcr.allergy' from pcr.allergy a
+            join pcr.organisation org on org.id = a.owning_organisation_id
+        where org.ods_code = _odscode
+        union
+        select
+            count(*) as 'Count' , 'pcr.problem' from pcr.problem pr
+            join pcr.observation o on o.id = pr.observation_id
+            join pcr.organisation org on org.id = o.owning_organisation_id
+        where org.ods_code = _odscode
+        union
+        select
+            count(*) as 'Count', 'pcr.immunisation' from pcr.immunisation i
+            join pcr.organisation org on org.id = i.owning_organisation_id
+        where org.ods_code = _odscode
+        union
+        select
+            count(*)  as 'Count', 'pcr.medication_order' from pcr.medication_order mo
+            join pcr.organisation org on org.id = mo.owning_organisation_id
+        where org.ods_code = _odscode
+        union
+        select
+            count(*)  as 'Count', 'pcr.medication_statement' from pcr.medication_statement ms
+            join pcr.organisation org on org.id = ms.owning_organisation_id
+        where org.ods_code = _odscode
+        union
+        select
+            count(*)  as 'Count', 'pcr.observation' from pcr.observation o
+            join pcr.organisation org on org.id = o.owning_organisation_id
+        where org.ods_code = _odscode
+        union
+        select
+            count(*)  as 'Count', 'pcr.patient' from pcr.patient p
+            join pcr.organisation org on org.id = p.organisation_id
+        where org.ods_code = _odscode;
 
     END$$
 DELIMITER ;
