@@ -187,6 +187,11 @@ public class MessageTransformOutbound extends PipelineComponent {
 
 		} else if (software.equals(MessageFormat.PCR_CSV)) {
 
+			//temporarily disabling this so we can clear down a queue
+			if (true) {
+				return null;
+			}
+
 			UUID systemId = exchange.getHeaderAsUuid(HeaderKeys.SenderSystemUuid);
 			String body = exchange.getBody();
 
