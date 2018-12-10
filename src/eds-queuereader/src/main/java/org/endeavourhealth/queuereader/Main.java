@@ -29,6 +29,7 @@ import org.endeavourhealth.core.configuration.PostMessageToExchangeConfig;
 import org.endeavourhealth.core.configuration.QueueReaderConfiguration;
 import org.endeavourhealth.core.csv.CsvHelper;
 import org.endeavourhealth.core.database.dal.DalProvider;
+import org.endeavourhealth.core.database.dal.admin.LibraryRepositoryHelper;
 import org.endeavourhealth.core.database.dal.admin.ServiceDalI;
 import org.endeavourhealth.core.database.dal.admin.models.Service;
 import org.endeavourhealth.core.database.dal.audit.ExchangeBatchDalI;
@@ -53,6 +54,7 @@ import org.endeavourhealth.core.fhirStorage.FhirStorageService;
 import org.endeavourhealth.core.fhirStorage.JsonServiceInterfaceEndpoint;
 import org.endeavourhealth.core.messaging.pipeline.components.PostMessageToExchange;
 import org.endeavourhealth.core.queueing.QueueHelper;
+import org.endeavourhealth.core.xml.QueryDocument.*;
 import org.endeavourhealth.core.xml.TransformErrorSerializer;
 import org.endeavourhealth.core.xml.transformError.TransformError;
 import org.endeavourhealth.subscriber.filer.EnterpriseFiler;
@@ -67,11 +69,13 @@ import org.endeavourhealth.transform.enterprise.json.LinkDistributorConfig;
 import org.endeavourhealth.transform.enterprise.transforms.PatientTransformer;
 import org.hibernate.internal.SessionImpl;
 import org.hl7.fhir.instance.model.*;
+import org.hl7.fhir.instance.model.Resource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.persistence.EntityManager;
 import java.io.*;
+import java.lang.System;
 import java.lang.reflect.Constructor;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
@@ -2341,6 +2345,8 @@ public class Main {
 			int checked = 0;
 			int saved = 0;
 
+			Map<String, Boolean> hmPermittedPublishers = new HashMap<>();
+
 			String sql = "SELECT service_id, patient_id, uprn, qualifier, abp_address, `algorithm`, `match`, no_address, invalid_address, missing_postcode, invalid_postcode FROM patient_address_uprn";
 
 			Statement s = edsConnection.createStatement();
@@ -2369,67 +2375,128 @@ public class Main {
 
 				//if the patient doesn't exist on this subscriber DB, then don't transform this record
 				if (subscriberPatientId != null) {
-					Long subscriberOrgId = enterpriseIdDal.findEnterpriseOrganisationId(serviceId);
 
-					String discoveryPersonId = patientLinkDal.getPersonId(patientId);
-					Long subscriberPersonId = enterpriseIdDal.findOrCreateEnterprisePersonId(discoveryPersonId);
+					//because of past mistakes, we have Discovery->Enterprise mappings for patients that
+					//shouldn't, so we also need to check that the service ID is definitely a publisher to this subscriber
+					Boolean isPublisher = hmPermittedPublishers.get(serviceId);
+					if (isPublisher == null) {
 
-					String lsoaCode = null;
-					if (!Strings.isNullOrEmpty(abpAddress)) {
-						String[] toks = abpAddress.split(" ");
-						String postcode = toks[toks.length - 1];
-						PostcodeLookup postcodeReference = postcodeDal.getPostcodeReference(postcode);
-						if (postcodeReference != null) {
-							lsoaCode = postcodeReference.getLsoaCode();
+						List<LibraryItem> libraryItems = LibraryRepositoryHelper.getProtocolsByServiceId(serviceId, null); //passing null means don't filter on system ID
+						for (LibraryItem libraryItem: libraryItems) {
+							Protocol protocol = libraryItem.getProtocol();
+							if (protocol.getEnabled() != ProtocolEnabled.TRUE) {
+								continue;
+							}
+
+							//check to make sure that this service is actually a PUBLISHER to this protocol
+							boolean isProtocolPublisher = false;
+							for (ServiceContract serviceContract : protocol.getServiceContract()) {
+								if (serviceContract.getType().equals(ServiceContractType.PUBLISHER)
+										&& serviceContract.getService().getUuid().equals(serviceId)
+										&& serviceContract.getActive() == ServiceContractActive.TRUE) {
+
+									isProtocolPublisher = true;
+									break;
+								}
+							}
+							if (!isProtocolPublisher) {
+								continue;
+							}
+
+							//check to see if this subscriber config is a subscriber to this DB
+							for (ServiceContract serviceContract : protocol.getServiceContract()) {
+								if (serviceContract.getType().equals(ServiceContractType.SUBSCRIBER)
+										&& serviceContract.getActive() == ServiceContractActive.TRUE) {
+
+									ServiceDalI serviceRepository = DalProvider.factoryServiceDal();
+									UUID subscriberServiceId = UUID.fromString(serviceContract.getService().getUuid());
+									UUID subscriberTechnicalInterfaceId = UUID.fromString(serviceContract.getTechnicalInterface().getUuid());
+									Service subscriberService = serviceRepository.getById(subscriberServiceId);
+									List<JsonServiceInterfaceEndpoint> serviceEndpoints = ObjectMapperPool.getInstance().readValue(subscriberService.getEndpoints(), new TypeReference<List<JsonServiceInterfaceEndpoint>>() {});
+									for (JsonServiceInterfaceEndpoint serviceEndpoint: serviceEndpoints) {
+										if (serviceEndpoint.getTechnicalInterfaceUuid().equals(subscriberTechnicalInterfaceId)) {
+											String protocolSubscriberConfigName = serviceEndpoint.getEndpoint();
+											if (protocolSubscriberConfigName.equals(subscriberConfigName)) {
+												isPublisher = new Boolean(true);
+												break;
+											}
+										}
+									}
+								}
+							}
 						}
+
+						if (isPublisher == null) {
+							isPublisher = new Boolean(false);
+						}
+
+						hmPermittedPublishers.put(serviceId, isPublisher);
 					}
 
-					col = 1;
-					psUpsert.setLong(col++, subscriberPatientId);
-					psUpsert.setLong(col++, subscriberOrgId);
-					psUpsert.setLong(col++, subscriberPersonId);
-					psUpsert.setString(col++, lsoaCode);
+					if (isPublisher.booleanValue()) {
 
-					if (pseudonymised) {
+						Long subscriberOrgId = enterpriseIdDal.findEnterpriseOrganisationId(serviceId);
 
-						String pseuoUprn = null;
-						if (uprn != null) {
+						String discoveryPersonId = patientLinkDal.getPersonId(patientId);
+						Long subscriberPersonId = enterpriseIdDal.findOrCreateEnterprisePersonId(discoveryPersonId);
 
-							TreeMap<String, String> keys = new TreeMap<>();
-							keys.put("UPRN", "" + uprn);
-
-							Crypto crypto = new Crypto();
-							crypto.SetEncryptedSalt(saltBytes);
-							pseuoUprn = crypto.GetDigest(keys);
+						String lsoaCode = null;
+						if (!Strings.isNullOrEmpty(abpAddress)) {
+							String[] toks = abpAddress.split(" ");
+							String postcode = toks[toks.length - 1];
+							PostcodeLookup postcodeReference = postcodeDal.getPostcodeReference(postcode);
+							if (postcodeReference != null) {
+								lsoaCode = postcodeReference.getLsoaCode();
+							}
 						}
 
-						psUpsert.setString(col++, pseuoUprn);
-					} else {
-						if (uprn != null) {
+						col = 1;
+						psUpsert.setLong(col++, subscriberPatientId);
+						psUpsert.setLong(col++, subscriberOrgId);
+						psUpsert.setLong(col++, subscriberPersonId);
+						psUpsert.setString(col++, lsoaCode);
 
-							psUpsert.setLong(col++, uprn.longValue());
+						if (pseudonymised) {
+
+							String pseuoUprn = null;
+							if (uprn != null) {
+
+								TreeMap<String, String> keys = new TreeMap<>();
+								keys.put("UPRN", "" + uprn);
+
+								Crypto crypto = new Crypto();
+								crypto.SetEncryptedSalt(saltBytes);
+								pseuoUprn = crypto.GetDigest(keys);
+							}
+
+							psUpsert.setString(col++, pseuoUprn);
 						} else {
-							psUpsert.setNull(col++, Types.BIGINT);
+							if (uprn != null) {
+
+								psUpsert.setLong(col++, uprn.longValue());
+							} else {
+								psUpsert.setNull(col++, Types.BIGINT);
+							}
 						}
-					}
-					psUpsert.setString(col++, qualifier);
-					psUpsert.setString(col++, algorithm);
-					psUpsert.setString(col++, match);
-					psUpsert.setBoolean(col++, noAddress);
-					psUpsert.setBoolean(col++, invalidAddress);
-					psUpsert.setBoolean(col++, missingPostcode);
-					psUpsert.setBoolean(col++, invalidPostcode);
+						psUpsert.setString(col++, qualifier);
+						psUpsert.setString(col++, algorithm);
+						psUpsert.setString(col++, match);
+						psUpsert.setBoolean(col++, noAddress);
+						psUpsert.setBoolean(col++, invalidAddress);
+						psUpsert.setBoolean(col++, missingPostcode);
+						psUpsert.setBoolean(col++, invalidPostcode);
 
-					//LOG.debug("" + psUpsert);
+						//LOG.debug("" + psUpsert);
 
-					psUpsert.addBatch();
-					inBatch++;
-					saved++;
+						psUpsert.addBatch();
+						inBatch++;
+						saved++;
 
-					if (inBatch >= TransformConfig.instance().getResourceSaveBatchSize()) {
-						psUpsert.executeBatch();
-						subscriberConnection.commit();
-						inBatch = 0;
+						if (inBatch >= TransformConfig.instance().getResourceSaveBatchSize()) {
+							psUpsert.executeBatch();
+							subscriberConnection.commit();
+							inBatch = 0;
+						}
 					}
 				}
 
@@ -4917,7 +4984,7 @@ public class Main {
 			UUID systemUuid = UUID.fromString(systemId);
 			ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
 
-			//get all the exchanges, which are returned in reverse order, so reverse for simplicity
+			//get all the exchanges, which are returned in reverse order, most recent first
 			List<Exchange> exchangesDesc = exchangeDal.getExchangesByService(serviceUuid, systemUuid, Integer.MAX_VALUE);
 
 			Map<Exchange, List<String>> hmExchangeFiles = new HashMap<>();
@@ -4972,7 +5039,7 @@ public class Main {
 			int indexRebulked = -1;
 			int indexOriginallyBulked = -1;
 
-			//go back through them to find the extract where the re-bulk is and when it was disabled
+			//go back through them to find the extract where the re-bulk is and when it was disabled (the list is in date order, so we're iterating most-recent first)
 			for (int i=exchanges.size()-1; i>=0; i--) {
 				Exchange exchange = exchanges.get(i);
 
