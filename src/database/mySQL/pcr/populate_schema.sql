@@ -57,5 +57,4 @@ insert into pcr.pcr_tables (id, table_name) values (51, 'care_plan_activity_targ
 delete from pcr.data_entry_prompt;
 SET FOREIGN_KEY_CHECKS=0;
 insert into pcr.data_entry_prompt (id, organisation_id, prompt_text) values (-1,1,'Place holder');
-insert into pcr.organisation (id,name,is_active,parent_organisation_id) values(9,'root entry',0,0);
 SET FOREIGN_KEY_CHECKS=1;
