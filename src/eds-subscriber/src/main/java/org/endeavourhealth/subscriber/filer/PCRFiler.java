@@ -38,7 +38,7 @@ public class PCRFiler {
 
     private static final int UPSERT_ATTEMPTS = 10;
     //TODO maybe more need add to list but only these 2 seem to hit so far
-    private static List<String> dependencyNames = Arrays.asList("medication_statement.csv", "medication_order.csv");
+    private static List<String> dependencyNames = Arrays.asList("medication_statement.csv", "medication_order.csv", "patient_address.csv");
 
     private static Map<String, HikariDataSource> connectionPools = new ConcurrentHashMap<>();
     private static Map<String, String> escapeCharacters = new ConcurrentHashMap<>();
