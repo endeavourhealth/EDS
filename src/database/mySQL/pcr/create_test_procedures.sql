@@ -8,6 +8,7 @@ DROP PROCEDURE IF EXISTS `patient_allergies`;
 DROP PROCEDURE IF EXISTS `practice_diabetics_count_over_12s`;
 DROP PROCEDURE IF EXISTS `practice_asthma_count`;
 DROP PROCEDURE IF EXISTS `practice_pcr_data_count`;
+DROP PROCEDURE IF EXISTS `practice_currently_registered_patients`;
 
 DELIMITER $$
 CREATE PROCEDURE `patient_demographics`(
@@ -155,6 +156,22 @@ CREATE PROCEDURE `practice_asthma_count`(
               and org.ods_code = _odscode
               and (reg.gp_registration_status_concept_id = 2 and reg.is_current = true)
               and p.date_of_death is null;
+
+    END$$
+DELIMITER ;
+
+DELIMITER $$
+CREATE PROCEDURE `practice_currently_registered_patients`(
+    IN _odscode varchar(10)
+)
+    BEGIN
+
+        select count(distinct(p.nhs_number)) as 'Currently registered patients' from pcr.patient p
+            join pcr.organisation org on org.id = o.owning_organisation_id
+            join pcr.gp_registration_status reg on reg.patient_id = p.id
+            and org.ods_code = _odscode
+            and (reg.gp_registration_status_concept_id = 2 and reg.is_current = true)
+            and p.date_of_death is null;
 
     END$$
 DELIMITER ;
