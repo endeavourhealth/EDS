@@ -2159,42 +2159,50 @@ public class Main {
 		}
 
 		try {
-			List<UUID> exchangeIds = new ArrayList<>();
-
 			File src = new File(srcFile);
-			List<String> lines = Files.readAllLines(src.toPath());
-			for (String line: lines) {
-				if (!Strings.isNullOrEmpty(line)) {
-					try {
-						UUID uuid = UUID.fromString(line);
-						exchangeIds.add(uuid);
-					} catch (Exception ex) {
-						LOG.error("Skipping line " + line);
-					}
-				}
-			}
-			LOG.info("Found " + exchangeIds.size() + " to post to " + exchangeName);
 
 			//create file of ones done
 			File dir = src.getParentFile();
 			String name = "DONE" + src.getName();
 			File dst = new File(dir, name);
 
+			Set<UUID> hsAlreadyDone = new HashSet<>();
 			if (dst.exists()) {
-				lines = Files.readAllLines(dst.toPath());
+				List<String> lines = Files.readAllLines(dst.toPath());
 				for (String line : lines) {
 					if (!Strings.isNullOrEmpty(line)) {
 						try {
 							UUID uuid = UUID.fromString(line);
-							exchangeIds.remove(uuid);
+							hsAlreadyDone.add(uuid);
 						} catch (Exception ex) {
 							LOG.error("Skipping line " + line);
 						}
 					}
 				}
 
-				LOG.info("After removing done ones, now have " + exchangeIds.size());
+				LOG.info("Already done " + hsAlreadyDone);
 			}
+
+			List<UUID> exchangeIds = new ArrayList<>();
+			int countTotal = 0;
+
+			List<String> lines = Files.readAllLines(src.toPath());
+			for (String line: lines) {
+				if (!Strings.isNullOrEmpty(line)) {
+					try {
+						UUID uuid = UUID.fromString(line);
+						countTotal ++;
+
+						if (!hsAlreadyDone.contains(uuid)) {
+							exchangeIds.add(uuid);
+						}
+
+					} catch (Exception ex) {
+						LOG.error("Skipping line " + line);
+					}
+				}
+			}
+			LOG.info("Found " + countTotal + " down to " + exchangeIds.size() + " skipping ones already done, to post to " + exchangeName);
 
 			continueOrQuit();
 
