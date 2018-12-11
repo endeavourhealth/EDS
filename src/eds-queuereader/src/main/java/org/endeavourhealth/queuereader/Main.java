@@ -2198,7 +2198,7 @@ public class Main {
 
 			continueOrQuit();
 
-			FileWriter fileWriter = new FileWriter(dst);
+			FileWriter fileWriter = new FileWriter(dst, true);
 			PrintWriter printWriter = new PrintWriter(fileWriter);
 
 			long startMs = System.currentTimeMillis();

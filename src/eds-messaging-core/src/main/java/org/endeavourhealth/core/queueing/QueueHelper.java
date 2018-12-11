@@ -126,7 +126,7 @@ public class QueueHelper {
             AuditWriter.writeExchangeEvent(exchange, "Manually pushed into " + exchangeName + " exchange");
 
             if (i % 1000 == 0) {
-                LOG.info("Posted " + i + " / " + exchangeIds.size() + " exchanges to " + exchangeName);
+                LOG.info("Posted " + (i+1) + " / " + exchangeIds.size() + " exchanges to " + exchangeName);
             }
         }
 
