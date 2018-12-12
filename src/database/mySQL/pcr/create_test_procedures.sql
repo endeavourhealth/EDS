@@ -16,6 +16,7 @@ CREATE PROCEDURE `patient_demographics`(
 )
     BEGIN
 
+        -- all demographics for a patient by NHS number
         select
             p.id, p.nhs_number, p.date_of_birth, p.gender_concept_id,
             p.title, p.first_name, p.middle_names, p.last_name,
@@ -23,9 +24,9 @@ CREATE PROCEDURE `patient_demographics`(
             a.postcode, a.uprn
         from
             pcr.patient p
-            left join
+        left join
             patient_address pa on pa.patient_id = p.id
-            left join
+        left join
             address a on a.id = pa.address_id
         where
             p.nhs_number = _nhsno;
@@ -39,17 +40,18 @@ CREATE PROCEDURE `patient_observations`(
 )
     BEGIN
 
+        -- all observations for a patient by NHS number
         select
             o.patient_id, o.effective_date, o.original_code, o.original_term, o.original_code_scheme,
             ov.result_value, ov.result_value_units, ov.result_date, ov.result_text,
             pr.title as 'Clincian Title', pr.first_name as 'Clinician First Name', pr.last_name as 'Clinician Last Name'
         from
             pcr.observation o
-            left join
+        left join
             pcr.observation_value ov on o.id = ov.observation_id and ov.patient_id = o.patient_id
-            left join
+        left join
             pcr.practitioner pr on pr.id = o.effective_practitioner_id
-            join
+        join
             pcr.patient p on p.id = o.patient_id
         where
             p.nhs_number = _nhsno;
@@ -63,14 +65,15 @@ CREATE PROCEDURE `patient_immunisations`(
 )
     BEGIN
 
+        -- all immunisations for a patient by NHS number
         select
             i.patient_id, i.effective_date, i.original_code, i.original_term, i.original_code_scheme,
             pr.title as 'Clincian Title', pr.first_name as 'Clinician First Name', pr.last_name as 'Clinician Last Name'
         from
             pcr.immunisation i
-            left join
+        left join
             pcr.practitioner pr on pr.id = i.effective_practitioner_id
-            join
+        join
             pcr.patient p on p.id = i.patient_id
         where
             p.nhs_number = _nhsno;
@@ -84,17 +87,18 @@ CREATE PROCEDURE `patient_medications`(
 )
     BEGIN
 
+        -- all medications for a patient by NHS number
         select
             ms.patient_id, ms.effective_date, ms.original_code, ms.original_term,ms.original_code_scheme,
             mo.dose, mo.quantity_value, mo.quantity_units,
             pr.title as 'Clincian Title', pr.first_name as 'Clinician First Name', pr.last_name as 'Clinician Last Name'
         from
             pcr.medication_statement ms
-            join
+        join
             pcr.medication_amount mo on ms.medication_amount_id = mo.id
-            left join
+        left join
             pcr.practitioner pr on pr.id = ms.effective_practitioner_id
-            join
+        join
             pcr.patient p on p.id = ms.patient_id
         where
             p.nhs_number = _nhsno;
@@ -108,14 +112,15 @@ CREATE PROCEDURE `patient_allergies`(
 )
     BEGIN
 
+        -- all allergies for a patient by NHS number
         select
             a.patient_id, a.effective_date, a.original_code, a.original_term, a.original_code_scheme,
             pr.title as 'Clincian Title', pr.first_name as 'Clinician First Name', pr.last_name as 'Clinician Last Name'
         from
             pcr.allergy a
-            left join
+        left join
             pcr.practitioner pr on pr.id = a.effective_practitioner_id
-            join
+        join
             pcr.patient p on p.id = a.patient_id
         where
             p.nhs_number = _nhsno;
@@ -129,15 +134,21 @@ CREATE PROCEDURE `practice_diabetics_count_over_12s`(
 )
     BEGIN
 
+        -- all registered patients who have a Diabetes code (3,4,5) and are 12 years or older
         select count(distinct(p.nhs_number)) as 'Diabetics 12+ count' from pcr.observation o
             join pcr.organisation org on org.id = o.owning_organisation_id
             join pcr.patient p on p.id = o.patient_id
             join pcr.gp_registration_status reg on reg.patient_id = p.id
-        where o.original_code in (select read2_concept_id from subscriber_transform_pcr.code_set_codes where code_set_id in (3,5))
-              and org.ods_code = _odscode
-              and p.date_of_birth < DATE(NOW()-INTERVAL 12 year)
-              and (reg.gp_registration_status_concept_id = 2 and reg.is_current = true)
-              and p.date_of_death is null;
+        where
+            org.ods_code = _odscode
+        and
+            o.original_code in (select read2_concept_id from subscriber_transform_pcr.code_set_codes where code_set_id in (3,4,5))
+        and
+            p.date_of_birth <= DATE(NOW() - INTERVAL 12 year)
+        and
+            (reg.gp_registration_status_concept_id = 2 and reg.is_current = true)
+        and
+            p.date_of_death is null;
 
     END$$
 DELIMITER ;
@@ -148,14 +159,24 @@ CREATE PROCEDURE `practice_asthma_count`(
 )
     BEGIN
 
+        -- all registered patients who have an Asthma diagnosis code (68) and have been given Asthma medication (69) during the last 12 months
         select count(distinct(p.nhs_number)) as 'Asthma patients' from pcr.observation o
             join pcr.organisation org on org.id = o.owning_organisation_id
             join pcr.patient p on p.id = o.patient_id
+            join pcr.medication_statement ms on ms.patient_id = p.id
             join pcr.gp_registration_status reg on reg.patient_id = p.id
-        where o.original_code in (select read2_concept_id from subscriber_transform_pcr.code_set_codes where code_set_id in (0))
-              and org.ods_code = _odscode
-              and (reg.gp_registration_status_concept_id = 2 and reg.is_current = true)
-              and p.date_of_death is null;
+        where
+            org.ods_code = _odscode
+        and
+            o.original_code in (select read2_concept_id from subscriber_transform_pcr.code_set_codes where code_set_id in (68))
+        and
+            (ms.original_code in (select sct_concept_id from subscriber_transform_pcr.code_set_codes where code_set_id in (69))
+        and
+            ms.effective_date >= DATE(NOW() - INTERVAL 12 MONTH))
+        and
+            (reg.gp_registration_status_concept_id = 2 and reg.is_current = true)
+        and
+            p.date_of_death is null;
 
     END$$
 DELIMITER ;
@@ -166,12 +187,16 @@ CREATE PROCEDURE `practice_currently_registered_patients`(
 )
     BEGIN
 
+        -- all registered patients
         select count(distinct(p.nhs_number)) as 'Currently registered patients' from pcr.patient p
             join pcr.organisation org on org.id = o.owning_organisation_id
             join pcr.gp_registration_status reg on reg.patient_id = p.id
-            and org.ods_code = _odscode
-            and (reg.gp_registration_status_concept_id = 2 and reg.is_current = true)
-            and p.date_of_death is null;
+        and
+            org.ods_code = _odscode
+        and
+            (reg.gp_registration_status_concept_id = 2 and reg.is_current = true)
+        and
+            p.date_of_death is null;
 
     END$$
 DELIMITER ;
@@ -182,6 +207,7 @@ CREATE PROCEDURE `practice_pcr_data_count`(
 )
     BEGIN
 
+        -- all PCR data tables counts
         select
             count(*) as 'Count', '' 'pcr.allergy' from pcr.allergy a
             join pcr.organisation org on org.id = a.owning_organisation_id
