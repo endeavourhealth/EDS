@@ -1,17 +1,8 @@
 package org.endeavourhealth.queuereader;
 
 import OpenPseudonymiser.Crypto;
-import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
-import com.amazonaws.regions.Regions;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.s3.model.GetObjectRequest;
-import com.amazonaws.services.s3.model.ObjectMetadata;
-import com.amazonaws.services.s3.model.PutObjectRequest;
-import com.amazonaws.services.s3.model.S3Object;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import org.apache.commons.csv.*;
@@ -20,56 +11,42 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.common.config.ConfigManager;
-import org.endeavourhealth.common.fhir.*;
+import org.endeavourhealth.common.fhir.PeriodHelper;
 import org.endeavourhealth.common.utility.FileHelper;
 import org.endeavourhealth.common.utility.FileInfo;
 import org.endeavourhealth.common.utility.SlackHelper;
 import org.endeavourhealth.core.configuration.ConfigDeserialiser;
-import org.endeavourhealth.core.configuration.PostMessageToExchangeConfig;
 import org.endeavourhealth.core.configuration.QueueReaderConfiguration;
 import org.endeavourhealth.core.csv.CsvHelper;
 import org.endeavourhealth.core.database.dal.DalProvider;
 import org.endeavourhealth.core.database.dal.admin.LibraryRepositoryHelper;
 import org.endeavourhealth.core.database.dal.admin.ServiceDalI;
 import org.endeavourhealth.core.database.dal.admin.models.Service;
-import org.endeavourhealth.core.database.dal.audit.ExchangeBatchDalI;
 import org.endeavourhealth.core.database.dal.audit.ExchangeDalI;
-import org.endeavourhealth.core.database.dal.audit.models.*;
+import org.endeavourhealth.core.database.dal.audit.models.Exchange;
+import org.endeavourhealth.core.database.dal.audit.models.ExchangeTransformAudit;
 import org.endeavourhealth.core.database.dal.eds.PatientLinkDalI;
-import org.endeavourhealth.core.database.dal.eds.PatientSearchDalI;
 import org.endeavourhealth.core.database.dal.ehr.ResourceDalI;
 import org.endeavourhealth.core.database.dal.ehr.models.ResourceWrapper;
 import org.endeavourhealth.core.database.dal.publisherTransform.SourceFileMappingDalI;
-import org.endeavourhealth.core.database.dal.publisherTransform.models.ResourceFieldMapping;
 import org.endeavourhealth.core.database.dal.publisherTransform.models.ResourceFieldMappingAudit;
 import org.endeavourhealth.core.database.dal.reference.PostcodeDalI;
 import org.endeavourhealth.core.database.dal.reference.models.PostcodeLookup;
-import org.endeavourhealth.core.database.dal.subscriberTransform.EnterpriseAgeUpdaterlDalI;
 import org.endeavourhealth.core.database.dal.subscriberTransform.EnterpriseIdDalI;
 import org.endeavourhealth.core.database.dal.subscriberTransform.models.EnterpriseAge;
 import org.endeavourhealth.core.database.rdbms.ConnectionManager;
 import org.endeavourhealth.core.exceptions.TransformException;
-import org.endeavourhealth.core.fhirStorage.FhirSerializationHelper;
 import org.endeavourhealth.core.fhirStorage.FhirStorageService;
 import org.endeavourhealth.core.fhirStorage.JsonServiceInterfaceEndpoint;
-import org.endeavourhealth.core.messaging.pipeline.components.PostMessageToExchange;
 import org.endeavourhealth.core.queueing.QueueHelper;
 import org.endeavourhealth.core.xml.QueryDocument.*;
-import org.endeavourhealth.core.xml.TransformErrorSerializer;
-import org.endeavourhealth.core.xml.transformError.TransformError;
 import org.endeavourhealth.subscriber.filer.EnterpriseFiler;
-import org.endeavourhealth.transform.barts.transforms.PPADDTransformer;
-import org.endeavourhealth.transform.barts.transforms.PPNAMTransformer;
-import org.endeavourhealth.transform.barts.transforms.PPPHOTransformer;
 import org.endeavourhealth.transform.common.*;
-import org.endeavourhealth.transform.common.resourceBuilders.PatientBuilder;
 import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
-import org.endeavourhealth.transform.emis.csv.helpers.EmisCsvHelper;
-import org.endeavourhealth.transform.enterprise.json.LinkDistributorConfig;
-import org.endeavourhealth.transform.enterprise.transforms.PatientTransformer;
 import org.hibernate.internal.SessionImpl;
-import org.hl7.fhir.instance.model.*;
-import org.hl7.fhir.instance.model.Resource;
+import org.hl7.fhir.instance.model.EpisodeOfCare;
+import org.hl7.fhir.instance.model.Patient;
+import org.hl7.fhir.instance.model.ResourceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -79,8 +56,6 @@ import java.lang.System;
 import java.lang.reflect.Constructor;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
 import java.sql.*;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -88,7 +63,6 @@ import java.util.Date;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
-import java.util.zip.ZipOutputStream;
 
 public class Main {
 	private static final Logger LOG = LoggerFactory.getLogger(Main.class);
@@ -170,14 +144,14 @@ public class Main {
 			System.exit(0);
 		}*/
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("CreateTransformMap")) {
 			UUID serviceId = UUID.fromString(args[1]);
 			String table = args[2];
 			String dstFile = args[3];
 			createTransforMap(serviceId, table, dstFile);
 			System.exit(0);
-		}
+		}*/
 
 
 		if (args.length >= 1
@@ -200,11 +174,11 @@ public class Main {
 			System.exit(0);
 		}*/
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("ApplyEmisAdminCaches")) {
 			applyEmisAdminCaches();
 			System.exit(0);
-		}
+		}*/
 
 		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("FixSubscribers")) {
@@ -220,7 +194,7 @@ public class Main {
 			System.exit(0);
 		}*/
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("TestS3Read")) {
 			String s3Bucket = args[1];
 			String s3Key = args[2];
@@ -228,9 +202,9 @@ public class Main {
 			String len = args[4];
 			testS3Read(s3Bucket, s3Key, start, len);
 			System.exit(0);
-		}
+		}*/
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("FixEmisProblems3ForPublisher")) {
 			String publisherId = args[1];
 			String systemId = args[2];
@@ -245,7 +219,7 @@ public class Main {
 			String systemId = args[2];
 			fixEmisProblems3(UUID.fromString(serviceId), UUID.fromString(systemId));
 			System.exit(0);
-		}
+		}*/
 
 		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("CheckDeletedObs")) {
@@ -255,11 +229,11 @@ public class Main {
 			System.exit(0);
 		}*/
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("FixPersonsNoNhsNumber")) {
 			fixPersonsNoNhsNumber();
 			System.exit(0);
-		}
+		}*/
 
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("PopulateSubscriberUprnTable")) {
@@ -293,7 +267,7 @@ public class Main {
 			System.exit(0);
 		}*/
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("FixBartsPatients")) {
 			UUID serviceId = UUID.fromString(args[1]);
 			fixBartsPatients(serviceId);
@@ -320,7 +294,7 @@ public class Main {
 			int threads = Integer.parseInt(args[1]);
 			moveS3ToAudit(threads);
 			System.exit(0);
-		}
+		}*/
 
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("ConvertFhirAudit")) {
@@ -392,7 +366,7 @@ public class Main {
 			System.exit(0);
 		}*/
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("FixPatientSearch")) {
 			String serviceId = args[1];
 			String systemId = null;
@@ -405,9 +379,9 @@ public class Main {
 				fixPatientSearch(serviceId, systemId);
 			}
 			System.exit(0);
-		}
+		}*/
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("FixSlotReferences")) {
 			String serviceId = args[1];
 			try {
@@ -417,9 +391,9 @@ public class Main {
 				fixSlotReferencesForPublisher(serviceId);
 			}
 			System.exit(0);
-		}
+		}*/
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("TestS3VsMySQL")) {
 			UUID serviceUuid = UUID.fromString(args[1]);
 			int count = Integer.parseInt(args[2]);
@@ -427,7 +401,7 @@ public class Main {
 			String bucketName = args[4];
 			testS3VsMySql(serviceUuid, count, sqlBatchSize, bucketName);
 			System.exit(0);
-		}
+		}*/
 
 
 		/*if (args.length >= 1
@@ -506,6 +480,27 @@ public class Main {
 			System.exit(0);
 		}*/
 
+		if (args.length >= 0
+				&& args[0].equalsIgnoreCase("LoadEmisData")) {
+			String serviceId = args[1];
+			String systemId = args[2];
+			String dbUrl = args[3];
+			String dbUsername = args[4];
+			String dbPassword = args[5];
+			String onlyThisFileType = null;
+			if (args.length > 6) {
+				onlyThisFileType = args[6];
+			}
+			loadEmisData(serviceId, systemId, dbUrl, dbUsername, dbPassword, onlyThisFileType);
+			System.exit(0);
+		}
+
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("CreateEmisDataTables")) {
+			createEmisDataTables();
+			System.exit(0);
+		}
+
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("LoadBartsData")) {
 			String serviceId = args[1];
@@ -552,6 +547,107 @@ public class Main {
 		LOG.info("EDS Queue reader running (kill file location " + TransformConfig.instance().getKillFileLocation() + ")");
 	}
 
+	private static void createEmisDataTables() {
+		LOG.debug("Creating Emis data tables");
+		try {
+			List<String> fileTypes = new ArrayList<>();
+
+			fileTypes.add("Admin_Location");
+			fileTypes.add("Admin_OrganisationLocation");
+			fileTypes.add("Admin_Organisation");
+			fileTypes.add("Admin_Patient");
+			fileTypes.add("Admin_UserInRole");
+			fileTypes.add("Agreements_SharingOrganisation");
+			fileTypes.add("Appointment_SessionUser");
+			fileTypes.add("Appointment_Session");
+			fileTypes.add("Appointment_Slot");
+			fileTypes.add("CareRecord_Consultation");
+			fileTypes.add("CareRecord_Diary");
+			fileTypes.add("CareRecord_ObservationReferral");
+			fileTypes.add("CareRecord_Observation");
+			fileTypes.add("CareRecord_Problem");
+			fileTypes.add("Coding_ClinicalCode");
+			fileTypes.add("Coding_DrugCode");
+			fileTypes.add("Prescribing_DrugRecord");
+			fileTypes.add("Prescribing_IssueRecord");
+			fileTypes.add("Audit_PatientAudit");
+			fileTypes.add("Audit_RegistrationAudit");
+
+			for (String fileType: fileTypes) {
+				createEmisDataTable(fileType);
+			}
+
+			LOG.debug("Finished Creating Emis data tables");
+		} catch (Throwable t) {
+			LOG.error("", t);
+		}
+	}
+
+	private static void createEmisDataTable(String fileType) throws Exception {
+
+		ParserI parser = createParserForEmisFileType(fileType, null);
+		if (parser == null) {
+			return;
+		}
+
+		System.out.println("-- " + fileType);
+
+		String table = fileType.replace(" ", "_");
+
+		String dropSql = "DROP TABLE IF EXISTS `" + table + "`;";
+		System.out.println(dropSql);
+
+		String sql = "CREATE TABLE `" + table + "` (";
+
+		sql += "file_name varchar(100)";
+		sql += ", ";
+		sql += "extract_date date";
+
+		if (parser instanceof AbstractFixedParser) {
+
+			AbstractFixedParser fixedParser = (AbstractFixedParser)parser;
+			List<FixedParserField> fields = fixedParser.getFieldList();
+
+			for (FixedParserField field: fields) {
+				String col = field.getName();
+				int len = field.getFieldlength();
+				sql += ", ";
+				sql += col.replace(" ", "_").replace("#", "").replace("/", "");
+				sql += " varchar(";
+				sql += len;
+				sql += ")";
+			}
+
+		} else {
+
+			List<String> cols = parser.getColumnHeaders();
+			for (String col: cols) {
+				sql += ", ";
+				sql += col.replace(" ", "_").replace("#", "").replace("/", "");
+
+				if (col.equals("BLOB_CONTENTS")
+						|| col.equals("VALUE_LONG_TXT")
+						|| col.equals("COMMENT_TXT")
+						|| col.equals("NONPREG_REL_PROBLM_SCT_CD")) {
+
+					sql += " mediumtext";
+
+				} else if (col.indexOf("Date") > -1
+						|| col.indexOf("Time") > -1) {
+					sql += " varchar(10)";
+
+				} else {
+					sql += " varchar(255)";
+				}
+			}
+		}
+
+		sql += ");";
+		/*LOG.debug("-- fileType");
+		LOG.debug(sql);*/
+		System.out.println(sql);
+	}
+
 	private static void convertFhirAudit(UUID serviceId, int threads) {
 		LOG.info("Converting FHIR audit for " + serviceId);
 		try {
@@ -578,7 +674,7 @@ public class Main {
 		}
 	}
 
-	private static void moveS3ToAudit(int threads) {
+	/*private static void moveS3ToAudit(int threads) {
 		LOG.info("Moving S3 to Audit");
 		try {
 			//list S3 contents
@@ -636,7 +732,7 @@ public class Main {
 			LOG.error("", t);
 		}
 
-	}
+	}*/
 
 	/*private static void convertEmisGuids() {
 		LOG.debug("Converting Emis Guid");
@@ -853,7 +949,7 @@ public class Main {
 		}
 	}*/
 
-	private static void testS3VsMySql(UUID serviceUuid, int count, int sqlBatchSize, String bucketName) {
+	/*private static void testS3VsMySql(UUID serviceUuid, int count, int sqlBatchSize, String bucketName) {
 		LOG.debug("Testing S3 vs MySQL for service " + serviceUuid);
 		try {
 			//retrieve some audit JSON from the DB
@@ -1010,6 +1106,202 @@ public class Main {
 		} catch (Throwable t) {
 			LOG.error("", t);
 		}
+	}*/
+
+	private static void loadEmisData(String serviceId, String systemId, String dbUrl, String dbUsername, String dbPassword, String onlyThisFileType) {
+		LOG.debug("Loading Emis data from into " + dbUrl);
+		try {
+			//hash file type of every file
+			ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
+			List<Exchange> exchanges = exchangeDal.getExchangesByService(UUID.fromString(serviceId), UUID.fromString(systemId), Integer.MAX_VALUE);
+
+			//open connection
+			Class.forName("com.mysql.cj.jdbc.Driver");
+			Connection conn = DriverManager.getConnection(dbUrl, dbUsername, dbPassword);
+
+			SimpleDateFormat sdfStart = new SimpleDateFormat("yyyy-MM-dd");
+			Date startDate = sdfStart.parse("2000-01-01");
+
+			for (int i=exchanges.size()-1; i>=0; i--) {
+				Exchange exchange = exchanges.get(i);
+				String exchangeBody = exchange.getBody();
+				List<ExchangePayloadFile> files = ExchangeHelper.parseExchangeBody(exchangeBody);
+
+				if (files.isEmpty()) {
+					continue;
+				}
+
+				for (ExchangePayloadFile file: files) {
+					String type = file.getType();
+					String path = file.getPath();
+
+					//if only doing a specific file type, skip all others
+					if (onlyThisFileType != null
+							&& !type.equals(onlyThisFileType)) {
+						continue;
+					}
+
+					String name = FilenameUtils.getBaseName(path);
+					String[] toks = name.split("_");
+					if (toks.length != 5) {
+						throw new TransformException("Failed to find extract date in filename " + path);
+					}
+					String dateStr = toks[3];
+					SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMddHHmmss");
+					Date extractDate = sdf.parse(dateStr);
+
+					boolean processFile = false;
+
+					if (type.equalsIgnoreCase("OriginalTerms")
+							|| type.equalsIgnoreCase("RegistrationStatus")) {
+						//can't process these custom files in this routine
+
+					} else if (type.equalsIgnoreCase("Coding_ClinicalCode")
+							|| type.equalsIgnoreCase("Coding_DrugCode")) {
+						processFile = true;
+
+					} else {
+
+						if (!extractDate.before(startDate)) {
+							processFile = true;
+						}
+					}
+
+					if (processFile) {
+						loadEmisDataFromFile(conn, path, type, extractDate);
+					}
+				}
+			}
+
+			conn.close();
+
+			LOG.debug("Finished Emis data from into " + dbUrl);
+		} catch (Throwable t) {
+			LOG.error("", t);
+		}
+	}
+
+	private static ParserI createParserForEmisFileType(String fileType, String filePath) {
+
+		String[] toks = fileType.split("_");
+
+		String domain = toks[0];
+		String name = toks[1];
+
+		String first = domain.substring(0, 1);
+		String last = domain.substring(1);
+		domain = first.toLowerCase() + last;
+
+		try {
+			String clsName = "org.endeavourhealth.transform.emis.csv.schema." + domain + "." + name;
+			Class cls = Class.forName(clsName);
+
+			//now construct an instance of the parser for the file we've found
+			Constructor<AbstractCsvParser> constructor = cls.getConstructor(UUID.class, UUID.class, UUID.class, String.class, String.class);
+			return constructor.newInstance(null, null, null, EmisCsvToFhirTransformer.VERSION_5_4, filePath);
+
+		} catch (Exception ex) {
+			LOG.error("No parser for file type [" + fileType + "]");
+			LOG.error("", ex);
+			return null;
+		}
+	}
+
+	private static void loadEmisDataFromFile(Connection conn, String filePath, String fileType, Date extractDate) throws Exception {
+		LOG.debug("Loading " + fileType + ": " + filePath);
+
+		String fileName = FilenameUtils.getName(filePath);
+
+		ParserI parser = createParserForEmisFileType(fileType, filePath);
+		if (parser == null) {
+			return;
+		}
+
+		String table = fileType.replace(" ", "_");
+
+		//check table is there
+		String sql = "SELECT 1 FROM information_schema.tables WHERE table_schema = database() AND table_name = '" + table + "' LIMIT 1";
+		Statement statement = conn.createStatement();
+		ResultSet rs = statement.executeQuery(sql);
+		boolean tableExists = rs.next();
+		rs.close();
+		statement.close();
+
+		if (!tableExists) {
+			LOG.error("No table exists for " + table);
+			return;
+		}
+
+		//create insert statement
+		sql = "INSERT INTO `" + table + "` (";
+		sql += "file_name, extract_date";
+		List<String> cols = parser.getColumnHeaders();
+		for (String col: cols) {
+			sql += ", ";
+			sql += col.replace(" ", "_").replace("#", "").replace("/", "");
+		}
+		sql += ") VALUES (";
+		sql += "?, ?";
+		for (String col: cols) {
+			sql += ", ";
+			sql += "?";
+		}
+		sql += ")";
+		PreparedStatement ps = conn.prepareStatement(sql);
+
+		List<String> currentBatchStrs = new ArrayList<>();
+
+		//load table
+		try {
+			int done = 0;
+			int currentBatchSize = 0;
+			while (parser.nextRecord()) {
+
+				int col = 1;
+
+				//file name is always first
+				ps.setString(col++, fileName);
+				ps.setDate(col++, new java.sql.Date(extractDate.getTime()));
+
+				for (String colName : cols) {
+					CsvCell cell = parser.getCell(colName);
+					if (cell == null) {
+						ps.setNull(col++, Types.VARCHAR);
+					} else {
+						ps.setString(col++, cell.getString());
+					}
+				}
+
+				ps.addBatch();
+				currentBatchSize++;
+				currentBatchStrs.add((ps.toString())); //for error handling
+
+				if (currentBatchSize >= 5) {
+					ps.executeBatch();
+					currentBatchSize = 0;
+					currentBatchStrs.clear();
+				}
+
+				done++;
+				if (done % 5000 == 0) {
+					LOG.debug("Done " + done);
+				}
+			}
+
+			if (currentBatchSize >= 0) {
+				ps.executeBatch();
+			}
+
+			ps.close();
+		} catch (Throwable t) {
+			LOG.error("Failed on batch with statements:");
+			for (String currentBatchStr: currentBatchStrs) {
+				LOG.error(currentBatchStr);
+			}
+			throw t;
+		}
+
+		LOG.debug("Finished " + fileType + ": " + filePath);
 	}
 
 	private static void createBartsDataTables() {
@@ -1334,7 +1626,7 @@ public class Main {
 	}
 
 
-	private static void fixPseudoIds(String subscriberConfig, int threads) {
+	/*private static void fixPseudoIds(String subscriberConfig, int threads) {
 		LOG.debug("Fixing Pseudo IDs for " + subscriberConfig);
 		try {
 
@@ -1604,9 +1896,9 @@ public class Main {
 			subscriberConnection.close();
 			subscriberTransformConnection.close();
 		}
-	}
+	}*/
 
-	private static void fixDeceasedPatients(String subscriberConfig) {
+	/*private static void fixDeceasedPatients(String subscriberConfig) {
 		LOG.debug("Fixing Deceased Patients for " + subscriberConfig);
 		try {
 			JsonNode config = ConfigManager.getConfigurationAsJson(subscriberConfig, "db_subscriber");
@@ -1680,7 +1972,7 @@ public class Main {
 		} catch (Throwable t) {
 			LOG.error("", t);
 		}
-	}
+	}*/
 
 
 	private static void updateEnterprisePatient(long enterprisePatientId, Integer[] ages, Connection connection) throws Exception {
@@ -1763,7 +2055,7 @@ public class Main {
 		connection.commit();
 	}
 
-	private static void testS3Read(String s3BucketName, String keyName, String start, String len) {
+	/*private static void testS3Read(String s3BucketName, String keyName, String start, String len) {
 		LOG.debug("Testing S3 Read from " + s3BucketName + " " + keyName + " from " + start + " " + len + " bytes");
 		try {
 
@@ -1812,9 +2104,9 @@ public class Main {
 		} catch (Throwable t) {
 			LOG.error("", t);
 		}
-	}
+	}*/
 
-	private static void createTransforMap(UUID serviceId, String table, String outputFile) {
+	/*private static void createTransforMap(UUID serviceId, String table, String outputFile) {
 		LOG.debug("Creating transform map for " + serviceId + " from " + table);
 		try {
 
@@ -1843,11 +2135,11 @@ public class Main {
 				String resourceVersion  = rs.getString("version");
 
 
-				/*sql = "SELECT * FROM resource_field_mappings WHERE version = 'a905db26-1357-4710-90ef-474f256567ed';";
-				PreparedStatement statement1 = mappingConnection.prepareStatement(sql);*/
+				*//*sql = "SELECT * FROM resource_field_mappings WHERE version = 'a905db26-1357-4710-90ef-474f256567ed';";
+				PreparedStatement statement1 = mappingConnection.prepareStatement(sql);*//*
 
-				/*sql = "SELECT * FROM resource_field_mappings WHERE version = ?";
-				PreparedStatement statement1 = mappingConnection.prepareStatement(sql);*/
+				*//*sql = "SELECT * FROM resource_field_mappings WHERE version = ?";
+				PreparedStatement statement1 = mappingConnection.prepareStatement(sql);*//*
 
 				sql = "SELECT * FROM resource_field_mappings WHERE resource_type = '" + resourceType + "' AND resource_id = '" + resourceId + "' AND version = '" + resourceVersion + "';";
 				PreparedStatement statement1 = mappingConnection.prepareStatement(sql);
@@ -1856,9 +2148,9 @@ public class Main {
 				//sql = "SELECT * FROM resource_field_mappings WHERE resource_type = ? AND resource_id = ? AND version = ?";
 
 				//statement1.setString(1, resourceVersion);
-				/*statement1.setString(1, resourceType);
+				*//*statement1.setString(1, resourceType);
 				statement1.setString(2, resourceId);
-				statement1.setString(3, resourceVersion);*/
+				statement1.setString(3, resourceVersion);*//*
 
 				ResultSet rs1 = null;
 				try {
@@ -2052,9 +2344,9 @@ public class Main {
 		} catch (Throwable t) {
 			LOG.error("", t);
 		}
-	}
+	}*/
 
-	private static void fixBartsPatients(UUID serviceId) {
+	/*private static void fixBartsPatients(UUID serviceId) {
 		LOG.debug("Fixing Barts patients at service " + serviceId);
 		try {
 
@@ -2150,7 +2442,7 @@ public class Main {
 		} catch (Throwable t) {
 			LOG.error("", t);
 		}
-	}
+	}*/
 
 	private static void postToRabbit(String exchangeName, String srcFile, Integer throttle) {
 		LOG.info("Posting to " + exchangeName + " from " + srcFile);
@@ -2532,7 +2824,7 @@ public class Main {
 		}
 	}
 
-	private static void fixPersonsNoNhsNumber() {
+	/*private static void fixPersonsNoNhsNumber() {
 		LOG.info("Fixing persons with no NHS number");
 		try {
 
@@ -2638,7 +2930,7 @@ public class Main {
 		} catch (Throwable t) {
 			LOG.error("", t);
 		}
-	}
+	}*/
 
 	/*private static void checkDeletedObs(UUID serviceId, UUID systemId) {
 		LOG.info("Checking Observations for " + serviceId);
@@ -3077,7 +3369,7 @@ public class Main {
 	}*/
 
 
-	private static void fixEmisProblems3ForPublisher(String publisher, UUID systemId) {
+	/*private static void fixEmisProblems3ForPublisher(String publisher, UUID systemId) {
 		try {
 			LOG.info("Doing fix for " + publisher);
 
@@ -3328,7 +3620,7 @@ public class Main {
 		}
 
 		return null;
-	}
+	}*/
 
 	/*private static void convertExchangeBody(UUID systemUuid) {
 		try {
@@ -4802,7 +5094,7 @@ public class Main {
 		}
 	}*/
 
-	private static void applyEmisAdminCaches() {
+	/*private static void applyEmisAdminCaches() {
 		LOG.info("Applying Emis Admin Caches");
 
 		try {
@@ -4936,7 +5228,7 @@ public class Main {
 		} catch (Throwable t) {
 			LOG.error("", t);
 		}
-	}
+	}*/
 
 	/*private static void fixBartsEscapedFiles(String filePath) {
 		LOG.info("Fixing Barts Escaped Files in " + filePath);
@@ -5752,7 +6044,7 @@ public class Main {
 		LOG.info("Finished Posting to inbound for " + serviceId);
 	}*/
 
-	private static void fixPatientSearchAllServices(String filterSystemId) {
+	/*private static void fixPatientSearchAllServices(String filterSystemId) {
 		LOG.info("Fixing patient search for all services and system " + filterSystemId);
 
 		try {
@@ -5840,7 +6132,7 @@ public class Main {
 		}
 
 		LOG.info("Finished fixing patient search for " + serviceId);
-	}
+	}*/
 
 	private static void runSql(String host, String username, String password, String sqlFile) {
 		LOG.info("Running SQL on " + host + " from " + sqlFile);
@@ -8762,7 +9054,7 @@ public class Main {
 		}
 	}*/
 
-	private static void fixSlotReferencesForPublisher(String publisher) {
+	/*private static void fixSlotReferencesForPublisher(String publisher) {
 		try {
 			ServiceDalI dal = DalProvider.factoryServiceDal();
 			List<Service> services = dal.getAll();
@@ -8801,7 +9093,7 @@ public class Main {
 			statement.close();
 			connection.close();
 
-			/*
+			*//*
 			EntityManager entityManager = ConnectionManager.getEdsEntityManager();
 			SessionImpl session = (SessionImpl) entityManager.getDelegate();
 			Connection connection = session.connection();
@@ -8814,7 +9106,7 @@ public class Main {
 			}
 			rs.close();
 			statement.close();
-			connection.close();*/
+			connection.close();*//*
 
 			LOG.debug("Found " + patientIds.size() + " patients");
 			int done = 0;
@@ -8898,7 +9190,7 @@ public class Main {
 		} catch (Exception ex) {
 			LOG.error("", ex);
 		}
-	}
+	}*/
 
 	/*private static void fixReviews(String sharedStoragePath, UUID justThisService) {
 		LOG.info("Fixing Reviews using path " + sharedStoragePath + " and service " + justThisService);
