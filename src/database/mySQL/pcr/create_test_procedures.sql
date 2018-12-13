@@ -189,7 +189,7 @@ CREATE PROCEDURE `practice_currently_registered_patients`(
 
         -- all registered patients
         select count(distinct(p.nhs_number)) as 'Currently registered patients' from pcr.patient p
-            join pcr.organisation org on org.id = o.owning_organisation_id
+            join pcr.organisation org on org.id = p.organisation_id
             join pcr.gp_registration_status reg on reg.patient_id = p.id
         and
             org.ods_code = _odscode
