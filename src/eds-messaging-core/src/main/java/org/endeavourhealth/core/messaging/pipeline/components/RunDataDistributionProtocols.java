@@ -740,8 +740,18 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 			throw new PipelineException("Failed to read protocol IDs from exchange " + exchange.getId());
 		}
 
+		Set<UUID> hsProtocolUuidsDone = new HashSet<>();
+
 		for (String protocolId: protocolIds) {
 			UUID protocolUuid = UUID.fromString(protocolId);
+
+			//due to a bug in the way exchanges are re-queued, we have ended up with duplicate protocol IDs
+			//in the exchange headers, which doesn't hurt anything but means we end up doing outbound transforms
+			//twice. So mitigate this buy handling duplicates
+			if (hsProtocolUuidsDone.contains(protocolUuid)) {
+				continue;
+			}
+			hsProtocolUuidsDone.add(protocolUuid);
 
 			try {
 				//changed to use cached version

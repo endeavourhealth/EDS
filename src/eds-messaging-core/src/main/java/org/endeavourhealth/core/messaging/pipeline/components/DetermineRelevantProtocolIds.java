@@ -50,7 +50,9 @@ public class DetermineRelevantProtocolIds extends PipelineComponent {
 	public static String getProtocolIdsForPublisherService(String serviceUuid, String systemUuid, UUID exchangeId) throws PipelineException {
 
 		//find all protocols where our service is an active publisher
+		LOG.debug("Getting protocols for service " + serviceUuid);
 		List<LibraryItem> protocolsForService = getProtocolsForPublisherService(serviceUuid);
+		LOG.debug("Found " + protocolsForService.size() + " protocols for service " + serviceUuid);
 
 		if (protocolsForService.isEmpty()) {
 			saveProtocolError(exchangeId);
@@ -77,6 +79,7 @@ public class DetermineRelevantProtocolIds extends PipelineComponent {
 		}
 
 		//if there's no protocol covering our service AND system as a publisher, then that's an error
+		LOG.debug("Found " + protocolsForServiceAndSystem.size() + " protocols for service " + serviceUuid + " and system " + systemUuid);
 		if (protocolsForServiceAndSystem.isEmpty()) {
 			saveProtocolError(exchangeId);
 			throw new PipelineException("No publisher protocols found for service " + serviceUuid + " and system " + systemUuid);
@@ -90,7 +93,9 @@ public class DetermineRelevantProtocolIds extends PipelineComponent {
 			for (LibraryItem libraryItem: protocolsForService) {
 				protocolIds.add(libraryItem.getUuid());
 			}
-			return ObjectMapperPool.getInstance().writeValueAsString(protocolIds.toArray());
+			String json = ObjectMapperPool.getInstance().writeValueAsString(protocolIds.toArray());
+			LOG.debug("Returning " + json + " for service " + serviceUuid);
+			return json;
 
 		} catch (JsonProcessingException e) {
 			LOG.error("Unable to serialize protocols to JSON");

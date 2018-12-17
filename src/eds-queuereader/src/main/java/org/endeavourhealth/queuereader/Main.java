@@ -601,7 +601,7 @@ public class Main {
 
 		sql += "file_name varchar(100)";
 		sql += ", ";
-		sql += "extract_date date";
+		sql += "extract_date datetime";
 
 		if (parser instanceof AbstractFixedParser) {
 
