@@ -25,9 +25,7 @@ CREATE PROCEDURE `patient_demographics`(
         from
             pcr.patient p
         left join
-            patient_address pa on pa.patient_id = p.id
-        left join
-            address a on a.id = pa.address_id
+            address a on a.id = p.home_address_id
         where
             p.nhs_number = _nhsno;
 
