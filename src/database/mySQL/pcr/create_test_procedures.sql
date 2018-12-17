@@ -164,19 +164,20 @@ CREATE PROCEDURE `practice_asthma_count`(
             join pcr.organisation org on org.id = o.owning_organisation_id
             join pcr.patient p on p.id = o.patient_id
             join pcr.medication_statement ms on ms.patient_id = p.id
+            join pcr.medication_order mo on mo.medication_statement_id = ms.id
             join pcr.gp_registration_status reg on reg.patient_id = p.id
+            join subscriber_transform_pcr.code_set_codes csc1 on csc1.read2_concept_id = o.original_code
+            join subscriber_transform_pcr.code_set_codes csc2 on csc2.sct_concept_id = ms.original_code
         where
-            org.ods_code = _odscode
-        and
-            o.original_code in (select read2_concept_id from subscriber_transform_pcr.code_set_codes where code_set_id in (68))
-        and
-            (ms.original_code in (select sct_concept_id from subscriber_transform_pcr.code_set_codes where code_set_id in (69))
-        and
-            ms.effective_date >= DATE(NOW() - INTERVAL 12 MONTH))
+            org.ods_code =  _odscode
         and
             (reg.gp_registration_status_concept_id = 2 and reg.is_current = true)
         and
-            p.date_of_death is null;
+            p.date_of_death is null
+        and
+            (csc1.code_set_id = 68 and csc2.code_set_id = 69)
+        and
+            mo.effective_date >= DATE(NOW() - INTERVAL 12 MONTH);
 
     END$$
 DELIMITER ;
