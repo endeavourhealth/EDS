@@ -2472,7 +2472,7 @@ public class Main {
 					}
 				}
 
-				LOG.info("Already done " + hsAlreadyDone);
+				LOG.info("Already done " + hsAlreadyDone.size());
 			}
 
 			List<UUID> exchangeIds = new ArrayList<>();
