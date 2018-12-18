@@ -4,6 +4,7 @@ DROP PROCEDURE IF EXISTS `patient_demographics`;
 DROP PROCEDURE IF EXISTS `patient_observations`;
 DROP PROCEDURE IF EXISTS `patient_immunisations`;
 DROP PROCEDURE IF EXISTS `patient_medications`;
+DROP PROCEDURE IF EXISTS `patient_medication_orders`;
 DROP PROCEDURE IF EXISTS `patient_allergies`;
 DROP PROCEDURE IF EXISTS `practice_diabetics_count_over_12s`;
 DROP PROCEDURE IF EXISTS `practice_asthma_count`;
@@ -98,6 +99,31 @@ CREATE PROCEDURE `patient_medications`(
             pcr.practitioner pr on pr.id = ms.effective_practitioner_id
         join
             pcr.patient p on p.id = ms.patient_id
+        where
+            p.nhs_number = _nhsno;
+
+    END$$
+DELIMITER ;
+
+DELIMITER $$
+CREATE PROCEDURE `patient_medication_orders`(
+    IN _nhsno varchar(36)
+)
+    BEGIN
+
+        -- all medication orders/issues for a patient by NHS number
+        select
+            m.patient_id, m.effective_date, m.original_code, m.original_term,m.original_code_scheme,
+            mo.dose, mo.quantity_value, mo.quantity_units,
+            pr.title as 'Clincian Title', pr.first_name as 'Clinician First Name', pr.last_name as 'Clinician Last Name'
+        from
+            pcr.medication_order m
+            join
+            pcr.medication_amount mo on m.medication_amount_id = mo.id
+            left join
+            pcr.practitioner pr on pr.id = m.effective_practitioner_id
+            join
+            pcr.patient p on p.id = m.patient_id
         where
             p.nhs_number = _nhsno;
 
