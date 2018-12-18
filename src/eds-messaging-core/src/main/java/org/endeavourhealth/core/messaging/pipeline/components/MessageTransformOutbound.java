@@ -76,6 +76,9 @@ public class MessageTransformOutbound extends PipelineComponent {
 		// (Holds transformed message id and destination endpoints)
 		List<SubscriberBatch> subscriberBatches = new ArrayList<>();
 
+		List<ResourceWrapper> filteredResources = null; //don't retrieve until we know we need to
+		Integer resourceCount = null;
+
 		for (ServiceContract serviceContract : transformBatch.getSubscribers()) {
 
 			String endpoint = getSubscriberEndpoint(serviceContract);
@@ -100,19 +103,24 @@ public class MessageTransformOutbound extends PipelineComponent {
 			String softwareVersion = technicalInterface.getMessageFormatVersion();
 			Date transformStarted = new Date();
 
-			Integer resourceCount = null;
-			String outboundData = null;
 			try {
 				UUID serviceId = exchange.getHeaderAsUuid(HeaderKeys.SenderServiceUuid);
 
-				//retrieve our resources. Do this for each protocol, rather than once, so there's no risk of
-				//losing resources if a transform removes elements from the list
-				List<ResourceWrapper> filteredResources = getResources(serviceId, exchangeId, batchId, resourceIds, endpoint);
-				resourceCount = new Integer(filteredResources.size());
+				//retrieve our resources if necessary
+				if (filteredResources == null) {
+					filteredResources = getResources(serviceId, exchangeId, batchId, resourceIds, endpoint);
+					resourceCount = new Integer(filteredResources.size());
+				}
 
 				//if we have resources, then perform the transform
+				String outboundData = null;
 				if (!filteredResources.isEmpty()) {
-					outboundData = transform(serviceId, exchange, batchId, software, softwareVersion, filteredResources, endpoint, protocolId);
+
+					//pass in a copy of the resource list to avoid any potential problems if a transform changes the list
+					List<ResourceWrapper> copy = new ArrayList<>(filteredResources);
+
+					//do the outbound transform
+					outboundData = transform(serviceId, exchange, batchId, software, softwareVersion, copy, endpoint, protocolId);
 				}
 
 				//if we've got data to send to our subscriber, then store it
