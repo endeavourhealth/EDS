@@ -2530,7 +2530,7 @@ public class Main {
 							Thread.sleep(sleep);
 						}
 
-						startMs = now;
+						startMs = System.currentTimeMillis();
 						doneThisSecond = 0;
 					}
 				}
