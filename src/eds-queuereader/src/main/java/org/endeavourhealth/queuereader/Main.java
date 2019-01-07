@@ -570,7 +570,7 @@ public class Main {
 			for (String line: lines) {
 				hsNhsNumbers.add(line.trim());
 			}
-			LOG.debug("Looking for Person IDs for " + hsNhsNumbers + " nhs numbers or any since " + dateCutoffStr);
+			LOG.debug("Looking for Person IDs for " + hsNhsNumbers.size() + " nhs numbers or any since " + dateCutoffStr);
 
 			SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
 			Date dateCutoff = sdf.parse(dateCutoffStr);
@@ -619,6 +619,8 @@ public class Main {
 
 					parser.close();
 				}
+
+				LOG.debug("Now got " + (newLines.size()/2) + " person IDs found");
 			}
 
 			File dst = new File(sourceFile + "2");
