@@ -573,6 +573,7 @@ public class Main {
 			newLines.add("NHS_number,PersonID");
 
 			Set<String> hsPersonIdsFound = new HashSet<>();
+			Set<String> hsNhsNumbersFound = new HashSet<>();
 
 			ExchangeDalI exchangeDalI = DalProvider.factoryExchangeDal();
 			List<Exchange> exchanges = exchangeDalI.getExchangesByService(serviceUuid, systemUuid, Integer.MAX_VALUE);
@@ -590,6 +591,8 @@ public class Main {
 						String nhsNumber = nhsNumberCell.getString();
 						nhsNumber = nhsNumber.replace("-", "");
 						if (hsNhsNumbers.contains(nhsNumber)) {
+
+							hsNhsNumbersFound.add(nhsNumber);
 
 							CsvCell personIdCell = parser.getMillenniumPersonId();
 							String personId = personIdCell.getString();
@@ -609,8 +612,14 @@ public class Main {
 
 			File dst = new File(sourceFile + "2");
 			Files.write(dst.toPath(), newLines);
-
 			LOG.debug("Finished Finding Barts person IDs for " + sourceFile);
+
+			for (String nhsNumber: hsNhsNumbers) {
+				if (!hsNhsNumbersFound.contains(nhsNumber)) {
+					LOG.error("Failed to find person ID for " + nhsNumber);
+				}
+			}
+
 		} catch (Throwable t) {
 			LOG.error("", t);
 		}
