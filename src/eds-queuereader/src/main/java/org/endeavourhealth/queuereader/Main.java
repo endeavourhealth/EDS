@@ -572,6 +572,8 @@ public class Main {
 			List<String> newLines = new ArrayList<>();
 			newLines.add("NHS_number,PersonID");
 
+			Set<String> hsPersonIdsFound = new HashSet<>();
+
 			ExchangeDalI exchangeDalI = DalProvider.factoryExchangeDal();
 			List<Exchange> exchanges = exchangeDalI.getExchangesByService(serviceUuid, systemUuid, Integer.MAX_VALUE);
 			for (Exchange exchange: exchanges) {
@@ -588,11 +590,16 @@ public class Main {
 						String nhsNumber = nhsNumberCell.getString();
 						nhsNumber = nhsNumber.replace("-", "");
 						if (hsNhsNumbers.contains(nhsNumber)) {
+
 							CsvCell personIdCell = parser.getMillenniumPersonId();
 							String personId = personIdCell.getString();
 
-							String line = nhsNumber + "," + personId;
-							newLines.add(line);
+							if (!hsPersonIdsFound.contains(personId)) {
+								hsPersonIdsFound.add(personId);
+
+								String line = nhsNumber + "," + personId;
+								newLines.add(line);
+							}
 						}
 					}
 
