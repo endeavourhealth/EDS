@@ -41,6 +41,7 @@ import org.endeavourhealth.core.fhirStorage.JsonServiceInterfaceEndpoint;
 import org.endeavourhealth.core.queueing.QueueHelper;
 import org.endeavourhealth.core.xml.QueryDocument.*;
 import org.endeavourhealth.subscriber.filer.EnterpriseFiler;
+import org.endeavourhealth.transform.barts.schema.PPATI;
 import org.endeavourhealth.transform.common.*;
 import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
 import org.hibernate.internal.SessionImpl;
@@ -124,6 +125,15 @@ public class Main {
 			UUID systemUuid = UUID.fromString(args[3]);
 			String samplePatientsFile = args[4];
 			createBartsSubset(sourceDirPath, serviceUuid, systemUuid, samplePatientsFile);
+			System.exit(0);
+		}
+
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("FindBartsPersonIds")) {
+			String sourceFile = args[1];
+			UUID serviceUuid = UUID.fromString(args[2]);
+			UUID systemUuid = UUID.fromString(args[3]);
+			findBartsPersonIds(sourceFile, serviceUuid, systemUuid);
 			System.exit(0);
 		}
 
@@ -545,6 +555,58 @@ public class Main {
 		// Begin consume
 		rabbitHandler.start();
 		LOG.info("EDS Queue reader running (kill file location " + TransformConfig.instance().getKillFileLocation() + ")");
+	}
+
+	private static void findBartsPersonIds(String sourceFile, UUID serviceUuid, UUID systemUuid) {
+		LOG.debug("Finding Barts person IDs for " + sourceFile);
+		try {
+
+			//read NHS numbers into memory
+			Set<String> hsNhsNumbers = new HashSet<>();
+			File src = new File(sourceFile);
+			List<String> lines = Files.readAllLines(src.toPath());
+			for (String line: lines) {
+				hsNhsNumbers.add(line.trim());
+			}
+
+			List<String> newLines = new ArrayList<>();
+			newLines.add("NHS_number,PersonID");
+
+			ExchangeDalI exchangeDalI = DalProvider.factoryExchangeDal();
+			List<Exchange> exchanges = exchangeDalI.getExchangesByService(serviceUuid, systemUuid, Integer.MAX_VALUE);
+			for (Exchange exchange: exchanges) {
+				List<ExchangePayloadFile> files = ExchangeHelper.parseExchangeBody(exchange.getBody());
+				for (ExchangePayloadFile file: files) {
+					String type = file.getType();
+					if (!type.equals("PPATI")) {
+						continue;
+					}
+
+					PPATI parser = new PPATI(null, null, null, null, file.getPath());
+					while (parser.nextRecord()) {
+						CsvCell nhsNumberCell = parser.getNhsNumber();
+						String nhsNumber = nhsNumberCell.getString();
+						nhsNumber = nhsNumber.replace("-", "");
+						if (hsNhsNumbers.contains(nhsNumber)) {
+							CsvCell personIdCell = parser.getMillenniumPersonId();
+							String personId = personIdCell.getString();
+
+							String line = nhsNumber + "," + personId;
+							newLines.add(line);
+						}
+					}
+
+					parser.close();
+				}
+			}
+
+			File dst = new File(sourceFile + "2");
+			Files.write(dst.toPath(), newLines);
+
+			LOG.debug("Finished Finding Barts person IDs for " + sourceFile);
+		} catch (Throwable t) {
+			LOG.error("", t);
+		}
 	}
 
 	private static void createEmisDataTables() {
