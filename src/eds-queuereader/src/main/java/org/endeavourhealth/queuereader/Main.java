@@ -133,7 +133,8 @@ public class Main {
 			String sourceFile = args[1];
 			UUID serviceUuid = UUID.fromString(args[2]);
 			UUID systemUuid = UUID.fromString(args[3]);
-			findBartsPersonIds(sourceFile, serviceUuid, systemUuid);
+			String dateCutoffStr = args[4];
+			findBartsPersonIds(sourceFile, serviceUuid, systemUuid, dateCutoffStr);
 			System.exit(0);
 		}
 
@@ -557,7 +558,8 @@ public class Main {
 		LOG.info("EDS Queue reader running (kill file location " + TransformConfig.instance().getKillFileLocation() + ")");
 	}
 
-	private static void findBartsPersonIds(String sourceFile, UUID serviceUuid, UUID systemUuid) {
+
+	private static void findBartsPersonIds(String sourceFile, UUID serviceUuid, UUID systemUuid, String dateCutoffStr) {
 		LOG.debug("Finding Barts person IDs for " + sourceFile);
 		try {
 
@@ -568,9 +570,12 @@ public class Main {
 			for (String line: lines) {
 				hsNhsNumbers.add(line.trim());
 			}
+			LOG.debug("Looking for Person IDs for " + hsNhsNumbers + " nhs numbers or any since " + dateCutoffStr);
+
+			SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+			Date dateCutoff = sdf.parse(dateCutoffStr);
 
 			List<String> newLines = new ArrayList<>();
-			newLines.add("NHS_number,PersonID");
 
 			Set<String> hsPersonIdsFound = new HashSet<>();
 			Set<String> hsNhsNumbersFound = new HashSet<>();
@@ -585,12 +590,18 @@ public class Main {
 						continue;
 					}
 
+					String parentPath = new File(file.getPath()).getParent();
+					String parentDir = FilenameUtils.getBaseName(parentPath);
+					Date extractDate = sdf.parse(parentDir);
+					boolean inDateRange = !extractDate.before(dateCutoff);
+
 					PPATI parser = new PPATI(null, null, null, null, file.getPath());
 					while (parser.nextRecord()) {
 						CsvCell nhsNumberCell = parser.getNhsNumber();
 						String nhsNumber = nhsNumberCell.getString();
 						nhsNumber = nhsNumber.replace("-", "");
-						if (hsNhsNumbers.contains(nhsNumber)) {
+						if (hsNhsNumbers.contains(nhsNumber)
+								|| inDateRange) {
 
 							hsNhsNumbersFound.add(nhsNumber);
 
@@ -600,8 +611,8 @@ public class Main {
 							if (!hsPersonIdsFound.contains(personId)) {
 								hsPersonIdsFound.add(personId);
 
-								String line = nhsNumber + "," + personId;
-								newLines.add(line);
+								newLines.add("#NHS " + nhsNumber + ":");
+								newLines.add(personId);
 							}
 						}
 					}
