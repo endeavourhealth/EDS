@@ -371,7 +371,8 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
                 "System ID", request.getSystemId(),
                 "Exchange Name", request.getExchangeName(),
                 "Post Mode", request.getPostMode(),
-                "Protocol ID", request.getSpecificProtocolId());
+                "Protocol ID", request.getSpecificProtocolId(),
+                "File Types to Filter", request.getFileTypesToFilterOn());
 
         UUID selectedExchangeId = request.getExchangeId();
         UUID serviceId = request.getServiceId();
@@ -379,6 +380,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
         String exchangeName = request.getExchangeName();
         String postMode = request.getPostMode();
         UUID specificProtocolId = request.getSpecificProtocolId();
+        String fileTypesToFilterOn = request.getFileTypesToFilterOn();
 
         //work out the exchange IDs to post
         List<UUID> exchangeIds = null;
@@ -416,8 +418,20 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
             }
         }
 
+        //tokenise and validate the filtering file types
+        Set<String> fileTypesSet = null;
+        if (!Strings.isNullOrEmpty(fileTypesToFilterOn)) {
+            fileTypesSet = new HashSet<>();
+
+            String[] toks = fileTypesToFilterOn.split("\n");
+            for (String tok: toks) {
+                tok = tok.trim();
+                fileTypesSet.add(tok);
+            }
+        }
+
         //post the exchanges to RabbitMQ
-        QueueHelper.postToExchange(exchangeIds, exchangeName, specificProtocolId, true);
+        QueueHelper.postToExchange(exchangeIds, exchangeName, specificProtocolId, true, fileTypesSet);
 
         //and update any past transform audits to say we've resubmitted them to rabbit, if it's the inbound queue
         for (ExchangeTransformAudit audit: auditsToFlagAsResubmited) {

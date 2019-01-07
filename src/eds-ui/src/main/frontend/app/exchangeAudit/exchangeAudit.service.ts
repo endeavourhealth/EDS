@@ -72,14 +72,17 @@ export class ExchangeAuditService extends BaseHttp2Service {
         return this.httpGet('api/exchangeAudit/getExchangeEvents', { search : params});
     }*/
 
-    postToExchange(exchangeId: string, serviceId: string, systemId: string, exchangeName: string, postMode: string, postSpecificProtocol: string):Observable<any> {
+    postToExchange(exchangeId: string, serviceId: string, systemId: string, exchangeName: string, postMode: string,
+                   postSpecificProtocol: string, fileTypesToFilterOn: string):Observable<any> {
+
         var request = {
             'exchangeId': exchangeId,
             'serviceId': serviceId,
             'systemId': systemId,
             'exchangeName': exchangeName,
             'postMode': postMode,
-            'specificProtocolId': postSpecificProtocol
+            'specificProtocolId': postSpecificProtocol,
+            'fileTypesToFilterOn': fileTypesToFilterOn
         };
         return this.httpPost('api/exchangeAudit/postToExchange', request);
     }

@@ -13,6 +13,7 @@ public class JsonPostToExchangeRequest {
     private String exchangeName;
     private String postMode;
     private UUID specificProtocolId;
+    private String fileTypesToFilterOn;
 
     public JsonPostToExchangeRequest() {}
 
@@ -62,5 +63,13 @@ public class JsonPostToExchangeRequest {
 
     public void setSpecificProtocolId(UUID specificProtocolId) {
         this.specificProtocolId = specificProtocolId;
+    }
+
+    public String getFileTypesToFilterOn() {
+        return fileTypesToFilterOn;
+    }
+
+    public void setFileTypesToFilterOn(String fileTypesToFilterOn) {
+        this.fileTypesToFilterOn = fileTypesToFilterOn;
     }
 }

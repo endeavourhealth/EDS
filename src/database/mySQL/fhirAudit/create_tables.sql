@@ -1,3 +1,7 @@
+use fhir_audit;
+
+drop table if exists resource_field_mappings;
+
 CREATE TABLE resource_field_mappings (
   resource_id char(36) NOT NULL,
   resource_type varchar(50) NOT NULL,

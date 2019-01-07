@@ -34,7 +34,8 @@ export class ExchangeAuditComponent {
 	//postAllExchanges: boolean;
 	postMode: string;
 	postSpecificProtocol: string;
-
+	postFilterFileTypes: boolean;
+	postFilterFileTypesSelected: string;
 
 	constructor(private $modal : NgbModal,
 				private $window : StateService,
@@ -243,7 +244,16 @@ export class ExchangeAuditComponent {
 		var exchangeId = vm.selectedExchange.exchangeId;
 		var serviceId = this.service.uuid;
 
-		this.busyPostingToExchange = vm.exchangeAuditService.postToExchange(exchangeId, serviceId, vm.systemId, exchangeName, this.postMode, this.postSpecificProtocol).subscribe(
+		var fileTypesToFilterOn;
+		if (vm.postFilterFileTypes) {
+			fileTypesToFilterOn = vm.postFilterFileTypesSelected;
+			if (!fileTypesToFilterOn) {
+				vm.log.error('No file types selected');
+				return;
+			}
+		}
+
+		this.busyPostingToExchange = vm.exchangeAuditService.postToExchange(exchangeId, serviceId, vm.systemId, exchangeName, this.postMode, this.postSpecificProtocol, fileTypesToFilterOn).subscribe(
 			(result) => {
 				vm.log.success('Successfully posted to ' + exchangeName + ' exchange', 'Post to Exchange');
 
@@ -314,5 +324,6 @@ export class ExchangeAuditComponent {
 		//remove from the document
 		document.body.removeChild(txtArea);
 	}
+
 
 }

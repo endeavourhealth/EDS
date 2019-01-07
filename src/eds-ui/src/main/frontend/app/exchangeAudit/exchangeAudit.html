@@ -142,29 +142,42 @@
                     <div class="panel panel-primary">
                     <!--<div class="panel panel-primary">-->
                         <div class="panel-body">
-                            Post to Exchange:
-                            <div>
-                                <button type="button" class="btn btn-sm btn-success" [disabled]="busyPostingToExchange" (click)="postToExchange('edsInbound')">Inbound</button>
-                                <!--<button type="button" class="btn btn-sm btn-success" [disabled]="busyPostingToExchange" (click)="postToExchange('edsResponse')">Response</button>-->
-                                <button type="button" class="btn btn-sm btn-success" [disabled]="busyPostingToExchange" (click)="postToExchange('edsProtocol')">Protocol</button>
-                                <!--<button type="button" class="btn btn-sm btn-success" [disabled]="busyPostingToExchange" (click)="postToExchange('edsTransform')">Transform</button>
-                                <button type="button" class="btn btn-sm btn-success" [disabled]="busyPostingToExchange" (click)="postToExchange('edsSubscriber')">Subscriber</button>-->
 
-                                Exchanges to post:
-                                <select id="postMode" [(ngModel)]="postMode">
-                                    <option value="This">This Exchange Only</option>
-                                    <option value="Onwards">This Exchange and Onwards</option>
-                                    <option value="All">All Exchanges</option>
-                                </select>
+                            <div class="row">
+                                <div class="form-group col-md-12">
 
-                                Protocol to apply:
-                                <!--<select id="protocol" class="form-control" [(ngModel)]="postSpecificProtocol" name="protocolId">-->
-                                <select id="protocol" [(ngModel)]="postSpecificProtocol" name="protocolId">
-                                    <option value="">--All Protocols--</option>
-                                    <option *ngFor="let protocol of protocols" value="{{protocol.id}}">{{protocol.name}}</option>
-                                </select>
+                                    Post to Exchange:
+                                    <button type="button" class="btn btn-sm btn-success" [disabled]="busyPostingToExchange" (click)="postToExchange('edsInbound')">Inbound</button>
+                                    <!--<button type="button" class="btn btn-sm btn-success" [disabled]="busyPostingToExchange" (click)="postToExchange('edsResponse')">Response</button>-->
+                                    <button type="button" class="btn btn-sm btn-success" [disabled]="busyPostingToExchange" (click)="postToExchange('edsProtocol')">Protocol</button>
+                                    <!--<button type="button" class="btn btn-sm btn-success" [disabled]="busyPostingToExchange" (click)="postToExchange('edsTransform')">Transform</button>
+                                    <button type="button" class="btn btn-sm btn-success" [disabled]="busyPostingToExchange" (click)="postToExchange('edsSubscriber')">Subscriber</button>-->
 
-                                <span class="fa fa-sm fa-refresh fa-refresh-animate" *ngIf="busyPostingToExchange"></span>
+                                    Exchanges to post:
+                                    <select id="postMode" [(ngModel)]="postMode">
+                                        <option value="This">This Exchange Only</option>
+                                        <option value="Onwards">This Exchange and Onwards</option>
+                                        <option value="All">All Exchanges</option>
+                                    </select>
+
+                                    Protocol to apply:
+                                    <!--<select id="protocol" class="form-control" [(ngModel)]="postSpecificProtocol" name="protocolId">-->
+                                    <select id="protocol" [(ngModel)]="postSpecificProtocol" name="protocolId">
+                                        <option value="">--All Protocols--</option>
+                                        <option *ngFor="let protocol of protocols" value="{{protocol.id}}">{{protocol.name}}</option>
+                                    </select>
+
+                                    Filter file types:
+                                    <input type="checkbox" id="filterFileTypesCheckbox" [(ngModel)]="postFilterFileTypes" name="filterFileTypes">
+
+                                    <span class="fa fa-sm fa-refresh fa-refresh-animate" *ngIf="busyPostingToExchange"></span>
+                                </div>
+                            </div>
+
+                            <div class="row" *ngIf="postFilterFileTypes">
+                                <div class="form-group col-md-12">
+                                    <textarea class="form-control" id="description" [(ngModel)]="postFilterFileTypesSelected" placeholder="File types to filter on (separated on separate lines)" name="postFilterFileTypesSelected"></textarea>
+                                </div>
                             </div>
                         </div>
                     </div>

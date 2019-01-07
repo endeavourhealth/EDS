@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.base.Strings;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.common.config.ConfigManager;
+import org.endeavourhealth.common.utility.JsonSerializer;
 import org.endeavourhealth.core.configuration.*;
 import org.endeavourhealth.core.database.dal.DalProvider;
 import org.endeavourhealth.core.database.dal.admin.LibraryRepositoryHelper;
@@ -19,15 +20,14 @@ import org.endeavourhealth.core.xml.QueryDocument.LibraryItem;
 import org.endeavourhealth.core.xml.QueryDocument.ServiceContract;
 import org.endeavourhealth.core.xml.QueryDocument.ServiceContractType;
 import org.endeavourhealth.transform.common.AuditWriter;
+import org.endeavourhealth.transform.common.ExchangeHelper;
+import org.endeavourhealth.transform.common.ExchangePayloadFile;
 import org.hl7.fhir.instance.model.ResourceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.BadRequestException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class QueueHelper {
@@ -40,7 +40,13 @@ public class QueueHelper {
         postToExchange(exchangeIds, exchangeName, specificProtocolId, recalculateProtocols);
     }*/
 
+
+
     public static void postToExchange(List<UUID> exchangeIds, String exchangeName, UUID specificProtocolId, boolean recalculateProtocols) throws Exception {
+        postToExchange(exchangeIds, exchangeName, specificProtocolId, recalculateProtocols, null);
+    }
+
+    public static void postToExchange(List<UUID> exchangeIds, String exchangeName, UUID specificProtocolId, boolean recalculateProtocols, Set<String> fileTypesToFilterOn) throws Exception {
 
         PostMessageToExchangeConfig exchangeConfig = findExchangeConfig(exchangeName);
         if (exchangeConfig == null) {
@@ -110,6 +116,28 @@ public class QueueHelper {
                 exchange.setHeader(HeaderKeys.ProtocolIds, specificProtocolJson);
             }
 
+            String exchangeEventStr = "Manually pushed into " + exchangeName + " exchange";
+
+            //apply any filtering on file type
+            if (fileTypesToFilterOn != null) {
+                List<ExchangePayloadFile> filteredFiles = new ArrayList<>();
+
+                List<ExchangePayloadFile> files = ExchangeHelper.parseExchangeBody(exchange.getBody());
+                for (ExchangePayloadFile file: files) {
+                    String fileType = file.getType();
+                    if (fileTypesToFilterOn.contains(fileType)) {
+                        filteredFiles.add(file);
+                    }
+                }
+
+                String newBody = JsonSerializer.serialize(filteredFiles);
+                exchange.setBody(newBody);
+
+                List<String> list = new ArrayList<>(fileTypesToFilterOn);
+                list.sort(((o1, o2) -> o1.compareToIgnoreCase(o2)));
+                exchangeEventStr += "\nFiltered on file types:\n" + String.join("\n", list);
+            }
+
             //work out what multicast header we need
             String multicastHeader = exchangeConfig.getMulticastHeader();
             if (!Strings.isNullOrEmpty(multicastHeader)) {
@@ -123,7 +151,7 @@ public class QueueHelper {
             component.process(exchange);
 
             //write an event for the exchange, so we can see this happened
-            AuditWriter.writeExchangeEvent(exchange, "Manually pushed into " + exchangeName + " exchange");
+            AuditWriter.writeExchangeEvent(exchange, exchangeEventStr);
 
             if (i % 1000 == 0) {
                 LOG.info("Posted " + (i+1) + " / " + exchangeIds.size() + " exchanges to " + exchangeName);

@@ -99,7 +99,12 @@ CREATE TABLE queued_message
     timestamp datetime NOT NULL,
     queued_message_type_id int NOT NULL,
     CONSTRAINT pk_queued_message PRIMARY KEY (id)
-);
+)
+ROW_FORMAT=COMPRESSED
+KEY_BLOCK_SIZE=8;
+
+CREATE INDEX ix_queued_message_timestamp
+  ON queued_message (timestamp);
 
 CREATE TABLE queued_message_type
 (
