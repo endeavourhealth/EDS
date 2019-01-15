@@ -9968,7 +9968,8 @@ public class Main {
 					CSVRecord csvRecord = csvIterator.next();
 
 					String patientGuid = csvRecord.get(filterColumn);
-					if (patientGuids.contains(patientGuid)) {
+					if (Strings.isNullOrEmpty(patientGuid) //if empty, carry over this record
+						|| patientGuids.contains(patientGuid)) {
 
 						printer.printRecord(csvRecord);
 						printer.flush();
