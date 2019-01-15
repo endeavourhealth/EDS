@@ -129,6 +129,15 @@ public class Main {
 		}
 
 		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("CreateEmisSubset")) {
+			String sourceDirPath = args[1];
+			String destDirPath = args[2];
+			String samplePatientsFile = args[3];
+			createEmisSubset(sourceDirPath, destDirPath, samplePatientsFile);
+			System.exit(0);
+		}
+
+		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("FindBartsPersonIds")) {
 			String sourceFile = args[1];
 			UUID serviceUuid = UUID.fromString(args[2]);
@@ -9849,6 +9858,128 @@ public class Main {
 
 		LOG.info("Finished finding missing codes");
 	}*/
+
+	private static void createEmisSubset(String sourceDirPath, String destDirPath, String samplePatientsFile) {
+		LOG.info("Creating Emis Subset");
+
+		try {
+
+			Set<String> patientGuids = new HashSet<>();
+			List<String> lines = Files.readAllLines(new File(samplePatientsFile).toPath());
+			for (String line: lines) {
+				line = line.trim();
+
+				//ignore comments
+				if (line.startsWith("#")) {
+					continue;
+				}
+				patientGuids.add(line);
+			}
+
+			File sourceDir = new File(sourceDirPath);
+			File destDir = new File(destDirPath);
+
+			if (!destDir.exists()) {
+				destDir.mkdirs();
+			}
+
+			createEmisSubsetForFile(sourceDir, destDir, patientGuids);
+
+			LOG.info("Finished Creating Emis Subset");
+
+		} catch (Throwable t) {
+			LOG.error("", t);
+		}
+	}
+
+	private static void createEmisSubsetForFile(File sourceDir, File destDir, Set<String> patientGuids) throws Exception {
+
+		File[] files = sourceDir.listFiles();
+		LOG.info("Found " + files.length + " files in " + sourceDir);
+
+		for (File sourceFile: files) {
+
+			String name = sourceFile.getName();
+			File destFile = new File(destDir, name);
+
+			if (sourceFile.isDirectory()) {
+
+				if (!destFile.exists()) {
+					destFile.mkdirs();
+				}
+
+				createEmisSubsetForFile(sourceFile, destFile, patientGuids);
+
+			} else {
+
+				if (destFile.exists()) {
+					destFile.delete();
+				}
+
+				LOG.info("Checking file " + sourceFile);
+
+				//skip any non-CSV file
+				String ext = FilenameUtils.getExtension(name);
+				if (!ext.equalsIgnoreCase("csv")) {
+					LOG.info("Skipping as not a CSV file");
+					continue;
+				}
+
+				CSVFormat format = CSVFormat.DEFAULT.withHeader();
+
+				InputStreamReader reader = new InputStreamReader(
+												new BufferedInputStream(
+													new FileInputStream(sourceFile)));
+
+				CSVParser parser = new CSVParser(reader, format);
+
+				String filterColumn = null;
+
+				Map<String, Integer> headerMap = parser.getHeaderMap();
+				if (headerMap.containsKey("PatientGuid")) {
+					filterColumn = "PatientGuid";
+
+				} else {
+					//if no patient column, just copy the file
+					parser.close();
+
+					LOG.info("Copying non-patient file " + sourceFile);
+					copyFile(sourceFile, destFile);
+					continue;
+				}
+
+				String[] columnHeaders = new String[headerMap.size()];
+				Iterator<String> headerIterator = headerMap.keySet().iterator();
+				while (headerIterator.hasNext()) {
+					String headerName = headerIterator.next();
+					int headerIndex = headerMap.get(headerName);
+					columnHeaders[headerIndex] = headerName;
+				}
+
+				BufferedWriter bw =
+						new BufferedWriter(
+								new OutputStreamWriter(
+										new FileOutputStream(destFile)));
+
+				CSVPrinter printer = new CSVPrinter(bw, format.withHeader(columnHeaders));
+
+				Iterator<CSVRecord> csvIterator = parser.iterator();
+				while (csvIterator.hasNext()) {
+					CSVRecord csvRecord = csvIterator.next();
+
+					String patientGuid = csvRecord.get(filterColumn);
+					if (patientGuids.contains(patientGuid)) {
+
+						printer.printRecord(csvRecord);
+						printer.flush();
+					}
+				}
+
+				parser.close();
+				printer.close();
+			}
+		}
+	}
 
 	private static void createTppSubset(String sourceDirPath, String destDirPath, String samplePatientsFile) {
 		LOG.info("Creating TPP Subset");
