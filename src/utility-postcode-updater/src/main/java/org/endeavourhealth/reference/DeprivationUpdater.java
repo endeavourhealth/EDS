@@ -1,11 +1,13 @@
 package org.endeavourhealth.reference;
 
+import com.google.common.base.Strings;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.endeavourhealth.core.csv.CsvHelper;
 import org.endeavourhealth.core.database.dal.DalProvider;
 import org.endeavourhealth.core.database.dal.reference.ReferenceUpdaterDalI;
+import org.endeavourhealth.core.database.dal.reference.models.DeprivationLookup;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,43 +18,21 @@ import java.util.Iterator;
 public class DeprivationUpdater {
     private static final Logger LOG = LoggerFactory.getLogger(DeprivationUpdater.class);
 
-    private static final String LSOA_CODE = "\uFEFFLSOA code (2011)"; //the raw file seems to have a weird character at the start
-    private static final String LSOA_NAME = "LSOA name (2011)";
-    private static final String LA_CODE = "Local Authority District code (2013)";
-    private static final String LA_NAME = "Local Authority District name (2013)";
-    private static final String DEPRIVATION_RANK = "Index of Multiple Deprivation (IMD) Rank (where 1 is most deprived)";
-    private static final String DEPRIVATION_DECILE = "Index of Multiple Deprivation (IMD) Decile (where 1 is most deprived 10% of LSOAs)";
-    private static final String INCOME_RANK = "Income Rank (where 1 is most deprived)";
-    private static final String INCOME_DECILE = "Income Decile (where 1 is most deprived 10% of LSOAs)";
-    private static final String EMPLOYMENT_RANK = "Employment Rank (where 1 is most deprived)";
-    private static final String EMPLOYMENT_DECILE = "Employment Decile (where 1 is most deprived 10% of LSOAs)";
-    private static final String EDUCATION_RANK = "Education, Skills and Training Rank (where 1 is most deprived)";
-    private static final String EDUCATION_DECILE = "Education, Skills and Training Decile (where 1 is most deprived 10% of LSOAs)";
-    private static final String HEALTH_RANK = "Health Deprivation and Disability Rank (where 1 is most deprived)";
-    private static final String HEALTH_DECILE = "Health Deprivation and Disability Decile (where 1 is most deprived 10% of LSOAs)";
-    private static final String CRIME_RANK = "Crime Rank (where 1 is most deprived)";
-    private static final String CRIME_DECILE = "Crime Decile (where 1 is most deprived 10% of LSOAs)";
-    private static final String HOUSING_AND_SERVICES_BARRIERS_RANK = "Barriers to Housing and Services Rank (where 1 is most deprived)";
-    private static final String HOUSING_AND_SERVICES_BARRIERS_DECILE = "Barriers to Housing and Services Decile (where 1 is most deprived 10% of LSOAs)";
-    private static final String LIVING_ENVIRONMENT_RANK = "Living Environment Rank (where 1 is most deprived)";
-    private static final String LIVING_ENVIRONMENT_DECILE = "Living Environment Decile (where 1 is most deprived 10% of LSOAs)";
-    
     /**
      * updates the deprivation_lookup table in the reference DB from ONS data
      *
      * Usage
      * =================================================================================
      * 1. go to https://www.gov.uk/government/statistics/english-indices-of-deprivation-2015
-     * 2. download "File 2: domains of deprivation "
-     * 3. open in Excel and save the second sheet as a CSV file
-     * 4. Then run this utility as:
+     * 2. download "File 7: all ranks, deciles and scores for the indices of deprivation, and population denominators"
+     * 3. Then run this utility on that CSV file, as:
      *      Main deprivation <csv file>
      */
     public static void updateDeprivationScores(String[] args) throws Exception {
 
         if (args.length != 2) {
             LOG.error("Incorrect number of parameters");
-            LOG.error("Usage: lsoa <lsoa txt file>");
+            LOG.error("Usage: deprivation <deprivation CSV file>");
             return;
         }
 
@@ -102,71 +82,165 @@ public class DeprivationUpdater {
         }
     }
 
+    private static Double convertDouble(CSVRecord record, String column) {
+        String s = record.get(column);
+        if (Strings.isNullOrEmpty(s)) {
+            return null;
+        }
+
+        return Double.valueOf(s);
+    }
+
+    private static Integer convertInt(CSVRecord record, String column) {
+        String s = record.get(column);
+        if (Strings.isNullOrEmpty(s)) {
+            return null;
+        }
+
+        return Integer.valueOf(s);
+    }
+
     private static void updateDeprivationScore(CSVRecord record) throws Exception {
 
-        String lsoaCode = record.get(LSOA_CODE);
+        DeprivationLookup lookup = new DeprivationLookup();
+        lookup.setLsoaCode(record.get("LSOA code (2011)"));
 
-        //the file has numbers in the format "1,234", so remove the commas before creating the Integers
-        Integer rank = new Integer(record.get(DEPRIVATION_RANK).replace(",", ""));
-        Integer decile = new Integer(record.get(DEPRIVATION_DECILE).replace(",", ""));
-        Integer incomeRank = new Integer(record.get(INCOME_RANK).replace(",", ""));
-        Integer incomeDecile = new Integer(record.get(INCOME_DECILE).replace(",", ""));
-        Integer employmentRank = new Integer(record.get(EMPLOYMENT_RANK).replace(",", ""));
-        Integer employmentDecile = new Integer(record.get(EMPLOYMENT_DECILE).replace(",", ""));
-        Integer educationRank = new Integer(record.get(EDUCATION_RANK).replace(",", ""));
-        Integer educationDecile = new Integer(record.get(EDUCATION_DECILE).replace(",", ""));
-        Integer healthRank = new Integer(record.get(HEALTH_RANK).replace(",", ""));
-        Integer healthDecile = new Integer(record.get(HEALTH_DECILE).replace(",", ""));
-        Integer crimeRank = new Integer(record.get(CRIME_RANK).replace(",", ""));
-        Integer crimeDecile = new Integer(record.get(CRIME_DECILE).replace(",", ""));
-        Integer housingAndServicesBarriersRank = new Integer(record.get(HOUSING_AND_SERVICES_BARRIERS_RANK).replace(",", ""));
-        Integer housingAndServicesBarriersDecile = new Integer(record.get(HOUSING_AND_SERVICES_BARRIERS_DECILE).replace(",", ""));
-        Integer livingEnvironmentRank = new Integer(record.get(LIVING_ENVIRONMENT_RANK).replace(",", ""));
-        Integer livingEnvironmentDecile = new Integer(record.get(LIVING_ENVIRONMENT_DECILE).replace(",", ""));
+        lookup.setImdScore(convertDouble(record, "Index of Multiple Deprivation (IMD) Score"));
+        lookup.setImdRank(convertInt(record, "Index of Multiple Deprivation (IMD) Rank (where 1 is most deprived)"));
+        lookup.setImdDecile(convertInt(record, "Index of Multiple Deprivation (IMD) Decile (where 1 is most deprived 10% of LSOAs)"));
+
+        lookup.setIncomeScore(convertDouble(record, "Income Score (rate)"));
+        lookup.setIncomeRank(convertInt(record, "Income Rank (where 1 is most deprived)"));
+        lookup.setIncomeDecile(convertInt(record, "Income Decile (where 1 is most deprived 10% of LSOAs)"));
+
+        lookup.setEmploymentScore(convertDouble(record, "Employment Score (rate)"));
+        lookup.setEmploymentRank(convertInt(record, "Employment Rank (where 1 is most deprived)"));
+        lookup.setEmploymentDecile(convertInt(record, "Employment Decile (where 1 is most deprived 10% of LSOAs)"));
+
+        lookup.setEducationScore(convertDouble(record, "Education, Skills and Training Score"));
+        lookup.setEducationRank(convertInt(record, "Education, Skills and Training Rank (where 1 is most deprived)"));
+        lookup.setEducationDecile(convertInt(record, "Education, Skills and Training Decile (where 1 is most deprived 10% of LSOAs)"));
+
+        lookup.setHealthScore(convertDouble(record, "Health Deprivation and Disability Score"));
+        lookup.setHealthRank(convertInt(record, "Health Deprivation and Disability Rank (where 1 is most deprived)"));
+        lookup.setHealthDecile(convertInt(record, "Health Deprivation and Disability Decile (where 1 is most deprived 10% of LSOAs)"));
+
+        lookup.setCrimeScore(convertDouble(record, "Crime Score"));
+        lookup.setCrimeRank(convertInt(record, "Crime Rank (where 1 is most deprived)"));
+        lookup.setCrimeDecile(convertInt(record, "Crime Decile (where 1 is most deprived 10% of LSOAs)"));
+
+        lookup.setHousingAndServicesBarriersScore(convertDouble(record, "Barriers to Housing and Services Score"));
+        lookup.setHousingAndServicesBarriersRank(convertInt(record, "Barriers to Housing and Services Rank (where 1 is most deprived)"));
+        lookup.setHousingAndServicesBarriersDecile(convertInt(record, "Barriers to Housing and Services Decile (where 1 is most deprived 10% of LSOAs)"));
+
+        lookup.setLivingEnvironmentScore(convertDouble(record, "Living Environment Score"));
+        lookup.setLivingEnvironmentRank(convertInt(record, "Living Environment Rank (where 1 is most deprived)"));
+        lookup.setLivingEnvironmentDecile(convertInt(record, "Living Environment Decile (where 1 is most deprived 10% of LSOAs)"));
+
+        lookup.setIdaciScore(convertDouble(record, "Income Deprivation Affecting Children Index (IDACI) Score (rate)"));
+        lookup.setIdaciRank(convertInt(record, "Income Deprivation Affecting Children Index (IDACI) Rank (where 1 is most deprived)"));
+        lookup.setIdaciDecile(convertInt(record, "Income Deprivation Affecting Children Index (IDACI) Decile (where 1 is most deprived 10% of LSOAs)"));
+
+        lookup.setIdaopiScore(convertDouble(record, "Income Deprivation Affecting Older People (IDAOPI) Score (rate)"));
+        lookup.setIdaopiRank(convertInt(record, "Income Deprivation Affecting Older People (IDAOPI) Rank (where 1 is most deprived)"));
+        lookup.setIdaopiDecile(convertInt(record, "Income Deprivation Affecting Older People (IDAOPI) Decile (where 1 is most deprived 10% of LSOAs)"));
+
+        lookup.setChildrenAndYoungSubDomainScore(convertDouble(record, "Children and Young People Sub-domain Score"));
+        lookup.setChildrenAndYoungSubDomainRank(convertInt(record, "Children and Young People Sub-domain Rank (where 1 is most deprived)"));
+        lookup.setChildrenAndYoungSubDomainDecile(convertInt(record, "Children and Young People Sub-domain Decile (where 1 is most deprived 10% of LSOAs)"));
+
+        lookup.setAdultSkillsSubDomainScore(convertDouble(record, "Adult Skills Sub-domain Score"));
+        lookup.setAdultSkillsSubDomainRank(convertInt(record, "Adult Skills Sub-domain Rank (where 1 is most deprived)"));
+        lookup.setAdultSkillsSubDomainDecile(convertInt(record, "Adult Skills Sub-domain Decile (where 1 is most deprived 10% of LSOAs)"));
+
+        lookup.setGeographicalBarriersSubDomainScore(convertDouble(record, "Geographical Barriers Sub-domain Score"));
+        lookup.setGeographicalBarriersSubDomainRank(convertInt(record, "Geographical Barriers Sub-domain Rank (where 1 is most deprived)"));
+        lookup.setGeographicalBarriersSubDomainDecile(convertInt(record, "Geographical Barriers Sub-domain Decile (where 1 is most deprived 10% of LSOAs)"));
+
+        lookup.setWiderBarriersSubDomainScore(convertDouble(record, "Wider Barriers Sub-domain Score"));
+        lookup.setWiderBarriersSubDomainRank(convertInt(record, "Wider Barriers Sub-domain Rank (where 1 is most deprived)"));
+        lookup.setWiderBarriersSubDomainDecile(convertInt(record, "Wider Barriers Sub-domain Decile (where 1 is most deprived 10% of LSOAs)"));
+
+        lookup.setIndoorsSubDomainScore(convertDouble(record, "Indoors Sub-domain Score"));
+        lookup.setIndoorsSubDomainRank(convertInt(record, "Indoors Sub-domain Rank (where 1 is most deprived)"));
+        lookup.setIndoorsSubDomainDecile(convertInt(record, "Indoors Sub-domain Decile (where 1 is most deprived 10% of LSOAs)"));
+
+        lookup.setOutdoorsSubDomainScore(convertDouble(record, "Outdoors Sub-domain Score"));
+        lookup.setOutdoorsSubDomainRank(convertInt(record, "Outdoors Sub-domain Rank (where 1 is most deprived)"));
+        lookup.setOutdoorsSubDomainDecile(convertInt(record, "Outdoors Sub-domain Decile (where 1 is most deprived 10% of LSOAs)"));
+
+        lookup.setTotalPopulation(convertInt(record, "Total population: mid 2012 (excluding prisoners)"));
+        lookup.setDependentChildren0To15(convertInt(record, "Dependent Children aged 0-15: mid 2012 (excluding prisoners)"));
+        lookup.setPopulation16To59(convertInt(record, "Population aged 16-59: mid 2012 (excluding prisoners)"));
+        lookup.setOlderPopulation60AndOver(convertInt(record, "Older population aged 60 and over: mid 2012 (excluding prisoners)"));
+
+        //this data seems to contain a non-integer value, which makes no sense, so ignoring it
+        //lookup.setWorkingAgePopulation(convertInt(record, "Working age population 18-59/64: for use with Employment Deprivation Domain (excluding prisoners) ")); //note trailing space is in the source file
 
         ReferenceUpdaterDalI referenceUpdaterDal = DalProvider.factoryReferenceUpdaterDal();
-        referenceUpdaterDal.updateDeprivationMap(lsoaCode,
-                rank,
-                decile,
-                incomeRank,
-                incomeDecile,
-                employmentRank,
-                employmentDecile,
-                educationRank,
-                educationDecile,
-                healthRank,
-                healthDecile,
-                crimeRank,
-                crimeDecile,
-                housingAndServicesBarriersRank,
-                housingAndServicesBarriersDecile,
-                livingEnvironmentRank,
-                livingEnvironmentDecile);
+        referenceUpdaterDal.updateDeprivationMap(lookup);
 
     }
 
     public static String[] getCsvHeadings() {
         return new String[]{
-                LSOA_CODE,
-                LSOA_NAME,
-                LA_CODE,
-                LA_NAME,
-                DEPRIVATION_RANK,
-                DEPRIVATION_DECILE,
-                INCOME_RANK,
-                INCOME_DECILE,
-                EMPLOYMENT_RANK,
-                EMPLOYMENT_DECILE,
-                EDUCATION_RANK,
-                EDUCATION_DECILE,
-                HEALTH_RANK,
-                HEALTH_DECILE,
-                CRIME_RANK,
-                CRIME_DECILE,
-                HOUSING_AND_SERVICES_BARRIERS_RANK,
-                HOUSING_AND_SERVICES_BARRIERS_DECILE,
-                LIVING_ENVIRONMENT_RANK,
-                LIVING_ENVIRONMENT_DECILE
+                "LSOA code (2011)",
+                "LSOA name (2011)",
+                "Local Authority District code (2013)",
+                "Local Authority District name (2013)",
+                "Index of Multiple Deprivation (IMD) Score",
+                "Index of Multiple Deprivation (IMD) Rank (where 1 is most deprived)",
+                "Index of Multiple Deprivation (IMD) Decile (where 1 is most deprived 10% of LSOAs)",
+                "Income Score (rate)",
+                "Income Rank (where 1 is most deprived)",
+                "Income Decile (where 1 is most deprived 10% of LSOAs)",
+                "Employment Score (rate)",
+                "Employment Rank (where 1 is most deprived)",
+                "Employment Decile (where 1 is most deprived 10% of LSOAs)",
+                "Education, Skills and Training Score",
+                "Education, Skills and Training Rank (where 1 is most deprived)",
+                "Education, Skills and Training Decile (where 1 is most deprived 10% of LSOAs)",
+                "Health Deprivation and Disability Score",
+                "Health Deprivation and Disability Rank (where 1 is most deprived)",
+                "Health Deprivation and Disability Decile (where 1 is most deprived 10% of LSOAs)",
+                "Crime Score",
+                "Crime Rank (where 1 is most deprived)",
+                "Crime Decile (where 1 is most deprived 10% of LSOAs)",
+                "Barriers to Housing and Services Score",
+                "Barriers to Housing and Services Rank (where 1 is most deprived)",
+                "Barriers to Housing and Services Decile (where 1 is most deprived 10% of LSOAs)",
+                "Living Environment Score",
+                "Living Environment Rank (where 1 is most deprived)",
+                "Living Environment Decile (where 1 is most deprived 10% of LSOAs)",
+                "Income Deprivation Affecting Children Index (IDACI) Score (rate)",
+                "Income Deprivation Affecting Children Index (IDACI) Rank (where 1 is most deprived)",
+                "Income Deprivation Affecting Children Index (IDACI) Decile (where 1 is most deprived 10% of LSOAs)",
+                "Income Deprivation Affecting Older People (IDAOPI) Score (rate)",
+                "Income Deprivation Affecting Older People (IDAOPI) Rank (where 1 is most deprived)",
+                "Income Deprivation Affecting Older People (IDAOPI) Decile (where 1 is most deprived 10% of LSOAs)",
+                "Children and Young People Sub-domain Score",
+                "Children and Young People Sub-domain Rank (where 1 is most deprived)",
+                "Children and Young People Sub-domain Decile (where 1 is most deprived 10% of LSOAs)",
+                "Adult Skills Sub-domain Score",
+                "Adult Skills Sub-domain Rank (where 1 is most deprived)",
+                "Adult Skills Sub-domain Decile (where 1 is most deprived 10% of LSOAs)",
+                "Geographical Barriers Sub-domain Score",
+                "Geographical Barriers Sub-domain Rank (where 1 is most deprived)",
+                "Geographical Barriers Sub-domain Decile (where 1 is most deprived 10% of LSOAs)",
+                "Wider Barriers Sub-domain Score",
+                "Wider Barriers Sub-domain Rank (where 1 is most deprived)",
+                "Wider Barriers Sub-domain Decile (where 1 is most deprived 10% of LSOAs)",
+                "Indoors Sub-domain Score",
+                "Indoors Sub-domain Rank (where 1 is most deprived)",
+                "Indoors Sub-domain Decile (where 1 is most deprived 10% of LSOAs)",
+                "Outdoors Sub-domain Score",
+                "Outdoors Sub-domain Rank (where 1 is most deprived)",
+                "Outdoors Sub-domain Decile (where 1 is most deprived 10% of LSOAs)",
+                "Total population: mid 2012 (excluding prisoners)",
+                "Dependent Children aged 0-15: mid 2012 (excluding prisoners)",
+                "Population aged 16-59: mid 2012 (excluding prisoners)",
+                "Older population aged 60 and over: mid 2012 (excluding prisoners)",
+                "Working age population 18-59/64: for use with Employment Deprivation Domain (excluding prisoners) " //note trailing space is in the source file
         };
     }
 }
