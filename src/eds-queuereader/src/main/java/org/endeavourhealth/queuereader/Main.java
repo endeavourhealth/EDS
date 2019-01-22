@@ -16,6 +16,7 @@ import org.endeavourhealth.common.utility.FileHelper;
 import org.endeavourhealth.common.utility.FileInfo;
 import org.endeavourhealth.common.utility.SlackHelper;
 import org.endeavourhealth.core.configuration.ConfigDeserialiser;
+import org.endeavourhealth.core.configuration.PostMessageToExchangeConfig;
 import org.endeavourhealth.core.configuration.QueueReaderConfiguration;
 import org.endeavourhealth.core.csv.CsvHelper;
 import org.endeavourhealth.core.database.dal.DalProvider;
@@ -25,6 +26,7 @@ import org.endeavourhealth.core.database.dal.admin.models.Service;
 import org.endeavourhealth.core.database.dal.audit.ExchangeDalI;
 import org.endeavourhealth.core.database.dal.audit.models.Exchange;
 import org.endeavourhealth.core.database.dal.audit.models.ExchangeTransformAudit;
+import org.endeavourhealth.core.database.dal.audit.models.HeaderKeys;
 import org.endeavourhealth.core.database.dal.eds.PatientLinkDalI;
 import org.endeavourhealth.core.database.dal.ehr.ResourceDalI;
 import org.endeavourhealth.core.database.dal.ehr.models.ResourceWrapper;
@@ -38,12 +40,18 @@ import org.endeavourhealth.core.database.rdbms.ConnectionManager;
 import org.endeavourhealth.core.exceptions.TransformException;
 import org.endeavourhealth.core.fhirStorage.FhirStorageService;
 import org.endeavourhealth.core.fhirStorage.JsonServiceInterfaceEndpoint;
+import org.endeavourhealth.core.messaging.pipeline.components.PostMessageToExchange;
 import org.endeavourhealth.core.queueing.QueueHelper;
 import org.endeavourhealth.core.xml.QueryDocument.*;
+import org.endeavourhealth.core.xml.transformError.TransformError;
 import org.endeavourhealth.subscriber.filer.EnterpriseFiler;
 import org.endeavourhealth.transform.barts.schema.PPATI;
 import org.endeavourhealth.transform.common.*;
 import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
+import org.endeavourhealth.transform.emis.csv.helpers.EmisCsvHelper;
+import org.endeavourhealth.transform.emis.csv.schema.appointment.Slot;
+import org.endeavourhealth.transform.emis.csv.transforms.appointment.SessionUserTransformer;
+import org.endeavourhealth.transform.emis.csv.transforms.appointment.SlotTransformer;
 import org.hibernate.internal.SessionImpl;
 import org.hl7.fhir.instance.model.EpisodeOfCare;
 import org.hl7.fhir.instance.model.Patient;
@@ -57,6 +65,7 @@ import java.lang.System;
 import java.lang.reflect.Constructor;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
+import java.nio.file.StandardOpenOption;
 import java.sql.*;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -372,6 +381,20 @@ public class Main {
 			System.exit(0);
 		}
 
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("FixEmisMissingSlots")) {
+			String serviceOdsCode = args[1];
+			fixEmisMissingSlots(serviceOdsCode);
+			System.exit(0);
+		}
+
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("FixEmisAdminCache")) {
+			String serviceOdsCode = args[1];
+			fixEmisAdminCache(serviceOdsCode);
+			System.exit(0);
+		}
+
 		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("TestSlack")) {
 			testSlack();
@@ -565,6 +588,148 @@ public class Main {
 		// Begin consume
 		rabbitHandler.start();
 		LOG.info("EDS Queue reader running (kill file location " + TransformConfig.instance().getKillFileLocation() + ")");
+	}
+
+	private static void fixEmisAdminCache(String serviceOdsCode) {
+
+	}
+
+	private static void fixEmisMissingSlots(String serviceOdsCode) {
+		LOG.debug("Fixing Emis Missing Slots for " + serviceOdsCode);
+		try {
+			ServiceDalI serviceDal = DalProvider.factoryServiceDal();
+			Service service = serviceDal.getByLocalIdentifier(serviceOdsCode);
+			LOG.info("Service " + service.getId() + " " + service.getName() + " " + service.getLocalId());
+
+			List<UUID> systemIds = findSystemIds(service);
+			if (systemIds.size() != 1) {
+				throw new Exception("Found " + systemIds.size() + " for service");
+			}
+			UUID systemId = systemIds.get(0);
+			UUID serviceId = service.getId();
+
+			ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
+			List<Exchange> exchanges = exchangeDal.getExchangesByService(serviceId, systemId, Integer.MAX_VALUE);
+
+			Set<String> hsSlotsToSkip = new HashSet<>();
+			ResourceDalI resourceDal = DalProvider.factoryResourceDal();
+
+			File auditFile = new File("SlotAudit_" + serviceOdsCode + ".csv");
+			LOG.debug("Auditing to " + auditFile);
+
+			PostMessageToExchangeConfig exchangeConfig = QueueHelper.findExchangeConfig("EdsProtocol");
+			if (exchangeConfig == null) {
+				throw new Exception("Failed to find PostMessageToExchange config details for exchange EdsProtocol");
+			}
+
+			//the list of exchanges is most-recent-first, so iterate backwards to do them in order
+			for (Exchange exchange: exchanges) {
+
+				List<ExchangePayloadFile> files = ExchangeHelper.parseExchangeBody(exchange.getBody());
+
+				//skip exchanges that are for custom extracts
+				if (files.size() <= 1) {
+					continue;
+				}
+				boolean processPatientData = EmisCsvToFhirTransformer.shouldProcessPatientData(serviceId, files);
+				if (!processPatientData) {
+					continue;
+				}
+
+				String version = EmisCsvToFhirTransformer.determineVersion(files);
+
+				EmisCsvHelper csvHelper = new EmisCsvHelper(serviceId, systemId, exchange.getId(), null, processPatientData);
+
+				//the processor is responsible for saving FHIR resources
+				TransformError transformError = new TransformError();
+				List<UUID> batchIdsCreated = new ArrayList<>();
+				FhirResourceFiler fhirResourceFiler = new FhirResourceFiler(exchange.getId(), serviceId, systemId, transformError, batchIdsCreated);
+
+				Map<Class, AbstractCsvParser> parsers = new HashMap<>();
+				EmisCsvToFhirTransformer.createParsers(serviceId, systemId, exchange.getId(), files, version, parsers);
+
+				//cache the practitioners for each session
+				SessionUserTransformer.transform(version, parsers, fhirResourceFiler, csvHelper);
+
+				Slot parser = (Slot)parsers.get(Slot.class);
+				while (parser.nextRecord()) {
+
+					//should this record be transformed?
+
+					//the slots CSV contains data on empty slots too; ignore them
+					CsvCell patientGuid = parser.getPatientGuid();
+					if (patientGuid.isEmpty()) {
+						continue;
+					}
+
+					//the EMIS data contains thousands of appointments that refer to patients we don't have, so I'm explicitly
+					//handling this here, and ignoring any Slot record that is in this state
+					UUID patientEdsId = IdHelper.getEdsResourceId(fhirResourceFiler.getServiceId(), ResourceType.Patient, patientGuid.getString());
+					if (patientEdsId == null) {
+						continue;
+					}
+
+					//see if this appointment has previously been transformed
+					CsvCell slotGuid = parser.getSlotGuid();
+					String uniqueId = patientGuid.getString() + ":" + slotGuid.getString();
+					if (!hsSlotsToSkip.contains(uniqueId)) {
+
+						//transform this slot record if no appt already exists for it
+						boolean alreadyExists = false;
+						UUID discoveryId = IdHelper.getEdsResourceId(serviceId, ResourceType.Slot, uniqueId);
+						if (discoveryId != null) {
+							List<ResourceWrapper> history = resourceDal.getResourceHistory(serviceId, ResourceType.Slot.toString(), discoveryId);
+							if (!history.isEmpty()) {
+								alreadyExists = true;
+							}
+						}
+
+						if (alreadyExists) {
+							hsSlotsToSkip.add(uniqueId);
+						}
+					}
+
+					if (hsSlotsToSkip.contains(uniqueId)) {
+						continue;
+					}
+					hsSlotsToSkip.add(uniqueId);
+
+					try {
+						LOG.debug("Creating slot for " + uniqueId);
+						SlotTransformer.createSlotAndAppointment((Slot)parser, fhirResourceFiler, csvHelper);
+					} catch (Exception ex) {
+						fhirResourceFiler.logTransformRecordError(ex, parser.getCurrentState());
+					}
+				}
+
+				csvHelper.clearCachedSessionPractitioners();
+
+				fhirResourceFiler.failIfAnyErrors();
+				fhirResourceFiler.waitToFinish();
+
+				//send to Rabbit protocol queue
+				if (!batchIdsCreated.isEmpty()) {
+
+					//write batch ID to file, so we have an audit of what we created
+					List<String> lines = new ArrayList<>();
+					for (UUID batchId: batchIdsCreated) {
+						lines.add("\"" + exchange.getId() + "\",\"" + batchId + "\"");
+					}
+					Files.write(auditFile.toPath(), lines, StandardOpenOption.CREATE, StandardOpenOption.APPEND, StandardOpenOption.WRITE);
+
+					String batchesJson = ObjectMapperPool.getInstance().writeValueAsString(batchIdsCreated.toArray());
+					exchange.setHeader(HeaderKeys.BatchIdsJson, batchesJson);
+
+					//send to Rabbit
+					PostMessageToExchange component = new PostMessageToExchange(exchangeConfig);
+					component.process(exchange);
+				}
+			}
+
+			LOG.debug("Finished Fixing Emis Missing Slots for " + serviceOdsCode);
+		} catch (Throwable t) {
+			LOG.error("", t);
+		}
 	}
 
 
@@ -2547,7 +2712,7 @@ public class Main {
 	private static void postToRabbit(String exchangeName, String srcFile, Integer throttle) {
 		LOG.info("Posting to " + exchangeName + " from " + srcFile);
 		if (throttle != null) {
-			LOG.info("Thrttled to " + throttle + " messages/second");
+			LOG.info("Throttled to " + throttle + " messages/second");
 		}
 
 		try {
