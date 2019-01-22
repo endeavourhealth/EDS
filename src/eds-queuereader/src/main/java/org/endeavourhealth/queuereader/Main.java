@@ -1559,7 +1559,7 @@ public class Main {
 			Connection conn = DriverManager.getConnection(dbUrl, dbUsername, dbPassword);
 
 			SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-			Date startDate = sdf.parse("2018-11-01");
+			Date startDate = sdf.parse("2019-01-20");
 			//Date startDate = sdf.parse("2018-09-17");
 			//Date endDate = sdf.parse("2018-09-30");
 
