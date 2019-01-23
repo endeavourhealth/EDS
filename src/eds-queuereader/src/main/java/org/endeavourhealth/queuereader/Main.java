@@ -43,6 +43,8 @@ import org.endeavourhealth.core.fhirStorage.JsonServiceInterfaceEndpoint;
 import org.endeavourhealth.core.messaging.pipeline.components.PostMessageToExchange;
 import org.endeavourhealth.core.queueing.QueueHelper;
 import org.endeavourhealth.core.xml.QueryDocument.*;
+import org.endeavourhealth.core.xml.TransformErrorSerializer;
+import org.endeavourhealth.core.xml.TransformErrorUtility;
 import org.endeavourhealth.core.xml.transformError.TransformError;
 import org.endeavourhealth.subscriber.filer.EnterpriseFiler;
 import org.endeavourhealth.transform.barts.schema.PPATI;
@@ -636,6 +638,15 @@ public class Main {
 					continue;
 				}
 
+				ExchangeTransformAudit transformAudit = new ExchangeTransformAudit();
+				transformAudit.setServiceId(serviceId);
+				transformAudit.setSystemId(systemId);
+				transformAudit.setExchangeId(exchange.getId());
+				transformAudit.setId(UUID.randomUUID());
+				transformAudit.setStarted(new Date());
+
+				exchangeDal.save(transformAudit);
+
 				String version = EmisCsvToFhirTransformer.determineVersion(files);
 
 				EmisCsvHelper csvHelper = new EmisCsvHelper(serviceId, systemId, exchange.getId(), null, processPatientData);
@@ -648,64 +659,85 @@ public class Main {
 				Map<Class, AbstractCsvParser> parsers = new HashMap<>();
 				EmisCsvToFhirTransformer.createParsers(serviceId, systemId, exchange.getId(), files, version, parsers);
 
-				//cache the practitioners for each session
-				SessionUserTransformer.transform(version, parsers, fhirResourceFiler, csvHelper);
+				try {
 
-				Slot parser = (Slot)parsers.get(Slot.class);
-				while (parser.nextRecord()) {
+					//cache the practitioners for each session
+					SessionUserTransformer.transform(version, parsers, fhirResourceFiler, csvHelper);
 
-					//should this record be transformed?
+					Slot parser = (Slot) parsers.get(Slot.class);
+					while (parser.nextRecord()) {
 
-					//the slots CSV contains data on empty slots too; ignore them
-					CsvCell patientGuid = parser.getPatientGuid();
-					if (patientGuid.isEmpty()) {
-						continue;
-					}
+						//should this record be transformed?
 
-					//the EMIS data contains thousands of appointments that refer to patients we don't have, so I'm explicitly
-					//handling this here, and ignoring any Slot record that is in this state
-					UUID patientEdsId = IdHelper.getEdsResourceId(fhirResourceFiler.getServiceId(), ResourceType.Patient, patientGuid.getString());
-					if (patientEdsId == null) {
-						continue;
-					}
+						//the slots CSV contains data on empty slots too; ignore them
+						CsvCell patientGuid = parser.getPatientGuid();
+						if (patientGuid.isEmpty()) {
+							continue;
+						}
 
-					//see if this appointment has previously been transformed
-					CsvCell slotGuid = parser.getSlotGuid();
-					String uniqueId = patientGuid.getString() + ":" + slotGuid.getString();
-					if (!hsSlotsToSkip.contains(uniqueId)) {
+						//the EMIS data contains thousands of appointments that refer to patients we don't have, so I'm explicitly
+						//handling this here, and ignoring any Slot record that is in this state
+						UUID patientEdsId = IdHelper.getEdsResourceId(fhirResourceFiler.getServiceId(), ResourceType.Patient, patientGuid.getString());
+						if (patientEdsId == null) {
+							continue;
+						}
 
-						//transform this slot record if no appt already exists for it
-						boolean alreadyExists = false;
-						UUID discoveryId = IdHelper.getEdsResourceId(serviceId, ResourceType.Slot, uniqueId);
-						if (discoveryId != null) {
-							List<ResourceWrapper> history = resourceDal.getResourceHistory(serviceId, ResourceType.Slot.toString(), discoveryId);
-							if (!history.isEmpty()) {
-								alreadyExists = true;
+						//see if this appointment has previously been transformed
+						CsvCell slotGuid = parser.getSlotGuid();
+						String uniqueId = patientGuid.getString() + ":" + slotGuid.getString();
+						if (!hsSlotsToSkip.contains(uniqueId)) {
+
+							//transform this slot record if no appt already exists for it
+							boolean alreadyExists = false;
+							UUID discoveryId = IdHelper.getEdsResourceId(serviceId, ResourceType.Slot, uniqueId);
+							if (discoveryId != null) {
+								List<ResourceWrapper> history = resourceDal.getResourceHistory(serviceId, ResourceType.Slot.toString(), discoveryId);
+								if (!history.isEmpty()) {
+									alreadyExists = true;
+								}
+							}
+
+							if (alreadyExists) {
+								hsSlotsToSkip.add(uniqueId);
 							}
 						}
 
-						if (alreadyExists) {
-							hsSlotsToSkip.add(uniqueId);
+						if (hsSlotsToSkip.contains(uniqueId)) {
+							continue;
+						}
+						hsSlotsToSkip.add(uniqueId);
+
+						try {
+							LOG.debug("Creating slot for " + uniqueId);
+							SlotTransformer.createSlotAndAppointment((Slot) parser, fhirResourceFiler, csvHelper);
+						} catch (Exception ex) {
+							fhirResourceFiler.logTransformRecordError(ex, parser.getCurrentState());
 						}
 					}
 
-					if (hsSlotsToSkip.contains(uniqueId)) {
-						continue;
-					}
-					hsSlotsToSkip.add(uniqueId);
+					csvHelper.clearCachedSessionPractitioners();
 
-					try {
-						LOG.debug("Creating slot for " + uniqueId);
-						SlotTransformer.createSlotAndAppointment((Slot)parser, fhirResourceFiler, csvHelper);
-					} catch (Exception ex) {
-						fhirResourceFiler.logTransformRecordError(ex, parser.getCurrentState());
-					}
+					fhirResourceFiler.failIfAnyErrors();
+					fhirResourceFiler.waitToFinish();
+
+				} catch (Throwable ex) {
+
+					Map<String, String> args = new HashMap<>();
+					args.put(TransformErrorUtility.ARG_FATAL_ERROR, ex.getMessage());
+					TransformErrorUtility.addTransformError(transformError, ex, args);
+
+					LOG.error("", ex);
 				}
 
-				csvHelper.clearCachedSessionPractitioners();
+				//save our audit
+				transformAudit.setEnded(new Date());
+				transformAudit.setNumberBatchesCreated(new Integer(batchIdsCreated.size()));
 
-				fhirResourceFiler.failIfAnyErrors();
-				fhirResourceFiler.waitToFinish();
+				if (transformError.getError().size() > 0) {
+					transformAudit.setErrorXml(TransformErrorSerializer.writeToXml(transformError));
+				}
+
+				exchangeDal.save(transformAudit);
 
 				//send to Rabbit protocol queue
 				if (!batchIdsCreated.isEmpty()) {
@@ -723,6 +755,10 @@ public class Main {
 					//send to Rabbit
 					PostMessageToExchange component = new PostMessageToExchange(exchangeConfig);
 					component.process(exchange);
+				}
+
+				if (transformError.getError().size() > 0) {
+					throw new Exception("Dropping out due to error in transform");
 				}
 			}
 
