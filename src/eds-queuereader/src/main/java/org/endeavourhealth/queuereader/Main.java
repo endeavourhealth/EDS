@@ -645,8 +645,6 @@ public class Main {
 				transformAudit.setId(UUID.randomUUID());
 				transformAudit.setStarted(new Date());
 
-				exchangeDal.save(transformAudit);
-
 				String version = EmisCsvToFhirTransformer.determineVersion(files);
 
 				EmisCsvHelper csvHelper = new EmisCsvHelper(serviceId, systemId, exchange.getId(), null, processPatientData);
@@ -729,7 +727,6 @@ public class Main {
 					LOG.error("", ex);
 				}
 
-				//save our audit
 				transformAudit.setEnded(new Date());
 				transformAudit.setNumberBatchesCreated(new Integer(batchIdsCreated.size()));
 
@@ -737,7 +734,12 @@ public class Main {
 					transformAudit.setErrorXml(TransformErrorSerializer.writeToXml(transformError));
 				}
 
-				exchangeDal.save(transformAudit);
+				//save our audit if something went wrong or was saved
+				if (transformError.getError().size() > 0
+						|| !batchIdsCreated.isEmpty()) {
+
+					exchangeDal.save(transformAudit);
+				}
 
 				//send to Rabbit protocol queue
 				if (!batchIdsCreated.isEmpty()) {
