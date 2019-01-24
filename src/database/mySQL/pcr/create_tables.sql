@@ -364,7 +364,6 @@ CREATE TABLE care_episode
   effective_practitioner_id     int COMMENT 'refers to the practitioner table for who is said to have done the event',
   entered_by_practitioner_id    int COMMENT 'id in practitioner table. ',
   end_date                      datetime COMMENT 'the clinical date and time for the end of this event',
-  encounter_link_id             varchar(255) COMMENT 'publishing system encounter reference i.e. Barts uses a FIN number to link care episodes',
   status_concept_id             bigint   NOT NULL COMMENT 'refers to information model, identifies the state of this care episode from the time it is initiated until it is complete. (i.e. temporary, preliminary, active, discharged (complete), cancelled)',
   speciality_concept_id         bigint COMMENT 'identifier for the main specialty code of the responsible health care provider',
   admin_concept_id              bigint COMMENT 'identifier for the administrative category for the care_episode',
@@ -412,22 +411,23 @@ CREATE TABLE consultation
 (
   id                         bigint AUTO_INCREMENT   NOT NULL,
   patient_id                 int      NOT NULL,
-  care_episode_id            bigint   NOT NULL COMMENT 'link to group hospital activity to an overall encounter episode',
+  care_episode_id            bigint   NOT NULL COMMENT 'identifier of an episode associated with this consultation',
   effective_date             datetime COMMENT 'clinically significant date and time',
   effective_date_precision   tinyint  COMMENT 'qualifies the effective_date for display purposes',
   effective_practitioner_id  int COMMENT 'responsible practitioner',
   entered_by_practitioner_id int COMMENT 'id in practitioner table. ',
-  end_date                   datetime COMMENT 'the clinical date and time for the end of this attendance',
+  end_date                   datetime COMMENT 'the clinical date and time for the end of this consultation',
   usual_practitioner_id      int COMMENT 'refers to practitioner table to give usual clinician',
   owning_organisation_id     int COMMENT 'refers to the organisation that owns/manages the consultation',
-  status_concept_id          bigint   NOT NULL COMMENT 'refers to information model, giving the attendance status (e.g. active, final, pending, amended, corrected, deleted)',
+  status_concept_id          bigint   NOT NULL COMMENT 'refers to information model, giving the consultation status (e.g. active, final, pending, amended, corrected, deleted)',
   is_confidential            boolean  NOT NULL COMMENT 'indicates this is a confidential consultation',
   duration_minutes           int,
   travel_time_minutes        int COMMENT 'time taken for the healthcare worker to travel for the consultation',
+  type_concept_id          bigint COMMENT 'type of consultation (i.e. GP face to face)',
   reason_concept_id          bigint COMMENT 'reason for this consultation',
   purpose_concept_id         bigint COMMENT 'purpose for the consultation (e.g. diabetic review consultation etc.)',
-  outcome_concept_id         bigint COMMENT 'outcome for this attendance',
-  free_text_id               bigint COMMENT 'textual reason for this attendance',
+  outcome_concept_id         bigint COMMENT 'outcome for this consultation',
+  free_text_id               bigint COMMENT 'textual notes for this consultation',
   location_id                int COMMENT 'refers to location table, stating where this consultation took place',
   appointment_slot_id        int COMMENT 'refers to appointment table, giving the appointment this consultation took place in',
   referral_request_id        int COMMENT 'links to a referral that initiated this consultation',
@@ -445,123 +445,39 @@ CREATE TABLE consultation
       REFERENCES location (id)
 ) AUTO_INCREMENT=1;
 
-CREATE TABLE accident_emergency_attendance
+CREATE TABLE encounter
 (
   id                         bigint  AUTO_INCREMENT  NOT NULL,
   patient_id                 int      NOT NULL,
-  care_episode_id            int      NOT NULL COMMENT 'identifier of an episode associated with an attendance',
-  arrival_date               datetime NOT NULL COMMENT 'Date and Time patient arrived at A&E',
-  effective_date             datetime COMMENT 'check in date and time',
-  triage_start_date          datetime COMMENT 'Date and time that the triage commenced',
-  triage_end_date            datetime COMMENT 'Date and time that the triage process was completed',
-  effective_practitioner_id  int COMMENT 'responsible practitioner for the care of the patient during an Accident And Emergency Attendance',
-  entered_by_practitioner_id int COMMENT 'id in practitioner table. ',
-  triage_practitioner_id     int COMMENT 'responsible triage practitioner',
-  end_date                   datetime COMMENT 'the clinical date and time for the end of this attendance',
-  received_practitioner_id   int COMMENT 'refers to the practitioner table for the receptionist who received the patient',
-  owning_organisation_id     int COMMENT 'refers to the organisation that owns/manages the attendance',
-  status_concept_id          bigint   NOT NULL COMMENT 'refers to information model, giving the attendance status (e.g. active, final, pending, amended, corrected, deleted)',
-  is_confidential            boolean  NOT NULL COMMENT 'indicates this is a confidential attendance',
-  reason_concept_id          bigint COMMENT 'reason for this attendance',
-  free_text_id               bigint COMMENT 'a brief description of why the person has presented for examination or treatment and may be the patient described symptom',
-  ambulance_number           varchar(45),
-  location_id                int COMMENT 'refers to location table, stating where this attendance took place',
+  care_episode_id            int      NOT NULL COMMENT 'identifier of an episode associated with this encounter',
+  effective_date             datetime COMMENT 'clinically significant date and time',
+  effective_date_precision   tinyint  COMMENT 'qualifies the effective_date for display purposes',
+  effective_practitioner_id  int COMMENT 'responsible practitioner for the care of the patient during the encounter',
+  end_date                   datetime COMMENT 'the clinical date and time for the end of this encounter',
+  owning_organisation_id     int COMMENT 'refers to the organisation that owns/manages the encounter',
+  status_concept_id          bigint   NOT NULL COMMENT 'refers to information model, giving the encounter status (e.g. active, final, pending, amended, corrected, deleted)',
+  is_confidential            boolean  NOT NULL COMMENT 'indicates this is a confidential encounter',
+  encounter_link_id          varchar(255) COMMENT 'publishing system encounter reference i.e. Barts uses a FIN number to link care episodes',
+  type_concept_id          	 bigint COMMENT 'type of encounter (i.e. A&E attendance, transfer, admission, discharge)',
+  reason_concept_id          bigint COMMENT 'reason for this encounter',
+  purpose_concept_id         bigint COMMENT 'purpose for the encounter',
+  outcome_concept_id         bigint COMMENT 'outcome for this encounter',
+  free_text_id               bigint COMMENT 'textual notes for the encounter',
+  location_id                int COMMENT 'refers to location table, stating where this encounter took place',
+  referral_request_id        int COMMENT 'links to a referral that initiated this encounter',
   is_consent                 boolean  NOT NULL COMMENT 'whether consent or dissent',
     PRIMARY KEY (id),
   UNIQUE KEY ix_patidid (patient_id, id),
-  CONSTRAINT accident_emergency_attendance_patient_id
+  CONSTRAINT encounter_patient_id
     FOREIGN KEY (patient_id)
       REFERENCES patient (id),
-  CONSTRAINT accident_emergency_attendance_care_episode_id
+  CONSTRAINT encounter_care_episode_id
     FOREIGN KEY (patient_id, care_episode_id)
       REFERENCES care_episode (patient_id, id),
-  CONSTRAINT accident_emergency_attendance_location_id
-    FOREIGN KEY (location_id)
-      REFERENCES location (id)
-)AUTO_INCREMENT=1 ;
-
-CREATE TABLE hospital_admission
-(
-  id                         bigint  NOT NULL AUTO_INCREMENT,
-  patient_id                 int      NOT NULL,
-  care_episode_id            bigint   NOT NULL COMMENT 'link to group hospital activity to an overall encounter episode',
-  effective_date             datetime COMMENT 'clinically significant date and time',
-  effective_date_precision   tinyint  COMMENT 'qualifies the effective_date for display purposes',
-  effective_practitioner_id  int COMMENT 'responsible practitioner',
-  entered_by_practitioner_id int COMMENT 'id in practitioner table. ',
-  end_date                   datetime COMMENT 'the clinical date and time for the end of this admission',
-  owning_organisation_id     int COMMENT 'refers to the organisation that owns/manages the admission',
-  status_concept_id          bigint   NOT NULL COMMENT 'refers to information model, giving the admission status (e.g. active, final, pending, amended, corrected, deleted)',
-  is_confidential            boolean  NOT NULL COMMENT 'indicates this is a confidential admission',
-  reason_concept_id          bigint COMMENT 'reason for this admission',
-  free_text_id               bigint COMMENT 'textual reason for this admission',
-  purpose_concept_id         bigint COMMENT 'purpose for the admission',
-  location_id                int COMMENT 'refers to location table, stating where this admission took place',
-  is_consent                 boolean  NOT NULL COMMENT 'whether consent or dissent',
-    PRIMARY KEY (id),
-  UNIQUE KEY ix_patidid (patient_id, id),
-  CONSTRAINT hospital_admission_patient_id
-    FOREIGN KEY (patient_id)
-      REFERENCES patient (id),
-  CONSTRAINT hospital_admission_location_id
+  CONSTRAINT encounter_location_id
     FOREIGN KEY (location_id)
       REFERENCES location (id)
 )AUTO_INCREMENT=1;
-
-CREATE TABLE hospital_ward_transfer
-(
-  id                         bigint   NOT NULL AUTO_INCREMENT,
-  patient_id                 int      NOT NULL,
-  care_episode_id            int      NOT NULL COMMENT 'identifier of an episode associated with a transfer',
-  effective_date             datetime COMMENT 'clinically significant date and time',
-  effective_date_precision   tinyint  COMMENT 'qualifies the effective_date for display purposes',
-  effective_practitioner_id  int COMMENT 'responsible practitioner',
-  entered_by_practitioner_id int COMMENT 'id in practitioner table. ',
-  end_date                   datetime COMMENT 'the clinical date and time for the end of this transfer',
-  owning_organisation_id     int COMMENT 'refers to the organisation that owns/manages the transfer',
-  status_concept_id          bigint   NOT NULL COMMENT 'refers to information model, giving the transfer status (e.g. active, final, pending, amended, corrected, deleted)',
-  is_confidential            boolean  NOT NULL COMMENT 'indicates this is a confidential transfer',
-  reason_concept_id          bigint COMMENT 'reason for this transfer',
-  free_text_id               bigint COMMENT 'textual reason for this transfer',
-  purpose_concept_id         bigint COMMENT 'purpose for the transfer',
-  location_id                int COMMENT 'refers to location table, stating where this transfer took place',
-  is_consent                 boolean  NOT NULL COMMENT 'whether consent or dissent',
-   PRIMARY KEY (id),
-  UNIQUE KEY ix_patidid (patient_id, id),
-   CONSTRAINT hospital_ward_transfer_patient_id
-    FOREIGN KEY (patient_id)
-      REFERENCES patient (id),
-  CONSTRAINT hospital_ward_transfer_location_id
-    FOREIGN KEY (location_id)
-      REFERENCES location (id)
-)AUTO_INCREMENT=1;
-
-CREATE TABLE hospital_discharge
-(
-  id                         bigint   NOT NULL AUTO_INCREMENT,
-  patient_id                 int      NOT NULL,
-  care_episode_id            int      NOT NULL COMMENT 'identifier of an episode associated with a discharge',
-  effective_date             datetime  COMMENT 'clinically significant date and time',
-  effective_date_precision   tinyint  COMMENT 'qualifies the effective_date for display purposes',
-  effective_practitioner_id  int COMMENT 'responsible practitioner',
-  entered_by_practitioner_id int COMMENT 'id in practitioner table. ',
-  end_date                   datetime COMMENT 'the clinical date and time for the end of this discharge',
-  owning_organisation_id     int COMMENT 'refers to the organisation that owns/manages the discharge',
-  status_concept_id          bigint   NOT NULL COMMENT 'refers to information model, giving the discharge status (e.g. active, final, pending, amended, corrected, deleted)',
-  is_confidential            boolean  NOT NULL COMMENT 'indicates this is a confidential discharge',
-  reason_concept_id          bigint COMMENT 'reason for this discharge',
-  free_text_id               bigint COMMENT 'textual notes for the discharge',
-  location_id                int COMMENT 'refers to location table, stating where this discharge took place',
-  is_consent                 boolean  NOT NULL COMMENT 'whether consent or dissent',
-    PRIMARY KEY (id),
-  UNIQUE KEY ix_patidid (patient_id, id),
-  CONSTRAINT hospital_discharge_patient_id
-    FOREIGN KEY (patient_id)
-      REFERENCES patient (id),
-  CONSTRAINT hospital_discharge_location_id
-    FOREIGN KEY (location_id)
-      REFERENCES location (id)
-)AUTO_INCREMENT=1 ;
 
 CREATE TABLE event_relationship
 (
