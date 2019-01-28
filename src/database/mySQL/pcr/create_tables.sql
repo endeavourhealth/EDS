@@ -333,147 +333,73 @@ CREATE TABLE appointment_attendance_event
       REFERENCES appointment_slot (id)
 )   COMMENT 'records the various timestamps during an appointment (e.g. arrival, sent in, finished)';
 
-CREATE TABLE gp_registration_status
+CREATE TABLE gp_registration
+(
+  id                                    int   AUTO_INCREMENT    NOT NULL,
+  patient_id                            int   NOT NULL,
+  owning_organisation_id                int NOT NULL COMMENT 'refers to the organisation that owns/manages the GP registration',
+  start_date                        	datetime NOT NULL,
+  end_date                              datetime,
+  PRIMARY KEY (id),
+  UNIQUE KEY ix_patient_id (patient_id, id),
+    CONSTRAINT gp_registration_patient_id
+    FOREIGN KEY (patient_id)
+    REFERENCES patient (id)
+)AUTO_INCREMENT=1 COMMENT 'stores the regular patient registration';
+
+CREATE TABLE gp_registration_history
 (
   id                                    int   AUTO_INCREMENT    NOT NULL,
   patient_id                            int      NOT NULL,
-  owning_organisation_id                int COMMENT 'refers to the organisation that owns/manages the GP registration',
-  effective_date                        datetime  COMMENT 'clinically significant date and time',
-  effective_date_precision              tinyint   COMMENT 'qualifies the effective_date for display purposes',
-  effective_practitioner_id             int COMMENT 'refers to the practitioner table for who is said to have done the event',
-  entered_by_practitioner_id            int COMMENT 'id in practitioner table. ',
-  end_date                              datetime,
-  gp_registration_type_concept_id       bigint COMMENT 'refers to information model to give patient registration type',
-  gp_registration_status_concept_id     bigint   NOT NULL COMMENT 'information model registration status e.g. registered, deducted',
-  gp_registration_status_sub_concept_id bigint COMMENT 'information model secondary information (e.g. deduction type - enlistment)',
-  is_current                            boolean  NOT NULL,
+  owning_organisation_id                int NOT NULL COMMENT 'refers to the organisation that owns/manages the GP registration',
+  effective_date                        datetime NOT NULL COMMENT 'clinically significant date and time',
+  patient_type				        	int NOT NULL COMMENT 'patient registration type (i.e. regular, temporary)',
+  patient_status					    int NOT NULL COMMENT 'registration status e.g. (currently registered, deducted)',
     PRIMARY KEY (id),
-  UNIQUE KEY ix_patidid (patient_id, id),
-    CONSTRAINT gp_registration_status_patient_id
+  	UNIQUE KEY ix_patient_id (patient_id, id),
+    CONSTRAINT gp_registration_history_patient_id
     FOREIGN KEY (patient_id)
-      REFERENCES patient (id)
+    REFERENCES patient (id)
 )AUTO_INCREMENT=1 COMMENT 'stores registration history for a GP registration';
 
 CREATE TABLE care_episode
 (
-  id                            int      NOT NULL,
+  id                            bigint   AUTO_INCREMENT  NOT NULL,
   patient_id                    int      NOT NULL,
-  owning_organisation_id        int COMMENT 'refers to the organisation that owns/manages the care episode',
-  effective_date                datetime  COMMENT 'clinically significant date and time',
-  effective_date_precision      tinyint   COMMENT 'qualifies the effective_date for display purposes',
-  effective_practitioner_id     int COMMENT 'refers to the practitioner table for who is said to have done the event',
-  entered_by_practitioner_id    int COMMENT 'id in practitioner table. ',
-  end_date                      datetime COMMENT 'the clinical date and time for the end of this event',
-  status_concept_id             bigint   NOT NULL COMMENT 'refers to information model, identifies the state of this care episode from the time it is initiated until it is complete. (i.e. temporary, preliminary, active, discharged (complete), cancelled)',
-  speciality_concept_id         bigint COMMENT 'identifier for the main specialty code of the responsible health care provider',
-  admin_concept_id              bigint COMMENT 'identifier for the administrative category for the care_episode',
-  reason_concept_id             bigint COMMENT 'reason for this care_episode',
-  type_concept_id               bigint COMMENT 'Describes the type of patient that this care_episode is associated with. Examples may include inpatient, outpatient etc.',
-  location_id                   int COMMENT 'refers to location table, stating where this care_episode took place',
-  referral_request_id           int COMMENT 'links to a referral that initiated this care_episode',
-  is_consent                    boolean  NOT NULL COMMENT 'whether consent or dissent',
-  latest_care_episode_status_id int,
+  owning_organisation_id        int NOT NULL COMMENT 'refers to the organisation that owns/manages the care episode',
+  start_date                    datetime,
+  end_date                      datetime,
+  service_id         			int COMMENT 'identifier for the speciality service of the responsible health care provider',
+  service_type         			varchar(255) COMMENT 'identifier for the speciality service type of the responsible health care provider',
+  referral_request_id           int COMMENT 'links to a referral that initiated this care episode',
    PRIMARY KEY (id),
-  UNIQUE KEY ix_patidid (patient_id, id),
+  UNIQUE KEY patient_id (patient_id, id),
    CONSTRAINT care_episode_patient_id
     FOREIGN KEY (patient_id)
       REFERENCES patient (id)
-)  COMMENT 'groups care events into encounter episodes';
-
-CREATE TABLE care_episode_additional_practitioner
-(
-  patient_id                 int  NOT NULL,
-  care_episode_id            bigint NOT NULL,
-  practitioner_id            int    NOT NULL,
-  entered_by_practitioner_id int COMMENT 'id in practitioner table. ',
-  PRIMARY KEY (patient_id, care_episode_id, practitioner_id)
-)   COMMENT 'provides additional practitioners for a care episode';
-
-CREATE TABLE care_episode_status
-(
-  patient_id                     int NOT NULL,
-  owning_organisation_id         int COMMENT 'refers to the organisation that owns/manages the care episode status',
-  entered_by_practitioner_id     int COMMENT 'id in practitioner table. ',
-  care_episode_id                int      NOT NULL,
-  start_time                     datetime NOT NULL,
-  end_time                       datetime,
-  care_episode_status_concept_id bigint   NOT NULL COMMENT 'information model care episode status',
-  PRIMARY KEY (patient_id, care_episode_id, start_time),
-  CONSTRAINT care_episode_status_patient_id
-    FOREIGN KEY (patient_id)
-      REFERENCES patient (id),
-  CONSTRAINT care_episode_status_care_episode_id_patient_id
-    FOREIGN KEY (patient_id, care_episode_id)
-      REFERENCES care_episode (patient_id, id)
-) COMMENT 'stores status/state events for a care episode';
-
-CREATE TABLE consultation
-(
-  id                         bigint AUTO_INCREMENT   NOT NULL,
-  patient_id                 int      NOT NULL,
-  care_episode_id            bigint   NOT NULL COMMENT 'identifier of an episode associated with this consultation',
-  effective_date             datetime COMMENT 'clinically significant date and time',
-  effective_date_precision   tinyint  COMMENT 'qualifies the effective_date for display purposes',
-  effective_practitioner_id  int COMMENT 'responsible practitioner',
-  entered_by_practitioner_id int COMMENT 'id in practitioner table. ',
-  end_date                   datetime COMMENT 'the clinical date and time for the end of this consultation',
-  usual_practitioner_id      int COMMENT 'refers to practitioner table to give usual clinician',
-  owning_organisation_id     int COMMENT 'refers to the organisation that owns/manages the consultation',
-  status_concept_id          bigint   NOT NULL COMMENT 'refers to information model, giving the consultation status (e.g. active, final, pending, amended, corrected, deleted)',
-  is_confidential            boolean  NOT NULL COMMENT 'indicates this is a confidential consultation',
-  duration_minutes           int,
-  travel_time_minutes        int COMMENT 'time taken for the healthcare worker to travel for the consultation',
-  type_concept_id          bigint COMMENT 'type of consultation (i.e. GP face to face)',
-  reason_concept_id          bigint COMMENT 'reason for this consultation',
-  purpose_concept_id         bigint COMMENT 'purpose for the consultation (e.g. diabetic review consultation etc.)',
-  outcome_concept_id         bigint COMMENT 'outcome for this consultation',
-  free_text_id               bigint COMMENT 'textual notes for this consultation',
-  location_id                int COMMENT 'refers to location table, stating where this consultation took place',
-  appointment_slot_id        int COMMENT 'refers to appointment table, giving the appointment this consultation took place in',
-  referral_request_id        int COMMENT 'links to a referral that initiated this consultation',
-  is_consent                 boolean  NOT NULL COMMENT 'whether consent or dissent',
-    PRIMARY KEY (id),
-  UNIQUE KEY ix_patidid (patient_id, id),
-  CONSTRAINT consultation_patient_id
-    FOREIGN KEY (patient_id)
-      REFERENCES patient (id),
-  CONSTRAINT consultation_appointment_slot_id
-    FOREIGN KEY (appointment_slot_id)
-      REFERENCES appointment_slot (id),
-  CONSTRAINT consultation_location_id
-    FOREIGN KEY (location_id)
-      REFERENCES location (id)
-) AUTO_INCREMENT=1;
+)AUTO_INCREMENT=1;
 
 CREATE TABLE encounter
 (
-  id                         bigint  AUTO_INCREMENT  NOT NULL,
+  id                         bigint   AUTO_INCREMENT  NOT NULL,
   patient_id                 int      NOT NULL,
+  owning_organisation_id     int 	  COMMENT 'refers to the organisation that owns/manages the encounter',
   care_episode_id            int      NOT NULL COMMENT 'identifier of an episode associated with this encounter',
-  effective_date             datetime COMMENT 'clinically significant date and time',
-  effective_date_precision   tinyint  COMMENT 'qualifies the effective_date for display purposes',
-  effective_practitioner_id  int COMMENT 'responsible practitioner for the care of the patient during the encounter',
-  end_date                   datetime COMMENT 'the clinical date and time for the end of this encounter',
-  owning_organisation_id     int COMMENT 'refers to the organisation that owns/manages the encounter',
-  status_concept_id          bigint   NOT NULL COMMENT 'refers to information model, giving the encounter status (e.g. active, final, pending, amended, corrected, deleted)',
-  is_confidential            boolean  NOT NULL COMMENT 'indicates this is a confidential encounter',
-  encounter_link_id          varchar(255) COMMENT 'publishing system encounter reference i.e. Barts uses a FIN number to link care episodes',
-  type_concept_id          	 bigint COMMENT 'type of encounter (i.e. A&E attendance, transfer, admission, discharge)',
-  reason_concept_id          bigint COMMENT 'reason for this encounter',
-  purpose_concept_id         bigint COMMENT 'purpose for the encounter',
-  outcome_concept_id         bigint COMMENT 'outcome for this encounter',
-  free_text_id               bigint COMMENT 'textual notes for the encounter',
+  parent_encounter_id        bigint COMMENT 'groups encounters for things like hospital spells',
+  start_date             	 datetime NOT NULL,
+  end_date                   datetime,
+  event_type          	 	 varchar(255) COMMENT 'type of encounter (i.e. GP Consultation, GP Face to face, A&E attendance, transfer, admission, discharge)',
+  state          	 		 varchar(255) COMMENT 'state of encounter, INPATIENT etc.',
+  practitioner_id  int 	  	 COMMENT 'responsible practitioner for the care of the patient during the encounter',
+  original_encounter_ref     varchar(255) COMMENT 'publishing system encounter reference i.e. Barts uses a FIN number to link care episodes',
+  appointment_slot_id        int COMMENT 'refers to appointment table, giving the appointment this encounter took place in',
+  additional_data            text COMMENT 'additional data stored as key-value pairs',
   location_id                int COMMENT 'refers to location table, stating where this encounter took place',
-  referral_request_id        int COMMENT 'links to a referral that initiated this encounter',
-  is_consent                 boolean  NOT NULL COMMENT 'whether consent or dissent',
     PRIMARY KEY (id),
   UNIQUE KEY ix_patidid (patient_id, id),
   CONSTRAINT encounter_patient_id
     FOREIGN KEY (patient_id)
       REFERENCES patient (id),
-  CONSTRAINT encounter_care_episode_id
-    FOREIGN KEY (patient_id, care_episode_id)
-      REFERENCES care_episode (patient_id, id),
   CONSTRAINT encounter_location_id
     FOREIGN KEY (location_id)
       REFERENCES location (id)
