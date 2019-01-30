@@ -3,7 +3,7 @@
 var token;
 
 function exampleAuthToken() {
-	document.getElementById('authhost').value = "https://devauth.endeavourhealth.net";
+	document.getElementById('authhost').value = "https://devauth.discoverydataservice.net";
 	document.getElementById('client').value = "eds-data-checker";
 	document.getElementById('user').value = "FredBloggs";
 	document.getElementById('pass').value = "Pa55w0rd";
@@ -36,7 +36,7 @@ function getAuthToken() {
 // *************** Resource types ***************
 
 function exampleResourceTypes() {
-	document.getElementById('apihost').value = "https://deveds.endeavourhealth.net/data-assurance";
+	document.getElementById('apihost').value = "https://devgateway.discoverydataservice.net/data-assurance";
 	document.getElementById('token1').value = token;
 }
 
@@ -63,7 +63,7 @@ function getResourceTypes() {
 // *************** Patient by NHS ***************
 
 function examplePatients() {
-	document.getElementById('apihost2').value = "https://deveds.endeavourhealth.net/data-assurance";
+	document.getElementById('apihost2').value = "https://devgateway.discoverydataservice.net/data-assurance";
 	document.getElementById('token2').value = token;
 	document.getElementById('nhsnumber').value = "8111119275";
 }
@@ -93,7 +93,7 @@ function getPatients() {
 // *************** Patient resources ***************
 
 function exampleResources() {
-	document.getElementById('apihost3').value = "https://deveds.endeavourhealth.net/data-assurance";
+	document.getElementById('apihost3').value = "https://devgateway.discoverydataservice.net/data-assurance";
 	document.getElementById('token3').value = token;
 	document.getElementById('resources').value = '"Patient", "Condition"';
 	document.getElementById('patients').value = document.getElementById('patientresponse').value;
@@ -128,7 +128,7 @@ function getResources() {
 // *************** References (admin resources) ***************
 
 function exampleReference() {
-	document.getElementById('reference-api').value = "https://deveds.endeavourhealth.net/data-assurance";
+	document.getElementById('reference-api').value = "https://devgateway.discoverydataservice.net/data-assurance";
 	document.getElementById('reference-token').value = token;
 	document.getElementById('reference-reference').value = 'Location/0045c497-11cb-4e64-86b8-1178354dc5ec';
 }
@@ -159,7 +159,7 @@ function getReference() {
 // *************** Patient flag (frailty) ***************
 
 function exampleFlag() {
-	document.getElementById('apihost4').value = "https://deveds.endeavourhealth.net/eds-api";
+	document.getElementById('apihost4').value = "https://devgateway.discoverydataservice.net/eds-api";
 	document.getElementById('token4').value = token;
 	document.getElementById('nhs2').value = "8111146787";
 	document.getElementById('requester').value = "111TESTORG";
