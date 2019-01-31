@@ -147,8 +147,9 @@ public class MessageTransformInbound extends PipelineComponent {
 
 				} else if (software.equalsIgnoreCase(MessageFormat.ADASTRA_CSV)) {
 					processAdastraCsvTransform(exchange, serviceId, systemId, messageVersion, currentErrors, batchIds);
-				}
-				else {
+
+				//NOTE: If adding support for a new publisher software, remember to add to the OpenEnvelope class too
+				} else {
 					throw new SoftwareNotSupportedException(software, messageVersion);
 				}
 			}

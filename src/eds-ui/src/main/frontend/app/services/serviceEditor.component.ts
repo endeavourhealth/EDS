@@ -251,4 +251,50 @@ export class ServiceEditComponent {
 				MessageBoxDialog.open(vm.$modal, 'Load systems', 'Failed to load Systems.  Ensure Systems are configured in the protocol manager', 'OK', null);
 			});
 	}
+
+	deleteService() {
+		var vm = this;
+		MessageBoxDialog.open(vm.$modal, 'Delete Service', 'Are you sure you want to delete the Service?', 'Yes', 'No')
+			.result.then(
+			() => vm.doDeleteService(vm.service),
+			() => vm.log.info('Delete cancelled')
+		);
+	}
+
+	private doDeleteService(item : Service) {
+		var vm = this;
+		vm.serviceService.delete(item.uuid)
+			.subscribe(
+				() => {
+					vm.log.success('Service deleted', item, 'Delete Service');
+					vm.close();
+				},
+				(error) => vm.log.error('Failed to delete Service', error, 'Delete Service')
+			);
+	}
+
+
+	deleteData() {
+		var vm = this;
+
+		MessageBoxDialog.open(vm.$modal, 'Delete Data', 'Are you sure you want to delete all data for this Service?', 'Yes', 'No')
+			.result.then(
+			() => vm.doDeleteData(vm.service),
+			() => vm.log.info('Delete data cancelled')
+		);
+
+	}
+
+
+	private doDeleteData(service: Service) {
+		var vm = this;
+		vm.serviceService.deleteData(service.uuid)
+			.subscribe(
+				() => {
+					vm.log.success('Data deletion started', service, 'Delete Data');
+					vm.close();
+				},
+				(error) => vm.log.error('Failed to delete data', error, 'Delete Data')
+			);
+	}
 }

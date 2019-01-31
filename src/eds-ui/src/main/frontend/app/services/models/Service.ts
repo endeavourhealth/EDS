@@ -14,6 +14,7 @@ export class Service {
 	ccgCode: string;
 	organisationTypeDesc: string;
 	organisationTypeCode: string;
+	lastDataDesc: string;
 
 	constructor() {}
 }

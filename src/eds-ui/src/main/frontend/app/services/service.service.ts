@@ -41,10 +41,9 @@ export class ServiceService extends BaseHttp2Service {
 		return this.httpDelete('api/service/', { search : params });
 	}
 
-	deleteData(serviceUuid : string, systemUuid : string) : Observable<any> {
+	deleteData(serviceUuid : string) : Observable<any> {
 		let params = new URLSearchParams();
 		params.set('serviceId', serviceUuid);
-		params.set('systemId', systemUuid);
 		return this.httpDelete('api/service/data', { search : params });
 	}
 
@@ -347,6 +346,15 @@ export class ServiceService extends BaseHttp2Service {
 			map['02M'] = 'NHS Fylde and Wyre CCG';
 			map['01E'] = 'NHS Greater Preston CCG';
 			map['01K'] = 'NHS Morecambe Bay CCG';
+
+			//add hospital trusts too
+			map['R1H'] = 'BARTS HEALTH NHS TRUST';
+			map['RWK'] = 'EAST LONDON NHS FOUNDATION TRUST';
+
+			//add parents of hospital trusts
+			map['Q71'] = 'NHS ENGLAND LONDON';
+			map['Q74'] = 'NHS ENGLAND NORTH (CUMBRIA AND NORTH EAST)';
+			map['Q82'] = 'NHS ENGLAND SOUTH (SOUTH CENTRAL)';
 
 
 			vm.ccgNameCache = map;

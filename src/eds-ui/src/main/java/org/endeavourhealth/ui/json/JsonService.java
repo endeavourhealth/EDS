@@ -27,15 +27,16 @@ public final class JsonService {
     private String ccgCode;
     private String organisationTypeDesc;
     private String organisationTypeCode;
+    private String lastDataDesc; //free-text saying when the last data received was
 
     public JsonService() {
     }
 
     public JsonService(Service service) throws IOException {
-        this(service, null, false);
+        this(service, null, false, null);
     }
 
-    public JsonService(Service service, String additionalInfo, boolean hasInboundError) throws IOException {
+    public JsonService(Service service, String additionalInfo, boolean hasInboundError, String lastDataDesc) throws IOException {
         this.uuid = service.getId();
         this.localIdentifier = service.getLocalId();
         this.hasInboundError = hasInboundError;
@@ -58,6 +59,8 @@ public final class JsonService {
             this.organisationTypeDesc = service.getOrganisationType().getDescription();
             this.organisationTypeCode = service.getOrganisationType().getCode();
         }
+
+        this.lastDataDesc = lastDataDesc;
     }
 
     /**
@@ -165,5 +168,13 @@ public final class JsonService {
 
     public void setOrganisationTypeCode(String organisationTypeCode) {
         this.organisationTypeCode = organisationTypeCode;
+    }
+
+    public String getLastDataDesc() {
+        return lastDataDesc;
+    }
+
+    public void setLastDataDesc(String lastDataDesc) {
+        this.lastDataDesc = lastDataDesc;
     }
 }

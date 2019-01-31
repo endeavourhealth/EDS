@@ -10,6 +10,7 @@ import {Subscription} from "rxjs/Subscription";
 import {TransformErrorDetail} from "./TransformErrorDetail";
 import {TransformErrorsDialog} from "./transformErrors.dialog";
 import {Protocol} from "./Protocol";
+import {MessageBoxDialog} from "eds-common-js/dist/index";
 
 @Component({
 	template : require('./exchangeAudit.html')
@@ -324,6 +325,5 @@ export class ExchangeAuditComponent {
 		//remove from the document
 		document.body.removeChild(txtArea);
 	}
-
 
 }

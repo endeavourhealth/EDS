@@ -12,6 +12,7 @@ import org.endeavourhealth.common.security.SecurityUtils;
 import org.endeavourhealth.common.security.annotations.RequiresAdmin;
 import org.endeavourhealth.core.database.dal.DalProvider;
 import org.endeavourhealth.core.database.dal.admin.LibraryDalI;
+import org.endeavourhealth.core.database.dal.admin.LibraryRepositoryHelper;
 import org.endeavourhealth.core.database.dal.admin.OrganisationDalI;
 import org.endeavourhealth.core.database.dal.admin.ServiceDalI;
 import org.endeavourhealth.core.database.dal.admin.models.ActiveItem;
@@ -23,6 +24,7 @@ import org.endeavourhealth.core.database.dal.audit.UserAuditDalI;
 import org.endeavourhealth.core.database.dal.audit.models.AuditAction;
 import org.endeavourhealth.core.database.dal.audit.models.AuditModule;
 import org.endeavourhealth.core.database.dal.audit.models.ExchangeTransformErrorState;
+import org.endeavourhealth.core.database.dal.audit.models.LastDataReceived;
 import org.endeavourhealth.core.database.dal.ehr.ResourceDalI;
 import org.endeavourhealth.core.fhirStorage.FhirDeletionService;
 import org.endeavourhealth.core.fhirStorage.JsonServiceInterfaceEndpoint;
@@ -161,12 +163,8 @@ public final class ServiceEndpoint extends AbstractEndpoint {
         Service service = serviceRepository.getById(serviceUuid);
 
         //validate that there's no data in the EHR repo before allowing a delete
-        ResourceDalI resourceRepository = DalProvider.factoryResourceDal();
-        List<JsonServiceInterfaceEndpoint> endpoints = ObjectMapperPool.getInstance().readValue(service.getEndpoints(), new TypeReference<List<JsonServiceInterfaceEndpoint>>() {
-        });
-        for (JsonServiceInterfaceEndpoint endpoint : endpoints) {
-            UUID systemId = endpoint.getSystemUuid();
-
+        if (!Strings.isNullOrEmpty(service.getPublisherConfigName())) {
+            ResourceDalI resourceRepository = DalProvider.factoryResourceDal();
             if (resourceRepository.dataExists(serviceUuid)) {
                 throw new BadRequestException("Cannot delete service without deleting data first");
             }
@@ -187,16 +185,13 @@ public final class ServiceEndpoint extends AbstractEndpoint {
     @Path("/data")
     @RequiresAdmin
     public Response deleteServiceData(@Context SecurityContext sc,
-                                      @QueryParam("serviceId") String serviceIdStr,
-                                      @QueryParam("systemId") String systemIdStr) throws Exception {
+                                      @QueryParam("serviceId") String serviceIdStr) throws Exception {
         super.setLogbackMarkers(sc);
         userAuditRepository.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Delete,
                 "Service Data",
-                "Service Id", serviceIdStr,
-                "System Id", systemIdStr);
+                "Service Id", serviceIdStr);
 
         UUID serviceUuid = UUID.fromString(serviceIdStr);
-        UUID systemUuid = UUID.fromString(systemIdStr);
 
         if (dataBeingDeleted.get(serviceUuid) != null) {
             throw new BadRequestException("Data deletion already in progress for this service");
@@ -207,7 +202,8 @@ public final class ServiceEndpoint extends AbstractEndpoint {
         //the delete will take some time, so do the delete in a separate thread
         Runnable task = () -> {
             LOG.info("Deleting all data for service " + dbService.getName() + " " + dbService.getId());
-            FhirDeletionService deletor = new FhirDeletionService(dbService, systemUuid);
+
+            FhirDeletionService deletor = new FhirDeletionService(dbService);
             dataBeingDeleted.put(dbService.getId(), deletor);
 
             try {
@@ -288,13 +284,16 @@ public final class ServiceEndpoint extends AbstractEndpoint {
         //we want to indicate if any service has inbound errors
         Set<UUID> servicesInError = calculateServicesInError(services);
 
+        Map<UUID, String> hmLastDataDescs = findLastDataDescs(services);
+
         List<JsonService> ret = new ArrayList<>();
 
         for (Service service : services) {
             UUID serviceId = service.getId();
             boolean isInError = servicesInError.contains(serviceId);
             String additionalInfo = getAdditionalInfo(service);
-            ret.add(new JsonService(service, additionalInfo, isInError));
+            String lastDataDesc = hmLastDataDescs.get(serviceId);
+            ret.add(new JsonService(service, additionalInfo, isInError, lastDataDesc));
         }
 
         clearLogbackMarkers();
@@ -312,10 +311,13 @@ public final class ServiceEndpoint extends AbstractEndpoint {
         services.add(service);
         Set<UUID> servicesInError = calculateServicesInError(services);
 
+        Map<UUID, String> hmLastDataDescs = findLastDataDescs(services);
+
         UUID serviceId = service.getId();
         boolean isInError = servicesInError.contains(serviceId);
         String additionalInfo = getAdditionalInfo(service);
-        JsonService ret = new JsonService(service, additionalInfo, isInError);
+        String lastDataDesc = hmLastDataDescs.get(serviceId);
+        JsonService ret = new JsonService(service, additionalInfo, isInError, lastDataDesc);
 
         clearLogbackMarkers();
         return Response
@@ -328,6 +330,7 @@ public final class ServiceEndpoint extends AbstractEndpoint {
         List<Service> services = serviceRepository.search(searchData);
 
         Set<UUID> servicesInError = calculateServicesInError(services);
+        Map<UUID, String> hmLastDataDescs = findLastDataDescs(services);
 
         List<JsonService> ret = new ArrayList<>();
 
@@ -335,7 +338,8 @@ public final class ServiceEndpoint extends AbstractEndpoint {
             UUID serviceId = service.getId();
             boolean isInError = servicesInError.contains(serviceId);
             String additionalInfo = getAdditionalInfo(service);
-            ret.add(new JsonService(service, additionalInfo, isInError));
+            String lastDataDesc = hmLastDataDescs.get(serviceId);
+            ret.add(new JsonService(service, additionalInfo, isInError, lastDataDesc));
         }
 
         clearLogbackMarkers();
@@ -343,6 +347,125 @@ public final class ServiceEndpoint extends AbstractEndpoint {
                 .ok()
                 .entity(ret)
                 .build();
+    }
+
+    private Map<UUID, String> findLastDataDescs(List<Service> services) throws Exception {
+
+        if (services.isEmpty()) {
+            return new HashMap<>();
+        }
+
+        //if we've less than X services, hit the DB one at a time, rather than loading the full error list
+        List<LastDataReceived> list = null;
+        if (services.size() < 5) {
+
+            list = new ArrayList<>();
+
+            for (Service service : services) {
+                UUID serviceId = service.getId();
+                list.addAll(exchangeAuditRepository.getLastDataReceived(serviceId));
+            }
+
+        } else {
+            //if we're lots of services, it's easier to load all the error states
+            list = exchangeAuditRepository.getLastDataReceived();
+        }
+
+        long durMin = 1000 * 60;
+        long durHour = durMin * 60;
+        long durDay = durHour * 25;
+        long durWeek = durDay * 7;
+        long durYear = (long)((double)durDay * 365.25d);
+
+        //first, hash the objects by service, so we know how many there are for each service
+        Map<UUID, List<LastDataReceived>> hmByService = new HashMap<>();
+
+        for (LastDataReceived obj : list) {
+            UUID serviceId = obj.getServiceId();
+
+            List<LastDataReceived> l = hmByService.get(serviceId);
+            if (l == null) {
+                l = new ArrayList<>();
+                hmByService.put(serviceId, l);
+            }
+            l.add(obj);
+        }
+
+        //now go through the map and create a suitable string for each service
+        Map<UUID, String> ret = new HashMap<>();
+
+        for (UUID serviceId: hmByService.keySet()) {
+
+            List<LastDataReceived> l = hmByService.get(serviceId);
+
+            List<String> lines = new ArrayList<>();
+
+            for (LastDataReceived obj: l) {
+
+                Date d = obj.getDataDate();
+
+                //format the time span between the date and now. I've honestly spent ages trying to write
+                //this using the Java 8 time classes, which are supposed to be better, but gave up and
+                //just went with this quick and dirty approach
+                List<String> periodToks = new ArrayList<>();
+
+                long diffMs = java.lang.System.currentTimeMillis() - d.getTime();
+
+                long years = diffMs / durYear;
+                if (years > 0 && periodToks.size() < 2) {
+                    periodToks.add("" + years + "y");
+                    diffMs -= years * durYear;
+                }
+                long weeks = diffMs / durWeek;
+                if (weeks > 0 && periodToks.size() < 2) {
+                    periodToks.add("" + weeks + "w");
+                    diffMs -= weeks * durWeek;
+                }
+                long days = diffMs / durDay;
+                if (days > 0 && periodToks.size() < 2) {
+                    periodToks.add("" + days + "d");
+                    diffMs -= days * durDay;
+                }
+                long hours = diffMs / durHour;
+                if (hours > 0 && periodToks.size() < 2) {
+                    periodToks.add("" + hours + "h");
+                    diffMs -= hours * durHour;
+                }
+                long mins = diffMs / durMin;
+                if (mins > 0 && periodToks.size() < 2) {
+                    periodToks.add("" + mins + "m");
+                    diffMs -= mins * durMin;
+                }
+
+                String periodDesc = String.join(" ", periodToks);
+
+                //if there are multiple systems, include the system name in the string for each period
+                if (l.size() > 1) {
+
+                    UUID systemId = obj.getSystemId();
+                    String softwareDesc = findSoftwareDescForSystem(systemId);
+                    lines.add(softwareDesc + ": " + periodDesc);
+
+                } else {
+                    lines.add(periodDesc);
+                }
+            }
+
+            String s = String.join(", ", lines);
+            ret.put(serviceId, s);
+        }
+
+        return ret;
+    }
+
+    private static String findSoftwareDescForSystem(UUID systemId) throws Exception {
+
+        LibraryItem libraryItem = LibraryRepositoryHelper.getLibraryItemUsingCache(systemId);
+        if (libraryItem == null) {
+            return "MISSING SYSTEM";
+        } else {
+            return libraryItem.getName();
+        }
     }
 
     private Set<UUID> calculateServicesInError(List<Service> services) throws Exception {

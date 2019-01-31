@@ -58,8 +58,9 @@
 										<th class="col-md-1">Parent</th>
 										<th class="col-md-2">Publisher Config</th>
 										<th class="col-md-1">Inbound Err</th>
+										<th class="col-md-1">Last Data</th>
 										<th class="col-md-1">Notes</th>
-										<th class="col-md-3"></th>
+										<th class="col-md-2"></th>
 									</tr>
 								</thead>
 								<tbody>
@@ -87,6 +88,7 @@
 												Y
 											</div>
 										</td>
+										<td>{{item.lastDataDesc}}</td>
 										<td>
 											<div *ngIf="item.notes">
 												{{getNotesPrefix(item)}}
@@ -94,10 +96,9 @@
 											</div>
 										</td>
 										<td>
-											<button type="button" class="btn btn-danger btn-xs child-to-show" (click)="delete(item)">Delete Service</button>
-											<button type="button" class="btn btn-danger btn-xs child-to-show" (click)="deleteData(item)">Delete Data</button>
+											<!--<button type="button" class="btn btn-danger btn-xs child-to-show" (click)="delete(item)">Delete Service</button>
+											<button type="button" class="btn btn-danger btn-xs child-to-show" (click)="deleteData(item)">Delete Data</button>-->
 											<button type="button" class="btn btn-default btn-xs child-to-show" (click)="viewExchanges(item)">Exchanges</button>
-											<!--<button type="button" class="btn btn-danger btn-xs child-to-show pull-right" (click)="delete(item)"><span class="fa fa-remove"></span></button>-->
 										</td>
 									</tr>
 								</tbody>
