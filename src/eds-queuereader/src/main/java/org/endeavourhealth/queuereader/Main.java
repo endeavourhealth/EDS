@@ -47,6 +47,7 @@ import org.endeavourhealth.core.xml.TransformErrorSerializer;
 import org.endeavourhealth.core.xml.TransformErrorUtility;
 import org.endeavourhealth.core.xml.transformError.TransformError;
 import org.endeavourhealth.subscriber.filer.EnterpriseFiler;
+import org.endeavourhealth.transform.barts.schema.PPALI;
 import org.endeavourhealth.transform.barts.schema.PPATI;
 import org.endeavourhealth.transform.common.*;
 import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
@@ -777,73 +778,111 @@ public class Main {
 
 			//read NHS numbers into memory
 			Set<String> hsNhsNumbers = new HashSet<>();
+			List<String> listNhsNumbers = new ArrayList<>();
 			File src = new File(sourceFile);
 			List<String> lines = Files.readAllLines(src.toPath());
 			for (String line: lines) {
-				hsNhsNumbers.add(line.trim());
+				String s = line.trim();
+				hsNhsNumbers.add(s);
+				listNhsNumbers.add(s); //maintain a list so we can preserve the ordering
 			}
 			LOG.debug("Looking for Person IDs for " + hsNhsNumbers.size() + " nhs numbers or any since " + dateCutoffStr);
 
 			SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
 			Date dateCutoff = sdf.parse(dateCutoffStr);
 
-			List<String> newLines = new ArrayList<>();
-
-			Set<String> hsPersonIdsFound = new HashSet<>();
-			Set<String> hsNhsNumbersFound = new HashSet<>();
+			Map<String, Set<String>> hmMatches = new HashMap<>();
 
 			ExchangeDalI exchangeDalI = DalProvider.factoryExchangeDal();
 			List<Exchange> exchanges = exchangeDalI.getExchangesByService(serviceUuid, systemUuid, Integer.MAX_VALUE);
 			for (Exchange exchange: exchanges) {
 				List<ExchangePayloadFile> files = ExchangeHelper.parseExchangeBody(exchange.getBody());
 				for (ExchangePayloadFile file: files) {
-					String type = file.getType();
-					if (!type.equals("PPATI")) {
-						continue;
-					}
+
 
 					String parentPath = new File(file.getPath()).getParent();
 					String parentDir = FilenameUtils.getBaseName(parentPath);
 					Date extractDate = sdf.parse(parentDir);
 					boolean inDateRange = !extractDate.before(dateCutoff);
 
-					PPATI parser = new PPATI(null, null, null, null, file.getPath());
-					while (parser.nextRecord()) {
-						CsvCell nhsNumberCell = parser.getNhsNumber();
-						String nhsNumber = nhsNumberCell.getString();
-						nhsNumber = nhsNumber.replace("-", "");
-						if (hsNhsNumbers.contains(nhsNumber)
-								|| inDateRange) {
+					String type = file.getType();
+					if (type.equals("PPATI")) {
 
-							hsNhsNumbersFound.add(nhsNumber);
+						PPATI parser = new PPATI(null, null, null, null, file.getPath());
+						while (parser.nextRecord()) {
+							CsvCell nhsNumberCell = parser.getNhsNumber();
+							String nhsNumber = nhsNumberCell.getString();
+							nhsNumber = nhsNumber.replace("-", "");
+							if (hsNhsNumbers.contains(nhsNumber)
+									|| inDateRange) {
 
-							CsvCell personIdCell = parser.getMillenniumPersonId();
-							String personId = personIdCell.getString();
+								CsvCell personIdCell = parser.getMillenniumPersonId();
+								String personId = personIdCell.getString();
 
-							if (!hsPersonIdsFound.contains(personId)) {
-								hsPersonIdsFound.add(personId);
-
-								newLines.add("#NHS " + nhsNumber + ":");
-								newLines.add(personId);
+								Set<String> s = hmMatches.get(nhsNumber);
+								if (s == null) {
+									s = new HashSet<>();
+									hmMatches.put(nhsNumber, s);
+								}
+								s.add(personId);
 							}
 						}
-					}
 
-					parser.close();
+						parser.close();
+
+					} else if (type.equals("PPALI")) {
+
+						PPALI parser = new PPALI(null, null, null, null, file.getPath());
+						while (parser.nextRecord()) {
+
+							CsvCell aliasCell = parser.getAlias();
+							//not going to bother trying to filter on alias type, since it won't hurt to include
+							//extra patients, if they have an MRN that accidentally matches one of the NHS numbers being searched for
+							String alias = aliasCell.getString();
+							if (hsNhsNumbers.contains(alias)
+									|| inDateRange) {
+								//NHS numbers in PPALI don't have the extra hyphens
+
+								CsvCell personIdCell = parser.getMillenniumPersonIdentifier();
+								String personId = personIdCell.getString();
+
+								Set<String> s = hmMatches.get(alias);
+								if (s == null) {
+									s = new HashSet<>();
+									hmMatches.put(alias, s);
+								}
+								s.add(personId);
+							}
+						}
+
+						parser.close();
+
+					} else {
+						//just ignore other file types
+					}
+				}
+			}
+
+			LOG.debug("" + hmMatches.size() + " / " + hsNhsNumbers.size() + " NHS numbers had person IDs found");
+
+			List<String> newLines = new ArrayList<>();
+
+			for (String nhsNumber: listNhsNumbers) {
+				Set<String> personIds = hmMatches.get(nhsNumber);
+				if (personIds == null) {
+					LOG.error("Failed to find person ID for " + nhsNumber);
+					continue;
 				}
 
-				LOG.debug("Now got " + (newLines.size()/2) + " person IDs found");
+				newLines.add("#NHS " + nhsNumber + ":");
+				for (String personId: personIds) {
+					newLines.add(personId);
+				}
 			}
 
 			File dst = new File(sourceFile + "2");
 			Files.write(dst.toPath(), newLines);
 			LOG.debug("Finished Finding Barts person IDs for " + sourceFile);
-
-			for (String nhsNumber: hsNhsNumbers) {
-				if (!hsNhsNumbersFound.contains(nhsNumber)) {
-					LOG.error("Failed to find person ID for " + nhsNumber);
-				}
-			}
 
 		} catch (Throwable t) {
 			LOG.error("", t);
