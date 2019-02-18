@@ -554,11 +554,12 @@ public class Main {
 			String dbUrl = args[3];
 			String dbUsername = args[4];
 			String dbPassword = args[5];
+			String startDate = args[6];
 			String onlyThisFileType = null;
-			if (args.length > 6) {
-				onlyThisFileType = args[6];
+			if (args.length > 7) {
+				onlyThisFileType = args[7];
 			}
-			loadBartsData(serviceId, systemId, dbUrl, dbUsername, dbPassword, onlyThisFileType);
+			loadBartsData(serviceId, systemId, dbUrl, dbUsername, dbPassword, startDate, onlyThisFileType);
 			System.exit(0);
 		}
 
@@ -1670,6 +1671,7 @@ public class Main {
 			fileTypes.add("PPADD");
 			fileTypes.add("PPAGP");
 			fileTypes.add("PPALI");
+			fileTypes.add("PPATI");
 			fileTypes.add("PPINF");
 			fileTypes.add("PPNAM");
 			fileTypes.add("PPPHO");
@@ -1789,7 +1791,7 @@ public class Main {
 
 	}
 
-	private static void loadBartsData(String serviceId, String systemId, String dbUrl, String dbUsername, String dbPassword, String onlyThisFileType) {
+	private static void loadBartsData(String serviceId, String systemId, String dbUrl, String dbUsername, String dbPassword, String startDateStr, String onlyThisFileType) {
 		LOG.debug("Loading Barts data from into " + dbUrl);
 		try {
 			//hash file type of every file
@@ -1801,10 +1803,7 @@ public class Main {
 			Connection conn = DriverManager.getConnection(dbUrl, dbUsername, dbPassword);
 
 			SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-			Date startDate = sdf.parse("2019-01-20");
-			//Date startDate = sdf.parse("2018-09-17");
-			//Date endDate = sdf.parse("2018-09-30");
-
+			Date startDate = sdf.parse(startDateStr);
 
 			for (int i=exchanges.size()-1; i>=0; i--) {
 				Exchange exchange = exchanges.get(i);
