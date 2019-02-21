@@ -155,7 +155,8 @@ public class Main {
 			UUID serviceUuid = UUID.fromString(args[2]);
 			UUID systemUuid = UUID.fromString(args[3]);
 			String dateCutoffStr = args[4];
-			findBartsPersonIds(sourceFile, serviceUuid, systemUuid, dateCutoffStr);
+			String dstFile = args[5];
+			findBartsPersonIds(sourceFile, serviceUuid, systemUuid, dateCutoffStr, dstFile);
 			System.exit(0);
 		}
 
@@ -773,7 +774,7 @@ public class Main {
 	}
 
 
-	private static void findBartsPersonIds(String sourceFile, UUID serviceUuid, UUID systemUuid, String dateCutoffStr) {
+	private static void findBartsPersonIds(String sourceFile, UUID serviceUuid, UUID systemUuid, String dateCutoffStr, String destFile) {
 		LOG.debug("Finding Barts person IDs for " + sourceFile);
 		try {
 
@@ -881,7 +882,10 @@ public class Main {
 				}
 			}
 
-			File dst = new File(sourceFile + "2");
+			File dst = new File(destFile);
+			if (dst.exists()) {
+				dst.delete();
+			}
 			Files.write(dst.toPath(), newLines);
 			LOG.debug("Finished Finding Barts person IDs for " + sourceFile);
 
