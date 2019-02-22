@@ -159,6 +159,15 @@ public class Main {
 			System.exit(0);
 		}
 
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("FixTPPNullOrgs")) {
+			String sourceDirPath = args[1];
+			String orgODS = args[2];
+
+			fixTPPNullOrgs(sourceDirPath, orgODS);
+			System.exit(0);
+		}
+
 		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("FixBartsOrgs")) {
 			String serviceId = args[1];
@@ -627,7 +636,7 @@ public class Main {
 			}
 
 			//the list of exchanges is most-recent-first, so iterate backwards to do them in order
-			for (Exchange exchange: exchanges) {
+			for (Exchange exchange : exchanges) {
 
 				List<ExchangePayloadFile> files = ExchangeHelper.parseExchangeBody(exchange.getBody());
 
@@ -748,7 +757,7 @@ public class Main {
 
 					//write batch ID to file, so we have an audit of what we created
 					List<String> lines = new ArrayList<>();
-					for (UUID batchId: batchIdsCreated) {
+					for (UUID batchId : batchIdsCreated) {
 						lines.add("\"" + exchange.getId() + "\",\"" + batchId + "\"");
 					}
 					Files.write(auditFile.toPath(), lines, StandardOpenOption.CREATE, StandardOpenOption.APPEND, StandardOpenOption.WRITE);
@@ -782,7 +791,7 @@ public class Main {
 			List<String> listNhsNumbers = new ArrayList<>();
 			File src = new File(sourceFile);
 			List<String> lines = Files.readAllLines(src.toPath());
-			for (String line: lines) {
+			for (String line : lines) {
 				String s = line.trim();
 				hsNhsNumbers.add(s);
 				listNhsNumbers.add(s); //maintain a list so we can preserve the ordering
@@ -796,9 +805,9 @@ public class Main {
 
 			ExchangeDalI exchangeDalI = DalProvider.factoryExchangeDal();
 			List<Exchange> exchanges = exchangeDalI.getExchangesByService(serviceUuid, systemUuid, Integer.MAX_VALUE);
-			for (Exchange exchange: exchanges) {
+			for (Exchange exchange : exchanges) {
 				List<ExchangePayloadFile> files = ExchangeHelper.parseExchangeBody(exchange.getBody());
-				for (ExchangePayloadFile file: files) {
+				for (ExchangePayloadFile file : files) {
 
 
 					String parentPath = new File(file.getPath()).getParent();
@@ -868,7 +877,7 @@ public class Main {
 
 			List<String> newLines = new ArrayList<>();
 
-			for (String nhsNumber: listNhsNumbers) {
+			for (String nhsNumber : listNhsNumbers) {
 				Set<String> personIds = hmMatches.get(nhsNumber);
 				if (personIds == null) {
 					LOG.error("Failed to find person ID for " + nhsNumber);
@@ -876,7 +885,7 @@ public class Main {
 				}
 
 				newLines.add("#NHS " + nhsNumber + ":");
-				for (String personId: personIds) {
+				for (String personId : personIds) {
 					newLines.add(personId);
 				}
 			}
@@ -916,7 +925,7 @@ public class Main {
 			fileTypes.add("Audit_PatientAudit");
 			fileTypes.add("Audit_RegistrationAudit");
 
-			for (String fileType: fileTypes) {
+			for (String fileType : fileTypes) {
 				createEmisDataTable(fileType);
 			}
 
@@ -948,10 +957,10 @@ public class Main {
 
 		if (parser instanceof AbstractFixedParser) {
 
-			AbstractFixedParser fixedParser = (AbstractFixedParser)parser;
+			AbstractFixedParser fixedParser = (AbstractFixedParser) parser;
 			List<FixedParserField> fields = fixedParser.getFieldList();
 
-			for (FixedParserField field: fields) {
+			for (FixedParserField field : fields) {
 				String col = field.getName();
 				int len = field.getFieldlength();
 				sql += ", ";
@@ -964,7 +973,7 @@ public class Main {
 		} else {
 
 			List<String> cols = parser.getColumnHeaders();
-			for (String col: cols) {
+			for (String col : cols) {
 				sql += ", ";
 				sql += col.replace(" ", "_").replace("#", "").replace("/", "");
 
@@ -1465,7 +1474,7 @@ public class Main {
 			SimpleDateFormat sdfStart = new SimpleDateFormat("yyyy-MM-dd");
 			Date startDate = sdfStart.parse("2000-01-01");
 
-			for (int i=exchanges.size()-1; i>=0; i--) {
+			for (int i = exchanges.size() - 1; i >= 0; i--) {
 				Exchange exchange = exchanges.get(i);
 				String exchangeBody = exchange.getBody();
 				List<ExchangePayloadFile> files = ExchangeHelper.parseExchangeBody(exchangeBody);
@@ -1474,7 +1483,7 @@ public class Main {
 					continue;
 				}
 
-				for (ExchangePayloadFile file: files) {
+				for (ExchangePayloadFile file : files) {
 					String type = file.getType();
 					String path = file.getPath();
 
@@ -1579,13 +1588,13 @@ public class Main {
 		sql = "INSERT INTO `" + table + "` (";
 		sql += "file_name, extract_date";
 		List<String> cols = parser.getColumnHeaders();
-		for (String col: cols) {
+		for (String col : cols) {
 			sql += ", ";
 			sql += col.replace(" ", "_").replace("#", "").replace("/", "");
 		}
 		sql += ") VALUES (";
 		sql += "?, ?";
-		for (String col: cols) {
+		for (String col : cols) {
 			sql += ", ";
 			sql += "?";
 		}
@@ -1638,7 +1647,7 @@ public class Main {
 			ps.close();
 		} catch (Throwable t) {
 			LOG.error("Failed on batch with statements:");
-			for (String currentBatchStr: currentBatchStrs) {
+			for (String currentBatchStr : currentBatchStrs) {
 				LOG.error(currentBatchStr);
 			}
 			throw t;
@@ -1708,13 +1717,13 @@ public class Main {
 			fileTypes.add("SusEmergencyCareDataSetTail");
 
 
-			for (String fileType: fileTypes) {
+			for (String fileType : fileTypes) {
 				createBartsDataTable(fileType);
 			}
 
 			LOG.debug("Finished Creating Barts data tables");
 		} catch (Throwable t) {
-			 LOG.error("", t);
+			LOG.error("", t);
 		}
 	}
 
@@ -1747,10 +1756,10 @@ public class Main {
 
 		if (parser instanceof AbstractFixedParser) {
 
-			AbstractFixedParser fixedParser = (AbstractFixedParser)parser;
+			AbstractFixedParser fixedParser = (AbstractFixedParser) parser;
 			List<FixedParserField> fields = fixedParser.getFieldList();
 
-			for (FixedParserField field: fields) {
+			for (FixedParserField field : fields) {
 				String col = field.getName();
 				int len = field.getFieldlength();
 				sql += ", ";
@@ -1763,7 +1772,7 @@ public class Main {
 		} else {
 
 			List<String> cols = parser.getColumnHeaders();
-			for (String col: cols) {
+			for (String col : cols) {
 				sql += ", ";
 				sql += col.replace(" ", "_").replace("#", "").replace("/", "");
 
@@ -1805,7 +1814,7 @@ public class Main {
 			SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
 			Date startDate = sdf.parse(startDateStr);
 
-			for (int i=exchanges.size()-1; i>=0; i--) {
+			for (int i = exchanges.size() - 1; i >= 0; i--) {
 				Exchange exchange = exchanges.get(i);
 				String exchangeBody = exchange.getBody();
 				List<ExchangePayloadFile> files = ExchangeHelper.parseExchangeBody(exchangeBody);
@@ -1814,7 +1823,7 @@ public class Main {
 					continue;
 				}
 
-				for (ExchangePayloadFile file: files) {
+				for (ExchangePayloadFile file : files) {
 					String type = file.getType();
 					String path = file.getPath();
 
@@ -1899,13 +1908,13 @@ public class Main {
 		sql = "INSERT INTO `" + table + "` (";
 		sql += "file_name";
 		List<String> cols = parser.getColumnHeaders();
-		for (String col: cols) {
+		for (String col : cols) {
 			sql += ", ";
 			sql += col.replace(" ", "_").replace("#", "").replace("/", "");
 		}
 		sql += ") VALUES (";
 		sql += "?";
-		for (String col: cols) {
+		for (String col : cols) {
 			sql += ", ";
 			sql += "?";
 		}
@@ -1957,7 +1966,7 @@ public class Main {
 			ps.close();
 		} catch (Throwable t) {
 			LOG.error("Failed on batch with statements:");
-			for (String currentBatchStr: currentBatchStrs) {
+			for (String currentBatchStr : currentBatchStrs) {
 				LOG.error(currentBatchStr);
 			}
 			throw t;
@@ -2479,7 +2488,7 @@ public class Main {
 				*//*sql = "SELECT * FROM resource_field_mappings WHERE version = 'a905db26-1357-4710-90ef-474f256567ed';";
 				PreparedStatement statement1 = mappingConnection.prepareStatement(sql);*//*
 
-				*//*sql = "SELECT * FROM resource_field_mappings WHERE version = ?";
+	 *//*sql = "SELECT * FROM resource_field_mappings WHERE version = ?";
 				PreparedStatement statement1 = mappingConnection.prepareStatement(sql);*//*
 
 				sql = "SELECT * FROM resource_field_mappings WHERE resource_type = '" + resourceType + "' AND resource_id = '" + resourceId + "' AND version = '" + resourceVersion + "';";
@@ -2820,11 +2829,11 @@ public class Main {
 			int countTotal = 0;
 
 			List<String> lines = Files.readAllLines(src.toPath());
-			for (String line: lines) {
+			for (String line : lines) {
 				if (!Strings.isNullOrEmpty(line)) {
 					try {
 						UUID uuid = UUID.fromString(line);
-						countTotal ++;
+						countTotal++;
 
 						if (!hsAlreadyDone.contains(uuid)) {
 							exchangeIds.add(uuid);
@@ -2846,7 +2855,7 @@ public class Main {
 			int doneThisSecond = 0;
 
 			LOG.info("Posting " + exchangeIds.size() + " to " + exchangeName);
-			for (int i=0; i<exchangeIds.size(); i++) {
+			for (int i = 0; i < exchangeIds.size(); i++) {
 
 				UUID exchangeId = exchangeIds.get(i);
 				List<UUID> tmp = new ArrayList<>();
@@ -2861,7 +2870,7 @@ public class Main {
 				}
 
 				if (throttle != null) {
-					doneThisSecond ++;
+					doneThisSecond++;
 
 					if (doneThisSecond > throttle.intValue()) {
 						long now = System.currentTimeMillis();
@@ -2879,7 +2888,7 @@ public class Main {
 
 			printWriter.close();
 
-			LOG.info("Finished Posting to " + exchangeName+ " from " + srcFile);
+			LOG.info("Finished Posting to " + exchangeName + " from " + srcFile);
 		} catch (Throwable t) {
 			LOG.error("", t);
 		}
@@ -2976,7 +2985,7 @@ public class Main {
 			int inBatch = 0;
 
 			EntityManager edsEntityManager = ConnectionManager.getEdsEntityManager();
-			SessionImpl session = (SessionImpl)edsEntityManager.getDelegate();
+			SessionImpl session = (SessionImpl) edsEntityManager.getDelegate();
 			Connection edsConnection = session.connection();
 
 			EnterpriseIdDalI enterpriseIdDal = DalProvider.factoryEnterpriseIdDal(subscriberConfigName);
@@ -3023,7 +3032,7 @@ public class Main {
 					if (isPublisher == null) {
 
 						List<LibraryItem> libraryItems = LibraryRepositoryHelper.getProtocolsByServiceId(serviceId, null); //passing null means don't filter on system ID
-						for (LibraryItem libraryItem: libraryItems) {
+						for (LibraryItem libraryItem : libraryItems) {
 							Protocol protocol = libraryItem.getProtocol();
 							if (protocol.getEnabled() != ProtocolEnabled.TRUE) {
 								continue;
@@ -3053,8 +3062,9 @@ public class Main {
 									UUID subscriberServiceId = UUID.fromString(serviceContract.getService().getUuid());
 									UUID subscriberTechnicalInterfaceId = UUID.fromString(serviceContract.getTechnicalInterface().getUuid());
 									Service subscriberService = serviceRepository.getById(subscriberServiceId);
-									List<JsonServiceInterfaceEndpoint> serviceEndpoints = ObjectMapperPool.getInstance().readValue(subscriberService.getEndpoints(), new TypeReference<List<JsonServiceInterfaceEndpoint>>() {});
-									for (JsonServiceInterfaceEndpoint serviceEndpoint: serviceEndpoints) {
+									List<JsonServiceInterfaceEndpoint> serviceEndpoints = ObjectMapperPool.getInstance().readValue(subscriberService.getEndpoints(), new TypeReference<List<JsonServiceInterfaceEndpoint>>() {
+									});
+									for (JsonServiceInterfaceEndpoint serviceEndpoint : serviceEndpoints) {
 										if (serviceEndpoint.getTechnicalInterfaceUuid().equals(subscriberTechnicalInterfaceId)) {
 											String protocolSubscriberConfigName = serviceEndpoint.getEndpoint();
 											if (protocolSubscriberConfigName.equals(subscriberConfigName)) {
@@ -3141,7 +3151,7 @@ public class Main {
 					}
 				}
 
-				checked ++;
+				checked++;
 				if (checked % 1000 == 0) {
 					LOG.info("Checked " + checked + " Saved " + saved);
 				}
@@ -4676,34 +4686,34 @@ public class Main {
 				entityManager.getTransaction().commit();
 			}
 
-			*//**
-			 * For each practice:
-			 Go through all files processed since 14 March
-			 Cache all links as above
-			 Cache all Encounters saved too
+			*/
 
-			 For each Encounter referenced at all:
-			 Retrieve latest version from resource current
-			 Retrieve version prior to 14 March
-			 Update current version with old references plus new ones
-
-			 For each parent observation:
-			 Retrieve latest version (could be observation or diagnostic report)
-
-			 For each problem:
-			 Retrieve latest version from resource current
-			 Check if still a problem:
-			 Retrieve version prior to 14 March
-			 Update current version with old references plus new ones
-
-			 *//*
+	/**
+	 * For each practice:
+	 * Go through all files processed since 14 March
+	 * Cache all links as above
+	 * Cache all Encounters saved too
+	 * <p>
+	 * For each Encounter referenced at all:
+	 * Retrieve latest version from resource current
+	 * Retrieve version prior to 14 March
+	 * Update current version with old references plus new ones
+	 * <p>
+	 * For each parent observation:
+	 * Retrieve latest version (could be observation or diagnostic report)
+	 * <p>
+	 * For each problem:
+	 * Retrieve latest version from resource current
+	 * Check if still a problem:
+	 * Retrieve version prior to 14 March
+	 * Update current version with old references plus new ones
+	 *//*
 
 			LOG.info("Finished Fixing encounters from " + table);
 		} catch (Throwable t) {
 			LOG.error("", t);
 		}
 	}*/
-
 	private static void saveResourceWrapper(UUID serviceId, ResourceWrapper wrapper) throws Exception {
 
 		if (wrapper.getVersion() == null) {
@@ -4716,7 +4726,7 @@ public class Main {
 		}
 
 		EntityManager entityManager = ConnectionManager.getEhrEntityManager(serviceId);
-		SessionImpl session = (SessionImpl)entityManager.getDelegate();
+		SessionImpl session = (SessionImpl) entityManager.getDelegate();
 		Connection connection = session.connection();
 		Statement statement = connection.createStatement();
 
@@ -4732,12 +4742,12 @@ public class Main {
 		}
 
 		String updateSql = "UPDATE resource_current"
-						+ " SET resource_data = '" + json + "',"
-						+ " resource_checksum = " + wrapper.getResourceChecksum()
-						+ " WHERE service_id = '" + wrapper.getServiceId() + "'"
-						+ " AND patient_id = '" + patientId + "'"
-						+ " AND resource_type = '" + wrapper.getResourceType() + "'"
-						+ " AND resource_id = '" + wrapper.getResourceId() + "'";
+				+ " SET resource_data = '" + json + "',"
+				+ " resource_checksum = " + wrapper.getResourceChecksum()
+				+ " WHERE service_id = '" + wrapper.getServiceId() + "'"
+				+ " AND patient_id = '" + patientId + "'"
+				+ " AND resource_type = '" + wrapper.getResourceType() + "'"
+				+ " AND resource_id = '" + wrapper.getResourceId() + "'";
 		statement.executeUpdate(updateSql);
 
 		//LOG.debug(updateSql);
@@ -4842,7 +4852,7 @@ public class Main {
 
 			Set<String> personIds = new HashSet<>();
 			List<String> lines = Files.readAllLines(new File(samplePatientsFile).toPath());
-			for (String line: lines) {
+			for (String line : lines) {
 				line = line.trim();
 
 				//ignore comments
@@ -5004,13 +5014,13 @@ public class Main {
 		ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
 		List<Exchange> exchanges = exchangeDal.getExchangesByService(serviceUuid, systemUuid, Integer.MAX_VALUE);
 
-		for (Exchange exchange: exchanges) {
+		for (Exchange exchange : exchanges) {
 
 			List<ExchangePayloadFile> files = ExchangeHelper.parseExchangeBody(exchange.getBody());
 
 			for (ExchangePayloadFile fileObj : files) {
 
-				String filePathWithoutSharedStorage = fileObj.getPath().substring(TransformConfig.instance().getSharedStoragePath().length()+1);
+				String filePathWithoutSharedStorage = fileObj.getPath().substring(TransformConfig.instance().getSharedStoragePath().length() + 1);
 				String sourceFilePath = FilenameUtils.concat(sourceDir, filePathWithoutSharedStorage);
 				File sourceFile = new File(sourceFilePath);
 
@@ -5141,7 +5151,7 @@ public class Main {
 		Files.copy(bis, dst.toPath());
 		bis.close();
 	}
-	
+
 	private static boolean isCerner22File(String fileType) throws Exception {
 
 		if (fileType.equalsIgnoreCase("PPATI")
@@ -5634,7 +5644,7 @@ public class Main {
 			//reverse the exchange list and cache the files for each one
 			List<Exchange> exchanges = new ArrayList<>();
 
-			for (int i=exchangesDesc.size()-1; i>=0; i--) {
+			for (int i = exchangesDesc.size() - 1; i >= 0; i--) {
 				Exchange exchange = exchangesDesc.get(i);
 
 				String exchangeBody = exchange.getBody();
@@ -5660,7 +5670,7 @@ public class Main {
 
 				//populate a map of the same files without the prefix
 				files = ExchangeHelper.parseExchangeBodyOldWay(exchangeBody);
-				for (int j=0; j<files.length; j++) {
+				for (int j = 0; j < files.length; j++) {
 					String file = files[j].substring(sharedStoragePath.length() + 1);
 					files[j] = file;
 				}
@@ -5681,7 +5691,7 @@ public class Main {
 			int indexOriginallyBulked = -1;
 
 			//go back through them to find the extract where the re-bulk is and when it was disabled (the list is in date order, so we're iterating most-recent first)
-			for (int i=exchanges.size()-1; i>=0; i--) {
+			for (int i = exchanges.size() - 1; i >= 0; i--) {
 				Exchange exchange = exchanges.get(i);
 
 				List<String> files = hmExchangeFiles.get(exchange);
@@ -5702,7 +5712,7 @@ public class Main {
 			}
 
 			//go back from when disabled to find the previous bulk load (i.e. the first one or one after it was previously not disabled)
-			for (int i=indexDisabled-1; i>=0; i--) {
+			for (int i = indexDisabled - 1; i >= 0; i--) {
 				Exchange exchange = exchanges.get(i);
 
 				List<String> files = hmExchangeFiles.get(exchange);
@@ -5744,7 +5754,7 @@ public class Main {
 
 			Set<String> patientGuidsDeletedOrTooOld = new HashSet<>();
 
-			for (String rebulkFile: rebulkFiles) {
+			for (String rebulkFile : rebulkFiles) {
 				String fileType = findFileType(rebulkFile);
 				if (!isPatientFile(fileType)) {
 					continue;
@@ -5787,7 +5797,7 @@ public class Main {
 				String replacementDisabledFile = null;
 				Exchange exchangeDisabled = exchanges.get(indexDisabled);
 				List<String> disabledFiles = hmExchangeFilesWithoutStoragePrefix.get(exchangeDisabled);
-				for (String s: disabledFiles) {
+				for (String s : disabledFiles) {
 					String disabledFileType = findFileType(s);
 					if (disabledFileType.equals(fileType)) {
 
@@ -5815,14 +5825,14 @@ public class Main {
 				//now go through all files of the same type PRIOR to the service was disabled
 				//to find any rows that we'll need to explicitly delete because they were deleted while
 				//the extract was disabled
-				for (int i=indexDisabled-1; i>=indexOriginallyBulked; i--) {
+				for (int i = indexDisabled - 1; i >= indexOriginallyBulked; i--) {
 					Exchange exchange = exchanges.get(i);
 
 					String originalFile = null;
 
 					List<String> files = hmExchangeFiles.get(exchange);
 
-					for (String s: files) {
+					for (String s : files) {
 						String originalFileType = findFileType(s);
 						if (originalFileType.equals(fileType)) {
 							originalFile = s;
@@ -5894,14 +5904,14 @@ public class Main {
 									throw new Exception("Failed to find patient UUID from GUID [" + patientGuid + "]");
 								}
 
-								Patient patientResource = (Patient)resourceDal.getCurrentVersionAsResource(serviceUuid, ResourceType.Patient, patientUuid.toString());
+								Patient patientResource = (Patient) resourceDal.getCurrentVersionAsResource(serviceUuid, ResourceType.Patient, patientUuid.toString());
 								if (patientResource.hasDeceased()) {
 									patientGuidsDeletedOrTooOld.add(patientGuid);
 									continue;
 								}
 
 								UUID episodeUuid = IdHelper.getEdsResourceId(serviceUuid, ResourceType.EpisodeOfCare, patientGuid); //we use the patient GUID for the episode too
-								EpisodeOfCare episodeResource = (EpisodeOfCare)resourceDal.getCurrentVersionAsResource(serviceUuid, ResourceType.EpisodeOfCare, episodeUuid.toString());
+								EpisodeOfCare episodeResource = (EpisodeOfCare) resourceDal.getCurrentVersionAsResource(serviceUuid, ResourceType.EpisodeOfCare, episodeUuid.toString());
 								if (episodeResource.hasPeriod()
 										&& !PeriodHelper.isActive(episodeResource.getPeriod())) {
 
@@ -5913,7 +5923,7 @@ public class Main {
 							//create a new CSV record, carrying over the GUIDs from the original but marking as deleted
 							String[] newRecord = new String[headers.length];
 
-							for (int j=0; j<newRecord.length; j++) {
+							for (int j = 0; j < newRecord.length; j++) {
 								String header = headers[j];
 								if (header.equals("PatientGuid")
 										|| header.equals("OrganisationGuid")
@@ -5931,13 +5941,13 @@ public class Main {
 								}
 							}
 
-							csvPrinter.printRecord((Object[])newRecord);
+							csvPrinter.printRecord((Object[]) newRecord);
 							csvPrinter.flush();
 
 							//log out the raw record that's missing from the original
 							StringBuffer sb = new StringBuffer();
 							sb.append("Record not in re-bulk: ");
-							for (int j=0; j<record.size(); j++) {
+							for (int j = 0; j < record.size(); j++) {
 								if (j > 0) {
 									sb.append(",");
 								}
@@ -5954,13 +5964,12 @@ public class Main {
 				csvPrinter.close();
 
 
-
 				//also create a version of the CSV file with just the header and nothing else in
-				for (int i=indexDisabled+1; i<indexRebulked; i++) {
+				for (int i = indexDisabled + 1; i < indexRebulked; i++) {
 					Exchange ex = exchanges.get(i);
 					List<String> exchangeFiles = hmExchangeFilesWithoutStoragePrefix.get(ex);
 
-					for (String s: exchangeFiles) {
+					for (String s : exchangeFiles) {
 						String exchangeFileType = findFileType(s);
 						if (exchangeFileType.equals(fileType)) {
 
@@ -5988,18 +5997,18 @@ public class Main {
 
 			//we also need to copy the restored sharing agreement file to replace all the period it was disabled
 			String rebulkedSharingAgreementFile = null;
-			for (String s: rebulkFiles) {
+			for (String s : rebulkFiles) {
 				String fileType = findFileType(s);
 				if (fileType.equals("Agreements_SharingOrganisation")) {
 					rebulkedSharingAgreementFile = s;
 				}
 			}
 
-			for (int i=indexDisabled; i<indexRebulked; i++) {
+			for (int i = indexDisabled; i < indexRebulked; i++) {
 				Exchange ex = exchanges.get(i);
 				List<String> exchangeFiles = hmExchangeFilesWithoutStoragePrefix.get(ex);
 
-				for (String s: exchangeFiles) {
+				for (String s : exchangeFiles) {
 					String exchangeFileType = findFileType(s);
 					if (exchangeFileType.equals("Agreements_SharingOrganisation")) {
 
@@ -6019,7 +6028,7 @@ public class Main {
 			List<String> copyScript = new ArrayList<>();
 			copyScript.add("#!/bin/bash");
 			copyScript.add("");
-			for (String s: tempFilesCreated) {
+			for (String s : tempFilesCreated) {
 				String localFile = FilenameUtils.concat(tempDir, s);
 				copyScript.add("sudo aws s3 cp " + localFile + " s3://discoverysftplanding/endeavour/" + s);
 			}
@@ -6156,7 +6165,7 @@ public class Main {
 
 	private static void dumpFileSizes(File f) {
 		if (f.isDirectory()) {
-			for (File child: f.listFiles()) {
+			for (File child : f.listFiles()) {
 				dumpFileSizes(child);
 			}
 		} else {
@@ -6196,7 +6205,7 @@ public class Main {
 
 		byte[] bytes = new byte[10];
 		System.in.read(bytes);
-		char c = (char)bytes[0];
+		char c = (char) bytes[0];
 		if (c != 'y' && c != 'Y') {
 			System.out.println("Read " + c);
 			System.exit(1);
@@ -6269,7 +6278,6 @@ public class Main {
 
 		throw new Exception("Failed to find sharing agreement file in " + files.get(0));
 	}
-
 
 
 	private static void testSlack() {
@@ -6509,7 +6517,7 @@ public class Main {
 
 			long totalStart = System.currentTimeMillis();
 
-			for (String sql: lines) {
+			for (String sql : lines) {
 
 				sql = sql.trim();
 
@@ -6648,81 +6656,81 @@ public class Main {
 
 	/**
 	 * exports ADT Encounters for patients based on a CSV file produced using the below SQL
-	 --USE EDS DATABASE
-
-	 -- barts b5a08769-cbbe-4093-93d6-b696cd1da483
-	 -- homerton 962d6a9a-5950-47ac-9e16-ebee56f9507a
-
-	 create table adt_patients (
-	 service_id character(36),
-	 system_id character(36),
-	 nhs_number character varying(10),
-	 patient_id character(36)
-	 );
-
-	 -- delete from adt_patients;
-
-	 select * from patient_search limit 10;
-	 select * from patient_link limit 10;
-
-	 insert into adt_patients
-	 select distinct ps.service_id, ps.system_id, ps.nhs_number, ps.patient_id
-	 from patient_search ps
-	 join patient_link pl
-	 on pl.patient_id = ps.patient_id
-	 join patient_link pl2
-	 on pl.person_id = pl2.person_id
-	 join patient_search ps2
-	 on ps2.patient_id = pl2.patient_id
-	 where
-	 ps.service_id IN ('b5a08769-cbbe-4093-93d6-b696cd1da483', '962d6a9a-5950-47ac-9e16-ebee56f9507a')
-	 and ps2.service_id NOT IN ('b5a08769-cbbe-4093-93d6-b696cd1da483', '962d6a9a-5950-47ac-9e16-ebee56f9507a');
-
-
-	 select count(1) from adt_patients limit 100;
-	 select * from adt_patients limit 100;
-
-
-
-
-	 ---MOVE TABLE TO HL7 RECEIVER DB
-
-	 select count(1) from adt_patients;
-
-	 -- top 1000 patients with messages
-
-	 select * from mapping.resource_uuid where resource_type = 'Patient' limit 10;
-
-	 select * from log.message limit 10;
-
-	 create table adt_patient_counts (
-	 nhs_number character varying(100),
-	 count int
-	 );
-
-	 insert into adt_patient_counts
-	 select pid1, count(1)
-	 from log.message
-	 where pid1 is not null
-	 and pid1 <> ''
-	 group by pid1;
-
-	 select * from adt_patient_counts order by count desc limit 100;
-
-	 alter table adt_patients
-	 add count int;
-
-	 update adt_patients
-	 set count = adt_patient_counts.count
-	 from adt_patient_counts
-	 where adt_patients.nhs_number = adt_patient_counts.nhs_number;
-
-	 select count(1) from adt_patients where nhs_number is null;
-
-	 select * from adt_patients
-	 where nhs_number is not null
-	 and count is not null
-	 order by count desc limit 1000;
+	 * --USE EDS DATABASE
+	 * <p>
+	 * -- barts b5a08769-cbbe-4093-93d6-b696cd1da483
+	 * -- homerton 962d6a9a-5950-47ac-9e16-ebee56f9507a
+	 * <p>
+	 * create table adt_patients (
+	 * service_id character(36),
+	 * system_id character(36),
+	 * nhs_number character varying(10),
+	 * patient_id character(36)
+	 * );
+	 * <p>
+	 * -- delete from adt_patients;
+	 * <p>
+	 * select * from patient_search limit 10;
+	 * select * from patient_link limit 10;
+	 * <p>
+	 * insert into adt_patients
+	 * select distinct ps.service_id, ps.system_id, ps.nhs_number, ps.patient_id
+	 * from patient_search ps
+	 * join patient_link pl
+	 * on pl.patient_id = ps.patient_id
+	 * join patient_link pl2
+	 * on pl.person_id = pl2.person_id
+	 * join patient_search ps2
+	 * on ps2.patient_id = pl2.patient_id
+	 * where
+	 * ps.service_id IN ('b5a08769-cbbe-4093-93d6-b696cd1da483', '962d6a9a-5950-47ac-9e16-ebee56f9507a')
+	 * and ps2.service_id NOT IN ('b5a08769-cbbe-4093-93d6-b696cd1da483', '962d6a9a-5950-47ac-9e16-ebee56f9507a');
+	 * <p>
+	 * <p>
+	 * select count(1) from adt_patients limit 100;
+	 * select * from adt_patients limit 100;
+	 * <p>
+	 * <p>
+	 * <p>
+	 * <p>
+	 * ---MOVE TABLE TO HL7 RECEIVER DB
+	 * <p>
+	 * select count(1) from adt_patients;
+	 * <p>
+	 * -- top 1000 patients with messages
+	 * <p>
+	 * select * from mapping.resource_uuid where resource_type = 'Patient' limit 10;
+	 * <p>
+	 * select * from log.message limit 10;
+	 * <p>
+	 * create table adt_patient_counts (
+	 * nhs_number character varying(100),
+	 * count int
+	 * );
+	 * <p>
+	 * insert into adt_patient_counts
+	 * select pid1, count(1)
+	 * from log.message
+	 * where pid1 is not null
+	 * and pid1 <> ''
+	 * group by pid1;
+	 * <p>
+	 * select * from adt_patient_counts order by count desc limit 100;
+	 * <p>
+	 * alter table adt_patients
+	 * add count int;
+	 * <p>
+	 * update adt_patients
+	 * set count = adt_patient_counts.count
+	 * from adt_patient_counts
+	 * where adt_patients.nhs_number = adt_patient_counts.nhs_number;
+	 * <p>
+	 * select count(1) from adt_patients where nhs_number is null;
+	 * <p>
+	 * select * from adt_patients
+	 * where nhs_number is not null
+	 * and count is not null
+	 * order by count desc limit 1000;
 	 */
 	/*private static void exportHl7Encounters(String sourceCsvPath, String outputPath) {
 		LOG.info("Exporting HL7 Encounters from " + sourceCsvPath + " to " + outputPath);
@@ -7038,8 +7046,6 @@ public class Main {
 			}
 		});
 	}*/
-
-
 	private static void findEmisStartDates(String path, String outputPath) {
 		LOG.info("Finding EMIS Start Dates in " + path + ", writing to " + outputPath);
 
@@ -7056,13 +7062,13 @@ public class Main {
 			Map<String, Set<String>> distinctPatients = new HashMap<>();
 
 			File root = new File(path);
-			for (File sftpRoot: root.listFiles()) {
+			for (File sftpRoot : root.listFiles()) {
 				LOG.info("Checking " + sftpRoot);
 
 				Map<Date, File> extracts = new HashMap<>();
 				List<Date> extractDates = new ArrayList<>();
 
-				for (File extractRoot: sftpRoot.listFiles()) {
+				for (File extractRoot : sftpRoot.listFiles()) {
 					Date d = sdf.parse(extractRoot.getName());
 
 					//LOG.info("" + extractRoot.getName() + " -> " + d);
@@ -7073,14 +7079,14 @@ public class Main {
 
 				Collections.sort(extractDates);
 
-				for (Date extractDate: extractDates) {
+				for (Date extractDate : extractDates) {
 					File extractRoot = extracts.get(extractDate);
 					LOG.info("Checking " + extractRoot);
 
 					//read the sharing agreements file
 					//e.g. 291_Agreements_SharingOrganisation_20150211164536_45E7CD20-EE37-41AB-90D6-DC9D4B03D102.csv
 					File sharingAgreementsFile = null;
-					for (File f: extractRoot.listFiles()) {
+					for (File f : extractRoot.listFiles()) {
 						String name = f.getName().toLowerCase();
 						if (name.indexOf("agreements_sharingorganisation") > -1
 								&& name.endsWith(".csv")) {
@@ -7129,7 +7135,7 @@ public class Main {
 
 					//go through orgs file to get name, ods and cdb codes
 					File orgsFile = null;
-					for (File f: extractRoot.listFiles()) {
+					for (File f : extractRoot.listFiles()) {
 						String name = f.getName().toLowerCase();
 						if (name.indexOf("admin_organisation_") > -1
 								&& name.endsWith(".csv")) {
@@ -7160,7 +7166,7 @@ public class Main {
 
 					//go through patients file to get count
 					File patientFile = null;
-					for (File f: extractRoot.listFiles()) {
+					for (File f : extractRoot.listFiles()) {
 						String name = f.getName().toLowerCase();
 						if (name.indexOf("admin_patient_") > -1
 								&& name.endsWith(".csv")) {
@@ -7203,7 +7209,7 @@ public class Main {
 			StringBuilder sb = new StringBuilder();
 			sb.append("Name,OdsCode,CDB,OrgGuid,StartDate,Server,Patients");
 
-			for (String orgGuid: startDates.keySet()) {
+			for (String orgGuid : startDates.keySet()) {
 				Date startDate = startDates.get(orgGuid);
 				String server = servers.get(orgGuid);
 				String name = names.get(orgGuid);
@@ -7258,13 +7264,13 @@ public class Main {
 		try {
 			File root = new File(path);
 			File[] files = root.listFiles();
-			for (File readerRoot: files) { //emis001
+			for (File readerRoot : files) { //emis001
 				LOG.info("Finding terms in " + readerRoot);
 
 				//first read in all the coding files to build up our map of codes
 				Map<String, String> hmCodes = new HashMap<>();
 
-				for (File dateFolder: readerRoot.listFiles()) {
+				for (File dateFolder : readerRoot.listFiles()) {
 					LOG.info("Looking for codes in " + dateFolder);
 
 					File f = findFile(dateFolder, "Coding_ClinicalCode");
@@ -7293,7 +7299,7 @@ public class Main {
 				Date cutoff = dateFormat.parse("2017-01-01");
 
 				//now process the consultation files themselves
-				for (File dateFolder: readerRoot.listFiles()) {
+				for (File dateFolder : readerRoot.listFiles()) {
 					LOG.info("Looking for consultations in " + dateFolder);
 
 					File f = findFile(dateFolder, "CareRecord_Consultation");
@@ -7363,7 +7369,7 @@ public class Main {
 			output.append("\"consultation term\",\"snomed concept ID\",\"snomed term\",\"count\"");
 			output.append("\r\n");
 
-			for (String line: hmResults.keySet()) {
+			for (String line : hmResults.keySet()) {
 				Long count = hmResults.get(line);
 				String combined = line + "," + count;
 
@@ -7386,7 +7392,7 @@ public class Main {
 	}
 
 	private static File findFile(File root, String token) throws Exception {
-		for (File f: root.listFiles()) {
+		for (File f : root.listFiles()) {
 			String s = f.getName();
 			if (s.indexOf(token) > -1) {
 				return f;
@@ -7535,7 +7541,7 @@ public class Main {
 		int batches = 0;
 		ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
 		List<ExchangeTransformAudit> audits = exchangeDal.getAllExchangeTransformAudits(serviceId, systemId, exchangeId);
-		for (ExchangeTransformAudit audit: audits) {
+		for (ExchangeTransformAudit audit : audits) {
 			if (audit.getNumberBatchesCreated() != null) {
 				batches += audit.getNumberBatchesCreated();
 			}
@@ -8766,8 +8772,9 @@ public class Main {
 
 		List<JsonServiceInterfaceEndpoint> endpoints = null;
 		try {
-			endpoints = ObjectMapperPool.getInstance().readValue(service.getEndpoints(), new TypeReference<List<JsonServiceInterfaceEndpoint>>() {});
-			for (JsonServiceInterfaceEndpoint endpoint: endpoints) {
+			endpoints = ObjectMapperPool.getInstance().readValue(service.getEndpoints(), new TypeReference<List<JsonServiceInterfaceEndpoint>>() {
+			});
+			for (JsonServiceInterfaceEndpoint endpoint : endpoints) {
 				UUID endpointSystemId = endpoint.getSystemUuid();
 				ret.add(endpointSystemId);
 			}
@@ -10107,7 +10114,7 @@ public class Main {
 
 			Set<String> patientGuids = new HashSet<>();
 			List<String> lines = Files.readAllLines(new File(samplePatientsFile).toPath());
-			for (String line: lines) {
+			for (String line : lines) {
 				line = line.trim();
 
 				//ignore comments
@@ -10138,7 +10145,7 @@ public class Main {
 		File[] files = sourceDir.listFiles();
 		LOG.info("Found " + files.length + " files in " + sourceDir);
 
-		for (File sourceFile: files) {
+		for (File sourceFile : files) {
 
 			String name = sourceFile.getName();
 			File destFile = new File(destDir, name);
@@ -10169,8 +10176,8 @@ public class Main {
 				CSVFormat format = CSVFormat.DEFAULT.withHeader();
 
 				InputStreamReader reader = new InputStreamReader(
-												new BufferedInputStream(
-													new FileInputStream(sourceFile)));
+						new BufferedInputStream(
+								new FileInputStream(sourceFile)));
 
 				CSVParser parser = new CSVParser(reader, format);
 
@@ -10210,7 +10217,7 @@ public class Main {
 
 					String patientGuid = csvRecord.get(filterColumn);
 					if (Strings.isNullOrEmpty(patientGuid) //if empty, carry over this record
-						|| patientGuids.contains(patientGuid)) {
+							|| patientGuids.contains(patientGuid)) {
 
 						printer.printRecord(csvRecord);
 						printer.flush();
@@ -10230,7 +10237,7 @@ public class Main {
 
 			Set<String> personIds = new HashSet<>();
 			List<String> lines = Files.readAllLines(new File(samplePatientsFile).toPath());
-			for (String line: lines) {
+			for (String line : lines) {
 				line = line.trim();
 
 				//ignore comments
@@ -10261,7 +10268,7 @@ public class Main {
 		File[] files = sourceDir.listFiles();
 		LOG.info("Found " + files.length + " files in " + sourceDir);
 
-		for (File sourceFile: files) {
+		for (File sourceFile : files) {
 
 			String name = sourceFile.getName();
 			File destFile = new File(destDir, name);
@@ -10364,7 +10371,7 @@ public class Main {
 
 			Set<String> personIds = new HashSet<>();
 			List<String> lines = Files.readAllLines(new File(samplePatientsFile).toPath());
-			for (String line: lines) {
+			for (String line : lines) {
 				line = line.trim();
 
 				//ignore comments
@@ -10395,7 +10402,7 @@ public class Main {
 		File[] files = sourceDir.listFiles();
 		LOG.info("Found " + files.length + " files in " + sourceDir);
 
-		for (File sourceFile: files) {
+		for (File sourceFile : files) {
 
 			String name = sourceFile.getName();
 			File destFile = new File(destDir, name);
@@ -10475,7 +10482,7 @@ public class Main {
 
 			Set<String> PersonIds = new HashSet<>();
 			List<String> lines = Files.readAllLines(new File(samplePatientsFile).toPath());
-			for (String line: lines) {
+			for (String line : lines) {
 				line = line.trim();
 
 				//ignore comments
@@ -10507,7 +10514,7 @@ public class Main {
 		File[] files = sourceDir.listFiles();
 		LOG.info("Found " + files.length + " files in " + sourceDir);
 
-		for (File sourceFile: files) {
+		for (File sourceFile : files) {
 
 			String name = sourceFile.getName();
 			File destFile = new File(destDir, name);
@@ -10553,8 +10560,8 @@ public class Main {
 					//PersonId column at 13
 					filterColumn = 13;
 				} else if (name.contains("ALLERGY")) {
-						//PersonId column at 2
-						filterColumn = 2;
+					//PersonId column at 2
+					filterColumn = 2;
 
 				} else if (name.contains("PROBLEM")) {
 					//PersonId column at 4
@@ -10607,7 +10614,7 @@ public class Main {
 
 			Set<String> caseIds = new HashSet<>();
 			List<String> lines = Files.readAllLines(new File(samplePatientsFile).toPath());
-			for (String line: lines) {
+			for (String line : lines) {
 				line = line.trim();
 
 				//ignore comments
@@ -10640,7 +10647,7 @@ public class Main {
 		File[] files = sourceDir.listFiles();
 		LOG.info("Found " + files.length + " files in " + sourceDir);
 
-		for (File sourceFile: files) {
+		for (File sourceFile : files) {
 
 			String name = sourceFile.getName();
 			File destFile = new File(destDir, name);
@@ -10784,6 +10791,116 @@ public class Main {
 			LOG.error("", t);
 		}
 	}
+
+	private static void fixTPPNullOrgs(String sourceDir, String orgODS) throws Exception {
+
+		final String COLUMN_ORG = "IDOrganisationVisibleTo";
+
+		LOG.info("Fixing TPP Null Organisations");
+
+		File[] files = new File(sourceDir).listFiles();
+
+		LOG.info("Found " + files.length + " files in " + sourceDir);
+
+		for (File sourceFile : files) {
+
+			String sourceFileName = sourceFile.getName();
+
+			if (sourceFile.isDirectory()) {
+
+				fixTPPNullOrgs(sourceFileName, orgODS);
+
+			} else {
+
+				LOG.info("Checking file " + sourceFile);
+
+				//skip any non-CSV file
+				String ext = FilenameUtils.getExtension(sourceFileName);
+				if (!ext.equalsIgnoreCase("csv")) {
+					LOG.info("Skipping as not a CSV file");
+					continue;
+				}
+
+				Charset encoding = Charset.forName("CP1252");
+				InputStreamReader reader =
+						new InputStreamReader(
+								new BufferedInputStream(
+										new FileInputStream(sourceFile)), encoding);
+
+				CSVFormat format = CSVFormat.DEFAULT.withQuoteMode(QuoteMode.ALL).withHeader();
+
+				CSVParser parser = new CSVParser(reader, format);
+
+				Map<String, Integer> headerMap = parser.getHeaderMap();
+				if (!headerMap.containsKey(COLUMN_ORG)) {
+
+					//if no COLUMN_ORG column, ignore
+					LOG.info("Ignoring file with no " + COLUMN_ORG + " column: " + sourceFile);
+					parser.close();
+
+					continue;
+				}
+
+				String[] columnHeaders = new String[headerMap.size()];
+				Iterator<String> headerIterator = headerMap.keySet().iterator();
+				while (headerIterator.hasNext()) {
+					String headerName = headerIterator.next();
+					int headerIndex = headerMap.get(headerName);
+					columnHeaders[headerIndex] = headerName;
+				}
+
+				BufferedWriter bw =
+						new BufferedWriter(
+								new OutputStreamWriter(
+										new FileOutputStream(sourceFile.getName().concat(".FIXED")), encoding));
+
+				CSVPrinter printer = new CSVPrinter(bw, format.withHeader(columnHeaders));
+
+				//iterate down the file and look at Org Column
+				Iterator<CSVRecord> csvIterator = parser.iterator();
+				while (csvIterator.hasNext()) {
+					CSVRecord csvRecord = csvIterator.next();
+
+					String fileOrgODS = csvRecord.get(COLUMN_ORG);
+
+					//set the empty value to that orgODS value passed in
+					if (Strings.isNullOrEmpty(fileOrgODS)) {
+
+						Map <String, String> recordMap = csvRecord.toMap();
+						recordMap.put(COLUMN_ORG, String.valueOf(orgODS));
+						List<String> alteredCsvRecord = new ArrayList<String>();
+						for (String key : columnHeaders) {
+							alteredCsvRecord.add(recordMap.get(key));
+						}
+
+						printer.printRecord(alteredCsvRecord);
+						printer.flush();
+
+					} else {
+
+						if (!fileOrgODS.equalsIgnoreCase(orgODS)) {
+							parser.close();
+							printer.flush();
+							printer.close();
+
+							throw new Exception("File contains different ODS codes to parameter value - aborting");
+						}
+
+						//write the record back unchanged
+						printer.printRecord(csvRecord);
+						printer.flush();
+					}
+				}
+
+				parser.close();
+				printer.close();
+
+				//Finally, delete source file and rename fixed file
+
+			}
+		}
+	}
+
 }
 
 /*class ResourceFiler extends FhirResourceFiler {
