@@ -10855,10 +10855,12 @@ public class Main {
 					columnHeaders[headerIndex] = headerName;
 				}
 
+				String destFileName = sourceFileName.concat(".FIXED");
+
 				BufferedWriter bw =
 						new BufferedWriter(
 								new OutputStreamWriter(
-										new FileOutputStream(sourceFile.getName().concat(".FIXED")), encoding));
+										new FileOutputStream(destFileName), encoding));
 
 				CSVPrinter printer = new CSVPrinter(bw, format.withHeader(columnHeaders));
 
@@ -10901,8 +10903,9 @@ public class Main {
 				parser.close();
 				printer.close();
 
-				//Finally, delete source file and rename fixed file
-
+				//Finally, delete source file and rename the fixed destination file back to source
+				sourceFile.delete();
+				new File (destFileName).renameTo(new File (sourceFileName));
 			}
 		}
 	}
