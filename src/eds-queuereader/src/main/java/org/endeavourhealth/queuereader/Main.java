@@ -165,6 +165,7 @@ public class Main {
 			String sourceDirPath = args[1];
 			String orgODS = args[2];
 
+			LOG.info("Fixing TPP Null Organisations");
 			fixTPPNullOrgs(sourceDirPath, orgODS);
 			System.exit(0);
 		}
@@ -10800,9 +10801,10 @@ public class Main {
 
 		final String COLUMN_ORG = "IDOrganisationVisibleTo";
 
-		LOG.info("Fixing TPP Null Organisations");
-
 		File[] files = new File(sourceDir).listFiles();
+
+		if (files == null)
+			return;
 
 		LOG.info("Found " + files.length + " files in " + sourceDir);
 
