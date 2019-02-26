@@ -258,10 +258,23 @@ export class ProtocolEditComponent {
 	}
 
 	getServiceContracts() {
+
+		//awful syntax to handle the service being undefined when adding new service contrals
 		return linq(this.libraryItem.protocol.serviceContract)
 			.OrderBy(sc => sc.type)
-			.ThenBy(sc => sc.service.name.toLowerCase())
+			.ThenBy(sc => {
+				if (sc.service.name) {
+					return sc.service.name.toLowerCase();
+				} else {
+					return "";
+				}
+			})
 			.ToArray();
+
+		/*return linq(this.libraryItem.protocol.serviceContract)
+			.OrderBy(sc => sc.type)
+			.ThenBy(sc => sc.service.name.toLowerCase())
+			.ToArray();*/
 	}
 
 	publisherCount(): number {
