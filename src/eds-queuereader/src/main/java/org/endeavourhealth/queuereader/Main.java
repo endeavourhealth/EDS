@@ -616,7 +616,8 @@ public class Main {
 			SessionImpl auditSession = (SessionImpl)auditEntityManager.getDelegate();
 			Connection auditConnection = auditSession.connection();
 
-			int batchSize = 1000;
+			int batchSize = 10000;
+			int done = 0;
 
 			ThreadPool threadPool = new ThreadPool(threads, batchSize);
 
@@ -643,6 +644,11 @@ public class Main {
 				if (exchangeIds.size() < batchSize) {
 					break;
 				}
+
+				threadPool.waitUntilEmpty();
+
+				done += exchangeIds.size();
+				LOG.debug("Done " + done);
 			}
 
 			threadPool.waitAndStop();
