@@ -19,6 +19,7 @@ DROP TABLE IF EXISTS published_file_type_column;
 DROP TABLE IF EXISTS published_file;
 DROP TABLE IF EXISTS published_file_record;
 drop table if exists last_data_received;
+drop table if exists last_data_processed;
 
 CREATE TABLE exchange
 (
@@ -274,6 +275,15 @@ create table last_data_received (
   system_id char(36) NOT NULL COMMENT 'links to admin.item to give the publishing software',
   data_date datetime NOT NULL COMMENT 'datetime of the data last received - date of the data, not the date is was received',
   received_date datetime NOT NULL COMMENT 'datetime the last data was received',
+  exchange_id char(36) NOT NULL COMMENT 'links to audit.exchange table',
+  CONSTRAINT pk_last_data_received PRIMARY KEY (service_id, system_id)
+);
+
+create table last_data_processed (
+  service_id char(36) NOT NULL COMMENT 'links to admin.service table',
+  system_id char(36) NOT NULL COMMENT 'links to admin.item to give the publishing software',
+  data_date datetime NOT NULL COMMENT 'datetime of the data that was last successfully transformed - date of the data, not the date is was received',
+  processed_date datetime NOT NULL COMMENT 'datetime the data was successfully transformed',
   exchange_id char(36) NOT NULL COMMENT 'links to audit.exchange table',
   CONSTRAINT pk_last_data_received PRIMARY KEY (service_id, system_id)
 );

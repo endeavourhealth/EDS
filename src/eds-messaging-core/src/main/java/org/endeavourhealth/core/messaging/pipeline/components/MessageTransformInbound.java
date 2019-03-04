@@ -39,6 +39,7 @@ import org.hl7.fhir.instance.model.Resource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 //import org.endeavourhealth.transform.barts.BartsCsvToFhirTransformer;
@@ -205,7 +206,47 @@ public class MessageTransformInbound extends PipelineComponent {
 			}
 		}
 
+		//if we make it here, we fully transformed OK
+		updateDataProcessed(exchange);
+
 		return batchIds;
+	}
+
+	private void updateDataProcessed(Exchange exchange) {
+
+		//the exchange object we have doesn't have all fields populated, such as system and service IDs, so get from the headesr
+		UUID serviceId = exchange.getHeaderAsUuid(HeaderKeys.SenderServiceUuid);
+		UUID systemId = exchange.getHeaderAsUuid(HeaderKeys.SenderSystemUuid);
+		/*UUID serviceId = exchange.getServiceId();
+		UUID systemId = exchange.getSystemId();*/
+
+		try {
+
+			String lastDataDateStr = exchange.getHeader(HeaderKeys.DataDate);
+
+			//won't always be present on really old exchanges
+			if (Strings.isNullOrEmpty(lastDataDateStr)) {
+				return;
+			}
+
+			SimpleDateFormat simpleDateFormat = new SimpleDateFormat(OpenEnvelope.DATA_DATE_FORMAT);
+			Date lastDataDate = simpleDateFormat.parse(lastDataDateStr);
+
+			//and save the date to the special table so we can retrieve it quicker
+			LastDataProcessed obj = new LastDataProcessed();
+			obj.setServiceId(serviceId);
+			obj.setSystemId(systemId);
+			obj.setExchangeId(exchange.getId());
+			obj.setProcessedDate(new Date());
+			obj.setDataDate(lastDataDate);
+
+			ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
+			exchangeDal.save(obj);
+
+		} catch (Throwable t) {
+			//any exception, just log it out without throwing further up
+			LOG.error("Failed to save last processing date for " + exchange.getId(), t);
+		}
 	}
 
 	private void processTppCsvTransform(Exchange exchange, UUID serviceId, UUID systemId, String messageVersion,

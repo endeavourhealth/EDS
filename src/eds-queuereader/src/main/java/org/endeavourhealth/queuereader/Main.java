@@ -8,13 +8,12 @@ import com.google.common.collect.Lists;
 import org.apache.commons.csv.*;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.io.IOUtils;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.common.fhir.PeriodHelper;
 import org.endeavourhealth.common.utility.FileHelper;
-import org.endeavourhealth.common.utility.FileInfo;
 import org.endeavourhealth.common.utility.SlackHelper;
+import org.endeavourhealth.common.utility.ThreadPool;
 import org.endeavourhealth.core.configuration.ConfigDeserialiser;
 import org.endeavourhealth.core.configuration.PostMessageToExchangeConfig;
 import org.endeavourhealth.core.configuration.QueueReaderConfiguration;
@@ -30,8 +29,6 @@ import org.endeavourhealth.core.database.dal.audit.models.HeaderKeys;
 import org.endeavourhealth.core.database.dal.eds.PatientLinkDalI;
 import org.endeavourhealth.core.database.dal.ehr.ResourceDalI;
 import org.endeavourhealth.core.database.dal.ehr.models.ResourceWrapper;
-import org.endeavourhealth.core.database.dal.publisherTransform.SourceFileMappingDalI;
-import org.endeavourhealth.core.database.dal.publisherTransform.models.ResourceFieldMappingAudit;
 import org.endeavourhealth.core.database.dal.reference.PostcodeDalI;
 import org.endeavourhealth.core.database.dal.reference.models.PostcodeLookup;
 import org.endeavourhealth.core.database.dal.subscriberTransform.EnterpriseIdDalI;
@@ -40,6 +37,7 @@ import org.endeavourhealth.core.database.rdbms.ConnectionManager;
 import org.endeavourhealth.core.exceptions.TransformException;
 import org.endeavourhealth.core.fhirStorage.FhirStorageService;
 import org.endeavourhealth.core.fhirStorage.JsonServiceInterfaceEndpoint;
+import org.endeavourhealth.core.messaging.pipeline.components.OpenEnvelope;
 import org.endeavourhealth.core.messaging.pipeline.components.PostMessageToExchange;
 import org.endeavourhealth.core.queueing.QueueHelper;
 import org.endeavourhealth.core.xml.QueryDocument.*;
@@ -73,9 +71,7 @@ import java.sql.*;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.Date;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
+import java.util.concurrent.Callable;
 
 public class Main {
 	private static final Logger LOG = LoggerFactory.getLogger(Main.class);
@@ -409,6 +405,13 @@ public class Main {
 			System.exit(0);
 		}
 
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("PopulateLastDataDate")) {
+			int threads = Integer.parseInt(args[1]);
+			populateLastDataDate(threads);
+			System.exit(0);
+		}
+
 		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("TestSlack")) {
 			testSlack();
@@ -604,6 +607,53 @@ public class Main {
 		rabbitHandler.start();
 		LOG.info("EDS Queue reader running (kill file location " + TransformConfig.instance().getKillFileLocation() + ")");
 	}
+
+	private static void populateLastDataDate(int threads) {
+		LOG.debug("Populating last data date");
+		try {
+
+			EntityManager auditEntityManager = ConnectionManager.getAuditEntityManager();
+			SessionImpl auditSession = (SessionImpl)auditEntityManager.getDelegate();
+			Connection auditConnection = auditSession.connection();
+
+			int batchSize = 1000;
+
+			ThreadPool threadPool = new ThreadPool(threads, batchSize);
+
+			while (true) {
+
+				String sql = "SELECT id FROM drewtest.exchange_ids WHERE done = 0 LIMIT " + batchSize;
+				Statement statement = auditConnection.createStatement();
+				ResultSet rs = statement.executeQuery(sql);
+
+				List<UUID> exchangeIds = new ArrayList<>();
+				while (rs.next()) {
+					String s = rs.getString(1);
+					exchangeIds.add(UUID.fromString(s));
+				}
+
+				rs.close();
+				statement.close();
+
+				for (UUID exchangeId: exchangeIds) {
+					threadPool.submit(new PopulateDataDateCallable(exchangeId));
+				}
+
+				//if finished
+				if (exchangeIds.size() < batchSize) {
+					break;
+				}
+			}
+
+			threadPool.waitAndStop();
+
+			LOG.debug("Finished Populating last data date");
+		} catch (Throwable t) {
+			LOG.error("", t);
+		}
+	}
+
+
 
 	private static void fixEmisAdminCache(String serviceOdsCode) {
 
@@ -10951,6 +11001,7 @@ public class Main {
 	}
 }*/
 
+/*
 class MoveToS3Runnable implements Runnable {
 	private static final Logger LOG = LoggerFactory.getLogger(MoveToS3Runnable.class);
 
@@ -11029,10 +11080,12 @@ class MoveToS3Runnable implements Runnable {
 			}
 
 
-			/*if (batch.size() > 5) {
+			*/
+/*if (batch.size() > 5) {
 				db.saveResourceMappings(batch);
 				batch.clear();
-			}*/
+			}*//*
+
 
 			int nowDone = done.incrementAndGet();
 			if (nowDone % 1000 == 0) {
@@ -11040,10 +11093,82 @@ class MoveToS3Runnable implements Runnable {
 			}
 		}
 
-		/*if (!batch.isEmpty()) {
+		*/
+/*if (!batch.isEmpty()) {
 			db.saveResourceMappings(batch);
 			batch.clear();
-		}*/
+		}*//*
 
+
+	}
+}*/
+
+
+class PopulateDataDateCallable implements Callable {
+	private static final Logger LOG = LoggerFactory.getLogger(PopulateDataDateCallable.class);
+
+	private static ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
+
+	private UUID exchangeId = null;
+
+	public PopulateDataDateCallable(UUID exchangeId) {
+		this.exchangeId = exchangeId;
+	}
+
+
+	private void doWork() throws Exception {
+
+		Exchange exchange = exchangeDal.getExchange(exchangeId);
+
+		//check if already done
+		String existingVal = exchange.getHeader(HeaderKeys.DataDate);
+		if (!Strings.isNullOrEmpty(existingVal)) {
+			//return this so we mark as done
+			markAsDone();
+			return;
+		}
+
+		String software = exchange.getHeader(HeaderKeys.SourceSystem);
+		String version = exchange.getHeader(HeaderKeys.SystemVersion);
+		String body = exchange.getBody();
+		Date lastDataDate = OpenEnvelope.calculateLastDataDate(software, version, body);
+		if (lastDataDate == null) {
+			LOG.error("Failed to calculate data for exchange " + exchange.getId() + " software " + software + " version " + version);
+			markAsDone();
+			return;
+		}
+
+		SimpleDateFormat simpleDateFormat = new SimpleDateFormat(OpenEnvelope.DATA_DATE_FORMAT);
+		exchange.setHeader(HeaderKeys.DataDate, simpleDateFormat.format(lastDataDate));
+
+		exchangeDal.save(exchange);
+
+		//mark as done
+		markAsDone();
+	}
+
+	private void markAsDone() throws Exception {
+		EntityManager auditEntityManager = ConnectionManager.getAuditEntityManager();
+		SessionImpl auditSession = (SessionImpl)auditEntityManager.getDelegate();
+		Connection auditConnection = auditSession.connection();
+
+		String sql = "UPDATE drewtest.exchange_ids SET done = 1 WHERE id = '" + exchangeId + "'";
+		Statement statement = auditConnection.createStatement();
+		auditEntityManager.getTransaction().begin();
+		statement.executeUpdate(sql);
+		auditEntityManager.getTransaction().commit();
+		statement.close();
+		auditEntityManager.close();
+	}
+
+
+	@Override
+	public Object call() throws Exception {
+		try {
+			doWork();
+		} catch (Throwable ex) {
+			LOG.error("", ex);
+		}
+		return null;
 	}
 }

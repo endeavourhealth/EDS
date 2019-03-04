@@ -44,6 +44,8 @@ import java.util.regex.Pattern;
 public class OpenEnvelope extends PipelineComponent {
 	private static final Logger LOG = LoggerFactory.getLogger(OpenEnvelope.class);
 
+	public static final String DATA_DATE_FORMAT = "yyyy-MM-dd HH:mm:ss";
+
 	private OpenEnvelopeConfig config;
 
 	public OpenEnvelope(OpenEnvelopeConfig config) {
@@ -117,7 +119,7 @@ public class OpenEnvelope extends PipelineComponent {
 			}
 
 			//set the date in the exchange header
-			SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+			SimpleDateFormat simpleDateFormat = new SimpleDateFormat(DATA_DATE_FORMAT);
 			exchange.setHeader(HeaderKeys.DataDate, simpleDateFormat.format(lastDataDate));
 
 			//and save the date to the special table so we can retrieve it quicker
