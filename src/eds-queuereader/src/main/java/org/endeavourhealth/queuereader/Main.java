@@ -623,7 +623,7 @@ public class Main {
 			while (true) {
 
 				String sql = "SELECT id FROM drewtest.exchange_ids WHERE done = 0 LIMIT " + batchSize;
-				LOG.debug("Getting new batch using: " + sql);
+				//LOG.debug("Getting new batch using: " + sql);
 
 				EntityManager auditEntityManager = ConnectionManager.getAuditEntityManager();
 				SessionImpl auditSession = (SessionImpl)auditEntityManager.getDelegate();
@@ -635,7 +635,7 @@ public class Main {
 				List<UUID> exchangeIds = new ArrayList<>();
 				while (rs.next()) {
 					String s = rs.getString(1);
-					LOG.debug("Got back exchange ID " + s);
+					//LOG.debug("Got back exchange ID " + s);
 					exchangeIds.add(UUID.fromString(s));
 				}
 
@@ -11190,7 +11190,7 @@ class PopulateDataDateCallable implements Callable {
 
 		ps.close();
 		auditEntityManager.close();
-		LOG.debug("Marked as done using: " + sql);
+		//LOG.debug("Marked as done using: " + sql);
 	}
 
 
