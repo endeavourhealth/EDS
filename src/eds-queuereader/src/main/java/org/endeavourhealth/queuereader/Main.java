@@ -11172,15 +11172,21 @@ class PopulateDataDateCallable implements Callable {
 
 	private void markAsDone() throws Exception {
 		EntityManager auditEntityManager = ConnectionManager.getAuditEntityManager();
+
+		auditEntityManager.getTransaction().begin();
+
 		SessionImpl auditSession = (SessionImpl)auditEntityManager.getDelegate();
 		Connection auditConnection = auditSession.connection();
 
-		String sql = "UPDATE drewtest.exchange_ids SET done = 1 WHERE id = '" + exchangeId + "'";
-		Statement statement = auditConnection.createStatement();
-		auditEntityManager.getTransaction().begin();
-		statement.executeUpdate(sql);
+		String sql = "UPDATE drewtest.exchange_ids SET done = 1 WHERE id = ?";
+		PreparedStatement ps = auditConnection.prepareStatement(sql);
+		ps.setString(1, exchangeId.toString());
+
+		ps.executeUpdate();
+
 		auditEntityManager.getTransaction().commit();
-		statement.close();
+
+		ps.close();
 		auditEntityManager.close();
 		LOG.debug("Marked as done using: " + sql);
 	}
