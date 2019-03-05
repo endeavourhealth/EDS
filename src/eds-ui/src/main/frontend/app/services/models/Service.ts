@@ -1,10 +1,10 @@
 import {Endpoint} from "./Endpoint";
+import {SystemStatus} from "./SystemStatus";
 
 export class Service {
 	uuid: string;
 	localIdentifier: string;
 	publisherConfigName: string;
-	hasInboundError: boolean;
 	name: string;
 	endpoints: Endpoint[];
 	organisations:{ [key:string]:string; };
@@ -14,7 +14,7 @@ export class Service {
 	ccgCode: string;
 	organisationTypeDesc: string;
 	organisationTypeCode: string;
-	lastDataDesc: string;
+	systemStatuses: SystemStatus[];
 
 	constructor() {}
 }

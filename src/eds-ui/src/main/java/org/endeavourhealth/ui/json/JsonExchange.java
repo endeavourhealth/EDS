@@ -16,7 +16,7 @@ public class JsonExchange {
     private Date timestamp;
     private Map<String, String> headers;
     private List<String> bodyLines;
-    private boolean isInError;
+    private boolean isInError; //note that jackson ends up binding this to a JSON property called just inError
 
     public JsonExchange(UUID exchangeId, UUID serviceId, UUID systemId, Date timestamp, Map<String, String> headers, List<String> bodyLines, boolean isInError) {
         this.exchangeId = exchangeId;

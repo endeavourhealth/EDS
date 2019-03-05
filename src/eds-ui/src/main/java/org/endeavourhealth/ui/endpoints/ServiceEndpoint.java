@@ -31,6 +31,7 @@ import org.endeavourhealth.core.xml.QueryDocumentSerializer;
 import org.endeavourhealth.coreui.endpoints.AbstractEndpoint;
 import org.endeavourhealth.coreui.json.JsonOrganisation;
 import org.endeavourhealth.ui.json.JsonService;
+import org.endeavourhealth.ui.json.JsonServiceSystemStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -320,10 +321,8 @@ public final class ServiceEndpoint extends AbstractEndpoint {
      */
     private List<JsonService> createAndPopulateJsonServices(List<Service> services) throws Exception {
 
-        //get the processing error flags
-        Set<UUID> servicesInError = calculateServicesInError(services);
-
-        //get the last receipt and processing data flags
+        //get the extra information we want
+        Map<UUID, Set<UUID>> hmServicesInError = findServicesInError(services);
         Map<UUID, Map<UUID, LastDataReceived>> hmLastDataReceived = findLastDataReceived(services);
         Map<UUID, Map<UUID, LastDataProcessed>> hmLastDataProcessed = findLastDataProcessed(services);
 
@@ -331,44 +330,74 @@ public final class ServiceEndpoint extends AbstractEndpoint {
 
         for (Service service : services) {
             UUID serviceId = service.getId();
-            boolean isInError = servicesInError.contains(serviceId);
             String additionalInfo = getAdditionalInfo(service);
-            JsonService jsonService = new JsonService(service, additionalInfo, isInError);
+            JsonService jsonService = new JsonService(service, additionalInfo);
 
             //work out where we are with processing data
-            Map<String, Date> lastDataReceived = new HashMap<>();
-            Map<String, Boolean> lastDataProcessed = new HashMap<>();
+            List<JsonServiceSystemStatus> jsonSystemStatuses = createAndPopulateJsonSystemStatuses(serviceId, hmServicesInError, hmLastDataReceived, hmLastDataProcessed);
+            jsonService.setSystemStatuses(jsonSystemStatuses);
 
-            Map<UUID, LastDataReceived> hmReceived = hmLastDataReceived.get(serviceId);
-            Map<UUID, LastDataProcessed> hmProcessed = hmLastDataProcessed.get(serviceId);
+            ret.add(jsonService);
+        }
+
+        return ret;
+    }
+
+    private List<JsonServiceSystemStatus> createAndPopulateJsonSystemStatuses(UUID serviceId,
+                                                                              Map<UUID, Set<UUID>> hmServicesInError,
+                                                                              Map<UUID, Map<UUID, LastDataReceived>> hmLastDataReceived,
+                                                                              Map<UUID, Map<UUID, LastDataProcessed>> hmLastDataProcessed) throws Exception {
+
+        Set<UUID> hsInError = hmServicesInError.get(serviceId);
+        Map<UUID, LastDataReceived> hmReceived = hmLastDataReceived.get(serviceId);
+        Map<UUID, LastDataProcessed> hmProcessed = hmLastDataProcessed.get(serviceId);
+
+        Set<UUID> systemIds = new HashSet<>();
+        if (hsInError != null) {
+            systemIds.addAll(hsInError);
+        }
+        if (hmReceived != null) {
+            systemIds.addAll(hmReceived.keySet());
+        }
+
+        if (systemIds.isEmpty()) {
+            return null;
+        }
+
+        List<JsonServiceSystemStatus> ret = new ArrayList<>();
+
+        for (UUID systemId: systemIds) {
+
+            JsonServiceSystemStatus status = new JsonServiceSystemStatus();
+
+            String desc = findSoftwareDescForSystem(systemId);
+            status.setSystemName(desc);
+
+            boolean inError = hsInError != null && hsInError.contains(systemId);
+            status.setProcessingInError(inError);
 
             if (hmReceived != null) {
+                LastDataReceived lastReceived = hmReceived.get(systemId);
 
-                for (UUID systemId: hmReceived.keySet()) {
-                    String systemDesc = findSoftwareDescForSystem(systemId);
-                    LastDataReceived receivedObj = hmReceived.get(systemId);
-                    lastDataReceived.put(systemDesc, receivedObj.getDataDate());
-
-                    Boolean isProcessed = Boolean.FALSE;
+                if (lastReceived != null) {
+                    Date dtLastReceived = lastReceived.getDataDate();
+                    UUID exchangeIdLastReceived = lastReceived.getExchangeId();
+                    status.setLastDataReceived(dtLastReceived);
 
                     if (hmProcessed != null) {
                         LastDataProcessed processedObj = hmProcessed.get(systemId);
                         if (processedObj != null) {
                             UUID lastExchangeProcessed = processedObj.getExchangeId();
-                            if (lastExchangeProcessed.equals(receivedObj.getExchangeId())) {
-                                isProcessed = Boolean.TRUE;
+                            if (lastExchangeProcessed.equals(exchangeIdLastReceived)) {
+
+                                status.setProcessingUpToDate(true);
                             }
                         }
                     }
-
-                    lastDataProcessed.put(systemDesc, isProcessed);
                 }
             }
 
-            jsonService.setLastDataReceived(lastDataReceived);
-            jsonService.setLastDataProcessed(lastDataProcessed);
-
-            ret.add(jsonService);
+            ret.add(status);
         }
 
         return ret;
@@ -573,14 +602,16 @@ public final class ServiceEndpoint extends AbstractEndpoint {
         }
     }
 
-    private Set<UUID> calculateServicesInError(List<Service> services) throws Exception {
-        Set<UUID> ret = new HashSet<>();
+    private Map<UUID, Set<UUID>> findServicesInError(List<Service> services) throws Exception {
+
+        Map<UUID, Set<UUID>> ret = new HashMap<>();
 
         if (services.isEmpty()) {
             return ret;
         }
 
         //if we've less than X services, hit the DB one at a time, rather than loading the full error list
+        List<ExchangeTransformErrorState> errorStates = new ArrayList<>();
         if (services.size() < 5) {
 
             for (Service service : services) {
@@ -589,20 +620,26 @@ public final class ServiceEndpoint extends AbstractEndpoint {
                 for (UUID systemId : systemIds) {
                     ExchangeTransformErrorState errorState = exchangeAuditRepository.getErrorState(serviceId, systemId);
                     if (errorState != null) {
-                        ret.add(serviceId);
-                        //no need to check the other systems for this service, so break out
-                        break;
+                        errorStates.add(errorState);
                     }
                 }
             }
 
         } else {
             //if we're lots of services, it's easier to load all the error states
-            List<ExchangeTransformErrorState> errorStates = exchangeAuditRepository.getAllErrorStates();
-            for (ExchangeTransformErrorState errorState : errorStates) {
-                UUID serviceId = errorState.getServiceId();
-                ret.add(serviceId);
+            errorStates = exchangeAuditRepository.getAllErrorStates();
+        }
+
+        for (ExchangeTransformErrorState errorState : errorStates) {
+            UUID serviceId = errorState.getServiceId();
+            UUID systemId = errorState.getSystemId();
+
+            Set<UUID> systemIdsInErr = ret.get(serviceId);
+            if (systemIdsInErr == null) {
+                systemIdsInErr = new HashSet<>();
+                ret.put(serviceId, systemIdsInErr);
             }
+            systemIdsInErr.add(systemId);
         }
 
         return ret;

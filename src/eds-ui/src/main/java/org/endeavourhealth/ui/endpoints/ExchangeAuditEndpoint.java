@@ -523,7 +523,6 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
         Service service = serviceRepository.getById(serviceId);
 
         JsonService jsonService = new JsonService(service);
-        jsonService.setHasInboundError(true); //by definition, all services in this fn as in error
 
         JsonTransformServiceErrorSummary summary = new JsonTransformServiceErrorSummary();
         summary.setService(jsonService);

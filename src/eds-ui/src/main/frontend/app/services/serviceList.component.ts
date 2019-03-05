@@ -8,6 +8,7 @@ import {Observable} from "rxjs";
 import {Subscription} from 'rxjs/Subscription';
 import {SystemService} from "../system/system.service";
 import {SystemPickerDialog} from "../system/systemPicker.dialog";
+import {SystemStatus} from "./models/SystemStatus";
 
 @Component({
 	template: require('./serviceList.html')
@@ -250,6 +251,108 @@ export class ServiceListComponent implements OnInit, OnDestroy{
 		} else {
 			return service.notes;
 		}
+	}
+
+	formatLastDataTooltip(service: Service, status: SystemStatus) : string {
+
+		var lastDate = new Date();
+		lastDate.setTime(status.lastDataReceived);
+
+		return lastDate.toISOString();
+	}
+
+	formatLastData(service: Service, status: SystemStatus) : string {
+
+		var ret = '';
+
+		//only show system name if more than one status
+		if (service.systemStatuses.length > 1) {
+			ret += status.systemName;
+			ret += ': '
+		}
+
+		var lastDate = new Date();
+		lastDate.setTime(status.lastDataReceived);
+
+		var today = new Date();
+
+		var diffMs = today.getTime() - lastDate.getTime();
+
+		var durMin = 1000 * 60;
+		var durHour = durMin * 60;
+		var durDay = durHour * 25;
+		var durWeek = durDay * 7;
+		var durYear = durDay * 365.25;
+
+		var toks = [];
+
+		if (toks.length < 2) {
+			var years = Math.floor(diffMs / durYear);
+			if (years > 0) {
+				toks.push('' + years + 'y');
+				diffMs -= years * durYear;
+			}
+		}
+
+		if (toks.length < 2) {
+			var weeks = Math.floor(diffMs / durWeek);
+			if (weeks > 0) {
+				toks.push('' + weeks + 'w');
+				diffMs -= weeks * durWeek;
+			}
+		}
+
+		if (toks.length < 2) {
+			var days = Math.floor(diffMs / durDay);
+			if (days > 0) {
+				toks.push('' + days + 'd');
+				diffMs -= days * durDay;
+			}
+		}
+
+		if (toks.length < 2) {
+			var hours = Math.floor(diffMs / durHour);
+			if (hours > 0) {
+				toks.push('' + hours + 'h');
+				diffMs -= hours * durHour;
+			}
+		}
+
+		if (toks.length < 2) {
+			var mins = Math.floor(diffMs / durMin);
+			if (mins > 0 ) {
+				toks.push('' + mins + 'm');
+				diffMs -= mins * durMin;
+			}
+		}
+
+		ret += toks.join(' ');
+
+		return ret;
+	}
+
+	formatProcessingStatus(service: Service, status: SystemStatus) : string {
+
+		var ret = '';
+
+		//only show system name if more than one status
+		//don't need to show the system since this is in the previous column
+		/*if (service.systemStatuses.length > 1) {
+			ret += status.systemName;
+			ret += ': '
+		}*/
+
+		if (status.processingInError) {
+			ret += 'ERROR';
+
+		} else if (status.processingUpToDate) {
+			ret += 'OK';
+
+		} else {
+			ret += 'Behind';
+		}
+
+		return ret;
 	}
 
 }

@@ -57,48 +57,57 @@
 										<th class="col-md-1">Local ID</th>
 										<th class="col-md-1">Parent</th>
 										<th class="col-md-2">Publisher Config</th>
-										<th class="col-md-1">Inbound Err</th>
 										<th class="col-md-1">Last Data</th>
+										<th class="col-md-1">Status</th>
 										<th class="col-md-1">Notes</th>
 										<th class="col-md-2"></th>
 									</tr>
 								</thead>
 								<tbody>
-									<tr class="hover-box show-child-on-hover" *ngFor="let item of filteredServices">
+									<tr class="hover-box show-child-on-hover" *ngFor="let service of filteredServices">
 										<td>
-											<a (click)="edit(item)">{{item.name}}</a>
+											<a (click)="edit(service)">{{service.name}}</a>
 
 											<!-- if we have any additional info, show it after the service name-->
-											<span class="bg-danger" *ngIf="item.additionalInfo">
-												{{item.additionalInfo}}
+											<span class="bg-danger" *ngIf="service.additionalInfo">
+												{{service.additionalInfo}}
 											</span>
 
 										</td>
-										<td>{{item.localIdentifier}}</td>
+										<td>{{service.localIdentifier}}</td>
 										<td>
-											<span ngbTooltip="{{serviceService.getCcgName(item.ccgCode)}}">
-												{{item.ccgCode}}
+											<span ngbTooltip="{{serviceService.getCcgName(service.ccgCode)}}">
+												{{service.ccgCode}}
 											</span>
-											<!--{{item.ccgCode}}-->
-											<!--<span class="fa fa-info-circle fa-right-pad text-muted" ngbTooltip="{{getCcgName(item.ccgCode)}}"></span>-->
 										</td>
-										<td>{{item.publisherConfigName}}</td>
+										<td>{{service.publisherConfigName}}</td>
+
 										<td>
-											<div *ngIf="item.hasInboundError">
-												Y
+											<div *ngIf="service.systemStatuses">
+												<div *ngFor="let status of service.systemStatuses">
+													<span ngbTooltip="{{formatLastDataTooltip(service, status)}}">{{formatLastData(service, status)}}</span>
+												</div>
 											</div>
 										</td>
-										<td>{{item.lastDataDesc}}</td>
+
 										<td>
-											<div *ngIf="item.notes">
-												{{getNotesPrefix(item)}}
-												<span class="fa fa-info-circle fa-right-pad text-muted" ngbTooltip="{{item.notes}}" *ngIf="item.notes.length > 10"></span>
+											<div *ngIf="service.systemStatuses">
+												<div *ngFor="let status of service.systemStatuses">
+													{{formatProcessingStatus(service, status)}}
+												</div>
+											</div>
+										</td>
+
+										<td>
+											<div *ngIf="service.notes">
+												{{getNotesPrefix(service)}}
+												<span class="fa fa-info-circle fa-right-pad text-muted" ngbTooltip="{{service.notes}}" *ngIf="service.notes.length > 10"></span>
 											</div>
 										</td>
 										<td>
 											<!--<button type="button" class="btn btn-danger btn-xs child-to-show" (click)="delete(item)">Delete Service</button>
 											<button type="button" class="btn btn-danger btn-xs child-to-show" (click)="deleteData(item)">Delete Data</button>-->
-											<button type="button" class="btn btn-default btn-xs child-to-show" (click)="viewExchanges(item)">Exchanges</button>
+											<button type="button" class="btn btn-default btn-xs child-to-show" (click)="viewExchanges(service)">Exchanges</button>
 										</td>
 									</tr>
 								</tbody>

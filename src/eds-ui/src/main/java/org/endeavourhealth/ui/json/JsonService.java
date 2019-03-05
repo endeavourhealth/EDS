@@ -7,14 +7,16 @@ import org.endeavourhealth.core.database.dal.admin.models.Service;
 import org.endeavourhealth.core.fhirStorage.JsonServiceInterfaceEndpoint;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public final class JsonService {
     private UUID uuid = null;
     private String localIdentifier = null;
     private String publisherConfigName = null;
-    private boolean hasInboundError;
     private String name = null;
     private List<JsonServiceInterfaceEndpoint> endpoints = null;
     private Map<UUID, String> organisations = null;
@@ -24,21 +26,18 @@ public final class JsonService {
     private String ccgCode;
     private String organisationTypeDesc;
     private String organisationTypeCode;
-    private Map<String, Date> lastDataReceived; //last data date for each system
-    private Map<String, Boolean> lastDataProcessed; //whether we're fully up to date for each system
-    //private String lastDataDesc; //free-text saying when the last data received was
+    private List<JsonServiceSystemStatus> systemStatuses;
 
     public JsonService() {
     }
 
     public JsonService(Service service) throws IOException {
-        this(service, null, false);
+        this(service, null);
     }
 
-    public JsonService(Service service, String additionalInfo, boolean hasInboundError) throws IOException {
+    public JsonService(Service service, String additionalInfo) throws IOException {
         this.uuid = service.getId();
         this.localIdentifier = service.getLocalId();
-        this.hasInboundError = hasInboundError;
         this.name = service.getName();
         this.organisations = service.getOrganisations();
         this.publisherConfigName = service.getPublisherConfigName();
@@ -85,14 +84,6 @@ public final class JsonService {
 
     public void setPublisherConfigName(String publisherConfigName) {
         this.publisherConfigName = publisherConfigName;
-    }
-
-    public boolean isHasInboundError() {
-        return hasInboundError;
-    }
-
-    public void setHasInboundError(boolean hasInboundError) {
-        this.hasInboundError = hasInboundError;
     }
 
     public String getName() {
@@ -167,19 +158,12 @@ public final class JsonService {
         this.organisationTypeCode = organisationTypeCode;
     }
 
-    public Map<String, Date> getLastDataReceived() {
-        return lastDataReceived;
+    public List<JsonServiceSystemStatus> getSystemStatuses() {
+        return systemStatuses;
     }
 
-    public void setLastDataReceived(Map<String, Date> lastDataReceived) {
-        this.lastDataReceived = lastDataReceived;
-    }
-
-    public Map<String, Boolean> getLastDataProcessed() {
-        return lastDataProcessed;
-    }
-
-    public void setLastDataProcessed(Map<String, Boolean> lastDataProcessed) {
-        this.lastDataProcessed = lastDataProcessed;
+    public void setSystemStatuses(List<JsonServiceSystemStatus> systemStatuses) {
+        this.systemStatuses = systemStatuses;
     }
 }
+
