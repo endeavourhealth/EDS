@@ -13,7 +13,6 @@ import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.common.fhir.PeriodHelper;
 import org.endeavourhealth.common.utility.FileHelper;
 import org.endeavourhealth.common.utility.SlackHelper;
-import org.endeavourhealth.common.utility.ThreadPool;
 import org.endeavourhealth.core.configuration.ConfigDeserialiser;
 import org.endeavourhealth.core.configuration.PostMessageToExchangeConfig;
 import org.endeavourhealth.core.configuration.QueueReaderConfiguration;
@@ -619,8 +618,6 @@ public class Main {
 			int batchSize = 10000;
 			int done = 0;
 
-			ThreadPool threadPool = new ThreadPool(threads, batchSize);
-
 			while (true) {
 
 				String sql = "SELECT id FROM drewtest.exchange_ids WHERE done = 0 LIMIT " + batchSize;
@@ -636,8 +633,43 @@ public class Main {
 				rs.close();
 				statement.close();
 
+				ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
+
 				for (UUID exchangeId: exchangeIds) {
-					threadPool.submit(new PopulateDataDateCallable(exchangeId));
+
+					Exchange exchange = exchangeDal.getExchange(exchangeId);
+
+					//check if already done
+					String existingVal = exchange.getHeader(HeaderKeys.DataDate);
+					String software = exchange.getHeader(HeaderKeys.SourceSystem);
+					String version = exchange.getHeader(HeaderKeys.SystemVersion);
+
+					if (Strings.isNullOrEmpty(existingVal)) {
+
+						String body = exchange.getBody();
+						Date lastDataDate = OpenEnvelope.calculateLastDataDate(software, version, body);
+						if (lastDataDate == null) {
+							LOG.error("Failed to calculate data for exchange " + exchange.getId() + " software " + software + " version " + version);
+
+						} else {
+
+							SimpleDateFormat simpleDateFormat = new SimpleDateFormat(OpenEnvelope.DATA_DATE_FORMAT);
+							exchange.setHeader(HeaderKeys.DataDate, simpleDateFormat.format(lastDataDate));
+
+							exchangeDal.save(exchange);
+						}
+
+					} else {
+						LOG.info("Exchange already done " + exchange.getId() + " software " + software + " version " + version);
+					}
+
+					//mark as done
+					sql = "UPDATE drewtest.exchange_ids SET done = 1 WHERE id = '" + exchangeId + "'";
+					statement = auditConnection.createStatement();
+					auditEntityManager.getTransaction().begin();
+					statement.executeUpdate(sql);
+					auditEntityManager.getTransaction().commit();
+					statement.close();
 				}
 
 				//if finished
@@ -645,13 +677,9 @@ public class Main {
 					break;
 				}
 
-				threadPool.waitUntilEmpty();
-
 				done += exchangeIds.size();
 				LOG.debug("Done " + done);
 			}
-
-			threadPool.waitAndStop();
 
 			LOG.debug("Finished Populating last data date");
 		} catch (Throwable t) {
@@ -11113,7 +11141,7 @@ class MoveToS3Runnable implements Runnable {
 class PopulateDataDateCallable implements Callable {
 	private static final Logger LOG = LoggerFactory.getLogger(PopulateDataDateCallable.class);
 
-	private static ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
+
 
 	private UUID exchangeId = null;
 
@@ -11124,30 +11152,7 @@ class PopulateDataDateCallable implements Callable {
 
 	private void doWork() throws Exception {
 
-		Exchange exchange = exchangeDal.getExchange(exchangeId);
 
-		//check if already done
-		String existingVal = exchange.getHeader(HeaderKeys.DataDate);
-		if (!Strings.isNullOrEmpty(existingVal)) {
-			//return this so we mark as done
-			markAsDone();
-			return;
-		}
-
-		String software = exchange.getHeader(HeaderKeys.SourceSystem);
-		String version = exchange.getHeader(HeaderKeys.SystemVersion);
-		String body = exchange.getBody();
-		Date lastDataDate = OpenEnvelope.calculateLastDataDate(software, version, body);
-		if (lastDataDate == null) {
-			LOG.error("Failed to calculate data for exchange " + exchange.getId() + " software " + software + " version " + version);
-			markAsDone();
-			return;
-		}
-
-		SimpleDateFormat simpleDateFormat = new SimpleDateFormat(OpenEnvelope.DATA_DATE_FORMAT);
-		exchange.setHeader(HeaderKeys.DataDate, simpleDateFormat.format(lastDataDate));
-
-		exchangeDal.save(exchange);
 
 		//mark as done
 		markAsDone();
