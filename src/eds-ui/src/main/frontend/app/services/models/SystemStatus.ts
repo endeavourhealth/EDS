@@ -4,6 +4,7 @@ export class SystemStatus {
     lastDataReceived: number;
     processingUpToDate: boolean;
     processingInError: boolean;
+    lastDataProcessedDate: number;
 
     constructor() {}
 }

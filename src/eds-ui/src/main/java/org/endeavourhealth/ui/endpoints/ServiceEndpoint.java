@@ -387,6 +387,10 @@ public final class ServiceEndpoint extends AbstractEndpoint {
                     if (hmProcessed != null) {
                         LastDataProcessed processedObj = hmProcessed.get(systemId);
                         if (processedObj != null) {
+
+                            Date lastDataProcessedDate = processedObj.getDataDate();
+                            status.setLastDataProcessedDate(lastDataProcessedDate);
+
                             UUID lastExchangeProcessed = processedObj.getExchangeId();
                             if (lastExchangeProcessed.equals(exchangeIdLastReceived)) {
 

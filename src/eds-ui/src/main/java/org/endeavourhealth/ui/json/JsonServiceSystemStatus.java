@@ -7,6 +7,7 @@ public class JsonServiceSystemStatus {
     private Date lastDataReceived;
     private boolean isProcessingUpToDate;
     private boolean isProcessingInError;
+    private Date lastDataProcessedDate;
 
     public String getSystemName() {
         return systemName;
@@ -38,5 +39,13 @@ public class JsonServiceSystemStatus {
 
     public void setProcessingInError(boolean processingInError) {
         isProcessingInError = processingInError;
+    }
+
+    public Date getLastDataProcessedDate() {
+        return lastDataProcessedDate;
+    }
+
+    public void setLastDataProcessedDate(Date lastDataProcessedDate) {
+        this.lastDataProcessedDate = lastDataProcessedDate;
     }
 }

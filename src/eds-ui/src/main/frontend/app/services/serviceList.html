@@ -93,7 +93,7 @@
 										<td>
 											<div *ngIf="service.systemStatuses">
 												<div *ngFor="let status of service.systemStatuses">
-													{{formatProcessingStatus(service, status)}}
+													<span ngbTooltip="{{formatProcessingStatusTooltip(service, status)}}">{{formatProcessingStatus(service, status)}}</span>
 												</div>
 											</div>
 										</td>

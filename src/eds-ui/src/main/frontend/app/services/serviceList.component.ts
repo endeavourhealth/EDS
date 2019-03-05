@@ -258,7 +258,7 @@ export class ServiceListComponent implements OnInit, OnDestroy{
 		var lastDate = new Date();
 		lastDate.setTime(status.lastDataReceived);
 
-		return lastDate.toISOString();
+		return 'Last data received from ' + lastDate.toISOString();
 	}
 
 	formatLastData(service: Service, status: SystemStatus) : string {
@@ -329,6 +329,25 @@ export class ServiceListComponent implements OnInit, OnDestroy{
 		ret += toks.join(' ');
 
 		return ret;
+	}
+
+	formatProcessingStatusTooltip(service: Service, status: SystemStatus) : string {
+		if (status.processingInError
+			|| !status.processingUpToDate) {
+
+			if (status.lastDataProcessedDate) {
+
+				var lastDateProcessed = new Date();
+				lastDateProcessed.setTime(status.lastDataProcessedDate);
+				return 'Processed up to ' + lastDateProcessed.toISOString();
+
+			} else {
+				return 'Not successfully processed any data yet';
+			}
+
+		} else {
+			return null;
+		}
 	}
 
 	formatProcessingStatus(service: Service, status: SystemStatus) : string {

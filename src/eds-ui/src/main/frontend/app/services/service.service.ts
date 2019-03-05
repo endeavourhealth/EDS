@@ -105,7 +105,7 @@ export class ServiceService extends BaseHttp2Service {
 					if (service.systemStatuses) {
 						for (var j=0; j<service.systemStatuses.length; j++) {
 							var systemStatus = service.systemStatuses[j];
-							if (systemStatus.isProcessingInError) {
+							if (systemStatus.processingInError) {
 								anyError = true;
 							}
 						}
