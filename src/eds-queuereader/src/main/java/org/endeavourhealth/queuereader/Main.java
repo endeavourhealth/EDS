@@ -615,10 +615,6 @@ public class Main {
 		LOG.debug("Populating last data date");
 		try {
 
-			EntityManager auditEntityManager = ConnectionManager.getAuditEntityManager();
-			SessionImpl auditSession = (SessionImpl)auditEntityManager.getDelegate();
-			Connection auditConnection = auditSession.connection();
-
 			int processed = 0;
 			AtomicInteger fixed = new AtomicInteger();
 
@@ -628,6 +624,11 @@ public class Main {
 
 				String sql = "SELECT id FROM drewtest.exchange_ids WHERE done = 0 LIMIT " + batchSize;
 				LOG.debug("Getting new batch using: " + sql);
+
+				EntityManager auditEntityManager = ConnectionManager.getAuditEntityManager();
+				SessionImpl auditSession = (SessionImpl)auditEntityManager.getDelegate();
+				Connection auditConnection = auditSession.connection();
+
 				Statement statement = auditConnection.createStatement();
 				ResultSet rs = statement.executeQuery(sql);
 
@@ -640,6 +641,7 @@ public class Main {
 
 				rs.close();
 				statement.close();
+				auditEntityManager.close();
 
 				for (UUID exchangeId: exchangeIds) {
 					threadPool.submit(new PopulateDataDateCallable(exchangeId, fixed));
