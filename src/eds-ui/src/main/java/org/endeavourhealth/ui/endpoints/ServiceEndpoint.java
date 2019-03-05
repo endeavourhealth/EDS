@@ -21,10 +21,7 @@ import org.endeavourhealth.core.database.dal.admin.models.Organisation;
 import org.endeavourhealth.core.database.dal.admin.models.Service;
 import org.endeavourhealth.core.database.dal.audit.ExchangeDalI;
 import org.endeavourhealth.core.database.dal.audit.UserAuditDalI;
-import org.endeavourhealth.core.database.dal.audit.models.AuditAction;
-import org.endeavourhealth.core.database.dal.audit.models.AuditModule;
-import org.endeavourhealth.core.database.dal.audit.models.ExchangeTransformErrorState;
-import org.endeavourhealth.core.database.dal.audit.models.LastDataReceived;
+import org.endeavourhealth.core.database.dal.audit.models.*;
 import org.endeavourhealth.core.database.dal.ehr.ResourceDalI;
 import org.endeavourhealth.core.fhirStorage.FhirDeletionService;
 import org.endeavourhealth.core.fhirStorage.JsonServiceInterfaceEndpoint;
@@ -280,21 +277,8 @@ public final class ServiceEndpoint extends AbstractEndpoint {
 
     private Response getServiceList() throws Exception {
         List<Service> services = serviceRepository.getAll();
+        List<JsonService> ret = createAndPopulateJsonServices(services);
 
-        //we want to indicate if any service has inbound errors
-        Set<UUID> servicesInError = calculateServicesInError(services);
-
-        Map<UUID, String> hmLastDataDescs = findLastDataDescs(services);
-
-        List<JsonService> ret = new ArrayList<>();
-
-        for (Service service : services) {
-            UUID serviceId = service.getId();
-            boolean isInError = servicesInError.contains(serviceId);
-            String additionalInfo = getAdditionalInfo(service);
-            String lastDataDesc = hmLastDataDescs.get(serviceId);
-            ret.add(new JsonService(service, additionalInfo, isInError, lastDataDesc));
-        }
 
         clearLogbackMarkers();
         return Response
@@ -309,15 +293,9 @@ public final class ServiceEndpoint extends AbstractEndpoint {
 
         List<Service> services = new ArrayList<>();
         services.add(service);
-        Set<UUID> servicesInError = calculateServicesInError(services);
 
-        Map<UUID, String> hmLastDataDescs = findLastDataDescs(services);
-
-        UUID serviceId = service.getId();
-        boolean isInError = servicesInError.contains(serviceId);
-        String additionalInfo = getAdditionalInfo(service);
-        String lastDataDesc = hmLastDataDescs.get(serviceId);
-        JsonService ret = new JsonService(service, additionalInfo, isInError, lastDataDesc);
+        List<JsonService> jsonServices = createAndPopulateJsonServices(services);
+        JsonService ret = jsonServices.get(0);
 
         clearLogbackMarkers();
         return Response
@@ -328,19 +306,7 @@ public final class ServiceEndpoint extends AbstractEndpoint {
 
     private Response getServicesMatchingText(String searchData) throws Exception {
         List<Service> services = serviceRepository.search(searchData);
-
-        Set<UUID> servicesInError = calculateServicesInError(services);
-        Map<UUID, String> hmLastDataDescs = findLastDataDescs(services);
-
-        List<JsonService> ret = new ArrayList<>();
-
-        for (Service service : services) {
-            UUID serviceId = service.getId();
-            boolean isInError = servicesInError.contains(serviceId);
-            String additionalInfo = getAdditionalInfo(service);
-            String lastDataDesc = hmLastDataDescs.get(serviceId);
-            ret.add(new JsonService(service, additionalInfo, isInError, lastDataDesc));
-        }
+        List<JsonService> ret = createAndPopulateJsonServices(services);
 
         clearLogbackMarkers();
         return Response
@@ -349,7 +315,146 @@ public final class ServiceEndpoint extends AbstractEndpoint {
                 .build();
     }
 
-    private Map<UUID, String> findLastDataDescs(List<Service> services) throws Exception {
+    /**
+     * converts internal Service objects into ones suitable for DDS-UI, which includes additional info about errors etc.
+     */
+    private List<JsonService> createAndPopulateJsonServices(List<Service> services) throws Exception {
+
+        //get the processing error flags
+        Set<UUID> servicesInError = calculateServicesInError(services);
+
+        //get the last receipt and processing data flags
+        Map<UUID, Map<UUID, LastDataReceived>> hmLastDataReceived = findLastDataReceived(services);
+        Map<UUID, Map<UUID, LastDataProcessed>> hmLastDataProcessed = findLastDataProcessed(services);
+
+        List<JsonService> ret = new ArrayList<>();
+
+        for (Service service : services) {
+            UUID serviceId = service.getId();
+            boolean isInError = servicesInError.contains(serviceId);
+            String additionalInfo = getAdditionalInfo(service);
+            JsonService jsonService = new JsonService(service, additionalInfo, isInError);
+
+            //work out where we are with processing data
+            Map<String, Date> lastDataReceived = new HashMap<>();
+            Map<String, Boolean> lastDataProcessed = new HashMap<>();
+
+            Map<UUID, LastDataReceived> hmReceived = hmLastDataReceived.get(serviceId);
+            Map<UUID, LastDataProcessed> hmProcessed = hmLastDataProcessed.get(serviceId);
+
+            if (hmReceived != null) {
+
+                for (UUID systemId: hmReceived.keySet()) {
+                    String systemDesc = findSoftwareDescForSystem(systemId);
+                    LastDataReceived receivedObj = hmReceived.get(systemId);
+                    lastDataReceived.put(systemDesc, receivedObj.getDataDate());
+
+                    Boolean isProcessed = Boolean.FALSE;
+
+                    if (hmProcessed != null) {
+                        LastDataProcessed processedObj = hmProcessed.get(systemId);
+                        if (processedObj != null) {
+                            UUID lastExchangeProcessed = processedObj.getExchangeId();
+                            if (lastExchangeProcessed.equals(receivedObj.getExchangeId())) {
+                                isProcessed = Boolean.TRUE;
+                            }
+                        }
+                    }
+
+                    lastDataProcessed.put(systemDesc, isProcessed);
+                }
+            }
+
+            jsonService.setLastDataReceived(lastDataReceived);
+            jsonService.setLastDataProcessed(lastDataProcessed);
+
+            ret.add(jsonService);
+        }
+
+        return ret;
+    }
+
+    private Map<UUID, Map<UUID, LastDataProcessed>> findLastDataProcessed(List<Service> services) throws Exception {
+
+        if (services.isEmpty()) {
+            return new HashMap<>();
+        }
+
+        //if we've less than X services, hit the DB one at a time, rather than loading the full error list
+        List<LastDataProcessed> list = null;
+        if (services.size() < 5) {
+
+            list = new ArrayList<>();
+
+            for (Service service : services) {
+                UUID serviceId = service.getId();
+                list.addAll(exchangeAuditRepository.getLastDataProcessed(serviceId));
+            }
+
+        } else {
+            //if we're lots of services, it's easier to load all the error states
+            list = exchangeAuditRepository.getLastDataProcessed();
+        }
+
+        Map<UUID, Map<UUID, LastDataProcessed>> ret = new HashMap<>();
+
+        for (LastDataProcessed obj : list) {
+            UUID serviceId = obj.getServiceId();
+
+            Map<UUID, LastDataProcessed> l = ret.get(serviceId);
+            if (l == null) {
+                l = new HashMap<>();
+                ret.put(serviceId, l);
+            }
+
+            UUID systemId = obj.getSystemId();
+            l.put(systemId, obj);
+        }
+
+        return ret;
+    }
+
+    private Map<UUID, Map<UUID, LastDataReceived>> findLastDataReceived(List<Service> services) throws Exception {
+
+        if (services.isEmpty()) {
+            return new HashMap<>();
+        }
+
+        //if we've less than X services, hit the DB one at a time, rather than loading the full error list
+        List<LastDataReceived> list = null;
+        if (services.size() < 5) {
+
+            list = new ArrayList<>();
+
+            for (Service service : services) {
+                UUID serviceId = service.getId();
+                list.addAll(exchangeAuditRepository.getLastDataReceived(serviceId));
+            }
+
+        } else {
+            //if we're lots of services, it's easier to load all the error states
+            list = exchangeAuditRepository.getLastDataReceived();
+        }
+
+        Map<UUID, Map<UUID, LastDataReceived>> ret = new HashMap<>();
+
+        for (LastDataReceived obj : list) {
+            UUID serviceId = obj.getServiceId();
+
+            Map<UUID, LastDataReceived> l = ret.get(serviceId);
+            if (l == null) {
+                l = new HashMap<>();
+                ret.put(serviceId, l);
+            }
+
+            UUID systemId = obj.getSystemId();
+            l.put(systemId, obj);
+        }
+
+        return ret;
+    }
+
+    /*private Map<UUID, String> findLastDataDescs(List<Service> services) throws Exception {
 
         if (services.isEmpty()) {
             return new HashMap<>();
@@ -456,7 +561,7 @@ public final class ServiceEndpoint extends AbstractEndpoint {
         }
 
         return ret;
-    }
+    }*/
 
     private static String findSoftwareDescForSystem(UUID systemId) throws Exception {
 

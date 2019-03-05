@@ -627,12 +627,14 @@ public class Main {
 			while (true) {
 
 				String sql = "SELECT id FROM drewtest.exchange_ids WHERE done = 0 LIMIT " + batchSize;
+				LOG.debug("Getting new batch using: " + sql);
 				Statement statement = auditConnection.createStatement();
 				ResultSet rs = statement.executeQuery(sql);
 
 				List<UUID> exchangeIds = new ArrayList<>();
 				while (rs.next()) {
 					String s = rs.getString(1);
+					LOG.debug("Got back exchange ID " + s);
 					exchangeIds.add(UUID.fromString(s));
 				}
 
@@ -11180,6 +11182,7 @@ class PopulateDataDateCallable implements Callable {
 		auditEntityManager.getTransaction().commit();
 		statement.close();
 		auditEntityManager.close();
+		LOG.debug("Marked as done using: " + sql);
 	}
 
 

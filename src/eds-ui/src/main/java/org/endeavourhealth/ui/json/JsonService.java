@@ -7,10 +7,7 @@ import org.endeavourhealth.core.database.dal.admin.models.Service;
 import org.endeavourhealth.core.fhirStorage.JsonServiceInterfaceEndpoint;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public final class JsonService {
@@ -27,16 +24,18 @@ public final class JsonService {
     private String ccgCode;
     private String organisationTypeDesc;
     private String organisationTypeCode;
-    private String lastDataDesc; //free-text saying when the last data received was
+    private Map<String, Date> lastDataReceived; //last data date for each system
+    private Map<String, Boolean> lastDataProcessed; //whether we're fully up to date for each system
+    //private String lastDataDesc; //free-text saying when the last data received was
 
     public JsonService() {
     }
 
     public JsonService(Service service) throws IOException {
-        this(service, null, false, null);
+        this(service, null, false);
     }
 
-    public JsonService(Service service, String additionalInfo, boolean hasInboundError, String lastDataDesc) throws IOException {
+    public JsonService(Service service, String additionalInfo, boolean hasInboundError) throws IOException {
         this.uuid = service.getId();
         this.localIdentifier = service.getLocalId();
         this.hasInboundError = hasInboundError;
@@ -59,8 +58,6 @@ public final class JsonService {
             this.organisationTypeDesc = service.getOrganisationType().getDescription();
             this.organisationTypeCode = service.getOrganisationType().getCode();
         }
-
-        this.lastDataDesc = lastDataDesc;
     }
 
     /**
@@ -170,11 +167,19 @@ public final class JsonService {
         this.organisationTypeCode = organisationTypeCode;
     }
 
-    public String getLastDataDesc() {
-        return lastDataDesc;
+    public Map<String, Date> getLastDataReceived() {
+        return lastDataReceived;
     }
 
-    public void setLastDataDesc(String lastDataDesc) {
-        this.lastDataDesc = lastDataDesc;
+    public void setLastDataReceived(Map<String, Date> lastDataReceived) {
+        this.lastDataReceived = lastDataReceived;
+    }
+
+    public Map<String, Boolean> getLastDataProcessed() {
+        return lastDataProcessed;
+    }
+
+    public void setLastDataProcessed(Map<String, Boolean> lastDataProcessed) {
+        this.lastDataProcessed = lastDataProcessed;
     }
 }
