@@ -11154,6 +11154,13 @@ class PopulateDataDateCallable implements Callable {
 		}
 
 		String body = exchange.getBody();
+
+		if (body.equals("[]")) {
+			LOG.error("Empty body found in exchange " + exchange.getId() + " software " + software + " version " + version);
+			markAsDone();
+			return;
+		}
+
 		Date lastDataDate = OpenEnvelope.calculateLastDataDate(software, version, body);
 		if (lastDataDate == null) {
 			LOG.error("Failed to calculate data for exchange " + exchange.getId() + " software " + software + " version " + version);
