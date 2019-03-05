@@ -14,6 +14,7 @@ import org.endeavourhealth.common.fhir.PeriodHelper;
 import org.endeavourhealth.common.utility.FileHelper;
 import org.endeavourhealth.common.utility.SlackHelper;
 import org.endeavourhealth.common.utility.ThreadPool;
+import org.endeavourhealth.common.utility.ThreadPoolError;
 import org.endeavourhealth.core.configuration.ConfigDeserialiser;
 import org.endeavourhealth.core.configuration.PostMessageToExchangeConfig;
 import org.endeavourhealth.core.configuration.QueueReaderConfiguration;
@@ -409,7 +410,8 @@ public class Main {
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("PopulateLastDataDate")) {
 			int threads = Integer.parseInt(args[1]);
-			populateLastDataDate(threads);
+			int batchSize = Integer.parseInt(args[2]);
+			populateLastDataDate(threads, batchSize);
 			System.exit(0);
 		}
 
@@ -609,7 +611,7 @@ public class Main {
 		LOG.info("EDS Queue reader running (kill file location " + TransformConfig.instance().getKillFileLocation() + ")");
 	}
 
-	private static void populateLastDataDate(int threads) {
+	private static void populateLastDataDate(int threads, int batchSize) {
 		LOG.debug("Populating last data date");
 		try {
 
@@ -617,9 +619,8 @@ public class Main {
 			SessionImpl auditSession = (SessionImpl)auditEntityManager.getDelegate();
 			Connection auditConnection = auditSession.connection();
 
-			int batchSize = 1000;
-			int done = 0;
-			AtomicInteger doneSecondary = new AtomicInteger();
+			int processed = 0;
+			AtomicInteger fixed = new AtomicInteger();
 
 			ThreadPool threadPool = new ThreadPool(threads, batchSize);
 
@@ -639,13 +640,20 @@ public class Main {
 				statement.close();
 
 				for (UUID exchangeId: exchangeIds) {
-					threadPool.submit(new PopulateDataDateCallable(exchangeId, doneSecondary));
+					threadPool.submit(new PopulateDataDateCallable(exchangeId, fixed));
 				}
 
-				threadPool.waitUntilEmpty();
+				List<ThreadPoolError> errs = threadPool.waitUntilEmpty();
+				if (!errs.isEmpty()) {
+					LOG.debug("Got " + errs.size() + " errors");
+					for (ThreadPoolError err: errs) {
+						LOG.error("", err.getException());
+					}
+					break;
+				}
 
-				done += exchangeIds.size();
-				LOG.debug("Done " + done + " done secondary " + doneSecondary.get());
+				processed += exchangeIds.size();
+				LOG.debug("processed " + processed + " fixed " + fixed.get());
 
 				//if finished
 				if (exchangeIds.size() < batchSize) {
@@ -11118,11 +11126,11 @@ class PopulateDataDateCallable implements Callable {
 	private static ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
 
 	private UUID exchangeId = null;
-	private AtomicInteger done = null;
+	private AtomicInteger fixed = null;
 
-	public PopulateDataDateCallable(UUID exchangeId, AtomicInteger done) {
+	public PopulateDataDateCallable(UUID exchangeId, AtomicInteger fixed) {
 		this.exchangeId = exchangeId;
-		this.done = done;
+		this.fixed = fixed;
 	}
 
 
@@ -11156,6 +11164,8 @@ class PopulateDataDateCallable implements Callable {
 
 		//mark as done
 		markAsDone();
+
+		fixed.incrementAndGet();
 	}
 
 	private void markAsDone() throws Exception {
@@ -11170,8 +11180,6 @@ class PopulateDataDateCallable implements Callable {
 		auditEntityManager.getTransaction().commit();
 		statement.close();
 		auditEntityManager.close();
-
-		done.incrementAndGet();
 	}
 
 
@@ -11180,7 +11188,7 @@ class PopulateDataDateCallable implements Callable {
 		try {
 			doWork();
 		} catch (Throwable ex) {
-			LOG.error("", ex);
+			LOG.error("Error with " + exchangeId, ex);
 		}
 		return null;
 	}
