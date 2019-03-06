@@ -256,9 +256,12 @@ export class ServiceListComponent implements OnInit, OnDestroy{
 	formatLastDataTooltip(service: Service, status: SystemStatus) : string {
 
 		var lastDate = new Date();
-		lastDate.setTime(status.lastDataReceived);
+		lastDate.setTime(status.lastDataDate);
 
-		return 'Last data received from ' + lastDate.toISOString();
+		var lastDataReceived = new Date();
+		lastDataReceived.setTime(status.lastDataReceived);
+
+		return 'Last data from ' + this.formatDate(lastDate) + ', ' + 'received on ' + this.formatDate(lastDataReceived);
 	}
 
 	formatLastData(service: Service, status: SystemStatus) : string {
@@ -272,7 +275,7 @@ export class ServiceListComponent implements OnInit, OnDestroy{
 		}
 
 		var lastDate = new Date();
-		lastDate.setTime(status.lastDataReceived);
+		lastDate.setTime(status.lastDataDate);
 
 		var today = new Date();
 
@@ -332,21 +335,14 @@ export class ServiceListComponent implements OnInit, OnDestroy{
 	}
 
 	formatProcessingStatusTooltip(service: Service, status: SystemStatus) : string {
-		if (status.processingInError
-			|| !status.processingUpToDate) {
+		if (status.lastDateSuccessfullyProcessed) {
 
-			if (status.lastDataProcessedDate) {
-
-				var lastDateProcessed = new Date();
-				lastDateProcessed.setTime(status.lastDataProcessedDate);
-				return 'Processed up to ' + lastDateProcessed.toISOString();
-
-			} else {
-				return 'Not successfully processed any data yet';
-			}
+			var d = new Date();
+			d.setTime(status.lastDateSuccessfullyProcessed);
+			return 'Last successfully processed on ' + this.formatDate(d);
 
 		} else {
-			return null;
+			return 'Not successfully processed any data yet';
 		}
 	}
 
@@ -372,6 +368,26 @@ export class ServiceListComponent implements OnInit, OnDestroy{
 		}
 
 		return ret;
+	}
+
+	formatDate(d: Date) : string {
+
+		var year = '' + d.getFullYear();
+		var month = '' + (d.getMonth() + 1);
+		var day = '' + d.getDate();
+
+		var hour = '' + d.getHours();
+		var minute = '' + d.getMinutes();
+		var seconds = '' + d.getSeconds();
+
+		if (month.length < 2) {
+			month = '0' + month;
+		}
+		if (day.length < 2) {
+			day = '0' + day;
+		}
+
+		return day + '/' + month + '/' + year + ' ' + hour + ':' + minute + ':' + seconds;
 	}
 
 }

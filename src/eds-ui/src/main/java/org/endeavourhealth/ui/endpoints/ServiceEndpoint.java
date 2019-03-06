@@ -380,16 +380,19 @@ public final class ServiceEndpoint extends AbstractEndpoint {
                 LastDataReceived lastReceived = hmReceived.get(systemId);
 
                 if (lastReceived != null) {
-                    Date dtLastReceived = lastReceived.getDataDate();
+                    Date dtLastData = lastReceived.getDataDate();
                     UUID exchangeIdLastReceived = lastReceived.getExchangeId();
-                    status.setLastDataReceived(dtLastReceived);
+                    Date dtLastDataReceived = lastReceived.getReceivedDate();
+
+                    status.setLastDataDate(dtLastData);
+                    status.setLastDataReceived(dtLastDataReceived);
 
                     if (hmProcessed != null) {
                         LastDataProcessed processedObj = hmProcessed.get(systemId);
                         if (processedObj != null) {
 
-                            Date lastDataProcessedDate = processedObj.getDataDate();
-                            status.setLastDataProcessedDate(lastDataProcessedDate);
+                            Date lastDataProcessedDate = processedObj.getProcessedDate();
+                            status.setLastDateSuccessfullyProcessed(lastDataProcessedDate);
 
                             UUID lastExchangeProcessed = processedObj.getExchangeId();
                             if (lastExchangeProcessed.equals(exchangeIdLastReceived)) {

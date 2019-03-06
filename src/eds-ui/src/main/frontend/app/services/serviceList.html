@@ -57,10 +57,10 @@
 										<th class="col-md-1">Local ID</th>
 										<th class="col-md-1">Parent</th>
 										<th class="col-md-2">Publisher Config</th>
-										<th class="col-md-1">Last Data</th>
+										<th class="col-md-2">Last Data</th>
 										<th class="col-md-1">Status</th>
 										<th class="col-md-1">Notes</th>
-										<th class="col-md-2"></th>
+										<th class="col-md-1">Actions</th>
 									</tr>
 								</thead>
 								<tbody>
@@ -94,6 +94,8 @@
 											<div *ngIf="service.systemStatuses">
 												<div *ngFor="let status of service.systemStatuses">
 													<span ngbTooltip="{{formatProcessingStatusTooltip(service, status)}}">{{formatProcessingStatus(service, status)}}</span>
+
+													<span *ngIf="status.processingInError" class="fa fa-exclamation-triangle"></span>
 												</div>
 											</div>
 										</td>
