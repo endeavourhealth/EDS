@@ -281,7 +281,8 @@ export class ServiceListComponent implements OnInit, OnDestroy{
 
 		var diffMs = today.getTime() - lastDate.getTime();
 
-		var durMin = 1000 * 60;
+		var durSec = 1000;
+		var durMin = durSec * 60;
 		var durHour = durMin * 60;
 		var durDay = durHour * 25;
 		var durWeek = durDay * 7;
@@ -326,6 +327,20 @@ export class ServiceListComponent implements OnInit, OnDestroy{
 			if (mins > 0 ) {
 				toks.push('' + mins + 'm');
 				diffMs -= mins * durMin;
+			}
+		}
+
+		if (toks.length < 2) {
+			var secs = Math.floor(diffMs / durSec);
+			if (secs > 0 ) {
+				toks.push('' + secs + 'm');
+				diffMs -= secs * durSec;
+			}
+		}
+
+		if (toks.length < 2) {
+			if (diffMs) {
+				toks.push('' + diffMs + 'ms');
 			}
 		}
 
@@ -385,6 +400,12 @@ export class ServiceListComponent implements OnInit, OnDestroy{
 		}
 		if (day.length < 2) {
 			day = '0' + day;
+		}
+		if (hour.length < 2) {
+			hour = '0' + hour;
+		}
+		if (minute.length < 2) {
+			minute = '0' + minute;
 		}
 
 		return day + '/' + month + '/' + year + ' ' + hour + ':' + minute + ':' + seconds;
