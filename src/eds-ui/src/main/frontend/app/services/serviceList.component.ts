@@ -338,11 +338,11 @@ export class ServiceListComponent implements OnInit, OnDestroy{
 			}
 		}
 
-		if (toks.length < 2) {
+		/*if (toks.length < 2) {
 			if (diffMs > 0) {
 				toks.push('' + diffMs + 'ms');
 			}
-		}
+		}*/
 
 		ret += toks.join(' ');
 
