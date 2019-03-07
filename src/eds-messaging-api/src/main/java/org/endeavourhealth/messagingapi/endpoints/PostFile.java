@@ -161,6 +161,11 @@ public class PostFile extends AbstractEndpoint {
 
 	private static boolean publisherHasDPA(String organisationId)  {
 		// check DPA in place for data publishing org
+		// may be a parent_child orgId, so check parent only, i.e. YDDH3_09A
+		String [] parts = organisationId.split("_");
+		if (parts.length > 1) {
+			organisationId = parts [0];
+		}
 		try {
 			List<DataProcessingAgreementEntity> matchingDpa = DataProcessingAgreementEntity.getDataProcessingAgreementsForOrganisation(organisationId);
 
