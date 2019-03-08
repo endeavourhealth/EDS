@@ -13,17 +13,17 @@
 
     <properties>
 
-        <eds-core.version>1.0-SNAPSHOT</eds-core.version>
-        <eds-security.version>1.0-SNAPSHOT</eds-security.version>
+        <eds-core.version>1.339-SNAPSHOT</eds-core.version>
+        <eds-security.version>1.12-SNAPSHOT</eds-security.version>
 
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <shrinkwrap-resolver.version>2.2.2</shrinkwrap-resolver.version>
-        <version.org.apache.tomcat>8.0.1</version.org.apache.tomcat>
+        <version.org.apache.tomcat>8.0.53</version.org.apache.tomcat>
         <version.org.eclipse.jdt.core.compiler>3.7</version.org.eclipse.jdt.core.compiler>
         <arquillian.version>1.1.11.Final</arquillian.version>
         <version.org.jboss.arquillian.drone>2.0.1.Final</version.org.jboss.arquillian.drone>
         <version.org.jboss.arquillian.graphene>2.1.0.Final</version.org.jboss.arquillian.graphene>
-        <keycloak.version>2.0.0.Final</keycloak.version>
+        <keycloak.version>3.0.0.Final</keycloak.version>
     </properties>
 
     <repositories>
