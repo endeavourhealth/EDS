@@ -6,6 +6,7 @@ export class SystemStatus {
     processingUpToDate: boolean;
     processingInError: boolean;
     lastDateSuccessfullyProcessed: number;
+    cachedLastDataDateDesc: string;
 
     constructor() {}
 }
