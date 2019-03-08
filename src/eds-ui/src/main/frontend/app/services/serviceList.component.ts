@@ -269,9 +269,12 @@ export class ServiceListComponent implements OnInit, OnDestroy{
 		var ret = '';
 
 		//only show system name if more than one status
+		var isCerner = false;
 		if (service.systemStatuses.length > 1) {
 			ret += status.systemName;
 			ret += ': '
+
+			isCerner = true;
 		}
 
 		var lastDate = new Date();
@@ -280,6 +283,10 @@ export class ServiceListComponent implements OnInit, OnDestroy{
 		var today = new Date();
 
 		var diffMs = today.getTime() - lastDate.getTime();
+
+		if (isCerner) {
+			console.log('last date = ' + lastDate + ' today = ' + today + ' diffMs = ' + diffMs);
+		}
 
 		var durSec = 1000;
 		var durMin = durSec * 60;
@@ -324,25 +331,48 @@ export class ServiceListComponent implements OnInit, OnDestroy{
 
 		if (toks.length < 2) {
 			var mins = Math.floor(diffMs / durMin);
+
+			if (isCerner) {
+				console.log('mins = ' + mins);
+			}
+
 			if (mins > 0 ) {
 				toks.push('' + mins + 'm');
 				diffMs -= mins * durMin;
+			}
+
+			if (isCerner) {
+				console.log('diffMs now = ' + mins);
 			}
 		}
 
 		if (toks.length < 2) {
 			var secs = Math.floor(diffMs / durSec);
+
+			if (isCerner) {
+				console.log('secs = ' + secs);
+			}
+
 			if (secs > 0 ) {
-				toks.push('' + secs + 'm');
+				toks.push('' + secs + 's');
 				diffMs -= secs * durSec;
+			}
+
+			if (isCerner) {
+				console.log('diffMs now = ' + mins);
 			}
 		}
 
-		/*if (toks.length < 2) {
+		if (toks.length < 2) {
+
+			if (isCerner) {
+				console.log('remaning diffMs = ' + secs);
+			}
+
 			if (diffMs > 0) {
 				toks.push('' + diffMs + 'ms');
 			}
-		}*/
+		}
 
 		ret += toks.join(' ');
 

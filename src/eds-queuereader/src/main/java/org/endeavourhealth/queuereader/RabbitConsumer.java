@@ -242,7 +242,7 @@ public class RabbitConsumer extends DefaultConsumer {
 
 		//if we've failed on the same exchange X times, then halt the queue reader
 		if (lastExchangeAttempts >= TransformConfig.instance().getAttemptsPermmitedPerExchange()) {
-			String reason = "Failed " + lastExchangeAttempts + " times on exchange " + lastExchangeAttempted + " so halting queue reader";
+			String reason = "Failed " + lastExchangeAttempts + " times on exchange " + lastExchangeAttempted.getExchangeId() + " so halting queue reader";
 			stop(reason);
 		}
 	}
