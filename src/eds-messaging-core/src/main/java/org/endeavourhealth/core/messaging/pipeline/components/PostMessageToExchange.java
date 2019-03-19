@@ -147,8 +147,9 @@ public class PostMessageToExchange extends PipelineComponent {
 			String nodes = RabbitConfig.getInstance().getNodes();
 			String username = RabbitConfig.getInstance().getUsername();
 			String password = RabbitConfig.getInstance().getPassword();
+			String sslProtocol = RabbitConfig.getInstance().getSslProtocol();
 
-			return ConnectionManager.getConnection(username, password, nodes);
+			return ConnectionManager.getConnection(username, password, nodes, sslProtocol);
 
 		} catch (IOException e) {
 			LOG.error("Unable to connect to rabbit", e);

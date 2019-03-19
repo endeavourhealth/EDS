@@ -5,6 +5,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
+import com.rabbitmq.client.*;
 import org.apache.commons.csv.*;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
@@ -68,6 +69,7 @@ import java.lang.reflect.Constructor;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
+import java.sql.Connection;
 import java.sql.*;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -91,6 +93,22 @@ public class Main {
 			fixEncounters(table);
 			System.exit(0);
 		}*/
+
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("TestRabbit")) {
+			String nodes = args[1];
+			String username = args[2];
+			String password = args[3];
+			String exchangeName = args[4];
+			String queueName = args[5];
+
+			String sslProtocol = null;
+			if (args.length > 6) {
+				sslProtocol = args[6];
+			}
+			testRabbit(nodes, username, password, sslProtocol, exchangeName, queueName);
+			System.exit(0);
+		}
 
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("CreateHomertonSubset")) {
@@ -610,6 +628,65 @@ public class Main {
 		rabbitHandler.start();
 		LOG.info("EDS Queue reader running (kill file location " + TransformConfig.instance().getKillFileLocation() + ")");
 	}
+
+	private static void testRabbit(String nodes, String username, String password, String sslProtocol, String exchangeName, String queueName) {
+		LOG.info("Testing RabbitMQ Connectivity on " + nodes);
+		LOG.info("SSL Protocol = " + sslProtocol);
+		LOG.info("Exchange = " + exchangeName);
+		LOG.info("Queue = " + queueName);
+
+		try {
+
+			//test publishing
+			LOG.info("Testing publishing...");
+			com.rabbitmq.client.Connection publishConnection = org.endeavourhealth.core.queueing.ConnectionManager.getConnection(username, password, nodes, sslProtocol);
+			Channel publishChannel = org.endeavourhealth.core.queueing.ConnectionManager.getPublishChannel(publishConnection, exchangeName);
+			publishChannel.confirmSelect();
+
+			for (int i=0; i<5; i++) {
+
+				Map<String, Object> headers = new HashMap<>();
+				headers.put("HeaderIndex", "" + i);
+
+				AMQP.BasicProperties properties = new AMQP.BasicProperties()
+						.builder()
+						.deliveryMode(2)    // Persistent message
+						.headers(headers)
+						.build();
+
+				String body = "MessageIndex = " + i;
+				byte[] bytes = body.getBytes();
+
+				publishChannel.basicPublish(
+						exchangeName,
+						"All", //routing key
+						properties,
+						bytes);
+			}
+			publishChannel.close();
+			publishConnection.close();
+			LOG.info("...Finished testing publishing");
+
+			//test consuming
+			LOG.info("Testing reading...");
+
+			com.rabbitmq.client.Connection readConnection = org.endeavourhealth.core.queueing.ConnectionManager.getConnection(username, password, nodes, sslProtocol);
+			Channel readChannel = readConnection.createChannel();
+			readChannel.basicQos(1);
+
+			Consumer consumer = new TestRabbitConsumer(readChannel);
+			readChannel.basicConsume(queueName, false, "TestRabbitConsumer", false, true, null, consumer);
+
+			LOG.info("Reader Connected (ctrl+c to close) will quit in 30s");
+			Thread.sleep(30 * 1000);
+
+			LOG.info("Finished Testing RabbitMQ Connectivity");
+		} catch (Throwable t) {
+			LOG.error("", t);
+		}
+	}
+
+
 
 	private static void populateLastDataDate(int threads, int batchSize) {
 		LOG.debug("Populating last data date");
@@ -11209,5 +11286,32 @@ class PopulateDataDateCallable implements Callable {
 			LOG.error("Error with " + exchangeId, ex);
 		}
 		return null;
+	}
+}
+
+
+class TestRabbitConsumer extends DefaultConsumer {
+	private static final Logger LOG = LoggerFactory.getLogger(TestRabbitConsumer.class);
+
+	public TestRabbitConsumer(Channel channel) {
+		super(channel);
+	}
+
+
+	@Override
+	public void handleDelivery(String consumerTag, Envelope envelope, AMQP.BasicProperties properties, byte[] bytes) throws IOException {
+
+		long deliveryTag = envelope.getDeliveryTag();
+
+		String bodyStr = new String(bytes, "UTF-8");
+		LOG.info("Received exchange body: " + bodyStr);
+		try {
+			Thread.sleep(1000);
+		} catch (Throwable t) {
+			LOG.error("", t);
+		}
+
+		this.getChannel().basicAck(deliveryTag, false);
+
 	}
 }

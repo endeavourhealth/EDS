@@ -1,10 +1,9 @@
 package org.endeavourhealth.queuereader;
 
-import com.rabbitmq.client.Address;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.ConnectionFactory;
 import org.endeavourhealth.core.configuration.QueueReaderConfiguration;
+import org.endeavourhealth.core.queueing.ConnectionManager;
 import org.endeavourhealth.core.queueing.RabbitConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,7 +27,7 @@ public class RabbitHandler {
 		this.configuration = configuration;
 
 		// Connect to rabbit cluster
-		connection = createRabbitConnection(configuration);
+		connection = createRabbitConnection();
 
 		// Create a channel
 		channel = connection.createChannel();
@@ -38,22 +37,33 @@ public class RabbitHandler {
 		consumer = new RabbitConsumer(channel, configuration, configId, this);
 	}
 
-	private Connection createRabbitConnection(QueueReaderConfiguration configuration) throws IOException, TimeoutException {
-		ConnectionFactory connectionFactory = new ConnectionFactory();
+	private Connection createRabbitConnection() throws IOException, TimeoutException {
+
+		//use same connection code as for publishing, to save on duplicating the code
+		return ConnectionManager.getConnection(
+				RabbitConfig.getInstance().getUsername(),
+				RabbitConfig.getInstance().getPassword(),
+				RabbitConfig.getInstance().getNodes(),
+				RabbitConfig.getInstance().getSslProtocol(),
+				false);
+
+		/*ConnectionFactory connectionFactory = new ConnectionFactory();
 		connectionFactory.setAutomaticRecoveryEnabled(true);
 		connectionFactory.setTopologyRecoveryEnabled(true);
 		connectionFactory.setUsername(RabbitConfig.getInstance().getUsername());
 		connectionFactory.setPassword(RabbitConfig.getInstance().getPassword());
 
+		String sslProtocol = RabbitConfig.getInstance().getSslProtocol();
+		if (!Strings.isNullOrEmpty(sslProtocol)) {
+			try {
+				connectionFactory.useSslProtocol(sslProtocol);
+			} catch (Exception ex) {
+				throw new IOException("Failed to initialise SSL protocol [" + sslProtocol + "]", ex);
+			}
+		}
+
 		Address[] addresses = Address.parseAddresses(RabbitConfig.getInstance().getNodes());
-
-		/*LOG.trace("User: " + RabbitConfig.getInstance().getUsername());
-		LOG.trace("Password: " + RabbitConfig.getInstance().getPassword());
-		for (Address address: addresses) {
-			LOG.trace("Node: " + address);
-		}*/
-
-		return connectionFactory.newConnection(addresses);
+		return connectionFactory.newConnection(addresses);*/
 	}
 
 	public void start() throws IOException {

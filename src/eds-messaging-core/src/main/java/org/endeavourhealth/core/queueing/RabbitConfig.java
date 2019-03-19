@@ -12,6 +12,7 @@ public class RabbitConfig {
 	private String username = null;
 	private String nodes = null;
 	private String managementNodes = null;
+	private String sslProtocol = null;
 
 	private static RabbitConfig instance;
 
@@ -46,6 +47,11 @@ public class RabbitConfig {
 			}
 			this.managementNodes = String.join(",", nodeArray);
 
+			JsonNode sslNode = rabbitConfig.get("ssl");
+			if (sslNode != null) {
+				this.sslProtocol = sslNode.asText();
+			}
+
 		} catch (Exception e) {
 			LOG.error("Failed to load rabbit config", e);
 		}
@@ -67,44 +73,8 @@ public class RabbitConfig {
 		return managementNodes;
 	}
 
-	/*private static final Logger LOG = LoggerFactory.getLogger(RabbitConfig.class);
-	private static final String CONFIG_XSD = "RabbitConfig.xsd";
-	private static final String CONFIG_RESOURCE = "RabbitConfig.xml";
-
-	private static RabbitConfig instance;
-
-	public static RabbitConfig getInstance()  {
-		if (instance == null)
-			instance = new RabbitConfig("RabbitConfig.xml");
-
-		return instance;
+	public String getSslProtocol() {
+		return sslProtocol;
 	}
 
-	private RMQConfig rmqConfig;
-
-	public RabbitConfig(String configFile) {
-		try {
-			File f = new File(configFile);
-			if (f.exists() && !f.isDirectory()) {
-				LOG.info("Loading configuration file (" + configFile + ")");
-				rmqConfig = XmlSerializer.deserializeFromFile(RMQConfig.class, configFile, CONFIG_XSD);
-			} else {
-				LOG.info("Loading configuration file from resource " + CONFIG_RESOURCE);
-				rmqConfig = XmlSerializer.deserializeFromResource(RMQConfig.class, CONFIG_RESOURCE, CONFIG_XSD);
-			}
-		} catch (Exception e) {
-			LOG.error("Unable to load rabbit configuration ", e);
-		}
-	}
-
-	public RMQExchange getExchange(String exchangeName) {
-		if (rmqConfig != null) {
-			for (RMQExchange rmqExchange : rmqConfig.getExchange()) {
-				if (rmqExchange.getName().equals(exchangeName))
-					return rmqExchange;
-			}
-		}
-
-		return null;
-	}*/
 }

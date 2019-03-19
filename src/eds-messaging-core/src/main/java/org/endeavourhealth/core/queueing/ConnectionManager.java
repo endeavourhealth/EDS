@@ -1,5 +1,6 @@
 package org.endeavourhealth.core.queueing;
 
+import com.google.common.base.Strings;
 import com.rabbitmq.client.Address;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
@@ -19,7 +20,11 @@ public class ConnectionManager {
 	private static final Logger LOG = LoggerFactory.getLogger(ConnectionManager.class);
 	private static final Map<Integer, Connection> connectionPool = new HashMap<>();
 
-	public static Connection getConnection(String username, String password, String nodes) throws IOException, TimeoutException {
+	public static Connection getConnection(String username, String password, String nodes, String sslProtocol) throws IOException, TimeoutException {
+		return getConnection(username, password, nodes, sslProtocol, true);
+	}
+
+	public static Connection getConnection(String username, String password, String nodes, String sslProtocol, boolean useCache) throws IOException, TimeoutException {
 		// Override with env vars if present
 		Map<String, String> envVars = System.getenv();
 		if (envVars.containsKey(AMQP_USERNAME)) username = envVars.get(AMQP_USERNAME);
@@ -28,7 +33,11 @@ public class ConnectionManager {
 
 		Integer hash = (username + password + nodes).hashCode();
 
-		Connection connection = connectionPool.get(hash);
+		Connection connection = null;
+
+		if (useCache) {
+			connection = connectionPool.get(hash);
+		}
 
 		if (connection == null || !connection.isOpen()) {
 			// Connection pooling
@@ -38,10 +47,21 @@ public class ConnectionManager {
 			connectionFactory.setUsername(username);
 			connectionFactory.setPassword(password);
 
+			if (!Strings.isNullOrEmpty(sslProtocol)) {
+				try {
+					connectionFactory.useSslProtocol(sslProtocol);
+				} catch (Exception ex) {
+					throw new IOException("Failed to initialise SSL protocol [" + sslProtocol + "]", ex);
+				}
+			}
+
 			Address[] addresses = Address.parseAddresses(nodes);
 
 			connection = connectionFactory.newConnection(addresses);
-			connectionPool.put(hash, connection);
+
+			if (useCache) {
+				connectionPool.put(hash, connection);
+			}
 		}
 
 		return connection;

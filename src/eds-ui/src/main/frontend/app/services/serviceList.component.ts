@@ -423,6 +423,9 @@ export class ServiceListComponent implements OnInit, OnDestroy{
 		if (minute.length < 2) {
 			minute = '0' + minute;
 		}
+		if (seconds.length < 2) {
+			seconds = '0' + minute;
+		}
 
 		return day + '/' + month + '/' + year + ' ' + hour + ':' + minute + ':' + seconds;
 	}
