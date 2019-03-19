@@ -63,7 +63,7 @@ public class PostFile extends AbstractEndpoint {
 
 				// Check the publisher has a DPA with Discovery before moving the data onto AWS
 				if (publisherHasDPA(organisationId)) {
-					MoveDataFilesToAWS(organisationId, items);
+					moveDataFilesToAWS(organisationId, items);
 				}
 				else {
 					return Response.serverError().status(Response.Status.METHOD_NOT_ALLOWED).entity(String.format("No DPA for publishing organisation: %s",organisationId)).build();
@@ -76,7 +76,7 @@ public class PostFile extends AbstractEndpoint {
 		return Response.serverError().status(Response.Status.METHOD_NOT_ALLOWED).entity("Unexpected content. Multi-part expected").build();
 	}
 
-	private static void MoveDataFilesToAWS(String organisationId, List<FileItem> fileItems) throws Exception {
+	private static void moveDataFilesToAWS(String organisationId, List<FileItem> fileItems) throws Exception {
 		{
 			JsonNode apiAWSConfig;
 			try {
@@ -173,7 +173,7 @@ public class PostFile extends AbstractEndpoint {
 		}
 		catch (Exception Ex) {
 			System.out.println("Exception in publisherHasDPA for organisationId ("+organisationId+") : " + Ex.getMessage());
-            Ex.printStackTrace();
+			Ex.printStackTrace();
 			return false;
 		}
 	}
