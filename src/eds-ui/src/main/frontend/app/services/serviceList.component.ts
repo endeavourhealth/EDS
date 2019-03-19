@@ -357,6 +357,10 @@ export class ServiceListComponent implements OnInit, OnDestroy{
 			}
 		}
 
+		if (toks.length == 0) {
+			toks.push('0s');
+		}
+
 		ret += toks.join(' ');
 
 		//cache it in the status so we don't need to work it out again
