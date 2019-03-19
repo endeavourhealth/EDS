@@ -48,7 +48,7 @@ public class PostFile extends AbstractEndpoint {
 			// Create a factory for temp disk file items
 			DiskFileItemFactory factory = new DiskFileItemFactory();
 			// Configure a repository (to ensure a secure temp location is used)
-			ServletContext servletContext = request.getServletContext();
+			ServletContext servletContext = request.getSession().getServletContext();
 			File repository = (File) servletContext.getAttribute("javax.servlet.context.tempdir");
 			factory.setRepository(repository);
 			// Setup temp disk clearing tracker
