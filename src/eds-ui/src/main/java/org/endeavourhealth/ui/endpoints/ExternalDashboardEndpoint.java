@@ -16,7 +16,6 @@ import org.endeavourhealth.dashboardinformation.enums.HealthStatus;
 import org.endeavourhealth.dashboardinformation.json.JsonApplicationInformation;
 import org.endeavourhealth.dashboardinformation.json.JsonDashboardInformation;
 import org.endeavourhealth.dashboardinformation.json.JsonGraphOptions;
-import org.endeavourhealth.dashboardinformation.json.JsonGraphResults;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -87,14 +86,16 @@ public class ExternalDashboardEndpoint extends AbstractEndpoint {
          JsonDashboardInformation dashboardInformation = new JsonDashboardInformation();
          dashboardInformation.setAppHealth(HealthStatus.INFO.getHealthStatus());
 
-         List<JsonGraphResults> results = generalRepository.getGraphData(options);
+         //this was removed from the repository a few days ago. Need to just remove this so I can get a build working
+         throw new Exception("getGraphData(..) was removed from ExchangeGeneralErrorDalI");
+         /*List<JsonGraphResults> results = generalRepository.getGraphData(options);
 
          dashboardInformation.setGraphResults(results);
 
          return Response
                  .ok()
                  .entity(dashboardInformation)
-                 .build();
+                 .build();*/
      }
 
     private Response getProtocolErrorDetails() throws Exception {
