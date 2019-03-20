@@ -122,7 +122,7 @@ public class QueueHelper {
             if (fileTypesToFilterOn != null) {
                 List<ExchangePayloadFile> filteredFiles = new ArrayList<>();
 
-                List<ExchangePayloadFile> files = ExchangeHelper.parseExchangeBody(exchange.getBody());
+                List<ExchangePayloadFile> files = ExchangeHelper.parseExchangeBody(exchange.getBody(), false);
                 for (ExchangePayloadFile file: files) {
                     String fileType = file.getType();
                     if (fileTypesToFilterOn.contains(fileType)) {
