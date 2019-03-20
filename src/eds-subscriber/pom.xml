@@ -18,41 +18,34 @@
         <dependency>
             <groupId>org.endeavourhealth.common</groupId>
             <artifactId>core</artifactId>
-            <version>${eds-core.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.endeavourhealth.configmanager</groupId>
             <artifactId>configmanager</artifactId>
-            <version>${eds-config.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.endeavourhealth.common</groupId>
             <artifactId>cache</artifactId>
-            <version>${eds-cache.version}</version>
         </dependency>
 
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
-            <version>${jackson.version}</version>
         </dependency>
 
         <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
-            <version>${commons-io.version}</version>
         </dependency>
         <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
-            <version>${logback-classic.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-csv</artifactId>
-            <version>${commons-csv.version}</version>
         </dependency>
 
     </dependencies>

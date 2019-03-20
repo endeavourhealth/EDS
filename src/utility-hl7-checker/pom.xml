@@ -21,69 +21,57 @@
         <dependency>
             <groupId>org.endeavourhealth.common</groupId>
             <artifactId>core</artifactId>
-            <version>${eds-core.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.endeavourhealth.common</groupId>
             <artifactId>utility</artifactId>
-            <version>${eds-utility.version}</version>
         </dependency>
 
         <!--mySQL-->
         <dependency>
             <groupId>mysql</groupId>
             <artifactId>mysql-connector-java</artifactId>
-            <version>${mysql.version}</version>
         </dependency>
 
         <!--postgreSQL-->
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
-            <version>${postgresql.version}</version>
         </dependency>
 
         <!-- hapi -->
         <dependency>
             <groupId>ca.uhn.hapi</groupId>
             <artifactId>hapi-base</artifactId>
-            <version>${hapi.version}</version>
         </dependency>
         <dependency>
             <groupId>ca.uhn.hapi</groupId>
             <artifactId>hapi-structures-v22</artifactId>
-            <version>${hapi.version}</version>
         </dependency>
         <dependency>
             <groupId>ca.uhn.hapi</groupId>
             <artifactId>hapi-structures-v23</artifactId>
-            <version>${hapi.version}</version>
         </dependency>
         <dependency>
             <groupId>ca.uhn.hapi</groupId>
             <artifactId>hapi-structures-v231</artifactId>
-            <version>${hapi.version}</version>
         </dependency>
         <dependency>
             <groupId>ca.uhn.hapi</groupId>
             <artifactId>hapi-structures-v24</artifactId>
-            <version>${hapi.version}</version>
         </dependency>
         <dependency>
             <groupId>ca.uhn.hapi</groupId>
             <artifactId>hapi-structures-v25</artifactId>
-            <version>${hapi.version}</version>
         </dependency>
         <dependency>
             <groupId>ca.uhn.hapi</groupId>
             <artifactId>hapi-structures-v251</artifactId>
-            <version>${hapi.version}</version>
         </dependency>
         <dependency>
             <groupId>ca.uhn.hapi</groupId>
             <artifactId>hapi-structures-v26</artifactId>
-            <version>${hapi.version}</version>
         </dependency>
 
     </dependencies>

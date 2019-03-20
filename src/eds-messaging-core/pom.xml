@@ -2,120 +2,107 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
+  <modelVersion>4.0.0</modelVersion>
 
-    <parent>
-        <groupId>org.endeavourhealth</groupId>
-        <artifactId>eds</artifactId>
-        <version>1.0-SNAPSHOT</version>
-        <relativePath>../../</relativePath>
-    </parent>
-
-    <artifactId>eds-messaging-core</artifactId>
+  <parent>
+    <groupId>org.endeavourhealth</groupId>
+    <artifactId>eds</artifactId>
     <version>1.0-SNAPSHOT</version>
+    <relativePath>../../</relativePath>
+  </parent>
 
-    <dependencies>
-        <dependency>
-            <groupId>org.openpseudonymiser</groupId>
-            <artifactId>cryptolib</artifactId>
-            <version>${crypto-lib.version}</version>
-        </dependency>
-        <!-- dependent on EDS-core -->
-        <dependency>
-            <groupId>org.endeavourhealth.common</groupId>
-            <artifactId>core</artifactId>
-            <version>${eds-core.version}</version>
-        </dependency>
+  <artifactId>eds-messaging-core</artifactId>
+  <version>1.0-SNAPSHOT</version>
 
-        <dependency>
-            <groupId>org.endeavourhealth.common</groupId>
-            <artifactId>cache</artifactId>
-            <version>${eds-cache.version}</version>
-        </dependency>
+  <dependencies>
+    <dependency>
+      <groupId>org.endeavourhealth</groupId>
+      <artifactId>eds-subscriber</artifactId>
+      <version>1.0-SNAPSHOT</version>
+    </dependency>
 
-        <dependency>
-            <groupId>org.endeavourhealth.configmanager</groupId>
-            <artifactId>configmanager</artifactId>
-            <version>${eds-config.version}</version>
-        </dependency>
+    <dependency>
+      <groupId>org.openpseudonymiser</groupId>
+      <artifactId>cryptolib</artifactId>
+    </dependency>
+    <!-- dependent on EDS-core -->
+    <dependency>
+      <groupId>org.endeavourhealth.common</groupId>
+      <artifactId>core</artifactId>
+    </dependency>
 
-        <dependency>
-            <groupId>org.endeavourhealth.common</groupId>
-            <artifactId>transforms</artifactId>
-            <version>${eds-transform.version}</version>
-        </dependency>
+    <dependency>
+      <groupId>org.endeavourhealth.common</groupId>
+      <artifactId>cache</artifactId>
+    </dependency>
 
-        <dependency>
-            <groupId>org.endeavourhealth.common</groupId>
-            <artifactId>utility</artifactId>
-            <version>${eds-utility.version}</version>
-        </dependency>
+    <dependency>
+      <groupId>org.endeavourhealth.configmanager</groupId>
+      <artifactId>configmanager</artifactId>
+    </dependency>
 
-        <dependency>
-            <groupId>com.google.guava</groupId>
-            <artifactId>guava</artifactId>
-            <version>${guava.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.rabbitmq</groupId>
-            <artifactId>amqp-client</artifactId>
-            <version>${amqp-client.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>commons-io</groupId>
-            <artifactId>commons-io</artifactId>
-            <version>${commons-io.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
-            <version>${jackson.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>javax.ws.rs</groupId>
-            <artifactId>javax.ws.rs-api</artifactId>
-            <version>${javax.ws.rs-api.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.glassfish.jersey.core</groupId>
-            <artifactId>jersey-client</artifactId>
-            <version>${jersey.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.httpcomponents</groupId>
-            <artifactId>httpclient</artifactId>
-            <version>${httpclient.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>me.fhir</groupId>
-            <artifactId>fhir-dstu2</artifactId>
-            <version>${fhir-dstu2.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.endeavourhealth</groupId>
-            <artifactId>eds-subscriber</artifactId>
-            <version>1.0-SNAPSHOT</version>
-        </dependency>
+    <dependency>
+      <groupId>org.endeavourhealth.common</groupId>
+      <artifactId>transforms</artifactId>
+    </dependency>
 
-        <!-- DropWizard -->
-        <dependency>
-            <groupId>io.dropwizard.metrics</groupId>
-            <artifactId>metrics-core</artifactId>
-            <version>${dropwizard-metrics.version}</version>
-        </dependency>
-    </dependencies>
+    <dependency>
+      <groupId>org.endeavourhealth.common</groupId>
+      <artifactId>utility</artifactId>
+    </dependency>
 
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.1</version>
-                <configuration>
-                    <source>${java.version}</source>
-                    <target>${java.version}</target>
-                </configuration>
-            </plugin>
-        </plugins>
-    </build>
+    <dependency>
+      <groupId>com.google.guava</groupId>
+      <artifactId>guava</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.rabbitmq</groupId>
+      <artifactId>amqp-client</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>commons-io</groupId>
+      <artifactId>commons-io</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>javax.ws.rs</groupId>
+      <artifactId>javax.ws.rs-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.glassfish.jersey.core</groupId>
+      <artifactId>jersey-client</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.httpcomponents</groupId>
+      <artifactId>httpclient</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>me.fhir</groupId>
+      <artifactId>fhir-dstu2</artifactId>
+    </dependency>
+
+
+    <!-- DropWizard -->
+    <dependency>
+      <groupId>io.dropwizard.metrics</groupId>
+      <artifactId>metrics-core</artifactId>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.1</version>
+        <configuration>
+          <source>${java.version}</source>
+          <target>${java.version}</target>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
 </project>

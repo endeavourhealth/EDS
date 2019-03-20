@@ -21,28 +21,24 @@
         <dependency>
             <groupId>org.endeavourhealth.common</groupId>
             <artifactId>core</artifactId>
-            <version>${eds-core.version}</version>
         </dependency>
 
         <!-- Apache CSV library -->
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-csv</artifactId>
-            <version>${commons-csv.version}</version>
         </dependency>
 
         <!--mySQL-->
         <dependency>
             <groupId>mysql</groupId>
             <artifactId>mysql-connector-java</artifactId>
-            <version>${mysql.version}</version>
         </dependency>
 
         <!--postgreSQL-->
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
-            <version>${postgresql.version}</version>
         </dependency>
 
     </dependencies>
