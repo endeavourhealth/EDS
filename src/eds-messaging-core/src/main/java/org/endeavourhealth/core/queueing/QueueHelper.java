@@ -33,14 +33,6 @@ import java.util.stream.Collectors;
 public class QueueHelper {
     private static final Logger LOG = LoggerFactory.getLogger(QueueHelper.class);
 
-    /*public static void postToExchange(UUID exchangeId, String exchangeName, UUID specificProtocolId, boolean recalculateProtocols) throws Exception {
-        List<UUID> exchangeIds = new ArrayList<>();
-        exchangeIds.add(exchangeId);
-
-        postToExchange(exchangeIds, exchangeName, specificProtocolId, recalculateProtocols);
-    }*/
-
-
 
     public static void postToExchange(List<UUID> exchangeIds, String exchangeName, UUID specificProtocolId, boolean recalculateProtocols) throws Exception {
         postToExchange(exchangeIds, exchangeName, specificProtocolId, recalculateProtocols, null);
