@@ -114,7 +114,8 @@ public class Main {
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("FixEmisEpisodes1")) {
 			String odsCode = args[1];
-			fixEmisEpisodes1(odsCode);
+			//fixEmisEpisodes1(odsCode);
+			fixEmisEpisodes2(odsCode);
 			System.exit(0);
 		}
 
@@ -637,7 +638,103 @@ public class Main {
 		LOG.info("EDS Queue reader running (kill file location " + TransformConfig.instance().getKillFileLocation() + ")");
 	}
 
-	private static void fixEmisEpisodes1(String odsCode) {
+	private static void fixEmisEpisodes2(String odsCode) {
+		LOG.info("Fixing Emis Episodes (2) for " + odsCode);
+		try {
+
+			ServiceDalI serviceDal = DalProvider.factoryServiceDal();
+			Service service = serviceDal.getByLocalIdentifier(odsCode);
+			LOG.info("Service " + service.getId() + " -> " + service.getName());
+
+			List<UUID> systemIds = findSystemIds(service);
+			if (systemIds.size() != 1) {
+				throw new Exception("Found " + systemIds.size() + " for service");
+			}
+			UUID systemId = systemIds.get(0);
+			UUID serviceId = service.getId();
+
+			ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
+			List<Exchange> exchanges = exchangeDal.getExchangesByService(serviceId, systemId, Integer.MAX_VALUE);
+			LOG.info("Found " + exchanges.size() + " exchanges");
+
+			InternalIdDalI internalIdDal = DalProvider.factoryInternalIdDal();
+
+			Set<String> patientGuidsDone = new HashSet<>();
+
+			//exchanges are in REVERSE order (most recent first)
+			for (int i=exchanges.size()-1; i>=0; i--) {
+
+				Exchange exchange = exchanges.get(i);
+				List<ExchangePayloadFile> files = ExchangeHelper.parseExchangeBody(exchange.getBody());
+
+				//skip exchanges that are for custom extracts
+				if (files.size() <= 1) {
+					continue;
+				}
+
+				//skip if we're ignoring old data
+				boolean processPatientData = EmisCsvToFhirTransformer.shouldProcessPatientData(serviceId, files);
+				if (!processPatientData) {
+					continue;
+				}
+
+				//find patient file
+				ExchangePayloadFile patientFile = null;
+				for (ExchangePayloadFile file: files) {
+					if (file.getType().equals("Admin_Patient")) {
+						patientFile = file;
+						break;
+					}
+				}
+				if (patientFile == null) {
+					throw new Exception("Failed to find Admin_Patient file in exchange " + exchange.getId());
+				}
+
+				String path = patientFile.getPath();
+				List<ExchangePayloadFile> filesTmp = new ArrayList<>();
+				filesTmp.add(patientFile);
+
+				String version = EmisCsvToFhirTransformer.determineVersion(filesTmp);
+				org.endeavourhealth.transform.emis.csv.schema.admin.Patient parser = new org.endeavourhealth.transform.emis.csv.schema.admin.Patient(serviceId, systemId, exchange.getId(), version, path);
+
+				while (parser.nextRecord()) {
+
+					CsvCell deletedCell = parser.getDeleted();
+					if (deletedCell.getBoolean()) {
+						continue;
+					}
+
+					//skip patients already done
+					CsvCell patientGuidCell = parser.getPatientGuid();
+					String patientGuid = patientGuidCell.getString();
+					if (patientGuidsDone.contains(patientGuid)) {
+						continue;
+					}
+					patientGuidsDone.add(patientGuid);
+
+					//check we've not already converted this patient previously (i.e. re-running this conversion)
+					CsvCell startDateCell = parser.getDateOfRegistration();
+					if (startDateCell.isEmpty()) {
+						LOG.error("Missing start date for patient " + patientGuid + " in exchange " + exchange.getId());
+						startDateCell = CsvCell.factoryDummyWrapper("1900-01-01");
+					}
+
+					//save internal ID map
+					String key = patientGuidCell.getString();
+					String value = startDateCell.getString();
+					internalIdDal.save(serviceId, "Emis_Latest_Reg_Date", key, value);
+				}
+
+				parser.close();
+			}
+
+			LOG.info("Finished Fixing Emis Episodes (2) for " + odsCode);
+		} catch (Throwable t) {
+			LOG.error("", t);
+		}
+	}
+
+	/*private static void fixEmisEpisodes1(String odsCode) {
 		LOG.info("Fixing Emis Episodes (1) for " + odsCode);
 		try {
 
@@ -750,7 +847,7 @@ public class Main {
 		} catch (Throwable t) {
 			LOG.error("", t);
 		}
-	}
+	}*/
 
 	private static void testRabbit(String nodes, String username, String password, String sslProtocol, String exchangeName, String queueName) {
 		LOG.info("Testing RabbitMQ Connectivity on " + nodes);
