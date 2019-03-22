@@ -694,6 +694,7 @@ public class Main {
 				List<ExchangePayloadFile> filesTmp = new ArrayList<>();
 				filesTmp.add(patientFile);
 
+
 				String version = EmisCsvToFhirTransformer.determineVersion(filesTmp);
 				org.endeavourhealth.transform.emis.csv.schema.admin.Patient parser = new org.endeavourhealth.transform.emis.csv.schema.admin.Patient(serviceId, systemId, exchange.getId(), version, path);
 
