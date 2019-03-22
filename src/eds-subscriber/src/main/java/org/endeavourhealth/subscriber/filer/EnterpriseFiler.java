@@ -50,6 +50,69 @@ public class EnterpriseFiler {
     public static void file(UUID batchId, String base64, String configName) throws Exception {
 
         byte[] bytes = Base64.getDecoder().decode(base64);
+        LOG.trace("Filing " + bytes.length + "b from batch " + batchId + " into " + configName);
+
+        JsonNode config = ConfigManager.getConfigurationAsJson(configName, "db_subscriber");
+
+        //we may have multiple connections if we have replicas
+        List<ConnectionWrapper> connectionWrappers = openConnection(config);
+
+        for (ConnectionWrapper connectionWrapper: connectionWrappers) {
+            file(connectionWrapper, bytes);
+        }
+    }
+
+    private static void file(ConnectionWrapper connectionWrapper, byte[] bytes) throws Exception {
+
+        Connection connection = connectionWrapper.getConnection();
+        String keywordEscapeChar = connectionWrapper.getKeywordEscapeChar();
+        int batchSize = connectionWrapper.getBatchSize();
+
+        ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
+        ZipInputStream zis = new ZipInputStream(bais);
+
+        try {
+
+            List<DeleteWrapper> deletes = new ArrayList<>();
+            JsonNode columnClassMappings = null;
+
+            while (true) {
+                ZipEntry entry = zis.getNextEntry();
+                if (entry == null) {
+                    break;
+                }
+
+                String entryFileName = entry.getName();
+                byte[] entryBytes = readZipEntry(zis);
+
+                if (entryFileName.equals(COLUMN_CLASS_MAPPINGS)) {
+                    String jsonStr = new String(entryBytes);
+                    columnClassMappings = ObjectMapperPool.getInstance().readTree(jsonStr);
+
+                } else {
+                    processCsvData(entryFileName, entryBytes, columnClassMappings, connection, keywordEscapeChar, batchSize, deletes);
+                }
+            }
+
+            //now files the deletes
+            fileDeletes(deletes, connection);
+
+        } catch (Exception ex) {
+            //if we get an exception, write out the zip file, so we can investigate what was being filed
+            writeZipFile(bytes);
+
+            throw new Exception("Exception filing to " + connectionWrapper, ex);
+        } finally {
+            if (zis != null) {
+                zis.close();
+            }
+            connection.close();
+        }
+    }
+
+    /*public static void file(UUID batchId, String base64, String configName) throws Exception {
+
+        byte[] bytes = Base64.getDecoder().decode(base64);
         ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
         ZipInputStream zis = new ZipInputStream(bais);
 
@@ -102,7 +165,7 @@ public class EnterpriseFiler {
                 connection.close();
             }
         }
-    }
+    }*/
 
 
     private static void writeZipFile(byte[] bytes) {
@@ -527,15 +590,94 @@ public class EnterpriseFiler {
 
 
 
-    private static int getBatchSize(String url) {
+    /*private static int getBatchSize(String url) {
         return batchSizes.get(url).intValue();
     }
 
     private static String getKeywordEscapeChar(String url) {
         return escapeCharacters.get(url);
+    }*/
+
+    /**
+     * returns list of connections to main subscriber DB and any replicas
+     */
+    public static List<ConnectionWrapper> openConnection(JsonNode config) throws Exception {
+
+        ConnectionWrapper mainConnection = openSingleConnection(config, false);
+
+        List<ConnectionWrapper> ret = new ArrayList<>();
+        ret.add(mainConnection);
+
+        if (config.has("replicas")) {
+
+            JsonNode replicas = (JsonNode)config.get("replicas");
+            for (int i=0; i<replicas.size(); i++) {
+                JsonNode replica = replicas.get(i);
+                ConnectionWrapper replicaConnection = openSingleConnection(replica, true);
+                ret.add(replicaConnection);
+            }
+        }
+
+        return ret;
     }
 
-    public static Connection openConnection(JsonNode config) throws Exception {
+    public static ConnectionWrapper openSingleConnection(JsonNode config, boolean isReplica) throws Exception {
+        String url = config.get("enterprise_url").asText();
+
+        HikariDataSource cachedPool = connectionPools.get(url);
+        String cachedEscapeChar = escapeCharacters.get(url);
+        Integer cachedBatchSize = batchSizes.get(url);
+
+        if (cachedPool == null) {
+
+            //sync and check again, just in case
+            synchronized (connectionPools) {
+                cachedPool = connectionPools.get(url);
+                if (cachedPool == null) {
+
+                    String driverClass = config.get("driverClass").asText();
+                    String username = config.get("enterprise_username").asText();
+                    String password = config.get("enterprise_password").asText();
+
+                    //force the driver to be loaded
+                    Class.forName(driverClass);
+
+                    cachedPool = new HikariDataSource();
+                    cachedPool.setJdbcUrl(url);
+                    cachedPool.setUsername(username);
+                    cachedPool.setPassword(password);
+                    cachedPool.setMaximumPoolSize(3);
+                    cachedPool.setMinimumIdle(1);
+                    cachedPool.setIdleTimeout(60000);
+                    cachedPool.setPoolName("EnterpriseFilerConnectionPool" + url);
+                    cachedPool.setAutoCommit(false);
+
+                    connectionPools.put(url, cachedPool);
+
+                    //cache the escape string too, since getting the metadata each time is extra load
+                    Connection conn = cachedPool.getConnection();
+                    cachedEscapeChar = conn.getMetaData().getIdentifierQuoteString();
+                    escapeCharacters.put(url, cachedEscapeChar);
+                    conn.close();
+
+                    //and catch the batch size
+                    int batchSize = 50;
+                    if (config.has("batch_size")) {
+                        batchSize = config.get("batch_size").asInt();
+                        if (batchSize <= 0) {
+                            throw new Exception("Invalid batch size");
+                        }
+                    }
+                    cachedBatchSize = new Integer(batchSize);
+                    batchSizes.put(url, new Integer(batchSize));
+                }
+            }
+        }
+
+        return new ConnectionWrapper(url, cachedPool, cachedEscapeChar, cachedBatchSize.intValue(), isReplica);
+    }
+
+    /*public static Connection openConnection(JsonNode config) throws Exception {
 
         String url = config.get("enterprise_url").asText();
         HikariDataSource pool = connectionPools.get(url);
@@ -583,5 +725,51 @@ public class EnterpriseFiler {
         }
 
         return pool.getConnection();
+    }*/
+
+    public static class ConnectionWrapper {
+        private String url;
+        private HikariDataSource connectionPool;
+        private String keywordEscapeChar;
+        private int batchSize;
+        private boolean isReplica;
+
+        public ConnectionWrapper(String url, HikariDataSource connectionPool, String keywordEscapeChar, int batchSize, boolean isReplica) {
+            this.url = url;
+            this.connectionPool = connectionPool;
+            this.keywordEscapeChar = keywordEscapeChar;
+            this.batchSize = batchSize;
+            this.isReplica = isReplica;
+        }
+
+        public String getUrl() {
+            return url;
+        }
+
+        public int getBatchSize() {
+            return batchSize;
+        }
+
+        public boolean isReplica() {
+            return isReplica;
+        }
+
+        public String getKeywordEscapeChar() {
+            return keywordEscapeChar;
+        }
+
+        public Connection getConnection() throws SQLException {
+            return connectionPool.getConnection();
+        }
+
+        public String toString() {
+            if (!isReplica) {
+                return url;
+            } else {
+                return "<<REPLICA>> " + url;
+            }
+        }
     }
+
 }
+

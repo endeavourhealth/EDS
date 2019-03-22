@@ -3313,233 +3313,239 @@ public class Main {
 				saltBytes = Base64.getDecoder().decode(base64Salt);
 			}*/
 
-			Connection subscriberConnection = EnterpriseFiler.openConnection(config);
+			List<EnterpriseFiler.ConnectionWrapper> connectionWrappers = EnterpriseFiler.openConnection(config);
+			for (EnterpriseFiler.ConnectionWrapper connectionWrapper: connectionWrappers) {
+				Connection subscriberConnection = connectionWrapper.getConnection();
+				LOG.info("Populating " + connectionWrapper);
 
-			String upsertSql;
-			if (pseudonymised) {
-				upsertSql = "INSERT INTO patient_uprn"
-						+ " (patient_id, organization_id, person_id, lsoa_code, pseudo_uprn, qualifier, `algorithm`, `match`, no_address, invalid_address, missing_postcode, invalid_postcode)"
-						+ " VALUES"
-						+ " (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
-						+ " ON DUPLICATE KEY UPDATE"
-						+ " organization_id = VALUES(organization_id),"
-						+ " person_id = VALUES(person_id),"
-						+ " lsoa_code = VALUES(lsoa_code),"
-						+ " pseudo_uprn = VALUES(pseudo_uprn),"
-						+ " qualifier = VALUES(qualifier),"
-						+ " `algorithm` = VALUES(`algorithm`),"
-						+ " `match` = VALUES(`match`),"
-						+ " no_address = VALUES(no_address),"
-						+ " invalid_address = VALUES(invalid_address),"
-						+ " missing_postcode = VALUES(missing_postcode),"
-						+ " invalid_postcode = VALUES(invalid_postcode)";
+				String upsertSql;
+				if (pseudonymised) {
+					upsertSql = "INSERT INTO patient_uprn"
+							+ " (patient_id, organization_id, person_id, lsoa_code, pseudo_uprn, qualifier, `algorithm`, `match`, no_address, invalid_address, missing_postcode, invalid_postcode)"
+							+ " VALUES"
+							+ " (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+							+ " ON DUPLICATE KEY UPDATE"
+							+ " organization_id = VALUES(organization_id),"
+							+ " person_id = VALUES(person_id),"
+							+ " lsoa_code = VALUES(lsoa_code),"
+							+ " pseudo_uprn = VALUES(pseudo_uprn),"
+							+ " qualifier = VALUES(qualifier),"
+							+ " `algorithm` = VALUES(`algorithm`),"
+							+ " `match` = VALUES(`match`),"
+							+ " no_address = VALUES(no_address),"
+							+ " invalid_address = VALUES(invalid_address),"
+							+ " missing_postcode = VALUES(missing_postcode),"
+							+ " invalid_postcode = VALUES(invalid_postcode)";
 
-			} else {
-				upsertSql = "INSERT INTO patient_uprn"
-						+ " (patient_id, organization_id, person_id, lsoa_code, uprn, qualifier, `algorithm`, `match`, no_address, invalid_address, missing_postcode, invalid_postcode)"
-						+ " VALUES"
-						+ " (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
-						+ " ON DUPLICATE KEY UPDATE"
-						+ " organization_id = VALUES(organization_id),"
-						+ " person_id = VALUES(person_id),"
-						+ " lsoa_code = VALUES(lsoa_code),"
-						+ " uprn = VALUES(uprn),"
-						+ " qualifier = VALUES(qualifier),"
-						+ " `algorithm` = VALUES(`algorithm`),"
-						+ " `match` = VALUES(`match`),"
-						+ " no_address = VALUES(no_address),"
-						+ " invalid_address = VALUES(invalid_address),"
-						+ " missing_postcode = VALUES(missing_postcode),"
-						+ " invalid_postcode = VALUES(invalid_postcode)";
-			}
-
-			PreparedStatement psUpsert = subscriberConnection.prepareStatement(upsertSql);
-			int inBatch = 0;
-
-			EntityManager edsEntityManager = ConnectionManager.getEdsEntityManager();
-			SessionImpl session = (SessionImpl) edsEntityManager.getDelegate();
-			Connection edsConnection = session.connection();
-
-			EnterpriseIdDalI enterpriseIdDal = DalProvider.factoryEnterpriseIdDal(subscriberConfigName);
-			PatientLinkDalI patientLinkDal = DalProvider.factoryPatientLinkDal();
-			PostcodeDalI postcodeDal = DalProvider.factoryPostcodeDal();
-
-			int checked = 0;
-			int saved = 0;
-
-			Map<String, Boolean> hmPermittedPublishers = new HashMap<>();
-
-			String sql = "SELECT service_id, patient_id, uprn, qualifier, abp_address, `algorithm`, `match`, no_address, invalid_address, missing_postcode, invalid_postcode FROM patient_address_uprn";
-
-			Statement s = edsConnection.createStatement();
-			s.setFetchSize(10000); //don't get all rows at once
-			ResultSet rs = s.executeQuery(sql);
-			LOG.info("Got raw results back");
-			while (rs.next()) {
-				int col = 1;
-				String serviceId = rs.getString(col++);
-				String patientId = rs.getString(col++);
-				Long uprn = rs.getLong(col++);
-				if (rs.wasNull()) {
-					uprn = null;
+				} else {
+					upsertSql = "INSERT INTO patient_uprn"
+							+ " (patient_id, organization_id, person_id, lsoa_code, uprn, qualifier, `algorithm`, `match`, no_address, invalid_address, missing_postcode, invalid_postcode)"
+							+ " VALUES"
+							+ " (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+							+ " ON DUPLICATE KEY UPDATE"
+							+ " organization_id = VALUES(organization_id),"
+							+ " person_id = VALUES(person_id),"
+							+ " lsoa_code = VALUES(lsoa_code),"
+							+ " uprn = VALUES(uprn),"
+							+ " qualifier = VALUES(qualifier),"
+							+ " `algorithm` = VALUES(`algorithm`),"
+							+ " `match` = VALUES(`match`),"
+							+ " no_address = VALUES(no_address),"
+							+ " invalid_address = VALUES(invalid_address),"
+							+ " missing_postcode = VALUES(missing_postcode),"
+							+ " invalid_postcode = VALUES(invalid_postcode)";
 				}
-				String qualifier = rs.getString(col++);
-				String abpAddress = rs.getString(col++);
-				String algorithm = rs.getString(col++);
-				String match = rs.getString(col++);
-				boolean noAddress = rs.getBoolean(col++);
-				boolean invalidAddress = rs.getBoolean(col++);
-				boolean missingPostcode = rs.getBoolean(col++);
-				boolean invalidPostcode = rs.getBoolean(col++);
 
-				//check if patient ID already exists in the subscriber DB
-				Long subscriberPatientId = enterpriseIdDal.findEnterpriseId(ResourceType.Patient.toString(), patientId);
+				PreparedStatement psUpsert = subscriberConnection.prepareStatement(upsertSql);
+				int inBatch = 0;
 
-				//if the patient doesn't exist on this subscriber DB, then don't transform this record
-				if (subscriberPatientId != null) {
+				EntityManager edsEntityManager = ConnectionManager.getEdsEntityManager();
+				SessionImpl session = (SessionImpl) edsEntityManager.getDelegate();
+				Connection edsConnection = session.connection();
 
-					//because of past mistakes, we have Discovery->Enterprise mappings for patients that
-					//shouldn't, so we also need to check that the service ID is definitely a publisher to this subscriber
-					Boolean isPublisher = hmPermittedPublishers.get(serviceId);
-					if (isPublisher == null) {
+				EnterpriseIdDalI enterpriseIdDal = DalProvider.factoryEnterpriseIdDal(subscriberConfigName);
+				PatientLinkDalI patientLinkDal = DalProvider.factoryPatientLinkDal();
+				PostcodeDalI postcodeDal = DalProvider.factoryPostcodeDal();
 
-						List<LibraryItem> libraryItems = LibraryRepositoryHelper.getProtocolsByServiceId(serviceId, null); //passing null means don't filter on system ID
-						for (LibraryItem libraryItem : libraryItems) {
-							Protocol protocol = libraryItem.getProtocol();
-							if (protocol.getEnabled() != ProtocolEnabled.TRUE) {
-								continue;
-							}
+				int checked = 0;
+				int saved = 0;
 
-							//check to make sure that this service is actually a PUBLISHER to this protocol
-							boolean isProtocolPublisher = false;
-							for (ServiceContract serviceContract : protocol.getServiceContract()) {
-								if (serviceContract.getType().equals(ServiceContractType.PUBLISHER)
-										&& serviceContract.getService().getUuid().equals(serviceId)
-										&& serviceContract.getActive() == ServiceContractActive.TRUE) {
+				Map<String, Boolean> hmPermittedPublishers = new HashMap<>();
 
-									isProtocolPublisher = true;
-									break;
+				String sql = "SELECT service_id, patient_id, uprn, qualifier, abp_address, `algorithm`, `match`, no_address, invalid_address, missing_postcode, invalid_postcode FROM patient_address_uprn";
+
+				Statement s = edsConnection.createStatement();
+				s.setFetchSize(10000); //don't get all rows at once
+				ResultSet rs = s.executeQuery(sql);
+				LOG.info("Got raw results back");
+				while (rs.next()) {
+					int col = 1;
+					String serviceId = rs.getString(col++);
+					String patientId = rs.getString(col++);
+					Long uprn = rs.getLong(col++);
+					if (rs.wasNull()) {
+						uprn = null;
+					}
+					String qualifier = rs.getString(col++);
+					String abpAddress = rs.getString(col++);
+					String algorithm = rs.getString(col++);
+					String match = rs.getString(col++);
+					boolean noAddress = rs.getBoolean(col++);
+					boolean invalidAddress = rs.getBoolean(col++);
+					boolean missingPostcode = rs.getBoolean(col++);
+					boolean invalidPostcode = rs.getBoolean(col++);
+
+					//check if patient ID already exists in the subscriber DB
+					Long subscriberPatientId = enterpriseIdDal.findEnterpriseId(ResourceType.Patient.toString(), patientId);
+
+					//if the patient doesn't exist on this subscriber DB, then don't transform this record
+					if (subscriberPatientId != null) {
+
+						//because of past mistakes, we have Discovery->Enterprise mappings for patients that
+						//shouldn't, so we also need to check that the service ID is definitely a publisher to this subscriber
+						Boolean isPublisher = hmPermittedPublishers.get(serviceId);
+						if (isPublisher == null) {
+
+							List<LibraryItem> libraryItems = LibraryRepositoryHelper.getProtocolsByServiceId(serviceId, null); //passing null means don't filter on system ID
+							for (LibraryItem libraryItem : libraryItems) {
+								Protocol protocol = libraryItem.getProtocol();
+								if (protocol.getEnabled() != ProtocolEnabled.TRUE) {
+									continue;
 								}
-							}
-							if (!isProtocolPublisher) {
-								continue;
-							}
 
-							//check to see if this subscriber config is a subscriber to this DB
-							for (ServiceContract serviceContract : protocol.getServiceContract()) {
-								if (serviceContract.getType().equals(ServiceContractType.SUBSCRIBER)
-										&& serviceContract.getActive() == ServiceContractActive.TRUE) {
+								//check to make sure that this service is actually a PUBLISHER to this protocol
+								boolean isProtocolPublisher = false;
+								for (ServiceContract serviceContract : protocol.getServiceContract()) {
+									if (serviceContract.getType().equals(ServiceContractType.PUBLISHER)
+											&& serviceContract.getService().getUuid().equals(serviceId)
+											&& serviceContract.getActive() == ServiceContractActive.TRUE) {
 
-									ServiceDalI serviceRepository = DalProvider.factoryServiceDal();
-									UUID subscriberServiceId = UUID.fromString(serviceContract.getService().getUuid());
-									UUID subscriberTechnicalInterfaceId = UUID.fromString(serviceContract.getTechnicalInterface().getUuid());
-									Service subscriberService = serviceRepository.getById(subscriberServiceId);
-									List<JsonServiceInterfaceEndpoint> serviceEndpoints = ObjectMapperPool.getInstance().readValue(subscriberService.getEndpoints(), new TypeReference<List<JsonServiceInterfaceEndpoint>>() {
-									});
-									for (JsonServiceInterfaceEndpoint serviceEndpoint : serviceEndpoints) {
-										if (serviceEndpoint.getTechnicalInterfaceUuid().equals(subscriberTechnicalInterfaceId)) {
-											String protocolSubscriberConfigName = serviceEndpoint.getEndpoint();
-											if (protocolSubscriberConfigName.equals(subscriberConfigName)) {
-												isPublisher = new Boolean(true);
-												break;
+										isProtocolPublisher = true;
+										break;
+									}
+								}
+								if (!isProtocolPublisher) {
+									continue;
+								}
+
+								//check to see if this subscriber config is a subscriber to this DB
+								for (ServiceContract serviceContract : protocol.getServiceContract()) {
+									if (serviceContract.getType().equals(ServiceContractType.SUBSCRIBER)
+											&& serviceContract.getActive() == ServiceContractActive.TRUE) {
+
+										ServiceDalI serviceRepository = DalProvider.factoryServiceDal();
+										UUID subscriberServiceId = UUID.fromString(serviceContract.getService().getUuid());
+										UUID subscriberTechnicalInterfaceId = UUID.fromString(serviceContract.getTechnicalInterface().getUuid());
+										Service subscriberService = serviceRepository.getById(subscriberServiceId);
+										List<JsonServiceInterfaceEndpoint> serviceEndpoints = ObjectMapperPool.getInstance().readValue(subscriberService.getEndpoints(), new TypeReference<List<JsonServiceInterfaceEndpoint>>() {
+										});
+										for (JsonServiceInterfaceEndpoint serviceEndpoint : serviceEndpoints) {
+											if (serviceEndpoint.getTechnicalInterfaceUuid().equals(subscriberTechnicalInterfaceId)) {
+												String protocolSubscriberConfigName = serviceEndpoint.getEndpoint();
+												if (protocolSubscriberConfigName.equals(subscriberConfigName)) {
+													isPublisher = new Boolean(true);
+													break;
+												}
 											}
 										}
 									}
 								}
 							}
-						}
 
-						if (isPublisher == null) {
-							isPublisher = new Boolean(false);
-						}
-
-						hmPermittedPublishers.put(serviceId, isPublisher);
-					}
-
-					if (isPublisher.booleanValue()) {
-
-						Long subscriberOrgId = enterpriseIdDal.findEnterpriseOrganisationId(serviceId);
-
-						String discoveryPersonId = patientLinkDal.getPersonId(patientId);
-						Long subscriberPersonId = enterpriseIdDal.findOrCreateEnterprisePersonId(discoveryPersonId);
-
-						String lsoaCode = null;
-						if (!Strings.isNullOrEmpty(abpAddress)) {
-							String[] toks = abpAddress.split(" ");
-							String postcode = toks[toks.length - 1];
-							PostcodeLookup postcodeReference = postcodeDal.getPostcodeReference(postcode);
-							if (postcodeReference != null) {
-								lsoaCode = postcodeReference.getLsoaCode();
-							}
-						}
-
-						col = 1;
-						psUpsert.setLong(col++, subscriberPatientId);
-						psUpsert.setLong(col++, subscriberOrgId);
-						psUpsert.setLong(col++, subscriberPersonId);
-						psUpsert.setString(col++, lsoaCode);
-
-						if (pseudonymised) {
-
-							String pseuoUprn = null;
-							if (uprn != null) {
-
-								TreeMap<String, String> keys = new TreeMap<>();
-								keys.put("UPRN", "" + uprn);
-
-								Crypto crypto = new Crypto();
-								crypto.SetEncryptedSalt(saltBytes);
-								pseuoUprn = crypto.GetDigest(keys);
+							if (isPublisher == null) {
+								isPublisher = new Boolean(false);
 							}
 
-							psUpsert.setString(col++, pseuoUprn);
-						} else {
-							if (uprn != null) {
+							hmPermittedPublishers.put(serviceId, isPublisher);
+						}
 
-								psUpsert.setLong(col++, uprn.longValue());
+						if (isPublisher.booleanValue()) {
+
+							Long subscriberOrgId = enterpriseIdDal.findEnterpriseOrganisationId(serviceId);
+
+							String discoveryPersonId = patientLinkDal.getPersonId(patientId);
+							Long subscriberPersonId = enterpriseIdDal.findOrCreateEnterprisePersonId(discoveryPersonId);
+
+							String lsoaCode = null;
+							if (!Strings.isNullOrEmpty(abpAddress)) {
+								String[] toks = abpAddress.split(" ");
+								String postcode = toks[toks.length - 1];
+								PostcodeLookup postcodeReference = postcodeDal.getPostcodeReference(postcode);
+								if (postcodeReference != null) {
+									lsoaCode = postcodeReference.getLsoaCode();
+								}
+							}
+
+							col = 1;
+							psUpsert.setLong(col++, subscriberPatientId);
+							psUpsert.setLong(col++, subscriberOrgId);
+							psUpsert.setLong(col++, subscriberPersonId);
+							psUpsert.setString(col++, lsoaCode);
+
+							if (pseudonymised) {
+
+								String pseuoUprn = null;
+								if (uprn != null) {
+
+									TreeMap<String, String> keys = new TreeMap<>();
+									keys.put("UPRN", "" + uprn);
+
+									Crypto crypto = new Crypto();
+									crypto.SetEncryptedSalt(saltBytes);
+									pseuoUprn = crypto.GetDigest(keys);
+								}
+
+								psUpsert.setString(col++, pseuoUprn);
 							} else {
-								psUpsert.setNull(col++, Types.BIGINT);
+								if (uprn != null) {
+
+									psUpsert.setLong(col++, uprn.longValue());
+								} else {
+									psUpsert.setNull(col++, Types.BIGINT);
+								}
+							}
+							psUpsert.setString(col++, qualifier);
+							psUpsert.setString(col++, algorithm);
+							psUpsert.setString(col++, match);
+							psUpsert.setBoolean(col++, noAddress);
+							psUpsert.setBoolean(col++, invalidAddress);
+							psUpsert.setBoolean(col++, missingPostcode);
+							psUpsert.setBoolean(col++, invalidPostcode);
+
+							//LOG.debug("" + psUpsert);
+
+							psUpsert.addBatch();
+							inBatch++;
+							saved++;
+
+							if (inBatch >= TransformConfig.instance().getResourceSaveBatchSize()) {
+								psUpsert.executeBatch();
+								subscriberConnection.commit();
+								inBatch = 0;
 							}
 						}
-						psUpsert.setString(col++, qualifier);
-						psUpsert.setString(col++, algorithm);
-						psUpsert.setString(col++, match);
-						psUpsert.setBoolean(col++, noAddress);
-						psUpsert.setBoolean(col++, invalidAddress);
-						psUpsert.setBoolean(col++, missingPostcode);
-						psUpsert.setBoolean(col++, invalidPostcode);
+					}
 
-						//LOG.debug("" + psUpsert);
-
-						psUpsert.addBatch();
-						inBatch++;
-						saved++;
-
-						if (inBatch >= TransformConfig.instance().getResourceSaveBatchSize()) {
-							psUpsert.executeBatch();
-							subscriberConnection.commit();
-							inBatch = 0;
-						}
+					checked++;
+					if (checked % 1000 == 0) {
+						LOG.info("Checked " + checked + " Saved " + saved);
 					}
 				}
 
-				checked++;
-				if (checked % 1000 == 0) {
-					LOG.info("Checked " + checked + " Saved " + saved);
+				if (inBatch > 0) {
+					psUpsert.executeBatch();
+					subscriberConnection.commit();
 				}
+
+				LOG.info("Chcked " + checked + " Saved " + saved);
+
+				psUpsert.close();
+
+				subscriberConnection.close();
+				edsEntityManager.close();
+
+				subscriberConnection.close();
 			}
-
-			if (inBatch > 0) {
-				psUpsert.executeBatch();
-				subscriberConnection.commit();
-			}
-
-			LOG.info("Chcked " + checked + " Saved " + saved);
-
-			psUpsert.close();
-
-			subscriberConnection.close();
-			edsEntityManager.close();
 
 			LOG.info("Finished Populating Subscriber UPRN Table for " + subscriberConfigName);
 		} catch (Throwable t) {
