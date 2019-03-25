@@ -12,6 +12,7 @@ import org.apache.commons.io.FilenameUtils;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.common.fhir.PeriodHelper;
+import org.endeavourhealth.common.fhir.ReferenceHelper;
 import org.endeavourhealth.common.utility.FileHelper;
 import org.endeavourhealth.common.utility.SlackHelper;
 import org.endeavourhealth.common.utility.ThreadPool;
@@ -38,6 +39,7 @@ import org.endeavourhealth.core.database.dal.subscriberTransform.EnterpriseIdDal
 import org.endeavourhealth.core.database.dal.subscriberTransform.models.EnterpriseAge;
 import org.endeavourhealth.core.database.rdbms.ConnectionManager;
 import org.endeavourhealth.core.exceptions.TransformException;
+import org.endeavourhealth.core.fhirStorage.FhirSerializationHelper;
 import org.endeavourhealth.core.fhirStorage.FhirStorageService;
 import org.endeavourhealth.core.fhirStorage.JsonServiceInterfaceEndpoint;
 import org.endeavourhealth.core.messaging.pipeline.components.OpenEnvelope;
@@ -57,9 +59,7 @@ import org.endeavourhealth.transform.emis.csv.schema.appointment.Slot;
 import org.endeavourhealth.transform.emis.csv.transforms.appointment.SessionUserTransformer;
 import org.endeavourhealth.transform.emis.csv.transforms.appointment.SlotTransformer;
 import org.hibernate.internal.SessionImpl;
-import org.hl7.fhir.instance.model.EpisodeOfCare;
-import org.hl7.fhir.instance.model.Patient;
-import org.hl7.fhir.instance.model.ResourceType;
+import org.hl7.fhir.instance.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -427,12 +427,6 @@ public class Main {
 			System.exit(0);
 		}
 
-		if (args.length >= 1
-				&& args[0].equalsIgnoreCase("FixEmisAdminCache")) {
-			String serviceOdsCode = args[1];
-			fixEmisAdminCache(serviceOdsCode);
-			System.exit(0);
-		}
 
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("PopulateLastDataDate")) {
@@ -471,7 +465,7 @@ public class Main {
 			System.exit(0);
 		}*/
 
-		/*if (args.length >= 1
+		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("FixSlotReferences")) {
 			String serviceId = args[1];
 			try {
@@ -481,7 +475,7 @@ public class Main {
 				fixSlotReferencesForPublisher(serviceId);
 			}
 			System.exit(0);
-		}*/
+		}
 
 		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("TestS3VsMySQL")) {
@@ -972,10 +966,6 @@ public class Main {
 	}
 
 
-
-	private static void fixEmisAdminCache(String serviceOdsCode) {
-
-	}
 
 	private static void fixEmisMissingSlots(String serviceOdsCode) {
 		LOG.debug("Fixing Emis Missing Slots for " + serviceOdsCode);
@@ -9781,7 +9771,7 @@ public class Main {
 		}
 	}*/
 
-	/*private static void fixSlotReferencesForPublisher(String publisher) {
+	private static void fixSlotReferencesForPublisher(String publisher) {
 		try {
 			ServiceDalI dal = DalProvider.factoryServiceDal();
 			List<Service> services = dal.getAll();
@@ -9810,7 +9800,7 @@ public class Main {
 			Connection connection = session.connection();
 			Statement statement = connection.createStatement();
 
-			String sql = "SELECT eds_id FROM publisher_transform_02.resource_id_map WHERE service_id = '" + serviceId + "'AND resource_type = '" + ResourceType.Patient + "';";
+			String sql = "SELECT eds_id FROM resource_id_map WHERE service_id = '" + serviceId + "'AND resource_type = '" + ResourceType.Patient + "';";
 			ResultSet rs = statement.executeQuery(sql);
 			while (rs.next()) {
 				String patientUuid = rs.getString(1);
@@ -9819,21 +9809,6 @@ public class Main {
 			rs.close();
 			statement.close();
 			connection.close();
-
-			*//*
-			EntityManager entityManager = ConnectionManager.getEdsEntityManager();
-			SessionImpl session = (SessionImpl) entityManager.getDelegate();
-			Connection connection = session.connection();
-			Statement statement = connection.createStatement();
-			String sql = "SELECT patient_id FROM patient_search WHERE service_id = '" + serviceId.toString() + "'";
-			ResultSet rs = statement.executeQuery(sql);
-			while (rs.next()) {
-				String patientUuid = rs.getString(1);
-				patientIds.add(UUID.fromString(patientUuid));
-			}
-			rs.close();
-			statement.close();
-			connection.close();*//*
 
 			LOG.debug("Found " + patientIds.size() + " patients");
 			int done = 0;
@@ -9917,7 +9892,7 @@ public class Main {
 		} catch (Exception ex) {
 			LOG.error("", ex);
 		}
-	}*/
+	}
 
 	/*private static void fixReviews(String sharedStoragePath, UUID justThisService) {
 		LOG.info("Fixing Reviews using path " + sharedStoragePath + " and service " + justThisService);
