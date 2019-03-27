@@ -478,6 +478,7 @@ public class Main {
 			System.exit(0);
 		}
 
+
 		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("TestS3VsMySQL")) {
 			UUID serviceUuid = UUID.fromString(args[1]);
