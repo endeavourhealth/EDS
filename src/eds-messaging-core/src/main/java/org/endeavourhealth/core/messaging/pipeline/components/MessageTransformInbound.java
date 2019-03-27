@@ -94,7 +94,7 @@ public class MessageTransformInbound extends PipelineComponent {
 		//if we're re-running an exchange (either due to a past failure or killing and restarting the queue reader),
 		//then we need to make sure we've got all our pre-existing batch IDs from last time, so they
 		//all go on the Protocol queue when the transform completes
-		findExistingBatchIds(batchIds, exchange.getId());
+		findExistingBatchIds(batchIds, exchange);
 		int startingBatchIdCount = batchIds.size();
 
 		//create the object that audits the transform and stores any errors
@@ -258,8 +258,17 @@ public class MessageTransformInbound extends PipelineComponent {
 	}
 
 
-	private void findExistingBatchIds(List<UUID> batchIds, UUID exchangeId) throws Exception {
-		List<ExchangeBatch> batches = exchangeBatchRepository.retrieveForExchangeId(exchangeId);
+	private void findExistingBatchIds(List<UUID> batchIds, Exchange exchange) throws Exception {
+
+		//only retrieve all the batches if the previous attempt to transform went into error or failed,
+		//so we don't end up sending everything to the protocol queue when we re-process things
+		ExchangeTransformAudit latest = auditRepository.getLatestExchangeTransformAudit(exchange.getServiceId(), exchange.getSystemId(), exchange.getId());
+		if (latest == null
+				|| (latest.getEnded() != null && latest.getErrorXml() == null)) {
+			return;
+		}
+
+		List<ExchangeBatch> batches = exchangeBatchRepository.retrieveForExchangeId(exchange.getId());
 		for (ExchangeBatch batch: batches) {
 			UUID batchId = batch.getBatchId();
 			batchIds.add(batchId);

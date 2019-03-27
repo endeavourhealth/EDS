@@ -11,6 +11,7 @@ import org.endeavourhealth.core.configuration.QueueReaderConfiguration;
 import org.endeavourhealth.core.database.dal.DalProvider;
 import org.endeavourhealth.core.database.dal.audit.QueuedMessageDalI;
 import org.endeavourhealth.core.database.dal.audit.models.Exchange;
+import org.endeavourhealth.core.database.dal.audit.models.HeaderKeys;
 import org.endeavourhealth.core.messaging.pipeline.PipelineProcessor;
 import org.endeavourhealth.transform.common.TransformConfig;
 import org.slf4j.Logger;
@@ -206,6 +207,7 @@ public class RabbitConsumer extends DefaultConsumer {
 			return null;
 		}
 
+
 		Exchange exchange = new Exchange();
 		exchange.setId(exchangeUuid);
 		exchange.setBody(queuedMessageBody);
@@ -218,6 +220,10 @@ public class RabbitConsumer extends DefaultConsumer {
 					.filter(headerKey -> headers.get(headerKey) != null)
 					.forEach(headerKey -> exchange.setHeader(headerKey, headers.get(headerKey).toString()));
 		}
+
+		//populate these fields
+		exchange.setServiceId(exchange.getHeaderAsUuid(HeaderKeys.SenderServiceUuid));
+		exchange.setSystemId(exchange.getHeaderAsUuid(HeaderKeys.SenderSystemUuid));
 
 		return exchange;
 	}

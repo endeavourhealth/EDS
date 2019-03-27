@@ -9801,7 +9801,7 @@ public class Main {
 			Connection connection = session.connection();
 			Statement statement = connection.createStatement();
 
-			String sql = "SELECT eds_id FROM resource_id_map WHERE service_id = '" + serviceId + "'AND resource_type = '" + ResourceType.Patient + "';";
+			String sql = "SELECT eds_id FROM resource_id_map WHERE service_id = '" + serviceId + "' AND resource_type = '" + ResourceType.Patient + "';";
 			ResultSet rs = statement.executeQuery(sql);
 			while (rs.next()) {
 				String patientUuid = rs.getString(1);

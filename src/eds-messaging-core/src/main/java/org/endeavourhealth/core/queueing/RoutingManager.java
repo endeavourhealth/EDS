@@ -49,7 +49,7 @@ public class RoutingManager implements ICache {
 
 		if (cachedRoutingsByExchangeName == null
 				|| cacheExpiry.before(new Date())) {
-			LOG.debug("Re-creating routing map cache");
+			//LOG.debug("Re-creating routing map cache");
 
 			Map<String, List<RouteGroup>> map = new HashMap<>();
 
