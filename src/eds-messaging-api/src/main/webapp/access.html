@@ -61,10 +61,24 @@
 												</div>
 											</div>
 
+                      <div class="col-md-6">
+                        <div class="form-group">
+                          <label class="label">Company/Organisation</label>
+                          <input class="form-control" type="text" name="organisation" id="organisation" required>
+                        </div>
+                      </div>
+
+                      <div class="col-md-6">
+                        <div class="form-group">
+                          <label class="label">Website address</label>
+                          <input class="form-control" type="text" name="website" id="website" required>
+                        </div>
+                      </div>
+
 											<div class="col-md-12">
 												<div class="form-group">
 													<label class="label">Reason for access</label>
-													<select class="form-control" required name="reason" id="reason" onchange="reasonChanged()">
+													<select class="form-control" required name="reason" id="reason">
 														<option value="" selected disabled>Select an option...</option>
 														<option value="PI Existing">Potential integration (existing software)</option>
 														<option value="PI New">Potential integration (new software)</option>
@@ -75,7 +89,7 @@
 												</div>
 											</div>
 
-											<div class="col-md-12" style="display:none;" id="otherGroup">
+											<div class="col-md-12" id="otherGroup">
 												<div class="form-group">
 													<label class="label">Give details</label>
 													<input class="form-control" type="text" name="other" id="other">
