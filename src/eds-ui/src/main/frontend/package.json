@@ -17,7 +17,7 @@
     "typings": "1.4.0",
     "url-loader": "0.5.7",
     "webpack": "2.2.1",
-    "webpack-dev-server": "3.1.11"
+    "webpack-dev-server": "2.9.7"
   },
   "dependencies": {
     "@angular/common": "2.4.1",
