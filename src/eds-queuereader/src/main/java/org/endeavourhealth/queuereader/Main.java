@@ -89,6 +89,7 @@ public class Main {
 		LOG.info("Initialising config manager");
 		ConfigManager.initialize("queuereader", configId);
 
+
 		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("FixEncounters")) {
 			String table = args[1];
