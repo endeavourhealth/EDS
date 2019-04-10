@@ -3473,6 +3473,7 @@ public class Main {
 								}
 							}
 
+
 							col = 1;
 							psUpsert.setLong(col++, subscriberPatientId);
 							psUpsert.setLong(col++, subscriberOrgId);
