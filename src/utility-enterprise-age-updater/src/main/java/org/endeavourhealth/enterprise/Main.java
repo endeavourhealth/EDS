@@ -37,32 +37,34 @@ public class Main {
             String enterpriseConfigName = args[0];
             LOG.info("Age updater starting for " + enterpriseConfigName);
 
-            EnterpriseAgeUpdaterlDalI enterpriseAgeUpdaterlDal = DalProvider.factoryEnterpriseAgeUpdaterlDal(enterpriseConfigName);
-            List<EnterpriseAge> agesToUpdate = enterpriseAgeUpdaterlDal.findAgesToUpdate();
+            EnterpriseAgeUpdaterlDalI enterpriseAgeUpdaterDal = DalProvider.factoryEnterpriseAgeUpdaterlDal(enterpriseConfigName);
+            List<EnterpriseAge> agesToUpdate = enterpriseAgeUpdaterDal.findAgesToUpdate();
             LOG.info("Found " + agesToUpdate.size() + " ages to update");
 
-            Connection enterpriseConnection = EnterpriseConnector.openConnection(enterpriseConfigName);
+            List<EnterpriseConnector.ConnectionWrapper> connectionWrappers = EnterpriseConnector.openConnection(enterpriseConfigName);
+
 
             int progress = 0;
             for (EnterpriseAge ageToUpdate: agesToUpdate) {
 
-                Integer[] ages = enterpriseAgeUpdaterlDal.reCalculateAgeValues(ageToUpdate);
+                Integer[] ages = enterpriseAgeUpdaterDal.reCalculateAgeValues(ageToUpdate);
 
-                updateEnterprisePatient(ageToUpdate.getEnterprisePatientId(), ages, enterpriseConnection);
-                updateEnterprisePerson(ageToUpdate.getEnterprisePatientId(), ages, enterpriseConnection);
+                for (EnterpriseConnector.ConnectionWrapper connectionWrapper: connectionWrappers) {
+                    Connection enterpriseConnection = connectionWrapper.getConnection();
+
+                    updateEnterprisePatient(ageToUpdate.getEnterprisePatientId(), ages, enterpriseConnection);
+                    updateEnterprisePerson(ageToUpdate.getEnterprisePatientId(), ages, enterpriseConnection);
+                    enterpriseConnection.close();
+                }
 
                 //if we've successfully updated Enterprise, then it's time to save our updated map object
                 //with the newly calculated date of next update
-                enterpriseAgeUpdaterlDal.save(ageToUpdate);
+                enterpriseAgeUpdaterDal.save(ageToUpdate);
 
                 progress ++;
                 if (progress % 100 == 0) {
                     LOG.info("Done " + progress);
                 }
-            }
-
-            if (enterpriseConnection != null) {
-                enterpriseConnection.close();
             }
 
             LOG.info("Age updates complete");

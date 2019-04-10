@@ -65,23 +65,30 @@ public class Main {
             //find the Enterprise Person ID for each of the changes, hashing them by the enterprise instance they're on
             List<UpdateJob> updates = convertChangesToEnterprise(enterpriseConfigName, changes);
 
-            Connection connection = EnterpriseConnector.openConnection(enterpriseConfigName);
-            List<String> tables = findTablesWithPersonId(connection);
+            List<EnterpriseConnector.ConnectionWrapper> connectionWrappers = EnterpriseConnector.openConnection(enterpriseConfigName);
+            for (EnterpriseConnector.ConnectionWrapper connectionWrapper: connectionWrappers) {
 
-            LOG.info("Updating " + updates.size() + " person IDs on " + enterpriseConfigName);
+                LOG.info("Updating " + updates.size() + " person IDs on " + connectionWrapper.getUrl());
+                Connection connection = connectionWrapper.getConnection();
 
-            try {
-                for (UpdateJob update: updates) {
-                    changePersonId(update, connection, tables);
+                try {
+                    List<String> tables = findTablesWithPersonId(connection);
+
+                    for (UpdateJob update: updates) {
+                        changePersonId(update, connection, tables);
+                    }
+
+                    //and delete any person records that no longer have any references to them
+                    LOG.info("Going to delete orphaned persons");
+                    deleteOrphanedPersons(connection);
+
+                } finally {
+                    connection.close();
                 }
 
-                //and delete any person records that no longer have any references to them
-                LOG.info("Going to delete orphaned persons");
-                deleteOrphanedPersons(connection);
 
-            } finally {
-                connection.close();
             }
+
 
             enterprisePersonUpdaterHistoryDal.updatePersonUpdaterLastRun(dateNextRun);
 

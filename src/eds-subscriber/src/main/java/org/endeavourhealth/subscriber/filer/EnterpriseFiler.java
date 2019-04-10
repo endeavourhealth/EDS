@@ -9,8 +9,8 @@ import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.io.FileUtils;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
-import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.core.database.rdbms.ConnectionManager;
+import org.endeavourhealth.core.database.rdbms.enterprise.EnterpriseConnector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,17 +52,14 @@ public class EnterpriseFiler {
         byte[] bytes = Base64.getDecoder().decode(base64);
         LOG.trace("Filing " + bytes.length + "b from batch " + batchId + " into " + configName);
 
-        JsonNode config = ConfigManager.getConfigurationAsJson(configName, "db_subscriber");
-
         //we may have multiple connections if we have replicas
-        List<ConnectionWrapper> connectionWrappers = openConnection(config);
-
-        for (ConnectionWrapper connectionWrapper: connectionWrappers) {
+        List<EnterpriseConnector.ConnectionWrapper> connectionWrappers = EnterpriseConnector.openConnection(configName);
+        for (EnterpriseConnector.ConnectionWrapper connectionWrapper: connectionWrappers) {
             file(connectionWrapper, bytes);
         }
     }
 
-    private static void file(ConnectionWrapper connectionWrapper, byte[] bytes) throws Exception {
+    private static void file(EnterpriseConnector.ConnectionWrapper connectionWrapper, byte[] bytes) throws Exception {
 
         Connection connection = connectionWrapper.getConnection();
         String keywordEscapeChar = connectionWrapper.getKeywordEscapeChar();
@@ -598,84 +595,7 @@ public class EnterpriseFiler {
         return escapeCharacters.get(url);
     }*/
 
-    /**
-     * returns list of connections to main subscriber DB and any replicas
-     */
-    public static List<ConnectionWrapper> openConnection(JsonNode config) throws Exception {
 
-        ConnectionWrapper mainConnection = openSingleConnection(config, false);
-
-        List<ConnectionWrapper> ret = new ArrayList<>();
-        ret.add(mainConnection);
-
-        if (config.has("replicas")) {
-
-            JsonNode replicas = (JsonNode)config.get("replicas");
-            for (int i=0; i<replicas.size(); i++) {
-                JsonNode replica = replicas.get(i);
-                ConnectionWrapper replicaConnection = openSingleConnection(replica, true);
-                ret.add(replicaConnection);
-            }
-        }
-
-        return ret;
-    }
-
-    public static ConnectionWrapper openSingleConnection(JsonNode config, boolean isReplica) throws Exception {
-        String url = config.get("enterprise_url").asText();
-
-        HikariDataSource cachedPool = connectionPools.get(url);
-        String cachedEscapeChar = escapeCharacters.get(url);
-        Integer cachedBatchSize = batchSizes.get(url);
-
-        if (cachedPool == null) {
-
-            //sync and check again, just in case
-            synchronized (connectionPools) {
-                cachedPool = connectionPools.get(url);
-                if (cachedPool == null) {
-
-                    String driverClass = config.get("driverClass").asText();
-                    String username = config.get("enterprise_username").asText();
-                    String password = config.get("enterprise_password").asText();
-
-                    //force the driver to be loaded
-                    Class.forName(driverClass);
-
-                    cachedPool = new HikariDataSource();
-                    cachedPool.setJdbcUrl(url);
-                    cachedPool.setUsername(username);
-                    cachedPool.setPassword(password);
-                    cachedPool.setMaximumPoolSize(3);
-                    cachedPool.setMinimumIdle(1);
-                    cachedPool.setIdleTimeout(60000);
-                    cachedPool.setPoolName("EnterpriseFilerConnectionPool" + url);
-                    cachedPool.setAutoCommit(false);
-
-                    connectionPools.put(url, cachedPool);
-
-                    //cache the escape string too, since getting the metadata each time is extra load
-                    Connection conn = cachedPool.getConnection();
-                    cachedEscapeChar = conn.getMetaData().getIdentifierQuoteString();
-                    escapeCharacters.put(url, cachedEscapeChar);
-                    conn.close();
-
-                    //and catch the batch size
-                    int batchSize = 50;
-                    if (config.has("batch_size")) {
-                        batchSize = config.get("batch_size").asInt();
-                        if (batchSize <= 0) {
-                            throw new Exception("Invalid batch size");
-                        }
-                    }
-                    cachedBatchSize = new Integer(batchSize);
-                    batchSizes.put(url, new Integer(batchSize));
-                }
-            }
-        }
-
-        return new ConnectionWrapper(url, cachedPool, cachedEscapeChar, cachedBatchSize.intValue(), isReplica);
-    }
 
     /*public static Connection openConnection(JsonNode config) throws Exception {
 
@@ -727,49 +647,7 @@ public class EnterpriseFiler {
         return pool.getConnection();
     }*/
 
-    public static class ConnectionWrapper {
-        private String url;
-        private HikariDataSource connectionPool;
-        private String keywordEscapeChar;
-        private int batchSize;
-        private boolean isReplica;
 
-        public ConnectionWrapper(String url, HikariDataSource connectionPool, String keywordEscapeChar, int batchSize, boolean isReplica) {
-            this.url = url;
-            this.connectionPool = connectionPool;
-            this.keywordEscapeChar = keywordEscapeChar;
-            this.batchSize = batchSize;
-            this.isReplica = isReplica;
-        }
-
-        public String getUrl() {
-            return url;
-        }
-
-        public int getBatchSize() {
-            return batchSize;
-        }
-
-        public boolean isReplica() {
-            return isReplica;
-        }
-
-        public String getKeywordEscapeChar() {
-            return keywordEscapeChar;
-        }
-
-        public Connection getConnection() throws SQLException {
-            return connectionPool.getConnection();
-        }
-
-        public String toString() {
-            if (!isReplica) {
-                return url;
-            } else {
-                return "<<REPLICA>> " + url;
-            }
-        }
-    }
 
 }
 

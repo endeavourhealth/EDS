@@ -38,6 +38,7 @@ import org.endeavourhealth.core.database.dal.reference.models.PostcodeLookup;
 import org.endeavourhealth.core.database.dal.subscriberTransform.EnterpriseIdDalI;
 import org.endeavourhealth.core.database.dal.subscriberTransform.models.EnterpriseAge;
 import org.endeavourhealth.core.database.rdbms.ConnectionManager;
+import org.endeavourhealth.core.database.rdbms.enterprise.EnterpriseConnector;
 import org.endeavourhealth.core.exceptions.TransformException;
 import org.endeavourhealth.core.fhirStorage.FhirSerializationHelper;
 import org.endeavourhealth.core.fhirStorage.FhirStorageService;
@@ -49,7 +50,6 @@ import org.endeavourhealth.core.xml.QueryDocument.*;
 import org.endeavourhealth.core.xml.TransformErrorSerializer;
 import org.endeavourhealth.core.xml.TransformErrorUtility;
 import org.endeavourhealth.core.xml.transformError.TransformError;
-import org.endeavourhealth.subscriber.filer.EnterpriseFiler;
 import org.endeavourhealth.transform.barts.schema.PPALI;
 import org.endeavourhealth.transform.barts.schema.PPATI;
 import org.endeavourhealth.transform.common.*;
@@ -3310,8 +3310,8 @@ public class Main {
 				saltBytes = Base64.getDecoder().decode(base64Salt);
 			}*/
 
-			List<EnterpriseFiler.ConnectionWrapper> connectionWrappers = EnterpriseFiler.openConnection(config);
-			for (EnterpriseFiler.ConnectionWrapper connectionWrapper: connectionWrappers) {
+			List<EnterpriseConnector.ConnectionWrapper> connectionWrappers = EnterpriseConnector.openConnection(config);
+			for (EnterpriseConnector.ConnectionWrapper connectionWrapper: connectionWrappers) {
 				Connection subscriberConnection = connectionWrapper.getConnection();
 				LOG.info("Populating " + connectionWrapper);
 
