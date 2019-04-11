@@ -423,10 +423,12 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
         if (!Strings.isNullOrEmpty(fileTypesToFilterOn)) {
             fileTypesSet = new HashSet<>();
 
-            String[] toks = fileTypesToFilterOn.split("\n");
+            String[] toks = fileTypesToFilterOn.split("\r|\n|,| |;");
             for (String tok: toks) {
                 tok = tok.trim();
-                fileTypesSet.add(tok);
+                if (!Strings.isNullOrEmpty(tok)) {
+                    fileTypesSet.add(tok);
+                }
             }
         }
 
