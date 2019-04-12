@@ -745,7 +745,8 @@ CREATE TABLE medication_statement
   quantity_value real,
   quantity_unit character varying(255),
   medication_statement_authorisation_type_id smallint NOT NULL,
-  original_term character varying(1000),
+  core_concept_id int NOT NULL,
+  non_core_concept_id int NOT NULL,
   CONSTRAINT pk_medication_statement_id PRIMARY KEY (`organization_id`,`person_id`,`id`),
   CONSTRAINT fk_medication_statement_date_precision FOREIGN KEY (date_precision_id)
       REFERENCES date_precision (id) MATCH SIMPLE
