@@ -696,9 +696,8 @@ CREATE TABLE allergy_intolerance
   practitioner_id bigint,
   clinical_effective_date date,
   date_precision_id smallint,
-  snomed_concept_id bigint,
-  original_code character varying(20),
-  original_term character varying(1000),
+  core_concept_id int NOT NULL,
+  non_core_concept_id int NOT NULL,
   is_review boolean NOT NULL,
   CONSTRAINT pk_allergy_intolerance_id PRIMARY KEY (`organization_id`,`person_id`,`id`),
   CONSTRAINT fk_allergy_intolerance_encounter_id FOREIGN KEY (encounter_id)
@@ -723,9 +722,9 @@ CREATE INDEX allergy_intolerance_patient_id
   ON allergy_intolerance
   (patient_id);
 
-CREATE INDEX allergy_intolerance_snomed_concept_id
+CREATE INDEX allergy_intolerance_core_concept_id
   ON allergy_intolerance
-  (snomed_concept_id);  
+  (core_concept_id);
 
 -- Table: medication_statement
 
