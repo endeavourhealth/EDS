@@ -549,7 +549,11 @@ CREATE INDEX fki_encounter_appointment_id
 CREATE INDEX fki_encounter_patient_id_organization_id
   ON encounter
   (patient_id, organization_id);
-  
+
+CREATE INDEX encounter_core_concept_id_clinical_effective_date
+  ON encounter
+  (core_concept_id, clinical_effective_date);
+
 
 -- Table: encounter_detail
 
@@ -864,18 +868,17 @@ CREATE TABLE observation
   practitioner_id bigint,
   clinical_effective_date date,
   date_precision_id smallint,
-  snomed_concept_id bigint,
   result_value real,
   result_value_units character varying(50),
   result_date date,
   result_text text,
   result_concept_id bigint,
-  original_code character varying(20),
   is_problem boolean NOT NULL,
-  original_term character varying(1000),
   is_review boolean NOT NULL,
   problem_end_date date,
   parent_observation_id bigint,
+  core_concept_id int NOT NULL,
+  non_core_concept_id int NOT NULL,
   CONSTRAINT pk_observation_id PRIMARY KEY (`organization_id`,`person_id`,`id`),
   CONSTRAINT fk_observation_encounter_id FOREIGN KEY (encounter_id)
       REFERENCES encounter (id) MATCH SIMPLE
@@ -899,21 +902,21 @@ CREATE INDEX observation_patient_id
   ON observation
   (patient_id);
 
-CREATE INDEX observation_snomed_concept_id
+CREATE INDEX observation_core_concept_id
   ON observation
-  (snomed_concept_id);
+  (core_concept_id);
 
-CREATE INDEX observation_snomed_concept_id_is_problem
+CREATE INDEX observation_core_concept_id_is_problem
   ON observation
-  (`snomed_concept_id`,`is_problem`);
+  (`core_concept_id`,`is_problem`);
 
-CREATE INDEX observation_snomed_concept_id_value
+CREATE INDEX observation_core_concept_id_result_value
   ON observation
-  (`snomed_concept_id`,`result_value`);
+  (`core_concept_id`,`result_value`);
 
-CREATE INDEX observation_original_code
+CREATE INDEX observation_non_core_concept_id
   ON observation
-  (original_code);
+  (non_core_concept_id);
     
 CREATE INDEX ix_observation_organization_id
   ON observation
@@ -922,8 +925,7 @@ CREATE INDEX ix_observation_organization_id
 CREATE INDEX ix_observation_clinical_effective_date
   ON observation
   (clinical_effective_date);
-  
-  
+
 CREATE INDEX ix_observation_person_id
   ON observation
   (person_id);	
