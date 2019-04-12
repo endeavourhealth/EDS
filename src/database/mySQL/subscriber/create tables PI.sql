@@ -941,10 +941,9 @@ CREATE TABLE procedure_request
   practitioner_id bigint,
   clinical_effective_date date,
   date_precision_id smallint,
-  snomed_concept_id bigint,
   procedure_request_status_id smallint,
-  original_code character varying(20),
-  original_term character varying(1000),
+  core_concept_id int NOT NULL,
+  non_core_concept_id int NOT NULL,
   CONSTRAINT pk_procedure_request_id PRIMARY KEY (`organization_id`,`person_id`,`id`),
   CONSTRAINT fk_procedure_request_encounter_id FOREIGN KEY (encounter_id)
       REFERENCES encounter (id) MATCH SIMPLE
