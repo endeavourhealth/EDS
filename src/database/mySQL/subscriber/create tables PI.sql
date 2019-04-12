@@ -477,6 +477,7 @@ CREATE TABLE appointment
   patient_delay integer,
   sent_in datetime,
   `left` datetime,
+  source_id varchar(36), 
   CONSTRAINT pk_appointment_id PRIMARY KEY (organization_id,person_id,id),
   CONSTRAINT fk_appointment_appointment_status_id FOREIGN KEY (appointment_status_id)
       REFERENCES appointment_status (id) MATCH SIMPLE
