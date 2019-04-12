@@ -796,7 +796,8 @@ CREATE TABLE medication_order
   duration_days integer,
   estimated_cost real,
   medication_statement_id bigint,
-  original_term character varying(1000),
+  core_concept_id int NOT NULL,
+  non_core_concept_id int NOT NULL,
   CONSTRAINT pk_medication_order_id PRIMARY KEY (`organization_id`,`person_id`,`id`),
   CONSTRAINT fk_medication_order_encounter_id FOREIGN KEY (encounter_id)
       REFERENCES encounter (id) MATCH SIMPLE
