@@ -822,7 +822,7 @@ CREATE INDEX medication_order_patient_id
   ON medication_order
   (patient_id);
 
-CREATE INDEX medication_order_c_id
+CREATE INDEX medication_order_core_concept_id
   ON medication_order
   (core_concept_id);
 
