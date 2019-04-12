@@ -696,9 +696,9 @@ CREATE TABLE allergy_intolerance
   practitioner_id bigint,
   clinical_effective_date date,
   date_precision_id smallint,
+  is_review boolean NOT NULL,
   core_concept_id int NOT NULL,
   non_core_concept_id int NOT NULL,
-  is_review boolean NOT NULL,
   CONSTRAINT pk_allergy_intolerance_id PRIMARY KEY (`organization_id`,`person_id`,`id`),
   CONSTRAINT fk_allergy_intolerance_encounter_id FOREIGN KEY (encounter_id)
       REFERENCES encounter (id) MATCH SIMPLE
@@ -986,16 +986,15 @@ CREATE TABLE referral_request
   practitioner_id bigint,
   clinical_effective_date date,
   date_precision_id smallint,
-  snomed_concept_id bigint,
   requester_organization_id bigint,
   recipient_organization_id bigint,
   priority_id smallint,
   type_id smallint,
   mode character varying(50),
   outgoing_referral boolean,
-  original_code character varying(20),
-  original_term character varying(1000),
   is_review boolean NOT NULL,
+  core_concept_id int NOT NULL,
+  non_core_concept_id int NOT NULL,
   CONSTRAINT pk_referral_request_id PRIMARY KEY (`organization_id`,`person_id`,`id`),
   CONSTRAINT fk_referral_request_date_precision FOREIGN KEY (date_precision_id)
       REFERENCES date_precision (id) MATCH SIMPLE
@@ -1031,9 +1030,9 @@ CREATE INDEX referral_request_patient_id
   ON referral_request
   (patient_id);
 
-CREATE INDEX referral_request_snomed_concept_id
+CREATE INDEX referral_request_core_concept_id
   ON referral_request
-  (snomed_concept_id);
+  (core_concept_id);
   
 -- Table: link_distributor
 
