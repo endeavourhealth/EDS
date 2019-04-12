@@ -738,7 +738,6 @@ CREATE TABLE medication_statement
   practitioner_id bigint,
   clinical_effective_date date,
   date_precision_id smallint,
-  dmd_id bigint,
   is_active boolean NOT NULL,
   cancellation_date date,
   dose character varying(1000),
@@ -789,7 +788,6 @@ CREATE TABLE medication_order
   practitioner_id bigint,
   clinical_effective_date date,
   date_precision_id smallint,
-  dmd_id bigint,
   dose character varying(1000),
   quantity_value real,
   quantity_unit character varying(255),
@@ -824,9 +822,9 @@ CREATE INDEX medication_order_patient_id
   ON medication_order
   (patient_id);
 
-CREATE INDEX medication_order_dmd_id
+CREATE INDEX medication_order_c_id
   ON medication_order
-  (dmd_id);
+  (core_concept_id);
 
 -- Table: flag
 
