@@ -427,7 +427,7 @@ CREATE INDEX episode_of_care_patient_id
   ON episode_of_care
   (patient_id);
   
-CREATE INDEX episode_of_care_registration_type_id
+CREATE INDEX episode_of_care_registration_type_concept_id
   ON episode_of_care
   (registration_type_concept_id);
 
