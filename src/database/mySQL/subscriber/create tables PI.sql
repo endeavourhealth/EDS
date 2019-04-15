@@ -43,6 +43,9 @@ DROP TABLE IF EXISTS registration_status;
 DROP TABLE IF EXISTS lsoa_lookup;
 DROP TABLE IF EXISTS msoa_lookup;
 DROP TABLE IF EXISTS link_distributor;
+DROP TABLE IF EXISTS patient_contact;
+DROP TABLE IF EXISTS patient_address;
+
 
 -- Table: lsoa_lookup
 
@@ -441,6 +444,7 @@ CREATE TABLE patient
   id bigint NOT NULL,
   organization_id bigint NOT NULL,
   person_id bigint NOT NULL,
+  name varchar(255),
   gender_concept_id int NOT NULL,
   nhs_number character varying(255),
   date_of_birth date,
@@ -538,6 +542,9 @@ CREATE TABLE appointment
   sent_in datetime,
   `left` datetime,
   source_id varchar(36), 
+  rota_name varchar(150), 
+  rota_location varchar(100), 
+  cancelled_date datetime,
   CONSTRAINT pk_appointment_id PRIMARY KEY (organization_id,person_id,id),
   CONSTRAINT fk_appointment_organization_id FOREIGN KEY (organization_id)
       REFERENCES organization (id) MATCH SIMPLE
@@ -1115,3 +1122,35 @@ create table patient_uprn (
 CREATE UNIQUE INDEX patient_uprn_id
   ON patient_uprn
   (patient_id);
+
+-- Table: patient_contact
+  
+CREATE TABLE patient_contact
+(
+  id                         bigint       NOT NULL AUTO_INCREMENT,
+  patient_id                 bigint       NOT NULL,
+  type_concept_id            bigint       NOT NULL COMMENT 'type of contact (e.g. home phone, mobile phone, email)',
+  value                      varchar(255) NOT NULL COMMENT 'the actual phone number or email address',
+  CONSTRAINT pk_id_patient_id PRIMARY KEY (`id`,`patient_id`),
+  CONSTRAINT fk_patient_contact_patient_id FOREIGN KEY (patient_id)
+      REFERENCES patient (id)
+) AUTO_INCREMENT =1 COMMENT 'stores contact details (e.g. phone) for patients';
+
+-- Table: patient_address
+
+CREATE TABLE patient_address
+(
+  id                       bigint 			NOT NULL AUTO_INCREMENT,
+  patient_id               bigint          	NOT NULL,
+  address_line_1           varchar(255),
+  address_line_2           varchar(255),
+  address_line_3           varchar(255),
+  address_line_4           varchar(255),
+  postcode                 varchar(10),
+  type_concept_id          bigint       	NOT NULL COMMENT 'type of address (e.g. home, temporary)',
+  date_to				   date,  
+  CONSTRAINT pk_id_patient_id PRIMARY KEY (`id`,`patient_id`),
+  CONSTRAINT fk_patient_address_patient_id FOREIGN KEY (patient_id)
+      REFERENCES patient (id)
+) AUTO_INCREMENT =1 COMMENT 'stores address details for patients';
+
