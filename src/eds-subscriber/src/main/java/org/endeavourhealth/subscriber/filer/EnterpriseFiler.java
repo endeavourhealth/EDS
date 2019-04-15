@@ -413,10 +413,74 @@ public class EnterpriseFiler {
 
     private static PreparedStatement createUpsertPreparedStatement(String tableName, List<String> columns, Connection connection, String keywordEscapeChar) throws Exception {
 
-        StringBuilder sql = new StringBuilder();
+        if (ConnectionManager.isSqlServer(connection)) {
 
-        if (ConnectionManager.isPostgreSQL(connection)) {
+            //keywordEscapeChar = "";
+
+            /*
+            SQL Server doesn't support upserts in a single statement, so we need to handle this with an attempted update
+            and then an insert if that didn't work
+
+             e.g.
+            UPDATE dbo.AccountDetails
+            SET Etc = @Etc
+            WHERE Email = @Email
+
+            INSERT dbo.AccountDetails ( Email, Etc )
+            SELECT @Email, @Etc
+            WHERE @@ROWCOUNT=0
+             */
+
+            //first write out the prepared statement for the UPDATE
+            //the columns are written to the prepared statement in the order supplied, meaning ID is
+            //always first. So we need to format this prepared statement in such a way that we can accept it
+            //as the first parameter, even though syntax means it is needed last
+            StringBuilder sql = new StringBuilder();
+            sql.append("DECLARE @id_tmp bigint;");
+            sql.append("SET @id_tmp = ?;");
+            sql.append("UPDATE " + tableName + " SET ");
+
+            for (int i = 0; i < columns.size(); i++) {
+                String column = columns.get(i);
+                if (column.equals(COL_ID)) {
+                    continue;
+                }
+
+                sql.append(keywordEscapeChar + column + keywordEscapeChar + " = ?");
+                if (i + 1 < columns.size()) {
+                    sql.append(", ");
+                }
+            }
+            sql.append(" WHERE " + keywordEscapeChar + COL_ID + keywordEscapeChar + " = @id_tmp;");
+
+            //then write out SQL for an insert to run if the above update affected zero rows
             sql.append("INSERT INTO " + tableName + "(");
+
+            for (int i = 0; i < columns.size(); i++) {
+                String column = columns.get(i);
+                sql.append(keywordEscapeChar + column + keywordEscapeChar);
+                if (i + 1 < columns.size()) {
+                    sql.append(", ");
+                }
+            }
+
+            sql.append(") SELECT ");
+
+            for (int i = 0; i < columns.size(); i++) {
+                sql.append("?");
+                if (i + 1 < columns.size()) {
+                    sql.append(", ");
+                }
+            }
+
+            sql.append(" WHERE @@ROWCOUNT=0;");
+
+            return connection.prepareStatement(sql.toString());
+
+        } else if (ConnectionManager.isPostgreSQL(connection)) {
+
+            StringBuilder sql = new StringBuilder();
+            sql.append("INSERT INTO " + tableName + " (");
 
             for (int i = 0; i < columns.size(); i++) {
                 String column = columns.get(i);
@@ -453,7 +517,11 @@ public class EnterpriseFiler {
 
             sql.append(";");
 
+            return connection.prepareStatement(sql.toString());
+
         } else {
+
+            StringBuilder sql = new StringBuilder();
             sql.append("INSERT INTO " + tableName + "(");
 
             for (int i = 0; i < columns.size(); i++) {
@@ -488,9 +556,9 @@ public class EnterpriseFiler {
             }
 
             sql.append(";");
-        }
 
-        return connection.prepareStatement(sql.toString());
+            return connection.prepareStatement(sql.toString());
+        }
     }
 
     /**
@@ -569,6 +637,15 @@ public class EnterpriseFiler {
                 index ++;
             }
 
+            //if SQL Server, then we need to add the values a SECOND time because the UPSEERT syntax used needs it
+            if (ConnectionManager.isSqlServer(connection)) {
+                for (String column: columns) {
+                    addToStatement(insert, csvRecord, column, columnClasses, index);
+                    index ++;
+                }
+            }
+
+            //LOG.debug("" + insert);
             insert.addBatch();
         }
 
