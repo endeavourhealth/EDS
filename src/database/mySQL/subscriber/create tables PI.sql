@@ -968,7 +968,7 @@ CREATE TABLE referral_request
   requester_organization_id bigint,
   recipient_organization_id bigint,
   referral_request_priority_concept_id int,
-  referral_request_type_concept_id smallint,
+  referral_request_type_concept_id int,
   mode character varying(50),
   outgoing_referral boolean,
   is_review boolean NOT NULL,
