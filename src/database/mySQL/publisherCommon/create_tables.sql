@@ -2,6 +2,7 @@ use publisher_common;
 
 DROP TABLE IF EXISTS emis_csv_code_map;
 DROP TABLE IF EXISTS emis_admin_resource_cache;
+DROP TABLE IF EXISTS emis_admin_resource_cache_applied;
 DROP TABLE IF EXISTS tpp_immunisation_content;
 DROP TABLE IF EXISTS tpp_ctv3_hierarchy_ref;
 DROP TABLE IF EXISTS tpp_ctv3_lookup;
@@ -35,6 +36,15 @@ CREATE TABLE emis_admin_resource_cache (
 	resource_data text,
 	audit_json MEDIUMTEXT,
 	CONSTRAINT pk_emis_admin_resource_cache PRIMARY KEY (data_sharing_agreement_guid, emis_guid, resource_type)
+)
+ROW_FORMAT=COMPRESSED
+KEY_BLOCK_SIZE=8;
+
+CREATE TABLE emis_admin_resource_cache_applied (
+	service_id char(36) NOT NULL COMMENT 'links to admin.service',
+	data_sharing_agreement_guid varchar(36) NOT NULL COMMENT 'so we know what data sharing GUID was applied',
+	date_applied datetime NOT NULL COMMENT 'datetime the admin cache was applied',
+	CONSTRAINT pk_emis_admin_resource_cache_applied PRIMARY KEY (service_id)
 )
 ROW_FORMAT=COMPRESSED
 KEY_BLOCK_SIZE=8;
