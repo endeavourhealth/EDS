@@ -1143,20 +1143,22 @@ CREATE UNIQUE INDEX patient_uprn_id
   
 CREATE TABLE patient_contact
 (
-  id                         bigint       NOT NULL AUTO_INCREMENT,
+  id                         bigint       NOT NULL,
+  organization_id 			 bigint		  NOT NULL,
   patient_id                 bigint       NOT NULL,
   type_concept_id            bigint       NOT NULL COMMENT 'type of contact (e.g. home phone, mobile phone, email)',
   value                      varchar(255) NOT NULL COMMENT 'the actual phone number or email address',
-  CONSTRAINT pk_id_patient_id PRIMARY KEY (`id`,`patient_id`),
-  CONSTRAINT fk_patient_contact_patient_id FOREIGN KEY (patient_id)
-      REFERENCES patient (id)
-) AUTO_INCREMENT =1 COMMENT 'stores contact details (e.g. phone) for patients';
+  CONSTRAINT pk_organization_id_id_patient_id PRIMARY KEY (`organization_id`,`id`,`patient_id`),
+  CONSTRAINT fk_patient_contact_patient_id_organisation_id FOREIGN KEY (patient_id, organization_id)
+      REFERENCES patient (id, organization_id)
+) AUTO_INCREMENT = 1 COMMENT 'stores contact details (e.g. phone) for patients';
 
 -- Table: patient_address
 
 CREATE TABLE patient_address
 (
-  id                       bigint 			NOT NULL AUTO_INCREMENT,
+  id                       bigint 			NOT NULL,
+  organization_id 		   bigint		    NOT NULL,
   patient_id               bigint          	NOT NULL,
   address_line_1           varchar(255),
   address_line_2           varchar(255),
@@ -1165,8 +1167,8 @@ CREATE TABLE patient_address
   postcode                 varchar(10),
   type_concept_id          bigint       	NOT NULL COMMENT 'type of address (e.g. home, temporary)',
   date_to				   date,  
-  CONSTRAINT pk_id_patient_id PRIMARY KEY (`id`,`patient_id`),
-  CONSTRAINT fk_patient_address_patient_id FOREIGN KEY (patient_id)
-      REFERENCES patient (id)
-) AUTO_INCREMENT =1 COMMENT 'stores address details for patients';
+  CONSTRAINT pk_organization_id_id_patient_id PRIMARY KEY (`organization_id`,`id`,`patient_id`),
+  CONSTRAINT fk_patient_address_patient_id_organization_id FOREIGN KEY (patient_id, organization_id)
+      REFERENCES patient (id, organization_id)
+) AUTO_INCREMENT = 1 COMMENT 'stores address details for patients';
 
