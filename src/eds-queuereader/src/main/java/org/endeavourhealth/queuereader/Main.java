@@ -1022,7 +1022,7 @@ public class Main {
 
 				String version = EmisCsvToFhirTransformer.determineVersion(files);
 
-				EmisCsvHelper csvHelper = new EmisCsvHelper(serviceId, systemId, exchange.getId(), null, processPatientData);
+				EmisCsvHelper csvHelper = new EmisCsvHelper(serviceId, systemId, exchange.getId(), null, processPatientData, null);
 
 				//the processor is responsible for saving FHIR resources
 				TransformError transformError = new TransformError();
@@ -1035,7 +1035,7 @@ public class Main {
 				try {
 
 					//cache the practitioners for each session
-					SessionUserTransformer.transform(version, parsers, fhirResourceFiler, csvHelper);
+					SessionUserTransformer.transform(parsers, fhirResourceFiler, csvHelper);
 
 					Slot parser = (Slot) parsers.get(Slot.class);
 					while (parser.nextRecord()) {
@@ -9824,7 +9824,7 @@ public class Main {
 
 			ResourceDalI resourceDal = DalProvider.factoryResourceDal();
 
-			EmisCsvHelper csvHelper = new EmisCsvHelper(serviceId, null, null, null, true);
+			EmisCsvHelper csvHelper = new EmisCsvHelper(serviceId, null, null, null, true, null);
 
 			//for each patient
 			for (UUID patientUuid: patientIds) {
