@@ -197,6 +197,13 @@ public class Main {
 			System.exit(0);
 		}
 
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("FixEmisDeletedPatients")) {
+			String odsCode = args[1];
+			fixEmisDeletedPatients(odsCode);
+			System.exit(0);
+		}
+
 		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("FixBartsOrgs")) {
 			String serviceId = args[1];
@@ -634,6 +641,180 @@ public class Main {
 		// Begin consume
 		rabbitHandler.start();
 		LOG.info("EDS Queue reader running (kill file location " + TransformConfig.instance().getKillFileLocation() + ")");
+	}
+
+	private static void fixEmisDeletedPatients(String odsCode) {
+		LOG.info("Fixing Emis Delerted Patients for " + odsCode);
+		try {
+
+			ServiceDalI serviceDal = DalProvider.factoryServiceDal();
+			Service service = serviceDal.getByLocalIdentifier(odsCode);
+			LOG.info("Service " + service.getId() + " -> " + service.getName());
+
+			List<UUID> systemIds = findSystemIds(service);
+			if (systemIds.size() != 1) {
+				throw new Exception("Found " + systemIds.size() + " for service");
+			}
+			UUID systemId = systemIds.get(0);
+			UUID serviceId = service.getId();
+
+			ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
+			List<Exchange> exchanges = exchangeDal.getExchangesByService(serviceId, systemId, Integer.MAX_VALUE);
+			LOG.info("Found " + exchanges.size() + " exchanges");
+
+			Set<String> hsPatientGuidsDeductedDeceased = new HashSet<>();
+			Map<String, List<UUID>> hmPatientGuidsDeleted = new HashMap<>();
+
+			Map<String, List<UUID>> hmPatientGuidsToFix = new HashMap<>();
+
+			//exchanges are in REVERSE order (most recent first)
+			for (int i=exchanges.size()-1; i>=0; i--) {
+
+				Exchange exchange = exchanges.get(i);
+				List<ExchangePayloadFile> files = ExchangeHelper.parseExchangeBody(exchange.getBody());
+
+				//skip exchanges that are for custom extracts
+				if (files.size() <= 1) {
+					continue;
+				}
+
+				//skip if we're ignoring old data
+				boolean processPatientData = EmisCsvToFhirTransformer.shouldProcessPatientData(serviceId, files);
+				if (!processPatientData) {
+					continue;
+				}
+
+				//find patient file
+				ExchangePayloadFile patientFile = findFileOfType(files, "Admin_Patient");
+				if (patientFile == null) {
+					throw new Exception("Failed to find Admin_Patient file in exchange " + exchange.getId());
+				}
+
+				ExchangePayloadFile agreementFile = findFileOfType(files, "Agreements_SharingOrganisation");
+				if (agreementFile == null) {
+					throw new Exception("Failed to find Agreements_SharingOrganisation file in exchange " + exchange.getId());
+				}
+
+				//work out file version
+				List<ExchangePayloadFile> filesTmp = new ArrayList<>();
+				filesTmp.add(patientFile);
+				filesTmp.add(agreementFile);
+				String version = EmisCsvToFhirTransformer.determineVersion(filesTmp);
+
+				//see if sharing agreement is disabled
+				String path = agreementFile.getPath();
+				org.endeavourhealth.transform.emis.csv.schema.agreements.SharingOrganisation agreementParser = new org.endeavourhealth.transform.emis.csv.schema.agreements.SharingOrganisation(serviceId, systemId, exchange.getId(), version, path);
+
+				agreementParser.nextRecord();
+				CsvCell disabled = agreementParser.getDisabled();
+				boolean isDisabled = disabled.getBoolean();
+
+				//create the parser
+				path = patientFile.getPath();
+				org.endeavourhealth.transform.emis.csv.schema.admin.Patient parser = new org.endeavourhealth.transform.emis.csv.schema.admin.Patient(serviceId, systemId, exchange.getId(), version, path);
+
+				while (parser.nextRecord()) {
+
+					CsvCell patientGuidCell = parser.getPatientGuid();
+					String patientGuid = patientGuidCell.getString();
+
+					CsvCell dateOfDeathCell = parser.getDateOfDeath();
+					CsvCell dateOfDeductionCell = parser.getDateOfDeactivation();
+
+					CsvCell deletedCell = parser.getDeleted();
+					if (deletedCell.getBoolean()) {
+
+						List<UUID> exchangesDeleted = hmPatientGuidsDeleted.get(patientGuid);
+						if (exchangesDeleted == null) {
+							exchangesDeleted = new ArrayList<>();
+							hmPatientGuidsDeleted.put(patientGuid, exchangesDeleted);
+						}
+						exchangesDeleted.add(exchange.getId());
+
+						//if this patient was previously updated with a deduction date or date of death, and the sharing
+						//agreement isn't disabled, then we will have deleted them and need to undelete
+						if (hsPatientGuidsDeductedDeceased.contains(patientGuid)
+								&& !isDisabled) {
+
+							List<UUID> exchangesToFix = hmPatientGuidsToFix.get(patientGuid);
+							if (exchangesToFix == null) {
+								exchangesToFix = new ArrayList<>();
+								hmPatientGuidsToFix.put(patientGuid, exchangesToFix);
+							}
+							exchangesToFix.add(exchange.getId());
+						}
+
+					} else {
+
+						//if the date of death of deduction is set then we need to track this
+						//because we're going to possibly get a delete in a years time
+						if (!dateOfDeathCell.isEmpty() || !dateOfDeductionCell.isEmpty()) {
+							hsPatientGuidsDeductedDeceased.add(patientGuid);
+						} else {
+							hsPatientGuidsDeductedDeceased.remove(patientGuid);
+						}
+
+						//if this patient was previously deleted and is now UN-deleted, then we'll
+						//need to fix the record
+						if (hmPatientGuidsDeleted.containsKey(patientGuid)) {
+							List<UUID> exchangesDeleted = hmPatientGuidsDeleted.get(patientGuid);
+
+							List<UUID> exchangesToFix = hmPatientGuidsToFix.get(patientGuid);
+							if (exchangesToFix == null) {
+								exchangesToFix = new ArrayList<>();
+								hmPatientGuidsToFix.put(patientGuid, exchangesToFix);
+							}
+							exchangesToFix.addAll(exchangesDeleted);
+						}
+					}
+				}
+
+				parser.close();
+			}
+
+			LOG.info("Finished checking for affected patients - found " + hmPatientGuidsToFix.size() + " patients to fix");
+			for (String patientGuid: hmPatientGuidsToFix.keySet()) {
+				List<UUID> exchangeIds = hmPatientGuidsToFix.get(patientGuid);
+				LOG.info("Patient " + patientGuid);
+				for (UUID exchangeId: exchangeIds) {
+					LOG.info("    Exchange Id " + exchangeId);
+				}
+
+				//log out the UUID for the patient too
+				EmisCsvHelper csvHelper = new EmisCsvHelper(serviceId, systemId, null, null, false, null);
+				Reference ref = ReferenceHelper.createReference(ResourceType.Patient, patientGuid);
+				ref = IdHelper.convertLocallyUniqueReferenceToEdsReference(ref, csvHelper);
+				LOG.debug("    Patient UUID " + ref.getReference());
+			}
+
+
+
+//for each exchange, work out if sharing agreement is disabled
+			//find patients affected by BOTH problems
+			//re-registration problem
+			//    go through files to find patients deleted then subsequently UN-deleted (need to restore everything EXCEPT patient and episode)
+			//    go through files to find deletes for deceased/deducted patients
+			//what about the practice that is actually disabled and we did delete all data for them?
+			//can a patient be affected by both issues?
+			//fix patients affected
+			//don't restore if genuinely disabled in sharing agreement
+			//post fixed patients to protocol queue
+
+
+			LOG.info("Finished Fixing Emis Delerted Patients for " + odsCode);
+		} catch (Throwable t) {
+			LOG.error("", t);
+		}
+	}
+
+	private static ExchangePayloadFile findFileOfType(List<ExchangePayloadFile> files, String fileType) {
+
+		for (ExchangePayloadFile file: files) {
+			if (file.getType().equals(fileType)) {
+				return file;
+			}
+		}
+		return null;
 	}
 
 	private static void fixEmisEpisodes2(String odsCode) {
