@@ -644,7 +644,7 @@ public class Main {
 	}
 
 	private static void fixEmisDeletedPatients(String odsCode) {
-		LOG.info("Fixing Emis Delerted Patients for " + odsCode);
+		LOG.info("Fixing Emis Deleted Patients for " + odsCode);
 		try {
 
 			ServiceDalI serviceDal = DalProvider.factoryServiceDal();
@@ -665,7 +665,7 @@ public class Main {
 			Set<String> hsPatientGuidsDeductedDeceased = new HashSet<>();
 			Map<String, List<UUID>> hmPatientGuidsDeleted = new HashMap<>();
 
-			Map<String, List<UUID>> hmPatientGuidsToFix = new HashMap<>();
+			Map<String, List<String>> hmPatientGuidsToFix = new HashMap<>();
 
 			//exchanges are in REVERSE order (most recent first)
 			for (int i=exchanges.size()-1; i>=0; i--) {
@@ -736,12 +736,12 @@ public class Main {
 						if (hsPatientGuidsDeductedDeceased.contains(patientGuid)
 								&& !isDisabled) {
 
-							List<UUID> exchangesToFix = hmPatientGuidsToFix.get(patientGuid);
+							List<String> exchangesToFix = hmPatientGuidsToFix.get(patientGuid);
 							if (exchangesToFix == null) {
 								exchangesToFix = new ArrayList<>();
 								hmPatientGuidsToFix.put(patientGuid, exchangesToFix);
 							}
-							exchangesToFix.add(exchange.getId());
+							exchangesToFix.add(exchange.getId().toString() + ": Deducted/Dead and Deleted after");
 						}
 
 					} else {
@@ -757,14 +757,18 @@ public class Main {
 						//if this patient was previously deleted and is now UN-deleted, then we'll
 						//need to fix the record
 						if (hmPatientGuidsDeleted.containsKey(patientGuid)) {
-							List<UUID> exchangesDeleted = hmPatientGuidsDeleted.get(patientGuid);
+							List<UUID> exchangesDeleted = hmPatientGuidsDeleted.remove(patientGuid);
 
-							List<UUID> exchangesToFix = hmPatientGuidsToFix.get(patientGuid);
+							List<String> exchangesToFix = hmPatientGuidsToFix.get(patientGuid);
 							if (exchangesToFix == null) {
 								exchangesToFix = new ArrayList<>();
 								hmPatientGuidsToFix.put(patientGuid, exchangesToFix);
 							}
-							exchangesToFix.addAll(exchangesDeleted);
+
+							for (UUID exchangeId: exchangesDeleted) {
+								exchangesToFix.add(exchangeId.toString() + ": Deleted and subsequently undeleted");
+							}
+
 						}
 					}
 				}
@@ -774,9 +778,9 @@ public class Main {
 
 			LOG.info("Finished checking for affected patients - found " + hmPatientGuidsToFix.size() + " patients to fix");
 			for (String patientGuid: hmPatientGuidsToFix.keySet()) {
-				List<UUID> exchangeIds = hmPatientGuidsToFix.get(patientGuid);
+				List<String> exchangeIds = hmPatientGuidsToFix.get(patientGuid);
 				LOG.info("Patient " + patientGuid);
-				for (UUID exchangeId: exchangeIds) {
+				for (String exchangeId: exchangeIds) {
 					LOG.info("    Exchange Id " + exchangeId);
 				}
 
@@ -801,7 +805,7 @@ public class Main {
 			//post fixed patients to protocol queue
 
 
-			LOG.info("Finished Fixing Emis Delerted Patients for " + odsCode);
+			LOG.info("Finished Fixing Emis Deleted Patients for " + odsCode);
 		} catch (Throwable t) {
 			LOG.error("", t);
 		}
