@@ -222,6 +222,10 @@ create table opcs4_lookup (
   CONSTRAINT pk_postcode_lookup PRIMARY KEY (procedure_code)
 );
 
+create table snomed_to_bnf_chapter_lookup (
+  snomed_code varchar(20) NOT NULL PRIMARY KEY,
+  bnf_chapter_code varchar(20)
+);
 
 create table icd10_lookup (
   code varchar(10),
