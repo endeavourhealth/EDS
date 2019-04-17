@@ -67,6 +67,8 @@ import javax.persistence.EntityManager;
 import java.io.*;
 import java.lang.System;
 import java.lang.reflect.Constructor;
+import java.net.InetAddress;
+import java.net.Socket;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
@@ -201,6 +203,14 @@ public class Main {
 				&& args[0].equalsIgnoreCase("FixEmisDeletedPatients")) {
 			String odsCode = args[1];
 			fixEmisDeletedPatients(odsCode);
+			System.exit(0);
+		}
+
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("TestGraphiteMetrics")) {
+			String host = args[1];
+			String port = args[2];
+			testGraphiteMetrics(host, port);
 			System.exit(0);
 		}
 
@@ -641,6 +651,76 @@ public class Main {
 		// Begin consume
 		rabbitHandler.start();
 		LOG.info("EDS Queue reader running (kill file location " + TransformConfig.instance().getKillFileLocation() + ")");
+	}
+
+	private static void testGraphiteMetrics(String host, String port) {
+		LOG.info("Testing Graphite metrics to " + host + " " + port);
+		try {
+
+			InetAddress ip = InetAddress.getLocalHost();
+			String hostname = ip.getHostName();
+			LOG.debug("Hostname = " + hostname);
+
+			String appId = ConfigManager.getAppId();
+			LOG.debug("AppID = " + appId);
+
+			Random r = new Random(System.currentTimeMillis());
+
+			while (true) {
+
+				Map<String, Object> metrics = new HashMap<>();
+
+				String metric1 = hostname + "." + appId + ".frailty-api.duration-ms";
+				Integer value1 = new Integer(r.nextInt(1000));
+				metrics.put(metric1, value1);
+
+				String metric2 = hostname + "." + appId+ ".frailty-api.response-code";
+				Integer value2 = null;
+				if (r.nextBoolean()) {
+					value2 = new Integer(200);
+				} else {
+					value2 = new Integer(400);
+				}
+				metrics.put(metric2, value2);
+
+				long timestamp = System.currentTimeMillis() / 1000;
+
+				LOG.debug("Sending metrics");
+				sendMetrics(host, Integer.parseInt(port), metrics, timestamp);
+
+				int sleep = r.nextInt(10 * 1000);
+				LOG.debug("Waiting " + sleep + " ms");
+
+				Thread.sleep(sleep);
+				/**
+				 * N3-MessagingAPI-01.messaging-api.frailty-api.duration-ms
+				 N3-MessagingAPI-01.messaging-api.frailty-api.response-code (edited)
+				 */
+			}
+
+		} catch (Throwable t) {
+			LOG.error("", t);
+		}
+	}
+
+	private static  void sendMetrics(String graphiteHost, int graphitePort, Map<String, Object> metrics, long timeStamp) throws Exception {
+
+		Socket socket = new Socket(graphiteHost, graphitePort);
+		OutputStream s = socket.getOutputStream();
+		PrintWriter out = new PrintWriter(s, true);
+		for (Map.Entry<String, Object> metric: metrics.entrySet()) {
+			if (metric.getValue() instanceof Integer) {
+				out.printf("%s %d %d%n", metric.getKey(), ((Integer)metric.getValue()).intValue(), timeStamp);
+			}
+			else if (metric.getValue() instanceof Float) {
+				out.printf("%s %f %d%n", metric.getKey(), ((Float)metric.getValue()).floatValue(), timeStamp);
+
+			} else {
+				throw new RuntimeException("Unsupported type " + metric.getValue().getClass());
+			}
+		}
+		out.close();
+		socket.close();
 	}
 
 	private static void fixEmisDeletedPatients(String odsCode) {
