@@ -119,12 +119,16 @@ CREATE TABLE msoa_lookup
   CONSTRAINT pk_msoa_lookup PRIMARY KEY (msoa_code)
 );
 
+-- Table: local_authority_lookup
+
 CREATE TABLE local_authority_lookup
 (
   local_authority_code varchar(9) NOT NULL,
   local_authority_name varchar(255),
   CONSTRAINT pk_local_authority_lookup PRIMARY KEY (local_authority_code)
 );
+
+-- Table: ward_lookup
 
 CREATE TABLE ward_lookup
 (
@@ -299,7 +303,6 @@ INSERT INTO registration_status VALUES (33, 'R10', 'Removal from Residential Ins
 INSERT INTO registration_status VALUES (34, 'D22', 'Records sent back to FHSA', false);
 INSERT INTO registration_status VALUES (35, 'D23', 'Records received by FHSA', false);
 INSERT INTO registration_status VALUES (36, 'D24', 'Registration expired', false);
-
 
 -- Table: registration_type
 
