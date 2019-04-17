@@ -47,7 +47,7 @@ public class SnomedToBnfChapterUpdater {
             LOG.error("" + file + " doesn't exist.");
         }
 
-        // saveSnomedToBnfLookups(file);
+        saveSnomedToBnfLookups(file);
         LOG.info("Finished Snomed To BNF Chapter Import.");
     }
 
@@ -77,12 +77,15 @@ public class SnomedToBnfChapterUpdater {
     private static Map<String, String> readSnomedToBnfChapterRecords(File src) throws Exception {
         Map<String, String> map = new HashMap<>();
 
+        // CSVFormat format = CSVFormat.DEFAULT;
+
         CSVFormat format = CSVFormat.newFormat(',')
                 .withFirstRecordAsHeader()
                 .withRecordSeparator("\r\n")
                 .withIgnoreEmptyLines(true);
 
         CSVParser parser = null;
+
         try {
             parser = CSVParser.parse(src, Charset.defaultCharset(), format);
             Iterator<CSVRecord> iterator = parser.iterator();
