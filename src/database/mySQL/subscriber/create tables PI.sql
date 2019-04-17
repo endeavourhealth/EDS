@@ -597,6 +597,7 @@ CREATE TABLE encounter
   service_provider_organization_id bigint,
   core_concept_id int NOT NULL,
   non_core_concept_id int NOT NULL,
+  age_during_event decimal (5,2),  
   CONSTRAINT pk_encounter_id PRIMARY KEY (organization_id,person_id,id),
   CONSTRAINT fk_encounter_appointment_id FOREIGN KEY (appointment_id)
       REFERENCES appointment (id) MATCH SIMPLE
@@ -783,6 +784,7 @@ CREATE TABLE allergy_intolerance
   is_review boolean NOT NULL,
   core_concept_id int NOT NULL,
   non_core_concept_id int NOT NULL,
+  age_during_event decimal (5,2),
   CONSTRAINT pk_allergy_intolerance_id PRIMARY KEY (`organization_id`,`person_id`,`id`),
   CONSTRAINT fk_allergy_intolerance_encounter_id FOREIGN KEY (encounter_id)
       REFERENCES encounter (id) MATCH SIMPLE
@@ -830,6 +832,7 @@ CREATE TABLE medication_statement
   medication_statement_authorisation_type_concept_id int NOT NULL,
   core_concept_id int NOT NULL,
   non_core_concept_id int NOT NULL,
+  age_during_event decimal (5,2),    
   CONSTRAINT pk_medication_statement_id PRIMARY KEY (`organization_id`,`person_id`,`id`),
   CONSTRAINT fk_medication_statement_date_precision FOREIGN KEY (date_precision_id)
       REFERENCES date_precision (id) MATCH SIMPLE
@@ -877,6 +880,7 @@ CREATE TABLE medication_order
   medication_statement_id bigint,
   core_concept_id int NOT NULL,
   non_core_concept_id int NOT NULL,
+  age_during_event decimal (5,2),    
   CONSTRAINT pk_medication_order_id PRIMARY KEY (`organization_id`,`person_id`,`id`),
   CONSTRAINT fk_medication_order_encounter_id FOREIGN KEY (encounter_id)
       REFERENCES encounter (id) MATCH SIMPLE
@@ -959,6 +963,7 @@ CREATE TABLE observation
   parent_observation_id bigint,
   core_concept_id int NOT NULL,
   non_core_concept_id int NOT NULL,
+  age_during_event decimal (5,2),    
   CONSTRAINT pk_observation_id PRIMARY KEY (`organization_id`,`person_id`,`id`),
   CONSTRAINT fk_observation_encounter_id FOREIGN KEY (encounter_id)
       REFERENCES encounter (id) MATCH SIMPLE
@@ -1025,6 +1030,7 @@ CREATE TABLE procedure_request
   procedure_request_status_concept_id int,
   core_concept_id int NOT NULL,
   non_core_concept_id int NOT NULL,
+  age_during_event decimal (5,2),    
   CONSTRAINT pk_procedure_request_id PRIMARY KEY (`organization_id`,`person_id`,`id`),
   CONSTRAINT fk_procedure_request_encounter_id FOREIGN KEY (encounter_id)
       REFERENCES encounter (id) MATCH SIMPLE
@@ -1072,6 +1078,7 @@ CREATE TABLE referral_request
   is_review boolean NOT NULL,
   core_concept_id int NOT NULL,
   non_core_concept_id int NOT NULL,
+  age_during_event decimal (5,2),    
   CONSTRAINT pk_referral_request_id PRIMARY KEY (`organization_id`,`person_id`,`id`),
   CONSTRAINT fk_referral_request_date_precision FOREIGN KEY (date_precision_id)
       REFERENCES date_precision (id) MATCH SIMPLE
