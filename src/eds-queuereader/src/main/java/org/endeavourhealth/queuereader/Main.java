@@ -13,10 +13,7 @@ import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.common.fhir.PeriodHelper;
 import org.endeavourhealth.common.fhir.ReferenceHelper;
-import org.endeavourhealth.common.utility.FileHelper;
-import org.endeavourhealth.common.utility.SlackHelper;
-import org.endeavourhealth.common.utility.ThreadPool;
-import org.endeavourhealth.common.utility.ThreadPoolError;
+import org.endeavourhealth.common.utility.*;
 import org.endeavourhealth.core.configuration.ConfigDeserialiser;
 import org.endeavourhealth.core.configuration.PostMessageToExchangeConfig;
 import org.endeavourhealth.core.configuration.QueueReaderConfiguration;
@@ -25,8 +22,10 @@ import org.endeavourhealth.core.database.dal.DalProvider;
 import org.endeavourhealth.core.database.dal.admin.LibraryRepositoryHelper;
 import org.endeavourhealth.core.database.dal.admin.ServiceDalI;
 import org.endeavourhealth.core.database.dal.admin.models.Service;
+import org.endeavourhealth.core.database.dal.audit.ExchangeBatchDalI;
 import org.endeavourhealth.core.database.dal.audit.ExchangeDalI;
 import org.endeavourhealth.core.database.dal.audit.models.Exchange;
+import org.endeavourhealth.core.database.dal.audit.models.ExchangeBatch;
 import org.endeavourhealth.core.database.dal.audit.models.ExchangeTransformAudit;
 import org.endeavourhealth.core.database.dal.audit.models.HeaderKeys;
 import org.endeavourhealth.core.database.dal.eds.PatientLinkDalI;
@@ -53,6 +52,7 @@ import org.endeavourhealth.core.xml.transformError.TransformError;
 import org.endeavourhealth.transform.barts.schema.PPALI;
 import org.endeavourhealth.transform.barts.schema.PPATI;
 import org.endeavourhealth.transform.common.*;
+import org.endeavourhealth.transform.common.resourceBuilders.GenericBuilder;
 import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
 import org.endeavourhealth.transform.emis.csv.helpers.EmisCsvHelper;
 import org.endeavourhealth.transform.emis.csv.schema.appointment.Slot;
@@ -60,6 +60,7 @@ import org.endeavourhealth.transform.emis.csv.transforms.appointment.SessionUser
 import org.endeavourhealth.transform.emis.csv.transforms.appointment.SlotTransformer;
 import org.hibernate.internal.SessionImpl;
 import org.hl7.fhir.instance.model.*;
+import org.hl7.fhir.instance.model.Resource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -203,6 +204,12 @@ public class Main {
 				&& args[0].equalsIgnoreCase("FixEmisDeletedPatients")) {
 			String odsCode = args[1];
 			fixEmisDeletedPatients(odsCode);
+			System.exit(0);
+		}
+
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("TestMetrics")) {
+			testMetrics();
 			System.exit(0);
 		}
 
@@ -653,6 +660,42 @@ public class Main {
 		LOG.info("EDS Queue reader running (kill file location " + TransformConfig.instance().getKillFileLocation() + ")");
 	}
 
+	private static void testMetrics() {
+		LOG.info("Testing Metrics");
+		try {
+
+
+			Random r = new Random(System.currentTimeMillis());
+
+			while (true) {
+
+
+
+				String metric1 = "frailty-api.duration-ms";
+				Integer value1 = new Integer(r.nextInt(1000));
+				MetricsHelper.recordValue(metric1, value1);
+
+				if (r.nextBoolean()) {
+					MetricsHelper.recordEvent("frailty-api.response-code-200");
+				} else {
+					MetricsHelper.recordEvent("frailty-api.response-code-400");
+				}
+
+				int sleep = r.nextInt(10 * 1000);
+				LOG.debug("Waiting " + sleep + " ms");
+
+				Thread.sleep(sleep);
+				/**
+				 * N3-MessagingAPI-01.messaging-api.frailty-api.duration-ms
+				 N3-MessagingAPI-01.messaging-api.frailty-api.response-code (edited)
+				 */
+			}
+
+		} catch (Throwable t) {
+			LOG.error("", t);
+		}
+	}
+
 	private static void testGraphiteMetrics(String host, String port) {
 		LOG.info("Testing Graphite metrics to " + host + " " + port);
 		try {
@@ -857,6 +900,7 @@ public class Main {
 			}
 
 			LOG.info("Finished checking for affected patients - found " + hmPatientGuidsToFix.size() + " patients to fix");
+
 			for (String patientGuid: hmPatientGuidsToFix.keySet()) {
 				List<String> exchangeIds = hmPatientGuidsToFix.get(patientGuid);
 				LOG.info("Patient " + patientGuid);
@@ -869,21 +913,79 @@ public class Main {
 				Reference ref = ReferenceHelper.createReference(ResourceType.Patient, patientGuid);
 				ref = IdHelper.convertLocallyUniqueReferenceToEdsReference(ref, csvHelper);
 				LOG.debug("    Patient UUID " + ref.getReference());
+
+				String patientUuidStr = ReferenceHelper.getReferenceId(ref);
+				UUID patientUuid = UUID.fromString(patientUuidStr);
+
+				Set<UUID> hsExchangeIdsDone = new HashSet<>();
+
+				for (String exchangeId: exchangeIds) {
+					UUID exchangeUuid = UUID.fromString(exchangeId.split(":")[0]);
+
+					//in some cases, the same exchange was found twice
+					if (hsExchangeIdsDone.contains(exchangeUuid)) {
+						continue;
+					}
+					hsExchangeIdsDone.add(exchangeUuid);
+
+					Exchange exchange = exchangeDal.getExchange(exchangeUuid);
+
+					ExchangeBatchDalI exchangeBatchDal = DalProvider.factoryExchangeBatchDal();
+					ResourceDalI resourceDal = DalProvider.factoryResourceDal();
+
+					List<UUID> batchIdsCreated = new ArrayList<>();
+					TransformError transformError = new TransformError();
+					FhirResourceFiler filer = new FhirResourceFiler(exchangeUuid, serviceId, systemId, transformError, batchIdsCreated);
+
+					//get all exchange batches for our patient
+					List<ExchangeBatch> batches = exchangeBatchDal.retrieveForExchangeId(exchangeUuid);
+					for (ExchangeBatch batch: batches) {
+						UUID batchPatient = batch.getEdsPatientId();
+						if (!batchPatient.equals(patientUuid)) {
+							continue;
+						}
+
+						//get all resources for this batch
+						List<ResourceWrapper> resourceWrappers = resourceDal.getResourcesForBatch(serviceId, batch.getBatchId());
+
+						//restore each resource
+						for (ResourceWrapper resourceWrapper: resourceWrappers) {
+
+							List<ResourceWrapper> history = resourceDal.getResourceHistory(serviceId, resourceWrapper.getResourceType(), resourceWrapper.getResourceId());
+
+							//most recent is first
+							ResourceWrapper mostRecent = history.get(0);
+							if (!mostRecent.isDeleted()) {
+								continue;
+							}
+
+							//find latest non-deleted version and save it over the deleted version
+							for (ResourceWrapper historyItem: history) {
+								if (!historyItem.isDeleted()) {
+
+									Resource resource = FhirSerializationHelper.deserializeResource(historyItem.getResourceData());
+									GenericBuilder builder = new GenericBuilder(resource);
+									filer.savePatientResource(null, false, builder);
+
+									break;
+								}
+							}
+						}
+					}
+
+					filer.waitToFinish();
+
+					//set new batch ID in exchange header
+					String batchIdString = ObjectMapperPool.getInstance().writeValueAsString(batchIdsCreated.toArray());
+					exchange.setHeader(HeaderKeys.BatchIdsJson, batchIdString);
+
+					//post new batch to protocol Q
+					PostMessageToExchangeConfig exchangeConfig = QueueHelper.findExchangeConfig("EdsProtocol");
+					PostMessageToExchange component = new PostMessageToExchange(exchangeConfig);
+					component.process(exchange);
+				}
+
 			}
-
-
-
-//for each exchange, work out if sharing agreement is disabled
-			//find patients affected by BOTH problems
-			//re-registration problem
-			//    go through files to find patients deleted then subsequently UN-deleted (need to restore everything EXCEPT patient and episode)
-			//    go through files to find deletes for deceased/deducted patients
-			//what about the practice that is actually disabled and we did delete all data for them?
-			//can a patient be affected by both issues?
-			//fix patients affected
-			//don't restore if genuinely disabled in sharing agreement
-			//post fixed patients to protocol queue
-
 
 			LOG.info("Finished Fixing Emis Deleted Patients for " + odsCode);
 		} catch (Throwable t) {
