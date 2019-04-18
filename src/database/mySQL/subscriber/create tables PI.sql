@@ -965,7 +965,8 @@ CREATE TABLE observation
   parent_observation_id bigint,
   core_concept_id int NOT NULL,
   non_core_concept_id int NOT NULL,
-  age_during_event decimal (5,2),    
+  age_during_event decimal (5,2),
+  episodicity_concept_id bigint,
   CONSTRAINT pk_observation_id PRIMARY KEY (`organization_id`,`person_id`,`id`),
   CONSTRAINT fk_observation_encounter_id FOREIGN KEY (encounter_id)
       REFERENCES encounter (id) MATCH SIMPLE
