@@ -939,7 +939,7 @@ public class Main {
 					List<ExchangeBatch> batches = exchangeBatchDal.retrieveForExchangeId(exchangeUuid);
 					for (ExchangeBatch batch: batches) {
 						UUID batchPatient = batch.getEdsPatientId();
-						if (!batchPatient.equals(patientUuid)) {
+						if (batchPatient == null || !batchPatient.equals(patientUuid)) {
 							continue;
 						}
 
