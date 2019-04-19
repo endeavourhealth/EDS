@@ -669,9 +669,7 @@ public class Main {
 
 			while (true) {
 
-
-
-				String metric1 = "frailty-api.duration-ms";
+				String metric1 = "frailty-api.ms-duration";
 				Integer value1 = new Integer(r.nextInt(1000));
 				MetricsHelper.recordValue(metric1, value1);
 

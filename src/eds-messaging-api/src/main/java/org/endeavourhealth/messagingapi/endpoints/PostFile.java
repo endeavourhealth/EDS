@@ -18,6 +18,7 @@ import org.apache.commons.fileupload.servlet.ServletFileUpload;
 import org.apache.commons.io.FileCleaningTracker;
 import org.apache.http.entity.ContentType;
 import org.endeavourhealth.common.config.ConfigManager;
+import org.endeavourhealth.common.utility.MetricsHelper;
 import org.endeavourhealth.datasharingmanagermodel.models.database.DataProcessingAgreementEntity;
 
 import javax.annotation.security.RolesAllowed;
@@ -40,6 +41,8 @@ public class PostFile extends AbstractEndpoint {
 	@RolesAllowed({"dds_messaging_post_file"})
 	@Consumes(MediaType.MULTIPART_FORM_DATA)
 	public Response uploadFiles(@Context final HttpServletRequest request) {
+		MetricsHelper.recordEvent("post-file");
+
 		String organisationId = request.getQueryString().replaceAll("organisationId=","");
 
 		// Check that we have a multi-part file upload request
