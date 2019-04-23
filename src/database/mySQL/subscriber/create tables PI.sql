@@ -5,6 +5,7 @@ create database if not exists subscriber_pi;
 
 use subscriber_pi;
 
+
 DROP TABLE IF EXISTS patient_uprn;
 DROP TABLE IF EXISTS medication_order;
 DROP TABLE IF EXISTS medication_statement;
