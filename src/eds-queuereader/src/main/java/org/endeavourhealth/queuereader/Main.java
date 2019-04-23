@@ -917,6 +917,7 @@ public class Main {
 
 				Set<UUID> hsExchangeIdsDone = new HashSet<>();
 
+
 				for (String exchangeId: exchangeIds) {
 					UUID exchangeUuid = UUID.fromString(exchangeId.split(":")[0]);
 
