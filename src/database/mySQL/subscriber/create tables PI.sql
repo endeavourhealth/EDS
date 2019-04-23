@@ -17,7 +17,7 @@ DROP TABLE IF EXISTS diagnostic_report;
 DROP TABLE IF EXISTS family_member_history;
 DROP TABLE IF EXISTS immunization;
 DROP TABLE IF EXISTS observation;
-DROP TABLE IF EXISTS `procedure`;
+DROP TABLE IF EXISTS procedure;
 DROP TABLE IF EXISTS procedure_request;
 DROP TABLE IF EXISTS referral_request;
 DROP TABLE IF EXISTS encounter_raw;
@@ -27,7 +27,7 @@ DROP TABLE IF EXISTS appointment;
 DROP TABLE IF EXISTS episode_of_care;
 DROP TABLE IF EXISTS patient;
 DROP TABLE IF EXISTS person;
-DROP TABLE IF EXISTS `schedule`;
+DROP TABLE IF EXISTS schedule;
 DROP TABLE IF EXISTS practitioner;
 DROP TABLE IF EXISTS location;
 DROP TABLE IF EXISTS organization;
@@ -439,8 +439,6 @@ CREATE TABLE person
   date_of_birth date,
   date_of_death date,
   postcode character varying(20),
-  lsoa_code character varying(50),
-  msoa_code character varying(50),
   ethnic_code_concept_id int,
   ward_code varchar(50),
   local_authority_code varchar(50),
@@ -469,8 +467,6 @@ CREATE TABLE patient
   date_of_birth date,
   date_of_death date,
   postcode character varying(20),
-  lsoa_code character varying(50),
-  msoa_code character varying(50),
   ethnic_code_concept_id int,
   ward_code varchar(50),
   local_authority_code varchar(50),
@@ -839,6 +835,7 @@ CREATE TABLE medication_statement
   medication_statement_authorisation_type_concept_id int NOT NULL,
   core_concept_id int NOT NULL,
   non_core_concept_id int NOT NULL,
+  bnf_reference int(6),
   age_during_event decimal (5,2),
   issue_method text,
   is_primary boolean,  
@@ -889,6 +886,7 @@ CREATE TABLE medication_order
   medication_statement_id bigint,
   core_concept_id int NOT NULL,
   non_core_concept_id int NOT NULL,
+  bnf_reference int(6),
   age_during_event decimal (5,2),
   issue_method text,
   is_primary boolean,  
@@ -1145,7 +1143,6 @@ create table patient_uprn (
 	patient_id bigint,
     organization_id bigint,
     person_id bigint,
-    lsoa_code varchar(50),
     uprn bigint,
     qualifier varchar(50),
     `algorithm` varchar(255),
@@ -1191,7 +1188,14 @@ CREATE TABLE patient_address
   address_line_4           varchar(255),
   postcode                 varchar(10),
   type_concept_id          bigint       	NOT NULL COMMENT 'type of address (e.g. home, temporary)',
-  date_to				   date,  
+  date_to				   date,
+  lsoa_2001                varchar(9),
+  lsoa_2011                varchar(9),
+  msoa_2001                varchar(9),
+  msoa_2011                varchar(9),
+  imd_score_2010           decimal(5,3),
+  imd_score_2015           decimal(5,3),
+  imd_score_2017           decimal(5,3),
   CONSTRAINT pk_organization_id_id_patient_id PRIMARY KEY (`organization_id`,`id`,`patient_id`),
   CONSTRAINT fk_patient_address_patient_id_organization_id FOREIGN KEY (patient_id, organization_id)
       REFERENCES patient (id, organization_id)
