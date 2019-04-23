@@ -1,6 +1,7 @@
 package org.endeavourhealth.messagingapi.endpoints;
 
 import org.apache.http.HttpStatus;
+import org.endeavourhealth.common.utility.MetricsHelper;
 import org.endeavourhealth.core.configuration.ConfigWrapper;
 import org.endeavourhealth.core.configuration.Pipeline;
 import org.endeavourhealth.core.database.dal.DalProvider;
@@ -28,6 +29,8 @@ public class PostMessage extends AbstractEndpoint {
     @Path("/PostMessage")
     @RolesAllowed({"eds_messaging_post"})
     public Response postMessage(@Context HttpHeaders headers, String body) throws Throwable {
+        MetricsHelper.recordEvent("post-message");
+
         UUID exchangeId = UUID.randomUUID();
 
         Pipeline pipeline = ConfigWrapper.getInstance().getPostMessage().getPipeline();
@@ -56,6 +59,8 @@ public class PostMessage extends AbstractEndpoint {
     @Path("/PostMessageAsync")
     @RolesAllowed({"eds_messaging_post"})
     public Response postMessageAsync(@Context HttpHeaders headers, String body) throws Throwable {
+        MetricsHelper.recordEvent("post-message-async");
+
         UUID exchangeId = UUID.randomUUID();
 
         Pipeline pipeline = ConfigWrapper.getInstance().getPostMessageAsync().getPipeline();

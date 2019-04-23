@@ -8,6 +8,7 @@ import org.apache.http.HttpStatus;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.common.security.SecurityUtils;
+import org.endeavourhealth.common.utility.MetricsHelper;
 import org.endeavourhealth.core.database.dal.DalProvider;
 import org.endeavourhealth.core.database.dal.admin.LibraryRepositoryHelper;
 import org.endeavourhealth.core.database.dal.admin.ServiceDalI;
@@ -41,6 +42,12 @@ public class SubscriberApi {
     private static final String FRAILTY_CODE = "289999999105";
     private static final String FRAILTY_TERM = "Potentially frail";
     private static final String SUBSCRIBER_SYSTEM_NAME = "JSON_API"; //"Subscriber_Rest_API";
+
+    private static final String METRIC_ERROR = "frailty-api.response-error";
+    private static final String METRIC_NOT_FOUND = "frailty-api.response-not-found";
+    private static final String METRIC_OK = "frailty-api.response-ok";
+    private static final String METRIC_MS_DURATION = "frailty-api.ms-duration";
+
 
     @GET
     @Path("/{resourceType}")
@@ -190,6 +197,10 @@ public class SubscriberApi {
             //save the audit, but if there's an error saving, catch and log here, so the API response isn't affected
             try {
                 SubscriberApiAuditHelper.save(audit);
+
+                //the above will calculate the duration on the audit object for us, so we can report it to graphite
+                MetricsHelper.recordValue(METRIC_MS_DURATION, audit.getDurationMs());
+
             } catch (Exception ex) {
                 LOG.error("Error saving audit", ex);
             }
@@ -239,6 +250,9 @@ public class SubscriberApi {
 
         SubscriberApiAuditHelper.updateAudit(audit, response, true);
 
+        //update graphite
+        MetricsHelper.recordEvent(METRIC_OK);
+
         return response;
     }
 
@@ -262,6 +276,13 @@ public class SubscriberApi {
                 .build();
 
         SubscriberApiAuditHelper.updateAudit(audit, response, true);
+
+        //send to graphite too
+        if (issueType == OperationOutcome.IssueType.NOTFOUND) {
+            MetricsHelper.recordEvent(METRIC_NOT_FOUND);
+        } else {
+            MetricsHelper.recordEvent(METRIC_ERROR);
+        }
 
         return response;
     }

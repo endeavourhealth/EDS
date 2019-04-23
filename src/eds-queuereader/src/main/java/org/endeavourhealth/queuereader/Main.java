@@ -669,9 +669,7 @@ public class Main {
 
 			while (true) {
 
-
-
-				String metric1 = "frailty-api.duration-ms";
+				String metric1 = "frailty-api.ms-duration";
 				Integer value1 = new Integer(r.nextInt(1000));
 				MetricsHelper.recordValue(metric1, value1);
 
@@ -941,7 +939,7 @@ public class Main {
 					List<ExchangeBatch> batches = exchangeBatchDal.retrieveForExchangeId(exchangeUuid);
 					for (ExchangeBatch batch: batches) {
 						UUID batchPatient = batch.getEdsPatientId();
-						if (!batchPatient.equals(patientUuid)) {
+						if (batchPatient == null || !batchPatient.equals(patientUuid)) {
 							continue;
 						}
 
