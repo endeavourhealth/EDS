@@ -149,6 +149,10 @@ CREATE UNIQUE INDEX schedule_id
 CREATE TABLE person
 (
   id bigint NOT NULL,
+  organization_id bigint NOT NULL,
+  title varchar(50),
+  first_names varchar(255),
+  last_name varchar(255),
   gender_concept_id int NOT NULL,
   nhs_number character varying(255),
   date_of_birth date,
@@ -264,8 +268,8 @@ CREATE TABLE appointment
   appointment_status_concept_id int NOT NULL,
   patient_wait integer,
   patient_delay integer,
-  sent_in datetime,
-  `left` datetime,
+  date_time_sent_in datetime,
+  date_time_left datetime,
   source_id varchar(36), 
   rota_name varchar(150), 
   rota_location varchar(100), 
@@ -746,8 +750,8 @@ CREATE TABLE patient_contact
 (
   id                         bigint       NOT NULL,
   organization_id 			 bigint		  NOT NULL,
-  person_id 				 bigint,
   patient_id                 bigint       NOT NULL,
+  person_id 				 bigint,
   type_concept_id            bigint       NOT NULL COMMENT 'type of contact (e.g. home phone, mobile phone, email)',
   value                      varchar(255) NOT NULL COMMENT 'the actual phone number or email address',
   CONSTRAINT pk_organization_id_id_patient_id_person_id PRIMARY KEY (`organization_id`,`id`,`patient_id`,`person_id`),
@@ -761,8 +765,8 @@ CREATE TABLE patient_address
 (
   id                       bigint 			NOT NULL,
   organization_id 		   bigint		    NOT NULL,
-  person_id 			   bigint,
   patient_id               bigint          	NOT NULL,
+  person_id 			   bigint,
   address_line_1           varchar(255),
   address_line_2           varchar(255),
   address_line_3           varchar(255),
