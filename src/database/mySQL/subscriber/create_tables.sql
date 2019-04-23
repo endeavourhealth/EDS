@@ -21,8 +21,6 @@ DROP TABLE IF EXISTS observation;
 DROP TABLE IF EXISTS `procedure`;
 DROP TABLE IF EXISTS procedure_request;
 DROP TABLE IF EXISTS referral_request;
-DROP TABLE IF EXISTS encounter_raw;
-DROP TABLE IF EXISTS encounter_detail;
 DROP TABLE IF EXISTS encounter;
 DROP TABLE IF EXISTS appointment;
 DROP TABLE IF EXISTS episode_of_care;
@@ -38,17 +36,15 @@ DROP TABLE IF EXISTS procedure_request_status;
 DROP TABLE IF EXISTS referral_request_priority;
 DROP TABLE IF EXISTS referral_request_type;
 DROP TABLE IF EXISTS medication_statement_authorisation_type;
-DROP TABLE IF EXISTS patient_gender;
-DROP TABLE IF EXISTS registration_type;
-DROP TABLE IF EXISTS registration_status;
 DROP TABLE IF EXISTS lsoa_lookup;
 DROP TABLE IF EXISTS msoa_lookup;
 DROP TABLE IF EXISTS ward_lookup;
 DROP TABLE IF EXISTS local_authority_lookup;
-DROP TABLE IF EXISTS link_distributor;
+DROP TABLE IF EXISTS pseudo_id;
 DROP TABLE IF EXISTS patient_contact;
 DROP TABLE IF EXISTS patient_address;
-
+DROP TABLE IF EXISTS subscriber_tables;
+DROP TABLE IF EXISTS event_log;
 
 -- Table: lsoa_lookup
 
@@ -242,99 +238,6 @@ INSERT INTO medication_statement_authorisation_type (id, value) VALUES (1, 'Repe
 INSERT INTO medication_statement_authorisation_type (id, value) VALUES (2, 'Repeat Dispensing');
 INSERT INTO medication_statement_authorisation_type (id, value) VALUES (3, 'Automatic');
 
--- Table: patient_gender
-
-CREATE TABLE patient_gender
-(
-  id smallint NOT NULL,
-  value character varying(10) NOT NULL,
-  CONSTRAINT pk_patient_gender_id PRIMARY KEY (id)
-);
-
-INSERT INTO patient_gender (id, value) VALUES (0, 'Male');
-INSERT INTO patient_gender (id, value) VALUES (1, 'Female');
-INSERT INTO patient_gender (id, value) VALUES (2, 'Other');
-INSERT INTO patient_gender (id, value) VALUES (3, 'Unknown');
-
--- Table: registration_status
-
-CREATE TABLE registration_status
-(
-  id smallint NOT NULL,
-  code character varying(10) NOT NULL,
-  description character varying(50) NOT NULL,
-  is_active boolean NOT NULL,
-  CONSTRAINT pk_registration_status_id PRIMARY KEY (id)
-);
-
-INSERT INTO registration_status VALUES (0, 'PR1', 'Patient has presented', false);
-INSERT INTO registration_status VALUES (1, 'PR2', 'Medical card received', false);
-INSERT INTO registration_status VALUES (2, 'PR3', 'Application Form FP1 submitted', false);
-INSERT INTO registration_status VALUES (3, 'R1', 'Registered', true);
-INSERT INTO registration_status VALUES (4, 'R2', 'Medical record sent by FHSA', true);
-INSERT INTO registration_status VALUES (5, 'R3', 'Record Received', true);
-INSERT INTO registration_status VALUES (6, 'R4', 'Left Practice. Still Registered', true);
-INSERT INTO registration_status VALUES (7, 'R5', 'Correctly registered', true);
-INSERT INTO registration_status VALUES (8, 'R6', 'Short stay', true);
-INSERT INTO registration_status VALUES (9, 'R7', 'Long stay', true);
-INSERT INTO registration_status VALUES (10, 'D1', 'Death', false);
-INSERT INTO registration_status VALUES (11, 'D2', 'Dead (Practice notification)', false);
-INSERT INTO registration_status VALUES (12, 'D3', 'Record Requested by FHSA', false);
-INSERT INTO registration_status VALUES (13, 'D4', 'Removal to New HA/HB', false);
-INSERT INTO registration_status VALUES (14, 'D5', 'Internal transfer', false);
-INSERT INTO registration_status VALUES (15, 'D6', 'Mental hospital', false);
-INSERT INTO registration_status VALUES (16, 'D7', 'Embarkation', false);
-INSERT INTO registration_status VALUES (17, 'D8', 'New HA/HB - same GP', false);
-INSERT INTO registration_status VALUES (18, 'D9', 'Adopted child', false);
-INSERT INTO registration_status VALUES (19, 'R8', 'Services', true);
-INSERT INTO registration_status VALUES (20, 'D10', 'Deduction at GP''s request', false);
-INSERT INTO registration_status VALUES (21, 'D11', 'Registration cancelled', false);
-INSERT INTO registration_status VALUES (22, 'R9', 'Service dependant', true);
-INSERT INTO registration_status VALUES (23, 'D12', 'Deduction at patient''s request', false);
-INSERT INTO registration_status VALUES (24, 'D13', 'Other reason', false);
-INSERT INTO registration_status VALUES (25, 'D14', 'Returned undelivered', false);
-INSERT INTO registration_status VALUES (26, 'D15', 'Internal transfer - address change', false);
-INSERT INTO registration_status VALUES (27, 'D16', 'Internal transfer within partnership', false);
-INSERT INTO registration_status VALUES (28, 'D17', 'Correspondence states ''gone away''', false);
-INSERT INTO registration_status VALUES (29, 'D18', 'Practice advise outside of area', false);
-INSERT INTO registration_status VALUES (30, 'D19', 'Practice advise patient no longer resident', false);
-INSERT INTO registration_status VALUES (31, 'D20', 'Practice advise removal via screening system', false);
-INSERT INTO registration_status VALUES (32, 'D21', 'Practice advise removal via vaccination data', false);
-INSERT INTO registration_status VALUES (33, 'R10', 'Removal from Residential Institute', true);
-INSERT INTO registration_status VALUES (34, 'D22', 'Records sent back to FHSA', false);
-INSERT INTO registration_status VALUES (35, 'D23', 'Records received by FHSA', false);
-INSERT INTO registration_status VALUES (36, 'D24', 'Registration expired', false);
-
--- Table: registration_type
-
-CREATE TABLE registration_type
-(
-  id smallint NOT NULL,
-  code character varying(10) NOT NULL,
-  description character varying(30) NOT NULL,
-  CONSTRAINT pk_registration_type_id PRIMARY KEY (id)
-);
-
-INSERT INTO registration_type (id, code, description) VALUES (0, 'E', 'Emergency');
-INSERT INTO registration_type (id, code, description) VALUES (1, 'IN', 'Immediately Necessary');
-INSERT INTO registration_type (id, code, description) VALUES (2, 'R', 'Regular/GMS');
-INSERT INTO registration_type (id, code, description) VALUES (3, 'T', 'Temporary');
-INSERT INTO registration_type (id, code, description) VALUES (4, 'P', 'Private');
-INSERT INTO registration_type (id, code, description) VALUES (5, 'O', 'Other');
-INSERT INTO registration_type (id, code, description) VALUES (6, 'D', 'Dummy/Synthetic');
-INSERT INTO registration_type (id, code, description) VALUES (7, 'C', 'Community');
-INSERT INTO registration_type (id, code, description) VALUES (8, 'W', 'Walk-In');
-INSERT INTO registration_type (id, code, description) VALUES (9, 'MS', 'Minor Surgery');
-INSERT INTO registration_type (id, code, description) VALUES (10, 'CHS', 'Child Health Services');
-INSERT INTO registration_type (id, code, description) VALUES (11, 'N', 'Contraceptive Services');
-INSERT INTO registration_type (id, code, description) VALUES (12, 'Y', 'Yellow Fever');
-INSERT INTO registration_type (id, code, description) VALUES (13, 'M', 'Maternity Services');
-INSERT INTO registration_type (id, code, description) VALUES (14, 'PR', 'Pre-Registration');
-INSERT INTO registration_type (id, code, description) VALUES (15, 'SH', 'Sexual Health');
-INSERT INTO registration_type (id, code, description) VALUES (16, 'V', 'Vasectomy');
-INSERT INTO registration_type (id, code, description) VALUES (17, 'OH', 'Out of Hours');
-
-
 -- Table: organization
 
 CREATE TABLE organization
@@ -462,7 +365,9 @@ CREATE TABLE patient
   id bigint NOT NULL,
   organization_id bigint NOT NULL,
   person_id bigint NOT NULL,
-  name varchar(255),
+  title varchar(50),
+  first_names varchar(255),
+  last_name varchar(255),  
   gender_concept_id int NOT NULL,
   nhs_number character varying(255),
   date_of_birth date,
@@ -641,136 +546,6 @@ CREATE INDEX fki_encounter_patient_id_organization_id
 CREATE INDEX encounter_core_concept_id_clinical_effective_date
   ON encounter
   (core_concept_id, clinical_effective_date);
-
-
--- Table: encounter_detail
-
-CREATE TABLE encounter_detail (
-  id bigint NOT NULL COMMENT 'same as the id column on the encounter table',
-  organization_id bigint NOT NULL COMMENT 'owning organisation (i.e. publisher)',
-  patient_id bigint NOT NULL,
-  person_id bigint NOT NULL,
-  practitioner_id bigint COMMENT 'performing practitioner',
-  episode_of_care_id bigint,
-  clinical_effective_date date,
-  date_precision_id smallint,
-  recording_practitioner_id bigint COMMENT 'who recorded the encounter',
-  recording_date date,
-  appointment_id bigint,
-  service_provider_organization_id bigint COMMENT 'organisation that performed the encounter', 
-  location_id bigint COMMENT 'where the encounter took place',
-  end_date date,
-  duration_minutes int COMMENT 'duration always in minutes',
-  completion_status_concept_id bigint,
-  healthcare_service_type_concept_id bigint,
-  interaction_mode_concept_id bigint,
-  administrative_action_concept_id bigint,
-  purpose_concept_id bigint,
-  disposition_concept_id bigint,
-  site_of_care_type_concept_id bigint,
-  patient_status_concept_id bigint,
-  CONSTRAINT pk_encounter_detail_id PRIMARY KEY (organization_id, person_id, id),
-  CONSTRAINT fk_encounter_detail_appointment_id FOREIGN KEY (appointment_id)
-      REFERENCES appointment (id) MATCH SIMPLE
-      ON UPDATE NO ACTION ON DELETE NO ACTION,
-  CONSTRAINT fk_encounter_detail_patient_id_organization_id FOREIGN KEY (patient_id, organization_id)
-      REFERENCES patient (id, organization_id) MATCH SIMPLE
-      ON UPDATE NO ACTION ON DELETE NO ACTION,
-  CONSTRAINT fk_encounter_detail_practitioner_id FOREIGN KEY (practitioner_id)
-      REFERENCES practitioner (id) MATCH SIMPLE
-      ON UPDATE NO ACTION ON DELETE NO ACTION,
-  CONSTRAINT fk_encounter_detail_date_precision FOREIGN KEY (date_precision_id)
-      REFERENCES date_precision (id) MATCH SIMPLE
-      ON UPDATE NO ACTION ON DELETE NO ACTION,
-  CONSTRAINT fk_encounter_detail_episode_of_care_id FOREIGN KEY (episode_of_care_id)
-      REFERENCES episode_of_care (id) MATCH SIMPLE
-      ON UPDATE NO ACTION ON DELETE NO ACTION,
-  CONSTRAINT fk_encounter_detail_service_provider_organization_id FOREIGN KEY (service_provider_organization_id)
-      REFERENCES organization (id) MATCH SIMPLE
-      ON UPDATE NO ACTION ON DELETE NO ACTION	
-);
-
-CREATE UNIQUE INDEX ix_encounter_detail_id
-  ON encounter_detail
-  (id);
-
-CREATE INDEX ix_encounter_detail_patient_id
-  ON encounter_detail
-  (patient_id);
-
-CREATE INDEX ix_encounter_detail_appointment_id
-  ON encounter_detail
-  (appointment_id);
-  
-CREATE INDEX ix_encounter_detail_patient_id_organization_id
-  ON encounter_detail
-  (patient_id, organization_id);
-  
-
--- need location table too
-
--- Table: encounter_raw
-
-CREATE TABLE encounter_raw (
-  id bigint NOT NULL COMMENT 'same as the id column on the encounter table',
-  organization_id bigint NOT NULL COMMENT 'owning organisation (i.e. publisher)',
-  patient_id bigint NOT NULL,
-  person_id bigint NOT NULL,
-  practitioner_id bigint COMMENT 'performing practitioner',
-  episode_of_care_id bigint,
-  clinical_effective_date date,
-  date_precision_id smallint,
-  recording_practitioner_id bigint COMMENT 'who recorded the encounter',
-  recording_date date,
-  appointment_id bigint,
-  service_provider_organization_id bigint COMMENT 'organisation that performed the encounter', 
-  location_id bigint COMMENT 'where the encounter took place',
-  end_date date,
-  duration_minutes int COMMENT 'encounter duration always in terms of minutes',
-  fhir_adt_message_code varchar(50) COMMENT 'ADT message type e.g. A01',
-  fhir_class varchar(50) COMMENT 'class from FHIR Encounter',
-  fhir_type varchar(50) COMMENT 'type from FHIR Encounter',
-  fhir_status varchar(50) COMMENT 'status from FHIR Encounter',
-  fhir_snomed_concept_id bigint,
-  fhir_original_code character varying(20),
-  fhir_original_term character varying(1000),
-  CONSTRAINT pk_encounter_raw_id PRIMARY KEY (organization_id, person_id, id),
-  CONSTRAINT fk_encounter_raw_appointment_id FOREIGN KEY (appointment_id)
-      REFERENCES appointment (id) MATCH SIMPLE
-      ON UPDATE NO ACTION ON DELETE NO ACTION,
-  CONSTRAINT fk_encounter_raw_patient_id_organization_id FOREIGN KEY (patient_id, organization_id)
-      REFERENCES patient (id, organization_id) MATCH SIMPLE
-      ON UPDATE NO ACTION ON DELETE NO ACTION,
-  CONSTRAINT fk_encounter_raw_practitioner_id FOREIGN KEY (practitioner_id)
-      REFERENCES practitioner (id) MATCH SIMPLE
-      ON UPDATE NO ACTION ON DELETE NO ACTION,
-  CONSTRAINT fk_encounter_raw_date_precision FOREIGN KEY (date_precision_id)
-      REFERENCES date_precision (id) MATCH SIMPLE
-      ON UPDATE NO ACTION ON DELETE NO ACTION,
-  CONSTRAINT fk_encounter_raw_episode_of_care_id FOREIGN KEY (episode_of_care_id)
-      REFERENCES episode_of_care (id) MATCH SIMPLE
-      ON UPDATE NO ACTION ON DELETE NO ACTION,
-  CONSTRAINT fk_encounter_raw_service_provider_organization_id FOREIGN KEY (service_provider_organization_id)
-      REFERENCES organization (id) MATCH SIMPLE
-      ON UPDATE NO ACTION ON DELETE NO ACTION	
-) COMMENT 'table of raw encounter data to allow working out mappings for encounter_detail concepts';
-
-CREATE UNIQUE INDEX ix_raw_detail_id
-  ON encounter_raw
-  (id);
-
-CREATE INDEX ix_encounter_raw_patient_id
-  ON encounter_raw
-  (patient_id);
-
-CREATE INDEX ix_encounter_raw_appointment_id
-  ON encounter_raw
-  (appointment_id);
-  
-CREATE INDEX ix_encounter_raw_patient_id_organization_id
-  ON encounter_raw
-  (patient_id, organization_id);
-  
 
 -- Table: allergy_intolerance
 
@@ -1126,19 +901,19 @@ CREATE INDEX referral_request_core_concept_id
   ON referral_request
   (core_concept_id);
   
--- Table: link_distributor
+-- Table: pseudo_id
 
-CREATE TABLE link_distributor
+CREATE TABLE pseudo_id
 (
-  source_skid character varying(255) NOT NULL,
-  target_salt_key_name varchar(50) NOT NULL,
-  target_skid character varying(255) NULL,
-  CONSTRAINT pk_link_distributor PRIMARY KEY (`source_skid`, `target_salt_key_name`)             
+  patient_id character varying(255) NOT NULL,
+  salt_key_name varchar(50) NOT NULL,
+  pseudo_id character varying(255) NULL,
+  CONSTRAINT pk_pseudo_id PRIMARY KEY (`patient_id`, `salt_key_name`)             
 );
 
-CREATE INDEX link_distributor_target_skid
-  ON link_distributor
-  (target_skid);
+CREATE INDEX pseudo_id_pseudo_id
+  ON pseudo_id
+  (pseudo_id);
 
 create table patient_uprn (
 	patient_id bigint,
@@ -1168,10 +943,11 @@ CREATE TABLE patient_contact
 (
   id                         bigint       NOT NULL,
   organization_id 			 bigint		  NOT NULL,
+  person_id 				 bigint,
   patient_id                 bigint       NOT NULL,
   type_concept_id            bigint       NOT NULL COMMENT 'type of contact (e.g. home phone, mobile phone, email)',
   value                      varchar(255) NOT NULL COMMENT 'the actual phone number or email address',
-  CONSTRAINT pk_organization_id_id_patient_id PRIMARY KEY (`organization_id`,`id`,`patient_id`),
+  CONSTRAINT pk_organization_id_id_patient_id_person_id PRIMARY KEY (`organization_id`,`id`,`patient_id`,`person_id`),
   CONSTRAINT fk_patient_contact_patient_id_organisation_id FOREIGN KEY (patient_id, organization_id)
       REFERENCES patient (id, organization_id)
 ) AUTO_INCREMENT = 1 COMMENT 'stores contact details (e.g. phone) for patients';
@@ -1182,6 +958,7 @@ CREATE TABLE patient_address
 (
   id                       bigint 			NOT NULL,
   organization_id 		   bigint		    NOT NULL,
+  person_id 			   bigint,
   patient_id               bigint          	NOT NULL,
   address_line_1           varchar(255),
   address_line_2           varchar(255),
@@ -1197,8 +974,37 @@ CREATE TABLE patient_address
   imd_score_2010           decimal(5,3),
   imd_score_2015           decimal(5,3),
   imd_score_2017           decimal(5,3),
-  CONSTRAINT pk_organization_id_id_patient_id PRIMARY KEY (`organization_id`,`id`,`patient_id`),
+  CONSTRAINT pk_organization_id_id_patient_id_person_id PRIMARY KEY (`organization_id`,`id`,`patient_id`,`person_id`),
   CONSTRAINT fk_patient_address_patient_id_organization_id FOREIGN KEY (patient_id, organization_id)
       REFERENCES patient (id, organization_id)
 ) AUTO_INCREMENT = 1 COMMENT 'stores address details for patients';
 
+-- Table: subscriber_tables
+
+CREATE TABLE subscriber_tables
+(
+  id         tinyint      NOT NULL AUTO_INCREMENT ,
+  table_name varchar(255) NOT NULL,
+  PRIMARY KEY (id)
+) AUTO_INCREMENT =1 COMMENT 'lookup of all the table names in this database';
+
+-- Table: event_log
+
+CREATE TABLE event_log
+(
+  id                         bigint   NOT NULL AUTO_INCREMENT,
+  organisation_id            int      NOT NULL,
+  entry_date                 datetime NOT NULL,
+  entered_by_practitioner_id bigint COMMENT 'who actually recorded the entry into the host system',
+  device_id                  int COMMENT 'refers to the device that may have recorded the data',
+  entry_mode                 tinyint  NOT NULL COMMENT 'entry mode i.e. 0-upsert, 1-delete',
+  table_id                   tinyint  NOT NULL COMMENT 'the table ID relevant to the entry',
+  item_id                    bigint   NOT NULL COMMENT 'the item identifier in the table relevant to to entry',
+  PRIMARY KEY (id),
+  CONSTRAINT event_log_entered_practitioner_id
+  FOREIGN KEY (entered_by_practitioner_id)
+  REFERENCES practitioner (id),
+  CONSTRAINT event_log_table_id
+  FOREIGN KEY (table_id)
+  REFERENCES subscriber_tables (id)
+) AUTO_INCREMENT=1 COMMENT 'represents the transaction log of all core table entries';
