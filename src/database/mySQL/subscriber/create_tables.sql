@@ -5,7 +5,6 @@ create database if not exists subscriber_pi;
 
 use subscriber_pi;
 
-
 DROP TABLE IF EXISTS patient_uprn;
 DROP TABLE IF EXISTS medication_order;
 DROP TABLE IF EXISTS medication_statement;
@@ -31,108 +30,11 @@ DROP TABLE IF EXISTS practitioner;
 DROP TABLE IF EXISTS location;
 DROP TABLE IF EXISTS organization;
 DROP TABLE IF EXISTS date_precision;
-DROP TABLE IF EXISTS appointment_status;
-DROP TABLE IF EXISTS procedure_request_status;
-DROP TABLE IF EXISTS referral_request_priority;
-DROP TABLE IF EXISTS referral_request_type;
-DROP TABLE IF EXISTS medication_statement_authorisation_type;
-DROP TABLE IF EXISTS lsoa_lookup;
-DROP TABLE IF EXISTS msoa_lookup;
-DROP TABLE IF EXISTS ward_lookup;
-DROP TABLE IF EXISTS local_authority_lookup;
 DROP TABLE IF EXISTS pseudo_id;
 DROP TABLE IF EXISTS patient_contact;
 DROP TABLE IF EXISTS patient_address;
 DROP TABLE IF EXISTS subscriber_tables;
 DROP TABLE IF EXISTS event_log;
-
--- Table: lsoa_lookup
-
-CREATE TABLE lsoa_lookup
-(
-  lsoa_code character(9) NOT NULL,
-  lsoa_name character varying(255),
-  imd_score decimal(5, 3) COMMENT 'Index of Multiple Deprivation (IMD) Score',
-  imd_rank integer COMMENT 'Index of Multiple Deprivation (IMD) Rank (where 1 is most deprived)',
-  imd_decile integer COMMENT 'Index of Multiple Deprivation (IMD) Decile (where 1 is most deprived 10% of LSOAs)',
-  income_score decimal(5, 3) COMMENT 'Income Score (rate)',
-  income_rank integer COMMENT 'Income Rank (where 1 is most deprived)',
-  income_decile integer COMMENT 'Income Decile (where 1 is most deprived 10% of LSOAs)',
-  employment_score decimal(5, 3) COMMENT 'Employment Score (rate)',
-  employment_rank integer COMMENT 'Employment Rank (where 1 is most deprived)',
-  employment_decile integer COMMENT 'Employment Decile (where 1 is most deprived 10% of LSOAs)',
-  education_score decimal(5, 3) COMMENT 'Education, Skills and Training Score',    
-  education_rank integer COMMENT 'Education, Skills and Training Rank (where 1 is most deprived)',
-  education_decile integer COMMENT 'Education, Skills and Training Decile (where 1 is most deprived 10% of LSOAs)',
-  health_score decimal(5, 3) COMMENT 'Health Deprivation and Disability Score',      
-  health_rank integer COMMENT 'Health Deprivation and Disability Rank (where 1 is most deprived)',
-  health_decile integer COMMENT 'Health Deprivation and Disability Decile (where 1 is most deprived 10% of LSOAs)',
-  crime_score decimal(5, 3) COMMENT 'Crime Score',
-  crime_rank integer COMMENT 'Crime Rank (where 1 is most deprived)',
-  crime_decile integer COMMENT 'Crime Decile (where 1 is most deprived 10% of LSOAs)',
-  housing_and_services_barriers_score decimal(5, 3) COMMENT 'Barriers to Housing and Services Score',      
-  housing_and_services_barriers_rank integer COMMENT 'Barriers to Housing and Services Rank (where 1 is most deprived)',
-  housing_and_services_barriers_decile integer COMMENT 'Barriers to Housing and Services Decile (where 1 is most deprived 10% of LSOAs)',
-  living_environment_score decimal(5, 3) COMMENT 'Living Environment Score',
-  living_environment_rank integer COMMENT 'Living Environment Rank (where 1 is most deprived)',
-  living_environment_decile integer COMMENT 'Living Environment Decile (where 1 is most deprived 10% of LSOAs)',
-  idaci_score decimal(5, 3) COMMENT 'Income Deprivation Affecting Children Index (IDACI) Score (rate)',
-  idaci_rank integer COMMENT 'Income Deprivation Affecting Children Index (IDACI) Rank (where 1 is most deprived)',
-  idaci_decile integer COMMENT 'Income Deprivation Affecting Children Index (IDACI) Decile (where 1 is most deprived 10% of LSOAs)',
-  idaopi_score decimal(5, 3) COMMENT 'Income Deprivation Affecting Older People (IDAOPI) Score (rate)',
-  idaopi_rank integer COMMENT 'Income Deprivation Affecting Older People (IDAOPI) Rank (where 1 is most deprived)',
-  idaopi_decile integer COMMENT 'Income Deprivation Affecting Older People (IDAOPI) Decile (where 1 is most deprived 10% of LSOAs)',
-  children_and_young_sub_domain_score decimal(5, 3) COMMENT 'Children and Young People Sub-domain Score',
-  children_and_young_sub_domain_rank integer COMMENT 'Children and Young People Sub-domain Rank (where 1 is most deprived)',
-  children_and_young_sub_domain_decile  integer COMMENT 'Children and Young People Sub-domain Decile (where 1 is most deprived 10% of LSOAs)',
-  adult_skills_sub_somain_score decimal(5, 3) COMMENT 'Adult Skills Sub-domain Score',
-  adult_skills_sub_somain_rank integer COMMENT 'Adult Skills Sub-domain Rank (where 1 is most deprived)',
-  adult_skills_sub_somain_decile integer COMMENT 'Adult Skills Sub-domain Decile (where 1 is most deprived 10% of LSOAs)',
-  grographical_barriers_sub_domain_score decimal(5, 3) COMMENT 'Geographical Barriers Sub-domain Score',
-  grographical_barriers_sub_domain_rank integer COMMENT 'Geographical Barriers Sub-domain Rank (where 1 is most deprived)',
-  grographical_barriers_sub_domain_decile integer COMMENT 'Geographical Barriers Sub-domain Decile (where 1 is most deprived 10% of LSOAs)',
-  wider_barriers_sub_domain_score decimal(5, 3) COMMENT 'Wider Barriers Sub-domain Score',
-  wider_barriers_sub_domain_rank integer COMMENT 'Wider Barriers Sub-domain Rank (where 1 is most deprived)',
-  wider_barriers_sub_domain_decile integer COMMENT 'Wider Barriers Sub-domain Decile (where 1 is most deprived 10% of LSOAs)',
-  indoors_sub_domain_score decimal(5, 3) COMMENT 'Indoors Sub-domain Score',
-  indoors_sub_domain_rank integer COMMENT 'Indoors Sub-domain Rank (where 1 is most deprived)',
-  indoors_sub_domain_decile integer COMMENT 'Indoors Sub-domain Decile (where 1 is most deprived 10% of LSOAs)',
-  outdoors_sub_domain_score decimal(5, 3) COMMENT 'Outdoors Sub-domain Score',
-  outdoors_sub_domain_rank integer COMMENT 'Outdoors Sub-domain Rank (where 1 is most deprived)',
-  outdoors_sub_domain_decile integer COMMENT 'Outdoors Sub-domain Decile (where 1 is most deprived 10% of LSOAs)',
-  total_population integer COMMENT 'Total population: mid 2012 (excluding prisoners)',
-  dependent_children_0_to_15 integer COMMENT 'Dependent Children aged 0-15: mid 2012 (excluding prisoners)',
-  population_16_to_59 integer COMMENT 'Population aged 16-59: mid 2012 (excluding prisoners)',
-  older_population_60_and_over integer COMMENT 'Older population aged 60 and over: mid 2012 (excluding prisoners)',
-  CONSTRAINT pk_lsoa_lookup PRIMARY KEY (lsoa_code)
-);
-
--- Table: msoa_lookup
-
-CREATE TABLE msoa_lookup
-(
-  msoa_code character(9) NOT NULL,
-  msoa_name character varying(255),
-  CONSTRAINT pk_msoa_lookup PRIMARY KEY (msoa_code)
-);
-
--- Table: local_authority_lookup
-
-CREATE TABLE local_authority_lookup
-(
-  local_authority_code varchar(9) NOT NULL,
-  local_authority_name varchar(255),
-  CONSTRAINT pk_local_authority_lookup PRIMARY KEY (local_authority_code)
-);
-
--- Table: ward_lookup
-
-CREATE TABLE ward_lookup
-(
-  ward_code varchar(9) NOT NULL,
-  ward_name varchar(255),
-  CONSTRAINT pk_ward_lookup PRIMARY KEY (ward_code)
-);
 
 -- Table: date_precision
 
@@ -149,94 +51,6 @@ INSERT INTO date_precision (id, value) VALUES (5, 'day');
 INSERT INTO date_precision (id, value) VALUES (12, 'minute');
 INSERT INTO date_precision (id, value) VALUES (13, 'second');
 INSERT INTO date_precision (id, value) VALUES (14, 'millisecond');
-
--- Table: appointment_status
-
-CREATE TABLE appointment_status
-(
-  id smallint NOT NULL,
-  value character varying(50) NOT NULL,
-  CONSTRAINT pk_appointment_status_id PRIMARY KEY (id)
-);
-
-INSERT INTO appointment_status (id, value) VALUES (0, 'Proposed');
-INSERT INTO appointment_status (id, value) VALUES (1, 'Pending');
-INSERT INTO appointment_status (id, value) VALUES (2, 'Booked');
-INSERT INTO appointment_status (id, value) VALUES (3, 'Arrived');
-INSERT INTO appointment_status (id, value) VALUES (4, 'Fulfilled');
-INSERT INTO appointment_status (id, value) VALUES (5, 'Cancelled');
-INSERT INTO appointment_status (id, value) VALUES (6, 'No Show');
-
--- Table: procedure_request_status
-
-CREATE TABLE procedure_request_status
-(
-  id smallint NOT NULL,
-  value character varying(50) NOT NULL,
-  CONSTRAINT pk_procedure_request_status_id PRIMARY KEY (id)
-);
-
-INSERT INTO procedure_request_status (id, value) VALUES (0, 'Proposed');
-INSERT INTO procedure_request_status (id, value) VALUES (1, 'Draft');
-INSERT INTO procedure_request_status (id, value) VALUES (2, 'Requested');
-INSERT INTO procedure_request_status (id, value) VALUES (3, 'Received');
-INSERT INTO procedure_request_status (id, value) VALUES (4, 'Accepted');
-INSERT INTO procedure_request_status (id, value) VALUES (5, 'In Progress');
-INSERT INTO procedure_request_status (id, value) VALUES (6, 'Completed');
-INSERT INTO procedure_request_status (id, value) VALUES (7, 'Suspended');
-INSERT INTO procedure_request_status (id, value) VALUES (8, 'Rejected');
-INSERT INTO procedure_request_status (id, value) VALUES (9, 'Aborted');
-
--- Table: referral_priority
-
-CREATE TABLE referral_request_priority
-(
-  id smallint NOT NULL,
-  value character varying(50) NOT NULL,
-  CONSTRAINT pk_referral_request_priority_id PRIMARY KEY (id)
-);
-
-INSERT INTO referral_request_priority (id, value) VALUES (0, 'Routine');
-INSERT INTO referral_request_priority (id, value) VALUES (1, 'Urgent');
-INSERT INTO referral_request_priority (id, value) VALUES (2, 'Two Week Wait');
-INSERT INTO referral_request_priority (id, value) VALUES (3, 'Soon');
-
--- Table: referral_request_type
-
-CREATE TABLE referral_request_type
-(
-  id smallint NOT NULL,
-  value character varying(50) NOT NULL,
-  CONSTRAINT pk_referral_request_type_id PRIMARY KEY (id)
-);
-
-INSERT INTO referral_request_type (id, value) VALUES (0, 'Unknown');
-INSERT INTO referral_request_type (id, value) VALUES (1, 'Assessment');
-INSERT INTO referral_request_type (id, value) VALUES (2, 'Investigation');
-INSERT INTO referral_request_type (id, value) VALUES (3, 'Management advice');
-INSERT INTO referral_request_type (id, value) VALUES (4, 'Patient reassurance');
-INSERT INTO referral_request_type (id, value) VALUES (5, 'Self referral');
-INSERT INTO referral_request_type (id, value) VALUES (6, 'Treatment');
-INSERT INTO referral_request_type (id, value) VALUES (7, 'Outpatient');
-INSERT INTO referral_request_type (id, value) VALUES (8, 'Performance of a procedure / operation');
-INSERT INTO referral_request_type (id, value) VALUES (9, 'Community Care');
-INSERT INTO referral_request_type (id, value) VALUES (10, 'Admission');
-INSERT INTO referral_request_type (id, value) VALUES (11, 'Day Care');
-INSERT INTO referral_request_type (id, value) VALUES (12, 'Assessment & Education');
-
--- Table: medication_statement_authorisation_type
-
-CREATE TABLE medication_statement_authorisation_type
-(
-  id smallint NOT NULL,
-  value character varying(50) NOT NULL,
-  CONSTRAINT pk_medication_statement_authorisation_type_id PRIMARY KEY (id)
-);
-
-INSERT INTO medication_statement_authorisation_type (id, value) VALUES (0, 'Acute');
-INSERT INTO medication_statement_authorisation_type (id, value) VALUES (1, 'Repeat');
-INSERT INTO medication_statement_authorisation_type (id, value) VALUES (2, 'Repeat Dispensing');
-INSERT INTO medication_statement_authorisation_type (id, value) VALUES (3, 'Automatic');
 
 -- Table: organization
 
@@ -260,7 +74,6 @@ CREATE INDEX fki_organization_parent_organization_id
   ON organization
   (parent_organization_id);
 
-
 -- Table: location
 
 CREATE TABLE location (
@@ -283,7 +96,6 @@ CREATE UNIQUE INDEX location_id
 CREATE INDEX fk_location_managing_organisation_id
   ON location
   (managing_organization_id);
-
 
 -- Table: practitioner
 
@@ -329,7 +141,6 @@ CREATE TABLE schedule
 CREATE UNIQUE INDEX schedule_id
   ON schedule
   (id);
-  
 
 -- Table: person
 
@@ -344,8 +155,6 @@ CREATE TABLE person
   date_of_death date,
   postcode character varying(20),
   ethnic_code_concept_id int,
-  ward_code varchar(50),
-  local_authority_code varchar(50),
   registered_practice_organization_id bigint,
   CONSTRAINT pk_person_id PRIMARY KEY (id)
 );
@@ -354,8 +163,6 @@ CREATE UNIQUE INDEX person_id
   ON person
   (id);  
 
-
-  
 -- Table: patient
 
 -- DROP TABLE patient;
@@ -374,8 +181,6 @@ CREATE TABLE patient
   date_of_death date,
   postcode character varying(20),
   ethnic_code_concept_id int,
-  ward_code varchar(50),
-  local_authority_code varchar(50),
   registered_practice_organization_id bigint,
   CONSTRAINT pk_patient_id_organization_id PRIMARY KEY (`organization_id`,`person_id`,`id`),
   CONSTRAINT fk_patient_organization_id FOREIGN KEY (organization_id)
@@ -390,7 +195,6 @@ CREATE UNIQUE INDEX patient_id
 CREATE INDEX patient_person_id
   ON patient
   (person_id);
-
 
 -- Table: episode_of_care
 
@@ -842,7 +646,6 @@ CREATE INDEX procedure_request_patient_id
   ON procedure_request
   (patient_id);
 
-
 -- Table: referral_request
 
 -- DROP TABLE referral_request;
@@ -967,13 +770,12 @@ CREATE TABLE patient_address
   postcode                 varchar(10),
   type_concept_id          bigint       	NOT NULL COMMENT 'type of address (e.g. home, temporary)',
   date_to				   date,
-  lsoa_2001                varchar(9),
-  lsoa_2011                varchar(9),
-  msoa_2001                varchar(9),
-  msoa_2011                varchar(9),
-  imd_score_2010           decimal(5,3),
-  imd_score_2015           decimal(5,3),
-  imd_score_2017           decimal(5,3),
+  lsoa_2001_code           varchar(9),
+  lsoa_2011_code           varchar(9),
+  msoa_2001_code           varchar(9),
+  msoa_2011_code           varchar(9),
+  ward_code                varchar(9),
+  local_authority_code     varchar(9),
   CONSTRAINT pk_organization_id_id_patient_id_person_id PRIMARY KEY (`organization_id`,`id`,`patient_id`,`person_id`),
   CONSTRAINT fk_patient_address_patient_id_organization_id FOREIGN KEY (patient_id, organization_id)
       REFERENCES patient (id, organization_id)
