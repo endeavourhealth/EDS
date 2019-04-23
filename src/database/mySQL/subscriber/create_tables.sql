@@ -799,17 +799,10 @@ CREATE TABLE subscriber_tables
 CREATE TABLE event_log
 (
   id                         bigint   NOT NULL AUTO_INCREMENT,
-  organisation_id            int      NOT NULL,
   entry_date                 datetime NOT NULL,
-  entered_by_practitioner_id bigint COMMENT 'who actually recorded the entry into the host system',
-  device_id                  int COMMENT 'refers to the device that may have recorded the data',
   entry_mode                 tinyint  NOT NULL COMMENT 'entry mode i.e. 0-upsert, 1-delete',
   table_id                   tinyint  NOT NULL COMMENT 'the table ID relevant to the entry',
-  item_id                    bigint   NOT NULL COMMENT 'the item identifier in the table relevant to to entry',
   PRIMARY KEY (id),
-  CONSTRAINT event_log_entered_practitioner_id
-  FOREIGN KEY (entered_by_practitioner_id)
-  REFERENCES practitioner (id),
   CONSTRAINT event_log_table_id
   FOREIGN KEY (table_id)
   REFERENCES subscriber_tables (id)
