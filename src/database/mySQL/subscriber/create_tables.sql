@@ -786,7 +786,6 @@ CREATE TABLE patient_address
 ) AUTO_INCREMENT = 1 COMMENT 'stores address details for patients';
 
 -- Table: subscriber_tables
-
 CREATE TABLE subscriber_tables
 (
   id         tinyint      NOT NULL AUTO_INCREMENT ,
@@ -795,7 +794,6 @@ CREATE TABLE subscriber_tables
 ) AUTO_INCREMENT =1 COMMENT 'lookup of all the table names in this database';
 
 -- Table: event_log
-
 CREATE TABLE event_log
 (
   id                         bigint   NOT NULL AUTO_INCREMENT,
