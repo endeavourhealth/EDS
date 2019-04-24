@@ -128,6 +128,7 @@ CREATE TABLE schedule
   start_date date,
   type character varying(255),
   location character varying(255),
+  comments varchar(150), 
   CONSTRAINT pk_schedule_id PRIMARY KEY (organization_id, id),
   CONSTRAINT fk_schedule_organization_id FOREIGN KEY (organization_id)
       REFERENCES organization (id) MATCH SIMPLE
@@ -271,8 +272,6 @@ CREATE TABLE appointment
   date_time_sent_in datetime,
   date_time_left datetime,
   source_id varchar(36), 
-  rota_name varchar(150), 
-  rota_location varchar(100), 
   cancelled_date datetime,
   CONSTRAINT pk_appointment_id PRIMARY KEY (organization_id,person_id,id),
   CONSTRAINT fk_appointment_organization_id FOREIGN KEY (organization_id)
