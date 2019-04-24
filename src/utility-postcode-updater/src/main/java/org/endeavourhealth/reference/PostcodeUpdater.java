@@ -35,16 +35,16 @@ public class PostcodeUpdater {
     private static final String POSTCODE_GRID_REFERENCE_QUALITY = "OSGRDIND";
     private static final String POSTCODE_COUNTRY = "CTRY";
     private static final String POSTCODE_FORMER_SHA_CODE = "OSHLTHAU";
-    private static final String POSTCODE_REGION_CODE = "GOR";
+    private static final String POSTCODE_REGION_CODE = "RGN";
     private static final String POSTCODE_FORMER_HA_CODE = "OLDHA";
-    private static final String POSTCODE_COMMISSIONING_REGION_CODE = "NHSCR";
+    private static final String POSTCODE_COMMISSIONING_REGION_CODE = "NHSER";
     private static final String POSTCODE_CCG_CODE = "CCG";
     private static final String POSTCODE_CENSUS_ENUMERATION_DISTRICT = "PSED";
     private static final String POSTCODE_CENSUS_ENUMERATION_DISTRICT_2 = "CENED";
     private static final String POSTCODE_ENUMERATION_DISTRICT_QUALITY_INDICATOR = "EDIND";
     private static final String POSTCODE_1998_WARD = "WARD98";
     private static final String POSTCODE_2001_CENSUS_OUTPUT_AREA = "OA01";
-    private static final String POSTCODE_NHS_REGION_GEOGRAPHY = "NHSRG";
+    private static final String POSTCODE_NHS_REGION_GEOGRAPHY = "NHSRLO";
     private static final String POSTCODE_FORMER_PAN_SHA = "HRO";
     private static final String POSTCODE_2001_CENSUS_LSOA = "LSOA01";
     private static final String POSTCODE_2001_URBAN_RURAL_INDICATOR = "UR01IND";
@@ -62,6 +62,8 @@ public class PostcodeUpdater {
     private static final String POSTCODE_2011_CENSUS_OUTPUT_AREA = "OA11";
     private static final String POSTCODE_2011_CENSUS_LSOA = "LSOA11";
     private static final String POSTCODE_2011_CENSUS_MSOA = "MSOA11";
+    private static final String POSTCODE_CANCER_ALLIANCE_VANGUARD = "CALNCV";
+    private static final String POSTCODE_STP_CODE = "STP";
 
     public static void updatePostcodes(File postcodeFile) throws Exception {
         LOG.info("Processing Postcode file from " + postcodeFile);
@@ -101,7 +103,7 @@ public class PostcodeUpdater {
             List<ThreadPoolError> errors = threadPool.waitAndStop();
             handleErrors(errors);
 
-            LOG.info("Finshed at " + rowsDone + " postcodes");
+            LOG.info("Finished at " + rowsDone + " postcodes");
 
         } finally {
             if (parser != null) {
@@ -207,6 +209,8 @@ public class PostcodeUpdater {
                 POSTCODE_2011_CENSUS_OUTPUT_AREA,
                 POSTCODE_2011_CENSUS_LSOA,
                 POSTCODE_2011_CENSUS_MSOA,
+                POSTCODE_CANCER_ALLIANCE_VANGUARD,
+                POSTCODE_STP_CODE,
         };
     }
 
@@ -232,9 +236,14 @@ public class PostcodeUpdater {
             String ward = record.get(POSTCODE_WARD);
             String ccgCode = record.get(POSTCODE_CCG_CODE);
             String localAuthority = record.get(POSTCODE_LA_DISTRICT);
+            String lsoa2001Code = record.get(POSTCODE_2001_CENSUS_LSOA);
+            String lsoa2011Code = record.get(POSTCODE_2011_CENSUS_LSOA);
+            String msoa2001Code = record.get(POSTCODE_2001_CENSUS_MSOA);
+            String msoa2011Code = record.get(POSTCODE_2011_CENSUS_MSOA);
 
             ReferenceUpdaterDalI referenceUpdaterDal = DalProvider.factoryReferenceUpdaterDal();
-            referenceUpdaterDal.updatePostcodeMap(postcode, lsoaCode, msoaCode, ward, ccgCode, localAuthority);
+            referenceUpdaterDal.updatePostcodeMap(postcode, lsoaCode, msoaCode, ward, ccgCode, localAuthority,
+                    lsoa2001Code, lsoa2011Code, msoa2001Code, msoa2011Code);
 
             return null;
         }
