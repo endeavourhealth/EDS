@@ -422,7 +422,6 @@ CREATE TABLE medication_statement
   bnf_reference int(6),
   age_at_event decimal (5,2),
   issue_method text,
-  is_primary boolean,  
   CONSTRAINT pk_medication_statement_id PRIMARY KEY (`organization_id`,`person_id`,`id`),
   CONSTRAINT fk_medication_statement_date_precision FOREIGN KEY (date_precision_id)
       REFERENCES date_precision (id) MATCH SIMPLE
@@ -473,7 +472,6 @@ CREATE TABLE medication_order
   bnf_reference int(6),
   age_at_event decimal (5,2),
   issue_method text,
-  is_primary boolean,  
   CONSTRAINT pk_medication_order_id PRIMARY KEY (`organization_id`,`person_id`,`id`),
   CONSTRAINT fk_medication_order_encounter_id FOREIGN KEY (encounter_id)
       REFERENCES encounter (id) MATCH SIMPLE
@@ -786,6 +784,7 @@ CREATE TABLE patient_address
 ) AUTO_INCREMENT = 1 COMMENT 'stores address details for patients';
 
 -- Table: subscriber_tables
+
 CREATE TABLE subscriber_tables
 (
   id         tinyint      NOT NULL AUTO_INCREMENT ,
@@ -794,6 +793,7 @@ CREATE TABLE subscriber_tables
 ) AUTO_INCREMENT =1 COMMENT 'lookup of all the table names in this database';
 
 -- Table: event_log
+
 CREATE TABLE event_log
 (
   id                         bigint   NOT NULL AUTO_INCREMENT,
