@@ -29,6 +29,10 @@ CREATE TABLE postcode_lookup
   ward_code varchar(9),
   ccg_code varchar(3),
   local_authority_code varchar(9) COMMENT 'london borough, local authority',
+  lsoa_2001_code varchar(9),
+  lsoa_2011_code varchar(9),
+  msoa_2001_code varchar(9),
+  msoa_2011_code varchar(9),
   CONSTRAINT pk_postcode_lookup PRIMARY KEY (postcode_no_space)
 );
 
@@ -38,7 +42,6 @@ CREATE TABLE local_authority_lookup
   local_authority_name varchar(255),
   CONSTRAINT pk_local_authority_lookup PRIMARY KEY (local_authority_code)
 );
-
 
 CREATE TABLE ccg_lookup
 (
@@ -54,14 +57,12 @@ CREATE TABLE ward_lookup
   CONSTRAINT pk_ward_lookup PRIMARY KEY (ward_code)
 );
 
-
 CREATE TABLE lsoa_lookup
 (
   lsoa_code varchar(9) NOT NULL,
   lsoa_name varchar(255),
   CONSTRAINT pk_lsoa_lookup PRIMARY KEY (lsoa_code)
 );
-
 
 CREATE TABLE msoa_lookup
 (
@@ -129,7 +130,6 @@ CREATE TABLE deprivation_lookup
   CONSTRAINT pk_deprivation_lookup PRIMARY KEY (lsoa_code)
 );
 
-
 CREATE TABLE encounter_code
 (
   code bigint NOT NULL,
@@ -137,7 +137,6 @@ CREATE TABLE encounter_code
   mapping varchar(1024),
   CONSTRAINT pk_encounter_code PRIMARY KEY (code)
 );
-
 
 CREATE UNIQUE INDEX ix_encounter_code_mapping
   ON encounter_code (mapping);
@@ -208,7 +207,6 @@ CREATE TABLE ctv3_to_snomed_map
 
 CREATE INDEX ix_ctv3_to_snomed_map_ctv3_concept_id_sct_concept_id
 ON ctv3_to_snomed_map (ctv3_concept_id, sct_concept_id);
-
 
 CREATE TABLE snomed_lookup (
   concept_id varchar (18) NOT NULL PRIMARY KEY,
