@@ -36,6 +36,9 @@ create table procedure_cds (
                                CONSTRAINT pk_sus PRIMARY KEY (exchange_id, sus_record_type, cds_unique_identifier, procedure_seq_nbr)
 );
 
+CREATE INDEX ix_procedure_cds_cds_unique_identifier
+  ON procedure_cds (cds_unique_identifier);
+
 -- records from sus inpatient, outpatient and emergency tail files are all written to this table with sus_record_type telling us which is which
 create table procedure_cds_tail (
                                     exchange_id char(36) NOT NULL COMMENT 'links to audit.exchange table (but on a different server)',
@@ -53,6 +56,9 @@ create table procedure_cds_tail (
                                     audit_json mediumtext null comment 'Used for Audit Purposes',
                                     CONSTRAINT pk_sus_tail PRIMARY KEY (exchange_id, sus_record_type, cds_unique_identifier)
 );
+
+CREATE INDEX ix_procedure_cds_tail_cds_unique_identifier
+  ON procedure_cds_tail (cds_unique_identifier);
 
 -- records from the fixed-width Procedure file
 create table procedure_procedure (
