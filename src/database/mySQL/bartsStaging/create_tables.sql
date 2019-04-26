@@ -35,6 +35,9 @@ create table procedure_cds
     CONSTRAINT pk_sus PRIMARY KEY (exchange_id, sus_record_type, cds_unique_identifier, procedure_seq_nbr)
 );
 
+CREATE INDEX ix_procedure_cds_cds_unique_identifier
+  ON procedure_cds (cds_unique_identifier);
+
 -- records from sus inpatient, outpatient and emergency tail files are all written to this table with sus_record_type telling us which is which
 create table procedure_cds_tail
 (
@@ -52,6 +55,9 @@ create table procedure_cds_tail
     audit_json                   mediumtext  null comment 'Used for Audit Purposes',
     CONSTRAINT pk_sus_tail PRIMARY KEY (exchange_id, sus_record_type, cds_unique_identifier)
 );
+
+CREATE INDEX ix_procedure_cds_tail_cds_unique_identifier
+  ON procedure_cds_tail (cds_unique_identifier);
 
 -- records from the fixed-width Procedure file
 create table procedure_procedure
@@ -123,6 +129,8 @@ create table procedure_SURCC
     CONSTRAINT pk_SURCC PRIMARY KEY (exchange_id, surgical_case_id)
 );
 
+CREATE INDEX ix_procedure_SURCC_surgical_case_id
+  ON procedure_SURCC (surgical_case_id);
 
 -- records from SURCP (UKRWH_CDE_SURGICAL_CASE_PROCEDURE)
 create table procedure_SURCP
@@ -147,7 +155,8 @@ create table procedure_SURCP
     CONSTRAINT pk_SURCP PRIMARY KEY (exchange_id, surgical_case_procedure_id)
 );
 
-
+CREATE INDEX ix_procedure_SURCP_surgical_case_procedure_id
+  ON procedure_SURCP (surgical_case_procedure_id);
 
 /*   commented out for now
 -- still no idea whether we should be looking at ECDS or not! ECDS replaced SusEmergency, so I think it should

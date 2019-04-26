@@ -275,6 +275,16 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 			return false;
 		}
 
+		Extension isTestPatient = ExtensionConverter.findExtension(fhirPatient, FhirExtensionUri.PATIENT_IS_TEST_PATIENT);
+		if (isTestPatient != null) {
+			BooleanType b = (BooleanType)isTestPatient.getValue();
+			if (b.getValue() != null && b.getValue()){
+				LOG.debug("      Patient " + patientUuid + " is a test patient, returning false");
+				return false;
+			}
+		}
+
+
 		for (Reference careProviderReference : fhirPatient.getCareProvider()) {
 
 			String odsCode = findOdsCodeFromReference(careProviderReference, serviceId);

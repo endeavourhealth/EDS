@@ -5,34 +5,27 @@ create database if not exists subscriber_pi;
 
 use subscriber_pi;
 
-DROP TABLE IF EXISTS patient_uprn;
-DROP TABLE IF EXISTS medication_order;
-DROP TABLE IF EXISTS medication_statement;
-DROP TABLE IF EXISTS flag;
+DROP TABLE IF EXISTS date_precision;
+DROP TABLE IF EXISTS organization;
+DROP TABLE IF EXISTS location;
+DROP TABLE IF EXISTS practitioner;
+DROP TABLE IF EXISTS `schedule`;
+DROP TABLE IF EXISTS person;
+DROP TABLE IF EXISTS patient;
+DROP TABLE IF EXISTS episode_of_care;
+DROP TABLE IF EXISTS appointment;
+DROP TABLE IF EXISTS encounter;
 DROP TABLE IF EXISTS allergy_intolerance;
-DROP TABLE IF EXISTS `condition`;
-DROP TABLE IF EXISTS specimen;
-DROP TABLE IF EXISTS diagnostic_order;
-DROP TABLE IF EXISTS diagnostic_report;
-DROP TABLE IF EXISTS family_member_history;
-DROP TABLE IF EXISTS immunization;
+DROP TABLE IF EXISTS medication_statement;
+DROP TABLE IF EXISTS medication_order;
+DROP TABLE IF EXISTS flag;
 DROP TABLE IF EXISTS observation;
-DROP TABLE IF EXISTS `procedure`;
 DROP TABLE IF EXISTS procedure_request;
 DROP TABLE IF EXISTS referral_request;
-DROP TABLE IF EXISTS encounter;
-DROP TABLE IF EXISTS appointment;
-DROP TABLE IF EXISTS episode_of_care;
-DROP TABLE IF EXISTS patient;
-DROP TABLE IF EXISTS person;
-DROP TABLE IF EXISTS `schedule`;
-DROP TABLE IF EXISTS practitioner;
-DROP TABLE IF EXISTS location;
-DROP TABLE IF EXISTS organization;
-DROP TABLE IF EXISTS date_precision;
 DROP TABLE IF EXISTS pseudo_id;
 DROP TABLE IF EXISTS patient_contact;
 DROP TABLE IF EXISTS patient_address;
+DROP TABLE IF EXISTS patient_uprn;
 DROP TABLE IF EXISTS subscriber_tables;
 DROP TABLE IF EXISTS event_log;
 
@@ -99,8 +92,6 @@ CREATE INDEX fk_location_managing_organisation_id
 
 -- Table: practitioner
 
--- DROP TABLE practitioner;
-
 CREATE TABLE practitioner
 (
   id bigint NOT NULL,
@@ -128,7 +119,7 @@ CREATE TABLE schedule
   start_date date,
   type character varying(255),
   location character varying(255),
-  comments varchar(150), 
+  name varchar(150), 
   CONSTRAINT pk_schedule_id PRIMARY KEY (organization_id, id),
   CONSTRAINT fk_schedule_organization_id FOREIGN KEY (organization_id)
       REFERENCES organization (id) MATCH SIMPLE
@@ -144,8 +135,6 @@ CREATE UNIQUE INDEX schedule_id
   (id);
 
 -- Table: person
-
--- DROP TABLE person;
 
 CREATE TABLE person
 (
@@ -169,8 +158,6 @@ CREATE UNIQUE INDEX person_id
   (id);  
 
 -- Table: patient
-
--- DROP TABLE patient;
 
 CREATE TABLE patient
 (
@@ -202,8 +189,6 @@ CREATE INDEX patient_person_id
   (person_id);
 
 -- Table: episode_of_care
-
--- DROP TABLE episode_of_care;
 
 CREATE TABLE episode_of_care
 (
@@ -648,8 +633,6 @@ CREATE INDEX procedure_request_patient_id
   (patient_id);
 
 -- Table: referral_request
-
--- DROP TABLE referral_request;
 
 CREATE TABLE referral_request
 (
