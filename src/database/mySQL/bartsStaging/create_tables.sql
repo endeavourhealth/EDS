@@ -199,6 +199,7 @@ create table procedure_target
     qualifier                  varchar(255),
     location                   varchar(255) COMMENT ' this will be updated on the linked Encounter resource ',
     specialty                  varchar(255) COMMENT ' this will be updated on the linked Encounter resource ',
+    audit_json                 mediumtext null comment 'Used for Audit Purposes',
     CONSTRAINT pk_procedure_target PRIMARY KEY (exchange_id, unique_id)
 );
 
