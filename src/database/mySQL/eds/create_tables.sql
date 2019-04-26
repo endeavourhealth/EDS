@@ -65,27 +65,31 @@ CREATE TABLE patient_search
 	patient_id char(36) NOT NULL,
 	last_updated timestamp NOT NULL,
 	registered_practice_ods_code VARCHAR(50),
+	dt_deleted datetime,
 	CONSTRAINT pk_patient_search PRIMARY KEY (service_id, patient_id)
 );
 
 CREATE INDEX ix_patient
   ON patient_search (patient_id);
 
-CREATE INDEX ix_service_patient
-  ON patient_search (service_id, patient_id);
+-- duplicate of primary key (clusterd index) so removed
+/*CREATE INDEX ix_service_patient
+  ON patient_search (service_id, patient_id);*/
 
 CREATE INDEX ix_service_date_of_birth
-  ON patient_search (service_id, date_of_birth);
+  ON patient_search (service_id, date_of_birth, dt_deleted);
 
 -- swap index to be NHS Number first, since that's more selective than a long list of service IDs
 /*CREATE INDEX ix_service_nhs_number
   ON patient_search (service_id, nhs_number);*/
 
 CREATE INDEX ix_service_nhs_number_2
-  ON patient_search (nhs_number, service_id);
+  ON patient_search (nhs_number, service_id, dt_deleted);
 
 CREATE INDEX ix_service_surname_forenames
-  ON patient_search (service_id, surname, forenames);
+  ON patient_search (service_id, surname, forenames, dt_deleted);
+
+
 
 CREATE TABLE patient_search_episode
 (
@@ -100,13 +104,13 @@ CREATE TABLE patient_search_episode
 	registration_type_code varchar(10),
 	last_updated timestamp NOT NULL,
 	registration_status_code varchar(10),
-	CONSTRAINT pk_patient_search PRIMARY KEY (service_id, patient_id, episode_id)
+	dt_deleted datetime,
+	CONSTRAINT pk_patient_search_episode PRIMARY KEY (service_id, patient_id, episode_id)
 );
 
 -- unique index required so patient merges trigger a change in patient_id
 CREATE UNIQUE INDEX uix_patient_search_episode_id
   ON patient_search_episode (episode_id);
-
 
 CREATE TABLE patient_search_local_identifier
 (
@@ -115,6 +119,7 @@ CREATE TABLE patient_search_local_identifier
 	local_id_system varchar(1000),
 	patient_id char(36) NOT NULL,
 	last_updated timestamp NOT NULL,
+	dt_deleted datetime,
 	CONSTRAINT pk_patient_search_local_identifier PRIMARY KEY (service_id, patient_id, local_id_system, local_id),
 	CONSTRAINT fk_patient_search_local_identifier_patient_id FOREIGN KEY (service_id, patient_id)
 		REFERENCES patient_search (service_id, patient_id) MATCH SIMPLE
@@ -123,7 +128,7 @@ CREATE TABLE patient_search_local_identifier
 
 -- index so patient search by local ID works in timely fashion
 CREATE INDEX ix_patient_search_local_identifier_id_service_patient
-  ON patient_search_local_identifier (local_id, service_id, patient_id);
+  ON patient_search_local_identifier (local_id, service_id, patient_id, dt_deleted);
 
 create table patient_address_uprn (
 	service_id char(36) not null,
