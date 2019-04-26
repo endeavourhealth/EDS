@@ -127,6 +127,8 @@ create table procedure_SURCC (
                                  CONSTRAINT pk_SURCC PRIMARY KEY (exchange_id, surgical_case_id)
 );
 
+CREATE INDEX ix_procedure_SURCC_surgical_case_id
+  ON procedure_SURCC (surgical_case_id);
 
 -- records from SURCP (UKRWH_CDE_SURGICAL_CASE_PROCEDURE)
 create table procedure_SURCP (
@@ -149,7 +151,8 @@ create table procedure_SURCP (
                                  CONSTRAINT pk_SURCP PRIMARY KEY (exchange_id, surgical_case_procedure_id)
 );
 
-
+CREATE INDEX ix_procedure_SURCP_surgical_case_procedure_id
+  ON procedure_SURCP (surgical_case_procedure_id);
 
 /*   commented out for now
 -- still no idea whether we should be looking at ECDS or not! ECDS replaced SusEmergency, so I think it should
