@@ -21,6 +21,7 @@ import org.endeavourhealth.core.messaging.pipeline.SubscriberBatch;
 import org.endeavourhealth.core.messaging.pipeline.TransformBatch;
 import org.endeavourhealth.subscriber.filer.EnterpriseFiler;
 import org.endeavourhealth.subscriber.filer.PCRFiler;
+import org.endeavourhealth.subscriber.filer.SubscriberFiler;
 import org.endeavourhealth.transform.common.MessageFormat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -73,6 +74,9 @@ public class PostToSubscriberWebService extends PipelineComponent {
 
 		} else if (software.equals(MessageFormat.PCR_CSV)) {
 			PCRFiler.file(batchId, payload, endpoint);
+
+		} else if (software.equals(MessageFormat.SUBSCRIBER_CSV)) {
+			SubscriberFiler.file(batchId, payload, endpoint);
 
 		} else if (software.equals(MessageFormat.VITRUICARE_XML)) {
 			sendHttpPost(payload, endpoint);
