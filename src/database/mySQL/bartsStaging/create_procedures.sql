@@ -366,7 +366,55 @@ BEGIN
 		cp.exchange_id = _exchange_id;
 
 
+	-- carry over to the target_latest table so we can see the latest state of everything
+    INSERT INTO procedure_target_latest
+    SELECT
+		exchange_id,
+		unique_id,
+		is_delete,
+		person_id,
+		encounter_id,
+		performer_personnel_id,
+		dt_performed,
+		free_text,
+		recorded_by_personnel_id,
+		dt_recorded,
+		procedure_type,
+		procedure_code,
+		procedure_term,
+		sequence_number,
+		parent_procedure_unique_id,
+		qualifier,
+		location,
+		specialty,
+		audit_json
+	FROM
+		procedure_target
+	WHERE
+		exchange_id = _exchange_id
+	ON DUPLICATE KEY UPDATE
+    	exchange_id = values(exchange_id),
+		-- unique_id = values(unique_id), -- part of primary key
+		is_delete = values(is_delete),
+		person_id = values(person_id),
+		encounter_id = values(encounter_id),
+		performer_personnel_id = values(performer_personnel_id),
+		dt_performed = values(dt_performed),
+		free_text = values(free_text),
+		recorded_by_personnel_id = values(recorded_by_personnel_id),
+		dt_recorded = values(dt_recorded),
+		procedure_type = values(procedure_type),
+		procedure_code = values(procedure_code),
+		procedure_term = values(procedure_term),
+		sequence_number = values(sequence_number),
+		parent_procedure_unique_id = values(parent_procedure_unique_id),
+		qualifier = values(qualifier),
+		location = values(location),
+		specialty = values(specialty),
+		audit_json = values(audit_json);
+
+
 END$$
 DELIMITER ;
 
--- CALL process_procedure_staging_exchange('<exchange id>');
+ -- CALL process_procedure_staging_exchange('<exchange id>');
