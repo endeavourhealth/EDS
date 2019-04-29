@@ -90,8 +90,7 @@ BEGIN
     null as dt_recorded,  -- recorded date - where from?
     'CERNER' as procedure_type,
     cp.procedure_code as procedure_code,
-    cp.procedure_term as procedure_term,
-    -- 'TO DO' as procedure_term,
+    cp.lookup_procedure_code_term as procedure_term,
     cp.primary_procedure_indicator as sequence_number,   -- the only data available, either 0 or 1
     null as parent_procedure_unique_id,  -- whats this?
     cp.modifier_text as qualifier,
