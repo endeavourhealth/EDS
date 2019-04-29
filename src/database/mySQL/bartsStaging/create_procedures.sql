@@ -277,7 +277,7 @@ BEGIN
 	select
 		cds.exchange_id as exchange_id,
 		concat('CDS-',cds.cds_unique_identifier,'-',cds.procedure_seq_nbr) as unique_id,
-		if (cds.cds_update_type = 1, true, false) as isDeleted,
+		if (cds.cds_update_type = 1, true, false) as is_delete,
 		coalesce(tail.person_id, cds.lookup_person_id) as person_id,
 		tail.encounter_id as encounter_id,
 		coalesce(tail.responsible_hcp_personnel_id, cds.lookup_consultant_personnel_id) as performer_personnel_id,
@@ -308,7 +308,7 @@ BEGIN
 	select
 		proce.exchange_id as exchange_id,
 		concat('PROCE-',proce.procedure_id,'-',proce.procedure_seq_nbr) as unique_id,
-		if (proce.active_ind = 0, true, false) as isDeleted,
+		if (proce.active_ind = 0, true, false) as is_delete,
 		coalesce(proc.person_id, proce.lookup_person_id) as person_id,
 		coalesce(proc.encounter_id, proce.encounter_id) as encounter_id,
 		proc.lookup_consultant_personnel_id as performer_personnel_id,
@@ -341,7 +341,7 @@ BEGIN
 	select
 		cp.exchange_id as exchange_id,
 		concat('SURG-',cp.surgical_case_procedure_id) as unique_id,
-		if (cp.active_ind = 0, true, false) as isDeleted,
+		if (cp.active_ind = 0, true, false) as is_delete,
 		cc.person_id as person_id,
 		cc.encounter_id as encounter_id,
 		cp.surgeon_personnel_id as performer_personnel_id,
