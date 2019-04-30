@@ -4,6 +4,7 @@ import ca.uhn.hl7v2.DefaultHapiContext;
 import ca.uhn.hl7v2.HL7Exception;
 import ca.uhn.hl7v2.HapiContext;
 import ca.uhn.hl7v2.model.Message;
+import ca.uhn.hl7v2.model.Structure;
 import ca.uhn.hl7v2.model.v23.datatype.CX;
 import ca.uhn.hl7v2.model.v23.group.ADT_A44_PATIENT;
 import ca.uhn.hl7v2.model.v23.segment.MRG;
@@ -519,47 +520,65 @@ public class Main {
         }
 
         // Added 2018-03-30
-            if (channelId == 2
-                    && messageType.startsWith("ADT^A44")
-                    && errorMessage.startsWith("[org.endeavourhealth.hl7receiver.model.exceptions.HL7MessageProcessorException]  Transform failure\r\n[java.lang.NullPointerException]  patientIdentifierValue")) {
+        if (channelId == 2
+                && messageType.startsWith("ADT^A44")
+                && errorMessage.startsWith("[org.endeavourhealth.hl7receiver.model.exceptions.HL7MessageProcessorException]  Transform failure\r\n[java.lang.NullPointerException]  patientIdentifierValue")) {
 
-                Message hapiMsg = parser.parse(inboundPayload);
-                //Terser terser = new Terser(hapiMsg);
-                //String cnn = terser.get("/PID-3");
-                //LOG.info("PID:3(looking for CNN):" + cnn);
-                try {
-                    boolean MRNFound = false;
-                    ADT_A44_PATIENT group = (ADT_A44_PATIENT) hapiMsg.get("PATIENT");
-                    PID pid = (PID) group.get("PID");
-                    //PID pid = (PID) hapiMsg.get("/PATIENT/PID");
-                    if (pid != null) {
-                        CX[] pid3s = pid.getPid3_PatientIDInternalID();
-                        if (pid3s != null && pid3s.length > 0) {
-                            MRNFound = true;
-                    /* This check might need to be more specific than just 'PID:3 present'
-                    for (int i = 0; i < pid3s.length; i++) {
-                        LOG.info("PID:3(" + i + "):" + pid3s[i].toString());
-                        if (pid3s[i].toString().indexOf("CNN") == -1) {
-                            LOG.info("CNN NOT FOUND");
-                        } else {
-                            LOG.info("CNN FOUND");
-                            MRNFound = true;
-                        }
-                    }*/
-                        }
+            Message hapiMsg = parser.parse(inboundPayload);
+            //Terser terser = new Terser(hapiMsg);
+            //String cnn = terser.get("/PID-3");
+            //LOG.info("PID:3(looking for CNN):" + cnn);
+            try {
+                boolean MRNFound = false;
+                ADT_A44_PATIENT group = (ADT_A44_PATIENT) hapiMsg.get("PATIENT");
+                PID pid = (PID) group.get("PID");
+                //PID pid = (PID) hapiMsg.get("/PATIENT/PID");
+                if (pid != null) {
+                    CX[] pid3s = pid.getPid3_PatientIDInternalID();
+                    if (pid3s != null && pid3s.length > 0) {
+                        MRNFound = true;
+                /* This check might need to be more specific than just 'PID:3 present'
+                for (int i = 0; i < pid3s.length; i++) {
+                    LOG.info("PID:3(" + i + "):" + pid3s[i].toString());
+                    if (pid3s[i].toString().indexOf("CNN") == -1) {
+                        LOG.info("CNN NOT FOUND");
+                    } else {
+                        LOG.info("CNN FOUND");
+                        MRNFound = true;
                     }
-
-                    // If "CNN" not found then move to DLQ
-                    if (MRNFound == false) {
-                        return "Automatically moved ADT because PID:3 does not contain MRN";
+                }*/
                     }
                 }
-                catch (Exception ex) {
-                    LOG.info("Error:" + ex.getMessage());
-                    LOG.info("Error:" + hapiMsg.printStructure());
-                }
 
+                // If "CNN" not found then move to DLQ
+                if (MRNFound == false) {
+                    return "Automatically moved ADT because PID:3 does not contain MRN";
+                }
             }
+            catch (Exception ex) {
+                LOG.info("Error:" + ex.getMessage());
+                LOG.info("Error:" + hapiMsg.printStructure());
+            }
+
+        }
+
+        // Added 2019-04-30
+        if (channelId == 2
+                && messageType.equals("ADT^A34")
+                && errorMessage.equals("[org.endeavourhealth.hl7receiver.model.exceptions.HL7MessageProcessorException]  Transform failure\r\n" +
+                "[org.endeavourhealth.hl7transform.common.TransformException]  EVN segment exists less than 1 time(s)")) {
+
+            LOG.info("Looking for EVN segment");
+            Message hapiMsg = parser.parse(inboundPayload);
+            Structure evn = hapiMsg.get("EVN");
+
+            // If MRG missing
+            if (evn == null || evn.isEmpty()) {
+                return "Automatically moved A34 because of missing EVN";
+            } else {
+                LOG.info("EVN segment found. isEmpty()=" + evn.isEmpty());
+            }
+        }
 
 
         //return null to indicate we don't ignore it
