@@ -276,7 +276,7 @@ BEGIN
 	insert into procedure_target
 	select
 		cds.exchange_id as exchange_id,
-		concat('CDS-',cds.cds_unique_identifier,'-',cds.procedure_seq_nbr) as unique_id,
+		concat('CDS-', cds.cds_unique_identifier, '-', cds.procedure_seq_nbr) as unique_id,
 		if (cds.cds_update_type = 1, true, false) as is_delete,
 		coalesce(tail.person_id, cds.lookup_person_id) as person_id,
 		tail.encounter_id as encounter_id,
@@ -289,7 +289,11 @@ BEGIN
 		cds.procedure_opcs_code as procedure_code,
 		cds.lookup_procedure_opcs_term as procedure_term,
 		cds.procedure_seq_nbr as sequence_number,
-		null as parent_procedure_unique_id,  -- whats this?
+		if (
+		  cds.procedure_seq_nbr > 1,
+		  null,
+		  concat('CDS-', cds.cds_unique_identifier, '-', 1)
+		) as parent_procedure_unique_id, -- if sequence number > 1 then parent procedure ID is the same unique ID but with seq 1
 		null as qualifier,
 		null as location, -- location?
 		null as speciality, -- speciality?
@@ -320,7 +324,11 @@ BEGIN
 		coalesce(proc.proc_cd, proce.procedure_code) as procedure_code,
 		coalesce(proc.proc_term, proce.procedure_term) as procedure_term,
 		proce.procedure_seq_nbr as sequence_number,
-		null as parent_procedure_unique_id,  -- whats this?
+		if (
+		  proce.procedure_seq_nbr > 1,
+		  null,
+		  concat('PROCE-', proce.procedure_id, '-', 1)
+    ) as parent_procedure_unique_id, -- if sequence number > 1 then parent procedure ID is the same unique ID but with seq 1
 		null as qualifier,
 		coalesce(proc.site, proc.ward) as location,
 		null as speciality, -- speciality?
