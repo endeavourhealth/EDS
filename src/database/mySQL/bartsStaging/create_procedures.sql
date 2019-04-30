@@ -282,9 +282,9 @@ BEGIN
 		tail.encounter_id as encounter_id,
 		coalesce(tail.responsible_hcp_personnel_id, cds.lookup_consultant_personnel_id) as performer_personnel_id,
 		cds.procedure_date as dt_performed,
-		null as free_text, -- comment?
-		null as recorded_by_personnel_id, -- check this
-		null as dt_recorded,  -- recorded date - where from?
+		null as free_text,    -- data not available
+		null as recorded_by_personnel_id, -- data not available
+		null as dt_recorded,  -- data not available
 		'OPCS4' as procedure_type,
 		cds.procedure_opcs_code as procedure_code,
 		cds.lookup_procedure_opcs_term as procedure_term,
@@ -294,9 +294,9 @@ BEGIN
 		  null,
 		  concat('CDS-', cds.cds_unique_identifier, '-', 1)
 		) as parent_procedure_unique_id, -- if sequence number > 1 then parent procedure ID is the same unique ID but with seq 1
-		null as qualifier,
-		null as location, -- location?
-		null as speciality, -- speciality?
+		null as qualifier,   -- data not available
+		null as location,    -- data not available
+		null as speciality,  -- data not available
 		cds.audit_json
 	from
 		procedure_cds_latest cds
@@ -319,7 +319,7 @@ BEGIN
 		proce.procedure_dt_tm as dt_performed,
 		proc.freetext_comment as free_text,
 		proc.lookup_recorded_by_personnel_id as recorded_by_personnel_id,
-		null as dt_recorded,  -- recorded date - where from?
+		null as dt_recorded,  -- data not available
 		coalesce(proc.proc_cd_type, proce.procedure_type) as procedure_type,
 		coalesce(proc.proc_cd, proce.procedure_code) as procedure_code,
 		coalesce(proc.proc_term, proce.procedure_term) as procedure_term,
@@ -329,9 +329,9 @@ BEGIN
 		  null,
 		  concat('PROCE-', proce.procedure_id, '-', 1)
     ) as parent_procedure_unique_id, -- if sequence number > 1 then parent procedure ID is the same unique ID but with seq 1
-		null as qualifier,
+		null as qualifier,   -- data not available
 		coalesce(proc.site, proc.ward) as location,
-		null as speciality, -- speciality?
+		null as speciality,  -- data not available
 		proce.audit_json
 	from
 		procedure_PROCE_latest proce
@@ -355,16 +355,16 @@ BEGIN
 		cp.surgeon_personnel_id as performer_personnel_id,
 		cp.dt_start as dt_performed,
 		if (cp.wound_class_code > 0, concat(cp.procedure_text,'. Wound class:',cp.wound_class_code),cp.procedure_text) as free_text,
-		null as recorded_by_personnel_id,
-		null as dt_recorded,  -- recorded date - where from?
+		null as recorded_by_personnel_id,  -- data not available
+		null as dt_recorded,  -- data not available
 		'CERNER' as procedure_type,
 		cp.procedure_code as procedure_code,
 		cp.lookup_procedure_code_term as procedure_term,
-		cp.primary_procedure_indicator as sequence_number,   -- the only data available, either 0 or 1
-		null as parent_procedure_unique_id,  -- whats this?
+		cp.primary_procedure_indicator as sequence_number,   -- the only data available is either 0 or 1
+		null as parent_procedure_unique_id,  -- data not applicable
 		cp.modifier_text as qualifier,
 		coalesce(cc.institution_code, cc.department_code, cc.surgical_area_code, cc.theatre_number_code) as location,
-		null as speciality, -- speciality?
+		null as speciality, -- data not available
 		cp.audit_json
 	from
 		procedure_SURCP_latest cp
