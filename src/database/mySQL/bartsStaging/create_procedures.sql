@@ -290,7 +290,7 @@ BEGIN
 		cds.lookup_procedure_opcs_term as procedure_term,
 		cds.procedure_seq_nbr as sequence_number,
 		if (
-		  cds.procedure_seq_nbr > 1,
+		  cds.procedure_seq_nbr = 1,
 		  null,
 		  concat('CDS-', cds.cds_unique_identifier, '-', 1)
 		) as parent_procedure_unique_id, -- if sequence number > 1 then parent procedure ID is the same unique ID but with seq 1
@@ -325,7 +325,7 @@ BEGIN
 		coalesce(proc.proc_term, proce.procedure_term) as procedure_term,
 		proce.procedure_seq_nbr as sequence_number,
 		if (
-		  proce.procedure_seq_nbr > 1,
+		  proce.procedure_seq_nbr = 1,
 		  null,
 		  concat('PROCE-', proce.procedure_id, '-', 1)
     ) as parent_procedure_unique_id, -- if sequence number > 1 then parent procedure ID is the same unique ID but with seq 1
