@@ -327,7 +327,7 @@ BEGIN
 		if (
 		  proce.procedure_seq_nbr is null or proce.procedure_seq_nbr = 1,
 		  null,
-		  concat('PROCE-', proce.procedure_id, '-', 1)
+		  concat('PROCE-', parent_proce.procedure_id)
     ) as parent_procedure_unique_id, -- if sequence number > 1 then parent procedure ID is the same unique ID but with seq 1
 		null as qualifier,   -- data not available
 		coalesce(proc.site, proc.ward) as location,
@@ -340,6 +340,11 @@ BEGIN
         on proce.encounter_id = proc.encounter_id
 		and proce.procedure_dt_tm = proc.proc_dt_tm
 		and proce.procedure_code = proc.proc_cd
+	left join
+		procedure_PROCE_latest parent_proce
+		on parent_proce.person_id = proce.person_id
+        and parent_proce.encounter_id = proce.encounter_id
+        and parent_proce.procedure_seq_nbr = 1
 	where
 		proce.exchange_id = _exchange_id;
 
