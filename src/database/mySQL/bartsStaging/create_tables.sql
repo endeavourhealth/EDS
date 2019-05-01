@@ -244,6 +244,7 @@ create table procedure_SURCC_latest
     CONSTRAINT pk_SURCC_latest PRIMARY KEY (surgical_case_id)
 );
 
+
 -- records from SURCP (UKRWH_CDE_SURGICAL_CASE_PROCEDURE)
 create table procedure_SURCP
 (
