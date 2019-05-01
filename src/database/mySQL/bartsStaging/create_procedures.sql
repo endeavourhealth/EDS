@@ -154,6 +154,7 @@ BEGIN
 		procedure_id,
 		active_ind,
 		encounter_id,
+        encounter_slice_id,
 		procedure_dt_tm,
 		procedure_type,
 		procedure_code,
@@ -175,6 +176,7 @@ BEGIN
 		-- procedure_id = values(procedure_id), -- part of primary key
 		active_ind = values(active_ind),
 		encounter_id = values(encounter_id),
+        encounter_slice_id = values(encounter_slice_id),
 		procedure_dt_tm = values(procedure_dt_tm),
 		procedure_type = values(procedure_type),
 		procedure_code = values(procedure_code),
@@ -344,7 +346,10 @@ BEGIN
 		procedure_PROCE_latest parent_proce
 		on parent_proce.lookup_person_id = proce.lookup_person_id
         and parent_proce.encounter_id = proce.encounter_id
+        and parent_proce.encounter_slice_id = proce.encounter_slice_id
         and parent_proce.procedure_seq_nbr = 1
+		and proce.procedure_seq_nbr is not null
+        and proce.procedure_seq_nbr > 1
 	where
 		proce.exchange_id = _exchange_id;
 

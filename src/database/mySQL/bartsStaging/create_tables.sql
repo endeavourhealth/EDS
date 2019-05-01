@@ -168,6 +168,7 @@ create table procedure_PROCE
     procedure_id         int        NOT NULL COMMENT 'from PROCEDURE_ID',
     active_ind           bool       NOT NULL COMMENT 'whether an active record or not (deleted), from ACTIVE_IND',
     encounter_id         int COMMENT 'from ENCNTR_ID',
+    encounter_slice_id   int COMMENT 'from ENCNTR_SLICE_ID',
     procedure_dt_tm      datetime COMMENT 'from PROCEDURE_DT_TM',
     procedure_type       varchar(50) COMMENT 'opcs or snomed, derived from CONCEPT_CKI_IDENT',
     procedure_code       varchar(50) COMMENT 'opcs-4 or snomed code, opcs-4 code in format ANN.N, derived from CONCEPT_CKI_IDENT',
@@ -189,6 +190,7 @@ create table procedure_PROCE_latest
     procedure_id         int        NOT NULL COMMENT 'from PROCEDURE_ID',
     active_ind           bool       NOT NULL COMMENT 'whether an active record or not (deleted), from ACTIVE_IND',
     encounter_id         int COMMENT 'from ENCNTR_ID',
+    encounter_slice_id   int COMMENT 'from ENCNTR_SLICE_ID',
     procedure_dt_tm      datetime COMMENT 'from PROCEDURE_DT_TM',
     procedure_type       varchar(50) COMMENT 'opcs or snomed, derived from CONCEPT_CKI_IDENT',
     procedure_code       varchar(50) COMMENT 'opcs-4 or snomed code, opcs-4 code in format ANN.N, derived from CONCEPT_CKI_IDENT',
@@ -204,7 +206,7 @@ create table procedure_PROCE_latest
 
 CREATE INDEX ix_procedure_procedure_join_helper ON procedure_PROCE_latest (exchange_id, encounter_id, procedure_dt_tm, procedure_code);
 
-CREATE INDEX ix_procedure_procedure_parent_helper ON procedure_PROCE_latest (lookup_person_id, encounter_id, procedure_seq_nbr);
+CREATE INDEX ix_procedure_procedure_parent_helper ON procedure_PROCE_latest (lookup_person_id, encounter_id, procedure_seq_nbr, encounter_slice_id);
 
 -- records from SURCC (UKRWH_CDE_SURGICAL_CASE)
 create table procedure_SURCC
