@@ -342,7 +342,7 @@ BEGIN
 		and proce.procedure_code = proc.proc_cd
 	left join
 		procedure_PROCE_latest parent_proce
-		on parent_proce.person_id = proce.person_id
+		on parent_proce.lookup_person_id = proce.lookup_person_id
         and parent_proce.encounter_id = proce.encounter_id
         and parent_proce.procedure_seq_nbr = 1
 	where

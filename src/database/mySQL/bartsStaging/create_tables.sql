@@ -122,7 +122,7 @@ create table procedure_procedure
     proc_cd_type                    varchar(50) NOT NULL COMMENT 'opcs or snomed',
     proc_cd                         varchar(50) NOT NULL COMMENT 'opcs-4 or snomed code, opcs-4 code in format ANN.N, from Proc_Cd',
     proc_term                       varchar(255) NOT NULL COMMENT 'corresponding term for the above code, looked up via TRUD',
-    person_id                       intNOT NULL COMMENT 'pre-looked up from encntr_id',
+    person_id                       int NOT NULL COMMENT 'pre-looked up from encntr_id',
     ward                            varchar(50) NOT NULL COMMENT 'from Ward',
     site                            varchar(50) NOT NULL COMMENT 'from Site',
     lookup_person_id                int COMMENT 'person ID looked up via Encounter ID',
@@ -204,6 +204,7 @@ create table procedure_PROCE_latest
 
 CREATE INDEX ix_procedure_procedure_join_helper ON procedure_PROCE_latest (exchange_id, encounter_id, procedure_dt_tm, procedure_code);
 
+CREATE INDEX ix_procedure_procedure_parent_helper ON procedure_PROCE_latest (lookup_person_id, encounter_id, procedure_seq_nbr);
 
 -- records from SURCC (UKRWH_CDE_SURGICAL_CASE)
 create table procedure_SURCC
