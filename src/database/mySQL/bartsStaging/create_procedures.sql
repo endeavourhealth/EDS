@@ -285,7 +285,7 @@ BEGIN
 		coalesce(tail.person_id, cds.lookup_person_id) as person_id,
 		tail.encounter_id as encounter_id,
 		coalesce(tail.responsible_hcp_personnel_id, cds.lookup_consultant_personnel_id) as performer_personnel_id,
-		cds.procedure_date as dt_performed,
+		coalesce(cds.procedure_date, cds.cds_activity_date) as dt_performed,
 		null as free_text,    -- data not available
 		null as recorded_by_personnel_id, -- data not available
 		null as dt_recorded,  -- data not available
