@@ -356,6 +356,7 @@ BEGIN
 		proce.exchange_id = _exchange_id;
 
 
+
 	-- SURCC and SURCP
 	insert into procedure_target
 	select
