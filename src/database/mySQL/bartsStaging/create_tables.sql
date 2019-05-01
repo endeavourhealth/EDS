@@ -224,6 +224,7 @@ create table procedure_SURCC
     department_code     varchar(50) COMMENT 'from DEPT_CD',
     surgical_area_code  varchar(50) COMMENT 'from SURGICAL_AREA_CD',
     theatre_number_code varchar(50) COMMENT 'from THEATRE_NBR_CD',
+    specialty_code      varchar(50) COMMENT 'from SURGICAL_CASE_SPECIALTY_CD',
     audit_json          mediumtext null comment 'Used for Audit Purposes',
     CONSTRAINT pk_SURCC PRIMARY KEY (exchange_id, surgical_case_id)
 );
@@ -243,6 +244,7 @@ create table procedure_SURCC_latest
     department_code     varchar(50) COMMENT 'from DEPT_CD',
     surgical_area_code  varchar(50) COMMENT 'from SURGICAL_AREA_CD',
     theatre_number_code varchar(50) COMMENT 'from THEATRE_NBR_CD',
+    specialty_code      varchar(50) COMMENT 'from SURGICAL_CASE_SPECIALTY_CD',
     audit_json          mediumtext null comment 'Used for Audit Purposes',
     CONSTRAINT pk_SURCC_latest PRIMARY KEY (surgical_case_id)
 );

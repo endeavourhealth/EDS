@@ -205,6 +205,7 @@ BEGIN
 		department_code,
 		surgical_area_code,
 		theatre_number_code,
+    specialty_code,
 		audit_json
     from
 		procedure_SURCC
@@ -224,6 +225,7 @@ BEGIN
 		department_code = values(department_code),
 		surgical_area_code = values(surgical_area_code),
 		theatre_number_code = values(theatre_number_code),
+		specialty_code = values(specialty_code),
 		audit_json = values(audit_json);
 
 	-- create helper table to get latest SURCC records
@@ -374,7 +376,7 @@ BEGIN
 		null as parent_procedure_unique_id,  -- data not applicable
 		cp.modifier_text as qualifier,
 		coalesce(cc.institution_code, cc.department_code, cc.surgical_area_code, cc.theatre_number_code) as location,
-		null as speciality, -- data not available
+		cc.specialty_code as specialty,
 		cp.audit_json
 	from
 		procedure_SURCP_latest cp
