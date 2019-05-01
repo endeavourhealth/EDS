@@ -34,7 +34,9 @@ import org.endeavourhealth.core.database.dal.ehr.models.ResourceWrapper;
 import org.endeavourhealth.core.database.dal.publisherTransform.InternalIdDalI;
 import org.endeavourhealth.core.database.dal.reference.PostcodeDalI;
 import org.endeavourhealth.core.database.dal.reference.models.PostcodeLookup;
-import org.endeavourhealth.core.database.dal.subscriberTransform.EnterpriseIdDalI;
+import org.endeavourhealth.core.database.dal.subscriberTransform.SubscriberOrgMappingDalI;
+import org.endeavourhealth.core.database.dal.subscriberTransform.SubscriberPersonMappingDalI;
+import org.endeavourhealth.core.database.dal.subscriberTransform.SubscriberResourceMappingDalI;
 import org.endeavourhealth.core.database.dal.subscriberTransform.models.EnterpriseAge;
 import org.endeavourhealth.core.database.rdbms.ConnectionManager;
 import org.endeavourhealth.core.database.rdbms.enterprise.EnterpriseConnector;
@@ -3729,7 +3731,7 @@ public class Main {
 				SessionImpl session = (SessionImpl) edsEntityManager.getDelegate();
 				Connection edsConnection = session.connection();
 
-				EnterpriseIdDalI enterpriseIdDal = DalProvider.factoryEnterpriseIdDal(subscriberConfigName);
+				SubscriberResourceMappingDalI enterpriseIdDal = DalProvider.factorySubscriberResourceMappingDal(subscriberConfigName);
 				PatientLinkDalI patientLinkDal = DalProvider.factoryPatientLinkDal();
 				PostcodeDalI postcodeDal = DalProvider.factoryPostcodeDal();
 
@@ -3762,7 +3764,7 @@ public class Main {
 					boolean invalidPostcode = rs.getBoolean(col++);
 
 					//check if patient ID already exists in the subscriber DB
-					Long subscriberPatientId = enterpriseIdDal.findEnterpriseId(ResourceType.Patient.toString(), patientId);
+					Long subscriberPatientId = enterpriseIdDal.findEnterpriseIdOldWay(ResourceType.Patient.toString(), patientId);
 
 					//if the patient doesn't exist on this subscriber DB, then don't transform this record
 					if (subscriberPatientId != null) {
@@ -3825,12 +3827,15 @@ public class Main {
 							hmPermittedPublishers.put(serviceId, isPublisher);
 						}
 
+
 						if (isPublisher.booleanValue()) {
 
-							Long subscriberOrgId = enterpriseIdDal.findEnterpriseOrganisationId(serviceId);
+							SubscriberOrgMappingDalI orgMappingDal = DalProvider.factorySubscriberOrgMappingDal(subscriberConfigName);
+							Long subscriberOrgId = orgMappingDal.findEnterpriseOrganisationId(serviceId);
 
 							String discoveryPersonId = patientLinkDal.getPersonId(patientId);
-							Long subscriberPersonId = enterpriseIdDal.findOrCreateEnterprisePersonId(discoveryPersonId);
+							SubscriberPersonMappingDalI personMappingDal = DalProvider.factorySubscriberPersonMappingDal(subscriberConfigName);
+							Long subscriberPersonId = personMappingDal.findOrCreateEnterprisePersonId(discoveryPersonId);
 
 							String lsoaCode = null;
 							if (!Strings.isNullOrEmpty(abpAddress)) {
