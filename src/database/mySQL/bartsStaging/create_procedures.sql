@@ -311,7 +311,7 @@ BEGIN
 	insert into procedure_target
 	select
 		proce.exchange_id as exchange_id,
-		concat('PROCE-',proce.procedure_id,'-',proce.procedure_seq_nbr) as unique_id,
+		concat('PROCE-', proce.procedure_id) as unique_id,
 		if (proce.active_ind = 0, true, false) as is_delete,
 		coalesce(proc.person_id, proce.lookup_person_id) as person_id,
 		coalesce(proc.encounter_id, proce.encounter_id) as encounter_id,
@@ -325,7 +325,7 @@ BEGIN
 		coalesce(proc.proc_term, proce.procedure_term) as procedure_term,
 		proce.procedure_seq_nbr as sequence_number,
 		if (
-		  proce.procedure_seq_nbr = 1,
+		  proce.procedure_seq_nbr is null or proce.procedure_seq_nbr = 1,
 		  null,
 		  concat('PROCE-', proce.procedure_id, '-', 1)
     ) as parent_procedure_unique_id, -- if sequence number > 1 then parent procedure ID is the same unique ID but with seq 1
