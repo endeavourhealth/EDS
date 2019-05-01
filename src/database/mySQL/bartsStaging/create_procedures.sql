@@ -373,6 +373,12 @@ BEGIN
 	where
 		cp.exchange_id = _exchange_id;
 
+		-- the above will have picked up CDS records where we don't have a patient, so delete them out of the target table
+	  delete from procedure_target
+	  where exchange_id = _exchange_id
+	  and person_id is null;
+
+
 
 	-- carry over to the target_latest table so we can see the latest state of everything
     INSERT INTO procedure_target_latest
