@@ -778,11 +778,10 @@ CREATE TABLE subscriber_tables
 
 CREATE TABLE event_log
 (
-  id                         bigint   NOT NULL AUTO_INCREMENT,
+  id                         bigint   NOT NULL,
   entry_date                 datetime NOT NULL,
-  entry_mode                 tinyint  NOT NULL COMMENT 'entry mode i.e. 0-upsert, 1-delete',
+  entry_mode                 tinyint  NOT NULL COMMENT 'entry mode i.e. 0=insert, 1=update, 2=delete',
   table_id                   tinyint  NOT NULL COMMENT 'the table ID relevant to the entry',
-  PRIMARY KEY (id),
   CONSTRAINT event_log_table_id
   FOREIGN KEY (table_id)
   REFERENCES subscriber_tables (id)
