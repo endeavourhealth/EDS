@@ -687,7 +687,8 @@ CREATE INDEX referral_request_patient_id
 CREATE INDEX referral_request_core_concept_id
   ON referral_request
   (core_concept_id);
-  
+
+
 -- Table: pseudo_id
 
 CREATE TABLE pseudo_id
