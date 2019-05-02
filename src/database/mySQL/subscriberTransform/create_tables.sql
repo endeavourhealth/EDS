@@ -20,6 +20,7 @@ DROP TABLE IF EXISTS pcr_practitioner_id_map;
 DROP TABLE IF EXISTS pcr_event_id_map;
 DROP TABLE IF EXISTS code_set_codes;
 DROP TABLE IF EXISTS code_set;
+DROP TABLE IF EXISTS subscriber_id_map;
 
 CREATE TABLE enterprise_id_map
 (
@@ -247,3 +248,19 @@ CREATE TABLE code_set_codes
   FOREIGN KEY (code_set_id)
   REFERENCES code_set (id)
 );
+
+CREATE TABLE subscriber_id_map
+(
+  resource_type varchar(50) NOT NULL COMMENT 'FHIR resource type, or similar, that this relates to',
+  resource_id char(36) NOT NULL COMMENT 'FHIR resource ID',
+  subscriber_id bigint NOT NULL COMMENT 'unique ID allocated for the subscriber DB',
+  previously_sent datetime NOT NULL COMMENT 'the date time of the previously sent version of this resource (or null if deleted)',
+  CONSTRAINT pk_subscriber_id_map PRIMARY KEY (resource_id, resource_type)
+);
+
+-- this unique index is required to make the column auto-increment
+CREATE UNIQUE INDEX uix_subscriber_id_map_auto_increment
+ON subscriber_id_map (subscriber_id);
+
+ALTER TABLE subscriber_id_map MODIFY COLUMN subscriber_id INT auto_increment;
+

@@ -5,8 +5,9 @@ import org.endeavourhealth.common.utility.SlackHelper;
 import org.endeavourhealth.core.database.dal.DalProvider;
 import org.endeavourhealth.core.database.dal.eds.PatientLinkDalI;
 import org.endeavourhealth.core.database.dal.eds.models.PatientLinkPair;
-import org.endeavourhealth.core.database.dal.subscriberTransform.EnterpriseIdDalI;
 import org.endeavourhealth.core.database.dal.subscriberTransform.EnterprisePersonUpdaterHistoryDalI;
+import org.endeavourhealth.core.database.dal.subscriberTransform.SubscriberPersonMappingDalI;
+import org.endeavourhealth.core.database.dal.subscriberTransform.SubscriberResourceMappingDalI;
 import org.endeavourhealth.core.database.rdbms.enterprise.EnterpriseConnector;
 import org.hl7.fhir.instance.model.ResourceType;
 import org.slf4j.Logger;
@@ -153,17 +154,18 @@ public class Main {
             String newDiscoveryPersonId = change.getNewPersonId();
             String discoveryPatientId = change.getPatientId();
 
-            EnterpriseIdDalI enterpriseIdDalI = DalProvider.factoryEnterpriseIdDal(enterpriseConfigName);
-            Long enterprisePatientId = enterpriseIdDalI.findEnterpriseId(ResourceType.Patient.toString(), discoveryPatientId);
+            SubscriberResourceMappingDalI enterpriseIdDalI = DalProvider.factorySubscriberResourceMappingDal(enterpriseConfigName);
+            Long enterprisePatientId = enterpriseIdDalI.findEnterpriseIdOldWay(ResourceType.Patient.toString(), discoveryPatientId);
 
             //if this patient has never gone to enterprise, then skip it
             if (enterprisePatientId == null) {
                 continue;
             }
 
-            List<Long> mappings = enterpriseIdDalI.findEnterprisePersonIdsForPersonId(oldDiscoveryPersonId);
+            SubscriberPersonMappingDalI personMappingDal = DalProvider.factorySubscriberPersonMappingDal(enterpriseConfigName);
+            List<Long> mappings = personMappingDal.findEnterprisePersonIdsForPersonId(oldDiscoveryPersonId);
             for (Long oldEnterprisePersonId: mappings) {
-                Long newEnterprisePersonId = enterpriseIdDalI.findOrCreateEnterprisePersonId(newDiscoveryPersonId);
+                Long newEnterprisePersonId = personMappingDal.findOrCreateEnterprisePersonId(newDiscoveryPersonId);
 
                 updatesForConfig.add(new UpdateJob(enterprisePatientId, oldEnterprisePersonId, newEnterprisePersonId));
             }
