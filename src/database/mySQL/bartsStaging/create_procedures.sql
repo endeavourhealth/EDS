@@ -89,7 +89,6 @@ BEGIN
 		responsible_hcp_personnel_id = values(responsible_hcp_personnel_id),
 		audit_json = values(audit_json);
 
-
 	-- create helper table to get latest procedure records
     insert into procedure_procedure_latest
     select
@@ -311,6 +310,7 @@ BEGIN
 	where
 		cds.exchange_id = _exchange_id;
 
+
 	-- Procedure and PROCE (left join to get all)
 	insert into procedure_target
 	select
@@ -352,10 +352,9 @@ BEGIN
         and parent_proce.procedure_seq_nbr = 1
 		and proce.procedure_seq_nbr is not null
         and proce.procedure_seq_nbr > 1
+        and proce.dt_received >= parent_proce.dt_received -- only join to parent proce that were added before, so we don't join to future ones if re-running data
 	where
 		proce.exchange_id = _exchange_id;
-
-
 
 	-- SURCC and SURCP
 	insert into procedure_target
@@ -439,7 +438,6 @@ BEGIN
 		location = values(location),
 		specialty = values(specialty),
 		audit_json = values(audit_json);
-
 
 END$$
 DELIMITER ;
