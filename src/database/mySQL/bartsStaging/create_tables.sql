@@ -29,7 +29,7 @@ create table procedure_cds
     cds_update_type                int          NOT NULL COMMENT 'from CDSUpdateType',
     mrn                            varchar(10)  NOT NULL COMMENT 'patient MRN from LocalPatientID field',
     nhs_number                     varchar(10)  NOT NULL COMMENT 'from NHSNumber',
-    date_of_birth                  datetime NOT NULL COMMENT 'from PersonBirthDate',
+    date_of_birth                  datetime     COMMENT 'from PersonBirthDate',
     consultant_code                varchar(20) NOT NULL COMMENT 'GMC number of consultant, from ConsultantCode',
     procedure_date                 date         COMMENT 'from PrimaryProcedureDate, SecondaryProcedureDate etc. - note this file has no time component',
     procedure_opcs_code            varchar(5)   NOT NULL COMMENT 'opcs-4 code in format ANN.N from PrimaryProcedureOPCS, SecondaryProcedureOPCS etc.',
