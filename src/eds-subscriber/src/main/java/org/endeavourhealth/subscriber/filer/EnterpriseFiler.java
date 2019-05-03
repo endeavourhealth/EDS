@@ -627,39 +627,60 @@ public class EnterpriseFiler {
         columns = new ArrayList<>(columns);
         columns.remove(COL_SAVE_MODE);
 
-        PreparedStatement insert = createUpsertPreparedStatement(tableName, columns, connection, keywordEscapeChar);
+        PreparedStatement insert = null;
 
-        for (CSVRecord csvRecord: csvRecords) {
+        try {
+            insert = createUpsertPreparedStatement(tableName, columns, connection, keywordEscapeChar);
 
-            int index = 1;
-            for (String column: columns) {
-                addToStatement(insert, csvRecord, column, columnClasses, index);
-                index ++;
-            }
+            for (CSVRecord csvRecord: csvRecords) {
 
-            //if SQL Server, then we need to add the values a SECOND time because the UPSEERT syntax used needs it
-            if (ConnectionManager.isSqlServer(connection)) {
+                int index = 1;
                 for (String column: columns) {
                     addToStatement(insert, csvRecord, column, columnClasses, index);
                     index ++;
                 }
+
+                //if SQL Server, then we need to add the values a SECOND time because the UPSEERT syntax used needs it
+                if (ConnectionManager.isSqlServer(connection)) {
+                    for (String column: columns) {
+                        addToStatement(insert, csvRecord, column, columnClasses, index);
+                        index ++;
+                    }
+                }
+
+                /*if (!tableName.equals("link_distributor")) {
+                    LOG.debug("Saving " + tableName + " with ID " + csvRecord.get(COL_ID));
+                }*/
+
+                insert.addBatch();
             }
 
-            //LOG.debug("" + insert);
-            insert.addBatch();
-        }
-
-        //wrap in try/catch so we can log out the SQL that failed
-        try {
             insert.executeBatch();
 
+            connection.commit();
+
         } catch (Exception ex) {
-            LOG.error(insert.toString());
-            throw ex;
+
+            connection.rollback();
+
+            //if we get an error, try again, but one record at a time so we can find out exactly which record caused the problem
+            if (csvRecords.size() == 1) {
+                LOG.error(insert.toString());
+                throw ex;
+            } else {
+                LOG.error("Had exception saving batch (" + ex.getMessage() + " so will try saving one at a time");
+                for (CSVRecord r: csvRecords) {
+                    List<CSVRecord> l = new ArrayList<>();
+                    l.add(r);
+                    fileUpserts(l, columns, columnClasses, tableName, connection, keywordEscapeChar);
+                }
+            }
+        } finally {
+            if (insert != null) {
+                insert.close();
+            }
         }
 
-        insert.close();
-        connection.commit();
     }
 
 
