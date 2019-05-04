@@ -274,8 +274,8 @@ BEGIN
 	-- first, clear down procedure_target for the exchange
 	delete from procedure_target where exchange_id = _exchange_id;
 
-
 	-- CDS and CDS Tail (left join, get all records including where tail record is null)
+    -- CDS must be done before PROCE, as PROCE refers back to CDS to avoid duplicates
 	insert into procedure_target
 	select
 		cds.exchange_id as exchange_id,
@@ -310,6 +310,12 @@ BEGIN
 	where
 		cds.exchange_id = _exchange_id;
 
+	-- the above will have picked up CDS records where we don't have a patient, so delete them out of the target table
+	delete from procedure_target
+	where
+		exchange_id = _exchange_id
+		and person_id is null
+		and is_delete = 0;
 
 	-- Procedure and PROCE (left join to get all)
 	insert into procedure_target
@@ -356,6 +362,20 @@ BEGIN
 	where
 		proce.exchange_id = _exchange_id;
 
+	-- all procedures from CDS are also in PROCE, so we need to de-duplicate those
+	delete target_proce
+    from procedure_target target_proce
+    inner join procedure_target target_cds
+		on target_proce.person_id = target_cds.person_id
+		and target_proce.encounter_id = target_cds.encounter_id
+		and date(target_proce.dt_performed) = target_cds.dt_performed -- CDS procs don't have times
+		and target_proce.procedure_code = target_cds.procedure_code
+        and target_proce.unique_id != target_cds.unique_id
+    where
+		target_proce.exchange_id = _exchange_id
+        and target_proce.unique_id like 'PROCE-%'
+        and target_cds.unique_id like 'CDS-%';
+
 	-- SURCC and SURCP
 	insert into procedure_target
 	select
@@ -385,10 +405,7 @@ BEGIN
 	where
 		cp.exchange_id = _exchange_id;
 
-		-- the above will have picked up CDS records where we don't have a patient, so delete them out of the target table
-	  delete from procedure_target
-	  where exchange_id = _exchange_id
-	  and person_id is null;
+
 
 
 

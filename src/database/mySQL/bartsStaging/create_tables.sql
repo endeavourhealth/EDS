@@ -344,6 +344,8 @@ create table procedure_target
     CONSTRAINT pk_procedure_target PRIMARY KEY (exchange_id, unique_id)
 );
 
+create index ix_duplication_helper on procedure_target (person_id, encounter_id, dt_performed, procedure_code, unique_id);
+
 
 -- latest version of every record that is in the archive table
 create table procedure_target_latest
