@@ -733,12 +733,15 @@ CREATE TABLE patient_contact
   organization_id 			 bigint		  NOT NULL,
   patient_id                 bigint       NOT NULL,
   person_id 				 bigint,
-  type_concept_id            bigint       NOT NULL COMMENT 'type of contact (e.g. home phone, mobile phone, email)',
-  value                      varchar(255) NOT NULL COMMENT 'the actual phone number or email address',
+  use_concept_id            int COMMENT 'use of contact (e.g. mobile, home, work)',
+  type_concept_id            int COMMENT 'type of contact (e.g. phone, email)',
+  start_date date,
+  end_date				   date,
+  value                      varchar(255) COMMENT 'the actual phone number or email address',
   CONSTRAINT pk_organization_id_id_patient_id_person_id PRIMARY KEY (`organization_id`,`id`,`patient_id`,`person_id`),
   CONSTRAINT fk_patient_contact_patient_id_organisation_id FOREIGN KEY (patient_id, organization_id)
       REFERENCES patient (id, organization_id)
-) AUTO_INCREMENT = 1 COMMENT 'stores contact details (e.g. phone) for patients';
+) COMMENT 'stores contact details (e.g. phone) for patients';
 
 -- Table: patient_address
 
@@ -752,9 +755,11 @@ CREATE TABLE patient_address
   address_line_2           varchar(255),
   address_line_3           varchar(255),
   address_line_4           varchar(255),
+  city varchar(255),
   postcode                 varchar(10),
   type_concept_id          bigint       	NOT NULL COMMENT 'type of address (e.g. home, temporary)',
-  date_to				   date,
+  start_date date,
+  end_date				   date,
   lsoa_2001_code           varchar(9),
   lsoa_2011_code           varchar(9),
   msoa_2001_code           varchar(9),
@@ -764,16 +769,16 @@ CREATE TABLE patient_address
   CONSTRAINT pk_organization_id_id_patient_id_person_id PRIMARY KEY (`organization_id`,`id`,`patient_id`,`person_id`),
   CONSTRAINT fk_patient_address_patient_id_organization_id FOREIGN KEY (patient_id, organization_id)
       REFERENCES patient (id, organization_id)
-) AUTO_INCREMENT = 1 COMMENT 'stores address details for patients';
+) COMMENT 'stores address details for patients';
 
 -- Table: subscriber_tables
 
 CREATE TABLE subscriber_tables
 (
-  id         tinyint      NOT NULL AUTO_INCREMENT ,
+  id         tinyint      NOT NULL ,
   table_name varchar(255) NOT NULL,
   PRIMARY KEY (id)
-) AUTO_INCREMENT =1 COMMENT 'lookup of all the table names in this database';
+) COMMENT 'lookup of all the table names in this database';
 
 -- Table: event_log
 
@@ -786,4 +791,4 @@ CREATE TABLE event_log
   CONSTRAINT event_log_table_id
   FOREIGN KEY (table_id)
   REFERENCES subscriber_tables (id)
-) AUTO_INCREMENT=1 COMMENT 'represents the transaction log of all core table entries';
+) COMMENT 'represents the transaction log of all core table entries';

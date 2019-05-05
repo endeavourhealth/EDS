@@ -297,7 +297,7 @@ public class SubscriberApi {
         PseudoIdDalI pseudoIdDal = DalProvider.factoryPseudoIdDal(enterpriseEndpoint);
 
         for (UUID patientUuid: results.keySet()) {
-            String pseudoId = pseudoIdDal.findPseudoId(patientUuid.toString());
+            String pseudoId = pseudoIdDal.findPseudoIdOldWay(patientUuid.toString());
             if (!Strings.isNullOrEmpty(pseudoId)) {
                 pseudoIds.add(pseudoId);
             }

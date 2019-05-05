@@ -21,6 +21,7 @@ DROP TABLE IF EXISTS pcr_event_id_map;
 DROP TABLE IF EXISTS code_set_codes;
 DROP TABLE IF EXISTS code_set;
 DROP TABLE IF EXISTS subscriber_id_map;
+DROP TABLE IF EXISTS subscriber_pseudo_id_map;
 
 CREATE TABLE enterprise_id_map
 (
@@ -251,11 +252,11 @@ CREATE TABLE code_set_codes
 
 CREATE TABLE subscriber_id_map
 (
-  resource_type varchar(50) NOT NULL COMMENT 'FHIR resource type, or similar, that this relates to',
-  resource_id char(36) NOT NULL COMMENT 'FHIR resource ID',
+  subscriber_table tinyint NOT NULL COMMENT 'ID of the target table this ID is for',
   subscriber_id bigint NOT NULL COMMENT 'unique ID allocated for the subscriber DB',
-  previously_sent datetime NOT NULL COMMENT 'the date time of the previously sent version of this resource (or null if deleted)',
-  CONSTRAINT pk_subscriber_id_map PRIMARY KEY (resource_id, resource_type)
+  source_id varchar(250) NOT NULL COMMENT 'Source ID (e.g. FHIR reference) that this ID is mapped from',
+  dt_previously_sent datetime NULL COMMENT 'the date time of the previously sent version of this resource (or null if deleted)',
+  CONSTRAINT pk_subscriber_id_map PRIMARY KEY (source_id, subscriber_table)
 );
 
 -- this unique index is required to make the column auto-increment
@@ -263,4 +264,17 @@ CREATE UNIQUE INDEX uix_subscriber_id_map_auto_increment
 ON subscriber_id_map (subscriber_id);
 
 ALTER TABLE subscriber_id_map MODIFY COLUMN subscriber_id INT auto_increment;
+
+
+
+CREATE TABLE subscriber_pseudo_id_map
+(
+  patient_id char(36) NOT NULL,
+  subscriber_patient_id bigint NOT NULL,
+  salt_key_name varchar(255) NOT NULL,
+  pseudo_id varchar(255) NOT NULL,
+  CONSTRAINT pk_subscriber_pseudo_id_map PRIMARY KEY (patient_id, subscriber_patient_id, salt_key_name)
+);
+
+create index ix_subscriber_pseudo_id_map_pseudo_id on subscriber_pseudo_id_map(salt_key_name, pseudo_id);
 
