@@ -199,6 +199,8 @@ BEGIN
 		active_ind,
 		person_id,
 		encounter_id,
+        dt_start,
+        dt_stop,
 		dt_cancelled,
 		institution_code,
 		department_code,
@@ -219,6 +221,8 @@ BEGIN
 		active_ind = values(active_ind),
 		person_id = values(person_id),
 		encounter_id = values(encounter_id),
+	    dt_start = values(dt_start),
+	    dt_stop = values(dt_stop),
 		dt_cancelled = values(dt_cancelled),
 		institution_code = values(institution_code),
 		department_code = values(department_code),
@@ -385,8 +389,9 @@ BEGIN
 		cc.person_id as person_id,
 		cc.encounter_id as encounter_id,
 		cp.surgeon_personnel_id as performer_personnel_id,
-		cp.dt_start as dt_performed,
-		if (cp.wound_class_code > 0, concat(cp.procedure_text,'. Wound class:',cp.wound_class_code),cp.procedure_text) as free_text,
+		ifnull(cp.dt_start, cc.dt_start) as dt_performed,
+        ifnull(cp.dt_stop, cc.dt_stop) as dt_ended,
+        if (cp.wound_class_code > 0, concat(cp.procedure_text,'. Wound class:',cp.wound_class_code),cp.procedure_text) as free_text,
 		null as recorded_by_personnel_id,  -- data not available
 		null as dt_recorded,  -- data not available
 		'CERNER' as procedure_type,
@@ -403,7 +408,8 @@ BEGIN
 	left join procedure_SURCC_latest cc
 		on cp.surgical_case_id = cc.surgical_case_id
 	where
-		cp.exchange_id = _exchange_id;
+		cp.exchange_id = _exchange_id
+	    and (cp.dt_start is not null and cc.dt_start is not null);
 
 
 
