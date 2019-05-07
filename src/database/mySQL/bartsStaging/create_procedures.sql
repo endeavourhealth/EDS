@@ -409,7 +409,7 @@ BEGIN
 		on cp.surgical_case_id = cc.surgical_case_id
 	where
 		cp.exchange_id = _exchange_id
-	    and (cp.dt_start is not null and cc.dt_start is not null);
+	    and (cp.dt_start is not null or cc.dt_start is not null);
 
 
 
