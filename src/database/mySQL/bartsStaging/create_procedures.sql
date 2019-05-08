@@ -289,6 +289,7 @@ BEGIN
 		tail.encounter_id as encounter_id,
 		coalesce(tail.responsible_hcp_personnel_id, cds.lookup_consultant_personnel_id) as performer_personnel_id,
 		coalesce(cds.procedure_date, cds.cds_activity_date) as dt_performed,
+		null as dt_ended,
 		null as free_text,    -- data not available
 		null as recorded_by_personnel_id, -- data not available
 		null as dt_recorded,  -- data not available
@@ -331,6 +332,7 @@ BEGIN
 		coalesce(proc.encounter_id, proce.encounter_id) as encounter_id,
 		proc.lookup_consultant_personnel_id as performer_personnel_id,
 		proce.procedure_dt_tm as dt_performed,
+		null as dt_ended,
 		proc.freetext_comment as free_text,
 		proc.lookup_recorded_by_personnel_id as recorded_by_personnel_id,
 		null as dt_recorded,  -- data not available
@@ -428,6 +430,7 @@ BEGIN
 		free_text,
 		recorded_by_personnel_id,
 		dt_recorded,
+		dt_ended,
 		procedure_type,
 		procedure_code,
 		procedure_term,
@@ -449,6 +452,7 @@ BEGIN
 		encounter_id = values(encounter_id),
 		performer_personnel_id = values(performer_personnel_id),
 		dt_performed = values(dt_performed),
+		dt_ended = values(dt_ended),
 		free_text = values(free_text),
 		recorded_by_personnel_id = values(recorded_by_personnel_id),
 		dt_recorded = values(dt_recorded),
