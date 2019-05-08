@@ -366,7 +366,7 @@ create table procedure_target_latest
     free_text                  mediumtext,
     recorded_by_personnel_id   int,
     dt_recorded                datetime,
-    procedure_type             varchar(50) COMMENT ' opcs, snomed or cerner code - tells us the schema of the below code ',
+   procedure_type             varchar(50) COMMENT ' opcs, snomed or cerner code - tells us the schema of the below code ',
     procedure_code             varchar(50),
     procedure_term             varchar(255),
     sequence_number            int,
