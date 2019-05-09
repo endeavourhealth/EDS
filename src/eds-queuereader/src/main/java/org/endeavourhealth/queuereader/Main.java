@@ -211,6 +211,14 @@ public class Main {
 		}
 
 		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("PostPatientToProtocol")) {
+			String odsCode = args[1];
+			String patientUuid = args[2];
+			postPatientToProtocol(odsCode, patientUuid);
+			System.exit(0);
+		}
+
+		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("TestMetrics")) {
 			testMetrics();
 			System.exit(0);
@@ -665,6 +673,65 @@ public class Main {
 		LOG.info("EDS Queue reader running (kill file location " + TransformConfig.instance().getKillFileLocation() + ")");
 	}
 
+	private static void postPatientToProtocol(String odsCode, String patientUuid) {
+		LOG.info("Posting patient " + patientUuid + " for " + odsCode + " to Protocol queue");
+		try {
+			ServiceDalI serviceDal = DalProvider.factoryServiceDal();
+			Service service = serviceDal.getByLocalIdentifier(odsCode);
+			LOG.info("Service " + service.getId() + " -> " + service.getName());
+
+			UUID patientId = UUID.fromString(patientUuid);
+
+			List<UUID> systemIds = findSystemIds(service);
+			if (systemIds.size() != 1) {
+				throw new Exception("Found " + systemIds.size() + " for service");
+			}
+			UUID systemId = systemIds.get(0);
+			UUID serviceId = service.getId();
+
+			ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
+			List<Exchange> exchanges = exchangeDal.getExchangesByService(serviceId, systemId, Integer.MAX_VALUE);
+			LOG.info("Found " + exchanges.size() + " exchanges");
+
+			ExchangeBatchDalI exchangeBatchDal = DalProvider.factoryExchangeBatchDal();
+
+			//exchanges are in order most recent first, so iterate backwards to get them in date order
+			for (int i=exchanges.size()-1; i>=0; i--) {
+				Exchange exchange = exchanges.get(i);
+
+
+				List<UUID> batchesForPatient = new ArrayList<>();
+
+				List<ExchangeBatch> batches = exchangeBatchDal.retrieveForExchangeId(exchange.getId());
+				for (ExchangeBatch batch: batches) {
+					if (batch.getEdsPatientId() != null
+							&& batch.getEdsPatientId().equals(patientId)) {
+
+						batchesForPatient.add(batch.getBatchId());
+					}
+				}
+
+				if (!batchesForPatient.isEmpty()) {
+					LOG.debug("Posting " + batchesForPatient.size() + " for exchange " + exchange.getId() + " to rabbit");
+
+					//set new batch ID in exchange header
+					String batchIdString = ObjectMapperPool.getInstance().writeValueAsString(batchesForPatient.toArray());
+					exchange.setHeader(HeaderKeys.BatchIdsJson, batchIdString);
+
+					//post new batch to protocol Q
+					PostMessageToExchangeConfig exchangeConfig = QueueHelper.findExchangeConfig("EdsProtocol");
+					PostMessageToExchange component = new PostMessageToExchange(exchangeConfig);
+					component.process(exchange);
+				}
+			}
+
+			LOG.info("Finished posting patient " + patientUuid + " for " + odsCode + " to Protocol queue");
+		} catch (Throwable t) {
+			LOG.error("", t);
+		}
+
+	}
+
 	private static void testMetrics() {
 		LOG.info("Testing Metrics");
 		try {
@@ -921,7 +988,7 @@ public class Main {
 				UUID patientUuid = UUID.fromString(patientUuidStr);
 
 				Set<UUID> hsExchangeIdsDone = new HashSet<>();
-
+				Set<String> resourcesDone = new HashSet<>();
 
 				for (String exchangeId: exchangeIds) {
 					UUID exchangeUuid = UUID.fromString(exchangeId.split(":")[0]);
@@ -954,6 +1021,13 @@ public class Main {
 
 						//restore each resource
 						for (ResourceWrapper resourceWrapper: resourceWrappers) {
+
+							//if an exchange was processed multiple times, we might try to pick up the same resource twice, so skip it
+							String resourceRef = ReferenceHelper.createResourceReference(resourceWrapper.getResourceType(), resourceWrapper.getResourceId().toString());
+							if (resourcesDone.contains(resourceRef)) {
+								continue;
+							}
+							resourceRef.equalsIgnoreCase(resourceRef);
 
 							List<ResourceWrapper> history = resourceDal.getResourceHistory(serviceId, resourceWrapper.getResourceType(), resourceWrapper.getResourceId());
 
