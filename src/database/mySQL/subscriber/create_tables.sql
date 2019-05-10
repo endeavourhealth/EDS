@@ -274,7 +274,6 @@ CREATE TABLE encounter
   age_at_event decimal (5,2),
   type text,
   sub_type text,
-  is_primary boolean,
   admission_method varchar(40),
   end_date date,
   institution_location_id text,
@@ -332,7 +331,6 @@ CREATE TABLE allergy_intolerance
   core_concept_id int NOT NULL,
   non_core_concept_id int NOT NULL,
   age_at_event decimal (5,2),
-  is_primary boolean,
   CONSTRAINT pk_allergy_intolerance_id PRIMARY KEY (`organization_id`,`person_id`,`id`),
   CONSTRAINT fk_allergy_intolerance_encounter_id FOREIGN KEY (encounter_id)
       REFERENCES encounter (id) MATCH SIMPLE
@@ -374,7 +372,7 @@ CREATE TABLE medication_statement
   dose character varying(1000),
   quantity_value real,
   quantity_unit character varying(255),
-  medication_statement_authorisation_type_concept_id int NOT NULL,
+  authorisation_type_concept_id int NOT NULL,
   core_concept_id int NOT NULL,
   non_core_concept_id int NOT NULL,
   bnf_reference int(6),
@@ -566,11 +564,10 @@ CREATE TABLE procedure_request
   practitioner_id bigint,
   clinical_effective_date date,
   date_precision_concept_id int,
-  procedure_request_status_concept_id int,
+  status_concept_id int,
   core_concept_id int NOT NULL,
   non_core_concept_id int NOT NULL,
   age_at_event decimal (5,2),
-  is_primary boolean,
   CONSTRAINT pk_procedure_request_id PRIMARY KEY (`organization_id`,`person_id`,`id`),
   CONSTRAINT fk_procedure_request_encounter_id FOREIGN KEY (encounter_id)
       REFERENCES encounter (id) MATCH SIMPLE
@@ -613,7 +610,6 @@ CREATE TABLE referral_request
   core_concept_id int NOT NULL,
   non_core_concept_id int NOT NULL,
   age_at_event decimal (5,2),
-  is_primary boolean,
   CONSTRAINT pk_referral_request_id PRIMARY KEY (`organization_id`,`person_id`,`id`),
   CONSTRAINT fk_referral_request_encounter_id FOREIGN KEY (encounter_id)
       REFERENCES encounter (id) MATCH SIMPLE

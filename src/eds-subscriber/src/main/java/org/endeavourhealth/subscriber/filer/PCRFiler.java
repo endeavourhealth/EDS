@@ -143,7 +143,7 @@ public class PCRFiler {
         String currentTable = null;
         List<CSVRecord> currentRecords = null;
         List<String> currentColumns = null;
-        HashMap<String, Class> currentColumnClasses = null;
+        Map<String, Class> currentColumnClasses = null;
 
         //go backwards, so we delete dependent records first
         for (int i=deletes.size()-1; i>=0; i--) {
@@ -290,7 +290,7 @@ public class PCRFiler {
         }
     }
 
-    private static void fileDeletes(List<CSVRecord> csvRecords, List<String> columns, HashMap<String, Class> columnClasses,
+    private static void fileDeletes(List<CSVRecord> csvRecords, List<String> columns, Map<String, Class> columnClasses,
                                     String tableName, Connection connection) throws Exception {
 
         if (csvRecords.isEmpty()) {
@@ -310,7 +310,7 @@ public class PCRFiler {
         connection.commit();
     }
 
-    private static void addToStatement(PreparedStatement statement, CSVRecord csvRecord, String column, HashMap<String, Class> columnClasses, int index) throws Exception {
+    private static void addToStatement(PreparedStatement statement, CSVRecord csvRecord, String column, Map<String, Class> columnClasses, int index) throws Exception {
 
         String value = csvRecord.get(column);
         Class fieldCls = columnClasses.get(column);

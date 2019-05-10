@@ -2,17 +2,17 @@ package org.endeavourhealth.subscriber.filer;
 
 import org.apache.commons.csv.CSVRecord;
 
-import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 
 public class DeleteWrapper {
     private String tableName = null;
     private CSVRecord record = null;
     private List<String> columns = null;
-    private HashMap<String, Class> columnClasses = null;
+    private Map<String, Class> columnClasses = null;
 
-    public DeleteWrapper(String tableName, CSVRecord record, List<String> columns, HashMap<String, Class> columnClasses) {
+    public DeleteWrapper(String tableName, CSVRecord record, List<String> columns, Map<String, Class> columnClasses) {
         this.tableName = tableName;
         this.record = record;
         this.columns = columns;
@@ -31,7 +31,7 @@ public class DeleteWrapper {
         return columns;
     }
 
-    public HashMap<String, Class> getColumnClasses() {
+    public Map<String, Class> getColumnClasses() {
         return columnClasses;
     }
 }

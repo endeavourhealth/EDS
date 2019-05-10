@@ -18,8 +18,8 @@ import java.io.*;
 import java.math.BigDecimal;
 import java.sql.*;
 import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.*;
+import java.util.Date;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -32,11 +32,10 @@ public class SubscriberFiler {
     private static final CSVFormat CSV_FORMAT = CSVFormat.DEFAULT;
 
     private static final String COL_IS_DELETE = "is_delete";
+    /*private static final String COL_SAVE_MODE = "save_mode";
+    private static final String UPSERT = "Upsert";
+    private static final String DELETE = "Delete";*/
     private static final String COL_ID = "id";
-
-    private static final String IS_DELETE_TRUE = "true";
-    private static final String IS_DELETE_FALSE = "false";
-
 
     private static final int UPSERT_ATTEMPTS = 10;
 
@@ -71,8 +70,11 @@ public class SubscriberFiler {
 
         try {
 
-            List<DeleteWrapper> deletes = new ArrayList<>();
+            //the zip contains a JSON file giving type descriptors for all the columns of each file
             JsonNode columnClassMappings = null;
+
+            //we process all upserts first, then deletes after, so have a list to farm them off to
+            List<DeleteWrapper> deletes = new ArrayList<>();
 
             while (true) {
                 ZipEntry entry = zis.getNextEntry();
@@ -83,13 +85,17 @@ public class SubscriberFiler {
                 String entryFileName = entry.getName();
                 byte[] entryBytes = readZipEntry(zis);
 
-                if (entryFileName.equals(COLUMN_CLASS_MAPPINGS)) {
+                //the first entry should always be the JSON file giving the column types for each file
+                if (columnClassMappings == null) {
+                    if (!entryFileName.equals(COLUMN_CLASS_MAPPINGS)) {
+                        throw new Exception("" + COLUMN_CLASS_MAPPINGS + " expected as first file");
+                    }
                     String jsonStr = new String(entryBytes);
                     columnClassMappings = ObjectMapperPool.getInstance().readTree(jsonStr);
-
-                } else {
-                    processCsvData(entryFileName, entryBytes, columnClassMappings, connection, keywordEscapeChar, batchSize, deletes);
+                    continue;
                 }
+
+                processCsvData(entryFileName, entryBytes, columnClassMappings, connection, keywordEscapeChar, batchSize, deletes);
             }
 
             //now files the deletes
@@ -182,7 +188,7 @@ public class SubscriberFiler {
         String currentTable = null;
         List<CSVRecord> currentRecords = null;
         List<String> currentColumns = null;
-        HashMap<String, Class> currentColumnClasses = null;
+        Map<String, Class> currentColumnClasses = null;
 
         //LOG.trace("Got " + deletes.size() + " deletes");
 
@@ -236,7 +242,7 @@ public class SubscriberFiler {
         return baos.toByteArray();
     }
 
-    private static void processCsvData(String entryFileName, byte[] csvBytes, JsonNode allColumnClassMappings, Connection connection, String keywordEscapeChar, int batchSize, List<DeleteWrapper> deletes) throws Exception {
+    private static void processCsvData(String entryFileName, byte[] csvBytes, JsonNode columnClassJson, Connection connection, String keywordEscapeChar, int batchSize, List<DeleteWrapper> deletes) throws Exception {
 
         String tableName = Files.getNameWithoutExtension(entryFileName);
 
@@ -245,30 +251,41 @@ public class SubscriberFiler {
         CSVParser csvParser = new CSVParser(isr, CSV_FORMAT.withHeader());
 
         //find out what columns we've got
-        Map<String, Integer> csvHeaderMap = csvParser.getHeaderMap();
-        List<String> columns = new ArrayList<>();
-        HashMap<String, Class> columnClasses = new HashMap<>();
-        createHeaderColumnMap(csvHeaderMap, entryFileName, allColumnClassMappings, columns, columnClasses);
+        List<String> columns = createHeaderList(csvParser);
+        Map<String, Class> columnClasses = createHeaderColumnMap(entryFileName, columnClassJson, columns);
+
+        //validate that file has "id" and "is_delete" always
+        if (!columns.contains(COL_IS_DELETE)) {
+            throw new Exception("" + entryFileName + " doesn't have an " + COL_IS_DELETE + " column");
+        }
+        if (!columns.contains(COL_ID)) {
+            throw new Exception("" + entryFileName + " doesn't have an " + COL_ID + " column");
+        }
 
         //since we're dealing with small volumes, we can just read keep all the records in memory
         List<CSVRecord> upserts = new ArrayList<>();
         //List<CSVRecord> deletes = new ArrayList<>();
 
+        int row = 0;
+
         Iterator<CSVRecord> csvIterator = csvParser.iterator();
         while (csvIterator.hasNext()) {
             CSVRecord csvRecord = csvIterator.next();
-            String isDelete = csvRecord.get(COL_IS_DELETE);
+            String isDeleteStr = csvRecord.get(COL_IS_DELETE);
+            if (Strings.isNullOrEmpty(isDeleteStr)) {
+                throw new Exception("Empty " + COL_IS_DELETE + " value on row " + row + " of " + entryFileName);
+            }
+            boolean isDelete = Boolean.parseBoolean(isDeleteStr);
 
-            if (isDelete.equalsIgnoreCase(IS_DELETE_TRUE)) {
+            if (isDelete) {
                 //we have to play deletes in reverse, so just add to this list and they'll be processed after all the upserts
                 deletes.add(new DeleteWrapper(tableName, csvRecord, columns, columnClasses));
 
-            } else if (isDelete.equalsIgnoreCase(IS_DELETE_FALSE)) {
-                upserts.add(csvRecord);
-
             } else {
-                throw new Exception("Unknown is delete mode " + isDelete);
+                upserts.add(csvRecord);
             }
+
+            row ++;
         }
 
         //when doing a bulk, we can have 300,000+ practitioners, so do them in batches, so we're
@@ -288,23 +305,31 @@ public class SubscriberFiler {
         }
     }
 
-    private static void createHeaderColumnMap(Map<String, Integer> csvHeaderMap,
-                                                String entryFileName,
-                                                JsonNode allColumnClassMappings,
-                                                List<String> columns,
-                                                HashMap<String, Class> columnClasses) throws Exception {
-        //get the column names, ordered
+    private static List<String> createHeaderList(CSVParser csvParser) {
+        Map<String, Integer> csvHeaderMap = csvParser.getHeaderMap();
+
+        //the parser stores the columns in a map, with values being the integer ordinal
         String[] arr = new String[csvHeaderMap.size()];
-        for (Map.Entry<String, Integer> entry : csvHeaderMap.entrySet())
+        for (Map.Entry<String, Integer> entry : csvHeaderMap.entrySet()) {
             arr[entry.getValue()] = entry.getKey();
+        }
 
-        for (String column: arr)
-            columns.add(column);
+        List<String> ret = new ArrayList<>();
 
-        //sort out column classes
+        for (String column: arr) {
+            ret.add(column);
+        }
+
+        return ret;
+    }
+
+    private static Map<String, Class> createHeaderColumnMap(String entryFileName, JsonNode allColumnClassMappings, List<String> columns) throws Exception {
+
+        Map<String, Class> ret = new HashMap<>();
+
         JsonNode columnClassMappings = allColumnClassMappings.get(entryFileName);
 
-        for (String column: csvHeaderMap.keySet()) {
+        for (String column: columns) {
             JsonNode node = columnClassMappings.get(column);
             if (node == null) {
                 throw new Exception("Failed to find class for column " + column + " in " + entryFileName);
@@ -327,11 +352,14 @@ public class SubscriberFiler {
                 cls = Class.forName(className);
             }
 
-            columnClasses.put(column, cls);
+            ret.put(column, cls);
         }
+
+        return ret;
     }
 
-    private static void fileDeletes(List<CSVRecord> csvRecords, List<String> columns, HashMap<String, Class> columnClasses,
+
+    private static void fileDeletes(List<CSVRecord> csvRecords, List<String> columns, Map<String, Class> columnClasses,
                                     String tableName, Connection connection) throws Exception {
 
         if (csvRecords.isEmpty()) {
@@ -351,7 +379,7 @@ public class SubscriberFiler {
         connection.commit();
     }
 
-    private static void addToStatement(PreparedStatement statement, CSVRecord csvRecord, String column, HashMap<String, Class> columnClasses, int index) throws Exception {
+    private static void addToStatement(PreparedStatement statement, CSVRecord csvRecord, String column, Map<String, Class> columnClasses, int index) throws Exception {
 
         String value = csvRecord.get(column);
         Class fieldCls = columnClasses.get(column);
@@ -569,7 +597,7 @@ public class SubscriberFiler {
      * killed due to a deadlock. This seems to be a transient issue, so backing off for a few seconds and trying
      * again should mitigate it
      */
-    private static void fileUpsertsWithRetry(List<CSVRecord> csvRecords, List<String> columns, HashMap<String, Class> columnClasses,
+    private static void fileUpsertsWithRetry(List<CSVRecord> csvRecords, List<String> columns, Map<String, Class> columnClasses,
                                     String tableName, Connection connection, String keywordEscapeChar) throws Exception {
 
         int attemptsMade = 0;
@@ -619,14 +647,14 @@ public class SubscriberFiler {
         }
     }
 
-    private static void fileUpserts(List<CSVRecord> csvRecords, List<String> columns, HashMap<String, Class> columnClasses,
+    private static void fileUpserts(List<CSVRecord> csvRecords, List<String> columns, Map<String, Class> columnClasses,
                                     String tableName, Connection connection, String keywordEscapeChar) throws Exception {
 
         if (csvRecords.isEmpty()) {
             return;
         }
 
-        //the first element in the columns list is the is delete, so remove that
+        //the first element in the columns list is the save mode, so remove that
         columns = new ArrayList<>(columns);
         columns.remove(COL_IS_DELETE);
 
