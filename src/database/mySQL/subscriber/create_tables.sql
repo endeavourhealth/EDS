@@ -127,7 +127,7 @@ CREATE TABLE person
   nhs_number character varying(255),
   date_of_birth date,
   date_of_death date,
-  postcode character varying(20),
+  current_address_id bigint,
   ethnic_code_concept_id int,
   registered_practice_organization_id bigint,
   CONSTRAINT pk_person_id PRIMARY KEY (id)

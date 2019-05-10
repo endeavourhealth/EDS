@@ -31,11 +31,12 @@ public class SubscriberFiler {
     private static final String DATE_FORMAT = "yyyy-MM-dd";
     private static final CSVFormat CSV_FORMAT = CSVFormat.DEFAULT;
 
-    private static final String COL_SAVE_MODE = "save_mode";
+    private static final String COL_IS_DELETE = "is_delete";
     private static final String COL_ID = "id";
 
-    private static final String UPSERT = "Upsert";
-    private static final String DELETE = "Delete";
+    private static final String IS_DELETE_TRUE = "true";
+    private static final String IS_DELETE_FALSE = "false";
+
 
     private static final int UPSERT_ATTEMPTS = 10;
 
@@ -256,17 +257,17 @@ public class SubscriberFiler {
         Iterator<CSVRecord> csvIterator = csvParser.iterator();
         while (csvIterator.hasNext()) {
             CSVRecord csvRecord = csvIterator.next();
-            String saveMode = csvRecord.get(COL_SAVE_MODE);
+            String isDelete = csvRecord.get(COL_IS_DELETE);
 
-            if (saveMode.equalsIgnoreCase(DELETE)) {
+            if (isDelete.equalsIgnoreCase(IS_DELETE_TRUE)) {
                 //we have to play deletes in reverse, so just add to this list and they'll be processed after all the upserts
                 deletes.add(new DeleteWrapper(tableName, csvRecord, columns, columnClasses));
 
-            } else if (saveMode.equalsIgnoreCase(UPSERT)) {
+            } else if (isDelete.equalsIgnoreCase(IS_DELETE_FALSE)) {
                 upserts.add(csvRecord);
 
             } else {
-                throw new Exception("Unknown save mode " + saveMode);
+                throw new Exception("Unknown is delete mode " + isDelete);
             }
         }
 
@@ -320,6 +321,8 @@ public class SubscriberFiler {
                 cls = Long.TYPE;
             } else if (className.equals("boolean")) {
                 cls = Boolean.TYPE;
+            } else if (className.equals("byte")) {
+                cls = Byte.TYPE;
             } else {
                 cls = Class.forName(className);
             }
@@ -623,9 +626,9 @@ public class SubscriberFiler {
             return;
         }
 
-        //the first element in the columns list is the save mode, so remove that
+        //the first element in the columns list is the is delete, so remove that
         columns = new ArrayList<>(columns);
-        columns.remove(COL_SAVE_MODE);
+        columns.remove(COL_IS_DELETE);
 
         PreparedStatement insert = createUpsertPreparedStatement(tableName, columns, connection, keywordEscapeChar);
 
