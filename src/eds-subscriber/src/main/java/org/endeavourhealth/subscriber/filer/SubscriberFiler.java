@@ -660,37 +660,47 @@ public class SubscriberFiler {
 
         PreparedStatement insert = createUpsertPreparedStatement(tableName, columns, connection, keywordEscapeChar);
 
-        for (CSVRecord csvRecord: csvRecords) {
+        //wrap in try/catch so we can log out the SQL that failed
+        try {
 
-            int index = 1;
-            for (String column: columns) {
-                addToStatement(insert, csvRecord, column, columnClasses, index);
-                index ++;
-            }
+            for (CSVRecord csvRecord: csvRecords) {
 
-            //if SQL Server, then we need to add the values a SECOND time because the UPSEERT syntax used needs it
-            if (ConnectionManager.isSqlServer(connection)) {
+                int index = 1;
                 for (String column: columns) {
                     addToStatement(insert, csvRecord, column, columnClasses, index);
                     index ++;
                 }
+
+                //if SQL Server, then we need to add the values a SECOND time because the UPSEERT syntax used needs it
+                if (ConnectionManager.isSqlServer(connection)) {
+                    for (String column: columns) {
+                        addToStatement(insert, csvRecord, column, columnClasses, index);
+                        index ++;
+                    }
+                }
+
+                //LOG.debug("" + insert);
+                insert.addBatch();
             }
 
-            //LOG.debug("" + insert);
-            insert.addBatch();
-        }
-
-        //wrap in try/catch so we can log out the SQL that failed
-        try {
             insert.executeBatch();
 
+            connection.commit();
+
         } catch (Exception ex) {
-            LOG.error(insert.toString());
-            throw ex;
+            connection.rollback();
+
+            throw new Exception("Exception with upsert " + insert.toString(), ex);
+
+        } finally {
+
+            if (insert != null) {
+                insert.close();
+            }
         }
 
-        insert.close();
-        connection.commit();
+
+
     }
 
 

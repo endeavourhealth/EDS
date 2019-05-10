@@ -1027,7 +1027,7 @@ public class Main {
 							if (resourcesDone.contains(resourceRef)) {
 								continue;
 							}
-							resourceRef.equalsIgnoreCase(resourceRef);
+							resourcesDone.add(resourceRef);
 
 							List<ResourceWrapper> history = resourceDal.getResourceHistory(serviceId, resourceWrapper.getResourceType(), resourceWrapper.getResourceId());
 

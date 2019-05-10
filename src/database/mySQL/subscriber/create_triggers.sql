@@ -13,7 +13,7 @@ CREATE TRIGGER after_patient_insert
         table_id,
         record_id
     ) VALUES (
-		now(),
+		now(3), -- current time inc ms
         0, -- insert
         2, -- patient
         NEW.id
@@ -25,7 +25,7 @@ drop trigger if exists after_patient_update;
 
 DELIMITER $$
 CREATE TRIGGER after_patient_update
-  AFTER INSERT ON patient
+  AFTER UPDATE ON patient
   FOR EACH ROW
   BEGIN
     INSERT INTO event_log (
@@ -34,7 +34,7 @@ CREATE TRIGGER after_patient_update
         table_id,
         record_id
     ) VALUES (
-		now(),
+		now(3), -- current time inc ms
         1, -- update
         2, -- patient
         NEW.id
@@ -55,7 +55,7 @@ CREATE TRIGGER after_patient_delete
         table_id,
         record_id
     ) VALUES (
-		now(),
+		now(3), -- current time inc ms
         2, -- delete
         2, -- patient
         OLD.id
@@ -78,7 +78,7 @@ CREATE TRIGGER after_person_insert
         table_id,
         record_id
     ) VALUES (
-		now(),
+		now(3), -- current time inc ms
         0, -- insert
         3, -- person
         NEW.id
@@ -90,7 +90,7 @@ drop trigger if exists after_person_update;
 
 DELIMITER $$
 CREATE TRIGGER after_person_update
-  AFTER INSERT ON person
+  AFTER UPDATE ON person
   FOR EACH ROW
   BEGIN
     INSERT INTO event_log (
@@ -99,7 +99,7 @@ CREATE TRIGGER after_person_update
         table_id,
         record_id
     ) VALUES (
-		now(),
+		now(3), -- current time inc ms
         1, -- update
         3, -- person
         NEW.id
@@ -120,7 +120,7 @@ CREATE TRIGGER after_person_delete
         table_id,
         record_id
     ) VALUES (
-		now(),
+		now(3), -- current time inc ms
         2, -- delete
         3, -- person
         OLD.id
@@ -143,7 +143,7 @@ CREATE TRIGGER after_allergy_intolerance_insert
         table_id,
         record_id
     ) VALUES (
-		now(),
+		now(3), -- current time inc ms
         0, -- insert
         4, -- allergy_intolerance
         NEW.id
@@ -155,7 +155,7 @@ drop trigger if exists after_allergy_intolerance_update;
 
 DELIMITER $$
 CREATE TRIGGER after_allergy_intolerance_update
-  AFTER INSERT ON allergy_intolerance
+  AFTER UPDATE ON allergy_intolerance
   FOR EACH ROW
   BEGIN
     INSERT INTO event_log (
@@ -164,7 +164,7 @@ CREATE TRIGGER after_allergy_intolerance_update
         table_id,
         record_id
     ) VALUES (
-		now(),
+		now(3), -- current time inc ms
         1, -- update
         4, -- allergy_intolerance
         NEW.id
@@ -185,7 +185,7 @@ CREATE TRIGGER after_allergy_intolerance_delete
         table_id,
         record_id
     ) VALUES (
-		now(),
+		now(3), -- current time inc ms
         2, -- delete
         4, -- allergy_intolerance
         OLD.id
@@ -208,7 +208,7 @@ CREATE TRIGGER after_encounter_insert
         table_id,
         record_id
     ) VALUES (
-		now(),
+		now(3), -- current time inc ms
         0, -- insert
         5, -- encounter
         NEW.id
@@ -220,7 +220,7 @@ drop trigger if exists after_encounter_update;
 
 DELIMITER $$
 CREATE TRIGGER after_encounter_update
-  AFTER INSERT ON encounter
+  AFTER UPDATE ON encounter
   FOR EACH ROW
   BEGIN
     INSERT INTO event_log (
@@ -229,7 +229,7 @@ CREATE TRIGGER after_encounter_update
         table_id,
         record_id
     ) VALUES (
-		now(),
+		now(3), -- current time inc ms
         1, -- update
         5, -- encounter
         NEW.id
@@ -250,7 +250,7 @@ CREATE TRIGGER after_encounter_delete
         table_id,
         record_id
     ) VALUES (
-		now(),
+		now(3), -- current time inc ms
         2, -- delete
         5, -- encounter
         OLD.id
@@ -273,7 +273,7 @@ CREATE TRIGGER after_episode_of_care_insert
         table_id,
         record_id
     ) VALUES (
-		now(),
+		now(3), -- current time inc ms
         0, -- insert
         6, -- episode_of_care
         NEW.id
@@ -285,7 +285,7 @@ drop trigger if exists after_episode_of_care_update;
 
 DELIMITER $$
 CREATE TRIGGER after_episode_of_care_update
-  AFTER INSERT ON episode_of_care
+  AFTER UPDATE ON episode_of_care
   FOR EACH ROW
   BEGIN
     INSERT INTO event_log (
@@ -294,7 +294,7 @@ CREATE TRIGGER after_episode_of_care_update
         table_id,
         record_id
     ) VALUES (
-		now(),
+		now(3), -- current time inc ms
         1, -- update
         6, -- episode_of_care
         NEW.id
@@ -315,7 +315,7 @@ CREATE TRIGGER after_episode_of_care_delete
         table_id,
         record_id
     ) VALUES (
-		now(),
+		now(3), -- current time inc ms
         2, -- delete
         6, -- episode_of_care
         OLD.id
@@ -338,7 +338,7 @@ CREATE TRIGGER after_flag_insert
         table_id,
         record_id
     ) VALUES (
-		now(),
+		now(3), -- current time inc ms
         0, -- insert
         7, -- flag
         NEW.id
@@ -350,7 +350,7 @@ drop trigger if exists after_flag_update;
 
 DELIMITER $$
 CREATE TRIGGER after_flag_update
-  AFTER INSERT ON flag
+  AFTER UPDATE ON flag
   FOR EACH ROW
   BEGIN
     INSERT INTO event_log (
@@ -359,7 +359,7 @@ CREATE TRIGGER after_flag_update
         table_id,
         record_id
     ) VALUES (
-		now(),
+		now(3), -- current time inc ms
         1, -- update
         7, -- flag
         NEW.id
@@ -380,7 +380,7 @@ CREATE TRIGGER after_flag_delete
         table_id,
         record_id
     ) VALUES (
-		now(),
+		now(3), -- current time inc ms
         2, -- delete
         7, -- flag
         OLD.id
@@ -403,7 +403,7 @@ CREATE TRIGGER after_location_insert
         table_id,
         record_id
     ) VALUES (
-		now(),
+		now(3), -- current time inc ms
         0, -- insert
         8, -- location
         NEW.id
@@ -415,7 +415,7 @@ drop trigger if exists after_location_update;
 
 DELIMITER $$
 CREATE TRIGGER after_location_update
-  AFTER INSERT ON location
+  AFTER UPDATE ON location
   FOR EACH ROW
   BEGIN
     INSERT INTO event_log (
@@ -424,7 +424,7 @@ CREATE TRIGGER after_location_update
         table_id,
         record_id
     ) VALUES (
-		now(),
+		now(3), -- current time inc ms
         1, -- update
         8, -- location
         NEW.id
@@ -445,7 +445,7 @@ CREATE TRIGGER after_location_delete
         table_id,
         record_id
     ) VALUES (
-		now(),
+		now(3), -- current time inc ms
         2, -- delete
         8, -- location
         OLD.id
@@ -468,7 +468,7 @@ CREATE TRIGGER after_medication_order_insert
         table_id,
         record_id
     ) VALUES (
-		now(),
+		now(3), -- current time inc ms
         0, -- insert
         9, -- medication_order
         NEW.id
@@ -480,7 +480,7 @@ drop trigger if exists after_medication_order_update;
 
 DELIMITER $$
 CREATE TRIGGER after_medication_order_update
-  AFTER INSERT ON medication_order
+  AFTER UPDATE ON medication_order
   FOR EACH ROW
   BEGIN
     INSERT INTO event_log (
@@ -489,7 +489,7 @@ CREATE TRIGGER after_medication_order_update
         table_id,
         record_id
     ) VALUES (
-		now(),
+		now(3), -- current time inc ms
         1, -- update
         9, -- medication_order
         NEW.id
@@ -510,7 +510,7 @@ CREATE TRIGGER after_medication_order_delete
         table_id,
         record_id
     ) VALUES (
-		now(),
+		now(3), -- current time inc ms
         2, -- delete
         9, -- medication_order
         OLD.id
@@ -533,7 +533,7 @@ CREATE TRIGGER after_medication_statement_insert
         table_id,
         record_id
     ) VALUES (
-		now(),
+		now(3), -- current time inc ms
         0, -- insert
         10, -- medication_statement
         NEW.id
@@ -545,7 +545,7 @@ drop trigger if exists after_medication_statement_update;
 
 DELIMITER $$
 CREATE TRIGGER after_medication_statement_update
-  AFTER INSERT ON medication_statement
+  AFTER UPDATE ON medication_statement
   FOR EACH ROW
   BEGIN
     INSERT INTO event_log (
@@ -554,7 +554,7 @@ CREATE TRIGGER after_medication_statement_update
         table_id,
         record_id
     ) VALUES (
-		now(),
+		now(3), -- current time inc ms
         1, -- update
         10, -- medication_statement
         NEW.id
@@ -575,7 +575,7 @@ CREATE TRIGGER after_medication_statement_delete
         table_id,
         record_id
     ) VALUES (
-		now(),
+		now(3), -- current time inc ms
         2, -- delete
         10, -- medication_statement
         OLD.id
@@ -598,7 +598,7 @@ CREATE TRIGGER after_observation_insert
         table_id,
         record_id
     ) VALUES (
-		now(),
+		now(3), -- current time inc ms
         0, -- insert
         11, -- observation
         NEW.id
@@ -610,7 +610,7 @@ drop trigger if exists after_observation_update;
 
 DELIMITER $$
 CREATE TRIGGER after_observation_update
-  AFTER INSERT ON observation
+  AFTER UPDATE ON observation
   FOR EACH ROW
   BEGIN
     INSERT INTO event_log (
@@ -619,7 +619,7 @@ CREATE TRIGGER after_observation_update
         table_id,
         record_id
     ) VALUES (
-		now(),
+		now(3), -- current time inc ms
         1, -- update
         11, -- observation
         NEW.id
@@ -640,7 +640,7 @@ CREATE TRIGGER after_observation_delete
         table_id,
         record_id
     ) VALUES (
-		now(),
+		now(3), -- current time inc ms
         2, -- delete
         11, -- observation
         OLD.id
@@ -663,7 +663,7 @@ CREATE TRIGGER after_organization_insert
         table_id,
         record_id
     ) VALUES (
-		now(),
+		now(3), -- current time inc ms
         0, -- insert
         12, -- organization
         NEW.id
@@ -675,7 +675,7 @@ drop trigger if exists after_organization_update;
 
 DELIMITER $$
 CREATE TRIGGER after_organization_update
-  AFTER INSERT ON organization
+  AFTER UPDATE ON organization
   FOR EACH ROW
   BEGIN
     INSERT INTO event_log (
@@ -684,7 +684,7 @@ CREATE TRIGGER after_organization_update
         table_id,
         record_id
     ) VALUES (
-		now(),
+		now(3), -- current time inc ms
         1, -- update
         12, -- organization
         NEW.id
@@ -705,7 +705,7 @@ CREATE TRIGGER after_organization_delete
         table_id,
         record_id
     ) VALUES (
-		now(),
+		now(3), -- current time inc ms
         2, -- delete
         12, -- organization
         OLD.id
@@ -728,7 +728,7 @@ CREATE TRIGGER after_practitioner_insert
         table_id,
         record_id
     ) VALUES (
-		now(),
+		now(3), -- current time inc ms
         0, -- insert
         13, -- practitioner
         NEW.id
@@ -740,7 +740,7 @@ drop trigger if exists after_practitioner_update;
 
 DELIMITER $$
 CREATE TRIGGER after_practitioner_update
-  AFTER INSERT ON practitioner
+  AFTER UPDATE ON practitioner
   FOR EACH ROW
   BEGIN
     INSERT INTO event_log (
@@ -749,7 +749,7 @@ CREATE TRIGGER after_practitioner_update
         table_id,
         record_id
     ) VALUES (
-		now(),
+		now(3), -- current time inc ms
         1, -- update
         13, -- practitioner
         NEW.id
@@ -770,7 +770,7 @@ CREATE TRIGGER after_practitioner_delete
         table_id,
         record_id
     ) VALUES (
-		now(),
+		now(3), -- current time inc ms
         2, -- delete
         13, -- practitioner
         OLD.id
@@ -793,7 +793,7 @@ CREATE TRIGGER after_procedure_request_insert
         table_id,
         record_id
     ) VALUES (
-		now(),
+		now(3), -- current time inc ms
         0, -- insert
         14, -- procedure_request
         NEW.id
@@ -805,7 +805,7 @@ drop trigger if exists after_procedure_request_update;
 
 DELIMITER $$
 CREATE TRIGGER after_procedure_request_update
-  AFTER INSERT ON procedure_request
+  AFTER UPDATE ON procedure_request
   FOR EACH ROW
   BEGIN
     INSERT INTO event_log (
@@ -814,7 +814,7 @@ CREATE TRIGGER after_procedure_request_update
         table_id,
         record_id
     ) VALUES (
-		now(),
+		now(3), -- current time inc ms
         1, -- update
         14, -- procedure_request
         NEW.id
@@ -835,7 +835,7 @@ CREATE TRIGGER after_procedure_request_delete
         table_id,
         record_id
     ) VALUES (
-		now(),
+		now(3), -- current time inc ms
         2, -- delete
         14, -- procedure_request
         OLD.id
@@ -858,7 +858,7 @@ CREATE TRIGGER after_pseudo_id_insert
         table_id,
         record_id
     ) VALUES (
-		now(),
+		now(3), -- current time inc ms
         0, -- insert
         15, -- pseudo_id
         NEW.id
@@ -870,7 +870,7 @@ drop trigger if exists after_pseudo_id_update;
 
 DELIMITER $$
 CREATE TRIGGER after_pseudo_id_update
-  AFTER INSERT ON pseudo_id
+  AFTER UPDATE ON pseudo_id
   FOR EACH ROW
   BEGIN
     INSERT INTO event_log (
@@ -879,7 +879,7 @@ CREATE TRIGGER after_pseudo_id_update
         table_id,
         record_id
     ) VALUES (
-		now(),
+		now(3), -- current time inc ms
         1, -- update
         15, -- pseudo_id
         NEW.id
@@ -900,7 +900,7 @@ CREATE TRIGGER after_pseudo_id_delete
         table_id,
         record_id
     ) VALUES (
-		now(),
+		now(3), -- current time inc ms
         2, -- delete
         15, -- pseudo_id
         OLD.id
@@ -923,7 +923,7 @@ CREATE TRIGGER after_referral_request_insert
         table_id,
         record_id
     ) VALUES (
-		now(),
+		now(3), -- current time inc ms
         0, -- insert
         16, -- referral_request
         NEW.id
@@ -935,7 +935,7 @@ drop trigger if exists after_referral_request_update;
 
 DELIMITER $$
 CREATE TRIGGER after_referral_request_update
-  AFTER INSERT ON referral_request
+  AFTER UPDATE ON referral_request
   FOR EACH ROW
   BEGIN
     INSERT INTO event_log (
@@ -944,7 +944,7 @@ CREATE TRIGGER after_referral_request_update
         table_id,
         record_id
     ) VALUES (
-		now(),
+		now(3), -- current time inc ms
         1, -- update
         16, -- referral_request
         NEW.id
@@ -965,7 +965,7 @@ CREATE TRIGGER after_referral_request_delete
         table_id,
         record_id
     ) VALUES (
-		now(),
+		now(3), -- current time inc ms
         2, -- delete
         16, -- referral_request
         OLD.id
@@ -988,7 +988,7 @@ CREATE TRIGGER after_schedule_insert
         table_id,
         record_id
     ) VALUES (
-		now(),
+		now(3), -- current time inc ms
         0, -- insert
         17, -- schedule
         NEW.id
@@ -1000,7 +1000,7 @@ drop trigger if exists after_schedule_update;
 
 DELIMITER $$
 CREATE TRIGGER after_schedule_update
-  AFTER INSERT ON schedule
+  AFTER UPDATE ON schedule
   FOR EACH ROW
   BEGIN
     INSERT INTO event_log (
@@ -1009,7 +1009,7 @@ CREATE TRIGGER after_schedule_update
         table_id,
         record_id
     ) VALUES (
-		now(),
+		now(3), -- current time inc ms
         1, -- update
         17, -- schedule
         NEW.id
@@ -1030,7 +1030,7 @@ CREATE TRIGGER after_schedule_delete
         table_id,
         record_id
     ) VALUES (
-		now(),
+		now(3), -- current time inc ms
         2, -- delete
         17, -- schedule
         OLD.id
@@ -1053,7 +1053,7 @@ CREATE TRIGGER after_appointment_insert
         table_id,
         record_id
     ) VALUES (
-		now(),
+		now(3), -- current time inc ms
         0, -- insert
         18, -- appointment
         NEW.id
@@ -1065,7 +1065,7 @@ drop trigger if exists after_appointment_update;
 
 DELIMITER $$
 CREATE TRIGGER after_appointment_update
-  AFTER INSERT ON appointment
+  AFTER UPDATE ON appointment
   FOR EACH ROW
   BEGIN
     INSERT INTO event_log (
@@ -1074,7 +1074,7 @@ CREATE TRIGGER after_appointment_update
         table_id,
         record_id
     ) VALUES (
-		now(),
+		now(3), -- current time inc ms
         1, -- update
         18, -- appointment
         NEW.id
@@ -1095,7 +1095,7 @@ CREATE TRIGGER after_appointment_delete
         table_id,
         record_id
     ) VALUES (
-		now(),
+		now(3), -- current time inc ms
         2, -- delete
         18, -- appointment
         OLD.id
@@ -1118,7 +1118,7 @@ CREATE TRIGGER after_patient_contact_insert
         table_id,
         record_id
     ) VALUES (
-		now(),
+		now(3), -- current time inc ms
         0, -- insert
         19, -- patient_contact
         NEW.id
@@ -1130,7 +1130,7 @@ drop trigger if exists after_patient_contact_update;
 
 DELIMITER $$
 CREATE TRIGGER after_patient_contact_update
-  AFTER INSERT ON patient_contact
+  AFTER UPDATE ON patient_contact
   FOR EACH ROW
   BEGIN
     INSERT INTO event_log (
@@ -1139,7 +1139,7 @@ CREATE TRIGGER after_patient_contact_update
         table_id,
         record_id
     ) VALUES (
-		now(),
+		now(3), -- current time inc ms
         1, -- update
         19, -- patient_contact
         NEW.id
@@ -1160,7 +1160,7 @@ CREATE TRIGGER after_patient_contact_delete
         table_id,
         record_id
     ) VALUES (
-		now(),
+		now(3), -- current time inc ms
         2, -- delete
         19, -- patient_contact
         OLD.id
@@ -1183,7 +1183,7 @@ CREATE TRIGGER after_patient_address_insert
         table_id,
         record_id
     ) VALUES (
-		now(),
+		now(3), -- current time inc ms
         0, -- insert
         20, -- patient_address
         NEW.id
@@ -1195,7 +1195,7 @@ drop trigger if exists after_patient_address_update;
 
 DELIMITER $$
 CREATE TRIGGER after_patient_address_update
-  AFTER INSERT ON patient_address
+  AFTER UPDATE ON patient_address
   FOR EACH ROW
   BEGIN
     INSERT INTO event_log (
@@ -1204,7 +1204,7 @@ CREATE TRIGGER after_patient_address_update
         table_id,
         record_id
     ) VALUES (
-		now(),
+		now(3), -- current time inc ms
         1, -- update
         20, -- patient_address
         NEW.id
@@ -1225,7 +1225,7 @@ CREATE TRIGGER after_patient_address_delete
         table_id,
         record_id
     ) VALUES (
-		now(),
+		now(3), -- current time inc ms
         2, -- delete
         20, -- patient_address
         OLD.id
