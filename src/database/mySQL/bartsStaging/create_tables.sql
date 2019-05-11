@@ -55,7 +55,7 @@ create table procedure_cds_latest
     nhs_number                     varchar(10)  NOT NULL COMMENT 'from NHSNumber',
     date_of_birth                  datetime COMMENT 'from PersonBirthDate',
     consultant_code                varchar(20) COMMENT 'GMC number of consultant, from ConsultantCode',
-    procedure_date                 date         NOT NULL COMMENT 'from PrimaryProcedureDate, SecondaryProcedureDate etc. - note this file has no time component',
+    procedure_date                 date         COMMENT 'from PrimaryProcedureDate, SecondaryProcedureDate etc. - note this file has no time component',
     procedure_opcs_code            varchar(5)   NOT NULL COMMENT 'opcs-4 code in format ANN.N from PrimaryProcedureOPCS, SecondaryProcedureOPCS etc.',
     procedure_seq_nbr              smallint     NOT NULL COMMENT 'number of this procedure in the CDS record',
     primary_procedure_opcs_code    varchar(5) COMMENT 'opcs-4 code in format ANN.N from PrimaryProcedureOPCS - will be null if this record is for the primary procedure',
