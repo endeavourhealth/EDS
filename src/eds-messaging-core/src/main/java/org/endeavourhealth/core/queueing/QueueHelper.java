@@ -261,6 +261,14 @@ public class QueueHelper {
             //LOG.debug("Checking config XML for " + configId + " for exchangeName = "+exchangeName);
             String queueReaderConfigXml = queueReadConfigs.get(configId);
 
+            //the transform common config record is JSON, and trying to parse JSON as XML results
+            //in confusing logging to console (which seems impossible to turn off),
+            //saying "[Fatal Error] :1:1: Content is not allowed in prolog"
+            //So avoid confusion by not even trying with them
+            if (queueReaderConfigXml.startsWith("{")) {
+                continue;
+            }
+
             config = findExchangeConfig(queueReaderConfigXml, exchangeName);
             if (config != null) {
                 return config;

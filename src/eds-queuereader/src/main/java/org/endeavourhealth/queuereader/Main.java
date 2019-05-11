@@ -14,9 +14,7 @@ import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.common.fhir.PeriodHelper;
 import org.endeavourhealth.common.fhir.ReferenceHelper;
 import org.endeavourhealth.common.utility.*;
-import org.endeavourhealth.core.configuration.ConfigDeserialiser;
-import org.endeavourhealth.core.configuration.PostMessageToExchangeConfig;
-import org.endeavourhealth.core.configuration.QueueReaderConfiguration;
+import org.endeavourhealth.core.configuration.*;
 import org.endeavourhealth.core.csv.CsvHelper;
 import org.endeavourhealth.core.database.dal.DalProvider;
 import org.endeavourhealth.core.database.dal.admin.LibraryRepositoryHelper;
@@ -221,6 +219,12 @@ public class Main {
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("TestMetrics")) {
 			testMetrics();
+			System.exit(0);
+		}
+
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("TestXML")) {
+			testXml();
 			System.exit(0);
 		}
 
@@ -726,6 +730,46 @@ public class Main {
 			}
 
 			LOG.info("Finished posting patient " + patientUuid + " for " + odsCode + " to Protocol queue");
+		} catch (Throwable t) {
+			LOG.error("", t);
+		}
+
+	}
+
+	private static void testXml() {
+		LOG.info("Testing XML");
+		try {
+
+			//PostMessageToExchangeConfig exchangeConfig = QueueHelper.findExchangeConfig("EdsProtocol");
+
+			Map<String, String> queueReadConfigs = ConfigManager.getConfigurations("queuereader");
+			for (String configId: queueReadConfigs.keySet()) {
+				LOG.debug("Checking config XML for " + configId);
+				String configXml = queueReadConfigs.get(configId);
+
+				if (configXml.startsWith("{")) {
+					LOG.debug("Skipping JSON");
+					continue;
+				}
+
+				try {
+					ApiConfiguration config = ConfigWrapper.deserialise(configXml);
+					//LOG.debug("Deserialised as messaging API XML");
+					ApiConfiguration.PostMessageAsync postConfig = config.getPostMessageAsync();
+
+				} catch (Exception ex) {
+
+					try {
+						QueueReaderConfiguration configuration = ConfigDeserialiser.deserialise(configXml);
+
+					} catch (Exception ex2) {
+						LOG.error(configXml);
+						LOG.error("", ex2);
+					}
+				}
+
+			}
+			LOG.info("Testing XML");
 		} catch (Throwable t) {
 			LOG.error("", t);
 		}
