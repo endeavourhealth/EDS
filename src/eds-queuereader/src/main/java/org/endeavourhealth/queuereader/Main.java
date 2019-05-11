@@ -27,6 +27,7 @@ import org.endeavourhealth.core.database.dal.audit.models.ExchangeBatch;
 import org.endeavourhealth.core.database.dal.audit.models.ExchangeTransformAudit;
 import org.endeavourhealth.core.database.dal.audit.models.HeaderKeys;
 import org.endeavourhealth.core.database.dal.eds.PatientLinkDalI;
+import org.endeavourhealth.core.database.dal.eds.PatientSearchDalI;
 import org.endeavourhealth.core.database.dal.ehr.ResourceDalI;
 import org.endeavourhealth.core.database.dal.ehr.models.ResourceWrapper;
 import org.endeavourhealth.core.database.dal.publisherTransform.InternalIdDalI;
@@ -429,12 +430,12 @@ public class Main {
 			System.exit(0);
 		}*/
 
-		/*if (args.length >= 1
+		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("PopulateNewSearchTable")) {
 			String table = args[1];
 			populateNewSearchTable(table);
 			System.exit(0);
-		}*/
+		}
 
 		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("FixBartsEscapes")) {
@@ -5638,7 +5639,7 @@ public class Main {
 		entityManager.getTransaction().commit();
 	}
 
-	/*private static void populateNewSearchTable(String table) {
+	private static void populateNewSearchTable(String table) {
 		LOG.info("Populating New Search Table");
 
 		try {
@@ -5664,7 +5665,7 @@ public class Main {
 			entityManager.close();
 
 			ResourceDalI resourceDal = DalProvider.factoryResourceDal();
-			PatientSearchDalI patientSearchDal = DalProvider.factoryPatientSearch2Dal();
+			PatientSearchDalI patientSearchDal = DalProvider.factoryPatientSearchDal();
 
 			LOG.info("Found " + patientIds.size() + " to do");
 
@@ -5680,7 +5681,7 @@ public class Main {
 					patientSearchDal.update(serviceId, patient);
 
 					//find episode of care
-					List<ResourceWrapper> wrappers = resourceDal.getResourcesByPatient(serviceId, null, patientId, ResourceType.EpisodeOfCare.toString());
+					List<ResourceWrapper> wrappers = resourceDal.getResourcesByPatient(serviceId, patientId, ResourceType.EpisodeOfCare.toString());
 					for (ResourceWrapper wrapper: wrappers) {
 						if (!wrapper.isDeleted()) {
 							EpisodeOfCare episodeOfCare = (EpisodeOfCare)FhirSerializationHelper.deserializeResource(wrapper.getResourceData());
@@ -5712,7 +5713,7 @@ public class Main {
 		} catch (Exception ex) {
 			LOG.error("", ex);
 		}
-	}*/
+	}
 
 	private static void createBartsSubset(String sourceDir, UUID serviceUuid, UUID systemUuid, String samplePatientsFile) {
 		LOG.info("Creating Barts Subset");
