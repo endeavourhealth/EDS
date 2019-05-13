@@ -5678,16 +5678,24 @@ public class Main {
 
 				Patient patient = (Patient)resourceDal.getCurrentVersionAsResource(serviceId, ResourceType.Patient, patientIdStr);
 				if (patient != null) {
+					LOG.debug("Updating for patient " + patientIdStr);
 					patientSearchDal.update(serviceId, patient);
+					LOG.debug("Done");
 
 					//find episode of care
 					List<ResourceWrapper> wrappers = resourceDal.getResourcesByPatient(serviceId, patientId, ResourceType.EpisodeOfCare.toString());
 					for (ResourceWrapper wrapper: wrappers) {
 						if (!wrapper.isDeleted()) {
+							LOG.debug("Updating for episodeOfCare resource " + wrapper.getResourceId());
 							EpisodeOfCare episodeOfCare = (EpisodeOfCare)FhirSerializationHelper.deserializeResource(wrapper.getResourceData());
 							patientSearchDal.update(serviceId, episodeOfCare);
+							LOG.debug("Done");
+						} else {
+							LOG.debug("EpisodeOfCare " + wrapper.getResourceId() + " is deleted");
 						}
 					}
+				} else {
+					LOG.debug("Patient " + patientIdStr + " not found or deleted");
 				}
 
 
