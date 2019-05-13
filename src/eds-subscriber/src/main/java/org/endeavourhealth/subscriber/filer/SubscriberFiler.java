@@ -189,6 +189,7 @@ public class SubscriberFiler {
         List<CSVRecord> currentRecords = null;
         List<String> currentColumns = null;
         Map<String, Class> currentColumnClasses = null;
+        boolean patientWasDeleted = false;
 
         //LOG.trace("Got " + deletes.size() + " deletes");
 
@@ -205,6 +206,9 @@ public class SubscriberFiler {
                         && !currentRecords.isEmpty()) {
                     LOG.trace("Deleting " + currentRecords.size() + " from " + currentTable);
                     fileDeletes(currentRecords, currentColumns, currentColumnClasses, currentTable, connection);
+                    if (currentTable.equalsIgnoreCase("patient")) {
+                        patientWasDeleted = true;
+                    }
                 }
 
                 currentTable = tableName;
@@ -221,6 +225,10 @@ public class SubscriberFiler {
                 && !currentRecords.isEmpty()) {
             LOG.trace("Deleting " + currentRecords.size() + " from " + currentTable);
             fileDeletes(currentRecords, currentColumns, currentColumnClasses, currentTable, connection);
+        }
+
+        if (patientWasDeleted) {
+            deleteLeftOverPersonRecords(connection);
         }
     }
 
@@ -698,12 +706,15 @@ public class SubscriberFiler {
                 insert.close();
             }
         }
-
-
-
     }
 
-
+    public static void deleteLeftOverPersonRecords(Connection connection) throws Exception {
+        PreparedStatement delete =
+                connection.prepareStatement("DELETE FROM person WHERE NOT EXISTS (SELECT 1 FROM patient WHERE patient.person_id = person.id);");
+        delete.executeBatch();
+        delete.close();
+        connection.commit();
+    }
 
     /*private static int getBatchSize(String url) {
         return batchSizes.get(url).intValue();
