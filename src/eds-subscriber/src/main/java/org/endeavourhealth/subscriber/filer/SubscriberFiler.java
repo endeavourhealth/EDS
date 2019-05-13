@@ -229,6 +229,7 @@ public class SubscriberFiler {
 
         if (patientWasDeleted) {
             deleteLeftOverPersonRecords(connection);
+            deleteLeftOverPatientUPRNRecords(connection);
         }
     }
 
@@ -708,9 +709,17 @@ public class SubscriberFiler {
         }
     }
 
-    public static void deleteLeftOverPersonRecords(Connection connection) throws Exception {
+    private static void deleteLeftOverPersonRecords(Connection connection) throws Exception {
         PreparedStatement delete =
                 connection.prepareStatement("DELETE FROM person WHERE NOT EXISTS (SELECT 1 FROM patient WHERE patient.person_id = person.id);");
+        delete.executeBatch();
+        delete.close();
+        connection.commit();
+    }
+
+    private static void deleteLeftOverPatientUPRNRecords(Connection connection) throws Exception {
+        PreparedStatement delete =
+                connection.prepareStatement("DELETE FROM patient_uprn WHERE NOT EXISTS (SELECT 1 FROM patient WHERE patient.id = patient_uprn.patient_id);");
         delete.executeBatch();
         delete.close();
         connection.commit();
