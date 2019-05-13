@@ -5676,6 +5676,7 @@ public class Main {
 				String serviceIdStr = serviceIds.get(patientIdStr);
 				UUID serviceId = UUID.fromString(serviceIdStr);
 
+
 				Patient patient = (Patient)resourceDal.getCurrentVersionAsResource(serviceId, ResourceType.Patient, patientIdStr);
 				if (patient != null) {
 					LOG.debug("Updating for patient " + patientIdStr);
