@@ -78,13 +78,14 @@
 							<table class="table table-striped table-condensed">
 								<thead>
 								<tr>
-									<th class="col-md-2">Type</th>
+									<th class="col-md-1">Type</th>
+									<th class="col-md-2">Local ID</th>
 									<th class="col-md-4">Service</th>
 									<th class="col-md-2">System</th>
 									<th class="col-md-2">Interface</th>
-									<th class="col-md-2">Active</th>
-									<th class="col-md-2" *ngIf="isCohortDefinedByServices()">Cohort</th>
-									<th class="col-md-2"></th>
+									<th class="col-md-1">Active</th>
+									<th class="col-md-1" *ngIf="isCohortDefinedByServices()">Cohort</th>
+									<th class="col-md-1"></th>
 								</tr>
 								</thead>
 								<tbody>
@@ -92,7 +93,8 @@
 									*ngFor="let item of getServiceContracts(); let i = index;"
 									(click)="selectedContract = item;"
 									[ngClass]="{'selection': item == selectedContract}">
-									<td>{{item.type}}</td>
+									<td>{{getTypeDescShort(item.type)}}</td>
+									<td>{{getLocalIdentifier(item.service)}}</td>
 									<td>{{item.service.name}}</td>
 									<td>{{item.system.name}}</td>
 									<td>{{item.technicalInterface.name}}</td>

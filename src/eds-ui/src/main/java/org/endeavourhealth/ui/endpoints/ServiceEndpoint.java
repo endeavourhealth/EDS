@@ -121,7 +121,10 @@ public final class ServiceEndpoint extends AbstractEndpoint {
         service.setPostcode(postcode);
 
         OrganisationType type = org.getOrganisationType();
-        service.setOrganisationTypeCode(type.getCode());
+        if (type != null) {
+            service.setOrganisationTypeCode(type.getCode());
+        }
+
 
         Map<String, String> parents = org.getParents();
 

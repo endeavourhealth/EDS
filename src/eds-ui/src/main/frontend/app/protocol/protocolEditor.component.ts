@@ -21,13 +21,14 @@ import {ServicePickerDialog} from "../services/servicePicker.dialog";
 })
 export class ProtocolEditComponent {
 	libraryItem : EdsLibraryItem;
-	protected protocol : Protocol;
+	//protected protocol : Protocol;
 	selectedContract : ServiceContract;
 	services : Service[];
 	systems : System[];
 	dataSets : DataSet[];
 	protocols : EdsLibraryItem[];
 	technicalInterfaces : TechnicalInterface[];
+	serviceLocalIdCache = {}; //cache to quickly find service ODS code for a UUID
 
 	//hard-code two cohort strings until the cohort editor is implemented
 	cohorts: string[];
@@ -82,7 +83,9 @@ export class ProtocolEditComponent {
 		var vm = this;
 		vm.libraryService.getLibraryItem<EdsLibraryItem>(uuid)
 			.subscribe(
-				(libraryItem) => vm.libraryItem = libraryItem,
+				(libraryItem) => {
+					vm.libraryItem = libraryItem;
+				},
 				(data) => vm.logger.error('Error loading', data, 'Error')
 			);
 	}
@@ -109,7 +112,7 @@ export class ProtocolEditComponent {
 	}
 
 	create(folderUuid : string) {
-		this.protocol = {
+		var protocol = {
 			enabled: 'TRUE',
 			patientConsent: 'OPT-IN',
 			cohort: '0',
@@ -122,7 +125,7 @@ export class ProtocolEditComponent {
 			name: '',
 			description: '',
 			folderUuid: folderUuid,
-			protocol: this.protocol
+			protocol: protocol
 		} as EdsLibraryItem;
 
 	}
@@ -259,22 +262,29 @@ export class ProtocolEditComponent {
 
 	getServiceContracts() {
 
-		//awful syntax to handle the service being undefined when adding new service contrals
-		return linq(this.libraryItem.protocol.serviceContract)
+
+		var vm = this;
+
+		//sort by ODS code now, as that's more consistent than name (given each practice seems to have two names)
+		return linq(vm.libraryItem.protocol.serviceContract)
+			.OrderBy(sc => sc.type)
+			.ThenBy(sc => {
+				return vm.getLocalIdentifier(sc.service).toLowerCase();
+			})
+			.ToArray();
+
+		//awful syntax to handle the service name being undefined when adding new service contrals
+		/*return linq(vm.libraryItem.protocol.serviceContract)
 			.OrderBy(sc => sc.type)
 			.ThenBy(sc => {
 				if (sc.service.name) {
 					return sc.service.name.toLowerCase();
 				} else {
-					return "";
+					return '';
 				}
 			})
-			.ToArray();
-
-		/*return linq(this.libraryItem.protocol.serviceContract)
-			.OrderBy(sc => sc.type)
-			.ThenBy(sc => sc.service.name.toLowerCase())
 			.ToArray();*/
+
 	}
 
 	publisherCount(): number {
@@ -317,5 +327,42 @@ export class ProtocolEditComponent {
 				}
 			}
 		);
+	}
+
+	/**
+	 * looks up a local ID (i.e. ODS Code) for a service
+     */
+	getLocalIdentifier(service: Service): string {
+		var uuid = service.uuid
+
+		var vm = this;
+		var ret = vm.serviceLocalIdCache[uuid];
+		if (!ret) {
+			if (vm.services) {
+				var i;
+				for (i=0; i<vm.services.length; i++) {
+					var s = vm.services[i];
+					if (s.uuid == uuid) {
+						ret = s.localIdentifier;
+						vm.serviceLocalIdCache[uuid] = ret;
+					}
+				}
+			}
+		}
+		//always return something non-null so the sorting fn doesn't need to handle undefined/null
+		if (!ret) {
+			ret = '';
+		}
+		return ret;
+	}
+
+	getTypeDescShort(type: string): string {
+		if (type == 'PUBLISHER') {
+			return 'P';
+		} else if (type == 'SUBSCRIBER') {
+			return 'S';
+		} else {
+			return type;
+		}
 	}
 }
