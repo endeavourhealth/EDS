@@ -5698,8 +5698,6 @@ public class Main {
 					LOG.debug("Patient " + patientIdStr + " not found or deleted");
 				}
 
-
-
 				String updateSql = "UPDATE " + table + " SET done = 1 WHERE patient_id = '" + patientIdStr + "' AND service_id = '" + serviceIdStr + "';";
 				entityManager = ConnectionManager.getEdsEntityManager();
 				session = (SessionImpl)entityManager.getDelegate();
