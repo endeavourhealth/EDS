@@ -5681,21 +5681,43 @@ public class Main {
 					LOG.debug("Updating for patient " + patientIdStr);
 					patientSearchDal.update(serviceId, patient);
 					LOG.debug("Done");
+				} else {
 
-					//find episode of care
-					List<ResourceWrapper> wrappers = resourceDal.getResourcesByPatient(serviceId, patientId, ResourceType.EpisodeOfCare.toString());
-					for (ResourceWrapper wrapper: wrappers) {
-						if (!wrapper.isDeleted()) {
-							LOG.debug("Updating for episodeOfCare resource " + wrapper.getResourceId());
-							EpisodeOfCare episodeOfCare = (EpisodeOfCare)FhirSerializationHelper.deserializeResource(wrapper.getResourceData());
-							patientSearchDal.update(serviceId, episodeOfCare);
-							LOG.debug("Done");
-						} else {
-							LOG.debug("EpisodeOfCare " + wrapper.getResourceId() + " is deleted");
+					List<ResourceWrapper> history = resourceDal.getResourceHistory(serviceId, ResourceType.Patient.toString(), patientId);
+					if (history.isEmpty()) {
+						LOG.debug("No history found for patient " + patientIdStr);
+					} else {
+						ResourceWrapper first = history.get(0);
+						if (!first.isDeleted()) {
+							throw new Exception("Resource current null for " + ResourceType.Patient + " " + patientIdStr + " but not deleted in resource_history");
+						}
+
+						//find first non-deleted instance and update for it, then delete
+						for (ResourceWrapper historyItem: history) {
+							if (!historyItem.isDeleted()) {
+								patient = (Patient)FhirSerializationHelper.deserializeResource(historyItem.getResourceData());
+								LOG.debug("Patient is deleted, so updating for deleted patient " + patientIdStr);
+								patientSearchDal.update(serviceId, patient);
+								patientSearchDal.deletePatient(serviceId, patient);
+								LOG.debug("Done");
+								break;
+							}
 						}
 					}
-				} else {
-					LOG.debug("Patient " + patientIdStr + " not found or deleted");
+				}
+
+				//find episode of care
+				//note, we don't have any current way to retrieve deleted episodes of care for a patient, so can only do this for non-deleted ones
+				List<ResourceWrapper> wrappers = resourceDal.getResourcesByPatient(serviceId, patientId, ResourceType.EpisodeOfCare.toString());
+				for (ResourceWrapper wrapper: wrappers) {
+					if (!wrapper.isDeleted()) {
+						LOG.debug("Updating for episodeOfCare resource " + wrapper.getResourceId());
+						EpisodeOfCare episodeOfCare = (EpisodeOfCare)FhirSerializationHelper.deserializeResource(wrapper.getResourceData());
+						patientSearchDal.update(serviceId, episodeOfCare);
+						LOG.debug("Done");
+					} else {
+						LOG.debug("EpisodeOfCare " + wrapper.getResourceId() + " is deleted");
+					}
 				}
 
 				String updateSql = "UPDATE " + table + " SET done = 1 WHERE patient_id = '" + patientIdStr + "' AND service_id = '" + serviceIdStr + "';";
