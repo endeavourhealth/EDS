@@ -2,7 +2,6 @@
 -- use subscriber_new_pi;
 
 DROP TABLE IF EXISTS location;
-
 DROP TABLE IF EXISTS `schedule`;
 DROP TABLE IF EXISTS allergy_intolerance;
 DROP TABLE IF EXISTS medication_order;
@@ -375,7 +374,7 @@ CREATE TABLE medication_statement
   authorisation_type_concept_id int,
   core_concept_id int,
   non_core_concept_id int,
-  bnf_reference int(6),
+  bnf_reference varchar(6),
   age_at_event decimal (5,2),
   issue_method text,
   CONSTRAINT pk_medication_statement_id PRIMARY KEY (`organization_id`,`person_id`,`id`),
@@ -422,7 +421,7 @@ CREATE TABLE medication_order
   medication_statement_id bigint,
   core_concept_id int,
   non_core_concept_id int,
-  bnf_reference int(6),
+  bnf_reference varchar(6),
   age_at_event decimal (5,2),
   issue_method text,
   CONSTRAINT pk_medication_order_id PRIMARY KEY (`organization_id`,`person_id`,`id`),
@@ -661,7 +660,9 @@ CREATE INDEX pseudo_id_pseudo_id
   ON pseudo_id
   (pseudo_id);
 
-create table patient_uprn (
+-- Table: patient_uprn
+
+CREATE TABLE patient_uprn (
 	patient_id bigint,
     organization_id bigint,
     person_id bigint,
@@ -729,8 +730,6 @@ CREATE TABLE patient_address
       REFERENCES patient (id, organization_id)
 ) COMMENT 'stores address details for patients';
 
-
-
 -- Table: event_log
 
 CREATE TABLE event_log (
@@ -740,4 +739,3 @@ CREATE TABLE event_log (
   record_id biginT NOT NULL COMMENT 'id of the record changed'
 );
 -- note: purposefully no primary key or any other constraint
-

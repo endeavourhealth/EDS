@@ -13,6 +13,7 @@ DROP TABLE IF EXISTS snomed_description_link;
 DROP TABLE IF EXISTS trm_concept_pc_link;
 DROP TABLE IF EXISTS trm_concept;
 DROP TABLE IF EXISTS opcs4_lookup;
+DROP TABLE IF EXISTS snomed_to_bnf_chapter_lookup;
 DROP TABLE IF EXISTS icd10_lookup;
 DROP TABLE IF EXISTS cerner_clinical_event_map;
 DROP TABLE IF EXISTS ctv3_to_snomed_map;
@@ -168,7 +169,6 @@ CREATE INDEX idx_code
 
 CREATE UNIQUE INDEX idx_code_system
   ON trm_concept (code, codesystem_pid);
-
 
 CREATE TABLE trm_concept_pc_link
 (

@@ -64,7 +64,7 @@ public class SnomedToBnfChapterUpdater {
 
             done ++;
             if (done % 1000 == 0) {
-                LOG.info("Done " + done + " Snomed To BNF Chapter Lookups (out of approx 140k).");
+                LOG.info("Done " + done + " Snomed To BNF Chapter Lookups (out of approx 325k).");
             }
         }
 
