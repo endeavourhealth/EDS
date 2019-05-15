@@ -5706,6 +5706,7 @@ public class Main {
 					}
 				}
 
+
 				//find episode of care
 				//note, we don't have any current way to retrieve deleted episodes of care for a patient, so can only do this for non-deleted ones
 				List<ResourceWrapper> wrappers = resourceDal.getResourcesByPatient(serviceId, patientId, ResourceType.EpisodeOfCare.toString());
