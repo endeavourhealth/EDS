@@ -280,7 +280,7 @@ BEGIN
     -- CDS must be done before PROCE, as PROCE refers back to CDS to avoid duplicates
 	insert into procedure_target
 	select
-		cds.exchange_id as exchange_id,
+		_exchange_id as exchange_id,
 		concat('CDS-', cds.cds_unique_identifier, '-', cds.procedure_seq_nbr) as unique_id,
 		if (cds.cds_update_type = 1, true, false) as is_delete,
 		coalesce(tail.person_id, cds.lookup_person_id) as person_id,
@@ -323,7 +323,7 @@ BEGIN
 	-- Procedure and PROCE (left join to get all)
 	insert into procedure_target
 	select
-		proce.exchange_id as exchange_id,
+		_exchange_id as exchange_id,
 		concat('PROCE-', proce.procedure_id) as unique_id,
 		if (proce.active_ind = 0, true, false) as is_delete,
 		coalesce(proc.lookup_person_id, proce.lookup_person_id) as person_id,
@@ -364,7 +364,8 @@ BEGIN
         and proce.procedure_seq_nbr > 1
         and proce.dt_received >= parent_proce.dt_received -- only join to parent proce that were added before, so we don't join to future ones if re-running data
 	where
-		proce.exchange_id = _exchange_id;
+		proce.exchange_id = _exchange_id
+		or (proc.exchange_id is not null and proc.exchange_id = _exchange_id); -- DAB-95 fix - we need to pick up procedure records that have changed w/o a PROCE change
 
 	-- all procedures from CDS are also in PROCE, so we need to de-duplicate those
 	delete target_proce
@@ -383,7 +384,7 @@ BEGIN
 	-- SURCC and SURCP
 	insert into procedure_target
 	select
-		cp.exchange_id as exchange_id,
+		_exchange_id as exchange_id,
 		concat('SURG-',cp.surgical_case_procedure_id) as unique_id,
 		if (cp.active_ind = 0, true, false) as is_delete,
 		cc.person_id as person_id,
@@ -412,10 +413,9 @@ BEGIN
 	left join procedure_SURCC_latest cc
 		on cp.surgical_case_id = cc.surgical_case_id
 	where
-		cp.exchange_id = _exchange_id
-		-- DAB-104 this logic means we're not picking up on deletes
-		and (cp.active_ind = 0 or cp.dt_start is not null);
-	    -- and (cp.dt_start is not null or cc.dt_start is not null);
+		(cp.exchange_id = _exchange_id
+		  or (cc.exchange_id is not null and cc.exchange_id = _exchange_id)) -- DAB-103 fix - we need to pick up SURCC records that have changed w/o a SURCP change
+		and (cp.active_ind = 0 or cp.dt_start is not null); -- DAB-104 added active_ind check to pick up deletes as they will always have null dt_starts
 
 
 	-- carry over to the target_latest table so we can see the latest state of everything
@@ -469,5 +469,3 @@ BEGIN
 
 END$$
 DELIMITER ;
-
- -- CALL process_procedure_staging_exchange('<exchange id>');
