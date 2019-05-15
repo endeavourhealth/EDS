@@ -401,7 +401,7 @@ BEGIN
 		'CERNER' as procedure_type,
 		cp.procedure_code as procedure_code,
 		cp.lookup_procedure_code_term as procedure_term,
-		cp.primary_procedure_indicator as sequence_number,   -- the only data available is either 0 or 1
+		if (cp.primary_procedure_indicator = 0, 2, 1) as sequence_number,   -- DAB-101 fix
 		null as parent_procedure_unique_id,  -- data not applicable
 		cp.modifier_text as qualifier,
 		coalesce(cc.institution_code, cc.department_code, cc.surgical_area_code, cc.theatre_number_code) as location,
