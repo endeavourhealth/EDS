@@ -413,7 +413,9 @@ BEGIN
 		on cp.surgical_case_id = cc.surgical_case_id
 	where
 		cp.exchange_id = _exchange_id
-	    and (cp.dt_start is not null or cc.dt_start is not null);
+		-- DAB-104 this logic means we're not picking up on deletes
+		and (cp.active_ind = 0 or cp.dt_start is not null);
+	    -- and (cp.dt_start is not null or cc.dt_start is not null);
 
 
 	-- carry over to the target_latest table so we can see the latest state of everything
