@@ -5699,6 +5699,7 @@ public class Main {
 				}
 
 
+
 				String updateSql = "UPDATE " + table + " SET done = 1 WHERE patient_id = '" + patientIdStr + "' AND service_id = '" + serviceIdStr + "';";
 				entityManager = ConnectionManager.getEdsEntityManager();
 				session = (SessionImpl)entityManager.getDelegate();
