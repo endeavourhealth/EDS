@@ -22,6 +22,7 @@ DROP TABLE IF EXISTS patient;
 DROP TABLE IF EXISTS person;
 DROP TABLE IF EXISTS practitioner;
 DROP TABLE IF EXISTS organization;
+DROP TABLE IF EXISTS diagnostic_order;
 
 
 -- Table: organization
@@ -551,6 +552,80 @@ CREATE INDEX ix_observation_person_id
   ON observation
   (person_id);
 
+ -- Table: diagnostic_order
+
+CREATE TABLE diagnostic_order
+(
+  id bigint NOT NULL,
+  organization_id bigint NOT NULL,
+  patient_id bigint NOT NULL,
+  person_id bigint NOT NULL,
+  encounter_id bigint,
+  practitioner_id bigint,
+  clinical_effective_date date,
+  date_precision_concept_id int,
+  result_value real,
+  result_value_units character varying(50),
+  result_date date,
+  result_text text,
+  result_concept_id int,
+  is_problem boolean NOT NULL,
+  is_review boolean NOT NULL,
+  problem_end_date date,
+  parent_observation_id bigint,
+  core_concept_id int,
+  non_core_concept_id int,
+  age_at_event decimal (5,2),
+  episodicity_concept_id int,
+  is_primary boolean,
+  CONSTRAINT pk_diagnostic_order_id PRIMARY KEY (`organization_id`,`person_id`,`id`),
+  CONSTRAINT fk_diagnostic_order_encounter_id FOREIGN KEY (encounter_id)
+      REFERENCES encounter (id) MATCH SIMPLE
+      ON UPDATE NO ACTION ON DELETE NO ACTION,
+  CONSTRAINT fk_diagnostic_order_patient_id_organization_id FOREIGN KEY (patient_id, organization_id)
+      REFERENCES patient (id, organization_id) MATCH SIMPLE
+      ON UPDATE NO ACTION ON DELETE NO ACTION,
+  CONSTRAINT fk_diagnostic_order_practitioner_id FOREIGN KEY (practitioner_id)
+      REFERENCES practitioner (id) MATCH SIMPLE
+      ON UPDATE NO ACTION ON DELETE NO ACTION
+);
+
+CREATE UNIQUE INDEX diagnostic_order_id
+  ON diagnostic_order
+  (id);
+
+CREATE INDEX diagnostic_order_patient_id
+  ON diagnostic_order
+  (patient_id);
+
+CREATE INDEX diagnostic_order_core_concept_id
+  ON diagnostic_order
+  (core_concept_id);
+
+CREATE INDEX diagnostic_order_core_concept_id_is_problem
+  ON diagnostic_order
+  (`core_concept_id`,`is_problem`);
+
+CREATE INDEX diagnostic_order_core_concept_id_result_value
+  ON diagnostic_order
+  (`core_concept_id`,`result_value`);
+
+CREATE INDEX diagnostic_order_non_core_concept_id
+  ON diagnostic_order
+  (non_core_concept_id);
+
+CREATE INDEX ix_diagnostic_order_organization_id
+  ON diagnostic_order
+  (organization_id);
+
+CREATE INDEX ix_diagnostic_order_clinical_effective_date
+  ON diagnostic_order
+  (clinical_effective_date);
+
+CREATE INDEX ix_diagnostic_order_person_id
+  ON diagnostic_order
+  (person_id);
+  
 -- Table: procedure_request
 
 CREATE TABLE procedure_request
