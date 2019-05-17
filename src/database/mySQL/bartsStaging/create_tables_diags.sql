@@ -8,8 +8,8 @@ drop table if exists diagnosis_diagnosis;
 drop table if exists diagnosis_diagnosis_latest;
 drop table if exists diagnosis_DIAGN;
 drop table if exists diagnosis_DIAGN_latest;
-drop table if exists diagnosis_problem;
-drop table if exists diagnosis_problem_latest;
+-- drop table if exists diagnosis_problem;
+-- drop table if exists diagnosis_problem_latest;
 
 drop table if exists diagnosis_target;
 drop table if exists diagnosis_target_latest;
@@ -194,39 +194,41 @@ create table diagnosis_DIAGN_latest
 
 -- CREATE INDEX ix_procedure_procedure_parent_helper ON procedure_PROCE_latest (lookup_person_id, encounter_id, procedure_seq_nbr, encounter_slice_id);
 
-create table diagnosis_problem
-(
-    exchange_id          char(36)   NOT NULL COMMENT 'links to audit.exchange table (but on a different server)',
-    dt_received          datetime   NOT NULL COMMENT 'date time this record was received into Discovery',
-    record_checksum      bigint     NOT NULL COMMENT 'checksum of the columns below to easily spot duplicates',
-    problem_id           int        NOT NULL COMMENT 'unique problem ID',
-    mrn                  varchar(10) NOT NULL COMMENT 'from MRN',
-    onset_date           datetime COMMENT 'on-set date of problem',
-    problem_code         varchar(50) COMMENT 'snomed description Id',
-    problem_term         varchar(255) COMMENT 'problem raw term (not looked up on TRUD)',
-    problem_txt          varchar(255) COMMENT 'problem free text, usually the same as the term, annotated_disp',
-    vocab                varchar(50) NOT NULL COMMENT 'problem code type, either SNOMED CT Description Id or UK ED Subset (Snomed Description Id)',
-    location             varchar(255) COMMENT ' text based location details from org_name',
-    audit_json           mediumtext null comment 'Used for Audit Purposes',
-    CONSTRAINT pk_diagnosis_problem PRIMARY KEY (exchange_id, problem_id)
-);
-
-create table diagnosis_problem_latest
-(
-    exchange_id          char(36)   NOT NULL COMMENT 'links to audit.exchange table (but on a different server)',
-    dt_received          datetime   NOT NULL COMMENT 'date time this record was received into Discovery',
-    record_checksum      bigint     NOT NULL COMMENT 'checksum of the columns below to easily spot duplicates',
-    problem_id           int        NOT NULL COMMENT 'unique problem ID',
-    mrn                  varchar(10) NOT NULL COMMENT 'from MRN',
-    onset_date           datetime COMMENT 'on-set date of problem',
-    problem_code         varchar(50) COMMENT 'snomed description Id',
-    problem_term         varchar(255) COMMENT 'problem raw term (not looked up on TRUD)',
-    problem_txt          varchar(255) COMMENT 'problem free text, usually the same as the term, from annotated_disp',
-    vocab                varchar(50) NOT NULL COMMENT 'problem code type, either SNOMED CT Description Id or UK ED Subset (Snomed Description Id)',
-    location             varchar(255) COMMENT ' text based location details from org_name',
-    audit_json           mediumtext null comment 'Used for Audit Purposes',
-    CONSTRAINT pk_diagnosis_problem PRIMARY KEY (problem_id)
-);
+-- Leave Problems to their own individual transform as they are separate to the other Diagnosis extract data
+#
+# create table diagnosis_problem
+# (
+#     exchange_id          char(36)   NOT NULL COMMENT 'links to audit.exchange table (but on a different server)',
+#     dt_received          datetime   NOT NULL COMMENT 'date time this record was received into Discovery',
+#     record_checksum      bigint     NOT NULL COMMENT 'checksum of the columns below to easily spot duplicates',
+#     problem_id           int        NOT NULL COMMENT 'unique problem ID',
+#     mrn                  varchar(10) NOT NULL COMMENT 'from MRN',
+#     onset_date           datetime COMMENT 'on-set date of problem',
+#     problem_code         varchar(50) COMMENT 'snomed description Id',
+#     problem_term         varchar(255) COMMENT 'problem raw term (not looked up on TRUD)',
+#     problem_txt          varchar(255) COMMENT 'problem free text, usually the same as the term, annotated_disp',
+#     vocab                varchar(50) NOT NULL COMMENT 'problem code type, either SNOMED CT Description Id or UK ED Subset (Snomed Description Id)',
+#     location             varchar(255) COMMENT ' text based location details from org_name',
+#     audit_json           mediumtext null comment 'Used for Audit Purposes',
+#     CONSTRAINT pk_diagnosis_problem PRIMARY KEY (exchange_id, problem_id)
+# );
+#
+# create table diagnosis_problem_latest
+# (
+#     exchange_id          char(36)   NOT NULL COMMENT 'links to audit.exchange table (but on a different server)',
+#     dt_received          datetime   NOT NULL COMMENT 'date time this record was received into Discovery',
+#     record_checksum      bigint     NOT NULL COMMENT 'checksum of the columns below to easily spot duplicates',
+#     problem_id           int        NOT NULL COMMENT 'unique problem ID',
+#     mrn                  varchar(10) NOT NULL COMMENT 'from MRN',
+#     onset_date           datetime COMMENT 'on-set date of problem',
+#     problem_code         varchar(50) COMMENT 'snomed description Id',
+#     problem_term         varchar(255) COMMENT 'problem raw term (not looked up on TRUD)',
+#     problem_txt          varchar(255) COMMENT 'problem free text, usually the same as the term, from annotated_disp',
+#     vocab                varchar(50) NOT NULL COMMENT 'problem code type, either SNOMED CT Description Id or UK ED Subset (Snomed Description Id)',
+#     location             varchar(255) COMMENT ' text based location details from org_name',
+#     audit_json           mediumtext null comment 'Used for Audit Purposes',
+#     CONSTRAINT pk_diagnosis_problem PRIMARY KEY (problem_id)
+# );
 
 -- target table for the above tables to populate, cleared down for each exchange
 create table diagnosis_target
