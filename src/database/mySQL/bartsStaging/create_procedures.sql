@@ -339,10 +339,12 @@ BEGIN
 		coalesce(proc.proc_term, proce.procedure_term) as procedure_term,
 		proce.procedure_seq_nbr as sequence_number,
 		if (
-		  proce.procedure_seq_nbr is null or proce.procedure_seq_nbr = 1,
+		  proce.procedure_seq_nbr is null
+			or proce.procedure_seq_nbr = 1
+            or parent_proce.procedure_id is null,
 		  null,
 		  concat('PROCE-', parent_proce.procedure_id)
-    ) as parent_procedure_unique_id, -- if sequence number > 1 then parent procedure ID is the same unique ID but with seq 1
+		) as parent_procedure_unique_id, -- if sequence number > 1 then parent procedure ID is the same unique ID but with seq 1
 		null as qualifier,   -- data not available
 		coalesce(proc.site, proc.ward) as location,
 		null as speciality,  -- data not available
@@ -392,30 +394,51 @@ BEGIN
 		cp.surgeon_personnel_id as performer_personnel_id,
 		coalesce(cp.dt_start, cc.dt_start) as dt_performed,
 		coalesce(cp.dt_stop, cc.dt_stop) as dt_ended,
-    if (
-      cp.wound_class_code > 0,
-      concat(cp.procedure_text, '. Wound class:', cp.wound_class_code),
-      cp.procedure_text
-    ) as free_text,
+		if (
+		  cp.wound_class_code > 0,
+		  concat(cp.procedure_text, '. Wound class:', cp.wound_class_code),
+		  cp.procedure_text
+		) as free_text,
 		null as recorded_by_personnel_id,  -- data not available
 		null as dt_recorded,  -- data not available
 		'CERNER' as procedure_type,
 		cp.procedure_code as procedure_code,
 		cp.lookup_procedure_code_term as procedure_term,
-		if (cp.primary_procedure_indicator = 0, 2, 1) as sequence_number,   -- DAB-101 fix
-		null as parent_procedure_unique_id,  -- data not applicable
+        if (
+			cp.primary_procedure_indicator is null,
+            null,
+			if (
+				cp.primary_procedure_indicator = 1,
+                1,
+                2
+			)
+		) as sequence_number,   -- DAB-101 fix
+		if (cp.primary_procedure_indicator is null
+			or cp.primary_procedure_indicator = 1
+            or parent_cp.surgical_case_procedure_id is null,
+		  null,
+		  concat('SURG-', parent_cp.surgical_case_procedure_id)
+		) as parent_procedure_unique_id, -- if sequence number > 1 then parent procedure ID is the same unique ID but with seq 1
 		cp.modifier_text as qualifier,
 		coalesce(cc.institution_code, cc.department_code, cc.surgical_area_code, cc.theatre_number_code) as location,
 		cc.specialty_code as specialty,
 		cp.audit_json
 	from
 		procedure_SURCP_latest cp
-	left join procedure_SURCC_latest cc
+	inner join procedure_SURCC_latest cc -- DAB-103 - inner join because we need BOTH SURCC and SURCP records (SURCC is not optional)
 		on cp.surgical_case_id = cc.surgical_case_id
+	left join procedure_SURCP_latest parent_cp -- DAB-110 - need to join to parent SURCP record so we can work out the parent ID
+		on cp.surgical_case_id = parent_cp.surgical_case_id
+        and parent_cp.primary_procedure_indicator = 1
+        and cp.primary_procedure_indicator = 0
+        and cp.dt_received >= parent_cp.dt_received -- only join to parent proce that were added before, so we don't join to future ones if re-running data
 	where
 		(cp.exchange_id = _exchange_id
-		  or (cc.exchange_id is not null and cc.exchange_id = _exchange_id)) -- DAB-103 fix - we need to pick up SURCC records that have changed w/o a SURCP change
-		and (cp.active_ind = 0 or cp.dt_start is not null); -- DAB-104 added active_ind check to pick up deletes as they will always have null dt_starts
+		  or cc.exchange_id = _exchange_id) -- DAB-103 fix - we need to pick up SURCC records that have changed w/o a SURCP change
+		and (cp.active_ind = 0 -- DAB-104 added active_ind check to pick up deletes as they will always have null dt_starts
+			or cp.dt_start is not null
+            or cc.dt_start is not null) -- DAB-103 - check both CC and CP for non-null start
+		and cp.procedure_code is not null; -- DAB-103 - exclude ones without procedure codes
 
 
 	-- carry over to the target_latest table so we can see the latest state of everything

@@ -36,7 +36,6 @@ import org.hl7.fhir.instance.model.Resource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.text.SimpleDateFormat;
 import java.util.*;
 
 //import org.endeavourhealth.transform.barts.BartsCsvToFhirTransformer;
@@ -223,15 +222,12 @@ public class MessageTransformInbound extends PipelineComponent {
 
 		try {
 
-			String lastDataDateStr = exchange.getHeader(HeaderKeys.DataDate);
+			Date lastDataDate = exchange.getHeaderAsDate(HeaderKeys.DataDate);
 
 			//won't always be present on really old exchanges
-			if (Strings.isNullOrEmpty(lastDataDateStr)) {
+			if (lastDataDate == null) {
 				return;
 			}
-
-			SimpleDateFormat simpleDateFormat = new SimpleDateFormat(OpenEnvelope.DATA_DATE_FORMAT);
-			Date lastDataDate = simpleDateFormat.parse(lastDataDateStr);
 
 			//and save the date to the special table so we can retrieve it quicker
 			LastDataProcessed obj = new LastDataProcessed();

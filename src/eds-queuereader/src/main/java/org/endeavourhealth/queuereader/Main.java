@@ -11978,8 +11978,7 @@ class PopulateDataDateCallable implements Callable {
 			return;
 		}
 
-		SimpleDateFormat simpleDateFormat = new SimpleDateFormat(OpenEnvelope.DATA_DATE_FORMAT);
-		exchange.setHeader(HeaderKeys.DataDate, simpleDateFormat.format(lastDataDate));
+		exchange.setHeaderAsDate(HeaderKeys.DataDate, lastDataDate);
 
 		exchangeDal.save(exchange);
 
