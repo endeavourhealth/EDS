@@ -389,7 +389,7 @@ BEGIN
 		_exchange_id as exchange_id,
 		concat('SURG-',cp.surgical_case_procedure_id) as unique_id,
 		if (cp.active_ind = 0, true, false) as is_delete,
-		cc.person_id as person_id,
+		cc.person_id as person_id, -- note this may be null if we're deleting a SURCP record - we won't have joined to a SURCC record
 		cc.encounter_id as encounter_id,
 		cp.surgeon_personnel_id as performer_personnel_id,
 		coalesce(cp.dt_start, cc.dt_start) as dt_performed,
@@ -425,7 +425,7 @@ BEGIN
 		cp.audit_json
 	from
 		procedure_SURCP_latest cp
-	inner join procedure_SURCC_latest cc -- DAB-103 - inner join because we need BOTH SURCC and SURCP records (SURCC is not optional)
+	left join procedure_SURCC_latest cc
 		on cp.surgical_case_id = cc.surgical_case_id
 	left join procedure_SURCP_latest parent_cp -- DAB-110 - need to join to parent SURCP record so we can work out the parent ID
 		on cp.surgical_case_id = parent_cp.surgical_case_id
@@ -434,12 +434,12 @@ BEGIN
         and cp.dt_received >= parent_cp.dt_received -- only join to parent proce that were added before, so we don't join to future ones if re-running data
 	where
 		(cp.exchange_id = _exchange_id
-		  or cc.exchange_id = _exchange_id) -- DAB-103 fix - we need to pick up SURCC records that have changed w/o a SURCP change
+		  or (cc.exchange_id is not null and cc.exchange_id = _exchange_id)) -- DAB-103 fix - we need to pick up SURCC records that have changed w/o a SURCP change
 		and (cp.active_ind = 0 -- DAB-104 added active_ind check to pick up deletes as they will always have null dt_starts
 			or cp.dt_start is not null
             or cc.dt_start is not null) -- DAB-103 - check both CC and CP for non-null start
-		and cp.procedure_code is not null; -- DAB-103 - exclude ones without procedure codes
-
+		and (cp.active_ind = 0
+			or cp.procedure_code is not null); -- DAB-103 - exclude ones without procedure codes
 
 	-- carry over to the target_latest table so we can see the latest state of everything
     INSERT INTO procedure_target_latest
@@ -492,3 +492,4 @@ BEGIN
 
 END$$
 DELIMITER ;
+
