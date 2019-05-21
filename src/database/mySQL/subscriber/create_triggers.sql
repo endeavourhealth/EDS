@@ -1232,3 +1232,66 @@ CREATE TRIGGER after_patient_address_delete
     );
   END$$
 DELIMITER ;
+
+drop trigger if exists after_diagnostic_order_insert;
+
+DELIMITER $$
+CREATE TRIGGER after_diagnostic_order_insert
+  AFTER INSERT ON diagnostic_order
+  FOR EACH ROW
+  BEGIN
+    INSERT INTO event_log (
+		dt_change,
+        change_type,
+        table_id,
+        record_id
+    ) VALUES (
+		now(3), -- current time inc ms
+        0, -- insert
+        21, -- diagnostic_order
+        NEW.id
+    );
+  END$$
+DELIMITER ;
+
+drop trigger if exists after_diagnostic_order_update;
+
+DELIMITER $$
+CREATE TRIGGER after_diagnostic_order_update
+  AFTER UPDATE ON diagnostic_order
+  FOR EACH ROW
+  BEGIN
+    INSERT INTO event_log (
+		dt_change,
+        change_type,
+        table_id,
+        record_id
+    ) VALUES (
+		now(3), -- current time inc ms
+        1, -- update
+        21, -- diagnostic_order
+        NEW.id
+    );
+  END$$
+DELIMITER ;
+
+drop trigger if exists after_diagnostic_order_delete;
+
+DELIMITER $$
+CREATE TRIGGER after_diagnostic_order_delete
+  AFTER DELETE ON diagnostic_order
+  FOR EACH ROW
+  BEGIN
+    INSERT INTO event_log (
+		dt_change,
+        change_type,
+        table_id,
+        record_id
+    ) VALUES (
+		now(3), -- current time inc ms
+        2, -- delete
+        21, -- diagnostic_order
+        OLD.id
+    );
+  END$$
+DELIMITER ;
