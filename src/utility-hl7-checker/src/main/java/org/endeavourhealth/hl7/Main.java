@@ -212,7 +212,7 @@ public class Main {
 
     private static void sendFailureSlackMessage(int channelId, int messageId, String errorMessage) throws Exception {
 
-        String msg = getChannelName(channelId) + " HL7 feed is stuck on message " + messageId + "\n```" + errorMessage + "```";
+        String msg = getChannelName(channelId) + " HL7 feed is now stuck on message " + messageId + "\n```" + errorMessage + "```";
         SlackHelper.sendSlackMessage(SlackHelper.Channel.Hl7Receiver, msg);
     }
 
