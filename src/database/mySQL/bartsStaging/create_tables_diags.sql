@@ -8,19 +8,20 @@ drop table if exists diagnosis_diagnosis;
 drop table if exists diagnosis_diagnosis_latest;
 drop table if exists diagnosis_DIAGN;
 drop table if exists diagnosis_DIAGN_latest;
--- drop table if exists diagnosis_problem;
--- drop table if exists diagnosis_problem_latest;
+drop table if exists diagnosis_problem;
+drop table if exists diagnosis_problem_latest;
 
 drop table if exists diagnosis_target;
 drop table if exists diagnosis_target_latest;
 
 -- records from sus inpatient, outpatient and emergency files are written to this table, with a record PER diagnosis
+-- NOTE: there is no diagnosis_date so cds_activity_date is used
 create table diagnosis_cds
 (
     exchange_id                    char(36)     NOT NULL COMMENT 'links to audit.exchange table (but on a different server)',
     dt_received                    datetime     NOT NULL COMMENT 'date time this record was received into Discovery',
     record_checksum                bigint       NOT NULL COMMENT 'checksum of the columns below to easily spot duplicates',
-    cds_activity_date              datetime     NOT NULL COMMENT 'Date common to all sus files',
+    cds_activity_date              datetime     NOT NULL COMMENT 'Date common to all sus files. NOTE: use for diagnosis date',
     sus_record_type                varchar(10)  NOT NULL COMMENT 'one of inpatient, outpatient, emergency',
     cds_unique_identifier          varchar(50)  NOT NULL COMMENT 'from CDSUniqueIdentifier',
     cds_update_type                int          NOT NULL COMMENT 'from CDSUpdateType',
@@ -28,7 +29,6 @@ create table diagnosis_cds
     nhs_number                     varchar(10)  NOT NULL COMMENT 'from NHSNumber',
     date_of_birth                  date     COMMENT 'from PersonBirthDate',
     consultant_code                varchar(20) NOT NULL COMMENT 'GMC number of consultant, from ConsultantCode',
-    -- TODO   diagnosis_date                 date         COMMENT 'from ?? - note this file has no time component',
     diagnosis_icd_code             varchar(5)   NOT NULL COMMENT 'icd-10 code PrimaryDiagnosisICD, SecondaryDiagnosisICD etc.',
     diagnosis_seq_nbr              smallint     NOT NULL COMMENT 'number of this diagnosis in the CDS record',
     primary_diagnosis_icd_code     varchar(5) COMMENT 'ics-10 code from PrimaryDiagnosisICD - will be null if this record is for the primary diagnosis',
@@ -44,7 +44,7 @@ create table diagnosis_cds_latest
     exchange_id                    char(36)     NOT NULL COMMENT 'links to audit.exchange table (but on a different server)',
     dt_received                    datetime     NOT NULL COMMENT 'date time this record was received into Discovery',
     record_checksum                bigint       NOT NULL COMMENT 'checksum of the columns below to easily spot duplicates',
-    cds_activity_date              datetime     NOT NULL COMMENT 'Date common to all sus files',
+    cds_activity_date              datetime     NOT NULL COMMENT 'Date common to all sus files. NOTE: use for diagnosis date',
     sus_record_type                varchar(10)  NOT NULL COMMENT 'one of inpatient, outpatient, emergency',
     cds_unique_identifier          varchar(50)  NOT NULL COMMENT 'from CDSUniqueIdentifier',
     cds_update_type                int          NOT NULL COMMENT 'from CDSUpdateType',
@@ -52,7 +52,6 @@ create table diagnosis_cds_latest
     nhs_number                     varchar(10)  NOT NULL COMMENT 'from NHSNumber',
     date_of_birth                  date COMMENT 'from PersonBirthDate',
     consultant_code                varchar(20) COMMENT 'GMC number of consultant, from ConsultantCode',
-    -- TODO   diagnosis_date                 date         COMMENT 'from ?? - note this file has no time component',
     diagnosis_icd_code             varchar(5)   NOT NULL COMMENT 'icd-10 code PrimaryDiagnosisICD, SecondaryDiagnosisICD etc.',
     diagnosis_seq_nbr              smallint     NOT NULL COMMENT 'number of this diagnosis in the CDS record',
     primary_diagnosis_icd_code     varchar(5) COMMENT 'ics-10 code from PrimaryDiagnosisICD - will be null if this record is for the primary diagnosis',
@@ -100,7 +99,6 @@ create table diagnosis_cds_tail_latest
     CONSTRAINT pk_diagnosis_cds_tail_latest PRIMARY KEY (cds_unique_identifier, sus_record_type)
 );
 
-
 -- records from the fixed-width Diagnosis file
 create table diagnosis_diagnosis
 (
@@ -112,7 +110,7 @@ create table diagnosis_diagnosis
     active_ind                      bool        NOT NULL COMMENT 'whether an active record or not (deleted), from active_ind',
     mrn                             varchar(10) NOT NULL COMMENT 'from MRN',
     encounter_id                    int         NOT NULL COMMENT 'from encntr_id, but standardised to remove trailing .00',
-    diag_dt_tm                      datetime    NOT NULL COMMENT 'from diag_dt',
+    diag_dt_tm                      datetime    NOT NULL COMMENT 'from diag_dt. The date of the diagnosis',
     diag_type                       varchar(255) COMMENT ' text based diagnosis type',
     diag_prnsl                      varchar(255) COMMENT ' text based diagnosis performer',
     diag_code                       varchar(50) NOT NULL COMMENT 'diagnosis code of type described by vocab',
@@ -194,41 +192,39 @@ create table diagnosis_DIAGN_latest
 
 -- CREATE INDEX ix_procedure_procedure_parent_helper ON procedure_PROCE_latest (lookup_person_id, encounter_id, procedure_seq_nbr, encounter_slice_id);
 
--- Leave Problems to their own individual transform as they are separate to the other Diagnosis extract data
-#
-# create table diagnosis_problem
-# (
-#     exchange_id          char(36)   NOT NULL COMMENT 'links to audit.exchange table (but on a different server)',
-#     dt_received          datetime   NOT NULL COMMENT 'date time this record was received into Discovery',
-#     record_checksum      bigint     NOT NULL COMMENT 'checksum of the columns below to easily spot duplicates',
-#     problem_id           int        NOT NULL COMMENT 'unique problem ID',
-#     mrn                  varchar(10) NOT NULL COMMENT 'from MRN',
-#     onset_date           datetime COMMENT 'on-set date of problem',
-#     problem_code         varchar(50) COMMENT 'snomed description Id',
-#     problem_term         varchar(255) COMMENT 'problem raw term (not looked up on TRUD)',
-#     problem_txt          varchar(255) COMMENT 'problem free text, usually the same as the term, annotated_disp',
-#     vocab                varchar(50) NOT NULL COMMENT 'problem code type, either SNOMED CT Description Id or UK ED Subset (Snomed Description Id)',
-#     location             varchar(255) COMMENT ' text based location details from org_name',
-#     audit_json           mediumtext null comment 'Used for Audit Purposes',
-#     CONSTRAINT pk_diagnosis_problem PRIMARY KEY (exchange_id, problem_id)
-# );
-#
-# create table diagnosis_problem_latest
-# (
-#     exchange_id          char(36)   NOT NULL COMMENT 'links to audit.exchange table (but on a different server)',
-#     dt_received          datetime   NOT NULL COMMENT 'date time this record was received into Discovery',
-#     record_checksum      bigint     NOT NULL COMMENT 'checksum of the columns below to easily spot duplicates',
-#     problem_id           int        NOT NULL COMMENT 'unique problem ID',
-#     mrn                  varchar(10) NOT NULL COMMENT 'from MRN',
-#     onset_date           datetime COMMENT 'on-set date of problem',
-#     problem_code         varchar(50) COMMENT 'snomed description Id',
-#     problem_term         varchar(255) COMMENT 'problem raw term (not looked up on TRUD)',
-#     problem_txt          varchar(255) COMMENT 'problem free text, usually the same as the term, from annotated_disp',
-#     vocab                varchar(50) NOT NULL COMMENT 'problem code type, either SNOMED CT Description Id or UK ED Subset (Snomed Description Id)',
-#     location             varchar(255) COMMENT ' text based location details from org_name',
-#     audit_json           mediumtext null comment 'Used for Audit Purposes',
-#     CONSTRAINT pk_diagnosis_problem PRIMARY KEY (problem_id)
-# );
+create table diagnosis_problem
+(
+    exchange_id          char(36)   NOT NULL COMMENT 'links to audit.exchange table (but on a different server)',
+    dt_received          datetime   NOT NULL COMMENT 'date time this record was received into Discovery',
+    record_checksum      bigint     NOT NULL COMMENT 'checksum of the columns below to easily spot duplicates',
+    problem_id           int        NOT NULL COMMENT 'unique problem ID',
+    mrn                  varchar(10) NOT NULL COMMENT 'from MRN',
+    onset_date           datetime COMMENT 'on-set date of problem',
+    problem_code         varchar(50) COMMENT 'snomed description Id',
+    problem_term         varchar(255) COMMENT 'problem raw term (not looked up on TRUD)',
+    problem_txt          varchar(255) COMMENT 'problem free text, usually the same as the term, annotated_disp',
+    vocab                varchar(50) NOT NULL COMMENT 'problem code type, either SNOMED CT Description Id or UK ED Subset (Snomed Description Id)',
+    location             varchar(255) COMMENT ' text based location details from org_name',
+    audit_json           mediumtext null comment 'Used for Audit Purposes',
+    CONSTRAINT pk_diagnosis_problem PRIMARY KEY (exchange_id, problem_id)
+);
+
+create table diagnosis_problem_latest
+(
+    exchange_id          char(36)   NOT NULL COMMENT 'links to audit.exchange table (but on a different server)',
+    dt_received          datetime   NOT NULL COMMENT 'date time this record was received into Discovery',
+    record_checksum      bigint     NOT NULL COMMENT 'checksum of the columns below to easily spot duplicates',
+    problem_id           int        NOT NULL COMMENT 'unique problem ID',
+    mrn                  varchar(10) NOT NULL COMMENT 'from MRN',
+    onset_date           datetime COMMENT 'on-set date of problem',
+    problem_code         varchar(50) COMMENT 'snomed description Id',
+    problem_term         varchar(255) COMMENT 'problem raw term (not looked up on TRUD)',
+    problem_txt          varchar(255) COMMENT 'problem free text, usually the same as the term, from annotated_disp',
+    vocab                varchar(50) NOT NULL COMMENT 'problem code type, either SNOMED CT Description Id or UK ED Subset (Snomed Description Id)',
+    location             varchar(255) COMMENT ' text based location details from org_name',
+    audit_json           mediumtext null comment 'Used for Audit Purposes',
+    CONSTRAINT pk_diagnosis_problem PRIMARY KEY (problem_id)
+);
 
 -- target table for the above tables to populate, cleared down for each exchange
 create table diagnosis_target
