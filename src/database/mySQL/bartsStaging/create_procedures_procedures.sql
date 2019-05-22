@@ -8,6 +8,39 @@ CREATE PROCEDURE `process_procedure_staging_exchange`(
 )
 BEGIN
 
+  -- work out if any CDS records now have fewer procedures than before
+  DROP TABLE IF EXISTS procedure_cds_count_changed;
+
+  CREATE TABLE procedure_cds_count_changed AS
+  SELECT new_count.*, previous_count.procedure_count AS old_count
+  FROM procedure_cds_count new_count
+  INNER JOIN procedure_cds_count_latest previous_count
+    ON new_count.cds_unique_identifier = previous_count.cds_unique_identifier
+    AND new_count.sus_record_type = previous_count.sus_record_type
+  WHERE
+    new_count.exchange_id = _exchange_id
+    AND new_count.procedure_count < previous_count.procedure_count;
+
+  -- update CDS count latest table with new counts
+  INSERT INTO procedure_cds_count_latest
+  SELECT
+    exchange_id,
+    dt_received,
+    record_checksum,
+    sus_record_type,
+    cds_unique_identifier,
+    procedure_count
+  FROM procedure_cds_count
+  WHERE
+    exchange_id = _exchange_id
+  ON DUPLICATE KEY UPDATE
+    exchange_id = VALUES(exchange_id),
+    dt_received = VALUES(dt_received),
+    record_checksum = VALUES(record_checksum),
+    -- sus_record_type = VALUES(sus_record_type), -- part of primary key
+    -- cds_unique_identifier = VALUES(cds_unique_identifier), -- part of primary key
+    procedure_count = VALUES(procedure_count);
+
 	-- create helper table to get latest CDS records
     insert into procedure_cds_latest
     select
@@ -159,8 +192,6 @@ BEGIN
 		procedure_seq_nbr,
 		lookup_person_id,
 		lookup_mrn,
-		lookup_nhs_number,
-		lookup_date_of_birth,
 		audit_json
 	from
 		procedure_PROCE
@@ -181,8 +212,6 @@ BEGIN
 		procedure_seq_nbr = values(procedure_seq_nbr),
 		lookup_person_id = values(lookup_person_id),
 		lookup_mrn = values(lookup_mrn),
-		lookup_nhs_number = values(lookup_nhs_number),
-		lookup_date_of_birth = values(lookup_date_of_birth),
 		audit_json = values(audit_json);
 
 
@@ -273,8 +302,49 @@ BEGIN
 		audit_json = values(audit_json);
 
 
+
 	-- first, clear down procedure_target for the exchange
 	delete from procedure_target where exchange_id = _exchange_id;
+
+	-- generate deletes for any CDS procedures where the procedure count has gone down
+    BEGIN -- need a begin becuase you need this to be able to declare a variable here
+		DECLARE sequenceNumber int default 0;
+		SET sequenceNumber = (SELECT MAX(old_count) FROM procedure_cds_count_changed);
+
+		WHILE (sequenceNumber > 0) DO
+
+			INSERT INTO procedure_target
+			SELECT
+				_exchange_id as exchange_id,
+				concat('CDS-', cds_count_changed.cds_unique_identifier, '-', sequenceNumber) as unique_id,
+				true as is_delete,
+				null as person_id,
+				null as encounter_id,
+				null as performer_personnel_id,
+				null as dt_performed,
+				null as dt_ended, -- no end dates for these
+				null as free_text,    -- data not available
+				null as recorded_by_personnel_id, -- data not available
+				null as dt_recorded,  -- data not available
+				null as procedure_type,
+				null as procedure_code,
+				null as procedure_term,
+				null as sequence_number,
+				null as parent_procedure_unique_id,
+				null as qualifier,
+				null as location,
+				null as speciality,
+				null -- audit
+			FROM
+				procedure_cds_count_changed cds_count_changed
+			WHERE
+				old_count >= sequenceNumber
+				and procedure_count < sequenceNumber;
+
+			-- decrement and loop
+			SET sequenceNumber = sequenceNumber - 1;
+		END WHILE;
+	END;
 
 	-- CDS and CDS Tail (left join, get all records including where tail record is null)
     -- CDS must be done before PROCE, as PROCE refers back to CDS to avoid duplicates
