@@ -16,6 +16,8 @@ drop table if exists procedure_SURCP_latest;
 -- drop table if exists procedure_ecds_tail;
 drop table if exists procedure_target;
 drop table if exists procedure_target_latest;
+drop table if exists procedure_cds_count;
+drop table if exists procedure_cds_count_latest;
 
 -- records from sus inpatient, outpatient and emergency files are written to this table, with a record PER procedure
 create table procedure_cds
@@ -41,6 +43,9 @@ create table procedure_cds
     audit_json                     mediumtext   null comment 'Used for Audit Purposes',
     CONSTRAINT pk_procedure_cds PRIMARY KEY (exchange_id, cds_unique_identifier, sus_record_type, procedure_seq_nbr)
 );
+
+-- index to make it easier to find last checksum for a CDS record
+CREATE INDEX ix_procedure_cds_checksum_helper on procedure_cds (cds_unique_identifier, sus_record_type, procedure_seq_nbr, dt_received);
 
 create table procedure_cds_latest
 (
@@ -68,6 +73,31 @@ create table procedure_cds_latest
 
 CREATE INDEX ix_procedure_cds_latest_join_helper on procedure_cds_latest (exchange_id, cds_unique_identifier, sus_record_type, procedure_seq_nbr);
 
+create table procedure_cds_count (
+
+  exchange_id                    char(36)     NOT NULL COMMENT 'links to audit.exchange table (but on a different server)',
+    dt_received                    datetime     NOT NULL COMMENT 'date time this record was received into Discovery',
+    record_checksum                int       NOT NULL COMMENT 'checksum of the columns below to easily spot duplicates',
+    sus_record_type                varchar(10)  NOT NULL COMMENT 'one of inpatient, outpatient, emergency',
+    cds_unique_identifier          varchar(50)  NOT NULL COMMENT 'from CDSUniqueIdentifier',
+    procedure_count             int NOT NULL COMMENT 'number of procedures in this CDS record',
+    CONSTRAINT pk_procedure_cds_count PRIMARY KEY (exchange_id, cds_unique_identifier, sus_record_type)
+);
+
+-- index to make it easier to find last checksum for a record
+CREATE INDEX ix_procedure_cds_count_checksum_helper on procedure_cds_count (cds_unique_identifier, sus_record_type, dt_received);
+
+create table procedure_cds_count_latest (
+
+  exchange_id                    char(36)     NOT NULL COMMENT 'links to audit.exchange table (but on a different server)',
+    dt_received                    datetime     NOT NULL COMMENT 'date time this record was received into Discovery',
+    record_checksum                int       NOT NULL COMMENT 'checksum of the columns below to easily spot duplicates',
+    sus_record_type                varchar(10)  NOT NULL COMMENT 'one of inpatient, outpatient, emergency',
+    cds_unique_identifier          varchar(50)  NOT NULL COMMENT 'from CDSUniqueIdentifier',
+    procedure_count             int NOT NULL COMMENT 'number of procedures in this CDS record',
+    CONSTRAINT pk_procedure_cds_count PRIMARY KEY (cds_unique_identifier, sus_record_type)
+);
+
 -- records from sus inpatient, outpatient and emergency tail files are all written to this table with sus_record_type telling us which is which
 create table procedure_cds_tail
 (
@@ -85,6 +115,9 @@ create table procedure_cds_tail
     audit_json                   mediumtext  null comment 'Used for Audit Purposes',
     CONSTRAINT pk_procedure_cds_tail PRIMARY KEY (exchange_id, cds_unique_identifier, sus_record_type)
 );
+
+-- index to make it easier to find last checksum for a record
+CREATE INDEX ix_procedure_cds_tail_checksum_helper on procedure_cds_tail (cds_unique_identifier, sus_record_type, dt_received);
 
 create table procedure_cds_tail_latest
 (
@@ -131,6 +164,10 @@ create table procedure_procedure
     CONSTRAINT pk_procedure_procedure PRIMARY KEY (exchange_id, encounter_id, proc_dt_tm, proc_cd)
 );
 
+-- index to make it easier to find last checksum for a record
+CREATE INDEX ix_procedure_procedure_checksum_helper on procedure_procedure (encounter_id, proc_dt_tm, proc_cd, dt_received);
+
+
 create table procedure_procedure_latest
 (
     exchange_id                     char(36)    NOT NULL COMMENT 'links to audit.exchange table (but on a different server)',
@@ -174,11 +211,13 @@ create table procedure_PROCE
     procedure_seq_nbr    int COMMENT 'from PROCEDURE_SEQ_NBR',
     lookup_person_id     int COMMENT 'pre-looked up via ENCNTR_ID',
     lookup_mrn           varchar(10) COMMENT 'looked up via ENCNTR_ID',
-    lookup_nhs_number    varchar(10) COMMENT 'patient NHS number, looked up via ENCNTR_ID',
-    lookup_date_of_birth datetime COMMENT 'patient NHS number, looked up via ENCNTR_ID',
     audit_json           mediumtext null comment 'Used for Audit Purposes',
     CONSTRAINT pk_PROCE PRIMARY KEY (exchange_id, procedure_id)
 );
+
+-- index to make it easier to find last checksum for a record
+CREATE INDEX ix_procedure_PROCE_checksum_helper on procedure_PROCE (procedure_id, dt_received);
+
 
 create table procedure_PROCE_latest
 (
@@ -196,8 +235,6 @@ create table procedure_PROCE_latest
     procedure_seq_nbr    int COMMENT 'from PROCEDURE_SEQ_NBR',
     lookup_person_id     int COMMENT 'pre-looked up via ENCNTR_ID',
     lookup_mrn           varchar(10) COMMENT 'looked up via ENCNTR_ID',
-    lookup_nhs_number    varchar(10) COMMENT 'patient NHS number, looked up via ENCNTR_ID',
-    lookup_date_of_birth datetime COMMENT 'patient NHS number, looked up via ENCNTR_ID',
     audit_json           mediumtext null comment 'Used for Audit Purposes',
     CONSTRAINT pk_PROCE_latest PRIMARY KEY (procedure_id)
 );
@@ -228,6 +265,10 @@ create table procedure_SURCC
     audit_json          mediumtext null comment 'Used for Audit Purposes',
     CONSTRAINT pk_SURCC PRIMARY KEY (exchange_id, surgical_case_id)
 );
+
+-- index to make it easier to find last checksum for a record
+CREATE INDEX ix_procedure_SURCC_checksum_helper on procedure_SURCC (surgical_case_id, dt_received);
+
 
 create table procedure_SURCC_latest
 (
@@ -273,6 +314,11 @@ create table procedure_SURCP
     audit_json                  mediumtext null comment 'Used for Audit Purposes',
     CONSTRAINT pk_procedure_SURCP PRIMARY KEY (exchange_id, surgical_case_procedure_id)
 );
+
+-- index to make it easier to find last checksum for a record
+CREATE INDEX ix_procedure_SURCP_checksum_helper on procedure_SURCP (surgical_case_procedure_id, dt_received);
+
+
 
 create table procedure_SURCP_latest
 (
