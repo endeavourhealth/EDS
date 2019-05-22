@@ -398,7 +398,7 @@ BEGIN
 		if (proce.active_ind = 0, true, false) as is_delete,
 		coalesce(proc.lookup_person_id, proce.lookup_person_id) as person_id,
 		coalesce(proc.encounter_id, proce.encounter_id) as encounter_id,
-		proc.lookup_consultant_personnel_id as performer_personnel_id,
+		coalesce(proce.lookup_responsible_personnel_id, proc.lookup_consultant_personnel_id) as performer_personnel_id,  -- DAB-121 fix
 		proce.procedure_dt_tm as dt_performed,
 		null as dt_ended, -- no end dates for these
 		proc.freetext_comment as free_text,

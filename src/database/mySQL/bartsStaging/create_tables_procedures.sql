@@ -211,6 +211,7 @@ create table procedure_PROCE
     procedure_seq_nbr    int COMMENT 'from PROCEDURE_SEQ_NBR',
     lookup_person_id     int COMMENT 'pre-looked up via ENCNTR_ID',
     lookup_mrn           varchar(10) COMMENT 'looked up via ENCNTR_ID',
+    lookup_responsible_personnel_id     int COMMENT 'pre-looked up via ENCNTR_ID',
     audit_json           mediumtext null comment 'Used for Audit Purposes',
     CONSTRAINT pk_PROCE PRIMARY KEY (exchange_id, procedure_id)
 );
@@ -235,6 +236,7 @@ create table procedure_PROCE_latest
     procedure_seq_nbr    int COMMENT 'from PROCEDURE_SEQ_NBR',
     lookup_person_id     int COMMENT 'pre-looked up via ENCNTR_ID',
     lookup_mrn           varchar(10) COMMENT 'looked up via ENCNTR_ID',
+    lookup_responsible_personnel_id     int COMMENT 'pre-looked up via ENCNTR_ID',
     audit_json           mediumtext null comment 'Used for Audit Purposes',
     CONSTRAINT pk_PROCE_latest PRIMARY KEY (procedure_id)
 );
@@ -375,7 +377,7 @@ create table procedure_target
     is_delete                  bool         NOT NULL COMMENT ' if this procedure should be deleted or upserted ',
     person_id                  int COMMENT ' person ID for the procedure ',
     encounter_id               int COMMENT ' encounter ID for the procedure ',
-    performer_personnel_id     int,
+    performer_personnel_id     int COMMENT ' consultant or responsible personnel ID for the procedure ',
     dt_performed               datetime,
     dt_ended                   datetime,
     free_text                  mediumtext,
@@ -404,7 +406,7 @@ create table procedure_target_latest
     is_delete                  bool         NOT NULL COMMENT ' if this procedure should be deleted or upserted ',
     person_id                  int COMMENT ' person ID for the procedure ',
     encounter_id               int COMMENT ' encounter ID for the procedure ',
-    performer_personnel_id     int,
+    performer_personnel_id     int COMMENT ' consultant or responsible personnel ID for the procedure ',
     dt_performed               datetime,
     dt_ended                   datetime,
     free_text                  mediumtext,
