@@ -192,6 +192,7 @@ BEGIN
 		procedure_seq_nbr,
 		lookup_person_id,
 		lookup_mrn,
+		lookup_responsible_personnel_id,
 		audit_json
 	from
 		procedure_PROCE
@@ -212,6 +213,7 @@ BEGIN
 		procedure_seq_nbr = values(procedure_seq_nbr),
 		lookup_person_id = values(lookup_person_id),
 		lookup_mrn = values(lookup_mrn),
+		lookup_responsible_personnel_id = values(lookup_responsible_personnel_id),
 		audit_json = values(audit_json);
 
 

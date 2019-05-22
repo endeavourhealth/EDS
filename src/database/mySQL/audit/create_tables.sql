@@ -42,7 +42,7 @@ CREATE TABLE exchange_event
   id varchar(36) NOT NULL,
   exchange_id varchar(36) NOT NULL,
   timestamp datetime(3) NOT NULL,
-  event_desc varchar(250),
+  event_desc MEDIUMTEXT,
   CONSTRAINT pk_exchange_event PRIMARY KEY (exchange_id, timestamp ASC, id)
 );
 
