@@ -203,6 +203,7 @@ create table diagnosis_problem
     dt_received          datetime   NOT NULL COMMENT 'date time this record was received into Discovery',
     record_checksum      bigint     NOT NULL COMMENT 'checksum of the columns below to easily spot duplicates',
     problem_id           int        NOT NULL COMMENT 'unique problem ID',
+    person_id            int        NOT NULL COMMENT 'from person_id',
     mrn                  varchar(10) NOT NULL COMMENT 'from MRN',
     onset_date           datetime COMMENT 'on-set date of problem',
     updated_by           varchar(50) COMMENT 'Clinician updating the record. Text, so map to Id',
@@ -215,9 +216,9 @@ create table diagnosis_problem
     persistence          varchar(50) COMMENT 'problem persistence text, i.e. type: Acute, Chronic',
     prognosis            varchar(50) COMMENT 'problem prognosis text to add to notes',
     vocab                varchar(50) COMMENT 'problem code type, either SNOMED CT, ICD-10, Cerner, UK ED Subset (Snomed Description Id),OPCS4,Patient Care',
-    status               varchar(50) COMMENT 'problem status such as Active, Resolved, Inactive. From Status_Lifecycle',
+    status               varchar(50) COMMENT 'problem status such as Active, Resolved, Inactive. From Status_Lifecycle, from Status_Lifecycle',
     status_date          datetime COMMENT 'the date of the current status',
-    location             varchar(255) COMMENT ' text based location details from org_name',
+    lookup_consultant_personnel_id  int COMMENT 'pre-looked up from updated_by',
     audit_json           mediumtext null comment 'Used for Audit Purposes',
     CONSTRAINT pk_diagnosis_problem PRIMARY KEY (exchange_id, problem_id)
 );
@@ -228,6 +229,7 @@ create table diagnosis_problem_latest
     dt_received          datetime   NOT NULL COMMENT 'date time this record was received into Discovery',
     record_checksum      bigint     NOT NULL COMMENT 'checksum of the columns below to easily spot duplicates',
     problem_id           int        NOT NULL COMMENT 'unique problem ID',
+    person_id            int        NOT NULL COMMENT 'from person_id',
     mrn                  varchar(10) NOT NULL COMMENT 'from MRN',
     onset_date           datetime COMMENT 'on-set date of problem',
     updated_by           varchar(50) COMMENT 'Clinician updating the record. Text, so map to Id',
@@ -240,9 +242,9 @@ create table diagnosis_problem_latest
     persistence          varchar(50) COMMENT 'problem persistence text, i.e. type: Acute, Chronic',
     prognosis            varchar(50) COMMENT 'problem prognosis text to add to notes',
     vocab                varchar(50) COMMENT 'problem code type, either SNOMED CT, ICD-10, Cerner, UK ED Subset (Snomed Description Id),OPCS4,Patient Care',
-    status               varchar(50) COMMENT 'problem status such as Active, Resolved, Inactive. From Status_Lifecycle',
+    status               varchar(50) COMMENT 'problem status such as Active, Resolved, Inactive. From Status_Lifecycle, from Status_Lifecycle',
     status_date          datetime COMMENT 'the date of the current status',
-    location             varchar(255) COMMENT ' text based location details from org_name',
+    lookup_consultant_personnel_id  int COMMENT 'pre-looked up from updated_by',
     audit_json           mediumtext null comment 'Used for Audit Purposes',
     CONSTRAINT pk_diagnosis_problem PRIMARY KEY (problem_id)
 );
