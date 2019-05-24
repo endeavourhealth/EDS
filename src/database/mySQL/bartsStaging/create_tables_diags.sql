@@ -113,10 +113,13 @@ create table diagnosis_diagnosis
     diag_dt_tm                      datetime    NOT NULL COMMENT 'from diag_dt. The date of the diagnosis',
     diag_type                       varchar(255) COMMENT ' text based diagnosis type',
     diag_prnsl                      varchar(255) COMMENT ' text based diagnosis performer',
-    diag_code                       varchar(50) NOT NULL COMMENT 'diagnosis code of type described by vocab',
-    confirmation                    varchar(50) COMMENT 'diagnosis confirmation text. Use to update the verification status',
     vocab                           varchar(50) NOT NULL COMMENT 'diagnosis code type, either SNOMED CT or UK ED Subset (Snomed)',
-    location                        varchar(255) COMMENT ' text based location details',
+    diag_code                       varchar(50) NOT NULL COMMENT 'diagnosis code of type described by vocab',
+    diag_term                       varchar(255) NOT NULL COMMENT 'corresponding term for the above code, looked up via TRUD',
+    diag_notes                      mediumtext COMMENT 'diagnosis notes made up of diagnosis, classification, rank, severity, certainty and secondary descriptions',
+    qualifier                       varchar(50) COMMENT 'qualifier - status information',
+    confirmation                    varchar(50) COMMENT 'diagnosis confirmation text. Use to update the verification status',
+    lookup_consultant_personnel_id  int COMMENT 'pre-looked up from diag_prnsl',
     audit_json                      mediumtext  null comment 'Used for Audit Purposes',
     CONSTRAINT pk_diagnosis_diagnosis PRIMARY KEY (exchange_id, diagnosis_id)
 );
@@ -243,6 +246,8 @@ create table diagnosis_problem_latest
     audit_json           mediumtext null comment 'Used for Audit Purposes',
     CONSTRAINT pk_diagnosis_problem PRIMARY KEY (problem_id)
 );
+
+-- TODO - will require additional fields from Problems OR a different Problems_Target table
 
 -- target table for the above tables to populate, cleared down for each exchange
 create table diagnosis_target
