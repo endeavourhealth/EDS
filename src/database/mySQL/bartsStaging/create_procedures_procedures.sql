@@ -53,7 +53,8 @@ BEGIN
 		cds_update_type,
 		mrn,
 		nhs_number,
-		date_of_birth,
+        id_withheld,
+        date_of_birth,
 		consultant_code,
 		procedure_date,
 		procedure_opcs_code,
@@ -77,6 +78,7 @@ BEGIN
 		cds_update_type = values(cds_update_type),
 		mrn = values(mrn),
 		nhs_number = values(nhs_number),
+        id_withheld = values(id_withheld,),
 		date_of_birth = values(date_of_birth),
 		consultant_code = values(consultant_code),
 		procedure_date = values(procedure_date),
@@ -101,6 +103,7 @@ BEGIN
 		mrn,
 		nhs_number,
 		person_id,
+        id_withheld,
 		encounter_id,
 		responsible_hcp_personnel_id,
 		audit_json
@@ -118,6 +121,7 @@ BEGIN
 		mrn = values(mrn),
 		nhs_number = values(nhs_number),
 		person_id = values(person_id),
+	    id_withheld = values(id_withhheld),
 		encounter_id = values(encounter_id),
 		responsible_hcp_personnel_id = values(responsible_hcp_personnel_id),
 		audit_json = values(audit_json);
