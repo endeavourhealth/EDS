@@ -78,8 +78,8 @@ BEGIN
 		cds_update_type = values(cds_update_type),
 		mrn = values(mrn),
 		nhs_number = values(nhs_number),
-        id_withheld = values(id_withheld,),
-		date_of_birth = values(date_of_birth),
+    id_withheld = values(id_withheld),
+    date_of_birth = values(date_of_birth),
 		consultant_code = values(consultant_code),
 		procedure_date = values(procedure_date),
 		procedure_opcs_code = values(procedure_opcs_code),
@@ -313,7 +313,7 @@ BEGIN
 	delete from procedure_target where exchange_id = _exchange_id;
 
 	-- generate deletes for any CDS procedures where the procedure count has gone down
-    BEGIN -- need a begin becuase you need this to be able to declare a variable here
+    BEGIN -- need a begin because you need this to be able to declare a variable here
 		DECLARE sequenceNumber int default 0;
 		SET sequenceNumber = (SELECT MAX(old_count) FROM procedure_cds_count_changed);
 
