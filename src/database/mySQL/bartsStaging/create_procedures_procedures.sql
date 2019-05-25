@@ -53,7 +53,7 @@ BEGIN
 		cds_update_type,
 		mrn,
 		nhs_number,
-        id_withheld,
+        withheld,
         date_of_birth,
 		consultant_code,
 		procedure_date,
@@ -78,7 +78,7 @@ BEGIN
 		cds_update_type = values(cds_update_type),
 		mrn = values(mrn),
 		nhs_number = values(nhs_number),
-    id_withheld = values(id_withheld),
+    withheld = values(withheld),
     date_of_birth = values(date_of_birth),
 		consultant_code = values(consultant_code),
 		procedure_date = values(procedure_date),
@@ -103,7 +103,6 @@ BEGIN
 		mrn,
 		nhs_number,
 		person_id,
-        id_withheld,
 		encounter_id,
 		responsible_hcp_personnel_id,
 		audit_json
@@ -121,7 +120,6 @@ BEGIN
 		mrn = values(mrn),
 		nhs_number = values(nhs_number),
 		person_id = values(person_id),
-	    id_withheld = values(id_withhheld),
 		encounter_id = values(encounter_id),
 		responsible_hcp_personnel_id = values(responsible_hcp_personnel_id),
 		audit_json = values(audit_json);
@@ -446,18 +444,39 @@ BEGIN
 		or (proc.exchange_id is not null and proc.exchange_id = _exchange_id); -- DAB-95 fix - we need to pick up procedure records that have changed w/o a PROCE change
 
 	-- all procedures from CDS are also in PROCE, so we need to de-duplicate those
-	delete target_proce
-    from procedure_target target_proce
-    inner join procedure_target target_cds
+    -- DAB-115 - need to handle CDS files received at a later date to the PROCE file, and send
+    -- through a is_delete = true rather than just delete from the target table
+    update procedure_target target_proce
+	inner join procedure_target target_cds
 		on target_proce.person_id = target_cds.person_id
 		and target_proce.encounter_id = target_cds.encounter_id
 		and date(target_proce.dt_performed) = target_cds.dt_performed -- CDS procs don't have times
 		and target_proce.procedure_code = target_cds.procedure_code
-        and target_proce.unique_id != target_cds.unique_id
-    where
-		target_proce.exchange_id = _exchange_id
-        and target_proce.unique_id like 'PROCE-%'
-        and target_cds.unique_id like 'CDS-%';
+		and target_proce.unique_id != target_cds.unique_id
+	set
+		target_proce.is_delete = 1,
+		target_proce.person_id = null,
+		target_proce.encounter_id = null,
+		target_proce.performer_personnel_id = null,
+		target_proce.dt_performed = null,
+		target_proce.dt_ended = null,
+		target_proce.free_text = null,
+		target_proce.recorded_by_personnel_id = null,
+		target_proce.dt_recorded = null,
+		target_proce.procedure_type = null,
+		target_proce.procedure_code = null,
+		target_proce.procedure_term = null,
+		target_proce.sequence_number = null,
+		target_proce.parent_procedure_unique_id = null,
+		target_proce.qualifier = null,
+		target_proce.location = null,
+		target_proce.specialty = null,
+		target_proce.audit_json = null
+	where
+		(target_proce.exchange_id = _exchange_id
+			or target_cds.exchange_id = _exchange_id)
+		and target_proce.unique_id like 'PROCE-%'
+		and target_cds.unique_id like 'CDS-%';
 
 	-- SURCC and SURCP
 	insert into procedure_target
