@@ -9,9 +9,7 @@ CREATE PROCEDURE `process_procedure_staging_exchange`(
 BEGIN
 
   -- work out if any CDS records now have fewer procedures than before
-  DROP TABLE IF EXISTS procedure_cds_count_changed;
-
-  CREATE TABLE procedure_cds_count_changed AS
+  CREATE TEMPORARY TABLE procedure_cds_count_changed AS
   SELECT new_count.*, previous_count.procedure_count AS old_count
   FROM procedure_cds_count new_count
   INNER JOIN procedure_cds_count_latest previous_count
@@ -525,6 +523,7 @@ BEGIN
 	left join procedure_SURCP_latest parent_cp -- DAB-110 - need to join to parent SURCP record so we can work out the parent ID
 		on cp.surgical_case_id = parent_cp.surgical_case_id
         and parent_cp.primary_procedure_indicator = 1
+        and parent_cp.dt_start is not null -- sometimes there are multiple primaries, but only one is done (e.g. 76082621)
         and cp.primary_procedure_indicator = 0
         and cp.dt_received >= parent_cp.dt_received -- only join to parent proce that were added before, so we don't join to future ones if re-running data
 	where
@@ -584,6 +583,8 @@ BEGIN
 		location = values(location),
 		specialty = values(specialty),
 		audit_json = values(audit_json);
+
+DROP TEMPORARY TABLE procedure_cds_count_changed;
 
 END$$
 DELIMITER ;
