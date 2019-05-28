@@ -157,7 +157,7 @@ BEGIN
 		mrn = values(mrn),
 		nhs_number = values(nhs_number),
 		date_of_birth = values(date_of_birth),
-		-- encounter_id = values(encounter_id), -- part of primary key
+		encounter_id = values(encounter_id),
 		consultant = values(consultant),
 		-- proc_dt_tm = values(proc_dt_tm), -- part of primary key
 		updated_by = values(updated_by),
@@ -168,7 +168,7 @@ BEGIN
 		proc_term = values(proc_term),
 		ward = values(ward),
 		site = values(site),
-		lookup_person_id = values(lookup_person_id),
+		-- lookup_person_id = values(lookup_person_id), -- part of primary key
 		lookup_consultant_personnel_id = values(lookup_consultant_personnel_id),
 		lookup_recorded_by_personnel_id = values(lookup_recorded_by_personnel_id),
 		audit_json = values(audit_json);
@@ -425,7 +425,7 @@ BEGIN
 		procedure_PROCE_latest proce
 	left join
 		procedure_procedure_latest proc
-        on proce.encounter_id = proc.encounter_id
+    on proce.lookup_person_id = proc.lookup_person_id -- DAB-122 - should join on person ID, rather than encounter ID
 		and proce.procedure_dt_tm = proc.proc_dt_tm
 		and proce.procedure_code = proc.proc_cd
 	left join

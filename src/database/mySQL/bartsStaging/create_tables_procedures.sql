@@ -159,11 +159,11 @@ create table procedure_procedure
     proc_term                       varchar(255) NOT NULL COMMENT 'corresponding term for the above code, looked up via TRUD',
     ward                            varchar(50) NOT NULL COMMENT 'from Ward',
     site                            varchar(50) NOT NULL COMMENT 'from Site',
-    lookup_person_id                int COMMENT 'person ID looked up via Encounter ID',
+    lookup_person_id                int COMMENT NOT NULL 'person ID looked up via Encounter ID',
     lookup_consultant_personnel_id  int COMMENT 'pre-looked up from consultant',
     lookup_recorded_by_personnel_id int COMMENT 'pre-looked up from updt_by',
     audit_json                      mediumtext  null comment 'Used for Audit Purposes',
-    CONSTRAINT pk_procedure_procedure PRIMARY KEY (exchange_id, encounter_id, proc_dt_tm, proc_cd)
+    CONSTRAINT pk_procedure_procedure PRIMARY KEY (exchange_id, lookup_person_id, proc_dt_tm, proc_cd)
 );
 
 -- index to make it easier to find last checksum for a record
@@ -189,11 +189,11 @@ create table procedure_procedure_latest
     proc_term                       varchar(255) COMMENT 'corresponding term for the above code, looked up via TRUD',
     ward                            varchar(50) COMMENT 'from Ward',
     site                            varchar(50) COMMENT 'from Site',
-    lookup_person_id                int COMMENT 'person ID looked up via Encounter ID',
+    lookup_person_id                int NOT NULL COMMENT 'person ID looked up via Encounter ID',
     lookup_consultant_personnel_id  int COMMENT 'pre-looked up from consultant',
     lookup_recorded_by_personnel_id int COMMENT 'pre-looked up from updt_by',
     audit_json                      mediumtext  null comment 'Used for Audit Purposes',
-    CONSTRAINT pk_procedure_procedure_latest PRIMARY KEY (encounter_id, proc_dt_tm, proc_cd)
+    CONSTRAINT pk_procedure_procedure_latest PRIMARY KEY (lookup_person_id, proc_dt_tm, proc_cd)
 );
 
 -- records from PROCE (UKRWH_CDE_PROCEDURE)
