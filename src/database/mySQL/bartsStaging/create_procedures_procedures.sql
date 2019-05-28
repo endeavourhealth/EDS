@@ -9,7 +9,7 @@ CREATE PROCEDURE `process_procedure_staging_exchange`(
 BEGIN
 
   -- work out if any CDS records now have fewer procedures than before
-  DROP TEMPORARY TABLE procedure_cds_count_changed;
+  DROP TEMPORARY TABLE IF EXISTS procedure_cds_count_changed;
 
   CREATE TEMPORARY TABLE procedure_cds_count_changed AS
   SELECT new_count.*, previous_count.procedure_count AS old_count
