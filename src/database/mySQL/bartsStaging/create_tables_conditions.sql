@@ -1,22 +1,22 @@
 use staging_barts;
 
-drop table if exists diagnosis_cds;
-drop table if exists diagnosis_cds_latest;
-drop table if exists diagnosis_cds_tail;
-drop table if exists diagnosis_cds_tail_latest;
-drop table if exists diagnosis_diagnosis;
-drop table if exists diagnosis_diagnosis_latest;
-drop table if exists diagnosis_DIAGN;
-drop table if exists diagnosis_DIAGN_latest;
-drop table if exists diagnosis_problem;
-drop table if exists diagnosis_problem_latest;
+drop table if exists condition_cds;
+drop table if exists condition_cds_latest;
+drop table if exists condition_cds_tail;
+drop table if exists condition_cds_tail_latest;
+drop table if exists condition_diagnosis;
+drop table if exists condition_diagnosis_latest;
+drop table if exists condition_DIAGN;
+drop table if exists condition_DIAGN_latest;
+drop table if exists condition_problem;
+drop table if exists condition_problem_latest;
 
-drop table if exists diagnosis_target;
-drop table if exists diagnosis_target_latest;
+drop table if exists condition_target;
+drop table if exists condition_target_latest;
 
 -- records from sus inpatient, outpatient and emergency files are written to this table, with a record PER diagnosis
 -- NOTE: there is no diagnosis_date so cds_activity_date is used
-create table diagnosis_cds
+create table condition_cds
 (
     exchange_id                    char(36)     NOT NULL COMMENT 'links to audit.exchange table (but on a different server)',
     dt_received                    datetime     NOT NULL COMMENT 'date time this record was received into Discovery',
@@ -27,6 +27,7 @@ create table diagnosis_cds
     cds_update_type                int          NOT NULL COMMENT 'from CDSUpdateType',
     mrn                            varchar(10)  NOT NULL COMMENT 'patient MRN from LocalPatientID field',
     nhs_number                     varchar(10)  NOT NULL COMMENT 'from NHSNumber',
+    withheld                       bool     COMMENT 'True if id is withheld',
     date_of_birth                  date     COMMENT 'from PersonBirthDate',
     consultant_code                varchar(20) NOT NULL COMMENT 'GMC number of consultant, from ConsultantCode',
     diagnosis_icd_code             varchar(5)   NOT NULL COMMENT 'icd-10 code PrimaryDiagnosisICD, SecondaryDiagnosisICD etc.',
@@ -39,7 +40,7 @@ create table diagnosis_cds
     CONSTRAINT pk_diagnosis_cds PRIMARY KEY (exchange_id, cds_unique_identifier, sus_record_type, diagnosis_seq_nbr)
 );
 
-create table diagnosis_cds_latest
+create table condition_cds_latest
 (
     exchange_id                    char(36)     NOT NULL COMMENT 'links to audit.exchange table (but on a different server)',
     dt_received                    datetime     NOT NULL COMMENT 'date time this record was received into Discovery',
@@ -50,6 +51,7 @@ create table diagnosis_cds_latest
     cds_update_type                int          NOT NULL COMMENT 'from CDSUpdateType',
     mrn                            varchar(10)  NOT NULL COMMENT 'patient MRN from LocalPatientID field',
     nhs_number                     varchar(10)  NOT NULL COMMENT 'from NHSNumber',
+    withheld                       bool          COMMENT 'True if id is withheld',
     date_of_birth                  date COMMENT 'from PersonBirthDate',
     consultant_code                varchar(20) COMMENT 'GMC number of consultant, from ConsultantCode',
     diagnosis_icd_code             varchar(5)   NOT NULL COMMENT 'icd-10 code PrimaryDiagnosisICD, SecondaryDiagnosisICD etc.',
@@ -62,10 +64,10 @@ create table diagnosis_cds_latest
     CONSTRAINT pk_diagnosis_cds_latest PRIMARY KEY (cds_unique_identifier, sus_record_type, diagnosis_seq_nbr)
 );
 
-CREATE INDEX ix_diagnosis_cds_latest_join_helper on diagnosis_cds_latest (exchange_id, cds_unique_identifier, sus_record_type, diagnosis_seq_nbr);
+CREATE INDEX ix_condition_cds_latest_join_helper on condition_cds_latest (exchange_id, cds_unique_identifier, sus_record_type, diagnosis_seq_nbr);
 
 -- records from sus inpatient, outpatient and emergency tail files are all written to this table with sus_record_type telling us which is which
-create table diagnosis_cds_tail
+create table condition_cds_tail
 (
     exchange_id                  char(36)    NOT NULL COMMENT 'links to audit.exchange table (but on a different server)',
     dt_received                  datetime    NOT NULL COMMENT 'date time this record was received into Discovery',
@@ -82,7 +84,7 @@ create table diagnosis_cds_tail
     CONSTRAINT pk_diagnosis_cds_tail PRIMARY KEY (exchange_id, cds_unique_identifier, sus_record_type)
 );
 
-create table diagnosis_cds_tail_latest
+create table condition_cds_tail_latest
 (
     exchange_id                  char(36)    NOT NULL COMMENT 'links to audit.exchange table (but on a different server)',
     dt_received                  datetime    NOT NULL COMMENT 'date time this record was received into Discovery',
@@ -100,7 +102,7 @@ create table diagnosis_cds_tail_latest
 );
 
 -- records from the fixed-width Diagnosis file
-create table diagnosis_diagnosis
+create table condition_diagnosis
 (
     exchange_id                     char(36)    NOT NULL COMMENT 'links to audit.exchange table (but on a different server)',
     dt_received                     datetime    NOT NULL COMMENT 'date time this record was received into Discovery',
@@ -111,8 +113,8 @@ create table diagnosis_diagnosis
     mrn                             varchar(10) NOT NULL COMMENT 'from MRN',
     encounter_id                    int         NOT NULL COMMENT 'from encntr_id, but standardised to remove trailing .00',
     diag_dt_tm                      datetime    NOT NULL COMMENT 'from diag_dt. The date of the diagnosis',
-    diag_type                       varchar(255) COMMENT ' text based diagnosis type',
-    diag_prnsl                      varchar(255) COMMENT ' text based diagnosis performer',
+    diag_type                       varchar(255) NOT NULL COMMENT ' text based diagnosis type',
+    diag_prnsl                      varchar(255) NOT NULL COMMENT ' text based diagnosis performer',
     vocab                           varchar(50) NOT NULL COMMENT 'diagnosis code type, either SNOMED CT or UK ED Subset (Snomed)',
     diag_code                       varchar(50) NOT NULL COMMENT 'diagnosis code of type described by vocab',
     diag_term                       varchar(255) NOT NULL COMMENT 'corresponding term for the above code, looked up via TRUD',
@@ -124,7 +126,7 @@ create table diagnosis_diagnosis
     CONSTRAINT pk_diagnosis_diagnosis PRIMARY KEY (exchange_id, diagnosis_id)
 );
 
-create table diagnosis_diagnosis_latest
+create table condition_diagnosis_latest
 (
     exchange_id                     char(36)    NOT NULL COMMENT 'links to audit.exchange table (but on a different server)',
     dt_received                     datetime    NOT NULL COMMENT 'date time this record was received into Discovery',
@@ -146,7 +148,7 @@ create table diagnosis_diagnosis_latest
 );
 
 -- records from DIAGN (UKRWH_CDE_DIAGNOSIS)
-create table diagnosis_DIAGN
+create table condition_DIAGN
 (
     exchange_id          char(36)   NOT NULL COMMENT 'links to audit.exchange table (but on a different server)',
     dt_received          datetime   NOT NULL COMMENT 'date time this record was received into Discovery',
@@ -169,7 +171,7 @@ create table diagnosis_DIAGN
     CONSTRAINT pk_DIAGN PRIMARY KEY (exchange_id, diagnosis_id)
 );
 
-create table diagnosis_DIAGN_latest
+create table condition_DIAGN_latest
 (
     exchange_id          char(36)   NOT NULL COMMENT 'links to audit.exchange table (but on a different server)',
     dt_received          datetime   NOT NULL COMMENT 'date time this record was received into Discovery',
@@ -197,7 +199,7 @@ create table diagnosis_DIAGN_latest
 
 -- CREATE INDEX ix_procedure_procedure_parent_helper ON procedure_PROCE_latest (lookup_person_id, encounter_id, procedure_seq_nbr, encounter_slice_id);
 
-create table diagnosis_problem
+create table condition_problem
 (
     exchange_id          char(36)   NOT NULL COMMENT 'links to audit.exchange table (but on a different server)',
     dt_received          datetime   NOT NULL COMMENT 'date time this record was received into Discovery',
@@ -205,7 +207,7 @@ create table diagnosis_problem
     problem_id           int        NOT NULL COMMENT 'unique problem ID',
     person_id            int        NOT NULL COMMENT 'from person_id',
     mrn                  varchar(10) NOT NULL COMMENT 'from MRN',
-    onset_date           datetime COMMENT 'on-set date of problem',
+    onset_dt_tm          datetime COMMENT 'on-set date of problem',
     updated_by           varchar(50) COMMENT 'Clinician updating the record. Text, so map to Id',
     problem_code         varchar(50) COMMENT 'snomed description Id',
     problem_term         varchar(255) COMMENT 'problem raw term (not looked up on TRUD)',
@@ -216,14 +218,14 @@ create table diagnosis_problem
     persistence          varchar(50) COMMENT 'problem persistence text, i.e. type: Acute, Chronic',
     prognosis            varchar(50) COMMENT 'problem prognosis text to add to notes',
     vocab                varchar(50) COMMENT 'problem code type, either SNOMED CT, ICD-10, Cerner, UK ED Subset (Snomed Description Id),OPCS4,Patient Care',
-    status               varchar(50) COMMENT 'problem status such as Active, Resolved, Inactive. From Status_Lifecycle, from Status_Lifecycle',
-    status_date          datetime COMMENT 'the date of the current status',
+    problem_status       varchar(50) COMMENT 'problem status such as Active, Resolved, Inactive. From Status_Lifecycle, from Status_Lifecycle',
+    problem_status_date  datetime COMMENT 'the date of the current status',
     lookup_consultant_personnel_id  int COMMENT 'pre-looked up from updated_by',
     audit_json           mediumtext null comment 'Used for Audit Purposes',
     CONSTRAINT pk_diagnosis_problem PRIMARY KEY (exchange_id, problem_id)
 );
 
-create table diagnosis_problem_latest
+create table condition_problem_latest
 (
     exchange_id          char(36)   NOT NULL COMMENT 'links to audit.exchange table (but on a different server)',
     dt_received          datetime   NOT NULL COMMENT 'date time this record was received into Discovery',
@@ -252,7 +254,7 @@ create table diagnosis_problem_latest
 -- TODO - will require additional fields from Problems OR a different Problems_Target table
 
 -- target table for the above tables to populate, cleared down for each exchange
-create table diagnosis_target
+create table condition_target
 (
     exchange_id                char(36)     NOT NULL COMMENT ' links to audit.exchange table (but on a different server)',
     unique_id                  varchar(255) NOT NULL COMMENT ' unique ID derived from source IDs ',
@@ -271,14 +273,15 @@ create table diagnosis_target
     sequence_number            int,
     location                   varchar(255) COMMENT ' text based location details',
     audit_json                 mediumtext null comment 'Used for Audit Purposes',
-    CONSTRAINT pk_diagnosis_target PRIMARY KEY (exchange_id, unique_id)
+    is_confidential            bool COMMENT 'if this procedure should be confidential or not',
+    CONSTRAINT pk_condition_target PRIMARY KEY (exchange_id, unique_id)
 );
 
-create index ix_duplication_helper on diagnosis_target (person_id, encounter_id, dt_performed, diagnosis_code, unique_id);
+create index ix_duplication_helper on condition_target (person_id, encounter_id, dt_performed, diagnosis_code, unique_id);
 
 
 -- latest version of every record that is in the archive table
-create table diagnosis_target_latest
+create table condition_target_latest
 (
     exchange_id                char(36)     NOT NULL COMMENT ' links to audit.exchange table (but on a different server)',
     unique_id                  varchar(255) NOT NULL COMMENT ' unique ID derived from source IDs ',
@@ -297,6 +300,7 @@ create table diagnosis_target_latest
     sequence_number            int,
     location                   varchar(255) COMMENT ' text based location details',
     audit_json                 mediumtext null comment 'Used for Audit Purposes',
-    CONSTRAINT pk_diagnosis_target PRIMARY KEY (unique_id)
+    is_confidential            bool COMMENT 'if this procedure should be confidential or not',
+    CONSTRAINT pk_condition_target PRIMARY KEY (unique_id)
 );
 
