@@ -31,7 +31,7 @@ create table procedure_cds
     cds_update_type                int          NOT NULL COMMENT 'from CDSUpdateType',
     mrn                            varchar(10)  NOT NULL COMMENT 'patient MRN from LocalPatientID field',
     nhs_number                     varchar(10)  NOT NULL COMMENT 'from NHSNumber',
-    withheld                      bool          NOT NULL COMMENT 'True if id is withheld',
+    withheld                      bool          COMMENT 'True if id is withheld',
     date_of_birth                  date     COMMENT 'from PersonBirthDate',
     consultant_code                varchar(20) NOT NULL COMMENT 'GMC number of consultant, from ConsultantCode',
     procedure_date                 date         COMMENT 'from PrimaryProcedureDate, SecondaryProcedureDate etc. - note this file has no time component',
@@ -59,7 +59,7 @@ create table procedure_cds_latest
     cds_update_type                int          NOT NULL COMMENT 'from CDSUpdateType',
     mrn                            varchar(10)  NOT NULL COMMENT 'patient MRN from LocalPatientID field',
     nhs_number                     varchar(10)  NOT NULL COMMENT 'from NHSNumber',
-    withheld                      bool         NOT NULL COMMENT 'True if id is withheld',
+    withheld                      bool         COMMENT 'True if id is withheld',
     date_of_birth                  date COMMENT 'from PersonBirthDate',
     consultant_code                varchar(20) COMMENT 'GMC number of consultant, from ConsultantCode',
     procedure_date                 date         COMMENT 'from PrimaryProcedureDate, SecondaryProcedureDate etc. - note this file has no time component',
@@ -159,7 +159,7 @@ create table procedure_procedure
     proc_term                       varchar(255) NOT NULL COMMENT 'corresponding term for the above code, looked up via TRUD',
     ward                            varchar(50) NOT NULL COMMENT 'from Ward',
     site                            varchar(50) NOT NULL COMMENT 'from Site',
-    lookup_person_id                int COMMENT NOT NULL 'person ID looked up via Encounter ID',
+    lookup_person_id                int NOT NULL COMMENT 'person ID looked up via Encounter ID',
     lookup_consultant_personnel_id  int COMMENT 'pre-looked up from consultant',
     lookup_recorded_by_personnel_id int COMMENT 'pre-looked up from updt_by',
     audit_json                      mediumtext  null comment 'Used for Audit Purposes',
@@ -394,6 +394,7 @@ create table procedure_target
     location                   varchar(255) COMMENT ' this will be updated on the linked Encounter resource ',
     specialty                  varchar(255) COMMENT ' this will be updated on the linked Encounter resource ',
     audit_json                 mediumtext null comment 'Used for Audit Purposes',
+    is_confidential            bool COMMENT 'if this procedure should be confidential or not',
     CONSTRAINT pk_procedure_target PRIMARY KEY (exchange_id, unique_id)
 );
 
@@ -423,6 +424,7 @@ create table procedure_target_latest
     location                   varchar(255) COMMENT ' this will be updated on the linked Encounter resource ',
     specialty                  varchar(255) COMMENT ' this will be updated on the linked Encounter resource ',
     audit_json                 mediumtext null comment 'Used for Audit Purposes',
+    is_confidential            bool COMMENT 'if this procedure should be confidential or not',
     CONSTRAINT pk_procedure_target PRIMARY KEY (unique_id)
 );
 

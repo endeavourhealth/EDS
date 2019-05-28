@@ -336,7 +336,8 @@ BEGIN
 				null as qualifier,
 				null as location,
 				null as speciality,
-				null -- audit
+				null, -- audit
+				null as is_confidential
 			FROM
 				procedure_cds_count_changed cds_count_changed
 			WHERE
@@ -375,7 +376,8 @@ BEGIN
 		null as qualifier,   -- data not available
 		null as location,    -- data not available
 		null as speciality,  -- data not available
-		cds.audit_json
+		cds.audit_json,
+		withheld as is_confidential
 	from
 		procedure_cds_latest cds
 	left join
@@ -420,7 +422,8 @@ BEGIN
 		null as qualifier,   -- data not available
 		coalesce(proc.site, proc.ward) as location,
 		null as speciality,  -- data not available
-		proce.audit_json
+		proce.audit_json,
+		null as is_confidential
 	from
 		procedure_PROCE_latest proce
 	left join
@@ -469,7 +472,8 @@ BEGIN
 		target_proce.qualifier = null,
 		target_proce.location = null,
 		target_proce.specialty = null,
-		target_proce.audit_json = null
+		target_proce.audit_json = null,
+		target_proce.is_confidential = null
 	where
 		(target_proce.exchange_id = _exchange_id
 			or target_cds.exchange_id = _exchange_id)
@@ -515,7 +519,8 @@ BEGIN
 		cp.modifier_text as qualifier,
 		coalesce(cc.institution_code, cc.department_code, cc.surgical_area_code, cc.theatre_number_code) as location,
 		cc.specialty_code as specialty,
-		cp.audit_json
+		cp.audit_json,
+		null as is_confidential
 	from
 		procedure_SURCP_latest cp
 	left join procedure_SURCC_latest cc
@@ -557,7 +562,8 @@ BEGIN
 		qualifier,
 		location,
 		specialty,
-		audit_json
+		audit_json,
+		is_confidential
 	FROM
 		procedure_target
 	WHERE
@@ -582,7 +588,8 @@ BEGIN
 		qualifier = values(qualifier),
 		location = values(location),
 		specialty = values(specialty),
-		audit_json = values(audit_json);
+		audit_json = values(audit_json),
+		is_confidential = values(is_confidential);
 
 DROP TEMPORARY TABLE procedure_cds_count_changed;
 
