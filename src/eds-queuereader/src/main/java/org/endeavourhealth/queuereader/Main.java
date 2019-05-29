@@ -83,6 +83,8 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class Main {
+	private static final Logger LOG = LoggerFactory.getLogger(Main.class);
+
 
 	public static void main(String[] args) throws Exception {
 
