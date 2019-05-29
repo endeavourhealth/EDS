@@ -2,6 +2,8 @@ use staging_barts;
 
 drop table if exists condition_cds;
 drop table if exists condition_cds_latest;
+drop table if exists condition_cds_count;
+drop table if exists condition_cds_count_latest;
 drop table if exists condition_cds_tail;
 drop table if exists condition_cds_tail_latest;
 drop table if exists condition_diagnosis;
@@ -37,7 +39,7 @@ create table condition_cds
     lookup_person_id               int COMMENT 'person ID looked up using NHS number, DoB and MRN',
     lookup_consultant_personnel_id int COMMENT 'personnel ID looked up using consultant code',
     audit_json                     mediumtext   null comment 'Used for Audit Purposes',
-    CONSTRAINT pk_diagnosis_cds PRIMARY KEY (exchange_id, cds_unique_identifier, sus_record_type, diagnosis_seq_nbr)
+    CONSTRAINT pk_condition_cds PRIMARY KEY (exchange_id, cds_unique_identifier, sus_record_type, diagnosis_seq_nbr)
 );
 
 create table condition_cds_latest
@@ -61,10 +63,35 @@ create table condition_cds_latest
     lookup_person_id               int COMMENT 'person ID looked up using NHS number, DoB and MRN',
     lookup_consultant_personnel_id int COMMENT 'personnel ID looked up using consultant code',
     audit_json                     mediumtext   null comment 'Used for Audit Purposes',
-    CONSTRAINT pk_diagnosis_cds_latest PRIMARY KEY (cds_unique_identifier, sus_record_type, diagnosis_seq_nbr)
+    CONSTRAINT pk_condition_cds_latest PRIMARY KEY (cds_unique_identifier, sus_record_type, diagnosis_seq_nbr)
 );
 
 CREATE INDEX ix_condition_cds_latest_join_helper on condition_cds_latest (exchange_id, cds_unique_identifier, sus_record_type, diagnosis_seq_nbr);
+
+create table condition_cds_count
+(
+    exchange_id                    char(36)     NOT NULL COMMENT 'links to audit.exchange table (but on a different server)',
+    dt_received                    datetime     NOT NULL COMMENT 'date time this record was received into Discovery',
+    record_checksum                int          NOT NULL COMMENT 'checksum of the columns below to easily spot duplicates',
+    sus_record_type                varchar(10)  NOT NULL COMMENT 'one of inpatient, outpatient, emergency',
+    cds_unique_identifier          varchar(50)  NOT NULL COMMENT 'from CDSUniqueIdentifier',
+    condition_count                int          NOT NULL COMMENT 'number of conditions in this CDS record',
+    CONSTRAINT pk_condition_cds_count PRIMARY KEY (exchange_id, cds_unique_identifier, sus_record_type)
+);
+
+-- index to make it easier to find last checksum for a record
+CREATE INDEX ix_condition_cds_count_checksum_helper on condition_cds_count (cds_unique_identifier, sus_record_type, dt_received);
+
+create table condition_cds_count_latest
+(
+    exchange_id                    char(36)     NOT NULL COMMENT 'links to audit.exchange table (but on a different server)',
+    dt_received                    datetime     NOT NULL COMMENT 'date time this record was received into Discovery',
+    record_checksum                int          NOT NULL COMMENT 'checksum of the columns below to easily spot duplicates',
+    sus_record_type                varchar(10)  NOT NULL COMMENT 'one of inpatient, outpatient, emergency',
+    cds_unique_identifier          varchar(50)  NOT NULL COMMENT 'from CDSUniqueIdentifier',
+    condition_count                int          NOT NULL COMMENT 'number of conditions in this CDS record',
+    CONSTRAINT pk_condition_cds_count PRIMARY KEY (cds_unique_identifier, sus_record_type)
+);
 
 -- records from sus inpatient, outpatient and emergency tail files are all written to this table with sus_record_type telling us which is which
 create table condition_cds_tail
@@ -81,7 +108,7 @@ create table condition_cds_tail
     encounter_id                 int,
     responsible_hcp_personnel_id int COMMENT 'from Responsible_HCP_Personal_ID',
     audit_json                   mediumtext  null comment 'Used for Audit Purposes',
-    CONSTRAINT pk_diagnosis_cds_tail PRIMARY KEY (exchange_id, cds_unique_identifier, sus_record_type)
+    CONSTRAINT pk_condition_cds_tail PRIMARY KEY (exchange_id, cds_unique_identifier, sus_record_type)
 );
 
 create table condition_cds_tail_latest
@@ -98,7 +125,7 @@ create table condition_cds_tail_latest
     encounter_id                 int NOT NULL,
     responsible_hcp_personnel_id int NOT NULL COMMENT 'from Responsible_HCP_Personal_ID',
     audit_json                   mediumtext  null comment 'Used for Audit Purposes',
-    CONSTRAINT pk_diagnosis_cds_tail_latest PRIMARY KEY (cds_unique_identifier, sus_record_type)
+    CONSTRAINT pk_condition_cds_tail_latest PRIMARY KEY (cds_unique_identifier, sus_record_type)
 );
 
 -- records from the fixed-width Diagnosis file
@@ -123,7 +150,7 @@ create table condition_diagnosis
     confirmation                    varchar(50) COMMENT 'diagnosis confirmation text. Use to update the verification status',
     lookup_consultant_personnel_id  int COMMENT 'pre-looked up from diag_prnsl',
     audit_json                      mediumtext  null comment 'Used for Audit Purposes',
-    CONSTRAINT pk_diagnosis_diagnosis PRIMARY KEY (exchange_id, diagnosis_id)
+    CONSTRAINT pk_condition_diagnosis PRIMARY KEY (exchange_id, diagnosis_id)
 );
 
 create table condition_diagnosis_latest
@@ -144,7 +171,7 @@ create table condition_diagnosis_latest
     vocab                           varchar(50) NOT NULL COMMENT 'diagnosis code type, either SNOMED CT or UK ED Subset (Snomed)',
     location                        varchar(255) COMMENT ' text based location details',
     audit_json                      mediumtext  null comment 'Used for Audit Purposes',
-    CONSTRAINT pk_diagnosis_diagnosis_latest PRIMARY KEY (diagnosis_id)
+    CONSTRAINT pk_condition_diagnosis_latest PRIMARY KEY (diagnosis_id)
 );
 
 -- records from DIAGN (UKRWH_CDE_DIAGNOSIS)
@@ -168,7 +195,7 @@ create table condition_DIAGN
     lookup_person_id     int COMMENT 'pre-looked up via ENCNTR_ID',
     lookup_mrn           varchar(10) COMMENT 'looked up via ENCNTR_ID',
     audit_json           mediumtext null comment 'Used for Audit Purposes',
-    CONSTRAINT pk_DIAGN PRIMARY KEY (exchange_id, diagnosis_id)
+    CONSTRAINT pk_condition_DIAGN PRIMARY KEY (exchange_id, diagnosis_id)
 );
 
 create table condition_DIAGN_latest
@@ -191,7 +218,7 @@ create table condition_DIAGN_latest
     lookup_person_id     int COMMENT 'pre-looked up via ENCNTR_ID',
     lookup_mrn           varchar(10) COMMENT 'looked up via ENCNTR_ID',
     audit_json           mediumtext null comment 'Used for Audit Purposes',
-    CONSTRAINT pk_DIAGN_latest PRIMARY KEY (diagnosis_id)
+    CONSTRAINT pk_condition_DIAGN_latest PRIMARY KEY (diagnosis_id)
 );
 
 -- TODO - create additional indexes? need to understand table relationships
@@ -222,7 +249,7 @@ create table condition_problem
     problem_status_date  datetime COMMENT 'the date of the current status',
     lookup_consultant_personnel_id  int COMMENT 'pre-looked up from updated_by',
     audit_json           mediumtext null comment 'Used for Audit Purposes',
-    CONSTRAINT pk_diagnosis_problem PRIMARY KEY (exchange_id, problem_id)
+    CONSTRAINT pk_condition_problem PRIMARY KEY (exchange_id, problem_id)
 );
 
 create table condition_problem_latest
@@ -248,7 +275,7 @@ create table condition_problem_latest
     status_date          datetime COMMENT 'the date of the current status',
     lookup_consultant_personnel_id  int COMMENT 'pre-looked up from updated_by',
     audit_json           mediumtext null comment 'Used for Audit Purposes',
-    CONSTRAINT pk_diagnosis_problem PRIMARY KEY (problem_id)
+    CONSTRAINT pk_condition_problem PRIMARY KEY (problem_id)
 );
 
 -- TODO - will require additional fields from Problems OR a different Problems_Target table
@@ -273,7 +300,7 @@ create table condition_target
     sequence_number            int,
     location                   varchar(255) COMMENT ' text based location details',
     audit_json                 mediumtext null comment 'Used for Audit Purposes',
-    is_confidential            bool COMMENT 'if this procedure should be confidential or not',
+    is_confidential            bool COMMENT 'if this condition should be confidential or not',
     CONSTRAINT pk_condition_target PRIMARY KEY (exchange_id, unique_id)
 );
 
@@ -300,7 +327,6 @@ create table condition_target_latest
     sequence_number            int,
     location                   varchar(255) COMMENT ' text based location details',
     audit_json                 mediumtext null comment 'Used for Audit Purposes',
-    is_confidential            bool COMMENT 'if this procedure should be confidential or not',
+    is_confidential            bool COMMENT 'if this condition should be confidential or not',
     CONSTRAINT pk_condition_target PRIMARY KEY (unique_id)
 );
-
