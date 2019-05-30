@@ -138,11 +138,11 @@ export class ExchangeAuditService extends BaseHttp2Service {
         return this.httpPost('api/exchangeAudit/postTest', request);
     }*/
 
-    getProtocolsList(serviceId:string, systemId:string) : Observable<Protocol[]> {
+    getProtocolsList(serviceId:string, onlySubscriberProtocols:boolean) : Observable<Protocol[]> {
 
         var params = new URLSearchParams();
         params.append('serviceId', serviceId);
-        params.append('systemId', systemId);
+        params.append('onlySubscriberProtocols', '' + onlySubscriberProtocols);
 
         return this.httpGet('api/exchangeAudit/getProtocolsForService', { search : params});
     }

@@ -75,7 +75,7 @@ export class ExchangeAuditComponent {
 		var vm = this;
 		var serviceId = vm.service.uuid;
 
-		this.exchangeAuditService.getProtocolsList(serviceId, vm.systemId).subscribe(
+		this.exchangeAuditService.getProtocolsList(serviceId, true).subscribe(
 			(result) => {
 				vm.protocols = result;
 			},

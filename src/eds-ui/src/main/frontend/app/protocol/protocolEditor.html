@@ -84,7 +84,7 @@
 									<th class="col-md-2">System</th>
 									<th class="col-md-2">Interface</th>
 									<th class="col-md-1">Active</th>
-									<th class="col-md-1" *ngIf="isCohortDefinedByServices()">Cohort</th>
+									<!--<th class="col-md-1" *ngIf="isCohortDefinedByServices()">Cohort</th>-->
 									<th class="col-md-1"></th>
 								</tr>
 								</thead>
@@ -99,7 +99,7 @@
 									<td>{{item.system.name}}</td>
 									<td>{{item.technicalInterface.name}}</td>
 									<td>{{item.active}}</td>
-									<td *ngIf="isCohortDefinedByServices()">{{item.definesCohort}}</td>
+									<!--<td *ngIf="isCohortDefinedByServices()">{{item.definesCohort}}</td>-->
 									<td>
 										<div class="child-to-show">
 											<button type="button" class="btn btn-danger btn-xs pull-right" (click)="removeContract(i, item)">
@@ -179,13 +179,22 @@
 							</div>
 						</div>
 
-						<div class="row" *ngIf="isCohortDefinedByServices()">
+						<!--<div class="row" *ngIf="isCohortDefinedByServices()">
 							<div class="form-group col-md-12">
 								<label>Defines Cohort</label>
 								<input type="checkbox" [(ngModel)]="selectedContract.definesCohort" name="definesCohort">
 							</div>
-						</div>
+						</div>-->
 
+					</div>
+				</div>
+
+				<div class="row" *ngIf="isCohortDefinedByServices()">
+					<div class="form-group col-md-12">
+						<label>Cohort ODS Codes</label>
+						<div class="input-group">
+							<textarea class="form-control" id="cohortOdsCodes" [(ngModel)]="cohortOdsCodesDesc" placeholder="ODS codes to define the cohort (separated on separate lines)" name="cohortOdsCodesDesc" (ngModelChange)="cohortOdsCodesChanged()"></textarea>
+						</div>
 					</div>
 				</div>
 			</form>

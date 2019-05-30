@@ -29,6 +29,7 @@ export class ProtocolEditComponent {
 	protocols : EdsLibraryItem[];
 	technicalInterfaces : TechnicalInterface[];
 	serviceLocalIdCache = {}; //cache to quickly find service ODS code for a UUID
+	cohortOdsCodesDesc: string;
 
 	//hard-code two cohort strings until the cohort editor is implemented
 	cohorts: string[];
@@ -85,6 +86,7 @@ export class ProtocolEditComponent {
 			.subscribe(
 				(libraryItem) => {
 					vm.libraryItem = libraryItem;
+					vm.updateCohortOdsCodeDesc();
 				},
 				(data) => vm.logger.error('Error loading', data, 'Error')
 			);
@@ -112,6 +114,8 @@ export class ProtocolEditComponent {
 	}
 
 	create(folderUuid : string) {
+		var vm = this;
+
 		var protocol = {
 			enabled: 'TRUE',
 			patientConsent: 'OPT-IN',
@@ -120,7 +124,7 @@ export class ProtocolEditComponent {
 			serviceContract: []
 		} as Protocol;
 
-		this.libraryItem = {
+		vm.libraryItem = {
 			uuid: null,
 			name: '',
 			description: '',
@@ -128,6 +132,7 @@ export class ProtocolEditComponent {
 			protocol: protocol
 		} as EdsLibraryItem;
 
+		vm.updateCohortOdsCodeDesc();
 	}
 
 	addContract() {
@@ -365,4 +370,25 @@ export class ProtocolEditComponent {
 			return type;
 		}
 	}
+
+	cohortOdsCodesChanged() {
+		var vm = this;
+
+		if (vm.isCohortDefinedByServices()) {
+			var arr = vm.cohortOdsCodesDesc.split('\n');
+			vm.libraryItem.protocol.cohortOdsCode = arr;
+		}
+	}
+
+	updateCohortOdsCodeDesc() {
+		var vm = this;
+		vm.cohortOdsCodesDesc = '';
+
+		if (vm.isCohortDefinedByServices()) {
+			if (vm.libraryItem.protocol.cohortOdsCode) {
+				vm.cohortOdsCodesDesc = vm.libraryItem.protocol.cohortOdsCode.join('\n')
+			}
+		}
+	}
+
 }

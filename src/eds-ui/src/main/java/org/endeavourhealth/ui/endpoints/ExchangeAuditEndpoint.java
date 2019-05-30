@@ -865,36 +865,60 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
     @Path("/getProtocolsForService")
     public Response getProtocolsForService(@Context SecurityContext sc,
                                            @QueryParam("serviceId") String serviceIdStr,
-                                           @QueryParam("systemId") String systemIdStr) throws Exception {
+                                           @QueryParam("onlySubscriberProtocols") String onlySubscriberProtocolsStr) throws Exception {
         super.setLogbackMarkers(sc);
 
         userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
                 "Get Protocols For Service",
                 "Service Id", serviceIdStr,
-                "System Id", systemIdStr);
+                "OnlySubscriberProtocols", onlySubscriberProtocolsStr);
+
+        boolean onlySubscriberProtocols = Boolean.parseBoolean(onlySubscriberProtocolsStr);
 
         List<JsonProtocol> ret = new ArrayList<>();
 
-        List<LibraryItem> libraryItems = LibraryRepositoryHelper.getProtocolsByServiceId(serviceIdStr, systemIdStr);
+        List<LibraryItem> libraryItems = LibraryRepositoryHelper.getProtocolsByServiceId(serviceIdStr, null);
         for (LibraryItem libraryItem: libraryItems) {
             Protocol protocol = libraryItem.getProtocol();
 
             //only return active protocols
-            if (protocol.getEnabled() == ProtocolEnabled.TRUE) {
+            if (protocol.getEnabled() != ProtocolEnabled.TRUE) {
+                continue;
+            }
 
-                //only return protocols with an active service contract for our service
+            //filter on protocols with subscribers
+            if (onlySubscriberProtocols) {
+                boolean hasSubscriber = false;
                 for (ServiceContract serviceContract : protocol.getServiceContract()) {
-                    if (serviceContract.getService().getUuid().equals(serviceIdStr)
-                        && serviceContract.getActive() == ServiceContractActive.TRUE) {
-
-                        JsonProtocol json = new JsonProtocol();
-                        json.setId(UUID.fromString(libraryItem.getUuid()));
-                        json.setName(libraryItem.getName());
-                        ret.add(json);
+                    if (serviceContract.getType() == ServiceContractType.SUBSCRIBER) {
+                        hasSubscriber = true;
                         break;
                     }
                 }
+                if (!hasSubscriber) {
+                    continue;
+                }
             }
+
+            //only return protocols with an active service contract for our service
+            boolean hasActiveContract = false;
+            for (ServiceContract serviceContract : protocol.getServiceContract()) {
+                if (serviceContract.getService().getUuid().equals(serviceIdStr)
+                    && serviceContract.getActive() == ServiceContractActive.TRUE) {
+
+                    hasActiveContract = true;
+                    break;
+                }
+            }
+            if (!hasActiveContract) {
+                continue;
+            }
+
+            JsonProtocol json = new JsonProtocol();
+            json.setId(UUID.fromString(libraryItem.getUuid()));
+            json.setName(libraryItem.getName());
+            ret.add(json);
+
         }
 
         clearLogbackMarkers();
