@@ -29,7 +29,9 @@ export class ProtocolEditComponent {
 	protocols : EdsLibraryItem[];
 	technicalInterfaces : TechnicalInterface[];
 	serviceLocalIdCache = {}; //cache to quickly find service ODS code for a UUID
-	cohortOdsCodesDesc: string;
+
+	cohortSelected: string;
+	cohortOdsCodes: string;
 
 	//hard-code two cohort strings until the cohort editor is implemented
 	cohorts: string[];
@@ -63,8 +65,8 @@ export class ProtocolEditComponent {
 		this.cohorts = ['All Patients', 'Explicit Patients', 'Defining Services'];
 		//this.cohorts = ['All Patients', 'Explicit Patients'];
 		//this.loadCohorts(); //hard-coding these for now
-		console.log('Cohorts = ' + this.cohorts);
-		console.log('Cohorts = ' + this.cohorts.length);
+		//console.log('Cohorts = ' + this.cohorts);
+		//console.log('Cohorts = ' + this.cohorts.length);
 
 		this.loadDatasets();
 	}
@@ -260,9 +262,10 @@ export class ProtocolEditComponent {
 	}
 
 	isCohortDefinedByServices(): boolean {
-		var p = this.libraryItem.protocol;
+		/*var p = this.libraryItem.protocol;
 		var cohort = p.cohort;
-		return cohort == 'Defining Services';
+		return cohort == 'Defining Services';*/
+		return this.cohortSelected == 'Defining Services';
 	}
 
 	getServiceContracts() {
@@ -374,20 +377,27 @@ export class ProtocolEditComponent {
 	cohortOdsCodesChanged() {
 		var vm = this;
 
-		if (vm.isCohortDefinedByServices()) {
-			var arr = vm.cohortOdsCodesDesc.split('\n');
-			vm.libraryItem.protocol.cohortOdsCode = arr;
+		if (vm.cohortSelected.startsWith('Defining Services')) {
+			vm.libraryItem.protocol.cohort = vm.cohortSelected + ':' + vm.cohortOdsCodes;
+
+		} else {
+			vm.libraryItem.protocol.cohort = vm.cohortSelected;
 		}
 	}
 
 	updateCohortOdsCodeDesc() {
 		var vm = this;
-		vm.cohortOdsCodesDesc = '';
 
-		if (vm.isCohortDefinedByServices()) {
-			if (vm.libraryItem.protocol.cohortOdsCode) {
-				vm.cohortOdsCodesDesc = vm.libraryItem.protocol.cohortOdsCode.join('\n')
-			}
+		var cohort = vm.libraryItem.protocol.cohort;
+		if (cohort.startsWith('Defining Services')) {
+
+			var index = cohort.indexOf(':');
+			vm.cohortSelected = cohort.substring(0, index);
+			vm.cohortOdsCodes = cohort.substring(index+1);
+
+		} else {
+			vm.cohortSelected = cohort;
+			vm.cohortOdsCodes = '';
 		}
 	}
 

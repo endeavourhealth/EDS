@@ -163,7 +163,7 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 		} else if (cohort.equals(COHORT_EXPLICIT)) {
 			return checkExplicitCohort(protocolId, serviceId, exchangeId, batchId);
 
-		} else if (cohort.equals(COHORT_DEFINING_SERVICES)) {
+		} else if (cohort.startsWith(COHORT_DEFINING_SERVICES)) {
 			return checkServiceDefinedCohort(protocolId, protocol, serviceId, exchangeId, batchId, odsCode);
 
 		} else {
@@ -622,8 +622,16 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 	private static Set<String> getOdsCodesForServiceDefinedProtocol(Protocol protocol) {
 		Set<String> ret = new HashSet<>();
 
-		for (String odsCode: protocol.getCohortOdsCode()) {
-			ret.add(odsCode.toUpperCase()); //when checking, we always make uppercase
+		String cohort = protocol.getCohort();
+		int index = cohort.indexOf(":");
+		if (index == -1) {
+			throw new RuntimeException("Invalid cohort format " + cohort);
+		}
+		String suffix = cohort.substring(index+1);
+		String[] toks = suffix.split("\r|\n|,| |;");
+		for (String tok: toks) {
+			String odsCode = tok.trim().toUpperCase();  //when checking, we always make uppercase
+			ret.add(odsCode);
 		}
 
 		return ret;
