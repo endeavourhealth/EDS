@@ -458,7 +458,7 @@ BEGIN
     update procedure_target target_proce
 	inner join procedure_target target_cds
 		on target_proce.person_id = target_cds.person_id
-		and target_proce.encounter_id = target_cds.encounter_id
+		-- and target_proce.encounter_id = target_cds.encounter_id -- DAB-115 don't join on encounter ID
 		and date(target_proce.dt_performed) = target_cds.dt_performed -- CDS procs don't have times
 		and target_proce.procedure_code = target_cds.procedure_code
 		and target_proce.unique_id != target_cds.unique_id
