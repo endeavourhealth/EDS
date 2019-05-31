@@ -146,8 +146,11 @@ create table condition_diagnosis
     diag_code                       varchar(50) NOT NULL COMMENT 'diagnosis code of type described by vocab',
     diag_term                       varchar(255) NOT NULL COMMENT 'corresponding term for the above code, looked up via TRUD',
     diag_notes                      mediumtext COMMENT 'diagnosis notes made up of diagnosis, classification, rank, severity, certainty and secondary descriptions',
-    qualifier                       varchar(50) COMMENT 'qualifier - status information',
+    classification                  varchar(50) COMMENT 'diagnosis classification text. ',
+    ranking                         varchar(50) COMMENT 'diagnosis ranking text. ',
     confirmation                    varchar(50) COMMENT 'diagnosis confirmation text. Use to update the verification status',
+    axis                            varchar(50) COMMENT 'diagnosis axis text. ',
+    location                        varchar(50) COMMENT ' text based location details from ORG_NAME',
     lookup_consultant_personnel_id  int COMMENT 'pre-looked up from diag_prnsl',
     audit_json                      mediumtext  null comment 'Used for Audit Purposes',
     CONSTRAINT pk_condition_diagnosis PRIMARY KEY (exchange_id, diagnosis_id)
@@ -166,10 +169,16 @@ create table condition_diagnosis_latest
     diag_dt_tm                      datetime    NOT NULL COMMENT 'from diag_dt',
     diag_type                       varchar(255) COMMENT ' text based diagnosis type',
     diag_prnsl                      varchar(255) COMMENT ' text based diagnosis performer',
-    diag_code                       varchar(50) NOT NULL COMMENT 'diagnosis code of type described by vocab',
-    confirmation                    varchar(50) COMMENT 'diagnosis confirmation text. Use to update the verification status',
     vocab                           varchar(50) NOT NULL COMMENT 'diagnosis code type, either SNOMED CT or UK ED Subset (Snomed)',
-    location                        varchar(255) COMMENT ' text based location details',
+    diag_code                       varchar(50) NOT NULL COMMENT 'diagnosis code of type described by vocab',
+    diag_term                       varchar(255) NOT NULL COMMENT 'corresponding term for the above code, looked up via TRUD',
+    diag_notes                      mediumtext COMMENT 'diagnosis notes made up of diagnosis, classification, rank, severity, certainty and secondary descriptions',
+    classification                  varchar(50) COMMENT 'diagnosis classification text. ',
+    ranking                         varchar(50) COMMENT 'diagnosis ranking text. ',
+    confirmation                    varchar(50) COMMENT 'diagnosis confirmation text. Use to update the verification status',
+    axis                            varchar(50) COMMENT 'diagnosis axis text. ',
+    location                        varchar(50) COMMENT ' text based location details from ORG_NAME',
+    lookup_consultant_personnel_id  int COMMENT 'pre-looked up from diag_prnsl',
     audit_json                      mediumtext  null comment 'Used for Audit Purposes',
     CONSTRAINT pk_condition_diagnosis_latest PRIMARY KEY (diagnosis_id)
 );
@@ -221,32 +230,27 @@ create table condition_DIAGN_latest
     CONSTRAINT pk_condition_DIAGN_latest PRIMARY KEY (diagnosis_id)
 );
 
--- TODO - create additional indexes? need to understand table relationships
--- CREATE INDEX ix_procedure_procedure_join_helper ON procedure_PROCE_latest (exchange_id, encounter_id, procedure_dt_tm, procedure_code);
-
--- CREATE INDEX ix_procedure_procedure_parent_helper ON procedure_PROCE_latest (lookup_person_id, encounter_id, procedure_seq_nbr, encounter_slice_id);
-
 create table condition_problem
 (
     exchange_id          char(36)   NOT NULL COMMENT 'links to audit.exchange table (but on a different server)',
     dt_received          datetime   NOT NULL COMMENT 'date time this record was received into Discovery',
     record_checksum      bigint     NOT NULL COMMENT 'checksum of the columns below to easily spot duplicates',
     problem_id           int        NOT NULL COMMENT 'unique problem ID',
-    person_id            int        NOT NULL COMMENT 'from person_id',
+    person_id            int        NOT NULL COMMENT 'from person_id but standardised to remove trailing .00',
     mrn                  varchar(10) NOT NULL COMMENT 'from MRN',
     onset_dt_tm          datetime COMMENT 'on-set date of problem',
     updated_by           varchar(50) COMMENT 'Clinician updating the record. Text, so map to Id',
+    vocab                varchar(50) COMMENT 'problem code type, either SNOMED CT, ICD-10, Cerner, UK ED Subset (Snomed Description Id),OPCS4,Patient Care',
     problem_code         varchar(50) COMMENT 'snomed description Id',
     problem_term         varchar(255) COMMENT 'problem raw term (not looked up on TRUD)',
     problem_txt          varchar(255) COMMENT 'problem free text, usually the same as the term, annotated_disp',
-    qualifier            varchar(50) COMMENT 'problem qualifier to add to notes',
-    classification       varchar(50) COMMENT 'problem classification text to add to notes',
+    classification       varchar(50) COMMENT 'problem classification text',
     confirmation         varchar(50) COMMENT 'problem confirmation text. Use to update the verification status',
-    persistence          varchar(50) COMMENT 'problem persistence text, i.e. type: Acute, Chronic',
-    prognosis            varchar(50) COMMENT 'problem prognosis text to add to notes',
-    vocab                varchar(50) COMMENT 'problem code type, either SNOMED CT, ICD-10, Cerner, UK ED Subset (Snomed Description Id),OPCS4,Patient Care',
-    problem_status       varchar(50) COMMENT 'problem status such as Active, Resolved, Inactive. From Status_Lifecycle, from Status_Lifecycle',
-    problem_status_date  datetime COMMENT 'the date of the current status',
+    ranking              varchar(50) COMMENT 'problem ranking text ',
+    axis                            varchar(50) COMMENT 'diagnosis axis text. ',
+    problem_status       varchar(50) COMMENT 'problem status such as Active, Resolved, Inactive, Canceled. From Status_Lifecycle',
+    problem_status_date  datetime COMMENT 'the date of the problem status',
+    location             varchar(50) COMMENT ' text based location details from ORG_NAME',
     lookup_consultant_personnel_id  int COMMENT 'pre-looked up from updated_by',
     audit_json           mediumtext null comment 'Used for Audit Purposes',
     CONSTRAINT pk_condition_problem PRIMARY KEY (exchange_id, problem_id)
@@ -258,27 +262,25 @@ create table condition_problem_latest
     dt_received          datetime   NOT NULL COMMENT 'date time this record was received into Discovery',
     record_checksum      bigint     NOT NULL COMMENT 'checksum of the columns below to easily spot duplicates',
     problem_id           int        NOT NULL COMMENT 'unique problem ID',
-    person_id            int        NOT NULL COMMENT 'from person_id',
+    person_id            int        NOT NULL COMMENT 'from person_id but standardised to remove trailing .00',
     mrn                  varchar(10) NOT NULL COMMENT 'from MRN',
     onset_date           datetime COMMENT 'on-set date of problem',
     updated_by           varchar(50) COMMENT 'Clinician updating the record. Text, so map to Id',
+    vocab                varchar(50) COMMENT 'problem code type, either SNOMED CT, ICD-10, Cerner, UK ED Subset (Snomed Description Id),OPCS4,Patient Care',
     problem_code         varchar(50) COMMENT 'snomed description Id',
     problem_term         varchar(255) COMMENT 'problem raw term (not looked up on TRUD)',
     problem_txt          varchar(255) COMMENT 'problem free text, usually the same as the term, from annotated_disp',
-    qualifier            varchar(50) COMMENT 'problem qualifier to add to notes',
-    classification       varchar(50) COMMENT 'problem classification text to add to notes',
+    classification       varchar(50) COMMENT 'problem classification text',
     confirmation         varchar(50) COMMENT 'problem confirmation text. Use to update the verification status',
-    persistence          varchar(50) COMMENT 'problem persistence text, i.e. type: Acute, Chronic',
-    prognosis            varchar(50) COMMENT 'problem prognosis text to add to notes',
-    vocab                varchar(50) COMMENT 'problem code type, either SNOMED CT, ICD-10, Cerner, UK ED Subset (Snomed Description Id),OPCS4,Patient Care',
-    status               varchar(50) COMMENT 'problem status such as Active, Resolved, Inactive. From Status_Lifecycle, from Status_Lifecycle',
-    status_date          datetime COMMENT 'the date of the current status',
+    ranking              varchar(50) COMMENT 'problem ranking text ',
+    axis                            varchar(50) COMMENT 'diagnosis axis text. ',
+    problem_status       varchar(50) COMMENT 'problem status such as Active, Resolved, Inactive, Canceled. From Status_Lifecycle',
+    problem_status_date  datetime COMMENT 'the date of the problem status',
+    location             varchar(50) COMMENT ' text based location details from ORG_NAME',
     lookup_consultant_personnel_id  int COMMENT 'pre-looked up from updated_by',
     audit_json           mediumtext null comment 'Used for Audit Purposes',
     CONSTRAINT pk_condition_problem PRIMARY KEY (problem_id)
 );
-
--- TODO - will require additional fields from Problems OR a different Problems_Target table
 
 -- target table for the above tables to populate, cleared down for each exchange
 create table condition_target
@@ -286,47 +288,55 @@ create table condition_target
     exchange_id                char(36)     NOT NULL COMMENT ' links to audit.exchange table (but on a different server)',
     unique_id                  varchar(255) NOT NULL COMMENT ' unique ID derived from source IDs ',
     is_delete                  bool         NOT NULL COMMENT ' if this diagnosis should be deleted or upserted ',
-    person_id                  int COMMENT ' person ID for the diagnosis ',
-    encounter_id               int COMMENT ' encounter ID for the disagnosis ',
-    performer_personnel_id     int COMMENT ' performer ID for the disagnosis, i.e. who diagnosed? ',
-    dt_performed               datetime,
+    person_id                  int          COMMENT ' person ID for the diagnosis/problem ',
+    encounter_id               int          COMMENT ' encounter ID for the disgnosis ',
+    performer_personnel_id     int          COMMENT ' performer ID for the disgnosis/problem. Use updated_by for Problems',
+    dt_performed               datetime     COMMENT ' the date of Diagnosis or Problem Onset ',
+    condition_code_type        varchar(50)  COMMENT ' SNOMED CT, ICD-10, Cerner, UK ED Subset (Snomed Description Id), OPCS4, Patient Care ',
+    condition_code             varchar(50),
+    condition_term             varchar(255),
+    condition_type             varchar(50)  COMMENT 'The type of Diagnosis, either text or coded from Cerner code_set nbr = 17 ',
     free_text                  mediumtext,
-    recorded_by_personnel_id   int,
-    dt_recorded                datetime,
-    diagnosis_code_type        varchar(50) COMMENT ' icd-10 or snomed or UK ED Subset (Snomed) - tells us the schema of the below code ',
-    diagnosis_code             varchar(50),
-    diagnosis_term             varchar(255),
-    diagnosis_type             varchar(50) COMMENT 'The type of Diagnosis, either text or coded from Cerner code_set nbr = 17',
-    sequence_number            int,
+    sequence_number            int          COMMENT 'only relevant for Diagnosis CDS data ',
+    parent_condition_unique_id varchar(255) COMMENT 'only relevant for CDS data ',
+    classification             varchar(50)  COMMENT 'condition classification text to add to notes',
+    confirmation               varchar(50)  COMMENT 'condition confirmation text. Use to update the verification status',
+    problem_status             varchar(50)  COMMENT 'problem status such as Active, Resolved, Inactive, Canceled. From Status_Lifecycle.  Indicates a Problem record',
+    ranking                    varchar(50)  COMMENT 'condition ranking text ',
+    axis                       varchar(50)  COMMENT 'diagnosis axis text. ',
     location                   varchar(255) COMMENT ' text based location details',
-    audit_json                 mediumtext null comment 'Used for Audit Purposes',
-    is_confidential            bool COMMENT 'if this condition should be confidential or not',
+    audit_json                 mediumtext null COMMENT 'Used for Audit Purposes',
+    is_confidential            bool         COMMENT 'if this condition should be confidential or not',
     CONSTRAINT pk_condition_target PRIMARY KEY (exchange_id, unique_id)
 );
 
-create index ix_duplication_helper on condition_target (person_id, encounter_id, dt_performed, diagnosis_code, unique_id);
+create index ix_duplication_helper on condition_target (person_id, encounter_id, dt_performed, condition_code, unique_id);
 
 
--- latest version of every record that is in the archive table
+-- latest version of every record that is in the target table
 create table condition_target_latest
 (
     exchange_id                char(36)     NOT NULL COMMENT ' links to audit.exchange table (but on a different server)',
     unique_id                  varchar(255) NOT NULL COMMENT ' unique ID derived from source IDs ',
     is_delete                  bool         NOT NULL COMMENT ' if this diagnosis should be deleted or upserted ',
-    person_id                  int COMMENT ' person ID for the diagnosis ',
-    encounter_id               int COMMENT ' encounter ID for the disagnosis ',
-    performer_personnel_id     int COMMENT ' performer ID for the disagnosis, i.e. who diagnosed? ',
-    dt_performed               datetime,
+    person_id                  int          COMMENT ' person ID for the diagnosis/problem ',
+    encounter_id               int          COMMENT ' encounter ID for the disgnosis ',
+    performer_personnel_id     int          COMMENT ' performer ID for the disgnosis/problem. Use updated_by for Problems',
+    dt_performed               datetime     COMMENT ' the date of Diagnosis or Problem Onset ',
+    condition_code_type        varchar(50)  COMMENT ' SNOMED CT, ICD-10, Cerner, UK ED Subset (Snomed Description Id), OPCS4, Patient Care ',
+    condition_code             varchar(50),
+    condition_term             varchar(255),
+    condition_type             varchar(50)  COMMENT 'The type of Diagnosis, either text or coded from Cerner code_set nbr = 17 ',
     free_text                  mediumtext,
-    recorded_by_personnel_id   int,
-    dt_recorded                datetime,
-    diagnosis_code_type        varchar(50) COMMENT ' icd-10 or snomed or UK ED Subset (Snomed) - tells us the schema of the below code ',
-    diagnosis_code             varchar(50),
-    diagnosis_term             varchar(255),
-    diagnosis_type             varchar(50) COMMENT 'The type of Diagnosis, either text or coded from Cerner code_set nbr = 17',
-    sequence_number            int,
+    sequence_number            int          COMMENT 'only relevant for Diagnosis CDS data ',
+    parent_condition_unique_id varchar(255) COMMENT 'only relevant for CDS data ',
+    classification             varchar(50)  COMMENT 'condition classification text to add to notes',
+    confirmation               varchar(50)  COMMENT 'condition confirmation text. Use to update the verification status',
+    problem_status             varchar(50)  COMMENT 'problem status such as Active, Resolved, Inactive, Canceled. From Status_Lifecycle.  Indicates a Problem record',
+    ranking                    varchar(50)  COMMENT 'condition ranking text ',
+    axis                       varchar(50)  COMMENT 'diagnosis axis text. ',
     location                   varchar(255) COMMENT ' text based location details',
-    audit_json                 mediumtext null comment 'Used for Audit Purposes',
-    is_confidential            bool COMMENT 'if this condition should be confidential or not',
+    audit_json                 mediumtext null COMMENT 'Used for Audit Purposes',
+    is_confidential            bool         COMMENT 'if this condition should be confidential or not',
     CONSTRAINT pk_condition_target PRIMARY KEY (unique_id)
 );
