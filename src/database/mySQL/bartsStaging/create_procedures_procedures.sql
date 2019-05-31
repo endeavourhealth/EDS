@@ -285,7 +285,8 @@ BEGIN
 		dt_stop,
 		wound_class_code,
 		lookup_procedure_code_term,
-		audit_json
+		audit_json,
+        lookup_wound_class_term
     from
 		procedure_SURCP
 	where
@@ -307,7 +308,8 @@ BEGIN
 		dt_stop = values(dt_stop),
 		wound_class_code = values(wound_class_code),
 		lookup_procedure_code_term = values(lookup_procedure_code_term),
-		audit_json = values(audit_json);
+		audit_json = values(audit_json),
+        lookup_wound_class_term = values(lookup_wound_class_term);
 
 
 
@@ -382,7 +384,7 @@ BEGIN
 		null as qualifier,   -- data not available
 		null as location,    -- data not available
 		null as speciality,  -- data not available
-		concat_ws(',', cds.audit_json, tail.audit_json) as audit_json,
+		concat_ws('&', cds.audit_json, tail.audit_json) as audit_json,
 		withheld as is_confidential
 	from
 		procedure_cds_latest cds
@@ -428,7 +430,7 @@ BEGIN
 		null as qualifier,   -- data not available
 		coalesce(proc.site, proc.ward) as location,
 		null as speciality,  -- data not available
-		concat_ws(',', proce.audit_json, proc.audit_json, parent_proce.audit_json) as audit_json,
+		concat_ws('&', proce.audit_json, proc.audit_json, parent_proce.audit_json) as audit_json,
 		null as is_confidential
 	from
 		procedure_PROCE_latest proce
@@ -478,7 +480,7 @@ BEGIN
 		target_proce.qualifier = null,
 		target_proce.location = null,
 		target_proce.specialty = null,
-		target_proce.audit_json = concat_ws(',', target_proce.audit_json, target_cds.audit_json), -- combine the audit already there with the CDS audit
+		target_proce.audit_json = concat_ws('&', target_proce.audit_json, target_cds.audit_json), -- combine the audit already there with the CDS audit
 		target_proce.is_confidential = null
 	where
 		(target_proce.exchange_id = _exchange_id
@@ -498,8 +500,8 @@ BEGIN
 		coalesce(cp.dt_start, cc.dt_start) as dt_performed,
 		coalesce(cp.dt_stop, cc.dt_stop) as dt_ended,
 		if (
-		  cp.wound_class_code > 0,
-		  concat(cp.procedure_text, '. Wound class:', cp.wound_class_code),
+		  cp.lookup_wound_class_term is not null,
+          concat_ws(', ', cp.procedure_text, concat('Wound class: ', cp.lookup_wound_class_term)),
 		  cp.procedure_text
 		) as free_text,
 		null as recorded_by_personnel_id,  -- data not available
@@ -525,7 +527,7 @@ BEGIN
 		cp.modifier_text as qualifier,
 		coalesce(cc.institution_code, cc.department_code, cc.surgical_area_code, cc.theatre_number_code) as location,
 		cc.specialty_code as specialty,
-		concat_ws(',', cp.audit_json, cc.audit_json, parent_cp.audit_json) as audit_json,
+		concat_ws('&', cp.audit_json, cc.audit_json, parent_cp.audit_json) as audit_json,
 		null as is_confidential
 	from
 		procedure_SURCP_latest cp

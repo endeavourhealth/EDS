@@ -315,9 +315,10 @@ create table procedure_SURCP
     surgeon_personnel_id        int COMMENT 'from PRIMARY_SURGEON_PRSNL_ID',
     dt_start                    datetime COMMENT 'from PROC_START_DT_TM',
     dt_stop                     datetime COMMENT 'from PROC_STOP_DT_TM',
-    wound_class_code            varchar(25) COMMENT 'from WOUND_CLASS_CD',
-    lookup_procedure_code_term  varchar(255),
+    wound_class_code            int COMMENT 'from WOUND_CLASS_CD',
+    lookup_procedure_code_term  varchar(255) COMMENT 'term for procedure code from CVREF',
     audit_json                  mediumtext null comment 'Used for Audit Purposes',
+    lookup_wound_class_term     varchar(255) COMMENT 'term for wound class code from CVREF',
     CONSTRAINT pk_procedure_SURCP PRIMARY KEY (exchange_id, surgical_case_procedure_id)
 );
 
@@ -342,9 +343,10 @@ create table procedure_SURCP_latest
     surgeon_personnel_id        int COMMENT 'from PRIMARY_SURGEON_PRSNL_ID',
     dt_start                    datetime COMMENT 'from PROC_START_DT_TM',
     dt_stop                     datetime COMMENT 'from PROC_STOP_DT_TM',
-    wound_class_code            varchar(25) COMMENT 'from WOUND_CLASS_CD',
-    lookup_procedure_code_term  varchar(255),
+    wound_class_code            int COMMENT 'from WOUND_CLASS_CD',
+    lookup_procedure_code_term  varchar(255) COMMENT 'term for procedure code from CVREF',
     audit_json                  mediumtext null comment 'Used for Audit Purposes',
+    lookup_wound_class_term     varchar(255) COMMENT 'term for wound class code from CVREF',
     CONSTRAINT pk_procedure_SURCP_latest PRIMARY KEY (surgical_case_procedure_id)
 );
 
