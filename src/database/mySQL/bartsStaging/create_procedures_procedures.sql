@@ -12,7 +12,9 @@ BEGIN
   DROP TEMPORARY TABLE IF EXISTS procedure_cds_count_changed;
 
   CREATE TEMPORARY TABLE procedure_cds_count_changed AS
-  SELECT new_count.*, previous_count.procedure_count AS old_count
+  SELECT
+	new_count.*,
+    previous_count.procedure_count AS old_count
   FROM procedure_cds_count new_count
   INNER JOIN procedure_cds_count_latest previous_count
     ON new_count.cds_unique_identifier = previous_count.cds_unique_identifier
@@ -80,8 +82,8 @@ BEGIN
 		cds_update_type = values(cds_update_type),
 		mrn = values(mrn),
 		nhs_number = values(nhs_number),
-    withheld = values(withheld),
-    date_of_birth = values(date_of_birth),
+		withheld = values(withheld),
+		date_of_birth = values(date_of_birth),
 		consultant_code = values(consultant_code),
 		procedure_date = values(procedure_date),
 		procedure_opcs_code = values(procedure_opcs_code),
@@ -340,7 +342,7 @@ BEGIN
 				null as qualifier,
 				null as location,
 				null as speciality,
-				null, -- audit
+				cds_count_changed.audit_json as audit_json,
 				null as is_confidential
 			FROM
 				procedure_cds_count_changed cds_count_changed
@@ -380,7 +382,7 @@ BEGIN
 		null as qualifier,   -- data not available
 		null as location,    -- data not available
 		null as speciality,  -- data not available
-		cds.audit_json,
+		concat_ws(',', cds.audit_json, tail.audit_json) as audit_json,
 		withheld as is_confidential
 	from
 		procedure_cds_latest cds
@@ -426,13 +428,13 @@ BEGIN
 		null as qualifier,   -- data not available
 		coalesce(proc.site, proc.ward) as location,
 		null as speciality,  -- data not available
-		proce.audit_json,
+		concat_ws(',', proce.audit_json, proc.audit_json, parent_proce.audit_json) as audit_json,
 		null as is_confidential
 	from
 		procedure_PROCE_latest proce
 	left join
 		procedure_procedure_latest proc
-    on proce.lookup_person_id = proc.lookup_person_id -- DAB-122 - should join on person ID, rather than encounter ID
+		on proce.lookup_person_id = proc.lookup_person_id -- DAB-122 - should join on person ID, rather than encounter ID
 		and proce.procedure_dt_tm = proc.proc_dt_tm
 		and proce.procedure_code = proc.proc_cd
 	left join
@@ -476,7 +478,7 @@ BEGIN
 		target_proce.qualifier = null,
 		target_proce.location = null,
 		target_proce.specialty = null,
-		target_proce.audit_json = null,
+		target_proce.audit_json = concat_ws(',', target_proce.audit_json, target_cds.audit_json), -- combine the audit already there with the CDS audit
 		target_proce.is_confidential = null
 	where
 		(target_proce.exchange_id = _exchange_id
@@ -523,7 +525,7 @@ BEGIN
 		cp.modifier_text as qualifier,
 		coalesce(cc.institution_code, cc.department_code, cc.surgical_area_code, cc.theatre_number_code) as location,
 		cc.specialty_code as specialty,
-		cp.audit_json,
+		concat_ws(',', cp.audit_json, cc.audit_json, parent_cp.audit_json) as audit_json,
 		null as is_confidential
 	from
 		procedure_SURCP_latest cp
@@ -599,4 +601,3 @@ DROP TEMPORARY TABLE procedure_cds_count_changed;
 
 END$$
 DELIMITER ;
-
