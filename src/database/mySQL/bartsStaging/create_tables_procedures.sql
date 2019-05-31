@@ -83,6 +83,7 @@ create table procedure_cds_count (
     sus_record_type                varchar(10)  NOT NULL COMMENT 'one of inpatient, outpatient, emergency',
     cds_unique_identifier          varchar(50)  NOT NULL COMMENT 'from CDSUniqueIdentifier',
     procedure_count             int NOT NULL COMMENT 'number of procedures in this CDS record',
+    audit_json                     mediumtext COMMENT 'used to link back to the source file',
     CONSTRAINT pk_procedure_cds_count PRIMARY KEY (exchange_id, cds_unique_identifier, sus_record_type)
 );
 
@@ -97,6 +98,7 @@ create table procedure_cds_count_latest (
     sus_record_type                varchar(10)  NOT NULL COMMENT 'one of inpatient, outpatient, emergency',
     cds_unique_identifier          varchar(50)  NOT NULL COMMENT 'from CDSUniqueIdentifier',
     procedure_count             int NOT NULL COMMENT 'number of procedures in this CDS record',
+    audit_json                     mediumtext COMMENT 'used to link back to the source file',
     CONSTRAINT pk_procedure_cds_count PRIMARY KEY (cds_unique_identifier, sus_record_type)
 );
 

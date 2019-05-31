@@ -29,7 +29,8 @@ BEGIN
     record_checksum,
     sus_record_type,
     cds_unique_identifier,
-    procedure_count
+    procedure_count,
+    audit_json
   FROM procedure_cds_count
   WHERE
     exchange_id = _exchange_id
@@ -39,7 +40,8 @@ BEGIN
     record_checksum = VALUES(record_checksum),
     -- sus_record_type = VALUES(sus_record_type), -- part of primary key
     -- cds_unique_identifier = VALUES(cds_unique_identifier), -- part of primary key
-    procedure_count = VALUES(procedure_count);
+    procedure_count = VALUES(procedure_count),
+    audit_json = VALUES(audit_json);
 
 	-- create helper table to get latest CDS records
     insert into procedure_cds_latest
