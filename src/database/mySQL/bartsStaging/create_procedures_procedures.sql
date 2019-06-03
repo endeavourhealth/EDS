@@ -457,7 +457,7 @@ BEGIN
     -- find PROCE procedures to delete
     DROP TEMPORARY TABLE IF EXISTS procedure_proce_duplicates;
 
-    CREATE TABLE procedure_proce_duplicates as
+    CREATE TEMPORARY TABLE procedure_proce_duplicates as
 	SELECT
 		target_proce.unique_id,
         target_cds.audit_json as cds_audit_json
