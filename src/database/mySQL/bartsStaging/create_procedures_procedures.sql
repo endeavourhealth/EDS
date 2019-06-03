@@ -458,7 +458,7 @@ BEGIN
     DROP TEMPORARY TABLE IF EXISTS procedure_proce_duplicates;
 
     CREATE TEMPORARY TABLE procedure_proce_duplicates as
-	SELECT
+	SELECT DISTINCT
 		target_proce.unique_id,
         target_cds.audit_json as cds_audit_json
     FROM
@@ -481,7 +481,8 @@ BEGIN
 		procedure_target target_proce
     INNER JOIN
 		procedure_proce_duplicates duplicates
-        ON duplicates.unique_id = target_proce.unique_id;
+        ON duplicates.unique_id = target_proce.unique_id
+      WHERE target_proce.exchange_id = _exchange_id;
 
     -- insert a "delete" for any duplicate with todays exchange ID
     INSERT INTO procedure_target
