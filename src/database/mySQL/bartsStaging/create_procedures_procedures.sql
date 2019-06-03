@@ -460,7 +460,8 @@ BEGIN
     CREATE TEMPORARY TABLE procedure_proce_duplicates as
 	SELECT DISTINCT
 		target_proce.unique_id,
-        target_cds.audit_json as cds_audit_json
+        null as cds_audit_json -- TODO - need to fix this
+        -- target_cds.audit_json as cds_audit_json
     FROM
         procedure_target target_proce
 	INNER JOIN procedure_target target_cds
