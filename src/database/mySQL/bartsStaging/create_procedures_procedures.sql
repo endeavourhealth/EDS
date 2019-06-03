@@ -453,40 +453,63 @@ BEGIN
 		or (proc.exchange_id is not null and proc.exchange_id = _exchange_id); -- DAB-95 fix - we need to pick up procedure records that have changed w/o a PROCE change
 
 	-- all procedures from CDS are also in PROCE, so we need to de-duplicate those
-    -- DAB-115 - need to handle CDS files received at a later date to the PROCE file, and send
-    -- through a is_delete = true rather than just delete from the target table
-    update procedure_target target_proce
-	inner join procedure_target target_cds
+    -- DAB-115 - need to handle CDS files received at a later date to the PROCE file, and send through with is_delete = true
+    -- find PROCE procedures to delete
+    DROP TEMPORARY TABLE IF EXISTS procedure_proce_duplicates;
+
+    CREATE TABLE procedure_proce_duplicates as
+	SELECT
+		target_proce.unique_id,
+        target_cds.audit_json as cds_audit_json
+    FROM
+        procedure_target target_proce
+	INNER JOIN procedure_target target_cds
 		on target_proce.person_id = target_cds.person_id
 		-- and target_proce.encounter_id = target_cds.encounter_id -- DAB-115 don't join on encounter ID
 		and date(target_proce.dt_performed) = target_cds.dt_performed -- CDS procs don't have times
 		and target_proce.procedure_code = target_cds.procedure_code
 		and target_proce.unique_id != target_cds.unique_id
-	set
-		target_proce.is_delete = 1,
-		target_proce.person_id = null,
-		target_proce.encounter_id = null,
-		target_proce.performer_personnel_id = null,
-		target_proce.dt_performed = null,
-		target_proce.dt_ended = null,
-		target_proce.free_text = null,
-		target_proce.recorded_by_personnel_id = null,
-		target_proce.dt_recorded = null,
-		target_proce.procedure_type = null,
-		target_proce.procedure_code = null,
-		target_proce.procedure_term = null,
-		target_proce.sequence_number = null,
-		target_proce.parent_procedure_unique_id = null,
-		target_proce.qualifier = null,
-		target_proce.location = null,
-		target_proce.specialty = null,
-		target_proce.audit_json = concat_ws('&', target_proce.audit_json, target_cds.audit_json), -- combine the audit already there with the CDS audit
-		target_proce.is_confidential = null
-	where
+	WHERE
 		(target_proce.exchange_id = _exchange_id
 			or target_cds.exchange_id = _exchange_id)
 		and target_proce.unique_id like 'PROCE-%'
 		and target_cds.unique_id like 'CDS-%';
+
+    -- remove anything out of our target table for our current exchange
+    DELETE target_proce
+    FROM
+		procedure_target target_proce
+    INNER JOIN
+		procedure_proce_duplicates duplicates
+        ON duplicates.unique_id = target_proce.unique_id;
+
+    -- insert a "delete" for any duplicate with todays exchange ID
+    INSERT INTO procedure_target
+    SELECT
+		_exchange_id,
+        duplicates.unique_id,
+        1 as is_delete,
+		null as person_id,
+		null as encounter_id,
+		null as performer_personnel_id,
+		null as dt_performed,
+		null as dt_ended,
+        null as free_text,
+        null as recorded_by_personnel_id,
+        null as dt_recorded,
+        null as procedure_type,
+        null as procedure_code,
+        null as procedure_term,
+        null as sequence_number,
+        null as parent_procedure_unique_id,
+        null as qualifier,
+        null as location,
+        null as specialty,
+        cds_audit_json as audit_json,
+		null as is_confidential
+	FROM
+		procedure_proce_duplicates duplicates;
+
 
 	-- SURCC and SURCP
 	insert into procedure_target
@@ -600,6 +623,7 @@ BEGIN
 		is_confidential = values(is_confidential);
 
 DROP TEMPORARY TABLE procedure_cds_count_changed;
+DROP TEMPORARY TABLE IF EXISTS procedure_proce_duplicates;
 
 END$$
 DELIMITER ;
