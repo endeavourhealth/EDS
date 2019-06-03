@@ -428,39 +428,60 @@ BEGIN
 	-- all diagnosis from CDS are also in DIAGN, so we need to de-duplicate those
 	-- also need to handle CDS files received at a later date (see DAB-115) to the DIAGN file, and send
 	-- through a is_delete = true rather than just delete from the target table
-	update condition_target target_cond
-		inner join condition_target target_cds
-		on target_cond.person_id = target_cds.person_id
-			and date(target_cond.dt_performed) = target_cds.dt_performed -- CDS diags don't have times
-			and target_cond.diagnosis_code = target_cds.diagnosis_code
-			and target_cond.unique_id != target_cds.unique_id
-	set
-		target_cond.is_delete = 1,
-		target_cond.person_id = null,
-		target_cond.encounter_id = null,
-		target_cond.performer_personnel_id = null,
-		target_cond.dt_performed = null,
-		target_cond.condition_code_type = null,
-		target_cond.condition_code = null,
-		target_cond.condition_term = null,
-		target_cond.condition_type = null,
-		target_cond.free_text = null,
-		target_cond.sequence_number = null,
-		target_cond.parent_condition_unique_id = null,
-		target_cond.classification = null,
-		target_cond.confirmation = null,
-		target_cond.problem_status = null,
-		target_cond.ranking = null,
-		target_cond.axis = null,
-		target_cond.location = null,
-		target_cond.audit_json = concat_ws('&', target_cond.audit_json, target_cds.target_cond), -- combine the audit already there with the CDS audit
-		target_cond.is_confidential = null
-	where
+	DROP TEMPORARY TABLE IF EXISTS condition_diag_duplicates;
+
+	CREATE TABLE condition_diag_duplicates as
+	SELECT
+		target_cond.unique_id,
+		target_cds.audit_json as cds_audit_json
+	FROM
+		condition_target target_cond
+			INNER JOIN condition_target target_cds
+								 on target_cond.person_id = target_cds.person_id
+									 and date(target_cond.dt_performed) = target_cds.dt_performed -- CDS diags don't have times
+									 and target_cond.condition_code = target_cds.condition_code
+									 and target_cond.unique_id != target_cds.unique_id
+	WHERE
 		(target_cond.exchange_id = _exchange_id
 			or target_cds.exchange_id = _exchange_id)
-	and target_cond.unique_id like 'DIAGN-%'
-	and target_cds.unique_id like 'CDS-%';
+		and target_cond.unique_id like 'DIAGN-%'
+		and target_cds.unique_id like 'CDS-%';
 
+	-- remove anything out of our target table for our current exchange
+	DELETE target_cond
+	FROM
+		condition_target target_cond
+			INNER JOIN
+		condition_diag_duplicates duplicates
+		ON duplicates.unique_id = target_cond.unique_id;
+
+	-- insert a "delete" for any duplicate with today's exchange ID
+	INSERT INTO condition_target
+	SELECT
+		_exchange_id,
+		duplicates.unique_id,
+		1 as is_delete,
+		null as person_id,
+		null as encounter_id,
+		null as performer_personnel_id,
+		null as dt_performed,
+		null as condition_code_type,
+		null as condition_code,
+		null as condition_term,
+		null as condition_type,
+		null as free_text,
+		null as sequence_number,
+		null as parent_condition_unique_id,
+		null as classification,
+		null as confirmation,
+		null as problem_status,
+		null as ranking,
+		null as axis,
+	  null as location,
+		cds_audit_json as audit_json,
+		null as is_confidential
+	FROM
+		condition_diag_duplicates duplicates;
 
 	-- Problems
 	insert into condition_target
@@ -547,7 +568,8 @@ BEGIN
 		is_confidential = values(is_confidential);
 
 
-	DROP TEMPORARY TABLE condition_cds_count_changed;
+	DROP TEMPORARY TABLE IF EXISTS condition_cds_count_changed;
+	DROP TEMPORARY TABLE IF EXISTS condition_diag_duplicates;
 
 END$$
 DELIMITER ;
