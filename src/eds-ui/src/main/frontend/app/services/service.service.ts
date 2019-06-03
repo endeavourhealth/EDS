@@ -65,6 +65,12 @@ export class ServiceService extends BaseHttp2Service {
 		return this.httpGet('api/service/systemsForService', { search : params });
 	}
 
+	getOpenOdsRecord(odsCode : string) : Observable<{}> {
+		let params = new URLSearchParams();
+		params.set('odsCode', odsCode);
+		return this.httpGet('api/service/openOdsRecord', { search : params });
+	}
+
 
 	toggleFiltering() {
 		var vm = this;

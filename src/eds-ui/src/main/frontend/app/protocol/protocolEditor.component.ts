@@ -28,10 +28,13 @@ export class ProtocolEditComponent {
 	dataSets : DataSet[];
 	protocols : EdsLibraryItem[];
 	technicalInterfaces : TechnicalInterface[];
-	serviceLocalIdCache = {}; //cache to quickly find service ODS code for a UUID
+	odsCodeByServiceUuid = {}; //cache to quickly find service ODS code for a UUID
+	serviceUuidByOdsCode = {};
+	serviceNameByOdsCode = {};
 
 	cohortSelected: string;
-	cohortOdsCodes: string;
+	cohortOdsCodes: string[];
+	cohortOdsCodesStr: string;
 
 	//hard-code two cohort strings until the cohort editor is implemented
 	cohorts: string[];
@@ -277,7 +280,7 @@ export class ProtocolEditComponent {
 		return linq(vm.libraryItem.protocol.serviceContract)
 			.OrderBy(sc => sc.type)
 			.ThenBy(sc => {
-				return vm.getLocalIdentifier(sc.service).toLowerCase();
+				return vm.getOdsCodeForService(sc.service).toLowerCase();
 			})
 			.ToArray();
 
@@ -337,32 +340,7 @@ export class ProtocolEditComponent {
 		);
 	}
 
-	/**
-	 * looks up a local ID (i.e. ODS Code) for a service
-     */
-	getLocalIdentifier(service: Service): string {
-		var uuid = service.uuid
 
-		var vm = this;
-		var ret = vm.serviceLocalIdCache[uuid];
-		if (!ret) {
-			if (vm.services) {
-				var i;
-				for (i=0; i<vm.services.length; i++) {
-					var s = vm.services[i];
-					if (s.uuid == uuid) {
-						ret = s.localIdentifier;
-						vm.serviceLocalIdCache[uuid] = ret;
-					}
-				}
-			}
-		}
-		//always return something non-null so the sorting fn doesn't need to handle undefined/null
-		if (!ret) {
-			ret = '';
-		}
-		return ret;
-	}
 
 	getTypeDescShort(type: string): string {
 		if (type == 'PUBLISHER') {
@@ -378,7 +356,8 @@ export class ProtocolEditComponent {
 		var vm = this;
 
 		if (vm.cohortSelected.startsWith('Defining Services')) {
-			vm.libraryItem.protocol.cohort = vm.cohortSelected + ':' + vm.cohortOdsCodes;
+			vm.libraryItem.protocol.cohort = vm.cohortSelected + ':' + vm.cohortOdsCodesStr;
+			vm.cohortOdsCodes = vm.cohortOdsCodesStr.split(/\r|\n|,| |;/);
 
 		} else {
 			vm.libraryItem.protocol.cohort = vm.cohortSelected;
@@ -393,12 +372,144 @@ export class ProtocolEditComponent {
 
 			var index = cohort.indexOf(':');
 			vm.cohortSelected = cohort.substring(0, index);
-			vm.cohortOdsCodes = cohort.substring(index+1);
+			vm.cohortOdsCodesStr = cohort.substring(index+1);
+			//no idea why the regex only works when separated with slashes rather than quotes
+			vm.cohortOdsCodes = vm.cohortOdsCodesStr.split(/\r|\n|,| |;/);
+			//vm.cohortOdsCodes = vm.cohortOdsCodesStr.split('\r|\n|,| |;');
 
 		} else {
 			vm.cohortSelected = cohort;
-			vm.cohortOdsCodes = '';
+			vm.cohortOdsCodesStr = '';
+			vm.cohortOdsCodes = [];
 		}
 	}
+
+	isServicePartOfCohort(serviceContract:ServiceContract): boolean {
+
+		if (serviceContract.type != 'PUBLISHER') {
+			return null;
+		}
+
+		var vm = this;
+		var odsCode = vm.getOdsCodeForService(serviceContract.service);
+
+		return vm.cohortOdsCodes.indexOf(odsCode) > -1;
+	}
+
+	getOrgNameForOdsCode(odsCode:string) : string {
+
+		if (odsCode == '' || !odsCode) {
+			return '';
+		}
+
+		var vm = this;
+
+		//don't bother doing anything until our services list has been retrieved
+		if (!vm.services) {
+			return '';
+		}
+
+		//console.log('looking for ' + odsCode);
+
+		var serviceName = vm.serviceNameByOdsCode[odsCode];
+		if (!serviceName) {
+			var i;
+			for (i=0; i<vm.services.length; i++) {
+				var s = vm.services[i];
+				if (s.localIdentifier == odsCode) {
+					serviceName = s.name;
+					vm.serviceNameByOdsCode[odsCode] = serviceName;
+				}
+			}
+		}
+
+		//if no match from looking at our Service records, then try ODS
+		if (!serviceName) {
+			serviceName = 'checking...';
+			vm.serviceNameByOdsCode[odsCode] = 'checking...';
+
+			vm.serviceService.getOpenOdsRecord(odsCode).subscribe(
+				(result) => {
+					//console.log('got result');
+					//console.log(result);
+
+					if (!result) {
+						vm.serviceNameByOdsCode[odsCode] = 'no ODS match';
+					} else {
+						vm.serviceNameByOdsCode[odsCode] = result['organisationName'] + ' (from ODS)';
+					}
+
+				},
+				(error) => {
+					vm.serviceNameByOdsCode[odsCode] = 'no ODS match';
+				}
+			);
+		}
+
+		return serviceName;
+	}
+
+	isOrgPublisher(odsCode:string) : boolean {
+
+		var vm = this;
+		var serviceId = vm.serviceUuidByOdsCode[odsCode];
+		if (!serviceId) {
+			if (vm.services) {
+				var i;
+				for (i=0; i<vm.services.length; i++) {
+					var s = vm.services[i];
+					if (s.localIdentifier == odsCode) {
+						serviceId = s.uuid;
+						vm.serviceUuidByOdsCode[odsCode] = serviceId;
+					}
+				}
+			}
+		}
+
+		if (!serviceId) {
+			return false;
+		}
+
+		var contracts = this.getServiceContracts();
+		var i;
+		for (i = 0; i < contracts.length; i++) {
+			var contract = contracts[i];
+			if (contract.type == 'PUBLISHER'
+				&& contract.service.uuid == serviceId) {
+
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * looks up a local ID (i.e. ODS Code) for a service
+	 */
+	getOdsCodeForService(service: Service): string {
+		var uuid = service.uuid;
+
+		var vm = this;
+		var ret = vm.odsCodeByServiceUuid[uuid];
+		if (!ret) {
+			if (vm.services) {
+				var i;
+				for (i=0; i<vm.services.length; i++) {
+					var s = vm.services[i];
+					if (s.uuid == uuid) {
+						ret = s.localIdentifier;
+						vm.odsCodeByServiceUuid[uuid] = ret;
+					}
+				}
+			}
+		}
+		//always return something non-null so the sorting fn doesn't need to handle undefined/null
+		if (!ret) {
+			ret = '';
+		}
+		return ret;
+	}
+
 
 }

@@ -730,4 +730,27 @@ public final class ServiceEndpoint extends AbstractEndpoint {
                 .build();
     }
 
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name = "EDS-UI.ServiceEndpoint.GetServiceOrganisations")
+    @Path("/openOdsRecord")
+    public Response getOpenOdsRecord(@Context SecurityContext sc, @QueryParam("odsCode") String odsCode) throws Exception {
+        super.setLogbackMarkers(sc);
+
+        OdsOrganisation org = OdsWebService.lookupOrganisationViaRest(odsCode);
+
+        clearLogbackMarkers();
+
+        if (org == null) {
+            return Response
+                    .noContent()
+                    .build();
+        } else {
+            return Response
+                    .ok()
+                    .entity(org)
+                    .build();
+        }
+    }
 }
