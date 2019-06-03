@@ -458,10 +458,9 @@ BEGIN
     DROP TEMPORARY TABLE IF EXISTS procedure_proce_duplicates;
 
     CREATE TEMPORARY TABLE procedure_proce_duplicates as
-	SELECT DISTINCT
+	SELECT
 		target_proce.unique_id,
-        null as cds_audit_json -- TODO - need to fix this
-        -- target_cds.audit_json as cds_audit_json
+        min(target_cds.audit_json) as cds_audit_json -- group by and min(..) so that we just get ONE cds match per PROCE
     FROM
         procedure_target target_proce
 	INNER JOIN procedure_target target_cds
@@ -474,7 +473,8 @@ BEGIN
 		(target_proce.exchange_id = _exchange_id
 			or target_cds.exchange_id = _exchange_id)
 		and target_proce.unique_id like 'PROCE-%'
-		and target_cds.unique_id like 'CDS-%';
+		and target_cds.unique_id like 'CDS-%'
+	GROUP BY target_proce.unique_id;
 
     -- remove anything out of our target table for our current exchange
     DELETE target_proce
