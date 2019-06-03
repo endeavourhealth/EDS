@@ -377,6 +377,15 @@ export class ProtocolEditComponent {
 			vm.cohortOdsCodes = vm.cohortOdsCodesStr.split(/\r|\n|,| |;/);
 			//vm.cohortOdsCodes = vm.cohortOdsCodesStr.split('\r|\n|,| |;');
 
+			//remove any empty ones
+			var i;
+			for (i=vm.cohortOdsCodes.length; i>=0; i--) {
+				var odsCode = vm.cohortOdsCodes[i];
+				if (odsCode == '') {
+					vm.cohortOdsCodes.splice(i, 1);
+				}
+			}
+
 		} else {
 			vm.cohortSelected = cohort;
 			vm.cohortOdsCodesStr = '';
@@ -511,5 +520,8 @@ export class ProtocolEditComponent {
 		return ret;
 	}
 
-
+	getCohortSize(): number {
+		var vm = this;
+		return vm.cohortOdsCodes.length;
+	}
 }

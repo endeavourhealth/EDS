@@ -631,7 +631,9 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 		String[] toks = suffix.split("\r|\n|,| |;");
 		for (String tok: toks) {
 			String odsCode = tok.trim().toUpperCase();  //when checking, we always make uppercase
-			ret.add(odsCode);
+			if (!Strings.isNullOrEmpty(tok)) {
+				ret.add(odsCode);
+			}
 		}
 
 		return ret;
