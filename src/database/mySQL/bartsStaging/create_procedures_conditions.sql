@@ -433,7 +433,7 @@ BEGIN
 	CREATE TABLE condition_diag_duplicates as
 	SELECT
 		target_cond.unique_id,
-		target_cds.audit_json as cds_audit_json
+		min(target_cds.audit_json) as cds_audit_json    -- group by and min(..) so that we just get ONE cds match per DIAGN
 	FROM
 		condition_target target_cond
 			INNER JOIN condition_target target_cds
@@ -445,7 +445,8 @@ BEGIN
 		(target_cond.exchange_id = _exchange_id
 			or target_cds.exchange_id = _exchange_id)
 		and target_cond.unique_id like 'DIAGN-%'
-		and target_cds.unique_id like 'CDS-%';
+		and target_cds.unique_id like 'CDS-%'
+	GROUP BY target_cond.unique_id;
 
 	-- remove anything out of our target table for our current exchange
 	DELETE target_cond
@@ -453,7 +454,8 @@ BEGIN
 		condition_target target_cond
 			INNER JOIN
 		condition_diag_duplicates duplicates
-		ON duplicates.unique_id = target_cond.unique_id;
+		ON duplicates.unique_id = target_cond.unique_id
+	WHERE target_cond.exchange_id = _exchange_id;
 
 	-- insert a "delete" for any duplicate with today's exchange ID
 	INSERT INTO condition_target
