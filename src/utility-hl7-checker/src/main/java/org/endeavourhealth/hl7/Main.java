@@ -590,6 +590,8 @@ public class Main {
      */
     private static void moveToDlq(int messageId, String reason) throws Exception {
 
+        LOG.debug("Moving " + messageId + " to DLQ becaue: " + reason);
+
         //although it looks like a select, it's just invoking a function which performs an update
         String sql = "SELECT helper.move_message_to_dead_letter(" + messageId + ", '" + reason + "');";
         executeUpdate(sql);
