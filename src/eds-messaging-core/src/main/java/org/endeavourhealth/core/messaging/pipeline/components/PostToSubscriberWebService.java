@@ -58,16 +58,20 @@ public class PostToSubscriberWebService extends PipelineComponent {
 			QueuedMessageDalI queuedMessageDal = DalProvider.factoryQueuedMessageDal();
 			String payload = queuedMessageDal.getById(queuedMessageId);
 
-			sendToSubscriber(payload, exchangeId, batchId, software, softwareVersion, endpoint);
+			sendToSubscriber(payload, exchangeId, batchId, queuedMessageId, software, softwareVersion, endpoint);
 
-			queuedMessageDal.delete(queuedMessageId);
+			// queued messages need to be left in the table for the sender
+			// app to pick them up asynchronously; it will then delete them
+			if (!(software.equals(MessageFormat.SUBSCRIBER_CSV))) {
+				queuedMessageDal.delete(queuedMessageId);
+			}
 
 		} catch (Exception ex) {
 			throw new PipelineException("Failed to send to " + software + " for exchange " + exchangeId + " and batch " + batchId + " and queued message " + queuedMessageId, ex);
 		}
 	}
 
-	private void sendToSubscriber(String payload, UUID exchangeId, UUID batchId, String software, String softwareVersion, String endpoint) throws Exception {
+	private void sendToSubscriber(String payload, UUID exchangeId, UUID batchId, UUID queuedMessageId, String software, String softwareVersion, String endpoint) throws Exception {
 
 		if (software.equals(MessageFormat.ENTERPRISE_CSV)) {
 			EnterpriseFiler.file(batchId, payload, endpoint);
@@ -76,7 +80,7 @@ public class PostToSubscriberWebService extends PipelineComponent {
 			PCRFiler.file(batchId, payload, endpoint);
 
 		} else if (software.equals(MessageFormat.SUBSCRIBER_CSV)) {
-			SubscriberFiler.file(batchId, payload, endpoint);
+			SubscriberFiler.file(batchId, queuedMessageId, payload, endpoint);
 
 		} else if (software.equals(MessageFormat.VITRUICARE_XML)) {
 			sendHttpPost(payload, endpoint);

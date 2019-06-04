@@ -11,6 +11,7 @@ import org.apache.commons.io.FileUtils;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.core.database.rdbms.ConnectionManager;
 import org.endeavourhealth.core.database.rdbms.enterprise.EnterpriseConnector;
+import org.endeavourhealth.scheduler.models.database.SubscriberZipFileUUIDsEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,8 +19,8 @@ import java.io.*;
 import java.math.BigDecimal;
 import java.sql.*;
 import java.text.SimpleDateFormat;
-import java.util.*;
 import java.util.Date;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -47,7 +48,13 @@ public class SubscriberFiler {
     private static Map<String, String> escapeCharacters = new ConcurrentHashMap<>();
     private static Map<String, Integer> batchSizes = new ConcurrentHashMap<>();
 
-    public static void file(UUID batchId, String base64, String configName) throws Exception {
+    public static void file(UUID batchId, UUID queuedMessageId, String base64, String configName) throws Exception {
+
+        SubscriberZipFileUUIDsEntity szfue = new SubscriberZipFileUUIDsEntity();
+        szfue.setQueuedMessageUUID(queuedMessageId.toString());
+        szfue.setSubscriberId(1);
+        szfue.setFileSent(false);
+        SubscriberZipFileUUIDsEntity.createSubscriberZipFileUUIDsEntity(szfue);
 
         byte[] bytes = Base64.getDecoder().decode(base64);
         LOG.trace("Filing " + bytes.length + "b from batch " + batchId + " into " + configName);
@@ -346,9 +353,9 @@ public class SubscriberFiler {
             String className = node.asText();
             Class cls = null;
 
-            //getting the name of the primative types returns "int", but
+            //getting the name of the primitive types returns "int", but
             //this doesn't work in reverse, trying to get them using Class.forName("int")
-            //so we have to manually check for these primative types
+            //so we have to manually check for these primitive types
             if (className.equals("int")) {
                 cls = Integer.TYPE;
             } else if (className.equals("long")) {
