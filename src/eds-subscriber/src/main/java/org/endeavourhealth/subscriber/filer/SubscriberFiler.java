@@ -9,9 +9,10 @@ import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.io.FileUtils;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
+import org.endeavourhealth.core.database.dal.DalProvider;
+import org.endeavourhealth.core.database.dal.datagenerator.SubscriberZipFileUUIDsDalI;
 import org.endeavourhealth.core.database.rdbms.ConnectionManager;
 import org.endeavourhealth.core.database.rdbms.enterprise.EnterpriseConnector;
-// import org.endeavourhealth.scheduler.models.database.SubscriberZipFileUUIDsEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,13 +51,19 @@ public class SubscriberFiler {
 
     public static void file(UUID batchId, UUID queuedMessageId, String base64, String configName) throws Exception {
 
+        /*
+        SubscriberZipFileUUIDsEntity szfue = new SubscriberZipFileUUIDsEntity();
+        szfue.setSubscriberId(1);
+        szfue.setQueuedMessageUUID(queuedMessageId.toString());
+        szfue.setQueuedMessageBody(base64);
+        SubscriberZipFileUUIDsEntity.createSubscriberZipFileUUIDsEntity(szfue);
+         */
 
-        // SubscriberZipFileUUIDsEntity szfue = new SubscriberZipFileUUIDsEntity();
-        // szfue.setQueuedMessageUUID(queuedMessageId.toString());
-        // szfue.setSubscriberId(1);
-        // szfue.setFileSent(false);
-        // SubscriberZipFileUUIDsEntity.createSubscriberZipFileUUIDsEntity(szfue);
+        int subscriberId = 1;
 
+        SubscriberZipFileUUIDsDalI szfudi = DalProvider.factorySubscriberZipFileUUIDs();
+        szfudi.createSubscriberZipFileUUIDsEntity(subscriberId,
+                queuedMessageId.toString(), base64);
 
         byte[] bytes = Base64.getDecoder().decode(base64);
         LOG.trace("Filing " + bytes.length + "b from batch " + batchId + " into " + configName);
