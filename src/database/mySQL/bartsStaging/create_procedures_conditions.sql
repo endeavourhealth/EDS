@@ -307,6 +307,7 @@ BEGIN
 		null as classification,
 		null as confirmation,
 		null as problem_status,
+		null as problem_status_date,
 		null as ranking,
 		null as axis,
 		null as location,
@@ -349,6 +350,7 @@ BEGIN
 		null as classification,   -- data not available
 		null as confirmation,     -- data not available
 		null as problem_status,   -- data not available
+		null as problem_status_date,  -- data not available
 		null as ranking,					-- data not available
 		null as axis,							-- data not available
 		null as location,					-- data not available
@@ -400,7 +402,8 @@ BEGIN
 
 		diag.classification as classification,
 		diag.confirmation as confirmation,
-		null as problem_status,  -- data not available
+		null as problem_status,  			-- data not available
+		null as problem_status_date,  -- data not available
 		diag.ranking as ranking,
 		diag.axis as axis,
 		diag.location as location,
@@ -477,6 +480,7 @@ BEGIN
 		null as classification,
 		null as confirmation,
 		null as problem_status,
+		null as problem_status_date,
 		null as ranking,
 		null as axis,
 	  null as location,
@@ -505,6 +509,7 @@ BEGIN
 		p.classification as classification,
 	  p.confirmation as confirmation,
 	  p.problem_status as problem_status,
+		p.problem_status_date as problem_status_date,
 		p.ranking as ranking,
 	  p.axis as axis,
 	  p.location as location,
@@ -536,6 +541,7 @@ BEGIN
 		classification,
 		confirmation,
 		problem_status,
+		problem_status_date,
 		ranking,
 		axis,
 		location,
@@ -563,6 +569,7 @@ BEGIN
 		classification = values(classification),
 		confirmation = values(confirmation),
 		problem_status = values(problem_status),
+		problem_status_date = values(problem_status_date),
 	  ranking = valuse(ranking),
 		axis = values(axis),
 		location = values(location),
