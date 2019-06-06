@@ -8,6 +8,7 @@ import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.core.database.dal.DalProvider;
 import org.endeavourhealth.core.database.dal.datagenerator.SubscriberZipFileUUIDsDalI;
@@ -59,17 +60,20 @@ public class SubscriberFiler {
         SubscriberZipFileUUIDsEntity.createSubscriberZipFileUUIDsEntity(szfue);
          */
 
-        int subscriberId = 1;
-
-        SubscriberZipFileUUIDsDalI szfudi = DalProvider.factorySubscriberZipFileUUIDs();
-        szfudi.createSubscriberZipFileUUIDsEntity(subscriberId,
-                queuedMessageId.toString(), base64);
 
         byte[] bytes = Base64.getDecoder().decode(base64);
         LOG.trace("Filing " + bytes.length + "b from batch " + batchId + " into " + configName);
 
         //we may have multiple connections if we have replicas
         List<EnterpriseConnector.ConnectionWrapper> connectionWrappers = EnterpriseConnector.openConnection(configName);
+
+        if (StringUtils.isNotEmpty(connectionWrappers.get(0).getRemoteSubscriberId())) {
+            int subscriberId = Integer.valueOf(connectionWrappers.get(0).getRemoteSubscriberId());
+            SubscriberZipFileUUIDsDalI szfudi = DalProvider.factorySubscriberZipFileUUIDs();
+            szfudi.createSubscriberZipFileUUIDsEntity(subscriberId,
+                    queuedMessageId.toString(), base64);
+        }
+
         for (EnterpriseConnector.ConnectionWrapper connectionWrapper: connectionWrappers) {
             file(connectionWrapper, bytes);
         }
