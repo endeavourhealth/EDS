@@ -235,7 +235,7 @@ BEGIN
 		problem_id,
 		person_id,
 		mrn,
-		onset_date,
+		onset_dt_tm,
 		updated_by,
 		vocab,
 		problem_code,
@@ -261,7 +261,7 @@ BEGIN
 		-- problem_id = values(problem_id), -- part of primary key
 		person_id = values(person_id),
 		mrn = values(mrn),
-		onset_date = values(onset_date),
+		onset_dt_tm = values(onset_dt_tm),
 		updated_by = values(updated_by),
 		vocab = values(vocab),
 		problem_code = values(problem_code),
@@ -330,7 +330,7 @@ BEGIN
 	insert into condition_target
 	select
 		_exchange_id as exchange_id,
-		concat('CDS-', cds.cds_unique_identifier, '-', cds.condition_seq_nbr) as unique_id,
+		concat('CDS-', cds.cds_unique_identifier, '-', cds.diagnosis_seq_nbr) as unique_id,
 		if (cds.cds_update_type = 1, true, false) as is_delete,
 		coalesce(tail.person_id, cds.lookup_person_id) as person_id,
 		tail.encounter_id as encounter_id,
@@ -433,7 +433,7 @@ BEGIN
 	-- through a is_delete = true rather than just delete from the target table
 	DROP TEMPORARY TABLE IF EXISTS condition_diag_duplicates;
 
-	CREATE TABLE condition_diag_duplicates as
+	CREATE TEMPORARY TABLE condition_diag_duplicates as
 	SELECT
 		target_cond.unique_id,
 		min(target_cds.audit_json) as cds_audit_json    -- group by and min(..) so that we just get ONE cds match per DIAGN
@@ -570,7 +570,7 @@ BEGIN
 		confirmation = values(confirmation),
 		problem_status = values(problem_status),
 		problem_status_date = values(problem_status_date),
-	  ranking = valuse(ranking),
+	  ranking = values(ranking),
 		axis = values(axis),
 		location = values(location),
 		audit_json = values(audit_json),

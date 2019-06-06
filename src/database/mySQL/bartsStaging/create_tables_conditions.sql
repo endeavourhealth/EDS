@@ -76,6 +76,7 @@ create table condition_cds_count
     sus_record_type                varchar(10)  NOT NULL COMMENT 'one of inpatient, outpatient, emergency',
     cds_unique_identifier          varchar(50)  NOT NULL COMMENT 'from CDSUniqueIdentifier',
     condition_count                int          NOT NULL COMMENT 'number of conditions in this CDS record',
+    audit_json                     mediumtext COMMENT 'used to link back to the source file',
     CONSTRAINT pk_condition_cds_count PRIMARY KEY (exchange_id, cds_unique_identifier, sus_record_type)
 );
 
@@ -90,6 +91,7 @@ create table condition_cds_count_latest
     sus_record_type                varchar(10)  NOT NULL COMMENT 'one of inpatient, outpatient, emergency',
     cds_unique_identifier          varchar(50)  NOT NULL COMMENT 'from CDSUniqueIdentifier',
     condition_count                int          NOT NULL COMMENT 'number of conditions in this CDS record',
+    audit_json                     mediumtext COMMENT 'used to link back to the source file',
     CONSTRAINT pk_condition_cds_count PRIMARY KEY (cds_unique_identifier, sus_record_type)
 );
 
@@ -264,7 +266,7 @@ create table condition_problem_latest
     problem_id           int        NOT NULL COMMENT 'unique problem ID',
     person_id            int        NOT NULL COMMENT 'from person_id but standardised to remove trailing .00',
     mrn                  varchar(10) NOT NULL COMMENT 'from MRN',
-    onset_date           datetime COMMENT 'on-set date of problem',
+    onset_dt_tm           datetime COMMENT 'on-set date of problem',
     updated_by           varchar(50) COMMENT 'Clinician updating the record. Text, so map to Id',
     vocab                varchar(50) COMMENT 'problem code type, either SNOMED CT, ICD-10, Cerner, UK ED Subset (Snomed Description Id),OPCS4,Patient Care',
     problem_code         varchar(50) COMMENT 'snomed description Id',
