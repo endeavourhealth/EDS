@@ -27,6 +27,10 @@ public abstract class AbstractEndpoint {
 		exchange.setHeaders(new HashMap<>());
 
 		for (String key : headers.getRequestHeaders().keySet()) {
+			//skip the authorization header, since that's comparatively huge and there's no need to carry it through RabbbitMQ
+			if (key.equalsIgnoreCase("authorization")) {
+				continue;
+			}
 			exchange.setHeader(key, headers.getHeaderString(key));
 		}
 

@@ -15,6 +15,7 @@ import org.endeavourhealth.core.messaging.pipeline.PipelineException;
 import org.endeavourhealth.core.queueing.ConnectionManager;
 import org.endeavourhealth.core.queueing.RabbitConfig;
 import org.endeavourhealth.core.queueing.RoutingManager;
+import org.endeavourhealth.transform.common.TransformConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,8 +50,14 @@ public class PostMessageToExchange extends PipelineComponent {
 
 		//copy the headers from the exchange, since we may be changing it
 		Map<String, Object> headers = new HashMap<>();
-		for (String key : exchange.getHeaders().keySet())
+		for (String key : exchange.getHeaders().keySet()) {
+			//skip the authorization header, since that's comparatively huge and there's no need to carry it through RabbbitMQ
+			if (key.equalsIgnoreCase("authorization")) {
+				continue;
+			}
 			headers.put(key, exchange.getHeader(key));
+		}
+
 
 		AMQP.BasicProperties properties = new AMQP.BasicProperties()
 				.builder()
@@ -77,12 +84,46 @@ public class PostMessageToExchange extends PipelineComponent {
 			try {
 				Object[] multicastItems = ObjectMapperPool.getInstance().readValue(multicastData, Object[].class);
 
+				int perSecondThrottle = TransformConfig.instance().getRabbitMessagePerSecondThrottle();
+				boolean applyThrottle = multicastItems.length > perSecondThrottle;
+				if (applyThrottle) {
+					LOG.info("Got " + multicastItems.length + " message to post, but will throttle to " + perSecondThrottle + " /sec");
+				}
+				long startMs = System.currentTimeMillis();
+				int doneThisSecond = 0;
+				int doneTotal = 0;
+
 				for (Object multicastItem : multicastItems) {
 					String itemData = ObjectMapperPool.getInstance().writeValueAsString(multicastItem);
 					// Replace header list with individual value
 					headers.put(multicastHeader, itemData);
 					properties = properties.builder().headers(headers).build();
 					publishMessage(routingKey, messageUuid, channel, properties);
+
+					if (applyThrottle) {
+						doneThisSecond++;
+						doneTotal++;
+
+						if (doneThisSecond > perSecondThrottle) {
+							long now = System.currentTimeMillis();
+							long sleep = 1000 - (now - startMs);
+
+							if (sleep > 0) {
+								try {
+									Thread.sleep(sleep);
+								} catch (Exception ex) {
+									LOG.error("", ex);
+								}
+							}
+
+							startMs = System.currentTimeMillis();
+							doneThisSecond = 0;
+						}
+
+						if (doneTotal % perSecondThrottle == 0) {
+							LOG.info("Done " + doneTotal);
+						}
+					}
 				}
 			} catch (IOException e) {
 				throw new PipelineException("Could not parse multicast data", e);
