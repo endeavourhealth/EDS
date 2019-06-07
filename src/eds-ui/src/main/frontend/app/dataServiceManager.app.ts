@@ -21,6 +21,7 @@ import {CodeSetModule} from "./codeSet/codeSet.module";
 import {CountReportModule} from "./countReport/countReport.module";
 import {ExchangeAuditModule} from "./exchangeAudit/exchangeAudit.module";
 import {DataSetModule} from "./dataSet/dataSet.module";
+import {RemoteFilingModule} from "./remoteFiling/remoteFiling.module";
 // State components
 import {DashboardComponent} from "./dashboard/dashboard.component";
 import {OrganisationListComponent} from "./organisations/organisationList.component";
@@ -43,6 +44,7 @@ import {ExchangeAuditComponent} from "./exchangeAudit/exchangeAudit.component";
 import {Application, AdminModule, LoggerModule} from "eds-common-js";
 import {DataServiceManagerMenuService} from "./dataServiceManager.menu";
 import {DataSetEditComponent} from "./dataSet/dataSetEditor.component";
+import {RemoteFilingComponent} from "./remoteFiling/remoteFiling.component";
 
 @NgModule(
 	Application.Define({
@@ -65,7 +67,8 @@ import {DataSetEditComponent} from "./dataSet/dataSetEditor.component";
 			ProtocolModule,
 			CodeSetModule,
 			CountReportModule,
-			ExchangeAuditModule
+			ExchangeAuditModule,
+			RemoteFilingModule
 		],
 		states: [
 			{name: 'app.dashboard', url: '/dashboard', component: DashboardComponent},
@@ -86,7 +89,8 @@ import {DataSetEditComponent} from "./dataSet/dataSetEditor.component";
 			{name: 'app.codeSetEdit', url: '/codeSetEdit/:itemAction/:itemUuid', component: CodeSetEditComponent},
 			{name: 'app.transformErrors', url: '/transformErrors', component: TransformErrorsComponent},
 			{name: 'app.exchangeAudit', url: '/exchangeAudit/:serviceId/:systemId', component: ExchangeAuditComponent},
-			{name: 'app.countReportEdit', url: '/countReportEdit/:itemAction/:itemUuid', component: CountReportEditComponent}
+			{name: 'app.countReportEdit', url: '/countReportEdit/:itemAction/:itemUuid', component: CountReportEditComponent},
+            {name: 'app.remoteFiling', url: '/remoteFiling', component: RemoteFilingComponent},
 		],
 		defaultState : { state: 'app.dashboard', params: {} },
 		menuManager : DataServiceManagerMenuService

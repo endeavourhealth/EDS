@@ -138,7 +138,7 @@ Clone this code repository to your local machine. The instructions below assume 
     * Select the Startup/Connection tab
     * Add the environment variable CONFIG_JDBC_USERNAME with your MySQL user (postgres) for both Debug and Run configurations    
     * Add the environment variable CONFIG_JDBC_PASSWORD with your MySQL password for both Debug and Run configurations
-    * Add the environment variable CONFIG_JDBC_URL with the value jdbc:mysql://localhost:5432/config
+    * Add the environment variable CONFIG_JDBC_URL with the value CONFIG_JDBC_URL=jdbc:mysql://localhost:3306/config?useSSL=false
     * Click OK
 
 4. Create Run Configuration for SFTP Reader
