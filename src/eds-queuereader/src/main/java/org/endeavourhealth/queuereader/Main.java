@@ -520,6 +520,17 @@ public class Main {
 			System.exit(0);
 		}
 
+		if (args.length >= 0
+				&& args[0].equalsIgnoreCase("TestAuditingFile")) {
+			UUID serviceId = UUID.fromString(args[1]);
+			UUID systemId = UUID.fromString(args[2]);
+			UUID exchangeId = UUID.fromString(args[3]);
+			String version = args[4];
+			String filePath = args[5];
+			testAuditingFile(serviceId, systemId, exchangeId, version, filePath);
+			System.exit(0);
+		}
+
 
 		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("TestS3VsMySQL")) {
@@ -674,6 +685,24 @@ public class Main {
 		// Begin consume
 		rabbitHandler.start();
 		LOG.info("EDS Queue reader running (kill file location " + TransformConfig.instance().getKillFileLocation() + ")");
+	}
+
+	private static void testAuditingFile(UUID serviceId, UUID systemId, UUID exchangeId, String version, String filePath) {
+		LOG.info("Testing Auditing File");
+		try {
+
+			LOG.info("Creating parser");
+			org.endeavourhealth.transform.emis.csv.schema.careRecord.Observation obsParser = new org.endeavourhealth.transform.emis.csv.schema.careRecord.Observation(serviceId, systemId, exchangeId, version, filePath);
+			LOG.info("Created parser");
+			obsParser.nextRecord();
+			LOG.info("Done auditing");
+			obsParser.close();
+			LOG.info("Closed");
+
+			LOG.info("Finish Testing Auditing File");
+		} catch (Throwable t) {
+			LOG.error("", t);
+		}
 	}
 
 	private static void postPatientToProtocol(String odsCode, String patientUuid) {
