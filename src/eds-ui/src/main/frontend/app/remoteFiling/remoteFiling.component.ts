@@ -13,6 +13,9 @@ export class RemoteFilingComponent {
     dayStats : RemoteFilingStatistics[];
     monthStats : RemoteFilingStatistics[];
     yearStats : RemoteFilingStatistics[];
+    totalItems = 10;
+    pageNumber = 1;
+    pageSize = 50;
 
     constructor(private $modal : NgbModal,
                 protected log : LoggerService,
@@ -27,15 +30,16 @@ export class RemoteFilingComponent {
 
     refresh() {
         const vm = this;
-        vm.getAllFiles();
+        vm.getPagedFiles();
+        vm.getFileCount();
         vm.getDayStatistics();
         vm.getMonthStatistics();
         vm.getYearStatistics();
     }
 
-    getAllFiles() {
+    getPagedFiles() {
         var vm = this;
-        vm.remoteFilingService.getAllFiles()
+        vm.remoteFilingService.getPagedFiles(vm.pageNumber, vm.pageSize)
             .subscribe(
                 (result) => {
                     vm.files= result;
@@ -43,6 +47,17 @@ export class RemoteFilingComponent {
                 },
                 (error) => vm.log.error('Failed to load files', error, 'Load files')
             )
+    }
+
+    getFileCount() {
+        const vm = this;
+        vm.remoteFilingService.getRemoteFilingCount()
+            .subscribe(
+                (result) => {
+                    vm.totalItems = result;
+                },
+                (error) => console.log(error)
+            );
     }
 
     getDayStatistics() {
@@ -79,6 +94,13 @@ export class RemoteFilingComponent {
                 },
                 (error) => vm.log.error('Failed to load statistics', error, 'Load statistics')
             )
+    }
+
+    pageChanged($event) {
+        const vm = this;
+        vm.pageNumber = $event;
+        vm.getPagedFiles();
+        vm.getFileCount();
     }
 
 }

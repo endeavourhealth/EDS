@@ -2,6 +2,8 @@ package org.endeavourhealth.ui.endpoints;
 
 import com.codahale.metrics.annotation.Timed;
 import io.astefanutti.metrics.aspectj.Metrics;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
 import org.endeavourhealth.common.security.SecurityUtils;
 import org.endeavourhealth.core.database.dal.DalProvider;
 import org.endeavourhealth.core.database.dal.audit.UserAuditDalI;
@@ -34,17 +36,35 @@ public class RemoteFilingEndpoint extends AbstractEndpoint {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     @Timed(absolute = true, name="EDS-UI.RemoteFilingEndpoint.getAllRemoteFilingStatus")
-    @Path("/getAllRemoteFilingStatus")
-    public Response getAllRemoteFilingStatus(@Context SecurityContext sc) throws Exception {
+    @Path("/getPagedRemoteFilingStatus")
+    public Response getAllRemoteFilingStatus(@Context SecurityContext sc,
+                                             @ApiParam(value = "page number (defaults to 1 if not provided)") @QueryParam("pageNumber") Integer pageNumber,
+                                             @ApiParam(value = "page size (defaults to 20 if not provided)")@QueryParam("pageSize") Integer pageSize) throws Exception {
 
         userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
                 "Remote Filing Statistics");
 
-        List<RdbmsSubscriberZipFileUUIDs> fileUUIDs = remoteRepository.getAllSubscriberZipFileUUIDsEntities();
+        List<RdbmsSubscriberZipFileUUIDs> fileUUIDs = remoteRepository.getPagedSubscriberZipFileUUIDsEntities(pageNumber, pageSize);
 
         return Response
                 .ok()
                 .entity(fileUUIDs)
+                .build();
+    }
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="DataSharingManager.RemoteFilingEndpoint.getRemoteFilingCount")
+    @Path("/getRemoteFilingCount")
+    @ApiOperation(value = "When using server side pagination, this returns the total count of the results of the query")
+    public Response getRemoteFilingCount(@Context SecurityContext sc) throws Exception {
+
+        Long count = remoteRepository.getTotalNumberOfSubscriberFiles();
+
+        return Response
+                .ok()
+                .entity(count)
                 .build();
     }
 

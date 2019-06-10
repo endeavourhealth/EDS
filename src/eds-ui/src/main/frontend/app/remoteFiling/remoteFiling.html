@@ -93,6 +93,13 @@
                             </div>
                         </div>
                     </div>
+
+                    <div class="row">
+                        <div class="col-md-12">
+                            <ngb-pagination [maxSize]="50" [boundaryLinks]="true" [collectionSize]="totalItems" [pageSize]="50" [(page)]="pageNumber" (pageChange)="pageChanged($event)" name="pagination"></ngb-pagination>
+
+                        </div>
+                    </div>
                 </form>
             </div>
         </div>

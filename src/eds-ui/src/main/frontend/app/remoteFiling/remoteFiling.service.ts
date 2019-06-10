@@ -9,9 +9,16 @@ import {RemoteFilingStatistics} from "./models/RemoteFilingStatistics";
 export class RemoteFilingService extends BaseHttp2Service {
     constructor (http : Http) { super (http); }
 
-    getAllFiles():Observable<SubscriberZipFileUUID[]> {
+    getPagedFiles(pageNumber: number, pageSize: number):Observable<SubscriberZipFileUUID[]> {
+        const vm = this;
+        const params = new URLSearchParams();
+        params.set('pageNumber',pageNumber.toString());
+        params.set('pageSize',pageSize.toString());
+        return this.httpGet('api/remoteFiling/getPagedRemoteFilingStatus', { search : params });
+    }
 
-        return this.httpGet('api/remoteFiling/getAllRemoteFilingStatus');
+    getRemoteFilingCount(): Observable<number> {
+        return this.httpGet('api/remoteFiling/getRemoteFilingCount');
     }
 
     getStatistics(timeframe: string):Observable<RemoteFilingStatistics[]> {
