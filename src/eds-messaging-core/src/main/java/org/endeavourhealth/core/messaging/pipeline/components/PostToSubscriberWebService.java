@@ -60,11 +60,17 @@ public class PostToSubscriberWebService extends PipelineComponent {
 
 			sendToSubscriber(payload, exchangeId, batchId, queuedMessageId, software, softwareVersion, endpoint);
 
+			// w/c 27/05/19
 			// queued messages need to be left in the table for the sender
 			// app to pick them up asynchronously; it will then delete them
-			if (!(software.equals(MessageFormat.SUBSCRIBER_CSV))) {
+
+			// w/c 10/06/19
+			// queued messages are now being written to the DB of the sender
+			// app, so they can be deleted from the queued message table
+
+			// if (!(software.equals(MessageFormat.SUBSCRIBER_CSV))) {
 				queuedMessageDal.delete(queuedMessageId);
-			}
+			// }
 
 		} catch (Exception ex) {
 			throw new PipelineException("Failed to send to " + software + " for exchange " + exchangeId + " and batch " + batchId + " and queued message " + queuedMessageId, ex);
