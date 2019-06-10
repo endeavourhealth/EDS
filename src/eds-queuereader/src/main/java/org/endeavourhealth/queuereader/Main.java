@@ -125,6 +125,13 @@ public class Main {
 		}
 
 		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("TestS3Listing")) {
+			String path = args[1];
+			testS3Listing(path);
+			System.exit(0);
+		}
+
+		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("CreateHomertonSubset")) {
 			String sourceDirPath = args[1];
 			String destDirPath = args[2];
@@ -687,12 +694,40 @@ public class Main {
 		LOG.info("EDS Queue reader running (kill file location " + TransformConfig.instance().getKillFileLocation() + ")");
 	}
 
+	private static void testS3Listing(String path) {
+		LOG.info("Testing S3 Listing");
+		try {
+
+			LOG.info("Trying with full path");
+			List<FileInfo> l = FileHelper.listFilesInSharedStorageWithInfo(path);
+			LOG.info("Found " + l.size());
+			for (FileInfo info: l) {
+				LOG.info("Got " + info.getFilePath());
+			}
+
+			String parent = FilenameUtils.getFullPath(path);
+			LOG.info("Trying with parent: " + parent);
+			l = FileHelper.listFilesInSharedStorageWithInfo(parent);
+			LOG.info("Found " + l.size());
+			for (FileInfo info: l) {
+				LOG.info("Got " + info.getFilePath());
+			}
+
+			LOG.info("Finished Testing S3 Listing");
+		} catch (Throwable t) {
+			LOG.error("", t);
+		}
+
+	}
+
 	private static void testAuditingFile(UUID serviceId, UUID systemId, UUID exchangeId, String version, String filePath) {
 		LOG.info("Testing Auditing File");
 		try {
 
 			LOG.info("Creating parser");
-			org.endeavourhealth.transform.emis.csv.schema.careRecord.Observation obsParser = new org.endeavourhealth.transform.emis.csv.schema.careRecord.Observation(serviceId, systemId, exchangeId, version, filePath);
+			//org.endeavourhealth.transform.emis.csv.schema.careRecord.Observation obsParser = new org.endeavourhealth.transform.emis.csv.schema.careRecord.Observation(serviceId, systemId, exchangeId, version, filePath);
+			org.endeavourhealth.transform.tpp.csv.schema.staff.SRStaffMemberProfile obsParser = new org.endeavourhealth.transform.tpp.csv.schema.staff.SRStaffMemberProfile(serviceId, systemId, exchangeId, version, filePath);
+
 			LOG.info("Created parser");
 			obsParser.nextRecord();
 			LOG.info("Done auditing");
