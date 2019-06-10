@@ -692,7 +692,9 @@ public class Main {
 		try {
 
 			LOG.info("Creating parser");
-			org.endeavourhealth.transform.emis.csv.schema.careRecord.Observation obsParser = new org.endeavourhealth.transform.emis.csv.schema.careRecord.Observation(serviceId, systemId, exchangeId, version, filePath);
+			//org.endeavourhealth.transform.emis.csv.schema.careRecord.Observation obsParser = new org.endeavourhealth.transform.emis.csv.schema.careRecord.Observation(serviceId, systemId, exchangeId, version, filePath);
+			org.endeavourhealth.transform.tpp.csv.schema.staff.SRStaffMemberProfile obsParser = new org.endeavourhealth.transform.tpp.csv.schema.staff.SRStaffMemberProfile(serviceId, systemId, exchangeId, version, filePath);
+
 			LOG.info("Created parser");
 			obsParser.nextRecord();
 			LOG.info("Done auditing");
