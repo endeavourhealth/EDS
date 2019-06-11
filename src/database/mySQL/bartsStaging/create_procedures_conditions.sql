@@ -352,7 +352,7 @@ BEGIN
 					concat('CDS-', cds.cds_unique_identifier, '-', 1)
 			) as parent_condition_unique_id, -- if sequence number > 1 then parent condition ID is the same unique ID but with seq 1
 		null as classification,   -- data not available
-		null as confirmation,     -- data not available
+		'Confirmed' as confirmation,     -- CDS data is always confirmed
 		null as problem_status,   -- data not available
 		null as problem_status_date,  -- data not available
 		null as ranking,					-- data not available
