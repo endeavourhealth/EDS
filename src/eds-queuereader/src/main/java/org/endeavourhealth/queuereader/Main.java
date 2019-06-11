@@ -698,20 +698,20 @@ public class Main {
 		LOG.info("Testing S3 Listing");
 		try {
 
-			LOG.info("Trying with full path");
+			LOG.info("Trying with full path: " + path);
 			List<FileInfo> l = FileHelper.listFilesInSharedStorageWithInfo(path);
 			LOG.info("Found " + l.size());
-			for (FileInfo info: l) {
+			/*for (FileInfo info: l) {
 				LOG.info("Got " + info.getFilePath());
-			}
+			}*/
 
 			String parent = FilenameUtils.getFullPath(path);
 			LOG.info("Trying with parent: " + parent);
 			l = FileHelper.listFilesInSharedStorageWithInfo(parent);
 			LOG.info("Found " + l.size());
-			for (FileInfo info: l) {
+			/*for (FileInfo info: l) {
 				LOG.info("Got " + info.getFilePath());
-			}
+			}*/
 
 			LOG.info("Finished Testing S3 Listing");
 		} catch (Throwable t) {
