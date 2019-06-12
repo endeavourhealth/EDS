@@ -6,5 +6,6 @@ export class SubscriberZipFileUUID {
     fileSent: string;
     fileFilingAttempted: string;
     fileFilingSuccess: boolean;
+    filingFailureMessage: string;
 
 }
