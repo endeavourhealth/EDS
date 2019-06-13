@@ -337,7 +337,8 @@ public class Main {
             LOG.info("finNoType:" + finNoType);
 
             // If episode id / encounter id is missing then move to DLQ
-            if (finNoType.compareToIgnoreCase("Newham FIN") == 0) {
+            if (Strings.isNullOrEmpty(finNoType)
+                || finNoType.compareToIgnoreCase("Newham FIN") == 0) {
                 return "Automatically moved ADT because PID18.4 (FIN No Type) indicates Newham";
             }
         }
