@@ -1,3 +1,9 @@
+CREATE DATABASE subscriber_pi
+GO
+
+USE subscriber_pi
+GO
+
 IF OBJECT_ID('dbo.allergy_intolerance', 'U') IS NOT NULL DROP TABLE dbo.allergy_intolerance
 GO
 IF OBJECT_ID('dbo.appointment', 'U') IS NOT NULL DROP TABLE dbo.appointment

@@ -1,3 +1,6 @@
+USE subscriber_pi;
+GO
+
 CREATE TRIGGER [after_allergy_intolerance_insert] 
 ON [allergy_intolerance]
 WITH EXECUTE AS CALLER 
