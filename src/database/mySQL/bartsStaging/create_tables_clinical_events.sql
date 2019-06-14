@@ -82,3 +82,4 @@ create table clinical_event_latest
     audit_json                     mediumtext   null comment 'Used for Audit Purposes',
     CONSTRAINT pk_condition_cds PRIMARY KEY (exchange_id, event_id)
 );
+
