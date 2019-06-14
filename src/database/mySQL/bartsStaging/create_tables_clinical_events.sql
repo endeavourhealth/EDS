@@ -37,7 +37,9 @@ create table clinical_event
     event_tag					   varchar(255)	COMMENT 'textual tag of the code',
     event_title_txt		   		   varchar(255)	COMMENT 'the title of the event',
     event_result_units_cd		   int	 		COMMENT 'the code of the units for the result',
+    lookup_result_units_code	   varchar(255)	COMMENT 'the lookup code of the units for the result',
     record_status_cd		   	   int 			COMMENT 'the code for the record status',
+    lookup_record_status_code	   varchar(255)	COMMENT 'the lookup code for the record status',
     lookup_mrn				   	   varchar(255)	COMMENT 'the lookup mrn for the person',
     audit_json                     mediumtext   null comment 'Used for Audit Purposes',
     CONSTRAINT pk_condition_cds PRIMARY KEY (exchange_id, event_id)
@@ -77,7 +79,9 @@ create table clinical_event_latest
     event_tag					   varchar(255)	COMMENT 'textual tag of the code',
     event_title_txt		   		   varchar(255)	COMMENT 'the title of the event',
     event_result_units_cd		   int	 		COMMENT 'the code of the units for the result',
+    lookup_result_units_code	   varchar(255)	COMMENT 'the lookup code of the units for the result',
     record_status_cd		   	   int 			COMMENT 'the code for the record status',
+    lookup_record_status_code	   varchar(255)	COMMENT 'the lookup code for the record status',
     lookup_mrn				   	   varchar(255)	COMMENT 'the lookup mrn for the person',
     audit_json                     mediumtext   null comment 'Used for Audit Purposes',
     CONSTRAINT pk_condition_cds PRIMARY KEY (exchange_id, event_id)
