@@ -37,6 +37,9 @@ public class Main {
             } else if (type.equalsIgnoreCase("opcs4")) {
                 Opcs4Updater.updateOpcs4Lookup(args);
 
+            } else if (type.equalsIgnoreCase("snomed")) {
+                SnomedUpdater.updateSnomedConceptsAndDescriptions(args);
+
             } else if (type.equalsIgnoreCase("snomedToBnfChapter")) {
                 SnomedToBnfChapterUpdater.updateSnomedToBnfChapterLookup(args);
 
