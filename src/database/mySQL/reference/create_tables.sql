@@ -233,12 +233,13 @@ create table icd10_lookup (
 
 CREATE TABLE cerner_clinical_event_map (
 	cerner_cvref_code varchar(10),
-    cerner_cvref_term varchar(50),
+    cerner_cvref_term varchar(255),
     snomed_concept_id varchar(50),
     snomed_preferred_term varchar(255),
     snomed_description_id varchar(50),
     snomed_description_term varchar(255),
     match_algorithm varchar(50),
+    mapping_source varchar(50),
     CONSTRAINT pk_internal_id_map PRIMARY KEY (cerner_cvref_code)
 );
 

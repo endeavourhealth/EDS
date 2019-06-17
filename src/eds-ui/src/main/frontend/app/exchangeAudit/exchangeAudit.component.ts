@@ -37,6 +37,8 @@ export class ExchangeAuditComponent {
 	postSpecificProtocol: string;
 	postFilterFileTypes: boolean;
 	postFilterFileTypesSelected: string;
+	postExchange: string;
+	postDeleteErrorState: boolean;
 
 	constructor(private $modal : NgbModal,
 				private $window : StateService,
@@ -240,7 +242,46 @@ export class ExchangeAuditComponent {
 		return this.selectedExchange.bodyLines;
 	}
 
-	postToExchange(exchangeName: string) {
+	postToExchange() {
+		var vm = this;
+		var exchangeId = vm.selectedExchange.exchangeId;
+		var serviceId = this.service.uuid;
+		var deleteErrorState = vm.postDeleteErrorState;
+
+		var exchangeName = vm.postExchange;
+		if (!exchangeName) {
+			vm.log.error('No exchange selected');
+			return;
+		}
+
+		var fileTypesToFilterOn;
+		if (vm.postFilterFileTypes) {
+			fileTypesToFilterOn = vm.postFilterFileTypesSelected;
+			if (!fileTypesToFilterOn) {
+				vm.log.error('No file types selected');
+				return;
+			}
+		}
+
+		this.busyPostingToExchange = vm.exchangeAuditService.postToExchange(exchangeId, serviceId, vm.systemId, exchangeName, this.postMode, this.postSpecificProtocol, fileTypesToFilterOn, deleteErrorState).subscribe(
+			(result) => {
+				vm.log.success('Successfully posted to ' + exchangeName + ' exchange', 'Post to Exchange');
+
+				//re-load the events for the exchange, as we'll have added to them
+				this.loadTransformAudits(vm.selectedExchange);
+				//this.loadExchangeEvents(vm.selectedExchange);
+				this.busyPostingToExchange = null;
+			},
+			(error) => {
+				vm.log.error('Failed to post to ' + exchangeName + ' exchange', error, 'Post to Exchange')
+
+				//clear down to say we're not busy
+				this.busyPostingToExchange = null;
+			}
+		)
+	}
+
+	/*postToExchange(exchangeName: string) {
 		var vm = this;
 		var exchangeId = vm.selectedExchange.exchangeId;
 		var serviceId = this.service.uuid;
@@ -270,7 +311,7 @@ export class ExchangeAuditComponent {
 				this.busyPostingToExchange = null;
 			}
 		)
-	}
+	}*/
 
 	showTransformErrors(transformAudit: TransformErrorDetail) {
 

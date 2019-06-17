@@ -372,7 +372,8 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
                 "Exchange Name", request.getExchangeName(),
                 "Post Mode", request.getPostMode(),
                 "Protocol ID", request.getSpecificProtocolId(),
-                "File Types to Filter", request.getFileTypesToFilterOn());
+                "File Types to Filter", request.getFileTypesToFilterOn(),
+                "Delete Error State", request.getDeleteTransformErrorState());
 
         UUID selectedExchangeId = request.getExchangeId();
         UUID serviceId = request.getServiceId();
@@ -381,6 +382,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
         String postMode = request.getPostMode();
         UUID specificProtocolId = request.getSpecificProtocolId();
         String fileTypesToFilterOn = request.getFileTypesToFilterOn();
+        Boolean deleteErrorState = request.getDeleteTransformErrorState();
 
         //work out the exchange IDs to post
         List<UUID> exchangeIds = null;
@@ -430,6 +432,18 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
                     fileTypesSet.add(tok);
                 }
             }
+        }
+
+        //delete the error state if needed
+        if (deleteErrorState != null
+                && deleteErrorState.booleanValue()) {
+
+            ExchangeTransformErrorState state = new ExchangeTransformErrorState();
+            state.setServiceId(serviceId);
+            state.setSystemId(systemId);
+
+            ExchangeDalI auditRepository = DalProvider.factoryExchangeDal();
+            auditRepository.delete(state);
         }
 
         //post the exchanges to RabbitMQ

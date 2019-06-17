@@ -14,6 +14,7 @@ public class JsonPostToExchangeRequest {
     private String postMode;
     private UUID specificProtocolId;
     private String fileTypesToFilterOn;
+    private Boolean deleteTransformErrorState;
 
     public JsonPostToExchangeRequest() {}
 
@@ -71,5 +72,13 @@ public class JsonPostToExchangeRequest {
 
     public void setFileTypesToFilterOn(String fileTypesToFilterOn) {
         this.fileTypesToFilterOn = fileTypesToFilterOn;
+    }
+
+    public Boolean getDeleteTransformErrorState() {
+        return deleteTransformErrorState;
+    }
+
+    public void setDeleteTransformErrorState(Boolean deleteTransformErrorState) {
+        this.deleteTransformErrorState = deleteTransformErrorState;
     }
 }

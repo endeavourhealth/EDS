@@ -154,11 +154,11 @@
                                 <div class="form-group col-md-12">
 
                                     Post to Exchange:
-                                    <button type="button" class="btn btn-sm btn-success" [disabled]="busyPostingToExchange" (click)="postToExchange('edsInbound')">Inbound</button>
-                                    <!--<button type="button" class="btn btn-sm btn-success" [disabled]="busyPostingToExchange" (click)="postToExchange('edsResponse')">Response</button>-->
-                                    <button type="button" class="btn btn-sm btn-success" [disabled]="busyPostingToExchange" (click)="postToExchange('edsProtocol')">Protocol</button>
-                                    <!--<button type="button" class="btn btn-sm btn-success" [disabled]="busyPostingToExchange" (click)="postToExchange('edsTransform')">Transform</button>
-                                    <button type="button" class="btn btn-sm btn-success" [disabled]="busyPostingToExchange" (click)="postToExchange('edsSubscriber')">Subscriber</button>-->
+                                    <select id="postExchange" [(ngModel)]="postExchange">
+                                        <option value=""></option>
+                                        <option value="edsInbound">Inbound</option>
+                                        <option value="edsProtocol">Protocol</option>
+                                    </select>
 
                                     Exchanges to post:
                                     <select id="postMode" [(ngModel)]="postMode">
@@ -167,25 +167,47 @@
                                         <option value="All">All Exchanges</option>
                                     </select>
 
+                                </div>
+                            </div>
+                            <div class="row" *ngIf="postExchange=='edsInbound'">
+                                <div class="form-group col-md-12">
+
+                                    Delete error state:
+                                    <input type="checkbox" id="deleteErrorStateCheckbox" [(ngModel)]="postDeleteErrorState" name="postDeleteErrorState">
+
+                                    Filter file types:
+                                    <input type="checkbox" id="filterFileTypesCheckbox" [(ngModel)]="postFilterFileTypes" name="filterFileTypes">
+
+                                </div>
+                            </div>
+
+                            <div class="row" *ngIf="postFilterFileTypes && postExchange=='edsInbound'">
+                                <div class="form-group col-md-12">
+                                    <textarea rows="8" class="form-control" id="description" [(ngModel)]="postFilterFileTypesSelected" placeholder="File types to filter on (space, comma or newline separated)" name="postFilterFileTypesSelected"></textarea>
+                                </div>
+                            </div>
+
+                            <div class="row" *ngIf="postExchange=='edsProtocol'">
+                                <div class="form-group col-md-12">
+
                                     Protocol to apply:
-                                    <!--<select id="protocol" class="form-control" [(ngModel)]="postSpecificProtocol" name="protocolId">-->
                                     <select id="protocol" [(ngModel)]="postSpecificProtocol" name="protocolId">
                                         <option value="">--All Protocols--</option>
                                         <option *ngFor="let protocol of protocols" value="{{protocol.id}}">{{protocol.name}}</option>
                                     </select>
 
-                                    Filter file types:
-                                    <input type="checkbox" id="filterFileTypesCheckbox" [(ngModel)]="postFilterFileTypes" name="filterFileTypes">
-
-                                    <span class="fa fa-sm fa-refresh fa-refresh-animate" *ngIf="busyPostingToExchange"></span>
                                 </div>
                             </div>
 
-                            <div class="row" *ngIf="postFilterFileTypes">
+                            <div class="row">
                                 <div class="form-group col-md-12">
-                                    <textarea class="form-control" id="description" [(ngModel)]="postFilterFileTypesSelected" placeholder="File types to filter on (separated on separate lines)" name="postFilterFileTypesSelected"></textarea>
+
+                                    <button type="button" class="btn btn-sm btn-success" [disabled]="busyPostingToExchange" (click)="postToExchange()">GO!</button>
+                                    <span class="fa fa-sm fa-refresh fa-refresh-animate" *ngIf="busyPostingToExchange"></span>
+
                                 </div>
                             </div>
+
                         </div>
                     </div>
 

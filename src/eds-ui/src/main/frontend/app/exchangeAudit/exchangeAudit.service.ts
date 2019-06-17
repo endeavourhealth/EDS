@@ -73,7 +73,7 @@ export class ExchangeAuditService extends BaseHttp2Service {
     }*/
 
     postToExchange(exchangeId: string, serviceId: string, systemId: string, exchangeName: string, postMode: string,
-                   postSpecificProtocol: string, fileTypesToFilterOn: string):Observable<any> {
+                   postSpecificProtocol: string, fileTypesToFilterOn: string, deleteErrorState: boolean):Observable<any> {
 
         var request = {
             'exchangeId': exchangeId,
@@ -82,7 +82,8 @@ export class ExchangeAuditService extends BaseHttp2Service {
             'exchangeName': exchangeName,
             'postMode': postMode,
             'specificProtocolId': postSpecificProtocol,
-            'fileTypesToFilterOn': fileTypesToFilterOn
+            'fileTypesToFilterOn': fileTypesToFilterOn,
+            'deleteTransformErrorState': deleteErrorState
         };
         return this.httpPost('api/exchangeAudit/postToExchange', request);
     }
