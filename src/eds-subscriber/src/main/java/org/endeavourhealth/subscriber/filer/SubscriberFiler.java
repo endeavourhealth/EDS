@@ -70,7 +70,7 @@ public class SubscriberFiler {
         if (StringUtils.isNotEmpty(connectionWrappers.get(0).getRemoteSubscriberId())) {
             int subscriberId = Integer.valueOf(connectionWrappers.get(0).getRemoteSubscriberId());
             SubscriberZipFileUUIDsDalI szfudi = DalProvider.factorySubscriberZipFileUUIDs();
-            szfudi.createSubscriberZipFileUUIDsEntity(subscriberId,
+            szfudi.createSubscriberZipFileUUIDsEntity(subscriberId, batchId.toString(),
                     queuedMessageId.toString(), base64);
         }
 
