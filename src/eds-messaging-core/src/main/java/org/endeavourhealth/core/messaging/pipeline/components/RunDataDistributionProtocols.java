@@ -9,7 +9,6 @@ import org.endeavourhealth.common.fhir.schema.RegistrationType;
 import org.endeavourhealth.core.configuration.RunDataDistributionProtocolsConfig;
 import org.endeavourhealth.core.database.dal.DalProvider;
 import org.endeavourhealth.core.database.dal.admin.LibraryRepositoryHelper;
-import org.endeavourhealth.core.database.dal.admin.OrganisationDalI;
 import org.endeavourhealth.core.database.dal.admin.PatientCohortDalI;
 import org.endeavourhealth.core.database.dal.audit.ExchangeBatchDalI;
 import org.endeavourhealth.core.database.dal.audit.models.Exchange;
@@ -40,12 +39,7 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 	private static final String COHORT_DEFINING_SERVICES = "Defining Services";
 
 	private RunDataDistributionProtocolsConfig config;
-	private static final PatientCohortDalI cohortRepository = DalProvider.factoryPatientCohortDal();
-	private static final ResourceDalI resourceRepository = DalProvider.factoryResourceDal();
-	private static final ExchangeBatchDalI exchangeBatchRepository = DalProvider.factoryExchangeBatchDal();
-	private static final PatientLinkDalI patientLInkDal = DalProvider.factoryPatientLinkDal();
-	private static final PatientSearchDalI patientSearchDal = DalProvider.factoryPatientSearchDal();
-	private static final OrganisationDalI organisationRepository = DalProvider.factoryOrganisationDal();
+
 	private static final ParserPool parser = new ParserPool();
 
 	//private static final PatientIdentifierRepository patientIdentifierRepository = new PatientIdentifierRepository();
@@ -90,6 +84,8 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 		UUID serviceId = exchange.getHeaderAsUuid(HeaderKeys.SenderServiceUuid);
 		String odsCode = exchange.getHeader(HeaderKeys.SenderLocalIdentifier);
 
+		TmpCache tmpCache = new TmpCache(exchangeId, serviceId, batchId);
+
 		// Run each protocol, creating a transformation batch for each
 		// (Contains list of relevant resources and subscriber service contracts)
 		for (LibraryItem libraryItem : protocolsToRun) {
@@ -115,7 +111,7 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 
 			//check if this batch falls into the protocol cohort
 			UUID protocolId = UUID.fromString(libraryItem.getUuid());
-			if (!checkCohort(protocol, protocolId, serviceId, exchangeId, batchId, odsCode)) {
+			if (!checkCohort(protocol, protocolId, tmpCache, odsCode)) {
 				continue;
 			}
 
@@ -148,7 +144,7 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 	}
 
 
-	private boolean checkCohort(Protocol protocol, UUID protocolId, UUID serviceId, UUID exchangeId, UUID batchId, String odsCode) throws PipelineException {
+	private boolean checkCohort(Protocol protocol, UUID protocolId, TmpCache tmpCache, String odsCode) throws PipelineException {
 
 		//if no cohort is defined, then treat this to mean we PASS the check
 		String cohort = protocol.getCohort();
@@ -161,10 +157,10 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 			return true;
 
 		} else if (cohort.equals(COHORT_EXPLICIT)) {
-			return checkExplicitCohort(protocolId, serviceId, exchangeId, batchId);
+			return checkExplicitCohort(protocolId, tmpCache);
 
 		} else if (cohort.startsWith(COHORT_DEFINING_SERVICES)) {
-			return checkServiceDefinedCohort(protocolId, protocol, serviceId, exchangeId, batchId, odsCode);
+			return checkServiceDefinedCohort(protocolId, protocol, tmpCache, odsCode);
 
 		} else {
 
@@ -173,7 +169,7 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 	}
 
 
-	private boolean checkServiceDefinedCohort(UUID protocolId, Protocol protocol, UUID serviceId, UUID exchangeId, UUID batchId, String odsCode) throws PipelineException {
+	private boolean checkServiceDefinedCohort(UUID protocolId, Protocol protocol, TmpCache tmpCache, String odsCode) throws PipelineException {
 
 		//find the list of service UUIDs that define the cohort
 		Set<String> cohortOdsCodes = getOdsCodesForServiceDefinedProtocol(protocol);
@@ -181,13 +177,13 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 
 		//if we've not activated any service contracts yet, this will be empty, which is fine
 		if (cohortOdsCodes.isEmpty()) {
-			LOG.debug("FAIL - No ODS codes defining cohort found for batch ID " + batchId);
+			LOG.debug("FAIL - No ODS codes defining cohort found for batch ID " + tmpCache.getBatchId());
 			return false;
 		}
 
 		//check to see if our service is one of the defining service contracts, in which case it automatically passes
 		if (cohortOdsCodes.contains(odsCode.toUpperCase())) {
-			LOG.debug("PASS - This service (" + odsCode + ") is in defining list for batch ID " + batchId);
+			LOG.debug("PASS - This service (" + odsCode + ") is in defining list for batch ID " + tmpCache.getBatchId());
 			return true;
 		}
 
@@ -195,80 +191,39 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 		//of the cohort-defining services
 		UUID patientUuid = null;
 		try {
-			patientUuid = findPatientId(exchangeId, batchId);
+			patientUuid = tmpCache.findPatientId();
 		} catch (Exception ex) {
-			throw new PipelineException("Failed to find patient ID for batch " + batchId, ex);
+			throw new PipelineException("Failed to find patient ID for batch " + tmpCache.getBatchId(), ex);
 		}
 
 		//if there's no patient ID, then this is admin resources batch, so return true so it goes through unfiltered
 		if (patientUuid == null) {
-			LOG.debug("PASS - No patient ID found for batch ID " + batchId);
+			LOG.debug("PASS - No patient ID found for batch ID " + tmpCache.getBatchId());
 			return true;
 		}
 
 		try {
-			return checkPatientIsRegisteredAtServices(serviceId, patientUuid, cohortOdsCodes);
+			return checkPatientIsRegisteredAtServices(tmpCache, cohortOdsCodes);
 
 		} catch (Exception ex) {
 			throw new PipelineException("Failed to retrieve patient or organisation resources for patient ID " + patientUuid, ex);
 		}
 	}
 
-	/*private boolean checkServiceDefinedCohort(UUID protocolId, Protocol protocol, UUID serviceId, UUID exchangeId, UUID batchId) throws PipelineException {
 
-		//find the list of service UUIDs that define the cohort
-		Set<String> serviceIdsDefiningCohort = getServiceIdsForServiceDefinedProtocol(protocol);
-		LOG.debug("Found " + serviceIdsDefiningCohort.size() + " services that define the cohort");
-
-		//if we've not activated any service contracts yet, this will be empty, which is fine
-		if (serviceIdsDefiningCohort.isEmpty()) {
-			LOG.debug("FAIL - No services defining cohort found for batch ID " + batchId);
-			return false;
-		}
-
-		//check to see if our service is one of the defining service contracts, in which case it automatically passes
-		if (serviceIdsDefiningCohort.contains(serviceId.toString())) {
-			LOG.debug("PASS - This service (" + serviceId + ") is in defining list for batch ID " + batchId);
-			return true;
-		}
-
-		//if our service isn't one of the cohort-defining ones, then we need to see if our patient is registered at one
-		//of the cohort-defining services
-		UUID patientUuid = null;
-		try {
-			patientUuid = findPatientId(exchangeId, batchId);
-		} catch (Exception ex) {
-			throw new PipelineException("Failed to find patient ID for batch " + batchId, ex);
-		}
-
-		//if there's no patient ID, then this is admin resources batch, so return true so it goes through unfiltered
-		if (patientUuid == null) {
-			LOG.debug("PASS - No patient ID found for batch ID " + batchId);
-			return true;
-		}
-
-		try {
-			return checkPatientIsRegisteredAtServices(serviceId, patientUuid, serviceIdsDefiningCohort);
-
-		} catch (Exception ex) {
-			throw new PipelineException("Failed to retrieve patient or organisation resources for patient ID " + patientUuid, ex);
-		}
-	}*/
-
-	private boolean checkPatientIsRegisteredAtServices(UUID serviceId, UUID patientUuid, Set<String> cohortOdsCodes) throws Exception {
+	private boolean checkPatientIsRegisteredAtServices(TmpCache tmpCache, Set<String> cohortOdsCodes) throws Exception {
 
 		//first check the patient resource at our own service
-		LOG.debug("Checking patient " + patientUuid + " at service " + serviceId);
-		if (checkPatientIsRegisteredAtServices(patientUuid, serviceId, false, cohortOdsCodes)) {
-			LOG.debug("PASS - Patient " + patientUuid + " is registered at one of defining services");
+		LOG.debug("Checking patient " + tmpCache.findPatientId() + " at service " + tmpCache.getServiceId());
+		if (checkPatientIsRegisteredAtServices(tmpCache.findPatientId(), tmpCache.getServiceId(), tmpCache, cohortOdsCodes)) {
+			LOG.debug("PASS - Patient " + tmpCache.findPatientId() + " is registered at one of defining services");
 			return true;
 		}
 
 		//if we couldn't work it out from our own patient resource, then check against any other patient resources
 		//that match to the same person record
-		String personId = patientLInkDal.getPersonId(patientUuid.toString());
-		Map<String, String> patientAndServiceIds = patientLInkDal.getPatientAndServiceIdsForPerson(personId);
-		LOG.debug("Found " + patientAndServiceIds.size() + " patient IDs for person ID " + personId);
+		Map<String, String> patientAndServiceIds = tmpCache.findOtherPatientsAndServices();
+		LOG.debug("Found " + patientAndServiceIds.size() + " patient IDs for person ID " + tmpCache.findPersonId());
 
 		for (String otherPatientId: patientAndServiceIds.keySet()) {
 
@@ -278,71 +233,24 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 			UUID otherServiceUuid = UUID.fromString(otherServiceUuidStr);
 
 			//skip the patient ID we started with since we know our service doesn't define the cohort (otherwise we wouldn't be in this fn)
-			if (otherPatientUuid.equals(patientUuid)) {
+			if (otherPatientUuid.equals(tmpCache.findPatientId())) {
 				continue;
 			}
 
 			LOG.debug("Checking patient " + otherPatientId + " at service " + otherServiceUuidStr);
-			if (checkPatientIsRegisteredAtServices(otherPatientUuid, otherServiceUuid, true, cohortOdsCodes)) {
+			if (checkPatientIsRegisteredAtServices(otherPatientUuid, otherServiceUuid, tmpCache, cohortOdsCodes)) {
 				LOG.debug("PASS - Patient " + otherPatientId + " is registered at one of defining services");
 				return true;
 			}
 		}
 
-		LOG.debug("FAIL - Patient " + patientUuid + " is NOT registered at one of defining services");
+		LOG.debug("FAIL - Patient " + tmpCache.findPatientId() + " is NOT registered at one of defining services");
 		return false;
 	}
 
-	/*private boolean checkPatientIsRegisteredAtServices(UUID serviceId, UUID patientUuid, Set<String> serviceIdsDefiningCohort) throws Exception {
+	private boolean checkPatientIsRegisteredAtServices(UUID patientUuid, UUID serviceId, TmpCache tmpCache, Set<String> cohortOdsCodes) throws Exception {
 
-		//first check the patient resource at our own service
-		LOG.debug("Checking patient " + patientUuid + " at service " + serviceId);
-		if (checkPatientIsRegisteredAtServices(patientUuid, serviceId, false, serviceIdsDefiningCohort)) {
-			LOG.debug("PASS - Patient " + patientUuid + " is registered at one of defining services");
-			return true;
-		}
-
-		//if we couldn't work it out from our own patient resource, then check against any other patient resources
-		//that match to the same person record
-		String personId = patientLInkDal.getPersonId(patientUuid.toString());
-		Map<String, String> patientAndServiceIds = patientLInkDal.getPatientAndServiceIdsForPerson(personId);
-		LOG.debug("Found " + patientAndServiceIds.size() + " patient IDs for person ID " + personId);
-
-		for (String otherPatientId: patientAndServiceIds.keySet()) {
-
-			UUID otherPatientUuid = UUID.fromString(otherPatientId);
-
-			String otherServiceUuidStr = patientAndServiceIds.get(otherPatientId);
-			UUID otherServiceUuid = UUID.fromString(otherServiceUuidStr);
-
-			//skip the patient ID we started with since we know our service doesn't define the cohort (otherwise we wouldn't be in this fn)
-			if (otherPatientUuid.equals(patientUuid)) {
-				continue;
-			}
-
-			LOG.debug("Checking patient " + otherPatientId + " at service " + otherServiceUuidStr);
-			if (checkPatientIsRegisteredAtServices(otherPatientUuid, otherServiceUuid, true, serviceIdsDefiningCohort)) {
-				LOG.debug("PASS - Patient " + otherPatientId + " is registered at one of defining services");
-				return true;
-			}
-		}
-
-		LOG.debug("FAIL - Patient " + patientUuid + " is NOT registered at one of defining services");
-		return false;
-	}*/
-
-	private boolean checkPatientIsRegisteredAtServices(UUID patientUuid, UUID serviceId, boolean checkCurrentVersionOnly, Set<String> cohortOdsCodes) throws Exception {
-
-		Patient fhirPatient = null;
-		if (checkCurrentVersionOnly) {
-			//when checking patient resources at other services, it makes sense to only count them if they're non-deleted
-			fhirPatient = (Patient)resourceRepository.getCurrentVersionAsResource(serviceId, ResourceType.Patient, patientUuid.toString());
-
-		} else {
-			//when checking the patient resource at our own service, check using the most recent non-deleted instance
-			fhirPatient = (Patient)retrieveNonDeletedResource(serviceId, ResourceType.Patient, patientUuid);
-		}
-
+		Patient fhirPatient = tmpCache.findPatientResource(patientUuid, serviceId);
 		if (fhirPatient == null) {
 			LOG.debug("      Patient " + patientUuid + " is null, returning false");
 			return false;
@@ -365,7 +273,7 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 
 		for (Reference careProviderReference : fhirPatient.getCareProvider()) {
 
-			String odsCode = findOdsCodeFromReference(careProviderReference, serviceId);
+			String odsCode = findOdsCodeFromReference(tmpCache, careProviderReference, serviceId);
 
 			if (!Strings.isNullOrEmpty(odsCode)) {
 				if (cohortOdsCodes.contains(odsCode.toUpperCase())) {
@@ -379,22 +287,14 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 		//if we couldn't find the registered practice code from the patient resource, see if we can do so via
 		//the EpisodeOfCare resources. We can only look at the current version because we can't search for
 		//past versions by patient ID
-		List<ResourceWrapper> episodeWrappers = resourceRepository.getResourcesByPatient(serviceId, patientUuid, ResourceType.EpisodeOfCare.toString());
-		LOG.debug("      Found " + episodeWrappers.size() + " episodes for patient " + patientUuid);
-		for (ResourceWrapper episodeWrapper: episodeWrappers) {
-
-			//this should only ever return non-deleted resources, but can't hurt to check
-			if (episodeWrapper.isDeleted()) {
-				continue;
-			}
-
-			String json = episodeWrapper.getResourceData();
-			EpisodeOfCare episodeOfCare = (EpisodeOfCare)FhirSerializationHelper.deserializeResource(json);
+		List<EpisodeOfCare> episodesOfCare = tmpCache.findEpisodeOfCareResources(patientUuid, serviceId);
+		LOG.debug("      Found " + episodesOfCare.size() + " episodes for patient " + patientUuid);
+		for (EpisodeOfCare episodeOfCare: episodesOfCare) {
 
 			//skip if ended
 			if (episodeOfCare.hasPeriod()
 					&& !PeriodHelper.isActive(episodeOfCare.getPeriod())) {
-				LOG.debug("      Episode " + episodeWrapper.getResourceId() + " is ended");
+				LOG.debug("      Episode " + episodeOfCare.getId() + " is ended");
 				continue;
 			}
 
@@ -402,26 +302,26 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 			Coding regTypeCoding = (Coding)ExtensionConverter.findExtensionValue(episodeOfCare, FhirExtensionUri.EPISODE_OF_CARE_REGISTRATION_TYPE);
 			if (regTypeCoding == null
 					|| !regTypeCoding.hasCode()) {
-				LOG.debug("      Episode " + episodeWrapper.getResourceId() + " has no reg type extension");
+				LOG.debug("      Episode " + episodeOfCare.getId() + " has no reg type extension");
 				continue;
 			}
 
 			//if not reg GMS
 			String regTypeValue = regTypeCoding.getCode();
 			if (!regTypeValue.equals(RegistrationType.REGULAR_GMS.getCode())) {
-				LOG.debug("      Episode " + episodeWrapper.getResourceId() + " is not reg GMS (is " + regTypeValue + ")");
+				LOG.debug("      Episode " + episodeOfCare.getId() + " is not reg GMS (is " + regTypeValue + ")");
 				continue;
 			}
 
 			//get mananging org reference
 			if (!episodeOfCare.hasManagingOrganization()) {
-				LOG.debug("      Episode " + episodeWrapper.getResourceId() + " has no managing org reference");
+				LOG.debug("      Episode " + episodeOfCare.getId() + " has no managing org reference");
 				continue;
 			}
 
 			//get ODS code for mananging org
 			Reference managingOrgReference = episodeOfCare.getManagingOrganization();
-			String odsCode = findOdsCodeFromReference(managingOrgReference, serviceId);
+			String odsCode = findOdsCodeFromReference(tmpCache, managingOrgReference, serviceId);
 
 			if (!Strings.isNullOrEmpty(odsCode)) {
 				if (cohortOdsCodes.contains(odsCode.toUpperCase())) {
@@ -435,148 +335,24 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 		return false;
 	}
 
-	/*private boolean checkPatientIsRegisteredAtServices(UUID patientUuid, UUID serviceId, boolean checkCurrentVersionOnly, Set<String> serviceIdsDefiningCohort) throws Exception {
 
-		Patient fhirPatient = null;
-		if (checkCurrentVersionOnly) {
-			//when checking patient resources at other services, it makes sense to only count them if they're non-deleted
-			fhirPatient = (Patient)resourceRepository.getCurrentVersionAsResource(serviceId, ResourceType.Patient, patientUuid.toString());
-
-		} else {
-			//when checking the patient resource at our own service, check using the most recent non-deleted instance
-			fhirPatient = (Patient)retrieveNonDeletedResource(serviceId, ResourceType.Patient, patientUuid);
-		}
-
-		if (fhirPatient == null) {
-			LOG.debug("      Patient " + patientUuid + " is null, returning false");
-			return false;
-		}
-
-		if (!fhirPatient.hasCareProvider()) {
-			LOG.debug("      Patient " + patientUuid + " has no care provider, returning false");
-			return false;
-		}
-
-		Extension isTestPatient = ExtensionConverter.findExtension(fhirPatient, FhirExtensionUri.PATIENT_IS_TEST_PATIENT);
-		if (isTestPatient != null) {
-			BooleanType b = (BooleanType)isTestPatient.getValue();
-			if (b.getValue() != null && b.getValue()){
-				LOG.debug("      Patient " + patientUuid + " is a test patient, returning false");
-				return false;
-			}
-		}
-
-
-		for (Reference careProviderReference : fhirPatient.getCareProvider()) {
-
-			String odsCode = findOdsCodeFromReference(careProviderReference, serviceId);
-
-			if (!Strings.isNullOrEmpty(odsCode)) {
-				if (isOdsCodeInServiceDefiningServices(odsCode, serviceIdsDefiningCohort)) {
-					return true;
-				}
-			} else {
-				LOG.debug("      ODS Code could not be found for " + careProviderReference.getReference());
-			}
-		}
-
-		//if we couldn't find the registered practice code from the patient resource, see if we can do so via
-		//the EpisodeOfCare resources. We can only look at the current version because we can't search for
-		//past versions by patient ID
-		List<ResourceWrapper> episodeWrappers = resourceRepository.getResourcesByPatient(serviceId, patientUuid, ResourceType.EpisodeOfCare.toString());
-		LOG.debug("      Found " + episodeWrappers.size() + " episodes for patient " + patientUuid);
-		for (ResourceWrapper episodeWrapper: episodeWrappers) {
-
-			//this should only ever return non-deleted resources, but can't hurt to check
-			if (episodeWrapper.isDeleted()) {
-				continue;
-			}
-
-			String json = episodeWrapper.getResourceData();
-			EpisodeOfCare episodeOfCare = (EpisodeOfCare)FhirSerializationHelper.deserializeResource(json);
-
-			//skip if ended
-			if (episodeOfCare.hasPeriod()
-					&& !PeriodHelper.isActive(episodeOfCare.getPeriod())) {
-				LOG.debug("      Episode " + episodeWrapper.getResourceId() + " is ended");
-				continue;
-			}
-
-			//find reg type
-			Coding regTypeCoding = (Coding)ExtensionConverter.findExtensionValue(episodeOfCare, FhirExtensionUri.EPISODE_OF_CARE_REGISTRATION_TYPE);
-			if (regTypeCoding == null
-					|| !regTypeCoding.hasCode()) {
-				LOG.debug("      Episode " + episodeWrapper.getResourceId() + " has no reg type extension");
-				continue;
-			}
-
-			//if not reg GMS
-			String regTypeValue = regTypeCoding.getCode();
-			if (!regTypeValue.equals(RegistrationType.REGULAR_GMS.getCode())) {
-				LOG.debug("      Episode " + episodeWrapper.getResourceId() + " is not reg GMS (is " + regTypeValue + ")");
-				continue;
-			}
-
-			//get mananging org reference
-			if (!episodeOfCare.hasManagingOrganization()) {
-				LOG.debug("      Episode " + episodeWrapper.getResourceId() + " has no managing org reference");
-				continue;
-			}
-
-			//get ODS code for mananging org
-			Reference managingOrgReference = episodeOfCare.getManagingOrganization();
-			String odsCode = findOdsCodeFromReference(managingOrgReference, serviceId);
-
-			if (!Strings.isNullOrEmpty(odsCode)) {
-				if (isOdsCodeInServiceDefiningServices(odsCode, serviceIdsDefiningCohort)) {
-					return true;
-				}
-			} else {
-				LOG.debug("      ODS Code could not be found for " + managingOrgReference.getReference());
-			}
-		}
-
-		return false;
-	}*/
-
-	/*private static boolean isOdsCodeInServiceDefiningServices(String odsCode, Set<String> serviceIdsDefiningCohort) throws Exception {
-		Organisation organisation = organisationRepository.getByNationalId(odsCode);
-		if (organisation != null
-				&& organisation.getServices() != null) {
-			LOG.debug("      Admin organisation was found with services " + organisation.getServices().size());
-
-			for (UUID orgServiceId : organisation.getServices().keySet()) {
-				String orgServiceIdStr = orgServiceId.toString();
-				LOG.debug("      Org admin service ID = " + orgServiceIdStr);
-				if (serviceIdsDefiningCohort.contains(orgServiceIdStr)) {
-					LOG.debug("      Matches sevice list");
-					return true;
-				}
-			}
-		} else {
-			LOG.debug("      No admin organisation was found with services for " + odsCode);
-		}
-
-		return false;
-	}*/
-
-	private String findOdsCodeFromReference(Reference careProviderReference, UUID serviceId) throws Exception {
+	private String findOdsCodeFromReference(TmpCache tmpCache, Reference careProviderReference, UUID serviceId) throws Exception {
 		ReferenceComponents comps = ReferenceHelper.getReferenceComponents(careProviderReference);
 		if (comps.getResourceType() == ResourceType.Organization) {
-			return findOdsCodeFromOrgReference(comps.getId(), serviceId);
+			return findOdsCodeFromOrgReference(tmpCache, comps.getId(), serviceId);
 
 		} else if (comps.getResourceType() == ResourceType.Practitioner) {
-			return findOdsCodeFromPractitionerReference(comps.getId(), serviceId);
+			return findOdsCodeFromPractitionerReference(tmpCache, comps.getId(), serviceId);
 
 		} else {
 			return null;
 		}
 	}
 
-	private String findOdsCodeFromPractitionerReference(String practitionerId, UUID serviceId) throws Exception {
+	private String findOdsCodeFromPractitionerReference(TmpCache tmpCache, String practitionerId, UUID serviceId) throws Exception {
 
 		UUID practitionerUuid = UUID.fromString(practitionerId);
-		Practitioner fhirPractitioner = (Practitioner)retrieveNonDeletedResource(serviceId, ResourceType.Practitioner, practitionerUuid);
+		Practitioner fhirPractitioner = tmpCache.findPractitioner(practitionerUuid, serviceId);
 
 		if (fhirPractitioner == null
 				|| !fhirPractitioner.hasPractitionerRole()) {
@@ -595,7 +371,7 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 
 			Reference orgReference = role.getManagingOrganization();
 			String orgId = ReferenceHelper.getReferenceId(orgReference);
-			String orgOds = findOdsCodeFromOrgReference(orgId, serviceId);
+			String orgOds = findOdsCodeFromOrgReference(tmpCache, orgId, serviceId);
 			if (!Strings.isNullOrEmpty(orgOds)) {
 				return orgOds;
 			}
@@ -604,11 +380,11 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 		return null;
 	}
 
-	private String findOdsCodeFromOrgReference(String organisationId, UUID serviceId) throws Exception {
+	private String findOdsCodeFromOrgReference(TmpCache tmpCache, String organisationId, UUID serviceId) throws Exception {
 
 		UUID organisationUuid = UUID.fromString(organisationId);
 		//LOG.debug("      Patient " + patientUuid + ", refers to organization " + organisationUuid);
-		Organization fhirOrganization = (Organization)retrieveNonDeletedResource(serviceId, ResourceType.Organization, organisationUuid);
+		Organization fhirOrganization = tmpCache.findOrganization(organisationUuid, serviceId);
 
 		if (fhirOrganization == null) {
 			return null;
@@ -639,185 +415,16 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 		return ret;
 	}
 
-	/*private static Set<String> getServiceIdsForServiceDefinedProtocol(Protocol protocol) {
-		Set<String> ret = new HashSet<>();
-
-		for (ServiceContract serviceContract: protocol.getServiceContract()) {
-			if (serviceContract.getActive() == ServiceContractActive.TRUE
-				&& serviceContract.isDefinesCohort() != null
-				&& serviceContract.isDefinesCohort().booleanValue()) {
-
-				Service service = serviceContract.getService();
-				String serviceIdStr = service.getUuid();
-				ret.add(serviceIdStr);
-			}
-		}
-
-		return ret;
-	}*/
-
-	/*private boolean checkServiceDefinedCohort(UUID protocolId, Protocol protocol, UUID serviceId, UUID exchangeId, UUID batchId) throws PipelineException {
-
-		//find the list of services that define the cohort
-		HashSet<String> serviceIdsDefiningCohort = new HashSet<>();
-		for (ServiceContract serviceContract: protocol.getServiceContract()) {
-			if (serviceContract.getActive() == ServiceContractActive.TRUE
-					&& serviceContract.isDefinesCohort() != null
-					&& serviceContract.isDefinesCohort().booleanValue()) {
-				Service service = serviceContract.getService();
-				String serviceIdStr = service.getUuid();
-				serviceIdsDefiningCohort.add(serviceIdStr);
-			}
-		}
-
-		//if we've not activated any service contracts yet, this will be empty, which is fine
-		if (serviceIdsDefiningCohort.isEmpty()) {
-			return false;
-			//throw new PipelineException("Protocol " + protocolId + " has cohort to be service-defined, but has no service contracts that define it");
-		}
-
-		//check to see if our service is one of the defining service contracts
-		if (serviceIdsDefiningCohort.contains(serviceId.toString())) {
-			return true;
-		}
-
-		//if our service isn't one of the cohort-defining ones, then we need to see if our patient is registered at one
-		//of the cohort-defining services
-		UUID patientUuid = null;
-		try {
-			patientUuid = findPatientId(exchangeId, batchId);
-		} catch (Exception ex) {
-			throw new PipelineException("Failed to find patient ID for batch " + batchId, ex);
-		}
-
-		//if there's no patient ID, then this is admin resources batch, so return true so it goes through unfiltered
-		if (patientUuid == null) {
-			//LOG.trace("No patient ID for batch " + batchId + " in exchange " + exchangeId + " so passing protocol " + protocolId + " check");
-			return true;
-		}
-
-		//rewriting to avoid using the patient_search table, which means we need the GP data to have
-		//been processed by Discovery first, which isn't necessarily the case
-		try {
-			Patient fhirPatient = (Patient)retrieveNonDeletedResource(serviceId, ResourceType.Patient, patientUuid);
-			if (fhirPatient != null
-					&& fhirPatient.hasCareProvider()) {
-
-				for (Reference careProviderReference: fhirPatient.getCareProvider()) {
-					ReferenceComponents comps = ReferenceHelper.getReferenceComponents(careProviderReference);
-					if (comps.getResourceType() == ResourceType.Organization) {
-
-						UUID organisationUuid = UUID.fromString(comps.getId());
-						Organization fhirOrganization = (Organization)retrieveNonDeletedResource(serviceId, ResourceType.Organization, organisationUuid);
-
-						if (fhirOrganization != null) {
-							String odsCode = IdentifierHelper.findOdsCode(fhirOrganization);
-							if (!Strings.isNullOrEmpty(odsCode)) {
-								Organisation organisation = organisationRepository.getByNationalId(odsCode);
-								if (organisation != null
-										&& organisation.getServices() != null) {
-
-									for (UUID orgServiceId : organisation.getServices().keySet()) {
-										String orgServiceIdStr = orgServiceId.toString();
-										if (serviceIdsDefiningCohort.contains(orgServiceIdStr)) {
-
-											return true;
-										}
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-
-		} catch (Exception ex) {
-			throw new PipelineException("Failed to retrieve patient or organisation resources for patient ID " + patientUuid, ex);
-		}
-
-		return false;
 
 
-		*//*
-		String patientId = patientUuid.toString();
 
-		//find the global person ID our patient belongs to
-		String personId = null;
-		try {
-			personId = patientLInkDal.getPersonId(patientId);
-		} catch (Exception ex) {
-			throw new PipelineException("Failed to find person ID for batch " + batchId + " and patientId " + patientId, ex);
-		}
-
-		//get all the patient IDs our person is matched to
-		List<String> patientIds = null;
-		try {
-			patientIds = patientLInkDal.getPatientIds(personId);
-		} catch (Exception ex) {
-			throw new PipelineException("Failed to find person ID for batch " + batchId + " and personId " + personId, ex);
-		}
-
-		//LOG.trace("Found " + patientIds.size() + " patient IDs for patient " + patientId + " and person " + personId + " for batch " + batchId + " in exchange " + exchangeId + " for protocol " + protocolId + " check");
-
-		for (String otherPatientId: patientIds) {
-
-			//skip the patient ID we started with since we know our service doesn't define the cohort
-			if (otherPatientId.equals(patientId)) {
-				continue;
-			}
-
-			ResourceWrapper resourceHistory = null;
-			try {
-				resourceHistory = resourceRepository.getCurrentVersion(ResourceType.Patient.toString(), UUID.fromString(otherPatientId));
-			} catch (Exception ex) {
-				throw new PipelineException("Failed to retrieve resource from database", ex);
-			}
-
-			if (resourceHistory == null
-					|| resourceHistory.isDeleted()) {
-				continue;
-			}
-
-			//if the other patient resouce does belong to one of our cohort defining services, then let it through
-			UUID otherPatientServiceId = resourceHistory.getServiceId();
-			if (serviceIdsDefiningCohort.contains(otherPatientServiceId.toString())) {
-				LOG.trace("Patient ID " + otherPatientId + " is in cohort for batch " + batchId + " in exchange " + exchangeId + " so passing protocol " + protocolId + " check");
-				return true;
-			}
-		}
-
-		return false;*//*
-	}*/
-
-	private org.hl7.fhir.instance.model.Resource retrieveNonDeletedResource(UUID serviceId, ResourceType resourceType, UUID resourceId) throws Exception {
-
-		//get the current instance from the DB
-		org.hl7.fhir.instance.model.Resource fhirResource = resourceRepository.getCurrentVersionAsResource(serviceId, resourceType, resourceId.toString());
-
-		//if the resource has been deleted, then we have to go back and find a non-deleted instance
-		if (fhirResource == null) {
-			List<ResourceWrapper> history = resourceRepository.getResourceHistory(serviceId, resourceType.toString(), resourceId);
-
-			//most recent is first
-			for (ResourceWrapper historyItem: history) {
-				if (!historyItem.isDeleted()) {
-					String json = historyItem.getResourceData();
-					fhirResource = parser.parse(json);
-					break;
-				}
-			}
-		}
-
-		return fhirResource;
-	}
-
-	private boolean checkExplicitCohort(UUID protocolId, UUID serviceId, UUID exchangeId, UUID batchId) throws PipelineException {
+	private boolean checkExplicitCohort(UUID protocolId, TmpCache tmpCache) throws PipelineException {
 		//find the patient ID for the batch
 		UUID patientId = null;
 		try {
-			patientId = findPatientId(exchangeId, batchId);
+			patientId = tmpCache.findPatientId();
 		} catch (Exception ex) {
-			throw new PipelineException("Failed to find patient ID for batch " + batchId, ex);
+			throw new PipelineException("Failed to find patient ID for batch " + tmpCache.getBatchId(), ex);
 		}
 
 		//if there's no patient ID, then this is admin resources batch, so return true so it goes through unfiltered
@@ -826,13 +433,16 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 		}
 
 		try {
-			String nhsNumber = findPatientNhsNumber(patientId);
+			String nhsNumber = tmpCache.findPatientNhsNumber();
 			//LOG.trace("patient ID " + patientId + " -> nhs number " + nhsNumber);
 
 			if (Strings.isNullOrEmpty(nhsNumber)) {
 				return false;
 			}
 
+			//no point moving the below to the TmpCache object since it only is specific to the protocol currently being checked
+			UUID serviceId = tmpCache.getServiceId();
+			PatientCohortDalI cohortRepository = DalProvider.factoryPatientCohortDal();
 			boolean inCohort = cohortRepository.isInCohort(protocolId, serviceId, nhsNumber);
 			//LOG.trace("protocol " + protocolId + " service " + serviceId + " nhs number " + nhsNumber + " -> in cohort " + inCohort);
 			return inCohort;
@@ -842,76 +452,9 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 	}
 
 
-	private String findPatientNhsNumber(UUID patientId) throws Exception {
 
-		PatientSearch patientSearchResult = patientSearchDal.searchByPatientId(patientId);
-		if (patientSearchResult != null) {
-			return patientSearchResult.getNhsNumber();
-		} else {
-			return null;
-		}
-	}
-	/*private String findPatientNhsNumber(UUID patientId) {
 
-		PatientIdentifierByPatientId identity = patientIdentifierRepository.getMostRecentByPatientId(patientId);
-		if (identity != null) {
-			return identity.getNhsNumber();
 
-		} else {
-			return null;
-		}
-	}*/
-
-	private static UUID findPatientId(UUID exchangeId, UUID batchId) throws Exception {
-
-		ExchangeBatch exchangeBatch = exchangeBatchRepository.getForExchangeAndBatchId(exchangeId, batchId);
-		if (exchangeBatch == null) {
-			return null;
-
-		} else {
-			return exchangeBatch.getEdsPatientId();
-		}
-	}
-	/*private static String findPatientId(String batchId) throws Exception {
-
-		UUID batchUuid = UUID.fromString(batchId);
-		List<ResourceByExchangeBatch> patientResourceWrappers = resourceRepository.getResourcesForBatch(batchUuid);
-
-		//go through what we've received and see if we can find a patient ID from there
-		for (ResourceByExchangeBatch batchEntry: patientResourceWrappers) {
-
-			String resourceType = batchEntry.getResourceType();
-			ResourceType fhirResourceType = ResourceType.valueOf(resourceType);
-			if (FhirResourceFiler.isPatientResource(fhirResourceType)) {
-
-				if (!batchEntry.getIsDeleted()) {
-					Resource fhir = FhirResourceHelper.deserialiseResouce(batchEntry);
-					return IdHelper.getPatientId(fhir);
-				}
-			}
-		}
-
-		//if everything in our batch is deleted, we need to look at past instances of the same resources we received
-		for (ResourceByExchangeBatch batchEntry: patientResourceWrappers) {
-
-			String resourceType = batchEntry.getResourceType();
-			UUID resourceId = batchEntry.getResourceId();
-			List<ResourceHistory> history = resourceRepository.getResourceHistory(resourceType, resourceId);
-
-			//work back through the history to find a non-deleted instance, which will allow us to find the EDS patient ID
-			for (int i=history.size()-1; i>=0; i--) {
-				ResourceHistory historyEntry = history.get(i);
-				if (historyEntry.getIsDeleted()) {
-					continue;
-				}
-
-				Resource fhir = FhirResourceHelper.deserialiseResouce(historyEntry);
-				return IdHelper.getPatientId(fhir);
-			}
-		}
-
-		return null;
-	}*/
 
 	/**
 	 * filters down resources in the batch to just those that match the protocol data set
@@ -978,4 +521,184 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 		return ret;
 	}
 
+	/**
+	 * if a patient has multiple subscribers, then we end up retrieving the same stuff from the DB multiple times, so
+	 * we can check if the patient falls into each subscribers cohort. This cache is intended to avoid that, by
+	 * caching resources for a patient just for the duration of this class being used.
+	 */
+	class TmpCache {
+
+		private final ExchangeBatchDalI exchangeBatchRepository = DalProvider.factoryExchangeBatchDal();
+		private final ResourceDalI resourceRepository = DalProvider.factoryResourceDal();
+		private final PatientLinkDalI patientLInkDal = DalProvider.factoryPatientLinkDal();
+		private final PatientSearchDalI patientSearchDal = DalProvider.factoryPatientSearchDal();
+
+		private UUID exchangeId;
+		private UUID serviceId;
+		private UUID batchId;
+
+		private boolean checkedForPatientId = false;
+		private UUID cachedPatientId = null;
+
+		private boolean checkedForNhsNumber = false;
+		private String cachedNhsNumber = null;
+
+		private boolean checkedForPersonId = false;
+		private String cachedPersonId = null;
+
+		private boolean checkedForOtherPatients = false;
+		private Map<String, String> cachedOtherPatients = null;
+
+		private Map<UUID, Patient> hmPatients = new HashMap<>();
+		private Map<UUID, List<EpisodeOfCare>> hmEpisodes = new HashMap<>();
+		private Map<UUID, Organization> hmOrgs = new HashMap<>();
+		private Map<UUID, Practitioner> hmPractitioners = new HashMap<>();
+
+		public TmpCache(UUID exchangeId, UUID serviceId, UUID batchId) {
+			this.exchangeId = exchangeId;
+			this.serviceId = serviceId;
+			this.batchId = batchId;
+		}
+
+		public UUID findPatientId() throws Exception {
+
+			if (!checkedForPatientId) {
+				ExchangeBatch exchangeBatch = exchangeBatchRepository.getForExchangeAndBatchId(exchangeId, batchId);
+				if (exchangeBatch == null) {
+					cachedPatientId = null;
+
+				} else {
+					cachedPatientId = exchangeBatch.getEdsPatientId();
+				}
+				checkedForPatientId = true;
+			}
+			return cachedPatientId;
+		}
+
+		public String findPatientNhsNumber() throws Exception {
+
+			if (!checkedForNhsNumber) {
+				PatientSearch patientSearchResult = patientSearchDal.searchByPatientId(findPatientId());
+				if (patientSearchResult != null) {
+					cachedNhsNumber = patientSearchResult.getNhsNumber();
+				} else {
+					cachedNhsNumber = null;
+				}
+				checkedForNhsNumber = true;
+			}
+			return cachedNhsNumber;
+		}
+
+		public String findPersonId() throws Exception {
+			if (!checkedForPersonId) {
+				cachedPersonId = patientLInkDal.getPersonId(findPatientId().toString());
+				checkedForPersonId = true;
+			}
+			return cachedPersonId;
+		}
+
+		public Map<String, String> findOtherPatientsAndServices() throws Exception {
+			if (!checkedForOtherPatients) {
+				cachedOtherPatients = patientLInkDal.getPatientAndServiceIdsForPerson(findPersonId());
+				checkedForOtherPatients = true;
+			}
+			return cachedOtherPatients;
+		}
+
+		public UUID getExchangeId() {
+			return exchangeId;
+		}
+
+		public UUID getServiceId() {
+			return serviceId;
+		}
+
+		public UUID getBatchId() {
+			return batchId;
+		}
+
+		public Patient findPatientResource(UUID patientUuid, UUID serviceId) throws Exception {
+
+			if (!hmPatients.containsKey(patientUuid)) {
+
+				//if looking for the resource for our main patient, then go back to find a non-deleted one if it is deleted
+				boolean checkAllResourceHistory = patientUuid.equals(findPatientId());
+
+				Patient fhirPatient = null;
+				if (checkAllResourceHistory) {
+					//when checking the patient resource at our own service, check using the most recent non-deleted instance
+					fhirPatient = (Patient)retrieveNonDeletedResource(serviceId, ResourceType.Patient, patientUuid);
+				} else {
+					//when checking patient resources at other services, it makes sense to only count them if they're non-deleted
+					fhirPatient = (Patient)resourceRepository.getCurrentVersionAsResource(serviceId, ResourceType.Patient, patientUuid.toString());
+				}
+
+				hmPatients.put(patientUuid, fhirPatient);
+			}
+
+			return hmPatients.get(patientUuid);
+		}
+
+		private org.hl7.fhir.instance.model.Resource retrieveNonDeletedResource(UUID serviceId, ResourceType resourceType, UUID resourceId) throws Exception {
+
+			//get the current instance from the DB
+			org.hl7.fhir.instance.model.Resource fhirResource = resourceRepository.getCurrentVersionAsResource(serviceId, resourceType, resourceId.toString());
+
+			//if the resource has been deleted, then we have to go back and find a non-deleted instance
+			if (fhirResource == null) {
+				List<ResourceWrapper> history = resourceRepository.getResourceHistory(serviceId, resourceType.toString(), resourceId);
+
+				//most recent is first
+				for (ResourceWrapper historyItem: history) {
+					if (!historyItem.isDeleted()) {
+						String json = historyItem.getResourceData();
+						fhirResource = parser.parse(json);
+						break;
+					}
+				}
+			}
+
+			return fhirResource;
+		}
+
+		public List<EpisodeOfCare> findEpisodeOfCareResources(UUID patientUuid, UUID serviceId) throws Exception {
+
+			if (!hmEpisodes.containsKey(patientUuid)) {
+
+				List<EpisodeOfCare> l = new ArrayList<>();
+
+				List<ResourceWrapper> episodeWrappers = resourceRepository.getResourcesByPatient(serviceId, patientUuid, ResourceType.EpisodeOfCare.toString());
+				for (ResourceWrapper episodeWrapper : episodeWrappers) {
+
+					//this should only ever return non-deleted resources, but can't hurt to check
+					if (episodeWrapper.isDeleted()) {
+						continue;
+					}
+
+					String json = episodeWrapper.getResourceData();
+					EpisodeOfCare episodeOfCare = (EpisodeOfCare) FhirSerializationHelper.deserializeResource(json);
+					l.add(episodeOfCare);
+				}
+
+				hmEpisodes.put(patientUuid, l);
+			}
+			return hmEpisodes.get(patientUuid);
+		}
+
+		public Practitioner findPractitioner(UUID practitionerUuid, UUID serviceId) throws Exception {
+			if (!hmPractitioners.containsKey(practitionerUuid)) {
+				Practitioner fhirPractitioner = (Practitioner)retrieveNonDeletedResource(serviceId, ResourceType.Practitioner, practitionerUuid);
+				hmPractitioners.put(practitionerUuid, fhirPractitioner);
+			}
+			return hmPractitioners.get(practitionerUuid);
+		}
+
+		public Organization findOrganization(UUID organizationUuid, UUID serviceId) throws Exception {
+			if (!hmOrgs.containsKey(organizationUuid)) {
+				Organization fhirOrganization = (Organization)retrieveNonDeletedResource(serviceId, ResourceType.Organization, organizationUuid);
+				hmOrgs.put(organizationUuid, fhirOrganization);
+			}
+			return hmOrgs.get(organizationUuid);
+		}
+	}
 }
