@@ -14,7 +14,9 @@ import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.common.fhir.PeriodHelper;
 import org.endeavourhealth.common.fhir.ReferenceHelper;
 import org.endeavourhealth.common.utility.*;
-import org.endeavourhealth.core.configuration.*;
+import org.endeavourhealth.core.configuration.ConfigDeserialiser;
+import org.endeavourhealth.core.configuration.PostMessageToExchangeConfig;
+import org.endeavourhealth.core.configuration.QueueReaderConfiguration;
 import org.endeavourhealth.core.csv.CsvHelper;
 import org.endeavourhealth.core.database.dal.DalProvider;
 import org.endeavourhealth.core.database.dal.admin.LibraryRepositoryHelper;
@@ -167,7 +169,7 @@ public class Main {
 			System.exit(0);
 		}
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("CreateBartsSubset")) {
 			String sourceDirPath = args[1];
 			UUID serviceUuid = UUID.fromString(args[2]);
@@ -175,7 +177,7 @@ public class Main {
 			String samplePatientsFile = args[4];
 			createBartsSubset(sourceDirPath, serviceUuid, systemUuid, samplePatientsFile);
 			System.exit(0);
-		}
+		}*/
 
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("CreateEmisSubset")) {
@@ -228,11 +230,11 @@ public class Main {
 			System.exit(0);
 		}
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("TestXML")) {
 			testXml();
 			System.exit(0);
-		}
+		}*/
 
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("TestGraphiteMetrics")) {
@@ -799,7 +801,7 @@ public class Main {
 
 	}
 
-	private static void testXml() {
+	/*private static void testXml() {
 		LOG.info("Testing XML");
 		try {
 
@@ -837,7 +839,7 @@ public class Main {
 			LOG.error("", t);
 		}
 
-	}
+	}*/
 
 	private static void testMetrics() {
 		LOG.info("Testing Metrics");
@@ -2595,6 +2597,7 @@ public class Main {
 			fileTypes.add("LOREF");
 			fileTypes.add("NOMREF");
 			fileTypes.add("OPATT");
+			fileTypes.add("ORDER");
 			fileTypes.add("ORGREF");
 			fileTypes.add("PPADD");
 			fileTypes.add("PPAGP");
@@ -5807,7 +5810,7 @@ public class Main {
 		}
 	}
 
-	private static void createBartsSubset(String sourceDir, UUID serviceUuid, UUID systemUuid, String samplePatientsFile) {
+	/*private static void createBartsSubset(String sourceDir, UUID serviceUuid, UUID systemUuid, String samplePatientsFile) {
 		LOG.info("Creating Barts Subset");
 
 		try {
@@ -5831,7 +5834,7 @@ public class Main {
 		} catch (Throwable t) {
 			LOG.error("", t);
 		}
-	}
+	}*/
 
 	/*private static void createBartsSubsetForFile(File sourceDir, File destDir, Set<String> personIds) throws Exception {
 
@@ -5971,7 +5974,7 @@ public class Main {
 		}
 	}*/
 
-	private static void createBartsSubsetForFile(String sourceDir, UUID serviceUuid, UUID systemUuid, Set<String> personIds) throws Exception {
+	/*private static void createBartsSubsetForFile(String sourceDir, UUID serviceUuid, UUID systemUuid, Set<String> personIds) throws Exception {
 
 		ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
 		List<Exchange> exchanges = exchangeDal.getExchangesByService(serviceUuid, systemUuid, Integer.MAX_VALUE);
@@ -6105,7 +6108,7 @@ public class Main {
 				}
 			}
 		}
-	}
+	}*/
 
 	private static void copyFile(File src, File dst) throws Exception {
 		FileInputStream fis = new FileInputStream(src);

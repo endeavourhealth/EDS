@@ -9,10 +9,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.nio.charset.Charset;
+import java.io.Reader;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.zip.ZipInputStream;
 
 public class Icd10Updater {
     private static final Logger LOG = LoggerFactory.getLogger(LsoaUpdater.class);
@@ -23,10 +24,8 @@ public class Icd10Updater {
      * Usage
      * =================================================================================
      * 1. Download the ICD10 data files from https://isd.digital.nhs.uk/trud3/user/authenticated/group/0/pack/28/subpack/258/releases#release-ICD_10.5.0_20151102000001
-     * 2. Open the zip file
-     * 3. Locate the "codes and titles and metadata file" e.g. ICD10_Edition5_CodesAndTitlesAndMetadata_GB_20160401.txt
      * 4. Then run this utility as:
-     *      Main icd10 <names and titles and metadata file.txt>
+     *      Main icd10 <file zip path>
      *
      * Verson on AWS Live is 2 November 2015
      */
@@ -34,7 +33,7 @@ public class Icd10Updater {
 
         if (args.length != 2) {
             LOG.error("Incorrect number of parameters");
-            LOG.error("Usage: icd10 <icd10 txt file>");
+            LOG.error("Usage: icd10 <icd10 zip file>");
             return;
         }
 
@@ -44,15 +43,47 @@ public class Icd10Updater {
 
         if (!file.exists()) {
             LOG.error("" + file + " doesn't exist");
+            return;
+        }
+        if (!ZipHelper.isZip(file)) {
+            LOG.error("" + file + " isn't a zip file");
+            return;
         }
 
-        saveIcd10Lookups(file);
+        LOG.info("Looking for Codes and Titles File...");
+        ZipInputStream zis = ZipHelper.createZipInputStream(file);
+        Reader r = ZipHelper.findFile(zis, ".*/Content/.*_CodesAndTitlesAndMetadata_.*.txt");
+        if (r != null) {
+            LOG.info("Found file and reading in...");
+            Map<String, String> codeMap = readIcd10Records(r);
+            LOG.info("Saving to DB...");
+            saveIcd10Lookups(codeMap);
+        } else {
+            LOG.error("Failed to find titles and metadata file");
+            return;
+        }
+        zis.close();
+
+        LOG.info("Looking for Equivalencies File...");
+        zis = ZipHelper.createZipInputStream(file);
+        r = ZipHelper.findFile(zis, ".*/Content/.*_TableOfCodingEquivalencesWithDescriptionsForward_.*.txt");
+        if (r != null) {
+            LOG.info("Found file and reading in...");
+            Map<String, String> codeMap = readIcd10EquivalenceRecords(r);
+            LOG.info("Saving to DB...");
+            saveIcd10Lookups(codeMap);
+        } else {
+            LOG.error("Failed to find titles and metadata file");
+            return;
+        }
+        zis.close();
+
         LOG.info("Finished ICD10 Import");
     }
 
-    private static void saveIcd10Lookups(File file) throws Exception {
 
-        Map<String, String> codeMap = readIcd10Records(file);
+    private static void saveIcd10Lookups(Map<String, String> codeMap) throws Exception {
+
         int done = 0;
 
         Icd10DalI dal = DalProvider.factoryIcd10Dal();
@@ -74,20 +105,20 @@ public class Icd10Updater {
     /**
      * the file is simply five columns delimited with a tab. No column headers.
      */
-    private static Map<String, String> readIcd10Records(File src) throws Exception {
+    private static Map<String, String> readIcd10Records(Reader r) throws Exception {
         Map<String, String> map = new HashMap<>();
 
-        CSVFormat format = CSVFormat.TDF;
+        CSVFormat format = CSVFormat.TDF.withHeader();
 
         CSVParser parser = null;
         try {
-            parser = CSVParser.parse(src, Charset.defaultCharset(), format);
+            parser = new CSVParser(r, format);
             Iterator<CSVRecord> iterator = parser.iterator();
 
             while (iterator.hasNext()) {
                 CSVRecord record = iterator.next();
-                String code = record.get(0);
-                String name = record.get(4);
+                String code = record.get("CODE");
+                String name = record.get("DESCRIPTION");
                 map.put(code, name);
             }
 
@@ -99,4 +130,37 @@ public class Icd10Updater {
 
         return map;
     }
+
+    private static Map<String, String> readIcd10EquivalenceRecords(Reader r) throws Exception {
+        Map<String, String> map = new HashMap<>();
+
+        CSVFormat format = CSVFormat.TDF.withHeader();
+
+        CSVParser parser = null;
+        try {
+            parser = new CSVParser(r, format);
+            Iterator<CSVRecord> iterator = parser.iterator();
+
+            while (iterator.hasNext()) {
+                CSVRecord record = iterator.next();
+                String code = record.get("From: ICD-10 4th Edition code");
+                String name = record.get("Code Description");
+                String isEquivalent = record.get("Target Different to Source?");
+
+                //this file contains all the codes, not just those that have equivalents. The ones that are equivalents
+                //have this field as Y
+                if (isEquivalent.equalsIgnoreCase("Y")) {
+                    map.put(code, name);
+                }
+            }
+
+        } finally {
+            if (parser != null) {
+                parser.close();
+            }
+        }
+
+        return map;
+    }
+
 }

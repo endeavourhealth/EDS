@@ -4,7 +4,6 @@ import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.csv.QuoteMode;
-import org.apache.commons.io.FilenameUtils;
 import org.endeavourhealth.common.utility.ThreadPool;
 import org.endeavourhealth.common.utility.ThreadPoolError;
 import org.endeavourhealth.core.database.dal.DalProvider;
@@ -13,11 +12,10 @@ import org.endeavourhealth.core.database.dal.reference.models.SnomedLookup;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.*;
+import java.io.File;
+import java.io.Reader;
 import java.util.*;
 import java.util.concurrent.Callable;
-import java.util.regex.Pattern;
-import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 public class SnomedUpdater {
@@ -51,24 +49,25 @@ public class SnomedUpdater {
 
         if (!file.exists()) {
             LOG.error("" + file + " doesn't exist");
+            return;
         }
-        String ext = FilenameUtils.getExtension(file.getName());
-        if (!ext.equalsIgnoreCase("zip")) {
+        if (!ZipHelper.isZip(file)) {
             LOG.error("" + file + " isn't a zip file");
+            return;
         }
 
         ThreadPool threadPool = new ThreadPool(5, 1000);
 
         //find international concepts file
         LOG.info("Doing International Snomed CT Files");
-        ZipInputStream zis = createZipInputStream(file);
-        Reader r = findFile(zis, "SnomedCT_InternationalRF2_PRODUCTION_.*/Full/Terminology/sct2_Description_Full-en_INT_.*.txt");
+        ZipInputStream zis = ZipHelper.createZipInputStream(file);
+        Reader r = ZipHelper.findFile(zis, "SnomedCT_InternationalRF2_PRODUCTION_.*/Full/Terminology/sct2_Description_Full-en_INT_.*.txt");
 
         //if we didn't find a "full" version, look for a delta one
         if (r == null) {
             zis.close(); //have to close and re-open
-            zis = createZipInputStream(file);
-            r = findFile(zis, "SnomedCT_InternationalRF2_PRODUCTION_.*/Delta/Terminology/sct2_Description_Delta-en_INT_.*.txt");
+            zis = ZipHelper.createZipInputStream(file);
+            r = ZipHelper.findFile(zis, "SnomedCT_InternationalRF2_PRODUCTION_.*/Delta/Terminology/sct2_Description_Delta-en_INT_.*.txt");
         }
 
         if (r != null) {
@@ -80,14 +79,14 @@ public class SnomedUpdater {
 
         //find UK concepts file
         LOG.info("Doing UK Snomed CT Files");
-        zis = createZipInputStream(file);
-        r = findFile(zis, "SnomedCT_UKClinicalRF2_PRODUCTION_.*/Full/Terminology/sct2_Description_Full-en_GB1000000_.*.txt");
+        zis = ZipHelper.createZipInputStream(file);
+        r = ZipHelper.findFile(zis, "SnomedCT_UKClinicalRF2_PRODUCTION_.*/Full/Terminology/sct2_Description_Full-en_GB1000000_.*.txt");
 
         //if we didn't find a "full" version, look for a delta one
         if (r == null) {
             zis.close(); //have to close and re-open
-            zis = createZipInputStream(file);
-            r = findFile(zis, "SnomedCT_UKClinicalRF2_PRODUCTION_.*/Delta/Terminology/sct2_Description_Delta-en_GB1000000_.*.txt");
+            zis = ZipHelper.createZipInputStream(file);
+            r = ZipHelper.findFile(zis, "SnomedCT_UKClinicalRF2_PRODUCTION_.*/Delta/Terminology/sct2_Description_Delta-en_GB1000000_.*.txt");
         }
 
         if (r != null) {
@@ -103,11 +102,7 @@ public class SnomedUpdater {
         LOG.info("Finished SNOMED CT Update");
     }
 
-    private static ZipInputStream createZipInputStream(File f) throws Exception {
-        FileInputStream fis = new FileInputStream(f);
-        BufferedInputStream bis = new BufferedInputStream(fis);
-        return new ZipInputStream(bis);
-    }
+
 
     private static void updateConcepts(Reader r, ThreadPool threadPool) throws Exception {
 
@@ -239,25 +234,6 @@ public class SnomedUpdater {
         handleErrors(errors);
     }
 
-    private static Reader findFile(ZipInputStream zis, String fileNameRegex) throws Exception {
-
-        while (true) {
-            ZipEntry entry = zis.getNextEntry();
-            if (entry == null) {
-                break;
-            }
-
-            String entryFileName = entry.getName();
-            //LOG.debug("Found " + entryFileName);
-            if (Pattern.matches(fileNameRegex, entryFileName)) {
-                LOG.debug("Matched on file " + entryFileName);
-                BufferedInputStream bis = new BufferedInputStream(zis);
-                return new InputStreamReader(bis);
-            }
-        }
-
-        return null;
-    }
 
 
 
