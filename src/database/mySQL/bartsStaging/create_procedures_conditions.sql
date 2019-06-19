@@ -511,7 +511,7 @@ BEGIN
 	  p.problem_term as condition_term,
 	  null as condition_type,   					-- data not available
 	  p.problem_txt as free_text,
-		1 as sequence_number,								-- set Problems with sequence_number = 1
+		null as sequence_number,						-- Problems don't have a sequence
 		null as parent_condition_unique_id,	-- data not available
 		p.classification as classification,
 	  p.confirmation as confirmation,
