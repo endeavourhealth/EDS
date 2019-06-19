@@ -2701,7 +2701,8 @@ public class Main {
 				if (col.equals("BLOB_CONTENTS")
 						|| col.equals("VALUE_LONG_TXT")
 						|| col.equals("COMMENT_TXT")
-						|| col.equals("NONPREG_REL_PROBLM_SCT_CD")) {
+						|| col.equals("NONPREG_REL_PROBLM_SCT_CD")
+						|| col.equals("ORDER_COMMENTS_TXT")) {
 
 					sql += " mediumtext";
 
