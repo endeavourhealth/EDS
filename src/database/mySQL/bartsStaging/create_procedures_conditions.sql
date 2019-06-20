@@ -340,7 +340,7 @@ BEGIN
 		coalesce(tail.responsible_hcp_personnel_id, cds.lookup_consultant_personnel_id) as performer_personnel_id,
 		cds.cds_activity_date as dt_performed,  -- NOTE - only cds activity date available
 		null as dt_precision,
-		'OPCS4' as condition_code_type,
+		'ICD10WHO' as condition_code_type,
 		cds.diagnosis_icd_code as condition_code,
 		cds.lookup_diagnosis_icd_term as condition_term,
 		null as condition_type,	    -- data not available
