@@ -2589,6 +2589,7 @@ public class Main {
 			//fileTypes.add("BulkProcedure");
 			fileTypes.add("CLEVE");
 			fileTypes.add("CVREF");
+			fileTypes.add("DIAGN");
 			fileTypes.add("Diagnosis");
 			fileTypes.add("ENCINF");
 			fileTypes.add("ENCNT");
@@ -2616,7 +2617,6 @@ public class Main {
 			fileTypes.add("SusEmergency");
 			fileTypes.add("SusInpatient");
 			fileTypes.add("SusOutpatient");
-			//fileTypes.add("Tails"); TODO - have three separate tails files
 			fileTypes.add("EventCode");
 			fileTypes.add("EventSetCanon");
 			fileTypes.add("EventSet");
