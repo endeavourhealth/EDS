@@ -42,6 +42,8 @@ create table condition_cds
     CONSTRAINT pk_condition_cds PRIMARY KEY (exchange_id, cds_unique_identifier, sus_record_type, diagnosis_seq_nbr)
 );
 
+CREATE INDEX ix_condition_cds_checksum_helper on condition_cds (cds_unique_identifier, sus_record_type, diagnosis_seq_nbr, dt_received);
+
 create table condition_cds_latest
 (
     exchange_id                    char(36)     NOT NULL COMMENT 'links to audit.exchange table (but on a different server)',
@@ -113,6 +115,9 @@ create table condition_cds_tail
     CONSTRAINT pk_condition_cds_tail PRIMARY KEY (exchange_id, cds_unique_identifier, sus_record_type)
 );
 
+CREATE INDEX ix_condition_cds_tail_checksum_helper on condition_cds_tail (cds_unique_identifier, sus_record_type, dt_received);
+
+
 create table condition_cds_tail_latest
 (
     exchange_id                  char(36)    NOT NULL COMMENT 'links to audit.exchange table (but on a different server)',
@@ -157,6 +162,8 @@ create table condition_diagnosis
     audit_json                      mediumtext  null comment 'Used for Audit Purposes',
     CONSTRAINT pk_condition_diagnosis PRIMARY KEY (exchange_id, diagnosis_id)
 );
+
+CREATE INDEX ix_condition_diagnosis_checksum_helper on condition_diagnosis (diagnosis_id, dt_received);
 
 create table condition_diagnosis_latest
 (
@@ -209,6 +216,8 @@ create table condition_DIAGN
     CONSTRAINT pk_condition_DIAGN PRIMARY KEY (exchange_id, diagnosis_id)
 );
 
+CREATE INDEX ix_condition_DIAGN_checksum_helper on condition_DIAGN (diagnosis_id, dt_received);
+
 create table condition_DIAGN_latest
 (
     exchange_id          char(36)   NOT NULL COMMENT 'links to audit.exchange table (but on a different server)',
@@ -258,6 +267,8 @@ create table condition_problem
     audit_json           mediumtext null comment 'Used for Audit Purposes',
     CONSTRAINT pk_condition_problem PRIMARY KEY (exchange_id, problem_id)
 );
+
+CREATE INDEX ix_condition_problem_checksum_helper on condition_problem (problem_id, dt_received);
 
 create table condition_problem_latest
 (
