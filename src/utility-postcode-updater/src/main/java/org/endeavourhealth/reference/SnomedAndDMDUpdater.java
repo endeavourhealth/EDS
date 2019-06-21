@@ -9,6 +9,7 @@ import org.endeavourhealth.common.utility.ThreadPoolError;
 import org.endeavourhealth.core.database.dal.DalProvider;
 import org.endeavourhealth.core.database.dal.reference.SnomedDalI;
 import org.endeavourhealth.core.database.dal.reference.models.SnomedLookup;
+import org.endeavourhealth.core.database.rdbms.DeadlockHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,8 +19,8 @@ import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.zip.ZipInputStream;
 
-public class SnomedUpdater {
-    private static final Logger LOG = LoggerFactory.getLogger(SnomedUpdater.class);
+public class SnomedAndDMDUpdater {
+    private static final Logger LOG = LoggerFactory.getLogger(SnomedAndDMDUpdater.class);
 
     public static final CSVFormat CSV_FORMAT = CSVFormat.TDF
             .withHeader()
@@ -32,18 +33,22 @@ public class SnomedUpdater {
      *
      * Usage
      * =================================================================================
-     * 1. Download the latest Snomed release from TRUD (if using the latest delta extract, be sure we've not missed any other deltas, otherwise use the full extract)
+     * 1. Download the latest Snomed or DM+D release from TRUD (if using the latest delta extract, be sure we've not missed any other deltas, otherwise use the full extract)
      * 2. Then run this utility as:
      *      Main snomed <zip file name and path>
      */
-    public static void updateSnomedConceptsAndDescriptions(String[] args) throws Exception {
+    public static void updateSnomedConceptsAndDescriptions(boolean dmd, String[] args) throws Exception {
         if (args.length != 2) {
             LOG.error("Incorrect number of parameters");
-            LOG.error("Usage: snomed <root of zipped Snomed release>");
+            if (dmd) {
+                LOG.error("Usage: dmd <root of zipped DM+D release>");
+            } else {
+                LOG.error("Usage: snomed <root of zipped Snomed release>");
+            }
             return;
         }
 
-        LOG.info("SNOMED CT Update Starting");
+        LOG.info("SNOMED/DM+D Update Starting");
 
         File file = new File(args[1]);
 
@@ -57,6 +62,43 @@ public class SnomedUpdater {
         }
 
         ThreadPool threadPool = new ThreadPool(5, 1000);
+
+        if (dmd) {
+            importDmd(file, threadPool);
+
+        } else {
+            importSnomed(file, threadPool);
+        }
+
+
+        List<ThreadPoolError> errors = threadPool.waitAndStop();
+        handleErrors(errors);
+
+        LOG.info("SNOMED/DM+D Update Complete");
+    }
+
+    private static void importDmd(File file, ThreadPool threadPool) throws Exception {
+
+
+        ZipInputStream zis = ZipHelper.createZipInputStream(file);
+        Reader r = ZipHelper.findFile(zis, "SnomedCT_UKDrugRF2_PRODUCTION_.*/Full/Terminology/sct2_Description_Full-en_GB1000001_.*.txt");
+
+        //if we didn't find a "full" version, look for a delta one
+        if (r == null) {
+            zis.close(); //have to close and re-open
+            zis = ZipHelper.createZipInputStream(file);
+            r = ZipHelper.findFile(zis, "SnomedCT_UKDrugRF2_PRODUCTION_.*/Delta/Terminology/sct2_Description_Delta-en_GB1000001_.*.txt");
+        }
+
+        if (r != null) {
+            updateConcepts(r, threadPool);
+        } else {
+            throw new Exception("Failed to find international description file");
+        }
+        zis.close();
+    }
+
+    private static void importSnomed(File file, ThreadPool threadPool) throws Exception {
 
         //find international concepts file
         LOG.info("Doing International Snomed CT Files");
@@ -95,14 +137,7 @@ public class SnomedUpdater {
             throw new Exception("Failed to find UK description file");
         }
         zis.close();
-
-        List<ThreadPoolError> errors = threadPool.waitAndStop();
-        handleErrors(errors);
-
-        LOG.info("Finished SNOMED CT Update");
     }
-
-
 
     private static void updateConcepts(Reader r, ThreadPool threadPool) throws Exception {
 
@@ -292,8 +327,19 @@ public class SnomedUpdater {
         public Object call() throws Exception {
 
             try {
+
                 SnomedDalI dal = DalProvider.factorySnomedDal();
-                dal.saveSnomedDescriptionToConceptMappings(mappings);
+
+                DeadlockHandler h = new DeadlockHandler();
+                while (true) {
+                    try {
+                        dal.saveSnomedDescriptionToConceptMappings(mappings);
+                        break;
+
+                    } catch (Exception ex) {
+                        h.handleError(ex);
+                    }
+                }
 
             } catch (Throwable t) {
                 LOG.error("", t);

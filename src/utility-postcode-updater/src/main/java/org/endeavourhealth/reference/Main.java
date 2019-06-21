@@ -38,7 +38,10 @@ public class Main {
                 Opcs4Updater.updateOpcs4Lookup(args);
 
             } else if (type.equalsIgnoreCase("snomed")) {
-                SnomedUpdater.updateSnomedConceptsAndDescriptions(args);
+                SnomedAndDMDUpdater.updateSnomedConceptsAndDescriptions(false, args);
+
+            } else if (type.equalsIgnoreCase("dmd")) {
+                SnomedAndDMDUpdater.updateSnomedConceptsAndDescriptions(true, args);
 
             } else if (type.equalsIgnoreCase("snomedToBnfChapter")) {
                 SnomedToBnfChapterUpdater.updateSnomedToBnfChapterLookup(args);
