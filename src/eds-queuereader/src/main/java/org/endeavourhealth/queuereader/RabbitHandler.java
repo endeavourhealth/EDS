@@ -19,12 +19,17 @@ public class RabbitHandler {
 	private Connection connection;
 	private Channel channel;
 	private RabbitConsumer consumer;
+	private boolean exclusiveReadingOnly;
 
 	public RabbitHandler(QueueReaderConfiguration configuration, String configId) throws Exception {
 		LOG.info("Connecting to Rabbit queue {} at {}", configuration.getQueue(), RabbitConfig.getInstance().getNodes());
 
 		this.configId = configId;
 		this.configuration = configuration;
+
+		//some queues are allowed to be read by multiple Queue Readers, and the config tells us. If the config
+		//doesn't, then assume it's exclusive reading only.
+		this.exclusiveReadingOnly = configuration.isExclusive() == null || configuration.isExclusive().booleanValue();
 
 		// Connect to rabbit cluster
 		connection = createRabbitConnection();
@@ -71,13 +76,13 @@ public class RabbitHandler {
 		channel.queueDeclare(
 				configuration.getQueue(),
 				true,		// Durable
-				false, 	// Exclusive
+				false, 	// Exclusive (but not the same as the exclusive parameter used below)
 				false, 	// Auto delete
 				null);
 
 		//pass true for the exclusive parameter, so we can only have one consumer per queue
 		//channel.basicConsume(configuration.getQueue(), false, consumer);
-		channel.basicConsume(configuration.getQueue(), false, configId, false, true, null, consumer);
+		channel.basicConsume(configuration.getQueue(), false, configId, false, exclusiveReadingOnly, null, consumer);
 	}
 
 	public void stop() throws IOException, TimeoutException {
