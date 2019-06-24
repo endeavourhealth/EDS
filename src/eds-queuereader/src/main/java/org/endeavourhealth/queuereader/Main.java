@@ -388,12 +388,12 @@ public class Main {
 			System.exit(0);
 		}
 
-		/*if (args.length >= 1
+		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("PostToProtocol")) {
 			String srcFile = args[1];
 			postToProtocol(srcFile);
 			System.exit(0);
-		}*/
+		}
 
 		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("FixBartsPatients")) {
@@ -3911,7 +3911,7 @@ public class Main {
 		}
 	}
 
-	/*private static void postToProtocol(String srcFile) {
+	private static void postToProtocol(String srcFile) {
 		LOG.info("Posting to protocol from " + srcFile);
 		try {
 			List<UUID> exchangeIds = new ArrayList<>();
@@ -3931,7 +3931,7 @@ public class Main {
 		} catch (Throwable t) {
 			LOG.error("", t);
 		}
-	}*/
+	}
 
 
 	private static void populateSubscriberUprnTable(String subscriberConfigName) throws Exception {

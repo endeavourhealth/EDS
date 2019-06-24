@@ -87,7 +87,7 @@ public class PostMessageToExchange extends PipelineComponent {
 				int perSecondThrottle = TransformConfig.instance().getRabbitMessagePerSecondThrottle();
 				boolean applyThrottle = multicastItems.length > perSecondThrottle;
 				if (applyThrottle) {
-					LOG.info("Got " + multicastItems.length + " message to post, but will throttle to " + perSecondThrottle + " /sec");
+					LOG.info("Got " + multicastItems.length + " message to post for exchange " + exchange.getId() + ", but will throttle to " + perSecondThrottle + " /sec");
 				}
 				long startMs = System.currentTimeMillis();
 				int doneThisSecond = 0;
