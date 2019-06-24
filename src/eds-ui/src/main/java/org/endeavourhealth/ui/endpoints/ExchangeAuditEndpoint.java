@@ -412,7 +412,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
                 throw new IllegalArgumentException("Invalid post mode [" + postMode + "] when exchange name is [" + exchangeName + "]");
             }
 
-            SubscriberQueueHelper.queueUpFullServiceForSubscriber(systemId, specificProtocolId);
+            SubscriberQueueHelper.queueUpFullServiceForSubscriber(serviceId, specificProtocolId);
             exchangeIds = new ArrayList<>(); //just create an empty list so the rest of this function does nothing
 
         } else {
