@@ -714,14 +714,18 @@ public class Main {
 			String doneFilePath = FilenameUtils.concat(parent, "DONE" + name);
 
 			Set<String> doneIds = new HashSet<>();
-			List<String> doneLines = Files.readAllLines(new File(doneFilePath).toPath());
-			for (String doneLine: doneLines) {
-				doneIds.add(doneLine);
+			File f = new File(doneFilePath);
+			if (f.exists()) {
+				List<String> doneLines = Files.readAllLines(f.toPath());
+				for (String doneLine: doneLines) {
+					doneIds.add(doneLine);
+				}
 			}
+			LOG.debug("Previously done " + doneIds.size());
 
 			List<EnterpriseConnector.ConnectionWrapper> connectionWrappers = EnterpriseConnector.openConnection(configName);
 
-			CSVParser parser = CSVParser.parse(filePath, CSVFormat.TDF.withHeader());
+			CSVParser parser = CSVParser.parse(new File(filePath), Charset.defaultCharset(), CSVFormat.TDF.withHeader());
 			Iterator<CSVRecord> iterator = parser.iterator();
 
 			List<String> batch = new ArrayList<>();

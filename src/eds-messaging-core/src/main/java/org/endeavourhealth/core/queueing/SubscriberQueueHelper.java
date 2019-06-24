@@ -1,5 +1,6 @@
 package org.endeavourhealth.core.queueing;
 
+import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.common.utility.JsonSerializer;
 import org.endeavourhealth.core.database.dal.DalProvider;
 import org.endeavourhealth.core.database.dal.admin.LibraryRepositoryHelper;
@@ -54,6 +55,9 @@ public class SubscriberQueueHelper {
         JsonServiceInterfaceEndpoint endpoint = endpoints.get(0);
         UUID systemId = endpoint.getSystemUuid();*/
 
+        String[] specificProtocolArr = new String[]{specificProtocolId.toString()};
+        String specificProtocolJson = ObjectMapperPool.getInstance().writeValueAsString(specificProtocolArr);
+
         Exchange exchange = new Exchange();
         exchange.setId(UUID.randomUUID());
         exchange.setBody(bodyJson);
@@ -61,10 +65,11 @@ public class SubscriberQueueHelper {
         exchange.setHeaders(new HashMap<>());
         exchange.setHeader(HeaderKeys.SenderServiceUuid, serviceId.toString());
         exchange.setHeader(HeaderKeys.IsForPopulatingSubscriber, Boolean.TRUE.toString()); //this tells the outbound transform to do ALL data for each patient
+        exchange.setHeader(HeaderKeys.ProtocolIds, specificProtocolJson);
         //exchange.setHeader(HeaderKeys.SenderLocalIdentifier, odsCode);
         //exchange.setHeader(HeaderKeys.SenderOrganisationUuid, orgId.toString());
         //exchange.setHeader(HeaderKeys.SenderSystemUuid, systemId.toString());
-//TODO - confirm these header keys are sufficient?
+
         exchange.setServiceId(service.getId());
         //exchange.setSystemId(systemId);
 
@@ -79,7 +84,7 @@ public class SubscriberQueueHelper {
         LOG.info("Posting to protocol queue");
         List<UUID> exchangeIds = new ArrayList<>();
         exchangeIds.add(exchange.getId());
-        QueueHelper.postToExchange(exchangeIds, "EdsProtocol", specificProtocolId, true);
+        QueueHelper.postToExchange(exchangeIds, "EdsProtocol", specificProtocolId, false);
         LOG.info("Exchange posted to protocol queue");
     }
 
