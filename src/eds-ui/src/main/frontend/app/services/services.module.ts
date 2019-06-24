@@ -6,6 +6,7 @@ import {ServiceListComponent} from "./serviceList.component";
 import {ServiceEditComponent} from "./serviceEditor.component";
 import {ServicePickerDialog} from "./servicePicker.dialog";
 import {ServiceService} from "./service.service";
+import {OdsSearchDialog} from "./odsSearch.dialog";
 
 @NgModule({
 	imports : [
@@ -16,10 +17,12 @@ import {ServiceService} from "./service.service";
 	declarations : [
 		ServiceListComponent,
 		ServiceEditComponent,
-		ServicePickerDialog
+		ServicePickerDialog,
+		OdsSearchDialog
 	],
 	entryComponents : [
-		ServicePickerDialog
+		ServicePickerDialog,
+		OdsSearchDialog
 	],
 	providers : [
 		ServiceService

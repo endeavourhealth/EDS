@@ -254,6 +254,19 @@ export class ExchangeAuditComponent {
 			return;
 		}
 
+		var mode = vm.postMode;
+		if (!mode) {
+			vm.log.error('Select which exchanges to post');
+			return;
+		}
+
+		var protocolId = this.postSpecificProtocol;
+		if (mode == 'FullLoad'
+			&& !protocolId) {
+			vm.log.error('Select a protocol to load for');
+			return;
+		}
+
 		var fileTypesToFilterOn;
 		if (vm.postFilterFileTypes) {
 			fileTypesToFilterOn = vm.postFilterFileTypesSelected;
@@ -263,7 +276,7 @@ export class ExchangeAuditComponent {
 			}
 		}
 
-		this.busyPostingToExchange = vm.exchangeAuditService.postToExchange(exchangeId, serviceId, vm.systemId, exchangeName, this.postMode, this.postSpecificProtocol, fileTypesToFilterOn, deleteErrorState).subscribe(
+		this.busyPostingToExchange = vm.exchangeAuditService.postToExchange(exchangeId, serviceId, vm.systemId, exchangeName, mode, protocolId, fileTypesToFilterOn, deleteErrorState).subscribe(
 			(result) => {
 				vm.log.success('Successfully posted to ' + exchangeName + ' exchange', 'Post to Exchange');
 

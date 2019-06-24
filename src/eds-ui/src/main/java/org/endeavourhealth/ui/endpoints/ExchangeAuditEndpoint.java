@@ -17,6 +17,7 @@ import org.endeavourhealth.core.database.dal.audit.ExchangeDalI;
 import org.endeavourhealth.core.database.dal.audit.UserAuditDalI;
 import org.endeavourhealth.core.database.dal.audit.models.*;
 import org.endeavourhealth.core.queueing.QueueHelper;
+import org.endeavourhealth.core.queueing.SubscriberQueueHelper;
 import org.endeavourhealth.core.xml.QueryDocument.*;
 import org.endeavourhealth.core.xml.TransformErrorSerializer;
 import org.endeavourhealth.core.xml.transformError.Arg;
@@ -46,7 +47,8 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
     private static final ServiceDalI serviceRepository = DalProvider.factoryServiceDal();
     private static final LibraryDalI libraryRepository = DalProvider.factoryLibraryDal();
 
-    private static final String INBOUND_EXCHANGE = "EdsInbound";
+    private static final String INBOUND_EXCHANGE = "edsInbound";
+    private static final String PROTOCOL_EXCHANGE = "edsProtocol";
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
@@ -404,56 +406,76 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
         } else if (postMode.equalsIgnoreCase("All")) {
             exchangeIds = auditRepository.getExchangeIdsForService(serviceId, systemId);
 
+        } else if (postMode.equalsIgnoreCase("FullLoad")) {
+
+            if (!exchangeName.equals(PROTOCOL_EXCHANGE)) {
+                throw new IllegalArgumentException("Invalid post mode [" + postMode + "] when exchange name is [" + exchangeName + "]");
+            }
+
+            SubscriberQueueHelper.queueUpFullServiceForSubscriber(systemId, specificProtocolId);
+            exchangeIds = new ArrayList<>(); //just create an empty list so the rest of this function does nothing
+
         } else {
             throw new IllegalArgumentException("Invalid post mode [" + postMode + "]");
         }
 
         //work out if there are any transform audits to mark as resubmitted, which we need to do before posting to Rabbit
         //as that will start the transforms and create new audits
-        List<ExchangeTransformAudit> auditsToFlagAsResubmited = new ArrayList<>();
+        //List<ExchangeTransformAudit> auditsToFlagAsResubmited = new ArrayList<>();
+        Set<String> fileTypesSet = null;
+
+        //the below only apply if posting to inbound queue
         if (exchangeName.equals(INBOUND_EXCHANGE)) {
-            for (UUID exchangeId : exchangeIds) {
+
+            //this bit hasn't been working for a long time, and it's not been missed, so don't bother trying
+            /*for (UUID exchangeId : exchangeIds) {
                 ExchangeTransformAudit audit = auditRepository.getMostRecentExchangeTransform(serviceId, systemId, exchangeId);
                 if (audit != null) {
                     auditsToFlagAsResubmited.add(audit);
                 }
-            }
-        }
+            }*/
 
-        //tokenise and validate the filtering file types
-        Set<String> fileTypesSet = null;
-        if (!Strings.isNullOrEmpty(fileTypesToFilterOn)) {
-            fileTypesSet = new HashSet<>();
+            //tokenise and validate the filtering file types
+            if (!Strings.isNullOrEmpty(fileTypesToFilterOn)) {
+                fileTypesSet = new HashSet<>();
 
-            String[] toks = fileTypesToFilterOn.split("\r|\n|,| |;");
-            for (String tok: toks) {
-                tok = tok.trim();
-                if (!Strings.isNullOrEmpty(tok)) {
-                    fileTypesSet.add(tok);
+                String[] toks = fileTypesToFilterOn.split("\r|\n|,| |;");
+                for (String tok: toks) {
+                    tok = tok.trim();
+                    if (!Strings.isNullOrEmpty(tok)) {
+                        fileTypesSet.add(tok);
+                    }
                 }
             }
-        }
 
-        //delete the error state if needed
-        if (deleteErrorState != null
-                && deleteErrorState.booleanValue()) {
+            //delete the error state if needed
+            if (deleteErrorState != null
+                    && deleteErrorState.booleanValue()) {
 
-            ExchangeTransformErrorState state = new ExchangeTransformErrorState();
-            state.setServiceId(serviceId);
-            state.setSystemId(systemId);
+                ExchangeTransformErrorState state = new ExchangeTransformErrorState();
+                state.setServiceId(serviceId);
+                state.setSystemId(systemId);
 
-            ExchangeDalI auditRepository = DalProvider.factoryExchangeDal();
-            auditRepository.delete(state);
+                ExchangeDalI auditRepository = DalProvider.factoryExchangeDal();
+                auditRepository.delete(state);
+            }
+        } else if (exchangeName.equals(PROTOCOL_EXCHANGE)) {
+
+            //nothing extra for this
+        } else {
+            throw new IllegalArgumentException("Invalid exhange name [" + exchangeName + "]");
         }
 
         //post the exchanges to RabbitMQ
         QueueHelper.postToExchange(exchangeIds, exchangeName, specificProtocolId, true, fileTypesSet);
 
         //and update any past transform audits to say we've resubmitted them to rabbit, if it's the inbound queue
-        for (ExchangeTransformAudit audit: auditsToFlagAsResubmited) {
-            audit.setResubmitted(true);
-            auditRepository.save(audit);
-        }
+        /*if (exchangeName.equals(INBOUND_EXCHANGE)) {
+            for (ExchangeTransformAudit audit : auditsToFlagAsResubmited) {
+                audit.setResubmitted(true);
+                auditRepository.save(audit);
+            }
+        }*/
 
         clearLogbackMarkers();
 

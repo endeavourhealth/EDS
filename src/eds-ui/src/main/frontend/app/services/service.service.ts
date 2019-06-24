@@ -13,8 +13,10 @@ export class ServiceService extends BaseHttp2Service {
 	showFilters: boolean;
 	serviceNameFilter: string;
 	servicePublisherConfigFilter: string;
-	serviceHasErrorsFilter: boolean;
+	//serviceHasErrorsFilter: boolean;
+	serviceStatusFilter: string;
 	serviceCcgCodeFilter: string;
+	serviceLastDataFilter: string;
 	ccgNameCache: {};
 
 	constructor(http : Http) {
@@ -77,6 +79,12 @@ export class ServiceService extends BaseHttp2Service {
 		vm.showFilters = !vm.showFilters;
 	}
 
+	private addDays(date: Date, days: number) {
+		var result = new Date(date);
+		result.setDate(result.getDate() + days);
+		return result;
+	}
+
 	applyFiltering(services: Service[]) : Service[] {
 		var vm = this;
 
@@ -98,28 +106,61 @@ export class ServiceService extends BaseHttp2Service {
 			}
 		}
 
+		//work out the bounding dates if searching by last data
+		var minLastData;
+		var maxLastData;
+		if (vm.serviceLastDataFilter) {
+			if (vm.serviceLastDataFilter == 'Today') {
+				minLastData = new Date();
+				minLastData.setHours(0, 0, 0, 0);
+
+			} else if (vm.serviceLastDataFilter == 'Yesterday') {
+				maxLastData = new Date();
+				maxLastData.setHours(0, 0, 0, 0);
+
+				minLastData = new Date(maxLastData.getTime());
+				minLastData = vm.addDays(minLastData, -1);
+
+			} else if (vm.serviceLastDataFilter == 'ThisWeek') {
+
+				minLastData = new Date();
+				minLastData.setHours(0, 0, 0, 0);
+				while (minLastData.getDay() != 1) {
+					minLastData = vm.addDays(minLastData, -1);
+				}
+			} else if (vm.serviceLastDataFilter == 'LastWeek') {
+
+				maxLastData = new Date();
+				maxLastData.setHours(0, 0, 0, 0);
+				while (maxLastData.getDay() != 1) {
+					maxLastData = vm.addDays(maxLastData, -1);
+				}
+
+				minLastData = new Date(maxLastData.getTime());
+				minLastData = vm.addDays(minLastData, -7);
+
+			} else if (vm.serviceLastDataFilter == 'Older') {
+
+				maxLastData = new Date();
+				maxLastData.setHours(0, 0, 0, 0);
+				while (maxLastData.getDay() != 1) {
+					maxLastData = vm.addDays(maxLastData, -1);
+				}
+				maxLastData = vm.addDays(maxLastData, -7);
+
+			} else {
+				console.log('unknown last data filer ' + vm.serviceLastDataFilter);
+			}
+
+			//console.log('filter from ' + minLastData + ' to ' + maxLastData);
+		}
+
 		var arrayLength = services.length;
 		for (var i = 0; i < arrayLength; i++) {
 			var service = services[i];
 
 			//only apply the filters if we're showing the panel
 			if (vm.showFilters) {
-
-				if (vm.serviceHasErrorsFilter) {
-
-					var anyError = false;
-					if (service.systemStatuses) {
-						for (var j=0; j<service.systemStatuses.length; j++) {
-							var systemStatus = service.systemStatuses[j];
-							if (systemStatus.processingInError) {
-								anyError = true;
-							}
-						}
-					}
-					if (!anyError) {
-						continue;
-					}
-				}
 
 				if (vm.servicePublisherConfigFilter) {
 					var publisherConfigName = service.publisherConfigName;
@@ -133,6 +174,87 @@ export class ServiceService extends BaseHttp2Service {
 					if (!ccgCode || ccgCode != vm.serviceCcgCodeFilter) {
 						continue;
 					}
+				}
+
+				if (vm.serviceStatusFilter) {
+
+					var include = false;
+
+					if (vm.serviceStatusFilter == 'NoStatus') {
+						include = !service.systemStatuses;
+
+					} else {
+
+						if (service.systemStatuses) {
+							for (var j=0; j<service.systemStatuses.length; j++) {
+								var systemStatus = service.systemStatuses[j];
+
+								if (vm.serviceStatusFilter == 'Error' && systemStatus.processingInError) {
+									include = true;
+									break;
+								}
+
+								if (vm.serviceStatusFilter == 'Behind'
+									&& !systemStatus.processingInError //if looking for behind, don't include any in error
+									&& !systemStatus.processingUpToDate) {
+									include = true;
+									break;
+								}
+
+								if (vm.serviceStatusFilter == 'OK'
+									&& !systemStatus.processingInError
+									&& systemStatus.processingUpToDate) {
+									include = true;
+									break;
+								}
+
+							}
+						}
+					}
+
+					if (!include) {
+						continue;
+					}
+				}
+				/*if (vm.serviceHasErrorsFilter) {
+
+				 var anyError = false;
+				 if (service.systemStatuses) {
+				 for (var j=0; j<service.systemStatuses.length; j++) {
+				 var systemStatus = service.systemStatuses[j];
+				 if (systemStatus.processingInError) {
+				 anyError = true;
+				 }
+				 }
+				 }
+				 if (!anyError) {
+				 continue;
+				 }
+				 }*/
+
+				if (minLastData || maxLastData) {
+					var include = false;
+
+					if (service.systemStatuses) {
+						for (var j=0; j<service.systemStatuses.length; j++) {
+							var systemStatus = service.systemStatuses[j];
+
+							var lastDate = new Date();
+							lastDate.setTime(systemStatus.lastDataDate);
+
+							if ((!minLastData || lastDate.getTime() >= minLastData.getTime())
+								&& (!maxLastData || lastDate.getTime() < maxLastData.getTime())) {
+
+								include = true;
+								break;
+							}
+						}
+					}
+
+					if (!include) {
+						continue;
+					}
+
 				}
 
 				//only apply the name filter if it's valid regex

@@ -9,6 +9,7 @@ import {Subscription} from 'rxjs/Subscription';
 import {SystemService} from "../system/system.service";
 import {SystemPickerDialog} from "../system/systemPicker.dialog";
 import {SystemStatus} from "./models/SystemStatus";
+import {OdsSearchDialog} from "./odsSearch.dialog";
 
 @Component({
 	template: require('./serviceList.html')
@@ -434,4 +435,9 @@ export class ServiceListComponent implements OnInit, OnDestroy{
 		return day + '/' + month + '/' + year + ' ' + hour + ':' + minute + ':' + seconds;
 	}
 
+	odsSearch() {
+		var vm = this;
+		OdsSearchDialog.open(vm.$modal);
+
+	}
 }

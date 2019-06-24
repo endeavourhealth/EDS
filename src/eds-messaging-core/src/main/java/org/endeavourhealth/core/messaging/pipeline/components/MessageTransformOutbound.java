@@ -11,12 +11,10 @@ import org.endeavourhealth.core.database.dal.DalProvider;
 import org.endeavourhealth.core.database.dal.admin.LibraryRepositoryHelper;
 import org.endeavourhealth.core.database.dal.admin.ServiceDalI;
 import org.endeavourhealth.core.database.dal.admin.models.Service;
+import org.endeavourhealth.core.database.dal.audit.ExchangeBatchDalI;
 import org.endeavourhealth.core.database.dal.audit.ExchangeDalI;
 import org.endeavourhealth.core.database.dal.audit.QueuedMessageDalI;
-import org.endeavourhealth.core.database.dal.audit.models.Exchange;
-import org.endeavourhealth.core.database.dal.audit.models.ExchangeSubscriberTransformAudit;
-import org.endeavourhealth.core.database.dal.audit.models.HeaderKeys;
-import org.endeavourhealth.core.database.dal.audit.models.QueuedMessageType;
+import org.endeavourhealth.core.database.dal.audit.models.*;
 import org.endeavourhealth.core.database.dal.ehr.ResourceDalI;
 import org.endeavourhealth.core.database.dal.ehr.models.ResourceWrapper;
 import org.endeavourhealth.core.database.dal.subscriberTransform.ExchangeBatchExtraResourceDalI;
@@ -49,177 +47,177 @@ import java.util.concurrent.ConcurrentHashMap;
 
 
 public class MessageTransformOutbound extends PipelineComponent {
-	private static final Logger LOG = LoggerFactory.getLogger(MessageTransformOutbound.class);
+    private static final Logger LOG = LoggerFactory.getLogger(MessageTransformOutbound.class);
 
-	private static final ExchangeDalI auditRepository = DalProvider.factoryExchangeDal();
-	private static final ResourceDalI resourceRepository = DalProvider.factoryResourceDal();
-	private static Map<String, Date> patientDOBMap = new HashMap<>();
-	private static Map<String, String> cachedEndpoints = new ConcurrentHashMap<>();
+    private static final ExchangeDalI auditRepository = DalProvider.factoryExchangeDal();
+    private static final ResourceDalI resourceRepository = DalProvider.factoryResourceDal();
+    private static Map<String, Date> patientDOBMap = new HashMap<>();
+    private static Map<String, String> cachedEndpoints = new ConcurrentHashMap<>();
 
-	private MessageTransformOutboundConfig config;
+    private MessageTransformOutboundConfig config;
 
-	public MessageTransformOutbound(MessageTransformOutboundConfig config) {
-		this.config = config;
-	}
-
-
-	@Override
-	public void process(Exchange exchange) throws PipelineException {
-		// Get the transformation data from the exchange
-		// List of resources and subscriber service contracts
-		TransformBatch transformBatch = getTransformBatch(exchange);
-		UUID exchangeId = exchange.getId();
-		UUID batchId = transformBatch.getBatchId();
-		UUID protocolId = transformBatch.getProtocolId();
-		Map<ResourceType, List<UUID>> resourceIds = transformBatch.getResourceIds();
-
-		// Run the transform, creating a subscriber batch for each
-		// (Holds transformed message id and destination endpoints)
-		List<SubscriberBatch> subscriberBatches = new ArrayList<>();
-
-		List<ResourceWrapper> filteredResources = null; //don't retrieve until we know we need to
-		Integer resourceCount = null;
-
-		for (ServiceContract serviceContract : transformBatch.getSubscribers()) {
-
-			String endpoint = getSubscriberEndpoint(serviceContract);
-
-			//subscribers that we don't actively push to (e.g. patient explorer) won't have an endpoint set, so skip it
-			if (Strings.isNullOrEmpty(endpoint)) {
-				continue;
-			}
-
-			String technicalInterfaceUuidStr = serviceContract.getTechnicalInterface().getUuid();
-			String systemUuidStr = serviceContract.getSystem().getUuid();
-			TechnicalInterface technicalInterface = null;
-			try {
-				//use a function that caches them for a minute at a time
-				technicalInterface = LibraryRepositoryHelper.getTechnicalInterfaceDetailsUsingCache(systemUuidStr, technicalInterfaceUuidStr);
-				//technicalInterface = LibraryRepositoryHelper.getTechnicalInterfaceDetails(systemUuidStr, technicalInterfaceUuidStr);
-			} catch (Exception ex) {
-				throw new PipelineException("Failed to retrieve technical interface for system " + systemUuidStr + " and technical interface " + technicalInterfaceUuidStr + " for protocol " + transformBatch.getProtocolId(), ex);
-			}
-
-			String software = technicalInterface.getMessageFormat();
-			String softwareVersion = technicalInterface.getMessageFormatVersion();
-			Date transformStarted = new Date();
-
-			try {
-				UUID serviceId = exchange.getHeaderAsUuid(HeaderKeys.SenderServiceUuid);
-
-				//retrieve our resources if necessary
-				if (filteredResources == null) {
-					filteredResources = getResources(serviceId, exchangeId, batchId, resourceIds, endpoint);
-					resourceCount = new Integer(filteredResources.size());
-				}
-
-				//if we have resources, then perform the transform
-				String outboundData = null;
-				if (!filteredResources.isEmpty()) {
-
-					//pass in a copy of the resource list to avoid any potential problems if a transform changes the list
-					List<ResourceWrapper> copy = new ArrayList<>(filteredResources);
-
-					//do the outbound transform
-					outboundData = transform(serviceId, exchange, batchId, software, softwareVersion, copy, endpoint, protocolId);
-				}
-
-				//if we've got data to send to our subscriber, then store it
-				UUID queuedMessageId = null;
-				if (!Strings.isNullOrEmpty(outboundData)) {
-
-					// Store transformed message
-					queuedMessageId = UUID.randomUUID();
-
-					try {
-						QueuedMessageDalI queuedMessageDal = DalProvider.factoryQueuedMessageDal();
-						queuedMessageDal.save(queuedMessageId, outboundData, QueuedMessageType.OutboundData);
-					} catch (Exception ex) {
-						throw new PipelineException("Failed to save queued message", ex);
-					}
-
-					SubscriberBatch subscriberBatch = new SubscriberBatch();
-					subscriberBatch.setQueuedMessageId(queuedMessageId);
-					subscriberBatch.setEndpoint(endpoint);
-					subscriberBatch.setSoftware(software);
-					subscriberBatch.setSoftwareVersion(softwareVersion);
-					subscriberBatch.setTechnicalInterfaceId(UUID.fromString(technicalInterfaceUuidStr));
-
-					subscriberBatches.add(subscriberBatch);
-				}
-
-				//audit the transformation
-				saveTransformAudit(exchangeId, batchId, endpoint, transformStarted, null, resourceCount, queuedMessageId);
-
-			} catch (Exception ex) {
-
-				//audit the exception
-				try {
-					saveTransformAudit(exchangeId, batchId, endpoint, transformStarted, ex, resourceCount, null);
-				} catch (Exception auditEx) {
-					LOG.error("Failed to save audit of transform failure", auditEx);
-				}
-
-				throw new PipelineException("Failed to transform exchange " + exchange.getId() + " and batch " + batchId, ex);
-			}
-		}
-
-		String subscriberBatchesJson = null;
-		try {
-			subscriberBatchesJson = ObjectMapperPool.getInstance().writeValueAsString(subscriberBatches);
-		} catch (JsonProcessingException e) {
-			LOG.error("Error serializing subscriber batch JSON", e);
-			throw new PipelineException("Error serializing subscriber batch JSON", e);
-		}
-		exchange.setHeader(HeaderKeys.SubscriberBatch, subscriberBatchesJson);
-		//LOG.trace("Message transformed (outbound)");
-	}
-
-	private String transform(UUID serviceId,
-							 Exchange exchange,
-							 UUID batchId,
-							 String software,
-							 String softwareVersion,
-							 List<ResourceWrapper> filteredResources,
-							 String endpoint,
-							 UUID protocolId) throws Exception {
-
-		UUID exchangeId = exchange.getId();
-
-		if (software.equals(MessageFormat.ENTERPRISE_CSV)) {
-
-			UUID systemId = exchange.getHeaderAsUuid(HeaderKeys.SenderSystemUuid);
-
-			//have to pass in the exchange body now
-			String body = exchange.getBody();
-			return FhirToEnterpriseCsvTransformer.transformFromFhir(serviceId, systemId, exchangeId, batchId, filteredResources, endpoint, protocolId, body);
-
-		} else if (software.equals(MessageFormat.PCR_CSV)) {
-
-			UUID systemId = exchange.getHeaderAsUuid(HeaderKeys.SenderSystemUuid);
-			String body = exchange.getBody();
-
-			return FhirToPcrCsvTransformer.transformFromFhir(serviceId, systemId, exchangeId, batchId, filteredResources, endpoint, protocolId, body);
-
-		} else if (software.equals(MessageFormat.SUBSCRIBER_CSV)) {
-
-			UUID systemId = exchange.getHeaderAsUuid(HeaderKeys.SenderSystemUuid);
-			String body = exchange.getBody();
-
-			return FhirToSubscriberCsvTransformer.transformFromFhir(serviceId, systemId, exchangeId, batchId, filteredResources, endpoint, protocolId, body);
+    public MessageTransformOutbound(MessageTransformOutboundConfig config) {
+        this.config = config;
+    }
 
 
-		} else if (software.equals(MessageFormat.VITRUICARE_XML)) {
-			return FhirToVitruCareXmlTransformer.transformFromFhir(serviceId, batchId, filteredResources, endpoint);
+    @Override
+    public void process(Exchange exchange) throws PipelineException {
+        // Get the transformation data from the exchange
+        // List of resources and subscriber service contracts
+        TransformBatch transformBatch = getTransformBatch(exchange);
+        UUID exchangeId = exchange.getId();
+        UUID batchId = transformBatch.getBatchId();
+        UUID protocolId = transformBatch.getProtocolId();
+        Map<ResourceType, List<UUID>> resourceIds = transformBatch.getResourceIds();
 
-		} else if (software.equals(MessageFormat.JSON_API)) {
-			//this is a pull-request message format, so there's no outbound transformation required
-			return null;
+        // Run the transform, creating a subscriber batch for each
+        // (Holds transformed message id and destination endpoints)
+        List<SubscriberBatch> subscriberBatches = new ArrayList<>();
 
-		} else {
-			throw new PipelineException("Unsupported outbound software " + software + " for exchange " + exchange.getId());
-		}
-	}
+        List<ResourceWrapper> filteredResources = null; //don't retrieve until we know we need to
+        Integer resourceCount = null;
+
+        for (ServiceContract serviceContract : transformBatch.getSubscribers()) {
+
+            String endpoint = getSubscriberEndpoint(serviceContract);
+
+            //subscribers that we don't actively push to (e.g. patient explorer) won't have an endpoint set, so skip it
+            if (Strings.isNullOrEmpty(endpoint)) {
+                continue;
+            }
+
+            String technicalInterfaceUuidStr = serviceContract.getTechnicalInterface().getUuid();
+            String systemUuidStr = serviceContract.getSystem().getUuid();
+            TechnicalInterface technicalInterface = null;
+            try {
+                //use a function that caches them for a minute at a time
+                technicalInterface = LibraryRepositoryHelper.getTechnicalInterfaceDetailsUsingCache(systemUuidStr, technicalInterfaceUuidStr);
+                //technicalInterface = LibraryRepositoryHelper.getTechnicalInterfaceDetails(systemUuidStr, technicalInterfaceUuidStr);
+            } catch (Exception ex) {
+                throw new PipelineException("Failed to retrieve technical interface for system " + systemUuidStr + " and technical interface " + technicalInterfaceUuidStr + " for protocol " + transformBatch.getProtocolId(), ex);
+            }
+
+            String software = technicalInterface.getMessageFormat();
+            String softwareVersion = technicalInterface.getMessageFormatVersion();
+            Date transformStarted = new Date();
+
+            try {
+                UUID serviceId = exchange.getHeaderAsUuid(HeaderKeys.SenderServiceUuid);
+
+                //retrieve our resources if necessary
+                if (filteredResources == null) {
+                    filteredResources = getResources(exchange, batchId, resourceIds, endpoint);
+                    resourceCount = new Integer(filteredResources.size());
+                }
+
+                //if we have resources, then perform the transform
+                String outboundData = null;
+                if (!filteredResources.isEmpty()) {
+
+                    //pass in a copy of the resource list to avoid any potential problems if a transform changes the list
+                    List<ResourceWrapper> copy = new ArrayList<>(filteredResources);
+
+                    //do the outbound transform
+                    outboundData = transform(serviceId, exchange, batchId, software, softwareVersion, copy, endpoint, protocolId);
+                }
+
+                //if we've got data to send to our subscriber, then store it
+                UUID queuedMessageId = null;
+                if (!Strings.isNullOrEmpty(outboundData)) {
+
+                    // Store transformed message
+                    queuedMessageId = UUID.randomUUID();
+
+                    try {
+                        QueuedMessageDalI queuedMessageDal = DalProvider.factoryQueuedMessageDal();
+                        queuedMessageDal.save(queuedMessageId, outboundData, QueuedMessageType.OutboundData);
+                    } catch (Exception ex) {
+                        throw new PipelineException("Failed to save queued message", ex);
+                    }
+
+                    SubscriberBatch subscriberBatch = new SubscriberBatch();
+                    subscriberBatch.setQueuedMessageId(queuedMessageId);
+                    subscriberBatch.setEndpoint(endpoint);
+                    subscriberBatch.setSoftware(software);
+                    subscriberBatch.setSoftwareVersion(softwareVersion);
+                    subscriberBatch.setTechnicalInterfaceId(UUID.fromString(technicalInterfaceUuidStr));
+
+                    subscriberBatches.add(subscriberBatch);
+                }
+
+                //audit the transformation
+                saveTransformAudit(exchangeId, batchId, endpoint, transformStarted, null, resourceCount, queuedMessageId);
+
+            } catch (Exception ex) {
+
+                //audit the exception
+                try {
+                    saveTransformAudit(exchangeId, batchId, endpoint, transformStarted, ex, resourceCount, null);
+                } catch (Exception auditEx) {
+                    LOG.error("Failed to save audit of transform failure", auditEx);
+                }
+
+                throw new PipelineException("Failed to transform exchange " + exchange.getId() + " and batch " + batchId, ex);
+            }
+        }
+
+        String subscriberBatchesJson = null;
+        try {
+            subscriberBatchesJson = ObjectMapperPool.getInstance().writeValueAsString(subscriberBatches);
+        } catch (JsonProcessingException e) {
+            LOG.error("Error serializing subscriber batch JSON", e);
+            throw new PipelineException("Error serializing subscriber batch JSON", e);
+        }
+        exchange.setHeader(HeaderKeys.SubscriberBatch, subscriberBatchesJson);
+        //LOG.trace("Message transformed (outbound)");
+    }
+
+    private String transform(UUID serviceId,
+                             Exchange exchange,
+                             UUID batchId,
+                             String software,
+                             String softwareVersion,
+                             List<ResourceWrapper> filteredResources,
+                             String endpoint,
+                             UUID protocolId) throws Exception {
+
+        UUID exchangeId = exchange.getId();
+
+        if (software.equals(MessageFormat.ENTERPRISE_CSV)) {
+
+            UUID systemId = exchange.getHeaderAsUuid(HeaderKeys.SenderSystemUuid);
+
+            //have to pass in the exchange body now
+            String body = exchange.getBody();
+            return FhirToEnterpriseCsvTransformer.transformFromFhir(serviceId, systemId, exchangeId, batchId, filteredResources, endpoint, protocolId, body);
+
+        } else if (software.equals(MessageFormat.PCR_CSV)) {
+
+            UUID systemId = exchange.getHeaderAsUuid(HeaderKeys.SenderSystemUuid);
+            String body = exchange.getBody();
+
+            return FhirToPcrCsvTransformer.transformFromFhir(serviceId, systemId, exchangeId, batchId, filteredResources, endpoint, protocolId, body);
+
+        } else if (software.equals(MessageFormat.SUBSCRIBER_CSV)) {
+
+            UUID systemId = exchange.getHeaderAsUuid(HeaderKeys.SenderSystemUuid);
+            String body = exchange.getBody();
+
+            return FhirToSubscriberCsvTransformer.transformFromFhir(serviceId, systemId, exchangeId, batchId, filteredResources, endpoint, protocolId, body);
+
+
+        } else if (software.equals(MessageFormat.VITRUICARE_XML)) {
+            return FhirToVitruCareXmlTransformer.transformFromFhir(serviceId, batchId, filteredResources, endpoint);
+
+        } else if (software.equals(MessageFormat.JSON_API)) {
+            //this is a pull-request message format, so there's no outbound transformation required
+            return null;
+
+        } else {
+            throw new PipelineException("Unsupported outbound software " + software + " for exchange " + exchange.getId());
+        }
+    }
 
 	/*private static void sendHttpPost(String payload, String url) throws Exception {
 
@@ -240,7 +238,7 @@ public class MessageTransformOutbound extends PipelineComponent {
 		//post.setHeader("User-Agent", USER_AGENT);
 
 		*//*List<NameValuePair> urlParameters = new ArrayList<NameValuePair>();
-		urlParameters.add(new BasicNameValuePair("sn", "C02G8416DRJM"));
+        urlParameters.add(new BasicNameValuePair("sn", "C02G8416DRJM"));
 		urlParameters.add(new BasicNameValuePair("cn", ""));
 		urlParameters.add(new BasicNameValuePair("locale", ""));
 		urlParameters.add(new BasicNameValuePair("caller", ""));
@@ -328,140 +326,137 @@ public class MessageTransformOutbound extends PipelineComponent {
 		LOG.trace("Message transformed (outbound)");
 	}*/
 
-	private String getSubscriberEndpoint(ServiceContract contract) throws PipelineException {
+    private String getSubscriberEndpoint(ServiceContract contract) throws PipelineException {
 
-		try {
-			UUID serviceId = UUID.fromString(contract.getService().getUuid());
-			UUID technicalInterfaceId = UUID.fromString(contract.getTechnicalInterface().getUuid());
+        try {
+            UUID serviceId = UUID.fromString(contract.getService().getUuid());
+            UUID technicalInterfaceId = UUID.fromString(contract.getTechnicalInterface().getUuid());
 
-			String cacheKey = serviceId.toString() + ":" + technicalInterfaceId.toString();
-			String endpoint = cachedEndpoints.get(cacheKey);
-			if (endpoint == null) {
+            String cacheKey = serviceId.toString() + ":" + technicalInterfaceId.toString();
+            String endpoint = cachedEndpoints.get(cacheKey);
+            if (endpoint == null) {
 
-				ServiceDalI serviceRepository = DalProvider.factoryServiceDal();
+                ServiceDalI serviceRepository = DalProvider.factoryServiceDal();
 
-				Service service = serviceRepository.getById(serviceId);
-				List<JsonServiceInterfaceEndpoint> serviceEndpoints = ObjectMapperPool.getInstance().readValue(service.getEndpoints(), new TypeReference<List<JsonServiceInterfaceEndpoint>>() {});
-				for (JsonServiceInterfaceEndpoint serviceEndpoint: serviceEndpoints) {
-					if (serviceEndpoint.getTechnicalInterfaceUuid().equals(technicalInterfaceId)) {
-						endpoint = serviceEndpoint.getEndpoint();
+                Service service = serviceRepository.getById(serviceId);
+                List<JsonServiceInterfaceEndpoint> serviceEndpoints = ObjectMapperPool.getInstance().readValue(service.getEndpoints(), new TypeReference<List<JsonServiceInterfaceEndpoint>>() {
+                });
+                for (JsonServiceInterfaceEndpoint serviceEndpoint : serviceEndpoints) {
+                    if (serviceEndpoint.getTechnicalInterfaceUuid().equals(technicalInterfaceId)) {
+                        endpoint = serviceEndpoint.getEndpoint();
 
-						//concurrent map can't store null values, so only add to the cache if non-null
-						if (endpoint != null) {
-							cachedEndpoints.put(cacheKey, endpoint);
-						}
-						break;
-					}
-				}
-			}
+                        //concurrent map can't store null values, so only add to the cache if non-null
+                        if (endpoint != null) {
+                            cachedEndpoints.put(cacheKey, endpoint);
+                        }
+                        break;
+                    }
+                }
+            }
 
-			return endpoint;
+            return endpoint;
 
-		} catch (Exception ex) {
-			throw new PipelineException("Failed to get endpoint for contract", ex);
-		}
-	}
-
-	/*private List<String> getSubscriberEndpoints(TransformBatch transformBatch) throws PipelineException {
-		// Find the relevant endpoints for those subscribers/technical interface
-		List<String> endpoints = new ArrayList<>();
-		try {
-			ServiceRepository serviceRepository = new ServiceRepository();
-			for (ServiceContract contract : transformBatch.getSubscribers()) {
-				Service service = serviceRepository.getById(UUID.fromString(contract.getService().getUuid()));
-				List<JsonServiceInterfaceEndpoint> serviceEndpoints = ObjectMapperPool.getInstance().readValue(service.getEndpoints(), new TypeReference<List<JsonServiceInterfaceEndpoint>>() {});
-				String endpoint = serviceEndpoints.stream()
-						.filter(ep -> ep.getTechnicalInterfaceUuid().toString().equals(contract.getTechnicalInterface().getUuid()))
-						.map(JsonServiceInterfaceEndpoint::getEndpoint)
-						.findFirst()
-						.get();
-				endpoints.add(endpoint);
-			}
-		} catch (IOException e) {
-			throw new PipelineException(e.getMessage(), e);
-		}
-		return endpoints;
-	}*/
-
-	private TransformBatch getTransformBatch(Exchange exchange) throws PipelineException {
-		String transformBatchJson = exchange.getHeader(HeaderKeys.TransformBatch);
-		try {
-			return ObjectMapperPool.getInstance().readValue(transformBatchJson, TransformBatch.class);
-		} catch (IOException e) {
-			throw new PipelineException("Error deserializing transformation batch JSON", e);
-		}
-	}
+        } catch (Exception ex) {
+            throw new PipelineException("Failed to get endpoint for contract", ex);
+        }
+    }
 
 
-	private static List<ResourceWrapper> getResources(UUID serviceId, UUID exchangeId, UUID batchId, Map<ResourceType, List<UUID>> resourceIds, String subscriberConfigName) throws Exception {
+    private TransformBatch getTransformBatch(Exchange exchange) throws PipelineException {
+        String transformBatchJson = exchange.getHeader(HeaderKeys.TransformBatch);
+        try {
+            return ObjectMapperPool.getInstance().readValue(transformBatchJson, TransformBatch.class);
+        } catch (IOException e) {
+            throw new PipelineException("Error deserializing transformation batch JSON", e);
+        }
+    }
 
-		//get the resources actually in the batch we're transforming
-		ResourceDalI resourceDal = DalProvider.factoryResourceDal();
 
-		//changed to use a fn that returns the most recent version of the resources we're interested in, rather than
-		//whatever they were like when we did our transform. Means we don't need to worry about sending older
-		//versions of our resources to subscribers.
-		//List<ResourceWrapper> resources = resourceDal.getResourcesForBatch(serviceId, batchId);
-		List<ResourceWrapper> resources = resourceDal.getCurrentVersionOfResourcesForBatch(serviceId, batchId);
+    private static List<ResourceWrapper> getResources(Exchange exchange, UUID batchId, Map<ResourceType, List<UUID>> resourceIds, String subscriberConfigName) throws Exception {
 
-		//if there are no resources, then there won't be any extra resources, so no point wasting time
-		//on looking for them or doing any filtering
-		if (resources.isEmpty()) {
-			return resources;
-		}
+        //get the resources actually in the batch we're transforming
+        ResourceDalI resourceDal = DalProvider.factoryResourceDal();
+        UUID serviceId = exchange.getServiceId();
 
-		//then add in any EXTRA resources we've previously calculated we'll need to include
-		ExchangeBatchExtraResourceDalI exchangeBatchExtraResourceDalI = DalProvider.factoryExchangeBatchExtraResourceDal(subscriberConfigName);
-		Map<ResourceType, List<UUID>> extraReourcesByType = exchangeBatchExtraResourceDalI.findExtraResources(exchangeId, batchId);
-		for (ResourceType resourceType: extraReourcesByType.keySet()) {
-			List<UUID> extraIds = extraReourcesByType.get(resourceType);
-			for (UUID extraId: extraIds) {
-				ResourceWrapper extraResource = resourceDal.getCurrentVersion(serviceId, resourceType.toString(), extraId);
+        List<ResourceWrapper> resources = null;
 
-				//if the resource is null then it means the resource has been deleted and our subscriber transform
-				//is running behind. So we need to find the a non-deleted instance of the resource and send that over,
-				//so everything is valid in this batch. The delete for the resource will then be sent later, when
-				//we process the exchange batch containing its delete
-				if (extraResource == null) {
-					List<ResourceWrapper> history = resourceDal.getResourceHistory(serviceId, resourceType.toString(), exchangeId);
+        //we use a special exchange with a specific header key to bulk populate subscribers
+        Boolean isForLoadingSubscriber = exchange.getHeaderAsBoolean(HeaderKeys.IsForPopulatingSubscriber);
+        if (isForLoadingSubscriber != null
+                && isForLoadingSubscriber.booleanValue()) {
 
-					//most recent is first, so go backwards
-					for (int i=history.size()-1; i>=0; i--) {
-						ResourceWrapper historyItem = history.get(i);
-						if (!historyItem.isDeleted()) {
-							extraResource = historyItem;
-							break;
-						}
-					}
+            ExchangeBatchDalI exchangeBatchDal = DalProvider.factoryExchangeBatchDal();
+            ExchangeBatch exchangeBatch = exchangeBatchDal.getForExchangeAndBatchId(exchange.getId(), batchId);
+            UUID patientId = exchangeBatch.getEdsPatientId();
+            LOG.debug("Loading all resources for " + patientId + " to transform for " + subscriberConfigName);
+            resources = resourceDal.getResourcesByPatient(serviceId, patientId); //passing in a null patient ID will get us the admin resources
 
-					//if the resource is STILL null, then we've never received a non-deleted instance of it, so just skip sending it to the subscriber
-					if (extraResource == null) {
-						continue;
-					}
-				}
+        } else {
 
-				resources.add(extraResource);
-			}
-		}
+            //if not a special bulk load, then just get the CURRENT VERSION of each resource in our exchange batch
+            resources = resourceDal.getCurrentVersionOfResourcesForBatch(serviceId, batchId);
+        }
 
-		//then filter to remove duplicates and ones the data set has filtered out
-		resources = filterResources(resources, resourceIds);
-		//resources = pruneOlderDuplicates(resources);
+        //if there are no resources, then there won't be any extra resources, so no point wasting time
+        //on looking for them or doing any filtering
+        if (resources.isEmpty()) {
+            return resources;
+        }
 
-		//finally, filter out any patient resources that do not meet the filterElements configuration if
-		//it is present for the subscriber config.  Used to filter FHIR -> subscriber output
-		resources = filterPatientResources(serviceId, resources, subscriberConfigName);
+        UUID exchangeId = exchange.getId();
 
-		return resources;
-	}
+        //then add in any EXTRA resources we've previously calculated we'll need to include
+        ExchangeBatchExtraResourceDalI exchangeBatchExtraResourceDalI = DalProvider.factoryExchangeBatchExtraResourceDal(subscriberConfigName);
+        Map<ResourceType, List<UUID>> extraReourcesByType = exchangeBatchExtraResourceDalI.findExtraResources(exchangeId, batchId);
+        for (ResourceType resourceType : extraReourcesByType.keySet()) {
+            List<UUID> extraIds = extraReourcesByType.get(resourceType);
+            for (UUID extraId : extraIds) {
+                ResourceWrapper extraResource = resourceDal.getCurrentVersion(serviceId, resourceType.toString(), extraId);
 
-	/**
-	 * we can end up with multiple instances of the same resource in a batch (or at least the Emis test data can)
-	 * so strip out all but the latest version of each resource, so we're not wasting time sending over
-	 * data that will immediately be overwritten and also we don't need to make sure to process them in order
-	 *
-	 * no longer required, as the new getCurrentVersionOfResourcesForBatch(..) already filters out duplicates
-	 */
+                //if the resource is null then it means the resource has been deleted and our subscriber transform
+                //is running behind. So we need to find the a non-deleted instance of the resource and send that over,
+                //so everything is valid in this batch. The delete for the resource will then be sent later, when
+                //we process the exchange batch containing its delete
+                if (extraResource == null) {
+                    List<ResourceWrapper> history = resourceDal.getResourceHistory(serviceId, resourceType.toString(), exchangeId);
+
+                    //most recent is first, so go backwards
+                    for (int i = history.size() - 1; i >= 0; i--) {
+                        ResourceWrapper historyItem = history.get(i);
+                        if (!historyItem.isDeleted()) {
+                            extraResource = historyItem;
+                            break;
+                        }
+                    }
+
+                    //if the resource is STILL null, then we've never received a non-deleted instance of it, so just skip sending it to the subscriber
+                    if (extraResource == null) {
+                        continue;
+                    }
+                }
+
+                resources.add(extraResource);
+            }
+        }
+
+        //then filter to remove duplicates and ones the data set has filtered out
+        resources = filterResources(resources, resourceIds);
+        //resources = pruneOlderDuplicates(resources);
+
+        //finally, filter out any patient resources that do not meet the filterElements configuration if
+        //it is present for the subscriber config.  Used to filter FHIR -> subscriber output
+        resources = filterPatientResources(serviceId, resources, subscriberConfigName);
+
+        return resources;
+    }
+
+    /**
+     * we can end up with multiple instances of the same resource in a batch (or at least the Emis test data can)
+     * so strip out all but the latest version of each resource, so we're not wasting time sending over
+     * data that will immediately be overwritten and also we don't need to make sure to process them in order
+     * <p>
+     * no longer required, as the new getCurrentVersionOfResourcesForBatch(..) already filters out duplicates
+     */
 	/*private static List<ResourceWrapper> pruneOlderDuplicates(List<ResourceWrapper> resources) {
 
 		HashMap<UUID, UUID> hmLatestVersion = new HashMap<>();
@@ -511,216 +506,215 @@ public class MessageTransformOutbound extends PipelineComponent {
 
 		return ret;
 	}*/
+    private static List<ResourceWrapper> filterResources(List<ResourceWrapper> allResources,
+                                                         Map<ResourceType, List<UUID>> resourceIdsToKeep) throws Exception {
 
-	private static List<ResourceWrapper> filterResources(List<ResourceWrapper> allResources,
-														 Map<ResourceType, List<UUID>> resourceIdsToKeep) throws Exception {
+        List<ResourceWrapper> ret = new ArrayList<>();
 
-		List<ResourceWrapper> ret = new ArrayList<>();
+        for (ResourceWrapper resource : allResources) {
+            UUID resourceId = resource.getResourceId();
+            ResourceType resourceType = ResourceType.valueOf(resource.getResourceType());
 
-		for (ResourceWrapper resource: allResources) {
-			UUID resourceId = resource.getResourceId();
-			ResourceType resourceType = ResourceType.valueOf(resource.getResourceType());
+            //the map of resource IDs tells us the resources that passed the protocol and should be passed
+            //to the subscriber. However, any resources that should be deleted should be passed, whether the
+            //protocol says to include it or not, since it may have previously been passed to the subscriber anyway
+            if (resource.isDeleted()) {
+                ret.add(resource);
 
-			//the map of resource IDs tells us the resources that passed the protocol and should be passed
-			//to the subscriber. However, any resources that should be deleted should be passed, whether the
-			//protocol says to include it or not, since it may have previously been passed to the subscriber anyway
-			if (resource.isDeleted()) {
-				ret.add(resource);
+            } else {
 
-			} else {
+                //during testing, the resource ID is null, so handle this
+                if (resourceIdsToKeep == null) {
+                    ret.add(resource);
+                    continue;
+                }
 
-				//during testing, the resource ID is null, so handle this
-				if (resourceIdsToKeep == null) {
-					ret.add(resource);
-					continue;
-				}
+                List<UUID> uuidsToKeep = resourceIdsToKeep.get(resourceType);
+                if (uuidsToKeep != null
+                        || uuidsToKeep.contains(resourceId)) {
+                    ret.add(resource);
+                }
+            }
+        }
 
-				List<UUID> uuidsToKeep = resourceIdsToKeep.get(resourceType);
-				if (uuidsToKeep != null
-						|| uuidsToKeep.contains(resourceId)) {
-					ret.add(resource);
-				}
-			}
-		}
+        return ret;
+    }
 
-		return ret;
-	}
+    private static List<ResourceWrapper> filterPatientResources(UUID serviceId, List<ResourceWrapper> allResources, String subscriberConfigName) throws Exception {
 
-	private static List<ResourceWrapper> filterPatientResources(UUID serviceId, List<ResourceWrapper> allResources, String subscriberConfigName) throws Exception {
+        //check config for filterElements, if null, return straight back out as no further filtering needed
+        JsonNode subscriberConfigJSON = ConfigManager.getConfigurationAsJson(subscriberConfigName, "db_subscriber");
+        JsonNode filterElementsNodeJSON = subscriberConfigJSON.get("filterElements");
 
-		//check config for filterElements, if null, return straight back out as no further filtering needed
-		JsonNode subscriberConfigJSON
-				= ConfigManager.getConfigurationAsJson(subscriberConfigName, "db_subscriber");
-		JsonNode filterElementsNodeJSON = subscriberConfigJSON.get("filterElements");
+        //there is no resource filtering applied, so return all resources
+        if (filterElementsNodeJSON == null) {
+            return allResources;
+        }
 
-		//there is no resource filtering applied, so return all resources
-		if (filterElementsNodeJSON == null) {
-			return allResources;
-		}
+        List<ResourceWrapper> ret = new ArrayList<>();
+        for (ResourceWrapper resource : allResources) {
+            if (resource.getResourceType().equalsIgnoreCase("Patient")) {
+                LOG.info("Patient " + resource.getResourceId() + ", inclusion :" + includeResource(serviceId, resource, filterElementsNodeJSON));
+            }
+            // perform filtering on patient resources.  Non patient resources are always included
+            if (isPatientResource(resource) && !includeResource(serviceId, resource, filterElementsNodeJSON)) {
+                continue;
+            }
 
-		List<ResourceWrapper> ret = new ArrayList<>();
-		for (ResourceWrapper resource: allResources) {
-			if (resource.getResourceType().equalsIgnoreCase("Patient")) {
-				LOG.info("Patient " + resource.getResourceId() + ", inclusion :" + includeResource(serviceId,resource,filterElementsNodeJSON));
-			}
-			// perform filtering on patient resources.  Non patient resources are always included
-			if (isPatientResource(resource) && !includeResource(serviceId, resource, filterElementsNodeJSON))
-			{ continue; }
+            //resource is either non patient or passes patient filter criteria so add
+            ret.add(resource);
+        }
 
-			//resource is either non patient or passes patient filter criteria so add
-			ret.add(resource);
-		}
+        return ret;
+    }
 
-		return ret;
-	}
-
-	// FHIR resources are filtered based on the subscriber configuration "filterElements" JSON
-	// Only resources which match any of the resources AND any of the age ranges will be included,
-	// i.e. A Patient resource who is 44.  An Immunization resource whose patient reference resource is 12.
-	//
-	//  JSON filter structure:
-	//	"filterElements": {
+    // FHIR resources are filtered based on the subscriber configuration "filterElements" JSON
+    // Only resources which match any of the resources AND any of the age ranges will be included,
+    // i.e. A Patient resource who is 44.  An Immunization resource whose patient reference resource is 12.
+    //
+    //  JSON filter structure:
+    //	"filterElements": {
     //		"patients": {
-	//			"ageRangeYears": ["0-19", "40-74"]
-	//		},
-	//		"resources": ["Patient", "Observation", "Immunization", "Condition", "MedicationStatement", "MedicationOrder", "AllergyIntolerance"]
-	//	}
-	private static boolean includeResource(UUID serviceId, ResourceWrapper resource, JsonNode filterElementsNodeJSON) throws Exception {
+    //			"ageRangeYears": ["0-19", "40-74"]
+    //		},
+    //		"resources": ["Patient", "Observation", "Immunization", "Condition", "MedicationStatement", "MedicationOrder", "AllergyIntolerance"]
+    //	}
+    private static boolean includeResource(UUID serviceId, ResourceWrapper resource, JsonNode filterElementsNodeJSON) throws Exception {
 
-		ResourceType resourceType = ResourceType.valueOf(resource.getResourceType());
+        ResourceType resourceType = ResourceType.valueOf(resource.getResourceType());
 
-		//is there a FHIR resource filter?
-		boolean resourceInclude = false;
-		JsonNode filterElementsResourcesNodeJSON = filterElementsNodeJSON.get("resources");
-		if (filterElementsResourcesNodeJSON != null) {
+        //is there a FHIR resource filter?
+        boolean resourceInclude = false;
+        JsonNode filterElementsResourcesNodeJSON = filterElementsNodeJSON.get("resources");
+        if (filterElementsResourcesNodeJSON != null) {
 
-			if (filterElementsResourcesNodeJSON.isArray()) {
-				for (final JsonNode resourceNode : filterElementsResourcesNodeJSON) {
+            if (filterElementsResourcesNodeJSON.isArray()) {
+                for (final JsonNode resourceNode : filterElementsResourcesNodeJSON) {
 
-					ResourceType resourceTypeFilter = ResourceType.valueOf(resourceNode.asText());
-					if (resourceTypeFilter != null) {
+                    ResourceType resourceTypeFilter = ResourceType.valueOf(resourceNode.asText());
+                    if (resourceTypeFilter != null) {
 
-						//the type of resource matches the filter so it's an inclusion at this point of the filtering
-						if (resourceType == resourceTypeFilter) {
-							resourceInclude = true;
-							break;
-						}
-					}
-				}
-			}
-			//resource failed to match a filter, so return false here as there is no point doing further filter checks
-			if (!resourceInclude)
-				return false;
-		}
+                        //the type of resource matches the filter so it's an inclusion at this point of the filtering
+                        if (resourceType == resourceTypeFilter) {
+                            resourceInclude = true;
+                            break;
+                        }
+                    }
+                }
+            }
+            //resource failed to match a filter, so return false here as there is no point doing further filter checks
+            if (!resourceInclude)
+                return false;
+        }
 
-		//is there a patient filter?
-		JsonNode filterElementsPatientNodeJSON = filterElementsNodeJSON.get("patients");
-		if (filterElementsPatientNodeJSON != null) {
+        //is there a patient filter?
+        JsonNode filterElementsPatientNodeJSON = filterElementsNodeJSON.get("patients");
+        if (filterElementsPatientNodeJSON != null) {
 
-			JsonNode filterElementsPatientAgeRangeYearNodeJSON = filterElementsPatientNodeJSON.get("ageRangeYears");
-			if (filterElementsPatientAgeRangeYearNodeJSON != null) {
+            JsonNode filterElementsPatientAgeRangeYearNodeJSON = filterElementsPatientNodeJSON.get("ageRangeYears");
+            if (filterElementsPatientAgeRangeYearNodeJSON != null) {
 
-				//check if actual Patient resource
-				if (resourceType == ResourceType.Patient) {
+                //check if actual Patient resource
+                if (resourceType == ResourceType.Patient) {
 
-					//this is an actual Patient resource, so validate the resource against the filter
-					Patient fhirPatient = (Patient) FhirResourceHelper.deserialiseResouce(resource);
-					Date dateOfBirth = fhirPatient.getBirthDate();
-					if (dateOfBirth != null) {
+                    //this is an actual Patient resource, so validate the resource against the filter
+                    Patient fhirPatient = (Patient) FhirResourceHelper.deserialiseResouce(resource);
+                    Date dateOfBirth = fhirPatient.getBirthDate();
+                    if (dateOfBirth != null) {
 
-						//cache the patient dob for further lookup
-						UUID patientId = resource.getPatientId();
-						patientDOBMap.put(patientId.toString(), dateOfBirth);
+                        //cache the patient dob for further lookup
+                        UUID patientId = resource.getPatientId();
+                        patientDOBMap.put(patientId.toString(), dateOfBirth);
 
-						//check to see if patient falls within age range filter
-						resourceInclude = isDOBInAgeRange(filterElementsPatientAgeRangeYearNodeJSON, dateOfBirth);
+                        //check to see if patient falls within age range filter
+                        resourceInclude = isDOBInAgeRange(filterElementsPatientAgeRangeYearNodeJSON, dateOfBirth);
 
-					} else {
-						return false;  //null DOB, so return false to not include the resource
-					}
-				} else {
+                    } else {
+                        return false;  //null DOB, so return false to not include the resource
+                    }
+                } else {
 
-					//check patient DOB cache first, else lookup Patient resource from the DB
-					UUID patientId = resource.getPatientId();
-					Date dateOfBirth = patientDOBMap.get(patientId.toString());
-					if (dateOfBirth == null) {
+                    //check patient DOB cache first, else lookup Patient resource from the DB
+                    UUID patientId = resource.getPatientId();
+                    Date dateOfBirth = patientDOBMap.get(patientId.toString());
+                    if (dateOfBirth == null) {
 
-						//this is not a Patient resource so we need to get the Patient DOB from the DB
-						//for the resource and validate against that.  The patient_id equals the resource_id for Patient resources.
-						UUID resourceId = resource.getResourceId();
-						Patient fhirPatient
-								= (Patient) resourceRepository.getCurrentVersionAsResource(serviceId, ResourceType.Patient, patientId.toString());
-						if (fhirPatient == null) {
+                        //this is not a Patient resource so we need to get the Patient DOB from the DB
+                        //for the resource and validate against that.  The patient_id equals the resource_id for Patient resources.
+                        UUID resourceId = resource.getResourceId();
+                        Patient fhirPatient
+                                = (Patient) resourceRepository.getCurrentVersionAsResource(serviceId, ResourceType.Patient, patientId.toString());
+                        if (fhirPatient == null) {
 
-							LOG.error("Patient resource not found for resourceId="+resourceId.toString()+" , processing patientId="+patientId);
-							return false;
-						}
+                            LOG.error("Patient resource not found for resourceId=" + resourceId.toString() + " , processing patientId=" + patientId);
+                            return false;
+                        }
 
-						dateOfBirth = fhirPatient.getBirthDate();
+                        dateOfBirth = fhirPatient.getBirthDate();
 
-						//null DOB, so return false to not include the resource
-						if (dateOfBirth == null)
-							return false;
+                        //null DOB, so return false to not include the resource
+                        if (dateOfBirth == null)
+                            return false;
 
-						//cache patient dob for future use
-						patientDOBMap.put(patientId.toString(), dateOfBirth);
-					}
+                        //cache patient dob for future use
+                        patientDOBMap.put(patientId.toString(), dateOfBirth);
+                    }
 
-					resourceInclude = isDOBInAgeRange(filterElementsPatientAgeRangeYearNodeJSON, dateOfBirth);
-				}
-			}
-		}
+                    resourceInclude = isDOBInAgeRange(filterElementsPatientAgeRangeYearNodeJSON, dateOfBirth);
+                }
+            }
+        }
 
-		return resourceInclude;
-	}
+        return resourceInclude;
+    }
 
-	private static boolean isDOBInAgeRange(JsonNode filterElementsPatientAgeRangeYearNodeJSON, Date dateOfBirth) {
+    private static boolean isDOBInAgeRange(JsonNode filterElementsPatientAgeRangeYearNodeJSON, Date dateOfBirth) {
 
-		Years age = Years.yearsBetween(new LocalDate(dateOfBirth), new LocalDate());
-		int yearsOld = age.getYears();
-		if (filterElementsPatientAgeRangeYearNodeJSON.isArray()) {
-			for (final JsonNode ageRangeNode : filterElementsPatientAgeRangeYearNodeJSON) {
-				String rangeYears = ageRangeNode.asText();  //from-to
-				String ageFrom = rangeYears.substring(0, rangeYears.indexOf("-"));
-				String ageTo = rangeYears.substring(rangeYears.indexOf("-") + 1, rangeYears.length());
+        Years age = Years.yearsBetween(new LocalDate(dateOfBirth), new LocalDate());
+        int yearsOld = age.getYears();
+        if (filterElementsPatientAgeRangeYearNodeJSON.isArray()) {
+            for (final JsonNode ageRangeNode : filterElementsPatientAgeRangeYearNodeJSON) {
+                String rangeYears = ageRangeNode.asText();  //from-to
+                String ageFrom = rangeYears.substring(0, rangeYears.indexOf("-"));
+                String ageTo = rangeYears.substring(rangeYears.indexOf("-") + 1, rangeYears.length());
 
-				if (yearsOld >= Integer.parseInt(ageFrom) && yearsOld <= Integer.parseInt(ageTo)) {
+                if (yearsOld >= Integer.parseInt(ageFrom) && yearsOld <= Integer.parseInt(ageTo)) {
 
-					//patient matches age range filter so include the resource
-					return true;
-				}
-			}
-		}
+                    //patient matches age range filter so include the resource
+                    return true;
+                }
+            }
+        }
 
-		return false;
-	}
+        return false;
+    }
 
-	private static boolean isPatientResource(ResourceWrapper resource) {
+    private static boolean isPatientResource(ResourceWrapper resource) {
 
-		return (resource.getPatientId() != null);
-	}
+        return (resource.getPatientId() != null);
+    }
 
 
-	private static void saveTransformAudit(UUID exchangeId, UUID batchId, String subscriberConfigName, Date started,
-										   Exception transformError, Integer resourceCount, UUID queuedMessageId) throws Exception {
+    private static void saveTransformAudit(UUID exchangeId, UUID batchId, String subscriberConfigName, Date started,
+                                           Exception transformError, Integer resourceCount, UUID queuedMessageId) throws Exception {
 
-		ExchangeSubscriberTransformAudit audit = new ExchangeSubscriberTransformAudit();
-		audit.setExchangeId(exchangeId);
-		audit.setExchangeBatchId(batchId);
-		audit.setSubscriberConfigName(subscriberConfigName);
-		audit.setStarted(started);
-		audit.setEnded(new Date());
-		audit.setQueuedMessageId(queuedMessageId);
-		audit.setNumberResourcesTransformed(resourceCount);
+        ExchangeSubscriberTransformAudit audit = new ExchangeSubscriberTransformAudit();
+        audit.setExchangeId(exchangeId);
+        audit.setExchangeBatchId(batchId);
+        audit.setSubscriberConfigName(subscriberConfigName);
+        audit.setStarted(started);
+        audit.setEnded(new Date());
+        audit.setQueuedMessageId(queuedMessageId);
+        audit.setNumberResourcesTransformed(resourceCount);
 
-		if (transformError != null) {
-			TransformError errorWrapper = new TransformError();
-			TransformErrorUtility.addTransformError(errorWrapper, transformError, new HashMap<>());
+        if (transformError != null) {
+            TransformError errorWrapper = new TransformError();
+            TransformErrorUtility.addTransformError(errorWrapper, transformError, new HashMap<>());
 
-			String xml = TransformErrorSerializer.writeToXml(errorWrapper);
-			audit.setErrorXml(xml);
-		}
+            String xml = TransformErrorSerializer.writeToXml(errorWrapper);
+            audit.setErrorXml(xml);
+        }
 
-		auditRepository.save(audit);
-	}
+        auditRepository.save(audit);
+    }
 }

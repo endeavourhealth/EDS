@@ -3,6 +3,7 @@
 		<div class="module-heading">
 			Services
 			<div class="pull-right">
+				<button class="btn btn-sm btn-default" (click)="odsSearch()" title="Ods Search">ODS Search</button>
 				<button class="btn btn-sm btn-default" (click)="toggleFilters()" title="Toggle Filters">Toggle Filters</button>
 				<button class="btn btn-sm btn-default" (click)="refreshAllServices()" title="Toggle Filters">Refresh</button>
 				<button class="btn btn-sm btn-success" (click)="add()" title="Add">Add new</button>
@@ -20,25 +21,46 @@
 								<input type="text" class="form-control" id="inputType" placeholder="Regex" [(ngModel)]="serviceService.serviceNameFilter" name="serviceNameFilter" (ngModelChange)="applyFiltering()">
 							</div>
 
-							<label for="inputType2" class="col-sm-1 control-label">Publisher Config</label>
-							<div class="col-sm-2">
-								<select id="inputType2" class="form-control" [(ngModel)]="serviceService.servicePublisherConfigFilter" name="servicePublisherConfigFilter" (ngModelChange)="applyFiltering()">
-									<option value=""></option>
-									<option *ngFor="let publisherConfigName of allPublisherConfigNames" value="{{publisherConfigName}}">{{publisherConfigName}}</option>
-								</select>
-							</div>
-
 							<label for="inputType2" class="col-sm-1 control-label">Parent</label>
 							<div class="col-sm-1">
-								<select id="inputType4" class="form-control" [(ngModel)]="serviceService.serviceCcgCodeFilter" name="serviceCcgCodeFilter" (ngModelChange)="applyFiltering()">
+								<select id="inputType2" class="form-control" [(ngModel)]="serviceService.serviceCcgCodeFilter" name="serviceCcgCodeFilter" (ngModelChange)="applyFiltering()">
 									<option value=""></option>
 									<option *ngFor="let ccgCode of allCcgCodes" value="{{ccgCode}}">{{ccgCode}} {{serviceService.getCcgName(ccgCode)}}</option>
 								</select>
 							</div>
 
-							<label for="inputType3" class="col-sm-1 control-label">In Error</label>
+							<label for="inputType5" class="col-sm-1 control-label">Publisher Config</label>
+							<div class="col-sm-2">
+								<select id="inputType5" class="form-control" [(ngModel)]="serviceService.servicePublisherConfigFilter" name="servicePublisherConfigFilter" (ngModelChange)="applyFiltering()">
+									<option value=""></option>
+									<option *ngFor="let publisherConfigName of allPublisherConfigNames" value="{{publisherConfigName}}">{{publisherConfigName}}</option>
+								</select>
+							</div>
+
+							<label for="inputType4" class="col-sm-1 control-label">Last Data</label>
 							<div class="col-sm-1">
-								<input type="checkbox" class="form-control" id="inputType3" [(ngModel)]="serviceService.serviceHasErrorsFilter" name="serviceHasErrorsFilter" (ngModelChange)="applyFiltering()">
+								<select id="inputType4" class="form-control" [(ngModel)]="serviceService.serviceLastDataFilter" name="lastDataFilter" (ngModelChange)="applyFiltering()">
+									<option value=""></option>
+									<option value="Today">Today</option>
+									<option value="Yesterday">Yesterday</option>
+									<option value="ThisWeek">This Week</option>
+									<option value="LastWeek">Last Week</option>
+									<option value="Older">Older</option>
+								</select>
+								<!--<input type="checkbox" class="form-control" id="inputType3" [(ngModel)]="serviceService.serviceHasErrorsFilter" name="serviceHasErrorsFilter" (ngModelChange)="applyFiltering()">-->
+							</div>
+
+
+							<label for="inputType3" class="col-sm-1 control-label">Status</label>
+							<div class="col-sm-1">
+								<select id="inputType3" class="form-control" [(ngModel)]="serviceService.serviceStatusFilter" name="serviceStatusFilter" (ngModelChange)="applyFiltering()">
+									<option value=""></option>
+									<option value="Error">Error</option>
+									<option value="Behind">Behind</option>
+									<option value="OK">OK</option>
+									<option value="NoStatus">No Status</option>
+								</select>
+								<!--<input type="checkbox" class="form-control" id="inputType3" [(ngModel)]="serviceService.serviceHasErrorsFilter" name="serviceHasErrorsFilter" (ngModelChange)="applyFiltering()">-->
 							</div>
 
 						</div>
