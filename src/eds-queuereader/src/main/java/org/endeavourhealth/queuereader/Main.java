@@ -782,6 +782,7 @@ public class Main {
 		//update audit
 		Files.write(new File(doneFilePath).toPath(), batch, StandardOpenOption.CREATE, StandardOpenOption.APPEND, StandardOpenOption.WRITE);
 
+		batch.clear();
 	}
 
 	private static void testS3Listing(String path) {
