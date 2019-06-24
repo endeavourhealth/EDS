@@ -103,6 +103,15 @@ public class Main {
 		}*/
 
 		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("DeleteEnterpriseObs")) {
+			String filePath = args[1];
+			String configName = args[2];
+			int batchSize = Integer.parseInt(args[3]);
+			deleteEnterpriseObs(filePath, configName, batchSize);
+			System.exit(0);
+		}
+
+		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("TestRabbit")) {
 			String nodes = args[1];
 			String username = args[2];
@@ -694,6 +703,81 @@ public class Main {
 		// Begin consume
 		rabbitHandler.start();
 		LOG.info("EDS Queue reader running (kill file location " + TransformConfig.instance().getKillFileLocation() + ")");
+	}
+
+	private static void deleteEnterpriseObs(String filePath, String configName, int batchSize) {
+		LOG.info("Deleting Enterprise Observations");
+		try {
+
+			String parent = FilenameUtils.getFullPath(filePath);
+			String name = FilenameUtils.getName(filePath);
+			String doneFilePath = FilenameUtils.concat(parent, "DONE" + name);
+
+			Set<String> doneIds = new HashSet<>();
+			List<String> doneLines = Files.readAllLines(new File(doneFilePath).toPath());
+			for (String doneLine: doneLines) {
+				doneIds.add(doneLine);
+			}
+
+			List<EnterpriseConnector.ConnectionWrapper> connectionWrappers = EnterpriseConnector.openConnection(configName);
+
+			CSVParser parser = CSVParser.parse(filePath, CSVFormat.TDF.withHeader());
+			Iterator<CSVRecord> iterator = parser.iterator();
+
+			List<String> batch = new ArrayList<>();
+
+			while (iterator.hasNext()) {
+				CSVRecord record = iterator.next();
+				String id = record.get("id");
+				if (doneIds.contains(id)) {
+					continue;
+				}
+				doneIds.add(id);
+				batch.add(id);
+
+				if (batch.size() >= batchSize) {
+					saveBatch(batch, connectionWrappers, doneFilePath);
+				}
+				if (doneIds.size() % 1000 == 0) {
+					LOG.debug("Done " + doneIds.size());
+				}
+			}
+
+			if (!batch.isEmpty()) {
+				saveBatch(batch, connectionWrappers, doneFilePath);
+				LOG.debug("Done " + doneIds.size());
+			}
+
+			parser.close();
+
+			LOG.info("Finished Deleting Enterprise Observations");
+		} catch (Throwable t) {
+			LOG.error("", t);
+		}
+	}
+
+	private static void saveBatch(List<String> batch, List<EnterpriseConnector.ConnectionWrapper> connectionWrappers, String doneFilePath) throws Exception {
+
+		for (EnterpriseConnector.ConnectionWrapper connectionWrapper: connectionWrappers) {
+			String sql = "DELETE FROM observation WHERE id = ?";
+
+			Connection connection = connectionWrapper.getConnection();
+			PreparedStatement ps = connection.prepareStatement(sql);
+
+			for (String id: batch) {
+				ps.setLong(1, Long.parseLong(id));
+				ps.addBatch();
+			}
+
+			ps.executeBatch();
+
+			ps.close();
+			connection.close();
+		}
+
+		//update audit
+		Files.write(new File(doneFilePath).toPath(), batch, StandardOpenOption.CREATE, StandardOpenOption.APPEND, StandardOpenOption.WRITE);
+
 	}
 
 	private static void testS3Listing(String path) {
