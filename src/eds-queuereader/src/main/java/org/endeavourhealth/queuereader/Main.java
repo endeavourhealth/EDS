@@ -768,12 +768,15 @@ public class Main {
 			Connection connection = connectionWrapper.getConnection();
 			PreparedStatement ps = connection.prepareStatement(sql);
 
+
 			for (String id: batch) {
 				ps.setLong(1, Long.parseLong(id));
 				ps.addBatch();
 			}
 
 			ps.executeBatch();
+
+			connection.commit();
 
 			ps.close();
 			connection.close();
