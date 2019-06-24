@@ -1,9 +1,8 @@
 -- use subscriber_new_pseudo;
 -- use subscriber_new_pi;
 
-DROP TABLE IF EXISTS location;
-DROP TABLE IF EXISTS `schedule`;
 DROP TABLE IF EXISTS allergy_intolerance;
+DROP TABLE IF EXISTS diagnostic_order;
 DROP TABLE IF EXISTS medication_order;
 DROP TABLE IF EXISTS medication_statement;
 DROP TABLE IF EXISTS flag;
@@ -20,9 +19,11 @@ DROP TABLE IF EXISTS appointment;
 DROP TABLE IF EXISTS episode_of_care;
 DROP TABLE IF EXISTS patient;
 DROP TABLE IF EXISTS person;
+DROP TABLE IF EXISTS location;
+DROP TABLE IF EXISTS `schedule`;
 DROP TABLE IF EXISTS practitioner;
 DROP TABLE IF EXISTS organization;
-DROP TABLE IF EXISTS diagnostic_order;
+
 
 
 -- Table: organization
@@ -244,6 +245,9 @@ CREATE TABLE appointment
       ON UPDATE NO ACTION ON DELETE NO ACTION,
   CONSTRAINT fk_appointment_practitioner_id FOREIGN KEY (practitioner_id)
       REFERENCES practitioner (id) MATCH SIMPLE
+      ON UPDATE NO ACTION ON DELETE NO ACTION,
+  CONSTRAINT fk_appointment_schedule_id FOREIGN KEY (schedule_id)
+      REFERENCES schedule (id) MATCH SIMPLE
       ON UPDATE NO ACTION ON DELETE NO ACTION
 );
 
