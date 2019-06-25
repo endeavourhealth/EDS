@@ -4,20 +4,16 @@ import OpenPseudonymiser.Crypto;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.base.Strings;
-import com.google.common.collect.Lists;
-import com.rabbitmq.client.*;
 import org.apache.commons.csv.*;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.common.config.ConfigManager;
-import org.endeavourhealth.common.fhir.PeriodHelper;
-import org.endeavourhealth.common.fhir.ReferenceHelper;
-import org.endeavourhealth.common.utility.*;
+import org.endeavourhealth.common.utility.FileHelper;
+import org.endeavourhealth.common.utility.MetricsHelper;
 import org.endeavourhealth.core.configuration.ConfigDeserialiser;
 import org.endeavourhealth.core.configuration.PostMessageToExchangeConfig;
 import org.endeavourhealth.core.configuration.QueueReaderConfiguration;
-import org.endeavourhealth.core.csv.CsvHelper;
 import org.endeavourhealth.core.database.dal.DalProvider;
 import org.endeavourhealth.core.database.dal.admin.LibraryRepositoryHelper;
 import org.endeavourhealth.core.database.dal.admin.ServiceDalI;
@@ -29,41 +25,25 @@ import org.endeavourhealth.core.database.dal.audit.models.ExchangeBatch;
 import org.endeavourhealth.core.database.dal.audit.models.ExchangeTransformAudit;
 import org.endeavourhealth.core.database.dal.audit.models.HeaderKeys;
 import org.endeavourhealth.core.database.dal.eds.PatientLinkDalI;
-import org.endeavourhealth.core.database.dal.eds.PatientSearchDalI;
-import org.endeavourhealth.core.database.dal.ehr.ResourceDalI;
 import org.endeavourhealth.core.database.dal.ehr.models.ResourceWrapper;
-import org.endeavourhealth.core.database.dal.publisherTransform.InternalIdDalI;
 import org.endeavourhealth.core.database.dal.reference.PostcodeDalI;
 import org.endeavourhealth.core.database.dal.reference.models.PostcodeLookup;
 import org.endeavourhealth.core.database.dal.subscriberTransform.SubscriberOrgMappingDalI;
 import org.endeavourhealth.core.database.dal.subscriberTransform.SubscriberPersonMappingDalI;
 import org.endeavourhealth.core.database.dal.subscriberTransform.SubscriberResourceMappingDalI;
-import org.endeavourhealth.core.database.dal.subscriberTransform.models.EnterpriseAge;
 import org.endeavourhealth.core.database.rdbms.ConnectionManager;
 import org.endeavourhealth.core.database.rdbms.enterprise.EnterpriseConnector;
 import org.endeavourhealth.core.exceptions.TransformException;
-import org.endeavourhealth.core.fhirStorage.FhirSerializationHelper;
 import org.endeavourhealth.core.fhirStorage.FhirStorageService;
 import org.endeavourhealth.core.fhirStorage.JsonServiceInterfaceEndpoint;
 import org.endeavourhealth.core.messaging.pipeline.components.OpenEnvelope;
 import org.endeavourhealth.core.messaging.pipeline.components.PostMessageToExchange;
 import org.endeavourhealth.core.queueing.QueueHelper;
 import org.endeavourhealth.core.xml.QueryDocument.*;
-import org.endeavourhealth.core.xml.TransformErrorSerializer;
-import org.endeavourhealth.core.xml.TransformErrorUtility;
-import org.endeavourhealth.core.xml.transformError.TransformError;
-import org.endeavourhealth.transform.barts.schema.PPALI;
-import org.endeavourhealth.transform.barts.schema.PPATI;
 import org.endeavourhealth.transform.common.*;
-import org.endeavourhealth.transform.common.resourceBuilders.GenericBuilder;
 import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
-import org.endeavourhealth.transform.emis.csv.helpers.EmisCsvHelper;
-import org.endeavourhealth.transform.emis.csv.schema.appointment.Slot;
-import org.endeavourhealth.transform.emis.csv.transforms.appointment.SessionUserTransformer;
-import org.endeavourhealth.transform.emis.csv.transforms.appointment.SlotTransformer;
 import org.hibernate.internal.SessionImpl;
-import org.hl7.fhir.instance.model.*;
-import org.hl7.fhir.instance.model.Resource;
+import org.hl7.fhir.instance.model.ResourceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -76,7 +56,6 @@ import java.net.Socket;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
-import java.sql.Connection;
 import java.sql.*;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -111,7 +90,7 @@ public class Main {
 			System.exit(0);
 		}
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("TestRabbit")) {
 			String nodes = args[1];
 			String username = args[2];
@@ -125,22 +104,22 @@ public class Main {
 			}
 			testRabbit(nodes, username, password, sslProtocol, exchangeName, queueName);
 			System.exit(0);
-		}
+		}*/
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("FixEmisEpisodes1")) {
 			String odsCode = args[1];
 			//fixEmisEpisodes1(odsCode);
 			fixEmisEpisodes2(odsCode);
 			System.exit(0);
-		}
+		}*/
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("TestS3Listing")) {
 			String path = args[1];
 			testS3Listing(path);
 			System.exit(0);
-		}
+		}*/
 
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("CreateHomertonSubset")) {
@@ -197,7 +176,7 @@ public class Main {
 			System.exit(0);
 		}
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("FindBartsPersonIds")) {
 			String sourceFile = args[1];
 			UUID serviceUuid = UUID.fromString(args[2]);
@@ -206,9 +185,9 @@ public class Main {
 			String dstFile = args[5];
 			findBartsPersonIds(sourceFile, serviceUuid, systemUuid, dateCutoffStr, dstFile);
 			System.exit(0);
-		}
+		}*/
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("FixTPPNullOrgs")) {
 			String sourceDirPath = args[1];
 			String orgODS = args[2];
@@ -216,20 +195,29 @@ public class Main {
 			LOG.info("Fixing TPP Null Organisations");
 			fixTPPNullOrgs(sourceDirPath, orgODS);
 			System.exit(0);
-		}
+		}*/
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("FixEmisDeletedPatients")) {
 			String odsCode = args[1];
 			fixEmisDeletedPatients(odsCode);
 			System.exit(0);
-		}
+		}*/
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("PostPatientToProtocol")) {
 			String odsCode = args[1];
 			String patientUuid = args[2];
 			postPatientToProtocol(odsCode, patientUuid);
+			System.exit(0);
+		}*/
+
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("PostPatientsToProtocol")) {
+			UUID serviceId = UUID.fromString(args[1]);
+			UUID systemId = UUID.fromString(args[2]);
+			String sourceFile = args[3];
+			postPatientsToProtocol(serviceId, systemId, sourceFile);
 			System.exit(0);
 		}
 
@@ -282,13 +270,13 @@ public class Main {
 		}*/
 
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("ExportFhirToCsv")) {
 			UUID serviceId = UUID.fromString(args[1]);
 			String path = args[2];
 			exportFhirToCsv(serviceId, path);
 			System.exit(0);
-		}
+		}*/
 
 
 		/*if (args.length >= 1
@@ -389,9 +377,9 @@ public class Main {
 		}
 
 		if (args.length >= 1
-				&& args[0].equalsIgnoreCase("PostToProtocol")) {
+				&& args[0].equalsIgnoreCase("PostExchangesToProtocol")) {
 			String srcFile = args[1];
-			postToProtocol(srcFile);
+			postExchangesToProtocol(srcFile);
 			System.exit(0);
 		}
 
@@ -446,12 +434,12 @@ public class Main {
 			System.exit(0);
 		}*/
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("PopulateNewSearchTable")) {
 			String table = args[1];
 			populateNewSearchTable(table);
 			System.exit(0);
-		}
+		}*/
 
 		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("FixBartsEscapes")) {
@@ -469,7 +457,7 @@ public class Main {
 			System.exit(0);
 		}*/
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("FixDisabledExtract")) {
 			String sharedStoragePath = args[1];
 			String tempDir = args[2];
@@ -478,23 +466,23 @@ public class Main {
 
 			fixDisabledEmisExtract(serviceOdsCode, systemId, sharedStoragePath, tempDir);
 			System.exit(0);
-		}
+		}*/
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("FixEmisMissingSlots")) {
 			String serviceOdsCode = args[1];
 			fixEmisMissingSlots(serviceOdsCode);
 			System.exit(0);
-		}
+		}*/
 
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("PopulateLastDataDate")) {
 			int threads = Integer.parseInt(args[1]);
 			int batchSize = Integer.parseInt(args[2]);
 			populateLastDataDate(threads, batchSize);
 			System.exit(0);
-		}
+		}*/
 
 
 		/*if (args.length >= 1
@@ -526,7 +514,7 @@ public class Main {
 			System.exit(0);
 		}*/
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("FixSlotReferences")) {
 			String serviceId = args[1];
 			try {
@@ -536,9 +524,9 @@ public class Main {
 				fixSlotReferencesForPublisher(serviceId);
 			}
 			System.exit(0);
-		}
+		}*/
 
-		if (args.length >= 0
+		/*if (args.length >= 0
 				&& args[0].equalsIgnoreCase("TestAuditingFile")) {
 			UUID serviceId = UUID.fromString(args[1]);
 			UUID systemId = UUID.fromString(args[2]);
@@ -547,7 +535,7 @@ public class Main {
 			String filePath = args[5];
 			testAuditingFile(serviceId, systemId, exchangeId, version, filePath);
 			System.exit(0);
-		}
+		}*/
 
 
 		/*if (args.length >= 1
@@ -788,33 +776,33 @@ public class Main {
 		batch.clear();
 	}
 
-	private static void testS3Listing(String path) {
+	/*private static void testS3Listing(String path) {
 		LOG.info("Testing S3 Listing");
 		try {
 
 			LOG.info("Trying with full path: " + path);
 			List<FileInfo> l = FileHelper.listFilesInSharedStorageWithInfo(path);
 			LOG.info("Found " + l.size());
-			/*for (FileInfo info: l) {
+			*//*for (FileInfo info: l) {
 				LOG.info("Got " + info.getFilePath());
-			}*/
+			}*//*
 
 			String parent = FilenameUtils.getFullPath(path);
 			LOG.info("Trying with parent: " + parent);
 			l = FileHelper.listFilesInSharedStorageWithInfo(parent);
 			LOG.info("Found " + l.size());
-			/*for (FileInfo info: l) {
+			*//*for (FileInfo info: l) {
 				LOG.info("Got " + info.getFilePath());
-			}*/
+			}*//*
 
 			LOG.info("Finished Testing S3 Listing");
 		} catch (Throwable t) {
 			LOG.error("", t);
 		}
 
-	}
+	}*/
 
-	private static void testAuditingFile(UUID serviceId, UUID systemId, UUID exchangeId, String version, String filePath) {
+	/*private static void testAuditingFile(UUID serviceId, UUID systemId, UUID exchangeId, String version, String filePath) {
 		LOG.info("Testing Auditing File");
 		try {
 
@@ -832,9 +820,9 @@ public class Main {
 		} catch (Throwable t) {
 			LOG.error("", t);
 		}
-	}
+	}*/
 
-	private static void postPatientToProtocol(String odsCode, String patientUuid) {
+	/*private static void postPatientToProtocol(String odsCode, String patientUuid) {
 		LOG.info("Posting patient " + patientUuid + " for " + odsCode + " to Protocol queue");
 		try {
 			ServiceDalI serviceDal = DalProvider.factoryServiceDal();
@@ -887,6 +875,64 @@ public class Main {
 			}
 
 			LOG.info("Finished posting patient " + patientUuid + " for " + odsCode + " to Protocol queue");
+		} catch (Throwable t) {
+			LOG.error("", t);
+		}
+
+	}*/
+
+	private static void postPatientsToProtocol(UUID serviceId, UUID systemId, String sourceFile) {
+
+		try {
+			LOG.info("Posting patient from " + sourceFile + " for " + serviceId + " to Protocol queue");
+			Set<UUID> hsPatientUuids = new HashSet<>();
+			List<String> lines = Files.readAllLines(new File(sourceFile).toPath());
+			for (String line: lines) {
+				hsPatientUuids.add(UUID.fromString(line));
+			}
+			LOG.info("Found " + hsPatientUuids.size() + " patient IDs");
+
+			ServiceDalI serviceDal = DalProvider.factoryServiceDal();
+			Service service = serviceDal.getById(serviceId);
+			LOG.info("Service " + service.getId() + " -> " + service.getName());
+
+			ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
+			List<Exchange> exchanges = exchangeDal.getExchangesByService(serviceId, systemId, Integer.MAX_VALUE);
+			LOG.info("Found " + exchanges.size() + " exchanges");
+
+			ExchangeBatchDalI exchangeBatchDal = DalProvider.factoryExchangeBatchDal();
+
+			//exchanges are in order most recent first, so iterate backwards to get them in date order
+			for (int i=exchanges.size()-1; i>=0; i--) {
+				Exchange exchange = exchanges.get(i);
+
+				List<UUID> batchesForPatient = new ArrayList<>();
+
+				List<ExchangeBatch> batches = exchangeBatchDal.retrieveForExchangeId(exchange.getId());
+				for (ExchangeBatch batch: batches) {
+					UUID patientId = batch.getEdsPatientId();
+					if (patientId != null
+							&& hsPatientUuids.contains(patientId)) {
+
+						batchesForPatient.add(batch.getBatchId());
+					}
+				}
+
+				if (!batchesForPatient.isEmpty()) {
+					LOG.debug("Posting " + batchesForPatient.size() + " for exchange " + exchange.getId() + " to rabbit");
+
+					//set new batch ID in exchange header
+					String batchIdString = ObjectMapperPool.getInstance().writeValueAsString(batchesForPatient.toArray());
+					exchange.setHeader(HeaderKeys.BatchIdsJson, batchIdString);
+
+					//post new batch to protocol Q
+					PostMessageToExchangeConfig exchangeConfig = QueueHelper.findExchangeConfig("EdsProtocol");
+					PostMessageToExchange component = new PostMessageToExchange(exchangeConfig);
+					component.process(exchange);
+				}
+			}
+
+			LOG.info("Finished posting patients from " + sourceFile + " for " + serviceId + " to Protocol queue");
 		} catch (Throwable t) {
 			LOG.error("", t);
 		}
@@ -1037,7 +1083,7 @@ public class Main {
 		socket.close();
 	}
 
-	private static void fixEmisDeletedPatients(String odsCode) {
+	/*private static void fixEmisDeletedPatients(String odsCode) {
 		LOG.info("Fixing Emis Deleted Patients for " + odsCode);
 		try {
 
@@ -1270,7 +1316,7 @@ public class Main {
 		} catch (Throwable t) {
 			LOG.error("", t);
 		}
-	}
+	}*/
 
 	private static ExchangePayloadFile findFileOfType(List<ExchangePayloadFile> files, String fileType) {
 
@@ -1282,7 +1328,7 @@ public class Main {
 		return null;
 	}
 
-	private static void fixEmisEpisodes2(String odsCode) {
+	/*private static void fixEmisEpisodes2(String odsCode) {
 		LOG.info("Fixing Emis Episodes (2) for " + odsCode);
 		try {
 
@@ -1377,7 +1423,7 @@ public class Main {
 		} catch (Throwable t) {
 			LOG.error("", t);
 		}
-	}
+	}*/
 
 	/*private static void fixEmisEpisodes1(String odsCode) {
 		LOG.info("Fixing Emis Episodes (1) for " + odsCode);
@@ -1494,7 +1540,7 @@ public class Main {
 		}
 	}*/
 
-	private static void testRabbit(String nodes, String username, String password, String sslProtocol, String exchangeName, String queueName) {
+	/*private static void testRabbit(String nodes, String username, String password, String sslProtocol, String exchangeName, String queueName) {
 		LOG.info("Testing RabbitMQ Connectivity on " + nodes);
 		LOG.info("SSL Protocol = " + sslProtocol);
 		LOG.info("Exchange = " + exchangeName);
@@ -1549,11 +1595,11 @@ public class Main {
 		} catch (Throwable t) {
 			LOG.error("", t);
 		}
-	}
+	}*/
 
 
 
-	private static void populateLastDataDate(int threads, int batchSize) {
+	/*private static void populateLastDataDate(int threads, int batchSize) {
 		LOG.debug("Populating last data date");
 		try {
 
@@ -1613,11 +1659,11 @@ public class Main {
 		} catch (Throwable t) {
 			LOG.error("", t);
 		}
-	}
+	}*/
 
 
 
-	private static void fixEmisMissingSlots(String serviceOdsCode) {
+	/*private static void fixEmisMissingSlots(String serviceOdsCode) {
 		LOG.debug("Fixing Emis Missing Slots for " + serviceOdsCode);
 		try {
 			ServiceDalI serviceDal = DalProvider.factoryServiceDal();
@@ -1910,7 +1956,7 @@ public class Main {
 		} catch (Throwable t) {
 			LOG.error("", t);
 		}
-	}
+	}*/
 
 	private static void createEmisDataTables() {
 		LOG.debug("Creating Emis data tables");
@@ -3342,7 +3388,7 @@ public class Main {
 	}*/
 
 
-	private static void updateEnterprisePatient(long enterprisePatientId, Integer[] ages, Connection connection) throws Exception {
+	/*private static void updateEnterprisePatient(long enterprisePatientId, Integer[] ages, Connection connection) throws Exception {
 
 		//the enterprise patient database isn't managed using hibernate, so we need to simply write a simple update statement
 		StringBuilder sb = new StringBuilder();
@@ -3420,7 +3466,7 @@ public class Main {
 		update.executeBatch();
 
 		connection.commit();
-	}
+	}*/
 
 	/*private static void testS3Read(String s3BucketName, String keyName, String start, String len) {
 		LOG.debug("Testing S3 Read from " + s3BucketName + " " + keyName + " from " + start + " " + len + " bytes");
@@ -3911,7 +3957,7 @@ public class Main {
 		}
 	}
 
-	private static void postToProtocol(String srcFile) {
+	private static void postExchangesToProtocol(String srcFile) {
 		LOG.info("Posting to protocol from " + srcFile);
 		try {
 			List<UUID> exchangeIds = new ArrayList<>();
@@ -5797,7 +5843,7 @@ public class Main {
 		entityManager.getTransaction().commit();
 	}
 
-	private static void populateNewSearchTable(String table) {
+	/*private static void populateNewSearchTable(String table) {
 		LOG.info("Populating New Search Table");
 
 		try {
@@ -5901,7 +5947,7 @@ public class Main {
 		} catch (Exception ex) {
 			LOG.error("", ex);
 		}
-	}
+	}*/
 
 	/*private static void createBartsSubset(String sourceDir, UUID serviceUuid, UUID systemUuid, String samplePatientsFile) {
 		LOG.info("Creating Barts Subset");
@@ -6658,7 +6704,7 @@ public class Main {
 	 * replacing the "delete" extracts with newly generated deltas that can be processed
 	 * before the re-bulk is done
 	 */
-	private static void fixDisabledEmisExtract(String serviceOdsCode, String systemId, String sharedStoragePath, String tempDirParent) {
+	/*private static void fixDisabledEmisExtract(String serviceOdsCode, String systemId, String sharedStoragePath, String tempDirParent) {
 
 		LOG.info("Fixing Disabled Emis Extracts Prior to Re-bulk for service " + serviceOdsCode);
 		try {
@@ -6667,7 +6713,7 @@ public class Main {
 			Service service = serviceDal.getByLocalIdentifier(serviceOdsCode);
 			LOG.info("Service " + service.getId() + " " + service.getName() + " " + service.getLocalId());
 
-			/*File tempDirLast = new File(tempDir, "last");
+			*//*File tempDirLast = new File(tempDir, "last");
 			if (!tempDirLast.exists()) {
 				if (!tempDirLast.mkdirs()) {
 					throw new Exception("Failed to create temp dir " + tempDirLast);
@@ -6680,7 +6726,7 @@ public class Main {
 					throw new Exception("Failed to create temp dir " + tempDirEmpty);
 				}
 				tempDirEmpty.mkdirs();
-			}*/
+			}*//*
 
 			String tempDir = FilenameUtils.concat(tempDirParent, serviceOdsCode);
 
@@ -6736,11 +6782,11 @@ public class Main {
 				hmExchangeFilesWithoutStoragePrefix.put(exchange, fileList);
 			}
 
-			/*exchanges.sort((o1, o2) -> {
+			*//*exchanges.sort((o1, o2) -> {
 				Date d1 = o1.getTimestamp();
 				Date d2 = o2.getTimestamp();
 				return d1.compareTo(d2);
-			});*/
+			});*//*
 
 			LOG.info("Found " + exchanges.size() + " exchanges and cached their files");
 
@@ -7098,7 +7144,7 @@ public class Main {
 
 			dumpFileSizes(new File(tempDir));
 
-			/*continueOrQuit();
+			*//*continueOrQuit();
 
 			//back up every file where the service was disabled
 			for (int i=indexDisabled; i<indexRebulked; i++) {
@@ -7214,14 +7260,14 @@ public class Main {
 				if (f.exists()) {
 					f.delete();
 				}
-			}*/
+			}*//*
 
 		} catch (Exception ex) {
 			LOG.error("", ex);
 		}
-	}
+	}*/
 
-	private static void dumpFileSizes(File f) {
+	/*private static void dumpFileSizes(File f) {
 		if (f.isDirectory()) {
 			for (File child : f.listFiles()) {
 				dumpFileSizes(child);
@@ -7230,15 +7276,15 @@ public class Main {
 			String totalSizeReadable = FileUtils.byteCountToDisplaySize(f.length());
 			LOG.info("" + f + " = " + totalSizeReadable);
 		}
-	}
+	}*/
 
-	private static String findExtractDate(Exchange exchange, Map<Exchange, List<String>> fileMap) throws Exception {
+	/*private static String findExtractDate(Exchange exchange, Map<Exchange, List<String>> fileMap) throws Exception {
 		List<String> files = fileMap.get(exchange);
 		String file = findSharingAgreementFile(files);
 		String name = FilenameUtils.getBaseName(file);
 		String[] toks = name.split("_");
 		return toks[3];
-	}
+	}*/
 
 	private static boolean isDisabledInSharingAgreementFile(List<String> files) throws Exception {
 		String file = findSharingAgreementFile(files);
@@ -7338,7 +7384,7 @@ public class Main {
 	}
 
 
-	private static void testSlack() {
+	/*private static void testSlack() {
 		LOG.info("Testing slack");
 
 		try {
@@ -7348,7 +7394,7 @@ public class Main {
 		} catch (Exception ex) {
 			LOG.error("", ex);
 		}
-	}
+	}*/
 
 	/*private static void postToInboundFromFile(UUID serviceId, UUID systemId, String filePath) {
 
@@ -8104,7 +8150,7 @@ public class Main {
 			}
 		});
 	}*/
-	private static void findEmisStartDates(String path, String outputPath) {
+	/*private static void findEmisStartDates(String path, String outputPath) {
 		LOG.info("Finding EMIS Start Dates in " + path + ", writing to " + outputPath);
 
 		try {
@@ -8458,7 +8504,7 @@ public class Main {
 		}
 
 		return null;
-	}
+	}*/
 
 	/*private static void populateProtocolQueue(String serviceIdStr, String startingExchangeId) {
 		LOG.info("Starting Populating Protocol Queue for " + serviceIdStr);
@@ -10460,7 +10506,7 @@ public class Main {
 		}
 	}*/
 
-	private static void fixSlotReferencesForPublisher(String publisher) {
+	/*private static void fixSlotReferencesForPublisher(String publisher) {
 		try {
 			ServiceDalI dal = DalProvider.factoryServiceDal();
 			List<Service> services = dal.getAll();
@@ -10581,7 +10627,7 @@ public class Main {
 		} catch (Exception ex) {
 			LOG.error("", ex);
 		}
-	}
+	}*/
 
 	/*private static void fixReviews(String sharedStoragePath, UUID justThisService) {
 		LOG.info("Fixing Reviews using path " + sharedStoragePath + " and service " + justThisService);
@@ -11776,7 +11822,7 @@ public class Main {
 		}
 	}
 
-	private static void exportFhirToCsv(UUID serviceId, String destinationPath) {
+	/*private static void exportFhirToCsv(UUID serviceId, String destinationPath) {
 		try {
 
 			File dir = new File(destinationPath);
@@ -11833,9 +11879,9 @@ public class Main {
 		} catch (Throwable t) {
 			LOG.error("", t);
 		}
-	}
+	}*/
 
-	private static void fixTPPNullOrgs(String sourceDir, String orgODS) throws Exception {
+	/*private static void fixTPPNullOrgs(String sourceDir, String orgODS) throws Exception {
 
 		final String COLUMN_ORG = "IDOrganisationVisibleTo";
 
@@ -11946,7 +11992,7 @@ public class Main {
 				new File (destFileName).renameTo(new File (sourceFileName));
 			}
 		}
-	}
+	}*/
 
 }
 
@@ -12180,6 +12226,7 @@ class PopulateDataDateCallable implements Callable {
 }
 
 
+/*
 class TestRabbitConsumer extends DefaultConsumer {
 	private static final Logger LOG = LoggerFactory.getLogger(TestRabbitConsumer.class);
 
@@ -12204,4 +12251,4 @@ class TestRabbitConsumer extends DefaultConsumer {
 		this.getChannel().basicAck(deliveryTag, false);
 
 	}
-}
+}*/
