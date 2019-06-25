@@ -254,8 +254,8 @@ export class ServiceListComponent implements OnInit, OnDestroy{
 	getNotesPrefix(service: Service) : string {
 
 		if (service.notes
-			&& service.notes.length > 10) {
-			return service.notes.substr(0, 10) + '...';
+			&& service.notes.length > 25) {
+			return service.notes.substr(0, 25) + '...';
 
 		} else {
 			return service.notes;
