@@ -49,6 +49,8 @@ create table clinical_event
     CONSTRAINT pk_condition_cds PRIMARY KEY (exchange_id, event_id)
 );
 
+CREATE INDEX ix_clinical_event_checksum_helper on clinical_event (event_id, dt_received);
+
 create table clinical_event_latest
 (
     exchange_id                    char(36)     NOT NULL COMMENT 'links to audit.exchange table (but on a different server)',
@@ -93,6 +95,8 @@ create table clinical_event_latest
     audit_json                     mediumtext   null comment 'Used for Audit Purposes',
     CONSTRAINT pk_condition_cds PRIMARY KEY (exchange_id, event_id)
 );
+
+CREATE INDEX ix_clinical_event_latest_checksum_helper on clinical_event_latest (event_id, dt_received);
 
 create table clinical_event_target
 (
