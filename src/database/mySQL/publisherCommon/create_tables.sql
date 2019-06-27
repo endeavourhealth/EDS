@@ -13,7 +13,6 @@ CREATE TABLE emis_csv_code_map (
 	medication boolean,
 	code_id bigint,
 	code_type varchar(250),
-	codeable_concept text,
 	read_term varchar(500),
 	read_code varchar(250),
 	snomed_concept_id BIGINT,
@@ -24,6 +23,7 @@ CREATE TABLE emis_csv_code_map (
 	national_code_description varchar(500),
 	parent_code_id bigint,
 	audit_json MEDIUMTEXT,
+	dt_last_received datetime,
 	CONSTRAINT pk_emis_csv_code_map PRIMARY KEY (medication, code_id)
 )
 ROW_FORMAT=COMPRESSED
