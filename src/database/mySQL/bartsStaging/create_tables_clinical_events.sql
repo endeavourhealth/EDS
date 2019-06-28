@@ -96,8 +96,6 @@ create table clinical_event_latest
     CONSTRAINT pk_condition_cds PRIMARY KEY (exchange_id, event_id)
 );
 
-CREATE INDEX ix_clinical_event_latest_checksum_helper on clinical_event_latest (event_id, dt_received);
-
 create table clinical_event_target
 (
     exchange_id                    char(36)     NOT NULL COMMENT 'links to audit.exchange table (but on a different server)',
