@@ -70,7 +70,6 @@ public class Main {
 	public static void main(String[] args) throws Exception {
 
 		String configId = args[0];
-
 		LOG.info("Initialising config manager");
 		ConfigManager.initialize("queuereader", configId);
 
