@@ -13,6 +13,42 @@
                 <form class="form-horizontal" role="form">
                     <div class="form-group">
 
+
+                        <label for="inputType" class="col-sm-1 control-label">Name/ID</label>
+                        <div class="col-sm-2">
+                            <input type="text" class="form-control" id="inputType" placeholder="Regex" [(ngModel)]="serviceService.serviceNameFilter" name="serviceNameFilter" (ngModelChange)="applyFiltering()">
+                        </div>
+
+                        <label for="inputType2" class="col-sm-1 control-label">Parent</label>
+                        <div class="col-sm-1">
+                            <select id="inputType2" class="form-control" [(ngModel)]="serviceService.serviceCcgCodeFilter" name="serviceCcgCodeFilter" (ngModelChange)="applyFiltering()">
+                                <option value=""></option>
+                                <option *ngFor="let ccgCode of allCcgCodes" value="{{ccgCode}}">{{ccgCode}} {{serviceService.getCcgName(ccgCode)}}</option>
+                            </select>
+                        </div>
+
+                        <label for="inputType5" class="col-sm-1 control-label">Publisher Config</label>
+                        <div class="col-sm-2">
+                            <select id="inputType5" class="form-control" [(ngModel)]="serviceService.servicePublisherConfigFilter" name="servicePublisherConfigFilter" (ngModelChange)="applyFiltering()">
+                                <option value=""></option>
+                                <option *ngFor="let publisherConfigName of allPublisherConfigNames" value="{{publisherConfigName}}">{{publisherConfigName}}</option>
+                            </select>
+                        </div>
+
+                        <label for="inputType4" class="col-sm-1 control-label">Last Data</label>
+                        <div class="col-sm-1">
+                            <select id="inputType4" class="form-control" [(ngModel)]="serviceService.serviceLastDataFilter" name="lastDataFilter" (ngModelChange)="applyFiltering()">
+                                <option value=""></option>
+                                <option value="Today">Today</option>
+                                <option value="Yesterday">Yesterday</option>
+                                <option value="ThisWeek">This Week</option>
+                                <option value="LastWeek">Last Week</option>
+                                <option value="Older">Older</option>
+                            </select>
+                            <!--<input type="checkbox" class="form-control" id="inputType3" [(ngModel)]="serviceService.serviceHasErrorsFilter" name="serviceHasErrorsFilter" (ngModelChange)="applyFiltering()">-->
+                        </div>
+
+<!--
                         <label for="inputType" class="col-sm-2 control-label">Name/ID</label>
                         <div class="col-sm-2">
                             <input type="text" class="form-control" id="inputType" placeholder="Regex" [(ngModel)]="serviceService.serviceNameFilter" name="serviceNameFilter" (ngModelChange)="applyFiltering()">
@@ -25,7 +61,7 @@
                                 <option *ngFor="let publisherConfigName of allPublisherConfigNames" value="{{publisherConfigName}}">{{publisherConfigName}}</option>
                             </select>
                         </div>
-
+-->
                     </div>
                 </form>
             </div>
@@ -36,6 +72,23 @@
                 <div class="col-md-12">
                     <div class="table">
                         <table class="table table-striped table-condensed">
+
+
+                            <!--
+                            								<thead>
+									<tr>
+										<th class="col-md-3">Name</th>
+										<th class="col-md-1">Local ID</th>
+										        <th class="col-md-1">Parent</th>
+										<th class="col-md-1">Publisher Config</th>
+										        <th class="col-md-2">Last Data</th>
+										<th class="col-md-1">Status</th>
+										<th class="col-md-2">Notes</th>
+										<th class="col-md-1">Actions</th>
+									</tr>
+								</thead>
+                            -->
+
                             <thead>
                                 <tr>
                                     <th class="col-md-3">Service</th>
@@ -44,7 +97,6 @@
                                     <th class="col-md-1">Notes</th>
                                     <th class="col-md-3">System</th>
                                     <th class="col-md-2">Exchanges in Error</th>
-                                    <!--<th class="col-md-1">Rerun Exchange</th>-->
                                 </tr>
                             </thead>
                             <tbody>

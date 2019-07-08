@@ -45,6 +45,10 @@ import {Application, AdminModule, LoggerModule} from "eds-common-js";
 import {DataServiceManagerMenuService} from "./dataServiceManager.menu";
 import {DataSetEditComponent} from "./dataSet/dataSetEditor.component";
 import {RemoteFilingComponent} from "./remoteFiling/remoteFiling.component";
+import {Hl7ReceiverComponent} from "./hl7Receiver/hl7Receiver.component";
+import {Hl7ReceiverModule} from "./hl7Receiver/hl7Receiver.module";
+import {FrailtyApiComponent} from "./frailtyApi/frailtyApi.component";
+import {FrailtyApiModule} from "./frailtyApi/frailtyApi.module";
 
 @NgModule(
 	Application.Define({
@@ -68,7 +72,9 @@ import {RemoteFilingComponent} from "./remoteFiling/remoteFiling.component";
 			CodeSetModule,
 			CountReportModule,
 			ExchangeAuditModule,
-			RemoteFilingModule
+			RemoteFilingModule,
+			Hl7ReceiverModule,
+			FrailtyApiModule
 		],
 		states: [
 			{name: 'app.dashboard', url: '/dashboard', component: DashboardComponent},
@@ -91,6 +97,8 @@ import {RemoteFilingComponent} from "./remoteFiling/remoteFiling.component";
 			{name: 'app.exchangeAudit', url: '/exchangeAudit/:serviceId/:systemId', component: ExchangeAuditComponent},
 			{name: 'app.countReportEdit', url: '/countReportEdit/:itemAction/:itemUuid', component: CountReportEditComponent},
             {name: 'app.remoteFiling', url: '/remoteFiling', component: RemoteFilingComponent},
+			{name: 'app.hl7Receiver', url: '/hl7Receiver', component: Hl7ReceiverComponent},
+			{name: 'app.frailtyApi', url: '/frailtyApi', component: FrailtyApiComponent}
 		],
 		defaultState : { state: 'app.dashboard', params: {} },
 		menuManager : DataServiceManagerMenuService
