@@ -201,6 +201,11 @@ public class MessageTransformOutbound extends PipelineComponent {
 
         } else if (software.equals(MessageFormat.SUBSCRIBER_CSV)) {
 
+            //TODO: remove when no longer needed
+            if (true) {
+                return null;
+            }
+
             UUID systemId = exchange.getHeaderAsUuid(HeaderKeys.SenderSystemUuid);
             String body = exchange.getBody();
 
