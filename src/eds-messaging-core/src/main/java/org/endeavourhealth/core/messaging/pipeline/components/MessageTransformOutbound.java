@@ -102,6 +102,11 @@ public class MessageTransformOutbound extends PipelineComponent {
             String softwareVersion = technicalInterface.getMessageFormatVersion();
             Date transformStarted = new Date();
 
+//FROILAND - please check this is OK
+            if (software.equals(MessageFormat.SUBSCRIBER_CSV)) {
+                continue;
+            }
+
             try {
                 UUID serviceId = exchange.getHeaderAsUuid(HeaderKeys.SenderServiceUuid);
 
