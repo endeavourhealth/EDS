@@ -102,6 +102,7 @@ public class MessageTransformOutbound extends PipelineComponent {
             String softwareVersion = technicalInterface.getMessageFormatVersion();
             Date transformStarted = new Date();
 
+
             //TODO remove when no longer needed
             if (software.equals(MessageFormat.SUBSCRIBER_CSV)) {
                 continue;
