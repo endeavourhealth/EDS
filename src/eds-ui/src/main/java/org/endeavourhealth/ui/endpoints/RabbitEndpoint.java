@@ -2,7 +2,6 @@ package org.endeavourhealth.ui.endpoints;
 
 import com.codahale.metrics.annotation.Timed;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JsonNode;
 import io.astefanutti.metrics.aspectj.Metrics;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.common.config.ConfigManager;
@@ -102,8 +101,8 @@ public final class RabbitEndpoint extends AbstractEndpoint {
 		super.setLogbackMarkers(sc);
 		userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load, "Nodes");
 
-		String rabbitConfigJson = ConfigManager.getConfiguration("rabbit");
-		JsonNode rabbitConfig = ObjectMapperPool.getInstance().readTree(rabbitConfigJson);
+		/*String rabbitConfigJson = ConfigManager.getConfiguration("rabbit");
+		JsonNode rabbitConfig = ObjectMapperPool.getInstance().readTree(rabbitConfigJson);*/
 
 		List<JsonRabbitNode> ret = new ArrayList<>();
 
@@ -142,7 +141,7 @@ public final class RabbitEndpoint extends AbstractEndpoint {
 		Client client = ClientBuilder.newClient();
 		client.register(rabbitAuth);
 
-		WebTarget resource = client.target("http://"+address+"/api/cluster-name");
+		WebTarget resource = client.target(RabbitConfig.getInstance().getManagementProtocol() + "://"+address+"/api/cluster-name");
 		Invocation.Builder request = resource.request();
 
 		int ping = -1;
@@ -174,6 +173,7 @@ public final class RabbitEndpoint extends AbstractEndpoint {
 				.build();
 	}
 
+
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
 	@Consumes(MediaType.APPLICATION_JSON)
@@ -188,7 +188,7 @@ public final class RabbitEndpoint extends AbstractEndpoint {
 		Client client = ClientBuilder.newClient();
 		client.register(rabbitAuth);
 
-		WebTarget resource = client.target("http://"+address+"/api/queues");
+		WebTarget resource = client.target(RabbitConfig.getInstance().getManagementProtocol() + "://"+address+"/api/queues");
 		Invocation.Builder request = resource.request();
 
 		Response response = request.get();
@@ -223,7 +223,7 @@ public final class RabbitEndpoint extends AbstractEndpoint {
 		Client client = ClientBuilder.newClient();
 		client.register(rabbitAuth);
 
-		WebTarget resource = client.target("http://"+address+"/api/exchanges");
+		WebTarget resource = client.target(RabbitConfig.getInstance().getManagementProtocol() + "://"+address+"/api/exchanges");
 		Invocation.Builder request = resource.request();
 
 		Response response = request.get();
@@ -378,7 +378,7 @@ public final class RabbitEndpoint extends AbstractEndpoint {
 		Client client = ClientBuilder.newClient();
 		client.register(rabbitAuth);
 
-		WebTarget resource = client.target("http://"+address+"/api/bindings");
+		WebTarget resource = client.target(RabbitConfig.getInstance().getManagementProtocol() + "://"+address+"/api/bindings");
 		Invocation.Builder request = resource.request();
 
 		Response response = request.get();
@@ -416,7 +416,7 @@ public final class RabbitEndpoint extends AbstractEndpoint {
 		client.register(rabbitAuth);
 
 		// DLE
-		WebTarget resource = client.target("http://" + address + "/api/exchanges/%2f/"+pipeline+"-DLE");
+		WebTarget resource = client.target(RabbitConfig.getInstance().getManagementProtocol() + "://" + address + "/api/exchanges/%2f/"+pipeline+"-DLE");
 		Invocation.Builder request = resource.request();
 
 		JsonRabbitExchangeOptions optionsJson = new JsonRabbitExchangeOptions();
@@ -433,7 +433,7 @@ public final class RabbitEndpoint extends AbstractEndpoint {
 		response.close();
 
 		// Exchange
-		resource = client.target("http://" + address + "/api/exchanges/%2f/"+pipeline);
+		resource = client.target(RabbitConfig.getInstance().getManagementProtocol() + "://" + address + "/api/exchanges/%2f/"+pipeline);
 		request = resource.request();
 
 		optionsJson = new JsonRabbitExchangeOptions();
@@ -465,7 +465,7 @@ public final class RabbitEndpoint extends AbstractEndpoint {
 	}
 
 	private static void declareQueue(Client client, String address, String queueName) throws Exception {
-		WebTarget resource = client.target("http://" + address + "/api/queues/%2f/" + queueName);
+		WebTarget resource = client.target(RabbitConfig.getInstance().getManagementProtocol() + "://" + address + "/api/queues/%2f/" + queueName);
 		Invocation.Builder request = resource.request();
 
 		JsonRabbitQueueOptions optionsJson = new JsonRabbitQueueOptions();
@@ -485,7 +485,7 @@ public final class RabbitEndpoint extends AbstractEndpoint {
 		client.register(rabbitAuth);
 
 		for (JsonRouteGroup routeGroup : routeGroups) {
-			WebTarget resource = client.target("http://" + address + "/api/bindings/%2f/e/"+exchange+"/q/"+queuePrefix + "-" + routeGroup.getRouteKey());
+			WebTarget resource = client.target(RabbitConfig.getInstance().getManagementProtocol() + "://" + address + "/api/bindings/%2f/e/"+exchange+"/q/"+queuePrefix + "-" + routeGroup.getRouteKey());
 			Invocation.Builder request = resource.request();
 
 			JsonRabbitBindingOptions optionsJson = new JsonRabbitBindingOptions();
@@ -519,7 +519,7 @@ public final class RabbitEndpoint extends AbstractEndpoint {
 		Client client = ClientBuilder.newClient();
 		client.register(rabbitAuth);
 
-		WebTarget resource = client.target("http://" + address + "/api/bindings/%2f/e/" + exchange + "/q/" + queue + "/"+routingKey);
+		WebTarget resource = client.target(RabbitConfig.getInstance().getManagementProtocol() + "://" + address + "/api/bindings/%2f/e/" + exchange + "/q/" + queue + "/"+routingKey);
 		Invocation.Builder request = resource.request();
 
 		Response response = request.delete();
