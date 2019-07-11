@@ -1,5 +1,7 @@
 USE staging_barts;
 
+
+
 DROP PROCEDURE IF EXISTS `process_procedure_staging_exchange`;
 
 DELIMITER $$
@@ -564,6 +566,16 @@ BEGIN
         and parent_cp.dt_start is not null -- sometimes there are multiple primaries, but only one is done (e.g. 76082621)
         and cp.primary_procedure_indicator = 0
         and cp.dt_received >= parent_cp.dt_received -- only join to parent proce that were added before, so we don't join to future ones if re-running data
+        and not exists ( -- had a SURCP with two primary records, both on the same day, so need this to ensure we only match to a single record
+			select 1
+            from procedure_SURCP_latest cp_duplicate_patient
+            where cp_duplicate_patient.primary_procedure_indicator = 1
+            and cp_duplicate_patient.dt_start is not null
+            and cp_duplicate_patient.exchange_id = parent_cp.exchange_id
+            and cp_duplicate_patient.surgical_case_id = parent_cp.surgical_case_id
+            and cp_duplicate_patient.surgical_case_procedure_id != parent_cp.surgical_case_procedure_id
+            and char_length(cp_duplicate_patient.procedure_text) > char_length(parent_cp.procedure_text)
+        )
 	where
 		(cp.exchange_id = _exchange_id
 		  or (cc.exchange_id is not null and cc.exchange_id = _exchange_id)) -- DAB-103 fix - we need to pick up SURCC records that have changed w/o a SURCP change
