@@ -102,11 +102,6 @@ public class MessageTransformOutbound extends PipelineComponent {
             String softwareVersion = technicalInterface.getMessageFormatVersion();
             Date transformStarted = new Date();
 
-//FROILAND - please check this is OK
-            if (software.equals(MessageFormat.SUBSCRIBER_CSV)) {
-                continue;
-            }
-
             try {
                 UUID serviceId = exchange.getHeaderAsUuid(HeaderKeys.SenderServiceUuid);
 
@@ -205,11 +200,6 @@ public class MessageTransformOutbound extends PipelineComponent {
             return FhirToPcrCsvTransformer.transformFromFhir(serviceId, systemId, exchangeId, batchId, filteredResources, endpoint, protocolId, body);
 
         } else if (software.equals(MessageFormat.SUBSCRIBER_CSV)) {
-
-            //TODO: remove when no longer needed
-            if (true) {
-                return null;
-            }
 
             UUID systemId = exchange.getHeaderAsUuid(HeaderKeys.SenderSystemUuid);
             String body = exchange.getBody();
