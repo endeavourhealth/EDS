@@ -1,5 +1,3 @@
-USE staging_barts;
-
 
 
 DROP PROCEDURE IF EXISTS `process_procedure_staging_exchange`;
@@ -573,8 +571,7 @@ BEGIN
             and cp_duplicate_patient.dt_start is not null
             and cp_duplicate_patient.exchange_id = parent_cp.exchange_id
             and cp_duplicate_patient.surgical_case_id = parent_cp.surgical_case_id
-            and cp_duplicate_patient.surgical_case_procedure_id != parent_cp.surgical_case_procedure_id
-            and char_length(cp_duplicate_patient.procedure_text) > char_length(parent_cp.procedure_text)
+            and cp_duplicate_patient.surgical_case_procedure_id < parent_cp.surgical_case_procedure_id
         )
 	where
 		(cp.exchange_id = _exchange_id
