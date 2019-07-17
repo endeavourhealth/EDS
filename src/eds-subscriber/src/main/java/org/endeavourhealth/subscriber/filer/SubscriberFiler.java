@@ -321,6 +321,7 @@ public class SubscriberFiler {
         //not keeping huge DB transactions open
         List<CSVRecord> batch = new ArrayList<>();
         for (CSVRecord record: upserts) {
+            LOG.debug("Record to insert: " + record.toString());
             batch.add(record);
 
             //in testing, batches of 20000 seemed best, although there wasn't much difference between batches of 5000 up to 100000
