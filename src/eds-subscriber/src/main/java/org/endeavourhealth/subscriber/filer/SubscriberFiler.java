@@ -52,15 +52,6 @@ public class SubscriberFiler {
 
     public static void file(UUID batchId, UUID queuedMessageId, String base64, String configName) throws Exception {
 
-        /*
-        SubscriberZipFileUUIDsEntity szfue = new SubscriberZipFileUUIDsEntity();
-        szfue.setSubscriberId(1);
-        szfue.setQueuedMessageUUID(queuedMessageId.toString());
-        szfue.setQueuedMessageBody(base64);
-        SubscriberZipFileUUIDsEntity.createSubscriberZipFileUUIDsEntity(szfue);
-         */
-
-
         byte[] bytes = Base64.getDecoder().decode(base64);
         LOG.trace("Filing " + bytes.length + "b from batch " + batchId + " into " + configName);
 
