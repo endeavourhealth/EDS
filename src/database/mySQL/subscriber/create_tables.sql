@@ -245,9 +245,6 @@ CREATE TABLE appointment
       ON UPDATE NO ACTION ON DELETE NO ACTION,
   CONSTRAINT fk_appointment_practitioner_id FOREIGN KEY (practitioner_id)
       REFERENCES practitioner (id) MATCH SIMPLE
-      ON UPDATE NO ACTION ON DELETE NO ACTION,
-  CONSTRAINT fk_appointment_schedule_id FOREIGN KEY (schedule_id)
-      REFERENCES schedule (id) MATCH SIMPLE
       ON UPDATE NO ACTION ON DELETE NO ACTION
 );
 
@@ -432,9 +429,6 @@ CREATE TABLE medication_order
   CONSTRAINT pk_medication_order_id PRIMARY KEY (`organization_id`,`person_id`,`id`),
   CONSTRAINT fk_medication_order_encounter_id FOREIGN KEY (encounter_id)
       REFERENCES encounter (id) MATCH SIMPLE
-      ON UPDATE NO ACTION ON DELETE NO ACTION,
-  CONSTRAINT fk_medication_order_medication_statement_id FOREIGN KEY (medication_statement_id)
-      REFERENCES medication_statement (id) MATCH SIMPLE
       ON UPDATE NO ACTION ON DELETE NO ACTION,
   CONSTRAINT fk_medication_order_patient_id_organization_id FOREIGN KEY (patient_id, organization_id)
       REFERENCES patient (id, organization_id) MATCH SIMPLE

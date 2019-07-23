@@ -311,8 +311,6 @@ CREATE UNIQUE INDEX [medication_order_id] ON [medication_order] ([id])
 GO
 CREATE INDEX [fk_medication_order_encounter_id] ON [medication_order] ([encounter_id])
 GO
-CREATE INDEX [fk_medication_order_medication_statement_id] ON [medication_order] ([medication_statement_id])
-GO
 CREATE INDEX [fk_medication_order_patient_id_organization_id] ON [medication_order] ([patient_id], [organization_id])
 GO
 CREATE INDEX [fk_medication_order_practitioner_id] ON [medication_order] ([practitioner_id])
@@ -701,8 +699,6 @@ GO
 ALTER TABLE [location] ADD CONSTRAINT [fk_location_organisation_id] FOREIGN KEY ([managing_organization_id]) REFERENCES [organization] ([id])
 GO
 ALTER TABLE [medication_order] ADD CONSTRAINT [fk_medication_order_encounter_id] FOREIGN KEY ([encounter_id]) REFERENCES [encounter] ([id])
-GO
-ALTER TABLE [medication_order] ADD CONSTRAINT [fk_medication_order_medication_statement_id] FOREIGN KEY ([medication_statement_id]) REFERENCES [medication_statement] ([id])
 GO
 ALTER TABLE [medication_order] ADD CONSTRAINT [fk_medication_order_patient_id_organization_id] FOREIGN KEY ([patient_id], [organization_id]) REFERENCES [patient] ([id], [organization_id])
 GO
