@@ -89,7 +89,7 @@ CREATE TABLE [appointment] (
 [practitioner_id] bigint NULL DEFAULT NULL,
 [schedule_id] bigint NULL DEFAULT NULL,
 [start_date] datetime2(0) NULL DEFAULT NULL,
-[planned_duration] int NOT NULL,
+[planned_duration] int NULL DEFAULT NULL,
 [actual_duration] int NULL DEFAULT NULL,
 [appointment_status_concept_id] int NULL DEFAULT NULL,
 [patient_wait] int NULL DEFAULT NULL,

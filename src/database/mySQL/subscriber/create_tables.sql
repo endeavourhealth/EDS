@@ -230,7 +230,7 @@ CREATE TABLE appointment
   practitioner_id bigint,
   schedule_id bigint,
   start_date datetime,
-  planned_duration integer NOT NULL,
+  planned_duration integer,
   actual_duration integer,
   appointment_status_concept_id int,
   patient_wait integer,
