@@ -3,7 +3,6 @@ package org.endeavourhealth.ui.endpoints;
 
 import com.codahale.metrics.annotation.Timed;
 import com.google.common.base.Strings;
-import io.astefanutti.metrics.aspectj.Metrics;
 import org.endeavourhealth.common.security.SecurityUtils;
 import org.endeavourhealth.common.security.annotations.RequiresAdmin;
 import org.endeavourhealth.core.database.dal.DalProvider;
@@ -38,7 +37,6 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 
 @Path("/exchangeAudit")
-@Metrics(registry = "EdsRegistry")
 public class ExchangeAuditEndpoint extends AbstractEndpoint {
     private static final Logger LOG = LoggerFactory.getLogger(ExchangeAuditEndpoint.class);
 

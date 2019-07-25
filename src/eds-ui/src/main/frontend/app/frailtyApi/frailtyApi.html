@@ -2,11 +2,75 @@
     <div class="module-heading">
         Frailty API Status
         <div class="pull-right">
-            <button class="btn btn-sm btn-success" (click)="refreshStatus()" title="Refresh">Refresh </button>
+            <button class="btn btn-sm btn-success" (click)="downloadMonthlyStats()" title="Download Monthly Statistics CSV">Download Monthly Stats</button>
         </div>
     </div>
     <div class="module-body">
-        <pre>{{resultStr}}</pre>
+
+        <div class="row">
+
+            <div class="form-group col-md-2">
+                <div class="row">
+                    <div class="form-group col-md-12">
+                        <label>Minutes Back</label>
+                        <div class="input-group">
+                            <span class="input-group-addon"><i class="fa fa-laptop fa-lg fa-fw"></i></span>
+                            <input name="RecentMinutes" type="number" class="form-control" [(ngModel)]="recentStatsMinutesBack">
+                        </div>
+                    </div>
+
+                    <div class="form-group col-md-12">
+                        <label>Group By</label>
+                        <div class="input-group">
+                            <span class="input-group-addon"><i class="fa fa-laptop fa-lg fa-fw"></i></span>
+                            <select id="groupBy" class="form-control" [(ngModel)]="recentStatsGroupBy" name="RecentGroupBy">
+                                <option value="second">Second</option>
+                                <option value="minute">Minute</option>
+                                <option value="5minute">5 Minutes</option>
+                                <option value="10minute">10 Minutes</option>
+                                <option value="30minute">30 Minutes</option>
+                                <option value="hour">Hour</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <button class="btn btn-sm btn-success" (click)="refreshStatus()" title="Refresh">Refresh </button>
+                </div>
+            </div>
+
+            <div class="form-group col-md-10">
+                <div class="table">
+                    <table class="table table-striped table-condensed">
+                        <thead>
+                            <tr>
+                                <th class="col-md-2">Time</th>
+                                <th class="col-md-2">Matched & Frail</th>
+                                <th class="col-md-2">Matched & Not Frail</th>
+                                <th class="col-md-2">Not Matched</th>
+                                <th class="col-md-2">Other Error</th>
+                                <th class="col-md-2">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="hover-box" *ngFor="let stat of recentStats">
+                                <td *ngIf="recentStatResultsGroupBy!='second'">
+                                    {{stat.dFrom | date:'dd-MMM-yyyy HH:mm'}} - {{stat.dTo | date:'HH:mm'}}
+                                </td>
+                                <td *ngIf="recentStatResultsGroupBy=='second'">
+                                    {{stat.dFrom | date:'dd-MMM-yyyy HH:mm:ss'}} - {{stat.dTo | date:'HH:mm:ss'}}
+                                </td>
+                                <td>{{stat.matchedAndFrail}}</td>
+                                <td>{{stat.matchedAndNotFrail}}</td>
+                                <td>{{stat.errorNotMatched}}</td>
+                                <td>{{stat.errorOther}}</td>
+                                <td>{{stat.total}}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
     </div>
 </div>
 

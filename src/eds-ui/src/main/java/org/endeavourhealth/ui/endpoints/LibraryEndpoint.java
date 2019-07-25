@@ -1,7 +1,6 @@
 package org.endeavourhealth.ui.endpoints;
 
 import com.codahale.metrics.annotation.Timed;
-import io.astefanutti.metrics.aspectj.Metrics;
 import org.endeavourhealth.common.security.SecurityUtils;
 import org.endeavourhealth.common.security.annotations.RequiresAdmin;
 import org.endeavourhealth.core.database.dal.DalProvider;
@@ -27,7 +26,6 @@ import javax.ws.rs.core.SecurityContext;
 import java.util.*;
 
 @Path("/library")
-@Metrics(registry = "EdsRegistry")
 public final class LibraryEndpoint extends AbstractItemEndpoint {
 
     private static final Logger LOG = LoggerFactory.getLogger(LibraryEndpoint.class);

@@ -2,7 +2,6 @@ package org.endeavourhealth.ui.endpoints;
 
 import com.codahale.metrics.annotation.Timed;
 import com.google.common.base.Strings;
-import io.astefanutti.metrics.aspectj.Metrics;
 import org.endeavourhealth.common.security.SecurityUtils;
 import org.endeavourhealth.core.database.dal.DalProvider;
 import org.endeavourhealth.core.database.dal.admin.LibraryDalI;
@@ -32,7 +31,6 @@ import javax.ws.rs.core.SecurityContext;
 import java.util.*;
 
 @Path("/patientIdentity")
-@Metrics(registry = "EdsRegistry")
 public final class PatientIdentityEndpoint extends AbstractEndpoint {
     private static final Logger LOG = LoggerFactory.getLogger(PatientIdentityEndpoint.class);
 

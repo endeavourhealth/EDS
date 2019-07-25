@@ -6,7 +6,60 @@
         </div>
     </div>
     <div class="module-body">
-        <pre>{{resultStr}}</pre>
+
+        <div *ngIf="channels">
+            <div class="row" *ngFor="let channel of channels">
+                <div class="col-md-12">
+                    <div class="panel panel-primary">
+                        <div class="panel-heading">
+                            <b>{{channel.name}}</b> (ID {{channel.id}})
+                        </div>
+
+                        <div class="panel-body">
+
+                            <div class="col-md-4">
+                                <h4>Hospital->HL7 Receiver</h4>
+
+                                <div *ngIf="channel.lastMessageId">
+                                    <div>Last Message Received: {{channel.lastMessageReceived | date:'dd-MMM-yyyy HH:mm:ss'}}</div>
+                                    <div>Last Message ID: {{channel.lastMessageId}}</div>
+                                </div>
+                                <div *ngIf="!channel.lastMessageId">
+                                    <div>Last Message Received: NEVER</div>
+                                    <div>Last Message ID: n/a</div>
+                                </div>
+
+                            </div>
+                            <div class="col-md-8">
+                                <h4>HL7 Receiver->Messaging API</h4>
+
+                                <div *ngIf="channel.errorMessageId">
+                                    <div>ADT->FHIR->Messaging API: ERROR</div>
+                                    <div>Error Message Received: {{channel.errorMessageReceived | date:'dd-MMM-yyyy HH:mm:ss'}}</div>
+                                    <div>Error Message ID: {{channel.errorMessageId}}</div>
+                                    <pre>{{channel.errorMessage}}</pre>
+                                </div>
+                                <div *ngIf="!channel.errorMessageId">
+                                    <div>ADT->FHIR->Messaging API: OK</div>
+                                </div>
+
+                                <div *ngIf="channel.paused">
+                                    <h5>PAUSED!</h5>
+                                    <button type="button" class="btn btn-sm btn-success" (click)="pauseChannel(channel.id, false)">Unpause</button>
+                                </div>
+                                <div *ngIf="!channel.paused">
+                                    <button type="button" class="btn btn-sm btn-warning" (click)="pauseChannel(channel.id, true)">Pause</button>
+                                </div>
+
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
     </div>
 </div>
 

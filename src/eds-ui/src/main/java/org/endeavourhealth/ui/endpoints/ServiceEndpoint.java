@@ -3,7 +3,6 @@ package org.endeavourhealth.ui.endpoints;
 import com.codahale.metrics.annotation.Timed;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.base.Strings;
-import io.astefanutti.metrics.aspectj.Metrics;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.common.fhir.schema.OrganisationType;
 import org.endeavourhealth.common.ods.OdsOrganisation;
@@ -44,7 +43,6 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Path("/service")
-@Metrics(registry = "EdsRegistry")
 public final class ServiceEndpoint extends AbstractEndpoint {
     private static final Logger LOG = LoggerFactory.getLogger(ServiceEndpoint.class);
 
@@ -59,7 +57,6 @@ public final class ServiceEndpoint extends AbstractEndpoint {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     @Timed(absolute = true, name = "EDS-UI.ServiceEndpoint.Post")
-    @Path("/")
     @RequiresAdmin
     public Response post(@Context SecurityContext sc, JsonService service) throws Exception {
         super.setLogbackMarkers(sc);
@@ -152,7 +149,6 @@ public final class ServiceEndpoint extends AbstractEndpoint {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     @Timed(absolute = true, name = "EDS-UI.ServiceEndpoint.DeleteService")
-    @Path("/")
     @RequiresAdmin
     public Response deleteService(@Context SecurityContext sc, @QueryParam("uuid") String uuid) throws Exception {
         super.setLogbackMarkers(sc);
@@ -257,7 +253,6 @@ public final class ServiceEndpoint extends AbstractEndpoint {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     @Timed(absolute = true, name = "EDS-UI.ServiceEndpoint.GetServiceList")
-    @Path("/")
     public Response get(@Context SecurityContext sc, @QueryParam("uuid") String uuid, @QueryParam("searchData") String searchData) throws Exception {
         super.setLogbackMarkers(sc);
         userAuditRepository.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,

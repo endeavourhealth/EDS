@@ -2,6 +2,7 @@ import {BaseHttp2Service} from "eds-common-js";
 import {Http, URLSearchParams} from "@angular/http";
 import {Observable} from "rxjs";
 import {Injectable} from "@angular/core";
+import {FrailtyStat} from "./FrailtyStat";
 
 @Injectable()
 export class FrailtyApiService extends BaseHttp2Service {
@@ -10,9 +11,16 @@ export class FrailtyApiService extends BaseHttp2Service {
         super (http);
     }
 
-    getHl7ReceiverStatus() : Observable<{}> {
-        console.log('Getting HL7 Receiver status');
+    getRecentStats(minutesBack: number, groupBy: string) : Observable<FrailtyStat[]> {
 
-        return this.httpGet('api/hl7Receiver/channelStatus', {});
+        var params = new URLSearchParams();
+        params.append('minutesBack', '' + minutesBack);
+        params.append('groupBy', groupBy);
+
+        return this.httpGet('api/frailtyApi/recentStats', { search: params });
+    }
+
+    downloadMonthlyStats(): Observable<string> {
+        return this.httpGet('api/frailtyApi/downloadMonthlyStats');
     }
 }

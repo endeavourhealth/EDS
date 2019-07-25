@@ -1,7 +1,6 @@
 package org.endeavourhealth.ui.endpoints;
 
 import com.codahale.metrics.annotation.Timed;
-import io.astefanutti.metrics.aspectj.Metrics;
 import org.endeavourhealth.core.database.dal.DalProvider;
 import org.endeavourhealth.core.database.dal.admin.ServiceDalI;
 import org.endeavourhealth.core.database.dal.admin.models.Service;
@@ -28,7 +27,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Path("/externalDashboard")
-@Metrics(registry = "EdsRegistry")
 public class ExternalDashboardEndpoint extends AbstractEndpoint {
     private static final Logger LOG = LoggerFactory.getLogger(ExternalDashboardEndpoint.class);
     private static final ExchangeProtocolErrorDalI protocolRepository = DalProvider.factoryExchangeProtocolErrorDal();

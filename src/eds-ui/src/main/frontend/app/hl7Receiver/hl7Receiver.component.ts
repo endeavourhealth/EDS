@@ -4,13 +4,14 @@ import {Component} from "@angular/core";
 import {Subscription} from "rxjs/Subscription";
 import {ServiceService} from "../services/service.service";
 import {Hl7ReceiverService} from "./hl7Receiver.service";
+import {Hl7ReceiverChannelStatus} from "./Hl7ReceiverChannelStatus";
 
 @Component({
     template : require('./hl7Receiver.html')
 })
 export class Hl7ReceiverComponent {
 
-    resultStr: string;
+    channels: Hl7ReceiverChannelStatus[];
 
     constructor(protected hl7ReceiverService:Hl7ReceiverService,
                 protected logger:LoggerService,
@@ -28,16 +29,29 @@ export class Hl7ReceiverComponent {
 
         vm.hl7ReceiverService.getHl7ReceiverStatus().subscribe(
             (result) => {
-                vm.logger.success('Successfully posted to exchange', 'Post to Exchange');
+
+                vm.logger.success('Successfully got HL7 status', 'HL7 Status');
+                vm.channels = result;
+
                 console.log('received HL7 status');
                 console.log(result);
-
-                vm.resultStr = JSON.stringify(result, null, 2);
-                //vm.refreshSummariesKeepingSelection(summary, result);
             },
             (error) => {
                 vm.logger.error('Failed get HL7 Receiver status', error, 'HL7 Receiver');
-                vm.resultStr = 'failed';
+            }
+        )
+    }
+
+    pauseChannel(channelId: number, pause: boolean) {
+        var vm = this;
+        vm.hl7ReceiverService.pauseChannel(channelId, pause).subscribe(
+            (result) => {
+                vm.refreshStatus();
+
+                console.log('paused/unpaused OK');
+            },
+            (error) => {
+                vm.logger.error('Failed to pause/unpause', error, 'HL7 Receiver');
             }
         )
     }

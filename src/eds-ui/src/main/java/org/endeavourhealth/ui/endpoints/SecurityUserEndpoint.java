@@ -2,7 +2,6 @@ package org.endeavourhealth.ui.endpoints;
 
 import com.codahale.metrics.annotation.Timed;
 import com.google.common.collect.Lists;
-import io.astefanutti.metrics.aspectj.Metrics;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
@@ -36,7 +35,6 @@ import java.util.List;
         @Authorization(value="oauth", scopes = {})
 })
 @Path("/security/users")
-@Metrics(registry = "EdsRegistry")
 public final class SecurityUserEndpoint extends AbstractEndpoint {
     private static final Logger LOG = LoggerFactory.getLogger(SecurityUserEndpoint.class);
 
@@ -45,7 +43,6 @@ public final class SecurityUserEndpoint extends AbstractEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Timed(absolute = true, name="EDS-UI.SecurityUserEndpoint.SearchForUsers")
-    @Path("")
     @RequiresAdmin
     @ApiOperation(value = "Search for users")
     public Response list(@Context SecurityContext sc,
@@ -99,7 +96,6 @@ public final class SecurityUserEndpoint extends AbstractEndpoint {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     @Timed(absolute = true, name="EDS-UI.SecurityUserEndpoint.CreateUser")
-    @Path("")
     @RolesAllowed({ "eds_admin" })
     @ApiOperation(value = "Create a user")
     public Response create(@Context SecurityContext sc,

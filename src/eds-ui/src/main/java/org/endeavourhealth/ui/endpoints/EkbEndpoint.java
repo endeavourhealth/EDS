@@ -1,7 +1,6 @@
 package org.endeavourhealth.ui.endpoints;
 
 import com.codahale.metrics.annotation.Timed;
-import io.astefanutti.metrics.aspectj.Metrics;
 import org.endeavourhealth.core.database.dal.DalProvider;
 import org.endeavourhealth.core.database.dal.audit.UserAuditDalI;
 import org.endeavourhealth.core.database.dal.audit.models.AuditModule;
@@ -22,7 +21,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Path("/ekb")
-@Metrics(registry = "EdsRegistry")
 public final class EkbEndpoint extends AbstractEndpoint {
 	private static final Logger LOG = LoggerFactory.getLogger(EkbEndpoint.class);
 	private static final UserAuditDalI userAudit = DalProvider.factoryUserAuditDal(AuditModule.EdsUiModule.Ekb);

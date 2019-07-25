@@ -1,7 +1,6 @@
 package org.endeavourhealth.ui.endpoints;
 
 import com.codahale.metrics.annotation.Timed;
-import io.astefanutti.metrics.aspectj.Metrics;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import org.endeavourhealth.common.security.SecurityUtils;
@@ -24,7 +23,6 @@ import javax.ws.rs.core.SecurityContext;
 import java.util.List;
 
 @Path("/remoteFiling")
-@Metrics(registry = "EdsRegistry")
 public class RemoteFilingEndpoint extends AbstractEndpoint {
     private static final Logger LOG = LoggerFactory.getLogger(RemoteFilingEndpoint.class);
 

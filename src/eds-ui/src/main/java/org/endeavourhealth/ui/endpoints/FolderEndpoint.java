@@ -1,7 +1,6 @@
 package org.endeavourhealth.ui.endpoints;
 
 import com.codahale.metrics.annotation.Timed;
-import io.astefanutti.metrics.aspectj.Metrics;
 import org.endeavourhealth.common.security.SecurityUtils;
 import org.endeavourhealth.common.security.annotations.RequiresAdmin;
 import org.endeavourhealth.core.database.dal.DalProvider;
@@ -31,7 +30,6 @@ import java.util.UUID;
  * Endpoint for functions related to creating and managing folders
  */
 @Path("/folder")
-@Metrics(registry = "EdsRegistry")
 public final class FolderEndpoint extends AbstractItemEndpoint {
     private static final Logger LOG = LoggerFactory.getLogger(FolderEndpoint.class);
     private static final UserAuditDalI userAudit = DalProvider.factoryUserAuditDal(AuditModule.EdsUiModule.Folders);

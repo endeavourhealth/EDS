@@ -1,7 +1,6 @@
 package org.endeavourhealth.ui.endpoints;
 
 import com.codahale.metrics.annotation.Timed;
-import io.astefanutti.metrics.aspectj.Metrics;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
@@ -38,7 +37,6 @@ import java.util.stream.Collectors;
         @Authorization(value="oauth", scopes = {})
 })
 @Path("/security/orgRoleGroups/{organisationId}")
-@Metrics(registry = "EdsRegistry")
 public final class SecurityOrgRoleEndpoint extends AbstractEndpoint {
     private static final Logger LOG = LoggerFactory.getLogger(SecurityOrgRoleEndpoint.class);
 
@@ -47,7 +45,6 @@ public final class SecurityOrgRoleEndpoint extends AbstractEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Timed(absolute = true, name="EDS-UI.SecurityOrgRoleEndpoint.GetAllRoleProfileGroups")
-    @Path("")
     @RequiresAdmin
     @ApiOperation(value = "Get all role profile groups for the currently selected organisation")
     public Response list(@Context SecurityContext sc,
@@ -208,7 +205,6 @@ public final class SecurityOrgRoleEndpoint extends AbstractEndpoint {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     @Timed(absolute = true, name="EDS-UI.SecurityOrgRoleEndpoint.CreateRoleProfileGroup")
-    @Path("")
     @RequiresAdmin
     @ApiOperation(value = "Create a role profile group for the currently selected organisation")
     public Response create(@Context SecurityContext sc,

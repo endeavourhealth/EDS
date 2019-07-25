@@ -2,7 +2,6 @@ package org.endeavourhealth.ui.endpoints;
 
 import com.codahale.metrics.annotation.Timed;
 import com.fasterxml.jackson.core.type.TypeReference;
-import io.astefanutti.metrics.aspectj.Metrics;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.common.security.SecurityUtils;
@@ -31,7 +30,6 @@ import java.util.List;
 import java.util.Map;
 
 @Path("/rabbit")
-@Metrics(registry = "EdsRegistry")
 public final class RabbitEndpoint extends AbstractEndpoint {
 	private static final Logger LOG = LoggerFactory.getLogger(RabbitEndpoint.class);
 

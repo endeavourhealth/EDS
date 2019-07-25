@@ -49,6 +49,8 @@ import {Hl7ReceiverComponent} from "./hl7Receiver/hl7Receiver.component";
 import {Hl7ReceiverModule} from "./hl7Receiver/hl7Receiver.module";
 import {FrailtyApiComponent} from "./frailtyApi/frailtyApi.component";
 import {FrailtyApiModule} from "./frailtyApi/frailtyApi.module";
+import {SftpReaderComponent} from "./sftpReader/sftpReader.component";
+import {SftpReaderModule} from "./sftpReader/sftpReader.module";
 
 @NgModule(
 	Application.Define({
@@ -74,7 +76,8 @@ import {FrailtyApiModule} from "./frailtyApi/frailtyApi.module";
 			ExchangeAuditModule,
 			RemoteFilingModule,
 			Hl7ReceiverModule,
-			FrailtyApiModule
+			FrailtyApiModule,
+			SftpReaderModule
 		],
 		states: [
 			{name: 'app.dashboard', url: '/dashboard', component: DashboardComponent},
@@ -98,7 +101,8 @@ import {FrailtyApiModule} from "./frailtyApi/frailtyApi.module";
 			{name: 'app.countReportEdit', url: '/countReportEdit/:itemAction/:itemUuid', component: CountReportEditComponent},
             {name: 'app.remoteFiling', url: '/remoteFiling', component: RemoteFilingComponent},
 			{name: 'app.hl7Receiver', url: '/hl7Receiver', component: Hl7ReceiverComponent},
-			{name: 'app.frailtyApi', url: '/frailtyApi', component: FrailtyApiComponent}
+			{name: 'app.frailtyApi', url: '/frailtyApi', component: FrailtyApiComponent},
+			{name: 'app.sftpReader', url: '/sftpReader', component: SftpReaderComponent}
 		],
 		defaultState : { state: 'app.dashboard', params: {} },
 		menuManager : DataServiceManagerMenuService

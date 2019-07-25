@@ -1,7 +1,6 @@
 package org.endeavourhealth.ui.endpoints;
 
 import com.codahale.metrics.annotation.Timed;
-import io.astefanutti.metrics.aspectj.Metrics;
 import org.endeavourhealth.common.security.SecurityUtils;
 import org.endeavourhealth.core.database.dal.DalProvider;
 import org.endeavourhealth.core.database.dal.audit.UserAuditDalI;
@@ -23,7 +22,6 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
 
 @Path("/entity")
-@Metrics(registry = "EdsRegistry")
 public final class EntityMapEndpoint extends AbstractEndpoint {
 
     private static final Logger LOG = LoggerFactory.getLogger(EntityMapEndpoint.class);

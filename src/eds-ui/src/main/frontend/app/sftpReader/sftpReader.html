@@ -1,0 +1,152 @@
+<div class="module">
+    <div class="module-heading">
+        SFTP Reader Status
+        <div class="pull-right">
+            <button class="btn btn-sm btn-success" (click)="refreshStatus()" title="Refresh the below">Refresh</button>
+        </div>
+    </div>
+    <div class="module-body">
+
+        <div *ngIf="statuses">
+            <div class="row" *ngFor="let status of statuses">
+                <div class="col-md-12">
+                    <div class="panel panel-primary">
+                        <div class="panel-heading">
+                            <b>{{status.name}}</b> ({{status.id}})
+                        </div>
+
+                        <div class="panel-body">
+
+                            <div class="col-md-4">
+                                <h4>Third Party->SFTP Reader</h4>
+
+                                <div *ngIf="status.latestBatchId">
+                                    <div>Last Extract Received: {{status.latestBatchReceived | date:'dd-MMM-yyyy HH:mm:ss'}}</div>
+                                    <div>Data From: {{status.latestBatchIdentifier}}</div>
+                                    <div>Extract Sequence No: {{status.latestBatchSequenceNumber}}</div>
+                                    <div>Files Received: {{status.latestBatchFileCount}}</div>
+                                    <div>Extract Size: {{status.latestBatchSizeBytes}}</div>
+
+                                    <div *ngIf="status.latestBatchComplete">
+                                        <div>Extract Valid and Complete: YES</div>
+                                    </div>
+                                    <div *ngIf="!status.latestBatchComplete">
+                                        <div>Extract Valid and Complete: NO</div>
+                                    </div>
+                                </div>
+                                <div *ngIf="!status.latestBatchId">
+                                    <div>Last Extract Received: NEVER</div>
+                                </div>
+
+                            </div>
+                            <div class="col-md-8">
+                                <h4>SFTP Reader->Messaging API</h4>
+
+
+
+                                <div *ngIf="status.completeBatchId">
+                                    <div>Extract Received: {{status.completeBatchReceived | date:'dd-MMM-yyyy HH:mm:ss'}}</div>
+                                    <div>Data From: {{status.completeBatchIdentifier}}</div>
+                                    <div>Extract Sequence No: {{status.completeBatchSequenceNumber}}</div>
+
+                                    <ngb-accordion #acc="ngbAccordion">
+                                        <ngb-panel title="Organisations in extract: {{status.completeBatchContents.length}}">
+                                            <template ngbPanelContent>
+
+                                                <table class="table table-striped table-condensed">
+                                                    <thead>
+                                                    <tr>
+                                                        <th class="col-md-2">ODS Code</th>
+                                                        <th class="col-md-2">Status</th>
+                                                        <th class="col-md-8">Error</th>
+                                                    </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                    <tr class="hover-box" *ngFor="let content of status.completeBatchContents">
+                                                        <td>{{content.orgId}}</td>
+                                                        <td *ngIf="content.notified">OK</td>
+                                                        <td *ngIf="!content.notified">Error</td>
+                                                        <td>{{content.error}}</td>
+                                                    </tr>
+                                                    </tbody>
+                                                </table>
+
+                                            </template>
+                                        </ngb-panel>
+                                    </ngb-accordion>
+
+                                    <ngb-accordion #acc="ngbAccordion">
+                                        <ngb-panel title="Organisations posted OK: {{filterOrgs(status.completeBatchContents, true).length}}">
+                                            <template ngbPanelContent>
+
+                                                <table class="table table-striped table-condensed">
+                                                    <thead>
+                                                    <tr>
+                                                        <th class="col-md-2">ODS Code</th>
+                                                        <th class="col-md-2">Status</th>
+                                                        <th class="col-md-8">Error</th>
+                                                    </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                    <tr class="hover-box" *ngFor="let content of filterOrgs(status.completeBatchContents, true)">
+                                                        <td>{{content.orgId}}</td>
+                                                        <td *ngIf="content.notified">OK</td>
+                                                        <td *ngIf="!content.notified">Error</td>
+                                                        <td>{{content.error}}</td>
+                                                    </tr>
+                                                    </tbody>
+                                                </table>
+
+                                            </template>
+                                        </ngb-panel>
+                                    </ngb-accordion>
+
+
+                                    <ngb-accordion #acc="ngbAccordion">
+                                        <ngb-panel title="Organisations in Error: {{filterOrgs(status.completeBatchContents, false).length}}">
+                                            <template ngbPanelContent>
+
+                                                <table class="table table-striped table-condensed">
+                                                    <thead>
+                                                    <tr>
+                                                        <th class="col-md-2">ODS Code</th>
+                                                        <th class="col-md-2">Status</th>
+                                                        <th class="col-md-8">Error</th>
+                                                    </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                    <tr class="hover-box" *ngFor="let content of filterOrgs(status.completeBatchContents, false)">
+                                                        <td>{{content.orgId}}</td>
+                                                        <td *ngIf="content.notified">OK</td>
+                                                        <td *ngIf="!content.notified">Error</td>
+                                                        <td>{{content.error}}</td>
+                                                    </tr>
+                                                    </tbody>
+                                                </table>
+
+                                            </template>
+                                        </ngb-panel>
+                                    </ngb-accordion>
+
+                                </div>
+                                <div *ngIf="!status.completeBatchId">
+                                    <div>No complete batches received to send to Messaging API</div>
+                                </div>
+
+<!--
+    completeBatchContents: SftpReaderBatchContents[];
+-->
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+
+    </div>
+</div>
+
+

@@ -1,7 +1,6 @@
 package org.endeavourhealth.ui.endpoints;
 
 import com.codahale.metrics.annotation.Timed;
-import io.astefanutti.metrics.aspectj.Metrics;
 import org.endeavourhealth.common.security.SecurityUtils;
 import org.endeavourhealth.common.security.annotations.RequiresAdmin;
 import org.endeavourhealth.core.database.dal.DalProvider;
@@ -28,7 +27,6 @@ import java.util.List;
 import java.util.UUID;
 
 @Path("/organisation")
-@Metrics(registry = "EdsRegistry")
 public final class OrganisationEndpoint extends AbstractEndpoint {
 	private static final Logger LOG = LoggerFactory.getLogger(OrganisationEndpoint.class);
 
@@ -40,7 +38,6 @@ public final class OrganisationEndpoint extends AbstractEndpoint {
 	@Produces(MediaType.APPLICATION_JSON)
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Timed(absolute = true, name="EDS-UI.OrganisationEndpoint.Post")
-	@Path("/")
 	@RequiresAdmin
 	public Response post(@Context SecurityContext sc, JsonOrganisation organisation) throws Exception {
 		super.setLogbackMarkers(sc);
@@ -72,7 +69,6 @@ public final class OrganisationEndpoint extends AbstractEndpoint {
 	@Produces(MediaType.APPLICATION_JSON)
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Timed(absolute = true, name="EDS-UI.OrganisationEndpoint.DeleteOrganisation")
-	@Path("/")
 	@RequiresAdmin
 	public Response deleteOrganisation(@Context SecurityContext sc, @QueryParam("uuid") String uuid) throws Exception {
 		super.setLogbackMarkers(sc);
@@ -122,7 +118,6 @@ public final class OrganisationEndpoint extends AbstractEndpoint {
 	@Produces(MediaType.APPLICATION_JSON)
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Timed(absolute = true, name="EDS-UI.OrganisationEndpoint.Get")
-	@Path("/")
 	public Response get(@Context SecurityContext sc, @QueryParam("uuid") String uuid, @QueryParam("searchData") String searchData) throws Exception {
 		super.setLogbackMarkers(sc);
 		userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
