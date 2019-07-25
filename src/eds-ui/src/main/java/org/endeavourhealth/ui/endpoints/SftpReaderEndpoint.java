@@ -130,7 +130,7 @@ public class SftpReaderEndpoint extends AbstractEndpoint {
                     int sequenceNumber = rs.getInt(col++);
                     boolean isComplete = rs.getBoolean(col++);
                     int fileCount = rs.getInt(col++);
-                    int extractSize = rs.getInt(col++);
+                    long extractSize = rs.getLong(col++);
 
                     String totalSizeReadable = FileUtils.byteCountToDisplaySize(extractSize);
 
