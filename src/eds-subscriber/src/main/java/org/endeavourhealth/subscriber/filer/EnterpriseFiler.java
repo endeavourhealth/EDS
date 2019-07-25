@@ -37,7 +37,7 @@ public class EnterpriseFiler {
     private static final String UPSERT = "Upsert";
     private static final String DELETE = "Delete";
 
-    private static final int UPSERT_ATTEMPTS = 10;
+    private static final int UPSERT_ATTEMPTS = 15;
 
     //private static final String ZIP_ENTRY = "EnterpriseData.xml";
 
@@ -582,13 +582,14 @@ public class EnterpriseFiler {
                 String msg = ex.getMessage();
                 if (attemptsMade < UPSERT_ATTEMPTS
                         && msg != null
-                        && msg.startsWith("Deadlock found when trying to get lock; try restarting transaction")) {
+                        && (msg.startsWith("Deadlock found when trying to get lock; try restarting transaction")
+                            || msg.startsWith("Lock wait timeout exceeded; try restarting transaction"))) {
 
                     //if the message matches the deadlock one, then wait a while and try again
                     attemptsMade ++;
-                    long secondsWait = attemptsMade;
-                    LOG.error("Upsert to " + tableName + " failed due to deadlock, so will try again in " + secondsWait + " seconds");
-                    Thread.sleep(1000 * secondsWait);
+                    long delay = getMsDelayForRetry(attemptsMade);
+                    LOG.error("Upsert to " + tableName + " failed due to deadlock, so will try again in " + (delay/1000L) + " seconds");
+                    Thread.sleep(delay);
                     continue;
 
                 } else {
@@ -614,6 +615,11 @@ public class EnterpriseFiler {
             }
 
         }
+    }
+
+    private static long getMsDelayForRetry(int attemptNumber) {
+        double d = Math.exp(attemptNumber);
+        return (long)(d * 1000D);
     }
 
     private static void fileUpserts(List<CSVRecord> csvRecords, List<String> columns, HashMap<String, Class> columnClasses,

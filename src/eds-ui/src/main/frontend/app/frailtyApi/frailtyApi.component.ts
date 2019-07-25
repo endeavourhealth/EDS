@@ -17,6 +17,7 @@ export class FrailtyApiComponent {
     recentStats: FrailtyStat[];
     recentStatResultsGroupBy: string;
 
+    downloadingMonthlyStats: boolean;
 
     constructor(protected frailtyService:FrailtyApiService,
                 protected logger:LoggerService,
@@ -48,6 +49,7 @@ export class FrailtyApiComponent {
 
     downloadMonthlyStats() {
         var vm = this;
+        vm.downloadingMonthlyStats = true;
 
         vm.frailtyService.downloadMonthlyStats().subscribe(
             (result) => {
@@ -66,9 +68,11 @@ export class FrailtyApiComponent {
                 window.URL.revokeObjectURL(url);
                 a.remove();
 
+                vm.downloadingMonthlyStats = false;
             },
             (error) => {
                 vm.logger.error('Failed get monthly Frailty API stats', error, 'Frailty API');
+                vm.downloadingMonthlyStats = false;
             }
         );
 

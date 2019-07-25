@@ -21,8 +21,8 @@ import java.io.*;
 import java.math.BigDecimal;
 import java.sql.*;
 import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.*;
+import java.util.Date;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -40,7 +40,7 @@ public class SubscriberFiler {
     private static final String DELETE = "Delete";*/
     private static final String COL_ID = "id";
 
-    private static final int UPSERT_ATTEMPTS = 10;
+    private static final int UPSERT_ATTEMPTS = 15;
 
     //private static final String ZIP_ENTRY = "EnterpriseData.xml";
 
@@ -633,13 +633,14 @@ public class SubscriberFiler {
                 String msg = ex.getMessage();
                 if (attemptsMade < UPSERT_ATTEMPTS
                         && msg != null
-                        && msg.startsWith("Deadlock found when trying to get lock; try restarting transaction")) {
+                        && (msg.startsWith("Deadlock found when trying to get lock; try restarting transaction")
+                        || msg.startsWith("Lock wait timeout exceeded; try restarting transaction"))) {
 
                     //if the message matches the deadlock one, then wait a while and try again
                     attemptsMade ++;
-                    long secondsWait = attemptsMade;
-                    LOG.error("Upsert to " + tableName + " failed due to deadlock, so will try again in " + secondsWait + " seconds");
-                    Thread.sleep(1000 * secondsWait);
+                    long msDelay = getMsDelayForRetry(attemptsMade);
+                    LOG.error("Upsert to " + tableName + " failed due to deadlock, so will try again in " + (msDelay/1000L) + " seconds");
+                    Thread.sleep(msDelay);
                     continue;
 
                 } else {
@@ -665,6 +666,11 @@ public class SubscriberFiler {
             }
 
         }
+    }
+
+    private static long getMsDelayForRetry(int attemptNumber) {
+        double d = Math.exp(attemptNumber);
+        return (long)(d * 1000D);
     }
 
     private static void fileUpserts(List<CSVRecord> csvRecords, List<String> columns, Map<String, Class> columnClasses,

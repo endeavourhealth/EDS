@@ -2,7 +2,7 @@
     <div class="module-heading">
         Frailty API Status
         <div class="pull-right">
-            <button class="btn btn-sm btn-success" (click)="downloadMonthlyStats()" title="Download Monthly Statistics CSV">Download Monthly Stats</button>
+            <button class="btn btn-sm btn-success" [disabled]="downloadingMonthlyStats" (click)="downloadMonthlyStats()" title="Download Monthly Statistics CSV">Download Monthly Stats&nbsp;<span class="fa fa-sm fa-refresh fa-refresh-animate" *ngIf="downloadingMonthlyStats"></span></button>
         </div>
     </div>
     <div class="module-body">
