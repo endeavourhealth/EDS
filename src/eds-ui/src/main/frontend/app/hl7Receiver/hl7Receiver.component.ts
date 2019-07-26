@@ -11,7 +11,10 @@ import {Hl7ReceiverChannelStatus} from "./Hl7ReceiverChannelStatus";
 })
 export class Hl7ReceiverComponent {
 
+    refreshingStatus: boolean;
     channels: Hl7ReceiverChannelStatus[];
+    resultStr: string;
+    showRawJson: boolean;
 
     constructor(protected hl7ReceiverService:Hl7ReceiverService,
                 protected logger:LoggerService,
@@ -26,18 +29,19 @@ export class Hl7ReceiverComponent {
 
     refreshStatus() {
         var vm = this;
+        vm.refreshingStatus = true;
 
         vm.hl7ReceiverService.getHl7ReceiverStatus().subscribe(
             (result) => {
-
                 vm.logger.success('Successfully got HL7 status', 'HL7 Status');
                 vm.channels = result;
+                vm.resultStr = JSON.stringify(result, null, 2);
 
-                console.log('received HL7 status');
-                console.log(result);
+                vm.refreshingStatus = false;
             },
             (error) => {
                 vm.logger.error('Failed get HL7 Receiver status', error, 'HL7 Receiver');
+                vm.refreshingStatus = false;
             }
         )
     }

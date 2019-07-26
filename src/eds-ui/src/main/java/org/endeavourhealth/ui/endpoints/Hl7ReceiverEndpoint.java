@@ -80,24 +80,21 @@ public class Hl7ReceiverEndpoint extends AbstractEndpoint {
         ArrayNode root = new ArrayNode(mapper.getNodeFactory());
 
         EntityManager entityManager = ConnectionManager.getHl7ReceiverEntityManager();
-        PreparedStatement psChannels = null;
-        PreparedStatement psPaused = null;
-        PreparedStatement psLastMessage = null;
-        PreparedStatement psErrors = null;
+        PreparedStatement ps = null;
         try {
             SessionImpl session = (SessionImpl) entityManager.getDelegate();
             Connection connection = session.connection();
 
             String sql = null;
             if (ConnectionManager.isPostgreSQL(connection)) {
-                sql = "SELECT channel_id, channel_name FROM configuration.channel";
+                sql = "SELECT channel_id, channel_name FROM configuration.channel ORDER BY channel_id";
             } else {
-                sql = "SELECT channel_id, channel_name FROM configuration_channel";
+                sql = "SELECT channel_id, channel_name FROM configuration_channel ORDER BY channel_id";
             }
 
-            psChannels = connection.prepareStatement(sql);
+            ps = connection.prepareStatement(sql);
 
-            ResultSet rs = psChannels.executeQuery();
+            ResultSet rs = ps.executeQuery();
             while (rs.next()) {
                 int col = 1;
                 int id = rs.getInt(col++);
@@ -108,26 +105,7 @@ public class Hl7ReceiverEndpoint extends AbstractEndpoint {
                 child.put("name", name);
             }
 
-            if (ConnectionManager.isPostgreSQL(connection)) {
-                sql = "SELECT channel_option_value FROM configuration.channel_option WHERE channel_id = ? AND channel_option_type = 'PauseProcessor'";
-            } else {
-                sql = "SELECT channel_option_value FROM configuration_channel_option WHERE channel_id = ? AND channel_option_type = 'PauseProcessor'";
-            }
-            psPaused = connection.prepareStatement(sql);
-
-            if (ConnectionManager.isPostgreSQL(connection)) {
-                sql = "SELECT message_id, log_date FROM log.last_message WHERE channel_id = ?";
-            } else {
-                sql = "SELECT message_id, log_date FROM last_message WHERE channel_id = ?";
-            }
-            psLastMessage = connection.prepareStatement(sql);
-
-            if (ConnectionManager.isPostgreSQL(connection)) {
-                sql = "SELECT message_id, log_date, error_message FROM log.message WHERE error_message is not null AND channel_id = ?";
-            } else {
-                sql = "SELECT message_id, log_date, error_message FROM message WHERE error_message is not null AND channel_id = ?";
-            }
-            psErrors = connection.prepareStatement(sql);
+            ps.close();
 
             //for each channel found, get more info
             for (int i=0; i<root.size(); i++) {
@@ -135,8 +113,15 @@ public class Hl7ReceiverEndpoint extends AbstractEndpoint {
                 int channelId = channelNode.get("id").intValue();
 
                 //get the paused status
-                psPaused.setInt(1, channelId);
-                rs = psPaused.executeQuery();
+                if (ConnectionManager.isPostgreSQL(connection)) {
+                    sql = "SELECT channel_option_value FROM configuration.channel_option WHERE channel_id = ? AND channel_option_type = 'PauseProcessor'";
+                } else {
+                    sql = "SELECT channel_option_value FROM configuration_channel_option WHERE channel_id = ? AND channel_option_type = 'PauseProcessor'";
+                }
+                ps = connection.prepareStatement(sql);
+
+                ps.setInt(1, channelId);
+                rs = ps.executeQuery();
                 if (rs.next()) {
                     String val = rs.getString(1);
                     boolean paused = Boolean.parseBoolean(val);
@@ -145,9 +130,18 @@ public class Hl7ReceiverEndpoint extends AbstractEndpoint {
                     }
                 }
 
+                ps.close();
+
                 //get the last message received
-                psLastMessage.setInt(1, channelId);
-                rs = psLastMessage.executeQuery();
+                if (ConnectionManager.isPostgreSQL(connection)) {
+                    sql = "SELECT message_id, log_date FROM log.last_message WHERE channel_id = ?";
+                } else {
+                    sql = "SELECT message_id, log_date FROM last_message WHERE channel_id = ?";
+                }
+                ps = connection.prepareStatement(sql);
+
+                ps.setInt(1, channelId);
+                rs = ps.executeQuery();
                 if (rs.next()) {
                     int messageId = rs.getInt(1);
                     Date logDate = new Date(rs.getTimestamp(2).getTime());
@@ -156,32 +150,135 @@ public class Hl7ReceiverEndpoint extends AbstractEndpoint {
                     channelNode.put("lastMessageReceived", logDate.getTime());
                 }
 
+                ps.close();
+
                 //get any errors in the ADT->FHIR transform
-                psErrors.setInt(1, channelId);
-                rs = psErrors.executeQuery();
+                if (ConnectionManager.isPostgreSQL(connection)) {
+                    sql = "SELECT message_id, log_date, inbound_message_type, error_message FROM log.message WHERE error_message is not null AND channel_id = ?";
+                } else {
+                    sql = "SELECT message_id, log_date, inbound_message_type, error_message FROM message WHERE error_message is not null AND channel_id = ?";
+                }
+                ps = connection.prepareStatement(sql);
+
+                ps.setInt(1, channelId);
+                rs = ps.executeQuery();
                 if (rs.next()) {
-                    int messageId = rs.getInt(1);
-                    Date logDate = new Date(rs.getTimestamp(2).getTime());
-                    String messageError = rs.getString(3);
+                    int col = 1;
+                    int messageId = rs.getInt(col++);
+                    Date logDate = new Date(rs.getTimestamp(col++).getTime());
+                    String messageType = rs.getString(col++);
+                    String messageError = rs.getString(col++);
 
                     channelNode.put("errorMessageId", messageId);
                     channelNode.put("errorMessageReceived", logDate.getTime());
+                    channelNode.put("errorMessageType", messageType);
                     channelNode.put("errorMessage", messageError);
                 }
+
+                ps.close();
+
+                //get the size of the ADT->FHIR transform queue
+                if (ConnectionManager.isPostgreSQL(connection)) {
+                    sql = "SELECT count(1) FROM log.message_queue WHERE channel_id = ?";
+                } else {
+                    sql = "SELECT count(1) FROM message_queue WHERE channel_id = ?";
+                }
+                ps = connection.prepareStatement(sql);
+
+                ps.setInt(1, channelId);
+                rs = ps.executeQuery();
+                if (rs.next()) {
+                    int queueSize = rs.getInt(1);
+
+                    channelNode.put("transformQueueSize", queueSize);
+                }
+
+                ps.close();
+
+                //get the details of the oldest thing in the transform queue
+                if (ConnectionManager.isPostgreSQL(connection)) {
+                    sql = "SELECT q.message_id, q.log_date, m.inbound_message_type"
+                            + " FROM log.message_queue q"
+                            + " INNER JOIN log.message m"
+                            + " ON m.message_id = q.message_id"
+                            + " WHERE q.channel_id = ?"
+                            + " ORDER BY q.log_date asc"
+                            + " LIMIT 1";
+                } else {
+                    sql = "SELECT q.message_id, q.log_date, m.inbound_message_type"
+                            + " FROM message_queue q"
+                            + " INNER JOIN message m"
+                            + " ON m.message_id = q.message_id"
+                            + " WHERE q.channel_id = ?"
+                            + " ORDER BY q.log_date asc"
+                            + " LIMIT 1";
+                }
+                ps = connection.prepareStatement(sql);
+
+                Integer oldestMessageId = null;
+
+                ps.setInt(1, channelId);
+                rs = ps.executeQuery();
+                if (rs.next()) {
+                    int col = 1;
+                    oldestMessageId = rs.getInt(col++);
+                    Date oldestMessageDate = new Date(rs.getTimestamp(col++).getTime());
+                    String oldestMessageType = rs.getString(col++);
+
+                    channelNode.put("transformQueueFirstMessageId", oldestMessageId);
+                    channelNode.put("transformQueueFirstMessageDate", oldestMessageDate.getTime());
+                    channelNode.put("transformQueueFirstMessageType", oldestMessageType);
+                }
+
+                ps.close();
+
+                //get extra details on the oldest thing in the queue
+                if (oldestMessageId != null) {
+
+                    if (ConnectionManager.isPostgreSQL(connection)) {
+                        sql = "SELECT processing_attempt_id, message_status_date, error_message, description"
+                                + " FROM log.message_status_history h"
+                                + " INNER JOIN log.message_status s"
+                                + " ON s.message_status_id = h.message_status_id"
+                                + " WHERE h.message_id = ?"
+                                + " ORDER BY h.message_status_date DESC";
+                    } else {
+                        sql = "SELECT processing_attempt_id, message_status_date, error_message, description"
+                                + " FROM message_status_history h"
+                                + " INNER JOIN message_status s"
+                                + " ON s.message_status_id = h.message_status_id"
+                                + " WHERE h.message_id = ?"
+                                + " ORDER BY h.message_status_date DESC";
+                    }
+                    ps = connection.prepareStatement(sql);
+
+                    ArrayNode arr = channelNode.putArray("transformQueueFirstStatus");
+
+                    ps.setInt(1, oldestMessageId);
+                    rs = ps.executeQuery();
+                    while (rs.next()) {
+                        int col = 1;
+                        int transformAttempt = rs.getInt(col++);
+                        Date statusDate = new Date(rs.getTimestamp(col++).getTime());
+                        String errorMessage = rs.getString(col++);
+                        String statusDesc = rs.getString(col++);
+
+                        ObjectNode obj = arr.addObject();
+                        obj.put("date", statusDate.getTime());
+                        obj.put("status", statusDesc);
+                        obj.put("transformAttempt", transformAttempt);
+                        obj.put("error", errorMessage);
+                    }
+
+                    ps.close();
+                }
+
+
             }
 
         } finally {
-            if (psChannels != null) {
-                psChannels.close();
-            }
-            if (psPaused != null) {
-                psPaused.close();
-            }
-            if (psLastMessage != null) {
-                psLastMessage.close();
-            }
-            if (psErrors != null) {
-                psErrors.close();
+            if (ps != null) {
+                ps.close();
             }
             entityManager.close();
         }

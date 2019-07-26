@@ -2,7 +2,7 @@
     <div class="module-heading">
         HL7 Receiver
         <div class="pull-right">
-            <button class="btn btn-sm btn-success" (click)="refreshStatus()" title="Refresh">Refresh </button>
+            <button class="btn btn-sm btn-success" [disabled]="refreshingStatus" (click)="refreshStatus()" title="Refresh">Refresh&nbsp;<span class="fa fa-sm fa-refresh fa-refresh-animate" *ngIf="refreshingStatus"></span></button>
         </div>
     </div>
     <div class="module-body">
@@ -31,17 +31,49 @@
 
                             </div>
                             <div class="col-md-8">
-                                <h4>HL7 Receiver->Messaging API</h4>
+                                <h4>HL7 Receiver->FHIR->Messaging API</h4>
 
                                 <div *ngIf="channel.errorMessageId">
-                                    <div>ADT->FHIR->Messaging API: ERROR</div>
-                                    <div>Error Message Received: {{channel.errorMessageReceived | date:'dd-MMM-yyyy HH:mm:ss'}}</div>
-                                    <div>Error Message ID: {{channel.errorMessageId}}</div>
+                                    <div>Status: ERROR ({{channel.transformQueueSize}} messages in queue)</div>
+                                    <br>
+                                    <b>Message in Error:</b>
+                                    <div>Received: {{channel.errorMessageReceived | date:'dd-MMM-yyyy HH:mm:ss'}}</div>
+                                    <div>Type: {{channel.errorMessageType}}</div>
+                                    <div>ID: {{channel.errorMessageId}}</div>
                                     <pre>{{channel.errorMessage}}</pre>
                                 </div>
                                 <div *ngIf="!channel.errorMessageId">
-                                    <div>ADT->FHIR->Messaging API: OK</div>
+                                    <div *ngIf="channel.transformQueueSize>0">
+                                        <div>Status: WORKING ({{channel.transformQueueSize}} messages in queue)</div>
+                                        <br>
+                                        <b>First Message in Queue:</b>
+                                        <div>Received: {{channel.transformQueueFirstMessageDate | date:'dd-MMM-yyyy HH:mm:ss'}}</div>
+                                        <div>Type: {{channel.transformQueueFirstMessageType}}</div>
+                                        <div>ID: {{channel.transformQueueFirstMessageId}}</div>
+
+                                    </div>
+                                    <div *ngIf="channel.transformQueueSize==0">
+                                        <div>Status: OK</div>
+                                    </div>
                                 </div>
+
+                                <table class="table table-striped table-condensed" *ngIf="channel.transformQueueSize">
+                                    <thead>
+                                    <tr>
+                                        <th class="col-md-3">Date</th>
+                                        <th class="col-md-4">Status</th>
+                                        <th class="col-md-5">Error</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    <tr class="hover-box" *ngFor="let status of channel.transformQueueFirstStatus">
+                                        <td>{{status.date | date:'dd-MMM-yyyy HH:mm:ss'}}</td>
+                                        <td>{{status.status}}</td>
+                                        <td><pre *ngIf="status.error">{{status.error}}</pre></td>
+                                    </tr>
+                                    </tbody>
+                                </table>
+
 
                                 <div *ngIf="channel.paused">
                                     <h5>PAUSED!</h5>
@@ -55,6 +87,13 @@
 
                         </div>
                     </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-12">
+                    Show raw JSON<input type="checkbox" id="showRawJson" [(ngModel)]="showRawJson" name="showRawJson">
+                    <pre *ngIf="showRawJson">{{resultStr}}</pre>
                 </div>
             </div>
 

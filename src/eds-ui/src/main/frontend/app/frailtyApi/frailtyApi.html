@@ -34,7 +34,7 @@
                         </div>
                     </div>
 
-                    <button class="btn btn-sm btn-success" (click)="refreshStatus()" title="Refresh">Refresh </button>
+                    <button class="btn btn-sm btn-success" [disabled]="refreshingRecentStats" (click)="refreshStatus()" title="Refresh">Refresh&nbsp;<span class="fa fa-sm fa-refresh fa-refresh-animate" *ngIf="refreshingRecentStats"></span></button>
                 </div>
             </div>
 

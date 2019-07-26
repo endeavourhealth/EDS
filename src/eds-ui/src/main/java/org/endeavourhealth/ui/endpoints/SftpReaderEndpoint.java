@@ -3,6 +3,7 @@ package org.endeavourhealth.ui.endpoints;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.google.common.base.Strings;
 import org.apache.commons.io.FileUtils;
 import org.endeavourhealth.common.security.SecurityUtils;
 import org.endeavourhealth.core.database.dal.DalProvider;
@@ -16,10 +17,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.persistence.EntityManager;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
+import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -39,12 +37,12 @@ public class SftpReaderEndpoint extends AbstractEndpoint {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     @Path("/status")
-    public Response getChannelStatus(@Context SecurityContext sc) throws Exception {
+    public Response getChannelStatus(@Context SecurityContext sc, @QueryParam("includeInactiveChannels") Boolean includeInactiveChannels) throws Exception {
         super.setLogbackMarkers(sc);
 
         userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load, "Get HL7 Receiver Status");
 
-        String ret = getSftpReaderStatus();
+        String ret = getSftpReaderStatus(includeInactiveChannels);
 
         clearLogbackMarkers();
 
@@ -58,7 +56,7 @@ public class SftpReaderEndpoint extends AbstractEndpoint {
     /**
      * all the below should be moved to core or similar if anything like it is needed elsewhere
      */
-    private String getSftpReaderStatus() throws Exception {
+    private String getSftpReaderStatus(Boolean includeInactiveChannels) throws Exception {
 
         ObjectMapper mapper = new ObjectMapper();
         ArrayNode root = new ArrayNode(mapper.getNodeFactory());
@@ -71,9 +69,17 @@ public class SftpReaderEndpoint extends AbstractEndpoint {
 
             String sql = null;
             if (ConnectionManager.isPostgreSQL(connection)) {
-                sql = "select configuration_id, poll_frequency_seconds, configuration_friendly_name from configuration.configuration";
+                sql = "SELECT c.configuration_id, c.poll_frequency_seconds, c.configuration_friendly_name, i.instance_name"
+                    + " FROM configuration.configuration c"
+                    + " LEFT OUTER JOIN configuration.instance_configuration i"
+                    + " ON c.configuration_id = i.configuration_id"
+                    + " ORDER BY c.configuration_friendly_name";
             } else {
-                sql = "select configuration_id, poll_frequency_seconds, configuration_friendly_name from configuration c";
+                sql = "SELECT c.configuration_id, c.poll_frequency_seconds, c.configuration_friendly_name, i.instance_name"
+                        + " FROM configuration c"
+                        + " LEFT OUTER JOIN instance_configuration i"
+                        + " ON c.configuration_id = i.configuration_id"
+                        + " ORDER BY c.configuration_friendly_name";
             }
 
             ps = connection.prepareStatement(sql);
@@ -84,11 +90,21 @@ public class SftpReaderEndpoint extends AbstractEndpoint {
                 String id = rs.getString(col++);
                 int freq = rs.getInt(col++);
                 String name = rs.getString(col++);
+                String instanceName = rs.getString(col++);
+
+                if (Strings.isNullOrEmpty(instanceName)) {
+                    if (includeInactiveChannels == null
+                            && !includeInactiveChannels.booleanValue()) {
+                        continue;
+                    }
+                }
+
 
                 ObjectNode child = root.addObject();
                 child.put("id", id);
                 child.put("name", name);
                 child.put("pollFrequency", freq);
+                child.put("instanceName", instanceName);
             }
             ps.close();
 

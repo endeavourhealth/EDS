@@ -2,7 +2,9 @@
     <div class="module-heading">
         SFTP Reader Status
         <div class="pull-right">
-            <button class="btn btn-sm btn-success" (click)="refreshStatus()" title="Refresh the below">Refresh</button>
+            <button class="btn btn-sm btn-success" [disabled]="refreshingStatus" (click)="refreshStatus()" >Refresh&nbsp;<span class="fa fa-sm fa-refresh fa-refresh-animate" *ngIf="refreshingStatus"></span></button>
+            <button class="btn btn-sm btn-success" [disabled]="refreshingStatus" *ngIf="!includeInactiveChannels" (click)="showInactive(true)" >Show Inactive Channels</button>
+            <button class="btn btn-sm btn-success" [disabled]="refreshingStatus" *ngIf="includeInactiveChannels" (click)="showInactive(false)" >Hide Inactive Channels</button>
         </div>
     </div>
     <div class="module-body">
@@ -10,7 +12,7 @@
         <div *ngIf="statuses">
             <div class="row" *ngFor="let status of statuses">
                 <div class="col-md-12">
-                    <div class="panel panel-primary">
+                    <div class="{{getPanelClass(status)}}">
                         <div class="panel-heading">
                             <b>{{status.name}}</b> ({{status.id}})
                         </div>
@@ -133,15 +135,20 @@
                                     <div>No complete batches received to send to Messaging API</div>
                                 </div>
 
-<!--
-    completeBatchContents: SftpReaderBatchContents[];
--->
                             </div>
 
                         </div>
                     </div>
                 </div>
             </div>
+
+            <div class="row">
+                <div class="col-md-12">
+                    Show raw JSON<input type="checkbox" id="showRawJson" [(ngModel)]="showRawJson" name="showRawJson">
+                    <pre *ngIf="showRawJson">{{resultStr}}</pre>
+                </div>
+            </div>
+
 
         </div>
 

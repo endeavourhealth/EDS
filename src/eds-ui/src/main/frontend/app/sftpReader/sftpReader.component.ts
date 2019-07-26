@@ -13,7 +13,11 @@ import {SftpReaderBatchContents} from "./SftpReaderBatchContents";
 export class SftpReaderComponent {
 
     //resultStr: string;
+    includeInactiveChannels: boolean;
     statuses: SftpReaderChannelStatus[];
+    resultStr: string;
+    showRawJson: boolean;
+    refreshingStatus: boolean;
 
     constructor(protected sftpReaderService:SftpReaderService,
                 protected logger:LoggerService,
@@ -28,19 +32,26 @@ export class SftpReaderComponent {
 
     refreshStatus() {
         var vm = this;
+        vm.refreshingStatus = true;
+        console.log('vm.refreshingStatus = ' + vm.refreshingStatus);
 
-        vm.sftpReaderService.getSftpReaderStatus().subscribe(
+        vm.sftpReaderService.getSftpReaderStatus(vm.includeInactiveChannels).subscribe(
             (result) => {
+                vm.refreshingStatus = false;
+                console.log('vm.refreshingStatus = ' + vm.refreshingStatus);
 
                 vm.logger.success('Successfully got HL7 status', 'HL7 Status');
                 vm.statuses = result;
 
-                //vm.resultStr = JSON.stringify(result, null, 2);
+                vm.resultStr = JSON.stringify(result, null, 2);
 
                 console.log('received HL7 status');
                 console.log(result);
             },
             (error) => {
+                vm.refreshingStatus = false;
+                console.log('vm.refreshingStatus = ' + vm.refreshingStatus);
+
                 vm.logger.error('Failed get HL7 Receiver status', error, 'HL7 Receiver');
             }
         )
@@ -58,4 +69,19 @@ export class SftpReaderComponent {
         }
         return ret;
     }
+
+    showInactive(b: boolean) {
+        var vm = this;
+        vm.includeInactiveChannels = b;
+        vm.refreshStatus();
+    }
+
+    getPanelClass(status: SftpReaderChannelStatus): string {
+        if (status.instanceName) {
+            return "panel panel-primary";
+        } else {
+            return "panel panel-info";
+        }
+    }
+
 }

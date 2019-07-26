@@ -11,8 +11,12 @@ export class SftpReaderService extends BaseHttp2Service {
         super (http);
     }
 
-    getSftpReaderStatus() : Observable<SftpReaderChannelStatus[]> {
+    getSftpReaderStatus(includeInactiveChannels: boolean) : Observable<SftpReaderChannelStatus[]> {
         console.log('Getting SFTP Reader status');
-        return this.httpGet('api/sftpReader/status', {});
+
+        var params = new URLSearchParams();
+        params.append('includeInactiveChannels', '' + includeInactiveChannels);
+
+        return this.httpGet('api/sftpReader/status', { search : params});
     }
 }

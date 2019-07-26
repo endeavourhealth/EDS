@@ -13,9 +13,9 @@ export class FrailtyApiComponent {
 
     recentStatsGroupBy: string;
     recentStatsMinutesBack: number;
-
     recentStats: FrailtyStat[];
     recentStatResultsGroupBy: string;
+    refreshingRecentStats: boolean;
 
     downloadingMonthlyStats: boolean;
 
@@ -34,15 +34,18 @@ export class FrailtyApiComponent {
 
     refreshStatus() {
         var vm = this;
+        vm.refreshingRecentStats = true;
 
         vm.frailtyService.getRecentStats(vm.recentStatsMinutesBack, vm.recentStatsGroupBy).subscribe(
             (result) => {
                 vm.recentStats = result;
                 vm.recentStatResultsGroupBy = vm.recentStatsGroupBy;
+                vm.refreshingRecentStats = false;
 
             },
             (error) => {
                 vm.logger.error('Failed get Frailty API stats', error, 'Frailty API');
+                vm.refreshingRecentStats = false;
             }
         );
     }
