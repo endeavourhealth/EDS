@@ -26,6 +26,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 @Path("/sftpReader")
 public class SftpReaderEndpoint extends AbstractEndpoint {
@@ -94,7 +96,7 @@ public class SftpReaderEndpoint extends AbstractEndpoint {
 
                 if (Strings.isNullOrEmpty(instanceName)) {
                     if (includeInactiveChannels == null
-                            && !includeInactiveChannels.booleanValue()) {
+                            || !includeInactiveChannels.booleanValue()) {
                         continue;
                     }
                 }
@@ -199,6 +201,53 @@ public class SftpReaderEndpoint extends AbstractEndpoint {
 
                 if (latestCompleteBatchId != null) {
 
+                    //get any errors for orgs in this configuration - since errors posting to the Messaging API
+                    //will most likely be on past exchanges and be blocking the latest exchange
+                    Map<String, String> hmErrorsPerOrg = new HashMap<>();
+
+                    //get the batch splits for the complete batch
+                    if (ConnectionManager.isPostgreSQL(connection)) {
+                        sql = "SELECT distinct organisation_id, error_text"
+                                + " FROM log.batch_split bs"
+                                + " INNER JOIN log.batch b"
+                                + " ON b.batch_id = bs.batch_id"
+                                + " INNER JOIN log.notification_message m"
+                                + " on m.batch_id = bs.batch_id"
+                                + " and m.batch_split_id = bs.batch_split_id"
+                                + " WHERE b.configuration_id = ?"
+                                + " AND b.is_complete = true"
+                                + " AND bs.have_notified = false"
+                                + " and m.error_text is not null";
+                    } else {
+                        sql = "SELECT distinct organisation_id, error_text"
+                                + " FROM batch_split bs"
+                                + " INNER JOIN batch b"
+                                + " ON b.batch_id = bs.batch_id"
+                                + " INNER JOIN notification_message m"
+                                + " on m.batch_id = bs.batch_id"
+                                + " and m.batch_split_id = bs.batch_split_id"
+                                + " WHERE b.configuration_id = ?"
+                                + " AND b.is_complete = true"
+                                + " AND bs.have_notified = false"
+                                + " and m.error_text is not null";
+                    }
+                    ps = connection.prepareStatement(sql);
+
+                    ps.setString(1, id);
+
+                    rs = ps.executeQuery();
+
+                    while (rs.next()) {
+
+                        int col = 1;
+                        String orgId = rs.getString(col++);
+                        String notificationError = rs.getString(col++);
+
+                        hmErrorsPerOrg.put(orgId, notificationError);
+                    }
+
+                    ps.close();
+
                     //get the batch splits for the complete batch
                     if (ConnectionManager.isPostgreSQL(connection)) {
                         sql = "select s.organisation_id, s.have_notified, m.inbound, m.error_text"
@@ -245,11 +294,18 @@ public class SftpReaderEndpoint extends AbstractEndpoint {
                         String notificationResult = rs.getString(col++);
                         String notificationError = rs.getString(col++);
 
-                        ObjectNode child = arr.addObject();
-                        child.put("orgId", orgId);
-                        child.put("notified", haveNotified);
-                        child.put("result", notificationResult);
-                        child.put("error", notificationError);
+                        //if no error message for this record, then look in the map because there should be one
+                        //for this org, but for an earlier batch, that's blocking this one for the org
+                        if (!haveNotified
+                                && Strings.isNullOrEmpty(notificationError)) {
+                            notificationError = hmErrorsPerOrg.get(orgId);
+                        }
+
+                        ObjectNode orgNode = arr.addObject();
+                        orgNode.put("orgId", orgId);
+                        orgNode.put("notified", haveNotified);
+                        orgNode.put("result", notificationResult);
+                        orgNode.put("error", notificationError);
                     }
 
                     ps.close();

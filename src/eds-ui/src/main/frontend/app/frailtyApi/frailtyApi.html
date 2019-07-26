@@ -62,7 +62,9 @@
                                 <td>{{stat.matchedAndFrail}}</td>
                                 <td>{{stat.matchedAndNotFrail}}</td>
                                 <td>{{stat.errorNotMatched}}</td>
-                                <td>{{stat.errorOther}}</td>
+                                <td>{{stat.errorOther}}
+                                    <span *ngIf="stat.errorOther>0" class="label label-danger">Warning</span>
+                                </td>
                                 <td>{{stat.total}}</td>
                             </tr>
                         </tbody>

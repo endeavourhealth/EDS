@@ -43,8 +43,16 @@
                                     <pre>{{channel.errorMessage}}</pre>
                                 </div>
                                 <div *ngIf="!channel.errorMessageId">
+
                                     <div *ngIf="channel.transformQueueSize>0">
-                                        <div>Status: WORKING ({{channel.transformQueueSize}} messages in queue)</div>
+
+                                        <div *ngIf="channel.paused">
+                                            <div>Status: PAUSED ({{channel.transformQueueSize}} messages in queue)</div>
+                                        </div>
+                                        <div *ngIf="!channel.paused">
+                                            <div>Status: WORKING ({{channel.transformQueueSize}} messages in queue)</div>
+                                        </div>
+
                                         <br>
                                         <b>First Message in Queue:</b>
                                         <div>Received: {{channel.transformQueueFirstMessageDate | date:'dd-MMM-yyyy HH:mm:ss'}}</div>
@@ -76,12 +84,12 @@
 
 
                                 <div *ngIf="channel.paused">
-                                    <h5>PAUSED!</h5>
-                                    <button type="button" class="btn btn-sm btn-success" (click)="pauseChannel(channel.id, false)">Unpause</button>
+                                    <span class="label label-warning">PAUSED!</span>
                                 </div>
                                 <div *ngIf="!channel.paused">
-                                    <button type="button" class="btn btn-sm btn-warning" (click)="pauseChannel(channel.id, true)">Pause</button>
+                                    <span class="label label-success">Not Paused</span>
                                 </div>
+                                <button type="button" class="btn btn-sm btn-default" (click)="pauseChannel(channel.id, !channel.paused)">Toggle Pause</button>
 
                             </div>
 
