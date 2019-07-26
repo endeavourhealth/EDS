@@ -3,6 +3,7 @@ import {Http, URLSearchParams} from "@angular/http";
 import {Observable} from "rxjs";
 import {Injectable} from "@angular/core";
 import {SftpReaderChannelStatus} from "./SftpReaderChannelStatus";
+import {SftpReaderInstance} from "./SftpReaderInstance";
 
 @Injectable()
 export class SftpReaderService extends BaseHttp2Service {
@@ -11,12 +12,14 @@ export class SftpReaderService extends BaseHttp2Service {
         super (http);
     }
 
-    getSftpReaderStatus(includeInactiveChannels: boolean) : Observable<SftpReaderChannelStatus[]> {
-        console.log('Getting SFTP Reader status');
-
+    getSftpReaderStatus(filterInstanceName: string) : Observable<SftpReaderChannelStatus[]> {
         var params = new URLSearchParams();
-        params.append('includeInactiveChannels', '' + includeInactiveChannels);
+        params.append('instance', '' + filterInstanceName);
 
         return this.httpGet('api/sftpReader/status', { search : params});
+    }
+
+    getSftpReaderInstances() : Observable<SftpReaderInstance[]> {
+        return this.httpGet('api/sftpReader/instances', { });
     }
 }

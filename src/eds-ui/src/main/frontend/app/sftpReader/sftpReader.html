@@ -2,9 +2,27 @@
     <div class="module-heading">
         SFTP Reader Status
         <div class="pull-right">
-            <button class="btn btn-sm btn-success" [disabled]="refreshingStatus" (click)="refreshStatus()" >Refresh&nbsp;<span class="fa fa-sm fa-refresh fa-refresh-animate" *ngIf="refreshingStatus"></span></button>
-            <button class="btn btn-sm btn-success" [disabled]="refreshingStatus" *ngIf="!includeInactiveChannels" (click)="showInactive(true)" >Show Inactive Channels</button>
-            <button class="btn btn-sm btn-success" [disabled]="refreshingStatus" *ngIf="includeInactiveChannels" (click)="showInactive(false)" >Hide Inactive Channels</button>
+
+            <form class="form-inline">
+
+                <button class="btn btn-sm btn-default" (click)="odsSearch()" title="Ods Search">ODS Search</button>
+
+
+                <div class="form-group">
+
+                    <select id="filterInstanceName" name="filterInstanceName" class="form-control" [(ngModel)]="filterInstanceName" (ngModelChange)="refreshStatus()" >
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                        <option *ngFor="let instanceName of instanceNames" value="{{instanceName.name}}">{{instanceName.name}}</option>
+                        <option value="all">All</option>
+                    </select>
+
+                </div>
+
+                <button class="btn btn-sm btn-success" [disabled]="refreshingStatus" (click)="refreshStatus()" >Refresh&nbsp;<span class="fa fa-sm fa-refresh fa-refresh-animate" *ngIf="refreshingStatus"></span></button>
+
+            </form>
+
         </div>
     </div>
     <div class="module-body">

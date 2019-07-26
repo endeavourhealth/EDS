@@ -1,3 +1,4 @@
+import {NgbModal} from "@ng-bootstrap/ng-bootstrap";
 import {linq, LoggerService} from "eds-common-js";
 import {StateService} from "ui-router-ng2";
 import {Component} from "@angular/core";
@@ -6,6 +7,8 @@ import {ServiceService} from "../services/service.service";
 import {SftpReaderService} from "./sftpReader.service";
 import {SftpReaderChannelStatus} from "./SftpReaderChannelStatus";
 import {SftpReaderBatchContents} from "./SftpReaderBatchContents";
+import {OdsSearchDialog} from "../services/odsSearch.dialog";
+import {SftpReaderInstance} from "./SftpReaderInstance";
 
 @Component({
     template : require('./sftpReader.html')
@@ -13,13 +16,15 @@ import {SftpReaderBatchContents} from "./SftpReaderBatchContents";
 export class SftpReaderComponent {
 
     //resultStr: string;
-    includeInactiveChannels: boolean;
+    instanceNames: SftpReaderInstance[];
+    filterInstanceName: string;
     statuses: SftpReaderChannelStatus[];
     resultStr: string;
     showRawJson: boolean;
     refreshingStatus: boolean;
 
-    constructor(protected sftpReaderService:SftpReaderService,
+    constructor(private $modal : NgbModal,
+                protected sftpReaderService:SftpReaderService,
                 protected logger:LoggerService,
                 protected $state:StateService) {
 
@@ -27,7 +32,22 @@ export class SftpReaderComponent {
     }
 
     ngOnInit() {
-        this.refreshStatus();
+        var vm = this;
+        vm.filterInstanceName = 'active';
+        vm.refreshInstances();
+        vm.refreshStatus();
+    }
+
+    refreshInstances() {
+        var vm = this;
+        vm.sftpReaderService.getSftpReaderInstances().subscribe(
+            (result) => {
+                vm.instanceNames = result;
+            },
+            (error) => {
+                vm.logger.error('Failed get SFTP Reader instances', error, 'SFTP Reader');
+            }
+        )
     }
 
     refreshStatus() {
@@ -35,7 +55,7 @@ export class SftpReaderComponent {
         vm.refreshingStatus = true;
         console.log('vm.refreshingStatus = ' + vm.refreshingStatus);
 
-        vm.sftpReaderService.getSftpReaderStatus(vm.includeInactiveChannels).subscribe(
+        vm.sftpReaderService.getSftpReaderStatus(vm.filterInstanceName).subscribe(
             (result) => {
                 vm.refreshingStatus = false;
                 console.log('vm.refreshingStatus = ' + vm.refreshingStatus);
@@ -70,12 +90,6 @@ export class SftpReaderComponent {
         return ret;
     }
 
-    showInactive(b: boolean) {
-        var vm = this;
-        vm.includeInactiveChannels = b;
-        vm.refreshStatus();
-    }
-
     getPanelClass(status: SftpReaderChannelStatus): string {
         if (status.instanceName) {
             return "panel panel-primary";
@@ -84,4 +98,9 @@ export class SftpReaderComponent {
         }
     }
 
+    odsSearch() {
+        var vm = this;
+        OdsSearchDialog.open(vm.$modal);
+
+    }
 }

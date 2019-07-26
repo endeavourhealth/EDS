@@ -39,12 +39,31 @@ public class SftpReaderEndpoint extends AbstractEndpoint {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     @Path("/status")
-    public Response getChannelStatus(@Context SecurityContext sc, @QueryParam("includeInactiveChannels") Boolean includeInactiveChannels) throws Exception {
+    public Response getChannelStatus(@Context SecurityContext sc, @QueryParam("instance") String instanceName) throws Exception {
         super.setLogbackMarkers(sc);
 
-        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load, "Get HL7 Receiver Status");
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load, "Get SFTP Reader Instance Status");
 
-        String ret = getSftpReaderStatus(includeInactiveChannels);
+        String ret = getSftpReaderStatus(instanceName);
+
+        clearLogbackMarkers();
+
+        return Response
+                .ok()
+                .entity(ret)
+                .build();
+    }
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Path("/instances")
+    public Response getInstances(@Context SecurityContext sc) throws Exception {
+        super.setLogbackMarkers(sc);
+
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load, "Get SFTP Reader Instance Names");
+
+        String ret = getSftpReaderInstances();
 
         clearLogbackMarkers();
 
@@ -55,10 +74,52 @@ public class SftpReaderEndpoint extends AbstractEndpoint {
     }
 
 
+
+    private String getSftpReaderInstances() throws Exception {
+
+        ObjectMapper mapper = new ObjectMapper();
+        ArrayNode root = new ArrayNode(mapper.getNodeFactory());
+
+        EntityManager entityManager = ConnectionManager.getSftpReaderEntityManager();
+        PreparedStatement ps = null;
+        try {
+            SessionImpl session = (SessionImpl) entityManager.getDelegate();
+            Connection connection = session.connection();
+
+            String sql = null;
+            if (ConnectionManager.isPostgreSQL(connection)) {
+                sql = "SELECT instance_name FROM configuration.instance ORDER BY instance_name";
+            } else {
+                sql = "SELECT instance_name FROM instance ORDER BY instance_name";
+            }
+
+            ps = connection.prepareStatement(sql);
+
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                int col = 1;
+                String instanceName = rs.getString(col++);
+
+                ObjectNode obj = root.addObject();
+                obj.put("name", instanceName);
+            }
+            ps.close();
+
+        } finally {
+            if (ps != null) {
+                ps.close();
+            }
+            entityManager.close();
+        }
+
+        return mapper.writeValueAsString(root);
+    }
+
+
     /**
      * all the below should be moved to core or similar if anything like it is needed elsewhere
      */
-    private String getSftpReaderStatus(Boolean includeInactiveChannels) throws Exception {
+    private String getSftpReaderStatus(String filterInstanceName) throws Exception {
 
         ObjectMapper mapper = new ObjectMapper();
         ArrayNode root = new ArrayNode(mapper.getNodeFactory());
@@ -94,13 +155,25 @@ public class SftpReaderEndpoint extends AbstractEndpoint {
                 String name = rs.getString(col++);
                 String instanceName = rs.getString(col++);
 
-                if (Strings.isNullOrEmpty(instanceName)) {
-                    if (includeInactiveChannels == null
-                            || !includeInactiveChannels.booleanValue()) {
+                if (filterInstanceName.equalsIgnoreCase("all")) {
+                    //include all
+
+                } else if (filterInstanceName.equals("active")) {
+                    if (Strings.isNullOrEmpty(instanceName)) {
+                        continue;
+                    }
+
+                } else if (filterInstanceName.equals("inactive")) {
+                    if (!Strings.isNullOrEmpty(instanceName)) {
+                        continue;
+                    }
+
+                } else {
+                    if (instanceName == null
+                            || !instanceName.equalsIgnoreCase(filterInstanceName)) {
                         continue;
                     }
                 }
-
 
                 ObjectNode child = root.addObject();
                 child.put("id", id);
