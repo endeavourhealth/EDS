@@ -278,27 +278,40 @@ public class SftpReaderEndpoint extends AbstractEndpoint {
                     //will most likely be on past exchanges and be blocking the latest exchange
                     Map<String, String> hmErrorsPerOrg = new HashMap<>();
 
-                    //get the batch splits for the complete batch
                     if (ConnectionManager.isPostgreSQL(connection)) {
-                        sql = "SELECT distinct organisation_id, error_text"
+                        sql = "SELECT organisation_id, error_text"
                                 + " FROM log.batch_split bs"
                                 + " INNER JOIN log.batch b"
                                 + " ON b.batch_id = bs.batch_id"
                                 + " INNER JOIN log.notification_message m"
                                 + " on m.batch_id = bs.batch_id"
                                 + " and m.batch_split_id = bs.batch_split_id"
+                                + " and not exists ("
+                                + " select 1"
+                                + " from log.notification_message m2"
+                                + " where m2.batch_id = m.batch_id"
+                                + " and m2.batch_split_id = m.batch_split_id"
+                                + " and m2.timestamp < m.timestamp"
+                                + " )"
                                 + " WHERE b.configuration_id = ?"
                                 + " AND b.is_complete = true"
                                 + " AND bs.have_notified = false"
                                 + " and m.error_text is not null";
                     } else {
-                        sql = "SELECT distinct organisation_id, error_text"
+                        sql = "SELECT organisation_id, error_text"
                                 + " FROM batch_split bs"
                                 + " INNER JOIN batch b"
                                 + " ON b.batch_id = bs.batch_id"
                                 + " INNER JOIN notification_message m"
                                 + " on m.batch_id = bs.batch_id"
                                 + " and m.batch_split_id = bs.batch_split_id"
+                                + " and not exists ("
+                                + " select 1"
+                                + " from log.notification_message m2"
+                                + " where m2.batch_id = m.batch_id"
+                                + " and m2.batch_split_id = m.batch_split_id"
+                                + " and m2.timestamp < m.timestamp"
+                                + " )"
                                 + " WHERE b.configuration_id = ?"
                                 + " AND b.is_complete = true"
                                 + " AND bs.have_notified = false"
