@@ -21,7 +21,7 @@ export class TransformErrorsComponent {
 	//filtering
 	filteredErrorSummaries: TransformErrorSummary[];
 	allPublisherConfigNames: string[];
-
+	allCcgCodes: string[];
 
 	constructor(private serviceService : ServiceService,
 				protected exchangeAuditService:ExchangeAuditService,
@@ -63,7 +63,7 @@ export class TransformErrorsComponent {
 		vm.loadExchange();
 	}
 
-	rerunFirst(summary:TransformErrorSummary) {
+	/*rerunFirst(summary:TransformErrorSummary) {
 		var vm = this;
 		var serviceId = summary.service.uuid;
 		var systemId = summary.systemId;
@@ -80,7 +80,7 @@ export class TransformErrorsComponent {
 				this.busyPostingToExchange = null;
 			}
 		)
-	}
+	}*/
 
 	rerunAll(summary:TransformErrorSummary) {
 		var vm = this;
@@ -90,7 +90,7 @@ export class TransformErrorsComponent {
 		this.busyPostingToExchange = vm.exchangeAuditService.rerunAllExchangesInError(serviceId, systemId).subscribe(
 			(result) => {
 				vm.logger.success('Successfully posted to exchange', 'Post to Exchange');
-				vm.refreshSummariesKeepingSelection(summary, null)
+				//vm.refreshSummariesKeepingSelection(summary, null);
 				this.busyPostingToExchange = null;
 			},
 			(error) => {
@@ -101,7 +101,7 @@ export class TransformErrorsComponent {
 		)
 	}
 
-	private refreshSummariesKeepingSelection(original:TransformErrorSummary, replacement:TransformErrorSummary) {
+	/*private refreshSummariesKeepingSelection(original:TransformErrorSummary, replacement:TransformErrorSummary) {
 		var vm = this;
 
 		//if we have a replacement, swap it into the array, otherwise remove from the array
@@ -134,7 +134,7 @@ export class TransformErrorsComponent {
 				}
 			}
 		}
-	}
+	}*/
 
 	loadExchange() {
 
@@ -201,20 +201,32 @@ export class TransformErrorsComponent {
 	private findAllPublisherConfigNames() {
 		var vm = this;
 		vm.allPublisherConfigNames = [];
+		vm.allCcgCodes = [];
 
 		var arrayLength = vm.transformErrorSummaries.length;
 		for (var i = 0; i < arrayLength; i++) {
 			var transformErrorSummary = vm.transformErrorSummaries[i];
-			var publisherConfigName = transformErrorSummary.service.publisherConfigName;
+			var service = transformErrorSummary.service;
+
+			var publisherConfigName = service.publisherConfigName;
 			if (publisherConfigName) {
 				var index = vm.allPublisherConfigNames.indexOf(publisherConfigName);
 				if (index == -1) {
 					vm.allPublisherConfigNames.push(publisherConfigName);
 				}
 			}
+
+			var ccgCode = service.ccgCode;
+			if (ccgCode) {
+				var index = vm.allCcgCodes.indexOf(ccgCode);
+				if (index == -1) {
+					vm.allCcgCodes.push(ccgCode);
+				}
+			}
 		}
 
 		vm.allPublisherConfigNames.sort();
+		vm.allCcgCodes.sort();
 	}
 
 	getNotesPrefix(transformErrorSummary: TransformErrorSummary) : string {
@@ -226,5 +238,72 @@ export class TransformErrorsComponent {
 		} else {
 			return transformErrorSummary.service.notes;
 		}
+	}
+
+	checkAll() {
+		var vm = this;
+
+		//if we've not loaded our services yet, just return out
+		if (!vm.transformErrorSummaries) {
+			return;
+		}
+
+		var arrayLength = vm.transformErrorSummaries.length;
+		for (var i = 0; i < arrayLength; i++) {
+			var transformErrorSummary = vm.transformErrorSummaries[i];
+			transformErrorSummary.checked = true;
+		}
+	}
+
+	getCheckedCount(): number {
+		var vm = this;
+
+		//only count filtered ones
+		if (!vm.filteredErrorSummaries) {
+			return 0;
+		}
+
+		var ret = 0;
+
+		var arrayLength = vm.filteredErrorSummaries.length;
+		for (var i = 0; i < arrayLength; i++) {
+			var transformErrorSummary = vm.filteredErrorSummaries[i];
+			if (transformErrorSummary.checked) {
+				ret ++;
+			}
+		}
+
+		return ret;
+	}
+
+	requeueChecked() {
+		var vm = this;
+
+		var filteredAndChecked = [];
+
+		var arrayLength = vm.filteredErrorSummaries.length;
+		for (var i = 0; i < arrayLength; i++) {
+			var transformErrorSummary = vm.filteredErrorSummaries[i];
+			if (transformErrorSummary.checked) {
+				filteredAndChecked.push(transformErrorSummary);
+			}
+		}
+
+		if (filteredAndChecked.length == 0) {
+			vm.logger.error('No services checked', null, 'Post to Exchange')
+			return;
+		}
+
+		this.busyPostingToExchange = vm.exchangeAuditService.rerunAllExchangesInErrorForServices(filteredAndChecked).subscribe(
+			(result) => {
+				vm.logger.success('Successfully posted to exchange', 'Post to Exchange');
+				this.busyPostingToExchange = null;
+			},
+			(error) => {
+				vm.logger.error('Failed to post to exchange', error, 'Post to Exchange')
+				//clear down to say we're not busy
+				this.busyPostingToExchange = null;
+			}
+		)
 	}
 }

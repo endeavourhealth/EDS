@@ -5,4 +5,5 @@ export class TransformErrorSummary {
     systemName: string;
     countExchanges: number;
     exchangeIds: string[];
+    checked: boolean;
 }

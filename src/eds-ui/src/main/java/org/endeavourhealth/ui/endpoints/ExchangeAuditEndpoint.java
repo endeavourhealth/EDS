@@ -732,7 +732,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
         }
     }
 
-    @POST
+    /*@POST
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     @Timed(absolute = true, name="EDS-UI.ExchangeAuditEndpoint.RerunFirstExchangeInError")
@@ -756,7 +756,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
         return Response
                 .ok(ret)
                 .build();
-    }
+    }*/
 
 
     @POST
@@ -771,7 +771,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
                 "Rerun All Exchanges",
                 "Request", request);
 
-        LOG.info("rerunAllExchanges");
+        LOG.trace("Re-queuing for " + request);
         rerunExchanges(request, false);
 
         clearLogbackMarkers();
@@ -788,7 +788,6 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
         UUID systemId = request.getSystemId();
 
         ExchangeTransformErrorState errorState = auditRepository.getErrorState(serviceId, systemId);
-        LOG.debug("Re-running exchanges firstOnly = " + firstOnly);
 
         List<UUID> exchangeIdsToRePost = new ArrayList<>();
         List<ExchangeTransformAudit> auditsToMarkAsResubmitted = new ArrayList<>();
@@ -821,11 +820,6 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
         //post to rabbit
         QueueHelper.postToExchange(exchangeIdsToRePost, INBOUND_EXCHANGE, null, true);
 
-        //after posting to rabbit, mark those audits as resubmitted
-        for (ExchangeTransformAudit audit: auditsToMarkAsResubmitted) {
-            audit.setResubmitted(true);
-            auditRepository.save(audit);
-        }
     }
 
     @GET
@@ -864,33 +858,6 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
                 .build();
     }
 
-    /*@POST
-    @Produces(MediaType.APPLICATION_JSON)
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Path("/postTest")
-    @RequiresAdmin
-    public Response postTest(@Context SecurityContext sc, JsonPostToExchangeRequest request) throws Exception {
-        super.setLogbackMarkers(sc);
-
-        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Save, "Testing Post Rerequesting");
-
-        LOG.info("-----posting to exchange for service " + request.getServiceId());
-        Throwable t = new RuntimeException();
-        t.fillInStackTrace();
-        LOG.error("", t);
-
-        for (int i=0; i<20; i++) {
-            LOG.info("Sleeping " + i);
-            Thread.sleep(1000 * 60);
-        }
-        LOG.info("Done");
-
-        clearLogbackMarkers();
-
-        return Response
-                .ok()
-                .build();
-    }*/
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
@@ -963,6 +930,29 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
                 .build();
     }
 
+    @POST
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.ExchangeAuditEndpoint.RequeueServicesInError")
+    @Path("/requeueServicesInError")
+    @RequiresAdmin
+    public Response rerunAllExchangesInError(@Context SecurityContext sc, List<JsonTransformRerunRequest> requests) throws Exception {
+        super.setLogbackMarkers(sc);
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Save,
+                "Rerun All Exchanges For Services",
+                "Request", requests);
 
+        for (JsonTransformRerunRequest request: requests) {
+            LOG.trace("Re-queuing for " + request);
+            rerunExchanges(request, false);
+        }
+
+
+        clearLogbackMarkers();
+
+        return Response
+                .ok()
+                .build();
+    }
 }
 

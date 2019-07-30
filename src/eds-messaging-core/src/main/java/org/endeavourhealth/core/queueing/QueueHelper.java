@@ -9,8 +9,10 @@ import org.endeavourhealth.core.configuration.*;
 import org.endeavourhealth.core.database.dal.DalProvider;
 import org.endeavourhealth.core.database.dal.admin.LibraryRepositoryHelper;
 import org.endeavourhealth.core.database.dal.audit.ExchangeBatchDalI;
+import org.endeavourhealth.core.database.dal.audit.ExchangeDalI;
 import org.endeavourhealth.core.database.dal.audit.models.Exchange;
 import org.endeavourhealth.core.database.dal.audit.models.ExchangeBatch;
+import org.endeavourhealth.core.database.dal.audit.models.ExchangeTransformAudit;
 import org.endeavourhealth.core.database.dal.audit.models.HeaderKeys;
 import org.endeavourhealth.core.messaging.pipeline.TransformBatch;
 import org.endeavourhealth.core.messaging.pipeline.components.DetermineRelevantProtocolIds;
@@ -145,23 +147,26 @@ public class QueueHelper {
             //write an event for the exchange, so we can see this happened
             AuditWriter.writeExchangeEvent(exchange, exchangeEventStr);
 
+            //if pushed into the Inbound queue, and it previously had an error in there, mark it as resubmitted
+            if (exchangeName.equals("EdsInbound")) {
+
+                UUID serviceId = exchange.getHeaderAsUuid(HeaderKeys.SenderServiceUuid);
+                UUID systemId = exchange.getHeaderAsUuid(HeaderKeys.SystemVersion);
+
+                ExchangeDalI auditRepository = DalProvider.factoryExchangeDal();
+                ExchangeTransformAudit audit = auditRepository.getMostRecentExchangeTransform(serviceId, systemId, exchangeId);
+                if (!audit.isResubmitted()) {
+                    audit.setResubmitted(true);
+                    auditRepository.save(audit);
+                }
+            }
+
             if (i % 1000 == 0) {
                 LOG.info("Posted " + (i+1) + " / " + exchangeIds.size() + " exchanges to " + exchangeName);
             }
         }
 
-        //if pushed into the Inbound queue, and it previously had an error in there, mark it as resubmitted
-        /*if (exchangeName.equals("EdsInbound")) {
 
-            UUID serviceId = exchange.getHeaderAsUuid(HeaderKeys.SenderServiceUuid);
-            UUID systemId = exchange.getHeaderAsUuid(HeaderKeys.SystemVersion);
-
-            ExchangeTransformAudit audit = auditRepository.getMostRecentExchangeTransform(serviceId, systemId, exchangeId);
-            if (!audit.isResubmitted()) {
-                audit.setResubmitted(true);
-                auditRepository.save(audit);
-            }
-        }*/
     }
 
 

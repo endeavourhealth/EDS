@@ -105,21 +105,14 @@ export class ExchangeAuditService extends BaseHttp2Service {
         return this.httpGet('api/exchangeAudit/getInboundTransformAudits', { search : params});
     }
 
-    rerunFirstExchangeInError(serviceId: string, systemId: string):Observable<TransformErrorSummary> {
+    /*rerunFirstExchangeInError(serviceId: string, systemId: string):Observable<TransformErrorSummary> {
         var request = {
             'serviceId': serviceId,
             'systemId': systemId
         };
         return this.httpPost('api/exchangeAudit/rerunFirstExchangeInError', request);
-    }
+    }*/
 
-    rerunAllExchangesInError(serviceId: string, systemId: string) : Observable<any> {
-        var request = {
-            'serviceId': serviceId,
-            'systemId': systemId
-        };
-        return this.httpPost('api/exchangeAudit/rerunAllExchangesInError', request);
-    }
 
     getTransformErrorLines(serviceId:string, systemId:string, exchangeId:string, version:string) : Observable<string[]> {
         var params = new URLSearchParams();
@@ -131,14 +124,6 @@ export class ExchangeAuditService extends BaseHttp2Service {
         return this.httpGet('api/exchangeAudit/getTransformErrorLines', { search : params});
     }
 
-    /*postTest(serviceId: string):Observable<any> {
-        var request = {
-            'serviceId': serviceId
-        };
-        console.log("Post test in service class");
-        return this.httpPost('api/exchangeAudit/postTest', request);
-    }*/
-
     getProtocolsList(serviceId:string, onlySubscriberProtocols:boolean) : Observable<Protocol[]> {
 
         var params = new URLSearchParams();
@@ -147,4 +132,28 @@ export class ExchangeAuditService extends BaseHttp2Service {
 
         return this.httpGet('api/exchangeAudit/getProtocolsForService', { search : params});
     }
+
+    rerunAllExchangesInError(serviceId: string, systemId: string) : Observable<any> {
+        var request = {
+            'serviceId': serviceId,
+            'systemId': systemId
+        };
+        return this.httpPost('api/exchangeAudit/rerunAllExchangesInError', request);
+    }
+
+
+    rerunAllExchangesInErrorForServices(summaries: TransformErrorSummary[]) : Observable<any> {
+        var request = [];
+        var arrayLength = summaries.length;
+        for (var i = 0; i < arrayLength; i++) {
+            var summary = summaries[i];
+            request.push({
+                'serviceId': summary.service.uuid,
+                'systemId': summary.systemId
+            });
+        }
+
+        return this.httpPost('api/exchangeAudit/requeueServicesInError', request);
+    }
+
 }

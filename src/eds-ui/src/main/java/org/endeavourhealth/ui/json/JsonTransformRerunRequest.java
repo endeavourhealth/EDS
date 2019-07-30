@@ -30,4 +30,8 @@ public class JsonTransformRerunRequest {
         this.systemId = systemId;
     }
 
+    @Override
+    public String toString() {
+        return "ServiceID " + serviceId + ", SystemId + " + systemId;
+    }
 }
