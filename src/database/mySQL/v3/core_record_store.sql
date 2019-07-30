@@ -1,6 +1,45 @@
-create database pcr;
+-- create database pcr;
 
 use pcr;
+
+DROP TABLE IF EXISTS table_id;
+DROP TABLE IF EXISTS date_precision;
+DROP TABLE IF EXISTS event_log;
+DROP TABLE IF EXISTS allergy_intolerance;
+DROP TABLE IF EXISTS appointment;
+DROP TABLE IF EXISTS diagnostic_order;
+DROP TABLE IF EXISTS encounter;
+DROP TABLE IF EXISTS encounter_status;
+DROP TABLE IF EXISTS encounter_location;
+DROP TABLE IF EXISTS episode_of_care;
+DROP TABLE IF EXISTS gp_registration;
+DROP TABLE IF EXISTS gp_registration_status;
+DROP TABLE IF EXISTS flag;
+DROP TABLE IF EXISTS location;
+DROP TABLE IF EXISTS location_telecom;
+DROP TABLE IF EXISTS medication_order;
+DROP TABLE IF EXISTS medication_statement;
+DROP TABLE IF EXISTS observation;
+DROP TABLE IF EXISTS observation_result;
+DROP TABLE IF EXISTS observation_immunisation;
+DROP TABLE IF EXISTS observation_procedure;
+DROP TABLE IF EXISTS observation_family_history;
+DROP TABLE IF EXISTS observation_condition;
+DROP TABLE IF EXISTS organisation;
+DROP TABLE IF EXISTS organisation_telecom;
+DROP TABLE IF EXISTS patient;
+DROP TABLE IF EXISTS patient_name;
+DROP TABLE IF EXISTS patient_address;
+DROP TABLE IF EXISTS patient_telecom;
+DROP TABLE IF EXISTS patient_relationship;
+DROP TABLE IF EXISTS patient_relationship_telecom;
+DROP TABLE IF EXISTS practitioner;
+DROP TABLE IF EXISTS procedure_request;
+DROP TABLE IF EXISTS questionnaire_response;
+DROP TABLE IF EXISTS questionnaire_response_question;
+DROP TABLE IF EXISTS referral_request;
+DROP TABLE IF EXISTS appointment_schedule;
+
 
 create table table_id (
 	id tinyint,
@@ -14,7 +53,7 @@ COMMENT 'stores numeric ID used for each table';
 -- insert into table_id
 INSERT INTO table_id VALUES (1, 'allergy_intolerance');
 INSERT INTO table_id VALUES (2, 'appointment');
-INSERT INTO table_id VALUES (3, 'diagnostic_report');
+INSERT INTO table_id VALUES (3, 'diagnostic_order');
 INSERT INTO table_id VALUES (4, 'encounter');
 INSERT INTO table_id VALUES (5, 'encounter_status');
 INSERT INTO table_id VALUES (6, 'encounter_location');
@@ -39,20 +78,25 @@ INSERT INTO table_id VALUES (24, 'patient_name');
 INSERT INTO table_id VALUES (25, 'patient_address');
 INSERT INTO table_id VALUES (26, 'patient_telecom');
 INSERT INTO table_id VALUES (27, 'patient_relationship');
+INSERT INTO table_id VALUES (28, 'patient_relationship_telecom');
+INSERT INTO table_id VALUES (29, 'practitioner');
+INSERT INTO table_id VALUES (30, 'procedure_request');
+INSERT INTO table_id VALUES (31, 'questionnaire_response');
+INSERT INTO table_id VALUES (32, 'questionnaire_response_question');
+INSERT INTO table_id VALUES (33, 'referral_request');
+INSERT INTO table_id VALUES (34, 'appointment_schedule');
 
 
 create table event_log (
-
-	table_id tinyint,
-    record_id int,
-
-    -- update type
-    -- timestamp
-    -- batch ID
-    -- patient ID?
-    -- service ID
-    -- system ID
--- TODO
+	table_id tinyint NOT NULL,
+    record_id int NOT NULL,
+    event_timestamp datetime(3) NOT NULL COMMENT 'datetime 3 gives us precision down to the millisecond',
+    update_type tinyint NOT NULL COMMENT '0 = insert, 1 = update, 2 = delete',
+    batch_id char(36) COMMENT 'UUID referring to the audit.exchange_batch table',
+    service_id char(36) COMMENT 'UUID referring to the admin.service table',
+    patient_id int COMMENT 'duplication of patient_if (if present) on audited table',
+    concept_id int COMMENT 'duplication of main concept ID (if present) on audited table',
+	CONSTRAINT pk_date_precision PRIMARY KEY (event_timestamp, table_id, record_id)
 );
 
 create table date_precision (
@@ -104,7 +148,7 @@ create table appointment (
     start_date datetime,
 	end_date datetime,
     minutes_duration smallint,
-    appointment_slot_id int,
+    appointment_schedule_id int COMMENT 'refers to appointment_schedule table',
     status_concept_id int COMMENT 'IM concept representing the appt status (e.g. booked, finished, DNA)',
     type_concept_id int COMMENT 'IM concept representing the type (e.g. telephone appt)',
     additional_data JSON COMMENT 'stores freetext/comments, patient wait, patient delay, sent in datetime, left datetime, cancelled datetime, dna_reason_concept_id',
@@ -386,7 +430,7 @@ create table observation (
 )
 ROW_FORMAT=COMPRESSED
 KEY_BLOCK_SIZE=8
-COMMENT 'table ID = 15';
+COMMENT 'table ID = 15, contains data for multiple FHIR resources: observation, condition, procedure, familty history, diagnostic report, imms, specimen';
 
 CREATE UNIQUE INDEX uix_id ON observation (id);
 
@@ -634,38 +678,147 @@ CREATE UNIQUE INDEX uix_id ON patient_relationship (id);
 
 
 create table patient_relationship_telecom (
+	id int NOT NULL,
+    patient_id int NOT NULL,
+	patient_relationship_id int NOT NULL,
+    telecom_concept_id int COMMENT 'IM concept for telephone, fax, email etc.',
+    telecom_value varchar(255),
+    additional_data JSON COMMENT '',
+	CONSTRAINT pk_patient_relationship_telecom PRIMARY KEY (patient_id, id)
+)
+ROW_FORMAT=COMPRESSED
+KEY_BLOCK_SIZE=8
+COMMENT 'table ID = 28';
 
-);
+CREATE UNIQUE INDEX uix_id ON patient_relationship_telecom (id);
 
 create table practitioner (
+	id int NOT NULL,
+    name_prefix varchar(255) COMMENT 'i.e. title',
+    given_names varchar(255) COMMENT 'first and middle names',
+    family_names varchar(255) COMMENT 'last names',
+    name_suffix varchar(255) COMMENT 'honourifics that go after the name',
+-- TODO identifiers, telecoms, address(es?), roles and orgs
+	additional_data JSON COMMENT '',
+	CONSTRAINT pk_patient_relationship_telecom PRIMARY KEY (id)
+)
+ROW_FORMAT=COMPRESSED
+KEY_BLOCK_SIZE=8
+COMMENT 'table ID = 29';
 
-);
+CREATE UNIQUE INDEX uix_id ON practitioner (id);
+
 
 create table procedure_request (
+	id int NOT NULL,
+    patient_id int NOT NULL,
+    recording_practitioner_id int,
+    recording_date datetime,
+    effective_practitioner_id int,
+    effective_date datetime,
+    effective_date_precision_id tinyint COMMENT 'refers to date_precision table',
+    concept_id int COMMENT 'IM concept ID',
+    is_confidential boolean,
+    encounter_id int,
+    status_concept_id int COMMENT 'IM concept for the status e.g. completed, requested',
+    additional_data JSON COMMENT 'stores location type, notes, schedule text, schedule date',
+	CONSTRAINT pk_procedure_request PRIMARY KEY (patient_id, id)
+)
+ROW_FORMAT=COMPRESSED
+KEY_BLOCK_SIZE=8
+COMMENT 'table ID = 30';
 
-);
+CREATE UNIQUE INDEX uix_id ON procedure_request (id);
+
 
 create table questionnaire_response (
+	id int NOT NULL,
+    patient_id int NOT NULL,
+    recording_practitioner_id int,
+    recording_date datetime,
+    effective_practitioner_id int,
+    effective_date datetime,
+    effective_date_precision_id tinyint COMMENT 'refers to date_precision table',
+    encounter_id int,
+    status_concept_id int COMMENT 'IM concept for the status e.g. completed, requested',
+    is_confidential boolean,
+    additional_data JSON COMMENT 'stores location type, notes, schedule text, schedule date',
+	CONSTRAINT pk_questionnaire_response PRIMARY KEY (patient_id, id)
+)
+ROW_FORMAT=COMPRESSED
+KEY_BLOCK_SIZE=8
+COMMENT 'table ID = 31';
 
-);
+CREATE UNIQUE INDEX uix_id ON questionnaire_response (id);
+
+
+create table questionnaire_response_question (
+	id int NOT NULL,
+    patient_id int NOT NULL,
+    questionnaire_response_id int NOT NULL COMMENT 'refers to owning questionnaire_response',
+	question_set varchar(255),
+    question varchar(255),
+    answer mediumtext,
+    ordinal tinyint,
+	CONSTRAINT pk_questionnaire_response_question PRIMARY KEY (patient_id, id)
+)
+ROW_FORMAT=COMPRESSED
+KEY_BLOCK_SIZE=8
+COMMENT 'table ID = 32';
+
+CREATE UNIQUE INDEX uix_id ON questionnaire_response_question (id);
+
+
 
 create table referral_request (
+	id int NOT NULL,
+    patient_id int NOT NULL,
+    recording_practitioner_id int,
+    recording_date datetime,
+    sending_practitioner_id int,
+    sending_organisation_id int,
+    sending_date datetime,
+    sending_date_precision_id tinyint COMMENT 'refers to date_precision table',
+    recipient_practitioner_id int,
+    recipient_organisation_id int,
+    concept_id int COMMENT 'IM concept ID',
+    is_confidential boolean,
+    encounter_id int,
+    status_concept_id int COMMENT 'IM concept for status e.g. draft, sent',
+    priority_concept_id int COMMENT 'IM concept for priority e.g. routine, urgent',
+    type_concept_id int COMMENT 'IM concept for type e.g. assessment, investigation, treatment',
+    mode_concept_id int COMMENT 'IM concept for send mode e.g. written, ERS',
+    additional_data JSON COMMENT 'stores description, UBRN, recipient service type',
+	CONSTRAINT pk_referral_request PRIMARY KEY (patient_id, id)
+)
+ROW_FORMAT=COMPRESSED
+KEY_BLOCK_SIZE=8
+COMMENT 'table ID = 33';
 
-);
+CREATE UNIQUE INDEX uix_id ON referral_request (id);
+
 
 -- diverting from FHIR "schedule" to avoid using SQL keywords
 create table appointment_schedule (
+	id int NOT NULL,
+    location_id int COMMENT 'refers to location table',
+    schedule_name varchar(255),
+    schedule_type_concept_id int COMMENT 'IM concept for schedule type e.g. telephone appts',
+    start_date datetime,
+    end_date datetime,
+    primary_practitioner_id int COMMENT 'refers to practitioner table',
+    created_by_practitioner_id int COMMENT 'refers to practitioner table',
+    created_date datetime,
+	additional_data JSON COMMENT 'stores location type, comments, additional practitioners',
+	CONSTRAINT pk_appointment_schedule PRIMARY KEY (id)
+)
+ROW_FORMAT=COMPRESSED
+KEY_BLOCK_SIZE=8
+COMMENT 'table ID = 34';
 
-);
+CREATE UNIQUE INDEX uix_id ON appointment_schedule (id);
 
--- may as well rename this so all appointment tables are together
-create table appointment_slot (
 
-);
-
-create table specimen (
-
-);
 
 -- do we have any specimen resources?
 -- problem contents
@@ -682,5 +835,5 @@ create table specimen (
 -- numeric obs to have separate leaf table?
 -- TODO add service ID to tables?
 -- how to store secondary procedures and conditions (they may have different dates)
-
--- obs <- obs DONE, DONE condition, DONE procedure, DONE familty history, N/A diagnostic report, imms DONE
+-- note: no slot table
+-- obs <- obs DONE, DONE condition, DONE procedure, DONE familty history, N/A diagnostic report, imms DONE, specimen
