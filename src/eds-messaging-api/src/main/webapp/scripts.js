@@ -191,6 +191,46 @@ function getFlag() {
 	}
 }
 
+// *************** UPRN ***************
+
+function exampleUPRN() {
+    document.getElementById('apihost5').value = "https://apiuprn.discoverydataservice.net:8443";
+    document.getElementById('token5').value = token;
+    document.getElementById('uprn-address').value = "10 Downing St,Westminster,London,SW1A2AA";
+}
+
+function getUPRN() {
+    var api5 = document.getElementById('apihost5').value;
+    var token5 = document.getElementById('token5').value;
+    var adrec = encodeURIComponent(document.getElementById('uprn-address').value);
+    var qpost = encodeURIComponent(document.getElementById('uprn-qpost').value);
+    var orgpost = encodeURIComponent(document.getElementById('uprn-org').value);
+    var country = encodeURIComponent(document.getElementById('uprn-country').value);
+    var summary = encodeURIComponent(document.getElementById('uprn-summary').value);
+
+    var url = api5 + "/api/getinfo?adrec=" + adrec;
+    if (qpost && qpost !== '') url += "&qpost="+qpost;
+    if (orgpost && orgpost !== '') url += "&orgpost="+orgpost;
+    if (country && country !== '') url += "&country="+country;
+    if (summary && summary !== '') url += "&summary="+summary;
+
+    var xhttp = new XMLHttpRequest();
+    xhttp.open("GET", url, false);
+    xhttp.withCredentials = true;
+    xhttp.setRequestHeader("Authorization", "Bearer " + token5);
+    try {
+        xhttp.send();
+        try {
+            var response = JSON.parse(xhttp.responseText);
+            document.getElementById('uprn-response').value = JSON.stringify(response, null, 2);
+        } catch (error) {
+            document.getElementById('uprn-response').value = xhttp.responseText;
+        }
+    } catch (error) {
+        document.getElementById('uprn-response').value = error;
+    }
+}
+
 // *************** Access request form ***************
 function validEmail(email) {
 	var re = /^([\w-]+(?:\.[\w-]+)*)@((?:[\w-]+\.)*\w[\w-]{0,66})\.([a-z]{2,6}(?:\.[a-z]{2})?)$/i;

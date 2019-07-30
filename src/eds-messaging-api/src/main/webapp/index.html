@@ -532,6 +532,136 @@
 						</div>
 					</div>
 				</div>
+        <br>
+        <!-- UPRN API -->
+        <div class="row">
+          <div class="col-md-12">
+            <div class="card" id="uprn">
+              <div class="card-header">
+                <h3>UPRN lookup
+                  <div class="pull-right">
+                    <button class="btn btn-sm btn-info" onclick="exampleUPRN()">Example</button>
+                    <button class="btn btn-sm btn-success" onclick="getUPRN()">Run</button>
+                  </div>
+                </h3>
+              </div>
+              <div class="card-body">
+                <div class="card-title">
+                  <table class="table table-sm table-bordered">
+                    <tr class="d-flex"><td class="col-3"><b>Method</b></td>            <td class="col-9">GET</td></tr>
+                    <tr class="d-flex"><td class="col-3"><b>Path</b></td>              <td class="col-9"><b>&lt;api host&gt;</b>/api/getinfo
+                    <tr class="d-flex"><td class="col-3"><b>Headers</b></td>           <td class="col-9">
+                      Authorization: Bearer <b>&lt;Token&gt;</b><small class="pull-right">(for client uprn)</small>
+                    <tr class="d-flex"><td class="col-3"><b>Query parameters</b></td>  <td class="col-9">
+                      adrec=<b>&lt;Address string, ending with Post Code&gt;</b><br>
+                      qpost=<b>&lt;List of Post Code areas&gt;</b> (optional)<br>
+                      orgpost=<b>&lt;Local organisation post code&gt;</b> (optional)<br>
+                      country=<b>&lt;England|Wales&gt;</b> (optional)<br>
+                      summary=<b>&lt;0|1&gt;</b> (optional)
+                    </td></tr>
+                  </table>
+                </div>
+                <hr>
+                <div class="card-text">
+                  <div class="row">
+                    <div class="col-md-12">
+                      <div class="input-group mb-3">
+                        <div class="input-group-prepend">
+                          <span class="input-group-text" id="apihost5-addon"><i class="fa fa-fw fa-globe"></i></span>
+                        </div>
+                        <input id="apihost5" type="text" class="form-control" placeholder="API host" aria-label="Host" aria-describedby="apihost5-addon">
+                      </div>
+                    </div>
+                    <div class="col-md-12">
+                      <div class="input-group mb-3">
+                        <div class="input-group-prepend">
+                          <span class="input-group-text" id="token5-addon"><i class="fa fa-fw fa-key"></i></span>
+                        </div>
+                        <input id="token5" type="text" class="form-control" placeholder="Token" aria-label="Token" aria-describedby="token5-addon">
+                      </div>
+                    </div>
+                    <div class="col-md-12">
+                      <div class="input-group mb-3">
+                        <div class="input-group-prepend">
+                          <span class="input-group-text" id="uprn-address-addon"><i class="fa fa-fw fa-map-marker"></i></span>
+                        </div>
+                        <input id="uprn-address" type="text" class="form-control" placeholder="Address (ending with Post Code)" aria-label="Host" aria-describedby="uprn-address-addon">
+                      </div>
+                    </div>
+                    <div class="col-md-12">
+                      <div class="input-group mb-3">
+                        <div class="input-group-prepend">
+                          <span class="input-group-text" id="uprn-qpost-addon"><i class="fa fa-fw fa-map-o"></i></span>
+                        </div>
+                        <input id="uprn-qpost" type="text" class="form-control" placeholder="Post Code areas (comma separated)" aria-label="Host" aria-describedby="uprn-qpost-addon">
+                      </div>
+                    </div>
+                    <div class="col-md-4">
+                      <div class="input-group mb-3">
+                        <div class="input-group-prepend">
+                          <span class="input-group-text" id="uprn-org-addon"><i class="fa fa-fw fa-hospital-o"></i></span>
+                        </div>
+                        <input id="uprn-org" type="text" class="form-control" placeholder="Organisation Post Code" aria-label="Host" aria-describedby="uprn-org-addon">
+                      </div>
+                    </div>
+                    <div class="col-md-4">
+                      <div class="input-group mb-3">
+                        <div class="input-group-prepend">
+                          <span class="input-group-text" id="uprn-country-addon"><i class="fa fa-fw fa-flag-o"></i></span>
+                        </div>
+                        <input id="uprn-country" type="text" class="form-control" placeholder="Country (England|Wales)" aria-label="Host" aria-describedby="uprn-country-addon">
+                      </div>
+                    </div>
+                    <div class="col-md-4">
+                      <div class="input-group mb-3">
+                        <div class="input-group-prepend">
+                          <span class="input-group-text" id="uprn-summary-addon"><i class="fa fa-fw fa-file-text-o"></i></span>
+                        </div>
+                        <input id="uprn-summary" type="text" class="form-control" placeholder="Summary (0 or 1)" aria-label="Host" aria-describedby="uprn-summary-addon">
+                      </div>
+                    </div>
+                  </div>
+                  <hr>
+                  <div class="row">
+                    <div class="col-md-12">
+                      <div class="input-group mb-3">
+                        <div class="input-group-prepend">
+                          <span class="input-group-text" id="uprn-response-addon"><i class="fa fa-fw fa-reply"></i></span>
+                        </div>
+                        <textarea id="uprn-response" type="text" class="form-control" placeholder="Example response: -
+{
+   'Address_format': 'good',
+   'Postcode_quality': 'good',
+   'Matched': true,
+   'UPRN': '100023336956',
+   'Qualifier': 'Equivalent',
+   'Classification': 'RD04',
+   'Algorithm': '3100-match60',
+   'ABPAddress': {
+     'Number': '10',
+     'Street': 'Downing Street',
+     'Town': 'London',
+     'Postcode': 'SW1A 2AA',
+     'Organisaton': 'prime minister & first lord of the treasury'
+   },
+   'Match_pattern': {
+     'Postcode': 'equivalent',
+     'Street': 'equivalent',
+     'Number': 'equivalent',
+     'Building': 'equivalent',
+     'Flat': 'equivalent'
+   }
+}
+" aria-label="Response" aria-describedby="uprn-response-addon" rows="10" style="font-family: monospace; font-size: 10pt"></textarea>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <br>
 			</div>
 		</main>
 	</body>
