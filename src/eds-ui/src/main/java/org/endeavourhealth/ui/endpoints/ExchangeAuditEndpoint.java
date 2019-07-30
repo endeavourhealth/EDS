@@ -790,7 +790,6 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
         ExchangeTransformErrorState errorState = auditRepository.getErrorState(serviceId, systemId);
 
         List<UUID> exchangeIdsToRePost = new ArrayList<>();
-        List<ExchangeTransformAudit> auditsToMarkAsResubmitted = new ArrayList<>();
 
         for (UUID exchangeId: errorState.getExchangeIdsInError()) {
 
@@ -803,8 +802,6 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
                     LOG.debug("Not re-posting " + audit.getExchangeId() + " as it's already been resubmitted");
                     continue;
                 }
-
-                auditsToMarkAsResubmitted.add(audit);
             }
 
             //then re-submit the exchange to Rabbit MQ for the queue reader to pick up

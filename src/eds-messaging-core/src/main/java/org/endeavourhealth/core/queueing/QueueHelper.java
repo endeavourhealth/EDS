@@ -148,16 +148,19 @@ public class QueueHelper {
             AuditWriter.writeExchangeEvent(exchange, exchangeEventStr);
 
             //if pushed into the Inbound queue, and it previously had an error in there, mark it as resubmitted
+LOG.trace("Posting " + exchange.getId() + " into exchange [" + exchangeName + "] for service " + exchange.getServiceId() + " and system " + exchange.getSystemId());
             if (exchangeName.equals("EdsInbound")) {
 
-                UUID serviceId = exchange.getHeaderAsUuid(HeaderKeys.SenderServiceUuid);
-                UUID systemId = exchange.getHeaderAsUuid(HeaderKeys.SystemVersion);
+                UUID serviceId = exchange.getServiceId();
+                UUID systemId = exchange.getSystemId();
 
                 ExchangeDalI auditRepository = DalProvider.factoryExchangeDal();
                 ExchangeTransformAudit audit = auditRepository.getMostRecentExchangeTransform(serviceId, systemId, exchangeId);
+LOG.trace("Is inbound exchange and found audit " + audit);
                 if (!audit.isResubmitted()) {
                     audit.setResubmitted(true);
                     auditRepository.save(audit);
+LOG.trace("Audit set to resubmitted = true");
                 }
             }
 

@@ -179,6 +179,10 @@ export class TransformErrorsComponent {
 			}
 		}
 
+		//these filter options can't be used here, as we don't have enough data in our service objects, so just turn them off
+		vm.serviceService.serviceStatusFilter = null;
+		vm.serviceService.serviceLastDataFilter = null;
+
 		var filteredServices = vm.serviceService.applyFiltering(services);
 
 		for (var i = 0; i < arrayLength; i++) {
