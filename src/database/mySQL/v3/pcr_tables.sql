@@ -1,4 +1,189 @@
--- create database pcr;
+drop database if exists pcr_admin;
+create database pcr_admin;
+
+use pcr_admin;
+
+DROP TABLE IF EXISTS table_id;
+DROP TABLE IF EXISTS date_precision;
+DROP TABLE IF EXISTS event_log;
+DROP TABLE IF EXISTS location;
+DROP TABLE IF EXISTS location_telecom;
+DROP TABLE IF EXISTS organisation;
+DROP TABLE IF EXISTS organisation_telecom;
+DROP TABLE IF EXISTS practitioner;
+
+create table table_id (
+	id tinyint,
+    `table_name` varchar(255),
+    CONSTRAINT pk_table_id PRIMARY KEY (id)
+)
+ROW_FORMAT=COMPRESSED
+KEY_BLOCK_SIZE=8
+COMMENT 'stores numeric ID used for each table';
+
+-- insert into table_id
+INSERT INTO table_id VALUES (1, 'allergy_intolerance');
+INSERT INTO table_id VALUES (2, 'appointment');
+INSERT INTO table_id VALUES (3, 'diagnostic_order');
+INSERT INTO table_id VALUES (4, 'encounter');
+INSERT INTO table_id VALUES (5, 'encounter_status');
+INSERT INTO table_id VALUES (6, 'encounter_location');
+INSERT INTO table_id VALUES (7, 'episode_of_care');
+INSERT INTO table_id VALUES (8, 'gp_registration');
+INSERT INTO table_id VALUES (9, 'gp_registration_status');
+INSERT INTO table_id VALUES (10, 'flag');
+INSERT INTO table_id VALUES (11, 'location');
+INSERT INTO table_id VALUES (12, 'location_telecom');
+INSERT INTO table_id VALUES (13, 'medication_order');
+INSERT INTO table_id VALUES (14, 'medication_statement');
+INSERT INTO table_id VALUES (15, 'observation');
+INSERT INTO table_id VALUES (16, 'observation_result');
+INSERT INTO table_id VALUES (17, 'observation_immunisation');
+INSERT INTO table_id VALUES (18, 'observation_procedure');
+INSERT INTO table_id VALUES (19, 'observation_family_history');
+INSERT INTO table_id VALUES (20, 'observation_condition');
+INSERT INTO table_id VALUES (21, 'organisation');
+INSERT INTO table_id VALUES (22, 'organisation_telecom');
+INSERT INTO table_id VALUES (23, 'patient');
+INSERT INTO table_id VALUES (24, 'patient_name');
+INSERT INTO table_id VALUES (25, 'patient_address');
+INSERT INTO table_id VALUES (26, 'patient_telecom');
+INSERT INTO table_id VALUES (27, 'patient_relationship');
+INSERT INTO table_id VALUES (28, 'patient_relationship_telecom');
+INSERT INTO table_id VALUES (29, 'practitioner');
+INSERT INTO table_id VALUES (30, 'procedure_request');
+INSERT INTO table_id VALUES (31, 'questionnaire_response');
+INSERT INTO table_id VALUES (32, 'questionnaire_response_question');
+INSERT INTO table_id VALUES (33, 'referral_request');
+INSERT INTO table_id VALUES (34, 'appointment_schedule');
+
+
+create table event_log (
+	table_id tinyint NOT NULL,
+    record_id int NOT NULL,
+    event_timestamp datetime(3) NOT NULL COMMENT 'datetime 3 gives us precision down to the millisecond',
+    update_type tinyint NOT NULL COMMENT '0 = insert, 1 = update, 2 = delete',
+    batch_id char(36) COMMENT 'UUID referring to the audit.exchange_batch table',
+    service_id char(36) COMMENT 'UUID referring to the admin.service table',
+    patient_id int COMMENT 'duplication of patient_if (if present) on audited table',
+    concept_id int COMMENT 'duplication of main concept ID (if present) on audited table',
+	CONSTRAINT pk_date_precision PRIMARY KEY (event_timestamp, table_id, record_id)
+);
+
+create table date_precision (
+	id tinyint,
+    precision_desc varchar(255),
+    CONSTRAINT pk_date_precision PRIMARY KEY (id)
+)
+ROW_FORMAT=COMPRESSED
+KEY_BLOCK_SIZE=8
+COMMENT 'lookup for date precisions';
+
+-- date precisions aligned with FHIR
+INSERT INTO date_precision VALUES (1, 'minute');
+INSERT INTO date_precision VALUES (2, 'day');
+INSERT INTO date_precision VALUES (3, 'month');
+INSERT INTO date_precision VALUES (4, 'year');
+INSERT INTO date_precision VALUES (5, 'unknown');
+
+create table location (
+	id int NOT NULL,
+    location_name varchar(255),
+    address_line_1 varchar(255),
+    address_line_2 varchar(255),
+    address_line_3 varchar(255),
+    address_city varchar(255),
+    address_county varchar(255),
+    address_postcode varchar(255),
+    address_mapped_id varchar(255) COMMENT 'derived ID of the "national" record of this address',
+    parent_location_id int,
+    managing_organisation_id int,
+	additional_data JSON COMMENT 'stores main contact name, is active, location type, physical type, open date, close date',
+	CONSTRAINT pk_location PRIMARY KEY (id)
+)
+ROW_FORMAT=COMPRESSED
+KEY_BLOCK_SIZE=8
+COMMENT 'table ID = 11';
+
+
+CREATE UNIQUE INDEX uix_id ON location (id);
+
+
+
+create table location_telecom (
+	id int NOT NULL,
+    location_id int NOT NULL,
+    telecom_concept_id int COMMENT 'IM concept for telephone, fax, email etc.',
+    telecom_value varchar(255),
+	additional_data JSON COMMENT '',
+	CONSTRAINT pk_location PRIMARY KEY (id)
+)
+ROW_FORMAT=COMPRESSED
+KEY_BLOCK_SIZE=8
+COMMENT 'table ID = 12';
+
+CREATE UNIQUE INDEX uix_id ON location_telecom (id);
+
+
+
+
+-- sticking with UK English
+create table organisation (
+	id int NOT NULL,
+    organisation_name varchar(255),
+    address_line_1 varchar(255),
+    address_line_2 varchar(255),
+    address_line_3 varchar(255),
+    address_city varchar(255),
+    address_county varchar(255),
+    address_postcode varchar(255),
+    address_mapped_id varchar(255) COMMENT 'derived ID of the "national" record of this address',
+    parent_organisation_id int,
+    main_location_id int COMMENT 'refers to location table',
+    type_concept_id int COMMENT 'IM concept for org type e.g. GP practice',
+	additional_data JSON COMMENT 'stores is active, open date, close date',
+	CONSTRAINT pk_organisation PRIMARY KEY (id)
+)
+ROW_FORMAT=COMPRESSED
+KEY_BLOCK_SIZE=8
+COMMENT 'table ID = 21';
+
+CREATE UNIQUE INDEX uix_id ON organisation (id);
+
+
+create table organisation_telecom (
+	id int NOT NULL,
+    organisation_id int NOT NULL,
+    telecom_concept_id int COMMENT 'IM concept for telephone, fax, email etc.',
+    telecom_value varchar(255),
+	additional_data JSON COMMENT '',
+	CONSTRAINT pk_organisation_telecom PRIMARY KEY (id)
+)
+ROW_FORMAT=COMPRESSED
+KEY_BLOCK_SIZE=8
+COMMENT 'table ID = 22';
+
+CREATE UNIQUE INDEX uix_id ON organisation_telecom (id);
+
+create table practitioner (
+	id int NOT NULL,
+    name_prefix varchar(255) COMMENT 'i.e. title',
+    given_names varchar(255) COMMENT 'first and middle names',
+    family_names varchar(255) COMMENT 'last names',
+    name_suffix varchar(255) COMMENT 'honourifics that go after the name',
+-- TODO identifiers, telecoms, address(es?), roles and orgs
+	additional_data JSON COMMENT '',
+	CONSTRAINT pk_patient_relationship_telecom PRIMARY KEY (id)
+)
+ROW_FORMAT=COMPRESSED
+KEY_BLOCK_SIZE=8
+COMMENT 'table ID = 29';
+
+CREATE UNIQUE INDEX uix_id ON practitioner (id);
+
+
+drop database if exists pcr;
+create database pcr;
 
 use pcr;
 
@@ -15,8 +200,6 @@ DROP TABLE IF EXISTS episode_of_care;
 DROP TABLE IF EXISTS gp_registration;
 DROP TABLE IF EXISTS gp_registration_status;
 DROP TABLE IF EXISTS flag;
-DROP TABLE IF EXISTS location;
-DROP TABLE IF EXISTS location_telecom;
 DROP TABLE IF EXISTS medication_order;
 DROP TABLE IF EXISTS medication_statement;
 DROP TABLE IF EXISTS observation;
@@ -25,15 +208,12 @@ DROP TABLE IF EXISTS observation_immunisation;
 DROP TABLE IF EXISTS observation_procedure;
 DROP TABLE IF EXISTS observation_family_history;
 DROP TABLE IF EXISTS observation_condition;
-DROP TABLE IF EXISTS organisation;
-DROP TABLE IF EXISTS organisation_telecom;
 DROP TABLE IF EXISTS patient;
 DROP TABLE IF EXISTS patient_name;
 DROP TABLE IF EXISTS patient_address;
 DROP TABLE IF EXISTS patient_telecom;
 DROP TABLE IF EXISTS patient_relationship;
 DROP TABLE IF EXISTS patient_relationship_telecom;
-DROP TABLE IF EXISTS practitioner;
 DROP TABLE IF EXISTS procedure_request;
 DROP TABLE IF EXISTS questionnaire_response;
 DROP TABLE IF EXISTS questionnaire_response_question;
@@ -317,43 +497,6 @@ CREATE UNIQUE INDEX uix_id ON flag (id);
 
 
 
-create table location (
-	id int NOT NULL,
-    location_name varchar(255),
-    address_line_1 varchar(255),
-    address_line_2 varchar(255),
-    address_line_3 varchar(255),
-    address_city varchar(255),
-    address_county varchar(255),
-    address_postcode varchar(255),
-    parent_location_id int,
-    managing_organisation_id int,
-	additional_data JSON COMMENT 'stores main contact name, is active, location type, physical type, open date, close date',
-	CONSTRAINT pk_location PRIMARY KEY (id)
-)
-ROW_FORMAT=COMPRESSED
-KEY_BLOCK_SIZE=8
-COMMENT 'table ID = 11';
-
-
-CREATE UNIQUE INDEX uix_id ON location (id);
-
-
-
-create table location_telecom (
-	id int NOT NULL,
-    location_id int NOT NULL,
-    telecom_concept_id int COMMENT 'IM concept for telephone, fax, email etc.',
-    telecom_value varchar(255),
-	additional_data JSON COMMENT '',
-	CONSTRAINT pk_location PRIMARY KEY (id)
-)
-ROW_FORMAT=COMPRESSED
-KEY_BLOCK_SIZE=8
-COMMENT 'table ID = 12';
-
-CREATE UNIQUE INDEX uix_id ON location_telecom (id);
-
 
 
 create table medication_order (
@@ -525,44 +668,6 @@ CREATE UNIQUE INDEX uix_id ON observation_condition (observation_id);
 
 
 
--- sticking with UK English
-create table organisation (
-	id int NOT NULL,
-    organisation_name varchar(255),
-    address_line_1 varchar(255),
-    address_line_2 varchar(255),
-    address_line_3 varchar(255),
-    address_city varchar(255),
-    address_county varchar(255),
-    address_postcode varchar(255),
-    parent_organisation_id int,
-    main_location_id int COMMENT 'refers to location table',
-    type_concept_id int COMMENT 'IM concept for org type e.g. GP practice',
-	additional_data JSON COMMENT 'stores is active, open date, close date',
-	CONSTRAINT pk_organisation PRIMARY KEY (id)
-)
-ROW_FORMAT=COMPRESSED
-KEY_BLOCK_SIZE=8
-COMMENT 'table ID = 21';
-
-CREATE UNIQUE INDEX uix_id ON organisation (id);
-
-
-create table organisation_telecom (
-	id int NOT NULL,
-    organisation_id int NOT NULL,
-    telecom_concept_id int COMMENT 'IM concept for telephone, fax, email etc.',
-    telecom_value varchar(255),
-	additional_data JSON COMMENT '',
-	CONSTRAINT pk_organisation_telecom PRIMARY KEY (id)
-)
-ROW_FORMAT=COMPRESSED
-KEY_BLOCK_SIZE=8
-COMMENT 'table ID = 22';
-
-CREATE UNIQUE INDEX uix_id ON organisation_telecom (id);
-
-
 create table patient (
 	id int NOT NULL,
     birth_date date,
@@ -617,6 +722,7 @@ create table patient_address (
     address_city varchar(255),
     address_county varchar(255),
     address_postcode varchar(255),
+    address_mapped_id varchar(255) COMMENT 'derived ID of the "national" record of this address',
     start_date date,
     end_date date,
     additional_data JSON COMMENT '',
@@ -665,6 +771,7 @@ create table patient_relationship (
     address_city varchar(255),
     address_county varchar(255),
     address_postcode varchar(255),
+    address_mapped_id varchar(255) COMMENT 'derived ID of the "national" record of this address',
     start_date date,
     end_date date,
     additional_data JSON COMMENT '',
@@ -691,22 +798,6 @@ KEY_BLOCK_SIZE=8
 COMMENT 'table ID = 28';
 
 CREATE UNIQUE INDEX uix_id ON patient_relationship_telecom (id);
-
-create table practitioner (
-	id int NOT NULL,
-    name_prefix varchar(255) COMMENT 'i.e. title',
-    given_names varchar(255) COMMENT 'first and middle names',
-    family_names varchar(255) COMMENT 'last names',
-    name_suffix varchar(255) COMMENT 'honourifics that go after the name',
--- TODO identifiers, telecoms, address(es?), roles and orgs
-	additional_data JSON COMMENT '',
-	CONSTRAINT pk_patient_relationship_telecom PRIMARY KEY (id)
-)
-ROW_FORMAT=COMPRESSED
-KEY_BLOCK_SIZE=8
-COMMENT 'table ID = 29';
-
-CREATE UNIQUE INDEX uix_id ON practitioner (id);
 
 
 create table procedure_request (
@@ -820,20 +911,17 @@ CREATE UNIQUE INDEX uix_id ON appointment_schedule (id);
 
 
 
--- do we have any specimen resources?
 -- problem contents
 -- residence tables?
--- event log to have code in
 -- what about problem linkage
 -- what about checksum?
 -- don't forget other cols on resource_current and resource_history
 -- have separate table of patient to person
 -- should we attempt to de-duplicate all the admin resources
--- where should admin resources be put with the sharing policy?
--- propose ID allocator? Or use auto-assign?
+-- where should admin resources be put with the sharding policy?
 -- have person ID on each table too?
--- numeric obs to have separate leaf table?
 -- TODO add service ID to tables?
--- how to store secondary procedures and conditions (they may have different dates)
+-- check for TODO statements
+
 -- note: no slot table
 -- obs <- obs DONE, DONE condition, DONE procedure, DONE familty history, N/A diagnostic report, imms DONE, specimen
