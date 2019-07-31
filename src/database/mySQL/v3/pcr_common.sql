@@ -5,7 +5,7 @@ use pcr_common;
 
 DROP TABLE IF EXISTS table_id;
 DROP TABLE IF EXISTS date_precision;
-
+DROP TABLE IF EXISTS event_log_transaction_type;
 
 create table table_id (
 	id tinyint,
@@ -72,6 +72,19 @@ INSERT INTO date_precision VALUES (3, 'month');
 INSERT INTO date_precision VALUES (4, 'year');
 INSERT INTO date_precision VALUES (5, 'unknown');
 
+
+create table event_log_transaction_type (
+	id tinyint,
+  transaction_desc varchar(255),
+  CONSTRAINT pk_event_log_transaction_type PRIMARY KEY (id)
+)
+ROW_FORMAT=COMPRESSED
+KEY_BLOCK_SIZE=8
+COMMENT 'lookup for date precisions';
+
+INSERT INTO event_log_transaction_type VALUES (1, 'insert');
+INSERT INTO event_log_transaction_type VALUES (2, 'update');
+INSERT INTO event_log_transaction_type VALUES (3, 'delete');
 
 -- procedure to look up table ID from table name (to avoid hard-coding table IDs everywhere)
 DROP PROCEDURE IF EXISTS `get_table_id`;

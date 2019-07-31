@@ -19,7 +19,7 @@ create table event_log (
 	table_id tinyint NOT NULL,
     record_id int NOT NULL,
     event_timestamp datetime(3) NOT NULL COMMENT 'datetime 3 gives us precision down to the millisecond',
-    update_type tinyint NOT NULL COMMENT '0 = insert, 1 = update, 2 = delete',
+    event_log_transaction_type_id tinyint NOT NULL COMMENT '0 = insert, 1 = update, 2 = delete',
     batch_id char(36) COMMENT 'UUID referring to the audit.exchange_batch table',
     service_id char(36) COMMENT 'UUID referring to the admin.service table',
     patient_id int COMMENT 'duplication of patient_if (if present) on audited table',

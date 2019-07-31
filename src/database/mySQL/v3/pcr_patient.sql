@@ -33,14 +33,14 @@ DROP TABLE IF EXISTS procedure_request;
 DROP TABLE IF EXISTS questionnaire_response;
 DROP TABLE IF EXISTS questionnaire_response_question;
 DROP TABLE IF EXISTS referral_request;
-
+DROP TABLE IF EXISTS patient_person_link;
 
 create table event_log (
 	id int NOT NULL,
 	table_id tinyint NOT NULL,
     record_id int NOT NULL,
     event_timestamp datetime(3) NOT NULL COMMENT 'datetime 3 gives us precision down to the millisecond',
-    update_type tinyint NOT NULL COMMENT '0 = insert, 1 = update, 2 = delete',
+    event_log_transaction_type_id tinyint NOT NULL COMMENT '0 = insert, 1 = update, 2 = delete',
     batch_id char(36) COMMENT 'UUID referring to the audit.exchange_batch table',
     service_id char(36) COMMENT 'UUID referring to the admin.service table',
     patient_id int COMMENT 'duplication of patient_if (if present) on audited table',
@@ -63,6 +63,7 @@ create table allergy_intolerance (
     concept_id int COMMENT 'IM concept ID',
     is_confidential boolean,
     encounter_id bigint,
+    problem_observation_id bigint COMMENT 'links to observation problem record',
     additional_data JSON COMMENT 'stores last_occurance, severity, certainty, category, status, freetext/note',
 	CONSTRAINT pk_allergy_intolerance PRIMARY KEY (patient_id, id)
 )
@@ -106,6 +107,7 @@ create table diagnostic_order (
     concept_id int COMMENT 'IM concept ID',
     is_confidential boolean,
     encounter_id bigint,
+    problem_observation_id bigint COMMENT 'links to observation problem record',
     additional_data JSON COMMENT 'stores freetext/comments',
 	CONSTRAINT pk_diagnostic_order PRIMARY KEY (patient_id, id)
 )
@@ -269,6 +271,7 @@ create table medication_order (
     quantity_value decimal(5, 3),
     quantity_unit_concept_id int COMMENT 'IM concept for units e.g. tablets',
     supply_duration_days int COMMENT 'intended length of the medication',
+    problem_observation_id bigint COMMENT 'links to observation problem record',
     additional_data JSON COMMENT 'stores reason, cost',
 	CONSTRAINT pk_medication_order PRIMARY KEY (patient_id, id)
 )
@@ -298,6 +301,7 @@ create table medication_statement (
     number_issues_issued int,
     cancellation_date date,
     authorisation_type_concept_id int COMMENT 'IM concept for auth type e.g. acute, repeat',
+    problem_observation_id bigint COMMENT 'links to observation problem record',
     additional_data JSON COMMENT 'stores reason',
 	CONSTRAINT pk_medication_statement PRIMARY KEY (patient_id, id)
 )
@@ -322,6 +326,7 @@ create table observation (
     encounter_id bigint,
     parent_observation_id bigint,
     observation_type_concept_id int COMMENT 'IM concept stating if this is a numeric result, procedure etc.',
+    problem_observation_id bigint COMMENT 'links to observation problem record',
     additional_data JSON COMMENT 'stores freetext/comments',
 	CONSTRAINT pk_observation PRIMARY KEY (patient_id, id)
 )
@@ -584,6 +589,7 @@ create table procedure_request (
     is_confidential boolean,
     encounter_id bigint,
     status_concept_id int COMMENT 'IM concept for the status e.g. completed, requested',
+    problem_observation_id bigint COMMENT 'links to observation problem record',
     additional_data JSON COMMENT 'stores location type, notes, schedule text, schedule date',
 	CONSTRAINT pk_procedure_request PRIMARY KEY (patient_id, id)
 )
@@ -651,6 +657,7 @@ create table referral_request (
     priority_concept_id int COMMENT 'IM concept for priority e.g. routine, urgent',
     type_concept_id int COMMENT 'IM concept for type e.g. assessment, investigation, treatment',
     mode_concept_id int COMMENT 'IM concept for send mode e.g. written, ERS',
+    problem_observation_id bigint COMMENT 'links to observation problem record',
     additional_data JSON COMMENT 'stores description, UBRN, recipient service type',
 	CONSTRAINT pk_referral_request PRIMARY KEY (patient_id, id)
 )
@@ -661,10 +668,12 @@ COMMENT 'table ID = 33';
 CREATE UNIQUE INDEX uix_id ON referral_request (id);
 
 
+CREATE TABLE patient_person_link
+(
+  patient_id int NOT NULL,
+  service_id character(36) NOT NULL COMMENT 'refers to admin.service table',
+  person_id int NOT NULL COMMENT 'refers to eds.patient_link table',
+  CONSTRAINT pk_patient_person_link PRIMARY KEY (patient_id)
+) COMMENT 'table linking individual patient records into singular person records';
 
--- problem contents
--- what about problem linkage
--- don't forget other cols on resource_current and resource_history
--- have separate table of patient to person
--- have person ID on each table too?
--- TODO add service ID to tables?
+CREATE INDEX ix_person_id ON patient_person_link (person_id);
