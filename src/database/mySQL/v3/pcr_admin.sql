@@ -15,6 +15,7 @@ DROP TABLE IF EXISTS practitioner_telecom;
 DROP TABLE IF EXISTS appointment_schedule;
 
 create table event_log (
+	id int NOT NULL,
 	table_id tinyint NOT NULL,
     record_id int NOT NULL,
     event_timestamp datetime(3) NOT NULL COMMENT 'datetime 3 gives us precision down to the millisecond',
@@ -23,8 +24,10 @@ create table event_log (
     service_id char(36) COMMENT 'UUID referring to the admin.service table',
     patient_id int COMMENT 'duplication of patient_if (if present) on audited table',
     concept_id int COMMENT 'duplication of main concept ID (if present) on audited table',
-	CONSTRAINT pk_date_precision PRIMARY KEY (event_timestamp, table_id, record_id)
+	CONSTRAINT pk_event_log PRIMARY KEY (id)
 );
+
+ALTER TABLE event_log MODIFY COLUMN id INT auto_increment;
 
 
 create table location (
