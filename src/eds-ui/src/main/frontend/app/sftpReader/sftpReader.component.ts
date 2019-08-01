@@ -60,19 +60,19 @@ export class SftpReaderComponent {
                 vm.refreshingStatus = false;
                 console.log('vm.refreshingStatus = ' + vm.refreshingStatus);
 
-                vm.logger.success('Successfully got HL7 status', 'HL7 Status');
+                vm.logger.success('Successfully got SFTP Reader status', 'SFTP Reader Status');
                 vm.statuses = result;
 
                 vm.resultStr = JSON.stringify(result, null, 2);
 
-                console.log('received HL7 status');
+                console.log('received SFTP Reader status');
                 console.log(result);
             },
             (error) => {
                 vm.refreshingStatus = false;
                 console.log('vm.refreshingStatus = ' + vm.refreshingStatus);
 
-                vm.logger.error('Failed get HL7 Receiver status', error, 'HL7 Receiver');
+                vm.logger.error('Failed get SFTP Reader status', error, 'SFTP Reader Status');
             }
         )
     }
