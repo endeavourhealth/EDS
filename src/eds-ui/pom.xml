@@ -141,6 +141,18 @@
       <artifactId>commons-collections4</artifactId>
     </dependency>
 
+    <!--postgreSQL-->
+    <dependency>
+      <groupId>org.postgresql</groupId>
+      <artifactId>postgresql</artifactId>
+    </dependency>
+
+    <!--SQL Server-->
+    <dependency>
+      <groupId>com.microsoft.sqlserver</groupId>
+      <artifactId>mssql-jdbc</artifactId>
+    </dependency>
+
     <!-- Keycloak -->
     <dependency>
       <groupId>org.keycloak</groupId>

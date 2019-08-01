@@ -5,14 +5,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.base.Strings;
-import org.apache.commons.io.FileUtils;
 import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.common.security.SecurityUtils;
 import org.endeavourhealth.core.database.dal.DalProvider;
 import org.endeavourhealth.core.database.dal.audit.UserAuditDalI;
 import org.endeavourhealth.core.database.dal.audit.models.AuditAction;
 import org.endeavourhealth.core.database.dal.audit.models.AuditModule;
-import org.endeavourhealth.core.database.rdbms.ConnectionManager;
 import org.endeavourhealth.coreui.endpoints.AbstractEndpoint;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -175,23 +173,50 @@ public class DatabaseStatsEndpoint extends AbstractEndpoint {
         String user = json.get(jsonPrefix + "username").asText();
         String pass = json.get(jsonPrefix + "password").asText();
 
+        if (json.has("driverName")) {
+            String driverName = json.get("driverName").asText();
+            Class.forName(driverName);
+        }
+
         Connection conn = null;
         PreparedStatement ps = null;
         try {
-            conn = DriverManager.getConnection(url, user, pass);
 
             String sql = null;
 
-            if (ConnectionManager.isPostgreSQL(conn)) {
+            //limit the connection timeout, since some DBs can't be accessed from this server
+            if (url.contains("mysql")) {
+                if (url.contains("?")) {
+                    url += "&";
+                } else {
+                    url += "?";
+                }
+                url += "Connection Timeout=5";
+                sql = "SELECT table_schema, SUM(data_length + index_length) FROM information_schema.tables GROUP BY table_schema";
+
+            } else if (url.contains("postgresql")) {
+                if (url.contains("?")) {
+                    url += "&";
+                } else {
+                    url += "?";
+                }
+                url += "&Timeout=5";
                 sql = "SELECT pg_database.datname, pg_database_size(pg_database.datname) FROM pg_database";
 
-            } else if (ConnectionManager.isSqlServer(conn)) {
-                ObjectNode objectNode = root.addObject();
-                objectNode.put("error", "No support for getting SQL Server DB sizes yet");
+            } else if (url.contains("sqlserver")) {
+                if (url.contains("?")) {
+                    url += "&";
+                } else {
+                    url += "?";
+                }
+                url += "loginTimeout=5";
+                sql = "SELECT DB_NAME(database_id), CONVERT(BIGINT, SUM((size * 8))) * 1024 FROM sys.master_files group by DB_NAME(database_id)";
 
-            } else { //mySQL
-                sql = "SELECT table_schema, SUM(data_length + index_length) FROM information_schema.tables GROUP BY table_schema";
+            } else {
+                throw new SQLException("Unknown database type for " + host);
             }
+
+            conn = DriverManager.getConnection(url, user, pass);
 
             if (sql != null) {
                 ps = conn.prepareStatement(sql);
@@ -200,12 +225,12 @@ public class DatabaseStatsEndpoint extends AbstractEndpoint {
                     int col = 1;
                     String dbName = rs.getString(col++);
                     long dbSize = rs.getLong(col++);
-                    String dbSizeReadable = FileUtils.byteCountToDisplaySize(dbSize);
+                    //String dbSizeReadable = FileUtils.byteCountToDisplaySize(dbSize);
 
                     ObjectNode objectNode = root.addObject();
                     objectNode.put("name", dbName);
                     objectNode.put("sizeBytes", dbSize);
-                    objectNode.put("sizeDesc", dbSizeReadable);
+                    //objectNode.put("sizeDesc", dbSizeReadable);
                 }
             }
 
