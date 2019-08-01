@@ -151,6 +151,8 @@ public class DatabaseStatsEndpoint extends AbstractEndpoint {
 
     private String getDatabaseSizes(String type, String host) throws Exception {
 
+        LOG.debug("getting DB sizes for " + host);
+
         ObjectMapper mapper = new ObjectMapper();
         ArrayNode root = new ArrayNode(mapper.getNodeFactory());
 
@@ -172,10 +174,12 @@ public class DatabaseStatsEndpoint extends AbstractEndpoint {
         String url = json.get(jsonPrefix + "url").asText();
         String user = json.get(jsonPrefix + "username").asText();
         String pass = json.get(jsonPrefix + "password").asText();
+        LOG.trace("URL = " + url);
 
         if (json.has("driverName")) {
             String driverName = json.get("driverName").asText();
             Class.forName(driverName);
+            LOG.trace("Loaded driver class " + driverName);
         }
 
         Connection conn = null;
@@ -183,6 +187,9 @@ public class DatabaseStatsEndpoint extends AbstractEndpoint {
         try {
 
             String sql = null;
+
+
+            LOG.trace("URL = ");
 
             //limit the connection timeout, since some DBs can't be accessed from this server
             if (url.contains("mysql")) {
@@ -200,7 +207,7 @@ public class DatabaseStatsEndpoint extends AbstractEndpoint {
                 } else {
                     url += "?";
                 }
-                url += "&Timeout=5";
+                url += "Timeout=5";
                 sql = "SELECT pg_database.datname, pg_database_size(pg_database.datname) FROM pg_database";
 
             } else if (url.contains("sqlserver")) {
@@ -216,22 +223,22 @@ public class DatabaseStatsEndpoint extends AbstractEndpoint {
                 throw new SQLException("Unknown database type for " + host);
             }
 
+            LOG.trace("URL now " + url);
+
             conn = DriverManager.getConnection(url, user, pass);
 
-            if (sql != null) {
-                ps = conn.prepareStatement(sql);
-                ResultSet rs = ps.executeQuery();
-                while (rs.next()) {
-                    int col = 1;
-                    String dbName = rs.getString(col++);
-                    long dbSize = rs.getLong(col++);
-                    //String dbSizeReadable = FileUtils.byteCountToDisplaySize(dbSize);
+            ps = conn.prepareStatement(sql);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                int col = 1;
+                String dbName = rs.getString(col++);
+                long dbSize = rs.getLong(col++);
+                //String dbSizeReadable = FileUtils.byteCountToDisplaySize(dbSize);
 
-                    ObjectNode objectNode = root.addObject();
-                    objectNode.put("name", dbName);
-                    objectNode.put("sizeBytes", dbSize);
-                    //objectNode.put("sizeDesc", dbSizeReadable);
-                }
+                ObjectNode objectNode = root.addObject();
+                objectNode.put("name", dbName);
+                objectNode.put("sizeBytes", dbSize);
+                //objectNode.put("sizeDesc", dbSizeReadable);
             }
 
         } catch (SQLException ex) {
