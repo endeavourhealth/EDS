@@ -50,57 +50,7 @@ public class Main {
                 Icd10Updater.updateIcd10Lookup(args);
 
             } else if (type.equalsIgnoreCase("ons_all")) {
-                /*
-                * 1. Download the latest "NHS Postcode Directory UK Full" dataset from the ONS:
-                * https://ons.maps.arcgis.com/home/search.html?q=NHS%20Postcode%20Directory%20UK%20Full&start=1&sortOrder=desc&sortField=modified#content
-                * 2. Unzip somewhere
-                * 3. Run this app with parameters: ons_all <path to unzipped content>
-                *
-                * Feb 2019 data at: https://ons.maps.arcgis.com/home/item.html?id=e1dc68a2c7f64adeb834bd089bd87ca5
-                * Nov 2018 data at: https://ons.maps.arcgis.com/home/item.html?id=3506c198565a444d9432d31f85257ade
-                * Aug 2018 data at: https://ons.maps.arcgis.com/home/item.html?id=1ad8f296756447bf87b011ec445391fc
-                * May 2018 data at: https://ons.maps.arcgis.com/home/item.html?id=726532de7e62432dbc0d443c22ad810f
-                * Aug 2016 data at: http://ons.maps.arcgis.com/home/item.html?id=dc23a64fa2e34e1289901b27d91c335b
-                */
-
-
-                File lsoaFile = LsoaUpdater.findFile(args);
-                File msoaFile = MsoaUpdater.findFile(args);
-                File ccgFile = CcgUpdater.findFile(args);
-                File wardFile = WardUpdater.findFile(args);
-                File laFile = LocalAuthorityUpdater.findFile(args);
-                File postcodeFile = PostcodeUpdater.findFile(args);
-
-                LsoaUpdater.updateLsoas(lsoaFile);
-                MsoaUpdater.updateMsoas(msoaFile);
-                CcgUpdater.updateCcgs(ccgFile);
-                WardUpdater.updateWards(wardFile);
-                LocalAuthorityUpdater.updateLocalAuthorities(laFile);
-                PostcodeUpdater.updatePostcodes(postcodeFile);
-
-            } else if (type.equalsIgnoreCase("ons_lsoa")) {
-                File lsoaFile = LsoaUpdater.findFile(args);
-                LsoaUpdater.updateLsoas(lsoaFile);
-
-            } else if (type.equalsIgnoreCase("ons_msoa")) {
-                File msoaFile = MsoaUpdater.findFile(args);
-                MsoaUpdater.updateMsoas(msoaFile);
-
-            } else if (type.equalsIgnoreCase("ons_ccg")) {
-                File ccgFile = CcgUpdater.findFile(args);
-                CcgUpdater.updateCcgs(ccgFile);
-
-            } else if (type.equalsIgnoreCase("ons_ward")) {
-                File wardFile = WardUpdater.findFile(args);
-                WardUpdater.updateWards(wardFile);
-
-            } else if (type.equalsIgnoreCase("ons_local_authority")) {
-                File laFile = LocalAuthorityUpdater.findFile(args);
-                LocalAuthorityUpdater.updateLocalAuthorities(laFile);
-
-            } else if (type.equalsIgnoreCase("ons_postcode")) {
-                File postcodeFile = PostcodeUpdater.findFile(args);
-                PostcodeUpdater.updatePostcodes(postcodeFile);
+                OnsUpdater.updateOns(args);
 
             } else if (type.equalsIgnoreCase("copy_all")) {
 

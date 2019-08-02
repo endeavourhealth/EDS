@@ -1,4 +1,4 @@
-package org.endeavourhealth.reference;
+package org.endeavourhealth.reference.helpers;
 
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
@@ -9,29 +9,25 @@ import org.endeavourhealth.core.database.dal.reference.ReferenceUpdaterDalI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.nio.charset.Charset;
+import java.io.Reader;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-public class LocalAuthorityUpdater {
-    private static final Logger LOG = LoggerFactory.getLogger(LocalAuthorityUpdater.class);
+public class OnsLocalAuthorityHelper {
+    private static final Logger LOG = LoggerFactory.getLogger(OnsLocalAuthorityHelper.class);
 
-    private static final String COL_CODE = "\uFEFFLAD18CD";
+    //cols changes Apr 2019
+    private static final String COL_CODE = "\uFEFFLAD19CD";
+    private static final String COL_NAME = "LAD19NM";
+    private static final String COL_NAME_WELSH = "LAD19NMW";
+    /*private static final String COL_CODE = "\uFEFFLAD18CD";
     private static final String COL_NAME = "LAD18NM";
-    private static final String COL_NAME_WELSH = "LAD18NMW";
+    private static final String COL_NAME_WELSH = "LAD18NMW";*/
 
-    public static void updateLocalAuthorities(File mapFile) throws Exception {
-        LOG.info("Processing Local Authority map from " + mapFile);
-        saveMappings(mapFile);
-        LOG.info("Finished Local Authority map from " + mapFile);
-    }
+    public static void processFile(Reader r) throws Exception {
 
-
-    private static void saveMappings(File mapFile) throws Exception {
-
-        Map<String, String> map = readFile(mapFile);
+        Map<String, String> map = readFile(r);
         int done = 0;
 
         ReferenceUpdaterDalI referenceUpdaterDal = DalProvider.factoryReferenceUpdaterDal();
@@ -49,7 +45,7 @@ public class LocalAuthorityUpdater {
     }
 
 
-    private static Map<String, String> readFile(File src) throws Exception {
+    private static Map<String, String> readFile(Reader r) throws Exception {
         Map<String, String> map = new HashMap<>();
 
         //this map file is TAB delimied
@@ -59,12 +55,12 @@ public class LocalAuthorityUpdater {
 
         CSVParser parser = null;
         try {
-            parser = CSVParser.parse(src, Charset.defaultCharset(), format.withHeader());
+            parser = new CSVParser(r, format.withHeader());
             Iterator<CSVRecord> iterator = parser.iterator();
 
             //validate the headers are what we expect
             String[] expectedHeaders = new String[]{COL_CODE, COL_NAME, COL_NAME_WELSH};
-            CsvHelper.validateCsvHeaders(parser, src.getAbsolutePath(), expectedHeaders);
+            CsvHelper.validateCsvHeaders(parser, "Local Authority file", expectedHeaders);
 
             while (iterator.hasNext()) {
                 CSVRecord record = iterator.next();
@@ -83,7 +79,7 @@ public class LocalAuthorityUpdater {
         return map;
     }
 
-    public static File findFile(String[] args) {
+    /*public static File findFile(String[] args) {
         if (args.length != 2) {
             throw new RuntimeException("Incorrect number of parameters, expecting 2");
         }
@@ -91,5 +87,5 @@ public class LocalAuthorityUpdater {
         //C:\SFTPData\postcodes\NHSPD_MAY_2018_UK_FULL\Documents\Names and Codes\LA_UA names and codes UK as at 12_18.csv
         String root = args[1];
         return Main.findFile("csv", "LA_UA.*UK.*", root, "Documents", "Names and Codes");
-    }
+    }*/
 }

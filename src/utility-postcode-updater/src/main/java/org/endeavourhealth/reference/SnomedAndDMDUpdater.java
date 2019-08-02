@@ -10,6 +10,7 @@ import org.endeavourhealth.core.database.dal.DalProvider;
 import org.endeavourhealth.core.database.dal.reference.SnomedDalI;
 import org.endeavourhealth.core.database.dal.reference.models.SnomedLookup;
 import org.endeavourhealth.core.database.rdbms.DeadlockHandler;
+import org.endeavourhealth.reference.helpers.ZipHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

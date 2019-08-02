@@ -5,6 +5,8 @@ import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.endeavourhealth.core.database.dal.DalProvider;
 import org.endeavourhealth.core.database.dal.reference.Icd10DalI;
+import org.endeavourhealth.reference.helpers.OnsLsoaHelper;
+import org.endeavourhealth.reference.helpers.ZipHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,7 +18,7 @@ import java.util.Map;
 import java.util.zip.ZipInputStream;
 
 public class Icd10Updater {
-    private static final Logger LOG = LoggerFactory.getLogger(LsoaUpdater.class);
+    private static final Logger LOG = LoggerFactory.getLogger(OnsLsoaHelper.class);
 
     /**
      * updates the icd10_lookup table in the reference DB from TRUD data
@@ -50,32 +52,31 @@ public class Icd10Updater {
             return;
         }
 
+        ZipInputStream zis = null;
+        Reader r = null;
+
         LOG.info("Looking for Codes and Titles File...");
-        ZipInputStream zis = ZipHelper.createZipInputStream(file);
-        Reader r = ZipHelper.findFile(zis, ".*/Content/.*_CodesAndTitlesAndMetadata_.*.txt");
-        if (r != null) {
-            LOG.info("Found file and reading in...");
-            Map<String, String> codeMap = readIcd10Records(r);
-            LOG.info("Saving to DB...");
-            saveIcd10Lookups(codeMap);
-        } else {
+        zis = ZipHelper.createZipInputStream(file);
+        r = ZipHelper.findFile(zis, ".*/Content/.*_CodesAndTitlesAndMetadata_.*.txt");
+        if (r == null) {
             LOG.error("Failed to find titles and metadata file");
             return;
         }
+        Map<String, String> codeMap = readIcd10Records(r);
+        LOG.info("Saving to DB...");
+        saveIcd10Lookups(codeMap);
         zis.close();
 
         LOG.info("Looking for Equivalencies File...");
         zis = ZipHelper.createZipInputStream(file);
         r = ZipHelper.findFile(zis, ".*/Content/.*_TableOfCodingEquivalencesWithDescriptionsForward_.*.txt");
-        if (r != null) {
-            LOG.info("Found file and reading in...");
-            Map<String, String> codeMap = readIcd10EquivalenceRecords(r);
-            LOG.info("Saving to DB...");
-            saveIcd10Lookups(codeMap);
-        } else {
+        if (r == null) {
             LOG.error("Failed to find titles and metadata file");
             return;
         }
+        codeMap = readIcd10EquivalenceRecords(r);
+        LOG.info("Saving to DB...");
+        saveIcd10Lookups(codeMap);
         zis.close();
 
         LOG.info("Finished ICD10 Import");

@@ -5,6 +5,7 @@ import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.endeavourhealth.core.database.dal.DalProvider;
 import org.endeavourhealth.core.database.dal.reference.Opcs4DalI;
+import org.endeavourhealth.reference.helpers.OnsLsoaHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,7 +16,7 @@ import java.util.Iterator;
 import java.util.Map;
 
 public class Opcs4Updater {
-    private static final Logger LOG = LoggerFactory.getLogger(LsoaUpdater.class);
+    private static final Logger LOG = LoggerFactory.getLogger(OnsLsoaHelper.class);
 
     /**
      * updates the opcs4_lookup table in the reference DB from TRUD data

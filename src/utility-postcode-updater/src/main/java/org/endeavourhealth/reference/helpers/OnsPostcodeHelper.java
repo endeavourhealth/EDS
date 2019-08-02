@@ -1,9 +1,8 @@
-package org.endeavourhealth.reference;
+package org.endeavourhealth.reference.helpers;
 
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
-import org.apache.commons.io.FilenameUtils;
 import org.endeavourhealth.common.utility.ThreadPool;
 import org.endeavourhealth.common.utility.ThreadPoolError;
 import org.endeavourhealth.core.database.dal.DalProvider;
@@ -11,14 +10,13 @@ import org.endeavourhealth.core.database.dal.reference.ReferenceUpdaterDalI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.nio.charset.Charset;
+import java.io.Reader;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.Callable;
 
-public class PostcodeUpdater {
-    private static final Logger LOG = LoggerFactory.getLogger(PostcodeUpdater.class);
+public class OnsPostcodeHelper {
+    private static final Logger LOG = LoggerFactory.getLogger(OnsPostcodeHelper.class);
 
 
     private static final String POSTCODE_8_CHAR_FIXED = "PCD2";
@@ -65,15 +63,8 @@ public class PostcodeUpdater {
     private static final String POSTCODE_CANCER_ALLIANCE_VANGUARD = "CALNCV";
     private static final String POSTCODE_STP_CODE = "STP";
 
-    public static void updatePostcodes(File postcodeFile) throws Exception {
-        LOG.info("Processing Postcode file from " + postcodeFile);
-        readPostcodeFile(postcodeFile);
-        LOG.info("Postcode Reference Update Complete from " + postcodeFile);
-    }
-
-
     //private static void readPostcodeFile(File postcodeFile, Map<String, BigDecimal> townsendMap) throws Exception {
-    private static void readPostcodeFile(File postcodeFile) throws Exception {
+    public static void processFile(Reader r) throws Exception {
 
         ThreadPool threadPool = new ThreadPool(5, 1000);
 
@@ -83,7 +74,7 @@ public class PostcodeUpdater {
         CSVParser parser = null;
         try {
             //the postcode CSV file doesn't contain headers, so we must just pass in the headers we know should be there
-            parser = CSVParser.parse(postcodeFile, Charset.defaultCharset(), format.withHeader(getPostcodeHeadings()));
+            parser = new CSVParser(r, format.withHeader(getPostcodeHeadings()));
             Iterator<CSVRecord> iterator = parser.iterator();
 
             while (iterator.hasNext()) {
@@ -250,7 +241,7 @@ public class PostcodeUpdater {
     }
 
 
-    public static File findFile(String[] args) {
+    /*public static File findFile(String[] args) {
         if (args.length != 2) {
             throw new RuntimeException("Incorrect number of parameters, expecting 2");
         }
@@ -288,6 +279,6 @@ public class PostcodeUpdater {
         }
 
         return ret;
-    }
+    }*/
 }
 
