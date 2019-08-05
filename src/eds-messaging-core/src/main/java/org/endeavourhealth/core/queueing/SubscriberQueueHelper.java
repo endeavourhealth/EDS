@@ -71,7 +71,7 @@ public class SubscriberQueueHelper {
         //exchange.setHeader(HeaderKeys.SenderSystemUuid, systemId.toString());
 
         exchange.setServiceId(service.getId());
-        //exchange.setSystemId(systemId);
+        //exchange.setSystemId(systemId); //specifically don't set this because we're doing ALL data for this service, not just a single system
 
         LOG.info("Saving exchange");
         AuditWriter.writeExchange(exchange);

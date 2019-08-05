@@ -173,7 +173,7 @@ public class RabbitConsumer extends DefaultConsumer {
 		UUID exchangeId = processingState.getExchangeId();
 
 		if (shouldAck) {
-			//LOG.info("Successfully processed exchange {}", exchange.getExchangeId());
+			//LOG.info("Successfully processed exchange " + exchangeId);
 			this.getChannel().basicAck(deliveryTag, false);
 			//LOG.info("Have sent ACK for exchange {}", exchange.getExchangeId());
 

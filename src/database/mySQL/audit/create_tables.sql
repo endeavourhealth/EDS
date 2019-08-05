@@ -18,8 +18,9 @@ DROP TABLE IF EXISTS published_file_type;
 DROP TABLE IF EXISTS published_file_type_column;
 DROP TABLE IF EXISTS published_file;
 DROP TABLE IF EXISTS published_file_record;
-drop table if exists last_data_received;
-drop table if exists last_data_processed;
+DROP TABLE IF EXISTS last_data_received;
+DROP TABLE IF EXISTS last_data_processed;
+DROP TABLE IF EXISTS exchange_subscriber_send_audit;
 
 CREATE TABLE exchange
 (
@@ -287,3 +288,15 @@ create table last_data_processed (
   exchange_id char(36) NOT NULL COMMENT 'links to audit.exchange table',
   CONSTRAINT pk_last_data_received PRIMARY KEY (service_id, system_id)
 );
+
+CREATE TABLE `exchange_subscriber_send_audit` (
+  `exchange_id` char(36) NOT NULL,
+  `exchange_batch_id` char(36) NOT NULL,
+  `subscriber_config_name` varchar(100) NOT NULL,
+  `inserted_at` datetime(3) NOT NULL,
+  `error_xml` mediumtext,
+  `queued_message_id` char(36) DEFAULT NULL,
+  PRIMARY KEY (`exchange_id`,`exchange_batch_id`,`subscriber_config_name`,`inserted_at`)
+)
+ROW_FORMAT=COMPRESSED
+KEY_BLOCK_SIZE=8;
