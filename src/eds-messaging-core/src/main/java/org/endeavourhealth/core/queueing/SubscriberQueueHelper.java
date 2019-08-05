@@ -58,17 +58,24 @@ public class SubscriberQueueHelper {
         String[] specificProtocolArr = new String[]{specificProtocolId.toString()};
         String specificProtocolJson = ObjectMapperPool.getInstance().writeValueAsString(specificProtocolArr);
 
+        Map<UUID, String> orgMap = service.getOrganisations();
+        if (orgMap.size() != 1) {
+            throw new Exception("Cannot support loading services without a single organisation");
+        }
+        Iterator<UUID> orgIterator = orgMap.keySet().iterator();
+        UUID orgId = orgIterator.next();
+
         Exchange exchange = new Exchange();
         exchange.setId(UUID.randomUUID());
         exchange.setBody(bodyJson);
         exchange.setTimestamp(new Date());
         exchange.setHeaders(new HashMap<>());
         exchange.setHeader(HeaderKeys.SenderServiceUuid, serviceId.toString());
-        exchange.setHeader(HeaderKeys.IsForPopulatingSubscriber, Boolean.TRUE.toString()); //this tells the outbound transform to do ALL data for each patient
         exchange.setHeader(HeaderKeys.ProtocolIds, specificProtocolJson);
-        //exchange.setHeader(HeaderKeys.SenderLocalIdentifier, odsCode);
-        //exchange.setHeader(HeaderKeys.SenderOrganisationUuid, orgId.toString());
+        exchange.setHeader(HeaderKeys.SenderLocalIdentifier, service.getLocalId());
+        exchange.setHeader(HeaderKeys.SenderOrganisationUuid, orgId.toString());
         //exchange.setHeader(HeaderKeys.SenderSystemUuid, systemId.toString());
+        exchange.setHeader(HeaderKeys.SourceSystem, HeaderKeys.DUMMY_SENDER_SOFTWARE_FOR_BULK_TRANSFORM); //routing requires a source system name and this tells us it's this special case
 
         exchange.setServiceId(service.getId());
         //exchange.setSystemId(systemId); //specifically don't set this because we're doing ALL data for this service, not just a single system

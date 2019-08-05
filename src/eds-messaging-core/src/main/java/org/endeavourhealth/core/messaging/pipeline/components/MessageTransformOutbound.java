@@ -381,15 +381,14 @@ public class MessageTransformOutbound extends PipelineComponent {
         List<ResourceWrapper> resources = null;
 
         //we use a special exchange with a specific header key to bulk populate subscribers
-        Boolean isForLoadingSubscriber = exchange.getHeaderAsBoolean(HeaderKeys.IsForPopulatingSubscriber);
-        if (isForLoadingSubscriber != null
-                && isForLoadingSubscriber.booleanValue()) {
+        String sourceSystem = exchange.getHeader(HeaderKeys.SourceSystem);
+        if (sourceSystem.equals(HeaderKeys.DUMMY_SENDER_SOFTWARE_FOR_BULK_TRANSFORM)) {
 
             ExchangeBatchDalI exchangeBatchDal = DalProvider.factoryExchangeBatchDal();
             ExchangeBatch exchangeBatch = exchangeBatchDal.getForExchangeAndBatchId(exchange.getId(), batchId);
             UUID patientId = exchangeBatch.getEdsPatientId();
-            LOG.debug("Loading all resources for " + patientId + " to transform for " + subscriberConfigName);
             resources = resourceDal.getResourcesByPatient(serviceId, patientId); //passing in a null patient ID will get us the admin resources
+            LOG.debug("Transforming all " + resources.size() + " resources for patient " + patientId + " to populate " + subscriberConfigName);
 
         } else {
 
