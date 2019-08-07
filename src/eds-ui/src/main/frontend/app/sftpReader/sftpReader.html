@@ -41,6 +41,11 @@
                                 <h4>Third Party->SFTP Reader</h4>
 
                                 <div *ngIf="status.latestBatchId">
+                                    <div>Last Checked for Data: {{status.latestPollingStart | date:'dd-MMM-yyyy HH:mm:ss'}}</div>
+                                    <div *ngIf="status.latestPollingException">
+                                        <span class="label label-danger">Warning</span>
+                                        <pre>{{status.latestPollingException}}</pre>
+                                    </div>
                                     <div>Last Extract Received: {{status.latestBatchReceived | date:'dd-MMM-yyyy HH:mm:ss'}}</div>
                                     <div>Data From: {{status.latestBatchIdentifier}}</div>
                                     <div>Extract Sequence No: {{status.latestBatchSequenceNumber}}</div>

@@ -188,6 +188,49 @@ public class SftpReaderEndpoint extends AbstractEndpoint {
                 ObjectNode channelNode = (ObjectNode)root.get(i);
                 String id = channelNode.get("id").asText();
 
+                //get the latest polling attempt
+                if (ConnectionManager.isPostgreSQL(connection)) {
+                    sql = "SELECT attempt_started, attempt_finished, exception_text, files_downloaded,"
+                            + " batches_completed, batch_splits_notified_ok, batch_splits_notified_failure"
+                            + " FROM log.configuration_polling_attempt"
+                            + " WHERE configuration_id = ?"
+                            + " ORDER BY attempt_started DESC"
+                            + " LIMIT 1";
+                } else {
+                    sql = "SELECT attempt_started, attempt_finished, exception_text, files_downloaded,"
+                            + " batches_completed, batch_splits_notified_ok, batch_splits_notified_failure"
+                            + " FROM configuration_polling_attempt"
+                            + " WHERE configuration_id = ?"
+                            + " ORDER BY attempt_started DESC"
+                            + " LIMIT 1";
+                }
+                ps = connection.prepareStatement(sql);
+
+                ps.setString(1, id);
+
+                rs = ps.executeQuery();
+                if (rs.next()) {
+                    int col = 1;
+                    Date attemptStartDate = new Date(rs.getTimestamp(col++).getTime());
+                    Date attemptEndDate = new Date(rs.getTimestamp(col++).getTime());
+                    String exceptionText = rs.getString(col++);
+                    int filesDownloaded = rs.getInt(col++);
+                    int batchesCompleted = rs.getInt(col++);
+                    int batchSplitsNotifiedOk = rs.getInt(col++);
+                    int batchSplitsNotifiedFailure = rs.getInt(col++);
+
+                    channelNode.put("latestPollingStart", attemptStartDate.getTime());
+                    channelNode.put("latestPollingEnd", attemptEndDate.getTime());
+                    channelNode.put("latestPollingException", exceptionText);
+                    channelNode.put("latestPollingFilesDownloaded", filesDownloaded);
+                    channelNode.put("latestPollingBatchesCompleted", batchesCompleted);
+                    channelNode.put("latestPollingBatchSplitsNotifiedOk", batchSplitsNotifiedOk);
+                    channelNode.put("latestPollingBatchSplitsNotifiedFailure", batchSplitsNotifiedFailure);
+                }
+
+                ps.close();
+
+
                 //get the latest batch received
                 if (ConnectionManager.isPostgreSQL(connection)) {
                     sql = "select b.batch_id, b.batch_identifier, b.insert_date, b.sequence_number, b.is_complete, count(1), sum(f.remote_size_bytes)"
@@ -307,7 +350,7 @@ public class SftpReaderEndpoint extends AbstractEndpoint {
                                 + " and m.batch_split_id = bs.batch_split_id"
                                 + " and not exists ("
                                 + " select 1"
-                                + " from log.notification_message m2"
+                                + " from notification_message m2"
                                 + " where m2.batch_id = m.batch_id"
                                 + " and m2.batch_split_id = m.batch_split_id"
                                 + " and m2.timestamp < m.timestamp"
