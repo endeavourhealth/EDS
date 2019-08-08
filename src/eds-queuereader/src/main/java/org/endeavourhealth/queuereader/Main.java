@@ -2075,6 +2075,7 @@ public class Main {
 		System.out.println(sql);
 	}
 
+
 	private static void convertFhirAudits(String publisherConfigName, int threads, int batchSize) throws Exception {
 		LOG.info("Converting FHIR audit for " + publisherConfigName);
 		try {
