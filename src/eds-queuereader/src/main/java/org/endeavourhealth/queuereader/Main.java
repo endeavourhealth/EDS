@@ -42,6 +42,18 @@ import org.endeavourhealth.core.queueing.QueueHelper;
 import org.endeavourhealth.core.xml.QueryDocument.*;
 import org.endeavourhealth.transform.common.*;
 import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
+import org.endeavourhealth.transform.emis.csv.schema.admin.*;
+import org.endeavourhealth.transform.emis.csv.schema.agreements.SharingOrganisation;
+import org.endeavourhealth.transform.emis.csv.schema.appointment.Session;
+import org.endeavourhealth.transform.emis.csv.schema.appointment.SessionUser;
+import org.endeavourhealth.transform.emis.csv.schema.appointment.Slot;
+import org.endeavourhealth.transform.emis.csv.schema.careRecord.*;
+import org.endeavourhealth.transform.emis.csv.schema.coding.ClinicalCode;
+import org.endeavourhealth.transform.emis.csv.schema.coding.DrugCode;
+import org.endeavourhealth.transform.emis.csv.schema.prescribing.DrugRecord;
+import org.endeavourhealth.transform.emis.csv.schema.prescribing.IssueRecord;
+import org.endeavourhealth.transform.emis.custom.schema.OriginalTerms;
+import org.endeavourhealth.transform.emis.custom.schema.RegistrationStatus;
 import org.hibernate.internal.SessionImpl;
 import org.hl7.fhir.instance.model.ResourceType;
 import org.slf4j.Logger;
@@ -61,6 +73,7 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.Date;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class Main {
@@ -82,12 +95,21 @@ public class Main {
 			System.exit(0);
 		}*/
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("DeleteEnterpriseObs")) {
 			String filePath = args[1];
 			String configName = args[2];
 			int batchSize = Integer.parseInt(args[3]);
 			deleteEnterpriseObs(filePath, configName, batchSize);
+			System.exit(0);
+		}*/
+
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("ConvertAudits")) {
+			String configName = args[2];
+			int threads = Integer.parseInt(args[3]);
+			int batchSize = Integer.parseInt(args[4]);
+			convertFhirAudits(configName, threads, batchSize);
 			System.exit(0);
 		}
 
@@ -413,13 +435,6 @@ public class Main {
 			System.exit(0);
 		}*/
 
-		if (args.length >= 1
-				&& args[0].equalsIgnoreCase("ConvertFhirAudit")) {
-			UUID serviceId = UUID.fromString(args[1]);
-			int threads = Integer.parseInt(args[2]);
-			convertFhirAudit(serviceId, threads);
-			System.exit(0);
-		}
 
 		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("ConvertExchangeBody")) {
@@ -694,7 +709,7 @@ public class Main {
 		LOG.info("EDS Queue reader running (kill file location " + TransformConfig.instance().getKillFileLocation() + ")");
 	}
 
-	private static void deleteEnterpriseObs(String filePath, String configName, int batchSize) {
+	/*private static void deleteEnterpriseObs(String filePath, String configName, int batchSize) {
 		LOG.info("Deleting Enterprise Observations");
 		try {
 
@@ -747,7 +762,7 @@ public class Main {
 		} catch (Throwable t) {
 			LOG.error("", t);
 		}
-	}
+	}*/
 
 	private static void saveBatch(List<String> batch, List<EnterpriseConnector.ConnectionWrapper> connectionWrappers, String doneFilePath) throws Exception {
 
@@ -2060,29 +2075,351 @@ public class Main {
 		System.out.println(sql);
 	}
 
-	private static void convertFhirAudit(UUID serviceId, int threads) {
-		LOG.info("Converting FHIR audit for " + serviceId);
+	private static void convertFhirAudits(String publisherConfigName, int threads, int batchSize) throws Exception {
+		LOG.info("Converting FHIR audit for " + publisherConfigName);
 		try {
+			//find a suitable service ID
+			UUID dummyServiceId = null;
+			ServiceDalI serviceDal = DalProvider.factoryServiceDal();
+			for (Service s: serviceDal.getAll()) {
+				if (s.getPublisherConfigName() != null
+						&& s.getPublisherConfigName().equalsIgnoreCase(publisherConfigName)) {
+					dummyServiceId = s.getId();
+					LOG.info("Found sample service ID " + s.getId() + " " + s.getName() + " " + s.getLocalId());
+					break;
+				}
+			}
 
-			//get all systems
+			Map<Integer, Integer> hmFileIdMap = new ConcurrentHashMap<>();
 
-			//for each file in publisher transform
-			//	need to create new version in audit
-			//	go through each file and generate the published_file_record entries
-			//  store map of old audit file ID -> new file ID
+			EntityManager entityManager = ConnectionManager.getPublisherTransformEntityManager(dummyServiceId);
+			SessionImpl session = (SessionImpl) entityManager.getDelegate();
+			Connection connection = session.connection();
 
-			//update transform_warning table, to set new file ID
+			//ensure all source files are mapped to published files
+			LOG.debug("Mapping source files to published files");
 
-			//for each audit JSON record
-			//	deserialise
-			//	convert to new format
-			//	what about FHIR ones that point to the wrong DB, like the Emis code map ones dp?
-			//	save to new DB
-			//	delete from old DB
+			String sql = "SELECT id, service_id, system_id, file_path, exchange_id, description"
+					+ " FROM source_file_mapping"
+					+ " WHERE new_published_file_id IS NULL";
+			PreparedStatement ps = connection.prepareStatement(sql);
+			ResultSet rs = ps.executeQuery();
+			while (rs.next()) {
+				int col = 1;
+				int id = rs.getInt(col++);
+				UUID serviceId = UUID.fromString(rs.getString(col++));
+				UUID systemId = UUID.fromString(rs.getString(col++));
+				String filePath = rs.getString(col++);
+				UUID exchangeId = UUID.fromString(rs.getString(col++));
+				String fileDesc = rs.getString(col++);
 
-			LOG.info("Finished Converting FHIR audit for " + serviceId);
+				int newFileAuditId = auditParser(serviceId, systemId, exchangeId, filePath, fileDesc);
+				hmFileIdMap.put(id, newFileAuditId);
+
+				if (hmFileIdMap.size() % 100 == 0) {
+					LOG.debug("Audited " + hmFileIdMap.size() + " files");
+				}
+			}
+			ps.close();
+
+			if (!hmFileIdMap.isEmpty()) {
+				LOG.debug("Audited " + hmFileIdMap.size() + " files, going to save mappings to DB");
+				sql = "UPDATE source_file_mapping"
+						+ " SET new_published_file_id = "
+						+ " WHERE id = ?";
+				ps = connection.prepareStatement(sql);
+
+				int thisBatchSize = 0;
+				int saved = 0;
+
+				for (Integer id: hmFileIdMap.keySet()) {
+					Integer newId = hmFileIdMap.get(id);
+
+					int col = 1;
+					ps.setInt(col++, newId.intValue());
+					ps.setInt(col++, id.intValue());
+					ps.addBatch();
+					batchSize ++;
+
+					if (thisBatchSize >= batchSize) {
+						ps.executeBatch();
+						saved += thisBatchSize;
+						thisBatchSize = 0;
+
+						if (saved % 100 == 0) {
+							LOG.debug("Saved " + saved + " mappingd");
+						}
+					}
+				}
+
+				if (thisBatchSize >= 0) {
+					ps.executeBatch();
+				}
+
+				ps.close();
+			}
+
+/*
+			LOG.debug("Converting audits");
+			while (true) {
+
+				sql = "SELECT c.resource_id, c.resource_type, c.created_at, m.version, m.mappings_json"
+						+ " FROM resource_field_mappings_to_convert c"
+						+ " INNER JOIN resource_field_mappings m"
+						+ " ON c.resource_id = m.resource_id"
+						+ " AND c.resource_type = m.resource_type"
+						+ " AND c.created_at = m.created_at"
+						+ " WHERE c.done = false"
+						+ " LIMIT " + batchSize;
+
+				Map<ResourceWrapper, ResourceFieldMappingAudit> map = new HashMap<>();
+
+				PreparedStatement ps = connection.prepareStatement(sql);
+				ResultSet rs = ps.executeQuery();
+				while (rs.next()) {
+					int col = 1;
+					ResourceWrapper r = new ResourceWrapper();
+					r.setResourceId(UUID.fromString(rs.getString(col++)));
+					r.setResourceType(rs.getString(col++));
+					r.setCreatedAt(new Date(rs.getTimestamp(col++).getTime()));
+					r.setVersion(UUID.fromString(rs.getString(col++)));
+
+					ResourceFieldMappingAudit audit = ResourceFieldMappingAudit.readFromJson(rs.getString(col++));
+
+					map.put(r, audit);
+				}
+				ps.close();
+
+				boolean lastOne = map.size() < batchSize;
+
+
+				for (ResourceWrapper r: map.keySet()) {
+					ResourceFieldMappingAudit audit = map.get(r);
+					List<ResourceFieldMappingAudit.ResourceFieldMappingAuditRow> auditRows = audit.getAudits();
+					for (ResourceFieldMappingAudit.ResourceFieldMappingAuditRow auditRow: auditRows) {
+						Long oldStyleAuditId = auditRow.getOldStyleAuditId();
+						if (oldStyleAuditId == null) {
+							throw new Exception("No old-style audit ID in audit for " + r.getResourceType() + " " + r.getResourceId() + " from " + r.getCreatedAt());
+						}
+
+						//need to convert oldStyleID to a fileID and record number
+						sql = "select r.source_location, f.id, f.service_id, f.system_id, f.exchange_id, f.file_path, t.description"
+								+ " from source_file_record r"
+								+ " inner join source_file f"
+								+ " on f.id = r.source_file_id"
+								+ " inner join source_file_type t"
+								+ " on t.id = f.source_file_type_id"
+								+ " where r.id = ?";
+						ps = connection.prepareStatement(sql);
+
+						ps.setLong(1, oldStyleAuditId.longValue());
+
+						rs = ps.executeQuery();
+						if (!rs.next()) {
+							throw new Exception("Failed to find source record details for old style audit ID " + oldStyleAuditId + " in audit for " + r.getResourceType() + " " + r.getResourceId() + " from " + r.getCreatedAt());
+						}
+
+						int col = 1;
+						String recordNumStr = rs.getString(col++);
+						UUID serviceId = UUID.fromString(rs.getString(col++));
+						UUID systemId = UUID.fromString(rs.getString(col++));
+						UUID exchangeId = UUID.fromString(rs.getString(col++));
+						String filePath = rs.getString(col++);
+						String fileDesc = rs.getString(col++);
+
+						ps.close();
+
+						//need to ensure the file is actually audited too
+						int newFileAuditId = auditParser(serviceId, systemId, exchangeId, filePath, fileDesc, hmFileIdMap);
+
+						auditRow.setOldStyleAuditId(null);
+						auditRow.setFileId(newFileAuditId);
+						auditRow.setRecord(Integer.parseInt(recordNumStr));
+					}
+
+				}
+
+				//save all audits
+				sql = "UPDATE resource_field_mappings"
+						+ " SET mappings_json = ?"
+						+ " WHERE resource_id = ?"
+						+ " AND resource_type = ?"
+						+ " AND created_at = ?"
+						+ " AND version = ?";
+				ps = connection.prepareStatement(sql);
+
+				entityManager.getTransaction().begin();
+
+				for (ResourceWrapper r: map.keySet()) {
+					ResourceFieldMappingAudit audit = map.get(r);
+					String auditJson = audit.writeToJson();
+
+					int col = 1;
+					ps.setString(col++, auditJson);
+					ps.setString(col++, r.getResourceId().toString());
+					ps.setString(col++, r.getResourceType());
+					ps.setTimestamp(col++, new Timestamp(r.getCreatedAt().getTime()));
+					ps.setString(col++, r.getVersion().toString());
+
+					ps.addBatch();
+				}
+
+				ps.executeBatch();
+				entityManager.getTransaction().commit();
+				ps.close();
+
+				//mark temp table as done
+				sql = "UPDATE resource_field_mappings_to_convert"
+						+ " SET done = true"
+						+ " WHERE resource_id = ?"
+						+ " AND resource_type = ?"
+						+ " AND created_at = ?";
+				ps = connection.prepareStatement(sql);
+
+				entityManager.getTransaction().begin();
+
+				for (ResourceWrapper r: map.keySet()) {
+					ResourceFieldMappingAudit audit = map.get(r);
+					String auditJson = audit.writeToJson();
+
+					int col = 1;
+					ps.setString(col++, r.getResourceId().toString());
+					ps.setString(col++, r.getResourceType());
+					ps.setTimestamp(col++, new Timestamp(r.getCreatedAt().getTime()));
+
+					ps.addBatch();
+				}
+
+				ps.executeBatch();
+				entityManager.getTransaction().commit();
+				ps.close();
+
+
+				if (lastOne) {
+					break;
+				}
+			}*/
+
+			LOG.info("Finished Converting FHIR audit for " + publisherConfigName);
 		} catch (Throwable t) {
 			LOG.error("", t);
+		}
+	}
+
+	private static int auditParser(UUID serviceId, UUID systemId, UUID exchangeId, String filePath, String fileDesc) throws Exception {
+
+		ParserI parser = createParser(serviceId, systemId, exchangeId, filePath, fileDesc);
+		Integer newId = parser.ensureFileAudited();
+		if (newId == null) {
+			throw new Exception("Null new ID for auditing file " + filePath);
+		}
+
+		return newId;
+	}
+
+	private static ParserI createParser(UUID serviceId, UUID systemId, UUID exchangeId, String filePath, String fileDesc) throws Exception {
+		switch (fileDesc) {
+			case "Bespoke Emis registration status extract":
+				String DATE_FORMAT = "dd/MM/yyyy";
+				String TIME_FORMAT = "hh:mm:ss";
+				CSVFormat CSV_FORMAT = CSVFormat.TDF
+						.withHeader()
+						.withEscape((Character)null)
+						.withQuote((Character)null)
+						.withQuoteMode(QuoteMode.MINIMAL); //ideally want Quote Mdde NONE, but validation in the library means we need to use this;
+				return new RegistrationStatus(serviceId, systemId, exchangeId, null, filePath, CSV_FORMAT, DATE_FORMAT, TIME_FORMAT);
+			case "ClinicalCode":
+				return new ClinicalCode(serviceId, systemId, exchangeId, null, filePath);
+			case "Consultation":
+				return new Consultation(serviceId, systemId, exchangeId, null, filePath);
+			case "Diary":
+				return new Diary(serviceId, systemId, exchangeId, null, filePath);
+			case "DrugCode":
+				return new DrugCode(serviceId, systemId, exchangeId, null, filePath);
+			case "DrugRecord":
+				return new DrugRecord(serviceId, systemId, exchangeId, null, filePath);
+			case "Emis appointments file":
+				return new Slot(serviceId, systemId, exchangeId, null, filePath);
+			case "Emis appointments session file":
+				return new Session(serviceId, systemId, exchangeId, null, filePath);
+			case "Emis clinical code reference file":
+				return new ClinicalCode(serviceId, systemId, exchangeId, null, filePath);
+			case "Emis consultations file":
+				return new Consultation(serviceId, systemId, exchangeId, null, filePath);
+			case "Emis diary file":
+				return new Diary(serviceId, systemId, exchangeId, null, filePath);
+			case "Emis drug code reference file":
+				return new DrugCode(serviceId, systemId, exchangeId, null, filePath);
+			case "Emis drug record file":
+				return new DrugRecord(serviceId, systemId, exchangeId, null, filePath);
+			case "Emis issue records file":
+				return new IssueRecord(serviceId, systemId, exchangeId, null, filePath);
+			case "Emis observations file":
+				return new Observation(serviceId, systemId, exchangeId, null, filePath);
+			case "Emis organisation location file":
+				return new Location(serviceId, systemId, exchangeId, null, filePath);
+			case "Emis organisation-location link file":
+				return new OrganisationLocation(serviceId, systemId, exchangeId, null, filePath);
+			case "Emis organisations file":
+				return new Organisation(serviceId, systemId, exchangeId, null, filePath);
+			case "Emis patient file":
+				return new Patient(serviceId, systemId, exchangeId, null, filePath);
+			case "Emis problems file":
+				return new Problem(serviceId, systemId, exchangeId, null, filePath);
+			case "Emis referrals file":
+				return new ObservationReferral(serviceId, systemId, exchangeId, null, filePath);
+			case "Emis session-user link file":
+				return new SessionUser(serviceId, systemId, exchangeId, null, filePath);
+			case "Emis sharing agreements file":
+				return new SharingOrganisation(serviceId, systemId, exchangeId, null, filePath);
+			case "Emis staff file":
+				return new UserInRole(serviceId, systemId, exchangeId, null, filePath);
+			case "IssueRecord":
+				return new IssueRecord(serviceId, systemId, exchangeId, null, filePath);
+			case "Location":
+				return new Location(serviceId, systemId, exchangeId, null, filePath);
+			case "Observation":
+				return new Observation(serviceId, systemId, exchangeId, null, filePath);
+			case "ObservationReferral":
+				return new ObservationReferral(serviceId, systemId, exchangeId, null, filePath);
+			case "Organisation":
+				return new Organisation(serviceId, systemId, exchangeId, null, filePath);
+			case "OrganisationLocation":
+				return new OrganisationLocation(serviceId, systemId, exchangeId, null, filePath);
+			case "OriginalTerms":
+				String DATE_FORMAT2 = "dd/MM/yyyy";
+				String TIME_FORMAT2 = "hh:mm:ss";
+				CSVFormat CSV_FORMAT2 = CSVFormat.TDF
+						.withHeader()
+						.withEscape((Character)null)
+						.withQuote((Character)null)
+						.withQuoteMode(QuoteMode.MINIMAL); //ideally want Quote Mdde NONE, but validation in the library means we need to use this;
+				return new OriginalTerms(serviceId, systemId, exchangeId, null, filePath, CSV_FORMAT2, DATE_FORMAT2, TIME_FORMAT2);
+			case "Patient":
+				return new Patient(serviceId, systemId, exchangeId, null, filePath);
+			case "Problem":
+				return new Problem(serviceId, systemId, exchangeId, null, filePath);
+			case "RegistrationStatus":
+				String DATE_FORMAT3 = "dd/MM/yyyy";
+				String TIME_FORMAT3 = "hh:mm:ss";
+				CSVFormat CSV_FORMAT3 = CSVFormat.TDF
+						.withHeader()
+						.withEscape((Character)null)
+						.withQuote((Character)null)
+						.withQuoteMode(QuoteMode.MINIMAL); //ideally want Quote Mdde NONE, but validation in the library means we need to use this;
+				return new RegistrationStatus(serviceId, systemId, exchangeId, null, filePath, CSV_FORMAT3, DATE_FORMAT3, TIME_FORMAT3);
+			case "Session":
+				return new Session(serviceId, systemId, exchangeId, null, filePath);
+			case "SessionUser":
+				return new SessionUser(serviceId, systemId, exchangeId, null, filePath);
+			case "SharingOrganisation":
+				return new SharingOrganisation(serviceId, systemId, exchangeId, null, filePath);
+			case "Slot":
+				return new Slot(serviceId, systemId, exchangeId, null, filePath);
+			case "UserInRole":
+				return new UserInRole(serviceId, systemId, exchangeId, null, filePath);
+			default:
+				throw new Exception("Unknown file type [" + fileDesc + "]");
 		}
 	}
 
