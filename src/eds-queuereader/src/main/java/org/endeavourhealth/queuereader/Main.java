@@ -44,6 +44,8 @@ import org.endeavourhealth.transform.common.*;
 import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
 import org.endeavourhealth.transform.emis.custom.schema.OriginalTerms;
 import org.endeavourhealth.transform.emis.custom.schema.RegistrationStatus;
+import org.endeavourhealth.transform.tpp.TppCsvToFhirTransformer;
+import org.endeavourhealth.transform.vision.schema.*;
 import org.hibernate.internal.SessionImpl;
 import org.hl7.fhir.instance.model.ResourceType;
 import org.slf4j.Logger;
@@ -63,7 +65,6 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.Date;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class Main {
@@ -2080,8 +2081,6 @@ public class Main {
 				}
 			}
 
-			Map<Integer, Integer> hmFileIdMap = new ConcurrentHashMap<>();
-
 			EntityManager entityManager = ConnectionManager.getPublisherTransformEntityManager(dummyServiceId);
 			SessionImpl session = (SessionImpl) entityManager.getDelegate();
 			Connection connection = session.connection();
@@ -2119,7 +2118,10 @@ public class Main {
 
 			for (int i=0; i<fileDescs.size(); i++) {
 				FileDesc f = fileDescs.get(i);
-				int newFileAuditId = auditParser(f.serviceId, f.systemId, f.exchangeId, f.filePath, f.fileDesc);
+				Integer newFileAuditId = auditParser(f.serviceId, f.systemId, f.exchangeId, f.filePath, f.fileDesc);
+				if (newFileAuditId == null) {
+					continue;
+				}
 				f.newId = newFileAuditId;
 
 				batch.add(f);
@@ -2151,13 +2153,15 @@ public class Main {
 					entityManager.close();
 				}
 
-				hmFileIdMap.put(f.id, newFileAuditId);
-				if (hmFileIdMap.size() % 100 == 0) {
-					LOG.debug("Audited " + hmFileIdMap.size() + " files");
+				if (i % 100 == 0) {
+					LOG.debug("Audited " + i + " files");
 				}
 			}
 
 			/*LOG.debug("Converting audits");
+
+			Map<Integer, Integer> hmFileIdMap = new ConcurrentHashMap<>();
+
 			while (true) {
 
 				sql = "SELECT c.resource_id, c.resource_type, c.created_at, m.version, m.mappings_json"
@@ -2336,18 +2340,53 @@ public class Main {
 		int newId;
 	}
 
-	private static int auditParser(UUID serviceId, UUID systemId, UUID exchangeId, String filePath, String fileDesc) throws Exception {
+	private static Integer auditParser(UUID serviceId, UUID systemId, UUID exchangeId, String filePath, String fileDesc) throws Exception {
 
 		ParserI parser = createParser(serviceId, systemId, exchangeId, filePath, fileDesc);
+		if (parser == null) {
+			LOG.debug("No parser created for " + fileDesc + " " + filePath);
+			return null;
+		}
+
 		Integer newId = parser.ensureFileAudited();
 		if (newId == null) {
 			throw new Exception("Null new ID for auditing file " + filePath);
 		}
 
-		return newId;
+		return new Integer(newId);
 	}
 
 	private static ParserI createParser(UUID serviceId, UUID systemId, UUID exchangeId, String filePath, String fileDesc) throws Exception {
+
+		if (fileDesc.startsWith("Vision ")) {
+
+			if (fileDesc.equals("Vision organisations file")) {
+				return new Practice(serviceId, systemId, exchangeId, null, filePath);
+			} else if (fileDesc.equals("Vision staff file")) {
+				return new Staff(serviceId, systemId, exchangeId, null, filePath);
+			} else if (fileDesc.equals("Vision patient file")) {
+				return new Patient(serviceId, systemId, exchangeId, null, filePath);
+			} else if (fileDesc.equals("Vision encounter file")) {
+				return new Encounter(serviceId, systemId, exchangeId, null, filePath);
+			} else if (fileDesc.equals("Vision referrals file")) {
+				return new Referral(serviceId, systemId, exchangeId, null, filePath);
+			} else if (fileDesc.equals("Vision journal file")) {
+				return new Journal(serviceId, systemId, exchangeId, null, filePath);
+			} else {
+				throw new Exception("Unknown vision file [" + fileDesc + "]");
+			}
+		}
+
+		if (fileDesc.startsWith("TPP ")) {
+			String[] arr = new String[]{filePath};
+			String version = TppCsvToFhirTransformer.determineVersion(arr);
+
+			Map<Class, AbstractCsvParser> parsers = new HashMap<>();
+			TppCsvToFhirTransformer.createParsers(serviceId, systemId, exchangeId, version, arr, parsers);
+			Iterator<AbstractCsvParser> it = parsers.values().iterator();
+
+			return it.next();
+		}
 
 		if (fileDesc.equals("Bespoke Emis registration status extract")
 				|| fileDesc.equals("RegistrationStatus")) {
@@ -2380,126 +2419,135 @@ public class Main {
 			return new OriginalTerms(serviceId, systemId, exchangeId, null, filePath, CSV_FORMAT2, DATE_FORMAT2, TIME_FORMAT2);
 		}
 
-		if (fileDesc.equals("Emis appointments file")) {
-			fileDesc = "Slot";
-		} else if (fileDesc.equals("Emis appointments session file")) {
-			fileDesc = "Session";
-		} else if (fileDesc.equals("Emis clinical code reference file")) {
-			fileDesc = "ClinicalCode";
-		} else if (fileDesc.equals("Emis consultations file")) {
-			fileDesc = "Consultation";
-		} else if (fileDesc.equals("Emis diary file")) {
-			fileDesc = "Diary";
-		} else if (fileDesc.equals("Emis drug code reference file")) {
-			fileDesc = "DrugCode";
-		} else if (fileDesc.equals("Emis drug record file")) {
-			fileDesc = "DrugRecord";
-		} else if (fileDesc.equals("Emis issue records file")) {
-			fileDesc = "IssueRecord";
-		} else if (fileDesc.equals("Emis observations file")) {
-			fileDesc = "Observation";
-		} else if (fileDesc.equals("Emis organisation location file")) {
-			fileDesc = "Location";
-		} else if (fileDesc.equals("Emis organisation-location link file")) {
-			fileDesc = "OrganisationLocation";
-		} else if (fileDesc.equals("Emis organisations file")) {
-			fileDesc = "Organisation";
-		} else if (fileDesc.equals("Emis patient file")) {
-			fileDesc = "Patient";
-		} else if (fileDesc.equals("Emis problems file")) {
-			fileDesc = "Problem";
-		} else if (fileDesc.equals("Emis referrals file")) {
-			fileDesc = "ObservationReferral";
-		} else if (fileDesc.equals("Emis session-user link file")) {
-			fileDesc = "SessionUser";
-		} else if (fileDesc.equals("Emis sharing agreements file")) {
-			fileDesc = "SharingOrganisation";
-		} else if (fileDesc.equals("Emis staff file")) {
-			fileDesc = "UserInRole";
+		if (filePath.contains("EMIS")) {
+
+			if (fileDesc.equals("Emis appointments file")) {
+				fileDesc = "Slot";
+			} else if (fileDesc.equals("Emis appointments session file")) {
+				fileDesc = "Session";
+			} else if (fileDesc.equals("Emis clinical code reference file")) {
+				fileDesc = "ClinicalCode";
+			} else if (fileDesc.equals("Emis consultations file")) {
+				fileDesc = "Consultation";
+			} else if (fileDesc.equals("Emis diary file")) {
+				fileDesc = "Diary";
+			} else if (fileDesc.equals("Emis drug code reference file")) {
+				fileDesc = "DrugCode";
+			} else if (fileDesc.equals("Emis drug record file")) {
+				fileDesc = "DrugRecord";
+			} else if (fileDesc.equals("Emis issue records file")) {
+				fileDesc = "IssueRecord";
+			} else if (fileDesc.equals("Emis observations file")) {
+				fileDesc = "Observation";
+			} else if (fileDesc.equals("Emis organisation location file")) {
+				fileDesc = "Location";
+			} else if (fileDesc.equals("Emis organisation-location link file")) {
+				fileDesc = "OrganisationLocation";
+			} else if (fileDesc.equals("Emis organisations file")) {
+				fileDesc = "Organisation";
+			} else if (fileDesc.equals("Emis patient file")) {
+				fileDesc = "Patient";
+			} else if (fileDesc.equals("Emis problems file")) {
+				fileDesc = "Problem";
+			} else if (fileDesc.equals("Emis referrals file")) {
+				fileDesc = "ObservationReferral";
+			} else if (fileDesc.equals("Emis session-user link file")) {
+				fileDesc = "SessionUser";
+			} else if (fileDesc.equals("Emis sharing agreements file")) {
+				fileDesc = "SharingOrganisation";
+			} else if (fileDesc.equals("Emis staff file")) {
+				fileDesc = "UserInRole";
+			}
+
+			String fileType = null;
+			switch (fileDesc) {
+				case "ClinicalCode":
+					fileType = "Coding_ClinicalCode";
+					break;
+				case "Consultation":
+					fileType = "CareRecord_Consultation";
+					break;
+				case "Diary":
+					fileType = "CareRecord_Diary";
+					break;
+				case "DrugCode":
+					fileType = "Coding_DrugCode";
+					break;
+				case "DrugRecord":
+					fileType = "Prescribing_DrugRecord";
+					break;
+				case "IssueRecord":
+					fileType = "Prescribing_IssueRecord";
+					break;
+				case "Location":
+					fileType = "Admin_Location";
+					break;
+				case "Observation":
+					fileType = "CareRecord_Observation";
+					break;
+				case "ObservationReferral":
+					fileType = "CareRecord_ObservationReferral";
+					break;
+				case "Organisation":
+					fileType = "Admin_Organisation";
+					break;
+				case "OrganisationLocation":
+					fileType = "Admin_OrganisationLocation";
+					break;
+				case "Patient":
+					fileType = "Admin_Patient";
+					break;
+				case "Problem":
+					fileType = "CareRecord_Problem";
+					break;
+				case "Session":
+					fileType = "Appointment_Session";
+					break;
+				case "SessionUser":
+					fileType = "Appointment_SessionUser";
+					break;
+				case "SharingOrganisation":
+					fileType = "Agreements_SharingOrganisation";
+					break;
+				case "Slot":
+					fileType = "Appointment_Slot";
+					break;
+				case "UserInRole":
+					fileType = "Admin_UserInRole";
+					break;
+				default:
+					throw new Exception("Unknown file type [" + fileDesc + "]");
+			}
+
+			/*String prefix = TransformConfig.instance().getSharedStoragePath();
+			prefix += "/";
+			if (!filePath.startsWith(prefix)) {
+				throw new Exception("File path [" + filePath + "] doesn't start with " + prefix);
+			}
+			filePath = filePath.substring(prefix.length());*/
+
+			ExchangePayloadFile p = new ExchangePayloadFile();
+			p.setPath(filePath);
+			p.setType(fileType);
+
+			List<ExchangePayloadFile> files = new ArrayList<>();
+			files.add(p);
+
+			String version = EmisCsvToFhirTransformer.determineVersion(files);
+
+			Map<Class, AbstractCsvParser> parsers = new HashMap<>();
+
+			EmisCsvToFhirTransformer.createParsers(serviceId, systemId, exchangeId, files, version, parsers);
+			Iterator<AbstractCsvParser> it = parsers.values().iterator();
+
+			return it.next();
 		}
 
-		String fileType = null;
-		switch (fileDesc) {
-			case "ClinicalCode":
-				fileType = "Coding_ClinicalCode";
-				break;
-			case "Consultation":
-				fileType = "CareRecord_Consultation";
-				break;
-			case "Diary":
-				fileType = "CareRecord_Diary";
-				break;
-			case "DrugCode":
-				fileType = "Coding_DrugCode";
-				break;
-			case "DrugRecord":
-				fileType = "Prescribing_DrugRecord";
-				break;
-			case "IssueRecord":
-				fileType = "Prescribing_IssueRecord";
-				break;
-			case "Location":
-				fileType = "Admin_Location";
-				break;
-			case "Observation":
-				fileType = "CareRecord_Observation";
-				break;
-			case "ObservationReferral":
-				fileType = "CareRecord_ObservationReferral";
-				break;
-			case "Organisation":
-				fileType = "Admin_Organisation";
-				break;
-			case "OrganisationLocation":
-				fileType = "Admin_OrganisationLocation";
-				break;
-			case "Patient":
-				fileType = "Admin_Patient";
-				break;
-			case "Problem":
-				fileType = "CareRecord_Problem";
-				break;
-			case "Session":
-				fileType = "Appointment_Session";
-				break;
-			case "SessionUser":
-				fileType = "Appointment_SessionUser";
-				break;
-			case "SharingOrganisation":
-				fileType = "Agreements_SharingOrganisation";
-				break;
-			case "Slot":
-				fileType = "Appointment_Slot";
-				break;
-			case "UserInRole":
-				fileType = "Admin_UserInRole";
-				break;
-			default:
-				throw new Exception("Unknown file type [" + fileDesc + "]");
+		if (filePath.contains("BARTSDW")) {
+			return null;
 		}
 
-		/*String prefix = TransformConfig.instance().getSharedStoragePath();
-		prefix += "/";
-		if (!filePath.startsWith(prefix)) {
-			throw new Exception("File path [" + filePath + "] doesn't start with " + prefix);
-		}
-		filePath = filePath.substring(prefix.length());*/
-
-		ExchangePayloadFile p = new ExchangePayloadFile();
-		p.setPath(filePath);
-		p.setType(fileType);
-
-		List<ExchangePayloadFile> files = new ArrayList<>();
-		files.add(p);
-
-		String version = EmisCsvToFhirTransformer.determineVersion(files);
-
-		Map<Class, AbstractCsvParser> parsers = new HashMap<>();
-
-		EmisCsvToFhirTransformer.createParsers(serviceId, systemId, exchangeId, files, version, parsers);
-		Iterator<AbstractCsvParser> it = parsers.values().iterator();
-
-		return it.next();
+		throw new Exception("Unknown file desc [" + fileDesc + "] for " + filePath);
 	}
 
 	/*private static void moveS3ToAudit(int threads) {
