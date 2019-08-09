@@ -2112,6 +2112,7 @@ public class Main {
 			}
 
 			ps.close();
+			entityManager.close();
 			LOG.debug("Found " + fileDescs.size() + " files to map");
 
 			List<FileDesc> batch = new ArrayList<>();
@@ -2124,6 +2125,10 @@ public class Main {
 				batch.add(f);
 				if (batch.size() >= batchSize
 						|| i+1 >= fileDescs.size()) {
+
+					entityManager = ConnectionManager.getPublisherTransformEntityManager(dummyServiceId);
+					session = (SessionImpl) entityManager.getDelegate();
+					connection = session.connection();
 
 					sql = "UPDATE source_file_mapping"
 							+ " SET new_published_file_id = ?"
@@ -2142,6 +2147,8 @@ public class Main {
 
 					ps.executeBatch();
 					entityManager.getTransaction().commit();
+					ps.close();
+					entityManager.close();
 				}
 
 				hmFileIdMap.put(f.id, newFileAuditId);
@@ -2150,10 +2157,7 @@ public class Main {
 				}
 			}
 
-
-
-/*
-			LOG.debug("Converting audits");
+			/*LOG.debug("Converting audits");
 			while (true) {
 
 				sql = "SELECT c.resource_id, c.resource_type, c.created_at, m.version, m.mappings_json"
@@ -2167,8 +2171,13 @@ public class Main {
 
 				Map<ResourceWrapper, ResourceFieldMappingAudit> map = new HashMap<>();
 
-				PreparedStatement ps = connection.prepareStatement(sql);
-				ResultSet rs = ps.executeQuery();
+				entityManager = ConnectionManager.getPublisherTransformEntityManager(dummyServiceId);
+				session = (SessionImpl) entityManager.getDelegate();
+				connection = session.connection();
+
+
+				ps = connection.prepareStatement(sql);
+				rs = ps.executeQuery();
 				while (rs.next()) {
 					int col = 1;
 					ResourceWrapper r = new ResourceWrapper();
@@ -2182,6 +2191,7 @@ public class Main {
 					map.put(r, audit);
 				}
 				ps.close();
+				entityManager.close();
 
 				boolean lastOne = map.size() < batchSize;
 
@@ -2195,8 +2205,13 @@ public class Main {
 							throw new Exception("No old-style audit ID in audit for " + r.getResourceType() + " " + r.getResourceId() + " from " + r.getCreatedAt());
 						}
 
+						entityManager = ConnectionManager.getPublisherTransformEntityManager(dummyServiceId);
+						session = (SessionImpl) entityManager.getDelegate();
+						connection = session.connection();
+
+
 						//need to convert oldStyleID to a fileID and record number
-						sql = "select r.source_location, f.id, f.service_id, f.system_id, f.exchange_id, f.file_path, t.description"
+						sql = "select r.source_location, f.id"
 								+ " from source_file_record r"
 								+ " inner join source_file f"
 								+ " on f.id = r.source_file_id"
@@ -2214,16 +2229,16 @@ public class Main {
 
 						int col = 1;
 						String recordNumStr = rs.getString(col++);
-						UUID serviceId = UUID.fromString(rs.getString(col++));
-						UUID systemId = UUID.fromString(rs.getString(col++));
-						UUID exchangeId = UUID.fromString(rs.getString(col++));
-						String filePath = rs.getString(col++);
-						String fileDesc = rs.getString(col++);
+						int fileId = rs.getInt(col++);
 
 						ps.close();
+						entityManager.close();
 
 						//need to ensure the file is actually audited too
-						int newFileAuditId = auditParser(serviceId, systemId, exchangeId, filePath, fileDesc, hmFileIdMap);
+						Integer newFileAuditId = hmFileIdMap.get(new Integer(fileId));
+
+//TODO - if null, retrieve
+//TODO - if still null???
 
 						auditRow.setOldStyleAuditId(null);
 						auditRow.setFileId(newFileAuditId);
@@ -2231,6 +2246,11 @@ public class Main {
 					}
 
 				}
+
+				entityManager = ConnectionManager.getPublisherTransformEntityManager(dummyServiceId);
+				session = (SessionImpl) entityManager.getDelegate();
+				connection = session.connection();
+
 
 				//save all audits
 				sql = "UPDATE resource_field_mappings"
@@ -2260,6 +2280,12 @@ public class Main {
 				ps.executeBatch();
 				entityManager.getTransaction().commit();
 				ps.close();
+				entityManager.close();
+
+				entityManager = ConnectionManager.getPublisherTransformEntityManager(dummyServiceId);
+				session = (SessionImpl) entityManager.getDelegate();
+				connection = session.connection();
+
 
 				//mark temp table as done
 				sql = "UPDATE resource_field_mappings_to_convert"
@@ -2286,6 +2312,7 @@ public class Main {
 				ps.executeBatch();
 				entityManager.getTransaction().commit();
 				ps.close();
+				entityManager.close();
 
 
 				if (lastOne) {
