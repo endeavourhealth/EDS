@@ -2126,7 +2126,7 @@ public class Main {
 						|| i+1 >= fileDescs.size()) {
 
 					sql = "UPDATE source_file_mapping"
-							+ " SET new_published_file_id = "
+							+ " SET new_published_file_id = ?"
 							+ " WHERE id = ?";
 					ps = connection.prepareStatement(sql);
 
