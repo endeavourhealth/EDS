@@ -26,6 +26,7 @@ import org.endeavourhealth.core.database.dal.audit.models.ExchangeTransformAudit
 import org.endeavourhealth.core.database.dal.audit.models.HeaderKeys;
 import org.endeavourhealth.core.database.dal.eds.PatientLinkDalI;
 import org.endeavourhealth.core.database.dal.ehr.models.ResourceWrapper;
+import org.endeavourhealth.core.database.dal.publisherTransform.models.ResourceFieldMappingAudit;
 import org.endeavourhealth.core.database.dal.reference.PostcodeDalI;
 import org.endeavourhealth.core.database.dal.reference.models.PostcodeLookup;
 import org.endeavourhealth.core.database.dal.subscriberTransform.SubscriberOrgMappingDalI;
@@ -65,6 +66,7 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.Date;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class Main {
@@ -2072,7 +2074,7 @@ public class Main {
 			//find a suitable service ID
 			UUID dummyServiceId = null;
 			ServiceDalI serviceDal = DalProvider.factoryServiceDal();
-			for (Service s: serviceDal.getAll()) {
+			for (Service s : serviceDal.getAll()) {
 				if (s.getPublisherConfigName() != null
 						&& s.getPublisherConfigName().equalsIgnoreCase(publisherConfigName)) {
 					dummyServiceId = s.getId();
@@ -2116,7 +2118,7 @@ public class Main {
 
 			List<FileDesc> batch = new ArrayList<>();
 
-			for (int i=0; i<fileDescs.size(); i++) {
+			for (int i = 0; i < fileDescs.size(); i++) {
 				FileDesc f = fileDescs.get(i);
 				Integer newFileAuditId = auditParser(f.serviceId, f.systemId, f.exchangeId, f.filePath, f.fileDesc);
 				if (newFileAuditId == null) {
@@ -2126,7 +2128,7 @@ public class Main {
 
 				batch.add(f);
 				if (batch.size() >= batchSize
-						|| i+1 >= fileDescs.size()) {
+						|| i + 1 >= fileDescs.size()) {
 
 					entityManager = ConnectionManager.getPublisherTransformEntityManager(dummyServiceId);
 					session = (SessionImpl) entityManager.getDelegate();
@@ -2139,7 +2141,7 @@ public class Main {
 
 					entityManager.getTransaction().begin();
 
-					for (FileDesc toSave: batch) {
+					for (FileDesc toSave : batch) {
 
 						int col = 1;
 						ps.setInt(col++, toSave.newId);
@@ -2157,14 +2159,34 @@ public class Main {
 					LOG.debug("Audited " + i + " files");
 				}
 			}
+			LOG.info("Finished Converting FHIR audit for " + publisherConfigName);
+		} catch (Throwable t) {
+			LOG.error("", t);
+		}
 
-			/*LOG.debug("Converting audits");
+	}
 
-			Map<Integer, Integer> hmFileIdMap = new ConcurrentHashMap<>();
+	private static void convertFhirAudits2(String publisherConfigName, int threads, int batchSize) throws Exception {
+		LOG.info("Converting FHIR audit for " + publisherConfigName);
+		try {
+			//find a suitable service ID
+			UUID dummyServiceId = null;
+			ServiceDalI serviceDal = DalProvider.factoryServiceDal();
+			for (Service s: serviceDal.getAll()) {
+				if (s.getPublisherConfigName() != null
+						&& s.getPublisherConfigName().equalsIgnoreCase(publisherConfigName)) {
+					dummyServiceId = s.getId();
+					LOG.info("Found sample service ID " + s.getId() + " " + s.getName() + " " + s.getLocalId());
+					break;
+				}
+			}
+
+			Map<Integer, Integer> hmFileIdMapOnThisServer = new ConcurrentHashMap<>();
+			Map<Integer, Map<Integer, String>> hmFileIdMapOnAllServers = new ConcurrentHashMap<>();
 
 			while (true) {
 
-				sql = "SELECT c.resource_id, c.resource_type, c.created_at, m.version, m.mappings_json"
+				String sql = "SELECT c.resource_id, c.resource_type, c.created_at, m.version, m.mappings_json"
 						+ " FROM resource_field_mappings_to_convert c"
 						+ " INNER JOIN resource_field_mappings m"
 						+ " ON c.resource_id = m.resource_id"
@@ -2175,13 +2197,13 @@ public class Main {
 
 				Map<ResourceWrapper, ResourceFieldMappingAudit> map = new HashMap<>();
 
-				entityManager = ConnectionManager.getPublisherTransformEntityManager(dummyServiceId);
-				session = (SessionImpl) entityManager.getDelegate();
-				connection = session.connection();
+				EntityManager entityManager = ConnectionManager.getPublisherTransformEntityManager(dummyServiceId);
+				SessionImpl session = (SessionImpl) entityManager.getDelegate();
+				Connection connection = session.connection();
 
 
-				ps = connection.prepareStatement(sql);
-				rs = ps.executeQuery();
+				PreparedStatement ps = connection.prepareStatement(sql);
+				ResultSet rs = ps.executeQuery();
 				while (rs.next()) {
 					int col = 1;
 					ResourceWrapper r = new ResourceWrapper();
@@ -2205,8 +2227,10 @@ public class Main {
 					List<ResourceFieldMappingAudit.ResourceFieldMappingAuditRow> auditRows = audit.getAudits();
 					for (ResourceFieldMappingAudit.ResourceFieldMappingAuditRow auditRow: auditRows) {
 						Long oldStyleAuditId = auditRow.getOldStyleAuditId();
-						if (oldStyleAuditId == null) {
-							throw new Exception("No old-style audit ID in audit for " + r.getResourceType() + " " + r.getResourceId() + " from " + r.getCreatedAt());
+
+						//got some records with a mix of old and new-style audits so skip any rows that are new-style
+						if (oldStyleAuditId != null) {
+							continue;
 						}
 
 						entityManager = ConnectionManager.getPublisherTransformEntityManager(dummyServiceId);
@@ -2239,10 +2263,106 @@ public class Main {
 						entityManager.close();
 
 						//need to ensure the file is actually audited too
-						Integer newFileAuditId = hmFileIdMap.get(new Integer(fileId));
+						Integer newFileAuditId = null;
 
-//TODO - if null, retrieve
-//TODO - if still null???
+						boolean isCodingRow = false;
+						String desiredFileName = null;
+
+						for (ResourceFieldMappingAudit.ResourceFieldMappingAuditCol auditCol: auditRow.getCols()) {
+
+							if (r.getResourceType().equals(ResourceType.MedicationOrder.toString())
+									|| r.getResourceType().equals(ResourceType.MedicationStatement.toString())) {
+
+								if (auditCol.getField().equals("medicationCodeableConcept.text")) {
+									isCodingRow = true;
+									desiredFileName = "DrugCode";
+								}
+
+							} else if (r.getResourceType().equals(ResourceType.Observation.toString())
+									|| r.getResourceType().equals(ResourceType.Condition.toString())
+									|| r.getResourceType().equals(ResourceType.Procedure.toString())
+									|| r.getResourceType().equals(ResourceType.DiagnosticReport.toString())) {
+
+								if (auditCol.getField().equals("code.text")
+										|| auditCol.getField().equals("component[1].code.text")
+										|| auditCol.getField().equals("component[0].code.text")) {
+									isCodingRow = true;
+									desiredFileName = "ClinicalCode";
+								}
+
+							} else if (r.getResourceType().equals(ResourceType.AllergyIntolerance.toString())) {
+
+								if (auditCol.getField().equals("substance.text")) {
+									isCodingRow = true;
+									desiredFileName = "ClinicalCode";
+								}
+
+							} else if (r.getResourceType().equals(ResourceType.FamilyMemberHistory.toString())) {
+
+								if (auditCol.getField().equals("condition[0].code.text")) {
+									isCodingRow = true;
+									desiredFileName = "ClinicalCode";
+								}
+
+							} else if (r.getResourceType().equals(ResourceType.Immunization.toString())) {
+
+								if (auditCol.getField().equals("vaccineCode.text")) {
+									isCodingRow = true;
+									desiredFileName = "ClinicalCode";
+								}
+
+							} else if (r.getResourceType().equals(ResourceType.DiagnosticOrder.toString())) {
+
+								if (auditCol.getField().equals("item[0].code.text")) {
+									isCodingRow = true;
+									desiredFileName = "ClinicalCode";
+								}
+
+							} else if (r.getResourceType().equals(ResourceType.ReferralRequest.toString())) {
+
+								if (auditCol.getField().equals("serviceRequested[0].text")) {
+									isCodingRow = true;
+									desiredFileName = "ClinicalCode";
+								}
+
+							} else if (r.getResourceType().equals(ResourceType.Specimen.toString())) {
+
+								if (auditCol.getField().equals("type.text")) {
+									isCodingRow = true;
+									desiredFileName = "ClinicalCode";
+								}
+
+							} else if (r.getResourceType().equals(ResourceType.Location.toString())) {
+
+								if (auditCol.getField().equals("managingOrganization.reference")) {
+									isCodingRow = true;
+									desiredFileName = "OrganisationLocation";
+								} else {
+									isCodingRow = true;
+									desiredFileName = "Location";
+								}
+
+							} else if (r.getResourceType().equals(ResourceType.Organization.toString())) {
+								isCodingRow = true;
+								desiredFileName = "Organisation";
+
+							} else if (r.getResourceType().equals(ResourceType.Practitioner.toString())) {
+								isCodingRow = true;
+								desiredFileName = "UserInRole";
+
+							}
+
+							if (isCodingRow) {
+								break;
+							}
+						}
+
+						if (isCodingRow) {
+							newFileAuditId = findNewAuditIdOnAnyServer(fileId, desiredFileName, hmFileIdMapOnAllServers);
+
+						} else {
+							newFileAuditId = findNewAuditIdOnThisServer(fileId, publisherConfigName, hmFileIdMapOnThisServer);
+						}
 
 						auditRow.setOldStyleAuditId(null);
 						auditRow.setFileId(newFileAuditId);
@@ -2294,7 +2414,8 @@ public class Main {
 				//mark temp table as done
 				sql = "UPDATE resource_field_mappings_to_convert"
 						+ " SET done = true"
-						+ " WHERE resource_id = ?"
+						+ " WHERE done = false"
+						+ " AND resource_id = ?"
 						+ " AND resource_type = ?"
 						+ " AND created_at = ?";
 				ps = connection.prepareStatement(sql);
@@ -2302,8 +2423,6 @@ public class Main {
 				entityManager.getTransaction().begin();
 
 				for (ResourceWrapper r: map.keySet()) {
-					ResourceFieldMappingAudit audit = map.get(r);
-					String auditJson = audit.writeToJson();
 
 					int col = 1;
 					ps.setString(col++, r.getResourceId().toString());
@@ -2322,12 +2441,99 @@ public class Main {
 				if (lastOne) {
 					break;
 				}
-			}*/
+			}
 
 			LOG.info("Finished Converting FHIR audit for " + publisherConfigName);
 		} catch (Throwable t) {
 			LOG.error("", t);
 		}
+	}
+
+	private static Integer findNewAuditIdOnAnyServer(int fileId, String desiredFileName, Map<Integer, Map<Integer, String>> hmFileIdMapOnAllServers) throws Exception {
+
+		Map<Integer, String> hmFileIds = hmFileIdMapOnAllServers.get(new Integer(fileId));
+		if (hmFileIds == null) {
+			EntityManager entityManager = ConnectionManager.getAuditEntityManager();
+			SessionImpl session = (SessionImpl) entityManager.getDelegate();
+			Connection connection = session.connection();
+
+			//need to convert oldStyleID to a fileID and record number
+			String sql = "SELECT new_published_file_id, file_path"
+					+ " FROM source_file_mappings"
+					+ " WHERE source_file_id = ?";
+			PreparedStatement ps = connection.prepareStatement(sql);
+
+			ps.setInt(1, fileId);
+
+			ResultSet rs = ps.executeQuery();
+
+			hmFileIds = new HashMap<>();
+
+			while (rs.next()) {
+				int publisherFileId = rs.getInt(1);
+				String filePath = rs.getString(2);
+
+				hmFileIds.put(publisherFileId, filePath);
+			}
+			hmFileIdMapOnAllServers.put(new Integer(fileId), hmFileIds);
+
+			ps.close();
+			entityManager.close();
+		}
+
+		Map<Integer, String> hmMatchesByType = new HashMap<>();
+		for (Integer publishedFileId: hmFileIds.keySet()) {
+			String filePath = hmFileIds.get(publishedFileId);
+			if (filePath.contains(desiredFileName)) {
+				hmMatchesByType.put(publishedFileId, filePath);
+			}
+		}
+
+		if (hmMatchesByType.isEmpty()) {
+			throw new Exception("Failed to find published file ID over all servers for source file ID " + fileId + " and desired file name " + desiredFileName);
+		}
+
+		if (hmMatchesByType.size() > 1) {
+			throw new Exception("Found multiple published file IDs over all servers for source file ID " + fileId + " and desired file name " + desiredFileName);
+		}
+
+		Iterator<Integer> it = hmMatchesByType.keySet().iterator();
+		return it.next();
+	}
+
+	private static Integer findNewAuditIdOnThisServer(int fileId, String publisherConfigName, Map<Integer, Integer> hmFileIdMapOnThisServer) throws Exception {
+		Integer ret = hmFileIdMapOnThisServer.get(new Integer(fileId));
+		if (ret != null) {
+			return ret;
+		}
+
+		//retrieve from DB
+		EntityManager entityManager = ConnectionManager.getAuditEntityManager();
+		SessionImpl session = (SessionImpl) entityManager.getDelegate();
+		Connection connection = session.connection();
+
+		//need to convert oldStyleID to a fileID and record number
+		String sql = "SELECT new_published_file_id"
+				+ " FROM source_file_mappings"
+				+ " WHERE source_file_id = ?"
+				+ " AND publisher_config = ?";
+		PreparedStatement ps = connection.prepareStatement(sql);
+
+		ps.setInt(1, fileId);
+		ps.setString(2, publisherConfigName);
+
+		ResultSet rs = ps.executeQuery();
+
+		if (!rs.next()) {
+			throw new Exception("Failed to find source record mapping for old style file ID " + fileId + " and publisher " + publisherConfigName);
+		}
+		int publisherFileId = rs.getInt(1);
+		hmFileIdMapOnThisServer.put(new Integer(fileId), new Integer(publisherFileId));
+
+		ps.close();
+		entityManager.close();
+
+		return new Integer(publisherFileId);
 	}
 
 	static class FileDesc {
