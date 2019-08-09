@@ -42,16 +42,6 @@ import org.endeavourhealth.core.queueing.QueueHelper;
 import org.endeavourhealth.core.xml.QueryDocument.*;
 import org.endeavourhealth.transform.common.*;
 import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
-import org.endeavourhealth.transform.emis.csv.schema.admin.*;
-import org.endeavourhealth.transform.emis.csv.schema.agreements.SharingOrganisation;
-import org.endeavourhealth.transform.emis.csv.schema.appointment.Session;
-import org.endeavourhealth.transform.emis.csv.schema.appointment.SessionUser;
-import org.endeavourhealth.transform.emis.csv.schema.appointment.Slot;
-import org.endeavourhealth.transform.emis.csv.schema.careRecord.*;
-import org.endeavourhealth.transform.emis.csv.schema.coding.ClinicalCode;
-import org.endeavourhealth.transform.emis.csv.schema.coding.DrugCode;
-import org.endeavourhealth.transform.emis.csv.schema.prescribing.DrugRecord;
-import org.endeavourhealth.transform.emis.csv.schema.prescribing.IssueRecord;
 import org.endeavourhealth.transform.emis.custom.schema.OriginalTerms;
 import org.endeavourhealth.transform.emis.custom.schema.RegistrationStatus;
 import org.hibernate.internal.SessionImpl;
@@ -2318,109 +2308,158 @@ public class Main {
 	}
 
 	private static ParserI createParser(UUID serviceId, UUID systemId, UUID exchangeId, String filePath, String fileDesc) throws Exception {
+
+		if (fileDesc.equals("Bespoke Emis registration status extract")
+				|| fileDesc.equals("RegistrationStatus")) {
+			String DATE_FORMAT = "dd/MM/yyyy";
+			String TIME_FORMAT = "hh:mm:ss";
+			CSVFormat CSV_FORMAT = CSVFormat.TDF
+					.withHeader()
+					.withEscape((Character)null)
+					.withQuote((Character)null)
+					.withQuoteMode(QuoteMode.MINIMAL); //ideally want Quote Mdde NONE, but validation in the library means we need to use this;
+
+			List<String> possibleVersions = new ArrayList<>();
+			possibleVersions.add(RegistrationStatus.VERSION_WITH_PROCESSING_ID);
+			possibleVersions.add(RegistrationStatus.VERSION_WITHOUT_PROCESSING_ID);
+
+			RegistrationStatus testParser = new RegistrationStatus(null, null, null, null, filePath, CSV_FORMAT, DATE_FORMAT, TIME_FORMAT);
+			possibleVersions = testParser.testForValidVersions(possibleVersions);
+			String version = possibleVersions.get(0);
+			return new RegistrationStatus(serviceId, systemId, exchangeId, version, filePath, CSV_FORMAT, DATE_FORMAT, TIME_FORMAT);
+		}
+
+		if (fileDesc.equals("OriginalTerms")) {
+			String DATE_FORMAT2 = "dd/MM/yyyy";
+			String TIME_FORMAT2 = "hh:mm:ss";
+			CSVFormat CSV_FORMAT2 = CSVFormat.TDF
+					.withHeader()
+					.withEscape((Character)null)
+					.withQuote((Character)null)
+					.withQuoteMode(QuoteMode.MINIMAL); //ideally want Quote Mdde NONE, but validation in the library means we need to use this;
+			return new OriginalTerms(serviceId, systemId, exchangeId, null, filePath, CSV_FORMAT2, DATE_FORMAT2, TIME_FORMAT2);
+		}
+
+		if (fileDesc.equals("Emis appointments file")) {
+			fileDesc = "Slot";
+		} else if (fileDesc.equals("Emis appointments session file")) {
+			fileDesc = "Session";
+		} else if (fileDesc.equals("Emis clinical code reference file")) {
+			fileDesc = "ClinicalCode";
+		} else if (fileDesc.equals("Emis consultations file")) {
+			fileDesc = "Consultation";
+		} else if (fileDesc.equals("Emis diary file")) {
+			fileDesc = "Diary";
+		} else if (fileDesc.equals("Emis drug code reference file")) {
+			fileDesc = "DrugCode";
+		} else if (fileDesc.equals("Emis drug record file")) {
+			fileDesc = "DrugRecord";
+		} else if (fileDesc.equals("Emis issue records file")) {
+			fileDesc = "IssueRecord";
+		} else if (fileDesc.equals("Emis observations file")) {
+			fileDesc = "Observation";
+		} else if (fileDesc.equals("Emis organisation location file")) {
+			fileDesc = "Location";
+		} else if (fileDesc.equals("Emis organisation-location link file")) {
+			fileDesc = "OrganisationLocation";
+		} else if (fileDesc.equals("Emis organisations file")) {
+			fileDesc = "Organisation";
+		} else if (fileDesc.equals("Emis patient file")) {
+			fileDesc = "Patient";
+		} else if (fileDesc.equals("Emis problems file")) {
+			fileDesc = "Problem";
+		} else if (fileDesc.equals("Emis referrals file")) {
+			fileDesc = "ObservationReferral";
+		} else if (fileDesc.equals("Emis session-user link file")) {
+			fileDesc = "SessionUser";
+		} else if (fileDesc.equals("Emis sharing agreements file")) {
+			fileDesc = "SharingOrganisation";
+		} else if (fileDesc.equals("Emis staff file")) {
+			fileDesc = "UserInRole";
+		}
+
+		String fileType = null;
 		switch (fileDesc) {
-			case "Bespoke Emis registration status extract":
-				String DATE_FORMAT = "dd/MM/yyyy";
-				String TIME_FORMAT = "hh:mm:ss";
-				CSVFormat CSV_FORMAT = CSVFormat.TDF
-						.withHeader()
-						.withEscape((Character)null)
-						.withQuote((Character)null)
-						.withQuoteMode(QuoteMode.MINIMAL); //ideally want Quote Mdde NONE, but validation in the library means we need to use this;
-				return new RegistrationStatus(serviceId, systemId, exchangeId, null, filePath, CSV_FORMAT, DATE_FORMAT, TIME_FORMAT);
 			case "ClinicalCode":
-				return new ClinicalCode(serviceId, systemId, exchangeId, null, filePath);
+				fileType = "Coding_ClinicalCode";
+				break;
 			case "Consultation":
-				return new Consultation(serviceId, systemId, exchangeId, null, filePath);
+				fileType = "CareRecord_Consultation";
+				break;
 			case "Diary":
-				return new Diary(serviceId, systemId, exchangeId, null, filePath);
+				fileType = "CareRecord_Diary";
+				break;
 			case "DrugCode":
-				return new DrugCode(serviceId, systemId, exchangeId, null, filePath);
+				fileType = "Coding_DrugCode";
+				break;
 			case "DrugRecord":
-				return new DrugRecord(serviceId, systemId, exchangeId, null, filePath);
-			case "Emis appointments file":
-				return new Slot(serviceId, systemId, exchangeId, null, filePath);
-			case "Emis appointments session file":
-				return new Session(serviceId, systemId, exchangeId, null, filePath);
-			case "Emis clinical code reference file":
-				return new ClinicalCode(serviceId, systemId, exchangeId, null, filePath);
-			case "Emis consultations file":
-				return new Consultation(serviceId, systemId, exchangeId, null, filePath);
-			case "Emis diary file":
-				return new Diary(serviceId, systemId, exchangeId, null, filePath);
-			case "Emis drug code reference file":
-				return new DrugCode(serviceId, systemId, exchangeId, null, filePath);
-			case "Emis drug record file":
-				return new DrugRecord(serviceId, systemId, exchangeId, null, filePath);
-			case "Emis issue records file":
-				return new IssueRecord(serviceId, systemId, exchangeId, null, filePath);
-			case "Emis observations file":
-				return new Observation(serviceId, systemId, exchangeId, null, filePath);
-			case "Emis organisation location file":
-				return new Location(serviceId, systemId, exchangeId, null, filePath);
-			case "Emis organisation-location link file":
-				return new OrganisationLocation(serviceId, systemId, exchangeId, null, filePath);
-			case "Emis organisations file":
-				return new Organisation(serviceId, systemId, exchangeId, null, filePath);
-			case "Emis patient file":
-				return new Patient(serviceId, systemId, exchangeId, null, filePath);
-			case "Emis problems file":
-				return new Problem(serviceId, systemId, exchangeId, null, filePath);
-			case "Emis referrals file":
-				return new ObservationReferral(serviceId, systemId, exchangeId, null, filePath);
-			case "Emis session-user link file":
-				return new SessionUser(serviceId, systemId, exchangeId, null, filePath);
-			case "Emis sharing agreements file":
-				return new SharingOrganisation(serviceId, systemId, exchangeId, null, filePath);
-			case "Emis staff file":
-				return new UserInRole(serviceId, systemId, exchangeId, null, filePath);
+				fileType = "Prescribing_DrugRecord";
+				break;
 			case "IssueRecord":
-				return new IssueRecord(serviceId, systemId, exchangeId, null, filePath);
+				fileType = "Prescribing_IssueRecord";
+				break;
 			case "Location":
-				return new Location(serviceId, systemId, exchangeId, null, filePath);
+				fileType = "Admin_Location";
+				break;
 			case "Observation":
-				return new Observation(serviceId, systemId, exchangeId, null, filePath);
+				fileType = "CareRecord_Observation";
+				break;
 			case "ObservationReferral":
-				return new ObservationReferral(serviceId, systemId, exchangeId, null, filePath);
+				fileType = "CareRecord_ObservationReferral";
+				break;
 			case "Organisation":
-				return new Organisation(serviceId, systemId, exchangeId, null, filePath);
+				fileType = "Admin_Organisation";
+				break;
 			case "OrganisationLocation":
-				return new OrganisationLocation(serviceId, systemId, exchangeId, null, filePath);
-			case "OriginalTerms":
-				String DATE_FORMAT2 = "dd/MM/yyyy";
-				String TIME_FORMAT2 = "hh:mm:ss";
-				CSVFormat CSV_FORMAT2 = CSVFormat.TDF
-						.withHeader()
-						.withEscape((Character)null)
-						.withQuote((Character)null)
-						.withQuoteMode(QuoteMode.MINIMAL); //ideally want Quote Mdde NONE, but validation in the library means we need to use this;
-				return new OriginalTerms(serviceId, systemId, exchangeId, null, filePath, CSV_FORMAT2, DATE_FORMAT2, TIME_FORMAT2);
+				fileType = "Admin_OrganisationLocation";
+				break;
 			case "Patient":
-				return new Patient(serviceId, systemId, exchangeId, null, filePath);
+				fileType = "Admin_Patient";
+				break;
 			case "Problem":
-				return new Problem(serviceId, systemId, exchangeId, null, filePath);
-			case "RegistrationStatus":
-				String DATE_FORMAT3 = "dd/MM/yyyy";
-				String TIME_FORMAT3 = "hh:mm:ss";
-				CSVFormat CSV_FORMAT3 = CSVFormat.TDF
-						.withHeader()
-						.withEscape((Character)null)
-						.withQuote((Character)null)
-						.withQuoteMode(QuoteMode.MINIMAL); //ideally want Quote Mdde NONE, but validation in the library means we need to use this;
-				return new RegistrationStatus(serviceId, systemId, exchangeId, null, filePath, CSV_FORMAT3, DATE_FORMAT3, TIME_FORMAT3);
+				fileType = "CareRecord_Problem";
+				break;
 			case "Session":
-				return new Session(serviceId, systemId, exchangeId, null, filePath);
+				fileType = "Appointment_Session";
+				break;
 			case "SessionUser":
-				return new SessionUser(serviceId, systemId, exchangeId, null, filePath);
+				fileType = "Appointment_SessionUser";
+				break;
 			case "SharingOrganisation":
-				return new SharingOrganisation(serviceId, systemId, exchangeId, null, filePath);
+				fileType = "Agreements_SharingOrganisation";
+				break;
 			case "Slot":
-				return new Slot(serviceId, systemId, exchangeId, null, filePath);
+				fileType = "Appointment_Slot";
+				break;
 			case "UserInRole":
-				return new UserInRole(serviceId, systemId, exchangeId, null, filePath);
+				fileType = "Admin_UserInRole";
+				break;
 			default:
 				throw new Exception("Unknown file type [" + fileDesc + "]");
 		}
+
+		String prefix = TransformConfig.instance().getSharedStoragePath();
+		prefix += "/";
+		if (!filePath.startsWith(prefix)) {
+			throw new Exception("File path [" + filePath + "] doesn't start with " + prefix);
+		}
+		filePath = filePath.substring(prefix.length());
+
+		ExchangePayloadFile p = new ExchangePayloadFile();
+		p.setPath(filePath);
+		p.setType(fileType);
+
+		List<ExchangePayloadFile> files = new ArrayList<>();
+		files.add(p);
+
+		String version = EmisCsvToFhirTransformer.determineVersion(files);
+
+		Map<Class, AbstractCsvParser> parsers = new HashMap<>();
+
+		EmisCsvToFhirTransformer.createParsers(serviceId, systemId, exchangeId, files, version, parsers);
+		Iterator<AbstractCsvParser> it = parsers.values().iterator();
+
+		return it.next();
 	}
 
 	/*private static void moveS3ToAudit(int threads) {
