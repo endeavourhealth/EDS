@@ -2094,67 +2094,63 @@ public class Main {
 					+ " WHERE new_published_file_id IS NULL";
 			PreparedStatement ps = connection.prepareStatement(sql);
 
+			List<FileDesc> fileDescs = new ArrayList<>();
+
 			ResultSet rs = ps.executeQuery();
 			while (rs.next()) {
 				int col = 1;
-				int id = rs.getInt(col++);
-				UUID serviceId = UUID.fromString(rs.getString(col++));
-				UUID systemId = UUID.fromString(rs.getString(col++));
-				String filePath = rs.getString(col++);
-				UUID exchangeId = UUID.fromString(rs.getString(col++));
-				String fileDesc = rs.getString(col++);
 
-				int newFileAuditId = auditParser(serviceId, systemId, exchangeId, filePath, fileDesc);
-				hmFileIdMap.put(id, newFileAuditId);
+				FileDesc f = new FileDesc();
+				f.id = rs.getInt(col++);
+				f.serviceId = UUID.fromString(rs.getString(col++));
+				f.systemId = UUID.fromString(rs.getString(col++));
+				f.filePath = rs.getString(col++);
+				f.exchangeId = UUID.fromString(rs.getString(col++));
+				f.fileDesc = rs.getString(col++);
 
+				fileDescs.add(f);
+			}
+
+			ps.close();
+			LOG.debug("Found " + fileDescs.size() + " files to map");
+
+			List<FileDesc> batch = new ArrayList<>();
+
+			for (int i=0; i<fileDescs.size(); i++) {
+				FileDesc f = fileDescs.get(i);
+				int newFileAuditId = auditParser(f.serviceId, f.systemId, f.exchangeId, f.filePath, f.fileDesc);
+				f.newId = newFileAuditId;
+
+				batch.add(f);
+				if (batch.size() >= batchSize
+						|| i+1 >= fileDescs.size()) {
+
+					sql = "UPDATE source_file_mapping"
+							+ " SET new_published_file_id = "
+							+ " WHERE id = ?";
+					ps = connection.prepareStatement(sql);
+
+					entityManager.getTransaction().begin();
+
+					for (FileDesc toSave: batch) {
+
+						int col = 1;
+						ps.setInt(col++, toSave.newId);
+						ps.setInt(col++, toSave.id);
+						ps.addBatch();
+					}
+
+					ps.executeBatch();
+					entityManager.getTransaction().commit();
+				}
+
+				hmFileIdMap.put(f.id, newFileAuditId);
 				if (hmFileIdMap.size() % 100 == 0) {
 					LOG.debug("Audited " + hmFileIdMap.size() + " files");
 				}
 			}
 
-			ps.close();
 
-			if (!hmFileIdMap.isEmpty()) {
-				LOG.debug("Audited " + hmFileIdMap.size() + " files, going to save mappings to DB");
-				sql = "UPDATE source_file_mapping"
-						+ " SET new_published_file_id = "
-						+ " WHERE id = ?";
-				ps = connection.prepareStatement(sql);
-
-				entityManager.getTransaction().begin();
-
-				int thisBatchSize = 0;
-				int saved = 0;
-
-				for (Integer id: hmFileIdMap.keySet()) {
-					Integer newId = hmFileIdMap.get(id);
-
-					int col = 1;
-					ps.setInt(col++, newId.intValue());
-					ps.setInt(col++, id.intValue());
-					ps.addBatch();
-					batchSize ++;
-
-					if (thisBatchSize >= batchSize) {
-						ps.executeBatch();
-						entityManager.getTransaction().commit();
-						entityManager.getTransaction().begin();
-						saved += thisBatchSize;
-						thisBatchSize = 0;
-
-						if (saved % 100 == 0) {
-							LOG.debug("Saved " + saved + " mappingd");
-						}
-					}
-				}
-
-				if (thisBatchSize >= 0) {
-					ps.executeBatch();
-				}
-
-				entityManager.getTransaction().commit();
-				ps.close();
-			}
 
 
 
@@ -2303,6 +2299,16 @@ public class Main {
 		} catch (Throwable t) {
 			LOG.error("", t);
 		}
+	}
+
+	static class FileDesc {
+		int id;
+		UUID serviceId;
+		UUID systemId;
+		String filePath;
+		UUID exchangeId;
+		String fileDesc;
+		int newId;
 	}
 
 	private static int auditParser(UUID serviceId, UUID systemId, UUID exchangeId, String filePath, String fileDesc) throws Exception {
