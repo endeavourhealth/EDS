@@ -2093,6 +2093,7 @@ public class Main {
 					+ " FROM source_file_mapping"
 					+ " WHERE new_published_file_id IS NULL";
 			PreparedStatement ps = connection.prepareStatement(sql);
+
 			ResultSet rs = ps.executeQuery();
 			while (rs.next()) {
 				int col = 1;
@@ -2110,6 +2111,7 @@ public class Main {
 					LOG.debug("Audited " + hmFileIdMap.size() + " files");
 				}
 			}
+
 			ps.close();
 
 			if (!hmFileIdMap.isEmpty()) {
@@ -2118,6 +2120,8 @@ public class Main {
 						+ " SET new_published_file_id = "
 						+ " WHERE id = ?";
 				ps = connection.prepareStatement(sql);
+
+				entityManager.getTransaction().begin();
 
 				int thisBatchSize = 0;
 				int saved = 0;
@@ -2133,6 +2137,8 @@ public class Main {
 
 					if (thisBatchSize >= batchSize) {
 						ps.executeBatch();
+						entityManager.getTransaction().commit();
+						entityManager.getTransaction().begin();
 						saved += thisBatchSize;
 						thisBatchSize = 0;
 
@@ -2146,8 +2152,11 @@ public class Main {
 					ps.executeBatch();
 				}
 
+				entityManager.getTransaction().commit();
 				ps.close();
 			}
+
+
 
 /*
 			LOG.debug("Converting audits");
