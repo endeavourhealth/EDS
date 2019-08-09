@@ -2438,12 +2438,12 @@ public class Main {
 				throw new Exception("Unknown file type [" + fileDesc + "]");
 		}
 
-		String prefix = TransformConfig.instance().getSharedStoragePath();
+		/*String prefix = TransformConfig.instance().getSharedStoragePath();
 		prefix += "/";
 		if (!filePath.startsWith(prefix)) {
 			throw new Exception("File path [" + filePath + "] doesn't start with " + prefix);
 		}
-		filePath = filePath.substring(prefix.length());
+		filePath = filePath.substring(prefix.length());*/
 
 		ExchangePayloadFile p = new ExchangePayloadFile();
 		p.setPath(filePath);
