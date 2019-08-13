@@ -132,16 +132,20 @@ public class SftpReaderEndpoint extends AbstractEndpoint {
 
             String sql = null;
             if (ConnectionManager.isPostgreSQL(connection)) {
-                sql = "SELECT c.configuration_id, c.poll_frequency_seconds, c.configuration_friendly_name, i.instance_name"
+                sql = "SELECT c.configuration_id, c.poll_frequency_seconds, c.configuration_friendly_name, i.instance_name, t.data_frequency_days"
                     + " FROM configuration.configuration c"
                     + " LEFT OUTER JOIN configuration.instance_configuration i"
                     + " ON c.configuration_id = i.configuration_id"
+                    + " LEFT OUTER JOIN configuration.interface_type t"
+                    + " ON c.interface_type_id = t.interface_type_id"
                     + " ORDER BY c.configuration_friendly_name";
             } else {
-                sql = "SELECT c.configuration_id, c.poll_frequency_seconds, c.configuration_friendly_name, i.instance_name"
+                sql = "SELECT c.configuration_id, c.poll_frequency_seconds, c.configuration_friendly_name, i.instance_name, t.data_frequency_days"
                         + " FROM configuration c"
                         + " LEFT OUTER JOIN instance_configuration i"
                         + " ON c.configuration_id = i.configuration_id"
+                        + " LEFT OUTER JOIN interface_type t"
+                        + " ON c.interface_type_id = t.interface_type_id"
                         + " ORDER BY c.configuration_friendly_name";
             }
 
@@ -154,6 +158,7 @@ public class SftpReaderEndpoint extends AbstractEndpoint {
                 int freq = rs.getInt(col++);
                 String name = rs.getString(col++);
                 String instanceName = rs.getString(col++);
+                int dataFrequencyDays = rs.getInt(col++);
 
                 if (filterInstanceName.equalsIgnoreCase("all")) {
                     //include all
@@ -178,7 +183,8 @@ public class SftpReaderEndpoint extends AbstractEndpoint {
                 ObjectNode child = root.addObject();
                 child.put("id", id);
                 child.put("name", name);
-                child.put("pollFrequency", freq);
+                child.put("pollFrequencySeconds", freq);
+                child.put("dataFrequencyDays", dataFrequencyDays);
                 child.put("instanceName", instanceName);
             }
             ps.close();

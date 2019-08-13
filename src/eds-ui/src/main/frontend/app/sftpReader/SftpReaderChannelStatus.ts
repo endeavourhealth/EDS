@@ -4,7 +4,8 @@ export class SftpReaderChannelStatus {
 
     id: string;
     name: string;
-    pollFrequency: number;
+    pollFrequencySeconds: number;
+    dataFrequencyDays: number;
     instanceName: string;
     latestPollingStart: number;
     latestPollingEnd: number;

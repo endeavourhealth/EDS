@@ -109,8 +109,9 @@ export class SftpReaderComponent {
         if (!lastPolled) {
             return true;
         }
-        var pollingFrequencySec = status.pollFrequency;
+        var pollingFrequencySec = status.pollFrequencySeconds;
         var pollingFrequencyMs = pollingFrequencySec * 1000;
+        pollingFrequencyMs = (pollingFrequencyMs * 1.1); //add 10% to the poling frequency so it's less touchy
 
         var now = new Date();
         var lastPolledDiffMs = now.getTime() - lastPolled;
@@ -123,15 +124,15 @@ export class SftpReaderComponent {
         if (!lastExtract) {
             return true;
         }
-        var durSec = 1000;
-        var durMin = durSec * 60;
-        var durHour = durMin * 60;
-        var durDay = durHour * 25;
+
+        var dataFrequencyDays = status.dataFrequencyDays;
+        var dataFrequencyMs = dataFrequencyDays * 24 * 60 * 60 * 1000;
+        dataFrequencyMs = (dataFrequencyMs * 1.1); //add 10% to the poling frequency so it's less touchy
 
         var now = new Date();
         var lastExtractDiffMs = now.getTime() - lastExtract;
 
-        return lastExtractDiffMs > durDay * 2; //say too old if > 2 days ago
+        return lastExtractDiffMs > dataFrequencyMs;
     }
 
 
