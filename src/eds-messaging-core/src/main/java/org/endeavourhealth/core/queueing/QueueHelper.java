@@ -157,7 +157,7 @@ public class QueueHelper {
                 ExchangeDalI auditRepository = DalProvider.factoryExchangeDal();
                 ExchangeTransformAudit audit = auditRepository.getMostRecentExchangeTransform(serviceId, systemId, exchangeId);
                 //LOG.trace("Is inbound exchange and found audit " + audit);
-                if (!audit.isResubmitted()) {
+                if (audit != null && !audit.isResubmitted()) {
                     audit.setResubmitted(true);
                     auditRepository.save(audit);
                     //LOG.trace("Audit set to resubmitted = true");
