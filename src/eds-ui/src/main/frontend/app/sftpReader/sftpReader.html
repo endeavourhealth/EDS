@@ -40,13 +40,31 @@
                             <div class="col-md-4">
                                 <h4>Third Party->SFTP Reader</h4>
 
+                                <div *ngIf="status.latestPollingStart">
+                                    <span *ngIf="isLastPollAttemptTooOld(status)">
+                                        <span class="label label-danger" *ngIf="isLastPollAttemptTooOld(status)">Warning</span>
+                                        &nbsp;
+                                    </span>
+                                    Last Checked for Data: {{status.latestPollingStart | date:'dd-MMM-yyyy HH:mm:ss'}}
+                                </div>
+                                <div *ngIf="!status.latestPollingStart">
+                                    <span class="label label-danger">Warning</span>&nbsp;Last Checked for Data: NEVER
+                                </div>
+
+                                <div *ngIf="status.latestPollingException">
+                                    <span class="label label-danger">Warning</span>
+                                    &nbsp;Error on last polling attempt:
+                                    <pre>{{status.latestPollingException}}</pre>
+                                </div>
+
                                 <div *ngIf="status.latestBatchId">
-                                    <div>Last Checked for Data: {{status.latestPollingStart | date:'dd-MMM-yyyy HH:mm:ss'}}</div>
-                                    <div *ngIf="status.latestPollingException">
-                                        <span class="label label-danger">Warning</span>
-                                        <pre>{{status.latestPollingException}}</pre>
+                                    <div>
+                                        <span *ngIf="isLastExtractTooOld(status)">
+                                        <span class="label label-danger" *ngIf="isLastExtractTooOld(status)">Warning</span>
+                                        &nbsp;
+                                    </span>
+                                        Last Extract Received: {{status.latestBatchReceived | date:'dd-MMM-yyyy HH:mm:ss'}}
                                     </div>
-                                    <div>Last Extract Received: {{status.latestBatchReceived | date:'dd-MMM-yyyy HH:mm:ss'}}</div>
                                     <div>Data From: {{status.latestBatchIdentifier}}</div>
                                     <div>Extract Sequence No: {{status.latestBatchSequenceNumber}}</div>
                                     <div>Files Received: {{status.latestBatchFileCount}}</div>
@@ -60,7 +78,8 @@
                                     </div>
                                 </div>
                                 <div *ngIf="!status.latestBatchId">
-                                    <div>Last Extract Received: NEVER</div>
+                                    <span class="label label-danger">Warning</span>
+                                    &nbsp;Last Extract Received: NEVER
                                 </div>
 
                             </div>

@@ -6,6 +6,13 @@ export class SftpReaderChannelStatus {
     name: string;
     pollFrequency: number;
     instanceName: string;
+    latestPollingStart: number;
+    latestPollingEnd: number;
+    latestPollingException: string;
+    latestPollingFilesDownloaded: number;
+    latestPollingBatchesCompleted: number;
+    latestPollingBatchSplitsNotifiedOk: number;
+    latestPollingBatchSplitsNotifiedFailure: number;
     latestBatchId: number;
     latestBatchIdentifier: string;
     latestBatchReceived: number;

@@ -103,4 +103,36 @@ export class SftpReaderComponent {
         OdsSearchDialog.open(vm.$modal);
 
     }
+
+    isLastPollAttemptTooOld(status: SftpReaderChannelStatus): boolean {
+        var lastPolled = status.latestPollingStart;
+        if (!lastPolled) {
+            return true;
+        }
+        var pollingFrequencySec = status.pollFrequency;
+        var pollingFrequencyMs = pollingFrequencySec * 1000;
+
+        var now = new Date();
+        var lastPolledDiffMs = now.getTime() - lastPolled;
+
+        return lastPolledDiffMs > pollingFrequencyMs;
+    }
+
+    isLastExtractTooOld(status: SftpReaderChannelStatus): boolean {
+        var lastExtract = status.latestBatchReceived;
+        if (!lastExtract) {
+            return true;
+        }
+        var durSec = 1000;
+        var durMin = durSec * 60;
+        var durHour = durMin * 60;
+        var durDay = durHour * 25;
+
+        var now = new Date();
+        var lastExtractDiffMs = now.getTime() - lastExtract;
+
+        return lastExtractDiffMs > durDay * 2; //say too old if > 2 days ago
+    }
+
+
 }
