@@ -4685,9 +4685,9 @@ public class Main {
 				String upsertSql;
 				if (pseudonymised) {
 					upsertSql = "INSERT INTO patient_uprn"
-							+ " (patient_id, organization_id, person_id, lsoa_code, pseudo_uprn, qualifier, `algorithm`, `match`, no_address, invalid_address, missing_postcode, invalid_postcode)"
+							+ " (patient_id, organization_id, person_id, lsoa_code, pseudo_uprn, qualifier, `algorithm`, `match`, no_address, invalid_address, missing_postcode, invalid_postcode, property_class)"
 							+ " VALUES"
-							+ " (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+							+ " (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
 							+ " ON DUPLICATE KEY UPDATE"
 							+ " organization_id = VALUES(organization_id),"
 							+ " person_id = VALUES(person_id),"
@@ -4699,13 +4699,14 @@ public class Main {
 							+ " no_address = VALUES(no_address),"
 							+ " invalid_address = VALUES(invalid_address),"
 							+ " missing_postcode = VALUES(missing_postcode),"
-							+ " invalid_postcode = VALUES(invalid_postcode)";
+							+ " invalid_postcode = VALUES(invalid_postcode),"
+							+ " property_class = VALUES(property_class)";
 
 				} else {
 					upsertSql = "INSERT INTO patient_uprn"
-							+ " (patient_id, organization_id, person_id, lsoa_code, uprn, qualifier, `algorithm`, `match`, no_address, invalid_address, missing_postcode, invalid_postcode)"
+							+ " (patient_id, organization_id, person_id, lsoa_code, uprn, qualifier, `algorithm`, `match`, no_address, invalid_address, missing_postcode, invalid_postcode, property_class)"
 							+ " VALUES"
-							+ " (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+							+ " (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
 							+ " ON DUPLICATE KEY UPDATE"
 							+ " organization_id = VALUES(organization_id),"
 							+ " person_id = VALUES(person_id),"
@@ -4717,7 +4718,8 @@ public class Main {
 							+ " no_address = VALUES(no_address),"
 							+ " invalid_address = VALUES(invalid_address),"
 							+ " missing_postcode = VALUES(missing_postcode),"
-							+ " invalid_postcode = VALUES(invalid_postcode)";
+							+ " invalid_postcode = VALUES(invalid_postcode),"
+							+ " property_class = VALUES(property_class)";
 				}
 
 				PreparedStatement psUpsert = subscriberConnection.prepareStatement(upsertSql);
@@ -4736,7 +4738,14 @@ public class Main {
 
 				Map<String, Boolean> hmPermittedPublishers = new HashMap<>();
 
-				String sql = "SELECT service_id, patient_id, uprn, qualifier, abp_address, `algorithm`, `match`, no_address, invalid_address, missing_postcode, invalid_postcode FROM patient_address_uprn";
+				//join to the property class table - this isn't the best way of doing it as it will only work while
+				//the reference and eds databases are on the same server
+				//String sql = "SELECT service_id, patient_id, uprn, qualifier, abp_address, `algorithm`, `match`, no_address, invalid_address, missing_postcode, invalid_postcode FROM patient_address_uprn";
+				String sql = "SELECT a.service_id, a.patient_id, a.uprn, a.qualifier, a.abp_address, a.`algorithm`,"
+							+ " a.`match`, a.no_address, a.invalid_address, a.missing_postcode, a.invalid_postcode, c.property_class"
+							+ " FROM patient_address_uprn a"
+							+ " LEFT OUTER JOIN reference.uprn_property_class c"
+							+ " ON c.uprn = a.uprn";
 
 				Statement s = edsConnection.createStatement();
 				s.setFetchSize(10000); //don't get all rows at once
@@ -4758,6 +4767,7 @@ public class Main {
 					boolean invalidAddress = rs.getBoolean(col++);
 					boolean missingPostcode = rs.getBoolean(col++);
 					boolean invalidPostcode = rs.getBoolean(col++);
+					String propertyClass = rs.getString(col++);
 
 					//check if patient ID already exists in the subscriber DB
 					Long subscriberPatientId = enterpriseIdDal.findEnterpriseIdOldWay(ResourceType.Patient.toString(), patientId);
@@ -4879,6 +4889,7 @@ public class Main {
 							psUpsert.setBoolean(col++, invalidAddress);
 							psUpsert.setBoolean(col++, missingPostcode);
 							psUpsert.setBoolean(col++, invalidPostcode);
+							psUpsert.setString(col++, propertyClass);
 
 							//LOG.debug("" + psUpsert);
 

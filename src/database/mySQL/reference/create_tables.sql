@@ -19,7 +19,7 @@ DROP TABLE IF EXISTS cerner_clinical_event_map;
 DROP TABLE IF EXISTS ctv3_to_snomed_map;
 DROP TABLE IF EXISTS read2_to_snomed_map;
 DROP TABLE IF EXISTS ctv3_to_read2_map;
-
+DROP TABLE IF EXISTS uprn_property_class;
 
 CREATE TABLE postcode_lookup
 (
@@ -259,3 +259,9 @@ CREATE TABLE ctv3_to_read2_map
 
 CREATE INDEX ix_ctv3_to_read2_map_ctv3_concept_id_read2_concept_id
   ON ctv3_to_read2_map (ctv3_concept_id, read2_concept_id);
+
+CREATE TABLE uprn_property_class (
+  uprn bigint not null,
+  property_class varchar(10) not null,
+  CONSTRAINT pk_uprn_property_class PRIMARY KEY (uprn)
+);
