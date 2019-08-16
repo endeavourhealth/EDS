@@ -45,7 +45,6 @@ import org.endeavourhealth.transform.common.*;
 import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
 import org.endeavourhealth.transform.emis.custom.schema.OriginalTerms;
 import org.endeavourhealth.transform.emis.custom.schema.RegistrationStatus;
-import org.endeavourhealth.transform.tpp.TppCsvToFhirTransformer;
 import org.endeavourhealth.transform.vision.schema.*;
 import org.hibernate.internal.SessionImpl;
 import org.hl7.fhir.instance.model.ResourceType;
@@ -2583,7 +2582,7 @@ public class Main {
 			}
 		}
 
-		if (fileDesc.startsWith("TPP ")) {
+		/*if (fileDesc.startsWith("TPP ")) {
 			String[] arr = new String[]{filePath};
 			String version = TppCsvToFhirTransformer.determineVersion(arr);
 
@@ -2592,7 +2591,7 @@ public class Main {
 			Iterator<AbstractCsvParser> it = parsers.values().iterator();
 
 			return it.next();
-		}
+		}*/
 
 		if (fileDesc.equals("Bespoke Emis registration status extract")
 				|| fileDesc.equals("RegistrationStatus")) {
