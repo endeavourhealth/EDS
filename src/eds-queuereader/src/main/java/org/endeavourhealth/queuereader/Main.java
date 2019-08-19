@@ -9,6 +9,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.common.config.ConfigManager;
+import org.endeavourhealth.common.fhir.ReferenceHelper;
 import org.endeavourhealth.common.utility.FileHelper;
 import org.endeavourhealth.common.utility.MetricsHelper;
 import org.endeavourhealth.core.configuration.ConfigDeserialiser;
@@ -25,6 +26,7 @@ import org.endeavourhealth.core.database.dal.audit.models.ExchangeBatch;
 import org.endeavourhealth.core.database.dal.audit.models.ExchangeTransformAudit;
 import org.endeavourhealth.core.database.dal.audit.models.HeaderKeys;
 import org.endeavourhealth.core.database.dal.eds.PatientLinkDalI;
+import org.endeavourhealth.core.database.dal.ehr.ResourceDalI;
 import org.endeavourhealth.core.database.dal.ehr.models.ResourceWrapper;
 import org.endeavourhealth.core.database.dal.publisherTransform.models.ResourceFieldMappingAudit;
 import org.endeavourhealth.core.database.dal.reference.PostcodeDalI;
@@ -35,18 +37,23 @@ import org.endeavourhealth.core.database.dal.subscriberTransform.SubscriberResou
 import org.endeavourhealth.core.database.rdbms.ConnectionManager;
 import org.endeavourhealth.core.database.rdbms.enterprise.EnterpriseConnector;
 import org.endeavourhealth.core.exceptions.TransformException;
+import org.endeavourhealth.core.fhirStorage.FhirSerializationHelper;
 import org.endeavourhealth.core.fhirStorage.FhirStorageService;
 import org.endeavourhealth.core.fhirStorage.JsonServiceInterfaceEndpoint;
 import org.endeavourhealth.core.messaging.pipeline.components.OpenEnvelope;
 import org.endeavourhealth.core.messaging.pipeline.components.PostMessageToExchange;
 import org.endeavourhealth.core.queueing.QueueHelper;
 import org.endeavourhealth.core.xml.QueryDocument.*;
+import org.endeavourhealth.core.xml.transformError.TransformError;
 import org.endeavourhealth.transform.common.*;
+import org.endeavourhealth.transform.common.resourceBuilders.GenericBuilder;
 import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
+import org.endeavourhealth.transform.emis.csv.helpers.EmisCsvHelper;
 import org.endeavourhealth.transform.emis.custom.schema.OriginalTerms;
 import org.endeavourhealth.transform.emis.custom.schema.RegistrationStatus;
 import org.endeavourhealth.transform.vision.schema.*;
 import org.hibernate.internal.SessionImpl;
+import org.hl7.fhir.instance.model.Reference;
 import org.hl7.fhir.instance.model.ResourceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -211,12 +218,12 @@ public class Main {
 			System.exit(0);
 		}*/
 
-		/*if (args.length >= 1
+		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("FixEmisDeletedPatients")) {
 			String odsCode = args[1];
 			fixEmisDeletedPatients(odsCode);
 			System.exit(0);
-		}*/
+		}
 
 		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("PostPatientToProtocol")) {
@@ -1090,7 +1097,7 @@ public class Main {
 		socket.close();
 	}
 
-	/*private static void fixEmisDeletedPatients(String odsCode) {
+	private static void fixEmisDeletedPatients(String odsCode) {
 		LOG.info("Fixing Emis Deleted Patients for " + odsCode);
 		try {
 
@@ -1295,7 +1302,7 @@ public class Main {
 							for (ResourceWrapper historyItem: history) {
 								if (!historyItem.isDeleted()) {
 
-									Resource resource = FhirSerializationHelper.deserializeResource(historyItem.getResourceData());
+									org.hl7.fhir.instance.model.Resource resource = FhirSerializationHelper.deserializeResource(historyItem.getResourceData());
 									GenericBuilder builder = new GenericBuilder(resource);
 									filer.savePatientResource(null, false, builder);
 
@@ -1323,7 +1330,7 @@ public class Main {
 		} catch (Throwable t) {
 			LOG.error("", t);
 		}
-	}*/
+	}
 
 	private static ExchangePayloadFile findFileOfType(List<ExchangePayloadFile> files, String fileType) {
 
