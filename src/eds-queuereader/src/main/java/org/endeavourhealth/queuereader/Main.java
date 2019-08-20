@@ -4997,8 +4997,11 @@ public class Main {
 
 				Statement s = edsConnection.createStatement();
 				s.setFetchSize(2000); //don't get all rows at once
+
+				LOG.info("Starting query on EDS database");
 				ResultSet rs = s.executeQuery(sql);
 				LOG.info("Got raw results back");
+
 				while (rs.next()) {
 					int col = 1;
 					String serviceId = rs.getString(col++);
