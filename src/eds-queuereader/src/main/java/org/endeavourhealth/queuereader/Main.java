@@ -797,7 +797,7 @@ public class Main {
 					checkForMissingFilesByNumber(files, ".", 1);
 
 				} else { //ABREF_80130_06012018_054435_1.TXT
-					checkForMissingFilesByDate(files, "yyyyMMdd", "_", 2);
+					checkForMissingFilesByDate(files, "ddMMyyyy", "_", 2);
 				}
 
 			}
@@ -819,7 +819,7 @@ public class Main {
 			String[] toks = file.split(delimiter);
 			String tok = toks[token];
 			Date d = sdf.parse(tok);
-			LOG.debug("File " + file + " -> " + tok + " -> " + sdf.format(d));
+			//LOG.debug("File " + file + " -> " + tok + " -> " + sdf.format(d));
 
 			if (minDate == null
 					|| d.before(minDate)) {
