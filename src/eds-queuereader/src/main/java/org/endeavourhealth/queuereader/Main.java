@@ -4990,7 +4990,7 @@ public class Main {
 							+ " ON c.uprn = a.uprn";
 
 				Statement s = edsConnection.createStatement();
-				s.setFetchSize(10000); //don't get all rows at once
+				s.setFetchSize(2000); //don't get all rows at once
 				ResultSet rs = s.executeQuery(sql);
 				LOG.info("Got raw results back");
 				while (rs.next()) {
