@@ -723,12 +723,20 @@ public class Main {
 			List<Exchange> exchanges = exchangeDal.getExchangesByService(serviceId, systemId, Integer.MAX_VALUE);
 			LOG.info("Found " + exchanges.size() + " exchanges");
 
+			SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
+			Date start2019 = sdf.parse("20190101");
+
 			Map<String, List<String>> hmByFileType = new HashMap<>();
 			Map<String, Date> hmReceivedDate = new HashMap<>();
 
 			for (Exchange exchange: exchanges) {
 				String body = exchange.getBody();
+
+				//skip any exchanges pre-2019
 				Date d = exchange.getHeaderAsDate(HeaderKeys.DataDate);
+				if (d.before(start2019)) {
+					continue;
+				}
 
 				List<ExchangePayloadFile> files = ExchangeHelper.parseExchangeBody(body);
 				for (ExchangePayloadFile file: files) {
