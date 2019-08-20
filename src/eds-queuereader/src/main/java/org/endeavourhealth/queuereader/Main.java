@@ -897,17 +897,25 @@ public class Main {
 				cal.add(Calendar.DAY_OF_YEAR, -1);
 				Date dateBefore = cal.getTime();
 				List<String> before = hmByDate.get(dateBefore);
-				String firstBefore = before.get(0);
-				Date beforeReceived = hmReceivedDate.get(firstBefore);
+				String beforeDesc = null;
+				if (before != null) {
+					String firstBefore = before.get(0);
+					Date beforeReceived = hmReceivedDate.get(firstBefore);
+					beforeDesc = firstBefore + " on " + sdfOutput.format(beforeReceived);
+				}
 
 				cal.setTime(d);
 				cal.add(Calendar.DAY_OF_YEAR, 1);
 				Date dateAfter = cal.getTime();
 				List<String> after = hmByDate.get(dateAfter);
-				String firstAfter = after.get(0);
-				Date afterReceived = hmReceivedDate.get(firstAfter);
+				String afterDesc = null;
+				if (after != null) {
+					String firstAfter = after.get(0);
+					Date afterReceived = hmReceivedDate.get(firstAfter);
+					afterDesc = firstAfter + " on " + sdfOutput.format(afterReceived);
+				}
 
-				LOG.error("No " + fileType + " file found for " + sdfOutput.format(d) + " previous [" + firstBefore + " on " + sdfOutput.format(beforeReceived) + "] after [" + firstAfter + " on " + sdfOutput.format(afterReceived) + "]");
+				LOG.error("No " + fileType + " file found for " + sdfOutput.format(d) + " previous [" + beforeDesc + "] after [" + afterDesc + "]");
 			}
 
 			cal.setTime(d);
@@ -953,14 +961,22 @@ public class Main {
 			List<String> l = hmByNum.get(new Integer(i));
 			if (l == null) {
 				List<String> before = hmByNum.get(new Integer(i-1));
-				String firstBefore = before.get(0);
-				Date beforeReceived = hmReceivedDate.get(firstBefore);
+				String beforeDesc = null;
+				if (before != null) {
+					String firstBefore = before.get(0);
+					Date beforeReceived = hmReceivedDate.get(firstBefore);
+					beforeDesc = firstBefore + " on " + sdfOutput.format(beforeReceived);
+				}
 
 				List<String> after = hmByNum.get(new Integer(i+1));
-				String firstAfter = after.get(0);
-				Date afterReceived = hmReceivedDate.get(firstAfter);
+				String afterDesc = null;
+				if (after != null) {
+					String firstAfter = after.get(0);
+					Date afterReceived = hmReceivedDate.get(firstAfter);
+					afterDesc = firstAfter + " on " + sdfOutput.format(afterReceived);
+				}
 
-				LOG.error("No " + fileType + " file found for " + i + " previous [" + firstBefore + " on " + sdfOutput.format(beforeReceived) + "] after [" + firstAfter + " on " + sdfOutput.format(afterReceived) + "]");
+				LOG.error("No " + fileType + " file found for " + i + " previous [" + beforeDesc + "] after [" + afterDesc + "]");
 			}
 		}
 	}
