@@ -68,6 +68,7 @@ import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
 import java.sql.*;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.Date;
@@ -748,6 +749,7 @@ public class Main {
 
 			for (String type: hmByFileType.keySet()) {
 				List<String> files = hmByFileType.get(type);
+				LOG.info("---------------------------------------------------------------------");
 				LOG.info("Checking " + type + " with " + files.size());
 
 				if (type.equals("MaternityServicesDataSet")) {
@@ -796,8 +798,15 @@ public class Main {
 				} else if (type.equals("SusOutpatientTail")) { //tailopa_DIS.204610
 					checkForMissingFilesByNumber(files, ".", 1);
 
-				} else { //ABREF_80130_06012018_054435_1.TXT
+				} else if (type.equals("SusOutpatientTail")) { //tailopa_DIS.204610
+					checkForMissingFilesByNumber(files, ".", 1);
+
+				} else if (type.equals("ABREF")) { //ABREF_80130_06012018_054435_1.TXT
 					checkForMissingFilesByDate(files, "ddMMyyyy", "_", 2);
+
+				} else { //CLEVE_80130_RNJ_15072018_045416_6.TXT
+
+					checkForMissingFilesByDate(files, "ddMMyyyy", "_", 3);
 				}
 
 			}
@@ -818,7 +827,13 @@ public class Main {
 		for (String file: files) {
 			String[] toks = file.split(delimiter);
 			String tok = toks[token];
-			Date d = sdf.parse(tok);
+			Date d = null;
+			try {
+				d = sdf.parse(tok);
+			} catch (ParseException pe) {
+				LOG.error("Error parsing " + tok + " with format " + dateFormat, pe);
+				return;
+			}
 			//LOG.debug("File " + file + " -> " + tok + " -> " + sdf.format(d));
 
 			if (minDate == null
