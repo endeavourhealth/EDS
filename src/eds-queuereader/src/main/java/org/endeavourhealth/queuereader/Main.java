@@ -145,7 +145,8 @@ public class Main {
 
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("CheckForBartsMissingFiles")) {
-			checkForBartsMissingFiles();
+			String sinceDate = args[1];
+			checkForBartsMissingFiles(sinceDate);
 			System.exit(0);
 		}
 
@@ -714,17 +715,18 @@ public class Main {
 		LOG.info("EDS Queue reader running (kill file location " + TransformConfig.instance().getKillFileLocation() + ")");
 	}
 
-	private static void checkForBartsMissingFiles() {
+	private static void checkForBartsMissingFiles(String sinceDate) {
 		LOG.info("Checking for Barts missing files");
 		try {
+			SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
+			Date start2019 = sdf.parse(sinceDate);
+			LOG.info("Checking files since " + sinceDate);
+
 			UUID serviceId = UUID.fromString("b5a08769-cbbe-4093-93d6-b696cd1da483");
 			UUID systemId = UUID.fromString("e517fa69-348a-45e9-a113-d9b59ad13095");
 			ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
 			List<Exchange> exchanges = exchangeDal.getExchangesByService(serviceId, systemId, Integer.MAX_VALUE);
 			LOG.info("Found " + exchanges.size() + " exchanges");
-
-			SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
-			Date start2019 = sdf.parse("20190101");
 
 			Map<String, List<String>> hmByFileType = new HashMap<>();
 			Map<String, Date> hmReceivedDate = new HashMap<>();
