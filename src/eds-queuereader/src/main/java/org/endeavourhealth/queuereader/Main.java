@@ -143,6 +143,12 @@ public class Main {
 		}*/
 
 		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("CheckForBartsMissingFiles")) {
+			checkForBartsMissingFiles();
+			System.exit(0);
+		}
+
+		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("CreateHomertonSubset")) {
 			String sourceDirPath = args[1];
 			String destDirPath = args[2];
@@ -705,6 +711,187 @@ public class Main {
 		// Begin consume
 		rabbitHandler.start();
 		LOG.info("EDS Queue reader running (kill file location " + TransformConfig.instance().getKillFileLocation() + ")");
+	}
+
+	private static void checkForBartsMissingFiles() {
+		LOG.info("Checking for Barts missing files");
+		try {
+			UUID serviceId = UUID.fromString("b5a08769-cbbe-4093-93d6-b696cd1da483");
+			UUID systemId = UUID.fromString("e517fa69-348a-45e9-a113-d9b59ad13095");
+			ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
+			List<Exchange> exchanges = exchangeDal.getExchangesByService(serviceId, systemId, Integer.MAX_VALUE);
+			LOG.info("Found " + exchanges.size() + " exchanges");
+
+			Map<String, List<String>> hmByFileType = new HashMap<>();
+			Map<String, Date> hmReceivedDate = new HashMap<>();
+
+			for (Exchange exchange: exchanges) {
+				String body = exchange.getBody();
+				Date d = exchange.getHeaderAsDate(HeaderKeys.DataDate);
+
+				List<ExchangePayloadFile> files = ExchangeHelper.parseExchangeBody(body);
+				for (ExchangePayloadFile file: files) {
+					String type = file.getType();
+					String path = file.getPath();
+					String name = FilenameUtils.getName(path);
+
+					List<String> l = hmByFileType.get(type);
+					if (l == null) {
+						l = new ArrayList<>();
+						hmByFileType.put(type, l);
+					}
+					l.add(name);
+					hmReceivedDate.put(name, d);
+				}
+			}
+			LOG.info("Parsed exchange bodies");
+
+			for (String type: hmByFileType.keySet()) {
+				List<String> files = hmByFileType.get(type);
+				LOG.info("Checking " + type + " with " + files.size());
+
+				if (type.equals("MaternityServicesDataSet")) {
+					continue;
+				}
+
+				if (type.equals("CriticalCare")) { //cc_BH_192575_susrnj.dat
+					checkForMissingFilesByNumber(files, "_", 2);
+
+				} else if (type.equals("Diagnosis")) { //rnj_pc_diag_20190330-011515.dat
+					checkForMissingFilesByDate(files, "yyyyMMdd", "_|-", 3);
+
+				} else if (type.equals("HomeDeliveryAndBirth")) { //hdb_BH_192576_susrnj.dat
+					checkForMissingFilesByNumber(files, "_", 2);
+
+				} else if (type.equals("MaternityBirth")) { //GETL_MAT_BIRTH_2019-03-30_001020_1431392750.txt
+					checkForMissingFilesByDate(files, "yyyy-MM-dd", "_", 3);
+
+				} else if (type.equals("Pregnancy")) { //GETL_MAT_PREG_2019-03-30_001020_1431392781.txt
+					checkForMissingFilesByDate(files, "yyyy-MM-dd", "_", 3);
+
+				} else if (type.equals("Problem")) { //rnj_pc_prob_20190328-011001.dat
+					checkForMissingFilesByDate(files, "yyyyMMdd", "_|-", 3);
+
+				} else if (type.equals("Procedure")) { //rnj_pc_proc_20180716-010530.dat
+					checkForMissingFilesByDate(files, "yyyyMMdd", "_|-", 3);
+
+				} else if (type.equals("SurginetCaseInfo")) { //spfit_sn_case_info_rnj_20190812-093823.dat
+					checkForMissingFilesByDate(files, "yyyyMMdd", "_|-", 5);
+
+				} else if (type.equals("SusEmergencyCareDataSet")) { //susecd.190360  AND  susecd_BH.190039
+					checkForMissingFilesByNumber(files, ".", 1);
+
+				} else if (type.equals("SusEmergencyCareDataSetTail")) { //tailecd_DIS.190362
+					checkForMissingFilesByNumber(files, ".", 1);
+
+				} else if (type.equals("SusInpatient")) { //ip_BH_193174_susrnj.dat
+					checkForMissingFilesByNumber(files, "_", 2);
+
+				} else if (type.equals("SusInpatientTail")) { //tailip_DIS.203225_susrnj.dat
+					checkForMissingFilesByNumber(files, "\\.|_", 2);
+
+				} else if (type.equals("SusOutpatient")) { //susopa_BH.204612
+					checkForMissingFilesByNumber(files, ".", 1);
+
+				} else if (type.equals("SusOutpatientTail")) { //tailopa_DIS.204610
+					checkForMissingFilesByNumber(files, ".", 1);
+
+				} else { //ABREF_80130_06012018_054435_1.TXT
+					checkForMissingFilesByDate(files, "yyyyMMdd", "_", 2);
+				}
+
+			}
+
+			LOG.info("Finished Checking for Barts missing files");
+		} catch (Throwable t) {
+			LOG.error("", t);
+		}
+	}
+
+	private static void checkForMissingFilesByDate(List<String> files, String dateFormat, String delimiter, int token) throws Exception {
+		SimpleDateFormat sdf = new SimpleDateFormat(dateFormat);
+
+		Date minDate = null;
+		Date maxDate = null;
+		Map<Date, List<String>> hmByDate = new HashMap<>();
+
+		for (String file: files) {
+			String[] toks = file.split(delimiter);
+			String tok = toks[token];
+			Date d = sdf.parse(tok);
+
+			if (minDate == null
+					|| d.before(minDate)) {
+				minDate = d;
+			}
+			if (maxDate == null
+					|| d.after(maxDate)) {
+				maxDate = d;
+			}
+
+			List<String> l = hmByDate.get(d);
+			if (l == null) {
+				l = new ArrayList<>();
+				hmByDate.put(d, l);
+			}
+			l.add(file);
+		}
+
+		Calendar cal = Calendar.getInstance();
+
+		Date d = new Date(minDate.getTime());
+		while (!d.after(maxDate)) {
+
+			List<String> l = hmByDate.get(d);
+			if (l == null) {
+
+				cal.setTime(d);
+				cal.add(Calendar.DAY_OF_YEAR, -1);
+				Date dateBefore = cal.getTime();
+				List<String> before = hmByDate.get(dateBefore);
+
+				cal.setTime(d);
+				cal.add(Calendar.DAY_OF_YEAR, 1);
+				Date dateAfter = cal.getTime();
+				List<String> after = hmByDate.get(dateAfter);
+				LOG.error("No file found for " + sdf.format(d) + " previous [" + before + "] after [" + after + "]");
+			}
+
+			cal.setTime(d);
+			cal.add(Calendar.DAY_OF_YEAR, 1);
+			d = cal.getTime();
+		}
+	}
+
+	private static void checkForMissingFilesByNumber(List<String> files, String delimiter, int token) {
+
+		int maxNum = 0;
+		int minNum = Integer.MAX_VALUE;
+		Map<Integer, List<String>> hmByNum = new HashMap<>();
+
+		for (String file: files) {
+			String[] toks = file.split(delimiter);
+			String tok = toks[token];
+			int num = Integer.parseInt(tok);
+			maxNum = Math.max(num, maxNum);
+			minNum = Math.min(num, minNum);
+
+			List<String> l = hmByNum.get(new Integer(num));
+			if (l == null) {
+				l = new ArrayList<>();
+				hmByNum.put(new Integer(num), l);
+			}
+			l.add(file);
+		}
+
+		for (int i=maxNum; i>=minNum; i--) {
+			List<String> l = hmByNum.get(new Integer(i));
+			if (l == null) {
+				List<String> before = hmByNum.get(new Integer(i-1));
+				List<String> after = hmByNum.get(new Integer(i+1));
+				LOG.error("No file found for " + i + " previous [" + before + "] after [" + after + "]");
+			}
+		}
 	}
 
 	/*private static void deleteEnterpriseObs(String filePath, String configName, int batchSize) {
