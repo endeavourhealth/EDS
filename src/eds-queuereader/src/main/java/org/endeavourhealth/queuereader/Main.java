@@ -772,67 +772,67 @@ public class Main {
 				}
 
 				if (type.equals("CriticalCare")) { //cc_BH_192575_susrnj.dat
-					checkForMissingFilesByNumber(type, files, "_", 2);
+					checkForMissingFilesByNumber(type, hmReceivedDate, files, "_", 2);
 
 				} else if (type.equals("Diagnosis")) { //rnj_pc_diag_20190330-011515.dat
-					checkForMissingFilesByDate(type, files, "yyyyMMdd", "_|-", 3);
+					checkForMissingFilesByDate(type, hmReceivedDate, files, "yyyyMMdd", "_|-", 3);
 
 				} else if (type.equals("HomeDeliveryAndBirth")) { //hdb_BH_192576_susrnj.dat
-					checkForMissingFilesByNumber(type, files, "_", 2);
+					checkForMissingFilesByNumber(type, hmReceivedDate, files, "_", 2);
 
 				} else if (type.equals("MaternityBirth")) { //GETL_MAT_BIRTH_2019-03-30_001020_1431392750.txt
-					checkForMissingFilesByDate(type, files, "yyyy-MM-dd", "_", 3);
+					checkForMissingFilesByDate(type, hmReceivedDate, files, "yyyy-MM-dd", "_", 3);
 
 				} else if (type.equals("Pregnancy")) { //GETL_MAT_PREG_2019-03-30_001020_1431392781.txt
-					checkForMissingFilesByDate(type, files, "yyyy-MM-dd", "_", 3);
+					checkForMissingFilesByDate(type, hmReceivedDate, files, "yyyy-MM-dd", "_", 3);
 
 				} else if (type.equals("Problem")) { //rnj_pc_prob_20190328-011001.dat
-					checkForMissingFilesByDate(type, files, "yyyyMMdd", "_|-", 3);
+					checkForMissingFilesByDate(type, hmReceivedDate, files, "yyyyMMdd", "_|-", 3);
 
 				} else if (type.equals("Procedure")) { //rnj_pc_proc_20180716-010530.dat
-					checkForMissingFilesByDate(type, files, "yyyyMMdd", "_|-", 3);
+					checkForMissingFilesByDate(type, hmReceivedDate, files, "yyyyMMdd", "_|-", 3);
 
 				} else if (type.equals("SurginetCaseInfo")) { //spfit_sn_case_info_rnj_20190812-093823.dat
-					checkForMissingFilesByDate(type, files, "yyyyMMdd", "_|-", 5);
+					checkForMissingFilesByDate(type, hmReceivedDate, files, "yyyyMMdd", "_|-", 5);
 
 				} else if (type.equals("SusEmergencyCareDataSet")) { //susecd.190360  AND  susecd_BH.190039
-					checkForMissingFilesByNumber(type, files, "\\.", 1);
+					checkForMissingFilesByNumber(type, hmReceivedDate, files, "\\.", 1);
 
 				} else if (type.equals("SusEmergencyCareDataSetTail")) { //tailecd_DIS.190362
-					checkForMissingFilesByNumber(type, files, "\\.", 1);
+					checkForMissingFilesByNumber(type, hmReceivedDate, files, "\\.", 1);
 
 				} else if (type.equals("SusInpatient")) { //ip_BH_193174_susrnj.dat
-					checkForMissingFilesByNumber(type, files, "_", 2);
+					checkForMissingFilesByNumber(type, hmReceivedDate, files, "_", 2);
 
 				} else if (type.equals("SusInpatientTail")) { //tailip_DIS.203225_susrnj.dat
-					checkForMissingFilesByNumber(type, files, "\\.|_", 2);
+					checkForMissingFilesByNumber(type, hmReceivedDate, files, "\\.|_", 2);
 
 				} else if (type.equals("SusOutpatient")) { //susopa_BH.204612
-					checkForMissingFilesByNumber(type, files, "\\.", 1);
+					checkForMissingFilesByNumber(type, hmReceivedDate, files, "\\.", 1);
 
 				} else if (type.equals("SusOutpatientTail")) { //tailopa_DIS.204610
-					checkForMissingFilesByNumber(type, files, "\\.", 1);
+					checkForMissingFilesByNumber(type, hmReceivedDate, files, "\\.", 1);
 
 				} else if (type.equals("SusOutpatientTail")) { //tailopa_DIS.204610
-					checkForMissingFilesByNumber(type, files, "\\.", 1);
+					checkForMissingFilesByNumber(type, hmReceivedDate, files, "\\.", 1);
 
 				} else if (type.equals("APPSL2")) { //GETL_APPSL2_80130_RNJ_10072018_065345_1.TXT
-					checkForMissingFilesByDate(type, files, "ddMMyyyy", "_", 4);
+					checkForMissingFilesByDate(type, hmReceivedDate, files, "ddMMyyyy", "_", 4);
 
 				} else if (type.equals("BlobContent")) { //Blob_Con_20190502_00198.csv
-					checkForMissingFilesByDate(type, files, "yyyyMMdd", "_", 2);
+					checkForMissingFilesByDate(type, hmReceivedDate, files, "yyyyMMdd", "_", 2);
 
 				} else if (type.equals("FamilyHistory")) { //Fam_Hist_20190417_00326.csv
-					checkForMissingFilesByDate(type, files, "yyyyMMdd", "_", 2);
+					checkForMissingFilesByDate(type, hmReceivedDate, files, "yyyyMMdd", "_", 2);
 
 				} else {
 
 					String first = files.get(0);
 					if (first.contains("_RNJ_")) { //CLEVE_80130_RNJ_15072018_045416_6.TXT
-						checkForMissingFilesByDate(type, files, "ddMMyyyy", "_", 3);
+						checkForMissingFilesByDate(type, hmReceivedDate, files, "ddMMyyyy", "_", 3);
 
 					} else { //Blob_Con_20190328_00170.csv
-						checkForMissingFilesByDate(type, files, "ddMMyyyy", "_", 2);
+						checkForMissingFilesByDate(type, hmReceivedDate, files, "ddMMyyyy", "_", 2);
 					}
 				}
 
@@ -844,8 +844,10 @@ public class Main {
 		}
 	}
 
-	private static void checkForMissingFilesByDate(String fileType, List<String> files, String dateFormat, String delimiter, int token) throws Exception {
+	private static void checkForMissingFilesByDate(String fileType, Map<String, Date> hmReceivedDate, List<String> files, String dateFormat, String delimiter, int token) throws Exception {
 		SimpleDateFormat sdf = new SimpleDateFormat(dateFormat);
+
+		SimpleDateFormat sdfOutput = new SimpleDateFormat("yyyy-MM-dd");
 
 		Date minDate = null;
 		Date maxDate = null;
@@ -881,7 +883,7 @@ public class Main {
 			l.add(file);
 		}
 
-		LOG.info("Checking for date range " + sdf.format(minDate) + " to " + sdf.format(maxDate));
+		LOG.info("Checking for date range " + sdfOutput.format(minDate) + " to " + sdfOutput.format(maxDate));
 
 		Calendar cal = Calendar.getInstance();
 
@@ -895,12 +897,17 @@ public class Main {
 				cal.add(Calendar.DAY_OF_YEAR, -1);
 				Date dateBefore = cal.getTime();
 				List<String> before = hmByDate.get(dateBefore);
+				String firstBefore = before.get(0);
+				Date beforeReceived = hmReceivedDate.get(firstBefore);
 
 				cal.setTime(d);
 				cal.add(Calendar.DAY_OF_YEAR, 1);
 				Date dateAfter = cal.getTime();
 				List<String> after = hmByDate.get(dateAfter);
-				LOG.error("No " + fileType + " file found for " + sdf.format(d) + " previous [" + before + "] after [" + after + "]");
+				String firstAfter = after.get(0);
+				Date afterReceived = hmReceivedDate.get(firstAfter);
+
+				LOG.error("No " + fileType + " file found for " + sdfOutput.format(d) + " previous [" + firstBefore + " on " + sdfOutput.format(beforeReceived) + "] after [" + firstAfter + " on " + sdfOutput.format(afterReceived) + "]");
 			}
 
 			cal.setTime(d);
@@ -909,7 +916,9 @@ public class Main {
 		}
 	}
 
-	private static void checkForMissingFilesByNumber(String fileType, List<String> files, String delimiter, int token) {
+	private static void checkForMissingFilesByNumber(String fileType, Map<String, Date> hmReceivedDate, List<String> files, String delimiter, int token) {
+
+		SimpleDateFormat sdfOutput = new SimpleDateFormat("yyyy-MM-dd");
 
 		int maxNum = 0;
 		int minNum = Integer.MAX_VALUE;
@@ -944,8 +953,14 @@ public class Main {
 			List<String> l = hmByNum.get(new Integer(i));
 			if (l == null) {
 				List<String> before = hmByNum.get(new Integer(i-1));
+				String firstBefore = before.get(0);
+				Date beforeReceived = hmReceivedDate.get(firstBefore);
+
 				List<String> after = hmByNum.get(new Integer(i+1));
-				LOG.error("No " + fileType + " file found for " + i + " previous [" + before + "] after [" + after + "]");
+				String firstAfter = after.get(0);
+				Date afterReceived = hmReceivedDate.get(firstAfter);
+
+				LOG.error("No " + fileType + " file found for " + i + " previous [" + firstBefore + " on " + sdfOutput.format(beforeReceived) + "] after [" + firstAfter + " on " + sdfOutput.format(afterReceived) + "]");
 			}
 		}
 	}
