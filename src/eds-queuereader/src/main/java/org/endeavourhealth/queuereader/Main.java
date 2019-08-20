@@ -819,6 +819,12 @@ public class Main {
 				} else if (type.equals("APPSL2")) { //GETL_APPSL2_80130_RNJ_10072018_065345_1.TXT
 					checkForMissingFilesByDate(type, files, "ddMMyyyy", "_", 4);
 
+				} else if (type.equals("BlobContent")) { //Blob_Con_20190502_00198.csv
+					checkForMissingFilesByDate(type, files, "yyyyMMdd", "_", 2);
+
+				} else if (type.equals("FamilyHistory")) { //Fam_Hist_20190417_00326.csv
+					checkForMissingFilesByDate(type, files, "yyyyMMdd", "_", 2);
+
 				} else {
 
 					String first = files.get(0);
@@ -875,7 +881,7 @@ public class Main {
 			l.add(file);
 		}
 
-		LOG.info("Checking for range " + sdf.format(minDate) + " to " + sdf.format(maxDate));
+		LOG.info("Checking for date range " + sdf.format(minDate) + " to " + sdf.format(maxDate));
 
 		Calendar cal = Calendar.getInstance();
 
@@ -932,7 +938,7 @@ public class Main {
 			l.add(file);
 		}
 
-		LOG.info("Checking for range " + minNum + " to " + maxNum);
+		LOG.info("Checking for number range " + minNum + " to " + maxNum);
 
 		for (int i=minNum; i<=maxNum; i++) {
 			List<String> l = hmByNum.get(new Integer(i));
