@@ -816,21 +816,18 @@ public class Main {
 				} else if (type.equals("SusOutpatientTail")) { //tailopa_DIS.204610
 					checkForMissingFilesByNumber(type, files, "\\.", 1);
 
-				} else if (type.equals("ABREF")) { //ABREF_80130_06012018_054435_1.TXT
-					checkForMissingFilesByDate(type, files, "ddMMyyyy", "_", 2);
-
 				} else if (type.equals("APPSL2")) { //GETL_APPSL2_80130_RNJ_10072018_065345_1.TXT
 					checkForMissingFilesByDate(type, files, "ddMMyyyy", "_", 4);
 
-				} else if (type.equals("RESREF")) { //RESREF_80130_26042019_042446_1.TXT
-					checkForMissingFilesByDate(type, files, "ddMMyyyy", "_", 2);
+				} else {
 
-				} else if (type.equals("DOCREF")) { //DOCREF_80130_17072018_063450_1.TXT
-					checkForMissingFilesByDate(type, files, "ddMMyyyy", "_", 2);
+					String first = files.get(0);
+					if (first.contains("_RNJ_")) { //CLEVE_80130_RNJ_15072018_045416_6.TXT
+						checkForMissingFilesByDate(type, files, "ddMMyyyy", "_", 3);
 
-				} else { //CLEVE_80130_RNJ_15072018_045416_6.TXT
-
-					checkForMissingFilesByDate(type, files, "ddMMyyyy", "_", 3);
+					} else { //Blob_Con_20190328_00170.csv
+						checkForMissingFilesByDate(type, files, "ddMMyyyy", "_", 2);
+					}
 				}
 
 			}
