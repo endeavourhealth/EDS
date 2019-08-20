@@ -819,6 +819,7 @@ public class Main {
 			String[] toks = file.split(delimiter);
 			String tok = toks[token];
 			Date d = sdf.parse(tok);
+			LOG.debug("File " + file + " -> " + tok + " -> " + sdf.format(d));
 
 			if (minDate == null
 					|| d.before(minDate)) {
@@ -836,6 +837,8 @@ public class Main {
 			}
 			l.add(file);
 		}
+
+		LOG.info("Checking for range " + sdf.format(minDate) + " to " + sdf.format(maxDate));
 
 		Calendar cal = Calendar.getInstance();
 
@@ -883,6 +886,8 @@ public class Main {
 			}
 			l.add(file);
 		}
+
+		LOG.info("Checking for range " + minNum + " to " + maxNum);
 
 		for (int i=maxNum; i>=minNum; i--) {
 			List<String> l = hmByNum.get(new Integer(i));
