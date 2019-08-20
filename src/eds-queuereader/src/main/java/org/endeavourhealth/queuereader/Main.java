@@ -781,10 +781,10 @@ public class Main {
 					checkForMissingFilesByDate(files, "yyyyMMdd", "_|-", 5);
 
 				} else if (type.equals("SusEmergencyCareDataSet")) { //susecd.190360  AND  susecd_BH.190039
-					checkForMissingFilesByNumber(files, ".", 1);
+					checkForMissingFilesByNumber(files, "\\.", 1);
 
 				} else if (type.equals("SusEmergencyCareDataSetTail")) { //tailecd_DIS.190362
-					checkForMissingFilesByNumber(files, ".", 1);
+					checkForMissingFilesByNumber(files, "\\.", 1);
 
 				} else if (type.equals("SusInpatient")) { //ip_BH_193174_susrnj.dat
 					checkForMissingFilesByNumber(files, "_", 2);
@@ -793,13 +793,13 @@ public class Main {
 					checkForMissingFilesByNumber(files, "\\.|_", 2);
 
 				} else if (type.equals("SusOutpatient")) { //susopa_BH.204612
-					checkForMissingFilesByNumber(files, ".", 1);
+					checkForMissingFilesByNumber(files, "\\.", 1);
 
 				} else if (type.equals("SusOutpatientTail")) { //tailopa_DIS.204610
-					checkForMissingFilesByNumber(files, ".", 1);
+					checkForMissingFilesByNumber(files, "\\.", 1);
 
 				} else if (type.equals("SusOutpatientTail")) { //tailopa_DIS.204610
-					checkForMissingFilesByNumber(files, ".", 1);
+					checkForMissingFilesByNumber(files, "\\.", 1);
 
 				} else if (type.equals("ABREF")) { //ABREF_80130_06012018_054435_1.TXT
 					checkForMissingFilesByDate(files, "ddMMyyyy", "_", 2);
@@ -889,8 +889,16 @@ public class Main {
 
 		for (String file: files) {
 			String[] toks = file.split(delimiter);
-			String tok = toks[token];
-			int num = Integer.parseInt(tok);
+			String tok = null;
+			int num = 0;
+			try {
+				tok = toks[token];
+				num = Integer.parseInt(tok);
+			} catch (Exception ex) {
+				LOG.error("Exception with " + file + " tok = [" + tok + "] and toks " + toks , ex);
+				return;
+			}
+
 			maxNum = Math.max(num, maxNum);
 			minNum = Math.min(num, minNum);
 
