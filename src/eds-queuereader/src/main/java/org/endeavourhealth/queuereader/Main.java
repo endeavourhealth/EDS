@@ -930,7 +930,7 @@ public class Main {
 
 		LOG.info("Checking for range " + minNum + " to " + maxNum);
 
-		for (int i=maxNum; i>=minNum; i--) {
+		for (int i=minNum; i<=maxNum; i++) {
 			List<String> l = hmByNum.get(new Integer(i));
 			if (l == null) {
 				List<String> before = hmByNum.get(new Integer(i-1));
