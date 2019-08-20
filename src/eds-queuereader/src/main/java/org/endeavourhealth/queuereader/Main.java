@@ -752,7 +752,9 @@ public class Main {
 				LOG.info("---------------------------------------------------------------------");
 				LOG.info("Checking " + type + " with " + files.size());
 
-				if (type.equals("MaternityServicesDataSet")) {
+				if (type.equals("MaternityServicesDataSet")
+						|| type.equals("SusEmergency")
+						|| type.equals("SusEmergencyTail")) {
 					continue;
 				}
 
@@ -804,6 +806,11 @@ public class Main {
 				} else if (type.equals("ABREF")) { //ABREF_80130_06012018_054435_1.TXT
 					checkForMissingFilesByDate(files, "ddMMyyyy", "_", 2);
 
+				} else if (type.equals("APPSL2")) { //GETL_APPSL2_80130_RNJ_10072018_065345_1.TXT
+					checkForMissingFilesByDate(files, "ddMMyyyy", "_", 4);
+
+
+
 				} else { //CLEVE_80130_RNJ_15072018_045416_6.TXT
 
 					checkForMissingFilesByDate(files, "ddMMyyyy", "_", 3);
@@ -826,12 +833,13 @@ public class Main {
 
 		for (String file: files) {
 			String[] toks = file.split(delimiter);
-			String tok = toks[token];
+			String tok = null;
 			Date d = null;
 			try {
+				tok = toks[token];
 				d = sdf.parse(tok);
 			} catch (ParseException pe) {
-				LOG.error("Error parsing " + tok + " with format " + dateFormat, pe);
+				LOG.error("Error parsing " + tok + " with format " + dateFormat + " toks " + toks, pe);
 				return;
 			}
 			//LOG.debug("File " + file + " -> " + tok + " -> " + sdf.format(d));
