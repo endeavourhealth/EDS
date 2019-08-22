@@ -101,7 +101,9 @@ public class SubscriberQueueHelper {
         List<ExchangeBatch> batches = new ArrayList<>();
 
         //create an admin batch
-        batches.add(createBatch(exchange, null));
+        // 22/08/2019 James commented out the line below at Drew's instruction to fix the
+        // memory problems with doing a "Full Load of Data" for bulk practice transforms
+        // batches.add(createBatch(exchange, null));
 
         for (UUID patientId: patientUuids) {
             batches.add(createBatch(exchange, patientId));
