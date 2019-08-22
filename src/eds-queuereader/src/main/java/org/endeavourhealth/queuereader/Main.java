@@ -5163,6 +5163,73 @@ public class Main {
 					boolean invalidPostcode = rs.getBoolean(col++);
 					String propertyClass = rs.getString(col++);
 
+
+					//because of past mistakes, we have Discovery->Enterprise mappings for patients that
+					//shouldn't, so we also need to check that the service ID is definitely a publisher to this subscriber
+					Boolean isPublisher = hmPermittedPublishers.get(serviceId);
+					if (isPublisher == null) {
+
+						List<LibraryItem> libraryItems = LibraryRepositoryHelper.getProtocolsByServiceId(serviceId, null); //passing null means don't filter on system ID
+						for (LibraryItem libraryItem : libraryItems) {
+							Protocol protocol = libraryItem.getProtocol();
+							if (protocol.getEnabled() != ProtocolEnabled.TRUE) {
+								continue;
+							}
+
+							//check to make sure that this service is actually a PUBLISHER to this protocol
+							boolean isProtocolPublisher = false;
+							for (ServiceContract serviceContract : protocol.getServiceContract()) {
+								if (serviceContract.getType().equals(ServiceContractType.PUBLISHER)
+										&& serviceContract.getService().getUuid().equals(serviceId)
+										&& serviceContract.getActive() == ServiceContractActive.TRUE) {
+
+									isProtocolPublisher = true;
+									break;
+								}
+							}
+							if (!isProtocolPublisher) {
+								continue;
+							}
+
+							//check to see if this subscriber config is a subscriber to this DB
+							for (ServiceContract serviceContract : protocol.getServiceContract()) {
+								if (serviceContract.getType().equals(ServiceContractType.SUBSCRIBER)
+										&& serviceContract.getActive() == ServiceContractActive.TRUE) {
+
+									ServiceDalI serviceRepository = DalProvider.factoryServiceDal();
+									UUID subscriberServiceId = UUID.fromString(serviceContract.getService().getUuid());
+									UUID subscriberTechnicalInterfaceId = UUID.fromString(serviceContract.getTechnicalInterface().getUuid());
+									Service subscriberService = serviceRepository.getById(subscriberServiceId);
+									List<JsonServiceInterfaceEndpoint> serviceEndpoints = ObjectMapperPool.getInstance().readValue(subscriberService.getEndpoints(), new TypeReference<List<JsonServiceInterfaceEndpoint>>() {
+									});
+									for (JsonServiceInterfaceEndpoint serviceEndpoint : serviceEndpoints) {
+										if (serviceEndpoint.getTechnicalInterfaceUuid().equals(subscriberTechnicalInterfaceId)) {
+											String protocolSubscriberConfigName = serviceEndpoint.getEndpoint();
+											if (protocolSubscriberConfigName.equals(subscriberConfigName)) {
+												isPublisher = new Boolean(true);
+												break;
+											}
+										}
+									}
+								}
+							}
+						}
+
+						if (isPublisher == null) {
+							isPublisher = new Boolean(false);
+						}
+
+						hmPermittedPublishers.put(serviceId, isPublisher);
+					}
+
+					if (specificPatientId != null) {
+						LOG.debug("Org is publisher = " + isPublisher);
+					}
+
+					if (!isPublisher.booleanValue()) {
+						continue;
+					}
+
 					//check if patient ID already exists in the subscriber DB
 					Long subscriberPatientId = enterpriseIdDal.findEnterpriseIdOldWay(ResourceType.Patient.toString(), patientId);
 
@@ -5171,146 +5238,96 @@ public class Main {
 					}
 
 					//if the patient doesn't exist on this subscriber DB, then don't transform this record
-					if (subscriberPatientId != null) {
+					if (subscriberPatientId == null) {
+						continue;
+					}
 
-						//because of past mistakes, we have Discovery->Enterprise mappings for patients that
-						//shouldn't, so we also need to check that the service ID is definitely a publisher to this subscriber
-						Boolean isPublisher = hmPermittedPublishers.get(serviceId);
-						if (isPublisher == null) {
+					//see if the patient actually exists in the subscriber DB (might not if the patient is deleted or confidential)
+					String checkSql = "SELECT id FROM patient WHERE id = ?";
+					Connection subscriberConnection2 = connectionWrapper.getConnection();
+					PreparedStatement psCheck = subscriberConnection2.prepareStatement(checkSql);
+					psCheck.setLong(1, subscriberPatientId);
+					ResultSet checkRs = psCheck.executeQuery();
+					boolean inSubscriberDb = checkRs.next();
+					psCheck.close();
+					subscriberConnection2.close();
+					if (!inSubscriberDb) {
+						LOG.info("Skipping patient " + patientId + " -> " + subscriberPatientId + " as not found in enterprise DB");
+						continue;
+					}
 
-							List<LibraryItem> libraryItems = LibraryRepositoryHelper.getProtocolsByServiceId(serviceId, null); //passing null means don't filter on system ID
-							for (LibraryItem libraryItem : libraryItems) {
-								Protocol protocol = libraryItem.getProtocol();
-								if (protocol.getEnabled() != ProtocolEnabled.TRUE) {
-									continue;
-								}
+					SubscriberOrgMappingDalI orgMappingDal = DalProvider.factorySubscriberOrgMappingDal(subscriberConfigName);
+					Long subscriberOrgId = orgMappingDal.findEnterpriseOrganisationId(serviceId);
 
-								//check to make sure that this service is actually a PUBLISHER to this protocol
-								boolean isProtocolPublisher = false;
-								for (ServiceContract serviceContract : protocol.getServiceContract()) {
-									if (serviceContract.getType().equals(ServiceContractType.PUBLISHER)
-											&& serviceContract.getService().getUuid().equals(serviceId)
-											&& serviceContract.getActive() == ServiceContractActive.TRUE) {
+					String discoveryPersonId = patientLinkDal.getPersonId(patientId);
+					SubscriberPersonMappingDalI personMappingDal = DalProvider.factorySubscriberPersonMappingDal(subscriberConfigName);
+					Long subscriberPersonId = personMappingDal.findOrCreateEnterprisePersonId(discoveryPersonId);
 
-										isProtocolPublisher = true;
-										break;
-									}
-								}
-								if (!isProtocolPublisher) {
-									continue;
-								}
+					String lsoaCode = null;
+					if (!Strings.isNullOrEmpty(abpAddress)) {
+						String[] toks = abpAddress.split(" ");
+						String postcode = toks[toks.length - 1];
+						PostcodeLookup postcodeReference = postcodeDal.getPostcodeReference(postcode);
+						if (postcodeReference != null) {
+							lsoaCode = postcodeReference.getLsoaCode();
+						}
+					}
 
-								//check to see if this subscriber config is a subscriber to this DB
-								for (ServiceContract serviceContract : protocol.getServiceContract()) {
-									if (serviceContract.getType().equals(ServiceContractType.SUBSCRIBER)
-											&& serviceContract.getActive() == ServiceContractActive.TRUE) {
 
-										ServiceDalI serviceRepository = DalProvider.factoryServiceDal();
-										UUID subscriberServiceId = UUID.fromString(serviceContract.getService().getUuid());
-										UUID subscriberTechnicalInterfaceId = UUID.fromString(serviceContract.getTechnicalInterface().getUuid());
-										Service subscriberService = serviceRepository.getById(subscriberServiceId);
-										List<JsonServiceInterfaceEndpoint> serviceEndpoints = ObjectMapperPool.getInstance().readValue(subscriberService.getEndpoints(), new TypeReference<List<JsonServiceInterfaceEndpoint>>() {
-										});
-										for (JsonServiceInterfaceEndpoint serviceEndpoint : serviceEndpoints) {
-											if (serviceEndpoint.getTechnicalInterfaceUuid().equals(subscriberTechnicalInterfaceId)) {
-												String protocolSubscriberConfigName = serviceEndpoint.getEndpoint();
-												if (protocolSubscriberConfigName.equals(subscriberConfigName)) {
-													isPublisher = new Boolean(true);
-													break;
-												}
-											}
-										}
-									}
-								}
-							}
+					col = 1;
+					psUpsert.setLong(col++, subscriberPatientId);
+					psUpsert.setLong(col++, subscriberOrgId);
+					psUpsert.setLong(col++, subscriberPersonId);
+					psUpsert.setString(col++, lsoaCode);
 
-							if (isPublisher == null) {
-								isPublisher = new Boolean(false);
-							}
+					if (pseudonymised) {
 
-							hmPermittedPublishers.put(serviceId, isPublisher);
+						String pseuoUprn = null;
+						if (uprn != null) {
+
+							TreeMap<String, String> keys = new TreeMap<>();
+							keys.put("UPRN", "" + uprn);
+
+							Crypto crypto = new Crypto();
+							crypto.SetEncryptedSalt(saltBytes);
+							pseuoUprn = crypto.GetDigest(keys);
 						}
 
-						if (specificPatientId != null) {
-							LOG.debug("Org is publisher = " + isPublisher);
+						psUpsert.setString(col++, pseuoUprn);
+					} else {
+						if (uprn != null) {
+
+							psUpsert.setLong(col++, uprn.longValue());
+						} else {
+							psUpsert.setNull(col++, Types.BIGINT);
 						}
+					}
+					psUpsert.setString(col++, qualifier);
+					psUpsert.setString(col++, algorithm);
+					psUpsert.setString(col++, match);
+					psUpsert.setBoolean(col++, noAddress);
+					psUpsert.setBoolean(col++, invalidAddress);
+					psUpsert.setBoolean(col++, missingPostcode);
+					psUpsert.setBoolean(col++, invalidPostcode);
+					psUpsert.setString(col++, propertyClass);
 
-						if (isPublisher.booleanValue()) {
+					if (specificPatientId != null) {
+						LOG.debug("" + psUpsert);
+					}
 
-							SubscriberOrgMappingDalI orgMappingDal = DalProvider.factorySubscriberOrgMappingDal(subscriberConfigName);
-							Long subscriberOrgId = orgMappingDal.findEnterpriseOrganisationId(serviceId);
+					psUpsert.addBatch();
+					inBatch++;
+					saved++;
 
-							String discoveryPersonId = patientLinkDal.getPersonId(patientId);
-							SubscriberPersonMappingDalI personMappingDal = DalProvider.factorySubscriberPersonMappingDal(subscriberConfigName);
-							Long subscriberPersonId = personMappingDal.findOrCreateEnterprisePersonId(discoveryPersonId);
-
-							String lsoaCode = null;
-							if (!Strings.isNullOrEmpty(abpAddress)) {
-								String[] toks = abpAddress.split(" ");
-								String postcode = toks[toks.length - 1];
-								PostcodeLookup postcodeReference = postcodeDal.getPostcodeReference(postcode);
-								if (postcodeReference != null) {
-									lsoaCode = postcodeReference.getLsoaCode();
-								}
-							}
-
-
-							col = 1;
-							psUpsert.setLong(col++, subscriberPatientId);
-							psUpsert.setLong(col++, subscriberOrgId);
-							psUpsert.setLong(col++, subscriberPersonId);
-							psUpsert.setString(col++, lsoaCode);
-
-							if (pseudonymised) {
-
-								String pseuoUprn = null;
-								if (uprn != null) {
-
-									TreeMap<String, String> keys = new TreeMap<>();
-									keys.put("UPRN", "" + uprn);
-
-									Crypto crypto = new Crypto();
-									crypto.SetEncryptedSalt(saltBytes);
-									pseuoUprn = crypto.GetDigest(keys);
-								}
-
-								psUpsert.setString(col++, pseuoUprn);
-							} else {
-								if (uprn != null) {
-
-									psUpsert.setLong(col++, uprn.longValue());
-								} else {
-									psUpsert.setNull(col++, Types.BIGINT);
-								}
-							}
-							psUpsert.setString(col++, qualifier);
-							psUpsert.setString(col++, algorithm);
-							psUpsert.setString(col++, match);
-							psUpsert.setBoolean(col++, noAddress);
-							psUpsert.setBoolean(col++, invalidAddress);
-							psUpsert.setBoolean(col++, missingPostcode);
-							psUpsert.setBoolean(col++, invalidPostcode);
-							psUpsert.setString(col++, propertyClass);
-
-							if (specificPatientId != null) {
-								LOG.debug("" + psUpsert);
-							}
-
-							psUpsert.addBatch();
-							inBatch++;
-							saved++;
-
-							if (inBatch >= saveBatchSize) {
-								try {
-									psUpsert.executeBatch();
-									subscriberConnection.commit();
-									inBatch = 0;
-								} catch (Exception ex) {
-									LOG.error("Error saving UPRN for " + patientId + " -> " + subscriberPatientId + " for org " + subscriberOrgId);
-									LOG.error("" + psUpsert);
-									throw ex;
-								}
-							}
+					if (inBatch >= saveBatchSize) {
+						try {
+							psUpsert.executeBatch();
+							subscriberConnection.commit();
+							inBatch = 0;
+						} catch (Exception ex) {
+							LOG.error("Error saving UPRN for " + patientId + " -> " + subscriberPatientId + " for org " + subscriberOrgId);
+							LOG.error("" + psUpsert);
+							throw ex;
 						}
 					}
 
