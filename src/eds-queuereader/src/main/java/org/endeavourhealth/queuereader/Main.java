@@ -383,7 +383,11 @@ public class Main {
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("PopulateSubscriberUprnTable")) {
 			String subscriberConfigName = args[1];
-			populateSubscriberUprnTable(subscriberConfigName);
+			Integer overrideBatchSize = null;
+			if (args.length > 2) {
+				overrideBatchSize = Integer.valueOf(args[2]);
+			}
+			populateSubscriberUprnTable(subscriberConfigName, overrideBatchSize);
 			System.exit(0);
 		}
 
@@ -4931,9 +4935,14 @@ public class Main {
 	}
 
 
-	private static void populateSubscriberUprnTable(String subscriberConfigName) throws Exception {
+	private static void populateSubscriberUprnTable(String subscriberConfigName, Integer overrideBatchSize) throws Exception {
 		LOG.info("Populating Subscriber UPRN Table for " + subscriberConfigName);
 		try {
+
+			int saveBatchSize = TransformConfig.instance().getResourceSaveBatchSize();
+			if (overrideBatchSize != null) {
+				saveBatchSize = overrideBatchSize.intValue();
+			}
 
 			JsonNode config = ConfigManager.getConfigurationAsJson(subscriberConfigName, "db_subscriber");
 
@@ -5179,10 +5188,16 @@ public class Main {
 							inBatch++;
 							saved++;
 
-							if (inBatch >= TransformConfig.instance().getResourceSaveBatchSize()) {
-								psUpsert.executeBatch();
-								subscriberConnection.commit();
-								inBatch = 0;
+							if (inBatch >= saveBatchSize) {
+								try {
+									psUpsert.executeBatch();
+									subscriberConnection.commit();
+									inBatch = 0;
+								} catch (Exception ex) {
+									LOG.error("Error saving UPRN for " + patientId + " -> " + subscriberPatientId + " for org " + subscriberOrgId);
+									LOG.error("" + psUpsert);
+									throw ex;
+								}
 							}
 						}
 					}
