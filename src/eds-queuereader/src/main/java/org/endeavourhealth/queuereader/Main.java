@@ -4946,6 +4946,15 @@ public class Main {
 		}
 	}
 
+	/*
+
+create table uprn_pseudo_map (
+	uprn bigint,
+    pseudo_uprn varchar(255),
+    property_class varchar(10)
+);
+
+	 */
 	private static void calculateUprnPseudoIds(String subscriberConfigName, String targetTable) throws Exception {
 		LOG.info("Calculating UPRN Pseudo IDs " + subscriberConfigName);
 		try {
@@ -4964,7 +4973,7 @@ public class Main {
 			SessionImpl session = (SessionImpl) subscrberEntityManager.getDelegate();
 			Connection subscriberConnection = session.connection();
 
-			String upsertSql = "INSERT INTO " + targetTable + " (uprn, pseudo_uprn, property_class) VALUES (?, ?)";
+			String upsertSql = "INSERT INTO " + targetTable + " (uprn, pseudo_uprn, property_class) VALUES (?, ?, ?)";
 
 			PreparedStatement psUpsert = subscriberConnection.prepareStatement(upsertSql);
 			int inBatch = 0;
