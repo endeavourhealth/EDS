@@ -381,6 +381,14 @@ public class Main {
 		}*/
 
 		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("CalculateUprnPseudoIds")) {
+			String subscriberConfigName = args[1];
+			String targetTable = args[2];
+			calculateUprnPseudoIds(subscriberConfigName, targetTable);
+			System.exit(0);
+		}
+
+		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("PopulateSubscriberUprnTable")) {
 			String subscriberConfigName = args[1];
 			Integer overrideBatchSize = null;
@@ -4938,6 +4946,91 @@ public class Main {
 		}
 	}
 
+	private static void calculateUprnPseudoIds(String subscriberConfigName, String targetTable) throws Exception {
+		LOG.info("Calculating UPRN Pseudo IDs " + subscriberConfigName);
+		try {
+
+			JsonNode config = ConfigManager.getConfigurationAsJson(subscriberConfigName, "db_subscriber");
+			JsonNode pseudoNode = config.get("pseudonymisation");
+			if (pseudoNode == null){
+				LOG.error("No salt key found!");
+				return;
+			}
+			JsonNode saltNode = pseudoNode.get("salt");
+			String base64Salt = saltNode.asText();
+			byte[] saltBytes = Base64.getDecoder().decode(base64Salt);
+
+			EntityManager subscrberEntityManager = ConnectionManager.getSubscriberTransformEntityManager(subscriberConfigName);
+			SessionImpl session = (SessionImpl) subscrberEntityManager.getDelegate();
+			Connection subscriberConnection = session.connection();
+
+			String upsertSql = "INSERT INTO " + targetTable + " (uprn, pseudo_uprn, property_class) VALUES (?, ?)";
+
+			PreparedStatement psUpsert = subscriberConnection.prepareStatement(upsertSql);
+			int inBatch = 0;
+			int done = 0;
+
+			EntityManager referenceEntityManager = ConnectionManager.getReferenceEntityManager();
+			session = (SessionImpl) referenceEntityManager.getDelegate();
+			Connection referenceConnection = session.connection();
+
+			String selectSql = "SELECT uprn, property_class FROM uprn_property_class";
+
+			PreparedStatement psSelect = referenceConnection.prepareStatement(selectSql);
+			psSelect.setFetchSize(2000);
+
+			LOG.info("Starting query on EDS database");
+			ResultSet rs = psSelect.executeQuery();
+			LOG.info("Got raw results back");
+
+			while (rs.next()) {
+				long uprn = rs.getLong(1);
+				String cls = rs.getString(2);
+
+				String pseuoUprn = null;
+				TreeMap<String, String> keys = new TreeMap<>();
+				keys.put("UPRN", "" + uprn);
+
+				Crypto crypto = new Crypto();
+				crypto.SetEncryptedSalt(saltBytes);
+				pseuoUprn = crypto.GetDigest(keys);
+
+				psUpsert.setLong(1, uprn);
+				psUpsert.setString(2, pseuoUprn);
+				psUpsert.setString(3, cls);
+
+				psUpsert.addBatch();
+				inBatch++;
+				done++;
+
+				if (inBatch >= TransformConfig.instance().getResourceSaveBatchSize()) {
+					psUpsert.executeBatch();
+					subscriberConnection.commit();
+					inBatch = 0;
+				}
+
+				if (done % 5000 == 0) {
+					LOG.debug("Done " + done);
+				}
+			}
+
+			if (inBatch > 0) {
+				psUpsert.executeBatch();
+				subscriberConnection.commit();
+			}
+			LOG.debug("Done " + done);
+
+			psUpsert.close();
+			subscrberEntityManager.close();
+
+			psSelect.close();
+			referenceEntityManager.close();
+
+			LOG.info("Finished Calculating UPRN Pseudo IDs " + subscriberConfigName);
+		} catch (Throwable t) {
+			LOG.error("", t);
+		}
+	}
 
 	private static void populateSubscriberUprnTable(String subscriberConfigName, Integer overrideBatchSize, String specificPatientId) throws Exception {
 		LOG.info("Populating Subscriber UPRN Table for " + subscriberConfigName);
