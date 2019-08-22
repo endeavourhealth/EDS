@@ -28,6 +28,12 @@ public class SnomedAndDMDUpdater {
 
     private static final String MODULE_UK_EDITION = "999000041000000102";
     private static final String MODULE_UK_CLINICAL_EXTENSION_REFERENCE_SET = "999000021000000109";
+    private static final String MODULE_UK_CLINICAL_EXTENSION = "999000011000000103";
+    private static final String MODULE_UK_DRUG_EXTENSION = "999000011000001104";
+    private static final String MODULE_UK_DRUG_EXTENSION_REFERENCE_SET = "999000021000001108";
+
+    private static final String ACCEPTABILITY_PREFERRED = "900000000000549004";
+    private static final String ACCEPTABILITY_ACCEPTED = "900000000000548007";
 
     public static final CSVFormat CSV_FORMAT = CSVFormat.TDF
             .withHeader()
@@ -86,145 +92,67 @@ public class SnomedAndDMDUpdater {
 
     private static void importDmd(File file, ThreadPool threadPool) throws Exception {
 
-        Set<String> hsConcepts = new HashSet<>();
-        Map<String, SnomedLookup> hmDescriptions = new HashMap<>();
+        Map<String, SnomedDescDetails> hmByDescId = new HashMap<>();
+        Map<String, List<SnomedDescDetails>> hmByConceptId = new HashMap<>();
 
+        LOG.info("Doing DM+D CT Description->Concept Mappings");
         ZipInputStream zis = ZipHelper.createZipInputStream(file);
-        Reader r = ZipHelper.findFile(zis, "SnomedCT_UKDrugRF2_PRODUCTION_.*/Full/Terminology/sct2_Description_Full-en_GB1000001_.*.txt");
+        Reader r = ZipHelper.findFile(zis, "SnomedCT_UKDrugRF2_PRODUCTION_.*/Snapshot/Terminology/sct2_Description_Snapshot-en_GB1000001_.*.txt");
         if (r == null) {
             throw new Exception("Failed to find international description file");
         }
-        updateDescriptionMappings(r, threadPool, hmDescriptions, hsConcepts);
+        processDescriptionFile(r, threadPool, hmByDescId, hmByConceptId);
         zis.close();
 
         //we now need to process the UK refset file to work out the preferred description for each concept
-        LOG.info("Doing UK Snomed Refset");
+        LOG.info("Doing DM+D Refset");
         zis = ZipHelper.createZipInputStream(file);
-        r = ZipHelper.findFile(zis, "SnomedCT_UKDrugRF2_PRODUCTION_.*/Full/Refset/Language/der2_cRefset_LanguageFull-en_GB1000001_.*.txt");
+        r = ZipHelper.findFile(zis, "SnomedCT_UKDrugRF2_PRODUCTION_.*/Snapshot/Refset/Language/der2_cRefset_LanguageSnapshot-en_GB1000001_.*.txt");
         if (r == null) {
             throw new Exception("Failed to find UK refset file");
         }
-        uppdateConceptTerms(r, threadPool, hmDescriptions, hsConcepts);
+        processRefSetFile(r, threadPool, hmByDescId, hmByConceptId);
         zis.close();
     }
 
     private static void importSnomed(File file, ThreadPool threadPool) throws Exception {
 
-        Set<String> hsConcepts = new HashSet<>();
-        Map<String, SnomedLookup> hmDescriptions = new HashMap<>();
+        Map<String, SnomedDescDetails> hmByDescId = new HashMap<>();
+        Map<String, List<SnomedDescDetails>> hmByConceptId = new HashMap<>();
+
 
         //find international concepts file
         LOG.info("Doing International Snomed CT Description->Concept Mappings");
         ZipInputStream zis = ZipHelper.createZipInputStream(file);
-        Reader r = ZipHelper.findFile(zis, "SnomedCT_InternationalRF2_PRODUCTION_.*/Full/Terminology/sct2_Description_Full-en_INT_.*.txt");
+        Reader r = ZipHelper.findFile(zis, "SnomedCT_InternationalRF2_PRODUCTION_.*/Snapshot/Terminology/sct2_Description_Snapshot-en_INT_.*.txt");
         if (r == null) {
             throw new Exception("Failed to find international description file");
         }
-        updateDescriptionMappings(r, threadPool, hmDescriptions, hsConcepts);
+        processDescriptionFile(r, threadPool, hmByDescId, hmByConceptId);
         zis.close();
 
         //find UK concepts file
         LOG.info("Doing UK Snomed CT Description->Concept Mappings");
         zis = ZipHelper.createZipInputStream(file);
-        r = ZipHelper.findFile(zis, "SnomedCT_UKClinicalRF2_PRODUCTION_.*/Full/Terminology/sct2_Description_Full-en_GB1000000_.*.txt");
+        r = ZipHelper.findFile(zis, "SnomedCT_UKClinicalRF2_PRODUCTION_.*/Snapshot/Terminology/sct2_Description_Snapshot-en_GB1000000_.*.txt");
         if (r == null) {
             throw new Exception("Failed to find UK description file");
         }
-        updateDescriptionMappings(r, threadPool, hmDescriptions, hsConcepts);
+        processDescriptionFile(r, threadPool, hmByDescId, hmByConceptId);
         zis.close();
 
         //we now need to process the UK refset file to work out the preferred description for each concept
         LOG.info("Doing UK Snomed Refset");
         zis = ZipHelper.createZipInputStream(file);
-        r = ZipHelper.findFile(zis, "SnomedCT_UKClinicalRF2_PRODUCTION_.*/Full/Refset/Language/der2_cRefset_LanguageFull-en_GB1000000_.*.txt");
+        r = ZipHelper.findFile(zis, "SnomedCT_UKClinicalRF2_PRODUCTION_.*/Snapshot/Refset/Language/der2_cRefset_LanguageSnapshot-en_GB1000000_.*.txt");
         if (r == null) {
             throw new Exception("Failed to find UK refset file");
         }
-        uppdateConceptTerms(r, threadPool, hmDescriptions, hsConcepts);
+        processRefSetFile(r, threadPool, hmByDescId, hmByConceptId);
         zis.close();
     }
 
-    private static void uppdateConceptTerms(Reader r, ThreadPool threadPool, Map<String, SnomedLookup> hmDescriptions, Set<String> hsConcepts) throws Exception {
-
-        Map<String, List<RefsetRecord>> hmConcepts = new HashMap<>();
-
-        //parse the refset file to find the preferred term for each concept
-        CSVParser parser = new CSVParser(r, CSV_FORMAT);
-        int recordNum = 0;
-
-        try {
-            Iterator<CSVRecord> iterator = parser.iterator();
-            while (iterator.hasNext()) {
-                recordNum++;
-                if (recordNum % 5000 == 0) {
-                    LOG.info("Processed " + recordNum + " refset records");
-                }
-
-                CSVRecord record = iterator.next();
-
-                String active = record.get("active");
-                String module = record.get("moduleId");
-                String descriptionId = record.get("referencedComponentId");
-
-                if (!active.equals("1")
-                        || !module.equals(MODULE_UK_EDITION)) {
-                    continue;
-                }
-
-                SnomedLookup termDetails = hmDescriptions.get(descriptionId);
-                if (termDetails == null) {
-                    throw new Exception("No term details found for description ID " + descriptionId);
-                }
-                String conceptId = termDetails.getConceptId();
-
-                RefsetRecord refsetRecord = new RefsetRecord(termDetails, module);
-
-                List<RefsetRecord> l = hmConcepts.get(conceptId);
-                if (l == null) {
-                    l = new ArrayList<>();
-                    hmConcepts.put(conceptId, l);
-                }
-                l.add(refsetRecord);
-            }
-
-        } catch (Exception ex) {
-            LOG.error("Error on line " + recordNum);
-            throw ex;
-
-        } finally {
-            parser.close();
-        }
-
-        //save concept IDs to DB
-        LOG.info("Now going to save preferred concept->term mappings to DB");
-        List<SnomedLookup> conceptBatch = new ArrayList<>();
-        int conceptsDone = 0;
-
-        for (String conceptId: hsConcepts) {
-            List<RefsetRecord> refsetRecords = hmConcepts.get(conceptId);
-            if (refsetRecords == null) {
-                throw new Exception("No refset records found for concept " + conceptId);
-            }
-
-            //sort the concepts into "best" order
-            refsetRecords.sort(((o1, o2) -> o1.compareTo(o2)));
-
-            RefsetRecord bestRecord = refsetRecords.get(0);
-            SnomedLookup bestTerm = bestRecord.getTermDetails();
-
-            conceptBatch.add(bestTerm);
-            conceptsDone ++;
-            saveConceptMappings(conceptBatch, threadPool, false);
-            if (conceptsDone % 5000 == 0) {
-                LOG.info("Saved " + conceptsDone + " concept->term mappings");
-            }
-        }
-
-        LOG.info("Saved " + conceptsDone + " concept->term mappings");
-        saveConceptMappings(conceptBatch, threadPool, true);
-    }
-
-    private static void updateDescriptionMappings(Reader r, ThreadPool threadPool, Map<String, SnomedLookup> hmDescriptions, Set<String> hsConcepts) throws Exception {
+    private static void processDescriptionFile(Reader r, ThreadPool threadPool, Map<String, SnomedDescDetails> hmByDescId, Map<String, List<SnomedDescDetails>> hmByConceptId) throws Exception {
 
         //save the description -> concept mappings as we go along, in batches
         Map<String, String> descriptionBatch = new HashMap<>();
@@ -251,6 +179,11 @@ public class SnomedAndDMDUpdater {
                 String typeId = record.get("typeId");
                 String term = record.get("term");
 
+                if (!typeId.equals(TYPE_FULLY_SPECIFIED_NAME)
+                        && !typeId.equals(TYPE_SYNONYM)) {
+                    throw new Exception("Unexpected type ID " + typeId + " for concept " + conceptId + " and term ID " + descriptionId);
+                }
+
                 //save the description to concept mapping
                 descriptionBatch.put(descriptionId, conceptId);
                 saveDescriptionMappings(descriptionBatch, threadPool, false);
@@ -259,42 +192,18 @@ public class SnomedAndDMDUpdater {
                     LOG.info("Saved " + descriptionsDone + " description->concept mappings");
                 }
 
-                //cache our concept ID so we know all concepts
-                hsConcepts.add(conceptId);
-
-                //cache any active description for the concept ID
                 if (active.equals("1")) {
+                    SnomedDescDetails o = new SnomedDescDetails(term, typeId);
 
-                    SnomedLookup l = new SnomedLookup();
-                    l.setConceptId(conceptId);
-                    l.setTerm(term);
-                    l.setTypeId(typeId);
-                    hmDescriptions.put(descriptionId, l);
-                }
+                    hmByDescId.put(descriptionId, o);
 
-                //see if this term is "better" than any other term for the same concept
-                /*String termAlreadyFound = conceptTermCache.get(conceptId);
-                String typeAlreadyFound = conceptTypeCache.get(conceptId);
-                boolean replace = false;
-                if (termAlreadyFound == null) {
-                    replace = true;
-                } else {
-                    //if the type in the map is a synonym, and ours isn't, then we replace it
-                    if (typeId.equals("900000000000003001")
-                            && !typeAlreadyFound.equals("900000000000003001")) {
-                        replace = true;
-
-                        //if the type in the map has the same type but our term is longer, then replace it
-                    } else if (typeId.equals(typeAlreadyFound)
-                            && term.length() > termAlreadyFound.length()) {
-                        replace = true;
+                    List<SnomedDescDetails> l = hmByConceptId.get(conceptId);
+                    if (l == null) {
+                        l = new ArrayList<>();
+                        hmByConceptId.put(conceptId, l);
                     }
+                    l.add(o);
                 }
-
-                if (replace) {
-                    conceptTermCache.put(conceptId, term);
-                    conceptTypeCache.put(conceptId, typeId);
-                }*/
 
                 lastDescriptionId = descriptionId;
             }
@@ -335,8 +244,112 @@ public class SnomedAndDMDUpdater {
         LOG.info("Saved " + conceptsDone + " concept->term mappings");
         saveConceptMappings(conceptBatch, threadPool, true);*/
 
-        threadPool.waitUntilEmpty();
+        List<ThreadPoolError> errors = threadPool.waitUntilEmpty();
+        handleErrors(errors);
     }
+
+
+    private static void processRefSetFile(Reader r, ThreadPool threadPool, Map<String, SnomedDescDetails> hmByDescId, Map<String, List<SnomedDescDetails>> hmByConceptId) throws Exception {
+
+        //parse the refset file to find the preferred term for each concept
+        CSVParser parser = new CSVParser(r, CSV_FORMAT);
+        int recordNum = 0;
+
+        try {
+            Iterator<CSVRecord> iterator = parser.iterator();
+            while (iterator.hasNext()) {
+                recordNum++;
+                if (recordNum % 5000 == 0) {
+                    LOG.info("Processed " + recordNum + " refset records");
+                }
+
+                CSVRecord record = iterator.next();
+
+                String active = record.get("active");
+                String module = record.get("moduleId");
+                String descriptionId = record.get("referencedComponentId");
+                String acceptabilityId = record.get("acceptabilityId");
+
+                if (!module.equals(MODULE_UK_CLINICAL_EXTENSION_REFERENCE_SET)
+                        && !module.equals(MODULE_UK_EDITION)
+                        && !module.equals(MODULE_UK_CLINICAL_EXTENSION)
+                        && !module.equals(MODULE_UK_DRUG_EXTENSION)
+                        && !module.equals(MODULE_UK_DRUG_EXTENSION_REFERENCE_SET)) {
+                    throw new Exception("Unexpected moduleId " + module + " for term ID " + descriptionId);
+                }
+
+                if (!acceptabilityId.equals(ACCEPTABILITY_ACCEPTED)
+                        && !acceptabilityId.equals(ACCEPTABILITY_PREFERRED)) {
+                    throw new Exception("Unexpected acceptabilityId " + acceptabilityId + " for term ID " + descriptionId);
+                }
+
+                if (!active.equals("1")) {
+                    continue;
+                }
+
+                boolean isPreferred = acceptabilityId.equals(ACCEPTABILITY_PREFERRED);
+
+                SnomedDescDetails termDetails = hmByDescId.get(descriptionId);
+
+                //need to handle null as there is at least one case of the refset pointing to a non-active desceiption (desc ID 3311408011)
+                if (termDetails != null) {
+                    termDetails.setRefsetPreferred(new Boolean(isPreferred));
+                }
+            }
+
+        } catch (Exception ex) {
+            LOG.error("Error on line " + recordNum);
+            throw ex;
+
+        } finally {
+            parser.close();
+        }
+
+        //save concept IDs to DB
+        LOG.info("Now going to save preferred concept->term mappings to DB");
+        List<SnomedLookup> conceptBatch = new ArrayList<>();
+        int conceptsDone = 0;
+
+        for (String conceptId: hmByConceptId.keySet()) {
+            List<SnomedDescDetails> refsetRecords = hmByConceptId.get(conceptId);
+            if (refsetRecords == null
+                    || refsetRecords.isEmpty()) {
+                throw new Exception("No descriptions found for concept " + conceptId);
+            }
+
+            //sort the concepts into "best" order
+            try {
+                refsetRecords.sort(((o1, o2) -> o1.compareTo(o2)));
+            } catch (Exception ex) {
+                LOG.error("Exception comparing records for concept " + conceptId + ":");
+                for (SnomedDescDetails s: refsetRecords) {
+                    LOG.error("" + s);
+                }
+                throw ex;
+            }
+
+            SnomedDescDetails bestRecord = refsetRecords.get(0);
+
+            SnomedLookup bestTerm = new SnomedLookup();
+            bestTerm.setTerm(bestRecord.getDescription());
+            bestTerm.setTypeId(bestRecord.getDescriptionTypeId());
+            bestTerm.setConceptId(conceptId);
+
+            conceptBatch.add(bestTerm);
+            conceptsDone ++;
+            saveConceptMappings(conceptBatch, threadPool, false);
+            if (conceptsDone % 5000 == 0) {
+                LOG.info("Saved " + conceptsDone + " concept->term mappings");
+            }
+        }
+
+        LOG.info("Saved " + conceptsDone + " concept->term mappings");
+        saveConceptMappings(conceptBatch, threadPool, true);
+
+        List<ThreadPoolError> errors = threadPool.waitUntilEmpty();
+        handleErrors(errors);
+    }
+
 
     private static void saveConceptMappings(List<SnomedLookup> batch, ThreadPool threadPool, boolean lastOne) throws Exception {
         if (batch.isEmpty()
@@ -445,25 +458,90 @@ public class SnomedAndDMDUpdater {
         }
     }
 
-    static class RefsetRecord {
-        private SnomedLookup termDetails;
-        private String module;
+    static class SnomedDescDetails {
+        private String description;
+        private String descriptionTypeId; //Full specified name, synonym, from descriptions file
+        private Boolean refsetPreferred; //whether a preferred term or not, from refset file
 
-        public RefsetRecord(SnomedLookup termDetails, String module) {
-            this.termDetails = termDetails;
-            this.module = module;
+        public SnomedDescDetails(String description, String descriptionTypeId) {
+            this.description = description;
+            this.descriptionTypeId = descriptionTypeId;
         }
 
-        public SnomedLookup getTermDetails() {
-            return termDetails;
+        public Boolean getRefsetPreferred() {
+            return refsetPreferred;
         }
 
-        public String getModule() {
-            return module;
+        public void setRefsetPreferred(Boolean refsetPreferred) {
+            this.refsetPreferred = refsetPreferred;
         }
 
-        public int compareTo(RefsetRecord o2) {
-            return 0;
+        public String getDescription() {
+            return description;
+        }
+
+        public String getDescriptionTypeId() {
+            return descriptionTypeId;
+        }
+
+        @Override
+        public String toString() {
+            return "Desc [" + description + "] type " + descriptionTypeId + " refsetPreferred " + refsetPreferred;
+        }
+
+        /**
+         * order of ranking (best to worst)
+         * 1. REFSET full Specified Name
+         * 2. REFSET preferred
+         * 3. REFSET acceptable
+         * 4. non-refset full Specified Name
+         * 5. non-refset preferred
+         * 6. non-refset acceptable
+         */
+        public int compareTo(SnomedDescDetails other) {
+
+            //always prefer descriptions found in the refset
+            if (refsetPreferred != null
+                    && other.getRefsetPreferred() == null) {
+                return -1;
+
+            } else if (refsetPreferred == null
+                    && other.getRefsetPreferred() != null) {
+                return 1;
+
+            } else {
+
+                //prefer fully specified names over synonyms
+                if (descriptionTypeId.equals(TYPE_FULLY_SPECIFIED_NAME)
+                        && !other.getDescriptionTypeId().equals(TYPE_FULLY_SPECIFIED_NAME)) {
+                    return -1;
+
+                } else if (!descriptionTypeId.equals(TYPE_FULLY_SPECIFIED_NAME)
+                        && other.getDescriptionTypeId().equals(TYPE_FULLY_SPECIFIED_NAME)) {
+                    return 1;
+
+                } else {
+                    //then we prefer "preferred" terms over "acceptable" ones (handling null refset status in both cases)
+                    if (refsetPreferred != null
+                            && refsetPreferred.booleanValue()
+                            && other.getRefsetPreferred() != null
+                            && !other.getRefsetPreferred().booleanValue()) {
+                        return -1;
+
+                    } else if (refsetPreferred != null
+                            && !refsetPreferred.booleanValue()
+                            && other.getRefsetPreferred() != null
+                            && other.getRefsetPreferred().booleanValue()) {
+                        return 1;
+
+                    } else {
+                        return 0;
+                    }
+                }
+
+            }
+
+
         }
     }
 }
