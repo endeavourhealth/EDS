@@ -387,7 +387,11 @@ public class Main {
 			if (args.length > 2) {
 				overrideBatchSize = Integer.valueOf(args[2]);
 			}
-			populateSubscriberUprnTable(subscriberConfigName, overrideBatchSize);
+			String patientId = null;
+			if (args.length > 3) {
+				patientId = args[3];
+			}
+			populateSubscriberUprnTable(subscriberConfigName, overrideBatchSize, patientId);
 			System.exit(0);
 		}
 
@@ -4935,7 +4939,7 @@ public class Main {
 	}
 
 
-	private static void populateSubscriberUprnTable(String subscriberConfigName, Integer overrideBatchSize) throws Exception {
+	private static void populateSubscriberUprnTable(String subscriberConfigName, Integer overrideBatchSize, String specificPatientId) throws Exception {
 		LOG.info("Populating Subscriber UPRN Table for " + subscriberConfigName);
 		try {
 
@@ -5035,6 +5039,12 @@ public class Main {
 							+ " LEFT OUTER JOIN reference.uprn_property_class c"
 							+ " ON c.uprn = a.uprn";
 
+				//support one patient at a time for debugging
+				if (specificPatientId != null) {
+					sql += " WHERE a.patient_id = '" + specificPatientId + "'";
+					LOG.debug("Restricting to patient " + specificPatientId);
+				}
+
 				Statement s = edsConnection.createStatement();
 				s.setFetchSize(2000); //don't get all rows at once
 
@@ -5062,6 +5072,10 @@ public class Main {
 
 					//check if patient ID already exists in the subscriber DB
 					Long subscriberPatientId = enterpriseIdDal.findEnterpriseIdOldWay(ResourceType.Patient.toString(), patientId);
+
+					if (specificPatientId != null) {
+						LOG.debug("Got patient " + patientId + " with UPRN " + uprn + " and property class " + propertyClass + " and subscriber patient ID " + subscriberPatientId);
+					}
 
 					//if the patient doesn't exist on this subscriber DB, then don't transform this record
 					if (subscriberPatientId != null) {
@@ -5124,6 +5138,9 @@ public class Main {
 							hmPermittedPublishers.put(serviceId, isPublisher);
 						}
 
+						if (specificPatientId != null) {
+							LOG.debug("Org is publisher = " + isPublisher);
+						}
 
 						if (isPublisher.booleanValue()) {
 
@@ -5182,7 +5199,9 @@ public class Main {
 							psUpsert.setBoolean(col++, invalidPostcode);
 							psUpsert.setString(col++, propertyClass);
 
-							//LOG.debug("" + psUpsert);
+							if (specificPatientId != null) {
+								LOG.debug("" + psUpsert);
+							}
 
 							psUpsert.addBatch();
 							inBatch++;
