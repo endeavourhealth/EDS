@@ -7,4 +7,5 @@ export class Exchange {
     bodyLines: string[];
     inError: boolean;
     transformAudits: TransformErrorDetail[];
+    exchangeSize: string;
 }

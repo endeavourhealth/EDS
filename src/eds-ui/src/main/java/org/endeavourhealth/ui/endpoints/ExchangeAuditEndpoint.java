@@ -3,6 +3,7 @@ package org.endeavourhealth.ui.endpoints;
 
 import com.codahale.metrics.annotation.Timed;
 import com.google.common.base.Strings;
+import org.apache.commons.io.FileUtils;
 import org.endeavourhealth.common.security.SecurityUtils;
 import org.endeavourhealth.common.security.annotations.RequiresAdmin;
 import org.endeavourhealth.core.database.dal.DalProvider;
@@ -24,6 +25,8 @@ import org.endeavourhealth.core.xml.transformError.Error;
 import org.endeavourhealth.core.xml.transformError.ExceptionLine;
 import org.endeavourhealth.core.xml.transformError.TransformError;
 import org.endeavourhealth.coreui.endpoints.AbstractEndpoint;
+import org.endeavourhealth.transform.common.ExchangeHelper;
+import org.endeavourhealth.transform.common.ExchangePayloadFile;
 import org.endeavourhealth.ui.json.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -125,8 +128,6 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
         List<Exchange> exchanges = auditRepository.getExchangesByService(serviceUuid, systemUuid, maxRows, dateFrom, dateTo);
         List<JsonExchange> ret = convertExchangesToJson(serviceUuid, systemUuid, exchanges);
 
-        Set<UUID> exchangeIdsInError = findAllExchangeIdsInErrorForService(serviceUuid, systemUuid);
-
         clearLogbackMarkers();
 
         return Response
@@ -215,12 +216,45 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
             Map<String, String> headers = exchange.getHeaders();
             List<String> bodyLines = getExchangeBodyLines(exchange);
             boolean inError = exchangeIdsInError.contains(exchangeId);
+            String exchangeSize = getExchangeSize(exchange);
 
-            JsonExchange jsonExchange = new JsonExchange(exchangeId, serviceUuid, systemUuid, timestamp, headers, bodyLines, inError);
+            JsonExchange jsonExchange = new JsonExchange(exchangeId, serviceUuid, systemUuid, timestamp, headers, bodyLines, inError, exchangeSize);
             ret.add(jsonExchange);
         }
 
         return ret;
+    }
+
+    /**
+     * returns the size of the exchange data, in a human readable format
+     */
+    private String getExchangeSize(Exchange exchange) {
+
+        String body = exchange.getBody();
+
+        try {
+            long extractSize = 0;
+            List<ExchangePayloadFile> files = ExchangeHelper.parseExchangeBody(body);
+            for (ExchangePayloadFile file: files) {
+
+                //if we hit some old extract data without the size in the JSON, then just abort
+                if (file.getSize() == null) {
+                    return null;
+                }
+
+                extractSize += file.getSize().longValue();
+            }
+
+            return FileUtils.byteCountToDisplaySize(extractSize);
+
+        } catch (Throwable t) {
+            //if the body can't be parsed into payload files, then it's most likely because it's either
+            //really old data or HL7 concent
+            return null;
+        }
+
+
+
     }
 
     private Set<UUID> findAllExchangeIdsInErrorForService(UUID serviceId, UUID systemId) throws Exception {

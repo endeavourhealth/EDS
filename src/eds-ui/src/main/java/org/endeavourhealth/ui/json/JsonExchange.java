@@ -17,8 +17,9 @@ public class JsonExchange {
     private Map<String, String> headers;
     private List<String> bodyLines;
     private boolean isInError; //note that jackson ends up binding this to a JSON property called just inError
+    private String exchangeSize;
 
-    public JsonExchange(UUID exchangeId, UUID serviceId, UUID systemId, Date timestamp, Map<String, String> headers, List<String> bodyLines, boolean isInError) {
+    public JsonExchange(UUID exchangeId, UUID serviceId, UUID systemId, Date timestamp, Map<String, String> headers, List<String> bodyLines, boolean isInError, String exchangeSize) {
         this.exchangeId = exchangeId;
         this.serviceId = serviceId;
         this.systemId = systemId;
@@ -26,6 +27,7 @@ public class JsonExchange {
         this.headers = headers;
         this.bodyLines = bodyLines;
         this.isInError = isInError;
+        this.exchangeSize = exchangeSize;
     }
 
     public UUID getExchangeId() {
@@ -82,5 +84,13 @@ public class JsonExchange {
 
     public void setInError(boolean inError) {
         isInError = inError;
+    }
+
+    public String getExchangeSize() {
+        return exchangeSize;
+    }
+
+    public void setExchangeSize(String exchangeSize) {
+        this.exchangeSize = exchangeSize;
     }
 }
