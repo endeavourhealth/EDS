@@ -102,16 +102,24 @@ public class Main {
 		}*/
 
 		if (args.length >= 1
-				&& args[0].equalsIgnoreCase("ConvertAudits")) {
-			String configName = args[2];
-			String tempTable = args[3];
-			int threads = Integer.parseInt(args[4]);
-			int batchSize = Integer.parseInt(args[5]);
-			boolean testMode = Boolean.parseBoolean(args[6]);
-			//convertFhirAudits(configName, threads, batchSize);
+				&& args[0].equalsIgnoreCase("ConvertAudits2")) {
+			String configName = args[1];
+			String tempTable = args[2];
+			int threads = Integer.parseInt(args[3]);
+			int batchSize = Integer.parseInt(args[4]);
+			boolean testMode = Boolean.parseBoolean(args[5]);
 			convertFhirAudits2(configName, tempTable, threads, batchSize, testMode);
 			System.exit(0);
 		}
+
+		/*if (args.length >= 1
+				&& args[0].equalsIgnoreCase("ConvertAudits")) {
+			String configName = args[2];
+			int threads = Integer.parseInt(args[3]);
+			int batchSize = Integer.parseInt(args[4]);
+			convertFhirAudits(configName, threads, batchSize);
+			System.exit(0);
+		}*/
 
 		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("TestRabbit")) {
