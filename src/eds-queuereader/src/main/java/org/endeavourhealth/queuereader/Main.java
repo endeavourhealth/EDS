@@ -2810,7 +2810,7 @@ public class Main {
 			//need to convert oldStyleID to a fileID and record number
 			String sql = "select r.source_location, f.new_published_file_id"
 					+ " from source_file_record r"
-					+ " inner join source_file_mappings f"
+					+ " inner join source_file_mapping f"
 					+ " on f.id = r.source_file_id"
 					+ " where r.id = ?";
 			PreparedStatement ps = connection.prepareStatement(sql);
@@ -2870,7 +2870,7 @@ public class Main {
 				//need to convert oldStyleID to a fileID and record number
 				String sql = "select r.source_location, f.new_published_file_id"
 						+ " from source_file_record r"
-						+ " inner join source_file_mappings f"
+						+ " inner join source_file_mapping f"
 						+ " on f.id = r.source_file_id"
 						+ " where r.id = ?"
 						+ " and f.file_path LIKE '%" + desiredFileName + "%'";
