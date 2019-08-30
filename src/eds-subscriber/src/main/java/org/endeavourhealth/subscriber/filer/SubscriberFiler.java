@@ -63,6 +63,7 @@ public class SubscriberFiler {
             SubscriberZipFileUUIDsDalI szfudi = DalProvider.factorySubscriberZipFileUUIDs();
             szfudi.createSubscriberZipFileUUIDsEntity(subscriberId, batchId.toString(),
                     queuedMessageId.toString(), base64);
+
         } else {
             for (EnterpriseConnector.ConnectionWrapper connectionWrapper: connectionWrappers) {
                 file(connectionWrapper, bytes);
