@@ -823,10 +823,10 @@ public class Main {
 					int col = 1;
 					if (validNhsNumberCol != null) {
 						int validNhsNunmber = isValidNhsNumber(value);
-						psUpdate.setInt(col++, validNhsNunmber);
+						psUpdateNull.setInt(col++, validNhsNunmber);
 					}
-					psUpdate.setString(col++, pseudoId);
-					psUpdate.executeUpdate();
+					psUpdateNull.setString(col++, pseudoId);
+					psUpdateNull.executeUpdate();
 
 				} else {
 
