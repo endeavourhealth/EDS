@@ -102,6 +102,23 @@ public class Main {
 		}*/
 
 		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("CreateDigest")) {
+			String url = args[1];
+			String user = args[2];
+			String pass = args[3];
+			String table = args[4];
+			String columnFrom = args[5];
+			String columnTo = args[6];
+			String base64Salt = args[7];
+			String validNhsNumberCol = null;
+			if (args.length > 8) {
+				validNhsNumberCol = args[8];
+			}
+			createDigest(url, user, pass, table, columnFrom, columnTo, base64Salt, validNhsNumberCol);
+			System.exit(0);
+		}
+
+		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("ConvertAudits2")) {
 			String configName = args[1];
 			String tempTable = args[2];
@@ -738,6 +755,170 @@ public class Main {
 		// Begin consume
 		rabbitHandler.start();
 		LOG.info("EDS Queue reader running (kill file location " + TransformConfig.instance().getKillFileLocation() + ")");
+	}
+
+	private static void createDigest(String url, String user, String pass, String table, String columnFrom, String columnTo, String base64Salt, String validNhsNumberCol) {
+		LOG.info("Creating Digest value from " + table + "." + columnFrom + " -> " + columnTo);
+		try {
+
+			byte[] saltBytes = Base64.getDecoder().decode(base64Salt);
+
+			//open connection
+			Class.forName("com.mysql.cj.jdbc.Driver");
+
+			//create connection
+			Properties props = new Properties();
+			props.setProperty("user", user);
+			props.setProperty("password", pass);
+
+			Connection conn = DriverManager.getConnection(url, props);
+
+			String sql = "SELECT DISTINCT " + columnFrom + " FROM " + table;
+			PreparedStatement psSelect = conn.prepareStatement(sql);
+			psSelect.setFetchSize(1000);
+
+			Connection conn2 = DriverManager.getConnection(url, props);
+
+			if (validNhsNumberCol != null) {
+				sql = "UPDATE " + table + " SET " + validNhsNumberCol + " = ?, " + columnTo + " = ? WHERE " + columnFrom + " = ?";
+			} else {
+				sql = "UPDATE " + table + " SET " + columnTo + " = ? WHERE " + columnFrom + " = ?";
+			}
+
+			PreparedStatement psUpdate = conn2.prepareStatement(sql);
+
+			Connection conn3 = DriverManager.getConnection(url, props);
+
+			if (validNhsNumberCol != null) {
+				sql = "UPDATE " + table + " SET " + validNhsNumberCol + " = ?, " + columnTo + " = ? WHERE " + columnFrom + " IS NULL";
+			} else {
+				sql = "UPDATE " + table + " SET " + columnTo + " = ? WHERE " + columnFrom + " IS NULL";
+			}
+
+			PreparedStatement psUpdateNull = conn3.prepareStatement(sql);
+
+
+			LOG.trace("Starting query");
+			ResultSet rs = psSelect.executeQuery();
+			LOG.trace("Query results back");
+
+			int done = 0;
+			int batchSize = 0;
+
+			while (rs.next()) {
+				Object o = rs.getObject(1);
+				String value = "";
+				if (o != null) {
+					value = o.toString();
+				}
+
+				TreeMap<String, String> keys = new TreeMap<>();
+				keys.put("DoesntMatter", value);
+
+				Crypto crypto = new Crypto();
+				crypto.SetEncryptedSalt(saltBytes);
+				String pseudoId = crypto.GetDigest(keys);
+
+				if (o == null) {
+					int col = 1;
+					if (validNhsNumberCol != null) {
+						int validNhsNunmber = isValidNhsNumber(value);
+						psUpdate.setInt(col++, validNhsNunmber);
+					}
+					psUpdate.setString(col++, pseudoId);
+					psUpdate.executeUpdate();
+
+				} else {
+
+					int col = 1;
+					if (validNhsNumberCol != null) {
+						int validNhsNunmber = isValidNhsNumber(value);
+						psUpdate.setInt(col++, validNhsNunmber);
+					}
+					psUpdate.setString(col++, pseudoId);
+					psUpdate.setString(col++, value);
+
+					psUpdate.addBatch();
+					batchSize++;
+
+					if (batchSize >= 10) {
+						psUpdate.executeBatch();
+					}
+				}
+
+				done ++;
+				if (done % 1000 == 0) {
+					LOG.debug("Done " + done);
+				}
+			}
+
+			if (batchSize >= 0) {
+				psUpdate.executeBatch();
+			}
+
+			rs.close();
+			psSelect.close();
+			psUpdate.close();
+			psUpdateNull.close();
+			conn.close();
+			conn2.close();
+			conn3.close();
+
+			LOG.debug("Done " + done);
+
+			LOG.info("Finished Creating Digest value from " + table + "." + columnFrom + " -> " + columnTo);
+		} catch (Throwable t) {
+			LOG.error("", t);
+		}
+	}
+
+	private static int isValidNhsNumber(String fieldValue) {
+		if (fieldValue == null) {
+			return -1;
+		}
+
+		if (fieldValue.isEmpty()) {
+			return -1;
+		}
+
+		if (fieldValue.length() != 10) {
+			return 0;
+		}
+
+		int sum = 0;
+
+		char[] chars = fieldValue.toCharArray();
+		for (int i=0; i<9; i++) {
+			char c = chars[i];
+
+			if (!Character.isDigit(c)) {
+				return 0;
+			}
+
+			int val = Character.getNumericValue(c);
+			int weight = 10 - i;
+			int m = val * weight;
+			sum += m;
+			//LOG.trace("" + c + " x " + weight + " = " + m + " sum = " + sum);
+		}
+
+		int remainder = sum % 11;
+		int check = 11 - remainder;
+		//LOG.trace("sum = " + sum + " mod 11 = " + remainder + " check = " + check);
+		if (check == 11) {
+			check = 0;
+		}
+		if (check == 10) {
+			return 0;
+		}
+
+		char lastChar = chars[9];
+		int actualCheck = Character.getNumericValue(lastChar);
+		if (check != actualCheck) {
+			return 0;
+		}
+
+		return 1;
 	}
 
 	private static void checkForBartsMissingFiles(String sinceDate) {
