@@ -52,7 +52,7 @@ export class ServiceListComponent implements OnInit, OnDestroy{
 				(result) => {
 					/*vm.services = linq(result).OrderBy(s => s.name).ToArray();*/
 					vm.services = linq(result).OrderBy(s => s.name.toLowerCase()).ToArray();
-					vm.startRefreshTimer();
+					//vm.startRefreshTimer();
 					vm.applyFiltering();
 					vm.findAllPublisherConfigNames();
 				},
@@ -174,7 +174,7 @@ export class ServiceListComponent implements OnInit, OnDestroy{
 			)
 	}
 
-	private startRefreshTimer() {
+	/*private startRefreshTimer() {
 		var vm = this;
 		this.timer = Observable.interval(2000).subscribe(() => vm.refreshServicesWithAdditionalInfo());
 	}
@@ -196,7 +196,7 @@ export class ServiceListComponent implements OnInit, OnDestroy{
 				}
 			}
 		}
-	}
+	}*/
 
 	viewExchanges(service: Service) {
 

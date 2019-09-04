@@ -291,7 +291,7 @@ export class ServiceEditComponent {
 		vm.serviceService.deleteData(service.uuid)
 			.subscribe(
 				() => {
-					vm.log.success('Data deletion started', service, 'Delete Data');
+					vm.log.success('Data deletion queued up', service, 'Delete Data');
 					vm.close();
 				},
 				(error) => vm.log.error('Failed to delete data', error, 'Delete Data')

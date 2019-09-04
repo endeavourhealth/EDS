@@ -112,8 +112,10 @@ public class MessageTransformInbound extends PipelineComponent {
 
 
 			try {
+				if (software.equalsIgnoreCase(MessageFormat.DUMMY_SENDER_SOFTWARE_FOR_BULK_DELETE)) {
+					processBulkDeleteForAllData(exchange, fhirResourceFiler, messageVersion);
 
-				if (software.equalsIgnoreCase(MessageFormat.EMIS_CSV)) {
+				} else if (software.equalsIgnoreCase(MessageFormat.EMIS_CSV)) {
 					processEmisCsvTransform(exchange, fhirResourceFiler, messageVersion);
 
 				} else if (software.equalsIgnoreCase(MessageFormat.EMIS_OPEN)) {
@@ -210,6 +212,10 @@ public class MessageTransformInbound extends PipelineComponent {
 		updateDataProcessed(exchange);
 
 		return batchIds;
+	}
+
+	private void processBulkDeleteForAllData(Exchange exchange, FhirResourceFiler fhirResourceFiler, String messageVersion) throws Exception {
+		BulkDeleteTransformer.transform(fhirResourceFiler);
 	}
 
 	private void updateDataProcessed(Exchange exchange) {

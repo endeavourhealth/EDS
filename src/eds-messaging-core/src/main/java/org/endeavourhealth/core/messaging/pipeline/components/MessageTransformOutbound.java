@@ -382,7 +382,7 @@ public class MessageTransformOutbound extends PipelineComponent {
 
         //we use a special exchange with a specific header key to bulk populate subscribers
         String sourceSystem = exchange.getHeader(HeaderKeys.SourceSystem);
-        if (sourceSystem.equals(HeaderKeys.DUMMY_SENDER_SOFTWARE_FOR_BULK_TRANSFORM)) {
+        if (sourceSystem.equals(MessageFormat.DUMMY_SENDER_SOFTWARE_FOR_BULK_TRANSFORM)) {
 
             ExchangeBatchDalI exchangeBatchDal = DalProvider.factoryExchangeBatchDal();
             ExchangeBatch exchangeBatch = exchangeBatchDal.getForExchangeAndBatchId(exchange.getId(), batchId);

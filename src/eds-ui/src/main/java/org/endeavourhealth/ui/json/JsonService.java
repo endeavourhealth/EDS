@@ -20,7 +20,7 @@ public final class JsonService {
     private String name = null;
     private List<JsonServiceInterfaceEndpoint> endpoints = null;
     private Map<UUID, String> organisations = null;
-    private String additionalInfo = null; //transient info, such as progress in deleting data
+    //private String additionalInfo = null; //transient info, such as progress in deleting data
     private String notes = null;
     private String postcode;
     private String ccgCode;
@@ -32,16 +32,12 @@ public final class JsonService {
     }
 
     public JsonService(Service service) throws IOException {
-        this(service, null);
-    }
-
-    public JsonService(Service service, String additionalInfo) throws IOException {
         this.uuid = service.getId();
         this.localIdentifier = service.getLocalId();
         this.name = service.getName();
         this.organisations = service.getOrganisations();
         this.publisherConfigName = service.getPublisherConfigName();
-        this.additionalInfo = additionalInfo;
+        //this.additionalInfo = additionalInfo;
 
         String endpointJson = service.getEndpoints();
         if (endpointJson != null && !endpointJson.isEmpty()) {
@@ -110,13 +106,13 @@ public final class JsonService {
         this.organisations = organisations;
     }
 
-    public String getAdditionalInfo() {
+    /*public String getAdditionalInfo() {
         return additionalInfo;
     }
 
     public void setAdditionalInfo(String additionalInfo) {
         this.additionalInfo = additionalInfo;
-    }
+    }*/
 
     public String getNotes() {
         return notes;

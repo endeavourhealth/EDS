@@ -22,8 +22,8 @@ import org.endeavourhealth.core.database.dal.audit.ExchangeDalI;
 import org.endeavourhealth.core.database.dal.audit.UserAuditDalI;
 import org.endeavourhealth.core.database.dal.audit.models.*;
 import org.endeavourhealth.core.database.dal.ehr.ResourceDalI;
-import org.endeavourhealth.core.fhirStorage.FhirDeletionService;
 import org.endeavourhealth.core.fhirStorage.JsonServiceInterfaceEndpoint;
+import org.endeavourhealth.core.queueing.QueueHelper;
 import org.endeavourhealth.core.xml.QueryDocument.LibraryItem;
 import org.endeavourhealth.core.xml.QueryDocument.System;
 import org.endeavourhealth.core.xml.QueryDocumentSerializer;
@@ -40,7 +40,6 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 
 @Path("/service")
 public final class ServiceEndpoint extends AbstractEndpoint {
@@ -51,7 +50,7 @@ public final class ServiceEndpoint extends AbstractEndpoint {
     private static final UserAuditDalI userAuditRepository = DalProvider.factoryUserAuditDal(AuditModule.EdsUiModule.Service);
     private static final ExchangeDalI exchangeAuditRepository = DalProvider.factoryExchangeDal();
 
-    private static final Map<UUID, FhirDeletionService> dataBeingDeleted = new ConcurrentHashMap<>();
+    //private static final Map<UUID, FhirDeletionService> dataBeingDeleted = new ConcurrentHashMap<>();
 
     @POST
     @Produces(MediaType.APPLICATION_JSON)
@@ -190,7 +189,9 @@ public final class ServiceEndpoint extends AbstractEndpoint {
 
         UUID serviceUuid = UUID.fromString(serviceIdStr);
 
-        if (dataBeingDeleted.get(serviceUuid) != null) {
+        QueueHelper.queueUpFullServiceForDelete(serviceUuid);
+
+        /*if (dataBeingDeleted.get(serviceUuid) != null) {
             throw new BadRequestException("Data deletion already in progress for this service");
         }
 
@@ -214,7 +215,7 @@ public final class ServiceEndpoint extends AbstractEndpoint {
         };
 
         Thread thread = new Thread(task);
-        thread.start();
+        thread.start();*/
 
         clearLogbackMarkers();
         return Response
@@ -328,8 +329,8 @@ public final class ServiceEndpoint extends AbstractEndpoint {
 
         for (Service service : services) {
             UUID serviceId = service.getId();
-            String additionalInfo = getAdditionalInfo(service);
-            JsonService jsonService = new JsonService(service, additionalInfo);
+            //String additionalInfo = getAdditionalInfo(service);
+            JsonService jsonService = new JsonService(service);
 
             //work out where we are with processing data
             List<JsonServiceSystemStatus> jsonSystemStatuses = createAndPopulateJsonSystemStatuses(serviceId, hmServicesInError, hmLastDataReceived, hmLastDataProcessed);
@@ -673,7 +674,7 @@ public final class ServiceEndpoint extends AbstractEndpoint {
      * returns additional info string for the service. Currently this is just
      * the progress on data being deleted
      */
-    private String getAdditionalInfo(Service service) {
+    /*private String getAdditionalInfo(Service service) {
 
         FhirDeletionService deletionService = dataBeingDeleted.get(service.getId());
         if (deletionService != null) {
@@ -681,7 +682,7 @@ public final class ServiceEndpoint extends AbstractEndpoint {
         }
 
         return null;
-    }
+    }*/
 
 
     @GET

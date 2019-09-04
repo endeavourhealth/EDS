@@ -17,7 +17,6 @@ import org.endeavourhealth.core.database.dal.audit.ExchangeDalI;
 import org.endeavourhealth.core.database.dal.audit.UserAuditDalI;
 import org.endeavourhealth.core.database.dal.audit.models.*;
 import org.endeavourhealth.core.queueing.QueueHelper;
-import org.endeavourhealth.core.queueing.SubscriberQueueHelper;
 import org.endeavourhealth.core.xml.QueryDocument.*;
 import org.endeavourhealth.core.xml.TransformErrorSerializer;
 import org.endeavourhealth.core.xml.transformError.Arg;
@@ -444,7 +443,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
                 throw new IllegalArgumentException("Invalid post mode [" + postMode + "] when exchange name is [" + exchangeName + "]");
             }
 
-            SubscriberQueueHelper.queueUpFullServiceForSubscriber(serviceId, specificProtocolId);
+            QueueHelper.queueUpFullServiceForPopulatingSubscriber(serviceId, specificProtocolId);
             exchangeIds = new ArrayList<>(); //just create an empty list so the rest of this function does nothing
 
         } else {

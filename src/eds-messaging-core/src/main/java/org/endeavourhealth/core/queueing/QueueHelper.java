@@ -1,6 +1,7 @@
 package org.endeavourhealth.core.queueing;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.base.Strings;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.common.config.ConfigManager;
@@ -8,12 +9,16 @@ import org.endeavourhealth.common.utility.JsonSerializer;
 import org.endeavourhealth.core.configuration.*;
 import org.endeavourhealth.core.database.dal.DalProvider;
 import org.endeavourhealth.core.database.dal.admin.LibraryRepositoryHelper;
+import org.endeavourhealth.core.database.dal.admin.ServiceDalI;
+import org.endeavourhealth.core.database.dal.admin.models.Service;
 import org.endeavourhealth.core.database.dal.audit.ExchangeBatchDalI;
 import org.endeavourhealth.core.database.dal.audit.ExchangeDalI;
 import org.endeavourhealth.core.database.dal.audit.models.Exchange;
 import org.endeavourhealth.core.database.dal.audit.models.ExchangeBatch;
 import org.endeavourhealth.core.database.dal.audit.models.ExchangeTransformAudit;
 import org.endeavourhealth.core.database.dal.audit.models.HeaderKeys;
+import org.endeavourhealth.core.database.dal.eds.PatientSearchDalI;
+import org.endeavourhealth.core.fhirStorage.JsonServiceInterfaceEndpoint;
 import org.endeavourhealth.core.messaging.pipeline.TransformBatch;
 import org.endeavourhealth.core.messaging.pipeline.components.DetermineRelevantProtocolIds;
 import org.endeavourhealth.core.messaging.pipeline.components.PostMessageToExchange;
@@ -21,9 +26,7 @@ import org.endeavourhealth.core.messaging.pipeline.components.RunDataDistributio
 import org.endeavourhealth.core.xml.QueryDocument.LibraryItem;
 import org.endeavourhealth.core.xml.QueryDocument.ServiceContract;
 import org.endeavourhealth.core.xml.QueryDocument.ServiceContractType;
-import org.endeavourhealth.transform.common.AuditWriter;
-import org.endeavourhealth.transform.common.ExchangeHelper;
-import org.endeavourhealth.transform.common.ExchangePayloadFile;
+import org.endeavourhealth.transform.common.*;
 import org.hl7.fhir.instance.model.ResourceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,6 +38,8 @@ import java.util.stream.Collectors;
 public class QueueHelper {
     private static final Logger LOG = LoggerFactory.getLogger(QueueHelper.class);
 
+    private static final String EXCHANGE_INBOUND = "EdsInbound";
+    private static final String EXCHANGE_PROTOCOL = "EdsProtocol";
 
     public static void postToExchange(List<UUID> exchangeIds, String exchangeName, UUID specificProtocolId, boolean recalculateProtocols) throws Exception {
         postToExchange(exchangeIds, exchangeName, specificProtocolId, recalculateProtocols, null);
@@ -149,7 +154,7 @@ public class QueueHelper {
 
             //if pushed into the Inbound queue, and it previously had an error in there, mark it as resubmitted
             //LOG.trace("Posting " + exchange.getId() + " into exchange [" + exchangeName + "] for service " + exchange.getServiceId() + " and system " + exchange.getSystemId());
-            if (exchangeName.equalsIgnoreCase("EdsInbound")) { //difference case used on different servers
+            if (exchangeName.equalsIgnoreCase(EXCHANGE_INBOUND)) { //difference case used on different servers
 
                 UUID serviceId = exchange.getServiceId();
                 UUID systemId = exchange.getSystemId();
@@ -398,4 +403,186 @@ public class QueueHelper {
                 .filter(t -> t.getExchange().equalsIgnoreCase(exchangeName))
                 .collect(StreamExtension.singleOrNullCollector());
     }*/
+
+    /**
+     * creates a "dummy" exchange and an exchange_batch for each patient and injects into the protocol queue
+     * that will cause all resources for each patient to be transformed
+     */
+    public static void queueUpFullServiceForPopulatingSubscriber(UUID serviceId, UUID specificProtocolId) throws Exception {
+
+        ServiceDalI serviceDal = DalProvider.factoryServiceDal();
+        Service service = serviceDal.getById(serviceId);
+
+        LibraryItem protocol = LibraryRepositoryHelper.getLibraryItem(specificProtocolId);
+
+        LOG.info("Populating subscriber for " + service.getName() + " " + service.getLocalId() + " and protocol " + protocol.getName());
+
+        //find all patients
+        LOG.info("Looking for patients at " + serviceId);
+        PatientSearchDalI patientSearchDal = DalProvider.factoryPatientSearchDal();
+        List<UUID> patientUuids = patientSearchDal.getPatientIds(serviceId);
+        LOG.info("Found " + patientUuids.size() + " for service " + serviceId);
+
+        //create a new "dummy" exchange which we need to get anything sent through the pipeline
+        String bodyJson = JsonSerializer.serialize(new ArrayList<ExchangePayloadFile>());
+
+        String[] specificProtocolArr = new String[]{specificProtocolId.toString()};
+        String specificProtocolJson = ObjectMapperPool.getInstance().writeValueAsString(specificProtocolArr);
+
+        Map<UUID, String> orgMap = service.getOrganisations();
+        if (orgMap.size() != 1) {
+            throw new Exception("Cannot support loading services without a single organisation");
+        }
+        Iterator<UUID> orgIterator = orgMap.keySet().iterator();
+        UUID orgId = orgIterator.next();
+        String odsCode = service.getLocalId();
+
+        Exchange exchange = new Exchange();
+        exchange.setId(UUID.randomUUID());
+        exchange.setBody(bodyJson);
+        exchange.setTimestamp(new Date());
+        exchange.setHeaders(new HashMap<>());
+        exchange.setHeaderAsUuid(HeaderKeys.SenderServiceUuid, serviceId);
+        exchange.setHeader(HeaderKeys.ProtocolIds, specificProtocolJson);
+        exchange.setHeader(HeaderKeys.SenderLocalIdentifier, odsCode);
+        exchange.setHeaderAsUuid(HeaderKeys.SenderOrganisationUuid, orgId);
+        exchange.setHeader(HeaderKeys.SourceSystem, MessageFormat.DUMMY_SENDER_SOFTWARE_FOR_BULK_TRANSFORM); //routing requires a source system name and this tells us it's this special case
+        exchange.setServiceId(serviceId);
+
+        //specifically don't set these because we're doing ALL data for this service, not just a single system
+        //exchange.setHeader(HeaderKeys.SenderSystemUuid, systemId.toString());
+        //exchange.setSystemId(systemId);
+
+        LOG.info("Saving exchange");
+        AuditWriter.writeExchange(exchange);
+        AuditWriter.writeExchangeEvent(exchange, "Created exchange to populate subscribers in protocol " + protocol.getName());
+
+        LOG.info("Creating exchange batches for " + patientUuids.size() + " patients");
+        createExchangeBatches(exchange, patientUuids);
+
+        //post to InboundQueue
+        LOG.info("Posting to protocol queue");
+        List<UUID> exchangeIds = new ArrayList<>();
+        exchangeIds.add(exchange.getId());
+        QueueHelper.postToExchange(exchangeIds, EXCHANGE_PROTOCOL, specificProtocolId, false);
+        LOG.info("Exchange posted to protocol queue");
+    }
+
+    private static void createExchangeBatches(Exchange exchange, List<UUID> patientUuids) throws Exception {
+
+        ExchangeBatchDalI exchangeBatchDal = DalProvider.factoryExchangeBatchDal();
+        List<ExchangeBatch> batches = new ArrayList<>();
+
+        //create an admin batch
+        // 22/08/2019 James commented out the line below at Drew's instruction to fix the
+        // memory problems with doing a "Full Load of Data" for bulk practice transforms
+        // batches.add(createBatch(exchange, null));
+
+        for (UUID patientId: patientUuids) {
+            batches.add(createBatch(exchange, patientId));
+
+            if (batches.size() >= TransformConfig.instance().getResourceSaveBatchSize()) {
+                exchangeBatchDal.save(batches);
+                batches.clear();
+            }
+        }
+
+        if (!batches.isEmpty()) {
+            exchangeBatchDal.save(batches);
+            batches.clear();
+        }
+    }
+
+    private static ExchangeBatch createBatch(Exchange exchange, UUID patientId) {
+        ExchangeBatch b = new ExchangeBatch();
+        b.setExchangeId(exchange.getId());
+        b.setNeedsSaving(true);
+        b.setBatchId(UUID.randomUUID());
+        b.setInsertedAt(new Date());
+        b.setEdsPatientId(patientId);
+
+        return b;
+    }
+
+    /**
+     * creates a "dummy" exchange and injects into the inbound queue which gets routed to a special
+     * inbound transform that will delete all data
+     */
+    public static void queueUpFullServiceForDelete(UUID serviceId) throws Exception {
+
+        ServiceDalI serviceDal = DalProvider.factoryServiceDal();
+        Service service = serviceDal.getById(serviceId);
+
+        LOG.info("Queuing up bulk delete for " + service.getName() + " " + service.getLocalId());
+
+        Map<UUID, String> orgMap = service.getOrganisations();
+        if (orgMap.size() != 1) {
+            throw new Exception("Cannot support loading services without a single organisation");
+        }
+        Iterator<UUID> orgIterator = orgMap.keySet().iterator();
+        UUID orgId = orgIterator.next();
+
+        List<UUID> systemIds = findSystemIds(service);
+        for (UUID systemId: systemIds) {
+            LOG.debug("Doing system ID " + systemId);
+
+            //find all patients
+            /*LOG.info("Looking for patients at " + serviceId);
+            PatientSearchDalI patientSearchDal = DalProvider.factoryPatientSearchDal();
+            List<UUID> patientUuids = patientSearchDal.getPatientIds(serviceId);
+            LOG.info("Found " + patientUuids.size() + " for service " + serviceId);*/
+
+            //create a new "dummy" exchange which we need to get anything sent through the pipeline
+            String bodyJson = JsonSerializer.serialize(new ArrayList<ExchangePayloadFile>());
+            String odsCode = service.getLocalId();
+
+            Exchange exchange = new Exchange();
+            exchange.setId(UUID.randomUUID());
+            exchange.setBody(bodyJson);
+            exchange.setTimestamp(new Date());
+            exchange.setHeaders(new HashMap<>());
+            exchange.setHeaderAsUuid(HeaderKeys.SenderServiceUuid, serviceId);
+            exchange.setHeader(HeaderKeys.ProtocolIds, ""); //just set to non-null value, so postToExchange(..) can safely recalculate
+            exchange.setHeader(HeaderKeys.SenderLocalIdentifier, odsCode);
+            exchange.setHeaderAsUuid(HeaderKeys.SenderOrganisationUuid, orgId);
+            exchange.setHeaderAsUuid(HeaderKeys.SenderSystemUuid, systemId);
+            exchange.setHeader(HeaderKeys.SourceSystem, MessageFormat.DUMMY_SENDER_SOFTWARE_FOR_BULK_DELETE); //routing requires a source system name and this tells us it's this special case
+            exchange.setServiceId(serviceId);
+            exchange.setSystemId(systemId);
+
+            LOG.info("Saving exchange");
+            AuditWriter.writeExchange(exchange);
+            AuditWriter.writeExchangeEvent(exchange, "Manually created exchange to delete data");
+
+            /*LOG.info("Creating exchange batches for " + patientUuids.size() + " patients");
+            createExchangeBatches(exchange, patientUuids);*/
+
+            //post to InboundQueue
+            LOG.info("Posting to inbound queue");
+            List<UUID> exchangeIds = new ArrayList<>();
+            exchangeIds.add(exchange.getId());
+            postToExchange(exchangeIds, EXCHANGE_INBOUND, null, true);
+            LOG.info("Exchange posted to inbound queue");
+        }
+    }
+
+    private static List<UUID> findSystemIds(Service service) throws Exception {
+
+        List<UUID> ret = new ArrayList<>();
+
+        List<JsonServiceInterfaceEndpoint> endpoints = null;
+        try {
+            endpoints = ObjectMapperPool.getInstance().readValue(service.getEndpoints(), new TypeReference<List<JsonServiceInterfaceEndpoint>>() {
+            });
+            for (JsonServiceInterfaceEndpoint endpoint : endpoints) {
+                UUID endpointSystemId = endpoint.getSystemUuid();
+                ret.add(endpointSystemId);
+            }
+        } catch (Exception e) {
+            throw new Exception("Failed to process endpoints from service " + service.getId());
+        }
+
+        return ret;
+    }
+
 }

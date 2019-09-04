@@ -8,7 +8,7 @@ export class Service {
 	name: string;
 	endpoints: Endpoint[];
 	organisations:{ [key:string]:string; };
-	additionalInfo: string;
+	//additionalInfo: string;
 	notes: string;
 	postcode: string;
 	ccgCode: string;
