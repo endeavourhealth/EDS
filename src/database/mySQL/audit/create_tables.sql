@@ -1,6 +1,6 @@
 USE audit;
 
-DROP TABLE IF EXISTS exchange;
+DROP TABLE IF EXISTS `exchange`;
 DROP TABLE IF EXISTS exchange_event;
 DROP TABLE IF EXISTS exchange_transform_audit;
 DROP TABLE IF EXISTS exchange_transform_error_state;
@@ -22,7 +22,7 @@ DROP TABLE IF EXISTS last_data_received;
 DROP TABLE IF EXISTS last_data_processed;
 DROP TABLE IF EXISTS exchange_subscriber_send_audit;
 
-CREATE TABLE exchange
+CREATE TABLE `exchange`
 (
     id char(36) NOT NULL,
     timestamp datetime(3) comment 'precision 3 gives us ms-level, which is sufficient for accurate sorting',
@@ -36,7 +36,7 @@ ROW_FORMAT=COMPRESSED
 KEY_BLOCK_SIZE=8;
 
 CREATE INDEX ix_exchange_service_id
-ON exchange (service_id, system_id, timestamp);
+ON `exchange` (service_id, system_id, timestamp);
 
 CREATE TABLE exchange_event
 (

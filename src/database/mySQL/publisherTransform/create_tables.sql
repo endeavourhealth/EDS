@@ -3,16 +3,17 @@ use publisher_transform_???;
 DROP TABLE IF EXISTS resource_id_map;
 DROP TABLE IF EXISTS sus_resource_map;
 DROP TABLE IF EXISTS resource_merge_map;
-DROP TABLE IF EXISTS source_file_type;
-DROP TABLE IF EXISTS source_file_type_column;
-DROP TABLE IF EXISTS source_file;
-DROP TABLE IF EXISTS source_file_record;
+DROP TABLE IF EXISTS source_file_type; -- obsolete, so just drop table
+DROP TABLE IF EXISTS source_file_type_column; -- obsolete, so just drop table
+DROP TABLE IF EXISTS source_file; -- obsolete, so just drop table
+DROP TABLE IF EXISTS source_file_record; -- obsolete, so just drop table
 DROP TABLE IF EXISTS resource_field_mappings;
 DROP TABLE IF EXISTS internal_id_map;
 DROP TABLE IF EXISTS cerner_code_value_ref;
 DROP TABLE IF EXISTS cerner_nomenclature_ref;
 DROP TABLE IF EXISTS cerner_clinical_event_mapping_state;
 DROP TABLE IF EXISTS tpp_config_list_option;
+DROP TABLE IF EXISTS source_file_record_audit;
 
 CREATE TABLE resource_id_map (
 	service_id char(36),
@@ -44,7 +45,7 @@ CREATE TABLE resource_merge_map (
 
 
 
-CREATE TABLE source_file_type (
+/*CREATE TABLE source_file_type (
 	id int NOT NULL,
   description varchar(255) NOT NULL,
   CONSTRAINT pk_source_file_type PRIMARY KEY (id)
@@ -71,6 +72,7 @@ CREATE TABLE source_file (
   inserted_at datetime NOT NULL,
   source_file_type_id int NOT NULL,
   exchange_id char(36),
+  new_published_file_id int COMMENT 'refers to the audit.published_file table',
   CONSTRAINT pk_source_file PRIMARY KEY (id)
 );
 
@@ -92,7 +94,7 @@ KEY_BLOCK_SIZE=8;
 
 ALTER TABLE source_file_record MODIFY COLUMN id INT auto_increment;
 
-CREATE INDEX ix_source_file_record_file_location ON source_file_record (source_file_id, source_location);
+CREATE INDEX ix_source_file_record_file_location ON source_file_record (source_file_id, source_location);*/
 
 CREATE TABLE resource_field_mappings (
   resource_id char(36) NOT NULL,
@@ -184,3 +186,10 @@ create table tpp_config_list_option (
 
 CREATE INDEX ix_tpp_config_list_option ON tpp_config_list_option (row_id);
 
+
+CREATE TABLE source_file_record_audit (
+  id int,
+  record_number int,
+  published_file_id int,
+  PRIMARY KEY (id)
+) COMMENT 'table to replace the other four source_file... tables, joining the old audit data to the new audit.published_file... tables';
