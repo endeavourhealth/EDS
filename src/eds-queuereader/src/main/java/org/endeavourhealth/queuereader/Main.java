@@ -767,84 +767,119 @@ public class Main {
 		LOG.info("EDS Queue reader running (kill file location " + TransformConfig.instance().getKillFileLocation() + ")");
 	}
 
-	private static void countNhsNumberChanges(String odsCode) {
-		LOG.info("Counting NHS number changes for " + odsCode);
+	private static void countNhsNumberChanges(String odsCodes) {
+		LOG.info("Counting NHS number changes for " + odsCodes);
 		try {
+
 			ServiceDalI serviceDal = DalProvider.factoryServiceDal();
-			Service service = serviceDal.getByLocalIdentifier(odsCode);
-			LOG.info("Service " + service.getName() + " " + service.getLocalId());
-			UUID serviceId = service.getId();
-
-			PatientSearchDalI patientSearchDal = DalProvider.factoryPatientSearchDal();
-			List<UUID> patientUuids = patientSearchDal.getPatientIds(serviceId);
-			LOG.info("Found " + patientUuids.size() + " patient UUIDs");
-
 			ResourceDalI resourceDal = DalProvider.factoryResourceDal();
-
 			SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
 
-			Date earliestDate = null;
-			Map<Date, List<UUID>> hmChanges = new HashMap<>();
+			Map<String, Date> hmEarliestDate = new HashMap<>();
+			Map<String, Integer> hmPatientCount = new HashMap<>();
+			Map<String, Map<Date, List<UUID>>> hmCounts = new HashMap<>();
 
-			for (int i=0; i<patientUuids.size(); i++) {
+			String[] toks = odsCodes.split(",");
+			for (String odsCode: toks) {
 
-				UUID patientUuid = patientUuids.get(i);
-				String previousNhsNumber = null;
+				Service service = serviceDal.getByLocalIdentifier(odsCode);
+				LOG.info("Doing " + service.getName() + " " + service.getLocalId());
+				UUID serviceId = service.getId();
 
-				List<ResourceWrapper> history = resourceDal.getResourceHistory(serviceId, ResourceType.Patient.toString(), patientUuid);
+				PatientSearchDalI patientSearchDal = DalProvider.factoryPatientSearchDal();
+				List<UUID> patientUuids = patientSearchDal.getPatientIds(serviceId);
+				LOG.info("Found " + patientUuids.size() + " patient UUIDs");
 
-				for (int j=history.size()-1; j>=0; j--) {
-					ResourceWrapper wrapper = history.get(j);
-					Date d = wrapper.getCreatedAt();
+				Date earliestDate = null;
+				Map<Date, List<UUID>> hmChanges = new HashMap<>();
 
-					//work out bulk date
-					if (earliestDate == null
-							|| d.before(earliestDate)) {
-						earliestDate = d;
-					}
+				for (int i = 0; i < patientUuids.size(); i++) {
 
-					if (wrapper.isDeleted()) {
-						continue;
-					}
+					UUID patientUuid = patientUuids.get(i);
+					String previousNhsNumber = null;
 
-					Patient patient = (Patient)wrapper.getResource();
+					List<ResourceWrapper> history = resourceDal.getResourceHistory(serviceId, ResourceType.Patient.toString(), patientUuid);
 
-					if (j == history.size()-1) {
-						//find first NHS number known
-						previousNhsNumber = IdentifierHelper.findNhsNumber(patient);
+					for (int j = history.size() - 1; j >= 0; j--) {
+						ResourceWrapper wrapper = history.get(j);
+						Date d = wrapper.getCreatedAt();
 
-					} else {
-						String thisNhsNumber = IdentifierHelper.findNhsNumber(patient);
-						if ((thisNhsNumber == null && previousNhsNumber != null)
-							//|| (thisNhsNumber != null && previousNhsNumber == null) //don't count it going FROM null to non-null as a change
-							|| (thisNhsNumber != null && previousNhsNumber != null && !thisNhsNumber.equals(previousNhsNumber))) {
+						//work out bulk date
+						if (earliestDate == null
+								|| d.before(earliestDate)) {
+							earliestDate = d;
+						}
 
-							//changed
-							LOG.info("" + patientUuid + " changed NHS number on " + sdf.format(d));
+						if (wrapper.isDeleted()) {
+							continue;
+						}
 
-							List<UUID> l = hmChanges.get(d);
-							if (l == null) {
-								l = new ArrayList<>();
-								hmChanges.put(d, l);
+						Patient patient = (Patient) wrapper.getResource();
+
+						if (j == history.size() - 1) {
+							//find first NHS number known
+							previousNhsNumber = IdentifierHelper.findNhsNumber(patient);
+
+						} else {
+							String thisNhsNumber = IdentifierHelper.findNhsNumber(patient);
+							if ((thisNhsNumber == null && previousNhsNumber != null)
+									//|| (thisNhsNumber != null && previousNhsNumber == null) //don't count it going FROM null to non-null as a change
+									|| (thisNhsNumber != null && previousNhsNumber != null && !thisNhsNumber.equals(previousNhsNumber))) {
+
+								//changed
+								LOG.info("" + patientUuid + " changed NHS number on " + sdf.format(d));
+
+								List<UUID> l = hmChanges.get(d);
+								if (l == null) {
+									l = new ArrayList<>();
+									hmChanges.put(d, l);
+								}
+								l.add(patientUuid);
+
+								previousNhsNumber = thisNhsNumber;
 							}
-							l.add(patientUuid);
-
-							previousNhsNumber = thisNhsNumber;
 						}
 					}
+
+					if (i % 1000 == 0) {
+						LOG.info("Done " + i);
+					}
 				}
 
-				if (i % 100 == 0) {
-					LOG.info("Done " + i);
-				}
+				hmEarliestDate.put(odsCode, earliestDate);
+				hmPatientCount.put(odsCode, new Integer(patientUuids.size()));
+				hmCounts.put(odsCode, hmChanges);
 			}
 
-			CSVFormat csvFormat = CSVFormat.DEFAULT.withHeader("Year", "Month", "Changes (" + odsCode + ")");
-			FileWriter fileWriter = new FileWriter("NHS_number_changes_" + odsCode + ".csv");
+			List<String> colHeaders = new ArrayList<>();
+			colHeaders.add("Year");
+			colHeaders.add("Month");
+			colHeaders.addAll(Arrays.asList(toks));
+			String[] headerArray = colHeaders.toArray(new String[]{});
+
+			CSVFormat csvFormat = CSVFormat.DEFAULT.withHeader(headerArray);
+			FileWriter fileWriter = new FileWriter("NHS_number_changes.csv");
 			CSVPrinter csvPrinter = new CSVPrinter(fileWriter, csvFormat);
 
-			csvPrinter.printRecord("Patient Count", "", new Integer(patientUuids.size()));
+			//patient count
+			List<String> row = new ArrayList<>();
+			row.add("Patient Count");
+			row.add("");
+			for (String odsCode: toks) {
+				Integer count = hmPatientCount.get(odsCode);
+				row.add("" + count);
+			}
+			csvPrinter.printRecord(row.toArray());
 
+			//start date
+			row = new ArrayList<>();
+			row.add("Bulk Date");
+			row.add("");
+			for (String odsCode: toks) {
+				Date startDate = hmEarliestDate.get(odsCode);
+				row.add("" + sdf.format(startDate));
+			}
+			csvPrinter.printRecord(row.toArray());
 
 			for (int year=2017; year<=2019; year++) {
 
@@ -862,26 +897,39 @@ public class Main {
 					cal.add(Calendar.DAY_OF_YEAR, -1);
 					Date monthEnd = cal.getTime();
 
-					int changes = 0;
+					row = new ArrayList<>();
+					row.add("" + year);
+					row.add("" + (month+1));
 
-					for (Date d: hmChanges.keySet()) {
-						if (!d.before(monthStart)
-								&& !d.after(monthEnd)) {
-							List<UUID> uuids = hmChanges.get(d);
-							changes += uuids.size();
+					for (String odsCode: toks) {
+						Date startDate = hmEarliestDate.get(odsCode);
+						if (startDate.after(monthStart)) {
+							row.add("");
+
+						} else {
+
+							int changes = 0;
+
+							Map<Date, List<UUID>> hmChanges = hmCounts.get(odsCode);
+							for (Date d: hmChanges.keySet()) {
+								if (!d.before(monthStart)
+										&& !d.after(monthEnd)) {
+									List<UUID> uuids = hmChanges.get(d);
+									changes += uuids.size();
+								}
+							}
+
+							row.add("" + changes);
 						}
 					}
 
-					csvPrinter.printRecord(new Integer(year), new Integer(month+1), new Integer(changes));
-
+					csvPrinter.printRecord(row.toArray());
 				}
 			}
 
 			csvPrinter.close();
 
-			LOG.info("Feed started " + sdf.format(earliestDate));
-
-			LOG.info("Finished counting NHS number changes for " + serviceId);
+			LOG.info("Finished counting NHS number changes for " + odsCodes);
 		} catch (Throwable t) {
 			LOG.error("", t);
 		}
