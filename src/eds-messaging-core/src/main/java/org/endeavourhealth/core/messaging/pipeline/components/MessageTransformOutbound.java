@@ -394,6 +394,7 @@ public class MessageTransformOutbound extends PipelineComponent {
 
             //if not a special bulk load, then just get the CURRENT VERSION of each resource in our exchange batch
             resources = resourceDal.getCurrentVersionOfResourcesForBatch(serviceId, batchId);
+            //LOG.trace("Found " + resources.size() + " resources in batch " + batchId);
         }
 
         //if there are no resources, then there won't be any extra resources, so no point wasting time
@@ -438,9 +439,8 @@ public class MessageTransformOutbound extends PipelineComponent {
             }
         }
 
-        //then filter to remove duplicates and ones the data set has filtered out
+        //then filter to remove ones excluded by the data set
         resources = filterResources(resources, resourceIds);
-        //resources = pruneOlderDuplicates(resources);
 
         //finally, filter out any patient resources that do not meet the filterElements configuration if
         //it is present for the subscriber config.  Used to filter FHIR -> subscriber output

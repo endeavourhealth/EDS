@@ -275,7 +275,6 @@ public class OpenEnvelope extends PipelineComponent {
 		exchange.setHeader(HeaderKeys.SenderOrganisationUuid, organisation.getId().toString());
 		exchange.setHeader(HeaderKeys.SenderSystemUuid, systemUuid.toString());
 
-		//set this on the exchange to forice it to write to the exchange_by_service table in Cassandra
 		exchange.setServiceId(service.getId());
 		exchange.setSystemId(systemUuid);
 	}

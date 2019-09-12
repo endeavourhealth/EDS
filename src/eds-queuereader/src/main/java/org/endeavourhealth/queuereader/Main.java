@@ -106,8 +106,8 @@ public class Main {
 
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("CountNhsNumberChanges")) {
-			UUID serviceId = UUID.fromString(args[1]);
-			countNhsNumberChanges(serviceId);
+			String odsCode = args[1];
+			countNhsNumberChanges(odsCode);
 			System.exit(0);
 		}
 
@@ -767,12 +767,13 @@ public class Main {
 		LOG.info("EDS Queue reader running (kill file location " + TransformConfig.instance().getKillFileLocation() + ")");
 	}
 
-	private static void countNhsNumberChanges(UUID serviceId) {
-		LOG.info("Counting NHS number changes for " + serviceId);
+	private static void countNhsNumberChanges(String odsCode) {
+		LOG.info("Counting NHS number changes for " + odsCode);
 		try {
 			ServiceDalI serviceDal = DalProvider.factoryServiceDal();
-			Service service = serviceDal.getById(serviceId);
+			Service service = serviceDal.getByLocalIdentifier(odsCode);
 			LOG.info("Service " + service.getName() + " " + service.getLocalId());
+			UUID serviceId = service.getId();
 
 			PatientSearchDalI patientSearchDal = DalProvider.factoryPatientSearchDal();
 			List<UUID> patientUuids = patientSearchDal.getPatientIds(serviceId);
@@ -838,8 +839,8 @@ public class Main {
 				}
 			}
 
-			CSVFormat csvFormat = CSVFormat.DEFAULT.withHeader("Year", "Month", "Changes (" + service.getLocalId() + ")");
-			FileWriter fileWriter = new FileWriter("NHS_number_changes_" + service.getLocalId() + ".csv");
+			CSVFormat csvFormat = CSVFormat.DEFAULT.withHeader("Year", "Month", "Changes (" + odsCode + ")");
+			FileWriter fileWriter = new FileWriter("NHS_number_changes_" + odsCode + ".csv");
 			CSVPrinter csvPrinter = new CSVPrinter(fileWriter, csvFormat);
 
 			csvPrinter.printRecord("Patient Count", "", new Integer(patientUuids.size()));

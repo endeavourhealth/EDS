@@ -73,7 +73,7 @@ public class ValidateMessageType extends PipelineComponent {
 					technicalInterface = LibraryRepositoryHelper.getTechnicalInterfaceDetailsUsingCache(systemUuidStr, technicalInterfaceUuidStr);
 					//technicalInterface = LibraryRepositoryHelper.getTechnicalInterfaceDetails(systemUuidStr, technicalInterfaceUuidStr);
 				} catch (Exception ex) {
-					throw new PipelineException("Failed to retrieve technical interface", ex);
+					throw new PipelineException("Failed to retrieve technical interface for service " + serviceUuid, ex);
 				}
 				//TechnicalInterface technicalInterface = serviceContract.getTechnicalInterface();
 
