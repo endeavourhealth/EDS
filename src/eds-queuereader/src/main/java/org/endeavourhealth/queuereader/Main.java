@@ -840,6 +840,9 @@ public class Main {
 			FileWriter fileWriter = new FileWriter("NHS_number_changes_" + service.getLocalId() + ".csv");
 			CSVPrinter csvPrinter = new CSVPrinter(fileWriter, csvFormat);
 
+			csvPrinter.printRecord("Patient Count", "", new Integer(patientUuids.size()));
+
+
 			for (int year=2017; year<=2019; year++) {
 
 				for (int month=Calendar.JANUARY; month<=Calendar.DECEMBER; month++) {
