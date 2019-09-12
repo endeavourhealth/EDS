@@ -867,7 +867,11 @@ public class Main {
 			row.add("");
 			for (String odsCode: toks) {
 				Integer count = hmPatientCount.get(odsCode);
-				row.add("" + count);
+				if (count == null) {
+					row.add("0");
+				} else {
+					row.add("" + count);
+				}
 			}
 			csvPrinter.printRecord(row.toArray());
 
@@ -877,7 +881,11 @@ public class Main {
 			row.add("");
 			for (String odsCode: toks) {
 				Date startDate = hmEarliestDate.get(odsCode);
-				row.add("" + sdf.format(startDate));
+				if (startDate == null) {
+					row.add("not found");
+				} else {
+					row.add("" + sdf.format(startDate));
+				}
 			}
 			csvPrinter.printRecord(row.toArray());
 
@@ -903,7 +911,7 @@ public class Main {
 
 					for (String odsCode: toks) {
 						Date startDate = hmEarliestDate.get(odsCode);
-						if (startDate.after(monthStart)) {
+						if (startDate == null || startDate.after(monthStart)) {
 							row.add("");
 
 						} else {
@@ -911,11 +919,13 @@ public class Main {
 							int changes = 0;
 
 							Map<Date, List<UUID>> hmChanges = hmCounts.get(odsCode);
-							for (Date d: hmChanges.keySet()) {
-								if (!d.before(monthStart)
-										&& !d.after(monthEnd)) {
-									List<UUID> uuids = hmChanges.get(d);
-									changes += uuids.size();
+							if (hmChanges != null) {
+								for (Date d : hmChanges.keySet()) {
+									if (!d.before(monthStart)
+											&& !d.after(monthEnd)) {
+										List<UUID> uuids = hmChanges.get(d);
+										changes += uuids.size();
+									}
 								}
 							}
 

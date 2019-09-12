@@ -642,9 +642,10 @@ CREATE TABLE procedure_request
   non_core_concept_id int,
   age_at_event decimal (5,2),
   CONSTRAINT pk_procedure_request_id PRIMARY KEY (`organization_id`,`person_id`,`id`),
+  /*got an Emis procedure request referring to a confidential encounter, so can't enforce this
   CONSTRAINT fk_procedure_request_encounter_id FOREIGN KEY (encounter_id)
       REFERENCES encounter (id) MATCH SIMPLE
-      ON UPDATE NO ACTION ON DELETE NO ACTION,
+      ON UPDATE NO ACTION ON DELETE NO ACTION,*/
   CONSTRAINT fk_procedure_request_patient_id_organization_id FOREIGN KEY (patient_id, organization_id)
       REFERENCES patient (id, organization_id) MATCH SIMPLE
       ON UPDATE NO ACTION ON DELETE NO ACTION,
