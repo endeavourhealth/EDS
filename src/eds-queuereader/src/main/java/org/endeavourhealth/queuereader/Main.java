@@ -9,6 +9,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.common.config.ConfigManager;
+import org.endeavourhealth.common.fhir.IdentifierHelper;
 import org.endeavourhealth.common.fhir.ReferenceHelper;
 import org.endeavourhealth.common.utility.FileHelper;
 import org.endeavourhealth.common.utility.MetricsHelper;
@@ -28,6 +29,7 @@ import org.endeavourhealth.core.database.dal.audit.models.ExchangeBatch;
 import org.endeavourhealth.core.database.dal.audit.models.ExchangeTransformAudit;
 import org.endeavourhealth.core.database.dal.audit.models.HeaderKeys;
 import org.endeavourhealth.core.database.dal.eds.PatientLinkDalI;
+import org.endeavourhealth.core.database.dal.eds.PatientSearchDalI;
 import org.endeavourhealth.core.database.dal.ehr.ResourceDalI;
 import org.endeavourhealth.core.database.dal.ehr.models.ResourceWrapper;
 import org.endeavourhealth.core.database.dal.publisherTransform.models.ResourceFieldMappingAudit;
@@ -52,6 +54,7 @@ import org.endeavourhealth.transform.common.resourceBuilders.GenericBuilder;
 import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
 import org.endeavourhealth.transform.emis.csv.helpers.EmisCsvHelper;
 import org.hibernate.internal.SessionImpl;
+import org.hl7.fhir.instance.model.Patient;
 import org.hl7.fhir.instance.model.Reference;
 import org.hl7.fhir.instance.model.ResourceType;
 import org.slf4j.Logger;
@@ -100,6 +103,13 @@ public class Main {
 			deleteEnterpriseObs(filePath, configName, batchSize);
 			System.exit(0);
 		}*/
+
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("CountNhsNumberChanges")) {
+			UUID serviceId = UUID.fromString(args[1]);
+			countNhsNumberChanges(serviceId);
+			System.exit(0);
+		}
 
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("CreateDigest")) {
@@ -755,6 +765,120 @@ public class Main {
 		// Begin consume
 		rabbitHandler.start();
 		LOG.info("EDS Queue reader running (kill file location " + TransformConfig.instance().getKillFileLocation() + ")");
+	}
+
+	private static void countNhsNumberChanges(UUID serviceId) {
+		LOG.info("Counting NHS number changes for " + serviceId);
+		try {
+			ServiceDalI serviceDal = DalProvider.factoryServiceDal();
+			Service service = serviceDal.getById(serviceId);
+			LOG.info("Service " + service.getName() + " " + service.getLocalId());
+
+			PatientSearchDalI patientSearchDal = DalProvider.factoryPatientSearchDal();
+			List<UUID> patientUuids = patientSearchDal.getPatientIds(serviceId);
+			LOG.info("Found " + patientUuids.size() + " patient UUIDs");
+
+			ResourceDalI resourceDal = DalProvider.factoryResourceDal();
+
+			SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
+
+			Date earliestDate = null;
+			Map<Date, List<UUID>> hmChanges = new HashMap<>();
+
+			for (int i=0; i<patientUuids.size(); i++) {
+
+				UUID patientUuid = patientUuids.get(i);
+				String previousNhsNumber = null;
+
+				List<ResourceWrapper> history = resourceDal.getResourceHistory(serviceId, ResourceType.Patient.toString(), patientUuid);
+
+				for (int j=history.size()-1; j>=0; j--) {
+					ResourceWrapper wrapper = history.get(j);
+					Date d = wrapper.getCreatedAt();
+
+					//work out bulk date
+					if (earliestDate == null
+							|| d.before(earliestDate)) {
+						earliestDate = d;
+					}
+
+					if (wrapper.isDeleted()) {
+						continue;
+					}
+
+					Patient patient = (Patient)wrapper.getResource();
+
+					if (j == history.size()-1) {
+						//find first NHS number known
+						previousNhsNumber = IdentifierHelper.findNhsNumber(patient);
+
+					} else {
+						String thisNhsNumber = IdentifierHelper.findNhsNumber(patient);
+						if ((thisNhsNumber == null && previousNhsNumber != null)
+							//|| (thisNhsNumber != null && previousNhsNumber == null) //don't count it going FROM null to non-null as a change
+							|| (thisNhsNumber != null && previousNhsNumber != null && !thisNhsNumber.equals(previousNhsNumber))) {
+
+							//changed
+							List<UUID> l = hmChanges.get(d);
+							if (l == null) {
+								l = new ArrayList<>();
+								hmChanges.put(d, l);
+							}
+							l.add(patientUuid);
+
+							previousNhsNumber = thisNhsNumber;
+						}
+					}
+				}
+
+				if (i % 100 == 0) {
+					LOG.info("Done " + i);
+				}
+			}
+
+			CSVFormat csvFormat = CSVFormat.DEFAULT.withHeader("Year", "Month", "Changes (" + service.getLocalId() + ")");
+			FileWriter fileWriter = new FileWriter("NHS_number_changes_" + service.getLocalId() + ".csv");
+			CSVPrinter csvPrinter = new CSVPrinter(fileWriter, csvFormat);
+
+			for (int year=2017; year<=2019; year++) {
+
+				for (int month=Calendar.JANUARY; month<=Calendar.DECEMBER; month++) {
+
+					String monthStr = "" + month;
+					if (monthStr.length() < 2) {
+						monthStr = "0" + monthStr;
+					}
+					Date monthStart = sdf.parse("" + year + monthStr + "01");
+
+					Calendar cal = Calendar.getInstance();
+					cal.setTime(monthStart);
+					cal.add(Calendar.MONTH, 1);
+					cal.add(Calendar.DAY_OF_YEAR, -1);
+					Date monthEnd = cal.getTime();
+
+					int changes = 0;
+
+					for (Date d: hmChanges.keySet()) {
+						if (!d.before(monthStart)
+								&& !d.after(monthEnd)) {
+							List<UUID> uuids = hmChanges.get(d);
+							changes += uuids.size();
+						}
+					}
+
+					csvPrinter.printRecord(new Integer(year), new Integer(month+1), new Integer(changes));
+
+				}
+			}
+
+			csvPrinter.close();
+
+			LOG.info("Feed started " + sdf.format(earliestDate));
+
+			LOG.info("Finished counting NHS number changes for " + serviceId);
+		} catch (Throwable t) {
+			LOG.error("", t);
+		}
 	}
 
 	private static void createDigest(String url, String user, String pass, String table, String columnFrom, String columnTo, String base64Salt, String validNhsNumberCol) {
