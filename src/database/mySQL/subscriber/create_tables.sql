@@ -279,9 +279,10 @@ CREATE TABLE encounter
   end_date date,
   institution_location_id text,
   CONSTRAINT pk_encounter_id PRIMARY KEY (organization_id,person_id,id),
+  /*known examples of Emis consultations referring to unknown appointments, so removed this
   CONSTRAINT fk_encounter_appointment_id FOREIGN KEY (appointment_id)
       REFERENCES appointment (id) MATCH SIMPLE
-      ON UPDATE NO ACTION ON DELETE NO ACTION,
+      ON UPDATE NO ACTION ON DELETE NO ACTION,*/
   CONSTRAINT fk_encounter_patient_id_organization_id FOREIGN KEY (patient_id, organization_id)
       REFERENCES patient (id, organization_id) MATCH SIMPLE
       ON UPDATE NO ACTION ON DELETE NO ACTION,

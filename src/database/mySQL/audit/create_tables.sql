@@ -162,7 +162,7 @@ CREATE TABLE transform_warning (
   service_id char(36),
   system_id char(36),
   exchange_id char(36),
-  source_file_record_id long,
+  source_file_record_id long COMMENT 'field no longer used',
   inserted_at datetime,
   transform_warning_type_id int,
   param_1 varchar(255),
