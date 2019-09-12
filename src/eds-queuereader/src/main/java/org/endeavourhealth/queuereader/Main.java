@@ -819,6 +819,8 @@ public class Main {
 							|| (thisNhsNumber != null && previousNhsNumber != null && !thisNhsNumber.equals(previousNhsNumber))) {
 
 							//changed
+							LOG.info("" + patientUuid + " changed NHS number on " + sdf.format(d));
+
 							List<UUID> l = hmChanges.get(d);
 							if (l == null) {
 								l = new ArrayList<>();
