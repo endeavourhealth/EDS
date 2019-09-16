@@ -34,7 +34,6 @@
     <module>src/eds-ui</module>
     <module>src/utility-postcode-updater</module>
     <module>src/utility-enterprise-age-updater</module>
-    <module>src/utility-enterprise-person-updater</module>
     <module>src/utility-database-deidentifier</module>
     <module>src/utility-hl7-checker</module>
   </modules>
