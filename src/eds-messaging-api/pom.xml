@@ -18,6 +18,12 @@
 
     <dependencies>
 
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-admin-client</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
         <!-- dependent on EDS-core and EDS-messaging-core modules-->
         <dependency>
             <groupId>org.endeavourhealth</groupId>
