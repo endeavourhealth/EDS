@@ -8,6 +8,7 @@ import org.apache.http.HttpStatus;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.common.security.SecurityUtils;
+import org.endeavourhealth.common.utility.ExpiringCache;
 import org.endeavourhealth.common.utility.MetricsHelper;
 import org.endeavourhealth.core.database.dal.DalProvider;
 import org.endeavourhealth.core.database.dal.admin.LibraryRepositoryHelper;
@@ -48,6 +49,7 @@ public class SubscriberApi {
     private static final String METRIC_OK = "frailty-api.response-ok";
     private static final String METRIC_MS_DURATION = "frailty-api.ms-duration";
 
+    private static final Map<String, String> mainSaltKeyCache = new ExpiringCache<>(1000 * 60 * 5); //cache for five mins
 
     @GET
     @Path("/{resourceType}")
@@ -208,7 +210,6 @@ public class SubscriberApi {
     }
 
 
-
     private String getEnterpriseEndpoint(org.endeavourhealth.core.database.dal.admin.models.Service service, UUID systemId) throws Exception {
 
         List<JsonServiceInterfaceEndpoint> serviceEndpoints = ObjectMapperPool.getInstance().readValue(service.getEndpoints(), new TypeReference<List<JsonServiceInterfaceEndpoint>>() {});
@@ -297,7 +298,9 @@ public class SubscriberApi {
         PseudoIdDalI pseudoIdDal = DalProvider.factoryPseudoIdDal(enterpriseEndpoint);
 
         for (UUID patientUuid: results.keySet()) {
-            String pseudoId = pseudoIdDal.findPseudoIdOldWay(patientUuid.toString());
+            //String pseudoId = pseudoIdDal.findPseudoIdOldWay(patientUuid.toString());
+            String mainSaltKeyName = findMainSaltKeyName(enterpriseEndpoint);
+            String pseudoId = pseudoIdDal.findSubscriberPseudoId(patientUuid, mainSaltKeyName);
             if (!Strings.isNullOrEmpty(pseudoId)) {
                 pseudoIds.add(pseudoId);
             }
@@ -393,6 +396,30 @@ public class SubscriberApi {
 
         //if we get here, we only got "none" back for all our results, so return a positive response without a flag
         return createSuccessResponse(null, requestParams, audit);
+    }
+
+    private String findMainSaltKeyName(String enterpriseEndpoint) throws Exception {
+
+        //check our cache first
+        String mainSaltKeyName = mainSaltKeyCache.get(enterpriseEndpoint);
+        if (mainSaltKeyName == null) {
+
+            //if not in the cache, hit the DB
+            JsonNode subscriberConfig = ConfigManager.getConfigurationAsJson(enterpriseEndpoint, "db_subscriber");
+            JsonNode mainPseudoNode = subscriberConfig.get("pseudonymisation");
+            if (mainPseudoNode == null) {
+                throw new Exception("No pseudonymisation node in JSON config for " + enterpriseEndpoint);
+            }
+            JsonNode saltKeyNameNode = mainPseudoNode.get("saltKeyName");
+            if (saltKeyNameNode == null) {
+                throw new Exception("No saltKeyName node in JSON config for " + enterpriseEndpoint);
+            }
+            mainSaltKeyName = saltKeyNameNode.asText();
+
+            //add to cache for next time
+            mainSaltKeyCache.put(enterpriseEndpoint, mainSaltKeyName);
+        }
+        return mainSaltKeyName;
     }
 
     /*private Response calculateFrailtyFlagLive(String enterpriseEndpoint, List<PatientSearch> results, UriInfo uriInfo, MultivaluedMap<String, String> requestParams, String headerAuthToken, SubscriberApiAudit audit) throws Exception {

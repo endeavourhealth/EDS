@@ -22,6 +22,7 @@ DROP TABLE IF EXISTS code_set_codes;
 DROP TABLE IF EXISTS code_set;
 DROP TABLE IF EXISTS subscriber_id_map;
 DROP TABLE IF EXISTS subscriber_pseudo_id_map;
+DROP TABLE IF EXISTS pseudo_id_audit;
 
 CREATE TABLE enterprise_id_map
 (
@@ -273,8 +274,15 @@ CREATE TABLE subscriber_pseudo_id_map
   subscriber_patient_id bigint NOT NULL,
   salt_key_name varchar(255) NOT NULL,
   pseudo_id varchar(255) NOT NULL,
-  CONSTRAINT pk_subscriber_pseudo_id_map PRIMARY KEY (patient_id, subscriber_patient_id, salt_key_name)
+  CONSTRAINT pk_subscriber_pseudo_id_map PRIMARY KEY (patient_id, salt_key_name)
 );
 
-create index ix_subscriber_pseudo_id_map_pseudo_id on subscriber_pseudo_id_map(salt_key_name, pseudo_id);
 
+CREATE TABLE pseudo_id_audit (
+  salt_key_name varchar(255) NOT NULL,
+  source_values varchar(255) NOT NULL,
+  pseudo_id varchar(255) NOT NULL,
+  CONSTRAINT pk_pseudo_id PRIMARY KEY (salt_key_name, source_values)
+) COMMENT 'audit of all pseudo IDs ever generated and what from';
+
+CREATE INDEX ix ON pseudo_id_audit (pseudo_id);

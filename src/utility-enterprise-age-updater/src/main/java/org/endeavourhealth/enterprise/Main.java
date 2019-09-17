@@ -43,6 +43,8 @@ public class Main {
 
             List<EnterpriseConnector.ConnectionWrapper> connectionWrappers = EnterpriseConnector.openConnection(enterpriseConfigName);
 
+            //NOTE: the agesToUpdate list doesn't contain deceased patients, as they are deleted
+            //out of the enterprise_age table when the date_of_death is set
 
             int progress = 0;
             for (EnterpriseAge ageToUpdate: agesToUpdate) {
