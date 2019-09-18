@@ -793,7 +793,7 @@ public class Main {
 		LOG.info("Finding patients that need transforming for " + filterOdsCode + " for " + file);
 		try {
 
-			Map<String, Set<UUID>> hmPatientIds = new HashMap<>();
+			Map<String, List<UUID>> hmPatientIds = new HashMap<>();
 
 			File f = new File(file);
 			if (f.exists()) {
@@ -806,9 +806,9 @@ public class Main {
 						currentOdsCode = line.substring(1);
 					} else {
 						UUID patientId = UUID.fromString(line);
-						Set<UUID> s = hmPatientIds.get(currentOdsCode);
+						List<UUID> s = hmPatientIds.get(currentOdsCode);
 						if (s == null) {
-							s = new HashSet<>();
+							s = new ArrayList<>();
 							hmPatientIds.put(currentOdsCode, s);
 						}
 						s.add(patientId);
@@ -841,7 +841,7 @@ public class Main {
 				LOG.info("Found " + patientUuids.size() + " patient UUIDs");
 
 				ResourceDalI resourceDal = DalProvider.factoryResourceDal();
-				Set<UUID> patientIdsForService = new HashSet<>();
+				List<UUID> patientIdsForService = new ArrayList<>();
 
 
 				for (int i = 0; i < patientUuids.size(); i++) {
@@ -875,7 +875,7 @@ public class Main {
 						//any patient with 999999 NHS number should be added so they get stripped out
 						String nhsNumber = IdentifierHelper.findNhsNumber(patient);
 						if (Strings.isNullOrEmpty(nhsNumber)
-								&& nhsNumber.startsWith("999999")) {
+								|| nhsNumber.startsWith("999999")) {
 							addPatient = true;
 							break;
 						}
@@ -907,10 +907,12 @@ public class Main {
 				hmPatientIds.put(odsCode, patientIdsForService);
 				LOG.debug("Found " + patientIdsForService.size() + " affected");
 
+				QueueHelper.queueUpPatientsForTransform(patientIdsForService);
+
 				List<String> lines = new ArrayList<>();
 				for (String odsCodeDone: hmPatientIds.keySet()) {
 					lines.add("#" + odsCodeDone);
-					Set<UUID> patientIdsDone = hmPatientIds.get(odsCodeDone);
+					List<UUID> patientIdsDone = hmPatientIds.get(odsCodeDone);
 					for (UUID patientIdDone: patientIdsDone) {
 						lines.add(patientIdDone.toString());
 					}
