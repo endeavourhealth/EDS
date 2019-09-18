@@ -53,6 +53,8 @@ import org.endeavourhealth.transform.common.*;
 import org.endeavourhealth.transform.common.resourceBuilders.GenericBuilder;
 import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
 import org.endeavourhealth.transform.emis.csv.helpers.EmisCsvHelper;
+import org.endeavourhealth.transform.enterprise.EnterpriseTransformHelper;
+import org.endeavourhealth.transform.subscriber.SubscriberTransformHelper;
 import org.hibernate.internal.SessionImpl;
 import org.hl7.fhir.instance.model.Patient;
 import org.hl7.fhir.instance.model.Reference;
@@ -117,6 +119,16 @@ public class Main {
 			System.exit(0);
 		}
 
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("FindPatientsThatNeedTransforming")) {
+			String file = args[1];
+			String odsCode = null;
+			if (args.length > 2) {
+				odsCode = args[2];
+			}
+			findPatientsThatNeedTransforming(file, odsCode);
+			System.exit(0);
+		}
 
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("CreateDigest")) {
@@ -772,6 +784,92 @@ public class Main {
 		// Begin consume
 		rabbitHandler.start();
 		LOG.info("EDS Queue reader running (kill file location " + TransformConfig.instance().getKillFileLocation() + ")");
+	}
+
+	private static void findPatientsThatNeedTransforming(String file, String odsCode) {
+		LOG.info("Finding patients that need transforming for " + odsCode + " for " + file);
+		try {
+
+			Set<UUID> patientIds = new HashSet<>();
+
+			File f = new File(file);
+			if (f.exists()) {
+				List<String> lines = FileUtils.readLines(f);
+				for (String line: lines) {
+					UUID patientId = UUID.fromString(line);
+					patientIds.add(patientId);
+				}
+			}
+
+			ServiceDalI serviceDal = DalProvider.factoryServiceDal();
+			List<Service> services = serviceDal.getAll();
+
+			for (Service service: services) {
+				if (odsCode != null
+						&& odsCode.equals(service.getLocalId())) {
+					continue;
+				}
+				LOG.debug("Doing " + service);
+
+				UUID serviceId = service.getId();
+
+				PatientSearchDalI patientSearchDal = DalProvider.factoryPatientSearchDal();
+				List<UUID> patientUuids = patientSearchDal.getPatientIds(serviceId);
+				LOG.info("Found " + patientUuids.size() + " patient UUIDs");
+
+				ResourceDalI resourceDal = DalProvider.factoryResourceDal();
+				int countAffected = 0;
+
+				for (int i = 0; i < patientUuids.size(); i++) {
+
+					UUID patientUuid = patientUuids.get(i);
+
+					boolean shouldBeInEnterprise = false;
+					boolean shouldBeInSubscriber = false;
+
+					List<ResourceWrapper> history = resourceDal.getResourceHistory(serviceId, ResourceType.Patient.toString(), patientUuid);
+
+					for (int j = history.size() - 1; j >= 0; j--) {
+						ResourceWrapper wrapper = history.get(j);
+						if (wrapper.isDeleted()) {
+							continue;
+						}
+
+						Patient patient = (Patient) wrapper.getResource();
+
+						if (j == history.size() - 1) {
+							//find first NHS number known
+							shouldBeInEnterprise = EnterpriseTransformHelper.shouldPatientBePresentInSubscriber(patient);
+							shouldBeInSubscriber = SubscriberTransformHelper.shouldPatientBePresentInSubscriber(patient);
+
+						} else {
+							boolean thisShouldBeInEnterprise = EnterpriseTransformHelper.shouldPatientBePresentInSubscriber(patient);
+							boolean thisShouldBeInSubscriber = SubscriberTransformHelper.shouldPatientBePresentInSubscriber(patient);
+
+							if (shouldBeInEnterprise != thisShouldBeInEnterprise
+									|| shouldBeInSubscriber != thisShouldBeInSubscriber) {
+
+								patientIds.add(patientUuid);
+								countAffected ++;
+								break;
+							}
+						}
+					}
+
+					if (i % 1000 == 0) {
+						LOG.info("Done " + i);
+					}
+				}
+
+				LOG.debug("Found " + countAffected + " affected");
+			}
+
+			FileUtils.writeLines(f, patientIds);
+			LOG.debug("Written to " + f);
+
+		} catch (Throwable t) {
+			LOG.error("", t);
+		}
 	}
 
 	private static void transformPatients(String sourceFile) {
