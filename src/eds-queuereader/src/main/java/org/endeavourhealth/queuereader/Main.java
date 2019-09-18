@@ -9,6 +9,8 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.common.config.ConfigManager;
+import org.endeavourhealth.common.fhir.ExtensionConverter;
+import org.endeavourhealth.common.fhir.FhirExtensionUri;
 import org.endeavourhealth.common.fhir.IdentifierHelper;
 import org.endeavourhealth.common.fhir.ReferenceHelper;
 import org.endeavourhealth.common.utility.FileHelper;
@@ -56,6 +58,7 @@ import org.endeavourhealth.transform.emis.csv.helpers.EmisCsvHelper;
 import org.endeavourhealth.transform.enterprise.EnterpriseTransformHelper;
 import org.endeavourhealth.transform.subscriber.SubscriberTransformHelper;
 import org.hibernate.internal.SessionImpl;
+import org.hl7.fhir.instance.model.BooleanType;
 import org.hl7.fhir.instance.model.Patient;
 import org.hl7.fhir.instance.model.Reference;
 import org.hl7.fhir.instance.model.ResourceType;
@@ -851,6 +854,8 @@ public class Main {
 
 					List<ResourceWrapper> history = resourceDal.getResourceHistory(serviceId, ResourceType.Patient.toString(), patientUuid);
 
+					boolean addPatient = false;
+
 					for (int j = history.size() - 1; j >= 0; j--) {
 						ResourceWrapper wrapper = history.get(j);
 						if (wrapper.isDeleted()) {
@@ -858,6 +863,24 @@ public class Main {
 						}
 
 						Patient patient = (Patient) wrapper.getResource();
+
+						//any confidential patient should be in the DB because they were previously filtered out
+						BooleanType bt = (BooleanType) ExtensionConverter.findExtensionValue(patient, FhirExtensionUri.IS_CONFIDENTIAL);
+						if (bt != null
+								&& bt.hasValue()
+								&& bt.getValue().booleanValue()) {
+							addPatient = true;
+							break;
+						}
+
+						//and patient w/o NHS number should be in the DB because they were previously filtered out
+						//any patient with 999999 NHS number should be added so they get stripped out
+						String nhsNumber = IdentifierHelper.findNhsNumber(patient);
+						if (Strings.isNullOrEmpty(nhsNumber)
+								&& nhsNumber.startsWith("999999")) {
+							addPatient = true;
+							break;
+						}
 
 						if (j == history.size() - 1) {
 							//find first NHS number known
@@ -871,10 +894,14 @@ public class Main {
 							if (shouldBeInEnterprise != thisShouldBeInEnterprise
 									|| shouldBeInSubscriber != thisShouldBeInSubscriber) {
 
-								patientIdsForService.add(patientUuid);
+								addPatient = true;
 								break;
 							}
 						}
+					}
+
+					if (addPatient) {
+						patientIdsForService.add(patientUuid);
 					}
 
 					if (i % 1000 == 0) {
