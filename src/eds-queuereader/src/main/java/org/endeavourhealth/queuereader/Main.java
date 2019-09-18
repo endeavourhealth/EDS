@@ -900,7 +900,7 @@ public class Main {
 					}
 
 					if (i % 1000 == 0) {
-						LOG.info("Done " + i);
+						LOG.info("Done " + i + " and found " + patientIdsForService.size());
 					}
 				}
 

@@ -17,6 +17,7 @@ import org.endeavourhealth.core.database.dal.audit.models.Exchange;
 import org.endeavourhealth.core.database.dal.audit.models.ExchangeBatch;
 import org.endeavourhealth.core.database.dal.audit.models.ExchangeTransformAudit;
 import org.endeavourhealth.core.database.dal.audit.models.HeaderKeys;
+import org.endeavourhealth.core.database.dal.eds.PatientLinkDalI;
 import org.endeavourhealth.core.database.dal.eds.PatientSearchDalI;
 import org.endeavourhealth.core.database.dal.eds.models.PatientSearch;
 import org.endeavourhealth.core.fhirStorage.JsonServiceInterfaceEndpoint;
@@ -595,13 +596,27 @@ public class QueueHelper {
         Map<UUID, List<UUID>> hmPatientByService = new HashMap<>();
 
         PatientSearchDalI patientSearchDal = DalProvider.factoryPatientSearchDal();
+        PatientLinkDalI patientLinkDal = DalProvider.factoryPatientLinkDal();
 
         for (UUID patientId: patientIds) {
+
+            UUID serviceId = null;
+
             PatientSearch ps = patientSearchDal.searchByPatientId(patientId);
-            if (ps == null) {
-                throw new Exception("Failed to find eds.patient_search record for patient " + patientId);
+            if (ps != null) {
+                serviceId = ps.getServiceId();
+
+            } else {
+                //if deleted, the patient search record will be null
+                String personIdStr = patientLinkDal.getPersonId(patientId.toString());
+                Map<String, String> hmPatientsForPerson = patientLinkDal.getPatientAndServiceIdsForPerson(personIdStr);
+                String serviceIdStr = hmPatientsForPerson.get(patientId.toString());
+                if (Strings.isNullOrEmpty(serviceIdStr)) {
+                    throw new Exception("Failed to find eds.patient_search record or eds.person_link record for patient " + patientId);
+                }
+                serviceId = UUID.fromString(serviceIdStr);
             }
-            UUID serviceId = ps.getServiceId();
+
             List<UUID> l = hmPatientByService.get(serviceId);
             if (l == null) {
                 l = new ArrayList<>();
