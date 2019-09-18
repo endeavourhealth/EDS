@@ -111,6 +111,14 @@ public class Main {
 		}
 
 		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("TransformPatients")) {
+			String sourceFile = args[1];
+			transformPatients(sourceFile);
+			System.exit(0);
+		}
+
+
+		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("CreateDigest")) {
 			String url = args[1];
 			String user = args[2];
@@ -764,6 +772,41 @@ public class Main {
 		// Begin consume
 		rabbitHandler.start();
 		LOG.info("EDS Queue reader running (kill file location " + TransformConfig.instance().getKillFileLocation() + ")");
+	}
+
+	private static void transformPatients(String sourceFile) {
+		LOG.info("Transforming patients from " + sourceFile);
+		try {
+			List<UUID> patientIds = new ArrayList<>();
+
+			File f = new File(sourceFile);
+			if (f.exists()) {
+				LOG.error("File " + f + " doesn't exist");
+				return;
+			}
+			List<String> lines = FileUtils.readLines(f);
+			for (String line: lines) {
+				line = line.trim();
+				if (line.startsWith("#")) {
+					continue;
+				}
+
+				UUID uuid = UUID.fromString(line);
+				patientIds.add(uuid);
+			}
+
+			if (patientIds.isEmpty()) {
+				LOG.error("No patient IDs found");
+				return;
+			}
+			LOG.info("Found " + patientIds.size() + " patient IDs");
+
+			QueueHelper.queueUpPatientsForTransform(patientIds);
+
+			LOG.info("Finished transforming patients from " + sourceFile);
+		} catch (Throwable t) {
+			LOG.error("", t);
+		}
 	}
 
 	private static void countNhsNumberChanges(String odsCodes) {

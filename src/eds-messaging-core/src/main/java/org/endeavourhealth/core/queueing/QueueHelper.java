@@ -18,14 +18,13 @@ import org.endeavourhealth.core.database.dal.audit.models.ExchangeBatch;
 import org.endeavourhealth.core.database.dal.audit.models.ExchangeTransformAudit;
 import org.endeavourhealth.core.database.dal.audit.models.HeaderKeys;
 import org.endeavourhealth.core.database.dal.eds.PatientSearchDalI;
+import org.endeavourhealth.core.database.dal.eds.models.PatientSearch;
 import org.endeavourhealth.core.fhirStorage.JsonServiceInterfaceEndpoint;
 import org.endeavourhealth.core.messaging.pipeline.TransformBatch;
 import org.endeavourhealth.core.messaging.pipeline.components.DetermineRelevantProtocolIds;
 import org.endeavourhealth.core.messaging.pipeline.components.PostMessageToExchange;
 import org.endeavourhealth.core.messaging.pipeline.components.RunDataDistributionProtocols;
-import org.endeavourhealth.core.xml.QueryDocument.LibraryItem;
-import org.endeavourhealth.core.xml.QueryDocument.ServiceContract;
-import org.endeavourhealth.core.xml.QueryDocument.ServiceContractType;
+import org.endeavourhealth.core.xml.QueryDocument.*;
 import org.endeavourhealth.transform.common.*;
 import org.hl7.fhir.instance.model.ResourceType;
 import org.slf4j.Logger;
@@ -409,19 +408,21 @@ public class QueueHelper {
      * that will cause all resources for each patient to be transformed
      */
     public static void queueUpFullServiceForPopulatingSubscriber(UUID serviceId, UUID specificProtocolId) throws Exception {
+        //find all patients
+        PatientSearchDalI patientSearchDal = DalProvider.factoryPatientSearchDal();
+        List<UUID> patientUuids = patientSearchDal.getPatientIds(serviceId);
+
+        queueUpFullServiceForPopulatingSubscriber(serviceId, specificProtocolId, patientUuids);
+    }
+
+    public static void queueUpFullServiceForPopulatingSubscriber(UUID serviceId, UUID specificProtocolId, List<UUID> patientUuids) throws Exception {
 
         ServiceDalI serviceDal = DalProvider.factoryServiceDal();
         Service service = serviceDal.getById(serviceId);
 
         LibraryItem protocol = LibraryRepositoryHelper.getLibraryItem(specificProtocolId);
 
-        LOG.info("Populating subscriber for " + service.getName() + " " + service.getLocalId() + " and protocol " + protocol.getName());
-
-        //find all patients
-        LOG.info("Looking for patients at " + serviceId);
-        PatientSearchDalI patientSearchDal = DalProvider.factoryPatientSearchDal();
-        List<UUID> patientUuids = patientSearchDal.getPatientIds(serviceId);
-        LOG.info("Found " + patientUuids.size() + " for service " + serviceId);
+        LOG.info("Populating subscriber for " + patientUuids.size() + " patients at " + service.getName() + " " + service.getLocalId() + " and protocol " + protocol.getName());
 
         //create a new "dummy" exchange which we need to get anything sent through the pipeline
         String bodyJson = JsonSerializer.serialize(new ArrayList<ExchangePayloadFile>());
@@ -453,11 +454,11 @@ public class QueueHelper {
         //exchange.setHeader(HeaderKeys.SenderSystemUuid, systemId.toString());
         //exchange.setSystemId(systemId);
 
-        LOG.info("Saving exchange");
+        //LOG.info("Saving exchange");
         AuditWriter.writeExchange(exchange);
         AuditWriter.writeExchangeEvent(exchange, "Created exchange to populate subscribers in protocol " + protocol.getName());
 
-        LOG.info("Creating exchange batches for " + patientUuids.size() + " patients");
+        //LOG.info("Creating exchange batches for " + patientUuids.size() + " patients");
         createExchangeBatches(exchange, patientUuids);
 
         //post to InboundQueue
@@ -585,4 +586,58 @@ public class QueueHelper {
         return ret;
     }
 
+    /**
+     * takes a list of patient IDs and groups them by service and queues them up for all relevant subscriber transforms
+     */
+    public static void queueUpPatientsForTransform(List<UUID> patientIds) throws Exception {
+
+        //find service for each one
+        Map<UUID, List<UUID>> hmPatientByService = new HashMap<>();
+
+        PatientSearchDalI patientSearchDal = DalProvider.factoryPatientSearchDal();
+
+        for (UUID patientId: patientIds) {
+            PatientSearch ps = patientSearchDal.searchByPatientId(patientId);
+            if (ps == null) {
+                throw new Exception("Failed to find eds.patient_search record for patient " + patientId);
+            }
+            UUID serviceId = ps.getServiceId();
+            List<UUID> l = hmPatientByService.get(serviceId);
+            if (l == null) {
+                l = new ArrayList<>();
+                hmPatientByService.put(serviceId, l);
+            }
+            l.add(patientId);
+        }
+
+        //do each service
+        for (UUID serviceId: hmPatientByService.keySet()) {
+            List<UUID> patientIdsForService = hmPatientByService.get(serviceId);
+            LOG.debug("Doing " + patientIdsForService.size() + " patients for service " + serviceId);
+
+            //find all protocols for service where there's a subscriber
+            List<LibraryItem> libraryItems = LibraryRepositoryHelper.getProtocolsByServiceId(serviceId.toString(), null);
+            for (LibraryItem libraryItem: libraryItems) {
+                Protocol protocol = libraryItem.getProtocol();
+
+                boolean hasSubscriber = false;
+                for (ServiceContract serviceContract: protocol.getServiceContract()) {
+                    if (serviceContract.getType() == ServiceContractType.SUBSCRIBER
+                            && serviceContract.getActive() == ServiceContractActive.TRUE) {
+                        hasSubscriber = true;
+                        break;
+                    }
+                }
+
+                //if no subscribers, then it's not interesting
+                if (!hasSubscriber) {
+                    continue;
+                }
+
+                //for each protocol, create exchange and exchange batches and post to protocol queue
+                UUID protocolUuid = UUID.fromString(libraryItem.getUuid());
+                queueUpFullServiceForPopulatingSubscriber(serviceId, protocolUuid, patientIdsForService);
+            }
+        }
+    }
 }
