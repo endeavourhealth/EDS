@@ -55,7 +55,6 @@ import org.endeavourhealth.transform.common.*;
 import org.endeavourhealth.transform.common.resourceBuilders.GenericBuilder;
 import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
 import org.endeavourhealth.transform.emis.csv.helpers.EmisCsvHelper;
-import org.endeavourhealth.transform.enterprise.EnterpriseTransformHelper;
 import org.endeavourhealth.transform.subscriber.SubscriberTransformHelper;
 import org.hibernate.internal.SessionImpl;
 import org.hl7.fhir.instance.model.BooleanType;
@@ -849,7 +848,6 @@ public class Main {
 
 					UUID patientUuid = patientUuids.get(i);
 
-					boolean shouldBeInEnterprise = false;
 					boolean shouldBeInSubscriber = false;
 
 					List<ResourceWrapper> history = resourceDal.getResourceHistory(serviceId, ResourceType.Patient.toString(), patientUuid);
@@ -884,15 +882,12 @@ public class Main {
 
 						if (j == history.size() - 1) {
 							//find first NHS number known
-							shouldBeInEnterprise = EnterpriseTransformHelper.shouldPatientBePresentInSubscriber(patient);
 							shouldBeInSubscriber = SubscriberTransformHelper.shouldPatientBePresentInSubscriber(patient);
 
 						} else {
-							boolean thisShouldBeInEnterprise = EnterpriseTransformHelper.shouldPatientBePresentInSubscriber(patient);
 							boolean thisShouldBeInSubscriber = SubscriberTransformHelper.shouldPatientBePresentInSubscriber(patient);
 
-							if (shouldBeInEnterprise != thisShouldBeInEnterprise
-									|| shouldBeInSubscriber != thisShouldBeInSubscriber) {
+							if (shouldBeInSubscriber != thisShouldBeInSubscriber) {
 
 								addPatient = true;
 								break;
