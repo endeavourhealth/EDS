@@ -780,7 +780,7 @@ public class Main {
 			List<UUID> patientIds = new ArrayList<>();
 
 			File f = new File(sourceFile);
-			if (f.exists()) {
+			if (!f.exists()) {
 				LOG.error("File " + f + " doesn't exist");
 				return;
 			}
