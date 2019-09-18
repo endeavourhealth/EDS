@@ -786,18 +786,31 @@ public class Main {
 		LOG.info("EDS Queue reader running (kill file location " + TransformConfig.instance().getKillFileLocation() + ")");
 	}
 
-	private static void findPatientsThatNeedTransforming(String file, String odsCode) {
-		LOG.info("Finding patients that need transforming for " + odsCode + " for " + file);
+	private static void findPatientsThatNeedTransforming(String file, String filterOdsCode) {
+		LOG.info("Finding patients that need transforming for " + filterOdsCode + " for " + file);
 		try {
 
-			Set<UUID> patientIds = new HashSet<>();
+			Map<String, Set<UUID>> hmPatientIds = new HashMap<>();
 
 			File f = new File(file);
 			if (f.exists()) {
 				List<String> lines = FileUtils.readLines(f);
+
+				String currentOdsCode = null;
+
 				for (String line: lines) {
-					UUID patientId = UUID.fromString(line);
-					patientIds.add(patientId);
+					if (line.startsWith("#")) {
+						currentOdsCode = line.substring(1);
+					} else {
+						UUID patientId = UUID.fromString(line);
+						Set<UUID> s = hmPatientIds.get(currentOdsCode);
+						if (s == null) {
+							s = new HashSet<>();
+							hmPatientIds.put(currentOdsCode, s);
+						}
+						s.add(patientId);
+					}
+
 				}
 			}
 
@@ -805,12 +818,19 @@ public class Main {
 			List<Service> services = serviceDal.getAll();
 
 			for (Service service: services) {
-				if (odsCode != null
-						&& odsCode.equals(service.getLocalId())) {
+
+				String odsCode = service.getLocalId();
+				if (filterOdsCode != null
+						&& filterOdsCode.equals(odsCode)) {
 					continue;
 				}
-				LOG.debug("Doing " + service);
 
+				if (hmPatientIds.containsKey(odsCode)) {
+					LOG.debug("Already done " + service);
+					continue;
+				}
+
+				LOG.debug("Doing " + service);
 				UUID serviceId = service.getId();
 
 				PatientSearchDalI patientSearchDal = DalProvider.factoryPatientSearchDal();
@@ -818,7 +838,8 @@ public class Main {
 				LOG.info("Found " + patientUuids.size() + " patient UUIDs");
 
 				ResourceDalI resourceDal = DalProvider.factoryResourceDal();
-				int countAffected = 0;
+				Set<UUID> patientIdsForService = new HashSet<>();
+
 
 				for (int i = 0; i < patientUuids.size(); i++) {
 
@@ -849,8 +870,7 @@ public class Main {
 							if (shouldBeInEnterprise != thisShouldBeInEnterprise
 									|| shouldBeInSubscriber != thisShouldBeInSubscriber) {
 
-								patientIds.add(patientUuid);
-								countAffected ++;
+								patientIdsForService.add(patientUuid);
 								break;
 							}
 						}
@@ -861,10 +881,21 @@ public class Main {
 					}
 				}
 
-				LOG.debug("Found " + countAffected + " affected");
+				hmPatientIds.put(odsCode, patientIdsForService);
+				LOG.debug("Found " + patientIdsForService.size() + " affected");
+
+				List<String> lines = new ArrayList<>();
+				for (String odsCodeDone: hmPatientIds.keySet()) {
+					lines.add("#" + odsCodeDone);
+					Set<UUID> patientIdsDone = hmPatientIds.get(odsCodeDone);
+					for (UUID patientIdDone: patientIdsDone) {
+						lines.add(patientIdDone.toString());
+					}
+				}
+
+				FileUtils.writeLines(f, lines);
 			}
 
-			FileUtils.writeLines(f, patientIds);
 			LOG.debug("Written to " + f);
 
 		} catch (Throwable t) {
