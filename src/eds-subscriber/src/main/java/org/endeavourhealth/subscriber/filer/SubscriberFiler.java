@@ -64,6 +64,14 @@ public class SubscriberFiler {
             szfudi.createSubscriberZipFileUUIDsEntity(subscriberId, batchId.toString(),
                     queuedMessageId.toString(), base64);
 
+            // JAB 20/09/2019, as per subscriber_databases slack channel discussion
+            // Added temporarily to test internally the filing of Barts data, to the new subscriber schema
+            if (subscriberId == 2) {
+                for (EnterpriseConnector.ConnectionWrapper connectionWrapper: connectionWrappers) {
+                    file(connectionWrapper, bytes);
+                }
+            }
+
 
         } else {
             for (EnterpriseConnector.ConnectionWrapper connectionWrapper: connectionWrappers) {
