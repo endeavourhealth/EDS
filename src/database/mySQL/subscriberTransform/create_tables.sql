@@ -2,7 +2,7 @@ USE subscriber_transform_???? -- db name varies
 
 DROP TABLE IF EXISTS enterprise_id_map;
 DROP TABLE IF EXISTS enterprise_organisation_id_map;
-DROP TABLE IF EXISTS household_id_map;
+DROP TABLE IF EXISTS household_id_map; -- obsolete table
 DROP TABLE IF EXISTS pseudo_id_map;
 DROP TABLE IF EXISTS enterprise_age;
 DROP TABLE IF EXISTS enterprise_person_id_map;
@@ -48,7 +48,7 @@ CREATE TABLE enterprise_organisation_id_map
 );
 
 
-CREATE TABLE household_id_map
+/*CREATE TABLE household_id_map
 (
   postcode char(8) NOT NULL,
   line_1 varchar(255) NOT NULL,
@@ -62,7 +62,7 @@ CREATE UNIQUE INDEX uix_household_id_map_auto_increment
 ON household_id_map (household_id);
 
 ALTER TABLE household_id_map MODIFY COLUMN household_id INT auto_increment;
-
+*/
 
 CREATE TABLE pseudo_id_map
 (
