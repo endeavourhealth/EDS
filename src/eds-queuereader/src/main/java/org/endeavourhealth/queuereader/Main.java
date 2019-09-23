@@ -110,6 +110,15 @@ public class Main {
 		}*/
 
 		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("SubscriberFullLoad")) {
+			UUID serviceId = UUID.fromString(args[1]);
+			UUID protocolId = UUID.fromString(args[2]);
+			QueueHelper.queueUpFullServiceForPopulatingSubscriber(serviceId, protocolId);
+			System.exit(0);
+		}
+
+
+		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("RunPersonUpdater")) {
 			String enterpriseConfigName = args[1];
 			runPersonUpdater(enterpriseConfigName);
