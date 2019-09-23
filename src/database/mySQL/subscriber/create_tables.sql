@@ -2,6 +2,7 @@
 -- use subscriber_new_pi;
 
 DROP PROCEDURE IF EXISTS update_person_record;
+DROP PROCEDURE IF EXISTS update_person_record_2;
 drop trigger if exists after_patient_insert;
 drop trigger if exists after_patient_update;
 drop trigger if exists after_patient_delete;
@@ -880,6 +881,46 @@ CREATE TABLE event_log (
 
 
 
+DELIMITER //
+CREATE PROCEDURE update_person_record_2(
+	IN _new_person_id bigint
+)
+BEGIN
+
+	DECLARE _best_patient_id bigint DEFAULT -1;
+
+	SET _best_patient_id = (
+		SELECT id
+		FROM
+		(SELECT
+			p.id,
+			IF (e.registration_type_concept_id = 1335267, 1, 0) as `registration_type_rank`, -- if reg type = GMS then up-rank
+			IF (e.registration_status_concept_id is null or e.registration_status_concept_id not in (1335283, 1335284, 1335285), 1, 0) as `registration_status_rank`, -- if pre-registered status, then down-rank
+			IF (p.date_of_death is not null, 1, 0) as `death_rank`, --  records is a date of death more likely to be actively used, so up-vote
+			IF (e.date_registered_end is null, '9999-12-31', e.date_registered_end) as `date_registered_end_sortable` -- up-vote non-ended ones
+		FROM patient p
+		LEFT OUTER JOIN episode_of_care e
+			ON e.organization_id = p.organization_id
+			AND e.patient_id = p.id
+		WHERE
+			p.person_id = _new_person_id
+		ORDER BY
+			registration_status_rank desc, -- avoid pre-registered records if possible
+			death_rank desc, -- records marked as deceased are more likely to be used than ones not
+			registration_type_rank desc, -- prefer GMS registrations over others
+			date_registered desc, -- want the most recent registration
+			date_registered_end_sortable desc
+		LIMIT 1) AS `tmp`
+	);
+
+	REPLACE INTO person
+	SELECT person_id, organization_id, title, first_names, last_name, gender_concept_id, nhs_number, date_of_birth, date_of_death, current_address_id, ethnic_code_concept_id, registered_practice_organization_id
+	FROM patient
+	WHERE id = _best_patient_id;
+
+END //
+DELIMITER ;
+
 
 DELIMITER //
 CREATE PROCEDURE update_person_record(
@@ -888,51 +929,21 @@ CREATE PROCEDURE update_person_record(
 )
 BEGIN
 
-	DECLARE _best_patient_id bigint DEFAULT -1;
     DECLARE _patients_remaning INT DEFAULT 1;
 
 	IF (_new_person_id IS NOT NULL) THEN
-
-		SET _best_patient_id = (
-			SELECT id
-            FROM
-			(SELECT
-				p.id,
-				IF (e.registration_type_concept_id = 1335267, 1, 0) as `registration_type_rank`, -- if reg type = GMS then up-rank
-				IF (e.registration_status_concept_id is null or e.registration_status_concept_id not in (1335283, 1335284, 1335285), 1, 0) as `registration_status_rank`, -- if pre-registered status, then down-rank
-				IF (p.date_of_death is not null, 1, 0) as `death_rank`, --  records is a date of death more likely to be actively used, so up-vote
-				IF (e.date_registered_end is null, '9999-12-31', e.date_registered_end) as `date_registered_end_sortable` -- up-vote non-ended ones
-			FROM patient p
-			LEFT OUTER JOIN episode_of_care e
-				ON e.organization_id = p.organization_id
-				AND e.patient_id = p.id
-			WHERE
-				p.person_id = _new_person_id
-			ORDER BY
-				registration_status_rank desc, -- avoid pre-registered records if possible
-				death_rank desc, -- records marked as deceased are more likely to be used than ones not
-				registration_type_rank desc, -- prefer GMS registrations over others
-				date_registered desc, -- want the most recent registration
-				date_registered_end_sortable desc
-			LIMIT 1) AS `tmp`
-		);
-
-		REPLACE INTO person
-        SELECT person_id, organization_id, title, first_names, last_name, gender_concept_id, nhs_number, date_of_birth, date_of_death, current_address_id, ethnic_code_concept_id, registered_practice_organization_id
-        FROM patient
-        WHERE id = _best_patient_id;
-
+		CALL update_person_record_2(_new_person_id);
 	END IF;
 
     IF (_old_person_id IS NOT NULL) THEN
 
-		SET _patients_remaning = (select 1 from patient where person_id = _old_person_id);
+		SET _patients_remaning = (select count(1) from patient where person_id = _old_person_id);
 
         IF (_patients_remaning = 0) THEN
 			DELETE FROM person
             WHERE id = _old_person_id;
         ELSE
-			CALL update_person_record(_old_person_id, null);
+			CALL update_person_record_2(_old_person_id);
         END IF;
 
     END IF;
@@ -940,6 +951,9 @@ BEGIN
 
 END //
 DELIMITER ;
+
+
+
 
 
 

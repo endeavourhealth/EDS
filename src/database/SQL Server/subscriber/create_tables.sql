@@ -728,6 +728,7 @@ GO
 
 
 
+
 CREATE PROCEDURE update_person_record(
 	@new_person_id AS bigint,
 	@old_person_id AS bigint
@@ -737,6 +738,9 @@ BEGIN
 
 	DECLARE @best_patient_id bigint;
     DECLARE @patients_remaning INT;
+	--print 'running SP';
+	--print '@new_person_id = ' + COALESCE(CONVERT(varchar, @new_person_id), 'null');
+	--print '@old_person_id = ' + COALESCE(CONVERT(varchar, @old_person_id), 'null');
 
 	IF (@new_person_id IS NOT NULL)
 	BEGIN
@@ -794,15 +798,17 @@ BEGIN
     IF (@old_person_id IS NOT NULL)
 	BEGIN
 
-		SET @patients_remaning = (select 1 from patient where person_id = @old_person_id);
-
+		SET @patients_remaning = (select COUNT(1) from patient where person_id = @old_person_id);
+		--PRINT 'patients remaining = ' + COALESCE(CONVERT(varchar, @patients_remaning), 'null');
         IF (@patients_remaning = 0)
 		BEGIN
+			--PRINT 'will delete all for old person ID';
 			DELETE FROM person
             WHERE id = @old_person_id;
 		END
         ELSE
 		BEGIN
+			--PRINT 'will recurse to re-do for old person ID';
 			EXEC update_person_record @old_person_id, null;
         END
 
@@ -811,6 +817,7 @@ BEGIN
 END
 
 GO
+
 
 
 CREATE TRIGGER [after_allergy_intolerance_insert]

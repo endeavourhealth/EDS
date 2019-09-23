@@ -8,6 +8,7 @@ DROP TRIGGER IF EXISTS after_patient_insert;
 DROP TRIGGER IF EXISTS after_patient_update;
 DROP TRIGGER IF EXISTS after_patient_delete;
 DROP PROCEDURE IF EXISTS update_person_record;
+DROP PROCEDURE IF EXISTS update_person_record_2;
 DROP TABLE IF EXISTS patient_uprn;
 DROP TABLE IF EXISTS medication_order;
 DROP TABLE IF EXISTS medication_statement;
@@ -988,6 +989,52 @@ CREATE UNIQUE INDEX patient_uprn_id
 
 
 
+
+DELIMITER //
+CREATE PROCEDURE update_person_record_2(
+	IN _new_person_id bigint
+)
+BEGIN
+
+	DECLARE _best_patient_id bigint DEFAULT -1;
+
+	SET _best_patient_id = (
+		SELECT id
+		FROM
+		(SELECT
+			p.id,
+			IF (rt.code = 'R', 1, 0) as `registration_type_rank`, -- if reg type = GMS then up-rank
+			IF (e.registration_status_id is null or rs.code not in ('PR1', 'PR2', 'PR3'), 1, 0) as `registration_status_rank`, -- if pre-registered status, then down-rank
+			IF (p.date_of_death is not null, 1, 0) as `death_rank`, --  records is a date of death more likely to be actively used, so up-vote
+			IF (e.date_registered_end is null, '9999-12-31', e.date_registered_end) as `date_registered_end_sortable` -- up-vote non-ended ones
+		FROM patient p
+		LEFT OUTER JOIN episode_of_care e
+			ON e.organization_id = p.organization_id
+			AND e.patient_id = p.id
+		LEFT OUTER JOIN registration_type rt
+			ON rt.id = e.registration_type_id
+		LEFT OUTER JOIN registration_status rs
+			ON rs.id = e.registration_status_id
+		WHERE
+			p.person_id = _new_person_id
+		ORDER BY
+			registration_status_rank desc, -- avoid pre-registered records if possible
+			death_rank desc, -- records marked as deceased are more likely to be used than ones not
+			registration_type_rank desc, -- prefer GMS registrations over others
+			date_registered desc, -- want the most recent registration
+			date_registered_end_sortable desc
+		LIMIT 1) AS `tmp`
+	);
+
+	REPLACE INTO person
+	SELECT person_id, patient_gender_id, nhs_number, date_of_birth, date_of_death, postcode, lsoa_code, msoa_code, ethnic_code, ward_code, local_authority_code, registered_practice_organization_id
+	FROM patient
+	WHERE id = _best_patient_id;
+
+END //
+DELIMITER ;
+
+
 DELIMITER //
 CREATE PROCEDURE update_person_record(
 	IN _new_person_id bigint,
@@ -999,51 +1046,18 @@ BEGIN
     DECLARE _patients_remaning INT DEFAULT 1;
 
 	IF (_new_person_id IS NOT NULL) THEN
-
-		SET _best_patient_id = (
-			SELECT id
-            FROM
-			(SELECT
-				p.id,
-				IF (rt.code = 'R', 1, 0) as `registration_type_rank`, -- if reg type = GMS then up-rank
-				IF (e.registration_status_id is null or rs.code not in ('PR1', 'PR2', 'PR3'), 1, 0) as `registration_status_rank`, -- if pre-registered status, then down-rank
-				IF (p.date_of_death is not null, 1, 0) as `death_rank`, --  records is a date of death more likely to be actively used, so up-vote
-				IF (e.date_registered_end is null, '9999-12-31', e.date_registered_end) as `date_registered_end_sortable` -- up-vote non-ended ones
-			FROM patient p
-			LEFT OUTER JOIN episode_of_care e
-				ON e.organization_id = p.organization_id
-				AND e.patient_id = p.id
-			LEFT OUTER JOIN registration_type rt
-				ON rt.id = e.registration_type_id
-			LEFT OUTER JOIN registration_status rs
-				ON rs.id = e.registration_status_id
-			WHERE
-				p.person_id = _new_person_id
-			ORDER BY
-				registration_status_rank desc, -- avoid pre-registered records if possible
-				death_rank desc, -- records marked as deceased are more likely to be used than ones not
-				registration_type_rank desc, -- prefer GMS registrations over others
-				date_registered desc, -- want the most recent registration
-				date_registered_end_sortable desc
-			LIMIT 1) AS `tmp`
-		);
-
-		REPLACE INTO person
-        SELECT person_id, patient_gender_id, nhs_number, date_of_birth, date_of_death, postcode, lsoa_code, msoa_code, ethnic_code, ward_code, local_authority_code, registered_practice_organization_id
-        FROM patient
-        WHERE id = _best_patient_id;
-
+		CALL update_person_record_2(_new_person_id);
 	END IF;
 
     IF (_old_person_id IS NOT NULL) THEN
 
-		SET _patients_remaning = (select 1 from patient where person_id = _old_person_id);
+		SET _patients_remaning = (select COUNT(1) from patient where person_id = _old_person_id);
 
         IF (_patients_remaning = 0) THEN
 			DELETE FROM person
             WHERE id = _old_person_id;
         ELSE
-			CALL update_person_record(_old_person_id, null);
+			CALL update_person_record_2(_old_person_id);
         END IF;
 
     END IF;
@@ -1051,6 +1065,7 @@ BEGIN
 
 END //
 DELIMITER ;
+
 
 DELIMITER $$
 CREATE TRIGGER after_patient_insert
