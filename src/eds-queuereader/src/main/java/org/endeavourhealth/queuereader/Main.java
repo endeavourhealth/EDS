@@ -815,6 +815,9 @@ public class Main {
 		LOG.info("EDS Queue reader running (kill file location " + TransformConfig.instance().getKillFileLocation() + ")");
 	}
 
+	/**
+	 * updates patient_search and patient_link tables for explicit list of patient UUIDs
+     */
 	private static void updatePatientSearch(String filePath) throws Exception {
 		LOG.info("Updating patient search from " + filePath);
 		try {
@@ -877,12 +880,16 @@ public class Main {
 
 					Patient p = (Patient)nonDeleted.getResource();
 					patientSearchDal.update(UUID.fromString(serviceId), p);
+					patientLinkDal.updatePersonId(UUID.fromString(serviceId), p);
+
+					//and call this to mark the patient_search record as deleted
 					patientSearchDal.deletePatient(UUID.fromString(serviceId), p);
 
 				} else {
 					LOG.debug("Patient wasn't deleted");
 					Patient p = (Patient)mostRecent.getResource();
 					patientSearchDal.update(UUID.fromString(serviceId), p);
+					patientLinkDal.updatePersonId(UUID.fromString(serviceId), p);
 				}
 			}
 
