@@ -111,6 +111,13 @@ public class Main {
 		}*/
 
 		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("UpdatePatientSearch")) {
+			String filePath = args[1];
+			updatePatientSearch(filePath);
+			System.exit(0);
+		}
+
+		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("SubscriberFullLoad")) {
 			UUID serviceId = UUID.fromString(args[1]);
 			UUID protocolId = UUID.fromString(args[2]);
@@ -806,6 +813,83 @@ public class Main {
 		// Begin consume
 		rabbitHandler.start();
 		LOG.info("EDS Queue reader running (kill file location " + TransformConfig.instance().getKillFileLocation() + ")");
+	}
+
+	private static void updatePatientSearch(String filePath) throws Exception {
+		LOG.info("Updating patient search from " + filePath);
+		try {
+			File f = new File(filePath);
+			if (!f.exists()) {
+				LOG.error("File " + f + " doesn't exist");
+				return;
+			}
+
+			List<UUID> patientIds = new ArrayList<>();
+
+			List<String> lines = FileUtils.readLines(f);
+			for (String line: lines) {
+				line = line.trim();
+				if (line.startsWith("#")) {
+					continue;
+				}
+
+				UUID uuid = UUID.fromString(line);
+				patientIds.add(uuid);
+			}
+			LOG.info("Found " + patientIds.size() + " patient UUIDs");
+
+			for (UUID patientId: patientIds) {
+				LOG.info("Doing patient " + patientId);
+
+				PatientLinkDalI patientLinkDal = DalProvider.factoryPatientLinkDal();
+				String personId = patientLinkDal.getPersonId(patientId.toString());
+				if (Strings.isNullOrEmpty(personId)) {
+					LOG.error("Null person ID for patient " + patientId);
+					continue;
+				}
+				Map<String, String> map = patientLinkDal.getPatientAndServiceIdsForPerson(personId);
+				String serviceId = map.get(patientId.toString());
+				if (Strings.isNullOrEmpty(serviceId)) {
+					LOG.error("Null service ID for patient " + patientId + " and person " + personId);
+					continue;
+				}
+
+				ResourceDalI resourceDal = DalProvider.factoryResourceDal();
+				PatientSearchDalI patientSearchDal = DalProvider.factoryPatientSearchDal();
+
+				List<ResourceWrapper> history = resourceDal.getResourceHistory(UUID.fromString(serviceId), ResourceType.Patient.toString(), patientId);
+
+				ResourceWrapper mostRecent = history.get(0);
+				if (mostRecent.isDeleted()) {
+					//find most recent non-deleted
+					ResourceWrapper nonDeleted = null;
+					for (ResourceWrapper wrapper: history) {
+						if (!wrapper.isDeleted()) {
+							nonDeleted = wrapper;
+							break;
+						}
+					}
+
+					if (nonDeleted == null) {
+						LOG.error("No non-deleted Patient resource for " + patientId);
+						continue;
+					}
+
+					Patient p = (Patient)nonDeleted.getResource();
+					patientSearchDal.update(UUID.fromString(serviceId), p);
+					patientSearchDal.deletePatient(UUID.fromString(serviceId), p);
+
+				} else {
+					LOG.debug("Patient wasn't deleted");
+					Patient p = (Patient)mostRecent.getResource();
+					patientSearchDal.update(UUID.fromString(serviceId), p);
+				}
+			}
+
+			LOG.info("Finished Updating patient search from " + filePath);
+		} catch (Throwable t) {
+			LOG.error("", t);
+		}
 	}
 
 
