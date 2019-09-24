@@ -864,6 +864,8 @@ public class Main {
 			PatientSearchDalI patientSearchDal = DalProvider.factoryPatientSearchDal();
 			PatientLinkDalI patientLinkDal = DalProvider.factoryPatientLinkDal();
 
+			int done = 0;
+			int skipped = 0;
 
 			for (UUID patientId: patientIds) {
 				LOG.info("Doing patient " + patientId);
@@ -910,6 +912,7 @@ public class Main {
 				if (history == null
 						|| history.isEmpty()) {
 					LOG.error("Failed to find any resource history for patient " + patientId);
+					skipped ++;
 					continue;
 				}
 
@@ -928,6 +931,7 @@ public class Main {
 
 					if (nonDeleted == null) {
 						LOG.error("No non-deleted Patient resource for " + patientId);
+						skipped ++;
 						continue;
 					}
 
@@ -944,8 +948,14 @@ public class Main {
 					patientSearchDal.update(serviceId, p);
 					patientLinkDal.updatePersonId(serviceId, p);
 				}
+
+				done ++;
+				if (done % 500 == 0) {
+					LOG.debug("Done " + done + " Skipped " + skipped);
+				}
 			}
 
+			LOG.debug("Done " + done + " Skipped " + skipped);
 			LOG.info("Finished Updating patient search from " + filePath);
 		} catch (Throwable t) {
 			LOG.error("", t);
