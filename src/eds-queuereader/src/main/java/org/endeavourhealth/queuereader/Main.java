@@ -861,6 +861,10 @@ public class Main {
 				PatientSearchDalI patientSearchDal = DalProvider.factoryPatientSearchDal();
 
 				List<ResourceWrapper> history = resourceDal.getResourceHistory(UUID.fromString(serviceId), ResourceType.Patient.toString(), patientId);
+				if (history.isEmpty()) {
+					LOG.error("Failed to find any resource history for patient " + patientId + " and person " + personId + " and service " + serviceId);
+					continue;
+				}
 
 				ResourceWrapper mostRecent = history.get(0);
 				if (mostRecent.isDeleted()) {
