@@ -33,6 +33,7 @@ import org.endeavourhealth.core.database.dal.audit.models.HeaderKeys;
 import org.endeavourhealth.core.database.dal.eds.PatientLinkDalI;
 import org.endeavourhealth.core.database.dal.eds.PatientSearchDalI;
 import org.endeavourhealth.core.database.dal.eds.models.PatientLinkPair;
+import org.endeavourhealth.core.database.dal.eds.models.PatientSearch;
 import org.endeavourhealth.core.database.dal.ehr.ResourceDalI;
 import org.endeavourhealth.core.database.dal.ehr.models.ResourceWrapper;
 import org.endeavourhealth.core.database.dal.publisherTransform.models.ResourceFieldMappingAudit;
@@ -859,33 +860,61 @@ public class Main {
 				hmPublishers.put(publisher, serviceId);
 			}
 
+			ResourceDalI resourceDal = DalProvider.factoryResourceDal();
+			PatientSearchDalI patientSearchDal = DalProvider.factoryPatientSearchDal();
+			PatientLinkDalI patientLinkDal = DalProvider.factoryPatientLinkDal();
+
+
 			for (UUID patientId: patientIds) {
 				LOG.info("Doing patient " + patientId);
 
-				ResourceDalI resourceDal = DalProvider.factoryResourceDal();
-				PatientSearchDalI patientSearchDal = DalProvider.factoryPatientSearchDal();
-				PatientLinkDalI patientLinkDal = DalProvider.factoryPatientLinkDal();
+				//we need to find a service ID for the patient, so we know where to get the resources from
+				UUID serviceId = null;
 
-				List<ResourceWrapper> history = null;
+				//try the patient_search table first
+				PatientSearch ps = patientSearchDal.searchByPatientId(patientId);
+				if (ps != null) {
+					serviceId = ps.getServiceId();
+				}
 
-				for (String publisher: hmPublishers.keySet()) {
-					UUID exampleServiceId = hmPublishers.get(publisher);
-
-					List<ResourceWrapper> publisherHistory = resourceDal.getResourceHistory(exampleServiceId, ResourceType.Patient.toString(), patientId);
-					if (!publisherHistory.isEmpty()) {
-						history = publisherHistory;
-						LOG.info("Found resource history for patient " + patientId + " on " + publisher);
-						break;
+				//if service ID is still null, then try looking in the patient_link table
+				if (serviceId == null) {
+					String personId = patientLinkDal.getPersonId(patientId.toString());
+					Map<String, String> map = patientLinkDal.getPatientAndServiceIdsForPerson(personId);
+					if (map.containsKey(patientId.toString())) {
+						serviceId = UUID.fromString(map.get(patientId.toString()));
 					}
 				}
 
-				if (history == null) {
+				List<ResourceWrapper> history = null;
+
+				if (serviceId != null) {
+					//if we have a service ID, then retrieve the resource history directly from that DB
+					history = resourceDal.getResourceHistory(serviceId, ResourceType.Patient.toString(), patientId);
+
+				} else {
+					//if we still don't have a service ID, then test each Corexx DB in turn
+					for (String publisher: hmPublishers.keySet()) {
+						UUID exampleServiceId = hmPublishers.get(publisher);
+
+						List<ResourceWrapper> publisherHistory = resourceDal.getResourceHistory(exampleServiceId, ResourceType.Patient.toString(), patientId);
+						if (!publisherHistory.isEmpty()) {
+							history = publisherHistory;
+							LOG.info("Found resource history for patient " + patientId + " on " + publisher);
+							break;
+						}
+					}
+				}
+
+
+				if (history == null
+						|| history.isEmpty()) {
 					LOG.error("Failed to find any resource history for patient " + patientId);
 					continue;
 				}
 
 				ResourceWrapper mostRecent = history.get(0);
-				UUID serviceId = mostRecent.getServiceId();
+				serviceId = mostRecent.getServiceId();
 
 				if (mostRecent.isDeleted()) {
 					//find most recent non-deleted
