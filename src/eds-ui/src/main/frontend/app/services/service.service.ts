@@ -5,6 +5,7 @@ import {Organisation} from "../organisations/models/Organisation";
 import {System} from "../system/models/System";
 import {BaseHttp2Service} from "eds-common-js";
 import {Http, URLSearchParams} from "@angular/http";
+import {EdsLibraryItem} from "../edsLibrary/models/EdsLibraryItem";
 
 @Injectable()
 export class ServiceService extends BaseHttp2Service {
@@ -57,13 +58,13 @@ export class ServiceService extends BaseHttp2Service {
 
 	getServiceOrganisations(uuid : string) : Observable<Organisation[]> {
 		let params = new URLSearchParams();
-		params.set('uuid',uuid);
+		params.set('uuid', uuid);
 		return this.httpGet('api/service/organisations', { search : params });
 	}
 
 	getSystemsForService(serviceId : string) : Observable<System[]> {
 		let params = new URLSearchParams();
-		params.set('serviceId',serviceId);
+		params.set('serviceId', serviceId);
 		return this.httpGet('api/service/systemsForService', { search : params });
 	}
 
@@ -71,6 +72,12 @@ export class ServiceService extends BaseHttp2Service {
 		let params = new URLSearchParams();
 		params.set('odsCode', odsCode);
 		return this.httpGet('api/service/openOdsRecord', { search : params });
+	}
+
+	getServiceProtocols(serviceId: string) : Observable<EdsLibraryItem[]> {
+		let params = new URLSearchParams();
+		params.set('serviceId', serviceId);
+		return this.httpGet('api/service/protocolsForService', { search : params });
 	}
 
 

@@ -101,12 +101,13 @@
 						</div>
 					</div>
 				</div>
+
 				<div class="row">
 					<div class="form-group col-md-12">
 						<label class="control-label">Organisations</label>
 						<button type="button" class="btn btn-xs btn-success" (click)="editOrganisations()">Edit</button>
 						<button type="button" class="btn btn-xs btn-success" (click)="autoSetOrganisation()">Auto Create</button>
-						<div class="table scroll-box-150">
+						<div class="table scroll-box-60">
 							<table class="table table-striped table-condensed">
 								<tbody>
 									<tr *ngFor="let item of organisations">
@@ -117,7 +118,45 @@
 						</div>
 					</div>
 				</div>
+
+				<div class="row">
+					<div class="form-group col-md-12">
+						<label class="control-label">Protocols</label>
+
+						<div class="table">
+							<table class="table table-striped table-condensed">
+								<thead>
+									<th class="col-md-1">Type</th>
+									<th class="col-md-1">Name</th>
+									<th class="col-md-1">Description</th>
+									<th class="col-md-1">Protocol Enabled</th>
+									<th class="col-md-1">System</th>
+									<th class="col-md-1">Interface</th>
+									<th class="col-md-1">Service Enabled</th>
+
+								</thead>
+								<tbody *ngFor="let item of protocols">
+									<tr *ngFor="let serviceContract of item.protocol.serviceContract">
+										<td>{{serviceContract.type}}</td>
+										<td>{{item.name}}</td>
+										<td>{{item.description}}</td>
+										<td>{{item.protocol.enabled}}</td>
+										<td>{{serviceContract.system.name}}</td>
+										<td>{{serviceContract.system.technicalInterface[0].name}}</td>
+										<td>{{serviceContract.active}}</td>
+
+										<!--serviceContract-->
+									</tr>
+
+								</tbody>
+							</table>
+						</div>
+					</div>
+				</div>
+
 			</form>
+
+
 		</div>
 	</div>
 </div>

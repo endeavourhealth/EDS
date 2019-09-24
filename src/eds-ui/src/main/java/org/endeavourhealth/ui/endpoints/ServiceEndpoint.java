@@ -9,6 +9,7 @@ import org.endeavourhealth.common.ods.OdsOrganisation;
 import org.endeavourhealth.common.ods.OdsWebService;
 import org.endeavourhealth.common.security.SecurityUtils;
 import org.endeavourhealth.common.security.annotations.RequiresAdmin;
+import org.endeavourhealth.common.utility.XmlSerializer;
 import org.endeavourhealth.core.database.dal.DalProvider;
 import org.endeavourhealth.core.database.dal.admin.LibraryDalI;
 import org.endeavourhealth.core.database.dal.admin.LibraryRepositoryHelper;
@@ -24,7 +25,7 @@ import org.endeavourhealth.core.database.dal.audit.models.*;
 import org.endeavourhealth.core.database.dal.ehr.ResourceDalI;
 import org.endeavourhealth.core.fhirStorage.JsonServiceInterfaceEndpoint;
 import org.endeavourhealth.core.queueing.QueueHelper;
-import org.endeavourhealth.core.xml.QueryDocument.LibraryItem;
+import org.endeavourhealth.core.xml.QueryDocument.*;
 import org.endeavourhealth.core.xml.QueryDocument.System;
 import org.endeavourhealth.core.xml.QueryDocumentSerializer;
 import org.endeavourhealth.coreui.endpoints.AbstractEndpoint;
@@ -749,4 +750,54 @@ public final class ServiceEndpoint extends AbstractEndpoint {
                     .build();
         }
     }
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name = "EDS-UI.ServiceEndpoint.GetProtocolsForService")
+    @Path("/protocolsForService")
+    public Response getProtocolsForService(@Context SecurityContext sc, @QueryParam("serviceId") String serviceIdStr) throws Exception {
+        super.setLogbackMarkers(sc);
+        userAuditRepository.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
+                "Service Protocols",
+                "ServiceId", serviceIdStr);
+
+        UUID serviceId = UUID.fromString(serviceIdStr);
+
+        //the protocols can be huge, so only return the relevant bits for our service
+        List<LibraryItem> ret = new ArrayList<>();
+
+        List<LibraryItem> libraryItems = LibraryRepositoryHelper.getProtocolsByServiceId(serviceIdStr, null);
+        for (LibraryItem rawLibraryItem: libraryItems) {
+
+            //copy the item, so amendments don't mess up what's in the cache
+            QueryDocument doc = new QueryDocument();
+            doc.getLibraryItem().add(rawLibraryItem);
+            String xml = QueryDocumentSerializer.writeToXml(doc);
+
+            LibraryItem libraryItem = (LibraryItem)XmlSerializer.deserializeFromString(LibraryItem.class, xml, (String)null);
+            /*doc = QueryDocumentSerializer.readQueryDocumentFromXml(xml);
+            LibraryItem libraryItem = (LibraryItem) XmlSerializer.deserializeFromString(LibraryItem.class, xml, (String)null);*/
+
+            Protocol protocol = libraryItem.getProtocol();
+            List<ServiceContract> serviceContracts = protocol.getServiceContract();
+            for (int i=serviceContracts.size()-1; i>=0; i--) {
+                ServiceContract serviceContract = serviceContracts.get(i);
+                String serviceContractServiceId = serviceContract.getService().getUuid();
+                if (!serviceContractServiceId.equals(serviceIdStr)) {
+                    serviceContracts.remove(i);
+                }
+            }
+
+            ret.add(libraryItem);
+        }
+
+        clearLogbackMarkers();
+
+        return Response
+                .ok()
+                .entity(ret)
+                .build();
+    }
+
 }

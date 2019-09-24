@@ -11,6 +11,7 @@ import {OrganisationPickerDialog} from "../organisations/organisationPicker.dial
 import {AdminService, LoggerService, MessageBoxDialog} from "eds-common-js";
 import {SystemService} from "../system/system.service";
 import {OrganisationService} from "../organisations/organisation.service";
+import {EdsLibraryItem} from "../edsLibrary/models/EdsLibraryItem";
 
 @Component({
 	template : require('./serviceEditor.html')
@@ -21,6 +22,7 @@ export class ServiceEditComponent {
 	organisations : Organisation[];
 	systems : System[];
 	technicalInterfaces : TechnicalInterface[];
+	protocols: EdsLibraryItem[];
 
 	selectedEndpoint : Endpoint;
 
@@ -63,6 +65,7 @@ export class ServiceEditComponent {
 				(result) => {
 					vm.service = result;
 					vm.getServiceOrganisations();
+					vm.getServiceProtocols();
 				},
 				(error) => vm.log.error('Error loading', error, 'Error')
 			);
@@ -295,6 +298,17 @@ export class ServiceEditComponent {
 					vm.close();
 				},
 				(error) => vm.log.error('Failed to delete data', error, 'Delete Data')
+			);
+	}
+
+	private getServiceProtocols() {
+		var vm = this;
+		vm.serviceService.getServiceProtocols(vm.service.uuid)
+			.subscribe(
+				(result) => {
+					vm.protocols = result;
+				},
+				(error) => vm.log.error('Failed to load service protocols', error, 'Load service protocols')
 			);
 	}
 }
