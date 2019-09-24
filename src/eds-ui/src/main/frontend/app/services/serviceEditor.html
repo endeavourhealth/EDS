@@ -142,7 +142,7 @@
 										<td>{{item.description}}</td>
 										<td>{{item.protocol.enabled}}</td>
 										<td>{{serviceContract.system.name}}</td>
-										<td>{{serviceContract.system.technicalInterface[0].name}}</td>
+										<td>{{serviceContract.technicalInterface.name}}</td>
 										<td>{{serviceContract.active}}</td>
 
 										<!--serviceContract-->
@@ -156,6 +156,9 @@
 
 			</form>
 
+			<!--<div class="row">
+				<pre>{{protocolJson}}</pre>
+			</div>-->
 
 		</div>
 	</div>

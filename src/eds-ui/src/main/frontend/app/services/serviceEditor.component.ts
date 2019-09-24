@@ -23,6 +23,7 @@ export class ServiceEditComponent {
 	systems : System[];
 	technicalInterfaces : TechnicalInterface[];
 	protocols: EdsLibraryItem[];
+	//protocolJson: string;
 
 	selectedEndpoint : Endpoint;
 
@@ -307,6 +308,7 @@ export class ServiceEditComponent {
 			.subscribe(
 				(result) => {
 					vm.protocols = result;
+					//vm.protocolJson = JSON.stringify(result, null, 2);
 				},
 				(error) => vm.log.error('Failed to load service protocols', error, 'Load service protocols')
 			);
