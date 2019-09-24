@@ -841,32 +841,52 @@ public class Main {
 			}
 			LOG.info("Found " + patientIds.size() + " patient UUIDs");
 
+			Map<String, UUID> hmPublishers = new HashMap<>();
+
+			List<String> publishers = new ArrayList<>();
+			publishers.add("publisher_01");
+			publishers.add("publisher_02");
+			publishers.add("publisher_03");
+			publishers.add("publisher_04");
+			publishers.add("publisher_04b");
+			publishers.add("publisher_05");
+			publishers.add("publisher_05_nwl_tmp");
+			publishers.add("publisher_05_sel_tmp");
+
+
+			for (String publisher: publishers) {
+				UUID serviceId = findSuitableServiceIdForPublisherConfig(publisher);
+				hmPublishers.put(publisher, serviceId);
+			}
+
 			for (UUID patientId: patientIds) {
 				LOG.info("Doing patient " + patientId);
 
-				PatientLinkDalI patientLinkDal = DalProvider.factoryPatientLinkDal();
-				String personId = patientLinkDal.getPersonId(patientId.toString());
-				if (Strings.isNullOrEmpty(personId)) {
-					LOG.error("Null person ID for patient " + patientId);
-					continue;
-				}
-				Map<String, String> map = patientLinkDal.getPatientAndServiceIdsForPerson(personId);
-				String serviceId = map.get(patientId.toString());
-				if (Strings.isNullOrEmpty(serviceId)) {
-					LOG.error("Null service ID for patient " + patientId + " and person " + personId);
-					continue;
-				}
-
 				ResourceDalI resourceDal = DalProvider.factoryResourceDal();
 				PatientSearchDalI patientSearchDal = DalProvider.factoryPatientSearchDal();
+				PatientLinkDalI patientLinkDal = DalProvider.factoryPatientLinkDal();
 
-				List<ResourceWrapper> history = resourceDal.getResourceHistory(UUID.fromString(serviceId), ResourceType.Patient.toString(), patientId);
-				if (history.isEmpty()) {
-					LOG.error("Failed to find any resource history for patient " + patientId + " and person " + personId + " and service " + serviceId);
+				List<ResourceWrapper> history = null;
+
+				for (String publisher: hmPublishers.keySet()) {
+					UUID exampleServiceId = hmPublishers.get(publisher);
+
+					List<ResourceWrapper> publisherHistory = resourceDal.getResourceHistory(exampleServiceId, ResourceType.Patient.toString(), patientId);
+					if (!publisherHistory.isEmpty()) {
+						history = publisherHistory;
+						LOG.info("Found resource history for patient " + patientId + " on " + publisher);
+						break;
+					}
+				}
+
+				if (history == null) {
+					LOG.error("Failed to find any resource history for patient " + patientId);
 					continue;
 				}
 
 				ResourceWrapper mostRecent = history.get(0);
+				UUID serviceId = mostRecent.getServiceId();
+
 				if (mostRecent.isDeleted()) {
 					//find most recent non-deleted
 					ResourceWrapper nonDeleted = null;
@@ -883,17 +903,17 @@ public class Main {
 					}
 
 					Patient p = (Patient)nonDeleted.getResource();
-					patientSearchDal.update(UUID.fromString(serviceId), p);
-					patientLinkDal.updatePersonId(UUID.fromString(serviceId), p);
+					patientSearchDal.update(serviceId, p);
+					patientLinkDal.updatePersonId(serviceId, p);
 
 					//and call this to mark the patient_search record as deleted
-					patientSearchDal.deletePatient(UUID.fromString(serviceId), p);
+					patientSearchDal.deletePatient(serviceId, p);
 
 				} else {
 					LOG.debug("Patient wasn't deleted");
 					Patient p = (Patient)mostRecent.getResource();
-					patientSearchDal.update(UUID.fromString(serviceId), p);
-					patientLinkDal.updatePersonId(UUID.fromString(serviceId), p);
+					patientSearchDal.update(serviceId, p);
+					patientLinkDal.updatePersonId(serviceId, p);
 				}
 			}
 
