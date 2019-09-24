@@ -854,6 +854,7 @@ public class Main {
 			publishers.add("publisher_05_nwl_tmp");
 			publishers.add("publisher_05_sel_tmp");
 
+			File changedFile = new File(filePath + "changed");
 
 			for (String publisher: publishers) {
 				UUID serviceId = findSuitableServiceIdForPublisherConfig(publisher);
@@ -919,6 +920,8 @@ public class Main {
 				ResourceWrapper mostRecent = history.get(0);
 				serviceId = mostRecent.getServiceId();
 
+				PatientLinkPair patientLink = null;
+
 				if (mostRecent.isDeleted()) {
 					//find most recent non-deleted
 					ResourceWrapper nonDeleted = null;
@@ -937,7 +940,7 @@ public class Main {
 
 					Patient p = (Patient)nonDeleted.getResource();
 					patientSearchDal.update(serviceId, p);
-					patientLinkDal.updatePersonId(serviceId, p);
+					patientLink = patientLinkDal.updatePersonId(serviceId, p);
 
 					//and call this to mark the patient_search record as deleted
 					patientSearchDal.deletePatient(serviceId, p);
@@ -946,7 +949,14 @@ public class Main {
 					LOG.debug("Patient wasn't deleted");
 					Patient p = (Patient)mostRecent.getResource();
 					patientSearchDal.update(serviceId, p);
-					patientLinkDal.updatePersonId(serviceId, p);
+					patientLink = patientLinkDal.updatePersonId(serviceId, p);
+				}
+
+				//if the person ID was changed, write this to a file
+				if (patientLink.getNewPersonId() != null) {
+					List<String> updateLines = new ArrayList<>();
+					updateLines.add(patientId.toString());
+					Files.write(changedFile.toPath(), updateLines, StandardOpenOption.CREATE, StandardOpenOption.APPEND, StandardOpenOption.WRITE);
 				}
 
 				done ++;
