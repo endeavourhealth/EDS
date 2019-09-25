@@ -87,6 +87,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class Main {
 	private static final Logger LOG = LoggerFactory.getLogger(Main.class);
 
+
 	public static void main(String[] args) throws Exception {
 
 		String configId = args[0];
@@ -945,7 +946,7 @@ public class Main {
 					patientSearchDal.deletePatient(serviceId, p);
 
 				} else {
-					LOG.debug("Patient wasn't deleted");
+					//LOG.debug("Patient wasn't deleted");
 					Patient p = (Patient)mostRecent.getResource();
 					patientSearchDal.update(serviceId, p);
 					patientLink = patientLinkDal.updatePersonId(serviceId, p);
