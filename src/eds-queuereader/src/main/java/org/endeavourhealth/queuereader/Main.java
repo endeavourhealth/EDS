@@ -13,6 +13,8 @@ import org.endeavourhealth.common.fhir.ExtensionConverter;
 import org.endeavourhealth.common.fhir.FhirExtensionUri;
 import org.endeavourhealth.common.fhir.IdentifierHelper;
 import org.endeavourhealth.common.fhir.ReferenceHelper;
+import org.endeavourhealth.common.fhir.schema.EthnicCategory;
+import org.endeavourhealth.common.fhir.schema.MaritalStatus;
 import org.endeavourhealth.common.utility.FileHelper;
 import org.endeavourhealth.common.utility.MetricsHelper;
 import org.endeavourhealth.common.utility.ThreadPool;
@@ -56,6 +58,7 @@ import org.endeavourhealth.core.xml.QueryDocument.*;
 import org.endeavourhealth.core.xml.transformError.TransformError;
 import org.endeavourhealth.transform.common.*;
 import org.endeavourhealth.transform.common.resourceBuilders.GenericBuilder;
+import org.endeavourhealth.transform.common.resourceBuilders.PatientBuilder;
 import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
 import org.endeavourhealth.transform.emis.csv.helpers.EmisCsvHelper;
 import org.endeavourhealth.transform.subscriber.SubscriberTransformHelper;
@@ -83,6 +86,7 @@ import java.util.*;
 import java.util.Date;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.regex.Pattern;
 
 public class Main {
 	private static final Logger LOG = LoggerFactory.getLogger(Main.class);
@@ -110,6 +114,17 @@ public class Main {
 			deleteEnterpriseObs(filePath, configName, batchSize);
 			System.exit(0);
 		}*/
+
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("FixMissingEmisEthnicities")) {
+			String filePath = args[1];
+			String odsCodeRegex = null;
+			if (args.length > 2) {
+				odsCodeRegex = args[2];
+			}
+			fixMissingEmisEthnicities(filePath, odsCodeRegex);
+			System.exit(0);
+		}
 
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("UpdatePatientSearch")) {
@@ -814,6 +829,179 @@ public class Main {
 		// Begin consume
 		rabbitHandler.start();
 		LOG.info("EDS Queue reader running (kill file location " + TransformConfig.instance().getKillFileLocation() + ")");
+	}
+
+	/**
+	 * restores the ethnicity and marital statuses on the Patient resources that were lost
+	 * if the "re-registrated patients" fix was run before the "deleted patients" fix. This meant that
+	 * the patient resource was re-created from the patient file but the ethnicity and marital status weren't carried
+	 * over from the pre-deleted version.
+     */
+	private static void fixMissingEmisEthnicities(String filePath, String filterRegexOdsCode) {
+		LOG.info("Fixing Missing Emis Ethnicities to " + filePath + " matching orgs using " + filterRegexOdsCode);
+		try {
+
+			Map<String, List<UUID>> hmPatientIds = new HashMap<>();
+
+			File f = new File(filePath);
+			if (f.exists()) {
+				List<String> lines = FileUtils.readLines(f);
+
+				String currentOdsCode = null;
+
+				for (String line: lines) {
+					if (line.startsWith("#")) {
+						currentOdsCode = line.substring(1);
+					} else {
+						UUID patientId = UUID.fromString(line);
+						List<UUID> s = hmPatientIds.get(currentOdsCode);
+						if (s == null) {
+							s = new ArrayList<>();
+							hmPatientIds.put(currentOdsCode, s);
+						}
+						s.add(patientId);
+					}
+
+				}
+			}
+
+			ServiceDalI serviceDal = DalProvider.factoryServiceDal();
+			List<Service> services = serviceDal.getAll();
+
+			for (Service service: services) {
+
+				String odsCode = service.getLocalId();
+				if (filterRegexOdsCode != null
+						&& !Pattern.matches(filterRegexOdsCode, odsCode)) {
+					LOG.debug("Skipping " + service + " due to regex");
+					continue;
+				}
+
+				if (hmPatientIds.containsKey(odsCode)) {
+					LOG.debug("Already done " + service);
+					continue;
+				}
+
+				LOG.debug("Doing " + service);
+				UUID serviceId = service.getId();
+
+				PatientSearchDalI patientSearchDal = DalProvider.factoryPatientSearchDal();
+				List<UUID> patientUuids = patientSearchDal.getPatientIds(serviceId);
+				LOG.info("Found " + patientUuids.size() + " patient UUIDs at service");
+
+				ResourceDalI resourceDal = DalProvider.factoryResourceDal();
+				List<UUID> patientIdsForService = new ArrayList<>();
+				List<ResourceWrapper> resourceWrappersToSave = new ArrayList<>();
+
+				for (int i = 0; i < patientUuids.size(); i++) {
+
+					if (i % 1000 == 0) {
+						LOG.info("Done " + i + " and found " + patientIdsForService.size());
+					}
+
+					UUID patientUuid = patientUuids.get(i);
+					List<ResourceWrapper> history = resourceDal.getResourceHistory(serviceId, ResourceType.Patient.toString(), patientUuid);
+
+					ResourceWrapper current = history.get(0);
+					if (current.isDeleted()) {
+						continue;
+					}
+
+					//if only one history record, no point looking back
+					if (history.size() == 1) {
+						continue;
+					}
+
+					Patient p = (Patient)current.getResource();
+					PatientBuilder patientBuilder = new PatientBuilder(p);
+
+					//see if both already present
+					EthnicCategory currentEthnicCategory = patientBuilder.getEthnicity();
+					MaritalStatus currentMaritalStatus = patientBuilder.getMaritalStatus();
+					if (currentEthnicCategory != null
+							&& currentMaritalStatus != null) {
+						continue;
+					}
+
+					EthnicCategory newEthnicCategory = null;
+					MaritalStatus newMaritalStatus = null;
+
+					for (int j=1; j<history.size(); j++) {
+						ResourceWrapper previousWrapper = history.get(j);
+						if (previousWrapper.isDeleted()) {
+							continue;
+						}
+
+						Patient previous = (Patient)previousWrapper.getResource();
+						PatientBuilder previousPatientBuilder = new PatientBuilder(previous);
+
+						if (newEthnicCategory == null) {
+							newEthnicCategory = previousPatientBuilder.getEthnicity();
+						}
+						if (newMaritalStatus == null) {
+							newMaritalStatus = previousPatientBuilder.getMaritalStatus();
+						}
+					}
+
+					if (newEthnicCategory == currentEthnicCategory
+							&& newMaritalStatus == currentMaritalStatus) {
+						continue;
+					}
+
+					boolean fixed = false;
+
+					if (newEthnicCategory != null) {
+						patientBuilder.setEthnicity(newEthnicCategory);
+						fixed = true;
+					}
+					if (newMaritalStatus != null) {
+						patientBuilder.setMaritalStatus(newMaritalStatus);
+						fixed = true;
+					}
+
+					if (fixed) {
+						p = (Patient) patientBuilder.getResource();
+						String newJson = FhirSerializationHelper.serializeResource(p);
+						current.setResourceData(newJson);
+
+						patientIdsForService.add(patientUuid);
+						resourceWrappersToSave.add(current);
+					}
+
+
+				}
+
+				LOG.info("Done " + patientUuids.size() + " and found " + patientIdsForService.size());
+
+				hmPatientIds.put(odsCode, patientIdsForService);
+
+				List<String> lines = new ArrayList<>();
+				for (String odsCodeDone: hmPatientIds.keySet()) {
+					lines.add("#" + odsCodeDone);
+					List<UUID> patientIdsDone = hmPatientIds.get(odsCodeDone);
+					for (UUID patientIdDone: patientIdsDone) {
+						lines.add(patientIdDone.toString());
+					}
+				}
+
+				FileUtils.writeLines(f, lines);
+
+				//only now we've stored the affected patient IDs in the file should we actually update the DB
+				for (ResourceWrapper wrapper: resourceWrappersToSave) {
+					saveResourceWrapper(serviceId, wrapper);
+				}
+
+				//and re-queue the affected patients for sending to subscribers
+				QueueHelper.queueUpPatientsForTransform(patientIdsForService);
+			}
+
+			LOG.debug("Written to " + f);
+
+			LOG.info("Finished Fixing Missing Emis Ethnicities to " + filePath);
+		} catch (Throwable t) {
+			LOG.error("", t);
+		}
+
 	}
 
 	/**

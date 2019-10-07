@@ -16,7 +16,7 @@ public class OnsUpdater {
     * https://ons.maps.arcgis.com/home/search.html?q=NHS%20Postcode%20Directory%20UK%20Full&start=1&sortOrder=desc&sortField=modified#content
     * 2. Run this app with parameters: ons_all <path to zip file>
     *
-    * Aug 2018 data at: https://ons.maps.arcgis.com/home/item.html?id=054714ceec2743c0b59884f5619f4efa
+    * Aug 2019 data at: https://ons.maps.arcgis.com/home/item.html?id=054714ceec2743c0b59884f5619f4efa
     * May 2019 data at: https://ons.maps.arcgis.com/home/item.html?id=fd3ffbae5dfe4b9db21070486c6a0d64
     * Feb 2019 data at: https://ons.maps.arcgis.com/home/item.html?id=e1dc68a2c7f64adeb834bd089bd87ca5
     * Nov 2018 data at: https://ons.maps.arcgis.com/home/item.html?id=3506c198565a444d9432d31f85257ade
