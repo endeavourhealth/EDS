@@ -70,7 +70,7 @@ public class QueueHelper {
 
             UUID exchangeId = exchangeIds.get(i);
             Exchange exchange = AuditWriter.readExchange(exchangeId);
-            if (exchangeIds.size() > 1 && exchange.getHeader(HeaderKeys.SourceSystem)=="BULK_DELETE_DATA") {
+            if (exchangeIds.size() > 1 && exchange.getHeader(HeaderKeys.SourceSystem).equals("BULK_DELETE_DATA")) {
                 // Skip dummy exchanges used to do bulk deletes unless this is ONLY a delete in which case size will be exactly 1.
                 continue;
             }
