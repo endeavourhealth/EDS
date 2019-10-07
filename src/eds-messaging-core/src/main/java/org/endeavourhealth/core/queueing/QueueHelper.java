@@ -70,6 +70,11 @@ public class QueueHelper {
 
             UUID exchangeId = exchangeIds.get(i);
             Exchange exchange = AuditWriter.readExchange(exchangeId);
+            if (exchangeIds.size() > 1 && exchange.getHeader(HeaderKeys.SourceSystem)=="BULK_DELETE_DATA") {
+                // Skip dummy exchanges used to do bulk deletes unless this is ONLY a delete in which case size will be exactly 1.
+                continue;
+            }
+
             //org.endeavourhealth.core.messaging.exchange.Exchange exchange = retrieveExchange(exchangeId);
 
             //to make sure the latest setup applies, re-calculate the protocols that apply to this exchange
@@ -555,7 +560,7 @@ public class QueueHelper {
             LOG.info("Saving exchange");
             AuditWriter.writeExchange(exchange);
             AuditWriter.writeExchangeEvent(exchange, "Manually created exchange to delete data");
-
+            AuditWriter.writeExchangeEvent(exchange, "NOTE: ANY ATTEMPT TO RE-QUEUE THIS EXCHANGE WILL BE IGNORED");
             /*LOG.info("Creating exchange batches for " + patientUuids.size() + " patients");
             createExchangeBatches(exchange, patientUuids);*/
 
