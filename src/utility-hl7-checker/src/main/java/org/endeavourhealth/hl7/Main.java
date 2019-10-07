@@ -6,6 +6,7 @@ import ca.uhn.hl7v2.HapiContext;
 import ca.uhn.hl7v2.model.Message;
 import ca.uhn.hl7v2.model.Structure;
 import ca.uhn.hl7v2.model.v23.datatype.CX;
+import ca.uhn.hl7v2.model.v23.datatype.ST;
 import ca.uhn.hl7v2.model.v23.group.ADT_A44_PATIENT;
 import ca.uhn.hl7v2.model.v23.segment.MRG;
 import ca.uhn.hl7v2.model.v23.segment.PID;
@@ -423,6 +424,40 @@ public class Main {
             // If "CNN" not found then move to DLQ
             if (cnnFound == false) {
                 return "Automatically moved ADT because PID:3 does not contain CNN";
+            }
+        }
+
+        // Added 2019-10-07
+        if (channelId == 1
+                && messageType.equals("ADT^A03")
+                && errorMessage.startsWith("[org.endeavourhealth.hl7receiver.model.exceptions.HL7MessageProcessorException]  Transform failure\r\n[java.lang.IllegalArgumentException]  patientIdentifierValue")) {
+
+            Message hapiMsg = parser.parse(inboundPayload);
+
+            boolean cnnValueFound = false;
+            PID pid = (PID) hapiMsg.get("PID");
+            if (pid != null) {
+                CX[] pid3s = pid.getPid3_PatientIDInternalID();
+                if (pid3s != null) {
+                    for (int i = 0; i < pid3s.length; i++) {
+                        LOG.info("PID:3(" + i + "):" + pid3s[i].toString());
+                        if (pid3s[i].toString().contains("CNN")) {
+
+                            ST id = pid3s[i].getID();
+                            if (id.isEmpty()) {
+                                LOG.info("CNN Value Missing");
+                                cnnValueFound = false;
+                            } else {
+                                cnnValueFound = true;
+                            }
+                        }
+                    }
+                }
+            }
+
+            // If "CNN" is blank then move to DLQ
+            if (cnnValueFound == false) {
+                return "Automatically moved ADT because PID:3 contains a blank CNN";
             }
         }
 
