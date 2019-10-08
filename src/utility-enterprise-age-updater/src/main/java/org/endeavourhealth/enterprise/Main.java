@@ -55,7 +55,9 @@ public class Main {
                     Connection enterpriseConnection = connectionWrapper.getConnection();
 
                     updateEnterprisePatient(ageToUpdate.getEnterprisePatientId(), ages, enterpriseConnection);
-                    updateEnterprisePerson(ageToUpdate.getEnterprisePatientId(), ages, enterpriseConnection);
+
+                    //no need to manually update the person table, as updates to patient will fire off a trigger that does it for us
+                    //updateEnterprisePerson(ageToUpdate.getEnterprisePatientId(), ages, enterpriseConnection);
                     enterpriseConnection.close();
                 }
 
@@ -120,7 +122,7 @@ public class Main {
         //LOG.info("Updated patient " + enterprisePatientId + " to ages " + ages[EnterpriseAge.UNIT_YEARS] + " y, " + ages[EnterpriseAge.UNIT_MONTHS] + " m " + ages[EnterpriseAge.UNIT_WEEKS] + " wks");
     }
 
-    private static void updateEnterprisePerson(long enterprisePatientId, Integer[] ages, Connection connection) throws Exception {
+    /*private static void updateEnterprisePerson(long enterprisePatientId, Integer[] ages, Connection connection) throws Exception {
 
         //update the age fields on the person table where the person is for our patient and their pseudo IDs match
         StringBuilder sb = new StringBuilder();
@@ -158,7 +160,7 @@ public class Main {
         update.executeBatch();
 
         connection.commit();
-    }
+    }*/
 
 
 
