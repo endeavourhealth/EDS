@@ -36,6 +36,7 @@ public class RabbitConsumer extends DefaultConsumer {
 
 	private RabbitConsumer_State lastExchangeAttempted;
 	private int lastExchangeAttempts;
+	private KillCheckingRunnable killCheckingRunnable;
 
 	public RabbitConsumer(Channel channel, QueueReaderConfiguration configuration, String configId, RabbitHandler handler) {
 		super(channel);
@@ -47,8 +48,20 @@ public class RabbitConsumer extends DefaultConsumer {
 
 		//call this to delete any pre-existing kill file
 		checkIfKillFileExists();
+
+		startKillCheckingThread();
 	}
 
+	/**
+	 * starts off the thread that periodically checks for a kill file, idenpendently of whether RabbitMQ is
+	 * giving us anything to service
+	 */
+	private void startKillCheckingThread() {
+		this.killCheckingRunnable = new KillCheckingRunnable();
+		Thread t = new Thread(killCheckingRunnable);
+		t.setName("KillChecker");
+		t.start();
+	}
 
 
 	@Override
@@ -90,10 +103,7 @@ public class RabbitConsumer extends DefaultConsumer {
 		processingFinished(processingState);
 
 		//see if we've been told to finish
-		if (checkIfKillFileExists()) {
-			String reason = "Detected kill file";
-			stop(reason);
-		}
+		checkIfKillFileExistsAndStopIfSo();
 	}
 
 	private static void processingFinished(RabbitConsumer_State processingState) {
@@ -255,6 +265,9 @@ public class RabbitConsumer extends DefaultConsumer {
 
 	private void stop(String reason) {
 
+		//stop our checking thread
+		this.killCheckingRunnable.stop();
+
 		//close down the rabbit connection and channel
 		try {
 			handler.stop();
@@ -268,6 +281,17 @@ public class RabbitConsumer extends DefaultConsumer {
 		//and halt
 		LOG.info("Queue Reader " + ConfigManager.getAppId() + " exiting: " + reason);
 		System.exit(0);
+	}
+
+	/**
+	 * This fn is called from multiple threads, so it syncronised to ensure that checks can't overlap
+	 * and ensures only the first check will return true, as the file is deleted
+	 */
+	private synchronized void checkIfKillFileExistsAndStopIfSo() {
+		if (checkIfKillFileExists()) {
+			String reason = "Detected kill file";
+			stop(reason);
+		}
 	}
 
 	/**
@@ -291,6 +315,42 @@ public class RabbitConsumer extends DefaultConsumer {
 		} else {
 			//LOG.trace("Kill file not found: " + killFile); //for investigation
 			return false;
+		}
+	}
+
+	class KillCheckingRunnable implements Runnable {
+
+		private AtomicInteger stop = new AtomicInteger();
+
+		public void stop() {
+			stop.incrementAndGet();
+		}
+
+		public boolean isStopped() {
+			return stop.get() > 0;
+		}
+
+		@Override
+		public void run() {
+
+			while (!isStopped()) {
+
+				//wait a bit
+				try {
+					Thread.sleep(10000);
+				} catch (InterruptedException ie) {
+					//do nothing
+				}
+
+				//if our rabbit processor is running something, then do nothing
+				synchronized (messagesBeingProcessed) {
+					if (!messagesBeingProcessed.isEmpty()) {
+						continue;
+					}
+				}
+
+				checkIfKillFileExistsAndStopIfSo();
+			}
 		}
 	}
 }
@@ -373,4 +433,6 @@ class RabbitConsumer_State {
 	public void setExchangeId(UUID exchangeId) {
 		this.exchangeId = exchangeId;
 	}
+
+
 }
