@@ -465,10 +465,12 @@ public class SubscriberFiler {
             if (Strings.isNullOrEmpty(value)) {
                 statement.setNull(index, Types.BOOLEAN);
 
-            } else if (value.equalsIgnoreCase("true")) {
+            } else if (value.equalsIgnoreCase("true")
+                    || value.equalsIgnoreCase("1")) {
                 statement.setBoolean(index, true);
 
-            } else if (value.equalsIgnoreCase("false")) {
+            } else if (value.equalsIgnoreCase("false")
+                    || value.equalsIgnoreCase("0")) {
                 statement.setBoolean(index, false);
 
             } else {
