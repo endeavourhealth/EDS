@@ -1009,6 +1009,7 @@ public class Main {
 
 						String sql = "UPDATE medication_statement SET is_active = 1 WHERE cancelled_date IS NULL AND id IN (" + String.join(",", batch) + ");";
 						lines.add(sql);
+						batch.clear();
 					}
 
 					if (lines.size() % 10 == 0) {
