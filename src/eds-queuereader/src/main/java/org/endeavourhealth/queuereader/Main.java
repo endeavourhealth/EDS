@@ -1010,9 +1010,15 @@ public class Main {
 						String sql = "UPDATE medication_statement SET is_active = 1 WHERE cancelled_date IS NULL AND id IN (" + String.join(",", batch) + ");";
 						lines.add(sql);
 					}
+
+					if (lines.size() % 10 == 0) {
+						LOG.debug("Created " + lines.size() + " lines with " + medicationStatementIdsForService.size() + " IDs remaining");
+					}
 				}
 
+				LOG.debug("Going to write to file");
 				Files.write(f.toPath(), lines, StandardOpenOption.CREATE, StandardOpenOption.APPEND, StandardOpenOption.WRITE);
+				LOG.debug("Done write to file");
 			}
 
 			LOG.debug("Written to " + f);
