@@ -912,7 +912,7 @@ public class Main {
 					continue;
 				}
 
-				if (odsCode.contains(odsCode)) {
+				if (odsCodesDone.contains(odsCode)) {
 					LOG.debug("Already done " + service);
 					continue;
 				}
