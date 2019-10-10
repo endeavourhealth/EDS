@@ -924,8 +924,7 @@ public class Main {
 				List<String> softwareNames = new ArrayList<>();
 
 				for (ServiceContract serviceContract: matchedProtocol.getProtocol().getServiceContract()) {
-					if (serviceContract.getService().getUuid().equals(serviceIdStr)
-							&& serviceContract.getType() == ServiceContractType.SUBSCRIBER
+					if (serviceContract.getType() == ServiceContractType.SUBSCRIBER
 							&& serviceContract.getActive() == ServiceContractActive.TRUE) {
 
 						String subscriberConfigName = MessageTransformOutbound.getSubscriberEndpoint(serviceContract);
