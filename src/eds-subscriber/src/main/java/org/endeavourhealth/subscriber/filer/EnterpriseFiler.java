@@ -399,17 +399,28 @@ public class EnterpriseFiler {
         } else if (fieldCls == Boolean.class
             || fieldCls == Boolean.TYPE) {
 
+            //explicitly test for expected values rather than using Boolean.parseBoolean(..) so anything
+            //not expected (e.g. 1 or 0) is treated as an error
             if (Strings.isNullOrEmpty(value)) {
                 statement.setNull(index, Types.BOOLEAN);
+
+            } else if (value.equalsIgnoreCase("true")
+                    || value.equalsIgnoreCase("1")) {
+                statement.setBoolean(index, true);
+
+            } else if (value.equalsIgnoreCase("false")
+                    || value.equalsIgnoreCase("0")) {
+                statement.setBoolean(index, false);
+
             } else {
-                boolean b = Boolean.parseBoolean(value);
-                statement.setBoolean(index, b);
+                throw new Exception("Unexpected boolean value [" + value + "] in column [" + column + "]");
             }
 
         } else {
             throw new Exception("Unsupported value class " + fieldCls);
         }
     }
+
 
     private static PreparedStatement createUpsertPreparedStatement(String tableName, List<String> columns, Connection connection, String keywordEscapeChar) throws Exception {
 

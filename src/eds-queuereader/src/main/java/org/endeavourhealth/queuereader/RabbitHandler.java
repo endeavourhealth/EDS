@@ -52,23 +52,6 @@ public class RabbitHandler {
 				RabbitConfig.getInstance().getSslProtocol(),
 				false);
 
-		/*ConnectionFactory connectionFactory = new ConnectionFactory();
-		connectionFactory.setAutomaticRecoveryEnabled(true);
-		connectionFactory.setTopologyRecoveryEnabled(true);
-		connectionFactory.setUsername(RabbitConfig.getInstance().getUsername());
-		connectionFactory.setPassword(RabbitConfig.getInstance().getPassword());
-
-		String sslProtocol = RabbitConfig.getInstance().getSslProtocol();
-		if (!Strings.isNullOrEmpty(sslProtocol)) {
-			try {
-				connectionFactory.useSslProtocol(sslProtocol);
-			} catch (Exception ex) {
-				throw new IOException("Failed to initialise SSL protocol [" + sslProtocol + "]", ex);
-			}
-		}
-
-		Address[] addresses = Address.parseAddresses(RabbitConfig.getInstance().getNodes());
-		return connectionFactory.newConnection(addresses);*/
 	}
 
 	public void start() throws IOException {
