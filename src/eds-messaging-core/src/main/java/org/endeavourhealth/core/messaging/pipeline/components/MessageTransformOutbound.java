@@ -326,7 +326,7 @@ public class MessageTransformOutbound extends PipelineComponent {
 		LOG.trace("Message transformed (outbound)");
 	}*/
 
-    private String getSubscriberEndpoint(ServiceContract contract) throws PipelineException {
+    public static String getSubscriberEndpoint(ServiceContract contract) throws PipelineException {
 
         try {
             UUID serviceId = UUID.fromString(contract.getService().getUuid());

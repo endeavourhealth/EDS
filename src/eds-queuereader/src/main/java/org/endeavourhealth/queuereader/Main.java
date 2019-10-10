@@ -45,12 +45,14 @@ import org.endeavourhealth.core.database.dal.subscriberTransform.EnterprisePerso
 import org.endeavourhealth.core.database.dal.subscriberTransform.SubscriberOrgMappingDalI;
 import org.endeavourhealth.core.database.dal.subscriberTransform.SubscriberPersonMappingDalI;
 import org.endeavourhealth.core.database.dal.subscriberTransform.SubscriberResourceMappingDalI;
+import org.endeavourhealth.core.database.dal.subscriberTransform.models.SubscriberId;
 import org.endeavourhealth.core.database.rdbms.ConnectionManager;
 import org.endeavourhealth.core.database.rdbms.enterprise.EnterpriseConnector;
 import org.endeavourhealth.core.exceptions.TransformException;
 import org.endeavourhealth.core.fhirStorage.FhirSerializationHelper;
 import org.endeavourhealth.core.fhirStorage.FhirStorageService;
 import org.endeavourhealth.core.fhirStorage.JsonServiceInterfaceEndpoint;
+import org.endeavourhealth.core.messaging.pipeline.components.MessageTransformOutbound;
 import org.endeavourhealth.core.messaging.pipeline.components.OpenEnvelope;
 import org.endeavourhealth.core.messaging.pipeline.components.PostMessageToExchange;
 import org.endeavourhealth.core.queueing.QueueHelper;
@@ -62,11 +64,9 @@ import org.endeavourhealth.transform.common.resourceBuilders.PatientBuilder;
 import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
 import org.endeavourhealth.transform.emis.csv.helpers.EmisCsvHelper;
 import org.endeavourhealth.transform.subscriber.SubscriberTransformHelper;
+import org.endeavourhealth.transform.subscriber.targetTables.SubscriberTableId;
 import org.hibernate.internal.SessionImpl;
-import org.hl7.fhir.instance.model.BooleanType;
-import org.hl7.fhir.instance.model.Patient;
-import org.hl7.fhir.instance.model.Reference;
-import org.hl7.fhir.instance.model.ResourceType;
+import org.hl7.fhir.instance.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -114,6 +114,18 @@ public class Main {
 			deleteEnterpriseObs(filePath, configName, batchSize);
 			System.exit(0);
 		}*/
+
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("FixMedicationStatementIsActive")) {
+			String protocolName = args[1];
+			String filePath = args[2];
+			String odsCodeRegex = null;
+			if (args.length > 3) {
+				odsCodeRegex = args[3];
+			}
+			fixMedicationStatementIsActive(protocolName, filePath, odsCodeRegex);
+			System.exit(0);
+		}
 
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("FixMissingEmisEthnicities")) {
@@ -829,6 +841,187 @@ public class Main {
 		// Begin consume
 		rabbitHandler.start();
 		LOG.info("EDS Queue reader running (kill file location " + TransformConfig.instance().getKillFileLocation() + ")");
+	}
+
+	private static void fixMedicationStatementIsActive(String protocolName, String filePath, String odsCodeRegex) {
+		LOG.info("Fixing MedicationStatement IsActive for " + protocolName + " to " + filePath + " matching orgs using " + odsCodeRegex);
+		try {
+			Set<String> odsCodesDone = new HashSet<>();
+
+			File f = new File(filePath);
+			if (f.exists()) {
+				List<String> lines = FileUtils.readLines(f);
+
+				for (String line: lines) {
+					if (line.startsWith("#")) {
+						String odsCode = line.substring(1);
+						odsCodesDone.add(odsCode);
+					}
+				}
+			}
+
+			//find services in protocol
+			//find subscriber config details
+
+
+			ServiceDalI serviceDal = DalProvider.factoryServiceDal();
+			ResourceDalI resourceDal = DalProvider.factoryResourceDal();
+			PatientSearchDalI patientSearchDal = DalProvider.factoryPatientSearchDal();
+
+			List<Service> services = serviceDal.getAll();
+
+			for (Service service: services) {
+
+				UUID serviceId = service.getId();
+				String serviceIdStr = serviceId.toString();
+
+				//find protocol
+				LibraryItem matchedProtocol = null;
+				List<LibraryItem> libraryItems = LibraryRepositoryHelper.getProtocolsByServiceId(serviceId.toString(), null);
+				for (LibraryItem protocol: libraryItems) {
+					if (protocol.getName().equalsIgnoreCase(protocolName)) {
+						matchedProtocol = protocol;
+						break;
+					}
+				}
+				if (matchedProtocol == null) {
+					LOG.debug("Skipping " + service + " as not in protocol " + protocolName);
+					continue;
+				}
+
+				//ensure in protocol as a publisher
+				boolean isPublisher = false;
+				for (ServiceContract serviceContract: matchedProtocol.getProtocol().getServiceContract()) {
+					if (serviceContract.getService().getUuid().equals(serviceIdStr)
+							&& serviceContract.getType() == ServiceContractType.PUBLISHER
+							&& serviceContract.getActive() == ServiceContractActive.TRUE) {
+						isPublisher = true;
+						break;
+					}
+				}
+
+				if (!isPublisher) {
+					LOG.debug("Skipping " + service + " as not a publisher to protocol " + protocolName);
+					continue;
+				}
+
+				String odsCode = service.getLocalId();
+				if (odsCodeRegex != null
+						&& !Pattern.matches(odsCodeRegex, odsCode)) {
+					LOG.debug("Skipping " + service + " due to regex");
+					continue;
+				}
+
+				if (odsCode.contains(odsCode)) {
+					LOG.debug("Already done " + service);
+					continue;
+				}
+
+				LOG.debug("Doing " + service);
+
+				//find subscriber config name
+				List<String> subscriberConfigNames = new ArrayList<>();
+				List<String> softwareNames = new ArrayList<>();
+
+				for (ServiceContract serviceContract: matchedProtocol.getProtocol().getServiceContract()) {
+					if (serviceContract.getService().getUuid().equals(serviceIdStr)
+							&& serviceContract.getType() == ServiceContractType.SUBSCRIBER
+							&& serviceContract.getActive() == ServiceContractActive.TRUE) {
+
+						String subscriberConfigName = MessageTransformOutbound.getSubscriberEndpoint(serviceContract);
+						if (!Strings.isNullOrEmpty(subscriberConfigName)) {
+							subscriberConfigNames.add(subscriberConfigName);
+
+							String technicalInterfaceUuidStr = serviceContract.getTechnicalInterface().getUuid();
+							String systemUuidStr = serviceContract.getSystem().getUuid();
+							TechnicalInterface technicalInterface = LibraryRepositoryHelper.getTechnicalInterfaceDetailsUsingCache(systemUuidStr, technicalInterfaceUuidStr);
+							String software = technicalInterface.getMessageFormat();
+							softwareNames.add(software);
+						}
+					}
+				}
+				if (subscriberConfigNames.size() == 0) {
+					throw new Exception("Failed to find subscriber config name for protocol " + protocolName);
+				}
+				if (subscriberConfigNames.size() > 1) {
+					throw new Exception("Found more than one subscriber config name for protocol " + protocolName);
+				}
+				String subscriberConfigName = subscriberConfigNames.get(0);
+				String softwareName = softwareNames.get(0);
+				LOG.info("Protocol " + protocolName + " -> " + softwareName + " @ " + subscriberConfigName);
+
+				List<UUID> patientUuids = patientSearchDal.getPatientIds(serviceId);
+				LOG.info("Found " + patientUuids.size() + " patient UUIDs at service");
+
+				SubscriberResourceMappingDalI subscriberDal = DalProvider.factorySubscriberResourceMappingDal(subscriberConfigName);
+
+				List<Long> medicationStatementIdsForService = new ArrayList<>();
+
+				for (int i = 0; i < patientUuids.size(); i++) {
+
+					if (i % 1000 == 0) {
+						LOG.info("Done " + i + " and found " + medicationStatementIdsForService.size());
+					}
+
+					UUID patientUuid = patientUuids.get(i);
+					List<ResourceWrapper> resourceWrappers = resourceDal.getResourcesByPatient(serviceId, patientUuid, ResourceType.MedicationStatement.toString());
+
+					for (ResourceWrapper resourceWrapper: resourceWrappers) {
+						MedicationStatement medicationStatement = (MedicationStatement)resourceWrapper.getResource();
+
+						boolean isActive = medicationStatement.hasStatus()
+								&& medicationStatement.getStatus() == MedicationStatement.MedicationStatementStatus.ACTIVE;
+						if (isActive) {
+
+							if (softwareName.equals(MessageFormat.ENTERPRISE_CSV)) {
+								Long enterpriseId = subscriberDal.findEnterpriseIdOldWay(ResourceType.MedicationStatement.toString(), resourceWrapper.getResourceId().toString());
+								if (enterpriseId != null) {
+									medicationStatementIdsForService.add(enterpriseId);
+								}
+
+							} else if (softwareName.equals(MessageFormat.SUBSCRIBER_CSV)) {
+								String ref = resourceWrapper.getReferenceString();
+								SubscriberId subscriberId = subscriberDal.findSubscriberId(SubscriberTableId.MEDICATION_STATEMENT.getId(), ref);
+								if (subscriberId != null) {
+									medicationStatementIdsForService.add(subscriberId.getSubscriberId());
+								}
+
+							} else {
+								throw new Exception("Unexpected software name " + softwareName);
+							}
+						}
+					}
+				}
+
+				LOG.info("Done " + patientUuids.size() + " and found " + medicationStatementIdsForService.size());
+
+				odsCodesDone.add(odsCode);
+
+				List<String> lines = new ArrayList<>();
+				lines.add("#" + odsCode);
+
+				List<String> batch = new ArrayList<>();
+				while (!medicationStatementIdsForService.isEmpty()) {
+					Long l = medicationStatementIdsForService.remove(0);
+					batch.add(l.toString());
+
+					if (medicationStatementIdsForService.isEmpty()
+							|| batch.size() > 50) {
+
+						String sql = "UPDATE medication_statement SET is_active = 1 WHERE cancelled_date IS NULL AND id IN (" + String.join(",", batch) + ");";
+						lines.add(sql);
+					}
+				}
+
+				Files.write(f.toPath(), lines, StandardOpenOption.CREATE, StandardOpenOption.APPEND, StandardOpenOption.WRITE);
+			}
+
+			LOG.debug("Written to " + f);
+
+			LOG.info("Finished Fixing Missing Emis Ethnicities to " + filePath);
+		} catch (Throwable t) {
+			LOG.error("", t);
+		}
 	}
 
 	/**
