@@ -15,16 +15,17 @@ import org.endeavourhealth.common.fhir.IdentifierHelper;
 import org.endeavourhealth.common.fhir.ReferenceHelper;
 import org.endeavourhealth.common.fhir.schema.EthnicCategory;
 import org.endeavourhealth.common.fhir.schema.MaritalStatus;
-import org.endeavourhealth.common.utility.FileHelper;
-import org.endeavourhealth.common.utility.MetricsHelper;
-import org.endeavourhealth.common.utility.ThreadPool;
-import org.endeavourhealth.common.utility.ThreadPoolError;
+import org.endeavourhealth.common.utility.*;
 import org.endeavourhealth.core.configuration.ConfigDeserialiser;
 import org.endeavourhealth.core.configuration.PostMessageToExchangeConfig;
 import org.endeavourhealth.core.configuration.QueueReaderConfiguration;
 import org.endeavourhealth.core.database.dal.DalProvider;
+import org.endeavourhealth.core.database.dal.admin.LibraryDalI;
 import org.endeavourhealth.core.database.dal.admin.LibraryRepositoryHelper;
 import org.endeavourhealth.core.database.dal.admin.ServiceDalI;
+import org.endeavourhealth.core.database.dal.admin.models.ActiveItem;
+import org.endeavourhealth.core.database.dal.admin.models.DefinitionItemType;
+import org.endeavourhealth.core.database.dal.admin.models.Item;
 import org.endeavourhealth.core.database.dal.admin.models.Service;
 import org.endeavourhealth.core.database.dal.audit.ExchangeBatchDalI;
 import org.endeavourhealth.core.database.dal.audit.ExchangeDalI;
@@ -116,10 +117,19 @@ public class Main {
 		}*/
 
 		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("InvestigateMissingPatients")) {
+			String nhsNumberFile = args[1];
+			String protocolName = args[2];
+			String odsCodeRegex = args[3];
+			investigateMissingPatients(nhsNumberFile, protocolName, odsCodeRegex);
+			System.exit(0);
+		}
+
+		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("FixMedicationStatementIsActive")) {
 			String odsCodeRegex = null;
 			if (args.length > 1) {
-				odsCodeRegex = args[2];
+				odsCodeRegex = args[1];
 			}
 			fixMedicationStatementIsActive(odsCodeRegex);
 			System.exit(0);
@@ -841,6 +851,100 @@ public class Main {
 		LOG.info("EDS Queue reader running (kill file location " + TransformConfig.instance().getKillFileLocation() + ")");
 	}
 
+	private static void investigateMissingPatients(String nhsNumberFile, String protocolName, String odsCodeRegex) {
+		LOG.info("Investigating Missing Patients from " + nhsNumberFile + " in Protocol " + protocolName);
+		try {
+
+			ServiceDalI serviceDal = DalProvider.factoryServiceDal();
+			ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
+
+			//go through all publishers and find all history of NHS numbers
+			File nhsNumberHistoryFile = new File(protocolName.replace(" ", "_") + "_NHS_number_history.txt");
+			if (!nhsNumberHistoryFile.exists()) {
+				LOG.info("Need to create NHS number history file " + nhsNumberHistoryFile);
+
+				LibraryItem matchedLibraryItem = null;
+
+				LibraryDalI repository = DalProvider.factoryLibraryDal();
+				List<ActiveItem> activeItems = repository.getActiveItemByTypeId(Integer.valueOf(DefinitionItemType.Protocol.getValue()), Boolean.valueOf(false));
+				for (ActiveItem activeItem: activeItems) {
+					Item item = repository.getItemByKey(activeItem.getItemId(), activeItem.getAuditId());
+					String xml = item.getXmlContent();
+					LibraryItem libraryItem = (LibraryItem) XmlSerializer.deserializeFromString(LibraryItem.class, xml, (String)null);
+					String name = libraryItem.getName();
+					if (name.equals(protocolName)) {
+						matchedLibraryItem = libraryItem;
+						break;
+					}
+				}
+				if (matchedLibraryItem == null) {
+					throw new Exception("Failed to find protocol");
+				}
+
+				for (ServiceContract serviceContract: matchedLibraryItem.getProtocol().getServiceContract()) {
+					if (serviceContract.getType() == ServiceContractType.SUBSCRIBER) {
+						continue;
+					}
+
+					String serviceIdStr = serviceContract.getService().getUuid();
+					UUID serviceId = UUID.fromString(serviceIdStr);
+					Service service = serviceDal.getById(serviceId);
+
+					String odsCode = service.getLocalId();
+					if (odsCodeRegex != null
+							&& !Pattern.matches(odsCodeRegex, odsCode)) {
+						LOG.debug("Skipping " + service + " due to regex");
+						continue;
+					}
+
+					LOG.info("Doing " + service);
+
+					List<UUID> systemIds = findSystemIds(service);
+					for (UUID systemId: systemIds) {
+						List<Exchange> exchanges = exchangeDal.getExchangesByService(serviceId, systemId, Integer.MAX_VALUE);
+						for (int i=exchanges.size()-1; i>=0; i--) {
+							Exchange exchange = exchanges.get(i);
+							List<ExchangePayloadFile> files = ExchangeHelper.parseExchangeBody(exchange.getBody());
+							ExchangePayloadFile patientFile = findFileOfType(files, "Admin_Patient");
+							if (patientFile == null) {
+								continue;
+							}
+
+							//work out file version
+							List<ExchangePayloadFile> filesTmp = new ArrayList<>();
+							filesTmp.add(patientFile);
+							String version = EmisCsvToFhirTransformer.determineVersion(filesTmp);
+
+							//create the parser
+							String path = patientFile.getPath();
+							org.endeavourhealth.transform.emis.csv.schema.admin.Patient parser = new org.endeavourhealth.transform.emis.csv.schema.admin.Patient(serviceId, systemId, exchange.getId(), version, path);
+
+							while (parser.nextRecord()) {
+
+								CsvCell patientGuidCell = parser.getPatientGuid();
+								String patientGuid = patientGuidCell.getString();
+
+								CsvCell nhsNumberCell = parser.getNhsNumber();
+								String nhsNumber = nhsNumberCell.getString();
+
+								CsvCell deletedCell = parser.getDeleted();
+							}
+
+							parser.close();
+						}
+					}
+				}
+			}
+
+
+			//go through file and check
+
+			LOG.info("Finished Investigating Missing Patients from " + nhsNumberFile + " in Protocol " + protocolName);
+		} catch (Throwable t) {
+			LOG.error("", t);
+		}
+	}
+
 	private static void fixMedicationStatementIsActive(String odsCodeRegex) {
 		LOG.info("Fixing MedicationStatement IsActive for using " + odsCodeRegex);
 		try {
@@ -900,13 +1004,17 @@ public class Main {
 
 							String subscriberConfigName = MessageTransformOutbound.getSubscriberEndpoint(serviceContract);
 							if (!Strings.isNullOrEmpty(subscriberConfigName)) {
-								subscriberConfigNames.add(subscriberConfigName);
+								if (!subscriberConfigNames.contains(subscriberConfigName)) {
+									subscriberConfigNames.add(subscriberConfigName);
+								}
 
 								String technicalInterfaceUuidStr = serviceContract.getTechnicalInterface().getUuid();
 								String systemUuidStr = serviceContract.getSystem().getUuid();
 								TechnicalInterface technicalInterface = LibraryRepositoryHelper.getTechnicalInterfaceDetailsUsingCache(systemUuidStr, technicalInterfaceUuidStr);
 								String software = technicalInterface.getMessageFormat();
-								softwareNames.add(software);
+								if (!softwareNames.contains(software)) {
+									softwareNames.add(software);
+								}
 							}
 						}
 					}
