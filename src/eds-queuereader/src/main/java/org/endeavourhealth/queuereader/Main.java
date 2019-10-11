@@ -857,6 +857,7 @@ public class Main {
 
 			ServiceDalI serviceDal = DalProvider.factoryServiceDal();
 			ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
+			SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
 
 			//go through all publishers and find all history of NHS numbers
 			File nhsNumberHistoryFile = new File(protocolName.replace(" ", "_") + "_NHS_number_history.txt");
@@ -899,6 +900,8 @@ public class Main {
 
 					LOG.info("Doing " + service);
 
+					List<String> lines = new ArrayList<>();
+
 					List<UUID> systemIds = findSystemIds(service);
 					for (UUID systemId: systemIds) {
 						List<Exchange> exchanges = exchangeDal.getExchangesByService(serviceId, systemId, Integer.MAX_VALUE);
@@ -909,6 +912,9 @@ public class Main {
 							if (patientFile == null) {
 								continue;
 							}
+
+							Date dataDate = exchange.getHeaderAsDate(HeaderKeys.DataDate);
+							String dateDateStr = sdf.format(dataDate);
 
 							//work out file version
 							List<ExchangePayloadFile> filesTmp = new ArrayList<>();
@@ -924,16 +930,36 @@ public class Main {
 								CsvCell patientGuidCell = parser.getPatientGuid();
 								String patientGuid = patientGuidCell.getString();
 
+								String patientUuidStr = null;
+								UUID patientUuid = IdHelper.getEdsResourceId(serviceId, ResourceType.Patient, patientGuid);
+								if (patientUuid == null) {
+									patientUuidStr = "NOUUID";
+								} else {
+									patientUuidStr = patientUuid.toString();
+								}
+
 								CsvCell nhsNumberCell = parser.getNhsNumber();
 								String nhsNumber = nhsNumberCell.getString();
+								if (Strings.isNullOrEmpty(nhsNumber)) {
+									nhsNumber = "BLANK";
+								}
 
 								CsvCell deletedCell = parser.getDeleted();
+								String deletedStr = deletedCell.getString();
+
+								lines.add(odsCode + "_" + dateDateStr + "_" + patientGuid + "_" + patientUuidStr + "_" + nhsNumber + "_" + deletedStr);
 							}
 
 							parser.close();
 						}
 					}
+
+					Files.write(nhsNumberHistoryFile.toPath(), lines, StandardOpenOption.CREATE, StandardOpenOption.APPEND, StandardOpenOption.WRITE);
+
+					LOG.debug("Done " + service);
 				}
+
+				LOG.info("Created NHS number history file");
 			}
 
 
@@ -1088,7 +1114,7 @@ public class Main {
 								}
 
 							} else {
-								throw new Exception("Unexpected software name " + softwareName);
+								//throw new Exception("Unexpected software name " + softwareName);
 							}
 
 							if (id != null) {
