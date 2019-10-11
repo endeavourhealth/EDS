@@ -121,7 +121,8 @@ public class Main {
 			String nhsNumberFile = args[1];
 			String protocolName = args[2];
 			String odsCodeRegex = args[3];
-			investigateMissingPatients(nhsNumberFile, protocolName, odsCodeRegex);
+			boolean verbose = Boolean.parseBoolean(args[4]);
+			investigateMissingPatients(nhsNumberFile, protocolName, odsCodeRegex, verbose);
 			System.exit(0);
 		}
 
@@ -851,7 +852,7 @@ public class Main {
 		LOG.info("EDS Queue reader running (kill file location " + TransformConfig.instance().getKillFileLocation() + ")");
 	}
 
-	private static void investigateMissingPatients(String nhsNumberFile, String protocolName, String odsCodeRegex) {
+	private static void investigateMissingPatients(String nhsNumberFile, String protocolName, String odsCodeRegex, boolean verbose) {
 		LOG.info("Investigating Missing Patients from " + nhsNumberFile + " in Protocol " + protocolName);
 		try {
 
@@ -942,6 +943,8 @@ public class Main {
 								String nhsNumber = nhsNumberCell.getString();
 								if (Strings.isNullOrEmpty(nhsNumber)) {
 									nhsNumber = "BLANK";
+								} else {
+									nhsNumber.replace(" ", "");
 								}
 
 								CsvCell deletedCell = parser.getDeleted();
@@ -962,13 +965,123 @@ public class Main {
 				LOG.info("Created NHS number history file");
 			}
 
+			Map<String, List<String>> hmNhsNumberToPatientGuid = new HashMap<>();
+			Map<String, List<NhsNumberInfo>> hmPatientGuidHistory = new HashMap<>();
+
+			LOG.info("Reading in NHS number history");
+			List<String> historyLines = Files.readAllLines(nhsNumberHistoryFile.toPath());
+
+			LOG.info("Parsing NHS number history");
+			for (String historyLine: historyLines) {
+				try {
+					String[] toks = historyLine.split("_");
+
+					NhsNumberInfo info = new NhsNumberInfo();
+					info.odsCode = toks[0];
+					info.date = toks[1];
+					info.patientGuid = toks[2];
+					info.patientUuid = toks[3];
+					info.nhsNumber = toks[4];
+					info.deleted = toks[5];
+
+					List<String> l = hmNhsNumberToPatientGuid.get(info.nhsNumber);
+					if (l == null) {
+						l = new ArrayList<>();
+						hmNhsNumberToPatientGuid.put(info.nhsNumber, l);
+					}
+					l.add(info.patientGuid);
+
+					List<NhsNumberInfo> l2 = hmPatientGuidHistory.get(info.patientGuid);
+					if (l2 == null) {
+						l2 = new ArrayList<>();
+						hmPatientGuidHistory.put(info.patientGuid, l2);
+					}
+					l2.add(info);
+
+				} catch (Exception ex) {
+					throw new Exception("Error parsing line [" + historyLine + "]", ex);
+				}
+			}
+			LOG.info("Read in NHS number history");
 
 			//go through file and check
+			File inputFile = new File(nhsNumberFile);
+			if (!inputFile.exists()) {
+				throw new Exception(nhsNumberFile + " doesn't exist");
+			}
+			List<String> nhsNumbers = Files.readAllLines(inputFile.toPath());
+			LOG.info("Found " + nhsNumbers.size());
+
+
+			List<String> lines = new ArrayList<>();
+
+			for (String nhsNumber: nhsNumbers) {
+				lines.add(">>>>>>>>> " + nhsNumber + " <<<<<<<<<<");
+
+				List<String> patientGuids = hmNhsNumberToPatientGuid.get(nhsNumber);
+				if (patientGuids == null
+						|| patientGuids.isEmpty()) {
+					lines.add("No match to any patient GUID");
+					continue;
+				}
+
+				if (verbose) {
+					lines.add("Matches " + patientGuids.size() + " patient GUIDs: " + patientGuids);
+				}
+
+				for (String patientGuid: patientGuids) {
+					List<NhsNumberInfo> history = hmPatientGuidHistory.get(patientGuid);
+					if (history == null) {
+						throw new Exception("No history for patient GUID " + patientGuid);
+					}
+
+					//see if it matches the CURRENT NHS number from the Emis data
+					NhsNumberInfo currentInfo = history.get(history.size()-1);
+					if (currentInfo.nhsNumber.equals(nhsNumber)) {
+						lines.add("" + patientGuid + ": matches CURRENT NHS number (at " + currentInfo.odsCode + "), so SHOULD be in subscriber DB");
+						//TODO - try to check subscriber DB???
+
+					} else {
+						if (verbose) {
+							lines.add("" + patientGuid + ": doesn't match current NHS number (at " + currentInfo.odsCode + ") which is " + currentInfo.nhsNumber);
+						}
+
+						//find out when the NHS number changed
+						NhsNumberInfo infoChanged = null;
+						for (int i=history.size()-1; i>=0; i--) {
+							NhsNumberInfo info = history.get(i);
+							if (info.nhsNumber.equals(nhsNumber)) {
+								infoChanged = history.get(i+1);
+								break;
+							}
+						}
+
+						if (infoChanged != null) {
+							lines.add("" + patientGuid + ": NHS number changed on " + infoChanged.date + " (at " + currentInfo.odsCode + ") to " + currentInfo.nhsNumber);
+
+						} else {
+							lines.add("" + patientGuid + ": ERROR - FAILED TO FIND MATCHING NHS NUMBER IN HISTORY");
+						}
+					}
+				}
+			}
+
+			File outputFile = new File("OUTPUT_" + nhsNumberFile);
+			Files.write(outputFile.toPath(), lines, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE);
 
 			LOG.info("Finished Investigating Missing Patients from " + nhsNumberFile + " in Protocol " + protocolName);
 		} catch (Throwable t) {
 			LOG.error("", t);
 		}
+	}
+
+	static class NhsNumberInfo {
+		String odsCode;
+		String date;
+		String patientGuid;
+		String patientUuid;
+		String nhsNumber;
+		String deleted;
 	}
 
 	private static void fixMedicationStatementIsActive(String odsCodeRegex) {
