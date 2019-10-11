@@ -918,7 +918,7 @@ public class Main {
 					}
 
 					if (subscriberConfigNames.size() > 1) {
-						throw new Exception("Found more than one subscriber config name for protocol " + libraryItem.getName());
+						throw new Exception("Found more than one subscriber config name for protocol " + libraryItem.getName() + ": " + subscriberConfigNames);
 					}
 
 					String subscriberConfigName = subscriberConfigNames.get(0);
