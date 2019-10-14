@@ -992,6 +992,14 @@ public class Main {
 					info.nhsNumber = toks[4];
 					info.deleted = toks[5];
 
+					if (currentOdsCode == null
+							|| !currentOdsCode.equals(info.odsCode)) {
+						currentOdsCode = info.odsCode;
+						totalAtOdsCode = 0;
+						LOG.info("Starting " + currentOdsCode);
+					}
+
+
 					Set<String> s = hmNhsNumberToPatientGuid.get(info.nhsNumber);
 					if (s == null) {
 						s = new HashSet<>();
@@ -1015,19 +1023,12 @@ public class Main {
 
 					if (addNew) {
 						l2.add(info);
-					}
 
-					if (currentOdsCode == null
-							|| !currentOdsCode.equals(info.odsCode)) {
-						currentOdsCode = info.odsCode;
-						totalAtOdsCode = 0;
-						LOG.info("Starting " + currentOdsCode);
-					}
-
-					total ++;
-					totalAtOdsCode ++;
-					if (totalAtOdsCode % 1000 == 0) {
-						LOG.info("Done " + totalAtOdsCode + " at " + currentOdsCode + " (total " + total + ")");
+						total ++;
+						totalAtOdsCode ++;
+						if (totalAtOdsCode % 10000 == 0) {
+							LOG.info("Done " + totalAtOdsCode + " at " + currentOdsCode + " (total " + total + ")");
+						}
 					}
 
 				} catch (Exception ex) {
