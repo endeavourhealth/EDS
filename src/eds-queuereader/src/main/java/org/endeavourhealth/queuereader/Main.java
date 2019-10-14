@@ -1079,6 +1079,10 @@ public class Main {
 					} else {
 						if (verbose) {
 							lines.add("" + patientGuid + ": doesn't match current NHS number (at " + currentInfo.odsCode + ") which is " + currentInfo.nhsNumber);
+
+							for (NhsNumberInfo info: history) {
+								lines.add("" + patientGuid + ": " + info.date + " NHS number = " + info.nhsNumber);
+							}
 						}
 
 						//find out when the NHS number changed
@@ -1092,7 +1096,8 @@ public class Main {
 						}
 
 						if (infoChanged != null) {
-							lines.add("" + patientGuid + ": NHS number changed on " + infoChanged.date + " (at " + currentInfo.odsCode + ") to " + currentInfo.nhsNumber);
+							//TODO - this is wrong
+							lines.add("" + patientGuid + ": NHS number changed on " + infoChanged.date + " (at " + infoChanged.odsCode + ") to " + currentInfo.nhsNumber);
 
 						} else {
 							lines.add("" + patientGuid + ": ERROR - FAILED TO FIND MATCHING NHS NUMBER IN HISTORY");
