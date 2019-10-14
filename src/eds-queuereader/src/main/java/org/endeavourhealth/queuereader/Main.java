@@ -1087,12 +1087,11 @@ public class Main {
 							+ " order by pse.registration_start desc"
 							+ " limit 1";
 
-					PreparedStatement statement = edsConnection.prepareStatement(sql);
-					statement.setString(1, nhsNumber);
+					PreparedStatement ps = edsConnection.prepareStatement(sql);
+					ps.setString(1, nhsNumber);
+
 					LOG.debug(sql);
-					ResultSet rs = statement.executeQuery(sql);
-
-
+					ResultSet rs = ps.executeQuery();
 					if (rs.next()) {
 
 						String odsCode = rs.getString(1);
@@ -1125,7 +1124,7 @@ public class Main {
 						comment = "FAILED TO FIND NHS Number in patient_search or CEG data";
 					}
 
-					statement.close();
+					ps.close();
 
 					/*String sql = "select registered_practice_ods_code, patient_id from eds.patient_search ps where nhs_number = ?";
 					PreparedStatement statement = edsConnection.prepareStatement(sql);
