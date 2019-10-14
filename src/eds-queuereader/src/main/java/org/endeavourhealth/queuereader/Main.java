@@ -971,6 +971,7 @@ public class Main {
 			LOG.info("Reading in NHS number history");
 			int total = 0;
 			String currentOdsCode = null;
+			int odsCodesDone = 0;
 			int totalAtOdsCode = 0;
 
 			FileReader fr = new FileReader(nhsNumberHistoryFile);
@@ -996,7 +997,8 @@ public class Main {
 							|| !currentOdsCode.equals(info.odsCode)) {
 						currentOdsCode = info.odsCode;
 						totalAtOdsCode = 0;
-						LOG.info("Starting " + currentOdsCode);
+						odsCodesDone ++;
+						LOG.info("Starting " + currentOdsCode + " org " + odsCodesDone);
 					}
 
 
