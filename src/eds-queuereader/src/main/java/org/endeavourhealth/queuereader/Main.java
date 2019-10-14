@@ -1136,12 +1136,13 @@ public class Main {
 
 					List<String> subscriberConfigNames = new ArrayList<>();
 					List<String> softwareNames = new ArrayList<>();
-
+LOG.debug("Protocol name = " + libraryItem.getName());
 					for (ServiceContract serviceContract : libraryItem.getProtocol().getServiceContract()) {
 						if (serviceContract.getType() == ServiceContractType.SUBSCRIBER
 								&& serviceContract.getActive() == ServiceContractActive.TRUE) {
 
 							String subscriberConfigName = MessageTransformOutbound.getSubscriberEndpoint(serviceContract);
+LOG.debug("    subscriber config = [" + subscriberConfigName + "]");
 							if (!Strings.isNullOrEmpty(subscriberConfigName)) {
 								if (!subscriberConfigNames.contains(subscriberConfigName)) {
 									subscriberConfigNames.add(subscriberConfigName);
@@ -1261,10 +1262,6 @@ public class Main {
 							String sql = "UPDATE medication_statement SET is_active = 1 WHERE cancellation_date IS NULL AND id IN (" + String.join(",", batch) + ");";
 							lines.add(sql);
 							batch.clear();
-						}
-
-						if (lines.size() % 10 == 0) {
-							LOG.debug("Created " + lines.size() + " lines with " + medicationStatementIdsForService.size() + " IDs remaining");
 						}
 					}
 
