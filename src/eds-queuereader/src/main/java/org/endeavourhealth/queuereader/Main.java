@@ -1136,22 +1136,31 @@ public class Main {
 
 					List<String> subscriberConfigNames = new ArrayList<>();
 					List<String> softwareNames = new ArrayList<>();
-LOG.debug("Protocol name = " + libraryItem.getName());
+//LOG.debug("Protocol name = " + libraryItem.getName());
 					for (ServiceContract serviceContract : libraryItem.getProtocol().getServiceContract()) {
 						if (serviceContract.getType() == ServiceContractType.SUBSCRIBER
 								&& serviceContract.getActive() == ServiceContractActive.TRUE) {
 
 							String subscriberConfigName = MessageTransformOutbound.getSubscriberEndpoint(serviceContract);
-LOG.debug("    subscriber config = [" + subscriberConfigName + "]");
+//LOG.debug("    subscriber config = [" + subscriberConfigName + "]");
 							if (!Strings.isNullOrEmpty(subscriberConfigName)) {
-								if (!subscriberConfigNames.contains(subscriberConfigName)) {
-									subscriberConfigNames.add(subscriberConfigName);
-								}
 
 								String technicalInterfaceUuidStr = serviceContract.getTechnicalInterface().getUuid();
 								String systemUuidStr = serviceContract.getSystem().getUuid();
 								TechnicalInterface technicalInterface = LibraryRepositoryHelper.getTechnicalInterfaceDetailsUsingCache(systemUuidStr, technicalInterfaceUuidStr);
 								String software = technicalInterface.getMessageFormat();
+
+								//ignore any service contracts not for these formats
+								if (!software.equals(MessageFormat.ENTERPRISE_CSV)) {
+								/*if (!software.equals(MessageFormat.ENTERPRISE_CSV)
+										&& !software.equals(MessageFormat.SUBSCRIBER_CSV)) {*/
+									continue;
+								}
+
+								if (!subscriberConfigNames.contains(subscriberConfigName)) {
+									subscriberConfigNames.add(subscriberConfigName);
+								}
+
 								if (!softwareNames.contains(software)) {
 									softwareNames.add(software);
 								}
