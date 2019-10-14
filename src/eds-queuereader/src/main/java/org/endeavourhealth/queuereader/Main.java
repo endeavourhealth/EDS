@@ -1169,58 +1169,58 @@ public class Main {
 
 					edsEntityManager.close();
 
-					continue;
-				}
+				} else {
 
-				if (verbose) {
-					lines.add("Matches " + patientGuids.size() + " patient GUIDs: " + patientGuids);
-				}
-
-				for (String patientGuid: patientGuids) {
-					List<NhsNumberInfo> history = hmPatientGuidHistory.get(patientGuid);
-					if (history == null) {
-						throw new Exception("No history for patient GUID " + patientGuid);
+					if (verbose) {
+						lines.add("Matches " + patientGuids.size() + " patient GUIDs: " + patientGuids);
 					}
 
-					//see if it matches the CURRENT NHS number from the Emis data
-					NhsNumberInfo currentInfo = history.get(history.size()-1);
-					if (currentInfo.nhsNumber.equals(nhsNumber)) {
-						lines.add("" + patientGuid + ": matches CURRENT NHS number (at " + currentInfo.odsCode + "), so SHOULD be in subscriber DB");
-						//TODO - try to check subscriber DB???
-
-						finding = "Match";
-						comment = "Matches current NHS number, so should be in subscriber DB";
-
-					} else {
-						if (verbose) {
-							lines.add("" + patientGuid + ": doesn't match current NHS number (at " + currentInfo.odsCode + ") which is " + currentInfo.nhsNumber);
-
-							for (NhsNumberInfo info: history) {
-								lines.add("" + patientGuid + ": " + info.date + " NHS number = " + info.nhsNumber);
-							}
+					for (String patientGuid : patientGuids) {
+						List<NhsNumberInfo> history = hmPatientGuidHistory.get(patientGuid);
+						if (history == null) {
+							throw new Exception("No history for patient GUID " + patientGuid);
 						}
 
-						//find out when the NHS number changed
-						NhsNumberInfo infoChanged = null;
-						for (int i=history.size()-1; i>=0; i--) {
-							NhsNumberInfo info = history.get(i);
-							if (info.nhsNumber.equals(nhsNumber)) {
-								infoChanged = history.get(i+1);
-								break;
-							}
-						}
+						//see if it matches the CURRENT NHS number from the Emis data
+						NhsNumberInfo currentInfo = history.get(history.size() - 1);
+						if (currentInfo.nhsNumber.equals(nhsNumber)) {
+							lines.add("" + patientGuid + ": matches CURRENT NHS number (at " + currentInfo.odsCode + "), so SHOULD be in subscriber DB");
+							//TODO - try to check subscriber DB???
 
-						if (infoChanged != null) {
-							lines.add("" + patientGuid + ": NHS number changed on " + infoChanged.date + " (at " + infoChanged.odsCode + ") to " + currentInfo.nhsNumber);
-
-							finding = "NHS number changed";
-							comment = "NHS number changed on " + infoChanged.date + " to " + currentInfo.nhsNumber;
+							finding = "Match";
+							comment = "Matches current NHS number, so should be in subscriber DB";
 
 						} else {
-							lines.add("" + patientGuid + ": ERROR - FAILED TO FIND MATCHING NHS NUMBER IN HISTORY");
+							if (verbose) {
+								lines.add("" + patientGuid + ": doesn't match current NHS number (at " + currentInfo.odsCode + ") which is " + currentInfo.nhsNumber);
 
-							finding = "ERROR";
-							comment = "FAILED TO FIND MATCHING NHS NUMBER IN HISTORY";
+								for (NhsNumberInfo info : history) {
+									lines.add("" + patientGuid + ": " + info.date + " NHS number = " + info.nhsNumber);
+								}
+							}
+
+							//find out when the NHS number changed
+							NhsNumberInfo infoChanged = null;
+							for (int i = history.size() - 1; i >= 0; i--) {
+								NhsNumberInfo info = history.get(i);
+								if (info.nhsNumber.equals(nhsNumber)) {
+									infoChanged = history.get(i + 1);
+									break;
+								}
+							}
+
+							if (infoChanged != null) {
+								lines.add("" + patientGuid + ": NHS number changed on " + infoChanged.date + " (at " + infoChanged.odsCode + ") to " + currentInfo.nhsNumber);
+
+								finding = "NHS number changed";
+								comment = "NHS number changed on " + infoChanged.date + " to " + currentInfo.nhsNumber;
+
+							} else {
+								lines.add("" + patientGuid + ": ERROR - FAILED TO FIND MATCHING NHS NUMBER IN HISTORY");
+
+								finding = "ERROR";
+								comment = "FAILED TO FIND MATCHING NHS NUMBER IN HISTORY";
+							}
 						}
 					}
 				}
