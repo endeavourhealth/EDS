@@ -1049,10 +1049,19 @@ public class Main {
 			List<String> nhsNumbers = Files.readAllLines(inputFile.toPath());
 			LOG.info("Found " + nhsNumbers.size());
 
+			String fileName = FilenameUtils.getBaseName(nhsNumberFile);
+			File outputCsvFile = new File("OUTPUT_" + fileName + ".csv");
+			BufferedWriter bw = new BufferedWriter(new FileWriter(outputCsvFile));
+			CSVPrinter outputPrinter = new CSVPrinter(bw, CSVFormat.DEFAULT.withHeader("nhs_number", "finding", "comment"));
 
 			List<String> lines = new ArrayList<>();
 
 			for (String nhsNumber: nhsNumbers) {
+				LOG.debug("Doing " + nhsNumber);
+
+				String finding = "";
+				String comment = "";
+
 				lines.add(">>>>>>>>> " + nhsNumber + " <<<<<<<<<<");
 
 				Set<String> patientGuids = hmNhsNumberToPatientGuid.get(nhsNumber);
@@ -1065,14 +1074,68 @@ public class Main {
 					SessionImpl edsSession = (SessionImpl)edsEntityManager.getDelegate();
 					Connection edsConnection = edsSession.connection();
 
-					String sql = "select registered_practice_ods_code, patient_id from eds.patient_search ps where nhs_number = '" + nhsNumber + "'";
-					Statement statement = edsConnection.createStatement();
+					String sql = "select local_id, ccg_code"
+					+ " from eds.patient_search ps"
+							+ " inner join admin.service s"
+							+ " on s.id = ps.service_id"
+							+ " and s.organisation_type = 'PR'"
+							+ " inner join eds.patient_search_episode pse"
+							+ " on pse.service_id = ps.service_id"
+							+ " and pse.patient_id = ps.patient_id"
+							+ " and pse.registration_end is null"
+							+ " where nhs_number = ?"
+							+ " order by pse.registration_start desc"
+							+ " limit 1";
+
+					PreparedStatement statement = edsConnection.prepareStatement(sql);
+					statement.setString(1, nhsNumber);
+
+					ResultSet rs = statement.executeQuery(sql);
+
+					if (rs.next()) {
+
+						String odsCode = rs.getString(1);
+						String ccgCode = rs.getString(2);
+
+						OdsOrganisation odsOrg = OdsWebService.lookupOrganisationViaRest(odsCode);
+						OdsOrganisation parentOdsOrg = null;
+						if (!Strings.isNullOrEmpty(ccgCode)) {
+							parentOdsOrg = OdsWebService.lookupOrganisationViaRest(ccgCode);
+						}
+
+						if (odsOrg == null) {
+							lines.add("Registered at " + odsCode + " but failed to find ODS record for " + odsCode);
+
+							finding = "ERROR";
+							comment = "Registered at " + odsCode + " but not found in open ODS";
+
+						} else if (parentOdsOrg == null) {
+							finding = "ERROR";
+							comment = "Registered at " + odsOrg.getOdsCode() + " " + odsOrg.getOrganisationName() + " but no ODS record found for parent " + ccgCode;
+
+						} else {
+							finding = "Out of area";
+							comment = "Patient registered at " + odsOrg.getOdsCode() + " " + odsOrg.getOrganisationName() + " in " + parentOdsOrg.getOdsCode() + " " + parentOdsOrg.getOrganisationName();
+						}
+
+					} else {
+
+						finding = "ERROR";
+						comment = "FAILED TO FIND NHS Number in patient_search or CEG data";
+					}
+
+					statement.close();
+
+					/*String sql = "select registered_practice_ods_code, patient_id from eds.patient_search ps where nhs_number = ?";
+					PreparedStatement statement = edsConnection.prepareStatement(sql);
+					statement.setString(1, nhsNumber);
+
 					ResultSet rs = statement.executeQuery(sql);
 					boolean foundResult = false;
 					while (rs.next()) {
 						foundResult = true;
 						String odsCode = rs.getString(1);
-						String patientId = rs.getString(1);
+						String patientId = rs.getString(2);
 
 						if (Strings.isNullOrEmpty(odsCode)) {
 							lines.add("No registered ODS code for patient " + patientId);
@@ -1100,7 +1163,9 @@ public class Main {
 						lines.add("Didn't find in patient_search table");
 					}
 
-					statement.close();
+					statement.close();*/
+
+
 					edsEntityManager.close();
 
 					continue;
@@ -1122,6 +1187,9 @@ public class Main {
 						lines.add("" + patientGuid + ": matches CURRENT NHS number (at " + currentInfo.odsCode + "), so SHOULD be in subscriber DB");
 						//TODO - try to check subscriber DB???
 
+						finding = "Match";
+						comment = "Matches current NHS number, so should be in subscriber DB";
+
 					} else {
 						if (verbose) {
 							lines.add("" + patientGuid + ": doesn't match current NHS number (at " + currentInfo.odsCode + ") which is " + currentInfo.nhsNumber);
@@ -1142,18 +1210,27 @@ public class Main {
 						}
 
 						if (infoChanged != null) {
-							//TODO - this is wrong
 							lines.add("" + patientGuid + ": NHS number changed on " + infoChanged.date + " (at " + infoChanged.odsCode + ") to " + currentInfo.nhsNumber);
+
+							finding = "NHS number changed";
+							comment = "NHS number changed on " + infoChanged.date + " to " + currentInfo.nhsNumber;
 
 						} else {
 							lines.add("" + patientGuid + ": ERROR - FAILED TO FIND MATCHING NHS NUMBER IN HISTORY");
+
+							finding = "ERROR";
+							comment = "FAILED TO FIND MATCHING NHS NUMBER IN HISTORY";
 						}
 					}
 				}
+
+				outputPrinter.printRecord(nhsNumber, finding, comment);
 			}
 
 			File outputFile = new File("OUTPUT_" + nhsNumberFile);
 			Files.write(outputFile.toPath(), lines, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE);
+
+			outputPrinter.close();
 
 			LOG.info("Finished Investigating Missing Patients from " + nhsNumberFile + " in Protocol " + protocolName);
 		} catch (Throwable t) {
