@@ -15,6 +15,8 @@ import org.endeavourhealth.common.fhir.IdentifierHelper;
 import org.endeavourhealth.common.fhir.ReferenceHelper;
 import org.endeavourhealth.common.fhir.schema.EthnicCategory;
 import org.endeavourhealth.common.fhir.schema.MaritalStatus;
+import org.endeavourhealth.common.ods.OdsOrganisation;
+import org.endeavourhealth.common.ods.OdsWebService;
 import org.endeavourhealth.common.utility.*;
 import org.endeavourhealth.core.configuration.ConfigDeserialiser;
 import org.endeavourhealth.core.configuration.PostMessageToExchangeConfig;
@@ -1057,6 +1059,50 @@ public class Main {
 				if (patientGuids == null
 						|| patientGuids.isEmpty()) {
 					lines.add("No match to any patient GUID");
+
+					//check patient search
+					EntityManager edsEntityManager = ConnectionManager.getEdsEntityManager();
+					SessionImpl edsSession = (SessionImpl)edsEntityManager.getDelegate();
+					Connection edsConnection = edsSession.connection();
+
+					String sql = "select registered_practice_ods_code, patient_id from eds.patient_search ps where nhs_number = '" + nhsNumber + "'";
+					Statement statement = edsConnection.createStatement();
+					ResultSet rs = statement.executeQuery(sql);
+					boolean foundResult = false;
+					while (rs.next()) {
+						foundResult = true;
+						String odsCode = rs.getString(1);
+						String patientId = rs.getString(1);
+
+						if (Strings.isNullOrEmpty(odsCode)) {
+							lines.add("No registered ODS code for patient " + patientId);
+
+						} else {
+							OdsOrganisation odsOrg = OdsWebService.lookupOrganisationViaRest(odsCode);
+							if (odsOrg == null) {
+								lines.add("Failed to find ODS record for " + odsCode);
+
+							} else {
+								for (String parentOdsCode: odsOrg.getParents().keySet()) {
+									OdsOrganisation parentOdsOrg = OdsWebService.lookupOrganisationViaRest(parentOdsCode);
+									if (parentOdsOrg == null) {
+										lines.add("Registered at " + odsOrg.getOrganisationName() + " " + odsOrg.getOdsCode() + " but can't find parent for " + parentOdsCode);
+
+									} else {
+										lines.add("Registered at " + odsOrg.getOrganisationName() + " " + odsOrg.getOdsCode() + " which is in " + parentOdsOrg.getOrganisationName() + " " + parentOdsOrg.getOdsCode());
+									}
+								}
+							}
+						}
+					}
+
+					if (!foundResult) {
+						lines.add("Didn't find in patient_search table");
+					}
+
+					statement.close();
+					edsEntityManager.close();
+
 					continue;
 				}
 
