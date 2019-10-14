@@ -1089,8 +1089,9 @@ public class Main {
 
 					PreparedStatement statement = edsConnection.prepareStatement(sql);
 					statement.setString(1, nhsNumber);
-
+					LOG.debug(sql);
 					ResultSet rs = statement.executeQuery(sql);
+
 
 					if (rs.next()) {
 
