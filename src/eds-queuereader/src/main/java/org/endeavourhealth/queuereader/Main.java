@@ -965,14 +965,22 @@ public class Main {
 				LOG.info("Created NHS number history file");
 			}
 
-			Map<String, List<String>> hmNhsNumberToPatientGuid = new HashMap<>();
+			Map<String, Set<String>> hmNhsNumberToPatientGuid = new HashMap<>();
 			Map<String, List<NhsNumberInfo>> hmPatientGuidHistory = new HashMap<>();
 
 			LOG.info("Reading in NHS number history");
-			List<String> historyLines = Files.readAllLines(nhsNumberHistoryFile.toPath());
+			int total = 0;
+			String currentOdsCode = null;
+			int totalAtOdsCode = 0;
 
-			LOG.info("Parsing NHS number history");
-			for (String historyLine: historyLines) {
+			FileReader fr = new FileReader(nhsNumberHistoryFile);
+			BufferedReader br = new BufferedReader(fr);
+			while (true) {
+				String historyLine = br.readLine();
+				if (historyLine == null) {
+					break;
+				}
+
 				try {
 					String[] toks = historyLine.split("_");
 
@@ -984,19 +992,43 @@ public class Main {
 					info.nhsNumber = toks[4];
 					info.deleted = toks[5];
 
-					List<String> l = hmNhsNumberToPatientGuid.get(info.nhsNumber);
-					if (l == null) {
-						l = new ArrayList<>();
-						hmNhsNumberToPatientGuid.put(info.nhsNumber, l);
+					Set<String> s = hmNhsNumberToPatientGuid.get(info.nhsNumber);
+					if (s == null) {
+						s = new HashSet<>();
+						hmNhsNumberToPatientGuid.put(info.nhsNumber, s);
 					}
-					l.add(info.patientGuid);
+					s.add(info.patientGuid);
 
 					List<NhsNumberInfo> l2 = hmPatientGuidHistory.get(info.patientGuid);
 					if (l2 == null) {
 						l2 = new ArrayList<>();
 						hmPatientGuidHistory.put(info.patientGuid, l2);
 					}
-					l2.add(info);
+					boolean addNew = true;
+					if (!l2.isEmpty()) {
+						//if this is just telling us the same as the previous one, ignore it
+						NhsNumberInfo previous = l2.get(l2.size()-1);
+						if (previous.nhsNumber.equals(info.nhsNumber)) {
+							addNew = false;
+						}
+					}
+
+					if (addNew) {
+						l2.add(info);
+					}
+
+					if (currentOdsCode == null
+							|| !currentOdsCode.equals(info.odsCode)) {
+						currentOdsCode = info.odsCode;
+						totalAtOdsCode = 0;
+						LOG.info("Starting " + currentOdsCode);
+					}
+
+					total ++;
+					totalAtOdsCode ++;
+					if (totalAtOdsCode % 1000 == 0) {
+						LOG.info("Done " + totalAtOdsCode + " at " + currentOdsCode + " (total " + total + ")");
+					}
 
 				} catch (Exception ex) {
 					throw new Exception("Error parsing line [" + historyLine + "]", ex);
@@ -1018,7 +1050,7 @@ public class Main {
 			for (String nhsNumber: nhsNumbers) {
 				lines.add(">>>>>>>>> " + nhsNumber + " <<<<<<<<<<");
 
-				List<String> patientGuids = hmNhsNumberToPatientGuid.get(nhsNumber);
+				Set<String> patientGuids = hmNhsNumberToPatientGuid.get(nhsNumber);
 				if (patientGuids == null
 						|| patientGuids.isEmpty()) {
 					lines.add("No match to any patient GUID");
