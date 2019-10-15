@@ -3,6 +3,7 @@ package org.endeavourhealth.queuereader;
 import OpenPseudonymiser.Crypto;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.google.common.base.Strings;
 import org.apache.commons.csv.*;
 import org.apache.commons.io.FileUtils;
@@ -1211,9 +1212,9 @@ public class Main {
 
 									String salt = null;
 									JsonNode config = ConfigManager.getConfigurationAsJson(subscriberConfigName, "db_subscriber");
-LOG.debug("Config = " + config);
-									JsonNode linked = config.get("linkedDistributors");
+									ArrayNode linked = (ArrayNode)config.get("linkedDistributors");
 LOG.debug("Linked = " + linked);
+LOG.debug("Linked size = " + linked.size());
 									for (int i=0; i>linked.size(); i++) {
 										JsonNode linkedElement = linked.get(i);
 										String name = linkedElement.get("saltKeyName").asText();
