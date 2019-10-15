@@ -1115,13 +1115,13 @@ public class Main {
 
 						} else {
 							finding = "Out of area";
-							comment = "Patient registered at " + odsOrg.getOdsCode() + " " + odsOrg.getOrganisationName() + " in " + parentOdsOrg.getOdsCode() + " " + parentOdsOrg.getOrganisationName();
+							comment = "Patient registered in " + parentOdsOrg.getOdsCode() + " " + parentOdsOrg.getOrganisationName();
 						}
 
 					} else {
 
-						finding = "ERROR";
-						comment = "FAILED TO FIND NHS Number in patient_search or CEG data";
+						finding = "Unknown";
+						comment = "No data for NHS number found (within scope of DDS)";
 					}
 
 					ps.close();
@@ -1212,7 +1212,8 @@ public class Main {
 								lines.add("" + patientGuid + ": NHS number changed on " + infoChanged.date + " (at " + infoChanged.odsCode + ") to " + currentInfo.nhsNumber);
 
 								finding = "NHS number changed";
-								comment = "NHS number changed on " + infoChanged.date + " to " + currentInfo.nhsNumber;
+								comment = "NHS number changed on " + infoChanged.date;
+								//comment = "NHS number changed on " + infoChanged.date + " to " + currentInfo.nhsNumber;
 
 							} else {
 								lines.add("" + patientGuid + ": ERROR - FAILED TO FIND MATCHING NHS NUMBER IN HISTORY");
