@@ -1212,19 +1212,15 @@ public class Main {
 									String salt = null;
 									JsonNode config = ConfigManager.getConfigurationAsJson(subscriberConfigName, "db_subscriber");
 									ArrayNode linked = (ArrayNode)config.get("linkedDistributors");
-LOG.debug("Linked = " + linked);
-LOG.debug("Linked size = " + linked.size());
-									for (int i=0; i>linked.size(); i++) {
+
+									for (int i=0; i<linked.size(); i++) {
 										JsonNode linkedElement = linked.get(i);
-LOG.debug("linkedElement = " + linkedElement);
 										String name = linkedElement.get("saltKeyName").asText();
-LOG.debug("Name = [" + name + "]");
 										if (name.equals("EGH")) {
 											salt = linkedElement.get("salt").asText();
-LOG.debug("salt = [" + salt + "]");
 										}
 									}
-									LOG.debug("Salt = " + salt);
+									//LOG.debug("Salt = " + salt);
 
 									PseudoIdBuilder b = new PseudoIdBuilder(subscriberConfigName, "EGH", salt);
 									b.addValueNhsNumber("NhsNumber", nhsNumber, null);
