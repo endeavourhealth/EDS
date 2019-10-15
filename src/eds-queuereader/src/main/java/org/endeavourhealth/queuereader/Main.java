@@ -122,9 +122,10 @@ public class Main {
 				&& args[0].equalsIgnoreCase("InvestigateMissingPatients")) {
 			String nhsNumberFile = args[1];
 			String protocolName = args[2];
-			String odsCodeRegex = args[3];
-			boolean verbose = Boolean.parseBoolean(args[4]);
-			investigateMissingPatients(nhsNumberFile, protocolName, odsCodeRegex, verbose);
+			String subscriberConfigName = args[3];
+			String odsCodeRegex = args[4];
+			boolean verbose = Boolean.parseBoolean(args[5]);
+			investigateMissingPatients(nhsNumberFile, protocolName, subscriberConfigName, odsCodeRegex, verbose);
 			System.exit(0);
 		}
 
@@ -854,7 +855,7 @@ public class Main {
 		LOG.info("EDS Queue reader running (kill file location " + TransformConfig.instance().getKillFileLocation() + ")");
 	}
 
-	private static void investigateMissingPatients(String nhsNumberFile, String protocolName, String odsCodeRegex, boolean verbose) {
+	private static void investigateMissingPatients(String nhsNumberFile, String protocolName, String subscriberConfigName, String odsCodeRegex, boolean verbose) {
 		LOG.info("Investigating Missing Patients from " + nhsNumberFile + " in Protocol " + protocolName);
 		try {
 
@@ -1186,8 +1187,61 @@ public class Main {
 							lines.add("" + patientGuid + ": matches CURRENT NHS number (at " + currentInfo.odsCode + "), so SHOULD be in subscriber DB");
 							//TODO - try to check subscriber DB???
 
-							finding = "Match";
-							comment = "Matches current NHS number, so should be in subscriber DB";
+							SubscriberResourceMappingDalI subscriberResourceMappingDal = DalProvider.factorySubscriberResourceMappingDal(subscriberConfigName);
+							Long enterpriseId = subscriberResourceMappingDal.findEnterpriseIdOldWay(ResourceType.Patient.toString(), currentInfo.patientUuid);
+							if (enterpriseId == null) {
+								finding = "ERROR";
+								comment = "Matches current NHS number, so should be in subscriber DB but can't find enterprise ID";
+
+							} else {
+
+								List<EnterpriseConnector.ConnectionWrapper> connectionWrappers = EnterpriseConnector.openConnection(subscriberConfigName);
+								EnterpriseConnector.ConnectionWrapper first = connectionWrappers.get(0);
+
+								String sql = "SELECT pseudo_id FROM patient WHERE id = ?";
+
+								Connection enterpriseConnection = first.getConnection();
+								PreparedStatement enterpriseStatement = enterpriseConnection.prepareStatement(sql);
+								enterpriseStatement.setLong(1, enterpriseId.longValue());
+
+								ResultSet rs = enterpriseStatement.executeQuery();
+								if (rs.next()) {
+
+									String pseudoId = rs.getString(1);
+
+									String salt = null;
+									JsonNode config = ConfigManager.getConfigurationAsJson(subscriberConfigName, "db_subscriber");
+									JsonNode linked = config.get("linkedDistributors");
+									for (int i=0; i>linked.size(); i++) {
+										JsonNode linkedElement = linked.get(i);
+										String name = linkedElement.get("saltKeyName").asText();
+										if (name.equals("EGH")) {
+											salt = linkedElement.get("salt").asText();
+										}
+									}
+
+									PseudoIdBuilder b = new PseudoIdBuilder(subscriberConfigName, "EGH", salt);
+									b.addValueNhsNumber("NhsNumber", nhsNumber, null);
+									String calcPseudoId = b.createPseudoId();
+
+									if (pseudoId.equals(calcPseudoId)) {
+										finding = "Match";
+										comment = "Matches current NHS number and is in subscriber DB";
+
+									} else {
+										finding = "Mis-match";
+										comment = "Matches current NHS number and is in subscriber DB but pseudo ID is different";
+									}
+
+								} else {
+
+									finding = "ERROR";
+									comment = "Matches current NHS number and enterprise ID = " + enterpriseId + " but not in DB";
+								}
+
+								enterpriseStatement.close();
+								enterpriseConnection.close();
+							}
 
 						} else {
 							if (verbose) {
