@@ -1217,6 +1217,7 @@ LOG.debug("Linked = " + linked);
 LOG.debug("Linked size = " + linked.size());
 									for (int i=0; i>linked.size(); i++) {
 										JsonNode linkedElement = linked.get(i);
+LOG.debug("linkedElement = " + linkedElement);
 										String name = linkedElement.get("saltKeyName").asText();
 LOG.debug("Name = [" + name + "]");
 										if (name.equals("EGH")) {
