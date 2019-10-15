@@ -1211,12 +1211,16 @@ public class Main {
 
 									String salt = null;
 									JsonNode config = ConfigManager.getConfigurationAsJson(subscriberConfigName, "db_subscriber");
+LOG.debug("Config = " + config);
 									JsonNode linked = config.get("linkedDistributors");
+LOG.debug("Linked = " + linked);
 									for (int i=0; i>linked.size(); i++) {
 										JsonNode linkedElement = linked.get(i);
 										String name = linkedElement.get("saltKeyName").asText();
+LOG.debug("Name = [" + name + "]");
 										if (name.equals("EGH")) {
 											salt = linkedElement.get("salt").asText();
+LOG.debug("salt = [" + salt + "]");
 										}
 									}
 									LOG.debug("Salt = " + salt);
