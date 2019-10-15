@@ -996,6 +996,22 @@ public class Main {
 					info.nhsNumber = toks[4];
 					info.deleted = toks[5];
 
+					//skip the Community services
+					if (info.odsCode.equals("16441")
+							|| info.odsCode.equals("16456")
+							|| info.odsCode.equals("16962")
+							|| info.odsCode.equals("16998")
+							|| info.odsCode.equals("19594")
+							|| info.odsCode.equals("29605")
+							|| info.odsCode.equals("30159")
+							|| info.odsCode.equals("R1H")
+							|| info.odsCode.equals("R1H14")
+							|| info.odsCode.equals("R1H15")
+							|| info.odsCode.equals("RQX")
+							|| info.odsCode.equals("RWKGY")) {
+						continue;
+					}
+
 					if (currentOdsCode == null
 							|| !currentOdsCode.equals(info.odsCode)) {
 						currentOdsCode = info.odsCode;
@@ -1198,7 +1214,11 @@ public class Main {
 								List<EnterpriseConnector.ConnectionWrapper> connectionWrappers = EnterpriseConnector.openConnection(subscriberConfigName);
 								EnterpriseConnector.ConnectionWrapper first = connectionWrappers.get(0);
 
-								String sql = "SELECT pseudo_id FROM patient WHERE id = ?";
+								String sql = "SELECT id, target_skid"
+										+ " FROM patient"
+										+ " LEFT OUTER JOIN link_distributor"
+										+ " ON patient.pseudo_id = link_distributor.source_skid"
+										+ " WHERE patient.id = ?";
 
 								Connection enterpriseConnection = first.getConnection();
 								PreparedStatement enterpriseStatement = enterpriseConnection.prepareStatement(sql);
@@ -1207,7 +1227,8 @@ public class Main {
 								ResultSet rs = enterpriseStatement.executeQuery();
 								if (rs.next()) {
 
-									String pseudoId = rs.getString(1);
+									long id = rs.getLong(1);
+									String pseudoId = rs.getString(2);
 
 									String salt = null;
 									JsonNode config = ConfigManager.getConfigurationAsJson(subscriberConfigName, "db_subscriber");
