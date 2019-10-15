@@ -1090,7 +1090,7 @@ public class Main {
 					PreparedStatement ps = edsConnection.prepareStatement(sql);
 					ps.setString(1, nhsNumber);
 
-					LOG.debug(sql);
+					//LOG.debug(sql);
 					ResultSet rs = ps.executeQuery();
 					if (rs.next()) {
 
