@@ -1219,6 +1219,7 @@ public class Main {
 											salt = linkedElement.get("salt").asText();
 										}
 									}
+									LOG.debug("Salt = " + salt);
 
 									PseudoIdBuilder b = new PseudoIdBuilder(subscriberConfigName, "EGH", salt);
 									b.addValueNhsNumber("NhsNumber", nhsNumber, null);
