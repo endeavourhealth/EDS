@@ -1156,6 +1156,9 @@ public class Main {
 							throw new Exception("No history for patient GUID " + patientGuid);
 						}
 
+						//some very old data was received into AWS out of order (e.g. F84081), so need to sort them
+						history.sort((o1, o2) -> o1.date.compareTo(o2.date));
+
 						//see if it matches the CURRENT NHS number from the Emis data
 						NhsNumberInfo currentInfo = history.get(history.size() - 1);
 						if (currentInfo.nhsNumber.equals(nhsNumber)) {
