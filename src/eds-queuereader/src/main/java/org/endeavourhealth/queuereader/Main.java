@@ -124,8 +124,7 @@ public class Main {
 			String protocolName = args[2];
 			String subscriberConfigName = args[3];
 			String odsCodeRegex = args[4];
-			boolean verbose = Boolean.parseBoolean(args[5]);
-			investigateMissingPatients(nhsNumberFile, protocolName, subscriberConfigName, odsCodeRegex, verbose);
+			investigateMissingPatients(nhsNumberFile, protocolName, subscriberConfigName, odsCodeRegex);
 			System.exit(0);
 		}
 
@@ -855,7 +854,7 @@ public class Main {
 		LOG.info("EDS Queue reader running (kill file location " + TransformConfig.instance().getKillFileLocation() + ")");
 	}
 
-	private static void investigateMissingPatients(String nhsNumberFile, String protocolName, String subscriberConfigName, String odsCodeRegex, boolean verbose) {
+	private static void investigateMissingPatients(String nhsNumberFile, String protocolName, String subscriberConfigName, String odsCodeRegex) {
 		LOG.info("Investigating Missing Patients from " + nhsNumberFile + " in Protocol " + protocolName);
 		try {
 
@@ -1058,6 +1057,18 @@ public class Main {
 			}
 			LOG.info("Read in NHS number history");
 
+			String salt = null;
+			JsonNode config = ConfigManager.getConfigurationAsJson(subscriberConfigName, "db_subscriber");
+			ArrayNode linked = (ArrayNode)config.get("linkedDistributors");
+
+			for (int i=0; i<linked.size(); i++) {
+				JsonNode linkedElement = linked.get(i);
+				String name = linkedElement.get("saltKeyName").asText();
+				if (name.equals("EGH")) {
+					salt = linkedElement.get("salt").asText();
+				}
+			}
+
 			//go through file and check
 			File inputFile = new File(nhsNumberFile);
 			if (!inputFile.exists()) {
@@ -1069,22 +1080,159 @@ public class Main {
 			String fileName = FilenameUtils.getBaseName(nhsNumberFile);
 			File outputCsvFile = new File("OUTPUT_" + fileName + ".csv");
 			BufferedWriter bw = new BufferedWriter(new FileWriter(outputCsvFile));
-			CSVPrinter outputPrinter = new CSVPrinter(bw, CSVFormat.DEFAULT.withHeader("nhs_number", "finding", "comment"));
+			CSVPrinter outputPrinter = new CSVPrinter(bw, CSVFormat.DEFAULT.withHeader("nhs_number", "pseudo_id", "finding", "comment"));
 
 			List<String> lines = new ArrayList<>();
 
 			for (String nhsNumber: nhsNumbers) {
 				LOG.debug("Doing " + nhsNumber);
 
-				String finding = "";
-				String comment = "";
+				PseudoIdBuilder b = new PseudoIdBuilder(subscriberConfigName, "EGH", salt);
+				b.addValueNhsNumber("NhsNumber", nhsNumber, null);
+				String calcPseudoId = b.createPseudoId();
+
+				String finding = null;
+				String comment = null;
 
 				lines.add(">>>>>>>>> " + nhsNumber + " <<<<<<<<<<");
 
 				Set<String> patientGuids = hmNhsNumberToPatientGuid.get(nhsNumber);
-				if (patientGuids == null
-						|| patientGuids.isEmpty()) {
-					lines.add("No match to any patient GUID");
+				if (patientGuids != null
+						&& !patientGuids.isEmpty()) {
+
+					lines.add("Matches " + patientGuids.size() + " patient GUIDs: " + patientGuids);
+
+					for (String patientGuid : patientGuids) {
+						List<NhsNumberInfo> history = hmPatientGuidHistory.get(patientGuid);
+						if (history == null) {
+							throw new Exception("No history for patient GUID " + patientGuid);
+						}
+
+						//some very old data was received into AWS out of order (e.g. F84081), so need to sort them
+						history.sort((o1, o2) -> o1.date.compareTo(o2.date));
+
+						//see if it matches the CURRENT NHS number from the Emis data
+						NhsNumberInfo currentInfo = history.get(history.size() - 1);
+						if (currentInfo.nhsNumber.equals(nhsNumber)) {
+							lines.add("" + patientGuid + ": matches CURRENT NHS number (at " + currentInfo.odsCode + "), so SHOULD be in subscriber DB");
+
+							SubscriberResourceMappingDalI subscriberResourceMappingDal = DalProvider.factorySubscriberResourceMappingDal(subscriberConfigName);
+							Long enterpriseId = subscriberResourceMappingDal.findEnterpriseIdOldWay(ResourceType.Patient.toString(), currentInfo.patientUuid);
+							if (enterpriseId == null) {
+
+								String startDateStr = TransformConfig.instance().getEmisStartDate(currentInfo.odsCode);
+								Date startDate = new SimpleDateFormat("dd/MM/yyyy").parse(startDateStr);
+								lines.add("Org start date " + startDateStr);
+
+								Date receivedDate = new SimpleDateFormat("yyyyMMdd").parse(currentInfo.date);
+
+								//if only received before the start date, then we won't have processed it
+								if (receivedDate.before(startDate)) {
+									lines.add("Patient data received before org start date so won't have been processed");
+									//leave the finding null so we check patient_search
+
+								} else {
+
+									finding = "ERROR";
+									comment = "Matches current NHS number, so should be in subscriber DB but can't find enterprise ID";
+
+									lines.add("" + patientGuid + ": no enterprise ID found");
+									for (NhsNumberInfo info : history) {
+										lines.add("" + patientGuid + ": " + info);
+									}
+								}
+
+							} else {
+
+								List<EnterpriseConnector.ConnectionWrapper> connectionWrappers = EnterpriseConnector.openConnection(subscriberConfigName);
+								EnterpriseConnector.ConnectionWrapper first = connectionWrappers.get(0);
+
+								String sql = "SELECT id, target_skid"
+										+ " FROM patient"
+										+ " LEFT OUTER JOIN link_distributor"
+										+ " ON patient.pseudo_id = link_distributor.source_skid"
+										+ " WHERE patient.id = ?";
+
+								Connection enterpriseConnection = first.getConnection();
+								PreparedStatement enterpriseStatement = enterpriseConnection.prepareStatement(sql);
+								enterpriseStatement.setLong(1, enterpriseId.longValue());
+
+								ResultSet rs = enterpriseStatement.executeQuery();
+								if (rs.next()) {
+
+									long id = rs.getLong(1);
+									String pseudoId = rs.getString(2);
+
+									lines.add("" + patientGuid + ": enterprise ID " + id + " with pseudo ID " + pseudoId);
+
+
+									//LOG.debug("Salt = " + salt);
+
+
+
+									lines.add("" + patientGuid + ": expected pseudo ID " + calcPseudoId);
+
+									if (pseudoId.equals(calcPseudoId)) {
+										finding = "Match";
+										comment = "Matches current NHS number and is in subscriber DB";
+
+										lines.add("" + patientGuid + ": found in subscriber DB with right pseudo ID");
+
+									} else {
+										finding = "Mis-match";
+										comment = "Matches current NHS number and is in subscriber DB but pseudo ID is different";
+
+										lines.add("" + patientGuid + ": found in subscriber DB but with wrong pseudo ID");
+									}
+
+								} else {
+
+									finding = "ERROR";
+									comment = "Matches current NHS number and enterprise ID = " + enterpriseId + " but not in DB";
+								}
+
+								enterpriseStatement.close();
+								enterpriseConnection.close();
+							}
+
+						} else {
+
+							lines.add("" + patientGuid + ": doesn't match current NHS number (at " + currentInfo.odsCode + ") which is " + currentInfo.nhsNumber);
+
+							for (NhsNumberInfo info : history) {
+								lines.add("" + patientGuid + ": " + info);
+							}
+
+							//find out when the NHS number changed
+							NhsNumberInfo infoChanged = null;
+							for (int i = history.size() - 1; i >= 0; i--) {
+								NhsNumberInfo info = history.get(i);
+								if (info.nhsNumber.equals(nhsNumber)) {
+									infoChanged = history.get(i + 1);
+									break;
+								}
+							}
+
+							if (infoChanged != null) {
+								lines.add("" + patientGuid + ": NHS number changed on " + infoChanged.date + " (at " + infoChanged.odsCode + ") to " + currentInfo.nhsNumber);
+
+								finding = "NHS number changed";
+								comment = "NHS number changed on " + infoChanged.date;
+								//comment = "NHS number changed on " + infoChanged.date + " to " + currentInfo.nhsNumber;
+
+							} else {
+								lines.add("" + patientGuid + ": ERROR - FAILED TO FIND MATCHING NHS NUMBER IN HISTORY");
+
+								finding = "ERROR";
+								comment = "FAILED TO FIND MATCHING NHS NUMBER IN HISTORY";
+							}
+						}
+					}
+				}
+
+				//if we've not found anything above, check patient_search for the NHS number to see if we can work out where they are
+				if (finding == null) {
+					lines.add("Checking patient_search");
 
 					//check patient search
 					EntityManager edsEntityManager = ConnectionManager.getEdsEntityManager();
@@ -1092,7 +1240,7 @@ public class Main {
 					Connection edsConnection = edsSession.connection();
 
 					String sql = "select local_id, ccg_code"
-					+ " from eds.patient_search ps"
+							+ " from eds.patient_search ps"
 							+ " inner join admin.service s"
 							+ " on s.id = ps.service_id"
 							+ " and s.organisation_type = 'PR'"
@@ -1144,142 +1292,9 @@ public class Main {
 					ps.close();
 					edsEntityManager.close();
 
-				} else {
-
-					if (verbose) {
-						lines.add("Matches " + patientGuids.size() + " patient GUIDs: " + patientGuids);
-					}
-
-					for (String patientGuid : patientGuids) {
-						List<NhsNumberInfo> history = hmPatientGuidHistory.get(patientGuid);
-						if (history == null) {
-							throw new Exception("No history for patient GUID " + patientGuid);
-						}
-
-						//some very old data was received into AWS out of order (e.g. F84081), so need to sort them
-						history.sort((o1, o2) -> o1.date.compareTo(o2.date));
-
-						//see if it matches the CURRENT NHS number from the Emis data
-						NhsNumberInfo currentInfo = history.get(history.size() - 1);
-						if (currentInfo.nhsNumber.equals(nhsNumber)) {
-							lines.add("" + patientGuid + ": matches CURRENT NHS number (at " + currentInfo.odsCode + "), so SHOULD be in subscriber DB");
-
-							SubscriberResourceMappingDalI subscriberResourceMappingDal = DalProvider.factorySubscriberResourceMappingDal(subscriberConfigName);
-							Long enterpriseId = subscriberResourceMappingDal.findEnterpriseIdOldWay(ResourceType.Patient.toString(), currentInfo.patientUuid);
-							if (enterpriseId == null) {
-
-								//see if patient is deleted
-
-								finding = "ERROR";
-								comment = "Matches current NHS number, so should be in subscriber DB but can't find enterprise ID";
-
-								lines.add("" + patientGuid + ": no enterprise ID found");
-								for (NhsNumberInfo info : history) {
-									lines.add("" + patientGuid + ": " + info);
-								}
-
-							} else {
-
-								List<EnterpriseConnector.ConnectionWrapper> connectionWrappers = EnterpriseConnector.openConnection(subscriberConfigName);
-								EnterpriseConnector.ConnectionWrapper first = connectionWrappers.get(0);
-
-								String sql = "SELECT id, target_skid"
-										+ " FROM patient"
-										+ " LEFT OUTER JOIN link_distributor"
-										+ " ON patient.pseudo_id = link_distributor.source_skid"
-										+ " WHERE patient.id = ?";
-
-								Connection enterpriseConnection = first.getConnection();
-								PreparedStatement enterpriseStatement = enterpriseConnection.prepareStatement(sql);
-								enterpriseStatement.setLong(1, enterpriseId.longValue());
-
-								ResultSet rs = enterpriseStatement.executeQuery();
-								if (rs.next()) {
-
-									long id = rs.getLong(1);
-									String pseudoId = rs.getString(2);
-
-									lines.add("" + patientGuid + ": enterprise ID " + id + " with pseudo ID " + pseudoId);
-
-									String salt = null;
-									JsonNode config = ConfigManager.getConfigurationAsJson(subscriberConfigName, "db_subscriber");
-									ArrayNode linked = (ArrayNode)config.get("linkedDistributors");
-
-									for (int i=0; i<linked.size(); i++) {
-										JsonNode linkedElement = linked.get(i);
-										String name = linkedElement.get("saltKeyName").asText();
-										if (name.equals("EGH")) {
-											salt = linkedElement.get("salt").asText();
-										}
-									}
-									//LOG.debug("Salt = " + salt);
-
-									PseudoIdBuilder b = new PseudoIdBuilder(subscriberConfigName, "EGH", salt);
-									b.addValueNhsNumber("NhsNumber", nhsNumber, null);
-									String calcPseudoId = b.createPseudoId();
-
-									lines.add("" + patientGuid + ": expected pseudo ID " + calcPseudoId);
-
-									if (pseudoId.equals(calcPseudoId)) {
-										finding = "Match";
-										comment = "Matches current NHS number and is in subscriber DB";
-
-										lines.add("" + patientGuid + ": found in subscriber DB with right pseudo ID");
-
-									} else {
-										finding = "Mis-match";
-										comment = "Matches current NHS number and is in subscriber DB but pseudo ID is different";
-
-										lines.add("" + patientGuid + ": found in subscriber DB but with wrong pseudo ID");
-									}
-
-								} else {
-
-									finding = "ERROR";
-									comment = "Matches current NHS number and enterprise ID = " + enterpriseId + " but not in DB";
-								}
-
-								enterpriseStatement.close();
-								enterpriseConnection.close();
-							}
-
-						} else {
-							if (verbose) {
-								lines.add("" + patientGuid + ": doesn't match current NHS number (at " + currentInfo.odsCode + ") which is " + currentInfo.nhsNumber);
-
-								for (NhsNumberInfo info : history) {
-									lines.add("" + patientGuid + ": " + info);
-								}
-							}
-
-							//find out when the NHS number changed
-							NhsNumberInfo infoChanged = null;
-							for (int i = history.size() - 1; i >= 0; i--) {
-								NhsNumberInfo info = history.get(i);
-								if (info.nhsNumber.equals(nhsNumber)) {
-									infoChanged = history.get(i + 1);
-									break;
-								}
-							}
-
-							if (infoChanged != null) {
-								lines.add("" + patientGuid + ": NHS number changed on " + infoChanged.date + " (at " + infoChanged.odsCode + ") to " + currentInfo.nhsNumber);
-
-								finding = "NHS number changed";
-								comment = "NHS number changed on " + infoChanged.date;
-								//comment = "NHS number changed on " + infoChanged.date + " to " + currentInfo.nhsNumber;
-
-							} else {
-								lines.add("" + patientGuid + ": ERROR - FAILED TO FIND MATCHING NHS NUMBER IN HISTORY");
-
-								finding = "ERROR";
-								comment = "FAILED TO FIND MATCHING NHS NUMBER IN HISTORY";
-							}
-						}
-					}
 				}
 
-				outputPrinter.printRecord(nhsNumber, finding, comment);
+				outputPrinter.printRecord(nhsNumber, calcPseudoId, finding, comment);
 			}
 
 			File outputFile = new File("OUTPUT_" + nhsNumberFile);
