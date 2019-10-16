@@ -967,6 +967,7 @@ public class Main {
 
 					Patient currentFhir = (Patient) current.getResource();
 					String currentNhsNumber = IdentifierHelper.findNhsNumber(currentFhir);
+					lines.add("Current NHS number = " + currentNhsNumber);
 					if (!currentNhsNumber.equals(nhsNumber)) {
 
 						boolean nhsNumberChanged = false;
@@ -978,13 +979,15 @@ public class Main {
 							}
 							Patient past = (Patient) current.getResource();
 							String pastNhsNumber = IdentifierHelper.findNhsNumber(past);
+							lines.add("History " + i + " has NHS number " + pastNhsNumber);
+
 							if (pastNhsNumber.equals(nhsNumber)) {
 								ResourceWrapper wrapperChanged = history.get(i-1);
 								String changedNhsNumber = IdentifierHelper.findNhsNumber(past);
-								lines.add("NHS number changed from " + nhsNumber + " to " + changedNhsNumber + " on " + sdf.format(wrapper.getCreatedAt()));
+								lines.add("NHS number changed from " + nhsNumber + " to " + changedNhsNumber + " on " + sdf.format(wrapperChanged.getCreatedAt()));
 
 								finding = "NHS number changed";
-								comment = "NHS number changed on " + sdf.format(wrapper.getCreatedAt());
+								comment = "NHS number changed on " + sdf.format(wrapperChanged.getCreatedAt());
 								nhsNumberChanged = true;
 								break;
 							}
