@@ -981,7 +981,9 @@ public class Main {
 							String pastNhsNumber = IdentifierHelper.findNhsNumber(past);
 							lines.add("History " + i + " has NHS number " + pastNhsNumber);
 
-							if (pastNhsNumber.equals(nhsNumber)) {
+							if (pastNhsNumber != null
+								&& pastNhsNumber.equals(nhsNumber)) {
+
 								ResourceWrapper wrapperChanged = history.get(i-1);
 								String changedNhsNumber = IdentifierHelper.findNhsNumber(past);
 								lines.add("NHS number changed from " + nhsNumber + " to " + changedNhsNumber + " on " + sdf.format(wrapperChanged.getCreatedAt()));
