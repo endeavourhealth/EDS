@@ -926,9 +926,9 @@ public class Main {
 
 					PatientInfo info = new PatientInfo();
 					info.patientUuid = rs.getString(1);
-					info.serviceUuid = rs.getString(1);
-					info.odsCode = rs.getString(1);
-					info.ccgCode = rs.getString(1);
+					info.serviceUuid = rs.getString(2);
+					info.odsCode = rs.getString(3);
+					info.ccgCode = rs.getString(4);
 					patientInfos.add(info);
 				}
 
