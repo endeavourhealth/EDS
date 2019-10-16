@@ -1142,47 +1142,6 @@ public class Main {
 					}
 
 					ps.close();
-
-					/*String sql = "select registered_practice_ods_code, patient_id from eds.patient_search ps where nhs_number = ?";
-					PreparedStatement statement = edsConnection.prepareStatement(sql);
-					statement.setString(1, nhsNumber);
-
-					ResultSet rs = statement.executeQuery(sql);
-					boolean foundResult = false;
-					while (rs.next()) {
-						foundResult = true;
-						String odsCode = rs.getString(1);
-						String patientId = rs.getString(2);
-
-						if (Strings.isNullOrEmpty(odsCode)) {
-							lines.add("No registered ODS code for patient " + patientId);
-
-						} else {
-							OdsOrganisation odsOrg = OdsWebService.lookupOrganisationViaRest(odsCode);
-							if (odsOrg == null) {
-								lines.add("Failed to find ODS record for " + odsCode);
-
-							} else {
-								for (String parentOdsCode: odsOrg.getParents().keySet()) {
-									OdsOrganisation parentOdsOrg = OdsWebService.lookupOrganisationViaRest(parentOdsCode);
-									if (parentOdsOrg == null) {
-										lines.add("Registered at " + odsOrg.getOrganisationName() + " " + odsOrg.getOdsCode() + " but can't find parent for " + parentOdsCode);
-
-									} else {
-										lines.add("Registered at " + odsOrg.getOrganisationName() + " " + odsOrg.getOdsCode() + " which is in " + parentOdsOrg.getOrganisationName() + " " + parentOdsOrg.getOdsCode());
-									}
-								}
-							}
-						}
-					}
-
-					if (!foundResult) {
-						lines.add("Didn't find in patient_search table");
-					}
-
-					statement.close();*/
-
-
 					edsEntityManager.close();
 
 				} else {
@@ -1201,13 +1160,20 @@ public class Main {
 						NhsNumberInfo currentInfo = history.get(history.size() - 1);
 						if (currentInfo.nhsNumber.equals(nhsNumber)) {
 							lines.add("" + patientGuid + ": matches CURRENT NHS number (at " + currentInfo.odsCode + "), so SHOULD be in subscriber DB");
-							//TODO - try to check subscriber DB???
 
 							SubscriberResourceMappingDalI subscriberResourceMappingDal = DalProvider.factorySubscriberResourceMappingDal(subscriberConfigName);
 							Long enterpriseId = subscriberResourceMappingDal.findEnterpriseIdOldWay(ResourceType.Patient.toString(), currentInfo.patientUuid);
 							if (enterpriseId == null) {
+
+								//see if patient is deleted
+
 								finding = "ERROR";
 								comment = "Matches current NHS number, so should be in subscriber DB but can't find enterprise ID";
+
+								lines.add("" + patientGuid + ": no enterprise ID found");
+								for (NhsNumberInfo info : history) {
+									lines.add("" + patientGuid + ": " + info);
+								}
 
 							} else {
 
@@ -1230,6 +1196,8 @@ public class Main {
 									long id = rs.getLong(1);
 									String pseudoId = rs.getString(2);
 
+									lines.add("" + patientGuid + ": enterprise ID " + id + " with pseudo ID " + pseudoId);
+
 									String salt = null;
 									JsonNode config = ConfigManager.getConfigurationAsJson(subscriberConfigName, "db_subscriber");
 									ArrayNode linked = (ArrayNode)config.get("linkedDistributors");
@@ -1247,13 +1215,19 @@ public class Main {
 									b.addValueNhsNumber("NhsNumber", nhsNumber, null);
 									String calcPseudoId = b.createPseudoId();
 
+									lines.add("" + patientGuid + ": expected pseudo ID " + calcPseudoId);
+
 									if (pseudoId.equals(calcPseudoId)) {
 										finding = "Match";
 										comment = "Matches current NHS number and is in subscriber DB";
 
+										lines.add("" + patientGuid + ": found in subscriber DB with right pseudo ID");
+
 									} else {
 										finding = "Mis-match";
 										comment = "Matches current NHS number and is in subscriber DB but pseudo ID is different";
+
+										lines.add("" + patientGuid + ": found in subscriber DB but with wrong pseudo ID");
 									}
 
 								} else {
@@ -1271,7 +1245,7 @@ public class Main {
 								lines.add("" + patientGuid + ": doesn't match current NHS number (at " + currentInfo.odsCode + ") which is " + currentInfo.nhsNumber);
 
 								for (NhsNumberInfo info : history) {
-									lines.add("" + patientGuid + ": " + info.date + " NHS number = " + info.nhsNumber);
+									lines.add("" + patientGuid + ": " + info);
 								}
 							}
 
@@ -1323,6 +1297,11 @@ public class Main {
 		String patientUuid;
 		String nhsNumber;
 		String deleted;
+
+		@Override
+		public String toString() {
+			return "ods " + odsCode + ", date " + date + ", patientGuid " + patientGuid + ", patientUUID " + patientUuid + ", NHS " + nhsNumber + ", deleted " + deleted;
+		}
 	}
 
 	private static void fixMedicationStatementIsActive(String odsCodeRegex) {
