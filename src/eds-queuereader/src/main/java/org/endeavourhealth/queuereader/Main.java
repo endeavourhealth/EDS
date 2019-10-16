@@ -18,17 +18,16 @@ import org.endeavourhealth.common.fhir.schema.EthnicCategory;
 import org.endeavourhealth.common.fhir.schema.MaritalStatus;
 import org.endeavourhealth.common.ods.OdsOrganisation;
 import org.endeavourhealth.common.ods.OdsWebService;
-import org.endeavourhealth.common.utility.*;
+import org.endeavourhealth.common.utility.FileHelper;
+import org.endeavourhealth.common.utility.MetricsHelper;
+import org.endeavourhealth.common.utility.ThreadPool;
+import org.endeavourhealth.common.utility.ThreadPoolError;
 import org.endeavourhealth.core.configuration.ConfigDeserialiser;
 import org.endeavourhealth.core.configuration.PostMessageToExchangeConfig;
 import org.endeavourhealth.core.configuration.QueueReaderConfiguration;
 import org.endeavourhealth.core.database.dal.DalProvider;
-import org.endeavourhealth.core.database.dal.admin.LibraryDalI;
 import org.endeavourhealth.core.database.dal.admin.LibraryRepositoryHelper;
 import org.endeavourhealth.core.database.dal.admin.ServiceDalI;
-import org.endeavourhealth.core.database.dal.admin.models.ActiveItem;
-import org.endeavourhealth.core.database.dal.admin.models.DefinitionItemType;
-import org.endeavourhealth.core.database.dal.admin.models.Item;
 import org.endeavourhealth.core.database.dal.admin.models.Service;
 import org.endeavourhealth.core.database.dal.audit.ExchangeBatchDalI;
 import org.endeavourhealth.core.database.dal.audit.ExchangeDalI;
@@ -854,6 +853,311 @@ public class Main {
 		LOG.info("EDS Queue reader running (kill file location " + TransformConfig.instance().getKillFileLocation() + ")");
 	}
 
+	private static void investigateMissingPatients(String nhsNumberFile, String protocolName, String subscriberConfigName, String ccgCodeRegex) {
+		LOG.info("Investigating Missing Patients from " + nhsNumberFile + " in Protocol " + protocolName);
+		try {
+
+			ServiceDalI serviceDal = DalProvider.factoryServiceDal();
+			ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
+			SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
+
+			String salt = null;
+			JsonNode config = ConfigManager.getConfigurationAsJson(subscriberConfigName, "db_subscriber");
+			ArrayNode linked = (ArrayNode)config.get("linkedDistributors");
+
+			for (int i=0; i<linked.size(); i++) {
+				JsonNode linkedElement = linked.get(i);
+				String name = linkedElement.get("saltKeyName").asText();
+				if (name.equals("EGH")) {
+					salt = linkedElement.get("salt").asText();
+				}
+			}
+
+			//go through file and check
+			File inputFile = new File(nhsNumberFile);
+			if (!inputFile.exists()) {
+				throw new Exception(nhsNumberFile + " doesn't exist");
+			}
+			List<String> nhsNumbers = Files.readAllLines(inputFile.toPath());
+			LOG.info("Found " + nhsNumbers.size());
+
+			String fileName = FilenameUtils.getBaseName(nhsNumberFile);
+			File outputCsvFile = new File("OUTPUT_" + fileName + ".csv");
+			BufferedWriter bw = new BufferedWriter(new FileWriter(outputCsvFile));
+			CSVPrinter outputPrinter = new CSVPrinter(bw, CSVFormat.DEFAULT.withHeader("nhs_number", "pseudo_id", "finding", "comment"));
+
+			File outputTextFile = new File("OUTPUT_" + nhsNumberFile);
+
+			List<String> lines = new ArrayList<>();
+
+			for (String nhsNumber: nhsNumbers) {
+				LOG.debug("Doing " + nhsNumber);
+
+				PseudoIdBuilder b = new PseudoIdBuilder(subscriberConfigName, "EGH", salt);
+				b.addValueNhsNumber("NhsNumber", nhsNumber, null);
+				String calcPseudoId = b.createPseudoId();
+
+				String finding = null;
+				String comment = null;
+
+				lines.add(">>>>>>>>> " + nhsNumber + " <<<<<<<<<<");
+
+				EntityManager edsEntityManager = ConnectionManager.getEdsEntityManager();
+				SessionImpl edsSession = (SessionImpl)edsEntityManager.getDelegate();
+				Connection edsConnection = edsSession.connection();
+
+				String sql = "select patient_id, service_id, local_id, ccg_code" +
+						" from eds.patient_link_person p" +
+						" inner join eds.patient_link_history h" +
+						" on h.new_person_id = p.person_id" +
+						" inner join admin.service s" +
+						" on s.id = service_id" +
+						" where nhs_number = ?" +
+						" and organisation_type = 'PR'";
+
+				PreparedStatement ps = edsConnection.prepareStatement(sql);
+				ps.setString(1, nhsNumber);
+
+				List<PatientInfo> patientInfos = new ArrayList<>();
+
+				//LOG.debug(sql);
+				ResultSet rs = ps.executeQuery();
+				while (rs.next()) {
+
+					PatientInfo info = new PatientInfo();
+					info.patientUuid = rs.getString(1);
+					info.serviceUuid = rs.getString(1);
+					info.odsCode = rs.getString(1);
+					info.ccgCode = rs.getString(1);
+					patientInfos.add(info);
+				}
+
+				ps.close();
+				edsEntityManager.close();
+
+				//check to see if the patient does exist in the CCG but has been deleted or had their NHS number changed
+				for (PatientInfo info: patientInfos) {
+
+					lines.add("Found " + info);
+
+					if (!Pattern.matches(ccgCodeRegex, info.ccgCode)) {
+						lines.add("Ignoring as out of CCG area");
+						continue;
+					}
+
+					ResourceDalI resourceDal = DalProvider.factoryResourceDal();
+					List<ResourceWrapper> history = resourceDal.getResourceHistory(UUID.fromString(info.serviceUuid), ResourceType.Patient.toString(), UUID.fromString(info.patientUuid));
+					if (history.isEmpty()) {
+						lines.add("No history found for patient");
+
+						finding = "ERROR";
+						comment = "Couldn't find FHIR resource history";
+
+						continue;
+					}
+
+					ResourceWrapper current = history.get(0);
+					if (current.isDeleted()) {
+						lines.add("Patient resource is deleted");
+
+						finding = "Deleted";
+						comment = "Patient record has been deleted from DDS";
+						continue;
+					}
+
+					Patient currentFhir = (Patient) current.getResource();
+					String currentNhsNumber = IdentifierHelper.findNhsNumber(currentFhir);
+					if (!currentNhsNumber.equals(nhsNumber)) {
+
+						boolean nhsNumberChanged = false;
+
+						for (int i=1; i<history.size(); i++) {
+							ResourceWrapper wrapper = history.get(i);
+							if (wrapper.isDeleted()) {
+								continue;
+							}
+							Patient past = (Patient) current.getResource();
+							String pastNhsNumber = IdentifierHelper.findNhsNumber(past);
+							if (pastNhsNumber.equals(nhsNumber)) {
+								ResourceWrapper wrapperChanged = history.get(i-1);
+								String changedNhsNumber = IdentifierHelper.findNhsNumber(past);
+								lines.add("NHS number changed from " + nhsNumber + " to " + changedNhsNumber + " on " + sdf.format(wrapper.getCreatedAt()));
+
+								finding = "NHS number changed";
+								comment = "NHS number changed on " + sdf.format(wrapper.getCreatedAt());
+								nhsNumberChanged = true;
+								break;
+							}
+						}
+
+						if (nhsNumberChanged) {
+							continue;
+						}
+					}
+
+					//if NHS number didn't change, then it SHOULD match the existing DB
+
+					SubscriberResourceMappingDalI subscriberResourceMappingDal = DalProvider.factorySubscriberResourceMappingDal(subscriberConfigName);
+					Long enterpriseId = subscriberResourceMappingDal.findEnterpriseIdOldWay(ResourceType.Patient.toString(), info.patientUuid);
+					if (enterpriseId == null) {
+						finding = "ERROR";
+						comment = "Matches current NHS number, so should be in subscriber DB but can't find enterprise ID";
+
+						lines.add("" + info.patientUuid + ": no enterprise ID found");
+						continue;
+					}
+
+					List<EnterpriseConnector.ConnectionWrapper> connectionWrappers = EnterpriseConnector.openConnection(subscriberConfigName);
+					EnterpriseConnector.ConnectionWrapper first = connectionWrappers.get(0);
+
+					sql = "SELECT id, target_skid"
+							+ " FROM patient"
+							+ " LEFT OUTER JOIN link_distributor"
+							+ " ON patient.pseudo_id = link_distributor.source_skid"
+							+ " WHERE patient.id = ?";
+
+					Connection enterpriseConnection = first.getConnection();
+					PreparedStatement enterpriseStatement = enterpriseConnection.prepareStatement(sql);
+					enterpriseStatement.setLong(1, enterpriseId.longValue());
+
+					rs = enterpriseStatement.executeQuery();
+					if (rs.next()) {
+
+						long id = rs.getLong(1);
+						String pseudoId = rs.getString(2);
+
+						lines.add("" + info.patientUuid + ": enterprise ID " + id + " with pseudo ID " + pseudoId);
+						lines.add("" + info.patientUuid + ": expected pseudo ID " + calcPseudoId);
+
+						if (pseudoId.equals(calcPseudoId)) {
+							finding = "Match";
+							comment = "Matches current NHS number and is in subscriber DB";
+
+							lines.add("" + info.patientUuid + ": found in subscriber DB with right pseudo ID");
+
+						} else {
+							finding = "Mis-match";
+							comment = "Matches current NHS number and is in subscriber DB but pseudo ID is different";
+
+							lines.add("" + info.patientUuid + ": found in subscriber DB but with wrong pseudo ID");
+						}
+
+					} else {
+
+						finding = "ERROR";
+						comment = "Matches current NHS number and enterprise ID = " + enterpriseId + " but not in DB";
+					}
+
+					enterpriseStatement.close();
+					enterpriseConnection.close();
+
+					continue;
+				}
+
+				//if we've not found anything above, check patient_search for the NHS number to see if we can work out where they are
+				if (finding == null) {
+					lines.add("Checking patient_search");
+
+					//check patient search
+					edsEntityManager = ConnectionManager.getEdsEntityManager();
+					edsSession = (SessionImpl)edsEntityManager.getDelegate();
+					edsConnection = edsSession.connection();
+
+					sql = "select local_id, ccg_code"
+							+ " from eds.patient_search ps"
+							+ " inner join admin.service s"
+							+ " on s.id = ps.service_id"
+							+ " and s.organisation_type = 'PR'"
+							+ " inner join eds.patient_search_episode pse"
+							+ " on pse.service_id = ps.service_id"
+							+ " and pse.patient_id = ps.patient_id"
+							+ " and pse.registration_end is null"
+							+ " where nhs_number = ?"
+							+ " order by pse.registration_start desc"
+							+ " limit 1";
+
+					ps = edsConnection.prepareStatement(sql);
+					ps.setString(1, nhsNumber);
+
+					//LOG.debug(sql);
+					rs = ps.executeQuery();
+					if (rs.next()) {
+
+						String odsCode = rs.getString(1);
+						String ccgCode = rs.getString(2);
+
+						OdsOrganisation odsOrg = OdsWebService.lookupOrganisationViaRest(odsCode);
+						OdsOrganisation parentOdsOrg = null;
+						if (!Strings.isNullOrEmpty(ccgCode)) {
+							parentOdsOrg = OdsWebService.lookupOrganisationViaRest(ccgCode);
+						}
+
+						if (odsOrg == null) {
+							lines.add("Registered at " + odsCode + " but failed to find ODS record for " + odsCode);
+
+							finding = "ERROR";
+							comment = "Registered at " + odsCode + " but not found in open ODS";
+
+						} else if (parentOdsOrg == null) {
+							finding = "ERROR";
+							comment = "Registered at " + odsOrg.getOdsCode() + " " + odsOrg.getOrganisationName() + " but no ODS record found for parent " + ccgCode;
+
+						} else {
+							finding = "Out of area";
+							comment = "Patient registered in " + parentOdsOrg.getOdsCode() + " " + parentOdsOrg.getOrganisationName();
+						}
+
+					} else {
+
+						finding = "Unknown";
+						comment = "No data for NHS number found (within scope of DDS)";
+					}
+
+					ps.close();
+					edsEntityManager.close();
+
+				}
+
+				outputPrinter.printRecord(nhsNumber, calcPseudoId, finding, comment);
+			}
+
+
+			Files.write(outputTextFile.toPath(), lines, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE);
+
+			outputPrinter.close();
+
+			LOG.info("Finished Investigating Missing Patients from " + nhsNumberFile + " in Protocol " + protocolName);
+		} catch (Throwable t) {
+			LOG.error("", t);
+		}
+	}
+
+	static class PatientInfo {
+		String patientUuid;
+		String serviceUuid;
+		String odsCode;
+		String ccgCode;
+
+		@Override
+		public String toString() {
+			return "ods " + odsCode + ", ccgCode " + ccgCode + ", serviceUuid " + serviceUuid + ", patientUUID " + patientUuid;
+		}
+	}
+
+	/*static class NhsNumberInfo {
+		String odsCode;
+		String date;
+		String patientGuid;
+		String patientUuid;
+		String nhsNumber;
+		String deleted;
+
+		@Override
+		public String toString() {
+			return "ods " + odsCode + ", date " + date + ", patientGuid " + patientGuid + ", patientUUID " + patientUuid + ", NHS " + nhsNumber + ", deleted " + deleted;
+		}
+	}
+
 	private static void investigateMissingPatients(String nhsNumberFile, String protocolName, String subscriberConfigName, String odsCodeRegex) {
 		LOG.info("Investigating Missing Patients from " + nhsNumberFile + " in Protocol " + protocolName);
 		try {
@@ -1306,21 +1610,7 @@ public class Main {
 		} catch (Throwable t) {
 			LOG.error("", t);
 		}
-	}
-
-	static class NhsNumberInfo {
-		String odsCode;
-		String date;
-		String patientGuid;
-		String patientUuid;
-		String nhsNumber;
-		String deleted;
-
-		@Override
-		public String toString() {
-			return "ods " + odsCode + ", date " + date + ", patientGuid " + patientGuid + ", patientUUID " + patientUuid + ", NHS " + nhsNumber + ", deleted " + deleted;
-		}
-	}
+	}*/
 
 	private static void fixMedicationStatementIsActive(String odsCodeRegex) {
 		LOG.info("Fixing MedicationStatement IsActive for using " + odsCodeRegex);

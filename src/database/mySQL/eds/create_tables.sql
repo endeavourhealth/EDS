@@ -33,6 +33,7 @@ CREATE TABLE patient_link_history
 CREATE INDEX ix_updated
   ON patient_link_history (updated);
 
+create index ix_new_person_id on eds.patient_link_history (new_person_id);
 
 CREATE TABLE patient_link_person
 (
