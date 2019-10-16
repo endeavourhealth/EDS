@@ -961,8 +961,8 @@ public class Main {
 					if (current.isDeleted()) {
 						lines.add("Patient resource is deleted");
 
-						finding = "Deleted";
-						comment = "Patient record has been deleted from DDS";
+						/*finding = "Deleted";
+						comment = "Patient record has been deleted from DDS";*/
 						continue;
 					}
 
