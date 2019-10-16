@@ -977,7 +977,7 @@ public class Main {
 							if (wrapper.isDeleted()) {
 								continue;
 							}
-							Patient past = (Patient) current.getResource();
+							Patient past = (Patient) wrapper.getResource();
 							String pastNhsNumber = IdentifierHelper.findNhsNumber(past);
 							lines.add("History " + i + " has NHS number " + pastNhsNumber);
 
