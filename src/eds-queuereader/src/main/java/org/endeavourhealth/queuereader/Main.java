@@ -3,6 +3,7 @@ package org.endeavourhealth.queuereader;
 import OpenPseudonymiser.Crypto;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.google.common.base.Strings;
 import org.apache.commons.csv.*;
@@ -44,10 +45,7 @@ import org.endeavourhealth.core.database.dal.ehr.models.ResourceWrapper;
 import org.endeavourhealth.core.database.dal.publisherTransform.models.ResourceFieldMappingAudit;
 import org.endeavourhealth.core.database.dal.reference.PostcodeDalI;
 import org.endeavourhealth.core.database.dal.reference.models.PostcodeLookup;
-import org.endeavourhealth.core.database.dal.subscriberTransform.EnterprisePersonUpdaterHistoryDalI;
-import org.endeavourhealth.core.database.dal.subscriberTransform.SubscriberOrgMappingDalI;
-import org.endeavourhealth.core.database.dal.subscriberTransform.SubscriberPersonMappingDalI;
-import org.endeavourhealth.core.database.dal.subscriberTransform.SubscriberResourceMappingDalI;
+import org.endeavourhealth.core.database.dal.subscriberTransform.*;
 import org.endeavourhealth.core.database.dal.subscriberTransform.models.SubscriberId;
 import org.endeavourhealth.core.database.rdbms.ConnectionManager;
 import org.endeavourhealth.core.database.rdbms.enterprise.EnterpriseConnector;
@@ -67,7 +65,9 @@ import org.endeavourhealth.transform.common.resourceBuilders.PatientBuilder;
 import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
 import org.endeavourhealth.transform.emis.csv.helpers.EmisCsvHelper;
 import org.endeavourhealth.transform.subscriber.SubscriberTransformHelper;
+import org.endeavourhealth.transform.subscriber.json.LinkDistributorConfig;
 import org.endeavourhealth.transform.subscriber.targetTables.SubscriberTableId;
+import org.endeavourhealth.transform.subscriber.transforms.PatientTransformer;
 import org.hibernate.internal.SessionImpl;
 import org.hl7.fhir.instance.model.*;
 import org.slf4j.Logger;
@@ -116,6 +116,14 @@ public class Main {
 			deleteEnterpriseObs(filePath, configName, batchSize);
 			System.exit(0);
 		}*/
+
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("PopulateSubscriberDBPseudoId")) {
+			String subscriberConfigName = args[1];
+			String saltKeyName = args[2];
+			populateSubscriberPseudoId(subscriberConfigName, saltKeyName);
+			System.exit(0);
+		}
 
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("InvestigateMissingPatients")) {
@@ -851,6 +859,140 @@ public class Main {
 		// Begin consume
 		rabbitHandler.start();
 		LOG.info("EDS Queue reader running (kill file location " + TransformConfig.instance().getKillFileLocation() + ")");
+	}
+
+	/**
+	 * populates the pseudo_id table on a new-style subscriber DB (MySQL or SQL Server) with pseudo_ids generated
+	 * from a salt
+     */
+	private static void populateSubscriberPseudoId(String subscriberConfigName, String saltKeyName) {
+		LOG.info("Populating subscriber DB pseudo ID for " + subscriberConfigName + " using " + saltKeyName);
+		try {
+			//find salt details
+			JsonNode config = ConfigManager.getConfigurationAsJson(subscriberConfigName, "db_subscriber");
+			JsonNode linkDistributorsNode = config.get("pseudo_salts");
+			if (linkDistributorsNode == null) {
+				throw new Exception("No pseudo_salts found in config");
+			}
+			ObjectMapper mapper = new ObjectMapper();
+			Object json = mapper.readValue(linkDistributorsNode.toString(), Object.class);
+			String linkDistributors = mapper.writeValueAsString(json);
+			LinkDistributorConfig[] arr = ObjectMapperPool.getInstance().readValue(linkDistributors, LinkDistributorConfig[].class);
+
+			LinkDistributorConfig saltConfig = null;
+			for (LinkDistributorConfig l : arr) {
+				if (l.getSaltKeyName().equals(saltKeyName)) {
+					saltConfig = l;
+				}
+			}
+			if (saltConfig == null) {
+				throw new Exception("No salt config found for " + saltKeyName);
+			}
+
+			String sql = "SELECT source_id, subscriber_id"
+					+ " FROM subscriber_id_map"
+					+ " WHERE source_id LIKE '" + ResourceType.Patient.toString() + "%'"
+					+ " AND subscriber_table = " + SubscriberTableId.PATIENT.getId();
+
+			Map<String, Long> hmPatients = new HashMap<>();
+
+			EntityManager subscriberTransformEntityManager = ConnectionManager.getSubscriberTransformEntityManager(subscriberConfigName);
+			SessionImpl subscriberTransformSession = (SessionImpl)subscriberTransformEntityManager.getDelegate();
+			Connection subscriberTransformConnection = subscriberTransformSession.connection();
+			PreparedStatement ps = subscriberTransformConnection.prepareStatement(sql);
+			ps.setFetchSize(1000);
+
+			LOG.info("Running query to find patients");
+			ResultSet rs = ps.executeQuery();
+			while (rs.next()) {
+				String sourceId = rs.getString(1);
+				Long subscriberId = rs.getLong(2);
+				hmPatients.put(sourceId, subscriberId);
+				if (hmPatients.size() % 5000 == 0) {
+					LOG.info("Found " + hmPatients.size());
+				}
+			}
+			ps.close();
+			subscriberTransformEntityManager.clear();
+			LOG.info("Query done, found " + hmPatients.size() + " patients");
+
+			int done = 0;
+			int skipped = 0;
+
+			File fixFile = new File("FIX_" + subscriberConfigName + "_" + saltKeyName + ".sql");
+			BufferedWriter fixWriter = new BufferedWriter(new FileWriter(fixFile));
+
+			File errorFile = new File("ERRORS_" + subscriberConfigName + "_" + saltKeyName + ".txt");
+			BufferedWriter errorWriter = new BufferedWriter(new FileWriter(errorFile));
+
+			LOG.info("Starting to process patients");
+
+			for (String sourceId: hmPatients.keySet()) {
+				Long subscriberId = hmPatients.get(sourceId);
+
+				Reference ref = ReferenceHelper.createReference(sourceId);
+				String patientUuidStr = ReferenceHelper.getReferenceId(ref);
+				UUID patientUuid = UUID.fromString(patientUuidStr);
+
+				//need to find the service ID
+				PatientSearchDalI patientSearchDal = DalProvider.factoryPatientSearchDal();
+				PatientSearch patientSearch = patientSearchDal.searchByPatientId(patientUuid);
+				if (patientSearch == null) {
+					errorWriter.write("Failed to find patient search record for " + sourceId + " with subscriber ID " + subscriberId);
+					errorWriter.newLine();
+					errorWriter.flush();
+					skipped ++;
+					continue;
+				}
+
+				//find current FHIR patient
+				UUID serviceId = patientSearch.getServiceId();
+				ResourceDalI resourceDal = DalProvider.factoryResourceDal();
+				Patient patient = (Patient)resourceDal.getCurrentVersionAsResource(serviceId, ResourceType.Patient, patientUuidStr);
+				if (patient == null) {
+					errorWriter.write("Null FHIR Patient for " + sourceId + " with subscriber ID " + subscriberId);
+					errorWriter.newLine();
+					errorWriter.flush();
+					skipped ++;
+					continue;
+				}
+
+				String pseudoId = PseudoIdBuilder.generatePsuedoIdFromConfig(subscriberConfigName, saltConfig, patient);
+
+				//need to store in our pseudo ID mapping table
+				if (pseudoId != null) {
+					PseudoIdDalI pseudoIdDal = DalProvider.factoryPseudoIdDal(subscriberConfigName);
+					pseudoIdDal.saveSubscriberPseudoId(patientUuid, subscriberId.longValue(), saltKeyName, pseudoId);
+
+					String pseudoIdRowSourceId = ReferenceHelper.createReferenceExternal(patient).getReference() + PatientTransformer.PREFIX_PSEUDO_ID + saltKeyName;
+
+					SubscriberResourceMappingDalI enterpriseIdDal = DalProvider.factorySubscriberResourceMappingDal(subscriberConfigName);
+					SubscriberId pseudoIdRowId = enterpriseIdDal.findOrCreateSubscriberId(SubscriberTableId.PSEUDO_ID.getId(), pseudoIdRowSourceId);
+
+					String fixSql = "DELETE FROM pseudo_id WHERE patient_id = " + subscriberId + " AND salt_key_name = '" + saltKeyName + "';";
+					fixWriter.write(fixSql);
+					fixWriter.newLine();
+
+					fixSql = "INSERT INTO pseudo_id (id, patient_id, salt_key_name, pseudo_id) VALUES (" + pseudoIdRowId.getSubscriberId() + ", " + subscriberId + ", '" + saltKeyName + "', '" + pseudoId + "');";
+					fixWriter.write(fixSql);
+					fixWriter.newLine();
+
+					fixWriter.flush();
+				}
+
+				done ++;
+				if (done % 1000 == 0) {
+					LOG.info("Done " + done + ", skipped " + skipped);
+				}
+			}
+
+			fixWriter.close();
+			errorWriter.close();
+
+			LOG.info("Finished Populating subscriber DB pseudo ID for " + subscriberConfigName + " using " + saltKeyName);
+		} catch (Throwable t) {
+			LOG.error("", t);
+		}
 	}
 
 	private static void investigateMissingPatients(String nhsNumberFile, String protocolName, String subscriberConfigName, String ccgCodeRegex) {

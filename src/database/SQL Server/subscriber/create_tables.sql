@@ -1,5 +1,5 @@
 
-USE subscriber_pi
+-- USE subscriber_pi
 GO
 
 -- drop SP
