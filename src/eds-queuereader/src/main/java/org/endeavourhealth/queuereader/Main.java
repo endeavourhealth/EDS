@@ -920,12 +920,20 @@ public class Main {
 			int skipped = 0;
 
 			File fixFile = new File("FIX_" + subscriberConfigName + "_" + saltKeyName + ".sql");
-			BufferedWriter fixWriter = new BufferedWriter(new FileWriter(fixFile));
+			PrintWriter fixWriter = new PrintWriter(new BufferedWriter(new FileWriter(fixFile)));
 
 			File errorFile = new File("ERRORS_" + subscriberConfigName + "_" + saltKeyName + ".txt");
-			BufferedWriter errorWriter = new BufferedWriter(new FileWriter(errorFile));
+			PrintWriter errorWriter = new PrintWriter(new BufferedWriter(new FileWriter(errorFile)));
 
 			LOG.info("Starting to process patients");
+
+			String fixSql = "DROP TABLE IF EXISTS pseudo_id_tmp;";
+			fixWriter.println(fixSql);
+
+			fixSql = "CREATE TABLE pseudo_id_tmp (id bigint, patient_id bigint, salt_key_name varchar(50), pseudo_id varchar(255));";
+			fixWriter.println(fixSql);
+
+			List<String> batch = new ArrayList<>();
 
 			for (String sourceId: hmPatients.keySet()) {
 				Long subscriberId = hmPatients.get(sourceId);
@@ -938,9 +946,7 @@ public class Main {
 				PatientSearchDalI patientSearchDal = DalProvider.factoryPatientSearchDal();
 				PatientSearch patientSearch = patientSearchDal.searchByPatientId(patientUuid);
 				if (patientSearch == null) {
-					errorWriter.write("Failed to find patient search record for " + sourceId + " with subscriber ID " + subscriberId);
-					errorWriter.newLine();
-					errorWriter.flush();
+					errorWriter.println("Failed to find patient search record for " + sourceId + " with subscriber ID " + subscriberId);
 					skipped ++;
 					continue;
 				}
@@ -950,9 +956,7 @@ public class Main {
 				ResourceDalI resourceDal = DalProvider.factoryResourceDal();
 				Patient patient = (Patient)resourceDal.getCurrentVersionAsResource(serviceId, ResourceType.Patient, patientUuidStr);
 				if (patient == null) {
-					errorWriter.write("Null FHIR Patient for " + sourceId + " with subscriber ID " + subscriberId);
-					errorWriter.newLine();
-					errorWriter.flush();
+					errorWriter.println("Null FHIR Patient for " + sourceId + " with subscriber ID " + subscriberId);
 					skipped ++;
 					continue;
 				}
@@ -969,15 +973,15 @@ public class Main {
 					SubscriberResourceMappingDalI enterpriseIdDal = DalProvider.factorySubscriberResourceMappingDal(subscriberConfigName);
 					SubscriberId pseudoIdRowId = enterpriseIdDal.findOrCreateSubscriberId(SubscriberTableId.PSEUDO_ID.getId(), pseudoIdRowSourceId);
 
-					String fixSql = "DELETE FROM pseudo_id WHERE patient_id = " + subscriberId + " AND salt_key_name = '" + saltKeyName + "';";
-					fixWriter.write(fixSql);
-					fixWriter.newLine();
+					batch.add("(" + pseudoIdRowId.getSubscriberId() + ", " + subscriberId + ", '" + saltKeyName + "', '" + pseudoId + "')");
+					if (batch.size() >= 50) {
+						fixSql = "INSERT INTO pseudo_id_tmp (id, patient_id, salt_key_name, pseudo_id) VALUES " + String.join(", ", batch) + ";";
+						fixWriter.println(fixSql);
+						batch.clear();
+					}
 
-					fixSql = "INSERT INTO pseudo_id (id, patient_id, salt_key_name, pseudo_id) VALUES (" + pseudoIdRowId.getSubscriberId() + ", " + subscriberId + ", '" + saltKeyName + "', '" + pseudoId + "');";
-					fixWriter.write(fixSql);
-					fixWriter.newLine();
-
-					fixWriter.flush();
+					//fixSql = "INSERT INTO pseudo_id_tmp (id, patient_id, salt_key_name, pseudo_id) VALUES (" + pseudoIdRowId.getSubscriberId() + ", " + subscriberId + ", '" + saltKeyName + "', '" + pseudoId + "');";
+					//fixWriter.println(fixSql);
 				}
 
 				done ++;
@@ -985,6 +989,23 @@ public class Main {
 					LOG.info("Done " + done + ", skipped " + skipped);
 				}
 			}
+
+			if (!batch.isEmpty()) {
+				fixSql = "INSERT INTO pseudo_id_tmp (id, patient_id, salt_key_name, pseudo_id) VALUES " + String.join(", ", batch) + ";";
+				fixWriter.println(fixSql);
+			}
+
+			fixSql = "CREATE INDEX ix ON pseudo_id_tmp (patient_id);";
+			fixWriter.println(fixSql);
+
+			fixSql = "DELETE FROM pseudo_id WHERE salt_key_name = '" + saltKeyName + "';";
+			fixWriter.println(fixSql);
+
+			fixSql = "INSERT INTO pseudo_id SELECT t.id, t.patient_id, t.salt_key_name, t.pseudo_id FROM pseudo_id_tmp t INNER JOIN patient p ON p.id = t.patient_id;";
+			fixWriter.println(fixSql);
+
+			fixSql = "DROP TABLE pseudo_id_tmp;";
+			fixWriter.println(fixSql);
 
 			fixWriter.close();
 			errorWriter.close();

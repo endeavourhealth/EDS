@@ -577,7 +577,7 @@ GO
 
 CREATE TABLE [pseudo_id] (
 [id] bigint,
-[patient_id] varchar(255) NOT NULL,
+[patient_id] bigint NOT NULL,
 [salt_key_name] varchar(50) NOT NULL,
 [pseudo_id] varchar(255) NULL DEFAULT NULL,
 PRIMARY KEY ([patient_id], [salt_key_name])

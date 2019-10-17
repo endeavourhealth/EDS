@@ -783,7 +783,7 @@ CREATE INDEX referral_request_core_concept_id
 CREATE TABLE pseudo_id
 (
   id bigint NOT NULL,
-  patient_id character varying(255) NOT NULL,
+  patient_id bigint NOT NULL,
   salt_key_name varchar(50) NOT NULL,
   pseudo_id character varying(255) NULL,
   CONSTRAINT pk_pseudo_id PRIMARY KEY (`patient_id`, `salt_key_name`)
