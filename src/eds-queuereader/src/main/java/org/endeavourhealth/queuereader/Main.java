@@ -856,9 +856,6 @@ public class Main {
 	private static void investigateMissingPatients(String nhsNumberFile, String protocolName, String subscriberConfigName, String ccgCodeRegex) {
 		LOG.info("Investigating Missing Patients from " + nhsNumberFile + " in Protocol " + protocolName);
 		try {
-
-			ServiceDalI serviceDal = DalProvider.factoryServiceDal();
-			ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
 			SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
 
 			String salt = null;
@@ -1068,7 +1065,7 @@ public class Main {
 					edsSession = (SessionImpl)edsEntityManager.getDelegate();
 					edsConnection = edsSession.connection();
 
-					sql = "select local_id, ccg_code"
+					sql = "select local_id, ccg_code, pse.registration_start"
 							+ " from eds.patient_search ps"
 							+ " inner join admin.service s"
 							+ " on s.id = ps.service_id"
@@ -1090,6 +1087,7 @@ public class Main {
 
 						String odsCode = rs.getString(1);
 						String ccgCode = rs.getString(2);
+						Date regDate = new Date(rs.getTimestamp(3).getTime());
 
 						OdsOrganisation odsOrg = OdsWebService.lookupOrganisationViaRest(odsCode);
 						OdsOrganisation parentOdsOrg = null;
@@ -1109,7 +1107,7 @@ public class Main {
 
 						} else {
 							finding = "Out of area";
-							comment = "Patient registered in " + parentOdsOrg.getOdsCode() + " " + parentOdsOrg.getOrganisationName();
+							comment = "Patient registered in " + parentOdsOrg.getOdsCode() + " " + parentOdsOrg.getOrganisationName() + " since " + sdf.format(regDate);
 						}
 
 					} else {
