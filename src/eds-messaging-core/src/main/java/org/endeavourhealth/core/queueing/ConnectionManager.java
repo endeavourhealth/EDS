@@ -5,6 +5,7 @@ import com.rabbitmq.client.Address;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
+import org.endeavourhealth.common.utility.NamingThreadFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,6 +47,7 @@ public class ConnectionManager {
 			connectionFactory.setTopologyRecoveryEnabled(true);
 			connectionFactory.setUsername(username);
 			connectionFactory.setPassword(password);
+			connectionFactory.setThreadFactory(new NamingThreadFactory("RabbitMQ")); //set thread factory so we can name them
 
 			if (!Strings.isNullOrEmpty(sslProtocol)) {
 				try {
