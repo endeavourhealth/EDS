@@ -164,7 +164,7 @@ export class ExchangeAuditComponent {
 
 		var vm = this;
 		vm.selectedExchange = exchange;
-		/*vm.loadExchangeEventsIfRequired(exchange);*/
+
 		vm.loadTransformAuditsIfRequired(exchange);
 	}
 

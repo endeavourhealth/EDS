@@ -71,16 +71,14 @@ public class QueueHelper {
             UUID exchangeId = exchangeIds.get(i);
             Exchange exchange = AuditWriter.readExchange(exchangeId);
 
-            //TODO - remove this once the AllowQueueing header has been added to all existing
-            String sourceSystem = exchange.getHeader(HeaderKeys.SourceSystem);
+            //no longer required as these special exchanges now have the AllowQueueing=false header which PostMessageToExchange detects
+            /*String sourceSystem = exchange.getHeader(HeaderKeys.SourceSystem);
             if (exchangeIds.size() > 1
                 && sourceSystem.equals(MessageFormat.DUMMY_SENDER_SOFTWARE_FOR_BULK_DELETE)) {
                 // Skip dummy exchanges used to do bulk deletes unless this is ONLY a delete in which case size will be exactly 1.
                 AuditWriter.writeExchangeEvent(exchange, "Not re-queuing into " + exchangeName + " as exchange cannot be re-queued");
                 continue;
-            }
-
-            //org.endeavourhealth.core.messaging.exchange.Exchange exchange = retrieveExchange(exchangeId);
+            }*/
 
             //to make sure the latest setup applies, re-calculate the protocols that apply to this exchange
             if (recalculateProtocols) {
