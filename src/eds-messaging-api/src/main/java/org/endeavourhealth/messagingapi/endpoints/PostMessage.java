@@ -7,6 +7,7 @@ import org.endeavourhealth.core.configuration.Pipeline;
 import org.endeavourhealth.core.database.dal.DalProvider;
 import org.endeavourhealth.core.database.dal.audit.ExchangeGeneralErrorDalI;
 import org.endeavourhealth.core.database.dal.audit.models.Exchange;
+import org.endeavourhealth.core.database.dal.audit.models.HeaderKeys;
 import org.endeavourhealth.core.messaging.pipeline.PipelineProcessor;
 import org.endeavourhealth.transform.common.AuditWriter;
 import org.slf4j.Logger;
@@ -92,13 +93,16 @@ public class PostMessage extends AbstractEndpoint {
     }
 
 
-    private Response process(HttpHeaders headers, String body, Pipeline pipeline, UUID exchangeId) {
+    private Response process(HttpHeaders headers, String body, Pipeline pipeline, UUID exchangeId) throws Exception {
 
         Exchange exchange = new Exchange();
         exchange.setId(exchangeId);
         exchange.setBody(body);
         exchange.setTimestamp(new Date());
         exchange.setHeaders(new HashMap<>());
+
+        //until we pass all validation, this exchange should not be allowed to be queued
+        exchange.setHeaderAsBoolean(HeaderKeys.AllowQueueing, new Boolean(false));
 
         for (String key : headers.getRequestHeaders().keySet()) {
             //skip the authorization header, since that's comparatively huge and there's no need to carry it through RabbbitMQ

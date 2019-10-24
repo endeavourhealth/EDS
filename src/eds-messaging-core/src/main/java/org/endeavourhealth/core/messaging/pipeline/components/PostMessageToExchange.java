@@ -9,6 +9,7 @@ import org.endeavourhealth.core.configuration.PostMessageToExchangeConfig;
 import org.endeavourhealth.core.database.dal.DalProvider;
 import org.endeavourhealth.core.database.dal.audit.QueuedMessageDalI;
 import org.endeavourhealth.core.database.dal.audit.models.Exchange;
+import org.endeavourhealth.core.database.dal.audit.models.HeaderKeys;
 import org.endeavourhealth.core.database.dal.audit.models.QueuedMessageType;
 import org.endeavourhealth.core.messaging.pipeline.PipelineComponent;
 import org.endeavourhealth.core.messaging.pipeline.PipelineException;
@@ -34,6 +35,21 @@ public class PostMessageToExchange extends PipelineComponent {
 
 	@Override
 	public void process(Exchange exchange) throws PipelineException {
+		postToRabbit(exchange);
+	}
+
+	public boolean postToRabbit(Exchange exchange) throws PipelineException {
+
+		try {
+			Boolean canBeQueued = exchange.getHeaderAsBoolean(HeaderKeys.AllowQueueing);
+			if (canBeQueued != null
+					&& !canBeQueued.booleanValue()) {
+				return false;
+			}
+		} catch (Exception ex) {
+			throw new PipelineException("Error checking header keys", ex);
+		}
+
 		String routingKey = getRoutingKey(exchange);
 
 		// Generate message identifier and store message in db
@@ -132,6 +148,7 @@ public class PostMessageToExchange extends PipelineComponent {
 
 		waitForConfirmations(channel);
 		closeChannel(channel);
+		return true;
 	}
 
 	private void closeChannel(Channel channel) {

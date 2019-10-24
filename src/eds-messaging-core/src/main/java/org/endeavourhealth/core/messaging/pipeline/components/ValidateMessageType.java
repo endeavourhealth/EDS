@@ -7,6 +7,7 @@ import org.endeavourhealth.core.database.dal.audit.models.HeaderKeys;
 import org.endeavourhealth.core.messaging.pipeline.PipelineComponent;
 import org.endeavourhealth.core.messaging.pipeline.PipelineException;
 import org.endeavourhealth.core.xml.QueryDocument.*;
+import org.endeavourhealth.transform.common.AuditWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -102,6 +103,14 @@ public class ValidateMessageType extends PipelineComponent {
 			}
 
 			throw new PipelineException("No valid publisher service contracts found");
+		}
+
+		//now we've completed validation, the exchange is valid and can be re-queued in the future
+		try {
+			exchange.setHeaderAsBoolean(HeaderKeys.AllowQueueing, null);
+			AuditWriter.writeExchange(exchange);
+		} catch (Exception ex) {
+			throw new PipelineException("Failed to save exchange", ex);
 		}
 
 		LOG.debug("Message validated");

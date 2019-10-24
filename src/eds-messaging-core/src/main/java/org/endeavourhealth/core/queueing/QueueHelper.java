@@ -70,8 +70,13 @@ public class QueueHelper {
 
             UUID exchangeId = exchangeIds.get(i);
             Exchange exchange = AuditWriter.readExchange(exchangeId);
-            if (exchangeIds.size() > 1 && exchange.getHeader(HeaderKeys.SourceSystem).equals("BULK_DELETE_DATA")) {
+
+            //TODO - remove this once the AllowQueueing header has been added to all existing
+            String sourceSystem = exchange.getHeader(HeaderKeys.SourceSystem);
+            if (exchangeIds.size() > 1
+                && sourceSystem.equals(MessageFormat.DUMMY_SENDER_SOFTWARE_FOR_BULK_DELETE)) {
                 // Skip dummy exchanges used to do bulk deletes unless this is ONLY a delete in which case size will be exactly 1.
+                AuditWriter.writeExchangeEvent(exchange, "Not re-queuing into " + exchangeName + " as exchange cannot be re-queued");
                 continue;
             }
 
@@ -95,6 +100,8 @@ public class QueueHelper {
                 //it'll still create the exchange, but without any protocols. So we don't want these exchanges
                 //then accidentally going into the inbound queues.
                 LOG.debug("Skipping exchange " + exchangeId + " as it has no publisher protocol ID");
+
+                AuditWriter.writeExchangeEvent(exchange, "Not re-queuing into " + exchangeName + " because no protocols found");
                 continue;
             }
 
@@ -152,25 +159,26 @@ public class QueueHelper {
 
             //re-post back into Rabbit using the same pipeline component as used by the messaging API
             PostMessageToExchange component = new PostMessageToExchange(exchangeConfig);
-            component.process(exchange);
+            if (component.postToRabbit(exchange)) { //some exchanges can't be re-queued
 
-            //write an event for the exchange, so we can see this happened
-            AuditWriter.writeExchangeEvent(exchange, exchangeEventStr);
+                //write an event for the exchange, so we can see this happened
+                AuditWriter.writeExchangeEvent(exchange, exchangeEventStr);
 
-            //if pushed into the Inbound queue, and it previously had an error in there, mark it as resubmitted
-            //LOG.trace("Posting " + exchange.getId() + " into exchange [" + exchangeName + "] for service " + exchange.getServiceId() + " and system " + exchange.getSystemId());
-            if (exchangeName.equalsIgnoreCase(EXCHANGE_INBOUND)) { //difference case used on different servers
+                //if pushed into the Inbound queue, and it previously had an error in there, mark it as resubmitted
+                //LOG.trace("Posting " + exchange.getId() + " into exchange [" + exchangeName + "] for service " + exchange.getServiceId() + " and system " + exchange.getSystemId());
+                if (exchangeName.equalsIgnoreCase(EXCHANGE_INBOUND)) { //difference case used on different servers
 
-                UUID serviceId = exchange.getServiceId();
-                UUID systemId = exchange.getSystemId();
+                    UUID serviceId = exchange.getServiceId();
+                    UUID systemId = exchange.getSystemId();
 
-                ExchangeDalI auditRepository = DalProvider.factoryExchangeDal();
-                ExchangeTransformAudit audit = auditRepository.getMostRecentExchangeTransform(serviceId, systemId, exchangeId);
-                //LOG.trace("Is inbound exchange and found audit " + audit);
-                if (audit != null && !audit.isResubmitted()) {
-                    audit.setResubmitted(true);
-                    auditRepository.save(audit);
-                    //LOG.trace("Audit set to resubmitted = true");
+                    ExchangeDalI auditRepository = DalProvider.factoryExchangeDal();
+                    ExchangeTransformAudit audit = auditRepository.getMostRecentExchangeTransform(serviceId, systemId, exchangeId);
+                    //LOG.trace("Is inbound exchange and found audit " + audit);
+                    if (audit != null && !audit.isResubmitted()) {
+                        audit.setResubmitted(true);
+                        auditRepository.save(audit);
+                        //LOG.trace("Audit set to resubmitted = true");
+                    }
                 }
             }
 
@@ -178,8 +186,6 @@ public class QueueHelper {
                 LOG.info("Posted " + (i+1) + " / " + exchangeIds.size() + " exchanges to " + exchangeName);
             }
         }
-
-
     }
 
 
@@ -444,35 +450,51 @@ public class QueueHelper {
         UUID orgId = orgIterator.next();
         String odsCode = service.getLocalId();
 
-        Exchange exchange = new Exchange();
-        exchange.setId(UUID.randomUUID());
-        exchange.setBody(bodyJson);
-        exchange.setTimestamp(new Date());
-        exchange.setHeaders(new HashMap<>());
-        exchange.setHeaderAsUuid(HeaderKeys.SenderServiceUuid, serviceId);
-        exchange.setHeader(HeaderKeys.ProtocolIds, specificProtocolJson);
-        exchange.setHeader(HeaderKeys.SenderLocalIdentifier, odsCode);
-        exchange.setHeaderAsUuid(HeaderKeys.SenderOrganisationUuid, orgId);
-        exchange.setHeader(HeaderKeys.SourceSystem, MessageFormat.DUMMY_SENDER_SOFTWARE_FOR_BULK_TRANSFORM); //routing requires a source system name and this tells us it's this special case
-        exchange.setServiceId(serviceId);
+        boolean postedToRabbit = false;
 
-        //specifically don't set these because we're doing ALL data for this service, not just a single system
-        //exchange.setHeader(HeaderKeys.SenderSystemUuid, systemId.toString());
-        //exchange.setSystemId(systemId);
+        List<UUID> systemIds = findSystemIds(service);
+        for (UUID systemId: systemIds) {
+            LOG.debug("Doing system ID " + systemId);
 
-        //LOG.info("Saving exchange");
-        AuditWriter.writeExchange(exchange);
-        AuditWriter.writeExchangeEvent(exchange, "Created exchange to populate subscribers in protocol " + protocol.getName());
+            Exchange exchange = new Exchange();
+            exchange.setId(UUID.randomUUID());
+            exchange.setBody(bodyJson);
+            exchange.setTimestamp(new Date());
+            exchange.setHeaders(new HashMap<>());
+            exchange.setHeaderAsUuid(HeaderKeys.SenderServiceUuid, serviceId);
+            exchange.setHeader(HeaderKeys.ProtocolIds, specificProtocolJson);
+            exchange.setHeader(HeaderKeys.SenderLocalIdentifier, odsCode);
+            exchange.setHeaderAsUuid(HeaderKeys.SenderOrganisationUuid, orgId);
+            exchange.setHeaderAsUuid(HeaderKeys.SenderSystemUuid, systemId);
+            exchange.setHeader(HeaderKeys.SourceSystem, MessageFormat.DUMMY_SENDER_SOFTWARE_FOR_BULK_TRANSFORM); //routing requires a source system name and this tells us it's this special case
+            exchange.setServiceId(serviceId);
+            exchange.setSystemId(systemId);
 
-        //LOG.info("Creating exchange batches for " + patientUuids.size() + " patients");
-        createExchangeBatches(exchange, patientUuids);
+            //LOG.info("Saving exchange");
+            AuditWriter.writeExchange(exchange);
+            AuditWriter.writeExchangeEvent(exchange, "Manually created exchange to populate subscribers in protocol " + protocol.getName());
 
-        //post to InboundQueue
-        LOG.info("Posting to protocol queue");
-        List<UUID> exchangeIds = new ArrayList<>();
-        exchangeIds.add(exchange.getId());
-        QueueHelper.postToExchange(exchangeIds, EXCHANGE_PROTOCOL, specificProtocolId, false);
-        LOG.info("Exchange posted to protocol queue");
+            //for audit purposes, we create an exchange per systemId, but only need to post one to Rabbit to do the work
+            if (!postedToRabbit) {
+                postedToRabbit = true;
+
+                //LOG.info("Creating exchange batches for " + patientUuids.size() + " patients");
+                createExchangeBatches(exchange, patientUuids);
+
+                //post to InboundQueue
+                LOG.info("Posting to protocol queue");
+                List<UUID> exchangeIds = new ArrayList<>();
+                exchangeIds.add(exchange.getId());
+                QueueHelper.postToExchange(exchangeIds, EXCHANGE_PROTOCOL, specificProtocolId, false);
+                LOG.info("Exchange posted to protocol queue");
+            } else {
+                LOG.info("Not posting to Rabbit as already done that for another system");
+            }
+
+            //set this header key to prevent re-queuing
+            exchange.setHeaderAsBoolean(HeaderKeys.AllowQueueing, new Boolean(false)); //don't allow this to be re-queued
+            AuditWriter.writeExchange(exchange);
+        }
     }
 
     private static void createExchangeBatches(Exchange exchange, List<UUID> patientUuids) throws Exception {
@@ -529,6 +551,8 @@ public class QueueHelper {
         Iterator<UUID> orgIterator = orgMap.keySet().iterator();
         UUID orgId = orgIterator.next();
 
+        boolean postedToRabbit = false;
+
         List<UUID> systemIds = findSystemIds(service);
         for (UUID systemId: systemIds) {
             LOG.debug("Doing system ID " + systemId);
@@ -560,16 +584,27 @@ public class QueueHelper {
             LOG.info("Saving exchange");
             AuditWriter.writeExchange(exchange);
             AuditWriter.writeExchangeEvent(exchange, "Manually created exchange to delete data");
-            AuditWriter.writeExchangeEvent(exchange, "NOTE: ANY ATTEMPT TO RE-QUEUE THIS EXCHANGE WILL BE IGNORED");
-            /*LOG.info("Creating exchange batches for " + patientUuids.size() + " patients");
-            createExchangeBatches(exchange, patientUuids);*/
+            //AuditWriter.writeExchangeEvent(exchange, "NOTE: ANY ATTEMPT TO RE-QUEUE THIS EXCHANGE WILL BE IGNORED");
 
-            //post to InboundQueue
-            LOG.info("Posting to inbound queue");
-            List<UUID> exchangeIds = new ArrayList<>();
-            exchangeIds.add(exchange.getId());
-            postToExchange(exchangeIds, EXCHANGE_INBOUND, null, true);
-            LOG.info("Exchange posted to inbound queue");
+            //for audit purposes, we create an exchange per systemId, but only need to post one to Rabbit to do the work
+            if (!postedToRabbit) {
+                postedToRabbit = true;
+
+                //post to InboundQueue
+                LOG.info("Posting to inbound queue");
+                List<UUID> exchangeIds = new ArrayList<>();
+                exchangeIds.add(exchange.getId());
+                postToExchange(exchangeIds, EXCHANGE_INBOUND, null, true);
+                LOG.info("Exchange posted to inbound queue");
+
+            } else {
+                LOG.info("Not posting exchange as already posted one for another system");
+            }
+
+            //set this header key to prevent re-queuing
+            exchange.setHeaderAsBoolean(HeaderKeys.AllowQueueing, new Boolean(false)); //don't allow this to be re-queued
+            AuditWriter.writeExchange(exchange);
+
         }
     }
 

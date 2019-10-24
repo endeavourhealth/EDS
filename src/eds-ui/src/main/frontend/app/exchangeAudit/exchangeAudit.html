@@ -214,6 +214,10 @@
                         </div>
                     </div>
 
+                    <div *ngIf="selectedExchange && !canBeQueued(selectedExchange)">
+                        <span class="label label-warning">This exchange cannot be re-queued</span>
+                    </div>
+
                     <!--exchange events table-->
                     <!--<div class="table">
                         <table class="table table-striped table-condensed">

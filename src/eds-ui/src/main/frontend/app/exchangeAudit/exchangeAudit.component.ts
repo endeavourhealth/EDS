@@ -380,4 +380,15 @@ export class ExchangeAuditComponent {
 		document.body.removeChild(txtArea);
 	}
 
+	canBeQueued(exchange: Exchange): boolean {
+		var key = exchange.headers['AllowQueueing'];
+
+
+		//if header key not present, it CAN be queued
+		if (key && key == 'false') {
+			return false;
+		} else {
+			return true;
+		}
+	}
 }
