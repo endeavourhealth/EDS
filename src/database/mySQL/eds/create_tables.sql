@@ -67,6 +67,9 @@ CREATE TABLE patient_search
 	last_updated timestamp NOT NULL,
 	registered_practice_ods_code VARCHAR(50),
 	dt_deleted datetime,
+	ods_code varchar(50),
+	organisation_name VARCHAR(255),
+	organisation_type_code varchar(10),
 	CONSTRAINT pk_patient_search PRIMARY KEY (service_id, patient_id)
 );
 
@@ -106,6 +109,7 @@ CREATE TABLE patient_search_episode
 	last_updated timestamp NOT NULL,
 	registration_status_code varchar(10),
 	dt_deleted datetime,
+	ods_code varchar(50),
 	CONSTRAINT pk_patient_search_episode PRIMARY KEY (service_id, patient_id, episode_id)
 );
 
