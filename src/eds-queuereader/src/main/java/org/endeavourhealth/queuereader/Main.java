@@ -944,6 +944,8 @@ public class Main {
 
 						ResourceDalI resourceDal = DalProvider.factoryResourceDal();
 						List<ResourceWrapper> statementWrappers = resourceDal.getResourcesByPatient(service.getId(), patientId, ResourceType.MedicationStatement.toString());
+						List<ResourceWrapper> orderWrappers = null;  //get on demand
+
 						for (ResourceWrapper statementWrapper : statementWrappers) {
 
 							MedicationStatement medicationStatement = (MedicationStatement) statementWrapper.getResource();
@@ -980,7 +982,10 @@ public class Main {
 
 									Reference medicationStatementReference = ReferenceHelper.createReferenceExternal(medicationStatement);
 
-									List<ResourceWrapper> orderWrappers = resourceDal.getResourcesByPatient(service.getId(), patientId, ResourceType.MedicationOrder.toString());
+									if (orderWrappers == null) {
+										orderWrappers = resourceDal.getResourcesByPatient(service.getId(), patientId, ResourceType.MedicationOrder.toString());
+									}
+
 									for (ResourceWrapper orderWrapper : orderWrappers) {
 
 										//quick check against the raw JSON so we don't have to deserialise the bulk of them
