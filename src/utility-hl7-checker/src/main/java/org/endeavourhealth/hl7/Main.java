@@ -13,6 +13,7 @@ import ca.uhn.hl7v2.model.v23.segment.PID;
 import ca.uhn.hl7v2.parser.Parser;
 import ca.uhn.hl7v2.util.Terser;
 import ca.uhn.hl7v2.validation.impl.NoValidation;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.base.Strings;
 import com.zaxxer.hikari.HikariDataSource;
 import org.apache.commons.io.FileUtils;
@@ -46,26 +47,31 @@ public class Main {
      */
     public static void main(String[] args) throws Exception {
 
-        ConfigManager.Initialize("Hl7Checker");
-
-        if (args.length < 5) {
-            LOG.error("Expecting five parameters:");
-            LOG.error("<db_connection_url> <driver_class> <db_username> <db_password> <state_file>");
+        if (args.length < 1) {
+            LOG.error("Expecting one parameter:");
+            LOG.error("<state_file>");
             System.exit(0);
             return;
         }
+        String stateFile = args[0];
 
-        String url = args[0];
-        String driverClass = args[1];
-        String user = args[2];
-        String pass = args[3];
-        String stateFile = args[4];
-
-        //optional fifth parameter puts it in read only mode
+        //optional parameter puts it in read only mode
         boolean readOnly = false;
-        if (args.length > 4) {
-            readOnly = Boolean.parseBoolean(args[4]);
+        if (args.length > 1) {
+            readOnly = Boolean.parseBoolean(args[1]);
         }
+
+        ConfigManager.Initialize("Hl7Checker");
+
+        //don't have DB credentials in app scripts, so get them directly from the config DB
+        JsonNode json = ConfigManager.getConfigurationAsJson("database", "hl7receiver");
+        if (json == null) {
+            throw new Exception("Failed to find [database] config for app [hl7receiver]");
+        }
+        String url = json.get("url").asText();
+        String user = json.get("username").asText();
+        String pass = json.get("password").asText();
+        String driverClass = json.get("class").asText();
 
         LOG.info("Starting HL7 Check on " + url);
 
