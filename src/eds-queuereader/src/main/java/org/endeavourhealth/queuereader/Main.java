@@ -20,7 +20,7 @@ import org.endeavourhealth.common.fhir.schema.MaritalStatus;
 import org.endeavourhealth.common.ods.OdsOrganisation;
 import org.endeavourhealth.common.ods.OdsWebService;
 import org.endeavourhealth.common.utility.FileHelper;
-import org.endeavourhealth.common.utility.MetricsHelper;
+import org.endeavourhealth.common.utility.JsonSerializer;
 import org.endeavourhealth.common.utility.ThreadPool;
 import org.endeavourhealth.common.utility.ThreadPoolError;
 import org.endeavourhealth.core.configuration.ConfigDeserialiser;
@@ -45,7 +45,10 @@ import org.endeavourhealth.core.database.dal.ehr.models.ResourceWrapper;
 import org.endeavourhealth.core.database.dal.publisherTransform.models.ResourceFieldMappingAudit;
 import org.endeavourhealth.core.database.dal.reference.PostcodeDalI;
 import org.endeavourhealth.core.database.dal.reference.models.PostcodeLookup;
-import org.endeavourhealth.core.database.dal.subscriberTransform.*;
+import org.endeavourhealth.core.database.dal.subscriberTransform.PseudoIdDalI;
+import org.endeavourhealth.core.database.dal.subscriberTransform.SubscriberOrgMappingDalI;
+import org.endeavourhealth.core.database.dal.subscriberTransform.SubscriberPersonMappingDalI;
+import org.endeavourhealth.core.database.dal.subscriberTransform.SubscriberResourceMappingDalI;
 import org.endeavourhealth.core.database.dal.subscriberTransform.models.SubscriberId;
 import org.endeavourhealth.core.database.rdbms.ConnectionManager;
 import org.endeavourhealth.core.database.rdbms.enterprise.EnterpriseConnector;
@@ -60,11 +63,11 @@ import org.endeavourhealth.core.queueing.QueueHelper;
 import org.endeavourhealth.core.xml.QueryDocument.*;
 import org.endeavourhealth.core.xml.transformError.TransformError;
 import org.endeavourhealth.transform.common.*;
-import org.endeavourhealth.transform.common.resourceBuilders.GenericBuilder;
+import org.endeavourhealth.transform.common.resourceBuilders.MedicationOrderBuilder;
+import org.endeavourhealth.transform.common.resourceBuilders.MedicationStatementBuilder;
 import org.endeavourhealth.transform.common.resourceBuilders.PatientBuilder;
 import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
-import org.endeavourhealth.transform.emis.csv.helpers.EmisCsvHelper;
-import org.endeavourhealth.transform.subscriber.SubscriberTransformHelper;
+import org.endeavourhealth.transform.emis.csv.helpers.IssueRecordIssueDate;
 import org.endeavourhealth.transform.subscriber.json.LinkDistributorConfig;
 import org.endeavourhealth.transform.subscriber.targetTables.SubscriberTableId;
 import org.endeavourhealth.transform.subscriber.transforms.PatientTransformer;
@@ -77,13 +80,10 @@ import javax.persistence.EntityManager;
 import java.io.*;
 import java.lang.System;
 import java.lang.reflect.Constructor;
-import java.net.InetAddress;
-import java.net.Socket;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
 import java.sql.*;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.Date;
@@ -116,6 +116,16 @@ public class Main {
 			deleteEnterpriseObs(filePath, configName, batchSize);
 			System.exit(0);
 		}*/
+
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("FixEmisDrugRecords")) {
+			String odsCodeRegex = null;
+			if (args.length > 1) {
+				odsCodeRegex = args[1];
+			}
+			fixEmisDrugRecords(odsCodeRegex);
+			System.exit(0);
+		}
 
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("PopulateSubscriberDBPseudoId")) {
@@ -172,20 +182,20 @@ public class Main {
 		}
 
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("RunPersonUpdater")) {
 			String enterpriseConfigName = args[1];
 			runPersonUpdater(enterpriseConfigName);
 			System.exit(0);
-		}
+		}*/
 
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("CountNhsNumberChanges")) {
 			String odsCode = args[1];
 			countNhsNumberChanges(odsCode);
 			System.exit(0);
-		}
+		}*/
 
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("TransformPatients")) {
@@ -194,7 +204,7 @@ public class Main {
 			System.exit(0);
 		}
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("FindPatientsThatNeedTransforming")) {
 			String file = args[1];
 			String odsCode = null;
@@ -203,7 +213,7 @@ public class Main {
 			}
 			findPatientsThatNeedTransforming(file, odsCode);
 			System.exit(0);
-		}
+		}*/
 
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("CreateDigest")) {
@@ -273,12 +283,12 @@ public class Main {
 			System.exit(0);
 		}*/
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("CheckForBartsMissingFiles")) {
 			String sinceDate = args[1];
 			checkForBartsMissingFiles(sinceDate);
 			System.exit(0);
-		}
+		}*/
 
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("CreateHomertonSubset")) {
@@ -356,12 +366,12 @@ public class Main {
 			System.exit(0);
 		}*/
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("FixEmisDeletedPatients")) {
 			String odsCode = args[1];
 			fixEmisDeletedPatients(odsCode);
 			System.exit(0);
-		}
+		}*/
 
 		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("PostPatientToProtocol")) {
@@ -380,11 +390,11 @@ public class Main {
 			System.exit(0);
 		}
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("TestMetrics")) {
 			testMetrics();
 			System.exit(0);
-		}
+		}*/
 
 		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("TestXML")) {
@@ -392,13 +402,13 @@ public class Main {
 			System.exit(0);
 		}*/
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("TestGraphiteMetrics")) {
 			String host = args[1];
 			String port = args[2];
 			testGraphiteMetrics(host, port);
 			System.exit(0);
-		}
+		}*/
 
 
 		/*if (args.length >= 1
@@ -859,6 +869,227 @@ public class Main {
 		// Begin consume
 		rabbitHandler.start();
 		LOG.info("EDS Queue reader running (kill file location " + TransformConfig.instance().getKillFileLocation() + ")");
+	}
+
+	private static void fixEmisDrugRecords(String odsCodeRegex) {
+		LOG.info("Fixing Emis drug records");
+		try {
+			ServiceDalI serviceDal = DalProvider.factoryServiceDal();
+			List<Service> services = serviceDal.getAll();
+			for (Service service: services) {
+
+				if (odsCodeRegex != null) {
+
+					String odsCode = service.getLocalId();
+					if (Strings.isNullOrEmpty(odsCode)
+						|| !Pattern.matches(odsCodeRegex, odsCode)) {
+						LOG.debug("Skipping " + service + " due to regex");
+						continue;
+					}
+
+				} else {
+					//check if Emis
+					String notes = service.getNotes();
+					if (notes == null || !notes.contains("CDB")) {
+						LOG.info("Skipping as not Emis: " + service);
+						continue;
+					}
+				}
+
+				LOG.info("Dong " + service);
+
+				Map<UUID, String> orgMap = service.getOrganisations();
+				if (orgMap.size() != 1) {
+					throw new Exception("Cannot support loading services without a single organisation");
+				}
+				Iterator<UUID> orgIterator = orgMap.keySet().iterator();
+				UUID orgId = orgIterator.next();
+
+				List<UUID> systems = findSystemIds(service);
+				for (UUID systemId: systems) {
+					LOG.info("Doing system ID  " + systemId);
+
+					LOG.info("Caching drug record IDs");
+					Map<String, UUID> hmDrugRecordToExchange = new HashMap<>();
+
+					ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
+					List<Exchange> exchanges = exchangeDal.getExchangesByService(service.getId(), systemId, Integer.MAX_VALUE);
+					for (Exchange exchange: exchanges) {
+						List<ExchangePayloadFile> files = ExchangeHelper.parseExchangeBody(exchange.getBody());
+						ExchangePayloadFile drugRecordFile = findFileOfType(files, "Prescribing_DrugRecord");
+						if (drugRecordFile == null) {
+							continue;
+						}
+
+						InputStreamReader isr = FileHelper.readFileReaderFromSharedStorage(drugRecordFile.getPath());
+						CSVParser parser = new CSVParser(isr, CSVFormat.DEFAULT.withHeader());
+						Iterator<CSVRecord> iterator = parser.iterator();
+						while (iterator.hasNext()) {
+							CSVRecord record = iterator.next();
+
+							String drugRecordId = record.get("DrugRecordGuid");
+							String patientId = record.get("PatientGuid");
+							String id = patientId + ":" + drugRecordId;
+
+							if (!hmDrugRecordToExchange.containsKey(id)) {
+								hmDrugRecordToExchange.put(id, exchange.getId());
+							}
+						}
+						parser.close();
+					}
+
+					LOG.info("Finding patients");
+					PatientSearchDalI patientSearchDal = DalProvider.factoryPatientSearchDal();
+					List<UUID> patientIds = patientSearchDal.getPatientIds(service.getId());
+					LOG.info("Found " + patientIds.size() + " patients");
+
+					//create dummy exchange
+					String bodyJson = JsonSerializer.serialize(new ArrayList<ExchangePayloadFile>());
+					String odsCode = service.getLocalId();
+
+					Exchange exchange = new Exchange();
+					exchange.setId(UUID.randomUUID());
+					exchange.setBody(bodyJson);
+					exchange.setTimestamp(new Date());
+					exchange.setHeaders(new HashMap<>());
+					exchange.setHeaderAsUuid(HeaderKeys.SenderServiceUuid, service.getId());
+					exchange.setHeader(HeaderKeys.ProtocolIds, ""); //just set to non-null value, so postToExchange(..) can safely recalculate
+					exchange.setHeader(HeaderKeys.SenderLocalIdentifier, odsCode);
+					exchange.setHeaderAsUuid(HeaderKeys.SenderOrganisationUuid, orgId);
+					exchange.setHeaderAsUuid(HeaderKeys.SenderSystemUuid, systemId);
+					exchange.setHeader(HeaderKeys.SourceSystem, MessageFormat.EMIS_CSV);
+					exchange.setServiceId(service.getId());
+					exchange.setSystemId(systemId);
+
+					LOG.info("Saving exchange");
+					AuditWriter.writeExchange(exchange);
+					AuditWriter.writeExchangeEvent(exchange, "Manually created to re-process Emis DrugRecord data");
+
+					List<UUID> batchIdsCreated = new ArrayList<>();
+					FhirResourceFiler filer = new FhirResourceFiler(exchange.getId(), service.getId(), systemId, new TransformError(), batchIdsCreated);
+
+					int done = 0;
+					for (UUID patientId : patientIds) {
+
+						ResourceDalI resourceDal = DalProvider.factoryResourceDal();
+						List<ResourceWrapper> statementWrappers = resourceDal.getResourcesByPatient(service.getId(), patientId, ResourceType.MedicationStatement.toString());
+						for (ResourceWrapper statementWrapper : statementWrappers) {
+
+							MedicationStatement medicationStatement = (MedicationStatement) statementWrapper.getResource();
+							if (!medicationStatement.hasStatus()) {
+								continue;
+							}
+
+							MedicationStatementBuilder builder = new MedicationStatementBuilder(medicationStatement);
+							boolean fixed = false;
+
+							Date cancellationDate = null;
+							Extension outerExtension = ExtensionConverter.findExtension(medicationStatement, FhirExtensionUri.MEDICATION_AUTHORISATION_CANCELLATION);
+							if (outerExtension != null) {
+								Extension innerExtension = ExtensionConverter.findExtension(outerExtension, "date");
+								if (innerExtension != null) {
+									DateType dt = (DateType) innerExtension.getValue();
+									cancellationDate = dt.getValue();
+								}
+							}
+
+
+							if (medicationStatement.getStatus() == MedicationStatement.MedicationStatementStatus.ACTIVE) {
+								//if active then ensure there's no cancellation date
+								if (cancellationDate != null) {
+									builder.setCancellationDate(null);
+									fixed = true;
+								}
+
+							} else if (medicationStatement.getStatus() == MedicationStatement.MedicationStatementStatus.COMPLETED) {
+								//if non-active, then ensure there IS a cancellation date
+								if (cancellationDate == null) {
+
+									IssueRecordIssueDate mostRecentDate = null;
+
+									Reference medicationStatementReference = ReferenceHelper.createReferenceExternal(medicationStatement);
+
+									List<ResourceWrapper> orderWrappers = resourceDal.getResourcesByPatient(service.getId(), patientId, ResourceType.MedicationOrder.toString());
+									for (ResourceWrapper orderWrapper : orderWrappers) {
+
+										MedicationOrder order = (MedicationOrder) orderWrapper.getResource();
+										MedicationOrderBuilder medicationOrderBuilder = new MedicationOrderBuilder(order);
+
+										Reference reference = medicationOrderBuilder.getMedicationStatementReference();
+										if (reference != null
+												&& ReferenceHelper.equals(reference, medicationStatementReference)) {
+
+											DateTimeType started = medicationOrderBuilder.getDateWritten();
+											Integer duration = medicationOrderBuilder.getDurationDays();
+
+											IssueRecordIssueDate obj = new IssueRecordIssueDate(started, duration);
+											if (obj.afterOrOtherIsNull(mostRecentDate)) {
+												mostRecentDate = obj;
+											}
+										}
+									}
+
+									//if no issues exist for it, use the start date of the DrugRecord
+									if (mostRecentDate == null) {
+										Date d = medicationStatement.getDateAsserted();
+										mostRecentDate = new IssueRecordIssueDate(new DateTimeType(d), new Integer(0));
+									}
+
+									Date d = mostRecentDate.getIssueDateType().getValue();
+
+									int duration = 0;
+									Integer intObj = mostRecentDate.getIssueDuration();
+									if (intObj != null) {
+										duration = intObj.intValue();
+									}
+
+									Calendar cal = Calendar.getInstance();
+									cal.setTime(d);
+									cal.add(Calendar.DAY_OF_YEAR, duration);
+
+									cancellationDate = cal.getTime();
+
+									builder.setCancellationDate(cancellationDate);
+									fixed = true;
+								}
+
+							} else {
+								LOG.error("Unexpected status " + medicationStatement.getStatus() + " on resource " + statementWrapper);
+							}
+
+							if (fixed) {
+
+								//save resource
+								filer.savePatientResource(null, false, builder);
+							}
+						}
+
+						done++;
+						if (done % 1000 == 0) {
+							LOG.info("Done " + done + " patients");
+						}
+					}
+					LOG.info("Done " + done + " patients");
+
+					//close down filer
+					filer.waitToFinish();
+
+					//set multicast header
+					String batchIdString = ObjectMapperPool.getInstance().writeValueAsString(batchIdsCreated.toArray());
+					exchange.setHeader(HeaderKeys.BatchIdsJson, batchIdString);
+
+					//post to Rabbit protocol queue
+					List<UUID> exchangeIds = new ArrayList<>();
+					exchangeIds.add(exchange.getId());
+					QueueHelper.postToExchange(exchangeIds, "EdsProtocol", null, true);
+				}
+			}
+
+			LOG.info("Finished Fixing Emis drug records");
+		} catch (Throwable t) {
+			LOG.error("", t);
+		}
+
 	}
 
 	/**
@@ -2498,7 +2729,7 @@ public class Main {
 	}
 
 
-	private static void runPersonUpdater(String enterpriseConfigName) throws Exception {
+	/*private static void runPersonUpdater(String enterpriseConfigName) throws Exception {
 
 		try {
 			LOG.info("Person updater starting for " + enterpriseConfigName);
@@ -2551,7 +2782,7 @@ public class Main {
 			LOG.error("", t);
 		}
 
-	}
+	}*/
 
 	private static void deleteOrphanedPersons(Connection connection) throws Exception {
 
@@ -2741,7 +2972,7 @@ public class Main {
 		}
 	}
 
-	private static void findPatientsThatNeedTransforming(String file, String filterOdsCode) {
+	/*private static void findPatientsThatNeedTransforming(String file, String filterOdsCode) {
 		LOG.info("Finding patients that need transforming for " + filterOdsCode + " for " + file);
 		try {
 
@@ -2878,7 +3109,7 @@ public class Main {
 		} catch (Throwable t) {
 			LOG.error("", t);
 		}
-	}
+	}*/
 
 	private static void transformPatients(String sourceFile) {
 		LOG.info("Transforming patients from " + sourceFile);
@@ -2915,7 +3146,7 @@ public class Main {
 		}
 	}
 
-	private static void countNhsNumberChanges(String odsCodes) {
+	/*private static void countNhsNumberChanges(String odsCodes) {
 		LOG.info("Counting NHS number changes for " + odsCodes);
 		try {
 
@@ -3091,7 +3322,7 @@ public class Main {
 		} catch (Throwable t) {
 			LOG.error("", t);
 		}
-	}
+	}*/
 
 	private static void createDigest(String url, String user, String pass, String table, String columnFrom, String columnTo, String base64Salt, String validNhsNumberCol) {
 		LOG.info("Creating Digest value from " + table + "." + columnFrom + " -> " + columnTo);
@@ -3257,7 +3488,7 @@ public class Main {
 		return 1;
 	}
 
-	private static void checkForBartsMissingFiles(String sinceDate) {
+	/*private static void checkForBartsMissingFiles(String sinceDate) {
 		LOG.info("Checking for Barts missing files");
 		try {
 			SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
@@ -3521,7 +3752,7 @@ public class Main {
 				LOG.error("No " + fileType + " file found for " + i + " previous [" + beforeDesc + "] after [" + afterDesc + "]");
 			}
 		}
-	}
+	}*/
 
 	/*private static void deleteEnterpriseObs(String filePath, String configName, int batchSize) {
 		LOG.info("Deleting Enterprise Observations");
@@ -3809,7 +4040,7 @@ public class Main {
 
 	}*/
 
-	private static void testMetrics() {
+	/*private static void testMetrics() {
 		LOG.info("Testing Metrics");
 		try {
 
@@ -3832,10 +4063,7 @@ public class Main {
 				LOG.debug("Waiting " + sleep + " ms");
 
 				Thread.sleep(sleep);
-				/**
-				 * N3-MessagingAPI-01.messaging-api.frailty-api.duration-ms
-				 N3-MessagingAPI-01.messaging-api.frailty-api.response-code (edited)
-				 */
+
 			}
 
 		} catch (Throwable t) {
@@ -3882,10 +4110,6 @@ public class Main {
 				LOG.debug("Waiting " + sleep + " ms");
 
 				Thread.sleep(sleep);
-				/**
-				 * N3-MessagingAPI-01.messaging-api.frailty-api.duration-ms
-				 N3-MessagingAPI-01.messaging-api.frailty-api.response-code (edited)
-				 */
 			}
 
 		} catch (Throwable t) {
@@ -3911,9 +4135,9 @@ public class Main {
 		}
 		out.close();
 		socket.close();
-	}
+	}*/
 
-	private static void fixEmisDeletedPatients(String odsCode) {
+	/*private static void fixEmisDeletedPatients(String odsCode) {
 		LOG.info("Fixing Emis Deleted Patients for " + odsCode);
 		try {
 
@@ -4146,7 +4370,7 @@ public class Main {
 		} catch (Throwable t) {
 			LOG.error("", t);
 		}
-	}
+	}*/
 
 	private static ExchangePayloadFile findFileOfType(List<ExchangePayloadFile> files, String fileType) {
 
