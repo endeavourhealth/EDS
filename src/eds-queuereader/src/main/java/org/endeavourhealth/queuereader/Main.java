@@ -983,6 +983,12 @@ public class Main {
 									List<ResourceWrapper> orderWrappers = resourceDal.getResourcesByPatient(service.getId(), patientId, ResourceType.MedicationOrder.toString());
 									for (ResourceWrapper orderWrapper : orderWrappers) {
 
+										//quick check against the raw JSON so we don't have to deserialise the bulk of them
+										String orderJson = orderWrapper.getResourceData();
+										if (!orderJson.contains(medicationStatementReference.getReference())) {
+											continue;
+										}
+
 										MedicationOrder order = (MedicationOrder) orderWrapper.getResource();
 										MedicationOrderBuilder medicationOrderBuilder = new MedicationOrderBuilder(order);
 
