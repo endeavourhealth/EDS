@@ -909,35 +909,6 @@ public class Main {
 				for (UUID systemId: systems) {
 					LOG.info("Doing system ID  " + systemId);
 
-					LOG.info("Caching drug record IDs");
-					Map<String, UUID> hmDrugRecordToExchange = new HashMap<>();
-
-					ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
-					List<Exchange> exchanges = exchangeDal.getExchangesByService(service.getId(), systemId, Integer.MAX_VALUE);
-					for (Exchange exchange: exchanges) {
-						List<ExchangePayloadFile> files = ExchangeHelper.parseExchangeBody(exchange.getBody());
-						ExchangePayloadFile drugRecordFile = findFileOfType(files, "Prescribing_DrugRecord");
-						if (drugRecordFile == null) {
-							continue;
-						}
-
-						InputStreamReader isr = FileHelper.readFileReaderFromSharedStorage(drugRecordFile.getPath());
-						CSVParser parser = new CSVParser(isr, CSVFormat.DEFAULT.withHeader());
-						Iterator<CSVRecord> iterator = parser.iterator();
-						while (iterator.hasNext()) {
-							CSVRecord record = iterator.next();
-
-							String drugRecordId = record.get("DrugRecordGuid");
-							String patientId = record.get("PatientGuid");
-							String id = patientId + ":" + drugRecordId;
-
-							if (!hmDrugRecordToExchange.containsKey(id)) {
-								hmDrugRecordToExchange.put(id, exchange.getId());
-							}
-						}
-						parser.close();
-					}
-
 					LOG.info("Finding patients");
 					PatientSearchDalI patientSearchDal = DalProvider.factoryPatientSearchDal();
 					List<UUID> patientIds = patientSearchDal.getPatientIds(service.getId());
