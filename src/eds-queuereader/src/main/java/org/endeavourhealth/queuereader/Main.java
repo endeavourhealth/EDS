@@ -1047,7 +1047,7 @@ public class Main {
 						}
 
 						done++;
-						if (done % 1000 == 0) {
+						if (done % 100 == 0) {
 							LOG.info("Done " + done + " patients");
 						}
 					}
