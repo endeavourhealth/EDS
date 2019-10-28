@@ -1059,14 +1059,16 @@ public class Main {
 					//close down filer
 					filer.waitToFinish();
 
-					//set multicast header
-					String batchIdString = ObjectMapperPool.getInstance().writeValueAsString(batchIdsCreated.toArray());
-					exchange.setHeader(HeaderKeys.BatchIdsJson, batchIdString);
+					if (exchange != null) {
+						//set multicast header
+						String batchIdString = ObjectMapperPool.getInstance().writeValueAsString(batchIdsCreated.toArray());
+						exchange.setHeader(HeaderKeys.BatchIdsJson, batchIdString);
 
-					//post to Rabbit protocol queue
-					List<UUID> exchangeIds = new ArrayList<>();
-					exchangeIds.add(exchange.getId());
-					QueueHelper.postToExchange(exchangeIds, "EdsProtocol", null, true);
+						//post to Rabbit protocol queue
+						List<UUID> exchangeIds = new ArrayList<>();
+						exchangeIds.add(exchange.getId());
+						QueueHelper.postToExchange(exchangeIds, "EdsProtocol", null, true);
+					}
 				}
 			}
 
