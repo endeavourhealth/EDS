@@ -25,6 +25,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class RabbitConsumer extends DefaultConsumer {
 	private static final Logger LOG = LoggerFactory.getLogger(RabbitConsumer.class);
 
+	private static final String FILE_EXT_KILL = "kill";
+	private static final String FILE_EXT_KILL_QUIET = "killQuiet";
+
 	//variables to prevent duplicate processing in the event of Rabbit fail-overs
 	private static final List<RabbitConsumer_State> messagesBeingProcessed = new ArrayList<>();
 
@@ -47,7 +50,8 @@ public class RabbitConsumer extends DefaultConsumer {
 		this.pipeline = new PipelineProcessor(configuration.getPipeline());
 
 		//call this to delete any pre-existing kill file
-		checkIfKillFileExists();
+		checkIfKillFileExists(FILE_EXT_KILL);
+		checkIfKillFileExists(FILE_EXT_KILL_QUIET);
 
 		startKillCheckingThread();
 	}
@@ -259,11 +263,11 @@ public class RabbitConsumer extends DefaultConsumer {
 		//if we've failed on the same exchange X times, then halt the queue reader
 		if (lastExchangeAttempts >= TransformConfig.instance().getAttemptsPermmitedPerExchange()) {
 			String reason = "Failed " + lastExchangeAttempts + " times on exchange " + lastExchangeAttempted.getExchangeId() + " so halting queue reader";
-			stop(reason);
+			stop(reason, true);
 		}
 	}
 
-	private void stop(String reason) {
+	private void stop(String reason, boolean sendSlackMessageIfPossible) {
 
 		//stop our checking thread
 		this.killCheckingRunnable.stop();
@@ -276,7 +280,9 @@ public class RabbitConsumer extends DefaultConsumer {
 		}
 
 		//tell us this has happened
-		SlackHelper.sendSlackMessage(SlackHelper.Channel.QueueReaderAlerts, "Queue Reader " + configId + " Stopping:\r\n" + reason);
+		if (sendSlackMessageIfPossible) {
+			SlackHelper.sendSlackMessage(SlackHelper.Channel.QueueReaderAlerts, "Queue Reader " + configId + " Stopping:\r\n" + reason);
+		}
 
 		//and halt
 		LOG.info("Queue Reader " + ConfigManager.getAppId() + " exiting: " + reason);
@@ -288,16 +294,20 @@ public class RabbitConsumer extends DefaultConsumer {
 	 * and ensures only the first check will return true, as the file is deleted
 	 */
 	private synchronized void checkIfKillFileExistsAndStopIfSo() {
-		if (checkIfKillFileExists()) {
+		if (checkIfKillFileExists(FILE_EXT_KILL)) {
 			String reason = "Detected kill file";
-			stop(reason);
+			stop(reason, true);
+
+		} else if (checkIfKillFileExists(FILE_EXT_KILL_QUIET)) {
+			String reason = "Detected quiet kill file";
+			stop(reason, false);
 		}
 	}
 
 	/**
 	 * checks to see if a file exists that tells us to finish processing and stop
      */
-	private boolean checkIfKillFileExists() {
+	private boolean checkIfKillFileExists(String extension) {
 
 		String killFileLocation = TransformConfig.instance().getKillFileLocation();
 		if (Strings.isNullOrEmpty(killFileLocation)) {
@@ -305,7 +315,7 @@ public class RabbitConsumer extends DefaultConsumer {
 			return false;
 		}
 
-		File killFile = new File(killFileLocation, configId + ".kill");
+		File killFile = new File(killFileLocation, configId + "." + extension);
 		if (killFile.exists()) {
 
 			//delete so we don't need to manually delete it

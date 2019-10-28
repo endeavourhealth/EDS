@@ -895,7 +895,7 @@ public class Main {
 					continue;
 				}
 
-				LOG.info("Dong " + service);
+				LOG.info("Doing " + service);
 
 				Map<UUID, String> orgMap = service.getOrganisations();
 				if (orgMap.size() != 1) {
