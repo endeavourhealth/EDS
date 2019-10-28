@@ -13,8 +13,8 @@ import {SystemService} from "./system.service";
 	template : require('./system.html')
 })
 export class SystemEditComponent extends LibraryItemComponent {
-	protected system : System;
-	selectedInterface : TechnicalInterface;
+
+	//selectedInterface : TechnicalInterface;
 
 	//NOTE: these strings correspnd to the values in the MessageFormat class
 	formats: string[];
@@ -81,24 +81,62 @@ export class SystemEditComponent extends LibraryItemComponent {
 		return false;
 	}
 
+	getInterface(): TechnicalInterface {
+		var vm = this;
+
+		if (!vm.libraryItem
+			|| !vm.libraryItem.system) {
+			//if called before the library item is loaded
+			return new TechnicalInterface();
+		} else {
+			var interfaces = vm.libraryItem.system.technicalInterface;
+			if (interfaces && interfaces.length > 0) {
+				return interfaces[0];
+			} else {
+				//if no interface yet, create and add to the system
+				var newInterface = {
+					uuid: null,
+					name: 'New interface',
+					frequency: '',
+					messageType: '',
+					messageFormat: '',
+					messageFormatVersion: ''
+				} as TechnicalInterface;
+				vm.libraryItem.system.technicalInterface.push(newInterface);
+				return newInterface;
+			}
+		}
+	}
+
 	create(folderUuid : string) {
-		this.system = {
+		var vm = this;
+
+		var newSystem = {
 			uuid: null,
 			name: '',
 			technicalInterface: []
 		} as System;
 
-		this.libraryItem = {
+		vm.libraryItem = {
 			uuid: null,
 			name: '',
 			description: '',
 			folderUuid: folderUuid,
-			system: this.system
+			system: newSystem
 		} as EdsLibraryItem;
-
 	}
 
-	getTechnicalInterface() {
+	save(close : boolean) {
+
+		//the technical interface also has a name field, which we just populate with the system name
+		var vm = this;
+		var name = vm.libraryItem.name;
+		vm.getInterface().name = name;
+
+		super.save(close);
+	}
+
+	/*getTechnicalInterface() {
 		if (this.libraryItem && this.libraryItem.system)
 			return this.libraryItem.system.technicalInterface;
 		else
@@ -123,25 +161,30 @@ export class SystemEditComponent extends LibraryItemComponent {
 		if (this.selectedInterface === scope.item) {
 			this.selectedInterface = null;
 		}
-	}
+	}*/
 
 	newFormat() {
+		var vm = this;
+
 		var newFormat = prompt("Enter the new format name");
 		if (newFormat == null) {
 			return;
 		}
 		if (newFormat.length == 0) {
-			this.log.error('Format cannot be empty');
+			vm.log.error('Format cannot be empty');
 			return;
 		}
 
-		if (this.formatsContains(newFormat)) {
-			this.log.error('Format already exists');
+		if (vm.formatsContains(newFormat)) {
+			vm.log.error('Format already exists');
 			return;
 		}
 
-		this.formats.push(newFormat);
-		this.selectedInterface.messageFormat = newFormat;
+		vm.formats.push(newFormat);
+
+		//set on the interface
+		vm.getInterface().messageFormat = newFormat;
+		//this.selectedInterface.messageFormat = newFormat;
 	}
 
 }

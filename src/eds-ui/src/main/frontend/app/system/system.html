@@ -26,7 +26,60 @@
 						</div>
 					</div>
 				</div>
+
 				<div class="row">
+					<div class="form-group col-md-6">
+						<label>Transaction Frequency</label>
+						<div class="input-group">
+							<span class="input-group-addon"><i class="fa fa-calendar fa-lg fa-fw"></i></span>
+							<select class="form-control" [(ngModel)]="getInterface().frequency" name="frequency">
+								<option *ngFor="let frequency of frequencies" value="{{frequency}}">{{frequency}}</option>
+							</select>
+						</div>
+					</div>
+				</div>
+
+				<div class="row">
+					<div class="form-group col-md-6">
+						<label>Message Type</label>
+						<div class="input-group">
+							<span class="input-group-addon"><i class="fa fa-question fa-lg fa-fw"></i></span>
+							<select class="form-control" [(ngModel)]="getInterface().messageType" name="messageType">
+								<option *ngFor="let type of types" value="{{type}}">{{type}}</option>
+							</select>
+						</div>
+
+					</div>
+				</div>
+
+				<div class="row">
+					<div class="form-group col-md-6">
+						<label>Message Format</label>&nbsp;
+						<button type="button" class="btn btn-xs btn-default" (click)="newFormat()">New Format</button>
+
+						<div class="input-group">
+							<span class="input-group-addon"><i class="fa fa-code fa-lg fa-fw"></i></span>
+							<select class="form-control" [(ngModel)]="getInterface().messageFormat" name="messagFormat">
+								<option *ngFor="let format of formats" value="{{format}}">{{format}}</option>
+							</select>
+						</div>
+
+					</div>
+				</div>
+
+				<div class="row">
+					<div class="form-group col-md-6">
+						<label>Message Format Version</label>
+						<div class="input-group">
+							<span class="input-group-addon"><i class="fa fa-sort-numeric-asc fa-lg fa-fw"></i></span>
+							<input type="text" class="form-control" id="messageFormatVersion" [(ngModel)]="getInterface().messageFormatVersion" placeholder="Please enter a message format version" name="messageVersion">
+						</div>
+
+					</div>
+				</div>
+
+
+				<!--<div class="row">
 					<div class="form-group col-md-8">
 						<label>Technical Interfaces</label>
 						<button type="button" class="btn btn-xs btn-success" style="margin-left: 20px" (click)="addInterface()">
@@ -118,7 +171,7 @@
 							</div>
 						</div>
 					</div>
-				</div>
+				</div>-->
 			</form>
 		</div>
 	</div>

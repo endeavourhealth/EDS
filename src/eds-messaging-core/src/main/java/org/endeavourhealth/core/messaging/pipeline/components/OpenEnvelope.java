@@ -7,11 +7,9 @@ import org.endeavourhealth.common.cache.ParserPool;
 import org.endeavourhealth.core.configuration.OpenEnvelopeConfig;
 import org.endeavourhealth.core.database.dal.DalProvider;
 import org.endeavourhealth.core.database.dal.admin.LibraryDalI;
-import org.endeavourhealth.core.database.dal.admin.OrganisationDalI;
 import org.endeavourhealth.core.database.dal.admin.ServiceDalI;
 import org.endeavourhealth.core.database.dal.admin.models.ActiveItem;
 import org.endeavourhealth.core.database.dal.admin.models.Item;
-import org.endeavourhealth.core.database.dal.admin.models.Organisation;
 import org.endeavourhealth.core.database.dal.admin.models.Service;
 import org.endeavourhealth.core.database.dal.audit.ExchangeDalI;
 import org.endeavourhealth.core.database.dal.audit.models.Exchange;
@@ -226,53 +224,36 @@ public class OpenEnvelope extends PipelineComponent {
 		exchange.setHeader(HeaderKeys.ResponseUri, messageHeader.getSource().getEndpoint());
 		exchange.setHeader(HeaderKeys.MessageEvent, messageHeader.getEvent().getCode());
 
-		getSenderUuid(exchange);
+		processSender(exchange);
 		processDestinations(exchange, messageHeader);
 	}
 
-	private void getSenderUuid(Exchange exchange) throws PipelineException {
+	private void processSender(Exchange exchange) throws PipelineException {
 
 		String organisationOds = exchange.getHeader(HeaderKeys.SenderLocalIdentifier);
+		String software = exchange.getHeader(HeaderKeys.SourceSystem);
+		String version = exchange.getHeader(HeaderKeys.SystemVersion);
 
-		//get the organisation
-		OrganisationDalI organisationRepository = DalProvider.factoryOrganisationDal();
-		Organisation organisation = null;
-		try {
-			organisation = organisationRepository.getByNationalId(organisationOds);
-		} catch (Exception ex) {
-			throw new PipelineException("Failed to retrieve organisation for " + organisationOds, ex);
-		}
-
-		if (organisation == null) {
-			throw new PipelineException("Organisation for national ID " + organisationOds + " could not be found");
-		}
-
-		//get the service
-		Service service = null;
-		//TODO - fix assumption that orgs can only have one service
+		//ensure we can match to a Service
 		ServiceDalI serviceRepository = DalProvider.factoryServiceDal();
-		for (UUID serviceId: organisation.getServices().keySet()) {
-			try {
-				service = serviceRepository.getById(serviceId);
-			} catch (Exception ex) {
-				throw new PipelineException("Failed to retrieve service " + serviceId);
-			}
+		Service service = null;
+		try {
+			service = serviceRepository.getByLocalIdentifier(organisationOds);
+		} catch (Exception ex) {
+			throw new PipelineException("Exception getting service for ODS code " + organisationOds, ex);
 		}
 
 		if (service == null) {
-			throw new PipelineException("No service found for organisation " + organisation.getId() + " opening exchange " + exchange.getId());
+			throw new PipelineException("No service found for ODS code " + organisationOds + " opening exchange " + exchange.getId());
 		}
 
-		String software = exchange.getHeader(HeaderKeys.SourceSystem);
-		String version = exchange.getHeader(HeaderKeys.SystemVersion);
+		//ensure we can match to a System at that Service
 		UUID systemUuid = findSystemId(service, software, version);
-
 		if (systemUuid == null) {
 			throw new PipelineException("No system found for service " + service.getId() + " software " + software + " version " + version + " opening exchange " + exchange.getId());
 		}
 
 		exchange.setHeader(HeaderKeys.SenderServiceUuid, service.getId().toString());
-		exchange.setHeader(HeaderKeys.SenderOrganisationUuid, organisation.getId().toString());
 		exchange.setHeader(HeaderKeys.SenderSystemUuid, systemUuid.toString());
 
 		exchange.setServiceId(service.getId());
@@ -320,7 +301,7 @@ public class OpenEnvelope extends PipelineComponent {
 				}
 			}
 		} catch (Exception e) {
-			throw new PipelineException("Failed to process endpoints from service " + service.getId());
+			throw new PipelineException("Failed to process endpoints from service " + service.getId(), e);
 		}
 
 		return null;
