@@ -886,14 +886,13 @@ public class Main {
 						LOG.debug("Skipping " + service + " due to regex");
 						continue;
 					}
+				}
 
-				} else {
-					//check if Emis
-					String notes = service.getNotes();
-					if (notes == null || !notes.contains("CDB")) {
-						LOG.info("Skipping as not Emis: " + service);
-						continue;
-					}
+				//check if Emis
+				String notes = service.getNotes();
+				if (notes == null || !notes.contains("CDB")) {
+					LOG.info("Skipping as not Emis: " + service);
+					continue;
 				}
 
 				LOG.info("Dong " + service);
