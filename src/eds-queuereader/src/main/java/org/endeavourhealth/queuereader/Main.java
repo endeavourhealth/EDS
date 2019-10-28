@@ -917,26 +917,11 @@ public class Main {
 					String bodyJson = JsonSerializer.serialize(new ArrayList<ExchangePayloadFile>());
 					String odsCode = service.getLocalId();
 
-					Exchange exchange = new Exchange();
-					exchange.setId(UUID.randomUUID());
-					exchange.setBody(bodyJson);
-					exchange.setTimestamp(new Date());
-					exchange.setHeaders(new HashMap<>());
-					exchange.setHeaderAsUuid(HeaderKeys.SenderServiceUuid, service.getId());
-					exchange.setHeader(HeaderKeys.ProtocolIds, ""); //just set to non-null value, so postToExchange(..) can safely recalculate
-					exchange.setHeader(HeaderKeys.SenderLocalIdentifier, odsCode);
-					exchange.setHeaderAsUuid(HeaderKeys.SenderOrganisationUuid, orgId);
-					exchange.setHeaderAsUuid(HeaderKeys.SenderSystemUuid, systemId);
-					exchange.setHeader(HeaderKeys.SourceSystem, MessageFormat.EMIS_CSV);
-					exchange.setServiceId(service.getId());
-					exchange.setSystemId(systemId);
-
-					LOG.info("Saving exchange");
-					AuditWriter.writeExchange(exchange);
-					AuditWriter.writeExchangeEvent(exchange, "Manually created to re-process Emis DrugRecord data");
+					Exchange exchange = null;
+					UUID exchangeId = UUID.randomUUID();
 
 					List<UUID> batchIdsCreated = new ArrayList<>();
-					FhirResourceFiler filer = new FhirResourceFiler(exchange.getId(), service.getId(), systemId, new TransformError(), batchIdsCreated);
+					FhirResourceFiler filer = new FhirResourceFiler(exchangeId, service.getId(), systemId, new TransformError(), batchIdsCreated);
 
 					int done = 0;
 					for (UUID patientId : patientIds) {
@@ -1039,6 +1024,25 @@ public class Main {
 							}
 
 							if (fixed) {
+
+								if (exchange == null) {
+									exchange = new Exchange();
+									exchange.setId(exchangeId);
+									exchange.setBody(bodyJson);
+									exchange.setTimestamp(new Date());
+									exchange.setHeaders(new HashMap<>());
+									exchange.setHeaderAsUuid(HeaderKeys.SenderServiceUuid, service.getId());
+									exchange.setHeader(HeaderKeys.ProtocolIds, ""); //just set to non-null value, so postToExchange(..) can safely recalculate
+									exchange.setHeader(HeaderKeys.SenderLocalIdentifier, odsCode);
+									exchange.setHeaderAsUuid(HeaderKeys.SenderOrganisationUuid, orgId);
+									exchange.setHeaderAsUuid(HeaderKeys.SenderSystemUuid, systemId);
+									exchange.setHeader(HeaderKeys.SourceSystem, MessageFormat.EMIS_CSV);
+									exchange.setServiceId(service.getId());
+									exchange.setSystemId(systemId);
+
+									AuditWriter.writeExchange(exchange);
+									AuditWriter.writeExchangeEvent(exchange, "Manually created to re-process Emis DrugRecord data");
+								}
 
 								//save resource
 								filer.savePatientResource(null, false, builder);
