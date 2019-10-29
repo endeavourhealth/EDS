@@ -127,7 +127,7 @@ export class SftpReaderComponent {
 
         var dataFrequencyDays = status.dataFrequencyDays;
         var dataFrequencyMs = dataFrequencyDays * 24 * 60 * 60 * 1000;
-        dataFrequencyMs = (dataFrequencyMs * 1.1); //add 10% to the poling frequency so it's less touchy
+        dataFrequencyMs = (dataFrequencyMs * 1.5); //add 10% to the poling frequency so it's less touchy
 
         var now = new Date();
         var lastExtractDiffMs = now.getTime() - lastExtract;
