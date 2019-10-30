@@ -11,10 +11,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.common.config.ConfigManager;
-import org.endeavourhealth.common.fhir.ExtensionConverter;
-import org.endeavourhealth.common.fhir.FhirExtensionUri;
-import org.endeavourhealth.common.fhir.IdentifierHelper;
-import org.endeavourhealth.common.fhir.ReferenceHelper;
+import org.endeavourhealth.common.fhir.*;
 import org.endeavourhealth.common.fhir.schema.EthnicCategory;
 import org.endeavourhealth.common.fhir.schema.MaritalStatus;
 import org.endeavourhealth.common.ods.OdsOrganisation;
@@ -116,6 +113,12 @@ public class Main {
 			deleteEnterpriseObs(filePath, configName, batchSize);
 			System.exit(0);
 		}*/
+
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("PopulatePatientSearchEpisodeOdsCode")) {
+			populatePatientSearchEpisodeOdsCode();
+			System.exit(0);
+		}
 
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("FixEmisDrugRecords")) {
@@ -869,6 +872,99 @@ public class Main {
 		// Begin consume
 		rabbitHandler.start();
 		LOG.info("EDS Queue reader running (kill file location " + TransformConfig.instance().getKillFileLocation() + ")");
+	}
+
+	private static void populatePatientSearchEpisodeOdsCode() {
+		LOG.info("Populating Patient Search Episode ODS Codes");
+		try {
+
+			EntityManager edsEntityManager = ConnectionManager.getEdsEntityManager();
+			SessionImpl edsSession = (SessionImpl)edsEntityManager.getDelegate();
+			Connection edsConnection = edsSession.connection();
+
+			int done = 0;
+
+			String sql = "SELECT service_id, patient_id, episode_id FROM tmp.patient_search_episode_tmp WHERE done = 0";
+			PreparedStatement ps = edsConnection.prepareStatement(sql);
+			ps.setFetchSize(1000);
+
+			ResultSet rs = ps.executeQuery();
+
+			while (rs.next()) {
+
+				String serviceId = rs.getString(1);
+				String patientId = rs.getString(2);
+				String episodeId = rs.getString(3);
+
+				ResourceDalI resourceDal = DalProvider.factoryResourceDal();
+				EpisodeOfCare episodeOfCare = (EpisodeOfCare)resourceDal.getCurrentVersionAsResource(UUID.fromString(serviceId), ResourceType.EpisodeOfCare, episodeId);
+				if (episodeOfCare != null
+						&& episodeOfCare.hasManagingOrganization()) {
+
+					Reference orgReference = episodeOfCare.getManagingOrganization();
+					ReferenceComponents comps = org.endeavourhealth.common.fhir.ReferenceHelper.getReferenceComponents(orgReference);
+					ResourceType type = comps.getResourceType();
+					String id = comps.getId();
+
+					resourceDal = DalProvider.factoryResourceDal();
+					Organization org = (Organization)resourceDal.getCurrentVersionAsResource(UUID.fromString(serviceId), type, id);
+					if (org != null) {
+						String orgOdsCode = IdentifierHelper.findOdsCode(org);
+
+						EntityManager edsEntityManager2 = ConnectionManager.getEdsEntityManager();
+						SessionImpl edsSession2 = (SessionImpl)edsEntityManager2.getDelegate();
+						Connection edsConnection2 = edsSession2.connection();
+
+						sql = "UPDATE patient_search_episode SET ods_code = ? WHERE service_id = ? AND patient_id = ? AND episode_id = ?";
+						PreparedStatement ps2 = edsConnection2.prepareStatement(sql);
+
+						edsEntityManager2.getTransaction().begin();
+
+						ps2.setString(1, orgOdsCode);
+						ps2.setString(2, serviceId);
+						ps2.setString(3, patientId);
+						ps2.setString(4, episodeId);
+						ps2.executeUpdate();
+						edsEntityManager2.getTransaction().commit();
+
+						ps2.close();
+						edsEntityManager2.close();
+
+					}
+				}
+
+				EntityManager edsEntityManager2 = ConnectionManager.getEdsEntityManager();
+				SessionImpl edsSession2 = (SessionImpl)edsEntityManager2.getDelegate();
+				Connection edsConnection2 = edsSession2.connection();
+
+				sql = "UPDATE tmp.patient_search_episode_tmp SET done = ? WHERE service_id = ? AND patient_id = ? AND episode_id = ?";
+				PreparedStatement ps2 = edsConnection2.prepareStatement(sql);
+
+				edsEntityManager2.getTransaction().begin();
+				ps2.setBoolean(1, true);
+				ps2.setString(2, serviceId);
+				ps2.setString(3, patientId);
+				ps2.setString(4, episodeId);
+				ps2.executeUpdate();
+
+				edsEntityManager2.getTransaction().commit();
+
+				ps2.close();
+				edsEntityManager2.close();
+
+				done ++;
+				if (done % 100 == 0) {
+					LOG.debug("Done " + done);
+				}
+			}
+			rs.close();
+			ps.close();
+
+			LOG.debug("Done " + done);
+			LOG.info("Finished Populating Patient Search Episode ODS Codes");
+		} catch (Throwable t) {
+			LOG.error("", t);
+		}
 	}
 
 	private static void fixEmisDrugRecords(String odsCodeRegex) {
