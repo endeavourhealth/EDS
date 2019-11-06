@@ -7,6 +7,11 @@
 
                 <button class="btn btn-sm btn-default" (click)="odsSearch()" title="Ods Search">ODS Search</button>
 
+                <div class="form-group">
+                    Warnings Only
+                    <input type="checkbox" id="showWarningsOnly" [(ngModel)]="showWarningsOnly" name="showWarningsOnly">
+                </div>
+
 
                 <div class="form-group">
 
@@ -28,7 +33,14 @@
     <div class="module-body">
 
         <div *ngIf="statuses">
-            <div class="row" *ngFor="let status of statuses">
+
+            <div class="row" *ngIf="showWarningsOnly && getStatusesToDisplay().length == 0">
+                <div class="col-md-12">
+                    No warnings found
+                </div>
+            </div>
+
+            <div class="row" *ngFor="let status of getStatusesToDisplay()">
                 <div class="col-md-12">
                     <div class="{{getPanelClass(status)}}">
                         <div class="panel-heading">

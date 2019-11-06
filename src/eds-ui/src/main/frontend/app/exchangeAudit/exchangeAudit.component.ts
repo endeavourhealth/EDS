@@ -11,6 +11,7 @@ import {TransformErrorDetail} from "./TransformErrorDetail";
 import {TransformErrorsDialog} from "./transformErrors.dialog";
 import {Protocol} from "./Protocol";
 import {MessageBoxDialog} from "eds-common-js/dist/index";
+import {ServiceListComponent} from "../services/serviceList.component";
 
 @Component({
 	template : require('./exchangeAudit.html')
@@ -390,5 +391,21 @@ export class ExchangeAuditComponent {
 		} else {
 			return true;
 		}
+	}
+
+	formatTransformAuditDuration(transformAudit: TransformErrorDetail) : string {
+		if (!transformAudit
+			|| !transformAudit.transformStart
+			|| !transformAudit.transformEnd) {
+			return '';
+		}
+
+		var startDate = new Date();
+		startDate.setTime(transformAudit.transformStart);
+
+		var endDate = new Date();
+		endDate.setTime(transformAudit.transformEnd);
+
+		return ServiceListComponent.getDateDiffDesc(startDate, endDate);
 	}
 }

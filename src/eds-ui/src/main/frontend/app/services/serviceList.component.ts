@@ -293,7 +293,18 @@ export class ServiceListComponent implements OnInit, OnDestroy{
 
 		var today = new Date();
 
-		var diffMs = today.getTime() - lastDate.getTime();
+		ret += ServiceListComponent.getDateDiffDesc(lastDate, today);
+
+		//cache it in the status so we don't need to work it out again
+		status.cachedLastDataDateDesc = ret;
+
+		return ret;
+
+	}
+
+	static getDateDiffDesc(earlier: Date, later: Date): string {
+
+		var diffMs = later.getTime() - earlier.getTime();
 
 		var durSec = 1000;
 		var durMin = durSec * 60;
@@ -362,12 +373,7 @@ export class ServiceListComponent implements OnInit, OnDestroy{
 			toks.push('0s');
 		}
 
-		ret += toks.join(' ');
-
-		//cache it in the status so we don't need to work it out again
-		status.cachedLastDataDateDesc = ret;
-
-		return ret;
+		return toks.join(' ');
 	}
 
 	formatProcessingStatusTooltip(service: Service, status: SystemStatus) : string {

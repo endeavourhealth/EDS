@@ -22,6 +22,7 @@ export class SftpReaderComponent {
     resultStr: string;
     showRawJson: boolean;
     refreshingStatus: boolean;
+    showWarningsOnly: boolean;
 
     constructor(private $modal : NgbModal,
                 protected sftpReaderService:SftpReaderService,
@@ -34,6 +35,7 @@ export class SftpReaderComponent {
     ngOnInit() {
         var vm = this;
         vm.filterInstanceName = 'active';
+        vm.showWarningsOnly = true;
         vm.refreshInstances();
         vm.refreshStatus();
     }
@@ -75,6 +77,41 @@ export class SftpReaderComponent {
                 vm.logger.error('Failed get SFTP Reader status', error, 'SFTP Reader Status');
             }
         )
+    }
+
+    getStatusesToDisplay() {
+        var vm = this;
+        if (!vm.showWarningsOnly) {
+            return vm.statuses;
+
+        } else {
+            var ret = [];
+            var i;
+            for (i=0; i<vm.statuses.length; i++) {
+                var status = vm.statuses[i];
+
+                //any of these count as a warning
+                if (!status.latestPollingStart
+                    || status.latestPollingException
+                    || !status.latestBatchId
+                    || vm.filterOrgs(status.completeBatchContents, false).length > 0) {
+
+                    ret.push(status);
+                }
+
+                /*if (vm.isLastPollAttemptTooOld(status)
+                    || !status.latestPollingStart
+                    || status.latestPollingException
+                    || vm.isLastExtractTooOld(status)
+                    || !status.latestBatchId
+                    || vm.filterOrgs(status.completeBatchContents, false).length > 0) {
+
+                    ret.push(status);
+                }*/
+            }
+            return ret;
+        }
+
     }
 
     filterOrgs(arr: SftpReaderBatchContents[], wantOk: boolean): SftpReaderBatchContents[] {
