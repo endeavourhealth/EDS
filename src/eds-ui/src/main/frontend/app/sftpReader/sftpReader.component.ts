@@ -91,15 +91,7 @@ export class SftpReaderComponent {
                 var status = vm.statuses[i];
 
                 //any of these count as a warning
-                if (!status.latestPollingStart
-                    || status.latestPollingException
-                    || !status.latestBatchId
-                    || vm.filterOrgs(status.completeBatchContents, false).length > 0) {
-
-                    ret.push(status);
-                }
-
-                /*if (vm.isLastPollAttemptTooOld(status)
+                if (vm.isLastPollAttemptTooOld(status)
                     || !status.latestPollingStart
                     || status.latestPollingException
                     || vm.isLastExtractTooOld(status)
@@ -107,7 +99,7 @@ export class SftpReaderComponent {
                     || vm.filterOrgs(status.completeBatchContents, false).length > 0) {
 
                     ret.push(status);
-                }*/
+                }
             }
             return ret;
         }
