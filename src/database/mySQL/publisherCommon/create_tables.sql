@@ -14,7 +14,7 @@ CREATE TABLE emis_csv_code_map (
 	code_id bigint,
 	code_type varchar(250),
 	read_term varchar(500),
-	read_code varchar(250),
+	read_code varchar(250) BINARY, -- note binary keyword to make case sensitive
 	snomed_concept_id BIGINT,
 	snomed_description_id BIGINT,
 	snomed_term varchar(500),
@@ -24,6 +24,8 @@ CREATE TABLE emis_csv_code_map (
 	parent_code_id bigint,
 	audit_json MEDIUMTEXT,
 	dt_last_received datetime,
+	adjusted_code varchar(50) BINARY, -- note binary keyword to make case sensitive
+	codeable_concept_system varchar(255),
 	CONSTRAINT pk_emis_csv_code_map PRIMARY KEY (medication, code_id)
 )
 ROW_FORMAT=COMPRESSED

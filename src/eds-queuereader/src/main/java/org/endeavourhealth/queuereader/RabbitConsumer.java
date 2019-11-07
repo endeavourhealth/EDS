@@ -6,6 +6,7 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.DefaultConsumer;
 import com.rabbitmq.client.Envelope;
 import org.endeavourhealth.common.config.ConfigManager;
+import org.endeavourhealth.common.utility.MetricsHelper;
 import org.endeavourhealth.common.utility.SlackHelper;
 import org.endeavourhealth.core.configuration.QueueReaderConfiguration;
 import org.endeavourhealth.core.database.dal.DalProvider;
@@ -70,6 +71,8 @@ public class RabbitConsumer extends DefaultConsumer {
 
 	@Override
 	public void handleDelivery(String consumerTag, Envelope envelope, AMQP.BasicProperties properties, byte[] bytes) throws IOException {
+
+		MetricsHelper.recordEvent("message_received");
 
 		RabbitConsumer_State processingState = findProcessingState(bytes, properties.getHeaders());
 
@@ -281,7 +284,13 @@ public class RabbitConsumer extends DefaultConsumer {
 
 		//tell us this has happened
 		if (sendSlackMessageIfPossible) {
-			SlackHelper.sendSlackMessage(SlackHelper.Channel.QueueReaderAlerts, "Queue Reader " + configId + " Stopping:\r\n" + reason);
+			String host;
+			try {
+				host = MetricsHelper.getHostName();
+			} catch (IOException ioe) {
+				host = "UNKNOWN";
+			}
+			SlackHelper.sendSlackMessage(SlackHelper.Channel.QueueReaderAlerts, "Queue Reader " + configId + " Stopping on " + host + ":\r\n" + reason);
 		}
 
 		//and halt

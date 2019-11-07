@@ -121,6 +121,16 @@ public class Main {
 		}
 
 		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("FixEmisSnomedCodes")) {
+			String odsCodeRegex = null;
+			if (args.length > 1) {
+				odsCodeRegex = args[1];
+			}
+			fixEmisSnomedCodes(odsCodeRegex);
+			System.exit(0);
+		}
+
+		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("FixEmisDrugRecords")) {
 			String odsCodeRegex = null;
 			if (args.length > 1) {
@@ -872,6 +882,65 @@ public class Main {
 		// Begin consume
 		rabbitHandler.start();
 		LOG.info("EDS Queue reader running (kill file location " + TransformConfig.instance().getKillFileLocation() + ")");
+	}
+
+	private static void fixEmisSnomedCodes(String odsCodeRegex) {
+		LOG.info("Finished Fixing Emis Snomed codes for orgs " + odsCodeRegex);
+		try {
+
+			List<ResourceType> resourceTypes = new ArrayList<>();
+			resourceTypes.add(ResourceType.Observation);
+			resourceTypes.add(ResourceType.Condition);
+			resourceTypes.add(ResourceType.Procedure);
+			resourceTypes.add(ResourceType.AllergyIntolerance);
+			resourceTypes.add(ResourceType.FamilyMemberHistory);
+			resourceTypes.add(ResourceType.Immunization);
+			resourceTypes.add(ResourceType.DiagnosticOrder);
+			resourceTypes.add(ResourceType.DiagnosticReport);
+			resourceTypes.add(ResourceType.Specimen);
+			resourceTypes.add(ResourceType.ReferralRequest);
+
+
+			ServiceDalI serviceDal = DalProvider.factoryServiceDal();
+			List<Service> services = serviceDal.getAll();
+			for (Service service: services) {
+
+				if (odsCodeRegex != null) {
+
+					String odsCode = service.getLocalId();
+					if (Strings.isNullOrEmpty(odsCode)
+							|| !Pattern.matches(odsCodeRegex, odsCode)) {
+						LOG.debug("Skipping " + service + " due to regex");
+						continue;
+					}
+				}
+
+				LOG.info("Doing " + service);
+
+				Map<UUID, String> orgMap = service.getOrganisations();
+				if (orgMap.size() != 1) {
+					throw new Exception("Cannot support loading services without a single organisation");
+				}
+				Iterator<UUID> orgIterator = orgMap.keySet().iterator();
+				UUID orgId = orgIterator.next();
+
+				List<UUID> systems = findSystemIds(service);
+				for (UUID systemId: systems) {
+
+					LibraryItem libraryItem = LibraryRepositoryHelper.getLibraryItem(systemId);
+					if (!libraryItem.getName().toUpperCase().contains("EMIS")) {
+						LOG.info("Skipping system " + libraryItem.getName());
+						continue;
+					}
+
+					LOG.info("Doing system ID  " + libraryItem.getName());
+				}
+			}
+
+			LOG.info("Finished Fixing Emis Snomed codes for orgs " + odsCodeRegex);
+		} catch (Throwable t) {
+			LOG.error("", t);
+		}
 	}
 
 	private static void populatePatientSearchEpisodeOdsCode() {

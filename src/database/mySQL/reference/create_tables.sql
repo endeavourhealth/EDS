@@ -20,6 +20,7 @@ DROP TABLE IF EXISTS ctv3_to_snomed_map;
 DROP TABLE IF EXISTS read2_to_snomed_map;
 DROP TABLE IF EXISTS ctv3_to_read2_map;
 DROP TABLE IF EXISTS uprn_property_class;
+DROP TABLE IF EXISTS read2;
 
 CREATE TABLE postcode_lookup
 (
@@ -264,4 +265,10 @@ CREATE TABLE uprn_property_class (
   uprn bigint not null,
   property_class varchar(10) not null,
   CONSTRAINT pk_uprn_property_class PRIMARY KEY (uprn)
+);
+
+create table read2 (
+	read_code varchar(5) binary,
+  preferred_term varchar(255),
+  CONSTRAINT pk_read2 PRIMARY KEY (read_code)
 );

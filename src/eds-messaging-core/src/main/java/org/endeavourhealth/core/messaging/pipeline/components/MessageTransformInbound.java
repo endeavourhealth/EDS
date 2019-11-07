@@ -477,7 +477,7 @@ public class MessageTransformInbound extends PipelineComponent {
 		String exchangeBody = exchange.getBody();
 
 		//if the version is this specific string, then invoke the custom transformer, otherwise the regular one
-		if (version.equalsIgnoreCase("CUSTOM")) {
+		if (version != null && version.equalsIgnoreCase("CUSTOM")) {
 			EmisCustomCsvToFhirTransformer.transform(exchangeBody, fhirResourceFiler, version);
 
 		} else {
