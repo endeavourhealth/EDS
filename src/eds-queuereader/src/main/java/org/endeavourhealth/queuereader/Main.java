@@ -950,9 +950,12 @@ public class Main {
 						continue;
 					}
 
-					LOG.info("Doing system ID  " + libraryItem.getName());
+					LOG.info("Doing system ID " + libraryItem.getName());
 
 					Set<String> hsObservationsDone = new HashSet<>();
+					Set<String> hsDiariesDone = new HashSet<>();
+					Set<String> hsConsultationsDone = new HashSet<>();
+					Set<String> hsSlotsDone = new HashSet<>();
 
 					EmisCsvHelper helper = new EmisCsvHelper(service.getId(), systemId, null, null, false, null);
 
@@ -972,8 +975,8 @@ public class Main {
 						}
 
 						List<ExchangePayloadFile> files = ExchangeHelper.parseExchangeBody(exchange.getBody());
-						ExchangePayloadFile observationFile = findFileOfType(files, "CareRecord_Observation");
-						if (observationFile == null) {
+						if (files.isEmpty()
+								|| files.size() == 1) { //custom extract
 							continue;
 						}
 
@@ -981,54 +984,273 @@ public class Main {
 							continue;
 						}
 
-						InputStreamReader reader = FileHelper.readFileReaderFromSharedStorage(observationFile.getPath());
-						CSVParser parser = new CSVParser(reader, CSVFormat.DEFAULT.withHeader());
-						Iterator<CSVRecord> iterator = parser.iterator();
-						while (iterator.hasNext()) {
-							CSVRecord record = iterator.next();
-							String observationGuid = record.get("ObservationGuid");
-							if (hsObservationsDone.contains(observationGuid)) {
-								continue;
+						ExchangePayloadFile observationFile = findFileOfType(files, "CareRecord_Observation");
+						if (observationFile != null) {
+							LOG.debug("Doing " + observationFile.getPath());
+
+							int obsRecordsDone = 0;
+
+							InputStreamReader reader = FileHelper.readFileReaderFromSharedStorage(observationFile.getPath());
+							CSVParser parser = new CSVParser(reader, CSVFormat.DEFAULT.withHeader());
+							Iterator<CSVRecord> iterator = parser.iterator();
+							while (iterator.hasNext()) {
+
+								obsRecordsDone ++;
+								if (obsRecordsDone % 1000 == 0) {
+									LOG.info("Done " + obsRecordsDone + " records");
+								}
+
+								CSVRecord record = iterator.next();
+								String observationGuid = record.get("ObservationGuid");
+								if (hsObservationsDone.contains(observationGuid)) {
+									continue;
+								}
+								hsObservationsDone.add(observationGuid);
+
+								String deleted = record.get("Deleted");
+								if (deleted.equalsIgnoreCase("true")) {
+									continue;
+								}
+
+								String codeIdStr = record.get("CodeId");
+								Long codeId = Long.valueOf(codeIdStr);
+								if (!codeIds.contains(codeId)) {
+									continue;
+								}
+
+								found++;
+
+								if (found % 100 == 0) {
+									LOG.info("Found " + found + " records and fixed " + fixed);
+								}
+
+								EmisCsvCodeMap codeObj = hmCodeCache.get(codeId);
+								if (codeObj == null) {
+									codeObj = mappingRepository.getCodeMapping(false, codeId);
+									hmCodeCache.put(codeId, codeObj);
+								}
+								String desiredCode = codeObj.getAdjustedCode();
+
+								String patientGuid = record.get("PatientGuid");
+								CsvCell observationCell = CsvCell.factoryDummyWrapper(observationGuid);
+								CsvCell patientCell = CsvCell.factoryDummyWrapper(patientGuid);
+
+								Set<ResourceType> resourceTypes = ObservationTransformer.findOriginalTargetResourceTypes(helper, patientCell, observationCell);
+								for (ResourceType resourceType : resourceTypes) {
+
+									String sourceId = EmisCsvHelper.createUniqueId(patientCell, observationCell);
+									UUID uuid = IdHelper.getEdsResourceId(service.getId(), resourceType, sourceId);
+
+									//need to get from history, so we get the version UUID
+									//ResourceWrapper wrapper = resourceDal.getCurrentVersion(service.getId(), resourceType.toString(), uuid);
+									List<ResourceWrapper> history = resourceDal.getResourceHistory(service.getId(), resourceType.toString(), uuid);
+									if (history.isEmpty()) {
+										continue;
+									}
+									ResourceWrapper wrapper = history.get(0);
+									if (wrapper.isDeleted()) {
+										continue;
+									}
+
+									Resource resource = wrapper.getResource();
+
+									String oldCode = null;
+
+									if (resourceType == ResourceType.Condition) {
+										Condition condition = (Condition) resource;
+										Coding coding = ObservationCodeHelper.findOriginalCoding(condition.getCode());
+										oldCode = coding.getCode();
+										if (oldCode.equals(desiredCode)) {
+											continue;
+										}
+
+										coding.setCode(desiredCode);
+
+									} else if (resourceType == ResourceType.Procedure) {
+										Procedure procedure = (Procedure) resource;
+										Coding coding = ObservationCodeHelper.findOriginalCoding(procedure.getCode());
+										oldCode = coding.getCode();
+										if (oldCode.equals(desiredCode)) {
+											continue;
+										}
+
+										coding.setCode(desiredCode);
+
+									} else if (resourceType == ResourceType.AllergyIntolerance) {
+										AllergyIntolerance allergyIntolerance = (AllergyIntolerance) resource;
+										Coding coding = ObservationCodeHelper.findOriginalCoding(allergyIntolerance.getSubstance());
+										oldCode = coding.getCode();
+										if (oldCode.equals(desiredCode)) {
+											continue;
+										}
+
+										coding.setCode(desiredCode);
+
+									} else if (resourceType == ResourceType.FamilyMemberHistory) {
+										FamilyMemberHistory familyMemberHistory = (FamilyMemberHistory) resource;
+										Coding coding = ObservationCodeHelper.findOriginalCoding(familyMemberHistory.getCondition().get(0).getCode());
+										oldCode = coding.getCode();
+										if (oldCode.equals(desiredCode)) {
+											continue;
+										}
+
+										coding.setCode(desiredCode);
+
+									} else if (resourceType == ResourceType.Immunization) {
+										Immunization immunization = (Immunization) resource;
+										Coding coding = ObservationCodeHelper.findOriginalCoding(immunization.getVaccineCode());
+										oldCode = coding.getCode();
+										if (oldCode.equals(desiredCode)) {
+											continue;
+										}
+
+										coding.setCode(desiredCode);
+
+									} else if (resourceType == ResourceType.DiagnosticOrder) {
+										DiagnosticOrder diagnosticOrder = (DiagnosticOrder) resource;
+										Coding coding = ObservationCodeHelper.findOriginalCoding(diagnosticOrder.getItem().get(0).getCode());
+										oldCode = coding.getCode();
+										if (oldCode.equals(desiredCode)) {
+											continue;
+										}
+
+										coding.setCode(desiredCode);
+
+									} else if (resourceType == ResourceType.Specimen) {
+										Specimen specimen = (Specimen) resource;
+										Coding coding = ObservationCodeHelper.findOriginalCoding(specimen.getType());
+										oldCode = coding.getCode();
+										if (oldCode.equals(desiredCode)) {
+											continue;
+										}
+
+										coding.setCode(desiredCode);
+
+									} else if (resourceType == ResourceType.DiagnosticReport) {
+										DiagnosticReport spediagnosticReportimen = (DiagnosticReport) resource;
+										Coding coding = ObservationCodeHelper.findOriginalCoding(spediagnosticReportimen.getCode());
+										oldCode = coding.getCode();
+										if (oldCode.equals(desiredCode)) {
+											continue;
+										}
+
+										coding.setCode(desiredCode);
+
+									} else if (resourceType == ResourceType.ReferralRequest) {
+										ReferralRequest referralRequest = (ReferralRequest) resource;
+										Coding coding = ObservationCodeHelper.findOriginalCoding(referralRequest.getServiceRequested().get(0));
+										oldCode = coding.getCode();
+										if (oldCode.equals(desiredCode)) {
+											continue;
+										}
+
+										coding.setCode(desiredCode);
+
+									} else if (resourceType == ResourceType.Observation) {
+										Observation observation = (Observation) resource;
+										Coding coding = ObservationCodeHelper.findOriginalCoding(observation.getCode());
+										oldCode = coding.getCode();
+										if (oldCode.equals(desiredCode)) {
+											continue;
+										}
+
+										coding.setCode(desiredCode);
+									} else {
+										throw new Exception("Unexpected resource type " + resourceType + " for ID " + uuid);
+									}
+
+									String newJson = FhirSerializationHelper.serializeResource(resource);
+									wrapper.setResourceData(newJson);
+
+									//service_id, resource_id, resource_type, patient_id, term, old_original_code, new_original_code
+									sql = "INSERT INTO tmp.emis_code_fix VALUES (?, ?, ?, ?, ?, ?, ?)";
+
+									EntityManager edsEntityManager = ConnectionManager.getEdsEntityManager();
+									SessionImpl edsSession = (SessionImpl) edsEntityManager.getDelegate();
+									Connection edsConnection = edsSession.connection();
+
+									ps = edsConnection.prepareStatement(sql);
+
+									edsEntityManager.getTransaction().begin();
+
+									int col = 1;
+									ps.setString(col++, service.getId().toString());
+									ps.setString(col++, wrapper.getPatientId().toString());
+									ps.setString(col++, wrapper.getResourceId().toString());
+									ps.setString(col++, wrapper.getResourceType());
+									ps.setString(col++, codeObj.getReadTerm());
+									ps.setString(col++, oldCode);
+									ps.setString(col++, desiredCode);
+
+									ps.executeUpdate();
+									edsEntityManager.getTransaction().commit();
+
+									saveResourceWrapper(service.getId(), wrapper);
+
+									fixed++;
+								}
 							}
-							hsObservationsDone.add(observationGuid);
+							parser.close();
+						}
 
-							String deleted = record.get("Deleted");
-							if (deleted.equalsIgnoreCase("true")) {
-								continue;
-							}
+						ExchangePayloadFile diaryFile = findFileOfType(files, "CareRecord_Diary");
+						if (diaryFile != null) {
+							LOG.debug("Doing " + diaryFile.getPath());
 
-							String codeIdStr = record.get("CodeId");
-							Long codeId = Long.valueOf(codeIdStr);
-							if (!codeIds.contains(codeId)) {
-								continue;
-							}
+							int diaryRecords = 0;
 
-							found ++;
+							InputStreamReader reader = FileHelper.readFileReaderFromSharedStorage(diaryFile.getPath());
+							CSVParser parser = new CSVParser(reader, CSVFormat.DEFAULT.withHeader());
+							Iterator<CSVRecord> iterator = parser.iterator();
+							while (iterator.hasNext()) {
 
-							if (found % 100 == 0) {
-								LOG.info("Found " + found + " records and fixed " + fixed);
-							}
+								diaryRecords ++;
+								if (diaryRecords % 1000 == 0) {
+									LOG.info("Done " + diaryRecords + " records");
+								}
 
-							EmisCsvCodeMap codeObj = hmCodeCache.get(codeId);
-							if (codeObj == null) {
-								codeObj = mappingRepository.getCodeMapping(false, codeId);
-								hmCodeCache.put(codeId, codeObj);
-							}
-							String desiredCode = codeObj.getAdjustedCode();
+								CSVRecord record = iterator.next();
+								String diaryGuid = record.get("DiaryGuid");
+								if (hsDiariesDone.contains(diaryGuid)) {
+									continue;
+								}
+								hsDiariesDone.add(diaryGuid);
 
-							String patientGuid = record.get("PatientGuid");
-							CsvCell observationCell = CsvCell.factoryDummyWrapper(observationGuid);
-							CsvCell patientCell = CsvCell.factoryDummyWrapper(patientGuid);
+								String deleted = record.get("Deleted");
+								if (deleted.equalsIgnoreCase("true")) {
+									continue;
+								}
 
-							Set<ResourceType> resourceTypes = ObservationTransformer.findOriginalTargetResourceTypes(helper, patientCell, observationCell);
-							for (ResourceType resourceType: resourceTypes) {
+								String codeIdStr = record.get("CodeId");
+								Long codeId = Long.valueOf(codeIdStr);
+								if (!codeIds.contains(codeId)) {
+									continue;
+								}
 
-								String sourceId = EmisCsvHelper.createUniqueId(patientCell, observationCell);
-								UUID uuid = IdHelper.getEdsResourceId(service.getId(), resourceType, sourceId);
+								found++;
+
+								if (found % 100 == 0) {
+									LOG.info("Found " + found + " records and fixed " + fixed);
+								}
+
+								EmisCsvCodeMap codeObj = hmCodeCache.get(codeId);
+								if (codeObj == null) {
+									codeObj = mappingRepository.getCodeMapping(false, codeId);
+									hmCodeCache.put(codeId, codeObj);
+								}
+								String desiredCode = codeObj.getAdjustedCode();
+
+								String patientGuid = record.get("PatientGuid");
+								CsvCell diaryCell = CsvCell.factoryDummyWrapper(diaryGuid);
+								CsvCell patientCell = CsvCell.factoryDummyWrapper(patientGuid);
+
+
+								String sourceId = EmisCsvHelper.createUniqueId(patientCell, diaryCell);
+								UUID uuid = IdHelper.getEdsResourceId(service.getId(), ResourceType.ProcedureRequest, sourceId);
 
 								//need to get from history, so we get the version UUID
 								//ResourceWrapper wrapper = resourceDal.getCurrentVersion(service.getId(), resourceType.toString(), uuid);
-								List<ResourceWrapper> history = resourceDal.getResourceHistory(service.getId(), resourceType.toString(), uuid);
+								List<ResourceWrapper> history = resourceDal.getResourceHistory(service.getId(), ResourceType.ProcedureRequest.toString(), uuid);
 								if (history.isEmpty()) {
 									continue;
 								}
@@ -1041,108 +1263,15 @@ public class Main {
 
 								String oldCode = null;
 
-								if (resourceType == ResourceType.Condition) {
-									Condition condition = (Condition)resource;
-									Coding coding = ObservationCodeHelper.findOriginalCoding(condition.getCode());
-									oldCode = coding.getCode();
-									if (oldCode.equals(desiredCode)) {
-										continue;
-									}
-
-									coding.setCode(desiredCode);
-
-								} else if (resourceType == ResourceType.Procedure) {
-									Procedure procedure = (Procedure)resource;
-									Coding coding = ObservationCodeHelper.findOriginalCoding(procedure.getCode());
-									oldCode = coding.getCode();
-									if (oldCode.equals(desiredCode)) {
-										continue;
-									}
-
-									coding.setCode(desiredCode);
-
-								} else if (resourceType == ResourceType.AllergyIntolerance) {
-									AllergyIntolerance allergyIntolerance = (AllergyIntolerance)resource;
-									Coding coding = ObservationCodeHelper.findOriginalCoding(allergyIntolerance.getSubstance());
-									oldCode = coding.getCode();
-									if (oldCode.equals(desiredCode)) {
-										continue;
-									}
-
-									coding.setCode(desiredCode);
-
-								} else if (resourceType == ResourceType.FamilyMemberHistory) {
-									FamilyMemberHistory familyMemberHistory = (FamilyMemberHistory)resource;
-									Coding coding = ObservationCodeHelper.findOriginalCoding(familyMemberHistory.getCondition().get(0).getCode());
-									oldCode = coding.getCode();
-									if (oldCode.equals(desiredCode)) {
-										continue;
-									}
-
-									coding.setCode(desiredCode);
-
-								} else if (resourceType == ResourceType.Immunization) {
-									Immunization immunization = (Immunization)resource;
-									Coding coding = ObservationCodeHelper.findOriginalCoding(immunization.getVaccineCode());
-									oldCode = coding.getCode();
-									if (oldCode.equals(desiredCode)) {
-										continue;
-									}
-
-									coding.setCode(desiredCode);
-
-								} else if (resourceType == ResourceType.DiagnosticOrder) {
-									DiagnosticOrder diagnosticOrder = (DiagnosticOrder)resource;
-									Coding coding = ObservationCodeHelper.findOriginalCoding(diagnosticOrder.getItem().get(0).getCode());
-									oldCode = coding.getCode();
-									if (oldCode.equals(desiredCode)) {
-										continue;
-									}
-
-									coding.setCode(desiredCode);
-
-								} else if (resourceType == ResourceType.Specimen) {
-									Specimen specimen = (Specimen)resource;
-									Coding coding = ObservationCodeHelper.findOriginalCoding(specimen.getType());
-									oldCode = coding.getCode();
-									if (oldCode.equals(desiredCode)) {
-										continue;
-									}
-
-									coding.setCode(desiredCode);
-
-								} else if (resourceType == ResourceType.DiagnosticReport) {
-									DiagnosticReport spediagnosticReportimen = (DiagnosticReport)resource;
-									Coding coding = ObservationCodeHelper.findOriginalCoding(spediagnosticReportimen.getCode());
-									oldCode = coding.getCode();
-									if (oldCode.equals(desiredCode)) {
-										continue;
-									}
-
-									coding.setCode(desiredCode);
-
-								} else if (resourceType == ResourceType.ReferralRequest) {
-									ReferralRequest referralRequest = (ReferralRequest)resource;
-									Coding coding = ObservationCodeHelper.findOriginalCoding(referralRequest.getServiceRequested().get(0));
-									oldCode = coding.getCode();
-									if (oldCode.equals(desiredCode)) {
-										continue;
-									}
-
-									coding.setCode(desiredCode);
-
-								} else if (resourceType == ResourceType.Observation) {
-									Observation observation = (Observation)resource;
-									Coding coding = ObservationCodeHelper.findOriginalCoding(observation.getCode());
-									oldCode = coding.getCode();
-									if (oldCode.equals(desiredCode)) {
-										continue;
-									}
-
-									coding.setCode(desiredCode);
-								} else {
-									throw new Exception("Unexpected resource type " + resourceType + " for ID " + uuid);
+								ProcedureRequest procedureRequest = (ProcedureRequest) resource;
+								Coding coding = ObservationCodeHelper.findOriginalCoding(procedureRequest.getCode());
+								oldCode = coding.getCode();
+								if (oldCode.equals(desiredCode)) {
+									continue;
 								}
+
+								coding.setCode(desiredCode);
+
 
 								String newJson = FhirSerializationHelper.serializeResource(resource);
 								wrapper.setResourceData(newJson);
@@ -1151,7 +1280,7 @@ public class Main {
 								sql = "INSERT INTO tmp.emis_code_fix VALUES (?, ?, ?, ?, ?, ?, ?)";
 
 								EntityManager edsEntityManager = ConnectionManager.getEdsEntityManager();
-								SessionImpl edsSession = (SessionImpl)edsEntityManager.getDelegate();
+								SessionImpl edsSession = (SessionImpl) edsEntityManager.getDelegate();
 								Connection edsConnection = edsSession.connection();
 
 								ps = edsConnection.prepareStatement(sql);
@@ -1172,10 +1301,249 @@ public class Main {
 
 								saveResourceWrapper(service.getId(), wrapper);
 
-								fixed ++;
+								fixed++;
 							}
+							parser.close();
 						}
-						parser.close();
+
+						ExchangePayloadFile consultationFile = findFileOfType(files, "CareRecord_Consultation");
+						if (consultationFile != null) {
+							LOG.debug("Doing " + consultationFile.getPath());
+
+							int consultationRecordsDone = 0;
+
+							InputStreamReader reader = FileHelper.readFileReaderFromSharedStorage(consultationFile.getPath());
+							CSVParser parser = new CSVParser(reader, CSVFormat.DEFAULT.withHeader());
+							Iterator<CSVRecord> iterator = parser.iterator();
+							while (iterator.hasNext()) {
+
+								consultationRecordsDone ++;
+								if (consultationRecordsDone % 1000 == 0) {
+									LOG.info("Done " + consultationRecordsDone + " records");
+								}
+
+								CSVRecord record = iterator.next();
+								String consultationGuid = record.get("ConsultationGuid");
+								if (hsConsultationsDone.contains(consultationGuid)) {
+									continue;
+								}
+								hsConsultationsDone.add(consultationGuid);
+
+								String deleted = record.get("Deleted");
+								if (deleted.equalsIgnoreCase("true")) {
+									continue;
+								}
+
+								String codeIdStr = record.get("ConsultationSourceCodeId");
+								if (Strings.isNullOrEmpty(codeIdStr)) {
+									continue;
+								}
+								Long codeId = Long.valueOf(codeIdStr);
+								if (!codeIds.contains(codeId)) {
+									continue;
+								}
+
+								found++;
+
+								if (found % 100 == 0) {
+									LOG.info("Found " + found + " records and fixed " + fixed);
+								}
+
+								EmisCsvCodeMap codeObj = hmCodeCache.get(codeId);
+								if (codeObj == null) {
+									codeObj = mappingRepository.getCodeMapping(false, codeId);
+									hmCodeCache.put(codeId, codeObj);
+								}
+								String desiredCode = codeObj.getAdjustedCode();
+
+								String patientGuid = record.get("PatientGuid");
+								CsvCell consultationCell = CsvCell.factoryDummyWrapper(consultationGuid);
+								CsvCell patientCell = CsvCell.factoryDummyWrapper(patientGuid);
+
+
+								String sourceId = EmisCsvHelper.createUniqueId(patientCell, consultationCell);
+								UUID uuid = IdHelper.getEdsResourceId(service.getId(), ResourceType.Encounter, sourceId);
+
+								//need to get from history, so we get the version UUID
+								//ResourceWrapper wrapper = resourceDal.getCurrentVersion(service.getId(), resourceType.toString(), uuid);
+								List<ResourceWrapper> history = resourceDal.getResourceHistory(service.getId(), ResourceType.Encounter.toString(), uuid);
+								if (history.isEmpty()) {
+									continue;
+								}
+								ResourceWrapper wrapper = history.get(0);
+								if (wrapper.isDeleted()) {
+									continue;
+								}
+
+								Resource resource = wrapper.getResource();
+
+								String oldCode = null;
+
+								Encounter encounter = (Encounter) resource;
+								Extension extension = ExtensionConverter.findExtension(encounter, FhirExtensionUri.ENCOUNTER_SOURCE);
+								if (extension == null
+										|| !extension.hasValue()) {
+									continue;
+								}
+								CodeableConcept codeableConcept = (CodeableConcept)extension.getValue();
+								Coding coding = ObservationCodeHelper.findOriginalCoding(codeableConcept);
+								oldCode = coding.getCode();
+								if (oldCode.equals(desiredCode)) {
+									continue;
+								}
+
+								coding.setCode(desiredCode);
+
+								String newJson = FhirSerializationHelper.serializeResource(resource);
+								wrapper.setResourceData(newJson);
+
+								//service_id, resource_id, resource_type, patient_id, term, old_original_code, new_original_code
+								sql = "INSERT INTO tmp.emis_code_fix VALUES (?, ?, ?, ?, ?, ?, ?)";
+
+								EntityManager edsEntityManager = ConnectionManager.getEdsEntityManager();
+								SessionImpl edsSession = (SessionImpl) edsEntityManager.getDelegate();
+								Connection edsConnection = edsSession.connection();
+
+								ps = edsConnection.prepareStatement(sql);
+
+								edsEntityManager.getTransaction().begin();
+
+								int col = 1;
+								ps.setString(col++, service.getId().toString());
+								ps.setString(col++, wrapper.getPatientId().toString());
+								ps.setString(col++, wrapper.getResourceId().toString());
+								ps.setString(col++, wrapper.getResourceType());
+								ps.setString(col++, codeObj.getReadTerm());
+								ps.setString(col++, oldCode);
+								ps.setString(col++, desiredCode);
+
+								ps.executeUpdate();
+								edsEntityManager.getTransaction().commit();
+
+								saveResourceWrapper(service.getId(), wrapper);
+
+								fixed++;
+							}
+							parser.close();
+						}
+
+						ExchangePayloadFile slotFile = findFileOfType(files, "Appointment_slot");
+						if (slotFile != null) {
+							LOG.debug("Doing " + slotFile.getPath());
+
+							int slotRecordsDone = 0;
+
+							InputStreamReader reader = FileHelper.readFileReaderFromSharedStorage(slotFile.getPath());
+							CSVParser parser = new CSVParser(reader, CSVFormat.DEFAULT.withHeader());
+							Iterator<CSVRecord> iterator = parser.iterator();
+							while (iterator.hasNext()) {
+
+								slotRecordsDone ++;
+								if (slotRecordsDone % 1000 == 0) {
+									LOG.info("Done " + slotRecordsDone + " records");
+								}
+
+								CSVRecord record = iterator.next();
+								String slotGuid = record.get("SlotGuid");
+								if (hsSlotsDone.contains(slotGuid)) {
+									continue;
+								}
+								hsSlotsDone.add(slotGuid);
+
+								String deleted = record.get("Deleted");
+								if (deleted.equalsIgnoreCase("true")) {
+									continue;
+								}
+
+								String codeIdStr = record.get("DnaReasonCodeId");
+								Long codeId = Long.valueOf(codeIdStr);
+								if (!codeIds.contains(codeId)) {
+									continue;
+								}
+
+								found++;
+
+								if (found % 100 == 0) {
+									LOG.info("Found " + found + " records and fixed " + fixed);
+								}
+
+								EmisCsvCodeMap codeObj = hmCodeCache.get(codeId);
+								if (codeObj == null) {
+									codeObj = mappingRepository.getCodeMapping(false, codeId);
+									hmCodeCache.put(codeId, codeObj);
+								}
+								String desiredCode = codeObj.getAdjustedCode();
+
+								String patientGuid = record.get("PatientGuid");
+								CsvCell slotCell = CsvCell.factoryDummyWrapper(slotGuid);
+								CsvCell patientCell = CsvCell.factoryDummyWrapper(patientGuid);
+
+
+								String sourceId = EmisCsvHelper.createUniqueId(patientCell, slotCell);
+								UUID uuid = IdHelper.getEdsResourceId(service.getId(), ResourceType.Appointment, sourceId);
+
+								//need to get from history, so we get the version UUID
+								//ResourceWrapper wrapper = resourceDal.getCurrentVersion(service.getId(), resourceType.toString(), uuid);
+								List<ResourceWrapper> history = resourceDal.getResourceHistory(service.getId(), ResourceType.Appointment.toString(), uuid);
+								if (history.isEmpty()) {
+									continue;
+								}
+								ResourceWrapper wrapper = history.get(0);
+								if (wrapper.isDeleted()) {
+									continue;
+								}
+
+								Resource resource = wrapper.getResource();
+
+								String oldCode = null;
+
+								Appointment encounter = (Appointment) resource;
+								Extension extension = ExtensionConverter.findExtension(encounter, FhirExtensionUri.APPOINTMENT_DNA_REASON_CODE);
+								if (extension == null
+										|| !extension.hasValue()) {
+									continue;
+								}
+								CodeableConcept codeableConcept = (CodeableConcept)extension.getValue();
+								Coding coding = ObservationCodeHelper.findOriginalCoding(codeableConcept);
+								oldCode = coding.getCode();
+								if (oldCode.equals(desiredCode)) {
+									continue;
+								}
+
+								coding.setCode(desiredCode);
+
+								String newJson = FhirSerializationHelper.serializeResource(resource);
+								wrapper.setResourceData(newJson);
+
+								//service_id, resource_id, resource_type, patient_id, term, old_original_code, new_original_code
+								sql = "INSERT INTO tmp.emis_code_fix VALUES (?, ?, ?, ?, ?, ?, ?)";
+
+								EntityManager edsEntityManager = ConnectionManager.getEdsEntityManager();
+								SessionImpl edsSession = (SessionImpl) edsEntityManager.getDelegate();
+								Connection edsConnection = edsSession.connection();
+
+								ps = edsConnection.prepareStatement(sql);
+
+								edsEntityManager.getTransaction().begin();
+
+								int col = 1;
+								ps.setString(col++, service.getId().toString());
+								ps.setString(col++, wrapper.getPatientId().toString());
+								ps.setString(col++, wrapper.getResourceId().toString());
+								ps.setString(col++, wrapper.getResourceType());
+								ps.setString(col++, codeObj.getReadTerm());
+								ps.setString(col++, oldCode);
+								ps.setString(col++, desiredCode);
+
+								ps.executeUpdate();
+								edsEntityManager.getTransaction().commit();
+
+								saveResourceWrapper(service.getId(), wrapper);
+
+								fixed++;
+							}
+							parser.close();
+						}
 					}
 
 					LOG.info("Done " + exchangesDone + " of " + exchanges.size() + " exchanges");
