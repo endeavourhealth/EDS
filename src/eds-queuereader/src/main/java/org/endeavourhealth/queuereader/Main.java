@@ -1185,6 +1185,9 @@ public class Main {
 									ps.executeUpdate();
 									edsEntityManager.getTransaction().commit();
 
+									ps.close();
+									edsEntityManager.close();
+
 									saveResourceWrapper(service.getId(), wrapper);
 
 									fixed++;
@@ -1298,6 +1301,9 @@ public class Main {
 
 								ps.executeUpdate();
 								edsEntityManager.getTransaction().commit();
+
+								ps.close();
+								edsEntityManager.close();
 
 								saveResourceWrapper(service.getId(), wrapper);
 
@@ -1420,6 +1426,9 @@ public class Main {
 								ps.executeUpdate();
 								edsEntityManager.getTransaction().commit();
 
+								ps.close();
+								edsEntityManager.close();
+
 								saveResourceWrapper(service.getId(), wrapper);
 
 								fixed++;
@@ -1537,6 +1546,9 @@ public class Main {
 
 								ps.executeUpdate();
 								edsEntityManager.getTransaction().commit();
+
+								ps.close();
+								edsEntityManager.close();
 
 								saveResourceWrapper(service.getId(), wrapper);
 
