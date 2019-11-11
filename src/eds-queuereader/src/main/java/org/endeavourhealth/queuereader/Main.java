@@ -1250,6 +1250,9 @@ public class Main {
 
 								String sourceId = EmisCsvHelper.createUniqueId(patientCell, diaryCell);
 								UUID uuid = IdHelper.getEdsResourceId(service.getId(), ResourceType.ProcedureRequest, sourceId);
+								if (uuid == null) {
+									continue;
+								}
 
 								//need to get from history, so we get the version UUID
 								//ResourceWrapper wrapper = resourceDal.getCurrentVersion(service.getId(), resourceType.toString(), uuid);
