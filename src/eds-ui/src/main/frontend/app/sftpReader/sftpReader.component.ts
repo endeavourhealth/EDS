@@ -9,6 +9,7 @@ import {SftpReaderChannelStatus} from "./SftpReaderChannelStatus";
 import {SftpReaderBatchContents} from "./SftpReaderBatchContents";
 import {OdsSearchDialog} from "../services/odsSearch.dialog";
 import {SftpReaderInstance} from "./SftpReaderInstance";
+import {SftpReaderHistoryDialog} from "./sftpReaderHistory.dialog";
 
 @Component({
     template : require('./sftpReader.html')
@@ -162,6 +163,11 @@ export class SftpReaderComponent {
         var lastExtractDiffMs = now.getTime() - lastExtract;
 
         return lastExtractDiffMs > dataFrequencyMs;
+    }
+
+    viewHistory(status: SftpReaderChannelStatus) {
+        var vm = this;
+        SftpReaderHistoryDialog.open(vm.$modal, status);
     }
 
 

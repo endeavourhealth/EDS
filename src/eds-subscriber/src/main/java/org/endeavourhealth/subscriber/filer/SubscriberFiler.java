@@ -135,64 +135,6 @@ public class SubscriberFiler {
         }
     }
 
-    /*public static void file(UUID batchId, String base64, String configName) throws Exception {
-
-        byte[] bytes = Base64.getDecoder().decode(base64);
-        ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
-        ZipInputStream zis = new ZipInputStream(bais);
-
-        LOG.trace("Filing " + bytes.length + "b from batch " + batchId + " into " + configName);
-
-        JsonNode columnClassMappings = null;
-
-        JsonNode config = ConfigManager.getConfigurationAsJson(configName, "db_subscriber");
-        Connection connection = openConnection(config);
-
-        String url = config.get("enterprise_url").asText();
-        String keywordEscapeChar = getKeywordEscapeChar(url);
-        int batchSize = getBatchSize(url);
-
-        try {
-            List<DeleteWrapper> deletes = new ArrayList<>();
-
-            while (true) {
-                ZipEntry entry = zis.getNextEntry();
-                if (entry == null) {
-                    break;
-                }
-
-                String entryFileName = entry.getName();
-                byte[] entryBytes = readZipEntry(zis);
-
-                if (entryFileName.equals(COLUMN_CLASS_MAPPINGS)) {
-                    String jsonStr = new String(entryBytes);
-                    columnClassMappings = ObjectMapperPool.getInstance().readTree(jsonStr);
-
-                } else {
-                    processCsvData(entryFileName, entryBytes, columnClassMappings, connection, keywordEscapeChar, batchSize, deletes);
-                }
-            }
-
-            //now files the deletes
-            fileDeletes(deletes, connection);
-
-        } catch (Exception ex) {
-            //if we get an exception, write out the zip file, so we can investigate what was being filed
-            writeZipFile(bytes);
-
-            throw new Exception("Exception filing to " + url, ex);
-
-        } finally {
-            if (zis != null) {
-                zis.close();
-            }
-            if (connection != null) {
-                connection.close();
-            }
-        }
-    }*/
-
-
     private static void writeZipFile(byte[] bytes) {
         File f = new File("EnterpriseFileError.zip");
         try {

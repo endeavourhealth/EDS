@@ -25,6 +25,7 @@ import javax.ws.rs.core.SecurityContext;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.Timestamp;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -34,6 +35,25 @@ public class SftpReaderEndpoint extends AbstractEndpoint {
     private static final Logger LOG = LoggerFactory.getLogger(SftpReaderEndpoint.class);
 
     private static final UserAuditDalI userAudit = DalProvider.factoryUserAuditDal(AuditModule.EdsUiModule.Library);
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Path("/instances")
+    public Response getInstances(@Context SecurityContext sc) throws Exception {
+        super.setLogbackMarkers(sc);
+
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load, "Get SFTP Reader Instance Names");
+
+        String ret = getSftpReaderInstances();
+
+        clearLogbackMarkers();
+
+        return Response
+                .ok()
+                .entity(ret)
+                .build();
+    }
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
@@ -57,13 +77,19 @@ public class SftpReaderEndpoint extends AbstractEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    @Path("/instances")
-    public Response getInstances(@Context SecurityContext sc) throws Exception {
+    @Path("/history")
+    public Response getChannelHistory(@Context SecurityContext sc,
+                                      @QueryParam("from") Long fromDateMillis,
+                                      @QueryParam("to") Long toDateMillis,
+                                      @QueryParam("configurationId") String configurationId) throws Exception {
         super.setLogbackMarkers(sc);
 
-        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load, "Get SFTP Reader Instance Names");
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load, "Get SFTP Reader Instance History");
 
-        String ret = getSftpReaderInstances();
+        Date dFrom = new Date(fromDateMillis);
+        Date dTo = new Date(toDateMillis);
+
+        String ret = getSftpReaderHistory(configurationId, dFrom, dTo);
 
         clearLogbackMarkers();
 
@@ -73,6 +99,141 @@ public class SftpReaderEndpoint extends AbstractEndpoint {
                 .build();
     }
 
+
+
+    private String getSftpReaderHistory(String configurationId, Date dFrom, Date dTo) throws Exception {
+
+        ObjectMapper mapper = new ObjectMapper();
+        ArrayNode root = new ArrayNode(mapper.getNodeFactory());
+
+        EntityManager entityManager = ConnectionManager.getSftpReaderEntityManager();
+        PreparedStatement ps = null;
+        try {
+            SessionImpl session = (SessionImpl) entityManager.getDelegate();
+            Connection connection = session.connection();
+
+            //get the individual orgs within each batch and stick in a map
+            String sql = null;
+            if (ConnectionManager.isPostgreSQL(connection)) {
+                sql = "SELECT b.batch_id, s.organisation_id, s.have_notified"
+                        + " FROM log.batch b"
+                        + " INNER JOIN log.batch_split s"
+                        + " ON s.batch_id = b.batch_id"
+                        + " WHERE b.configuration_id = ?"
+                        + " AND b.insert_date >= ?"
+                        + " AND b.insert_date <= ?";
+
+            } else {
+                sql = "SELECT b.batch_id, s.organisation_id, s.have_notified"
+                        + " FROM batch b"
+                        + " INNER JOIN batch_split s"
+                        + " ON s.batch_id = b.batch_id"
+                        + " WHERE b.configuration_id = ?"
+                        + " AND b.insert_date >= ?"
+                        + " AND b.insert_date <= ?";
+            }
+
+            ps = connection.prepareStatement(sql);
+
+            int col = 1;
+            ps.setString(col++, configurationId);
+            ps.setTimestamp(col++, new Timestamp(dFrom.getTime()));
+            ps.setTimestamp(col++, new Timestamp(dTo.getTime()));
+
+            Map<Integer, Map<String, Boolean>> hmOrgsByBatch = new HashMap<>(); //bit nasty having a map of maps, but quick
+
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                col = 1;
+                int batchId = rs.getInt(col++);
+                String orgId = rs.getString(col++);
+                boolean notified = rs.getBoolean(col++);
+
+                Map<String, Boolean> innerMap = hmOrgsByBatch.get(new Integer(batchId));
+                if (innerMap == null) {
+                    innerMap = new HashMap<>();
+                    hmOrgsByBatch.put(new Integer(batchId), innerMap);
+                }
+                innerMap.put(orgId, new Boolean(notified));
+            }
+            ps.close();
+
+            //get the details of the batches and files
+            sql = null;
+            if (ConnectionManager.isPostgreSQL(connection)) {
+                sql = "SELECT b.batch_id, b.insert_date, b.batch_identifier, b.sequence_number, b.is_complete, count(f.batch_file_id), sum(remote_size_bytes)"
+                        + " FROM log.batch b"
+                        + " INNER JOIN log.batch_file f"
+                        + " ON f.batch_id = b.batch_id"
+                        + " WHERE b.configuration_id = ?"
+                        + " AND b.insert_date >= ?"
+                        + " AND b.insert_date <= ?"
+                        + " GROUP BY b.batch_id, b.insert_date, b.batch_identifier, b.sequence_number, b.is_complete"
+                        + " ORDER BY b.insert_date desc";
+            } else {
+                sql = "SELECT b.batch_id, b.insert_date, b.batch_identifier, b.sequence_number, b.is_complete, count(f.batch_file_id), sum(remote_size_bytes)"
+                        + " FROM batch b"
+                        + " INNER JOIN batch_file f"
+                        + " ON f.batch_id = b.batch_id"
+                        + " WHERE b.configuration_id = ?"
+                        + " AND b.insert_date >= ?"
+                        + " AND b.insert_date <= ?"
+                        + " GROUP BY b.batch_id, b.insert_date, b.batch_identifier, b.sequence_number, b.is_complete"
+                        + " ORDER BY b.insert_date desc";
+            }
+
+            ps = connection.prepareStatement(sql);
+
+            col = 1;
+            ps.setString(col++, configurationId);
+            ps.setTimestamp(col++, new Timestamp(dFrom.getTime()));
+            ps.setTimestamp(col++, new Timestamp(dTo.getTime()));
+
+            rs = ps.executeQuery();
+            while (rs.next()) {
+                col = 1;
+                int batchId = rs.getInt(col++);
+                Date dReceived = new Date(rs.getTimestamp(col++).getTime());
+                String batchIdentifier = rs.getString(col++);
+                int sequenceNumber = rs.getInt(col++);
+                boolean isComplete = rs.getBoolean(col++);
+                int numFiles = rs.getInt(col++);
+                long sizeBytes = rs.getLong(col++);
+                String sizeDesc = FileUtils.byteCountToDisplaySize(sizeBytes);
+
+                ObjectNode obj = root.addObject();
+                obj.put("id", batchId);
+                obj.put("received", dReceived.getTime());
+                obj.put("identifier", batchIdentifier);
+                obj.put("sequenceNumber", sequenceNumber);
+                obj.put("complete", isComplete);
+                obj.put("fileCount", numFiles);
+                obj.put("sizeBytes", sizeBytes);
+                obj.put("sizeDesc", sizeDesc);
+                ArrayNode orgsArr = obj.putArray("batchContents");
+
+                Map<String, Boolean> hmOrgs = hmOrgsByBatch.get(new Integer(batchId));
+                if (hmOrgs != null) {
+                    for (String orgId: hmOrgs.keySet()) {
+                        Boolean complete = hmOrgs.get(orgId);
+
+                        ObjectNode orgObj = orgsArr.addObject();
+                        orgObj.put("orgId", orgId);
+                        orgObj.put("notified", complete.booleanValue());
+                    }
+                }
+            }
+            ps.close();
+
+        } finally {
+            if (ps != null) {
+                ps.close();
+            }
+            entityManager.close();
+        }
+
+        return mapper.writeValueAsString(root);
+    }
 
 
     private String getSftpReaderInstances() throws Exception {

@@ -4,6 +4,7 @@ import {FormsModule} from "@angular/forms";
 import {NgbModule} from "@ng-bootstrap/ng-bootstrap";
 import {SftpReaderComponent} from "./sftpReader.component";
 import {SftpReaderService} from "./sftpReader.service";
+import {SftpReaderHistoryDialog} from "./sftpReaderHistory.dialog";
 
 @NgModule({
     imports : [
@@ -12,7 +13,11 @@ import {SftpReaderService} from "./sftpReader.service";
         NgbModule
     ],
     declarations : [
-        SftpReaderComponent
+        SftpReaderComponent,
+        SftpReaderHistoryDialog
+    ],
+    entryComponents : [
+        SftpReaderHistoryDialog
     ],
     providers : [
         SftpReaderService

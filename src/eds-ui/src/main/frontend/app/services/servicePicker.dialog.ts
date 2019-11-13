@@ -9,12 +9,7 @@ import {NgbModal, NgbActiveModal, NgbModalOptions} from "@ng-bootstrap/ng-bootst
 	template: require('./servicePicker.html')
 })
 export class ServicePickerDialog  {
-	public static open(modalService: NgbModal, services : Service[]) {
-	const modalRef = modalService.open(ServicePickerDialog, { backdrop : "static"} as NgbModalOptions);
-	modalRef.componentInstance.resultData = jQuery.extend(true, [], services);
 
-	return modalRef;
-	}
 
 	@Input() resultData : Service[];
 	searchData : string;
@@ -23,6 +18,14 @@ export class ServicePickerDialog  {
 	constructor(public activeModal: NgbActiveModal,
 							private log:LoggerService,
 							private serviceService : ServiceService) {
+	}
+
+
+	public static open(modalService: NgbModal, services : Service[]) {
+		const modalRef = modalService.open(ServicePickerDialog, { backdrop : "static"} as NgbModalOptions);
+		modalRef.componentInstance.resultData = jQuery.extend(true, [], services);
+
+		return modalRef;
 	}
 
 	private search() {

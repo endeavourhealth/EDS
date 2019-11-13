@@ -45,6 +45,8 @@
                     <div class="{{getPanelClass(status)}}">
                         <div class="panel-heading">
                             <b>{{status.name}}</b> ({{status.id}})
+                            <!--<a (click)="viewHistory(status)">View History</a>-->
+                            <button class="btn btn-xs btn-info pull-right" (click)="viewHistory(status)" title="View History">View History</button>
                         </div>
 
                         <div class="panel-body">
