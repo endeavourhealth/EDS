@@ -40,6 +40,70 @@
                 </div>
             </div>
 
+            <!--<div class="row">
+                <div class="col-md-12">
+
+                    <div class="table">
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th class="col-md-1">ID</th>
+                                    <th class="col-md-1">Name</th>
+                                    <th class="col-md-1">Last Polled</th>
+                                    <th class="col-md-1">Last Extract</th>
+                                    <th class="col-md-1">Data From</th>
+
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr *ngFor="let status of getStatusesToDisplay()">
+
+                                    <td>{{status.id}}</td>
+                                    <td>{{status.name}}</td>
+
+                                    <td>
+                                        <div *ngIf="status.latestPollingStart">
+                                            <span *ngIf="isLastPollAttemptTooOld(status)">
+                                                <span class="label label-danger" *ngIf="isLastPollAttemptTooOld(status)">Warning</span>
+                                                &nbsp;
+                                            </span>
+                                                {{status.latestPollingStart | date:'dd-MMM-yyyy HH:mm:ss'}}
+                                        </div>
+                                        <div *ngIf="!status.latestPollingStart">
+                                            <span class="label label-danger">Warning</span>&nbsp;NEVER
+                                        </div>
+                                    </td>
+
+                                    <td>
+                                        <div *ngIf="status.latestBatchId">
+                                            <div>
+                                                <span *ngIf="isLastExtractTooOld(status)">
+                                                    <span class="label label-danger" *ngIf="isLastExtractTooOld(status)">Warning</span>
+                                                    &nbsp;
+                                                </span>
+                                                {{status.latestBatchReceived | date:'dd-MMM-yyyy HH:mm:ss'}}
+                                            </div>
+                                        </div>
+                                        <div *ngIf="!status.latestBatchId">
+                                            <span class="label label-danger">Warning</span>
+                                            &nbsp;NEVER
+                                        </div>
+                                    </td>
+
+                                    <td>
+                                        <div *ngIf="status.latestBatchId">
+                                            {{status.latestBatchIdentifier}}
+                                        </div>
+
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                </div>
+            </div>-->
+
             <div class="row" *ngFor="let status of getStatusesToDisplay()">
                 <div class="col-md-12">
                     <div class="{{getPanelClass(status)}}">
