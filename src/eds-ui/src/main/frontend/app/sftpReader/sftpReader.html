@@ -80,9 +80,11 @@
                                         Last Extract Received: {{status.latestBatchReceived | date:'dd-MMM-yyyy HH:mm:ss'}}
                                     </div>
                                     <div>Data From: {{status.latestBatchIdentifier}}</div>
-                                    <div>Extract Sequence No: {{status.latestBatchSequenceNumber}}</div>
+                                    <div>Files Received: {{status.latestBatchFileCount}}, Extract Size: {{status.latestBatchSizeBytes}}</div>
+
+                                    <!--<div>Extract Sequence No: {{status.latestBatchSequenceNumber}}</div>
                                     <div>Files Received: {{status.latestBatchFileCount}}</div>
-                                    <div>Extract Size: {{status.latestBatchSizeBytes}}</div>
+                                    <div>Extract Size: {{status.latestBatchSizeBytes}}</div>-->
 
                                     <div *ngIf="status.latestBatchComplete">
                                         <div>Extract Valid and Complete: YES</div>

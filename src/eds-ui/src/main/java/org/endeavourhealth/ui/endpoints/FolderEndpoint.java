@@ -83,7 +83,7 @@ public final class FolderEndpoint extends AbstractItemEndpoint {
             throw new BadRequestException("Must specify folder type");
         }
 
-        LOG.trace("SavingFolder FolderUUID {}, FolderName {} FolderType {} ParentUUID {} ItemType {}", folderUuid, folderName, folderType, parentUuid, itemType);
+        //LOG.trace("SavingFolder FolderUUID {}, FolderName {} FolderType {} ParentUUID {} ItemType {}", folderUuid, folderName, folderType, parentUuid, itemType);
 
         //before letting our superclass do the normal item saving,
         //validate that we're not making a folder a child of itself
@@ -141,7 +141,7 @@ public final class FolderEndpoint extends AbstractItemEndpoint {
 
         UUID folderUuid = folderParameters.getUuid();
 
-        LOG.trace("DeletingFolder FolderUUID {}", folderUuid);
+        //LOG.trace("DeletingFolder FolderUUID {}", folderUuid);
 
         LibraryDalI repository = DalProvider.factoryLibraryDal();
 
@@ -187,7 +187,7 @@ public final class FolderEndpoint extends AbstractItemEndpoint {
 
         UUID orgUuid = getOrganisationUuidFromToken(sc);
 
-        LOG.trace("GettingFolders under parent UUID {} and folderType {}, which is itemType {}", parentUuidStr, folderType, itemType);
+        //LOG.trace("GettingFolders under parent UUID {} and folderType {}, which is itemType {}", parentUuidStr, folderType, itemType);
 
         Iterable<ActiveItem> activeItems = null;
         List<Item> items = new ArrayList();
@@ -245,7 +245,7 @@ public final class FolderEndpoint extends AbstractItemEndpoint {
             }
         }
 
-        LOG.trace("Found {} child folders", items.size());
+        //LOG.trace("Found {} child folders", items.size());
 
         JsonFolderList ret = new JsonFolderList();
 
@@ -272,7 +272,7 @@ public final class FolderEndpoint extends AbstractItemEndpoint {
 
     public static void createTopLevelFolder(UUID organisationUuid, UUID userUuid, DefinitionItemType itemType) throws Exception {
 
-        LOG.trace("Creating top-level folder of type {}", itemType);
+        //LOG.trace("Creating top-level folder of type {}", itemType);
 
         LibraryDalI repository = DalProvider.factoryLibraryDal();
 
