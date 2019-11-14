@@ -20,6 +20,7 @@ export class SftpReaderComponent {
     instanceNames: SftpReaderInstance[];
     filterInstanceName: string;
     statuses: SftpReaderChannelStatus[];
+    statusesLastRefreshed: Date;
     resultStr: string;
     showRawJson: boolean;
     refreshingStatus: boolean;
@@ -65,6 +66,7 @@ export class SftpReaderComponent {
 
                 vm.logger.success('Successfully got SFTP Reader status', 'SFTP Reader Status');
                 vm.statuses = result;
+                vm.statusesLastRefreshed = new Date();
 
                 vm.resultStr = JSON.stringify(result, null, 2);
 
@@ -135,6 +137,8 @@ export class SftpReaderComponent {
     }
 
     isLastPollAttemptTooOld(status: SftpReaderChannelStatus): boolean {
+        var vm = this;
+
         var lastPolled = status.latestPollingStart;
         if (!lastPolled) {
             return true;
@@ -143,13 +147,16 @@ export class SftpReaderComponent {
         var pollingFrequencyMs = pollingFrequencySec * 1000;
         pollingFrequencyMs = (pollingFrequencyMs * 1.1); //add 10% to the poling frequency so it's less touchy
 
-        var now = new Date();
+        //var now = new Date();
+        var now = vm.statusesLastRefreshed; //use date of refresh rather than current date so it doesn't change if you don't refresh the page
         var lastPolledDiffMs = now.getTime() - lastPolled;
 
         return lastPolledDiffMs > pollingFrequencyMs;
     }
 
     isLastExtractTooOld(status: SftpReaderChannelStatus): boolean {
+        var vm = this;
+
         var lastExtract = status.latestBatchReceived;
         if (!lastExtract) {
             return true;
@@ -159,7 +166,8 @@ export class SftpReaderComponent {
         var dataFrequencyMs = dataFrequencyDays * 24 * 60 * 60 * 1000;
         dataFrequencyMs = (dataFrequencyMs * 1.5); //add 10% to the poling frequency so it's less touchy
 
-        var now = new Date();
+        //var now = new Date();
+        var now = vm.statusesLastRefreshed; //use date of refresh rather than current date so it doesn't change if you don't refresh the page
         var lastExtractDiffMs = now.getTime() - lastExtract;
 
         return lastExtractDiffMs > dataFrequencyMs;
