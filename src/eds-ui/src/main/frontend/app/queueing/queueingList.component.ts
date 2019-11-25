@@ -72,28 +72,30 @@ export class QueueingListComponent {
 	}
 
 	private populateRoutingMap(routings: Routing[]) {
-		this.routingExchangeNames = [];
-		this.routingMap = {};
+		var vm = this;
+		vm.routingExchangeNames = [];
+		vm.routingMap = {};
 
 		//hash the routings by their exhcnage name
 		var len = routings.length;
 		for (var i=0; i<len; i++) {
 			var r = routings[i];
-			this.addToRoutingMap(r);
+			vm.addToRoutingMap(r);
 		}
 	}
 
 	private addToRoutingMap(routing: Routing) {
+		var vm = this;
 		var exchangeName = routing.exchangeName;
 
 		var list;
-		if ($.inArray(exchangeName, this.routingExchangeNames) > -1) {
-			list = this.routingMap[exchangeName];
+		if ($.inArray(exchangeName, vm.routingExchangeNames) > -1) {
+			list = vm.routingMap[exchangeName];
 
 		} else {
 			list = [];
-			this.routingMap[exchangeName] = list;
-			this.routingExchangeNames.push(exchangeName);
+			vm.routingMap[exchangeName] = list;
+			vm.routingExchangeNames.push(exchangeName);
 		}
 
 		list.push(routing);
@@ -102,28 +104,31 @@ export class QueueingListComponent {
 
 	getRoutingsForExchange(exchangeName: string): Routing[] {
 		//if this is called before the initial calls return, we'll have an undefined map
-		if (!this.routingMap) {
+		var vm = this;
+		if (!vm.routingMap) {
 			return [];
 		}
-		return this.routingMap[exchangeName];
+		return vm.routingMap[exchangeName];
 	}
 
 	getBindingsForExchange(exchangeName: string): RabbitBinding[] {
 		//if this is called before the initial calls return, we'll have an undefined map
-		if (!this.bindingMap) {
+		var vm = this;
+		if (!vm.bindingMap) {
 			return [];
 		}
-		return this.bindingMap[exchangeName];
+		return vm.bindingMap[exchangeName];
 	}
 
 	private getRoutingAsList(): Routing[] {
+		var vm = this;
 
 		var ret = [];
 
-		var len = this.routingExchangeNames.length;
+		var len = vm.routingExchangeNames.length;
 		for (var i=0; i<len; i++) {
-			var exchangeName = this.routingExchangeNames[i];
-			var routings = this.routingMap[exchangeName];
+			var exchangeName = vm.routingExchangeNames[i];
+			var routings = vm.routingMap[exchangeName];
 
 			for (var j=0; j<routings.length; j++) {
 				var routing = routings[j];
@@ -144,31 +149,34 @@ export class QueueingListComponent {
 	}
 
 	private populateBindingMap(bindings: RabbitBinding[]) {
-		this.bindingMap = {};
+		var vm = this;
+		vm.bindingMap = {};
 
 		//hash the routings by their exhcnage name
 		var len = bindings.length;
 		for (var i=0; i<len; i++) {
 			var r = bindings[i];
-			this.addToBindingMap(r);
+			vm.addToBindingMap(r);
 		}
 	}
 
 	private addToBindingMap(binding: RabbitBinding) {
+		var vm = this;
 		var exchangeName = binding.source;
 
-		var list = this.bindingMap[exchangeName];
+		var list = vm.bindingMap[exchangeName];
 		if (!list) {
 			list = [];
-			this.bindingMap[exchangeName] = list;
+			vm.bindingMap[exchangeName] = list;
 		}
 		list.push(binding);
 	}
 
 
 	getRouteGroupStatusIconClass(routeGroup : Routing) {
+		var vm = this;
 		var exchangeName = routeGroup.exchangeName;
-		var bindings = this.getBindingsForExchange(exchangeName);
+		var bindings = vm.getBindingsForExchange(exchangeName);
 		if (!bindings) {
 			return 'fa fa-plus-circle text-danger';
 		}
@@ -179,8 +187,9 @@ export class QueueingListComponent {
 	}
 
 	bindingExistsInConfig(binding: RabbitBinding) {
+		var vm = this;
 		var exchangeName = binding.source;
-		var routings = this.getRoutingsForExchange(exchangeName);
+		var routings = vm.getRoutingsForExchange(exchangeName);
 		if (!routings) {
 			return false;
 		}
@@ -199,7 +208,14 @@ export class QueueingListComponent {
 		MessageBoxDialog.open(vm.$modal, 'Delete Route group', 'Are you sure you want to delete the route group?', 'Yes', 'No')
 			.result.then(function () {
 
-				var list = vm.getRoutingAsList();
+				var exchangeName = item.exchangeName;
+				var list = vm.routingMap[exchangeName];
+				var index = list.indexOf(item);
+				list.splice(index, 1);
+
+				vm.saveRoutings();
+
+				/*var list = vm.getRoutingAsList();
 				var index = list.indexOf(item);
 				list.splice(index, 1);
 
@@ -210,7 +226,7 @@ export class QueueingListComponent {
 							vm.log.success('Route group deleted', item, 'Delete route group');
 						},
 						(error) => vm.log.error('Failed to delete route group', error, 'Delete route group')
-					);
+					);*/
 			})
 			.catch((reason) => vm.log.info("Delete cancelled"));
 	}
@@ -244,12 +260,11 @@ export class QueueingListComponent {
 	}
 
 	newRouting(exchangeName: string) {
+		var vm = this;
 		var newRouting = new Routing();
 		if (exchangeName) {
 			newRouting.exchangeName = exchangeName;
 		}
-
-		var vm = this;
 
 		QueueEditDialog.open(this.$modal, newRouting)
 			.result.then(function(editedItem : Routing) {
@@ -264,7 +279,7 @@ export class QueueingListComponent {
 
 	private saveRoutings() {
 		var vm = this;
-		this.rabbitService.saveRoutings(this.getRoutingAsList())
+		vm.rabbitService.saveRoutings(vm.getRoutingAsList())
 			.subscribe(
 				() => vm.log.success('Route group saved', 'Save routeGroup'),
 				(error) => vm.log.error('Failed to save route group', error, 'Save route group')
@@ -272,17 +287,19 @@ export class QueueingListComponent {
 	}
 
 	moveUp(routing: Routing) {
-		this.move(routing, true);
+		var vm = this;
+		vm.move(routing, true);
 	}
 
 	moveDown(routing: Routing) {
-		this.move(routing, false);
+		var vm = this;
+		vm.move(routing, false);
 	}
 
 	move(routing: Routing, up: boolean) {
-
+		var vm = this;
 		var exchangeName = routing.exchangeName;
-		var list = this.routingMap[exchangeName];
+		var list = vm.routingMap[exchangeName];
 		var index = list.indexOf(routing);
 
 		if (up) {
@@ -301,11 +318,12 @@ export class QueueingListComponent {
 			list.splice(index+1, 0, routing);
 		}
 
-		this.saveRoutings();
+		vm.saveRoutings();
 	}
 
 	refresh() {
-		this.getRabbitNodes();
+		var vm = this;
+		vm.getRabbitNodes();
 	}
 
 }

@@ -327,7 +327,7 @@ CREATE TABLE [medication_statement] (
 [practitioner_id] bigint NULL DEFAULT NULL,
 [clinical_effective_date] date NULL DEFAULT NULL,
 [date_precision_concept_id] int NULL DEFAULT NULL,
-[is_active] tinyint NOT NULL,
+[is_active] tinyint NULL,
 [cancellation_date] date NULL DEFAULT NULL,
 [dose] varchar(1000) NULL DEFAULT NULL,
 [quantity_value] float NULL DEFAULT NULL,
