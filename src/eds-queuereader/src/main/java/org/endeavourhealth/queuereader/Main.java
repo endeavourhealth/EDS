@@ -1010,7 +1010,12 @@ public class Main {
 
 						sql = "SELECT name FROM organization WHERE id = ?";
 						ps = connection1.prepareStatement(sql);
-						ps.setLong(1, enterpriseId);
+						if (enterpriseId != null) {
+							ps.setLong(1, enterpriseId);
+						} else {
+							//if no ID found, just use a substitute number
+							ps.setLong(1, 999);
+						}
 						rs = ps.executeQuery();
 						String orgId = null;
 						if (rs.next()) {
