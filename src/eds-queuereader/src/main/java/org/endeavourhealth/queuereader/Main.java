@@ -39,8 +39,11 @@ import org.endeavourhealth.core.database.dal.eds.models.PatientLinkPair;
 import org.endeavourhealth.core.database.dal.eds.models.PatientSearch;
 import org.endeavourhealth.core.database.dal.ehr.ResourceDalI;
 import org.endeavourhealth.core.database.dal.ehr.models.ResourceWrapper;
+import org.endeavourhealth.core.database.dal.hl7receiver.Hl7ResourceIdDalI;
+import org.endeavourhealth.core.database.dal.hl7receiver.models.ResourceId;
 import org.endeavourhealth.core.database.dal.publisherCommon.EmisTransformDalI;
 import org.endeavourhealth.core.database.dal.publisherCommon.models.EmisCsvCodeMap;
+import org.endeavourhealth.core.database.dal.publisherTransform.ResourceIdTransformDalI;
 import org.endeavourhealth.core.database.dal.publisherTransform.models.ResourceFieldMappingAudit;
 import org.endeavourhealth.core.database.dal.reference.PostcodeDalI;
 import org.endeavourhealth.core.database.dal.reference.models.PostcodeLookup;
@@ -59,6 +62,7 @@ import org.endeavourhealth.core.messaging.pipeline.components.MessageTransformOu
 import org.endeavourhealth.core.messaging.pipeline.components.OpenEnvelope;
 import org.endeavourhealth.core.messaging.pipeline.components.PostMessageToExchange;
 import org.endeavourhealth.core.queueing.QueueHelper;
+import org.endeavourhealth.core.terminology.TerminologyService;
 import org.endeavourhealth.core.xml.QueryDocument.*;
 import org.endeavourhealth.core.xml.transformError.TransformError;
 import org.endeavourhealth.transform.common.*;
@@ -119,6 +123,15 @@ public class Main {
 			deleteEnterpriseObs(filePath, configName, batchSize);
 			System.exit(0);
 		}*/
+
+
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("TestDatabases")) {
+			String serviceIdStr = args[1];
+			String subscriberConfigName = args[2];
+			testDatabases(serviceIdStr, subscriberConfigName);
+			System.exit(0);
+		}
 
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("PopulatePatientSearchEpisodeOdsCode")) {
@@ -888,6 +901,135 @@ public class Main {
 		// Begin consume
 		rabbitHandler.start();
 		LOG.info("EDS Queue reader running (kill file location " + TransformConfig.instance().getKillFileLocation() + ")");
+	}
+
+	private static void testDatabases(String odsCodesStr, String subscriberConfigNamesStr) {
+		LOG.info("Testing all databases");
+		try {
+
+			String[] odsCodes = odsCodesStr.split("\\|");
+			String[] subscriberConfigNames = subscriberConfigNamesStr.split("\\|");
+
+			for (String odsCode: odsCodes) {
+				LOG.debug("---------------------------------------------------------------");
+				LOG.debug("Doing " + odsCode);
+
+				//admin
+				LOG.debug("Doing admin");
+				ServiceDalI serviceDalI = DalProvider.factoryServiceDal();
+				Service service = serviceDalI.getByLocalIdentifier(odsCode);
+				LOG.debug("Admin test " + service);
+				UUID serviceId = service.getId();
+
+				//EDS
+				LOG.debug("Doing EDS");
+				PatientSearchDalI patientSearchDal = DalProvider.factoryPatientSearchDal();
+				List<UUID> patientIds = patientSearchDal.getPatientIds(serviceId);
+				LOG.debug("EDS test = " + patientIds.size());
+
+				PatientLinkDalI patientLinkDalI = DalProvider.factoryPatientLinkDal();
+				List<PatientLinkPair> changes = patientLinkDalI.getChangesSince(new Date());
+				LOG.debug("EDS (hibernate) test = " + changes.size());
+
+				//reference
+				LOG.debug("Doing reference");
+				String snomedTerm = TerminologyService.lookupSnomedTerm("10000006");
+				LOG.debug("Reference test = " + snomedTerm);
+
+				//HL7 Receiver
+				LOG.debug("Doing HL7 Receiver");
+				Hl7ResourceIdDalI hl7ResourceIdDal = DalProvider.factoryHL7ResourceDal();
+				ResourceId id = hl7ResourceIdDal.getResourceId("B", "Patient", "PIdAssAuth=2.16.840.1.113883.3.2540.1-PatIdValue=N7619764");
+				LOG.debug("HL7 receiver test = " + id);
+
+
+				//audit
+				LOG.debug("Doing audit");
+				ExchangeDalI exchangeDalI = DalProvider.factoryExchangeDal();
+				List<UUID> systemIds = findSystemIds(service);
+				UUID systemId = systemIds.get(0);
+				List<Exchange> exchanges = exchangeDalI.getExchangesByService(serviceId, systemId, 100);
+				LOG.debug("Audit test " + exchanges.size());
+
+				//publisher common
+				LOG.debug("Doing publisher common");
+				EmisTransformDalI emisTransformDalI = DalProvider.factoryEmisTransformDal();
+				EmisCsvCodeMap codeMap = emisTransformDalI.getCodeMapping(false, 654010L);
+				LOG.debug("Publisher common test " + codeMap);
+
+				boolean wasAdminApplied = emisTransformDalI.wasAdminCacheApplied(serviceId);
+				LOG.debug("Publisher common (hibernate) test " + wasAdminApplied);
+
+				//sftp reader
+				LOG.debug("Doing SFTP reader");
+				EntityManager entityManager = ConnectionManager.getSftpReaderEntityManager();
+				PreparedStatement ps = null;
+				SessionImpl session = (SessionImpl) entityManager.getDelegate();
+				Connection connection = session.connection();
+				String sql = null;
+				if (ConnectionManager.isPostgreSQL(connection)) {
+					sql = "SELECT instance_name FROM configuration.instance ORDER BY instance_name";
+				} else {
+					sql = "SELECT instance_name FROM instance ORDER BY instance_name";
+				}
+				ps = connection.prepareStatement(sql);
+				ResultSet rs = ps.executeQuery();
+				rs.next();
+				LOG.debug("SFTP Reader test " + rs.getString(1));
+				ps.close();
+				entityManager.close();
+
+				//publisher transform
+				LOG.debug("Doing publisher transform");
+				ResourceIdTransformDalI resourceIdTransformDalI = DalProvider.factoryResourceIdTransformDal();
+				List<Reference> references = new ArrayList<>();
+				UUID patientId = patientIds.get(0);
+				references.add(ReferenceHelper.createReference(ResourceType.Patient, patientId.toString()));
+				Map<Reference, Reference> map = resourceIdTransformDalI.findSourceReferencesFromEdsReferences(serviceId, references);
+				LOG.debug("publisher transform done " + map);
+
+				//ehr
+				LOG.debug("Doing EHR");
+				ResourceDalI resourceDalI = DalProvider.factoryResourceDal();
+				ResourceWrapper wrapper = resourceDalI.getCurrentVersion(serviceId, ResourceType.Patient.toString(), patientId);
+				LOG.debug("EHR done " + wrapper);
+
+				for (String subscriberConfigName: subscriberConfigNames) {
+
+					//subscriber transform
+					LOG.debug("Doing subscriber transform " + subscriberConfigName);
+					SubscriberOrgMappingDalI subscriberOrgMappingDalI = DalProvider.factorySubscriberOrgMappingDal(subscriberConfigName);
+					Long enterpriseId = subscriberOrgMappingDalI.findEnterpriseOrganisationId(serviceId.toString());
+					LOG.debug("Subscriber transform on " + subscriberConfigName + " done " + enterpriseId);
+
+					//subscriber
+					LOG.debug("Doing subscribers from " + subscriberConfigName);
+					List<EnterpriseConnector.ConnectionWrapper> subscriberConnections = EnterpriseConnector.openConnection(subscriberConfigName);
+					for (EnterpriseConnector.ConnectionWrapper subscriberConnection : subscriberConnections) {
+						Connection connection1 = subscriberConnection.getConnection();
+
+						sql = "SELECT name FROM organization WHERE id = ?";
+						ps = connection1.prepareStatement(sql);
+						ps.setLong(1, enterpriseId);
+						rs = ps.executeQuery();
+						rs.next();
+						LOG.debug("subscriber on " + subscriberConfigName + " (" + subscriberConnection.toString() + ") done " + rs.getString(1));
+						ps.close();
+						connection1.close();
+					}
+				}
+
+				/*
+						FhirAudit("db_fhir_audit", true, "FhirAuditDb"),
+						PublisherStaging("db_publisher_staging", false, "PublisherStagingDb"),
+						DataGenerator("db_data_generator", true, "DataGeneratorDb"),
+				*/
+			}
+
+			LOG.info("Finished testing all databases");
+		} catch (Exception ex) {
+			LOG.error("", ex);
+		}
 	}
 
 	private static void fixEmisSnomedCodes(String odsCodeRegex) {
@@ -8666,7 +8808,7 @@ create table uprn_pseudo_map (
 				saltBytes = Base64.getDecoder().decode(base64Salt);
 			}*/
 
-			List<EnterpriseConnector.ConnectionWrapper> connectionWrappers = EnterpriseConnector.openConnection(config);
+			List<EnterpriseConnector.ConnectionWrapper> connectionWrappers = EnterpriseConnector.openConnection(subscriberConfigName);
 			for (EnterpriseConnector.ConnectionWrapper connectionWrapper: connectionWrappers) {
 				Connection subscriberConnection = connectionWrapper.getConnection();
 				LOG.info("Populating " + connectionWrapper);
