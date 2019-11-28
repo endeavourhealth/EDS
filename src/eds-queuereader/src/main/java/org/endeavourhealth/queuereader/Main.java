@@ -101,6 +101,7 @@ import java.util.regex.Pattern;
 public class Main {
 	private static final Logger LOG = LoggerFactory.getLogger(Main.class);
 
+
 	public static void main(String[] args) throws Exception {
 
 		String configId = args[0];
@@ -992,7 +993,7 @@ public class Main {
 				LOG.debug("Doing EHR");
 				ResourceDalI resourceDalI = DalProvider.factoryResourceDal();
 				ResourceWrapper wrapper = resourceDalI.getCurrentVersion(serviceId, ResourceType.Patient.toString(), patientId);
-				LOG.debug("EHR done " + wrapper);
+				LOG.debug("EHR done " + (wrapper != null));
 
 				for (String subscriberConfigName: subscriberConfigNames) {
 
