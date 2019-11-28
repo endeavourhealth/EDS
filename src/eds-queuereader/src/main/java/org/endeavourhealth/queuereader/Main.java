@@ -1012,8 +1012,11 @@ public class Main {
 						ps = connection1.prepareStatement(sql);
 						ps.setLong(1, enterpriseId);
 						rs = ps.executeQuery();
-						rs.next();
-						LOG.debug("subscriber on " + subscriberConfigName + " (" + subscriberConnection.toString() + ") done " + rs.getString(1));
+						String orgId = null;
+						if (rs.next()) {
+							orgId = rs.getString(1);
+						}
+						LOG.debug("subscriber on " + subscriberConfigName + " (" + subscriberConnection.toString() + ") done " + orgId);
 						ps.close();
 						connection1.close();
 					}
