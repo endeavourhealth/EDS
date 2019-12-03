@@ -20,7 +20,7 @@ public class OnsWardHelper {
     //cols changed Apr 2018
     private static final String COL_CODE = "\uFEFFWD19CD";
     private static final String COL_NAME = "WD19NM";
-    private static final String COL_NAME_WELSH = "WD19NMW";
+    //private static final String COL_NAME_WELSH = "WD19NMW"; //removed in Dec 2019 version
     /*private static final String COL_CODE = "\uFEFFWD18CD";
     private static final String COL_NAME = "WD18NM";
     private static final String COL_NAME_WELSH = "WD18NMW";*/
@@ -59,7 +59,8 @@ public class OnsWardHelper {
             Iterator<CSVRecord> iterator = parser.iterator();
 
             //validate the headers are what we expect
-            String[] expectedHeaders = new String[]{COL_CODE, COL_NAME, COL_NAME_WELSH};
+            //String[] expectedHeaders = new String[]{COL_CODE, COL_NAME, COL_NAME_WELSH};
+            String[] expectedHeaders = new String[]{COL_CODE, COL_NAME};
             CsvHelper.validateCsvHeaders(parser, "Ward File", expectedHeaders);
 
             while (iterator.hasNext()) {
