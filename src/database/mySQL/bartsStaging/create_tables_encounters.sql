@@ -2,6 +2,9 @@ use staging_barts;
 
 drop table if exists encounter_cds;
 drop table if exists encounter_cds_latest;
+
+-- TODO:  split CDS tables out into IN, OUT and AE to handle different date/times? or one big table and target?
+
 drop table if exists encounter_cds_tail;
 drop table if exists encounter_cds_tail_latest;
 
@@ -23,8 +26,8 @@ create table encounter_cds
     withheld                       bool         COMMENT 'True if id is withheld',
     date_of_birth                  date         COMMENT 'from PersonBirthDate',
     consultant_code                varchar(20)  NOT NULL COMMENT 'GMC number of consultant, from ConsultantCode',
-    treatment_function_code        varchar(10)   COMMENT 'specific to consultant',
-    -- specific spell admission / discharge / episode stuff here
+
+    -- specific spell admission / discharge / episode stuff here (inpatient)
     spell_number                   varchar(12),
     admission_category_code        varchar(2),
     admission_method_code          varchar(2),
@@ -43,13 +46,37 @@ create table encounter_cds
     episode_end_site_code          varchar(12)  COMMENT 'location at end of episode',
     episode_end_date               date         COMMENT 'CCYYMMDD',
     episode_end_time               time         COMMENT 'HHSSMM',
+
+    -- specific appointment stuff here (outpatient)
+    appt_attendance_identifier      varchar(12),
+    appt_attended_code              char(1)      COMMENT 'Attended or DNA',
+    appt_outcome_code               char(1),
+    appt_date                       date         COMMENT 'CCYYMMDD',
+    appt_time                       time         COMMENT 'HHSSMM',
+    appt_site_code                  varchar(12)  COMMENT 'location of appointment',
+
+    -- specific arrival / assessment / departure stuff here (A&E)
+    arrival_mode_code               varchar(12),
+    attendance_category_code        char(1),
+    arrival_date                    date         COMMENT 'CCYYMMDD',
+    arrival_time                    time         COMMENT 'HHSSMM',
+    assessment_date                 date         COMMENT 'CCYYMMDD',
+    assessment_time                 time         COMMENT 'HHSSMM',
+    treatment_date                  date         COMMENT 'CCYYMMDD',
+    treatment_time                  time         COMMENT 'HHSSMM',
+    attendance_conclusion_date      date         COMMENT 'CCYYMMDD',
+    attendance_conclusion_time      time         COMMENT 'HHSSMM',
+    departure_date                  date         COMMENT 'CCYYMMDD',
+    departure_time                  time         COMMENT 'HHSSMM',
+    treatment_site_code             varchar(12)  COMMENT 'location of treatment?',
+
     lookup_person_id               int          COMMENT 'person ID looked up using NHS number, DoB and MRN',
     lookup_consultant_personnel_id int          COMMENT 'personnel ID looked up using consultant code',
     audit_json                     mediumtext   null COMMENT 'Used for Audit Purposes',
-    CONSTRAINT pk_encounter_cds PRIMARY KEY (exchange_id, cds_unique_identifier, sus_record_type, spell_number)
+    CONSTRAINT pk_encounter_cds PRIMARY KEY (exchange_id, cds_unique_identifier, sus_record_type)
 );
 
-CREATE INDEX ix_encounter_cds_checksum_helper on encounter_cds (cds_unique_identifier, sus_record_type, spell_number, dt_received);
+CREATE INDEX ix_encounter_cds_checksum_helper on encounter_cds (cds_unique_identifier, sus_record_type, dt_received);
 
 create table encounter_cds_latest
 (
@@ -65,8 +92,8 @@ create table encounter_cds_latest
     withheld                       bool         COMMENT 'True if id is withheld',
     date_of_birth                  date COMMENT 'from PersonBirthDate',
     consultant_code                varchar(20)  COMMENT 'GMC number of consultant, from ConsultantCode',
-    treatment_function_code        varchar(10)   COMMENT 'specific to consultant',
-    -- specific spell admission / discharge / episode stuff here
+
+    -- specific spell admission / discharge / episode stuff here (inpatient)
     spell_number                   varchar(12),
     admission_category_code        varchar(2),
     admission_method_code          varchar(2),
@@ -85,13 +112,37 @@ create table encounter_cds_latest
     episode_end_site_code          varchar(12)  COMMENT 'location at end of episode',
     episode_end_date               date         COMMENT 'CCYYMMDD',
     episode_end_time               time         COMMENT 'HHSSMM',
+
+    -- specific appointment stuff here (outpatient)
+    appt_attendance_identifier      varchar(12),
+    appt_attended_code              char(1)      COMMENT 'Attended or DNA',
+    appt_outcome_code               char(1),
+    appt_date                       date         COMMENT 'CCYYMMDD',
+    appt_time                       time         COMMENT 'HHSSMM',
+    appt_site_code                  varchar(12)  COMMENT 'location of appointment',
+
+    -- specific arrival / assessment / departure stuff here (A&E)
+    arrival_mode_code               varchar(12),
+    attendance_category_code        char(1),
+    arrival_date                    date         COMMENT 'CCYYMMDD',
+    arrival_time                    time         COMMENT 'HHSSMM',
+    assessment_date                 date         COMMENT 'CCYYMMDD',
+    assessment_time                 time         COMMENT 'HHSSMM',
+    treatment_date                  date         COMMENT 'CCYYMMDD',
+    treatment_time                  time         COMMENT 'HHSSMM',
+    attendance_conclusion_date      date         COMMENT 'CCYYMMDD',
+    attendance_conclusion_time      time         COMMENT 'HHSSMM',
+    departure_date                  date         COMMENT 'CCYYMMDD',
+    departure_time                  time         COMMENT 'HHSSMM',
+    treatment_site_code             varchar(12)  COMMENT 'location of treatment?',
+
     lookup_person_id               int COMMENT 'person ID looked up using NHS number, DoB and MRN',
     lookup_consultant_personnel_id int COMMENT 'personnel ID looked up using consultant code',
     audit_json                     mediumtext   null comment 'Used for Audit Purposes',
-    CONSTRAINT pk_encounter_cds_latest PRIMARY KEY (cds_unique_identifier, sus_record_type, spell_number)
+    CONSTRAINT pk_encounter_cds_latest PRIMARY KEY (cds_unique_identifier, sus_record_type)
 );
 
-CREATE INDEX ix_encounter_cds_latest_join_helper on encounter_cds_latest (exchange_id, cds_unique_identifier, sus_record_type, spell_number);
+CREATE INDEX ix_encounter_cds_latest_join_helper on encounter_cds_latest (exchange_id, cds_unique_identifier, sus_record_type);
 
 
 -- records from sus inpatient, outpatient and emergency tail files are all written to this table with sus_record_type telling us which is which
@@ -144,8 +195,10 @@ create table encounter_target
     person_id                      int          COMMENT 'person ID for the encounter',
     encounter_id                   int          COMMENT 'encounter ID',
     performer_personnel_id         int          COMMENT 'performer ID for the encounter',
-
     treatment_function_code        varchar(10)   COMMENT 'specific to consultant',
+
+    -- TODO: is each CDS instance a single exclusive encounter record?
+    -- specific spell admission / discharge / episode stuff here (inpatient)
     spell_number                   varchar(12),
     admission_category_code        varchar(2),
     admission_method_code          varchar(2),
@@ -165,12 +218,35 @@ create table encounter_target
     episode_end_date               date         COMMENT 'CCYYMMDD',
     episode_end_time               time         COMMENT 'HHSSMM',
 
+    -- specific appointment stuff here (outpatient)
+    appt_attendance_identifier      varchar(12),
+    appt_attended_code              char(1)      COMMENT 'Attended or DNA',
+    appt_outcome_code               char(1),
+    appt_date                       date         COMMENT 'CCYYMMDD',
+    appt_time                       time         COMMENT 'HHSSMM',
+    appt_site_code                  varchar(12)  COMMENT 'location of appointment',
+
+    -- specific arrival / assessment / departure stuff here (A&E)
+    arrival_mode_code               varchar(12),
+    attendance_category_code        char(1),
+    arrival_date                    date         COMMENT 'CCYYMMDD',
+    arrival_time                    time         COMMENT 'HHSSMM',
+    assessment_date                 date         COMMENT 'CCYYMMDD',
+    assessment_time                 time         COMMENT 'HHSSMM',
+    treatment_date                  date         COMMENT 'CCYYMMDD',
+    treatment_time                  time         COMMENT 'HHSSMM',
+    attendance_conclusion_date      date         COMMENT 'CCYYMMDD',
+    attendance_conclusion_time      time         COMMENT 'HHSSMM',
+    departure_date                  date         COMMENT 'CCYYMMDD',
+    departure_time                  time         COMMENT 'HHSSMM',
+    treatment_site_code             varchar(12)  COMMENT 'location of treatment?',
+
     audit_json                     mediumtext NULL COMMENT 'Used for Audit Purposes',
     is_confidential                bool         COMMENT 'if this condition should be confidential or not',
     CONSTRAINT pk_encounter_target PRIMARY KEY (exchange_id, unique_id)
 );
 
-create index ix_duplication_helper on encounter_target (person_id, encounter_id, spell_start_date, unique_id);
+create index ix_duplication_helper on encounter_target (person_id, encounter_id, unique_id);
 
 
 -- latest version of every record that is in the target table
@@ -182,8 +258,10 @@ create table encounter_target_latest
     person_id                      int          COMMENT 'person ID for the encounter',
     encounter_id                   int          COMMENT 'encounter ID',
     performer_personnel_id         int          COMMENT 'performer ID for the encounter',
-
     treatment_function_code        varchar(10)   COMMENT 'specific to consultant',
+
+    -- TODO: is each CDS instance a single exclusive encounter record?
+    -- specific spell admission / discharge / episode stuff here (inpatient)
     spell_number                   varchar(12),
     admission_category_code        varchar(2),
     admission_method_code          varchar(2),
@@ -202,6 +280,29 @@ create table encounter_target_latest
     episode_end_site_code          varchar(12)  COMMENT 'location at end of episode',
     episode_end_date               date         COMMENT 'CCYYMMDD',
     episode_end_time               time         COMMENT 'HHSSMM',
+
+    -- specific appointment stuff here (outpatient)
+    appt_attendance_identifier      varchar(12),
+    appt_attended_code              char(1)      COMMENT 'Attended or DNA',
+    appt_outcome_code               char(1),
+    appt_date                       date         COMMENT 'CCYYMMDD',
+    appt_time                       time         COMMENT 'HHSSMM',
+    appt_site_code                  varchar(12)  COMMENT 'location of appointment',
+
+    -- specific arrival / assessment / departure stuff here (A&E)
+    arrival_mode_code               varchar(12),
+    attendance_category_code        char(1),
+    arrival_date                    date         COMMENT 'CCYYMMDD',
+    arrival_time                    time         COMMENT 'HHSSMM',
+    assessment_date                 date         COMMENT 'CCYYMMDD',
+    assessment_time                 time         COMMENT 'HHSSMM',
+    treatment_date                  date         COMMENT 'CCYYMMDD',
+    treatment_time                  time         COMMENT 'HHSSMM',
+    attendance_conclusion_date      date         COMMENT 'CCYYMMDD',
+    attendance_conclusion_time      time         COMMENT 'HHSSMM',
+    departure_date                  date         COMMENT 'CCYYMMDD',
+    departure_time                  time         COMMENT 'HHSSMM',
+    treatment_site_code             varchar(12)  COMMENT 'location of treatment?',
 
     audit_json                     mediumtext NULL COMMENT 'Used for Audit Purposes',
     is_confidential                bool        COMMENT 'if this condition should be confidential or not',
