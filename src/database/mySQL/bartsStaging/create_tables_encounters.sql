@@ -291,10 +291,21 @@ create table encounter_target
     person_id                      int          COMMENT 'person ID for the encounter',
     encounter_id                   int          COMMENT 'encounter ID',
     performer_personnel_id         int          COMMENT 'performer ID for the encounter',
-    treatment_function_code        varchar(10)   COMMENT 'specific to consultant',
+    treatment_function_code        varchar(10)   COMMENT 'treatment area specific to performer',
 
-    -- TODO: is each CDS instance a single exclusive encounter record?
-    -- specific spell admission / discharge / episode stuff here (inpatient)
+    -- TODO: is each CDS instance a single exclusive encounter record? - a single linked tail encounter_id suggests so
+
+    -- eg:
+    encounter_type                  varchar(10) NOT NULL COMMENT 'one of inpatient, outpatient, emergency',
+    encounter_location_code         varchar(12),
+    encounter_start_date            date,
+    encounter_start_time            time,
+    encounter_end_date              date,
+    encounter_end_time              time,
+
+    -- or?
+
+        -- specific spell admission / discharge / episode stuff here (inpatient)
     spell_number                   varchar(12),
     admission_category_code        varchar(2),
     admission_method_code          varchar(2),
@@ -356,49 +367,7 @@ create table encounter_target_latest
     performer_personnel_id         int          COMMENT 'performer ID for the encounter',
     treatment_function_code        varchar(10)   COMMENT 'specific to consultant',
 
-    -- TODO: is each CDS instance a single exclusive encounter record?
-    -- specific spell admission / discharge / episode stuff here (inpatient)
-    spell_number                   varchar(12),
-    admission_category_code        varchar(2),
-    admission_method_code          varchar(2),
-    admission_source_code          varchar(2),
-    patient_classification         char(1),
-    spell_start_date               date         COMMENT 'CCYYMMDD',
-    spell_start_time               time         COMMENT 'HHSSMM',
-    discharge_date                 date         COMMENT 'CCYYMMDD',
-    discharge_time                 time         COMMENT 'HHSSMM',
-    discharge_destination_code     varchar(2),
-    discharge_method               char(1),
-    episode_number                 varchar(2),
-    episode_start_site_code        varchar(12)  COMMENT 'location at start of episode',
-    episode_start_date             date         COMMENT 'CCYYMMDD',
-    episode_start_time             time         COMMENT 'HHSSMM',
-    episode_end_site_code          varchar(12)  COMMENT 'location at end of episode',
-    episode_end_date               date         COMMENT 'CCYYMMDD',
-    episode_end_time               time         COMMENT 'HHSSMM',
-
-    -- specific appointment stuff here (outpatient)
-    appt_attendance_identifier      varchar(12),
-    appt_attended_code              char(1)      COMMENT 'Attended or DNA',
-    appt_outcome_code               char(1),
-    appt_date                       date         COMMENT 'CCYYMMDD',
-    appt_time                       time         COMMENT 'HHSSMM',
-    appt_site_code                  varchar(12)  COMMENT 'location of appointment',
-
-    -- specific arrival / assessment / departure stuff here (A&E)
-    arrival_mode_code               varchar(12),
-    attendance_category_code        char(1),
-    arrival_date                    date         COMMENT 'CCYYMMDD',
-    arrival_time                    time         COMMENT 'HHSSMM',
-    assessment_date                 date         COMMENT 'CCYYMMDD',
-    assessment_time                 time         COMMENT 'HHSSMM',
-    treatment_date                  date         COMMENT 'CCYYMMDD',
-    treatment_time                  time         COMMENT 'HHSSMM',
-    attendance_conclusion_date      date         COMMENT 'CCYYMMDD',
-    attendance_conclusion_time      time         COMMENT 'HHSSMM',
-    departure_date                  date         COMMENT 'CCYYMMDD',
-    departure_time                  time         COMMENT 'HHSSMM',
-    treatment_site_code             varchar(12)  COMMENT 'location of treatment?',
+    -- TODO: is each CDS instance a single exclusive encounter record? - a single linked tail encounter_id suggests so
 
     audit_json                     mediumtext NULL COMMENT 'Used for Audit Purposes',
     is_confidential                bool        COMMENT 'if this condition should be confidential or not',
