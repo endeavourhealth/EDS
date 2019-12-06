@@ -168,7 +168,7 @@ create table cds_emergency
     nhs_number            varchar(10) NOT NULL COMMENT 'from NHSNumber',
     withheld              bool COMMENT 'True if id is withheld',
     date_of_birth         date COMMENT 'from PersonBirthDate',
-    consultant_code       varchar(20) NOT NULL COMMENT 'GMC number of consultant, from ConsultantCode',
+    consultant_code       varchar(20) NOT NULL COMMENT 'GMC number of consultant, from AEStaffMemberCode',
 
     attendance_number               varchar(12),
     arrival_mode_code               char(1)      COMMENT 'LKP_CDS_AEA_ARRIVAL_MODE',
@@ -184,6 +184,21 @@ create table cds_emergency
     departure_date                  date         COMMENT 'A&E departure date: CCYYMMDD',
     departure_time                  time         COMMENT 'A&E departure time: HHSSMM',
     treatment_site_code             varchar(12)  COMMENT 'A&E location',
+
+    aed_diagnosis_scheme            varchar(2)   COMMENT 'code scheme',
+    primary_aed_diagnosis           varchar(6)   COMMENT 'actual code value',
+    secondary_aed_diagnosis         varchar(300) COMMENT 'multiple further AED diagnosis in 6 character batches',
+
+    investigation_scheme            varchar(2)   COMMENT 'code scheme',
+    primary_investigation           varchar(6)   COMMENT 'actual code value',
+    secondary_investigation         varchar(300) COMMENT 'multiple further AED diagnosis in 6 character batches',
+
+    treatment_scheme                varchar(2)   COMMENT 'code scheme',
+    primary_treatment               varchar(6)   COMMENT 'actual code value',
+    primary_treatment_date          date,
+    secondary_treatment             varchar(6)   COMMENT 'actual code value',
+    secondary_treatment_date        date,
+    other_treatment                 varchar(686) COMMENT 'multiple further AED diagnosis in 14 character batches (date (8) + code (6))',
 
     lookup_person_id               int COMMENT 'person ID looked up using NHS number, DoB and MRN',
     lookup_consultant_personnel_id int COMMENT 'personnel ID looked up using consultant code',
@@ -206,7 +221,7 @@ create table cds_emergency_latest
     nhs_number            varchar(10) NOT NULL COMMENT 'from NHSNumber',
     withheld              bool COMMENT 'True if id is withheld',
     date_of_birth         date COMMENT 'from PersonBirthDate',
-    consultant_code       varchar(20) NOT NULL COMMENT 'GMC number of consultant, from ConsultantCode',
+    consultant_code       varchar(20) NOT NULL COMMENT 'GMC number of consultant, from AEStaffMemberCode',
 
     attendance_number               varchar(12),
     arrival_mode_code               char(1)      COMMENT 'LKP_CDS_AEA_ARRIVAL_MODE',
@@ -222,6 +237,21 @@ create table cds_emergency_latest
     departure_date                  date         COMMENT 'A&E departure date: CCYYMMDD',
     departure_time                  time         COMMENT 'A&E departure time: HHSSMM',
     treatment_site_code             varchar(12)  COMMENT 'A&E location',
+
+    aed_diagnosis_scheme            varchar(2)   COMMENT 'code scheme',
+    primary_aed_diagnosis           varchar(6)   COMMENT 'actual code value',
+    secondary_aed_diagnosis         varchar(300) COMMENT 'multiple further AED diagnosis in 6 character batches',
+
+    investigation_scheme            varchar(2)   COMMENT 'code scheme',
+    primary_investigation           varchar(6)   COMMENT 'actual code value',
+    secondary_investigation         varchar(300) COMMENT 'multiple further AED diagnosis in 6 character batches',
+
+    treatment_scheme                varchar(2)   COMMENT 'code scheme',
+    primary_treatment               varchar(6)   COMMENT 'actual code value',
+    primary_treatment_date          date,
+    secondary_treatment             varchar(6)   COMMENT 'actual code value',
+    secondary_treatment_date        date,
+    other_treatment                 varchar(686) COMMENT 'multiple further AED diagnosis in 14 character batches (date (8) + code (6))',
 
     lookup_person_id               int COMMENT 'person ID looked up using NHS number, DoB and MRN',
     lookup_consultant_personnel_id int COMMENT 'personnel ID looked up using consultant code',
