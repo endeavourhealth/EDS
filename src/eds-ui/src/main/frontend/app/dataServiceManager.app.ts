@@ -53,6 +53,8 @@ import {SftpReaderComponent} from "./sftpReader/sftpReader.component";
 import {SftpReaderModule} from "./sftpReader/sftpReader.module";
 import {DatabaseStatsModule} from "./databaseStats/databaseStats.module";
 import {DatabaseStatsComponent} from "./databaseStats/databaseStats.component";
+import {QueueReaderStatusModule} from "./queueReaderStatus/queueReaderStatus.module";
+import {QueueReaderStatusComponent} from "./queueReaderStatus/queueReaderStatus.component";
 
 @NgModule(
 	Application.Define({
@@ -80,7 +82,8 @@ import {DatabaseStatsComponent} from "./databaseStats/databaseStats.component";
 			Hl7ReceiverModule,
 			FrailtyApiModule,
 			SftpReaderModule,
-			DatabaseStatsModule
+			DatabaseStatsModule,
+			QueueReaderStatusModule
 		],
 		states: [
 			{name: 'app.dashboard', url: '/dashboard', component: DashboardComponent},
@@ -106,7 +109,8 @@ import {DatabaseStatsComponent} from "./databaseStats/databaseStats.component";
 			{name: 'app.hl7Receiver', url: '/hl7Receiver', component: Hl7ReceiverComponent},
 			{name: 'app.frailtyApi', url: '/frailtyApi', component: FrailtyApiComponent},
 			{name: 'app.sftpReader', url: '/sftpReader', component: SftpReaderComponent},
-			{name: 'app.databaseStats', url: '/databaseStats', component: DatabaseStatsComponent}
+			{name: 'app.databaseStats', url: '/databaseStats', component: DatabaseStatsComponent},
+			{name: 'app.queueReaderStatus', url: '/queueReaderStatus', component: QueueReaderStatusComponent}
 		],
 		defaultState : { state: 'app.dashboard', params: {} },
 		menuManager : DataServiceManagerMenuService

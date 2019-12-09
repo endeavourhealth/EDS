@@ -8,4 +8,5 @@ export class Exchange {
     inError: boolean;
     transformAudits: TransformErrorDetail[];
     exchangeSize: string;
+    queueRoutingKeys: {};
 }

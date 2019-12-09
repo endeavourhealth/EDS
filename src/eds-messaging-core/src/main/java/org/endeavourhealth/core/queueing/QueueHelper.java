@@ -5,6 +5,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.base.Strings;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.common.config.ConfigManager;
+import org.endeavourhealth.common.utility.ExpiringCache;
 import org.endeavourhealth.common.utility.JsonSerializer;
 import org.endeavourhealth.core.configuration.*;
 import org.endeavourhealth.core.database.dal.DalProvider;
@@ -38,8 +39,12 @@ import java.util.stream.Collectors;
 public class QueueHelper {
     private static final Logger LOG = LoggerFactory.getLogger(QueueHelper.class);
 
-    private static final String EXCHANGE_INBOUND = "EdsInbound";
-    private static final String EXCHANGE_PROTOCOL = "EdsProtocol";
+    public static final String EXCHANGE_INBOUND = "EdsInbound";
+    public static final String EXCHANGE_PROTOCOL = "EdsProtocol";
+    public static final String EXCHANGE_TRANSFORM = "EdsTransform";
+    public static final String EXCHANGE_SUBSCRIBER = "EdsSubscriber";
+
+    private static ExpiringCache<String, PostMessageToExchangeConfig> configCache = new ExpiringCache<>(1000L * 60L * 5L);
 
     public static void postToExchange(List<UUID> exchangeIds, String exchangeName, UUID specificProtocolId, boolean recalculateProtocols) throws Exception {
         postToExchange(exchangeIds, exchangeName, specificProtocolId, recalculateProtocols, null);
@@ -48,9 +53,6 @@ public class QueueHelper {
     public static void postToExchange(List<UUID> exchangeIds, String exchangeName, UUID specificProtocolId, boolean recalculateProtocols, Set<String> fileTypesToFilterOn) throws Exception {
 
         PostMessageToExchangeConfig exchangeConfig = findExchangeConfig(exchangeName);
-        if (exchangeConfig == null) {
-            throw new BadRequestException("Failed to find PostMessageToExchange config details for exchange " + exchangeName);
-        }
 
         if (exchangeIds.isEmpty()) {
             return;
@@ -268,36 +270,50 @@ public class QueueHelper {
     }
 
     public static PostMessageToExchangeConfig findExchangeConfig(String exchangeName) throws Exception {
-        //LOG.debug("Looking for config for exchange [" + exchangeName + "]");
 
-        //go through all the known app configs to find config for posting to the Rabbit Exchange we're interested in
-        String messagingApiConfigXml = ConfigManager.getConfiguration("api-configuration", "messaging-api");
-        PostMessageToExchangeConfig config = findExchangeConfig(messagingApiConfigXml, exchangeName);
-        if (config != null) {
-            //LOG.debug("Found in messaging API XML");
-            return config;
+        PostMessageToExchangeConfig config = configCache.get(exchangeName);
+        if (config == null) {
+
+            //LOG.debug("Looking for config for exchange [" + exchangeName + "]");
+
+            //go through all the known app configs to find config for posting to the Rabbit Exchange we're interested in
+
+            //check messaging API config first
+            String messagingApiConfigXml = ConfigManager.getConfiguration("api-configuration", "messaging-api");
+            config = findExchangeConfig(messagingApiConfigXml, exchangeName);
+
+            //if no luck there, check all Queue Reader app configs
+            if (config == null) {
+
+                Map<String, String> queueReadConfigs = ConfigManager.getConfigurations("queuereader");
+                for (String configId : queueReadConfigs.keySet()) {
+                    //LOG.debug("Checking config XML for " + configId + " for exchangeName = "+exchangeName);
+                    String queueReaderConfigXml = queueReadConfigs.get(configId);
+
+                    //the transform common config record is JSON, and trying to parse JSON as XML results
+                    //in confusing logging to console (which seems impossible to turn off),
+                    //saying "[Fatal Error] :1:1: Content is not allowed in prolog"
+                    //So avoid confusion by not even trying with them
+                    if (queueReaderConfigXml.startsWith("{")) {
+                        continue;
+                    }
+
+                    config = findExchangeConfig(queueReaderConfigXml, exchangeName);
+                    if (config != null) {
+                        break;
+                    }
+                }
+            }
         }
 
-        Map<String, String> queueReadConfigs = ConfigManager.getConfigurations("queuereader");
-        for (String configId: queueReadConfigs.keySet()) {
-            //LOG.debug("Checking config XML for " + configId + " for exchangeName = "+exchangeName);
-            String queueReaderConfigXml = queueReadConfigs.get(configId);
-
-            //the transform common config record is JSON, and trying to parse JSON as XML results
-            //in confusing logging to console (which seems impossible to turn off),
-            //saying "[Fatal Error] :1:1: Content is not allowed in prolog"
-            //So avoid confusion by not even trying with them
-            if (queueReaderConfigXml.startsWith("{")) {
-                continue;
-            }
-
-            config = findExchangeConfig(queueReaderConfigXml, exchangeName);
-            if (config != null) {
-                return config;
-            }
+        if (config == null) {
+            throw new BadRequestException("Failed to find PostMessageToExchange config details for exchange " + exchangeName);
+        } else {
+            //add to cache
+            configCache.put(exchangeName, config);
         }
 
-        return null;
+        return config;
     }
 
     private static PostMessageToExchangeConfig findExchangeConfig(String configXml, String exchangeName) throws Exception {
@@ -347,71 +363,6 @@ public class QueueHelper {
                 .filter(t -> t.getExchange().equalsIgnoreCase(exchangeName))
                 .collect(StreamExtension.singleOrNullCollector());*/
     }
-
-    /*private static PostMessageToExchangeConfig findExchangeConfig(String exchangeName) throws Exception {
-
-        //go through all the known app configs to find config for posting to the Rabbit Exchange we're interested in
-        PostMessageToExchangeConfig config = findExchangeConfig("messaging-api", "api-configuration", exchangeName);
-        if (config != null) {
-            return config;
-        }
-
-        config = findExchangeConfig("queuereader", "inbound", exchangeName);
-        if (config != null) {
-            return config;
-        }
-
-        config = findExchangeConfig("queuereader", "protocol", exchangeName);
-        if (config != null) {
-            return config;
-        }
-
-        config = findExchangeConfig("queuereader", "response", exchangeName);
-        if (config != null) {
-            return config;
-        }
-
-        config = findExchangeConfig("queuereader", "subscriber", exchangeName);
-        if (config != null) {
-            return config;
-        }
-
-        config = findExchangeConfig("queuereader", "transform", exchangeName);
-        if (config != null) {
-            return config;
-        }
-
-        return null;
-    }
-
-
-    private static PostMessageToExchangeConfig findExchangeConfig(String appId, String configId, String exchangeName) throws Exception {
-
-        //we access the messaging API config directly, to find out how it posts new incoming exchanges to rabbit
-        String configXml = ConfigManager.getConfiguration(configId, appId);
-
-        Pipeline pipeline = null;
-
-        //the config XML may be one of two serialised classes, so we use a try/catch to safely try both if necessary
-        try {
-            ApiConfiguration config = ConfigWrapper.deserialise(configXml);
-            ApiConfiguration.PostMessageAsync postConfig = config.getPostMessageAsync();
-            pipeline = postConfig.getPipeline();
-
-        } catch (Exception e) {
-
-            QueueReaderConfiguration configuration = ConfigDeserialiser.deserialise(configXml);
-            pipeline = configuration.getPipeline();
-        }
-
-        return pipeline
-                .getPipelineComponents()
-                .stream()
-                .filter(t -> t instanceof PostMessageToExchangeConfig)
-                .map(t -> (PostMessageToExchangeConfig)t)
-                .filter(t -> t.getExchange().equalsIgnoreCase(exchangeName))
-                .collect(StreamExtension.singleOrNullCollector());
-    }*/
 
     /**
      * creates a "dummy" exchange and an exchange_batch for each patient and injects into the protocol queue

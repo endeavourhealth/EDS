@@ -170,6 +170,9 @@
                                         <option *ngIf="postExchange=='edsProtocol'" value="FullLoad">Full Load of Data</option>
                                     </select>
 
+                                    Queues [Inbound={{selectedExchange.queueRoutingKeys['EdsInbound']}}, Protocol={{selectedExchange.queueRoutingKeys['EdsProtocol']}}]
+                                    <!--Queues [Inbound={{selectedExchange.queueRoutingKeys['EdsInbound']}} Protocol={{selectedExchange.selectedExchange.queueRoutingKeys['EdsProtocol']}}]-->
+
                                 </div>
                             </div>
                             <div class="row" *ngIf="postExchange=='edsInbound'">

@@ -12,6 +12,7 @@ import org.endeavourhealth.core.database.dal.audit.models.AuditAction;
 import org.endeavourhealth.core.database.dal.audit.models.AuditModule;
 import org.endeavourhealth.core.database.rdbms.ConnectionManager;
 import org.endeavourhealth.coreui.endpoints.AbstractEndpoint;
+import org.endeavourhealth.ui.json.JsonSftpReaderIgnoreBatchSplitParameters;
 import org.hibernate.internal.SessionImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,6 +30,7 @@ import java.sql.Timestamp;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 @Path("/sftpReader")
 public class SftpReaderEndpoint extends AbstractEndpoint {
@@ -546,7 +548,7 @@ public class SftpReaderEndpoint extends AbstractEndpoint {
 
                     //get the batch splits for the complete batch
                     if (ConnectionManager.isPostgreSQL(connection)) {
-                        sql = "select s.organisation_id, s.have_notified, m.inbound, m.error_text"
+                        sql = "select s.batch_split_id, s.organisation_id, s.have_notified, m.inbound, m.error_text"
                                 + " from log.batch_split s"
                                 + " left outer join log.notification_message m"
                                 + " on m.batch_id = s.batch_id"
@@ -560,7 +562,7 @@ public class SftpReaderEndpoint extends AbstractEndpoint {
                                 + " )"
                                 + " where s.batch_id = ?";
                     } else {
-                        sql = "select s.organisation_id, s.have_notified, m.inbound, m.error_text"
+                        sql = "select s.batch_split_id, s.organisation_id, s.have_notified, m.inbound, m.error_text"
                                 + " from batch_split s"
                                 + " left outer join notification_message m"
                                 + " on m.batch_id = s.batch_id"
@@ -585,6 +587,7 @@ public class SftpReaderEndpoint extends AbstractEndpoint {
                     while (rs.next()) {
 
                         int col = 1;
+                        int batchSplitId = rs.getInt(col++);
                         String orgId = rs.getString(col++);
                         boolean haveNotified = rs.getBoolean(col++);
                         String notificationResult = rs.getString(col++);
@@ -598,6 +601,7 @@ public class SftpReaderEndpoint extends AbstractEndpoint {
                         }
 
                         ObjectNode orgNode = arr.addObject();
+                        orgNode.put("batchSplitId", batchSplitId);
                         orgNode.put("orgId", orgId);
                         orgNode.put("notified", haveNotified);
                         orgNode.put("result", notificationResult);
@@ -616,5 +620,81 @@ public class SftpReaderEndpoint extends AbstractEndpoint {
         }
 
         return mapper.writeValueAsString(root);
+    }
+
+    @POST
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Path("/ignore")
+    public Response ignoreBatchSplit(@Context SecurityContext sc,
+                                     JsonSftpReaderIgnoreBatchSplitParameters parameters) throws Exception {
+        super.setLogbackMarkers(sc);
+
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Save, "Ignore", "Configuration ID", parameters.getConfigurationId(), "Batch ID", parameters.getBatchId(), "Batch Split ID", parameters.getBatchSplitId());
+
+        ignoreBatchSplitImpl(parameters.getConfigurationId(), parameters.getBatchId(), parameters.getBatchSplitId(), parameters.getReason());
+
+        clearLogbackMarkers();
+
+        return Response
+                .ok()
+                .build();
+    }
+
+    private void ignoreBatchSplitImpl(String configurationId, int batchId, int batchSplitId, String reason) throws Exception {
+        Connection connection = ConnectionManager.getSftpReaderConnection();
+        PreparedStatement psInsert = null;
+        PreparedStatement psUpdate = null;
+        try {
+            String sql = null;
+            if (ConnectionManager.isPostgreSQL(connection)) {
+                sql = "INSERT INTO log.notification_message (batch_id, batch_split_id, configuration_id, message_uuid, timestamp, inbound, was_success)"
+                        + " VALUES (?, ?, ?, ?, ?, ?, ?)";
+            } else {
+                sql = "INSERT INTO notification_message (batch_id, batch_split_id, configuration_id, message_uuid, timestamp, inbound, was_success)"
+                        + " VALUES (?, ?, ?, ?, ?, ?, ?)";
+            }
+            psInsert = connection.prepareStatement(sql);
+
+            Date d = new Date();
+
+            int col = 1;
+            psInsert.setInt(col++, batchId);
+            psInsert.setInt(col++, batchSplitId);
+            psInsert.setString(col++, configurationId);
+            psInsert.setString(col++, UUID.randomUUID().toString());
+            psInsert.setTimestamp(col++, new java.sql.Timestamp(d.getTime()));
+            psInsert.setString(col++, reason);
+            psInsert.setBoolean(col++, true);
+            psInsert.executeUpdate();
+
+            if (ConnectionManager.isPostgreSQL(connection)) {
+                sql = "UPDATE log.batch_split"
+                    + " SET have_notified = ?, notification_date = ?"
+                    + " WHERE batch_split_id = ?";
+            } else {
+                sql = "UPDATE batch_split"
+                        + " SET have_notified = ?, notification_date = ?"
+                        + " WHERE batch_split_id = ?";
+            }
+            psUpdate = connection.prepareStatement(sql);
+
+            col = 1;
+            psUpdate.setBoolean(col++, true);
+            psUpdate.setTimestamp(col++, new java.sql.Timestamp(d.getTime()));
+            psUpdate.setInt(col++, batchSplitId);
+            psUpdate.executeUpdate();
+
+            connection.commit();
+
+        } finally {
+            if (psInsert != null) {
+                psInsert.close();
+            }
+            if (psUpdate != null) {
+                psUpdate.close();
+            }
+            connection.close();
+        }
     }
 }

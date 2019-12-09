@@ -6,6 +6,7 @@ import com.google.common.base.Strings;
 import org.apache.commons.io.FileUtils;
 import org.endeavourhealth.common.security.SecurityUtils;
 import org.endeavourhealth.common.security.annotations.RequiresAdmin;
+import org.endeavourhealth.core.configuration.PostMessageToExchangeConfig;
 import org.endeavourhealth.core.database.dal.DalProvider;
 import org.endeavourhealth.core.database.dal.admin.LibraryDalI;
 import org.endeavourhealth.core.database.dal.admin.LibraryRepositoryHelper;
@@ -16,6 +17,7 @@ import org.endeavourhealth.core.database.dal.admin.models.Service;
 import org.endeavourhealth.core.database.dal.audit.ExchangeDalI;
 import org.endeavourhealth.core.database.dal.audit.UserAuditDalI;
 import org.endeavourhealth.core.database.dal.audit.models.*;
+import org.endeavourhealth.core.messaging.pipeline.components.PostMessageToExchange;
 import org.endeavourhealth.core.queueing.QueueHelper;
 import org.endeavourhealth.core.xml.QueryDocument.*;
 import org.endeavourhealth.core.xml.TransformErrorSerializer;
@@ -46,9 +48,6 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
     private static final ExchangeDalI auditRepository = DalProvider.factoryExchangeDal();
     private static final ServiceDalI serviceRepository = DalProvider.factoryServiceDal();
     private static final LibraryDalI libraryRepository = DalProvider.factoryLibraryDal();
-
-    private static final String INBOUND_EXCHANGE = "edsInbound";
-    private static final String PROTOCOL_EXCHANGE = "edsProtocol";
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
@@ -208,17 +207,34 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
 
             UUID exchangeId = exchange.getId();
 
-            //don't need to re-retrieve, since MySQL gives us all the content. It's only Cassandra that doesn't give everything
-            //exchange = auditRepository.getExchange(exchangeId);
-
             Date timestamp = exchange.getTimestamp();
             Map<String, String> headers = exchange.getHeaders();
             List<String> bodyLines = getExchangeBodyLines(exchange);
             boolean inError = exchangeIdsInError.contains(exchangeId);
             String exchangeSize = getExchangeSize(exchange);
+            Map<String, String> routingKeys = getRoutingKeys(exchange);
 
-            JsonExchange jsonExchange = new JsonExchange(exchangeId, serviceUuid, systemUuid, timestamp, headers, bodyLines, inError, exchangeSize);
+            JsonExchange jsonExchange = new JsonExchange(exchangeId, serviceUuid, systemUuid, timestamp, headers, bodyLines, inError, exchangeSize, routingKeys);
             ret.add(jsonExchange);
+        }
+
+        return ret;
+    }
+
+    private Map<String, String> getRoutingKeys(Exchange exchange) throws Exception {
+
+        List<String> exchangeNames = new ArrayList<>();
+        exchangeNames.add(QueueHelper.EXCHANGE_INBOUND);
+        exchangeNames.add(QueueHelper.EXCHANGE_PROTOCOL);
+        exchangeNames.add(QueueHelper.EXCHANGE_TRANSFORM);
+        exchangeNames.add(QueueHelper.EXCHANGE_SUBSCRIBER);
+
+        Map<String, String> ret = new HashMap<>();
+
+        for (String exchangeName: exchangeNames) {
+            PostMessageToExchangeConfig config = QueueHelper.findExchangeConfig(exchangeName);
+            String routingKey = PostMessageToExchange.getRoutingKey(exchange, config);
+            ret.put(exchangeName, routingKey);
         }
 
         return ret;
@@ -439,7 +455,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
 
         } else if (postMode.equalsIgnoreCase("FullLoad")) {
 
-            if (!exchangeName.equals(PROTOCOL_EXCHANGE)) {
+            if (!exchangeName.equalsIgnoreCase(QueueHelper.EXCHANGE_PROTOCOL)) {
                 throw new IllegalArgumentException("Invalid post mode [" + postMode + "] when exchange name is [" + exchangeName + "]");
             }
 
@@ -456,7 +472,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
         Set<String> fileTypesSet = null;
 
         //the below only apply if posting to inbound queue
-        if (exchangeName.equals(INBOUND_EXCHANGE)) {
+        if (exchangeName.equalsIgnoreCase(QueueHelper.EXCHANGE_INBOUND)) {
 
             //this bit hasn't been working for a long time, and it's not been missed, so don't bother trying
             /*for (UUID exchangeId : exchangeIds) {
@@ -490,9 +506,9 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
                 ExchangeDalI auditRepository = DalProvider.factoryExchangeDal();
                 auditRepository.delete(state);
             }
-        } else if (exchangeName.equals(PROTOCOL_EXCHANGE)) {
-
+        } else if (exchangeName.equalsIgnoreCase(QueueHelper.EXCHANGE_PROTOCOL)) {
             //nothing extra for this
+
         } else {
             throw new IllegalArgumentException("Invalid exhange name [" + exchangeName + "]");
         }
@@ -848,7 +864,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
         }
 
         //post to rabbit
-        QueueHelper.postToExchange(exchangeIdsToRePost, INBOUND_EXCHANGE, null, true);
+        QueueHelper.postToExchange(exchangeIdsToRePost, QueueHelper.EXCHANGE_INBOUND, null, true);
 
     }
 

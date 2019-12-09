@@ -8,9 +8,11 @@ import com.rabbitmq.client.Envelope;
 import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.common.utility.MetricsHelper;
 import org.endeavourhealth.common.utility.SlackHelper;
+import org.endeavourhealth.core.application.ApplicationHeartbeatCallbackI;
 import org.endeavourhealth.core.configuration.QueueReaderConfiguration;
 import org.endeavourhealth.core.database.dal.DalProvider;
 import org.endeavourhealth.core.database.dal.audit.QueuedMessageDalI;
+import org.endeavourhealth.core.database.dal.audit.models.ApplicationHeartbeat;
 import org.endeavourhealth.core.database.dal.audit.models.Exchange;
 import org.endeavourhealth.core.database.dal.audit.models.HeaderKeys;
 import org.endeavourhealth.core.messaging.pipeline.PipelineProcessor;
@@ -23,7 +25,8 @@ import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class RabbitConsumer extends DefaultConsumer {
+public class RabbitConsumer extends DefaultConsumer
+							implements ApplicationHeartbeatCallbackI {
 	private static final Logger LOG = LoggerFactory.getLogger(RabbitConsumer.class);
 
 	private static final String FILE_EXT_KILL = "kill";
@@ -337,6 +340,26 @@ public class RabbitConsumer extends DefaultConsumer {
 		}
 	}
 
+	/**
+	 * this fn is called every minute from the heartbeat thread, to see if we're busy
+     */
+	@Override
+	public void populateIsBusy(ApplicationHeartbeat applicationHeartbeat) {
+		applicationHeartbeat.setBusy(new Boolean(isBusy()));
+	}
+
+	private boolean isBusy() {
+		boolean busy;
+		synchronized (messagesBeingProcessed) {
+			busy = !messagesBeingProcessed.isEmpty();
+		}
+		return busy;
+	}
+
+	/**
+	 * runnable to check for the kill file every 10s. The normal Rabbit processing checks at the end of each
+	 * message, but if the app is idle, this thread takes over.
+	 */
 	class KillCheckingRunnable implements Runnable {
 
 		private AtomicInteger stop = new AtomicInteger();
@@ -362,10 +385,9 @@ public class RabbitConsumer extends DefaultConsumer {
 				}
 
 				//if our rabbit processor is running something, then do nothing
-				synchronized (messagesBeingProcessed) {
-					if (!messagesBeingProcessed.isEmpty()) {
-						continue;
-					}
+				//since we don't want to kill anything mid-way through running
+				if (isBusy()) {
+					continue;
 				}
 
 				checkIfKillFileExistsAndStopIfSo();

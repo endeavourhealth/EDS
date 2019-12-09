@@ -3,6 +3,7 @@ package org.endeavourhealth.queuereader;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import org.endeavourhealth.common.utility.MetricsHelper;
+import org.endeavourhealth.core.application.ApplicationHeartbeatHelper;
 import org.endeavourhealth.core.configuration.QueueReaderConfiguration;
 import org.endeavourhealth.core.queueing.ConnectionManager;
 import org.endeavourhealth.core.queueing.RabbitConfig;
@@ -69,8 +70,9 @@ public class RabbitHandler {
 		//channel.basicConsume(configuration.getQueue(), false, consumer);
 		channel.basicConsume(configuration.getQueue(), false, configId, false, exclusiveReadingOnly, null, consumer);
 
-		//now we're running, start this
+		//now we're running, start these
 		MetricsHelper.startHeartbeat();
+		ApplicationHeartbeatHelper.start(consumer);
 	}
 
 	public void stop() throws IOException, TimeoutException {

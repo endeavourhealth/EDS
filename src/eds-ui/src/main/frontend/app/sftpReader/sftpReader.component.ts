@@ -26,10 +26,10 @@ export class SftpReaderComponent {
     refreshingStatus: boolean;
     showWarningsOnly: boolean;
 
-    constructor(private $modal : NgbModal,
-                protected sftpReaderService:SftpReaderService,
-                protected logger:LoggerService,
-                protected $state:StateService) {
+    constructor(private $modal: NgbModal,
+                protected sftpReaderService: SftpReaderService,
+                protected logger: LoggerService,
+                protected $state: StateService) {
 
 
     }
@@ -57,12 +57,12 @@ export class SftpReaderComponent {
     refreshStatus() {
         var vm = this;
         vm.refreshingStatus = true;
-        console.log('vm.refreshingStatus = ' + vm.refreshingStatus);
+        //console.log('vm.refreshingStatus = ' + vm.refreshingStatus);
 
         vm.sftpReaderService.getSftpReaderStatus(vm.filterInstanceName).subscribe(
             (result) => {
                 vm.refreshingStatus = false;
-                console.log('vm.refreshingStatus = ' + vm.refreshingStatus);
+                //console.log('vm.refreshingStatus = ' + vm.refreshingStatus);
 
                 vm.logger.success('Successfully got SFTP Reader status', 'SFTP Reader Status');
                 vm.statuses = result;
@@ -70,12 +70,12 @@ export class SftpReaderComponent {
 
                 vm.resultStr = JSON.stringify(result, null, 2);
 
-                console.log('received SFTP Reader status');
-                console.log(result);
+                //console.log('received SFTP Reader status');
+                //console.log(result);
             },
             (error) => {
                 vm.refreshingStatus = false;
-                console.log('vm.refreshingStatus = ' + vm.refreshingStatus);
+                //console.log('vm.refreshingStatus = ' + vm.refreshingStatus);
 
                 vm.logger.error('Failed get SFTP Reader status', error, 'SFTP Reader Status');
             }
@@ -178,5 +178,25 @@ export class SftpReaderComponent {
         SftpReaderHistoryDialog.open(vm.$modal, status);
     }
 
+
+    ignoreBatchSplit(content: SftpReaderBatchContents, status: SftpReaderChannelStatus) {
+        var vm = this;
+
+        var reason = prompt('Enter reason');
+        if (reason == null) {
+            return;
+        }
+
+        vm.sftpReaderService.ignoreBatchSplit(status.latestBatchId, content.batchSplitId, status.id, reason).subscribe(
+            (result) => {
+                content.error = null;
+                content.result = reason;
+                content.notified = true;
+            },
+            (error) => {
+                vm.logger.error('Failed to ignore batch split', error, 'SFTP Reader Error');
+            }
+        )
+    }
 
 }

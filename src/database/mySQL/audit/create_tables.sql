@@ -21,6 +21,8 @@ DROP TABLE IF EXISTS published_file_record;
 DROP TABLE IF EXISTS last_data_received;
 DROP TABLE IF EXISTS last_data_processed;
 DROP TABLE IF EXISTS exchange_subscriber_send_audit;
+DROP TABLE IF EXISTS application_heartbeat;
+DROP TABLE IF EXISTS last_data_to_subscriber;
 
 CREATE TABLE `exchange`
 (
@@ -300,3 +302,33 @@ CREATE TABLE `exchange_subscriber_send_audit` (
 )
 ROW_FORMAT=COMPRESSED
 KEY_BLOCK_SIZE=8;
+
+
+create table application_heartbeat (
+  application_name varchar(255) not null COMMENT 'top-level name of the app e.g. QueueReader',
+  application_instance_name varchar(255) not null COMMENT 'identifies the instance of the app e.g. InboundA',
+  timestmp datetime NOT NULL COMMENT 'timestamp of last heartbeat',
+  host_name varchar(255) not null COMMENT 'server name last heartbeat from',
+  is_busy boolean COMMENT 'whether the application is busy (depends on context what this means)',
+  max_heap_mb int COMMENT 'JVM max heap',
+  current_heap_mb int COMMENT 'JVM heap allocated',
+  CONSTRAINT pk_application_heartbeat PRIMARY KEY (application_name, application_instance_name)
+)
+  ROW_FORMAT=COMPRESSED
+  KEY_BLOCK_SIZE=8;
+
+
+
+create table last_data_to_subscriber (
+  subscriber_config_name varchar(255) not null COMMENT 'subscriber feed this relates to',
+  service_id char(36) not null COMMENT 'service UUID this is for',
+  system_id char(36) not null COMMENT 'system UUID this is for',
+  data_date datetime COMMENT 'date of the last data processed (not receipt date)',
+  sent_date datetime COMMENT 'timestamp the subscriber feed population was completed',
+  exchange_id char(36) COMMENT 'exchange UUID of the last exchange sent',
+  CONSTRAINT pk_last_data_to_subscriber PRIMARY KEY (subscriber_config_name, service_id, system_id)
+)
+  ROW_FORMAT=COMPRESSED
+  KEY_BLOCK_SIZE=8;
+
+create index ix_service_id on last_data_to_subscriber (service_id, system_id);

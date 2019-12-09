@@ -50,7 +50,7 @@ public class PostMessageToExchange extends PipelineComponent {
 			throw new PipelineException("Error checking header keys", ex);
 		}
 
-		String routingKey = getRoutingKey(exchange);
+		String routingKey = getRoutingKey(exchange, config);
 
 		// Generate message identifier and store message in db
 		UUID messageUuid = exchange.getId();
@@ -218,7 +218,7 @@ public class PostMessageToExchange extends PipelineComponent {
 		}
 	}
 
-	private String getRoutingKey(Exchange exchange) throws PipelineException {
+	public static String getRoutingKey(Exchange exchange, PostMessageToExchangeConfig config) throws PipelineException {
 
 		//get the value we're routing on, which will be one or more headers from the exchange
 		List<String> routingValues = new ArrayList<>();
@@ -235,22 +235,5 @@ public class PostMessageToExchange extends PipelineComponent {
 		String exchangeName = config.getExchange();
 		return RoutingManager.getInstance().getRoutingKeyForIdentifier(exchangeName, fullRoutingValue);
 	}
-	/*private String getRoutingKey(Exchange exchange) throws PipelineException {
-
-		//get the value we're routing on
-		String routingValue = null;
-
-		String routingHeader = config.getRoutingHeader();
-		if (!Strings.isNullOrEmpty(routingHeader)) {
-			routingValue = exchange.getHeader(routingHeader);
-		}
-
-		if (Strings.isNullOrEmpty(routingValue)) {
-			throw new PipelineException("Failed to find routing value for " + routingHeader + " in exchange " + exchange);
-		}
-
-		String exchangeName = config.getExchange();
-		return RoutingManager.getInstance().getRoutingKeyForIdentifier(exchangeName, routingValue);
-	}*/
 
 }

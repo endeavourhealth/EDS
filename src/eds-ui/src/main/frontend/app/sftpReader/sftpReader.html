@@ -1,6 +1,6 @@
 <div class="module">
     <div class="module-heading">
-        SFTP Reader Status
+        SFTP Reader Status <span *ngIf="statusesLastRefreshed">(as of {{statusesLastRefreshed | date:'HH:mm:ss'}})</span>
         <div class="pull-right">
 
             <form class="form-inline">
@@ -115,7 +115,7 @@
 
                         <div class="panel-body">
 
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <h4>Third Party->SFTP Reader</h4>
 
                                 <div *ngIf="status.latestPollingStart">
@@ -163,7 +163,7 @@
                                 </div>
 
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-8">
                                 <h4>SFTP Reader->Messaging API</h4>
 
 
@@ -182,15 +182,20 @@
                                                     <tr>
                                                         <th class="col-md-2">ODS Code</th>
                                                         <th class="col-md-2">Status</th>
-                                                        <th class="col-md-8">Error</th>
+                                                        <th class="col-md-7">Message</th>
+                                                        <th class="col-md-1">Action</th>
                                                     </tr>
                                                     </thead>
                                                     <tbody>
                                                     <tr class="hover-box" *ngFor="let content of status.completeBatchContents">
                                                         <td>{{content.orgId}}</td>
                                                         <td *ngIf="content.notified">OK</td>
+                                                        <td *ngIf="content.notified">{{content.result}}</td>
                                                         <td *ngIf="!content.notified">Error</td>
-                                                        <td>{{content.error}}</td>
+                                                        <td *ngIf="!content.notified">{{content.error}}</td>
+                                                        <td>
+                                                            <button *ngIf="!content.notified" type="button" class="btn btn-default btn-xs child-to-show" (click)="ignoreBatchSplit(content, status)">Ignore</button>
+                                                        </td>
                                                     </tr>
                                                     </tbody>
                                                 </table>
@@ -209,15 +214,20 @@
                                                         <tr>
                                                             <th class="col-md-2">ODS Code</th>
                                                             <th class="col-md-2">Status</th>
-                                                            <th class="col-md-8">Error</th>
+                                                            <th class="col-md-7">Message</th>
+                                                            <th class="col-md-1">Action</th>
                                                         </tr>
                                                         </thead>
                                                         <tbody>
                                                         <tr class="hover-box" *ngFor="let content of filterOrgs(status.completeBatchContents, true)">
                                                             <td>{{content.orgId}}</td>
                                                             <td *ngIf="content.notified">OK</td>
+                                                            <td *ngIf="content.notified">{{content.result}}</td>
                                                             <td *ngIf="!content.notified">Error</td>
-                                                            <td>{{content.error}}</td>
+                                                            <td *ngIf="!content.notified">{{content.error}}</td>
+                                                            <td>
+                                                                <button *ngIf="!content.notified" type="button" class="btn btn-default btn-xs child-to-show" (click)="ignoreBatchSplit(content, status)">Ignore</button>
+                                                            </td>
                                                         </tr>
                                                         </tbody>
                                                     </table>
@@ -239,15 +249,20 @@
                                                         <tr>
                                                             <th class="col-md-2">ODS Code</th>
                                                             <th class="col-md-2">Status</th>
-                                                            <th class="col-md-8">Error</th>
+                                                            <th class="col-md-7">Message</th>
+                                                            <th class="col-md-1">Action</th>
                                                         </tr>
                                                         </thead>
                                                         <tbody>
                                                         <tr class="hover-box" *ngFor="let content of filterOrgs(status.completeBatchContents, false)">
                                                             <td>{{content.orgId}}</td>
                                                             <td *ngIf="content.notified">OK</td>
+                                                            <td *ngIf="content.notified">{{content.result}}</td>
                                                             <td *ngIf="!content.notified">Error</td>
-                                                            <td>{{content.error}}</td>
+                                                            <td *ngIf="!content.notified">{{content.error}}</td>
+                                                            <td>
+                                                                <button *ngIf="!content.notified" type="button" class="btn btn-default btn-xs child-to-show" (click)="ignoreBatchSplit(content, status)">Ignore</button>
+                                                            </td>
                                                         </tr>
                                                         </tbody>
                                                     </table>

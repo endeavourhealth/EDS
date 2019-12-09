@@ -32,4 +32,14 @@ export class SftpReaderService extends BaseHttp2Service {
 
         return this.httpGet('api/sftpReader/history', { search : params});
     }
+
+    ignoreBatchSplit(batchId: number, batchSplitId: number, configurationId: string, reason: string) : Observable<any> {
+        var request = {
+            'batchId': batchId,
+            'batchSplitId': batchSplitId,
+            'configurationId': configurationId,
+            'reason': reason
+        };
+        return this.httpPost('api/sftpReader/ignore', request);
+    }
 }
