@@ -662,7 +662,11 @@ public class SftpReaderEndpoint extends AbstractEndpoint {
             psInsert.setInt(col++, batchId);
             psInsert.setInt(col++, batchSplitId);
             psInsert.setString(col++, configurationId);
-            psInsert.setString(col++, UUID.randomUUID().toString());
+            if (ConnectionManager.isPostgreSQL(connection)) {
+                psInsert.setObject(col++, UUID.randomUUID());
+            } else {
+                psInsert.setString(col++, UUID.randomUUID().toString());
+            }
             psInsert.setTimestamp(col++, new java.sql.Timestamp(d.getTime()));
             psInsert.setString(col++, reason);
             psInsert.setBoolean(col++, true);
