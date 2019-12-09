@@ -46,6 +46,16 @@ create table cds_inpatient
     discharge_destination_code     varchar(2)   COMMENT 'LKP_CDS_DISCH_DEST',
     discharge_method               char(1)      COMMENT 'LKP_CDS_DISCH_METHOD',
 
+    -- store any diagnosis and procedure data
+    primary_diagnosis_ICD          varchar(6),
+    secondary_diagnosis_ICD        varchar(6),
+    other_diagnosis_ICD            mediumtext,
+    primary_procedure_OPCS         varchar(4),
+    primary_procedure_date         date,
+    secondary_procedure_OPCS       varchar(4),
+    secondary_procedure_date       date,
+    other_procedures_OPCS          mediumtext,
+
     lookup_person_id               int          COMMENT 'person ID looked up using NHS number, DoB and MRN',
     lookup_consultant_personnel_id int          COMMENT 'personnel ID looked up using consultant code',
     audit_json                     mediumtext   null COMMENT 'Used for Audit Purposes',
@@ -89,6 +99,16 @@ create table cds_inpatient_latest
     discharge_destination_code     varchar(2)   COMMENT 'LKP_CDS_DISCH_DEST',
     discharge_method               char(1)      COMMENT 'LKP_CDS_DISCH_METHOD',
 
+    -- store any diagnosis and procedure data
+    primary_diagnosis_ICD          varchar(6),
+    secondary_diagnosis_ICD        varchar(6),
+    other_diagnosis_ICD            mediumtext,
+    primary_procedure_OPCS         varchar(4),
+    primary_procedure_date         date,
+    secondary_procedure_OPCS       varchar(4),
+    secondary_procedure_date       date,
+    other_procedures_OPCS          mediumtext,
+
     lookup_person_id               int COMMENT 'person ID looked up using NHS number, DoB and MRN',
     lookup_consultant_personnel_id int COMMENT 'personnel ID looked up using consultant code',
     audit_json                     mediumtext   null comment 'Used for Audit Purposes',
@@ -120,6 +140,16 @@ create table cds_outpatient
     appt_time                       time         COMMENT 'time of the outpatient appointment: HHSSMM',
     appt_site_code                  varchar(12)  COMMENT 'location of appointment',
 
+    -- store any diagnosis and procedure data
+    primary_diagnosis_ICD           varchar(6),
+    secondary_diagnosis_ICD         varchar(6),
+    other_diagnosis_ICD             mediumtext,
+    primary_procedure_OPCS          varchar(4),
+    primary_procedure_date          date,
+    secondary_procedure_OPCS        varchar(4),
+    secondary_procedure_date        date,
+    other_procedures_OPCS           mediumtext,
+
     lookup_person_id                int COMMENT 'person ID looked up using NHS number, DoB and MRN',
     lookup_consultant_personnel_id  int COMMENT 'personnel ID looked up using consultant code',
     audit_json                      mediumtext   null comment 'Used for Audit Purposes',
@@ -149,6 +179,16 @@ create table cds_outpatient_latest
     appt_date                       date        COMMENT 'date of the outpatient appointment: CCYYMMDD',
     appt_time                       time        COMMENT 'time of the outpatient appointment: HHSSMM',
     appt_site_code                  varchar(12) COMMENT 'location of appointment',
+
+    -- store any diagnosis and procedure data
+    primary_diagnosis_ICD           varchar(6),
+    secondary_diagnosis_ICD         varchar(6),
+    other_diagnosis_ICD             mediumtext,
+    primary_procedure_OPCS          varchar(4),
+    primary_procedure_date          date,
+    secondary_procedure_OPCS        varchar(4),
+    secondary_procedure_date        date,
+    other_procedures_OPCS           mediumtext,
 
     lookup_person_id                int COMMENT 'person ID looked up using NHS number, DoB and MRN',
     lookup_consultant_personnel_id  int COMMENT 'personnel ID looked up using consultant code',
@@ -204,6 +244,16 @@ create table cds_emergency
     secondary_treatment_date        date,
     other_treatment                 varchar(686) COMMENT 'multiple further AED diagnosis in 14 character batches (date (8) + code (6))',
 
+    -- store any diagnosis and procedure data
+    primary_diagnosis_ICD           varchar(6),
+    secondary_diagnosis_ICD         varchar(6),
+    other_diagnosis_ICD             mediumtext,
+    primary_procedure_OPCS          varchar(4),
+    primary_procedure_date          date,
+    secondary_procedure_OPCS        varchar(4),
+    secondary_procedure_date        date,
+    other_procedures_OPCS           mediumtext,
+
     lookup_person_id               int COMMENT 'person ID looked up using NHS number, DoB and MRN',
     lookup_consultant_personnel_id int COMMENT 'personnel ID looked up using consultant code',
     audit_json                     mediumtext   null comment 'Used for Audit Purposes',
@@ -256,6 +306,16 @@ create table cds_emergency_latest
     secondary_treatment             varchar(6)   COMMENT 'actual code value',
     secondary_treatment_date        date,
     other_treatment                 varchar(686) COMMENT 'multiple further AED diagnosis in 14 character batches (date (8) + code (6))',
+
+    -- store any diagnosis and procedure data
+    primary_diagnosis_ICD           varchar(6),
+    secondary_diagnosis_ICD         varchar(6),
+    other_diagnosis_ICD             mediumtext,
+    primary_procedure_OPCS          varchar(4),
+    primary_procedure_date          date,
+    secondary_procedure_OPCS        varchar(4),
+    secondary_procedure_date        date,
+    other_procedures_OPCS           mediumtext,
 
     lookup_person_id               int COMMENT 'person ID looked up using NHS number, DoB and MRN',
     lookup_consultant_personnel_id int COMMENT 'personnel ID looked up using consultant code',
