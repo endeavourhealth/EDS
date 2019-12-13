@@ -85,6 +85,14 @@
                                             <span class="label label-danger">Warning ({{getStatusAgeDesc(status)}})</span>
                                         </span>
 
+                                        <span *ngIf="refreshingRabbitQueueStatus">
+                                            <span class="fa fa-sm fa-refresh fa-refresh-animate">
+                                            </span>
+                                        </span>
+                                        <span *ngIf="!refreshingRabbitQueueStatus">
+                                            {{getQueueSizeForQueueName(status.queueName)}}
+                                        </span>
+
                                         <span *ngIf="status.isBusy && !isStatusTooOld(status)">
                                             <span class="fa fa-play"></span>
                                         </span>

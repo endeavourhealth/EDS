@@ -306,10 +306,15 @@ export class QueueReaderStatusComponent {
 
     getQueueSize(exchangeName: string, routingKey: string): number {
         var vm = this;
+        var queueName = vm.combineIntoQueueName(exchangeName, routingKey);
+        return vm.getQueueSizeForQueueName(queueName);
+    }
+
+    getQueueSizeForQueueName(queueName: string): number {
+        var vm = this;
         if (!vm.rabbitQueueStatus) {
             return null;
         }
-        var queueName = vm.combineIntoQueueName(exchangeName, routingKey);
         var queueStatus = vm.rabbitQueueStatus[queueName];
         if (queueStatus) {
             return queueStatus.messages_ready;
