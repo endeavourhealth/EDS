@@ -62,7 +62,7 @@
     <!--register our Startup class as a servlet listener so we can perform one-time setup-->
     <context-param>
         <param-name>app_id</param-name>
-        <param-value>eds-ui</param-value>
+        <param-value>dds-ui</param-value>
     </context-param>
     <listener>
         <listener-class>
@@ -91,7 +91,7 @@
         <filter-class>com.codahale.metrics.servlet.InstrumentedFilter</filter-class>
         <init-param>
             <param-name>name-prefix</param-name>
-            <param-value>dds-ui</param-value>
+            <param-value>DDS-UI</param-value>
         </init-param>
     </filter>
     <filter-mapping>
