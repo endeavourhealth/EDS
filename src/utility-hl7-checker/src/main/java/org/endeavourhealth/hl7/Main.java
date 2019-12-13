@@ -13,13 +13,12 @@ import ca.uhn.hl7v2.model.v23.segment.PID;
 import ca.uhn.hl7v2.parser.Parser;
 import ca.uhn.hl7v2.util.Terser;
 import ca.uhn.hl7v2.validation.impl.NoValidation;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.base.Strings;
-import com.zaxxer.hikari.HikariDataSource;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.common.utility.SlackHelper;
+import org.endeavourhealth.core.database.rdbms.ConnectionManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,7 +34,7 @@ import java.util.Map;
 public class Main {
     private static final Logger LOG = LoggerFactory.getLogger(Main.class);
 
-    private static HikariDataSource connectionPool = null;
+    //private static HikariDataSource connectionPool = null;
     private static HapiContext context;
     private static Parser parser;
 
@@ -64,19 +63,19 @@ public class Main {
         ConfigManager.Initialize("Hl7Checker");
 
         //don't have DB credentials in app scripts, so get them directly from the config DB
-        JsonNode json = ConfigManager.getConfigurationAsJson("database", "hl7receiver");
+        /*JsonNode json = ConfigManager.getConfigurationAsJson("database", "hl7receiver");
         if (json == null) {
             throw new Exception("Failed to find [database] config for app [hl7receiver]");
         }
         String url = json.get("url").asText();
         String user = json.get("username").asText();
         String pass = json.get("password").asText();
-        String driverClass = json.get("class").asText();
+        String driverClass = json.get("class").asText();*/
 
-        LOG.info("Starting HL7 Check on " + url);
+        LOG.info("Starting HL7 Check");
 
         try {
-            openConnectionPool(url, driverClass, user, pass);
+            //openConnectionPool(url, driverClass, user, pass);
 
             context = new DefaultHapiContext();
             context.setValidationContext(new NoValidation());
@@ -141,7 +140,7 @@ public class Main {
             System.exit(0);
         }
 
-        LOG.info("Completed HL7 Check on " + url);
+        LOG.info("Completed HL7 Check");
         System.exit(0);
     }
 
@@ -645,10 +644,8 @@ public class Main {
 
     }
 
-    /*
-     *
-     */
-    private static void openConnectionPool(String url, String driverClass, String username, String password) throws Exception {
+
+    /*private static void openConnectionPool(String url, String driverClass, String username, String password) throws Exception {
 
         //force the driver to be loaded
         Class.forName(driverClass);
@@ -668,10 +665,11 @@ public class Main {
         //test getting a connection
         Connection conn = pool.getConnection();
         conn.close();
-    }
+    }*/
 
     private static Connection getConnection() throws Exception {
-        return connectionPool.getConnection();
+        return ConnectionManager.getHl7ReceiverConnection();
+        //return connectionPool.getConnection();
     }
 
     private static void executeUpdate(String sql) throws Exception {
