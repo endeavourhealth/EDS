@@ -26,7 +26,7 @@ public class Main {
             return;
         }
 
-        ConfigManager.Initialize("PostcodeUpdater");
+        ConfigManager.Initialize("ReferenceUpdater");
 
         try {
 
