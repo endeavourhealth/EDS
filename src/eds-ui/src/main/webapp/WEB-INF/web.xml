@@ -91,7 +91,7 @@
         <filter-class>com.codahale.metrics.servlet.InstrumentedFilter</filter-class>
         <init-param>
             <param-name>name-prefix</param-name>
-            <param-value>EDS-UI</param-value>
+            <param-value>dds-ui</param-value>
         </init-param>
     </filter>
     <filter-mapping>
