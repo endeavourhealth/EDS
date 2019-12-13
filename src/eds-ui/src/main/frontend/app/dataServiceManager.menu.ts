@@ -25,7 +25,7 @@ export class DataServiceManagerMenuService implements  MenuService {
 			{caption: 'HL7 Receiver', state: 'app.hl7Receiver', icon: 'fa fa-fire', role: 'eds-ui:monitoring'},
 			{caption: 'SFTP Reader', state: 'app.sftpReader', icon: 'fa fa-table', role: 'eds-ui:monitoring'},
 			{caption: 'Transform Errors', state: 'app.transformErrors', icon: 'fa fa-exchange', role: 'eds-ui:transform-errors'},
-			{caption: 'DB Stats', state: 'app.databaseStats', icon: 'fa fa-database', role: 'eds-ui:statistics'},
+			/*{caption: 'DB Stats', state: 'app.databaseStats', icon: 'fa fa-database', role: 'eds-ui:statistics'},*/
 			{caption: 'Statistics', state: 'app.stats', icon: 'fa fa-line-chart', role: 'eds-ui:statistics'},
 			{caption: 'Audit', state: 'app.audit', icon: 'fa fa-list-ul', role: 'eds-ui:audit'},
 			{caption: 'Monitoring', state: 'app.monitoring', icon: 'fa fa-list-alt', role: 'eds-ui:monitoring'},

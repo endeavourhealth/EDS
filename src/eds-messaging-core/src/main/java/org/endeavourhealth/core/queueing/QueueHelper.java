@@ -22,13 +22,10 @@ import org.endeavourhealth.core.database.dal.eds.PatientLinkDalI;
 import org.endeavourhealth.core.database.dal.eds.PatientSearchDalI;
 import org.endeavourhealth.core.database.dal.eds.models.PatientSearch;
 import org.endeavourhealth.core.fhirStorage.JsonServiceInterfaceEndpoint;
-import org.endeavourhealth.core.messaging.pipeline.TransformBatch;
 import org.endeavourhealth.core.messaging.pipeline.components.DetermineRelevantProtocolIds;
 import org.endeavourhealth.core.messaging.pipeline.components.PostMessageToExchange;
-import org.endeavourhealth.core.messaging.pipeline.components.RunDataDistributionProtocols;
 import org.endeavourhealth.core.xml.QueryDocument.*;
 import org.endeavourhealth.transform.common.*;
-import org.hl7.fhir.instance.model.ResourceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -211,7 +208,10 @@ public class QueueHelper {
 
         } else if (multicastHeader.equalsIgnoreCase(HeaderKeys.TransformBatch)) {
 
-            List<TransformBatch> transformBatches = new ArrayList<>();
+            //this is hit if we're trying to post into the transform queues, which we don't do, so removing to simplify
+            throw new BadRequestException("Mutlicasting using transform batch not supported");
+
+            /*List<TransformBatch> transformBatches = new ArrayList<>();
 
             String[] protocolIds = exchange.getHeaderAsStringArray(HeaderKeys.ProtocolIds);
             UUID serviceId = exchange.getHeaderAsUuid(HeaderKeys.SenderServiceUuid);
@@ -257,7 +257,7 @@ public class QueueHelper {
 
             } catch (JsonProcessingException e) {
                 LOG.error("Failed to populate batch IDs for exchange " + exchangeUuid, e);
-            }
+            }*/
 
         } else if (multicastHeader.equalsIgnoreCase(HeaderKeys.SubscriberBatch)) {
 

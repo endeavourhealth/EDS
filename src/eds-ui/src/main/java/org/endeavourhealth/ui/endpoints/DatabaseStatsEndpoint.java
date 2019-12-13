@@ -20,7 +20,6 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
-import java.net.URI;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -102,9 +101,31 @@ public class DatabaseStatsEndpoint extends AbstractEndpoint {
         String url = json.get(nodePrefix + "url").asText();
 
         String cleanedUrl = url.substring(5); //need to remove prefix "jdbc:"
-        URI uri = URI.create(cleanedUrl);
+
+        int index = cleanedUrl.indexOf("://");
+        if (index == -1) {
+            LOG.error("Can't parse database URL " + url);
+        }
+        String scheme = cleanedUrl.substring(0, index);
+
+        cleanedUrl = cleanedUrl.substring(index+3);
+        //depending on the DB engine, the next delimiter could be any of the three below
+        int colonIx = cleanedUrl.indexOf(":");
+        int semicolonIx = cleanedUrl.indexOf(";");
+        int slashIx = cleanedUrl.indexOf("/");
+        index = findMinOverZero(colonIx, semicolonIx, slashIx);
+
+        String host;
+        if (index == Integer.MAX_VALUE) {
+            host = cleanedUrl;
+        } else {
+            host = cleanedUrl.substring(0, index);
+        }
+
+
+        /*URI uri = URI.create(cleanedUrl);
         String host = uri.getHost();
-        String scheme = uri.getScheme();
+        String scheme = uri.getScheme();*/
 
         String cacheKey = scheme + "@" + host;
         if (cache.containsKey(cacheKey)) {
@@ -122,6 +143,16 @@ public class DatabaseStatsEndpoint extends AbstractEndpoint {
         ObjectNode objectNode = root.addObject();
         objectNode.put("type", scheme);
         objectNode.put("host", host);
+    }
+
+    private int findMinOverZero(int... indexes) {
+        int ret = Integer.MAX_VALUE;
+        for (int index: indexes) {
+            if (index > -1) {
+                ret = Math.min(ret, index);
+            }
+        }
+        return ret;
     }
 
     @GET

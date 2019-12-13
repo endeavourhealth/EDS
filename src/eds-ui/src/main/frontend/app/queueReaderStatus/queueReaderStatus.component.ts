@@ -24,8 +24,10 @@ export class QueueReaderStatusComponent {
     //queue reader status
     statusLastRefreshed: Date;
     queueReaderStatusList: QueueReaderStatus[];
-    queueReaderStatusMap: {};
+    queueReaderStatusMapByQueue: {};
+    queueReaderStatusMapByHostName: {};
     refreshingQueueReaderStatus: boolean;
+    hostNames: string[];
 
     //rabbit status
     rabbitQueueStatus: {};
@@ -157,20 +159,30 @@ export class QueueReaderStatusComponent {
                 vm.queueReaderStatusList = result;
 
                 //also hash the QueueReaderStatus objects by their queue name, so
-                vm.queueReaderStatusMap = {};
+                vm.queueReaderStatusMapByQueue = {};
+                vm.queueReaderStatusMapByHostName = {};
 
                 var len = vm.queueReaderStatusList.length;
                 for (var i=0; i<len; i++) {
                     var status = vm.queueReaderStatusList[i];
                     var queueName = status.queueName;
+                    var hostName = status.hostName;
 
-                    var statusesForQueue = vm.queueReaderStatusMap[queueName];
-                    console.log(statusesForQueue);
+                    var statusesForQueue = vm.queueReaderStatusMapByQueue[queueName];
+                    //console.log(statusesForQueue);
                     if (!statusesForQueue) {
                         statusesForQueue = [];
-                        vm.queueReaderStatusMap[queueName] = statusesForQueue;
+                        vm.queueReaderStatusMapByQueue[queueName] = statusesForQueue;
                     }
                     statusesForQueue.push(status);
+
+                    var statusesForHostName = vm.queueReaderStatusMapByHostName[hostName];
+                    if (!statusesForHostName) {
+                        statusesForHostName = [];
+                        vm.queueReaderStatusMapByHostName[hostName] = statusesForHostName;
+                    }
+                    statusesForHostName.push(status);
+
                 }
 
                 vm.calculateColours();
@@ -189,26 +201,26 @@ export class QueueReaderStatusComponent {
         var vm = this;
 
         //get list of disinct host names
-        var distinctHostNames = [];
+        vm.hostNames = [];
 
         var len = vm.queueReaderStatusList.length;
         for (var i=0; i<len; i++) {
             var s = vm.queueReaderStatusList[i];
             var hostName = s.hostName;
-            if ($.inArray(hostName, distinctHostNames) == -1) {
-                distinctHostNames.push(hostName);
+            if ($.inArray(hostName, vm.hostNames) == -1) {
+                vm.hostNames.push(hostName);
             }
         }
 
         //sort list
-        distinctHostNames = linq(distinctHostNames).OrderBy(s => s.toLowerCase()).ToArray();
+        vm.hostNames = linq(vm.hostNames).OrderBy(s => s.toLowerCase()).ToArray();
 
         //assign a colour to each server name
         vm.hostNameColourMap = {};
 
-        len = distinctHostNames.length;
+        len = vm.hostNames.length;
         for (var i=0; i<len; i++) {
-            hostName = distinctHostNames[i];
+            hostName = vm.hostNames[i];
 
             var colour = null;
             if (i >= vm.presetColours.length) {
@@ -277,21 +289,19 @@ export class QueueReaderStatusComponent {
     getCellColour(status: QueueReaderStatus): any {
         var vm = this;
         var hostName = status.hostName;
+        return vm.getCellColourForHostName(hostName);
+    }
+
+    getCellColourForHostName(hostName: string): any {
+        var vm = this;
         var colour = vm.hostNameColourMap[hostName];
         return {'background-color': colour};
-        /*if (exchangeName == 'EdsInbound') {
-            console.log('inbound');
-            return {'background-color': '#0000FF'};
-        } else {
-            console.log('not inbound');
-            return {'background-color': '#00FFFF'};
-        }*/
     }
 
     getStatuses(exchangeName: string, routingKey: string): QueueReaderStatus[] {
         var vm = this;
         var queueName = vm.combineIntoQueueName(exchangeName, routingKey);
-        return vm.queueReaderStatusMap[queueName];
+        return vm.queueReaderStatusMapByQueue[queueName];
     }
 
     getQueueSize(exchangeName: string, routingKey: string): number {
@@ -306,5 +316,11 @@ export class QueueReaderStatusComponent {
         } else {
             return null;
         }
+    }
+
+    getStatusesForHostName(hostName: string): QueueReaderStatus[] {
+        var vm = this;
+        return vm.queueReaderStatusMapByHostName[hostName];
+
     }
 }
