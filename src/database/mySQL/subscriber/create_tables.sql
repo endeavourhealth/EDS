@@ -840,6 +840,8 @@ CREATE TABLE patient_contact
       REFERENCES patient (id, organization_id)
 ) COMMENT 'stores contact details (e.g. phone) for patients';
 
+create unique index ux_patient_contact_id on patient_contact (id);
+
 -- Table: patient_address
 
 CREATE TABLE patient_address
@@ -867,6 +869,8 @@ CREATE TABLE patient_address
   CONSTRAINT fk_patient_address_patient_id_organization_id FOREIGN KEY (patient_id, organization_id)
       REFERENCES patient (id, organization_id)
 ) COMMENT 'stores address details for patients';
+
+create unique index ux_patient_address_id on patient_address (id);
 
 -- Table: event_log
 

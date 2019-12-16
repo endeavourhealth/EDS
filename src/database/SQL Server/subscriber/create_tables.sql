@@ -472,6 +472,8 @@ PRIMARY KEY ([organization_id], [id], [patient_id], [person_id])
 GO
 CREATE INDEX [fk_patient_address_patient_id_organization_id] ON [patient_address] ([patient_id], [organization_id])
 GO
+create unique index ux_patient_address_id on patient_address (id);
+GO
 
 
 CREATE TABLE [patient_contact] (
@@ -488,6 +490,8 @@ PRIMARY KEY ([organization_id], [id], [patient_id], [person_id])
 )
 GO
 CREATE INDEX [fk_patient_contact_patient_id_organisation_id] ON [patient_contact] ([patient_id], [organization_id])
+GO
+create unique index ux_patient_contact_id on patient_contact (id);
 GO
 
 
