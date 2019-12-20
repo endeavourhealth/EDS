@@ -238,7 +238,7 @@ CREATE INDEX ix_published_file_type_description ON published_file_type (file_typ
 
 CREATE TABLE published_file_type_column (
   published_file_type_id int NOT NULL,
-  column_index tinyint unsigned NOT NULL,
+  column_index smallint unsigned NOT NULL,
   column_name varchar(255) NOT NULL,
   fixed_column_start int NULL,
   fixed_column_length int NULL,
