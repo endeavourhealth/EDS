@@ -1,5 +1,7 @@
 package org.endeavourhealth.messagingapi.endpoints;
 
+import com.codahale.metrics.annotation.ResponseMetered;
+import com.codahale.metrics.annotation.Timed;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.base.Strings;
@@ -37,8 +39,8 @@ import javax.ws.rs.core.*;
 import java.util.*;
 
 @Path("/subscriber")
-public class SubscriberApi {
-    private static final Logger LOG = LoggerFactory.getLogger(SubscriberApi.class);
+public class SubscriberApiEndpoint {
+    private static final Logger LOG = LoggerFactory.getLogger(SubscriberApiEndpoint.class);
 
     private static final String FRAILTY_CODE = "289999999105";
     private static final String FRAILTY_TERM = "Potentially frail";
@@ -54,6 +56,8 @@ public class SubscriberApi {
     @GET
     @Path("/{resourceType}")
     @Produces(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="SubscriberApiEndpoint.GET")
+    @ResponseMetered(absolute = true, name="SubscriberApiEndpoint.GET")
     @RolesAllowed({"dds_api_read_only"})
     public Response getResources(@Context HttpServletRequest request,
                                  @Context SecurityContext sc,

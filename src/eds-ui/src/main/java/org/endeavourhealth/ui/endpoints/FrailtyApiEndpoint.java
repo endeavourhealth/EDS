@@ -1,5 +1,6 @@
 package org.endeavourhealth.ui.endpoints;
 
+import com.codahale.metrics.annotation.Timed;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 import org.endeavourhealth.common.security.SecurityUtils;
@@ -35,6 +36,7 @@ public class FrailtyApiEndpoint extends AbstractEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="FrailtyApiEndpoint.recentStats")
     @Path("/recentStats")
     public Response getRecentStats(@Context SecurityContext sc,
                                    @QueryParam("minutesBack") int minutesBack,
@@ -58,6 +60,7 @@ public class FrailtyApiEndpoint extends AbstractEndpoint {
 
     @GET
     @Produces(MediaType.TEXT_PLAIN)
+    @Timed(absolute = true, name="FrailtyApiEndpoint.downloadMonthlyStats")
     @Path("/downloadMonthlyStats")
     public Response getRecentStats(@Context SecurityContext sc) throws Exception {
         super.setLogbackMarkers(sc);

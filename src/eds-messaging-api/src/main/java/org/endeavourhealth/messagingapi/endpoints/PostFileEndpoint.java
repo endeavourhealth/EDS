@@ -10,6 +10,7 @@ import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.transfer.Transfer;
 import com.amazonaws.services.s3.transfer.TransferManagerBuilder;
 import com.amazonaws.services.s3.transfer.Upload;
+import com.codahale.metrics.annotation.Timed;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.fileupload.disk.DiskFileItemFactory;
@@ -35,10 +36,11 @@ import java.io.InputStream;
 import java.util.List;
 
 @Path("/")
-public class PostFile extends AbstractEndpoint {
+public class PostFileEndpoint {
 	@POST
 	@Path("/PostFile")
 	@RolesAllowed({"dds_messaging_post_file"})
+	@Timed(absolute = true, name="PostFileEndpoint.PostFile")
 	@Consumes(MediaType.MULTIPART_FORM_DATA)
 	public Response uploadFiles(@Context final HttpServletRequest request) {
 		MetricsHelper.recordEvent("post-file");

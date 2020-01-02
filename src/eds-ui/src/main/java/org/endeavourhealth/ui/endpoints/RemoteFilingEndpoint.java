@@ -33,7 +33,7 @@ public class RemoteFilingEndpoint extends AbstractEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    @Timed(absolute = true, name="EDS-UI.RemoteFilingEndpoint.getAllRemoteFilingStatus")
+    @Timed(absolute = true, name="RemoteFilingEndpoint.getAllRemoteFilingStatus")
     @Path("/getPagedRemoteFilingStatus")
     public Response getAllRemoteFilingStatus(@Context SecurityContext sc,
                                              @ApiParam(value = "page number (defaults to 1 if not provided)") @QueryParam("pageNumber") Integer pageNumber,
@@ -69,7 +69,7 @@ public class RemoteFilingEndpoint extends AbstractEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    @Timed(absolute = true, name="EDS-UI.RemoteFilingEndpoint.getAllRemoteFilingStats")
+    @Timed(absolute = true, name="RemoteFilingEndpoint.getAllRemoteFilingStats")
     @Path("/getStatistics")
     public Response getAllRemoteFilingStats(@Context SecurityContext sc,
                                             @QueryParam("timeframe") String timeframe) throws Exception {

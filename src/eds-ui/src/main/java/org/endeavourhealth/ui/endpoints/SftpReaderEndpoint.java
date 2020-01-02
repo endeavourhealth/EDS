@@ -1,5 +1,6 @@
 package org.endeavourhealth.ui.endpoints;
 
+import com.codahale.metrics.annotation.Timed;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -41,6 +42,7 @@ public class SftpReaderEndpoint extends AbstractEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="SftpReaderEndpoint.instances")
     @Path("/instances")
     public Response getInstances(@Context SecurityContext sc) throws Exception {
         super.setLogbackMarkers(sc);
@@ -60,6 +62,7 @@ public class SftpReaderEndpoint extends AbstractEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="SftpReaderEndpoint.status")
     @Path("/status")
     public Response getChannelStatus(@Context SecurityContext sc, @QueryParam("instance") String instanceName) throws Exception {
         super.setLogbackMarkers(sc);
@@ -79,6 +82,7 @@ public class SftpReaderEndpoint extends AbstractEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="SftpReaderEndpoint.history")
     @Path("/history")
     public Response getChannelHistory(@Context SecurityContext sc,
                                       @QueryParam("from") Long fromDateMillis,

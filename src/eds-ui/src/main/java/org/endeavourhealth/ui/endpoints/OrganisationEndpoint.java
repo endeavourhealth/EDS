@@ -37,7 +37,7 @@ public final class OrganisationEndpoint extends AbstractEndpoint {
 	@POST
 	@Produces(MediaType.APPLICATION_JSON)
 	@Consumes(MediaType.APPLICATION_JSON)
-	@Timed(absolute = true, name="EDS-UI.OrganisationEndpoint.Post")
+	@Timed(absolute = true, name="OrganisationEndpoint.Post")
 	@RequiresAdmin
 	public Response post(@Context SecurityContext sc, JsonOrganisation organisation) throws Exception {
 		super.setLogbackMarkers(sc);
@@ -68,7 +68,7 @@ public final class OrganisationEndpoint extends AbstractEndpoint {
 	@DELETE
 	@Produces(MediaType.APPLICATION_JSON)
 	@Consumes(MediaType.APPLICATION_JSON)
-	@Timed(absolute = true, name="EDS-UI.OrganisationEndpoint.DeleteOrganisation")
+	@Timed(absolute = true, name="OrganisationEndpoint.DeleteOrganisation")
 	@RequiresAdmin
 	public Response deleteOrganisation(@Context SecurityContext sc, @QueryParam("uuid") String uuid) throws Exception {
 		super.setLogbackMarkers(sc);
@@ -90,7 +90,7 @@ public final class OrganisationEndpoint extends AbstractEndpoint {
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
 	@Consumes(MediaType.APPLICATION_JSON)
-	@Timed(absolute = true, name="EDS-UI.OrganisationEndpoint.GetServices")
+	@Timed(absolute = true, name="OrganisationEndpoint.GetServices")
 	@Path("/services")
 	public Response getOrganisationServices(@Context SecurityContext sc, @QueryParam("uuid") String uuid) throws Exception {
 		userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
@@ -117,7 +117,7 @@ public final class OrganisationEndpoint extends AbstractEndpoint {
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
 	@Consumes(MediaType.APPLICATION_JSON)
-	@Timed(absolute = true, name="EDS-UI.OrganisationEndpoint.Get")
+	@Timed(absolute = true, name="OrganisationEndpoint.Get")
 	public Response get(@Context SecurityContext sc, @QueryParam("uuid") String uuid, @QueryParam("searchData") String searchData) throws Exception {
 		super.setLogbackMarkers(sc);
 		userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,

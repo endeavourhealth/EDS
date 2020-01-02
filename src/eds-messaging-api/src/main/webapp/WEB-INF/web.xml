@@ -6,10 +6,12 @@
     <servlet>
         <servlet-name>Endeavour Data Service</servlet-name>
         <servlet-class>org.glassfish.jersey.servlet.ServletContainer</servlet-class>
+
         <init-param>
             <param-name>jersey.config.server.provider.packages</param-name>
             <param-value>org.endeavourhealth.messagingapi</param-value>
         </init-param>
+
         <init-param>
             <param-name>jersey.config.server.provider.classnames</param-name>
             <param-value>org.glassfish.jersey.jackson.JacksonFeature,org.endeavourhealth.common.security.CustomRolesAllowedFeature</param-value>
@@ -19,6 +21,12 @@
         <init-param>
             <param-name>listings</param-name>
             <param-value>true</param-value>
+        </init-param>
+
+        <!-- specify the Application class so we can load our MetricsRegistry -->
+        <init-param>
+            <param-name>javax.ws.rs.Application</param-name>
+            <param-value>org.endeavourhealth.coreui.framework.JerseyApplication</param-value>
         </init-param>
 
         <load-on-startup>1</load-on-startup>
@@ -35,16 +43,24 @@
         <param-name>app_id</param-name>
         <param-value>messaging-api</param-value>
     </context-param>
+
     <listener>
         <listener-class>
             org.endeavourhealth.coreui.framework.StartupConfig
         </listener-class>
     </listener>
+
     <listener>
         <listener-class>
             org.apache.commons.fileupload.servlet.FileCleanerCleanup
         </listener-class>
     </listener>
+
+    <!--listener to capture global endpoint metrics-->
+    <listener>
+        <listener-class>org.endeavourhealth.coreui.framework.MetricsContextListener</listener-class>
+    </listener>
+
 
     <!-- ============================================ -->
     <!-- JEE security settings - Keycloak integration -->

@@ -32,7 +32,7 @@ public final class StatsEndpoint extends AbstractEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    @Timed(absolute = true, name="EDS-UI.StatsEndpoint.GetStorageStatistics")
+    @Timed(absolute = true, name="StatsEndpoint.GetStorageStatistics")
     @Path("/getStorageStatistics")
     public Response getStorageStatistics(@Context SecurityContext sc,
                                          @QueryParam("serviceList") List<String> services,

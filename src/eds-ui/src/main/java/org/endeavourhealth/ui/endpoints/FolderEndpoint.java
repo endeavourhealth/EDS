@@ -37,7 +37,7 @@ public final class FolderEndpoint extends AbstractItemEndpoint {
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    @Timed(absolute = true, name="EDS-UI.FolderEndpoint.SaveFolder")
+    @Timed(absolute = true, name="FolderEndpoint.SaveFolder")
     @Path("/saveFolder")
     @RequiresAdmin
     public Response saveFolder(@Context SecurityContext sc, JsonFolder folderParameters) throws Exception {
@@ -128,7 +128,7 @@ public final class FolderEndpoint extends AbstractItemEndpoint {
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    @Timed(absolute = true, name="EDS-UI.FolderEndpoint.DeleteFolder")
+    @Timed(absolute = true, name="FolderEndpoint.DeleteFolder")
     @Path("/deleteFolder")
     @RequiresAdmin
     public Response deleteFolder(@Context SecurityContext sc, JsonFolder folderParameters) throws Exception {
@@ -168,7 +168,7 @@ public final class FolderEndpoint extends AbstractItemEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    @Timed(absolute = true, name="EDS-UI.FolderEndpoint.GetFolders")
+    @Timed(absolute = true, name="FolderEndpoint.GetFolders")
     @Path("/getFolders")
     public Response getFolders(@Context SecurityContext sc, @QueryParam("folderType") int folderType, @QueryParam("parentUuid") String parentUuidStr) throws Exception {
         super.setLogbackMarkers(sc);

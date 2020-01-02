@@ -42,7 +42,7 @@ public final class SecurityUserEndpoint extends AbstractEndpoint {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    @Timed(absolute = true, name="EDS-UI.SecurityUserEndpoint.SearchForUsers")
+    @Timed(absolute = true, name="SecurityUserEndpoint.SearchForUsers")
     @RequiresAdmin
     @ApiOperation(value = "Search for users")
     public Response list(@Context SecurityContext sc,
@@ -66,7 +66,7 @@ public final class SecurityUserEndpoint extends AbstractEndpoint {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    @Timed(absolute = true, name="EDS-UI.SecurityUserEndpoint.GetUserDetails")
+    @Timed(absolute = true, name="SecurityUserEndpoint.GetUserDetails")
     @Path("/{userId}")
     @RequiresAdmin
     @ApiOperation(value = "Get a user's details")
@@ -95,7 +95,7 @@ public final class SecurityUserEndpoint extends AbstractEndpoint {
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    @Timed(absolute = true, name="EDS-UI.SecurityUserEndpoint.CreateUser")
+    @Timed(absolute = true, name="SecurityUserEndpoint.CreateUser")
     @RolesAllowed({ "eds_admin" })
     @ApiOperation(value = "Create a user")
     public Response create(@Context SecurityContext sc,
@@ -136,7 +136,7 @@ public final class SecurityUserEndpoint extends AbstractEndpoint {
     @PUT
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    @Timed(absolute = true, name="EDS-UI.SecurityUserEndpoint.UpdateUser")
+    @Timed(absolute = true, name="SecurityUserEndpoint.UpdateUser")
     @Path("/{userId}")
     @RequiresAdmin
     @ApiOperation(value = "Update a user")
@@ -166,7 +166,7 @@ public final class SecurityUserEndpoint extends AbstractEndpoint {
     }
 
     @DELETE
-    @Timed(absolute = true, name="EDS-UI.SecurityUserEndpoint.DeleteUser")
+    @Timed(absolute = true, name="SecurityUserEndpoint.DeleteUser")
     @Path("/{userId}")
     @RequiresAdmin
     @ApiOperation(value = "Delete a user")
@@ -193,7 +193,7 @@ public final class SecurityUserEndpoint extends AbstractEndpoint {
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    @Timed(absolute = true, name="EDS-UI.SecurityUserEndpoint.JoinGroup")
+    @Timed(absolute = true, name="SecurityUserEndpoint.JoinGroup")
     @Path("/{userId}/groups/{groupId}")
     @RequiresAdmin
     @ApiOperation(value = "Add a user to a group or role-profile group")
@@ -213,7 +213,7 @@ public final class SecurityUserEndpoint extends AbstractEndpoint {
     }
 
     @DELETE
-    @Timed(absolute = true, name="EDS-UI.SecurityUserEndpoint.LeaveGroup")
+    @Timed(absolute = true, name="SecurityUserEndpoint.LeaveGroup")
     @Path("/{userId}/groups/{groupId}")
     @RequiresAdmin
     @ApiOperation(value = "Remove a user from a group or role-profile group")

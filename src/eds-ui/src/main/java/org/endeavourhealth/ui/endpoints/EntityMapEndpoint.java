@@ -30,7 +30,7 @@ public final class EntityMapEndpoint extends AbstractEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    @Timed(absolute = true, name="EDS-UI.EntityMapEndpoint.GetEntityMap")
+    @Timed(absolute = true, name="EntityMapEndpoint.GetEntityMap")
     @Path("/getEntityMap")
     public Response getEntityMap(@Context SecurityContext sc) throws Exception {
         super.setLogbackMarkers(sc);

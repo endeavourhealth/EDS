@@ -1,5 +1,6 @@
 package org.endeavourhealth.messagingapi.endpoints;
 
+import com.codahale.metrics.annotation.Timed;
 import org.apache.http.HttpStatus;
 import org.endeavourhealth.common.utility.MetricsHelper;
 import org.endeavourhealth.core.configuration.ConfigWrapper;
@@ -27,14 +28,15 @@ import java.util.HashMap;
 import java.util.UUID;
 
 @Path("/")
-public class PostMessage extends AbstractEndpoint {
-    private static final Logger LOG = LoggerFactory.getLogger(PostMessage.class);
+public class PostMessageEndpoint {
+    private static final Logger LOG = LoggerFactory.getLogger(PostMessageEndpoint.class);
 
     private static final ExchangeGeneralErrorDalI errorDal = DalProvider.factoryExchangeGeneralErrorDal();
 
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="PostMessageEndpoint.PostMessage")
     @Path("/PostMessage")
     @RolesAllowed({"eds_messaging_post"})
     public Response postMessage(@Context HttpHeaders headers, String body) throws Throwable {
@@ -66,6 +68,7 @@ public class PostMessage extends AbstractEndpoint {
     // @Consumes(MediaType.APPLICATION_JSON)
     // @Produces(MediaType.APPLICATION_JSON)
     @Path("/PostMessageAsync")
+    @Timed(absolute = true, name="PostMessageEndpoint.PostMessageAsync")
     @RolesAllowed({"eds_messaging_post"})
     public Response postMessageAsync(@Context HttpHeaders headers, String body) throws Throwable {
         MetricsHelper.recordEvent("post-message-async");

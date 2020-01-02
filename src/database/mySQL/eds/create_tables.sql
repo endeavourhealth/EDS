@@ -7,6 +7,7 @@ DROP TABLE IF EXISTS patient_search_local_identifier;
 DROP TABLE IF EXISTS patient_search_episode;
 DROP TABLE IF EXISTS patient_search;
 DROP TABLE IF EXISTS patient_address_uprn;
+DROP TABLE IF EXISTS patient_search_address;
 
 CREATE TABLE patient_link
 (
@@ -149,3 +150,26 @@ create table patient_address_uprn (
     invalid_postcode boolean,
     CONSTRAINT pk_patient_search PRIMARY KEY (service_id, patient_id)
 );
+
+/*
+-- not sure about this table yet
+create table patient_search_address (
+	service_id char(36) NOT NULL,
+	patient_id char(36) NOT NULL,
+    ordinal tinyint NOT NULL,
+	`use` varchar(10),
+    start_date date,
+    end_date date,
+    address_line_1 varchar(255),
+    address_line_2 varchar(255),
+    address_line_3 varchar(255),
+    address_line_4 varchar(255),
+    city varchar(255),
+    district varchar(255),
+    postcode varchar(10),
+    last_updated timestamp NOT NULL,
+    uprn_results JSON,
+    uprn_last_updated timestamp,
+	CONSTRAINT pk_patient_search_episode PRIMARY KEY (service_id, patient_id, ordinal)
+);
+*/

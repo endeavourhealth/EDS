@@ -1,5 +1,6 @@
 package org.endeavourhealth.messagingapi.endpoints;
 
+import com.codahale.metrics.annotation.Timed;
 import org.endeavourhealth.common.utility.MetricsHelper;
 import org.endeavourhealth.core.configuration.ConfigWrapper;
 import org.endeavourhealth.core.configuration.Pipeline;
@@ -14,10 +15,11 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 @Path("/")
-public class GetData extends AbstractEndpoint {
+public class GetDataEndpoint {
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
 	@Path("/GetData")
+	@Timed(absolute = true, name="GetDataEndpoint.GetData")
 	@RolesAllowed({"eds_messaging_get"})
 	public Response getData(@Context HttpHeaders headers) {
 		MetricsHelper.recordEvent("get-data");

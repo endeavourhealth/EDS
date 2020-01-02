@@ -1,5 +1,6 @@
 package org.endeavourhealth.ui.endpoints;
 
+import com.codahale.metrics.annotation.Timed;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -34,6 +35,7 @@ public class Hl7ReceiverEndpoint extends AbstractEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="Hl7ReceiverEndpoint.downloadMonthlyStats")
     @Path("/channelStatus")
     public Response getChannelStatus(@Context SecurityContext sc) throws Exception {
         super.setLogbackMarkers(sc);
@@ -54,6 +56,7 @@ public class Hl7ReceiverEndpoint extends AbstractEndpoint {
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="Hl7ReceiverEndpoint.pause")
     @Path("/pause/{channelId}/{pause}")
     public Response pauseChannel(@Context SecurityContext sc,
                                  @PathParam(value = "channelId") int channelId,

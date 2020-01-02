@@ -39,7 +39,7 @@ public final class SecurityRoleProfileEndpoint extends AbstractEndpoint {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    @Timed(absolute = true, name="EDS-UI.SecurityRoleProfileEndpoint.ListAvailableRoles")
+    @Timed(absolute = true, name="SecurityRoleProfileEndpoint.ListAvailableRoles")
     @Path("availableRoles")
     @RequiresAdmin
     @ApiOperation(value = "List roles that can be added to role profiles")
@@ -68,7 +68,7 @@ public final class SecurityRoleProfileEndpoint extends AbstractEndpoint {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    @Timed(absolute = true, name="EDS-UI.SecurityRoleProfileEndpoint.ListRolesProfiles")
+    @Timed(absolute = true, name="SecurityRoleProfileEndpoint.ListRolesProfiles")
     @RequiresAdmin
     @ApiOperation(value = "List role profiles")
     public Response list(@Context SecurityContext sc,
@@ -102,7 +102,7 @@ public final class SecurityRoleProfileEndpoint extends AbstractEndpoint {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    @Timed(absolute = true, name="EDS-UI.SecurityRoleProfileEndpoint.GetRoleProfile")
+    @Timed(absolute = true, name="SecurityRoleProfileEndpoint.GetRoleProfile")
     @Path("/{role-profile-name}")
     @RequiresAdmin
     @ApiOperation(value = "Get a role profile")
@@ -133,7 +133,7 @@ public final class SecurityRoleProfileEndpoint extends AbstractEndpoint {
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    @Timed(absolute = true, name="EDS-UI.SecurityRoleProfileEndpoint.CreateRoleProfile")
+    @Timed(absolute = true, name="SecurityRoleProfileEndpoint.CreateRoleProfile")
     @RequiresAdmin
     @ApiOperation(value = "Create a role profile")
     public Response create(@Context SecurityContext sc,
@@ -163,7 +163,7 @@ public final class SecurityRoleProfileEndpoint extends AbstractEndpoint {
     @PUT
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    @Timed(absolute = true, name="EDS-UI.SecurityRoleProfileEndpoint.UpdateRoleProfile")
+    @Timed(absolute = true, name="SecurityRoleProfileEndpoint.UpdateRoleProfile")
     @Path("/{role-profile-name}")
     @RequiresAdmin
     @ApiOperation(value = "Update a role profile")
@@ -198,7 +198,7 @@ public final class SecurityRoleProfileEndpoint extends AbstractEndpoint {
     }
 
     @DELETE
-    @Timed(absolute = true, name="EDS-UI.SecurityRoleProfileEndpoint.DeleteRoleProfile")
+    @Timed(absolute = true, name="SecurityRoleProfileEndpoint.DeleteRoleProfile")
     @Path("/{role-profile-name}")
     @RequiresAdmin
     @ApiOperation(value = "Delete a role profile")

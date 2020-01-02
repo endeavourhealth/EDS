@@ -56,7 +56,7 @@ public final class ServiceEndpoint extends AbstractEndpoint {
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    @Timed(absolute = true, name = "EDS-UI.ServiceEndpoint.Post")
+    @Timed(absolute = true, name = "ServiceEndpoint.Post")
     @RequiresAdmin
     public Response post(@Context SecurityContext sc, JsonService service) throws Exception {
         super.setLogbackMarkers(sc);
@@ -148,7 +148,7 @@ public final class ServiceEndpoint extends AbstractEndpoint {
     @DELETE
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    @Timed(absolute = true, name = "EDS-UI.ServiceEndpoint.DeleteService")
+    @Timed(absolute = true, name = "ServiceEndpoint.DeleteService")
     @RequiresAdmin
     public Response deleteService(@Context SecurityContext sc, @QueryParam("uuid") String uuid) throws Exception {
         super.setLogbackMarkers(sc);
@@ -178,7 +178,7 @@ public final class ServiceEndpoint extends AbstractEndpoint {
     @DELETE
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    @Timed(absolute = true, name = "EDS-UI.ServiceEndpoint.DeleteServiceData")
+    @Timed(absolute = true, name = "ServiceEndpoint.DeleteServiceData")
     @Path("/data")
     @RequiresAdmin
     public Response deleteServiceData(@Context SecurityContext sc,
@@ -227,7 +227,7 @@ public final class ServiceEndpoint extends AbstractEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    @Timed(absolute = true, name = "EDS-UI.ServiceEndpoint.GetServiceOrganisations")
+    @Timed(absolute = true, name = "ServiceEndpoint.GetServiceOrganisations")
     @Path("/organisations")
     public Response getServiceOrganisations(@Context SecurityContext sc, @QueryParam("uuid") String uuid) throws Exception {
         super.setLogbackMarkers(sc);
@@ -254,7 +254,7 @@ public final class ServiceEndpoint extends AbstractEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    @Timed(absolute = true, name = "EDS-UI.ServiceEndpoint.GetServiceList")
+    @Timed(absolute = true, name = "ServiceEndpoint.GetServiceList")
     public Response get(@Context SecurityContext sc, @QueryParam("uuid") String uuid, @QueryParam("searchData") String searchData) throws Exception {
         super.setLogbackMarkers(sc);
         userAuditRepository.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
@@ -689,7 +689,7 @@ public final class ServiceEndpoint extends AbstractEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    @Timed(absolute = true, name = "EDS-UI.ServiceEndpoint.GetSystemsForService")
+    @Timed(absolute = true, name = "ServiceEndpoint.GetSystemsForService")
     @Path("/systemsForService")
     public Response getSystemsForService(@Context SecurityContext sc, @QueryParam("serviceId") String serviceIdStr) throws Exception {
         super.setLogbackMarkers(sc);
@@ -730,7 +730,7 @@ public final class ServiceEndpoint extends AbstractEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    @Timed(absolute = true, name = "EDS-UI.ServiceEndpoint.GetServiceOrganisations")
+    @Timed(absolute = true, name = "ServiceEndpoint.GetServiceOrganisations")
     @Path("/openOdsRecord")
     public Response getOpenOdsRecord(@Context SecurityContext sc, @QueryParam("odsCode") String odsCode) throws Exception {
         super.setLogbackMarkers(sc);
@@ -754,7 +754,7 @@ public final class ServiceEndpoint extends AbstractEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    @Timed(absolute = true, name = "EDS-UI.ServiceEndpoint.GetProtocolsForService")
+    @Timed(absolute = true, name = "ServiceEndpoint.GetProtocolsForService")
     @Path("/protocolsForService")
     public Response getProtocolsForService(@Context SecurityContext sc, @QueryParam("serviceId") String serviceIdStr) throws Exception {
         super.setLogbackMarkers(sc);

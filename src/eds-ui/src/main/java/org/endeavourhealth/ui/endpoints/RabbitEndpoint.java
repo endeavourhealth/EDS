@@ -60,7 +60,7 @@ public final class RabbitEndpoint extends AbstractEndpoint {
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
 	@Consumes(MediaType.APPLICATION_JSON)
-	@Timed(absolute = true, name="EDS-UI.RabbitEndpoint.GetRoutings")
+	@Timed(absolute = true, name="RabbitEndpoint.GetRoutings")
 	@Path("/routings")
 	public Response getRoutings(@Context SecurityContext sc) throws Exception {
 		super.setLogbackMarkers(sc);
@@ -77,7 +77,7 @@ public final class RabbitEndpoint extends AbstractEndpoint {
 	@POST
 	@Produces(MediaType.APPLICATION_JSON)
 	@Consumes(MediaType.APPLICATION_JSON)
-	@Timed(absolute = true, name="EDS-UI.RabbitEndpoint.PostRoutings")
+	@Timed(absolute = true, name="RabbitEndpoint.PostRoutings")
 	@Path("/routings")
 	public Response saveRoutings(@Context SecurityContext sc, String routings) throws Exception {
 		super.setLogbackMarkers(sc);
@@ -93,7 +93,7 @@ public final class RabbitEndpoint extends AbstractEndpoint {
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
 	@Consumes(MediaType.APPLICATION_JSON)
-	@Timed(absolute = true, name="EDS-UI.RabbitEndpoint.GetRabbitNodes")
+	@Timed(absolute = true, name="RabbitEndpoint.GetRabbitNodes")
 	@Path("/nodes")
 	public Response getRabbitNodes(@Context SecurityContext sc) throws Exception {
 		super.setLogbackMarkers(sc);
@@ -128,7 +128,7 @@ public final class RabbitEndpoint extends AbstractEndpoint {
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
 	@Consumes(MediaType.APPLICATION_JSON)
-	@Timed(absolute = true, name="EDS-UI.RabbitEndpoint.PingRabbitNodes")
+	@Timed(absolute = true, name="RabbitEndpoint.PingRabbitNodes")
 	@Path("/ping")
 	public Response pingRabbitNode(@Context SecurityContext sc, @QueryParam("address") String address) throws Exception {
 		super.setLogbackMarkers(sc);
@@ -175,7 +175,7 @@ public final class RabbitEndpoint extends AbstractEndpoint {
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
 	@Consumes(MediaType.APPLICATION_JSON)
-	@Timed(absolute = true, name="EDS-UI.RabbitEndpoint.GetRabbitQueues")
+	@Timed(absolute = true, name="RabbitEndpoint.GetRabbitQueues")
 	@Path("/queues")
 	public Response getRabbitQueues(@Context SecurityContext sc, @QueryParam("address") String address) throws Exception {
 		super.setLogbackMarkers(sc);
@@ -210,7 +210,7 @@ public final class RabbitEndpoint extends AbstractEndpoint {
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
 	@Consumes(MediaType.APPLICATION_JSON)
-	@Timed(absolute = true, name="EDS-UI.RabbitEndpoint.GetRabbitExchanges")
+	@Timed(absolute = true, name="RabbitEndpoint.GetRabbitExchanges")
 	@Path("/exchanges")
 	public Response getRabbitExchanges(@Context SecurityContext sc, @QueryParam("address") String address) throws Exception {
 		super.setLogbackMarkers(sc);
@@ -245,7 +245,7 @@ public final class RabbitEndpoint extends AbstractEndpoint {
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
 	@Consumes(MediaType.APPLICATION_JSON)
-	@Timed(absolute = true, name="EDS-UI.RabbitEndpoint.GetRabbitBindings")
+	@Timed(absolute = true, name="RabbitEndpoint.GetRabbitBindings")
 	@Path("/bindings")
 	public Response getRabbitBindings(@Context SecurityContext sc, @QueryParam("address") String address) throws Exception {
 		super.setLogbackMarkers(sc);
@@ -268,7 +268,7 @@ public final class RabbitEndpoint extends AbstractEndpoint {
 	@POST
 	@Produces(MediaType.APPLICATION_JSON)
 	@Consumes(MediaType.TEXT_PLAIN)
-	@Timed(absolute = true, name="EDS-UI.RabbitEndpoint.SynchronizeRabbit")
+	@Timed(absolute = true, name="RabbitEndpoint.SynchronizeRabbit")
 	@Path("/synchronize")
 	@RequiresAdmin
 	public Response synchronizeRabbit(@Context SecurityContext sc, String address) throws Exception {

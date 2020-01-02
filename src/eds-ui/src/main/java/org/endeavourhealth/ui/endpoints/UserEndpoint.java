@@ -29,7 +29,7 @@ public final class UserEndpoint extends AbstractEndpoint {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    @Timed(absolute = true, name="EDS-UI.UserEndpoint.GetUserDetails")
+    @Timed(absolute = true, name="UserEndpoint.GetUserDetails")
     @Path("/details")
     public Response userDetails(@Context SecurityContext sc) throws Exception {
         userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
@@ -42,7 +42,7 @@ public final class UserEndpoint extends AbstractEndpoint {
 
     @GET
     @Path("/account")
-    @Timed(absolute = true, name="EDS-UI.UserEndpoint.GetUserAccount")
+    @Timed(absolute = true, name="UserEndpoint.GetUserAccount")
     public Response userAccount(@Context SecurityContext sc) throws Exception {
         userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
             "User Account");
@@ -57,7 +57,7 @@ public final class UserEndpoint extends AbstractEndpoint {
 
     @GET
     @Path("/logout")
-    @Timed(absolute = true, name="EDS-UI.UserEndpoint.Logout")
+    @Timed(absolute = true, name="UserEndpoint.Logout")
     public Response logout(@Context SecurityContext sc) throws Exception {
 
         LOG.info("Logout: {}", SecurityUtils.getCurrentUser(sc));

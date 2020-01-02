@@ -37,7 +37,7 @@ public class ExternalDashboardEndpoint extends AbstractEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    @Timed(absolute = true, name="EDS-UI.ExternalDashboardEndpoint.GetProtocolErrors")
+    @Timed(absolute = true, name="ExternalDashboardEndpoint.GetProtocolErrors")
     @Path("/getProtocolErrors")
     public Response getProtocolErrors(@Context SecurityContext sc) throws Exception {
         super.setLogbackMarkers(sc);
@@ -53,7 +53,7 @@ public class ExternalDashboardEndpoint extends AbstractEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    @Timed(absolute = true, name="EDS-UI.ExternalDashboardEndpoint.GetGeneralErrors")
+    @Timed(absolute = true, name="ExternalDashboardEndpoint.GetGeneralErrors")
     @Path("/getGeneralErrors")
     public Response getGeneralErrors(@Context SecurityContext sc) throws Exception {
         super.setLogbackMarkers(sc);
@@ -68,7 +68,7 @@ public class ExternalDashboardEndpoint extends AbstractEndpoint {
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    @Timed(absolute = true, name="EDS-UI.ExternalDashboardEndpoint.getErrorGraph")
+    @Timed(absolute = true, name="ExternalDashboardEndpoint.getErrorGraph")
     @Path("/getErrorGraph")
     public Response getErrorGraph(@Context SecurityContext sc, JsonGraphOptions options) throws Exception {
         super.setLogbackMarkers(sc);

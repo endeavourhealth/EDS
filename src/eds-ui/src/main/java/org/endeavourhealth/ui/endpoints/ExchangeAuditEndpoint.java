@@ -52,7 +52,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    @Timed(absolute = true, name="EDS-UI.ExchangeAuditEndpoint.GetExchangeList")
+    @Timed(absolute = true, name="ExchangeAuditEndpoint.GetExchangeList")
     @Path("/getExchangesByDate")
     public Response getExchangesByDate(@Context SecurityContext sc,
                                     @QueryParam("serviceId") String serviceIdStr,
@@ -103,7 +103,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    @Timed(absolute = true, name="EDS-UI.ExchangeAuditEndpoint.GetExchangeList")
+    @Timed(absolute = true, name="ExchangeAuditEndpoint.GetExchangeList")
     @Path("/getRecentExchanges")
     public Response getRecentExchanges(@Context SecurityContext sc,
                                           @QueryParam("serviceId") String serviceIdStr,
@@ -137,7 +137,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    @Timed(absolute = true, name="EDS-UI.ExchangeAuditEndpoint.GetExchangeList")
+    @Timed(absolute = true, name="ExchangeAuditEndpoint.GetExchangeList")
     @Path("/getExchangesFromFirstError")
     public Response getExchangesFromFirstError(@Context SecurityContext sc,
                                        @QueryParam("serviceId") String serviceIdStr,
@@ -289,7 +289,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    @Timed(absolute = true, name="EDS-UI.ExchangeAuditEndpoint.GetExchangeById")
+    @Timed(absolute = true, name="ExchangeAuditEndpoint.GetExchangeById")
     @Path("/getExchangeById")
     public Response getExchangeById(@Context SecurityContext sc,
                                     @QueryParam("serviceId") String serviceIdStr,
@@ -375,7 +375,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
     /*@GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    @Timed(absolute = true, name="EDS-UI.ExchangeAuditEndpoint.GetExchangeEvents")
+    @Timed(absolute = true, name="ExchangeAuditEndpoint.GetExchangeEvents")
     @Path("/getExchangeEvents")
     public Response getExchangeEvents(@Context SecurityContext sc, @QueryParam("exchangeId") String exchangeIdStr) throws Exception {
         super.setLogbackMarkers(sc);
@@ -408,7 +408,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    @Timed(absolute = true, name="EDS-UI.ExchangeAuditEndpoint.PostToExchange")
+    @Timed(absolute = true, name="ExchangeAuditEndpoint.PostToExchange")
     @Path("/postToExchange")
     @RequiresAdmin
     public Response postToExchange(@Context SecurityContext sc, JsonPostToExchangeRequest request) throws Exception {
@@ -553,7 +553,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    @Timed(absolute = true, name="EDS-UI.ExchangeAuditEndpoint.GetTransformErrorSummaries")
+    @Timed(absolute = true, name="ExchangeAuditEndpoint.GetTransformErrorSummaries")
     @Path("/getTransformErrorSummaries")
     public Response getTransformErrorSummaries(@Context SecurityContext sc) throws Exception {
         super.setLogbackMarkers(sc);
@@ -621,7 +621,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    @Timed(absolute = true, name="EDS-UI.ExchangeAuditEndpoint.GetInboundTransformAudits")
+    @Timed(absolute = true, name="ExchangeAuditEndpoint.GetInboundTransformAudits")
     @Path("/getInboundTransformAudits")
     public Response getInboundTransformAudits(@Context SecurityContext sc,
                                             @QueryParam("serviceId") String serviceIdStr,
@@ -784,7 +784,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
     /*@POST
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    @Timed(absolute = true, name="EDS-UI.ExchangeAuditEndpoint.RerunFirstExchangeInError")
+    @Timed(absolute = true, name="ExchangeAuditEndpoint.RerunFirstExchangeInError")
     @Path("/rerunFirstExchangeInError")
     @RequiresAdmin
     public Response rerunFirstExchangeInError(@Context SecurityContext sc, JsonTransformRerunRequest request) throws Exception {
@@ -811,7 +811,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    @Timed(absolute = true, name="EDS-UI.ExchangeAuditEndpoint.RerunAllExchangeInError")
+    @Timed(absolute = true, name="ExchangeAuditEndpoint.RerunAllExchangeInError")
     @Path("/rerunAllExchangesInError")
     @RequiresAdmin
     public Response rerunAllExchangesInError(@Context SecurityContext sc, JsonTransformRerunRequest request) throws Exception {
@@ -871,7 +871,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    @Timed(absolute = true, name="EDS-UI.ExchangeAuditEndpoint.GetTransformErrorLines")
+    @Timed(absolute = true, name="ExchangeAuditEndpoint.GetTransformErrorLines")
     @Path("/getTransformErrorLines")
     public Response getTransformErrorLines(@Context SecurityContext sc,
                                              @QueryParam("serviceId") String serviceIdStr,
@@ -908,7 +908,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    @Timed(absolute = true, name="EDS-UI.ExchangeAuditEndpoint.GetProtocolsForService")
+    @Timed(absolute = true, name="ExchangeAuditEndpoint.GetProtocolsForService")
     @Path("/getProtocolsForService")
     public Response getProtocolsForService(@Context SecurityContext sc,
                                            @QueryParam("serviceId") String serviceIdStr,
@@ -979,7 +979,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    @Timed(absolute = true, name="EDS-UI.ExchangeAuditEndpoint.RequeueServicesInError")
+    @Timed(absolute = true, name="ExchangeAuditEndpoint.RequeueServicesInError")
     @Path("/requeueServicesInError")
     @RequiresAdmin
     public Response rerunAllExchangesInError(@Context SecurityContext sc, List<JsonTransformRerunRequest> requests) throws Exception {

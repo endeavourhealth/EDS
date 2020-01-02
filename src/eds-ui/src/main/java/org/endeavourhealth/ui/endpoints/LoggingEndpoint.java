@@ -28,7 +28,7 @@ public final class LoggingEndpoint extends AbstractEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    @Timed(absolute = true, name="EDS-UI.LoggingEndpoint.GetLoggingEvents")
+    @Timed(absolute = true, name="LoggingEndpoint.GetLoggingEvents")
     @Path("/getLoggingEvents")
     public Response getLoggingEvents(
         @Context SecurityContext sc,
@@ -54,7 +54,7 @@ public final class LoggingEndpoint extends AbstractEndpoint {
     @GET
     @Produces(MediaType.TEXT_PLAIN)
     @Consumes(MediaType.APPLICATION_JSON)
-    @Timed(absolute = true, name="EDS-UI.LoggingEndpoint.GetStackTrace")
+    @Timed(absolute = true, name="LoggingEndpoint.GetStackTrace")
     @Path("/getStackTrace")
     public Response getStackTrace(@Context SecurityContext sc, @QueryParam("eventId") Long eventId) throws Exception {
         super.setLogbackMarkers(sc);

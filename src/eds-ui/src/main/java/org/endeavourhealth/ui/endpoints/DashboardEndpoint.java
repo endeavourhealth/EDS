@@ -32,7 +32,7 @@ public final class DashboardEndpoint extends AbstractEndpoint {
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
 	@Consumes(MediaType.APPLICATION_JSON)
-	@Timed(absolute = true, name="EDS-UI.DashboardEndpoint.GetRecentDocuments")
+	@Timed(absolute = true, name="DashboardEndpoint.GetRecentDocuments")
 	@Path("/getRecentDocuments")
 	public Response getRecentDocuments(@Context SecurityContext sc, @QueryParam("count") int count) throws Exception {
 		super.setLogbackMarkers(sc);

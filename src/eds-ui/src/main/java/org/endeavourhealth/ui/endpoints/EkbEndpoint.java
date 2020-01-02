@@ -29,7 +29,7 @@ public final class EkbEndpoint extends AbstractEndpoint {
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
 	@Consumes(MediaType.APPLICATION_JSON)
-	@Timed(absolute = true, name="EDS-UI.EkbEndpoint.Search")
+	@Timed(absolute = true, name="EkbEndpoint.Search")
 	@Path("/search/sct")
 	public Response search(@Context SecurityContext sc, @QueryParam("term") String term, @QueryParam("maxResultsSize") int maxResultsSize, @QueryParam("start") int start) throws Exception {
 		super.setLogbackMarkers(sc);
@@ -49,7 +49,7 @@ public final class EkbEndpoint extends AbstractEndpoint {
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
 	@Consumes(MediaType.APPLICATION_JSON)
-	@Timed(absolute = true, name="EDS-UI.EkbEndpoint.GetConcept")
+	@Timed(absolute = true, name="EkbEndpoint.GetConcept")
 	@Path("/concepts/{code}")
 	public Response getConcept(@Context SecurityContext sc, @PathParam("code") String code) throws Exception {
 		super.setLogbackMarkers(sc);
@@ -69,7 +69,7 @@ public final class EkbEndpoint extends AbstractEndpoint {
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
 	@Consumes(MediaType.APPLICATION_JSON)
-	@Timed(absolute = true, name="EDS-UI.EkbEndpoint.GetChildren")
+	@Timed(absolute = true, name="EkbEndpoint.GetChildren")
 	@Path("/hierarchy/{code}/childHierarchy")
 	public Response getChildren(@Context SecurityContext sc, @PathParam("code") String code) throws Exception {
 		super.setLogbackMarkers(sc);
@@ -89,7 +89,7 @@ public final class EkbEndpoint extends AbstractEndpoint {
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
 	@Consumes(MediaType.APPLICATION_JSON)
-	@Timed(absolute = true, name="EDS-UI.EkbEndpoint.GetParents")
+	@Timed(absolute = true, name="EkbEndpoint.GetParents")
 	@Path("/hierarchy/{code}/parentHierarchy")
 	public Response getParents(@Context SecurityContext sc, @PathParam("code") String code) throws Exception {
 		super.setLogbackMarkers(sc);

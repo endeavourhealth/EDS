@@ -41,7 +41,7 @@ public final class PatientIdentityEndpoint extends AbstractEndpoint {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    @Timed(absolute = true, name="EDS-UI.PatientIdentityEndpoint.GetByLocalIdentifier")
+    @Timed(absolute = true, name="PatientIdentityEndpoint.GetByLocalIdentifier")
     @Path("/byLocalIdentifier")
     public Response byLocalIdentifier(@Context SecurityContext sc,
                          @QueryParam("serviceId") String serviceIdStr,
@@ -130,7 +130,7 @@ public final class PatientIdentityEndpoint extends AbstractEndpoint {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    @Timed(absolute = true, name="EDS-UI.PatientIdentityEndpoint.GetByNHSNumber")
+    @Timed(absolute = true, name="PatientIdentityEndpoint.GetByNHSNumber")
     @Path("/byNhsNumber")
     public Response byNhsNumber(@Context SecurityContext sc, @QueryParam("nhsNumber") String nhsNumber) throws Exception {
         super.setLogbackMarkers(sc);
@@ -218,7 +218,7 @@ public final class PatientIdentityEndpoint extends AbstractEndpoint {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    @Timed(absolute = true, name="EDS-UI.PatientIdentityEndpoint.GetByPatientId")
+    @Timed(absolute = true, name="PatientIdentityEndpoint.GetByPatientId")
     @Path("/byPatientId")
     public Response byPatientId(@Context SecurityContext sc, @QueryParam("patientId") String patientIdStr) throws Exception {
         super.setLogbackMarkers(sc);

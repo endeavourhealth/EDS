@@ -78,7 +78,7 @@ public class ResourceEndpoint extends AbstractEndpoint {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    @Timed(absolute = true, name="EDS-UI.ResourceEndpoint.GetAllResourceTypes")
+    @Timed(absolute = true, name="ResourceEndpoint.GetAllResourceTypes")
     @Path("/allResourceTypes")
     public Response getAllResourceTypes(@Context SecurityContext sc) throws Exception {
         super.setLogbackMarkers(sc);
@@ -100,7 +100,7 @@ public class ResourceEndpoint extends AbstractEndpoint {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    @Timed(absolute = true, name="EDS-UI.ResourceEndpoint.GetForId")
+    @Timed(absolute = true, name="ResourceEndpoint.GetForId")
     @Path("/forId")
     public Response forId(@Context SecurityContext sc,
                           @QueryParam("serviceId") String serviceId,
@@ -138,7 +138,7 @@ public class ResourceEndpoint extends AbstractEndpoint {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    @Timed(absolute = true, name="EDS-UI.ResourceEndpoint.GetForPatient")
+    @Timed(absolute = true, name="ResourceEndpoint.GetForPatient")
     @Path("/forPatient")
     public Response forPatient(@Context SecurityContext sc,
                                @QueryParam("serviceId") String serviceId,
@@ -184,7 +184,7 @@ public class ResourceEndpoint extends AbstractEndpoint {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    @Timed(absolute = true, name="EDS-UI.ResourceEndpoint.GetResourceHistory")
+    @Timed(absolute = true, name="ResourceEndpoint.GetResourceHistory")
     @Path("/resourceHistory")
     public Response resourceHistory(@Context SecurityContext sc,
                                     @QueryParam("serviceId") String serviceId,
