@@ -1107,7 +1107,7 @@ public class Main {
 					Set<String> hsConsultationsDone = new HashSet<>();
 					Set<String> hsSlotsDone = new HashSet<>();
 
-					EmisCsvHelper helper = new EmisCsvHelper(service.getId(), systemId, null, null, false, null);
+					EmisCsvHelper helper = new EmisCsvHelper(service.getId(), systemId, null, null, null);
 
 					ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
 					List<Exchange> exchanges = exchangeDal.getExchangesByService(service.getId(), systemId, Integer.MAX_VALUE);
@@ -1130,7 +1130,7 @@ public class Main {
 							continue;
 						}
 
-						if (!EmisCsvToFhirTransformer.shouldProcessPatientData(service.getId(), files)) {
+						if (!EmisCsvToFhirTransformer.shouldProcessPatientData(helper)) {
 							continue;
 						}
 
