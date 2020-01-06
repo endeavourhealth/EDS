@@ -895,10 +895,7 @@ public class Main {
 		registerShutdownHook();*/
 
 		// Instantiate rabbit handler
-		LOG.info("Creating EDS queue reader");
 		RabbitHandler rabbitHandler = new RabbitHandler(configuration, configId);
-
-		// Begin consume
 		rabbitHandler.start();
 		LOG.info("EDS Queue reader running (kill file location " + TransformConfig.instance().getKillFileLocation() + ")");
 	}
