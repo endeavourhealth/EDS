@@ -324,10 +324,10 @@ create table cds_critical_care
 
     lookup_person_id               int          COMMENT 'person ID looked up using NHS number, DoB and MRN',
     audit_json                     mediumtext   null COMMENT 'Used for Audit Purposes',
-    CONSTRAINT pk_cds_critical_care PRIMARY KEY (exchange_id, cds_unique_identifier)
+    CONSTRAINT pk_cds_critical_care PRIMARY KEY (exchange_id, cds_unique_identifier, critical_care_identifier)
 );
 -- index to make it easier to find last checksum for a CDS critical care record
-CREATE INDEX ix_cds_critical_care_checksum_helper on cds_critical_care (cds_unique_identifier, dt_received);
+CREATE INDEX ix_cds_critical_care_checksum_helper on cds_critical_care (cds_unique_identifier, critical_care_identifier, dt_received);
 
 create table cds_critical_care_latest
 (
@@ -374,9 +374,9 @@ create table cds_critical_care_latest
 
     lookup_person_id               int          COMMENT 'person ID looked up using NHS number, DoB and MRN',
     audit_json                     mediumtext   null COMMENT 'Used for Audit Purposes',
-    CONSTRAINT pk_cds_critical_care_latest PRIMARY KEY (cds_unique_identifier)
+    CONSTRAINT pk_cds_critical_care_latest PRIMARY KEY (cds_unique_identifier, critical_care_identifier)
 );
-CREATE INDEX ix_cds_critical_care_latest_join_helper on cds_critical_care_latest (exchange_id, cds_unique_identifier);
+CREATE INDEX ix_cds_critical_care_latest_join_helper on cds_critical_care_latest (exchange_id, cds_unique_identifier, critical_care_identifier);
 
 
 -- records from sus inpatient, outpatient and emergency tail files are all written to this table with sus_record_type
