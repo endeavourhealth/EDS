@@ -8,6 +8,8 @@ drop table if exists cds_emergency;
 drop table if exists cds_emergency_latest;
 drop table if exists cds_critical_care;
 drop table if exists cds_critical_care_latest;
+drop table if exists cds_home_delivery_birth;
+drop table if exists cds_home_delivery_birth_latest;
 drop table if exists cds_tail;
 drop table if exists cds_tail_latest;
 
@@ -378,6 +380,111 @@ create table cds_critical_care_latest
 );
 CREATE INDEX ix_cds_critical_care_latest_join_helper on cds_critical_care_latest (exchange_id, cds_unique_identifier, critical_care_identifier);
 
+-- records from sus home delivery and birth files are written to this table (similar to Inpatient structure)
+create table cds_home_delivery_birth
+(
+    exchange_id                    char(36)     NOT NULL COMMENT 'links to audit.exchange table (but on a different server)',
+    dt_received                    datetime     NOT NULL COMMENT 'date time this record was received into Discovery',
+    record_checksum                bigint       NOT NULL COMMENT 'checksum of the columns below to easily spot duplicates',
+    cds_activity_date              datetime     NOT NULL COMMENT 'Date common to all sus files',
+    cds_unique_identifier          varchar(50)  NOT NULL COMMENT 'from CDSUniqueIdentifier',
+    cds_update_type                int          NOT NULL COMMENT 'from CDSUpdateType',
+    mrn                            varchar(10)  NOT NULL COMMENT 'patient MRN from LocalPatientID field',
+    nhs_number                     varchar(10)  NOT NULL COMMENT 'from NHSNumber',
+    withheld                       bool         COMMENT 'True if id is withheld',
+    date_of_birth                  date         COMMENT 'from PersonBirthDate',
+    consultant_code                varchar(20)  NOT NULL COMMENT 'GMC number of consultant, from ConsultantCode',
+
+    birth_weight                   varchar(4),
+    live_or_still_birth_indicator  char(1),
+    total_previous_pregnancies     varchar(2),
+
+    patient_pathway_identifier     varchar(20)  COMMENT 'links to the EpisodeId from the tail file if present',
+    spell_number                   varchar(12),
+    admission_method_code          varchar(12)   COMMENT 'LKP_CDS_ADMISS_METHOD',
+    admission_source_code          varchar(12)   COMMENT 'LKP_CDS_ADMISS_SOURCE',
+    patient_classification         char(1)      COMMENT 'LKP_CDS_PATIENT_CLASS',
+    spell_start_date               datetime     COMMENT 'start date and time of hospital spell',
+    episode_number                 varchar(2),
+    episode_start_site_code        varchar(12)  COMMENT 'location at start of episode',
+    episode_start_ward_code        varchar(12)  COMMENT 'ward at start of episode',
+    episode_start_date             datetime     COMMENT 'episode start date and time',
+    episode_end_site_code          varchar(12)  COMMENT 'location at end of episode',
+    episode_end_ward_code          varchar(12)  COMMENT 'ward at end of episode',
+    episode_end_date               datetime     COMMENT 'episode end date and time',
+    discharge_date                 datetime     COMMENT 'date and time of discharge',
+    discharge_destination_code     varchar(12)   COMMENT 'LKP_CDS_DISCH_DEST',
+    discharge_method               char(1)      COMMENT 'LKP_CDS_DISCH_METHOD',
+
+    -- store any diagnosis and procedure data
+    primary_diagnosis_ICD          varchar(6),
+    secondary_diagnosis_ICD        varchar(6),
+    other_diagnosis_ICD            mediumtext,
+    primary_procedure_OPCS         varchar(4),
+    primary_procedure_date         date,
+    secondary_procedure_OPCS       varchar(4),
+    secondary_procedure_date       date,
+    other_procedures_OPCS          mediumtext,
+
+    lookup_person_id               int          COMMENT 'person ID looked up using NHS number, DoB and MRN',
+    lookup_consultant_personnel_id int          COMMENT 'personnel ID looked up using consultant code',
+    audit_json                     mediumtext   null COMMENT 'Used for Audit Purposes',
+    CONSTRAINT pk_cds_home_delivery_birth PRIMARY KEY (exchange_id, cds_unique_identifier)
+);
+-- index to make it easier to find last checksum for a CDS home deltivery and birth record
+CREATE INDEX ix_cds_home_delivery_birth_checksum_helper on cds_home_delivery_birth (cds_unique_identifier, dt_received);
+
+create table cds_home_delivery_birth_latest
+(
+    exchange_id                    char(36)     NOT NULL COMMENT 'links to audit.exchange table (but on a different server)',
+    dt_received                    datetime     NOT NULL COMMENT 'date time this record was received into Discovery',
+    record_checksum                bigint       NOT NULL COMMENT 'checksum of the columns below to easily spot duplicates',
+    cds_activity_date              datetime     NOT NULL COMMENT 'Date common to all sus files',
+    cds_unique_identifier          varchar(50)  NOT NULL COMMENT 'from CDSUniqueIdentifier',
+    cds_update_type                int          NOT NULL COMMENT 'from CDSUpdateType',
+    mrn                            varchar(10)  NOT NULL COMMENT 'patient MRN from LocalPatientID field',
+    nhs_number                     varchar(10)  NOT NULL COMMENT 'from NHSNumber',
+    withheld                       bool         COMMENT 'True if id is withheld',
+    date_of_birth                  date         COMMENT 'from PersonBirthDate',
+    consultant_code                varchar(20)  NOT NULL COMMENT 'GMC number of consultant, from ConsultantCode',
+
+    birth_weight                   varchar(4),
+    live_or_still_birth_indicator  char(1),
+    total_previous_pregnancies     varchar(2),
+
+    patient_pathway_identifier     varchar(20)  COMMENT 'links to the EpisodeId from the tail file if present',
+    spell_number                   varchar(12),
+    admission_method_code          varchar(12)   COMMENT 'LKP_CDS_ADMISS_METHOD',
+    admission_source_code          varchar(12)   COMMENT 'LKP_CDS_ADMISS_SOURCE',
+    patient_classification         char(1)      COMMENT 'LKP_CDS_PATIENT_CLASS',
+    spell_start_date               datetime     COMMENT 'start date and time of hospital spell',
+    episode_number                 varchar(2),
+    episode_start_site_code        varchar(12)  COMMENT 'location at start of episode',
+    episode_start_ward_code        varchar(12)  COMMENT 'ward at start of episode',
+    episode_start_date             datetime     COMMENT 'episode start date and time',
+    episode_end_site_code          varchar(12)  COMMENT 'location at end of episode',
+    episode_end_ward_code          varchar(12)  COMMENT 'ward at end of episode',
+    episode_end_date               datetime     COMMENT 'episode end date and time',
+    discharge_date                 datetime     COMMENT 'date and time of discharge',
+    discharge_destination_code     varchar(12)   COMMENT 'LKP_CDS_DISCH_DEST',
+    discharge_method               char(1)      COMMENT 'LKP_CDS_DISCH_METHOD',
+
+    -- store any diagnosis and procedure data
+    primary_diagnosis_ICD          varchar(6),
+    secondary_diagnosis_ICD        varchar(6),
+    other_diagnosis_ICD            mediumtext,
+    primary_procedure_OPCS         varchar(4),
+    primary_procedure_date         date,
+    secondary_procedure_OPCS       varchar(4),
+    secondary_procedure_date       date,
+    other_procedures_OPCS          mediumtext,
+
+    lookup_person_id               int          COMMENT 'person ID looked up using NHS number, DoB and MRN',
+    lookup_consultant_personnel_id int          COMMENT 'personnel ID looked up using consultant code',
+    audit_json                     mediumtext   null COMMENT 'Used for Audit Purposes',
+    CONSTRAINT pk_cds_home_delivery_birth_latest PRIMARY KEY (cds_unique_identifier)
+);
+CREATE INDEX ix_cds_home_delivery_birth_latest_join_helper on cds_home_delivery_birth_latest (exchange_id, cds_unique_identifier);
 
 -- records from sus inpatient, outpatient and emergency tail files are all written to this table with sus_record_type
 -- telling us which is which and there there is an encounter_id for every entry
