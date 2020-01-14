@@ -855,7 +855,7 @@ CREATE TABLE patient_address
   address_line_3           varchar(255),
   address_line_4           varchar(255),
   city varchar(255),
-  postcode                 varchar(10),
+  postcode                 varchar(255),
   use_concept_id          int	NOT NULL COMMENT 'use of address (e.g. home, temporary)',
   start_date date,
   end_date				   date,

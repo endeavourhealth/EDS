@@ -457,7 +457,7 @@ CREATE TABLE [patient_address] (
 [address_line_3] varchar(255) NULL DEFAULT NULL,
 [address_line_4] varchar(255) NULL DEFAULT NULL,
 [city] varchar(255) NULL DEFAULT NULL,
-[postcode] varchar(10) NULL DEFAULT NULL,
+[postcode] varchar(255) NULL DEFAULT NULL,
 [use_concept_id] int NOT NULL,
 [start_date] date NULL DEFAULT NULL,
 [end_date] date NULL DEFAULT NULL,
