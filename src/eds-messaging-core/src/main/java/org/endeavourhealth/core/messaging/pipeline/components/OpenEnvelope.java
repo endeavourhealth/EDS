@@ -1,8 +1,6 @@
 package org.endeavourhealth.core.messaging.pipeline.components;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.base.Strings;
-import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.common.cache.ParserPool;
 import org.endeavourhealth.core.configuration.OpenEnvelopeConfig;
 import org.endeavourhealth.core.database.dal.DalProvider;
@@ -15,7 +13,7 @@ import org.endeavourhealth.core.database.dal.audit.ExchangeDalI;
 import org.endeavourhealth.core.database.dal.audit.models.Exchange;
 import org.endeavourhealth.core.database.dal.audit.models.HeaderKeys;
 import org.endeavourhealth.core.database.dal.audit.models.LastDataReceived;
-import org.endeavourhealth.core.fhirStorage.JsonServiceInterfaceEndpoint;
+import org.endeavourhealth.core.fhirStorage.ServiceInterfaceEndpoint;
 import org.endeavourhealth.core.messaging.pipeline.PipelineComponent;
 import org.endeavourhealth.core.messaging.pipeline.PipelineException;
 import org.endeavourhealth.core.xml.QueryDocument.LibraryItem;
@@ -263,14 +261,21 @@ public class OpenEnvelope extends PipelineComponent {
 
 	private UUID findSystemId(Service service, String software, String messageVersion) throws PipelineException {
 
-		List<JsonServiceInterfaceEndpoint> endpoints = null;
+		List<ServiceInterfaceEndpoint> endpoints = null;
 		try {
-			endpoints = ObjectMapperPool.getInstance().readValue(service.getEndpoints(), new TypeReference<List<JsonServiceInterfaceEndpoint>>() {});
+			endpoints = service.getEndpointsList();
 
-			for (JsonServiceInterfaceEndpoint endpoint: endpoints) {
+			for (ServiceInterfaceEndpoint endpoint: endpoints) {
 
 				UUID endpointSystemId = endpoint.getSystemUuid();
 				String endpointInterfaceId = endpoint.getTechnicalInterfaceUuid().toString();
+
+				//if the interface has been added to the service but is in "draft" mode then it's not to be used yet
+				String status = endpoint.getEndpoint();
+				if (status != null
+						&& status.equals(ServiceInterfaceEndpoint.STATUS_DRAFT)) {
+					continue;
+				}
 
 				LibraryDalI libraryRepository = DalProvider.factoryLibraryDal();
 				ActiveItem activeItem = libraryRepository.getActiveItemByItemId(endpointSystemId);

@@ -9,6 +9,7 @@ public class JsonServiceSystemStatus {
     private boolean isProcessingUpToDate; //if last data received has been processed OK
     private boolean isProcessingInError; //if inbound processing is in error
     private Date lastDateSuccessfullyProcessed; //last time we processed anything successfully
+    private String publisherMode; //whether this interface is set to auto-fail or route to the bulk queues
 
     public String getSystemName() {
         return systemName;
@@ -56,5 +57,13 @@ public class JsonServiceSystemStatus {
 
     public void setLastDateSuccessfullyProcessed(Date lastDateSuccessfullyProcessed) {
         this.lastDateSuccessfullyProcessed = lastDateSuccessfullyProcessed;
+    }
+
+    public String getPublisherMode() {
+        return publisherMode;
+    }
+
+    public void setPublisherMode(String publisherMode) {
+        this.publisherMode = publisherMode;
     }
 }

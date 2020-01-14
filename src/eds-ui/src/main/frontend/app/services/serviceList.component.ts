@@ -264,13 +264,19 @@ export class ServiceListComponent implements OnInit, OnDestroy{
 
 	formatLastDataTooltip(service: Service, status: SystemStatus) : string {
 
-		var lastDate = new Date();
-		lastDate.setTime(status.lastDataDate);
+		if (status.lastDataDate) {
 
-		var lastDataReceived = new Date();
-		lastDataReceived.setTime(status.lastDataReceived);
+			var lastDate = new Date();
+			lastDate.setTime(status.lastDataDate);
 
-		return 'Last data from ' + this.formatDate(lastDate) + ', ' + 'received on ' + this.formatDate(lastDataReceived);
+			var lastDataReceived = new Date();
+			lastDataReceived.setTime(status.lastDataReceived);
+
+			return 'Last data from ' + this.formatDate(lastDate) + ', ' + 'received on ' + this.formatDate(lastDataReceived);
+
+		} else {
+			return 'No data received';
+		}
 	}
 
 	formatLastData(service: Service, status: SystemStatus) : string {
@@ -288,12 +294,17 @@ export class ServiceListComponent implements OnInit, OnDestroy{
 			ret += ': ';
 		}
 
-		var lastDate = new Date();
-		lastDate.setTime(status.lastDataDate);
+		if (status.lastDataDate) {
+			var lastDate = new Date();
+			lastDate.setTime(status.lastDataDate);
 
-		var today = new Date();
+			var today = new Date();
 
-		ret += ServiceListComponent.getDateDiffDesc(lastDate, today);
+			ret += ServiceListComponent.getDateDiffDesc(lastDate, today);
+
+		} else {
+			ret += 'N/A';
+		}
 
 		//cache it in the status so we don't need to work it out again
 		status.cachedLastDataDateDesc = ret;
@@ -377,20 +388,63 @@ export class ServiceListComponent implements OnInit, OnDestroy{
 	}
 
 	formatProcessingStatusTooltip(service: Service, status: SystemStatus) : string {
+
+		var ret = '';
+
+		if (status.publisherMode) {
+			if (status.publisherMode == 'Publisher_Draft') {
+				ret += '(Draft - new data will be rejected by messaging API) ';
+
+			} else if (status.publisherMode == 'Publisher_Auto_Fail') {
+				ret += '(Auto-fail - inbound transform will automatically fail) ';
+
+			} else if (status.publisherMode == 'Publisher_Bulk') {
+				ret += '(Bulk - exchangs will be routed to bulk queues) ';
+
+			} else if (status.publisherMode == 'Publisher_Normal') {
+				//don't add anything
+
+			} else {
+				//in case one was missed somehow
+				ret += '<<<' + status.publisherMode + '>>> ';
+			}
+		}
+
 		if (status.lastDateSuccessfullyProcessed) {
 
 			var d = new Date();
 			d.setTime(status.lastDateSuccessfullyProcessed);
-			return 'Last successfully processed on ' + this.formatDate(d);
+			ret += 'Last successfully processed on ' + this.formatDate(d);
 
 		} else {
-			return 'Not successfully processed any data yet';
+			ret += 'Not successfully processed any data yet';
 		}
+
+		return ret;
 	}
 
 	formatProcessingStatus(service: Service, status: SystemStatus) : string {
 
 		var ret = '';
+
+		if (status.publisherMode) {
+			if (status.publisherMode == 'Publisher_Draft') {
+				ret += '(D) ';
+
+			} else if (status.publisherMode == 'Publisher_Auto_Fail') {
+				ret += '(AF) ';
+
+			} else if (status.publisherMode == 'Publisher_Bulk') {
+				ret += '(B) ';
+
+			} else if (status.publisherMode == 'Publisher_Normal') {
+				//don't add anything
+
+			} else {
+				//in case one was missed somehow
+				ret += '<<<' + status.publisherMode + '>>> ';
+			}
+		}
 
 		//only show system name if more than one status
 		//don't need to show the system since this is in the previous column
@@ -405,8 +459,11 @@ export class ServiceListComponent implements OnInit, OnDestroy{
 		} else if (status.processingUpToDate) {
 			ret += 'OK';
 
-		} else {
+		} else if (status.lastDataReceived) {
 			ret += 'Behind';
+
+		} else {
+			ret += 'No data';
 		}
 
 		return ret;

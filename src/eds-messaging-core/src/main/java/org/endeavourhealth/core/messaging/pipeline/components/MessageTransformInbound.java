@@ -13,6 +13,7 @@ import org.endeavourhealth.core.database.dal.admin.models.Service;
 import org.endeavourhealth.core.database.dal.audit.ExchangeBatchDalI;
 import org.endeavourhealth.core.database.dal.audit.ExchangeDalI;
 import org.endeavourhealth.core.database.dal.audit.models.*;
+import org.endeavourhealth.core.fhirStorage.ServiceInterfaceEndpoint;
 import org.endeavourhealth.core.messaging.pipeline.PipelineComponent;
 import org.endeavourhealth.core.messaging.pipeline.PipelineException;
 import org.endeavourhealth.core.xml.TransformErrorSerializer;
@@ -105,11 +106,26 @@ public class MessageTransformInbound extends PipelineComponent {
 
 		ExchangeTransformAudit transformAudit = createTransformAudit(serviceId, systemId, exchange.getId());
 
-		if (canTransformExchange(errorState, exchange.getId())) {
+		if (!canTransformExchange(errorState, exchange.getId())) {
+			LOG.warn("NOT performing transform for Exchange " + exchange.getId() + " because previous Exchange went into error");
+
+			//record the exception as a fatal error with the exchange
+			Map<String, String> args = new HashMap<>();
+			args.put(TransformErrorUtility.ARG_WAITING, null);
+			TransformErrorUtility.addTransformError(currentErrors, null, args);
+
+		} else if (shouldAutoFailExchange(serviceId, systemId)) {
+			LOG.warn("NOT performing transform for Exchange " + exchange.getId() + " because system is set to auto-fail");
+
+			//record the exception as a fatal error with the exchange
+			Map<String, String> args = new HashMap<>();
+			args.put(TransformErrorUtility.ARG_AUTO_FAILED, null);
+			TransformErrorUtility.addTransformError(currentErrors, null, args);
+
+		} else {
 
 			//the processor is responsible for saving FHIR resources
 			FhirResourceFiler fhirResourceFiler = new FhirResourceFiler(exchange.getId(), serviceId, systemId, currentErrors, batchIds);
-
 
 			try {
 				if (software.equalsIgnoreCase(MessageFormat.DUMMY_SENDER_SOFTWARE_FOR_BULK_DELETE)) {
@@ -170,13 +186,6 @@ public class MessageTransformInbound extends PipelineComponent {
 				sendSlackAlert(exchange, software, serviceId, currentErrors);
 			}
 
-		} else {
-			LOG.info("NOT performing transform for Exchange {} because previous Exchange went into error", exchange.getId());
-
-			//record the exception as a fatal error with the exchange
-			Map<String, String> args = new HashMap<>();
-			args.put(TransformErrorUtility.ARG_WAITING, null);
-			TransformErrorUtility.addTransformError(currentErrors, null, args);
 		}
 
 		//if we had any errors with the transform, update the error state for this service and system, so
@@ -212,6 +221,27 @@ public class MessageTransformInbound extends PipelineComponent {
 		updateDataProcessed(exchange);
 
 		return batchIds;
+	}
+
+	/**
+	 * tests if the service and system have been set into "auto-fail" mode which will automatically
+	 * fail any exchanges to allow us to safely get data out of a RabbitMQ queue
+     */
+	private boolean shouldAutoFailExchange(UUID serviceId, UUID systemId) throws Exception {
+		ServiceDalI serviceDal = DalProvider.factoryServiceDal();
+		Service service = serviceDal.getById(serviceId);
+		for (ServiceInterfaceEndpoint serviceInterface: service.getEndpointsList()) {
+			if (serviceInterface.getSystemUuid().equals(systemId)) {
+
+				String publisherStatus = serviceInterface.getEndpoint();
+				if (publisherStatus != null
+						&& publisherStatus.equals(ServiceInterfaceEndpoint.STATUS_AUTO_FAIL)) {
+					return true;
+				}
+			}
+		}
+
+		return false;
 	}
 
 	private void processBulkDeleteForAllData(Exchange exchange, FhirResourceFiler fhirResourceFiler, String messageVersion) throws Exception {

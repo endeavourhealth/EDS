@@ -1,5 +1,5 @@
 export class Endpoint {
-	systemUuid:string;
-	technicalInterfaceUuid:string;
-	endpoint:string;
+	systemUuid: string;
+	technicalInterfaceUuid: string;
+	endpoint: string;
 }

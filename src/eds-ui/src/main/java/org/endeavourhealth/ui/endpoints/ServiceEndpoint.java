@@ -1,9 +1,7 @@
 package org.endeavourhealth.ui.endpoints;
 
 import com.codahale.metrics.annotation.Timed;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.base.Strings;
-import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.common.fhir.schema.OrganisationType;
 import org.endeavourhealth.common.ods.OdsOrganisation;
 import org.endeavourhealth.common.ods.OdsWebService;
@@ -23,7 +21,7 @@ import org.endeavourhealth.core.database.dal.audit.ExchangeDalI;
 import org.endeavourhealth.core.database.dal.audit.UserAuditDalI;
 import org.endeavourhealth.core.database.dal.audit.models.*;
 import org.endeavourhealth.core.database.dal.ehr.ResourceDalI;
-import org.endeavourhealth.core.fhirStorage.JsonServiceInterfaceEndpoint;
+import org.endeavourhealth.core.fhirStorage.ServiceInterfaceEndpoint;
 import org.endeavourhealth.core.queueing.QueueHelper;
 import org.endeavourhealth.core.xml.QueryDocument.*;
 import org.endeavourhealth.core.xml.QueryDocument.System;
@@ -79,9 +77,7 @@ public final class ServiceEndpoint extends AbstractEndpoint {
         if (!Strings.isNullOrEmpty(service.getOrganisationTypeCode())) {
             dbService.setOrganisationType(OrganisationType.fromCode(service.getOrganisationTypeCode()));
         }
-
-        String endpointsJson = ObjectMapperPool.getInstance().writeValueAsString(service.getEndpoints());
-        dbService.setEndpoints(endpointsJson);
+        dbService.setEndpointsList(service.getEndpoints());
 
         UUID serviceId = serviceRepository.save(dbService);
 
@@ -334,7 +330,7 @@ public final class ServiceEndpoint extends AbstractEndpoint {
             JsonService jsonService = new JsonService(service);
 
             //work out where we are with processing data
-            List<JsonServiceSystemStatus> jsonSystemStatuses = createAndPopulateJsonSystemStatuses(serviceId, hmServicesInError, hmLastDataReceived, hmLastDataProcessed);
+            List<JsonServiceSystemStatus> jsonSystemStatuses = createAndPopulateJsonSystemStatuses(service, hmServicesInError, hmLastDataReceived, hmLastDataProcessed);
             jsonService.setSystemStatuses(jsonSystemStatuses);
 
             ret.add(jsonService);
@@ -343,11 +339,12 @@ public final class ServiceEndpoint extends AbstractEndpoint {
         return ret;
     }
 
-    private List<JsonServiceSystemStatus> createAndPopulateJsonSystemStatuses(UUID serviceId,
+    private List<JsonServiceSystemStatus> createAndPopulateJsonSystemStatuses(Service service,
                                                                               Map<UUID, Set<UUID>> hmServicesInError,
                                                                               Map<UUID, Map<UUID, LastDataReceived>> hmLastDataReceived,
                                                                               Map<UUID, Map<UUID, LastDataProcessed>> hmLastDataProcessed) throws Exception {
 
+        UUID serviceId = service.getId();
         Set<UUID> hsInError = hmServicesInError.get(serviceId);
         Map<UUID, LastDataReceived> hmReceived = hmLastDataReceived.get(serviceId);
         Map<UUID, LastDataProcessed> hmProcessed = hmLastDataProcessed.get(serviceId);
@@ -360,9 +357,28 @@ public final class ServiceEndpoint extends AbstractEndpoint {
             systemIds.addAll(hmReceived.keySet());
         }
 
+        //create a map of the publisher mode for each system
+        Map<UUID, String> hmPublisherInterfaceModes = new HashMap<>();
+        for (ServiceInterfaceEndpoint interfaceEndpoint: service.getEndpointsList()) {
+            UUID systemId = interfaceEndpoint.getSystemUuid();
+            String mode = interfaceEndpoint.getEndpoint();
+
+            //if this interface is a publisher-type one, then ensure it's in the list of system IDs and add the mode to the map
+            if (mode.equals(ServiceInterfaceEndpoint.STATUS_BULK_PROCESSING)
+                    || mode.equals(ServiceInterfaceEndpoint.STATUS_AUTO_FAIL)
+                    || mode.equals(ServiceInterfaceEndpoint.STATUS_DRAFT)
+                    || mode.equals(ServiceInterfaceEndpoint.STATUS_NORMAL)) {
+
+                hmPublisherInterfaceModes.put(systemId, mode);
+                systemIds.add(systemId);
+            }
+        }
+
+
         if (systemIds.isEmpty()) {
             return null;
         }
+
 
         List<JsonServiceSystemStatus> ret = new ArrayList<>();
 
@@ -403,6 +419,9 @@ public final class ServiceEndpoint extends AbstractEndpoint {
                     }
                 }
             }
+
+            String publisherMode = hmPublisherInterfaceModes.get(systemId);
+            status.setPublisherMode(publisherMode);
 
             ret.add(status);
         }
@@ -656,11 +675,10 @@ public final class ServiceEndpoint extends AbstractEndpoint {
 
         List<UUID> ret = new ArrayList<>();
 
-        List<JsonServiceInterfaceEndpoint> endpoints = null;
+        List<ServiceInterfaceEndpoint> endpoints = null;
         try {
-            endpoints = ObjectMapperPool.getInstance().readValue(service.getEndpoints(), new TypeReference<List<JsonServiceInterfaceEndpoint>>() {
-            });
-            for (JsonServiceInterfaceEndpoint endpoint : endpoints) {
+            endpoints = service.getEndpointsList();
+            for (ServiceInterfaceEndpoint endpoint : endpoints) {
                 UUID endpointSystemId = endpoint.getSystemUuid();
                 ret.add(endpointSystemId);
             }
@@ -706,9 +724,8 @@ public final class ServiceEndpoint extends AbstractEndpoint {
 
         List<System> ret = new ArrayList<>();
 
-        List<JsonServiceInterfaceEndpoint> endpoints = ObjectMapperPool.getInstance().readValue(service.getEndpoints(), new TypeReference<List<JsonServiceInterfaceEndpoint>>() {
-        });
-        for (JsonServiceInterfaceEndpoint endpoint : endpoints) {
+        List<ServiceInterfaceEndpoint> endpoints = service.getEndpointsList();
+        for (ServiceInterfaceEndpoint endpoint : endpoints) {
 
             UUID endpointSystemId = endpoint.getSystemUuid();
 

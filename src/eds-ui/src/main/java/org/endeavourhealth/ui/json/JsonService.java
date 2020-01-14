@@ -1,13 +1,9 @@
 package org.endeavourhealth.ui.json;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.core.type.TypeReference;
-import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.core.database.dal.admin.models.Service;
-import org.endeavourhealth.core.fhirStorage.JsonServiceInterfaceEndpoint;
+import org.endeavourhealth.core.fhirStorage.ServiceInterfaceEndpoint;
 
-import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -18,7 +14,7 @@ public final class JsonService {
     private String localIdentifier = null;
     private String publisherConfigName = null;
     private String name = null;
-    private List<JsonServiceInterfaceEndpoint> endpoints = null;
+    private List<ServiceInterfaceEndpoint> endpoints = null;
     private Map<UUID, String> organisations = null;
     //private String additionalInfo = null; //transient info, such as progress in deleting data
     private String notes = null;
@@ -31,20 +27,14 @@ public final class JsonService {
     public JsonService() {
     }
 
-    public JsonService(Service service) throws IOException {
+    public JsonService(Service service) throws Exception {
         this.uuid = service.getId();
         this.localIdentifier = service.getLocalId();
         this.name = service.getName();
         this.organisations = service.getOrganisations();
         this.publisherConfigName = service.getPublisherConfigName();
         //this.additionalInfo = additionalInfo;
-
-        String endpointJson = service.getEndpoints();
-        if (endpointJson != null && !endpointJson.isEmpty()) {
-            this.endpoints = ObjectMapperPool.getInstance().readValue(endpointJson, new TypeReference<List<JsonServiceInterfaceEndpoint>>(){});
-        } else {
-            this.endpoints = new ArrayList<>();
-        }
+        this.endpoints = service.getEndpointsList();
 
         this.notes = service.getNotes();
         this.postcode = service.getPostcode();
@@ -90,11 +80,11 @@ public final class JsonService {
         this.name = name;
     }
 
-    public List<JsonServiceInterfaceEndpoint> getEndpoints() {
+    public List<ServiceInterfaceEndpoint> getEndpoints() {
         return endpoints;
     }
 
-    public void setEndpoints(List<JsonServiceInterfaceEndpoint> endpoints) {
+    public void setEndpoints(List<ServiceInterfaceEndpoint> endpoints) {
         this.endpoints = endpoints;
     }
 

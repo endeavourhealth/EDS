@@ -1,7 +1,6 @@
 package org.endeavourhealth.queuereader;
 
 import OpenPseudonymiser.Crypto;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -57,7 +56,7 @@ import org.endeavourhealth.core.database.rdbms.enterprise.EnterpriseConnector;
 import org.endeavourhealth.core.exceptions.TransformException;
 import org.endeavourhealth.core.fhirStorage.FhirSerializationHelper;
 import org.endeavourhealth.core.fhirStorage.FhirStorageService;
-import org.endeavourhealth.core.fhirStorage.JsonServiceInterfaceEndpoint;
+import org.endeavourhealth.core.fhirStorage.ServiceInterfaceEndpoint;
 import org.endeavourhealth.core.messaging.pipeline.components.MessageTransformOutbound;
 import org.endeavourhealth.core.messaging.pipeline.components.OpenEnvelope;
 import org.endeavourhealth.core.messaging.pipeline.components.PostMessageToExchange;
@@ -8951,9 +8950,8 @@ create table uprn_pseudo_map (
 									UUID subscriberServiceId = UUID.fromString(serviceContract.getService().getUuid());
 									UUID subscriberTechnicalInterfaceId = UUID.fromString(serviceContract.getTechnicalInterface().getUuid());
 									Service subscriberService = serviceRepository.getById(subscriberServiceId);
-									List<JsonServiceInterfaceEndpoint> serviceEndpoints = ObjectMapperPool.getInstance().readValue(subscriberService.getEndpoints(), new TypeReference<List<JsonServiceInterfaceEndpoint>>() {
-									});
-									for (JsonServiceInterfaceEndpoint serviceEndpoint : serviceEndpoints) {
+									List<ServiceInterfaceEndpoint> serviceEndpoints = subscriberService.getEndpointsList();
+									for (ServiceInterfaceEndpoint serviceEndpoint : serviceEndpoints) {
 										if (serviceEndpoint.getTechnicalInterfaceUuid().equals(subscriberTechnicalInterfaceId)) {
 											String protocolSubscriberConfigName = serviceEndpoint.getEndpoint();
 											if (protocolSubscriberConfigName.equals(subscriberConfigName)) {
@@ -14734,11 +14732,10 @@ create table uprn_pseudo_map (
 
 		List<UUID> ret = new ArrayList<>();
 
-		List<JsonServiceInterfaceEndpoint> endpoints = null;
+		List<ServiceInterfaceEndpoint> endpoints = null;
 		try {
-			endpoints = ObjectMapperPool.getInstance().readValue(service.getEndpoints(), new TypeReference<List<JsonServiceInterfaceEndpoint>>() {
-			});
-			for (JsonServiceInterfaceEndpoint endpoint : endpoints) {
+			endpoints = service.getEndpointsList();
+			for (ServiceInterfaceEndpoint endpoint : endpoints) {
 				UUID endpointSystemId = endpoint.getSystemUuid();
 				ret.add(endpointSystemId);
 			}

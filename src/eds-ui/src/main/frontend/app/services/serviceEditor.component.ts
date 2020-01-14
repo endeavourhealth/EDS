@@ -101,10 +101,13 @@ export class ServiceEditComponent {
 		this.$window.go(this.transition.from());
 	}
 
-	private addEndpoint() {
-		var newEndpoint = {
-			endpoint : "http://"
-		} as Endpoint;
+	private addEndpoint(publisher: boolean) {
+		var newEndpoint = {} as Endpoint;
+		if (publisher) {
+			newEndpoint.endpoint = 'Publisher_Normal';
+		} else {
+			newEndpoint.endpoint = '';
+		}
 		this.service.endpoints.push(newEndpoint);
 		this.selectedEndpoint = newEndpoint;
 	}
@@ -147,6 +150,22 @@ export class ServiceEditComponent {
 			return ti[0];
 		else
 			return null;
+	}
+
+	private getInterfaceTypeLetter(o: Endpoint): string {
+		var vm = this;
+
+		if (!o) {
+			return null;
+		} else if (vm.isPublisher(o)) {
+			return 'Publisher';
+		} else {
+			return 'Subscriber';
+		}
+	}
+
+	private isPublisher(o: Endpoint): boolean {
+		return o.endpoint.startsWith('Publisher_');
 	}
 
 	private editOrganisations() {

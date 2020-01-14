@@ -36,7 +36,7 @@ CREATE TABLE enterprise_id_map
 CREATE UNIQUE INDEX uix_enterprise_id_map_auto_increment
 ON enterprise_id_map (enterprise_id);
 
-ALTER TABLE enterprise_id_map MODIFY COLUMN enterprise_id INT auto_increment;
+ALTER TABLE enterprise_id_map MODIFY COLUMN enterprise_id bigint auto_increment;
 
 
 
@@ -94,7 +94,7 @@ CREATE TABLE enterprise_person_id_map
 CREATE UNIQUE INDEX uix_enterprise_person_id_map_auto_increment
 ON enterprise_person_id_map (enterprise_person_id);
 
-ALTER TABLE enterprise_person_id_map MODIFY COLUMN enterprise_person_id INT auto_increment;
+ALTER TABLE enterprise_person_id_map MODIFY COLUMN enterprise_person_id bigint auto_increment;
 
 
 CREATE TABLE enterprise_person_update_history
@@ -264,7 +264,7 @@ CREATE TABLE subscriber_id_map
 CREATE UNIQUE INDEX uix_subscriber_id_map_auto_increment
 ON subscriber_id_map (subscriber_id);
 
-ALTER TABLE subscriber_id_map MODIFY COLUMN subscriber_id INT auto_increment;
+ALTER TABLE subscriber_id_map MODIFY COLUMN subscriber_id bigint auto_increment;
 
 
 

@@ -2,12 +2,10 @@ package org.endeavourhealth.messagingapi.endpoints;
 
 import com.codahale.metrics.annotation.ResponseMetered;
 import com.codahale.metrics.annotation.Timed;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.base.Strings;
 import io.swagger.annotations.ApiParam;
 import org.apache.http.HttpStatus;
-import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.common.security.SecurityUtils;
 import org.endeavourhealth.common.utility.ExpiringCache;
@@ -22,7 +20,7 @@ import org.endeavourhealth.core.database.dal.eds.PatientLinkDalI;
 import org.endeavourhealth.core.database.dal.eds.PatientSearchDalI;
 import org.endeavourhealth.core.database.dal.subscriberTransform.PseudoIdDalI;
 import org.endeavourhealth.core.fhirStorage.FhirSerializationHelper;
-import org.endeavourhealth.core.fhirStorage.JsonServiceInterfaceEndpoint;
+import org.endeavourhealth.core.fhirStorage.ServiceInterfaceEndpoint;
 import org.endeavourhealth.core.messaging.pipeline.PipelineException;
 import org.endeavourhealth.core.xml.QueryDocument.*;
 import org.hl7.fhir.instance.model.*;
@@ -216,8 +214,8 @@ public class SubscriberApiEndpoint {
 
     private String getEnterpriseEndpoint(org.endeavourhealth.core.database.dal.admin.models.Service service, UUID systemId) throws Exception {
 
-        List<JsonServiceInterfaceEndpoint> serviceEndpoints = ObjectMapperPool.getInstance().readValue(service.getEndpoints(), new TypeReference<List<JsonServiceInterfaceEndpoint>>() {});
-        for (JsonServiceInterfaceEndpoint serviceEndpoint: serviceEndpoints) {
+        List<ServiceInterfaceEndpoint> serviceEndpoints = service.getEndpointsList();
+        for (ServiceInterfaceEndpoint serviceEndpoint: serviceEndpoints) {
             if (serviceEndpoint.getSystemUuid().equals(systemId)) {
                 return serviceEndpoint.getEndpoint();
             }

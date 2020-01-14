@@ -7,10 +7,13 @@ import com.rabbitmq.client.Connection;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.core.configuration.PostMessageToExchangeConfig;
 import org.endeavourhealth.core.database.dal.DalProvider;
+import org.endeavourhealth.core.database.dal.admin.ServiceDalI;
+import org.endeavourhealth.core.database.dal.admin.models.Service;
 import org.endeavourhealth.core.database.dal.audit.QueuedMessageDalI;
 import org.endeavourhealth.core.database.dal.audit.models.Exchange;
 import org.endeavourhealth.core.database.dal.audit.models.HeaderKeys;
 import org.endeavourhealth.core.database.dal.audit.models.QueuedMessageType;
+import org.endeavourhealth.core.fhirStorage.ServiceInterfaceEndpoint;
 import org.endeavourhealth.core.messaging.pipeline.PipelineComponent;
 import org.endeavourhealth.core.messaging.pipeline.PipelineException;
 import org.endeavourhealth.core.queueing.ConnectionManager;
@@ -73,7 +76,6 @@ public class PostMessageToExchange extends PipelineComponent {
 			}
 			headers.put(key, exchange.getHeader(key));
 		}
-
 
 		AMQP.BasicProperties properties = new AMQP.BasicProperties()
 				.builder()
@@ -151,6 +153,31 @@ public class PostMessageToExchange extends PipelineComponent {
 		return true;
 	}
 
+	/**
+	 * works out if the service and system have been set into "bulk" mode which is factored in to
+	 * the routing, allowing us to route exchanges for services differently to how they otherwise would be
+     */
+	private static boolean isBulkMode(Exchange exchange) throws Exception {
+
+		UUID serviceId = exchange.getHeaderAsUuid(HeaderKeys.SenderServiceUuid);
+		UUID systemId = exchange.getHeaderAsUuid(HeaderKeys.SenderSystemUuid);
+
+		ServiceDalI serviceDal = DalProvider.factoryServiceDal();
+		Service service = serviceDal.getById(serviceId);
+		for (ServiceInterfaceEndpoint serviceInterface: service.getEndpointsList()) {
+			if (serviceInterface.getSystemUuid().equals(systemId)) {
+
+				String publisherStatus = serviceInterface.getEndpoint();
+				if (publisherStatus != null
+						&& publisherStatus.equals(ServiceInterfaceEndpoint.STATUS_BULK_PROCESSING)) {
+					return true;
+				}
+			}
+		}
+
+		return false;
+	}
+
 	private void closeChannel(Channel channel) {
 		if (channel != null)
 			try {
@@ -220,8 +247,19 @@ public class PostMessageToExchange extends PipelineComponent {
 
 	public static String getRoutingKey(Exchange exchange, PostMessageToExchangeConfig config) throws PipelineException {
 
-		//get the value we're routing on, which will be one or more headers from the exchange
 		List<String> routingValues = new ArrayList<>();
+
+		//if the service/system has been set into bulk mode, then factor this into the routing key
+		try {
+			boolean bulkMode = isBulkMode(exchange);
+			if (bulkMode) {
+				routingValues.add("BULK");
+			}
+		} catch (Exception ex) {
+			throw new PipelineException("Failed to determine if in bulk mode", ex);
+		}
+
+		//get the value we're routing on, which will be one or more headers from the exchange
 		List<String> routingHeaders = config.getRoutingHeader();
 		for (String routingHeader: routingHeaders) {
 			String routingValue = exchange.getHeader(routingHeader);

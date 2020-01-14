@@ -1,7 +1,6 @@
 package org.endeavourhealth.core.queueing;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.base.Strings;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.common.config.ConfigManager;
@@ -21,7 +20,7 @@ import org.endeavourhealth.core.database.dal.audit.models.HeaderKeys;
 import org.endeavourhealth.core.database.dal.eds.PatientLinkDalI;
 import org.endeavourhealth.core.database.dal.eds.PatientSearchDalI;
 import org.endeavourhealth.core.database.dal.eds.models.PatientSearch;
-import org.endeavourhealth.core.fhirStorage.JsonServiceInterfaceEndpoint;
+import org.endeavourhealth.core.fhirStorage.ServiceInterfaceEndpoint;
 import org.endeavourhealth.core.messaging.pipeline.components.DetermineRelevantProtocolIds;
 import org.endeavourhealth.core.messaging.pipeline.components.PostMessageToExchange;
 import org.endeavourhealth.core.xml.QueryDocument.*;
@@ -561,11 +560,10 @@ public class QueueHelper {
 
         List<UUID> ret = new ArrayList<>();
 
-        List<JsonServiceInterfaceEndpoint> endpoints = null;
+        List<ServiceInterfaceEndpoint> endpoints = null;
         try {
-            endpoints = ObjectMapperPool.getInstance().readValue(service.getEndpoints(), new TypeReference<List<JsonServiceInterfaceEndpoint>>() {
-            });
-            for (JsonServiceInterfaceEndpoint endpoint : endpoints) {
+            endpoints = service.getEndpointsList();
+            for (ServiceInterfaceEndpoint endpoint : endpoints) {
                 UUID endpointSystemId = endpoint.getSystemUuid();
                 ret.add(endpointSystemId);
             }

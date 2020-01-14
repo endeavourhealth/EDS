@@ -1,7 +1,6 @@
 package org.endeavourhealth.core.messaging.pipeline.components;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.base.Strings;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
@@ -19,7 +18,7 @@ import org.endeavourhealth.core.database.dal.ehr.ResourceDalI;
 import org.endeavourhealth.core.database.dal.ehr.models.ResourceWrapper;
 import org.endeavourhealth.core.database.dal.subscriberTransform.ExchangeBatchExtraResourceDalI;
 import org.endeavourhealth.core.fhirStorage.FhirResourceHelper;
-import org.endeavourhealth.core.fhirStorage.JsonServiceInterfaceEndpoint;
+import org.endeavourhealth.core.fhirStorage.ServiceInterfaceEndpoint;
 import org.endeavourhealth.core.messaging.pipeline.PipelineComponent;
 import org.endeavourhealth.core.messaging.pipeline.PipelineException;
 import org.endeavourhealth.core.messaging.pipeline.SubscriberBatch;
@@ -339,9 +338,8 @@ public class MessageTransformOutbound extends PipelineComponent {
                 ServiceDalI serviceRepository = DalProvider.factoryServiceDal();
 
                 Service service = serviceRepository.getById(serviceId);
-                List<JsonServiceInterfaceEndpoint> serviceEndpoints = ObjectMapperPool.getInstance().readValue(service.getEndpoints(), new TypeReference<List<JsonServiceInterfaceEndpoint>>() {
-                });
-                for (JsonServiceInterfaceEndpoint serviceEndpoint : serviceEndpoints) {
+                List<ServiceInterfaceEndpoint> serviceEndpoints = service.getEndpointsList();
+                for (ServiceInterfaceEndpoint serviceEndpoint : serviceEndpoints) {
                     if (serviceEndpoint.getTechnicalInterfaceUuid().equals(technicalInterfaceId)) {
                         endpoint = serviceEndpoint.getEndpoint();
 
