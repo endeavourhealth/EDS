@@ -2,15 +2,12 @@ import {Component} from "@angular/core";
 import {NgbModal} from "@ng-bootstrap/ng-bootstrap";
 import {StateService, Transition} from "ui-router-ng2";
 import {Service} from "./models/Service";
-import {Organisation} from "../organisations/models/Organisation";
 import {System} from "../system/models/System";
 import {TechnicalInterface} from "../system/models/TechnicalInterface";
 import {Endpoint} from "./models/Endpoint";
 import {ServiceService} from "./service.service";
-import {OrganisationPickerDialog} from "../organisations/organisationPicker.dialog";
 import {AdminService, LoggerService, MessageBoxDialog} from "eds-common-js";
 import {SystemService} from "../system/system.service";
-import {OrganisationService} from "../organisations/organisation.service";
 import {EdsLibraryItem} from "../edsLibrary/models/EdsLibraryItem";
 
 @Component({
@@ -19,7 +16,6 @@ import {EdsLibraryItem} from "../edsLibrary/models/EdsLibraryItem";
 export class ServiceEditComponent {
 
 	service : Service = <Service>{};
-	organisations : Organisation[];
 	systems : System[];
 	technicalInterfaces : TechnicalInterface[];
 	protocols: EdsLibraryItem[];
@@ -33,7 +29,6 @@ export class ServiceEditComponent {
 							private adminService : AdminService,
 							private serviceService : ServiceService,
 							private systemService : SystemService,
-							private organisationService : OrganisationService,
 							private transition : Transition) {
 
 		this.loadSystems();
@@ -65,7 +60,6 @@ export class ServiceEditComponent {
 			.subscribe(
 				(result) => {
 					vm.service = result;
-					vm.getServiceOrganisations();
 					vm.getServiceProtocols();
 				},
 				(error) => vm.log.error('Error loading', error, 'Error')
@@ -74,13 +68,6 @@ export class ServiceEditComponent {
 
 	save(close : boolean) {
 		var vm = this;
-
-		// Populate service organisations before save
-		vm.service.organisations = {};
-		for (var idx in this.organisations) {
-			var organisation: Organisation = this.organisations[idx];
-			this.service.organisations[organisation.uuid] = organisation.name;
-		}
 
 		vm.serviceService.save(vm.service)
 			.subscribe(
@@ -119,14 +106,6 @@ export class ServiceEditComponent {
 		}
 	}
 
-	private getServiceOrganisations() {
-		var vm = this;
-		vm.serviceService.getServiceOrganisations(vm.service.uuid)
-			.subscribe(
-				(result) => vm.organisations = result,
-				(error) => vm.log.error('Failed to load service organisations', error, 'Load service organisations')
-			);
-	}
 
 	private getSystem(systemUuid : string) : System {
 		if (!systemUuid || !this.systems)
@@ -168,83 +147,6 @@ export class ServiceEditComponent {
 		return o.endpoint.startsWith('Publisher_');
 	}
 
-	private editOrganisations() {
-		var vm = this;
-		OrganisationPickerDialog.open(vm.$modal, vm.organisations)
-			.result.then(function (result : Organisation[]) {
-			vm.organisations = result;
-		});
-	}
-
-	/**
-	 * attempts to automatically match to an existing organisation or creates one otherwise
-	 */
-	private autoSetOrganisation() {
-
-		//console.log('auto org');
-		//ensure got an ODS code
-		var vm = this;
-
-		if (vm.organisations
-			&& vm.organisations.length > 0) {
-			vm.log.error('Organisation already set');
-			return;
-		}
-
-		var odsCode = vm.service.localIdentifier;
-		if (!odsCode) {
-			vm.log.error('Need national ID');
-			return;
-		}
-		var name = vm.service.name;
-		if (!name) {
-			vm.log.error('Need name');
-			return;
-		}
-
-		//search for org based on ODS code
-		//console.log('doing search for ' + odsCode);
-		vm.organisationService.search(odsCode)
-			.subscribe(
-				(result) => {
-					if (result.length == 0) {
-						//create new one
-						//console.log('no match found so will create');
-						vm.createOrganisation(odsCode, name);
-
-					} else if (result.length == 1) {
-						//use this one
-						//console.log('matched to one org');
-						vm.organisations = [];
-						vm.organisations.push(result[0]);
-
-					} else {
-						vm.log.error('More than one organisation found for ' + odsCode);
-					}
-				},
-				(error) => vm.log.error(error)
-			);
-	}
-
-	private createOrganisation(odsCode: string, name: string) {
-
-		var vm = this;
-
-		var organisation = <Organisation>{};
-		organisation.name = name;
-		organisation.nationalId = odsCode;
-		organisation.services = {};
-
-		//console.log('saving new org');
-		vm.organisationService.saveOrganisation(organisation)
-			.subscribe(saved => {
-					//console.log('saved OK so will add to orgs with UUID ' + saved.uuid);
-					vm.organisations = [];
-					vm.organisations.push(saved);
-				},
-				error => vm.log.error('Error saving', error, 'Error')
-			);
-	}
 
 	loadSystems() {
 		var vm = this;

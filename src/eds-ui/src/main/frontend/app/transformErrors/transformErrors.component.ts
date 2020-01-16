@@ -6,6 +6,7 @@ import {Component} from "@angular/core";
 import {ExchangeAuditService} from "../exchangeAudit/exchangeAudit.service";
 import {Subscription} from "rxjs/Subscription";
 import {ServiceService} from "../services/service.service";
+import {Service} from "../services/models/Service";
 
 @Component({
 	template : require('./transformErrors.html')
@@ -310,4 +311,9 @@ export class TransformErrorsComponent {
 			}
 		)
 	}
+
+	edit(item : Service) {
+		this.$state.go('app.serviceEdit', {itemUuid: item.uuid, itemAction: 'edit'});
+	}
+
 }

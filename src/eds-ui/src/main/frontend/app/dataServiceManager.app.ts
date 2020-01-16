@@ -6,7 +6,6 @@ import {NgModule} from "@angular/core";
 // Modules
 import {DashboardModule} from "./dashboard/dashboard.module";
 import {EdsLibraryModule} from "./edsLibrary/library.module";
-import {OrganisationsModule} from "./organisations/organisations.module";
 import {ServicesModule} from "./services/services.module";
 import {QueueingModule} from "./queueing/queueing.module";
 import {LoggingModule} from "./logging/logging.module";
@@ -24,8 +23,6 @@ import {DataSetModule} from "./dataSet/dataSet.module";
 import {RemoteFilingModule} from "./remoteFiling/remoteFiling.module";
 // State components
 import {DashboardComponent} from "./dashboard/dashboard.component";
-import {OrganisationListComponent} from "./organisations/organisationList.component";
-import {OrganisationEditComponent} from "./organisations/organisationEditor.component";
 import {ServiceListComponent} from "./services/serviceList.component";
 import {ServiceEditComponent} from "./services/serviceEditor.component";
 import {UserListComponent} from "./users/userList.component";
@@ -63,7 +60,6 @@ import {QueueReaderStatusComponent} from "./queueReaderStatus/queueReaderStatus.
 			LoggerModule,
 			DashboardModule,
 			EdsLibraryModule,
-			OrganisationsModule,
 			ServicesModule,
 			QueueingModule,
 			LoggingModule,
@@ -87,8 +83,6 @@ import {QueueReaderStatusComponent} from "./queueReaderStatus/queueReaderStatus.
 		],
 		states: [
 			{name: 'app.dashboard', url: '/dashboard', component: DashboardComponent},
-			{name: 'app.organisationList', url: '/organisationList', component: OrganisationListComponent},
-			{name: 'app.organisationEdit',url: '/organisationEdit/:itemAction/:itemUuid',component: OrganisationEditComponent},
 			{name: 'app.serviceList', url: '/serviceList', component: ServiceListComponent},
 			{name: 'app.serviceEdit', url: '/serviceEdit/:itemAction/:itemUuid', component: ServiceEditComponent},
 			{name: 'app.admin', url: '/admin', component: UserListComponent},

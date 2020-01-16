@@ -17,10 +17,13 @@ public class JsonExchange {
     private Map<String, String> headers;
     private List<String> bodyLines;
     private boolean isInError; //note that jackson ends up binding this to a JSON property called just inError
-    private String exchangeSize;
+    private String exchangeSizeDesc;
+    private Long exchangeSizeBytes;
     private Map<String, String> queueRoutingKeys;
 
-    public JsonExchange(UUID exchangeId, UUID serviceId, UUID systemId, Date timestamp, Map<String, String> headers, List<String> bodyLines, boolean isInError, String exchangeSize, Map<String, String> queueRoutingKeys) {
+    public JsonExchange(UUID exchangeId, UUID serviceId, UUID systemId, Date timestamp, Map<String, String> headers,
+                        List<String> bodyLines, boolean isInError, Long exchangeSizeBytes, String exchangeSizeDesc,
+                        Map<String, String> queueRoutingKeys) {
         this.exchangeId = exchangeId;
         this.serviceId = serviceId;
         this.systemId = systemId;
@@ -28,7 +31,8 @@ public class JsonExchange {
         this.headers = headers;
         this.bodyLines = bodyLines;
         this.isInError = isInError;
-        this.exchangeSize = exchangeSize;
+        this.exchangeSizeDesc = exchangeSizeDesc;
+        this.exchangeSizeBytes = exchangeSizeBytes;
         this.queueRoutingKeys = queueRoutingKeys;
     }
 
@@ -88,12 +92,20 @@ public class JsonExchange {
         isInError = inError;
     }
 
-    public String getExchangeSize() {
-        return exchangeSize;
+    public String getExchangeSizeDesc() {
+        return exchangeSizeDesc;
     }
 
-    public void setExchangeSize(String exchangeSize) {
-        this.exchangeSize = exchangeSize;
+    public void setExchangeSizeDesc(String exchangeSizeDesc) {
+        this.exchangeSizeDesc = exchangeSizeDesc;
+    }
+
+    public Long getExchangeSizeBytes() {
+        return exchangeSizeBytes;
+    }
+
+    public void setExchangeSizeBytes(Long exchangeSizeBytes) {
+        this.exchangeSizeBytes = exchangeSizeBytes;
     }
 
     public Map<String, String> getQueueRoutingKeys() {

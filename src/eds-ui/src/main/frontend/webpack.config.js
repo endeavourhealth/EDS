@@ -22,7 +22,6 @@ module.exports = {
 		'dashboard' : './app/dashboard/dashboard.module.ts',
 		'exchangeAudit' : './app/exchangeAudit/exchangeAudit.module.ts',
 		'logging' : './app/logging/logging.module.ts',
-		'organisations' : './app/organisations/organisations.module.ts',
 		'queueing' : './app/queueing/queueing.module.ts',
 		'services' : './app/services/services.module.ts',
 		'stats' : './app/stats/stats.module.ts',

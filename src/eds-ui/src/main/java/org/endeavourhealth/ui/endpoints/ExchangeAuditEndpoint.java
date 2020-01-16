@@ -211,10 +211,14 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
             Map<String, String> headers = exchange.getHeaders();
             List<String> bodyLines = getExchangeBodyLines(exchange);
             boolean inError = exchangeIdsInError.contains(exchangeId);
-            String exchangeSize = getExchangeSize(exchange);
+            Long exchangeSizeBytes = getExchangeSize(exchange);
+            String exchangeSizeDesc = null;
+            if (exchangeSizeBytes != null) {
+                exchangeSizeDesc = FileUtils.byteCountToDisplaySize(exchangeSizeBytes.longValue());
+            }
             Map<String, String> routingKeys = getRoutingKeys(exchange);
 
-            JsonExchange jsonExchange = new JsonExchange(exchangeId, serviceUuid, systemUuid, timestamp, headers, bodyLines, inError, exchangeSize, routingKeys);
+            JsonExchange jsonExchange = new JsonExchange(exchangeId, serviceUuid, systemUuid, timestamp, headers, bodyLines, inError, exchangeSizeBytes, exchangeSizeDesc, routingKeys);
             ret.add(jsonExchange);
         }
 
@@ -243,7 +247,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
     /**
      * returns the size of the exchange data, in a human readable format
      */
-    private String getExchangeSize(Exchange exchange) {
+    private Long getExchangeSize(Exchange exchange) {
 
         String body = exchange.getBody();
 
@@ -260,7 +264,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
                 extractSize += file.getSize().longValue();
             }
 
-            return FileUtils.byteCountToDisplaySize(extractSize);
+            return new Long(extractSize);
 
         } catch (Throwable t) {
             //if the body can't be parsed into payload files, then it's most likely because it's either

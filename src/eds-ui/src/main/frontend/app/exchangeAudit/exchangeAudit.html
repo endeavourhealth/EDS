@@ -14,7 +14,6 @@
 
         <div class="container-fluid">
 
-
             <div class="row">
                 <div class="col-md-4">
 
@@ -94,14 +93,16 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr class="hover-box show-child-on-hover"
-                                    *ngFor="let exchange of exchanges"
-                                    (click)="selectExchange(exchange);"
-                                    [ngClass]="{'selection': exchange == selectedExchange}">
+                                <tr class="hover-box show-child-on-hover" *ngFor="let exchange of exchanges" (click)="selectExchange(exchange);" [ngClass]="{'selection': exchange == selectedExchange}">
 
                                     <td>{{exchange.timestamp | date:'dd-MMM-yyyy HH:mm:ss'}}</td>
                                     <td>{{exchange.headers['DataDate'] | date:'dd-MMM-yyyy HH:mm:ss'}}</td>
-                                    <td>{{exchange.exchangeSize}}</td>
+                                    <td>
+                                        <span [ngStyle]="getCellColour(exchange)">
+                                            {{exchange.exchangeSizeDesc}}
+                                        </span>
+
+                                    </td>
                                     <td>
                                         <div *ngIf="exchange.inError">
                                             Y

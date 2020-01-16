@@ -1,7 +1,6 @@
 import {Injectable} from "@angular/core";
 import {Observable} from "rxjs";
 import {Service} from "./models/Service";
-import {Organisation} from "../organisations/models/Organisation";
 import {System} from "../system/models/System";
 import {BaseHttp2Service} from "eds-common-js";
 import {Http, URLSearchParams} from "@angular/http";
@@ -13,6 +12,7 @@ export class ServiceService extends BaseHttp2Service {
 	//common filter options used by the Service list and Transform Errors page
 	showFilters: boolean;
 	serviceNameFilter: string;
+	serviceNameSearchIncludeNotes: boolean;
 	servicePublisherConfigFilter: string;
 	//serviceHasErrorsFilter: boolean;
 	serviceStatusFilter: string;
@@ -22,6 +22,7 @@ export class ServiceService extends BaseHttp2Service {
 
 	constructor(http : Http) {
 		super (http);
+		this.serviceNameSearchIncludeNotes = true;
 	}
 
 	getAll(): Observable<Service[]> {
@@ -54,12 +55,6 @@ export class ServiceService extends BaseHttp2Service {
 		let params = new URLSearchParams();
 		params.set('searchData',searchData);
 		return this.httpGet('api/service', { search : params });
-	}
-
-	getServiceOrganisations(uuid : string) : Observable<Organisation[]> {
-		let params = new URLSearchParams();
-		params.set('uuid', uuid);
-		return this.httpGet('api/service/organisations', { search : params });
 	}
 
 	getSystemsForService(serviceId : string) : Observable<System[]> {
@@ -196,12 +191,14 @@ export class ServiceService extends BaseHttp2Service {
 							for (var j=0; j<service.systemStatuses.length; j++) {
 								var systemStatus = service.systemStatuses[j];
 
-								if (vm.serviceStatusFilter == 'Error' && systemStatus.processingInError) {
+								if (vm.serviceStatusFilter == 'Error'
+									&& systemStatus.processingInError) {
 									include = true;
 									break;
 								}
 
 								if (vm.serviceStatusFilter == 'Behind'
+									&& systemStatus.lastDataReceived //only count if we've received some data
 									&& !systemStatus.processingInError //if looking for behind, don't include any in error
 									&& !systemStatus.processingUpToDate) {
 									include = true;
@@ -215,6 +212,13 @@ export class ServiceService extends BaseHttp2Service {
 									break;
 								}
 
+								if (vm.serviceStatusFilter == 'NoData'
+									&& !systemStatus.lastDataReceived) {
+									include = true;
+									break;
+								}
+
+
 							}
 						}
 					}
@@ -223,21 +227,7 @@ export class ServiceService extends BaseHttp2Service {
 						continue;
 					}
 				}
-				/*if (vm.serviceHasErrorsFilter) {
 
-				 var anyError = false;
-				 if (service.systemStatuses) {
-				 for (var j=0; j<service.systemStatuses.length; j++) {
-				 var systemStatus = service.systemStatuses[j];
-				 if (systemStatus.processingInError) {
-				 anyError = true;
-				 }
-				 }
-				 }
-				 if (!anyError) {
-				 continue;
-				 }
-				 }*/
 
 				if (minLastData || maxLastData) {
 					var include = false;
@@ -268,7 +258,13 @@ export class ServiceService extends BaseHttp2Service {
 				if (validNameFilterRegex) {
 					var name = service.name;
 					var id = service.localIdentifier;
-					var notes = service.notes;
+
+					//only include notes if the checkbox is ticked
+					var notes;
+					if (vm.serviceNameSearchIncludeNotes) {
+						notes = service.notes;
+					}
+
 					if ((!name || !name.toLowerCase().match(validNameFilterRegex))
 						&& (!id || !id.toLowerCase().match(validNameFilterRegex))
 						&& (!notes || !notes.toLowerCase().match(validNameFilterRegex))) {

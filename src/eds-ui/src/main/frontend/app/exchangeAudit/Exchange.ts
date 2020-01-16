@@ -7,6 +7,7 @@ export class Exchange {
     bodyLines: string[];
     inError: boolean;
     transformAudits: TransformErrorDetail[];
-    exchangeSize: string;
+    exchangeSizeDesc: string;
+    exchangeSizeBytes: number;
     queueRoutingKeys: {};
 }

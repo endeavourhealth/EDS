@@ -303,7 +303,7 @@ export class ServiceListComponent implements OnInit, OnDestroy{
 			ret += ServiceListComponent.getDateDiffDesc(lastDate, today);
 
 		} else {
-			ret += 'N/A';
+			ret += 'n/a';
 		}
 
 		//cache it in the status so we don't need to work it out again

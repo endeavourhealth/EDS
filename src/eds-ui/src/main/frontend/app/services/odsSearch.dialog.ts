@@ -42,6 +42,9 @@ export class OdsSearchDialog  {
             return;
         }
 
+        //remove any whitespace
+        vm.odsCode = vm.odsCode.trim();
+
         vm.searching = true;
         vm.resultStr = 'searching...';
 

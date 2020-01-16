@@ -2,6 +2,10 @@
 	<div class="container-fluid">
 		<div class="module-heading">
 			Services
+			<span *ngIf="filteredServices">
+				({{filteredServices.length}} shown of {{services.length}})
+			</span>
+
 			<div class="pull-right">
 				<button class="btn btn-sm btn-default" (click)="odsSearch()" title="Ods Search">ODS Search</button>
 				<button class="btn btn-sm btn-default" (click)="toggleFilters()" title="Toggle Filters">Toggle Filters</button>
@@ -16,29 +20,37 @@
 					<form class="form-horizontal" role="form">
 						<div class="form-group">
 
-							<label for="inputType" class="col-sm-1 control-label">Name/ID</label>
 							<div class="col-sm-2">
+
+								<label for="inputType" class="control-label">Name/ID</label>
+
+								<div class="pull-right">
+									<label for="serviceNameSearchIncludeNotes" class="control-label">Match on notes</label>
+									<input type="checkbox" id="serviceNameSearchIncludeNotes" [(ngModel)]="serviceService.serviceNameSearchIncludeNotes" name="serviceNameSearchIncludeNotes" (ngModelChange)="applyFiltering()">
+								</div>
+
 								<input type="text" class="form-control" id="inputType" placeholder="Regex" [(ngModel)]="serviceService.serviceNameFilter" name="serviceNameFilter" (ngModelChange)="applyFiltering()">
+
 							</div>
 
-							<label for="inputType2" class="col-sm-1 control-label">Parent</label>
-							<div class="col-sm-1">
+							<div class="col-sm-2">
+								<label for="inputType2" class="control-label">Parent</label>
 								<select id="inputType2" class="form-control" [(ngModel)]="serviceService.serviceCcgCodeFilter" name="serviceCcgCodeFilter" (ngModelChange)="applyFiltering()">
 									<option value=""></option>
 									<option *ngFor="let ccgCode of allCcgCodes" value="{{ccgCode}}">{{ccgCode}} {{serviceService.getCcgName(ccgCode)}}</option>
 								</select>
 							</div>
 
-							<label for="inputType5" class="col-sm-1 control-label">Publisher Config</label>
 							<div class="col-sm-2">
+								<label for="inputType5" class="control-label">Publisher Config</label>
 								<select id="inputType5" class="form-control" [(ngModel)]="serviceService.servicePublisherConfigFilter" name="servicePublisherConfigFilter" (ngModelChange)="applyFiltering()">
 									<option value=""></option>
 									<option *ngFor="let publisherConfigName of allPublisherConfigNames" value="{{publisherConfigName}}">{{publisherConfigName}}</option>
 								</select>
 							</div>
 
-							<label for="inputType4" class="col-sm-1 control-label">Last Data</label>
 							<div class="col-sm-1">
+								<label for="inputType4" class="control-label">Last Data</label>
 								<select id="inputType4" class="form-control" [(ngModel)]="serviceService.serviceLastDataFilter" name="lastDataFilter" (ngModelChange)="applyFiltering()">
 									<option value=""></option>
 									<option value="Today">Today</option>
@@ -51,13 +63,14 @@
 							</div>
 
 
-							<label for="inputType3" class="col-sm-1 control-label">Status</label>
 							<div class="col-sm-1">
+								<label for="inputType3" class="control-label">Status</label>
 								<select id="inputType3" class="form-control" [(ngModel)]="serviceService.serviceStatusFilter" name="serviceStatusFilter" (ngModelChange)="applyFiltering()">
 									<option value=""></option>
 									<option value="Error">Error</option>
 									<option value="Behind">Behind</option>
 									<option value="OK">OK</option>
+									<option value="NoData">No Data</option>
 									<option value="NoStatus">No Status</option>
 								</select>
 								<!--<input type="checkbox" class="form-control" id="inputType3" [(ngModel)]="serviceService.serviceHasErrorsFilter" name="serviceHasErrorsFilter" (ngModelChange)="applyFiltering()">-->
@@ -76,7 +89,7 @@
 								<thead>
 									<tr>
 										<th class="col-md-3">Name</th>
-										<th class="col-md-1">Local ID</th>
+										<th class="col-md-1">ID</th>
 										<th class="col-md-1">Parent</th>
 										<th class="col-md-1">Publisher Config</th>
 										<th class="col-md-2">Last Data</th>
@@ -137,12 +150,6 @@
 								</tbody>
 							</table>
 						</div>
-					</div>
-				</div>
-
-				<div class="row" *ngIf="filteredServices">
-					<div class="form-group col-md-12">
-						{{filteredServices.length}} services found
 					</div>
 				</div>
 

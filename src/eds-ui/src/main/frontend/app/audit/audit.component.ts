@@ -1,9 +1,7 @@
 import {Component} from "@angular/core";
 import {NgbModal} from "@ng-bootstrap/ng-bootstrap";
-import {OrganisationService} from "../organisations/organisation.service";
 import {AuditService} from "./audit.service";
 import {User} from "../users/models/User";
-import {Organisation} from "../organisations/models/Organisation";
 import {AuditEvent} from "./models/AuditEvent";
 import {AuditEventDialog} from "./auditEvent.dialog";
 import {LoggerService} from "eds-common-js";
@@ -15,13 +13,11 @@ export class AuditComponent {
 	module : string = "";
 	user : string = "";
 	month : Date;
-	organisation : string = "";
 	submodule : string = "";
 	action : string = "";
 
 	modules : string[];
 	users : User[];
-	organisations : Organisation[];
 	submodules : string[];
 	actions : string[];
 	auditEvents:AuditEvent[];
@@ -30,14 +26,12 @@ export class AuditComponent {
 	constructor(
 				protected auditService:AuditService,
 				protected log:LoggerService,
-				protected organisationService : OrganisationService,
 				protected $modal : NgbModal) {
 
 		this.month = new Date();
 		this.month.setDate(1);
 		this.loadModules();
 		this.loadUsers();
-		this.loadOrganisations();
 		this.loadActions();
 		this.refresh();
 	}
@@ -49,16 +43,6 @@ export class AuditComponent {
 			.subscribe(
 				(data) => vm.users = data,
 				(error) => vm.log.error("Error loading users", error, "Error")
-			);
-	}
-
-	loadOrganisations() {
-		var vm = this;
-		vm.organisations = null;
-		vm.organisationService.getOrganisations()
-			.subscribe(
-				(data) => vm.organisations = data,
-				(error) => vm.log.error("Error loading organisations", error, "Error")
 			);
 	}
 
@@ -108,7 +92,7 @@ export class AuditComponent {
 		var vm = this;
 		vm.auditEvents = null;
 
-		var organisationId: string = null;
+		/*var organisationId: string = null;
 		if (vm.organisation)
 			organisationId = vm.organisation;
 
@@ -116,7 +100,7 @@ export class AuditComponent {
 			.subscribe(
 				(data) => vm.auditEvents = data,
 				(error) => vm.log.error("Error loading audit events", error, "Error")
-			);
+			);*/
 	}
 
 	getFilteredEvents(vm : any) {

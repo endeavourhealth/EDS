@@ -14,7 +14,7 @@
 			<form>
 				<div class="row">
 					<div class="form-group col-md-12">
-						<label class="control-label">Local Identifier</label>
+						<label class="control-label">ODS Code / Local Identifier</label>
 						<input type="text" class="form-control" placeholder="Local Identifier" [(ngModel)]="service.localIdentifier" name="localIdentifier">
 					</div>
 				</div>
@@ -118,23 +118,6 @@
 								</div>
 
 							</div>
-						</div>
-					</div>
-				</div>
-
-				<div class="row">
-					<div class="form-group col-md-12">
-						<label class="control-label">Organisations</label>
-						<button type="button" class="btn btn-xs btn-success" (click)="editOrganisations()">Edit</button>
-						<button type="button" class="btn btn-xs btn-success" (click)="autoSetOrganisation()">Auto Create</button>
-						<div class="table scroll-box-60">
-							<table class="table table-striped table-condensed">
-								<tbody>
-									<tr *ngFor="let item of organisations">
-										<td>{{ item?.name }}</td>
-									</tr>
-								</tbody>
-							</table>
 						</div>
 					</div>
 				</div>

@@ -40,6 +40,9 @@ export class ExchangeAuditComponent {
 	postFilterFileTypesSelected: string;
 	postExchange: string;
 	postDeleteErrorState: boolean;
+	exchangeSizeColours: {}; //cached colours dynamically calculated for each exchange
+
+	minLog: number;
 
 	constructor(private $modal : NgbModal,
 				private $window : StateService,
@@ -78,6 +81,8 @@ export class ExchangeAuditComponent {
 		var vm = this;
 		var serviceId = vm.service.uuid;
 
+
+
 		this.exchangeAuditService.getProtocolsList(serviceId, true).subscribe(
 			(result) => {
 				vm.protocols = result;
@@ -93,7 +98,7 @@ export class ExchangeAuditComponent {
 		//make sure to clear this down, so it's clear we've got new content
 		vm.selectedExchange = null;
 
-		console.log('searchMode = ' + this.searchMode);
+		//console.log('searchMode = ' + this.searchMode);
 
 		if (vm.searchMode == 'Recent') {
 
@@ -237,8 +242,6 @@ export class ExchangeAuditComponent {
 			//console.log('No selected exchange');
 			return null;
 		}
-		//console.log('Got selected exchange');
-		//console.log('Body = ' + this.selectedExchange.bodyLines);
 
 		return this.selectedExchange.bodyLines;
 	}
@@ -407,5 +410,109 @@ export class ExchangeAuditComponent {
 		endDate.setTime(transformAudit.transformEnd);
 
 		return ServiceListComponent.getDateDiffDesc(startDate, endDate);
+	}
+
+	getCellColour(exchange: Exchange): any {
+		var vm = this;
+
+		if (!vm.exchangeSizeColours) {
+			vm.exchangeSizeColours = {};
+		}
+
+		var colour = vm.exchangeSizeColours[exchange.exchangeId];
+		if (!colour) {
+			var size = exchange.exchangeSizeBytes;
+			colour = vm.generateColourForSize(size);
+			//colour = '#FFFFFF';
+			vm.exchangeSizeColours[exchange.exchangeId] = colour;
+		}
+		return {'background-color': colour};
+	}
+
+	testCellColour(size: number): any {
+		var vm = this;
+		var colour = vm.generateColourForSize(size);
+		return {'background-color': colour};
+	}
+
+	private generateColourForSize(size: number): string {
+
+		var vm = this;
+
+		if (!size
+			|| size == 0) {
+			return '#FFFFFF';
+
+		} else {
+
+			//scale into MB so tiny extracts don't take up most of the colour range
+			size = size / (1024 * 1024);
+
+			//use a logarithmic scale to generate a number between 0 and 10
+			var log10 = Math.log10(size);
+
+			//adjust by the smallest possible value so it's all > 0
+			if (!vm.minLog) {
+				vm.minLog = Math.log10(1 / (1024 * 1024));
+			}
+			log10 += Math.abs(vm.minLog);
+
+			//if over a max value, just cap so it doesn't wrap around
+			var max = 10;
+			if (log10 > max) {
+				log10 = max;
+			}
+
+			//generate a HSB colour (red to blue) from that
+			var hue = ((max - log10) / max); //convert value into decimal between 0 and 1
+			hue *= 0.66; //convert into decomal between 0 and 0.66 to only span red to blue range of colour wheel
+			var saturation = 40 / 100;
+			var brightness = 1;
+
+			//convert HSB to RGB
+			return vm.HSVtoRGB(hue, saturation, brightness);
+		}
+	}
+
+	/**
+	 * converts HSB colour (all values between 0 and 1) to a RGB HTML string
+     */
+	private HSVtoRGB(h: number, s: number, v: number): string {
+		var r, g, b, i, f, p, q, t;
+
+		i = Math.floor(h * 6);
+		f = h * 6 - i;
+		p = v * (1 - s);
+		q = v * (1 - f * s);
+		t = v * (1 - (1 - f) * s);
+		switch (i % 6) {
+			case 0: r = v, g = t, b = p; break;
+			case 1: r = q, g = v, b = p; break;
+			case 2: r = p, g = v, b = t; break;
+			case 3: r = p, g = q, b = v; break;
+			case 4: r = t, g = p, b = v; break;
+			case 5: r = v, g = p, b = q; break;
+		}
+
+		//scale up to 0-255 range and convert to hex strings
+		var rStr = Math.round(r * 255).toString(16);
+		var gStr = Math.round(g * 255).toString(16);
+		var bStr = Math.round(b * 255).toString(16);
+
+		var ret = '#';
+		if (rStr.length == 1) {
+			ret += '0';
+		}
+		ret += rStr;
+		if (gStr.length == 1) {
+			ret += '0';
+		}
+		ret += gStr;
+		if (bStr.length == 1) {
+			ret += '0';
+		}
+		ret += bStr;
+
+		return ret;
 	}
 }

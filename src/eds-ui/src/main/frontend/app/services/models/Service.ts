@@ -7,8 +7,6 @@ export class Service {
 	publisherConfigName: string;
 	name: string;
 	endpoints: Endpoint[];
-	organisations:{ [key:string]:string; };
-	//additionalInfo: string;
 	notes: string;
 	postcode: string;
 	ccgCode: string;
