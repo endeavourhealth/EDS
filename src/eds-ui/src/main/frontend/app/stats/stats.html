@@ -1,6 +1,9 @@
 <div class="module">
 	<div class="module-heading">
 		Data Service Statistics
+
+		<button class="btn btn-sm btn-success pull-right" [disabled]="downloadingPatientCounts" (click)="downloadPatientCounts()" title="Download Patient Counts">Download Patient Counts&nbsp;<span class="fa fa-sm fa-refresh fa-refresh-animate" *ngIf="downloadingPatientCounts"></span></button>
+
 		<button class="btn btn-success btn-sm pull-right"
 				(click)="showGraphs()"
 				title="Display the statistical graphs">
@@ -11,6 +14,7 @@
 				title="Refresh these statistics">
 			<i class="fa fa-refresh"></i> Refresh Stats
 		</button>
+
 	</div>
 	<div class="module-body">
 		<div class="container-fluid">

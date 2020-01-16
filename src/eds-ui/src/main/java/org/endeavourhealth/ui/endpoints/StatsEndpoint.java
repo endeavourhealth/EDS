@@ -1,11 +1,14 @@
 package org.endeavourhealth.ui.endpoints;
 
 import com.codahale.metrics.annotation.Timed;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVPrinter;
 import org.endeavourhealth.common.security.SecurityUtils;
 import org.endeavourhealth.core.database.dal.DalProvider;
 import org.endeavourhealth.core.database.dal.audit.UserAuditDalI;
 import org.endeavourhealth.core.database.dal.audit.models.AuditAction;
 import org.endeavourhealth.core.database.dal.audit.models.AuditModule;
+import org.endeavourhealth.core.database.rdbms.ConnectionManager;
 import org.endeavourhealth.core.fhirStorage.statistics.PatientStatistics;
 import org.endeavourhealth.core.fhirStorage.statistics.ResourceStatistics;
 import org.endeavourhealth.core.fhirStorage.statistics.StorageStatistics;
@@ -19,6 +22,10 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
+import java.io.StringWriter;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -92,4 +99,65 @@ public final class StatsEndpoint extends AbstractEndpoint {
     }
 
 
+    @GET
+    @Produces(MediaType.TEXT_PLAIN)
+    @Timed(absolute = true, name="StatsEndpoint.downloadPatientCounts")
+    @Path("/downloadPatientCounts")
+    public Response downloadPatientCounts(@Context SecurityContext sc) throws Exception {
+        super.setLogbackMarkers(sc);
+
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load, "Download Patient Counts");
+
+        String s = getPatientCounts();
+
+        clearLogbackMarkers();
+
+        return Response
+                .ok(s, MediaType.TEXT_PLAIN_TYPE)
+                .build();
+    }
+
+    private static String getPatientCounts() throws Exception {
+
+        Connection connection = ConnectionManager.getEdsConnection();
+        PreparedStatement psPatient = null;
+        PreparedStatement psPerson = null;
+        try {
+
+            String query = "SELECT COUNT(1) FROM patient_search WHERE dt_deleted IS NULL";
+            psPatient = connection.prepareStatement(query);
+
+            ResultSet rs = psPatient.executeQuery();
+            rs.next();
+            long patientCount = rs.getLong(1);
+
+            query = "SELECT COUNT(DISTINCT nhs_number) FROM patient_search WHERE dt_deleted IS NULL";
+            psPerson = connection.prepareStatement(query);
+
+            rs = psPerson.executeQuery();
+            rs.next();
+            long personCount = rs.getLong(1);
+
+            CSVFormat format = CSVFormat.DEFAULT.withHeader("Patient_Count", "Person_Count");
+
+            StringWriter sw = new StringWriter();
+            CSVPrinter csv = new CSVPrinter(sw, format);
+
+            csv.printRecord(new Long(patientCount), new Long(personCount));
+
+            csv.flush();
+            csv.close();
+
+            return sw.toString();
+
+        } finally {
+            if (psPatient != null) {
+                psPatient.close();
+            }
+            if (psPerson != null) {
+                psPerson.close();
+            }
+            connection.close();
+        }
+    }
 }

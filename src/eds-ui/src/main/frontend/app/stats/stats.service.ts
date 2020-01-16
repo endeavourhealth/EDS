@@ -21,4 +21,8 @@ export class StatsService extends BaseHttp2Service {
 
 		return this.httpGet('api/stats/getStorageStatistics', { search : params });
 	}
+
+	downloadPatientCounts(): Observable<string> {
+		return this.httpGet('api/stats/downloadPatientCounts');
+	}
 }

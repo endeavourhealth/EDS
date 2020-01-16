@@ -19,9 +19,11 @@ export class StatsComponent {
 	filterDateFrom : Date;
 	filterDateTo : Date;
 
-	constructor(private $modal : NgbModal,
-				protected statsService:StatsService,
-				protected log : LoggerService,
+	downloadingPatientCounts: boolean;
+
+	constructor(private $modal: NgbModal,
+				protected statsService: StatsService,
+				protected logger: LoggerService,
 				protected serviceService : ServiceService) {
 
 		this.hidePatients = false;
@@ -55,7 +57,7 @@ export class StatsComponent {
 		vm.serviceService.getAll()
 			.subscribe(
 				(result) => vm.services = result,
-				(error) => vm.log.error('Failed to load services', error, 'Load services')
+				(error) => vm.logger.error('Failed to load services', error, 'Load services')
 			);
 	}
 
@@ -136,4 +138,35 @@ export class StatsComponent {
 		});
 	}
 
+
+	downloadPatientCounts() {
+		var vm = this;
+		vm.downloadingPatientCounts = true;
+
+		vm.statsService.downloadPatientCounts().subscribe(
+			(result) => {
+				const filename = 'PatientCounts.csv';
+				const blob = new Blob([result], { type: 'text/plain' });
+
+				//window['saveAs'](blob, filename);
+
+				let url = window.URL.createObjectURL(blob);
+				let a = document.createElement('a');
+				document.body.appendChild(a);
+				a.setAttribute('style', 'display: none');
+				a.href = url;
+				a.download = filename;
+				a.click();
+				window.URL.revokeObjectURL(url);
+				a.remove();
+
+				vm.downloadingPatientCounts = false;
+			},
+			(error) => {
+				vm.logger.error('Failed get patient counts', error, 'Stats API');
+				vm.downloadingPatientCounts = false;
+			}
+		);
+
+	}
 }
