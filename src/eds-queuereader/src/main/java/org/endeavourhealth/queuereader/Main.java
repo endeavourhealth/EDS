@@ -1081,12 +1081,6 @@ public class Main {
 				LOG.info("Doing " + service);
 
 
-
-				Map<UUID, String> orgMap = service.getOrganisations();
-				if (orgMap.size() != 1) {
-					throw new Exception("Cannot support loading services without a single organisation");
-				}
-
 				List<UUID> systems = findSystemIds(service);
 				for (UUID systemId: systems) {
 
@@ -1837,12 +1831,6 @@ public class Main {
 
 				LOG.info("Doing " + service);
 
-				Map<UUID, String> orgMap = service.getOrganisations();
-				if (orgMap.size() != 1) {
-					throw new Exception("Cannot support loading services without a single organisation");
-				}
-				Iterator<UUID> orgIterator = orgMap.keySet().iterator();
-				UUID orgId = orgIterator.next();
 
 				List<UUID> systems = findSystemIds(service);
 				for (UUID systemId: systems) {
@@ -1974,7 +1962,6 @@ public class Main {
 									exchange.setHeaderAsUuid(HeaderKeys.SenderServiceUuid, service.getId());
 									exchange.setHeader(HeaderKeys.ProtocolIds, ""); //just set to non-null value, so postToExchange(..) can safely recalculate
 									exchange.setHeader(HeaderKeys.SenderLocalIdentifier, odsCode);
-									exchange.setHeaderAsUuid(HeaderKeys.SenderOrganisationUuid, orgId);
 									exchange.setHeaderAsUuid(HeaderKeys.SenderSystemUuid, systemId);
 									exchange.setHeader(HeaderKeys.SourceSystem, MessageFormat.EMIS_CSV);
 									exchange.setServiceId(service.getId());

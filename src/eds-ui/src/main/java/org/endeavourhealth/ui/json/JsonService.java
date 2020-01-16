@@ -5,7 +5,6 @@ import org.endeavourhealth.core.database.dal.admin.models.Service;
 import org.endeavourhealth.core.fhirStorage.ServiceInterfaceEndpoint;
 
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -15,8 +14,6 @@ public final class JsonService {
     private String publisherConfigName = null;
     private String name = null;
     private List<ServiceInterfaceEndpoint> endpoints = null;
-    private Map<UUID, String> organisations = null;
-    //private String additionalInfo = null; //transient info, such as progress in deleting data
     private String notes = null;
     private String postcode;
     private String ccgCode;
@@ -31,7 +28,6 @@ public final class JsonService {
         this.uuid = service.getId();
         this.localIdentifier = service.getLocalId();
         this.name = service.getName();
-        this.organisations = service.getOrganisations();
         this.publisherConfigName = service.getPublisherConfigName();
         //this.additionalInfo = additionalInfo;
         this.endpoints = service.getEndpointsList();
@@ -87,22 +83,6 @@ public final class JsonService {
     public void setEndpoints(List<ServiceInterfaceEndpoint> endpoints) {
         this.endpoints = endpoints;
     }
-
-    public Map<UUID, String> getOrganisations() {
-        return organisations;
-    }
-
-    public void setOrganisations(Map<UUID, String> organisations) {
-        this.organisations = organisations;
-    }
-
-    /*public String getAdditionalInfo() {
-        return additionalInfo;
-    }
-
-    public void setAdditionalInfo(String additionalInfo) {
-        this.additionalInfo = additionalInfo;
-    }*/
 
     public String getNotes() {
         return notes;

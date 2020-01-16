@@ -390,12 +390,6 @@ public class QueueHelper {
         String[] specificProtocolArr = new String[]{specificProtocolId.toString()};
         String specificProtocolJson = ObjectMapperPool.getInstance().writeValueAsString(specificProtocolArr);
 
-        Map<UUID, String> orgMap = service.getOrganisations();
-        if (orgMap.size() != 1) {
-            throw new Exception("Cannot support loading services without a single organisation");
-        }
-        Iterator<UUID> orgIterator = orgMap.keySet().iterator();
-        UUID orgId = orgIterator.next();
         String odsCode = service.getLocalId();
 
         boolean postedToRabbit = false;
@@ -412,7 +406,6 @@ public class QueueHelper {
             exchange.setHeaderAsUuid(HeaderKeys.SenderServiceUuid, serviceId);
             exchange.setHeader(HeaderKeys.ProtocolIds, specificProtocolJson);
             exchange.setHeader(HeaderKeys.SenderLocalIdentifier, odsCode);
-            exchange.setHeaderAsUuid(HeaderKeys.SenderOrganisationUuid, orgId);
             exchange.setHeaderAsUuid(HeaderKeys.SenderSystemUuid, systemId);
             exchange.setHeader(HeaderKeys.SourceSystem, MessageFormat.DUMMY_SENDER_SOFTWARE_FOR_BULK_TRANSFORM); //routing requires a source system name and this tells us it's this special case
             exchange.setServiceId(serviceId);
@@ -492,13 +485,6 @@ public class QueueHelper {
 
         LOG.info("Queuing up bulk delete for " + service.getName() + " " + service.getLocalId());
 
-        Map<UUID, String> orgMap = service.getOrganisations();
-        if (orgMap.size() != 1) {
-            throw new Exception("Cannot support loading services without a single organisation");
-        }
-        Iterator<UUID> orgIterator = orgMap.keySet().iterator();
-        UUID orgId = orgIterator.next();
-
         boolean postedToRabbit = false;
 
         List<UUID> systemIds = findSystemIds(service);
@@ -523,7 +509,6 @@ public class QueueHelper {
             exchange.setHeaderAsUuid(HeaderKeys.SenderServiceUuid, serviceId);
             exchange.setHeader(HeaderKeys.ProtocolIds, ""); //just set to non-null value, so postToExchange(..) can safely recalculate
             exchange.setHeader(HeaderKeys.SenderLocalIdentifier, odsCode);
-            exchange.setHeaderAsUuid(HeaderKeys.SenderOrganisationUuid, orgId);
             exchange.setHeaderAsUuid(HeaderKeys.SenderSystemUuid, systemId);
             exchange.setHeader(HeaderKeys.SourceSystem, MessageFormat.DUMMY_SENDER_SOFTWARE_FOR_BULK_DELETE); //routing requires a source system name and this tells us it's this special case
             exchange.setServiceId(serviceId);

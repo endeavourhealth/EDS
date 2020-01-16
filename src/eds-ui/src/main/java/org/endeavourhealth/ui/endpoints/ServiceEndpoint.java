@@ -11,11 +11,9 @@ import org.endeavourhealth.common.utility.XmlSerializer;
 import org.endeavourhealth.core.database.dal.DalProvider;
 import org.endeavourhealth.core.database.dal.admin.LibraryDalI;
 import org.endeavourhealth.core.database.dal.admin.LibraryRepositoryHelper;
-import org.endeavourhealth.core.database.dal.admin.OrganisationDalI;
 import org.endeavourhealth.core.database.dal.admin.ServiceDalI;
 import org.endeavourhealth.core.database.dal.admin.models.ActiveItem;
 import org.endeavourhealth.core.database.dal.admin.models.Item;
-import org.endeavourhealth.core.database.dal.admin.models.Organisation;
 import org.endeavourhealth.core.database.dal.admin.models.Service;
 import org.endeavourhealth.core.database.dal.audit.ExchangeDalI;
 import org.endeavourhealth.core.database.dal.audit.UserAuditDalI;
@@ -27,7 +25,6 @@ import org.endeavourhealth.core.xml.QueryDocument.*;
 import org.endeavourhealth.core.xml.QueryDocument.System;
 import org.endeavourhealth.core.xml.QueryDocumentSerializer;
 import org.endeavourhealth.coreui.endpoints.AbstractEndpoint;
-import org.endeavourhealth.coreui.json.JsonOrganisation;
 import org.endeavourhealth.ui.json.JsonService;
 import org.endeavourhealth.ui.json.JsonServiceSystemStatus;
 import org.slf4j.Logger;
@@ -45,7 +42,6 @@ public final class ServiceEndpoint extends AbstractEndpoint {
     private static final Logger LOG = LoggerFactory.getLogger(ServiceEndpoint.class);
 
     private static final ServiceDalI serviceRepository = DalProvider.factoryServiceDal();
-    private static final OrganisationDalI organisationRepository = DalProvider.factoryOrganisationDal();
     private static final UserAuditDalI userAuditRepository = DalProvider.factoryUserAuditDal(AuditModule.EdsUiModule.Service);
     private static final ExchangeDalI exchangeAuditRepository = DalProvider.factoryExchangeDal();
 
@@ -69,7 +65,6 @@ public final class ServiceEndpoint extends AbstractEndpoint {
         dbService.setId(service.getUuid());
         dbService.setName(service.getName());
         dbService.setLocalId(service.getLocalIdentifier());
-        dbService.setOrganisations(service.getOrganisations());
         dbService.setPublisherConfigName(service.getPublisherConfigName());
         dbService.setNotes(service.getNotes());
         dbService.setPostcode(service.getPostcode());
@@ -220,32 +215,6 @@ public final class ServiceEndpoint extends AbstractEndpoint {
                 .build();
     }
 
-    @GET
-    @Produces(MediaType.APPLICATION_JSON)
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Timed(absolute = true, name = "ServiceEndpoint.GetServiceOrganisations")
-    @Path("/organisations")
-    public Response getServiceOrganisations(@Context SecurityContext sc, @QueryParam("uuid") String uuid) throws Exception {
-        super.setLogbackMarkers(sc);
-        userAuditRepository.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
-                "Service Organisations",
-                "ServiceId", uuid);
-
-        UUID serviceUuid = UUID.fromString(uuid);
-        Service service = serviceRepository.getById(serviceUuid);
-
-        List<JsonOrganisation> ret = new ArrayList<>();
-        for (UUID organisationId : service.getOrganisations().keySet()) {
-            Organisation organisation = organisationRepository.getById(organisationId);
-            ret.add(new JsonOrganisation(organisation, false));
-        }
-
-        clearLogbackMarkers();
-        return Response
-                .ok()
-                .entity(ret)
-                .build();
-    }
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
