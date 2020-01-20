@@ -20,6 +20,7 @@ export class ExchangeAuditComponent {
 
 	service: Service;
 	systemId: string;
+	publisherMode: string;
 
 	//exchange filters
 	searchMode: string;
@@ -32,17 +33,19 @@ export class ExchangeAuditComponent {
 	exchanges: Exchange[];
 	protocols: Protocol[];
 	selectedExchange: Exchange;
+
+	//for re-queuing
 	busyPostingToExchange: Subscription;
-	//postAllExchanges: boolean;
 	postMode: string;
 	postSpecificProtocol: string;
 	postFilterFileTypes: boolean;
 	postFilterFileTypesSelected: string;
 	postExchange: string;
 	postDeleteErrorState: boolean;
-	exchangeSizeColours: {}; //cached colours dynamically calculated for each exchange
 
-	minLog: number;
+	//for colouring exchanges
+	exchangeSizeColours: {}; //cached colours dynamically calculated for each exchange
+	minLog: number; //cached for calculating colours
 
 	constructor(private $modal : NgbModal,
 				private $window : StateService,
@@ -66,6 +69,7 @@ export class ExchangeAuditComponent {
 					this.service = result;
 					this.refreshExchanges();
 					this.refreshProtocols();
+					this.refreshPublisherMode();
 				},
 				(error) => log.error('Failed to retrieve service', error, 'Refresh Service')
 			)
@@ -514,5 +518,57 @@ export class ExchangeAuditComponent {
 		ret += bStr;
 
 		return ret;
+	}
+
+	private refreshPublisherMode():void {
+		var vm = this;
+		vm.publisherMode = null;
+
+		for (var i=0; i<vm.service.endpoints.length; i++) {
+			var endpoint = vm.service.endpoints[i];
+			if (endpoint.systemUuid == vm.systemId
+				&& endpoint.endpoint.startsWith('Publisher_')) {
+				vm.publisherMode = endpoint.endpoint;
+			}
+		}
+	}
+
+	private savePublisherMode() {
+		var vm = this;
+
+		for (var i=0; i<vm.service.endpoints.length; i++) {
+			var endpoint = vm.service.endpoints[i];
+			if (endpoint.systemUuid == vm.systemId) {
+				endpoint.endpoint = vm.publisherMode;
+			}
+		}
+
+		vm.serviceService.validateSave(vm.service)
+			.subscribe(
+				(result) => {
+
+					//if we have a message then log
+					if (result) {
+						vm.log.warning(result);
+					} else {
+						vm.reallySavePublisherMode();
+					}
+				},
+				(error) => {
+					vm.log.error('Error validating', error, 'Error');
+				}
+			);
+	}
+
+	private reallySavePublisherMode() {
+		var vm = this;
+
+		vm.serviceService.save(vm.service)
+			.subscribe(
+				(saved) => {
+					vm.log.success('Service saved');
+				},
+				(error) => vm.log.error('Error saving', error, 'Error')
+			);
 	}
 }

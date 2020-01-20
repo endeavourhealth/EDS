@@ -39,11 +39,15 @@
 					<div class="form-group col-md-6">
 						<label class="control-label">Organisation type</label>
 						<select class="form-control" [(ngModel)]="service.organisationTypeCode" name="organisationTypeCode">
+
+							<!-- blank option -->
+							<option value=""></option>
+
 							<!-- if org type list not loaded, just populate with what's on the service already -->
-							<option *ngIf="!service.organisationTypes" value="{{service.organisationTypeCode}}">{{service.organisationTypeDesc}}</option>
+							<option *ngIf="!organisationTypes" value="{{service.organisationTypeCode}}">{{service.organisationTypeDesc}}</option>
 
 							<!-- once org type list loaded, fully populate with everything in the list -->
-							<option *ngFor="let orgType of service.organisationTypes" value="{{orgType.code}}">{{orgType.description}}</option>
+							<option *ngFor="let orgType of organisationTypes" value="{{orgType.code}}">{{orgType.description}}</option>
 						</select>
 					</div>
 				</div>

@@ -89,53 +89,157 @@ public final class ServiceEndpoint extends AbstractEndpoint {
                 .build();
     }
 
-    /*private void populateFromOds(JsonService service) throws Exception {
 
-        if (Strings.isNullOrEmpty(service.getLocalIdentifier())) {
-            return;
+    @POST
+    @Produces(MediaType.TEXT_PLAIN)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name = "ServiceEndpoint.validateService")
+    @Path("/validateService")
+    @RequiresAdmin
+    public Response validateService(@Context SecurityContext sc, JsonService serviceToSave) throws Exception {
+        super.setLogbackMarkers(sc);
+        userAuditRepository.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Save,
+                "Validate",
+                "Service", serviceToSave);
+
+        //validate that the service can be saved OK
+        String error = null;
+
+        //ensure local ID isn't already in use
+        String localId = serviceToSave.getLocalIdentifier();
+        if (Strings.isNullOrEmpty(localId)) {
+            error = "ODS code must be set";
         }
 
-        if (!Strings.isNullOrEmpty(service.getPostcode())
-                || !Strings.isNullOrEmpty(service.getCcgCode())
-                || !Strings.isNullOrEmpty(service.getOrganisationTypeCode())) {
-            return;
-        }
+        ServiceDalI dal = DalProvider.factoryServiceDal();
 
-        OdsOrganisation org = OdsWebService.lookupOrganisationViaRest(service.getLocalIdentifier());
-        if (org == null) {
-            LOG.error("NO ODS record found for [" + service.getLocalIdentifier() + "]");
-            return;
-        }
-        String postcode = org.getPostcode();
-        service.setPostcode(postcode);
-
-        OrganisationType type = org.getOrganisationType();
-        if (type != null) {
-            service.setOrganisationTypeCode(type.getCode());
-        }
-
-
-        Map<String, String> parents = org.getParents();
-
-        String parentCode = null;
-        if (parents.size() == 1) {
-            parentCode = parents.keySet().iterator().next();
-
-        } else {
-            //some orgs have multiple parents, and the simplest way to choose just one seems to be
-            //to ignore the old SHA hierarchy
-            for (String code: parents.keySet()) {
-                String name = parents.get(code);
-                if (name.toUpperCase().contains("STRATEGIC HEALTH AUTHORITY")) {
-                    continue;
-                }
-
-                parentCode = code;
+        if (error == null) {
+            Service existingService = dal.getByLocalIdentifier(localId);
+            if (existingService != null
+                    && (serviceToSave.getUuid() == null
+                        || !serviceToSave.getUuid().equals(existingService.getId()))) {
+                error = "ODS code " + localId + " already in use";
             }
         }
 
-        service.setCcgCode(parentCode);
-    }*/
+        //ensure ODS code isn't changed
+        /*if (error == null) {
+            UUID existingId = serviceToSave.getUuid();
+            if (existingId != null) {
+                Service existingService = dal.getById(existingId);
+                String existingLocalId = existingService.getLocalId();
+                if (!Strings.isNullOrEmpty(existingLocalId)
+                        && !existingLocalId.equals(localId)) {
+                    error = "ODS code cannot be changed once set";
+                }
+            }
+        }*/
+
+        //if a publisher, ensure publisher config is set
+        if (error == null) {
+            String publisherConfig = serviceToSave.getPublisherConfigName();
+            if (Strings.isNullOrEmpty(publisherConfig)) {
+
+                for (ServiceInterfaceEndpoint endpoint : serviceToSave.getEndpoints()) {
+                    String endpointStr = endpoint.getEndpoint();
+                    if (endpointStr != null
+                            && (endpointStr.equals(ServiceInterfaceEndpoint.STATUS_BULK_PROCESSING)
+                            || endpointStr.equals(ServiceInterfaceEndpoint.STATUS_NORMAL)
+                            || endpointStr.equals(ServiceInterfaceEndpoint.STATUS_AUTO_FAIL))) {
+
+                        error = "Publisher config must be set if a publisher";
+                        break;
+                    }
+                }
+            }
+        }
+
+        //ensure don't change publisher state to normal or bulk when there's stuff in the queue already
+        if (error == null) {
+            UUID existingServiceId = serviceToSave.getUuid();
+            if (existingServiceId != null) {
+                Service existingService = dal.getById(existingServiceId);
+                if (existingService != null) {
+
+                    for (ServiceInterfaceEndpoint endpoint : serviceToSave.getEndpoints()) {
+                        String endpointStr = endpoint.getEndpoint();
+                        UUID systemUuid = endpoint.getSystemUuid();
+
+                        if (endpointStr != null
+                                && (endpointStr.equals(ServiceInterfaceEndpoint.STATUS_BULK_PROCESSING)
+                                || endpointStr.equals(ServiceInterfaceEndpoint.STATUS_NORMAL))) {
+
+                            //check the existing instance to see if changed
+                            String existingEndpointStr = null;
+                            for (ServiceInterfaceEndpoint existingEndpoint : existingService.getEndpointsList()) {
+                                if (existingEndpoint.getSystemUuid().equals(systemUuid)) {
+                                    existingEndpointStr = existingEndpoint.getEndpoint();
+                                    break;
+                                }
+                            }
+
+                            //if the publisher mode has changed, then validate that there's nothing in the queue
+                            if (!endpointStr.equals(existingEndpointStr)) {
+
+                                ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
+                                List<Exchange> mostRecentExchanges = exchangeDal.getExchangesByService(existingServiceId, systemUuid, 1);
+                                if (!mostRecentExchanges.isEmpty()) {
+                                    Exchange mostRecentExchange = mostRecentExchanges.get(0);
+                                    ExchangeTransformAudit latestTransform = exchangeDal.getLatestExchangeTransformAudit(existingServiceId, systemUuid, mostRecentExchange.getId());
+
+                                    boolean inQueue = false;
+
+                                    //if the exchange has never been transformed or the transform hasn't ended, we
+                                    //can infer that it's in the queue
+                                    if (latestTransform == null
+                                            || latestTransform.getEnded() == null) {
+                                        LOG.debug("Exchange " + mostRecentExchange.getId() + " has never been transformed or hasn't finished yet");
+                                        inQueue = true;
+
+                                    } else {
+                                        Date transformFinished = latestTransform.getEnded();
+                                        List<ExchangeEvent> events = exchangeDal.getExchangeEvents(mostRecentExchange.getId());
+                                        if (!events.isEmpty()) {
+                                            ExchangeEvent mostRecentEvent = events.get(events.size() - 1);
+                                            String eventDesc = mostRecentEvent.getEventDesc();
+                                            Date eventDate = mostRecentEvent.getTimestamp();
+
+                                            if (eventDesc.startsWith("Manually pushed into")
+                                                    && eventDate.after(transformFinished)) {
+
+                                                LOG.debug("Exchange " + mostRecentExchange.getId() + " latest event is being inserted into queue");
+                                                inQueue = true;
+                                            }
+                                        }
+                                    }
+
+                                    if (inQueue) {
+                                        error = "Cannot change publisher mode while inbound messages are queued";
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        clearLogbackMarkers();
+
+        if (error == null) {
+            return Response
+                    .ok()
+                    .build();
+
+        } else {
+            return Response
+                    .ok()
+                    .entity(error)
+                    .build();
+
+        }
+    }
 
     @DELETE
     @Produces(MediaType.APPLICATION_JSON)

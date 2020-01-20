@@ -5,10 +5,12 @@ import org.endeavourhealth.common.fhir.schema.OrganisationType;
 public class JsonOrganisationType {
     private String code;
     private String description;
+    private String name;
 
     public JsonOrganisationType(OrganisationType o) {
         this.code = o.getCode();
         this.description = o.getDescription();
+        this.name = o.toString(); //the name of the enum e.g. GP_PRACTICE
     }
 
     public JsonOrganisationType() {
@@ -28,5 +30,13 @@ public class JsonOrganisationType {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 }

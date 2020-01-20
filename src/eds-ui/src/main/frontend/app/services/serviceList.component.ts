@@ -31,8 +31,7 @@ export class ServiceListComponent implements OnInit, OnDestroy{
 							private log : LoggerService,
 							protected $state : StateService) {
 
-		var vm = this;
-		vm.loadOrganisationTypes(); //not strictly necessary for this component, but will be needed if editing anything
+
 	}
 
 	ngOnInit() {
@@ -46,28 +45,6 @@ export class ServiceListComponent implements OnInit, OnDestroy{
 		}
 	}
 
-	/**
-	 * ensures the list of org types is loaded and cached
-	 */
-	private loadOrganisationTypes() {
-		var vm = this;
-
-		//if already done, return
-		if (vm.serviceService.organisationTypes) {
-			return;
-		}
-
-		var vm = this;
-		vm.serviceService.getOrganisationTypeList()
-			.subscribe(
-				(result) => {
-					vm.serviceService.organisationTypes = result;
-				},
-				(error) => {
-					vm.log.error('Failed to retrieve organisation type list');
-				}
-			);
-	}
 
 
 	refreshAllServices() {

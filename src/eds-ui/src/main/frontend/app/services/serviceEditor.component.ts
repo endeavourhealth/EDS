@@ -10,6 +10,7 @@ import {AdminService, LoggerService, MessageBoxDialog} from "eds-common-js";
 import {SystemService} from "../system/system.service";
 import {EdsLibraryItem} from "../edsLibrary/models/EdsLibraryItem";
 import {OdsSearchDialog} from "./odsSearch.dialog";
+import {OrganisationType} from "./models/OrganisationType";
 
 @Component({
 	template : require('./serviceEditor.html')
@@ -24,6 +25,10 @@ export class ServiceEditComponent {
 
 	selectedEndpoint : Endpoint;
 
+
+	//keep this here so it only needs getting once
+	organisationTypes: OrganisationType[];
+
 	constructor(private $modal : NgbModal,
 							private $window : StateService,
 							private log:LoggerService,
@@ -33,6 +38,7 @@ export class ServiceEditComponent {
 							private transition : Transition) {
 
 		var vm = this;
+		vm.loadOrganisationTypes();
 		vm.loadSystems();
 
 		vm.performAction(transition.params()['itemAction'], transition.params()['itemUuid']);
@@ -70,6 +76,27 @@ export class ServiceEditComponent {
 	}
 
 	save(close : boolean) {
+		var vm = this;
+
+		//doesn't immediately save - calls validation function first which checks the save is safe
+		vm.serviceService.validateSave(vm.service)
+			.subscribe(
+				(result) => {
+
+					//if we have a message then log
+					if (result) {
+						vm.log.warning(result);
+					} else {
+						vm.reallySave(close);
+					}
+				},
+				(error) => {
+					vm.log.error('Error validating', error, 'Error');
+				}
+			);
+	}
+
+	private reallySave(close: boolean) {
 		var vm = this;
 
 		vm.serviceService.save(vm.service)
@@ -154,7 +181,7 @@ export class ServiceEditComponent {
 		var vm = this;
 
 		//if already done, return
-		if (vm.serviceService.organisationTypes) {
+		if (vm.organisationTypes) {
 			return;
 		}
 
@@ -162,7 +189,7 @@ export class ServiceEditComponent {
 		vm.serviceService.getOrganisationTypeList()
 			.subscribe(
 				(result) => {
-					vm.serviceService.organisationTypes = result;
+					vm.organisationTypes = result;
 				},
 				(error) => {
 					vm.log.error('Failed to retrieve organisation type list');
@@ -273,14 +300,25 @@ export class ServiceEditComponent {
 		vm.serviceService.getOpenOdsRecord(vm.service.localIdentifier)
 			.subscribe(
 				(result) => {
+
+					//validate we got something
+					if (!result['organisationName']) {
+						vm.log.error('No ODS record found for ' + odsCode);
+						return;
+					}
+
 					var newName = result['organisationName'];
 					if (newName) {
 						vm.service.name = newName;
+					} else {
+						vm.service.name = '';
 					}
 
 					var newPostcode = result['postcode'];
 					if (newPostcode) {
 						vm.service.postcode = newPostcode;
+					} else {
+						vm.service.postcode = '';
 					}
 
 					//ccg
@@ -288,8 +326,8 @@ export class ServiceEditComponent {
 					if (newParents) {
 						var parentKeys = Object.keys(newParents);
 
-						//some orgs have multiple parents, and the simplest way to choose just one seems to be
-						//to ignore the old SHA hierarchy
+						vm.service.ccgCode = '';
+
 						if (parentKeys.length == 1) {
 							var parentKey = parentKeys[0];
 							vm.service.ccgCode = parentKey;
@@ -298,9 +336,14 @@ export class ServiceEditComponent {
 
 							for (var i = 0; i < parentKeys.length; i++) {
 								var parentKey = parentKeys[i];
-								var parentVal = newParents[parentKey];
+								var parentVal = newParents[parentKey] as string;
+								parentVal = parentVal.toUpperCase();
 
-								if (!parentVal.toUpperCase().contains('STRATEGIC HEALTH AUTHORITY')) {
+								//some orgs have multiple parents which seems to work OK if we ignore the old
+								//SHA parents and GENOMIC ones
+								if (parentVal.indexOf('STRATEGIC HEALTH AUTHORITY') == -1
+									&& parentVal.indexOf('GENOMIC') == -1) {
+
 									vm.service.ccgCode = parentKey;
 								}
 							}
@@ -308,6 +351,25 @@ export class ServiceEditComponent {
 					}
 
 					//org type
+					var orgTypeName = result['organisationType'];
+					if (orgTypeName) {
+
+						vm.service.organisationTypeCode = '';
+						vm.service.organisationTypeDesc = '';
+
+						for (var i = 0; i < vm.organisationTypes.length; i++) {
+							var organisationType = vm.organisationTypes[i];
+							var name = organisationType.name;
+
+							//the org type in the ODS results is the NAME of the OrganisationType enum, not the code or desc
+							if (name == orgTypeName) {
+								vm.service.organisationTypeCode = organisationType.code;
+								vm.service.organisationTypeDesc = organisationType.description;
+								break;
+							}
+						}
+
+					}
 
 				},
 				(error) => {

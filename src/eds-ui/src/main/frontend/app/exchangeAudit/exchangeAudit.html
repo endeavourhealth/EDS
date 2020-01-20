@@ -149,8 +149,7 @@
                         </ngb-panel>
                     </ngb-accordion>
 
-                    <div class="panel panel-primary">
-                    <!--<div class="panel panel-primary">-->
+                    <div class="panel panel-primary col-md-9">
                         <div class="panel-body">
 
                             <div class="row">
@@ -175,6 +174,7 @@
                                     <!--Queues [Inbound={{selectedExchange.queueRoutingKeys['EdsInbound']}} Protocol={{selectedExchange.selectedExchange.queueRoutingKeys['EdsProtocol']}}]-->
 
                                 </div>
+
                             </div>
                             <div class="row" *ngIf="postExchange=='edsInbound'">
                                 <div class="form-group col-md-12">
@@ -213,6 +213,30 @@
                                     <span class="fa fa-sm fa-refresh fa-refresh-animate" *ngIf="busyPostingToExchange"></span>
 
                                 </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <div class="panel panel-primary col-md-3" >
+                        <div class="panel-body">
+
+                            <div *ngIf="publisherMode" class="row">
+                                <div class="form-group">
+
+                                    Publisher mode:
+
+                                    <select id="publisherStatus" [(ngModel)]="publisherMode" name="publisherStatus">
+                                        <option value="Publisher_Draft">Draft</option>
+                                        <option value="Publisher_Normal">Normal</option>
+                                        <option value="Publisher_Auto_Fail">Auto-fail</option>
+                                        <option value="Publisher_Bulk">Bulk</option>
+                                    </select>
+
+                                    <button type="button" class="btn btn-sm btn-success" (click)="savePublisherMode()">Save</button>
+
+                                </div>
+
                             </div>
 
                         </div>

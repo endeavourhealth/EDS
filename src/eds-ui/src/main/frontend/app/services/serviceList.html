@@ -62,6 +62,19 @@
 								<!--<input type="checkbox" class="form-control" id="inputType3" [(ngModel)]="serviceService.serviceHasErrorsFilter" name="serviceHasErrorsFilter" (ngModelChange)="applyFiltering()">-->
 							</div>
 
+							<div class="col-sm-2">
+								<label for="servicePublisherModeFilter" class="control-label">Publisher Mode</label>
+								<select id="servicePublisherModeFilter" class="form-control" [(ngModel)]="serviceService.servicePublisherModeFilter" name="servicePublisherModeFilter" (ngModelChange)="applyFiltering()">
+									<option value=""></option>
+									<option value="Publisher_Draft">Draft</option>
+									<option value="Publisher_Normal">Normal</option>
+									<option value="Publisher_Auto_Fail">Auto-fail</option>
+									<option value="Publisher_Bulk">Bulk</option>
+								</select>
+								<!--<input type="checkbox" class="form-control" id="inputType3" [(ngModel)]="serviceService.serviceHasErrorsFilter" name="serviceHasErrorsFilter" (ngModelChange)="applyFiltering()">-->
+							</div>
+
+
 
 							<div class="col-sm-1">
 								<label for="inputType3" class="control-label">Status</label>

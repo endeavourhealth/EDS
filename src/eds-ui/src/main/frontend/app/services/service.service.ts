@@ -19,10 +19,9 @@ export class ServiceService extends BaseHttp2Service {
 	serviceStatusFilter: string;
 	serviceCcgCodeFilter: string;
 	serviceLastDataFilter: string;
+	servicePublisherModeFilter: string;
 	ccgNameCache: {};
 
-	//keep this here so it only needs getting once
-	organisationTypes: OrganisationType[];
 
 	constructor(http : Http) {
 		super (http);
@@ -45,6 +44,11 @@ export class ServiceService extends BaseHttp2Service {
 	save(service : Service) : Observable<any> {
 		return this.httpPost('api/service', service);
 	}
+
+	validateSave(service : Service) : Observable<string> {
+		return this.httpPost('api/service/validateService', service);
+	}
+
 
 	delete(uuid : string) : Observable<any> {
 		let params = new URLSearchParams();
@@ -229,6 +233,24 @@ export class ServiceService extends BaseHttp2Service {
 								}
 
 
+							}
+						}
+					}
+
+					if (!include) {
+						continue;
+					}
+				}
+
+				if (vm.servicePublisherModeFilter) {
+					var include = false;
+
+					if (service.systemStatuses) {
+						for (var j=0; j<service.systemStatuses.length; j++) {
+							var systemStatus = service.systemStatuses[j];
+							if (systemStatus.publisherMode == vm.servicePublisherModeFilter) {
+								include = true;
+								break;
 							}
 						}
 					}
