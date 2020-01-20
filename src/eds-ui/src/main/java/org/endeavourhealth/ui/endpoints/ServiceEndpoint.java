@@ -25,6 +25,7 @@ import org.endeavourhealth.core.xml.QueryDocument.*;
 import org.endeavourhealth.core.xml.QueryDocument.System;
 import org.endeavourhealth.core.xml.QueryDocumentSerializer;
 import org.endeavourhealth.coreui.endpoints.AbstractEndpoint;
+import org.endeavourhealth.ui.json.JsonOrganisationType;
 import org.endeavourhealth.ui.json.JsonService;
 import org.endeavourhealth.ui.json.JsonServiceSystemStatus;
 import org.slf4j.Logger;
@@ -59,7 +60,7 @@ public final class ServiceEndpoint extends AbstractEndpoint {
                 "Service", service);
 
         //if no postcode etc. are set, see if we can find them via Open ODS
-        populateFromOds(service);
+        //populateFromOds(service); //done on the front end now
 
         Service dbService = new Service();
         dbService.setId(service.getUuid());
@@ -88,7 +89,7 @@ public final class ServiceEndpoint extends AbstractEndpoint {
                 .build();
     }
 
-    private void populateFromOds(JsonService service) throws Exception {
+    /*private void populateFromOds(JsonService service) throws Exception {
 
         if (Strings.isNullOrEmpty(service.getLocalIdentifier())) {
             return;
@@ -134,7 +135,7 @@ public final class ServiceEndpoint extends AbstractEndpoint {
         }
 
         service.setCcgCode(parentCode);
-    }
+    }*/
 
     @DELETE
     @Produces(MediaType.APPLICATION_JSON)
@@ -182,32 +183,6 @@ public final class ServiceEndpoint extends AbstractEndpoint {
         UUID serviceUuid = UUID.fromString(serviceIdStr);
 
         QueueHelper.queueUpFullServiceForDelete(serviceUuid);
-
-        /*if (dataBeingDeleted.get(serviceUuid) != null) {
-            throw new BadRequestException("Data deletion already in progress for this service");
-        }
-
-        final Service dbService = serviceRepository.getById(serviceUuid);
-
-        //the delete will take some time, so do the delete in a separate thread
-        Runnable task = () -> {
-            LOG.info("Deleting all data for service " + dbService.getName() + " " + dbService.getId());
-
-            FhirDeletionService deletor = new FhirDeletionService(dbService);
-            dataBeingDeleted.put(dbService.getId(), deletor);
-
-            try {
-                deletor.deleteData();
-                LOG.info("Completed deleting all data for service " + dbService.getName() + " " + dbService.getId());
-            } catch (Exception ex) {
-                LOG.error("Error deleting service " + dbService.getName() + " " + dbService.getId(), ex);
-            } finally {
-                dataBeingDeleted.remove(dbService.getId());
-            }
-        };
-
-        Thread thread = new Thread(task);
-        thread.start();*/
 
         clearLogbackMarkers();
         return Response
@@ -478,114 +453,6 @@ public final class ServiceEndpoint extends AbstractEndpoint {
         return ret;
     }
 
-    /*private Map<UUID, String> findLastDataDescs(List<Service> services) throws Exception {
-
-        if (services.isEmpty()) {
-            return new HashMap<>();
-        }
-
-        //if we've less than X services, hit the DB one at a time, rather than loading the full error list
-        List<LastDataReceived> list = null;
-        if (services.size() < 5) {
-
-            list = new ArrayList<>();
-
-            for (Service service : services) {
-                UUID serviceId = service.getId();
-                list.addAll(exchangeAuditRepository.getLastDataReceived(serviceId));
-            }
-
-        } else {
-            //if we're lots of services, it's easier to load all the error states
-            list = exchangeAuditRepository.getLastDataReceived();
-        }
-
-        long durMin = 1000 * 60;
-        long durHour = durMin * 60;
-        long durDay = durHour * 25;
-        long durWeek = durDay * 7;
-        long durYear = (long)((double)durDay * 365.25d);
-
-        //first, hash the objects by service, so we know how many there are for each service
-        Map<UUID, List<LastDataReceived>> hmByService = new HashMap<>();
-
-        for (LastDataReceived obj : list) {
-            UUID serviceId = obj.getServiceId();
-
-            List<LastDataReceived> l = hmByService.get(serviceId);
-            if (l == null) {
-                l = new ArrayList<>();
-                hmByService.put(serviceId, l);
-            }
-            l.add(obj);
-        }
-
-        //now go through the map and create a suitable string for each service
-        Map<UUID, String> ret = new HashMap<>();
-
-        for (UUID serviceId: hmByService.keySet()) {
-
-            List<LastDataReceived> l = hmByService.get(serviceId);
-
-            List<String> lines = new ArrayList<>();
-
-            for (LastDataReceived obj: l) {
-
-                Date d = obj.getDataDate();
-
-                //format the time span between the date and now. I've honestly spent ages trying to write
-                //this using the Java 8 time classes, which are supposed to be better, but gave up and
-                //just went with this quick and dirty approach
-                List<String> periodToks = new ArrayList<>();
-
-                long diffMs = java.lang.System.currentTimeMillis() - d.getTime();
-
-                long years = diffMs / durYear;
-                if (years > 0 && periodToks.size() < 2) {
-                    periodToks.add("" + years + "y");
-                    diffMs -= years * durYear;
-                }
-                long weeks = diffMs / durWeek;
-                if (weeks > 0 && periodToks.size() < 2) {
-                    periodToks.add("" + weeks + "w");
-                    diffMs -= weeks * durWeek;
-                }
-                long days = diffMs / durDay;
-                if (days > 0 && periodToks.size() < 2) {
-                    periodToks.add("" + days + "d");
-                    diffMs -= days * durDay;
-                }
-                long hours = diffMs / durHour;
-                if (hours > 0 && periodToks.size() < 2) {
-                    periodToks.add("" + hours + "h");
-                    diffMs -= hours * durHour;
-                }
-                long mins = diffMs / durMin;
-                if (mins > 0 && periodToks.size() < 2) {
-                    periodToks.add("" + mins + "m");
-                    diffMs -= mins * durMin;
-                }
-
-                String periodDesc = String.join(" ", periodToks);
-
-                //if there are multiple systems, include the system name in the string for each period
-                if (l.size() > 1) {
-
-                    UUID systemId = obj.getSystemId();
-                    String softwareDesc = findSoftwareDescForSystem(systemId);
-                    lines.add(softwareDesc + ": " + periodDesc);
-
-                } else {
-                    lines.add(periodDesc);
-                }
-            }
-
-            String s = String.join(", ", lines);
-            ret.put(serviceId, s);
-        }
-
-        return ret;
-    }*/
 
     private static String findSoftwareDescForSystem(UUID systemId) throws Exception {
 
@@ -657,21 +524,6 @@ public final class ServiceEndpoint extends AbstractEndpoint {
 
         return ret;
     }
-
-    /**
-     * returns additional info string for the service. Currently this is just
-     * the progress on data being deleted
-     */
-    /*private String getAdditionalInfo(Service service) {
-
-        FhirDeletionService deletionService = dataBeingDeleted.get(service.getId());
-        if (deletionService != null) {
-            return "Data being deleted: " + deletionService.getProgress();
-        }
-
-        return null;
-    }*/
-
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
@@ -786,4 +638,29 @@ public final class ServiceEndpoint extends AbstractEndpoint {
                 .build();
     }
 
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name = "ServiceEndpoint.OrganisationTypeList")
+    @Path("/organisationTypeList")
+    public Response getOrganisationTypeList(@Context SecurityContext sc) throws Exception {
+        super.setLogbackMarkers(sc);
+
+        List<JsonOrganisationType> ret = new ArrayList<>();
+
+        for (OrganisationType t: OrganisationType.values()) {
+            ret.add(new JsonOrganisationType(t));
+        }
+
+        //sort by alpha
+        ret.sort(((o1, o2) -> o1.getDescription().compareToIgnoreCase(o2.getDescription())));
+
+        clearLogbackMarkers();
+
+        return Response
+                .ok()
+                .entity(ret)
+                .build();
+    }
 }

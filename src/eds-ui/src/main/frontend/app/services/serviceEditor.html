@@ -3,6 +3,7 @@
 		<div class="module-heading">
 			Service Details
 			<div class="pull-right">
+				<button class="btn btn-sm btn-default" (click)="odsSearch()" title="Ods Search">ODS Search</button>
 				<button type="button" class="btn btn-sm btn-danger" (click)="deleteData()">Delete All Data</button>
 				<button type="button" class="btn btn-sm btn-danger" (click)="deleteService()">Delete Service</button>
 				<button type="button" class="btn btn-sm btn-success" (click)="save(false)">Save</button>
@@ -13,23 +14,47 @@
 		<div class="module-body">
 			<form>
 				<div class="row">
-					<div class="form-group col-md-12">
+					<div class="form-group col-md-6">
 						<label class="control-label">ODS Code / Local Identifier</label>
-						<input type="text" class="form-control" placeholder="Local Identifier" [(ngModel)]="service.localIdentifier" name="localIdentifier">
+						<button type="button" class="btn btn-xs btn-success" (click)="autoFillDetailsFromOds()">Auto-fill from ODS</button>
+						<input type="text" class="form-control" placeholder="" [(ngModel)]="service.localIdentifier" name="localIdentifier">
+					</div>
+					<div class="form-group col-md-6">
+						<label class="control-label">CCG/Parent Code</label>
+						<input type="text" class="form-control" placeholder="" [(ngModel)]="service.ccgCode" name="ccgCode">
 					</div>
 				</div>
 				<div class="row">
-					<div class="form-group col-md-12">
+					<div class="form-group col-md-6">
 						<label class="control-label">Name</label>
-						<input type="text" class="form-control" placeholder="Service name" [(ngModel)]="service.name" name="name">
+						<input type="text" class="form-control" placeholder="" [(ngModel)]="service.name" name="name">
+					</div>
+					<div class="form-group col-md-6">
+						<label class="control-label">Postcode</label>
+						<input type="text" class="form-control" placeholder="" [(ngModel)]="service.postcode" name="postcode">
 					</div>
 				</div>
+
 				<div class="row">
-					<div class="form-group col-md-12">
-						<label class="control-label">Publisher Config Name</label>
-						<input type="text" class="form-control" placeholder="Config name for publisher DB" [(ngModel)]="service.publisherConfigName" name="publisherConfigName">
+					<div class="form-group col-md-6">
+						<label class="control-label">Organisation type</label>
+						<select class="form-control" [(ngModel)]="service.organisationTypeCode" name="organisationTypeCode">
+							<!-- if org type list not loaded, just populate with what's on the service already -->
+							<option *ngIf="!service.organisationTypes" value="{{service.organisationTypeCode}}">{{service.organisationTypeDesc}}</option>
+
+							<!-- once org type list loaded, fully populate with everything in the list -->
+							<option *ngFor="let orgType of service.organisationTypes" value="{{orgType.code}}">{{orgType.description}}</option>
+						</select>
 					</div>
 				</div>
+
+				<div class="row">
+					<div class="form-group col-md-6">
+						<label class="control-label">Publisher Config Name</label>
+						<input type="text" class="form-control" placeholder="" [(ngModel)]="service.publisherConfigName" name="publisherConfigName">
+					</div>
+				</div>
+
 				<div class="row">
 					<div class="form-group col-md-12">
 						<label class="control-label">Notes</label>

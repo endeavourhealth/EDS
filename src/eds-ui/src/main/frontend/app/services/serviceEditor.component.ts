@@ -9,6 +9,7 @@ import {ServiceService} from "./service.service";
 import {AdminService, LoggerService, MessageBoxDialog} from "eds-common-js";
 import {SystemService} from "../system/system.service";
 import {EdsLibraryItem} from "../edsLibrary/models/EdsLibraryItem";
+import {OdsSearchDialog} from "./odsSearch.dialog";
 
 @Component({
 	template : require('./serviceEditor.html')
@@ -31,8 +32,10 @@ export class ServiceEditComponent {
 							private systemService : SystemService,
 							private transition : Transition) {
 
-		this.loadSystems();
-		this.performAction(transition.params()['itemAction'], transition.params()['itemUuid']);
+		var vm = this;
+		vm.loadSystems();
+
+		vm.performAction(transition.params()['itemAction'], transition.params()['itemUuid']);
 	}
 
 	protected performAction(action:string, itemUuid:string) {
@@ -91,7 +94,7 @@ export class ServiceEditComponent {
 	private addEndpoint(publisher: boolean) {
 		var newEndpoint = {} as Endpoint;
 		if (publisher) {
-			newEndpoint.endpoint = 'Publisher_Normal';
+			newEndpoint.endpoint = 'Publisher_Bulk';
 		} else {
 			newEndpoint.endpoint = '';
 		}
@@ -147,6 +150,25 @@ export class ServiceEditComponent {
 		return o.endpoint.startsWith('Publisher_');
 	}
 
+	private loadOrganisationTypes() {
+		var vm = this;
+
+		//if already done, return
+		if (vm.serviceService.organisationTypes) {
+			return;
+		}
+
+		var vm = this;
+		vm.serviceService.getOrganisationTypeList()
+			.subscribe(
+				(result) => {
+					vm.serviceService.organisationTypes = result;
+				},
+				(error) => {
+					vm.log.error('Failed to retrieve organisation type list');
+				}
+			);
+	}
 
 	loadSystems() {
 		var vm = this;
@@ -232,6 +254,65 @@ export class ServiceEditComponent {
 					//vm.protocolJson = JSON.stringify(result, null, 2);
 				},
 				(error) => vm.log.error('Failed to load service protocols', error, 'Load service protocols')
+			);
+	}
+
+	odsSearch() {
+		var vm = this;
+		OdsSearchDialog.open(vm.$modal);
+	}
+
+	autoFillDetailsFromOds() {
+		var vm = this;
+		var odsCode = vm.service.localIdentifier;
+		if (!odsCode) {
+			vm.log.error('No ODS code entered');
+			return;
+		}
+
+		vm.serviceService.getOpenOdsRecord(vm.service.localIdentifier)
+			.subscribe(
+				(result) => {
+					var newName = result['organisationName'];
+					if (newName) {
+						vm.service.name = newName;
+					}
+
+					var newPostcode = result['postcode'];
+					if (newPostcode) {
+						vm.service.postcode = newPostcode;
+					}
+
+					//ccg
+					var newParents = result['parents'];
+					if (newParents) {
+						var parentKeys = Object.keys(newParents);
+
+						//some orgs have multiple parents, and the simplest way to choose just one seems to be
+						//to ignore the old SHA hierarchy
+						if (parentKeys.length == 1) {
+							var parentKey = parentKeys[0];
+							vm.service.ccgCode = parentKey;
+
+						} else {
+
+							for (var i = 0; i < parentKeys.length; i++) {
+								var parentKey = parentKeys[i];
+								var parentVal = newParents[parentKey];
+
+								if (!parentVal.toUpperCase().contains('STRATEGIC HEALTH AUTHORITY')) {
+									vm.service.ccgCode = parentKey;
+								}
+							}
+						}
+					}
+
+					//org type
+
+				},
+				(error) => {
+					vm.log.error('Failed to find ODS record');
+				}
 			);
 	}
 }

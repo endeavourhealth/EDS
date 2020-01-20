@@ -119,7 +119,7 @@ public final class StatsEndpoint extends AbstractEndpoint {
 
     private static String getPatientCounts() throws Exception {
 
-        Connection connection = ConnectionManager.getEdsConnection();
+        Connection connection = ConnectionManager.getEdsNonPooledConnection(); //as this SQL is slow
         PreparedStatement psPatient = null;
         PreparedStatement psPerson = null;
         try {

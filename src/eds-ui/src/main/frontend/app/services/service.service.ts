@@ -5,6 +5,7 @@ import {System} from "../system/models/System";
 import {BaseHttp2Service} from "eds-common-js";
 import {Http, URLSearchParams} from "@angular/http";
 import {EdsLibraryItem} from "../edsLibrary/models/EdsLibraryItem";
+import {OrganisationType} from "./models/OrganisationType";
 
 @Injectable()
 export class ServiceService extends BaseHttp2Service {
@@ -20,10 +21,16 @@ export class ServiceService extends BaseHttp2Service {
 	serviceLastDataFilter: string;
 	ccgNameCache: {};
 
+	//keep this here so it only needs getting once
+	organisationTypes: OrganisationType[];
+
 	constructor(http : Http) {
 		super (http);
-		this.serviceNameSearchIncludeNotes = true;
+
+		var vm = this;
+		vm.serviceNameSearchIncludeNotes = true;
 	}
+
 
 	getAll(): Observable<Service[]> {
 		return this.httpGet('api/service');
@@ -75,6 +82,9 @@ export class ServiceService extends BaseHttp2Service {
 		return this.httpGet('api/service/protocolsForService', { search : params });
 	}
 
+	getOrganisationTypeList() : Observable<OrganisationType[]> {
+		return this.httpGet('api/service/organisationTypeList', {});
+	}
 
 	toggleFiltering() {
 		var vm = this;
