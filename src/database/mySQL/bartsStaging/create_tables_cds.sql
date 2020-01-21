@@ -2,10 +2,14 @@ use staging_barts;
 
 drop table if exists cds_inpatient;
 drop table if exists cds_inpatient_latest;
+drop table if exists cds_inpatient_target;
+drop table if exists cds_inpatient_target_latest;
 drop table if exists cds_outpatient;
 drop table if exists cds_outpatient_latest;
 drop table if exists cds_emergency;
 drop table if exists cds_emergency_latest;
+drop table if exists cds_emergency_target;
+drop table if exists cds_emergency_target_latest;
 drop table if exists cds_critical_care;
 drop table if exists cds_critical_care_latest;
 drop table if exists cds_home_delivery_birth;
@@ -83,7 +87,7 @@ create table cds_inpatient_latest
     admission_source_code          varchar(12)   COMMENT 'LKP_CDS_ADMISS_SOURCE',
     patient_classification         char(1)      COMMENT 'LKP_CDS_PATIENT_CLASS',
     spell_start_date               datetime     COMMENT 'start date and time of hospital spell',
-    episode_number                 varchar(2),
+    episode_number                 varchar(2)   COMMENT 'episode number within the hospital spell',
     episode_start_site_code        varchar(12)  COMMENT 'location at start of episode',
     episode_start_ward_code        varchar(12)  COMMENT 'ward at start of episode',
     episode_start_date             datetime     COMMENT 'episode start date and time',
@@ -110,6 +114,92 @@ create table cds_inpatient_latest
     CONSTRAINT pk_cds_inpatient_latest PRIMARY KEY (cds_unique_identifier)
 );
 CREATE INDEX ix_cds_inpatient_latest_join_helper on cds_inpatient_latest (exchange_id, cds_unique_identifier);
+
+create table cds_inpatient_target
+(
+    exchange_id                	   char(36)     NOT NULL COMMENT ' links to audit.exchange table (but on a different server)',
+    unique_id                  	   varchar(255) NOT NULL COMMENT ' unique ID derived from source IDs ',
+    is_delete                  	   bool         NOT NULL COMMENT ' if this procedure should be deleted or upserted ',
+    person_id                  	   int COMMENT ' person ID for the inpatient encounter ',
+    encounter_id               	   int COMMENT ' encounter ID for the inpatient encounter, derived from tail ',
+    episode_id               	   int COMMENT ' episode ID associated with the inpatient encounter, derived from tail ',
+    performer_personnel_id     	   int COMMENT ' responsible personnel ID for the inpatient encounter ',
+
+    patient_pathway_identifier     varchar(20)  COMMENT 'links to the EpisodeId from the tail file if present',
+    spell_number                   varchar(12),
+    admission_method_code          varchar(12)   COMMENT 'LKP_CDS_ADMISS_METHOD',
+    admission_source_code          varchar(12)   COMMENT 'LKP_CDS_ADMISS_SOURCE',
+    patient_classification         char(1)      COMMENT 'LKP_CDS_PATIENT_CLASS',
+    spell_start_date               datetime     COMMENT 'start date and time of hospital spell',
+    episode_number                 varchar(2)   COMMENT 'episode number within the hospital spell',
+    episode_start_site_code        varchar(12)  COMMENT 'location at start of episode',
+    episode_start_ward_code        varchar(12)  COMMENT 'ward at start of episode',
+    episode_start_date             datetime     COMMENT 'episode start date and time',
+    episode_end_site_code          varchar(12)  COMMENT 'location at end of episode',
+    episode_end_ward_code          varchar(12)  COMMENT 'ward at end of episode',
+    episode_end_date               datetime     COMMENT 'episode end date and time',
+    discharge_date                 datetime     COMMENT 'date and time of discharge',
+    discharge_destination_code     varchar(12)   COMMENT 'LKP_CDS_DISCH_DEST',
+    discharge_method               char(1)      COMMENT 'LKP_CDS_DISCH_METHOD',
+
+    -- store any diagnosis and procedure data
+    primary_diagnosis_ICD          varchar(6),
+    secondary_diagnosis_ICD        varchar(6),
+    other_diagnosis_ICD            mediumtext,
+    primary_procedure_OPCS         varchar(4),
+    primary_procedure_date         date,
+    secondary_procedure_OPCS       varchar(4),
+    secondary_procedure_date       date,
+    other_procedures_OPCS          mediumtext,
+
+    audit_json                     mediumtext   null comment 'Used for Audit Purposes',
+    is_confidential                bool COMMENT 'if this procedure should be confidential or not, i.e. withheld flag set',
+
+    CONSTRAINT pk_inpatient_target PRIMARY KEY (exchange_id, unique_id)
+);
+
+-- latest version of the inpatient record based on unique_id
+create table cds_inpatient_target_latest
+(
+    exchange_id                	char(36)     NOT NULL COMMENT ' links to audit.exchange table (but on a different server)',
+    unique_id                  	varchar(255) NOT NULL COMMENT ' unique ID derived from source IDs ',
+    is_delete                  	bool         NOT NULL COMMENT ' if this procedure should be deleted or upserted ',
+    person_id                  	int COMMENT ' person ID for the inpatient encounter ',
+    encounter_id               	int COMMENT ' encounter ID for the inpatient encounter, derived from tail ',
+    episode_id               	int COMMENT ' episode ID associated with the inpatient encounter, derived from tail ',
+    performer_personnel_id     	int COMMENT ' responsible personnel ID for the inpatient encounter ',
+    patient_pathway_identifier     varchar(20)  COMMENT 'links to the EpisodeId from the tail file if present',
+    spell_number                   varchar(12),
+    admission_method_code          varchar(12)   COMMENT 'LKP_CDS_ADMISS_METHOD',
+    admission_source_code          varchar(12)   COMMENT 'LKP_CDS_ADMISS_SOURCE',
+    patient_classification         char(1)      COMMENT 'LKP_CDS_PATIENT_CLASS',
+    spell_start_date               datetime     COMMENT 'start date and time of hospital spell',
+    episode_number                 varchar(2)   COMMENT 'episode number within the hospital spell',
+    episode_start_site_code        varchar(12)  COMMENT 'location at start of episode',
+    episode_start_ward_code        varchar(12)  COMMENT 'ward at start of episode',
+    episode_start_date             datetime     COMMENT 'episode start date and time',
+    episode_end_site_code          varchar(12)  COMMENT 'location at end of episode',
+    episode_end_ward_code          varchar(12)  COMMENT 'ward at end of episode',
+    episode_end_date               datetime     COMMENT 'episode end date and time',
+    discharge_date                 datetime     COMMENT 'date and time of discharge',
+    discharge_destination_code     varchar(12)   COMMENT 'LKP_CDS_DISCH_DEST',
+    discharge_method               char(1)      COMMENT 'LKP_CDS_DISCH_METHOD',
+
+    -- store any diagnosis and procedure data
+    primary_diagnosis_ICD          varchar(6),
+    secondary_diagnosis_ICD        varchar(6),
+    other_diagnosis_ICD            mediumtext,
+    primary_procedure_OPCS         varchar(4),
+    primary_procedure_date         date,
+    secondary_procedure_OPCS       varchar(4),
+    secondary_procedure_date       date,
+    other_procedures_OPCS          mediumtext,
+
+    audit_json                  mediumtext   null comment 'Used for Audit Purposes',
+    is_confidential             bool COMMENT 'if this procedure should be confidential or not, i.e. withheld flag set',
+
+    CONSTRAINT pk_inpatient_target_latest PRIMARY KEY (unique_id)
+);
 
 
 -- records from sus outpatient files are written to this table
@@ -205,7 +295,7 @@ create table cds_emergency
     date_of_birth         date COMMENT 'from PersonBirthDate',
 
     patient_pathway_identifier          varchar(20)  COMMENT 'links to the EpisodeId from the tail file if present',
-    department_type                     varchar(20),
+    department_type                     varchar(2),
     ambulance_incident_number           varchar(50),
     treatment_organisation_code         varchar(12)  COMMENT 'emergency care organisation ods code',
     attendance_identifier               varchar(20),
@@ -223,12 +313,12 @@ create table cds_emergency
     discharge_destination_site_id       varchar(20),
     conclusion_date                     datetime,
     departure_date                      datetime,
-    mh_classifications                  mediumtext   COMMENT 'code~start datetime~end datetime in upto 10 | delimetered groups',
-    diagnosis                           mediumtext   COMMENT 'code in upto 20 | delimetered groups',
-    investigations                      mediumtext   COMMENT 'code~datetime in upto 10 | delimetered groups',
-    treatments                          mediumtext   COMMENT 'code~datetime in upto 10 | delimetered groups',
-    referred_to_services                mediumtext   COMMENT 'Snomed code~request date~assessment date  in upto 10 | delimetered groups',
-    safeguarding_concerns               mediumtext   COMMENT 'Snomed code in upto 10 | delimetered groups',
+    mh_classifications                  mediumtext   COMMENT ' start datetime~end datetime~code in upto 10 | delimetered groups',
+    diagnosis                           mediumtext   COMMENT ' code in upto 20 | delimetered groups',
+    investigations                      mediumtext   COMMENT ' datetime~code in upto 10 | delimetered groups',
+    treatments                          mediumtext   COMMENT ' datetime~code in upto 10 | delimetered groups',
+    referred_to_services                mediumtext   COMMENT ' request date~assessment date~code  in upto 10 | delimetered groups',
+    safeguarding_concerns               mediumtext   COMMENT ' code in upto 10 | delimetered groups',
 
     lookup_person_id               int COMMENT 'person ID looked up using NHS number, DoB and MRN',
     audit_json                     mediumtext   null comment 'Used for Audit Purposes',
@@ -245,13 +335,13 @@ create table cds_emergency_latest
     cds_activity_date     datetime    NOT NULL COMMENT 'Date common to all sus files',
     cds_unique_identifier varchar(50) NOT NULL COMMENT 'from CDSUniqueIdentifier',
     cds_update_type       int         NOT NULL COMMENT 'from CDSUpdateType',
-    mrn                   varchar(10) NOT NULL COMMENT 'patient MRN from LocalPatientID field',     -- TODO make NULL?
+    mrn                   varchar(10) NOT NULL COMMENT 'patient MRN from LocalPatientID field',
     nhs_number            varchar(10) NOT NULL COMMENT 'from NHSNumber',
     withheld              bool COMMENT 'True if id has a withheld reason',
     date_of_birth         date COMMENT 'from PersonBirthDate',
 
     patient_pathway_identifier          varchar(20)  COMMENT 'links to the EpisodeId from the tail file if present',
-    department_type                     varchar(20),
+    department_type                     varchar(2),
     ambulance_incident_number           varchar(50),
     treatment_organisation_code         varchar(12)  COMMENT 'emergency care organisation ods code',
     attendance_identifier               varchar(20),
@@ -269,18 +359,94 @@ create table cds_emergency_latest
     discharge_destination_site_id       varchar(20),
     conclusion_date                     datetime,
     departure_date                      datetime,
-    mh_classifications                  mediumtext   COMMENT 'code~start datetime~end datetime in upto 10 | delimetered groups',
-    diagnosis                           mediumtext   COMMENT 'code in upto 20 | delimetered groups',
-    investigations                      mediumtext   COMMENT 'code~datetime in upto 10 | delimetered groups',
-    treatments                          mediumtext   COMMENT 'code~datetime in upto 10 | delimetered groups',
-    referred_to_services                mediumtext   COMMENT 'Snomed code~request date~assessment date  in upto 10 | delimetered groups',
-    safeguarding_concerns               mediumtext   COMMENT 'Snomed code in upto 10 | delimetered groups',
+    mh_classifications                  mediumtext   COMMENT ' start datetime~end datetime~code in upto 10 | delimetered groups',
+    diagnosis                           mediumtext   COMMENT ' code in upto 20 | delimetered groups',
+    investigations                      mediumtext   COMMENT ' datetime~code in upto 10 | delimetered groups',
+    treatments                          mediumtext   COMMENT ' datetime~code in upto 10 | delimetered groups',
+    referred_to_services                mediumtext   COMMENT ' request date~assessment date~code  in upto 10 | delimetered groups',
+    safeguarding_concerns               mediumtext   COMMENT ' code in upto 10 | delimetered groups',
 
     lookup_person_id               int COMMENT 'person ID looked up using NHS number, DoB and MRN',
     audit_json                     mediumtext   null comment 'Used for Audit Purposes',
     CONSTRAINT pk_cds_emergency_latest PRIMARY KEY (cds_unique_identifier)
 );
 CREATE INDEX ix_cds_emergency_latest_join_helper on cds_emergency_latest (exchange_id, cds_unique_identifier);
+
+create table cds_emergency_target
+  (
+      exchange_id                	char(36)     NOT NULL COMMENT ' links to audit.exchange table (but on a different server)',
+      unique_id                  	varchar(255) NOT NULL COMMENT ' unique ID derived from source IDs ',
+      is_delete                  	bool         NOT NULL COMMENT ' if this procedure should be deleted or upserted ',
+      person_id                  	int COMMENT ' person ID for the emergency encounter ',
+      encounter_id               	int COMMENT ' encounter ID for the emergency encounter, derived from tail ',
+      episode_id               	    int COMMENT ' episode ID associated with the emergency encounter, derived from tail ',
+      performer_personnel_id     	int COMMENT ' responsible personnel ID for the emergency encounter ',
+      department_type			   	varchar(2),
+      ambulance_no				varchar(50),
+      organisation_code			varchar(12) COMMENT ' ODS code of A&E treatment organisation ',
+      attendance_id				varchar(20),
+      arrival_mode				varchar(20) COMMENT ' Snomed coded ',
+      attendance_category			varchar(20),
+      arrival_date				datetime,
+      initial_assessment_date		datetime,
+      chief_complaint				varchar(20) COMMENT ' Snomed coded ',
+      seen_for_treatment_date		datetime,
+      decided_to_admit_date		datetime,
+      treatment_function_code		varchar(12),
+      discharge_status			varchar(20) COMMENT ' Snomed coded ',
+      discharge_destination		varchar(20) COMMENT ' Snomed coded ',
+      conclusion_date				datetime,
+      departure_date				datetime,
+      mh_classifications			mediumtext COMMENT ' start datetime~end datetime~code in upto 10 | delimetered groups',
+      diagnosis					mediumtext COMMENT ' code in upto 20 | delimetered groups',
+      investigations              mediumtext COMMENT ' datetime~code in upto 10 | delimetered groups',
+      treatments                  mediumtext COMMENT ' datetime~code in upto 10 | delimetered groups',
+      referred_to_services        mediumtext COMMENT ' request date~assessment date~code  in upto 10 | delimetered groups',
+      safeguarding_concerns       mediumtext COMMENT ' code in upto 10 | delimetered groups',
+      audit_json                  mediumtext   null comment 'Used for Audit Purposes',
+      is_confidential             bool COMMENT 'if this procedure should be confidential or not, i.e. withheld flag set',
+
+      CONSTRAINT pk_emergency_target PRIMARY KEY (exchange_id, unique_id)
+  );
+
+-- latest version of the emergency record based on unique_id
+create table cds_emergency_target_latest
+(
+    exchange_id                	char(36)     NOT NULL COMMENT ' links to audit.exchange table (but on a different server)',
+    unique_id                  	varchar(255) NOT NULL COMMENT ' unique ID derived from source IDs ',
+    is_delete                  	bool         NOT NULL COMMENT ' if this procedure should be deleted or upserted ',
+    person_id                  	int COMMENT ' person ID for the emergency encounter ',
+    encounter_id               	int COMMENT ' encounter ID for the emergency encounter, derived from tail ',
+    episode_id               	int COMMENT ' episode ID associated with the emergency encounter, derived from tail ',
+    performer_personnel_id     	int COMMENT ' responsible personnel ID for the emergency encounter ',
+    department_type			   	varchar(2),
+    ambulance_no				varchar(50),
+    organisation_code			varchar(12) COMMENT ' ODS code of A&E treatment organisation ',
+    attendance_id				varchar(20),
+    arrival_mode				varchar(20) COMMENT ' Snomed coded ',
+    attendance_category			varchar(20),
+    arrival_date				datetime,
+    initial_assessment_date		datetime,
+    chief_complaint				varchar(20) COMMENT ' Snomed coded ',
+    seen_for_treatment_date		datetime,
+    decided_to_admit_date		datetime,
+    treatment_function_code		varchar(12),
+    discharge_status			varchar(20) COMMENT ' Snomed coded ',
+    discharge_destination		varchar(20) COMMENT ' Snomed coded ',
+    conclusion_date				datetime,
+    departure_date				datetime,
+    mh_classifications			mediumtext COMMENT ' start datetime~end datetime~code in upto 10 | delimetered groups',
+    diagnosis					mediumtext COMMENT ' code in upto 20 | delimetered groups',
+    investigations              mediumtext COMMENT ' datetime~code in upto 10 | delimetered groups',
+    treatments                  mediumtext COMMENT ' datetime~code in upto 10 | delimetered groups',
+    referred_to_services        mediumtext COMMENT ' request date~assessment date~code  in upto 10 | delimetered groups',
+    safeguarding_concerns       mediumtext COMMENT ' code in upto 10 | delimetered groups',
+    audit_json                  mediumtext   null comment 'Used for Audit Purposes',
+    is_confidential             bool COMMENT 'if this procedure should be confidential or not, i.e. withheld flag set',
+
+    CONSTRAINT pk_emergency_target_latest PRIMARY KEY (unique_id)
+);
+
 
 -- records from critical care files are written to this table
 create table cds_critical_care
@@ -492,3 +658,4 @@ create table cds_tail_latest
     audit_json                   mediumtext  NULL COMMENT 'Used for Audit Purposes',
     CONSTRAINT pk_cds_tail_latest PRIMARY KEY (cds_unique_identifier, sus_record_type)
 );
+
