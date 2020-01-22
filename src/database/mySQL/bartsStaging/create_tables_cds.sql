@@ -6,6 +6,8 @@ drop table if exists cds_inpatient_target;
 drop table if exists cds_inpatient_target_latest;
 drop table if exists cds_outpatient;
 drop table if exists cds_outpatient_latest;
+drop table if exists cds_outpatient_target;
+drop table if exists cds_outpatient_target_latest;
 drop table if exists cds_emergency;
 drop table if exists cds_emergency_latest;
 drop table if exists cds_emergency_target;
@@ -279,6 +281,74 @@ create table cds_outpatient_latest
     CONSTRAINT pk_cds_outpatient_latest PRIMARY KEY (cds_unique_identifier)
 );
 CREATE INDEX ix_cds_outpatient_latest_join_helper on cds_outpatient_latest (exchange_id, cds_unique_identifier);
+
+create table cds_outpatient_target
+(
+    exchange_id                	char(36)     NOT NULL COMMENT ' links to audit.exchange table (but on a different server)',
+    unique_id                  	varchar(255) NOT NULL COMMENT ' unique ID derived from source IDs ',
+    is_delete                  	bool         NOT NULL COMMENT ' if this outpatient record should be deleted or upserted ',
+    person_id                  	int COMMENT ' person ID for the outpatient encounter ',
+    encounter_id               	int COMMENT ' encounter ID for the outpatient encounter, derived from tail ',
+    episode_id               	int COMMENT ' episode ID associated with the outpatient encounter, derived from tail ',
+    performer_personnel_id     	int COMMENT ' responsible personnel ID for the outpatient encounter ',
+
+    patient_pathway_identifier  varchar(20)  COMMENT 'links to the EpisodeId from the tail file if present',
+    appt_attendance_identifier  varchar(20),
+    appt_attended_code          char(1)      COMMENT 'Attended or DNA code: LKP_CDS_ATTENDED',
+    appt_outcome_code           char(1)      COMMENT 'LKP_CDS_ATTENDANCE_OUTCOME',
+    appt_date                   datetime     COMMENT 'date and time of the outpatient appointment',
+    appt_site_code              varchar(12)  COMMENT 'location of outpatient appointment',
+
+    -- store any diagnosis and procedure data
+    primary_diagnosis_ICD           varchar(6),
+    secondary_diagnosis_ICD         varchar(6),
+    other_diagnosis_ICD             mediumtext,
+    primary_procedure_OPCS          varchar(4),
+    primary_procedure_date          date,
+    secondary_procedure_OPCS        varchar(4),
+    secondary_procedure_date        date,
+    other_procedures_OPCS           mediumtext,
+
+    audit_json                  mediumtext   null comment 'Used for Audit Purposes',
+    is_confidential             bool COMMENT 'if this procedure should be confidential or not, i.e. withheld flag set',
+
+    CONSTRAINT pk_outpatient_target PRIMARY KEY (exchange_id, unique_id)
+);
+
+-- latest version of the outpatient record based on unique_id
+create table cds_outpatient_target_latest
+(
+    exchange_id                	char(36)     NOT NULL COMMENT ' links to audit.exchange table (but on a different server)',
+    unique_id                  	varchar(255) NOT NULL COMMENT ' unique ID derived from source IDs ',
+    is_delete                  	bool         NOT NULL COMMENT ' if this outpatient record should be deleted or upserted ',
+    person_id                  	int COMMENT ' person ID for the outpatient encounter ',
+    encounter_id               	int COMMENT ' encounter ID for the outpatient encounter, derived from tail ',
+    episode_id               	int COMMENT ' episode ID associated with the outpatient encounter, derived from tail ',
+    performer_personnel_id     	int COMMENT ' responsible personnel ID for the outpatient encounter ',
+
+    patient_pathway_identifier  varchar(20)  COMMENT 'links to the EpisodeId from the tail file if present',
+    appt_attendance_identifier  varchar(20),
+    appt_attended_code          char(1)      COMMENT 'Attended or DNA code: LKP_CDS_ATTENDED',
+    appt_outcome_code           char(1)      COMMENT 'LKP_CDS_ATTENDANCE_OUTCOME',
+    appt_date                   datetime     COMMENT 'date and time of the outpatient appointment',
+    appt_site_code              varchar(12)  COMMENT 'location of outpatient appointment',
+
+    -- store any diagnosis and procedure data
+    primary_diagnosis_ICD           varchar(6),
+    secondary_diagnosis_ICD         varchar(6),
+    other_diagnosis_ICD             mediumtext,
+    primary_procedure_OPCS          varchar(4),
+    primary_procedure_date          date,
+    secondary_procedure_OPCS        varchar(4),
+    secondary_procedure_date        date,
+    other_procedures_OPCS           mediumtext,
+
+    audit_json                  mediumtext   null comment 'Used for Audit Purposes',
+    is_confidential             bool COMMENT 'if this procedure should be confidential or not, i.e. withheld flag set',
+
+    CONSTRAINT pk_emergency_target_latest PRIMARY KEY (unique_id)
+);
+
 
 -- records from sus emergency care dataset files are written to this table
 create table cds_emergency
