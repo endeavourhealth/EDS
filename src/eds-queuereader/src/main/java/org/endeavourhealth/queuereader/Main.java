@@ -85,6 +85,9 @@ import org.slf4j.LoggerFactory;
 import javax.persistence.EntityManager;
 import java.io.*;
 import java.lang.System;
+import java.lang.management.ManagementFactory;
+import java.lang.management.MemoryMXBean;
+import java.lang.management.OperatingSystemMXBean;
 import java.lang.reflect.Constructor;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
@@ -122,6 +125,12 @@ public class Main {
 			deleteEnterpriseObs(filePath, configName, batchSize);
 			System.exit(0);
 		}*/
+
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("TestJMX")) {
+			testJmx();
+			System.exit(0);
+		}
 
 
 		if (args.length >= 1
@@ -897,6 +906,34 @@ public class Main {
 		RabbitHandler rabbitHandler = new RabbitHandler(configuration, configId);
 		rabbitHandler.start();
 		LOG.info("EDS Queue reader running (kill file location " + TransformConfig.instance().getKillFileLocation() + ")");
+	}
+
+	private static void testJmx() {
+		LOG.info("Testing JMX");
+		try {
+			LOG.debug("----OperatingSystemMXBean--------------------------------");
+			OperatingSystemMXBean osb = ManagementFactory.getOperatingSystemMXBean();
+			LOG.debug("getName = " + osb.getName());
+			LOG.debug("getSystemLoadAverage = " + osb.getSystemLoadAverage());
+			LOG.debug("getArch = " + osb.getArch());
+			LOG.debug("getVersion = " + osb.getVersion());
+			LOG.debug("getAvailableProcessors = " + osb.getAvailableProcessors());
+
+			LOG.debug("----MemoryMXBean--------------------------------");
+			MemoryMXBean mb = ManagementFactory.getMemoryMXBean();
+			LOG.debug("getNonHeapMemoryUsage = " + mb.getNonHeapMemoryUsage());
+			LOG.debug("getHeapMemoryUsage = " + mb.getHeapMemoryUsage());
+			LOG.debug("getObjectPendingFinalizationCount = " + mb.getObjectPendingFinalizationCount());
+
+			LOG.debug("----MemoryMXBean--------------------------------");
+			com.sun.management.OperatingSystemMXBean sosb = (com.sun.management.OperatingSystemMXBean)ManagementFactory.getOperatingSystemMXBean();
+			LOG.debug("getSystemCpuLoad = " + sosb.getSystemCpuLoad());
+			LOG.debug("getTotalPhysicalMemorySize = " + sosb.getTotalPhysicalMemorySize());
+
+			LOG.info("Finished Testing JMX");
+		} catch (Throwable t) {
+			LOG.error("", t);
+		}
 	}
 
 	private static void testDatabases(String odsCodesStr, String subscriberConfigNamesStr) {
