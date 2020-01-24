@@ -242,3 +242,50 @@ BEGIN
 
 END$$
 DELIMITER ;
+
+
+DROP PROCEDURE IF EXISTS `get_target_emergency_cds_exchange`;
+
+DELIMITER $$
+CREATE PROCEDURE `get_target_emergency_cds_exchange`(
+    IN _exchange_id char(36)
+)
+BEGIN
+
+    select
+        et.unique_id,
+        et.is_delete,
+        et.person_id,
+        et.encounter_id,   -- derive from lookup if null using attendance_id on AEATT
+        et.episode_id,
+        et.performer_personnel_id,
+        et.department_type,
+        et.ambulance_no,
+        et.organisation_code,
+        et.attendance_id,
+        et.arrival_mode,
+        et.attendance_category,
+        et.arrival_date,
+        et.initial_assessment_date,
+        et.chief_complaint,
+        et.seen_for_treatment_date,
+        et.decided_to_admit_date,
+        et.treatment_function_code,
+        et.discharge_status,
+        et.discharge_destination,
+        et.conclusion_date,
+        et.departure_date,
+        et.diagnosis,
+        et.investigations,
+        et.treatments,
+        et.referred_to_services,
+        et.safeguarding_concerns,
+        et.audit_json,
+        et.is_confidential
+    from
+        cds_emergency_target et
+    where
+        et.exchange_id = _exchange_id;
+
+END$$
+DELIMITER ;

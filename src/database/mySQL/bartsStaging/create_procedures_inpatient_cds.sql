@@ -254,3 +254,52 @@ BEGIN
 
 END$$
 DELIMITER ;
+
+DROP PROCEDURE IF EXISTS `get_target_inpatient_cds_exchange`;
+
+DELIMITER $$
+CREATE PROCEDURE `get_target_inpatient_cds_exchange`(
+    IN _exchange_id char(36)
+)
+BEGIN
+
+    select
+        it.unique_id,
+        it.is_delete,
+        it.person_id,
+        it.encounter_id,   -- derive from lookup if null using spell_number on IPEPI
+        it.episode_id,
+        it.performer_personnel_id,
+        it.patient_pathway_identifier,
+        it.spell_number,
+        it.admission_method_code,
+        it.admission_source_code,
+        it.patient_classification,
+        it.spell_start_date,
+        it.episode_number,
+        it.episode_start_site_code,
+        it.episode_start_ward_code,
+        it.episode_start_date,
+        it.episode_end_site_code,
+        it.episode_end_ward_code,
+        it.episode_end_date,
+        it.discharge_date,
+        it.discharge_destination_code,
+        it.discharge_method,
+        it.primary_diagnosis_ICD,
+        it.secondary_diagnosis_ICD,
+        it.other_diagnosis_ICD,
+        it.primary_procedure_OPCS,
+        it.primary_procedure_date,
+        it.secondary_procedure_OPCS,
+        it.secondary_procedure_date,
+        it.other_procedures_OPCS,
+        it.audit_json,
+        it.is_confidential
+    from
+        cds_inpatient_target it
+    where
+        it.exchange_id = _exchange_id;
+
+END$$
+DELIMITER ;
