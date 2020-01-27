@@ -6,6 +6,7 @@ import {BaseHttp2Service} from "eds-common-js";
 import {Http, URLSearchParams} from "@angular/http";
 import {EdsLibraryItem} from "../edsLibrary/models/EdsLibraryItem";
 import {OrganisationType} from "./models/OrganisationType";
+import {linq} from "eds-common-js/dist/index";
 
 @Injectable()
 export class ServiceService extends BaseHttp2Service {
@@ -20,6 +21,8 @@ export class ServiceService extends BaseHttp2Service {
 	serviceCcgCodeFilter: string;
 	serviceLastDataFilter: string;
 	servicePublisherModeFilter: string;
+	sortFilter: string;
+
 	ccgNameCache: {};
 
 
@@ -27,7 +30,9 @@ export class ServiceService extends BaseHttp2Service {
 		super (http);
 
 		var vm = this;
+		vm.showFilters = true;
 		vm.serviceNameSearchIncludeNotes = true;
+		vm.sortFilter = 'NameAsc';
 	}
 
 
@@ -101,7 +106,7 @@ export class ServiceService extends BaseHttp2Service {
 		return result;
 	}
 
-	applyFiltering(services: Service[]) : Service[] {
+	applyFiltering(services: Service[], transformErrorsView: boolean) : Service[] {
 		var vm = this;
 
 		//if we've not loaded our services yet, just return out
@@ -192,9 +197,19 @@ export class ServiceService extends BaseHttp2Service {
 					}
 				}
 
-				if (vm.serviceStatusFilter) {
+				if (vm.serviceStatusFilter
+					&& !transformErrorsView) { //only applies to full service list
 
-					var include = false;
+					var statusVal = vm.getSortingStatusValue(service);
+
+					if ((vm.serviceStatusFilter == 'NoStatus' && statusVal != 4)
+						|| (vm.serviceStatusFilter == 'NoData' && statusVal != 3)
+						|| (vm.serviceStatusFilter == 'OK' && statusVal != 2)
+						|| (vm.serviceStatusFilter == 'Behind' && statusVal != 1)
+						|| (vm.serviceStatusFilter == 'Error' && statusVal == 0)) {
+
+						continue;
+					}
 
 					if (vm.serviceStatusFilter == 'NoStatus') {
 						include = !service.systemStatuses;
@@ -242,7 +257,8 @@ export class ServiceService extends BaseHttp2Service {
 					}
 				}
 
-				if (vm.servicePublisherModeFilter) {
+				if (vm.servicePublisherModeFilter
+					&& !transformErrorsView) { //only applies to main services view
 					var include = false;
 
 					if (service.systemStatuses) {
@@ -261,7 +277,8 @@ export class ServiceService extends BaseHttp2Service {
 				}
 
 
-				if (minLastData || maxLastData) {
+				if ((minLastData || maxLastData)
+					&& !transformErrorsView) { //only applies to main services view
 					var include = false;
 
 					if (service.systemStatuses) {
@@ -308,10 +325,162 @@ export class ServiceService extends BaseHttp2Service {
 			filteredServices.push(service);
 		}
 
+		//always sort by name first
+		filteredServices = linq(filteredServices).OrderBy(s => s.name.toLowerCase()).ToArray();
+
+		if (vm.sortFilter) {
+
+			//console.log('sorting by ' + vm.sortFilter);
+
+			if (vm.sortFilter == 'NameAsc'
+				|| vm.sortFilter == 'NameDesc') {
+				//already sorted by name
+
+				if (vm.sortFilter == 'NameDesc') {
+					filteredServices = filteredServices.reverse();
+				}
+
+			} else if (vm.sortFilter == 'IDAsc'
+				|| vm.sortFilter == 'IDDesc') {
+				filteredServices = linq(filteredServices).OrderBy(s => this.getSortingLocalId(s)).ToArray();
+
+				if (vm.sortFilter == 'IDDesc') {
+					filteredServices = filteredServices.reverse();
+				}
+
+			} else if (vm.sortFilter == 'ParentAsc'
+				|| vm.sortFilter == 'ParentDesc') {
+				filteredServices = linq(filteredServices).OrderBy(s => this.getSortingCcgCode(s)).ToArray();
+
+				if (vm.sortFilter == 'ParentDesc') {
+					filteredServices = filteredServices.reverse();
+				}
+
+			} else if (vm.sortFilter == 'PublisherConfigAsc'
+				|| vm.sortFilter == 'PublisherConfigDesc') {
+				filteredServices = linq(filteredServices).OrderBy(s => this.getSortingPublisherConfigName(s)).ToArray();
+
+				if (vm.sortFilter == 'PublisherConfigDesc') {
+					filteredServices = filteredServices.reverse();
+				}
+
+			} else if (vm.sortFilter == 'LastDataAsc'
+				|| vm.sortFilter == 'LastDataDesc') {
+
+				//always use the most recent date if multiple publisher feeds are present
+				filteredServices = linq(filteredServices).OrderBy(s => this.getSortingDate(s)).ToArray();
+
+				if (vm.sortFilter == 'LastDataDesc') {
+					filteredServices = filteredServices.reverse();
+				}
+
+			} else if (vm.sortFilter == 'StatusAsc'
+				|| vm.sortFilter == 'StatusDesc') {
+
+				//use a special function that works out a sorting value for the status
+				filteredServices = linq(filteredServices).OrderBy(s => this.getSortingStatusValue(s)).ToArray();
+
+				if (vm.sortFilter == 'StatusDesc') {
+					filteredServices = filteredServices.reverse();
+				}
+
+			} else {
+				console.log('unknown sort mode ' + vm.sortFilter);
+			}
+		}
+
 		return filteredServices;
 
 	}
 
+	private getSortingLocalId(s:Service):string {
+		if (s.localIdentifier) {
+			return s.localIdentifier;
+
+		} else {
+			return '';
+		}
+	}
+
+	private getSortingDate(s: Service): number {
+		var ret;
+
+		if (s.systemStatuses) {
+
+			for (var i = 0; i < s.systemStatuses.length; i++) {
+				var status = s.systemStatuses[i];
+				if (status.lastDataDate
+					&& (!ret
+					|| status.lastDataDate > ret)) {
+
+					ret = status.lastDataDate;
+				}
+			}
+		}
+
+		//if no date, then use the current time
+		if (!ret) {
+			ret = new Date().getTime();
+			//ret = 0;
+		}
+
+		//console.log('service ' + s.name + ' ret ' + ret + ' -> ' + new Date().setTime(ret));
+		return ret * -1; //multiple by -1 so we get everything ordered more intuitively
+	}
+
+	private getSortingStatusValue(s: Service): number {
+
+		var ret = 0; //no status
+
+		//console.log('service ' + s.name + ' has statuses ' + s.systemStatuses);
+		if (s.systemStatuses) {
+
+			for (var i = 0; i < s.systemStatuses.length; i++) {
+				var status = s.systemStatuses[i];
+
+				var thisVal;
+
+				if (!status.lastDataReceived) { //no data
+					thisVal = 1;
+
+				} else if (!status.processingInError //OK
+					&& status.processingUpToDate) {
+					thisVal = 2;
+
+				} else if (!status.processingInError //behind
+					&& !status.processingUpToDate) {
+					thisVal = 4;
+
+				} else { //error
+					thisVal = 4
+				}
+
+				if (thisVal > ret) {
+					ret = thisVal;
+				}
+			}
+		}
+
+		//console.log('service ' + s.name + ' ret ' + ret);
+		return ret;
+	}
+
+
+	private getSortingCcgCode(s:Service):string {
+		if (s.ccgCode) {
+			return s.ccgCode;
+		} else {
+			return '';
+		}
+	}
+
+	private getSortingPublisherConfigName(s:Service):string {
+		if (s.publisherConfigName) {
+			return s.publisherConfigName;
+		} else {
+			return '';
+		}
+	}
 
 	getCcgName(ccgCode: string) : string {
 
@@ -540,5 +709,7 @@ export class ServiceService extends BaseHttp2Service {
 		return ret;
 		//return 'CCG name for ' + ccgCode + ' here!';
 	}
+
+
 }
 

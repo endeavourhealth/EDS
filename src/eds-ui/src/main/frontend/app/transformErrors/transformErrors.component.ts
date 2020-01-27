@@ -160,7 +160,7 @@ export class TransformErrorsComponent {
 
 	applyFiltering() {
 		var vm = this;
-
+console.log('filtering now');
 		//if we've not loaded our services yet, just return out
 		if (!vm.transformErrorSummaries) {
 			return;
@@ -170,6 +170,7 @@ export class TransformErrorsComponent {
 
 		//the filtering function works on Service objects, so we need to get the list of services and filter that first
 		var services = [];
+		var hmErrorsByServiceId = {};
 
 		var arrayLength = vm.transformErrorSummaries.length;
 		for (var i = 0; i < arrayLength; i++) {
@@ -178,21 +179,27 @@ export class TransformErrorsComponent {
 			if (services.indexOf(service) == -1) {
 				services.push(service);
 			}
+
+			var errorsForService = hmErrorsByServiceId[transformErrorSummary.service.uuid];
+			if (!errorsForService) {
+				errorsForService = [];
+			}
+			errorsForService.push(transformErrorSummary);
+			hmErrorsByServiceId[transformErrorSummary.service.uuid] = errorsForService;
 		}
 
-		//these filter options can't be used here, as we don't have enough data in our service objects, so just turn them off
-		vm.serviceService.serviceStatusFilter = null;
-		vm.serviceService.serviceLastDataFilter = null;
+		var filteredServices = vm.serviceService.applyFiltering(services, true);
 
-		var filteredServices = vm.serviceService.applyFiltering(services);
+		for (var i=0; i<filteredServices.length; i++) {
+			var service = filteredServices[i];
+			var errorsForService = hmErrorsByServiceId[service.uuid];
 
-		for (var i = 0; i < arrayLength; i++) {
-			var transformErrorSummary = vm.transformErrorSummaries[i];
-			var service = transformErrorSummary.service;
-			if (filteredServices.indexOf(service) > -1) {
-				vm.filteredErrorSummaries.push(transformErrorSummary);
+			for (var j=0; j<errorsForService.length; j++) {
+				var errorForService = errorsForService[j];
+				vm.filteredErrorSummaries.push(errorForService);
 			}
 		}
+
 	}
 
 	toggleFilters() {

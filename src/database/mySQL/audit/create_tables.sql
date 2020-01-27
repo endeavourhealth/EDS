@@ -312,11 +312,12 @@ create table application_heartbeat (
   is_busy boolean COMMENT 'whether the application is busy (depends on context what this means)',
   max_heap_mb int COMMENT 'JVM max heap',
   current_heap_mb int COMMENT 'JVM heap allocated',
+  server_memory_mb int COMMENT 'server physical memory',
+  server_cpu_usage_percent int COMMENT 'server total CPU load',
   CONSTRAINT pk_application_heartbeat PRIMARY KEY (application_name, application_instance_name)
 )
   ROW_FORMAT=COMPRESSED
   KEY_BLOCK_SIZE=8;
-
 
 
 create table last_data_to_subscriber (

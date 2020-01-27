@@ -26,6 +26,9 @@ export class QueueReaderStatusComponent {
     queueReaderStatusList: QueueReaderStatus[];
     queueReaderStatusMapByQueue: {};
     queueReaderStatusMapByHostName: {};
+    queueReaderCpuMapByHostName: {};
+    queueReaderPhysicalMemoryMapByHostName: {};
+    queueReaderMemoryGraphMapByHostName: {};
     refreshingQueueReaderStatus: boolean;
     hostNames: string[];
 
@@ -156,15 +159,41 @@ export class QueueReaderStatusComponent {
         vm.queueReaderStatusService.getStatus().subscribe(
             (result) => {
 
-                vm.queueReaderStatusList = result;
+                vm.queueReaderStatusList = linq(result).OrderBy(s => s.applicationInstanceName).ToArray();
 
                 //also hash the QueueReaderStatus objects by their queue name, so
                 vm.queueReaderStatusMapByQueue = {};
                 vm.queueReaderStatusMapByHostName = {};
+                vm.queueReaderCpuMapByHostName = {};
+                vm.queueReaderPhysicalMemoryMapByHostName = {};
+
+                //find the most recent CPU usage for each host
+                var statusByTimestamp = linq(result).OrderBy(s => s.timestmp).ToArray();
+                //console.log('result ' + result.length + ' -> ' + statusByTimestamp.length);
+                for (var i=statusByTimestamp.length-1; i>=0; i--) {
+                    //console.log('doing ' + i);
+                    var status = statusByTimestamp[i] as QueueReaderStatus;
+                    var hostName = status.hostName;
+
+                    var cpu = status.cpuLoad;
+                    //console.log('status ' + status.applicationInstanceName + ' has cpu ' + cpu);
+                    if (cpu) {
+                        if (!vm.queueReaderCpuMapByHostName[hostName]) {
+                            vm.queueReaderCpuMapByHostName[hostName] = cpu + '%';
+                        }
+                    }
+
+                    var physicalMemoryDesc = status.physicalMemoryDesc;
+                    if (physicalMemoryDesc) {
+                        if (!vm.queueReaderPhysicalMemoryMapByHostName[hostName]) {
+                            vm.queueReaderPhysicalMemoryMapByHostName[hostName] = physicalMemoryDesc;
+                        }
+                    }
+                }
 
                 var len = vm.queueReaderStatusList.length;
                 for (var i=0; i<len; i++) {
-                    var status = vm.queueReaderStatusList[i];
+                    var status = vm.queueReaderStatusList[i] as QueueReaderStatus;
                     var queueName = status.queueName;
                     var hostName = status.hostName;
 
@@ -182,9 +211,15 @@ export class QueueReaderStatusComponent {
                         vm.queueReaderStatusMapByHostName[hostName] = statusesForHostName;
                     }
                     statusesForHostName.push(status);
-
                 }
 
+                //need to work out distinct server names
+                vm.calculateDistinctHostNames();
+
+                //work out a quick visual indicator for memory usage
+                vm.calculateMemoryGraphs();
+
+                //generate unique colours for each host name
                 vm.calculateColours();
 
                 vm.refreshingQueueReaderStatus = false;
@@ -197,10 +232,10 @@ export class QueueReaderStatusComponent {
         );
     }
 
-    calculateColours():void {
+    calculateDistinctHostNames(): void {
         var vm = this;
 
-        //get list of disinct host names
+        //get list of distinct host names
         vm.hostNames = [];
 
         var len = vm.queueReaderStatusList.length;
@@ -215,12 +250,83 @@ export class QueueReaderStatusComponent {
         //sort list
         vm.hostNames = linq(vm.hostNames).OrderBy(s => s.toLowerCase()).ToArray();
 
+    }
+
+    calculateMemoryGraphs(): void {
+        var vm = this;
+
+        vm.queueReaderMemoryGraphMapByHostName = {};
+
+        var memorySizeMap = {};
+        var memoryUsedMap = {};
+
+        for (var i=0; i<vm.queueReaderStatusList.length; i++) {
+            var s = vm.queueReaderStatusList[i];
+            var hostName = s.hostName;
+
+            //get the physical memory size
+            var memorySize = s.physicalMemoryMb;
+            if (!memorySizeMap[hostName]) {
+                memorySizeMap[hostName] = memorySize;
+            }
+
+            //and if the app is running, add up the max heap allocated
+            if (!vm.isStatusTooOld(s)) {
+                var memoryUsed = s.maxHeapMb;
+                var used = memoryUsedMap[hostName];
+                if (!used) {
+                    used = 0;
+                }
+                used += memoryUsed;
+                memoryUsedMap[hostName] = used;
+            }
+        }
+
+        for (var i=0; i<vm.hostNames.length; i++) {
+            var hostName = vm.hostNames[i];
+            var memorySize = memorySizeMap[hostName] as number;
+            var memoryUsed = memoryUsedMap[hostName] as number;
+
+            var graph = '';
+
+            //this won't be set until all QRs are re-deployed
+            if (memorySize) {
+
+                if (!memoryUsed) {
+                    memoryUsed = 0;
+                }
+                var max = Math.round(memorySize / 1024); //convert MB into GB
+                var current = Math.round((memoryUsed / memorySize) * max);
+
+                //show the allocation
+                for (var j = 0; j < current && j < max; j++) {
+                    graph += 'O';
+                }
+
+                //if over-allocated, show the extra differently
+                for (var j = max; j < current; j++) {
+                    graph += 'X';
+                }
+
+                //pad out the string to the max
+                while (graph.length < max) {
+                    graph += "_";
+                }
+            }
+
+            vm.queueReaderMemoryGraphMapByHostName[hostName] = graph;
+        }
+    }
+
+    calculateColours():void {
+        var vm = this;
+
         //assign a colour to each server name
         vm.hostNameColourMap = {};
 
-        len = vm.hostNames.length;
+        var len = vm.hostNames.length;
         for (var i=0; i<len; i++) {
-            hostName = vm.hostNames[i];
+            var hostName = vm.hostNames[i];
 
             var colour = null;
             if (i >= vm.presetColours.length) {
@@ -264,8 +370,9 @@ export class QueueReaderStatusComponent {
 
     getStatusMemoryDesc(status: QueueReaderStatus): string {
         if (status.maxHeapDesc) {
-            var percent = Math.round(100 * (status.currentHeapMb / status.maxHeapMb));
-            return ' [' + percent + '% of ' + status.maxHeapDesc + ']';
+            /*var percent = Math.round(100 * (status.currentHeapMb / status.maxHeapMb));
+            return ' [' + percent + '% of ' + status.maxHeapDesc + ']';*/
+            return ' [' + status.maxHeapDesc + ']';
         } else {
             return '';
         }
@@ -298,10 +405,22 @@ export class QueueReaderStatusComponent {
         return {'background-color': colour};
     }
 
-    getStatuses(exchangeName: string, routingKey: string): QueueReaderStatus[] {
+    getStatusesForExchangeAndKey(exchangeName: string, routingKey: string): QueueReaderStatus[] {
         var vm = this;
         var queueName = vm.combineIntoQueueName(exchangeName, routingKey);
-        return vm.queueReaderStatusMapByQueue[queueName];
+        var statuses = vm.queueReaderStatusMapByQueue[queueName];
+
+        var ret = [];
+        if (statuses) {
+            for (var i=0; i<statuses.length; i++) {
+                var status = statuses[i];
+                if (vm.shouldShowStatus(status)) {
+                    ret.push(status);
+                }
+            }
+        }
+
+        return ret;
     }
 
     getQueueSize(exchangeName: string, routingKey: string): number {
@@ -325,7 +444,56 @@ export class QueueReaderStatusComponent {
 
     getStatusesForHostName(hostName: string): QueueReaderStatus[] {
         var vm = this;
-        return vm.queueReaderStatusMapByHostName[hostName];
+        var statuses = vm.queueReaderStatusMapByHostName[hostName];
 
+        var ret = [];
+        if (statuses) {
+            for (var i=0; i<statuses.length; i++) {
+                var status = statuses[i];
+                if (vm.shouldShowStatus(status)) {
+                    ret.push(status);
+                }
+            }
+        }
+
+        return ret;
+    }
+
+    getCpuUsage(hostName: string): string {
+        var vm = this;
+        return vm.queueReaderCpuMapByHostName[hostName];
+    }
+
+    getMemoryUsage(hostName: string): string {
+        var vm = this;
+        return vm.queueReaderPhysicalMemoryMapByHostName[hostName];
+    }
+
+    getMemoryUsageGraph(hostName: string): string {
+        var vm = this;
+        return vm.queueReaderMemoryGraphMapByHostName[hostName];
+    }
+
+    shouldShowStatus(status: QueueReaderStatus): boolean {
+        var vm = this;
+
+        //if filter option is on, return true
+        if (vm.queueReaderStatusService.showMissingQueueReadersOnEmptyQueues) {
+            return true;
+        }
+
+        //if queue isn't empty, return true
+        var queueSize = vm.getQueueSizeForQueueName(status.queueName);
+        if (queueSize //may be null if still refreshing queues
+            && queueSize > 0) {
+            return true;
+        }
+
+        //if status is NOT in warning state return true
+        if (!vm.isStatusTooOld(status)) {
+            return true;
+        }
+
+        return false;
     }
 }

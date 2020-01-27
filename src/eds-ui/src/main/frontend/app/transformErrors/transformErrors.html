@@ -45,6 +45,25 @@
                             </select>
                         </div>
 
+                        <div class="col-sm-2">
+                            <label for="sortFilter" class="control-label">Sorting</label>
+                            <select id="sortFilter" class="form-control" [(ngModel)]="serviceService.sortFilter" name="sortFilter" (ngModelChange)="applyFiltering()">
+                                <option value="NameAsc">Name Asc</option>
+                                <option value="NameDesc">Name Desc</option>
+                                <option value="IDAsc">ID Asc</option>
+                                <option value="IDDesc">ID Desc</option>
+                                <option value="ParentAsc">Parent Asc</option>
+                                <option value="ParentDesc">Parent Desc</option>
+                                <option value="PublisherConfigAsc">Publisher Config Asc</option>
+                                <option value="PublisherConfigDesc">Publisher Config Desc</option>
+                                <option value="LastDataAsc">Last Data Asc</option>
+                                <option value="LastDataDesc">Last Data Desc</option>
+                                <option value="StatusAsc">Status Asc</option>
+                                <option value="StatusDesc">Status Desc</option>
+                            </select>
+                        </div>
+
+
                     </div>
                 </form>
             </div>
@@ -65,8 +84,8 @@
                             <thead>
                                 <tr>
                                     <th class="col-md-1"></th> <!-- checkbox col -->
-                                    <th class="col-md-3">Service</th>
-                                    <th class="col-md-1">Local ID</th>
+                                    <th class="col-md-3">Name</th>
+                                    <th class="col-md-1">ID</th>
                                     <!--<th class="col-md-2">Publisher Config</th>-->
                                     <th class="col-md-2">Notes</th>
                                     <th class="col-md-3">System</th>

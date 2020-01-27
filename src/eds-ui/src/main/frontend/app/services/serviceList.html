@@ -59,10 +59,9 @@
 									<option value="LastWeek">Last Week</option>
 									<option value="Older">Older</option>
 								</select>
-								<!--<input type="checkbox" class="form-control" id="inputType3" [(ngModel)]="serviceService.serviceHasErrorsFilter" name="serviceHasErrorsFilter" (ngModelChange)="applyFiltering()">-->
 							</div>
 
-							<div class="col-sm-2">
+							<div class="col-sm-1">
 								<label for="servicePublisherModeFilter" class="control-label">Publisher Mode</label>
 								<select id="servicePublisherModeFilter" class="form-control" [(ngModel)]="serviceService.servicePublisherModeFilter" name="servicePublisherModeFilter" (ngModelChange)="applyFiltering()">
 									<option value=""></option>
@@ -71,7 +70,6 @@
 									<option value="Publisher_Auto_Fail">Auto-fail</option>
 									<option value="Publisher_Bulk">Bulk</option>
 								</select>
-								<!--<input type="checkbox" class="form-control" id="inputType3" [(ngModel)]="serviceService.serviceHasErrorsFilter" name="serviceHasErrorsFilter" (ngModelChange)="applyFiltering()">-->
 							</div>
 
 
@@ -86,7 +84,24 @@
 									<option value="NoData">No Data</option>
 									<option value="NoStatus">No Status</option>
 								</select>
-								<!--<input type="checkbox" class="form-control" id="inputType3" [(ngModel)]="serviceService.serviceHasErrorsFilter" name="serviceHasErrorsFilter" (ngModelChange)="applyFiltering()">-->
+							</div>
+
+							<div class="col-sm-2">
+								<label for="sortFilter" class="control-label">Sorting</label>
+								<select id="sortFilter" class="form-control" [(ngModel)]="serviceService.sortFilter" name="sortFilter" (ngModelChange)="applyFiltering()">
+									<option value="NameAsc">Name Asc</option>
+									<option value="NameDesc">Name Desc</option>
+									<option value="IDAsc">ID Asc</option>
+									<option value="IDDesc">ID Desc</option>
+									<option value="ParentAsc">Parent Asc</option>
+									<option value="ParentDesc">Parent Desc</option>
+									<option value="PublisherConfigAsc">Publisher Config Asc</option>
+									<option value="PublisherConfigDesc">Publisher Config Desc</option>
+									<option value="LastDataAsc">Last Data Asc</option>
+									<option value="LastDataDesc">Last Data Desc</option>
+									<option value="StatusAsc">Status Asc</option>
+									<option value="StatusDesc">Status Desc</option>
+								</select>
 							</div>
 
 						</div>
@@ -130,6 +145,7 @@
 										</td>
 										<td>{{service.publisherConfigName}}</td>
 
+										<!-- last data -->
 										<td>
 											<div *ngIf="service.systemStatuses">
 												<div *ngFor="let status of service.systemStatuses">
@@ -138,6 +154,7 @@
 											</div>
 										</td>
 
+										<!-- status and publisher mode -->
 										<td>
 											<div *ngIf="service.systemStatuses">
 												<div *ngFor="let status of service.systemStatuses">

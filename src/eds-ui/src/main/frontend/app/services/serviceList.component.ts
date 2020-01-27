@@ -52,9 +52,7 @@ export class ServiceListComponent implements OnInit, OnDestroy{
 		vm.serviceService.getAll()
 			.subscribe(
 				(result) => {
-					/*vm.services = linq(result).OrderBy(s => s.name).ToArray();*/
-					vm.services = linq(result).OrderBy(s => s.name.toLowerCase()).ToArray();
-					//vm.startRefreshTimer();
+					vm.services = result;
 					vm.applyFiltering();
 					vm.findAllPublisherConfigNames();
 				},
@@ -107,54 +105,6 @@ export class ServiceListComponent implements OnInit, OnDestroy{
 	}
 
 
-	/*delete(item : Service) {
-	 var vm = this;
-	 MessageBoxDialog.open(vm.$modal, 'Delete Service', 'Are you sure you want to delete the Service?', 'Yes', 'No')
-	 .result.then(
-	 () => vm.doDelete(item),
-	 () => vm.log.info('Delete cancelled')
-	 );
-	 }
-
-	 doDelete(item : Service) {
-	 var vm = this;
-	 vm.serviceService.delete(item.uuid)
-	 .subscribe(
-	 () => {
-	 var index = vm.services.indexOf(item);
-	 vm.services.splice(index, 1);
-	 vm.log.success('Service deleted', item, 'Delete Service');
-	 },
-	 (error) => vm.log.error('Failed to delete Service', error, 'Delete Service')
-	 );
-	 }*/
-
-
-	/*deleteData(service: Service) {
-		var vm = this;
-		vm.selectSystemId(service, function(service: Service, systemId: string) {
-
-			MessageBoxDialog.open(vm.$modal, 'Delete Data', 'Are you sure you want to delete all data for this Service?', 'Yes', 'No')
-				.result.then(
-				() => vm.doDeleteData(service, systemId),
-				() => vm.log.info('Delete data cancelled')
-			);
-		});
-	}
-
-
-	private doDeleteData(service: Service, systemId: string) {
-		var vm = this;
-		vm.serviceService.deleteData(service.uuid, systemId)
-			.subscribe(
-				() => {
-					vm.log.success('Data deletion started', service, 'Delete Data');
-					vm.refreshService(service);
-				},
-				(error) => vm.log.error('Failed to delete data', error, 'Delete Data')
-			);
-	}*/
-
 	private refreshService(oldService : Service) {
 		var vm = this;
 		vm.serviceService.get(oldService.uuid)
@@ -176,30 +126,6 @@ export class ServiceListComponent implements OnInit, OnDestroy{
 			)
 	}
 
-	/*private startRefreshTimer() {
-		var vm = this;
-		this.timer = Observable.interval(2000).subscribe(() => vm.refreshServicesWithAdditionalInfo());
-	}
-
-	private refreshServicesWithAdditionalInfo() {
-		var vm = this;
-		var arrayLength = vm.services.length;
-		for (var i = 0; i < arrayLength; i++) {
-			var service = vm.services[i];
-			if (service.additionalInfo) {
-				vm.refreshService(service);
-			}
-
-			//clear down the cached desc on the system statuses
-			if (service.systemStatuses) {
-				for (var j=9; j<service.systemStatuses.length; j++) {
-					var systemStatus = service.systemStatuses[j];
-					systemStatus.cachedLastDataDateDesc = null;
-				}
-			}
-		}
-	}*/
-
 	viewExchanges(service: Service) {
 
 		/*var vm = this;
@@ -213,7 +139,7 @@ export class ServiceListComponent implements OnInit, OnDestroy{
 
 	applyFiltering() {
 		var vm = this;
-		vm.filteredServices = vm.serviceService.applyFiltering(vm.services);
+		vm.filteredServices = vm.serviceService.applyFiltering(vm.services, false);
 	}
 
 	toggleFilters() {

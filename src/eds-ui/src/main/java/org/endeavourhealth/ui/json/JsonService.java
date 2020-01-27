@@ -24,14 +24,13 @@ public final class JsonService {
     public JsonService() {
     }
 
-    public JsonService(Service service) throws Exception {
+    public JsonService(Service service, List<JsonServiceSystemStatus> statuses) throws Exception {
         this.uuid = service.getId();
         this.localIdentifier = service.getLocalId();
-        this.name = service.getName();
         this.publisherConfigName = service.getPublisherConfigName();
+        this.name = service.getName();
         //this.additionalInfo = additionalInfo;
         this.endpoints = service.getEndpointsList();
-
         this.notes = service.getNotes();
         this.postcode = service.getPostcode();
         this.ccgCode = service.getCcgCode();
@@ -39,6 +38,7 @@ public final class JsonService {
             this.organisationTypeDesc = service.getOrganisationType().getDescription();
             this.organisationTypeCode = service.getOrganisationType().getCode();
         }
+        this.systemStatuses = statuses;
     }
 
     /**

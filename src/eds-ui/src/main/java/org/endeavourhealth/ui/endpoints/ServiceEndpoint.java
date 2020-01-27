@@ -363,7 +363,7 @@ public final class ServiceEndpoint extends AbstractEndpoint {
     /**
      * converts internal Service objects into ones suitable for DDS-UI, which includes additional info about errors etc.
      */
-    private List<JsonService> createAndPopulateJsonServices(List<Service> services) throws Exception {
+    public static List<JsonService> createAndPopulateJsonServices(List<Service> services) throws Exception {
 
         //get the extra information we want
         Map<UUID, Set<UUID>> hmServicesInError = findServicesInError(services);
@@ -373,21 +373,18 @@ public final class ServiceEndpoint extends AbstractEndpoint {
         List<JsonService> ret = new ArrayList<>();
 
         for (Service service : services) {
-            UUID serviceId = service.getId();
-            //String additionalInfo = getAdditionalInfo(service);
-            JsonService jsonService = new JsonService(service);
 
             //work out where we are with processing data
             List<JsonServiceSystemStatus> jsonSystemStatuses = createAndPopulateJsonSystemStatuses(service, hmServicesInError, hmLastDataReceived, hmLastDataProcessed);
-            jsonService.setSystemStatuses(jsonSystemStatuses);
 
+            JsonService jsonService = new JsonService(service, jsonSystemStatuses);
             ret.add(jsonService);
         }
 
         return ret;
     }
 
-    private List<JsonServiceSystemStatus> createAndPopulateJsonSystemStatuses(Service service,
+    private static List<JsonServiceSystemStatus> createAndPopulateJsonSystemStatuses(Service service,
                                                                               Map<UUID, Set<UUID>> hmServicesInError,
                                                                               Map<UUID, Map<UUID, LastDataReceived>> hmLastDataReceived,
                                                                               Map<UUID, Map<UUID, LastDataProcessed>> hmLastDataProcessed) throws Exception {
@@ -477,7 +474,7 @@ public final class ServiceEndpoint extends AbstractEndpoint {
         return ret;
     }
 
-    private Map<UUID, Map<UUID, LastDataProcessed>> findLastDataProcessed(List<Service> services) throws Exception {
+    private static Map<UUID, Map<UUID, LastDataProcessed>> findLastDataProcessed(List<Service> services) throws Exception {
 
         if (services.isEmpty()) {
             return new HashMap<>();
@@ -517,7 +514,7 @@ public final class ServiceEndpoint extends AbstractEndpoint {
         return ret;
     }
 
-    private Map<UUID, Map<UUID, LastDataReceived>> findLastDataReceived(List<Service> services) throws Exception {
+    private static Map<UUID, Map<UUID, LastDataReceived>> findLastDataReceived(List<Service> services) throws Exception {
 
         if (services.isEmpty()) {
             return new HashMap<>();
@@ -568,7 +565,7 @@ public final class ServiceEndpoint extends AbstractEndpoint {
         }
     }
 
-    private Map<UUID, Set<UUID>> findServicesInError(List<Service> services) throws Exception {
+    private static Map<UUID, Set<UUID>> findServicesInError(List<Service> services) throws Exception {
 
         Map<UUID, Set<UUID>> ret = new HashMap<>();
 

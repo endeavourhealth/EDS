@@ -149,96 +149,99 @@
                         </ngb-panel>
                     </ngb-accordion>
 
-                    <div class="panel panel-primary col-md-9">
-                        <div class="panel-body">
+                    <div class="row">
 
-                            <div class="row">
-                                <div class="form-group col-md-12">
+                        <div class="panel panel-primary col-md-9">
+                            <div class="panel-body">
 
-                                    Post to Exchange:
-                                    <select id="postExchange" [(ngModel)]="postExchange">
-                                        <option value=""></option>
-                                        <option value="edsInbound">Inbound</option>
-                                        <option value="edsProtocol">Protocol</option>
-                                    </select>
+                                <div class="row">
+                                    <div class="form-group col-md-12">
 
-                                    Exchanges to post:
-                                    <select id="postMode" [(ngModel)]="postMode">
-                                        <option value="This">This Exchange Only</option>
-                                        <option value="Onwards">This Exchange and Onwards</option>
-                                        <option value="All">All Exchanges</option>
-                                        <option *ngIf="postExchange=='edsProtocol'" value="FullLoad">Full Load of Data</option>
-                                    </select>
+                                        Post to Exchange:
+                                        <select id="postExchange" [(ngModel)]="postExchange">
+                                            <option value=""></option>
+                                            <option value="edsInbound">Inbound</option>
+                                            <option value="edsProtocol">Protocol</option>
+                                        </select>
 
-                                    Queues [Inbound={{selectedExchange.queueRoutingKeys['EdsInbound']}}, Protocol={{selectedExchange.queueRoutingKeys['EdsProtocol']}}]
-                                    <!--Queues [Inbound={{selectedExchange.queueRoutingKeys['EdsInbound']}} Protocol={{selectedExchange.selectedExchange.queueRoutingKeys['EdsProtocol']}}]-->
+                                        Exchanges to post:
+                                        <select id="postMode" [(ngModel)]="postMode">
+                                            <option value="This">This Exchange Only</option>
+                                            <option value="Onwards">This Exchange and Onwards</option>
+                                            <option value="All">All Exchanges</option>
+                                            <option *ngIf="postExchange=='edsProtocol'" value="FullLoad">Full Load of Data</option>
+                                        </select>
 
+                                        Queues [Inbound={{selectedExchange.queueRoutingKeys['EdsInbound']}}, Protocol={{selectedExchange.queueRoutingKeys['EdsProtocol']}}]
+                                        <!--Queues [Inbound={{selectedExchange.queueRoutingKeys['EdsInbound']}} Protocol={{selectedExchange.selectedExchange.queueRoutingKeys['EdsProtocol']}}]-->
+
+                                    </div>
+
+                                </div>
+                                <div class="row" *ngIf="postExchange=='edsInbound'">
+                                    <div class="form-group col-md-12">
+
+                                        Delete error state:
+                                        <input type="checkbox" id="deleteErrorStateCheckbox" [(ngModel)]="postDeleteErrorState" name="postDeleteErrorState">
+
+                                        Filter file types:
+                                        <input type="checkbox" id="filterFileTypesCheckbox" [(ngModel)]="postFilterFileTypes" name="filterFileTypes">
+
+                                    </div>
+                                </div>
+
+                                <div class="row" *ngIf="postFilterFileTypes && postExchange=='edsInbound'">
+                                    <div class="form-group col-md-12">
+                                        <textarea rows="8" class="form-control" id="description" [(ngModel)]="postFilterFileTypesSelected" placeholder="File types to filter on (space, comma or newline separated)" name="postFilterFileTypesSelected"></textarea>
+                                    </div>
+                                </div>
+
+                                <div class="row" *ngIf="postExchange=='edsProtocol'">
+                                    <div class="form-group col-md-12">
+
+                                        Protocol to apply:
+                                        <select id="protocol" [(ngModel)]="postSpecificProtocol" name="protocolId">
+                                            <option value="">--All Protocols--</option>
+                                            <option *ngFor="let protocol of protocols" value="{{protocol.id}}">{{protocol.name}}</option>
+                                        </select>
+
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="form-group col-md-12">
+
+                                        <button type="button" class="btn btn-sm btn-success" [disabled]="busyPostingToExchange" (click)="postToExchange()">GO!</button>
+                                        <span class="fa fa-sm fa-refresh fa-refresh-animate" *ngIf="busyPostingToExchange"></span>
+
+                                    </div>
                                 </div>
 
                             </div>
-                            <div class="row" *ngIf="postExchange=='edsInbound'">
-                                <div class="form-group col-md-12">
-
-                                    Delete error state:
-                                    <input type="checkbox" id="deleteErrorStateCheckbox" [(ngModel)]="postDeleteErrorState" name="postDeleteErrorState">
-
-                                    Filter file types:
-                                    <input type="checkbox" id="filterFileTypesCheckbox" [(ngModel)]="postFilterFileTypes" name="filterFileTypes">
-
-                                </div>
-                            </div>
-
-                            <div class="row" *ngIf="postFilterFileTypes && postExchange=='edsInbound'">
-                                <div class="form-group col-md-12">
-                                    <textarea rows="8" class="form-control" id="description" [(ngModel)]="postFilterFileTypesSelected" placeholder="File types to filter on (space, comma or newline separated)" name="postFilterFileTypesSelected"></textarea>
-                                </div>
-                            </div>
-
-                            <div class="row" *ngIf="postExchange=='edsProtocol'">
-                                <div class="form-group col-md-12">
-
-                                    Protocol to apply:
-                                    <select id="protocol" [(ngModel)]="postSpecificProtocol" name="protocolId">
-                                        <option value="">--All Protocols--</option>
-                                        <option *ngFor="let protocol of protocols" value="{{protocol.id}}">{{protocol.name}}</option>
-                                    </select>
-
-                                </div>
-                            </div>
-
-                            <div class="row">
-                                <div class="form-group col-md-12">
-
-                                    <button type="button" class="btn btn-sm btn-success" [disabled]="busyPostingToExchange" (click)="postToExchange()">GO!</button>
-                                    <span class="fa fa-sm fa-refresh fa-refresh-animate" *ngIf="busyPostingToExchange"></span>
-
-                                </div>
-                            </div>
-
                         </div>
-                    </div>
 
-                    <div class="panel panel-primary col-md-3" >
-                        <div class="panel-body">
+                        <div class="panel panel-primary col-md-3" >
+                            <div class="panel-body">
 
-                            <div *ngIf="publisherMode" class="row">
-                                <div class="form-group">
+                                <div *ngIf="publisherMode" class="row">
+                                    <div class="form-group">
 
-                                    Publisher mode:
+                                        Publisher mode:
 
-                                    <select id="publisherStatus" [(ngModel)]="publisherMode" name="publisherStatus">
-                                        <option value="Publisher_Draft">Draft</option>
-                                        <option value="Publisher_Normal">Normal</option>
-                                        <option value="Publisher_Auto_Fail">Auto-fail</option>
-                                        <option value="Publisher_Bulk">Bulk</option>
-                                    </select>
+                                        <select id="publisherStatus" [(ngModel)]="publisherMode" name="publisherStatus">
+                                            <option value="Publisher_Draft">Draft</option>
+                                            <option value="Publisher_Normal">Normal</option>
+                                            <option value="Publisher_Auto_Fail">Auto-fail</option>
+                                            <option value="Publisher_Bulk">Bulk</option>
+                                        </select>
 
-                                    <button type="button" class="btn btn-sm btn-success" (click)="savePublisherMode()">Save</button>
+                                        <button type="button" class="btn btn-sm btn-success" (click)="savePublisherMode()">Save</button>
+
+                                    </div>
 
                                 </div>
 
                             </div>
-
                         </div>
                     </div>
 

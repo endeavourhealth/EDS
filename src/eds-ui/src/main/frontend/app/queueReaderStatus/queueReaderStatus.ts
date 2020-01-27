@@ -6,8 +6,10 @@ export class QueueReaderStatus {
     hostName: string;
     isBusy: boolean;
     maxHeapMb: number;
-    currentHeapMb: number;
     maxHeapDesc: string;
+    currentHeapMb: number;
+    physicalMemoryMb: number;
+    physicalMemoryDesc: string;
+    cpuLoad: number;
     queueName: string;
-    color: string;
 }

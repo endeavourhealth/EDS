@@ -562,12 +562,29 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
     public Response getTransformErrorSummaries(@Context SecurityContext sc) throws Exception {
         super.setLogbackMarkers(sc);
 
-        LOG.trace("getErrors");
+        //get the errors
+        List<ExchangeTransformErrorState> errors = auditRepository.getAllErrorStates();
 
+        //generate the list of service details for each error
+        List<Service> services = new ArrayList<>();
+        for (ExchangeTransformErrorState error: errors) {
+            UUID serviceId = error.getServiceId();
+            Service service = serviceRepository.getById(serviceId);
+            services.add(service);
+        }
+
+        //convert service details to JSON objects and hash by UUID
+        List<JsonService> jsonServices = ServiceEndpoint.createAndPopulateJsonServices(services);
+        Map<UUID, JsonService> hmJsonServices = new HashMap<>();
+        for (JsonService jsonService: jsonServices) {
+            hmJsonServices.put(jsonService.getUuid(), jsonService);
+        }
+
+        //wrap the errors in JSON objects
         List<JsonTransformServiceErrorSummary> ret = new ArrayList<>();
 
-        for (ExchangeTransformErrorState errorState: auditRepository.getAllErrorStates()) {
-            JsonTransformServiceErrorSummary summary = convertErrorStateToJson(errorState);
+        for (ExchangeTransformErrorState errorState: errors) {
+            JsonTransformServiceErrorSummary summary = convertErrorStateToJson(errorState, hmJsonServices);
             if (summary != null) {
                 ret.add(summary);
             }
@@ -582,36 +599,18 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
     }
 
 
-    private static JsonTransformServiceErrorSummary convertErrorStateToJson(ExchangeTransformErrorState errorState) throws Exception {
+    private static JsonTransformServiceErrorSummary convertErrorStateToJson(ExchangeTransformErrorState errorState, Map<UUID, JsonService> hmJsonServices) throws Exception {
 
         if (errorState == null) {
             return null;
         }
 
+        //find service for ID
+        UUID serviceId = errorState.getServiceId();
+        JsonService jsonService = hmJsonServices.get(serviceId);
+
         //too confusing to return only the audits that haven't been resubmitted, so just return all of them
         List<UUID> exchangeIdsInError = errorState.getExchangeIdsInError();
-
-        /*//the error state has a list of all exchange IDs that are currently in error, but we only
-        //want to return to EDS UI those that haven't yet been resubmitted
-        List<UUID> exchangeIdsInError = new ArrayList<>();
-        for (UUID exchangeId: errorState.getExchangeIdsInError()) {
-            ExchangeTransformAudit audit = auditRepository.getMostRecentExchangeTransform(errorState.getServiceId(), errorState.getSystemId(), exchangeId);
-
-            if (audit != null
-                && !audit.isResubmitted()) {
-                exchangeIdsInError.add(exchangeId);
-            }
-        }
-
-        //if all of the exchanges have been resubmitted, then the error state is effectively cleared for now
-        if (exchangeIdsInError.isEmpty()) {
-            return null;
-        }*/
-
-        UUID serviceId = errorState.getServiceId();
-        Service service = serviceRepository.getById(serviceId);
-
-        JsonService jsonService = new JsonService(service);
 
         JsonTransformServiceErrorSummary summary = new JsonTransformServiceErrorSummary();
         summary.setService(jsonService);
@@ -784,32 +783,6 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
             return "UNKNOWN";
         }
     }
-
-    /*@POST
-    @Produces(MediaType.APPLICATION_JSON)
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Timed(absolute = true, name="ExchangeAuditEndpoint.RerunFirstExchangeInError")
-    @Path("/rerunFirstExchangeInError")
-    @RequiresAdmin
-    public Response rerunFirstExchangeInError(@Context SecurityContext sc, JsonTransformRerunRequest request) throws Exception {
-        super.setLogbackMarkers(sc);
-        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Save,
-                "Rerun First Exchange",
-                "Request", request);
-
-        LOG.info("Rerun first");
-        rerunExchanges(request, true);
-
-        //we return the updated error state, so the UI can replace its old content
-        ExchangeTransformErrorState errorState = auditRepository.getErrorState(request.getServiceId(), request.getSystemId());
-        JsonTransformServiceErrorSummary ret = convertErrorStateToJson(errorState);
-
-        clearLogbackMarkers();
-
-        return Response
-                .ok(ret)
-                .build();
-    }*/
 
 
     @POST

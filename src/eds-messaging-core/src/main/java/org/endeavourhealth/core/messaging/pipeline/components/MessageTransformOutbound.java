@@ -157,7 +157,8 @@ public class MessageTransformOutbound extends PipelineComponent {
                     LOG.error("Failed to save audit of transform failure", auditEx);
                 }
 
-                throw new PipelineException("Failed to transform exchange " + exchange.getId() + " and batch " + batchId, ex);
+                String msg = "Failed to transform exchange " + exchange.getId() + " and batch " + batchId + " for " + exchange.getHeader(HeaderKeys.SenderLocalIdentifier);
+                throw new PipelineException(msg, ex);
             }
         }
 

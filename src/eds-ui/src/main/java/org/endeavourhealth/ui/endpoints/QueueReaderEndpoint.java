@@ -85,12 +85,15 @@ public class QueueReaderEndpoint extends AbstractEndpoint {
             QueueReaderConfiguration configuration = ConfigDeserialiser.deserialise(queueReaderConfigXml);
             String queueName = configuration.getQueue();
 
-            Integer maxHeap = h.getMaxHeapMb();
             String maxHeapDesc = null;
-            if (maxHeap != null) {
-                maxHeapDesc = FileUtils.byteCountToDisplaySize(maxHeap * (1024L * 1024L));
+            if (h.getMaxHeapMb() != null) {
+                maxHeapDesc = FileUtils.byteCountToDisplaySize(h.getMaxHeapMb() * (1024L * 1024L));
             }
 
+            String physicalMemoryDesc = null;
+            if (h.getServerMemoryMb() != null) {
+                physicalMemoryDesc = FileUtils.byteCountToDisplaySize(h.getServerMemoryMb() * (1024L * 1024L));
+            }
 
             ObjectNode objectNode = root.addObject();
             objectNode.put("applicationName", h.getApplicationName());
@@ -99,8 +102,11 @@ public class QueueReaderEndpoint extends AbstractEndpoint {
             objectNode.put("hostName", h.getHostName());
             objectNode.put("isBusy", h.getBusy());
             objectNode.put("maxHeapMb", h.getMaxHeapMb());
-            objectNode.put("currentHeapMb", h.getCurrentHeapMb());
             objectNode.put("maxHeapDesc", maxHeapDesc);
+            objectNode.put("currentHeapMb", h.getCurrentHeapMb());
+            objectNode.put("physicalMemoryMb", h.getServerMemoryMb());
+            objectNode.put("physicalMemoryDesc", physicalMemoryDesc);
+            objectNode.put("cpuLoad", h.getServerCpuUsagePercent());
             objectNode.put("queueName", queueName);
         }
 

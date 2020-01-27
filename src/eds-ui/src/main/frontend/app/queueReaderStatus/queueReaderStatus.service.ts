@@ -8,8 +8,12 @@ import {QueueReaderStatus} from "./queueReaderStatus";
 @Injectable()
 export class QueueReaderStatusService extends BaseHttp2Service {
 
+    showMissingQueueReadersOnEmptyQueues: boolean;
+
     constructor(http : Http) {
         super (http);
+
+        this.showMissingQueueReadersOnEmptyQueues = true;
     }
 
     getStatus() : Observable<QueueReaderStatus[]> {
