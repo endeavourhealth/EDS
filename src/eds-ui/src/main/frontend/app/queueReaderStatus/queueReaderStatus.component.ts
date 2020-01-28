@@ -485,7 +485,8 @@ export class QueueReaderStatusComponent {
         //if queue isn't empty, return true
         var queueSize = vm.getQueueSizeForQueueName(status.queueName);
         if (queueSize //may be null if still refreshing queues
-            && queueSize > 0) {
+            && (queueSize > 0
+                || (queueSize == 0 && status.isBusy))) { //queue size doesn't include the one being processed now, so allow if busy
             return true;
         }
 
