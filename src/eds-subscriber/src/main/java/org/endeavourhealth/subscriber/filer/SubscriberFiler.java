@@ -3,7 +3,6 @@ package org.endeavourhealth.subscriber.filer;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.base.Strings;
 import com.google.common.io.Files;
-import com.zaxxer.hikari.HikariDataSource;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
@@ -23,7 +22,6 @@ import java.sql.*;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.Date;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -35,25 +33,15 @@ public class SubscriberFiler {
     private static final CSVFormat CSV_FORMAT = CSVFormat.DEFAULT;
 
     private static final String COL_IS_DELETE = "is_delete";
-    /*private static final String COL_SAVE_MODE = "save_mode";
-    private static final String UPSERT = "Upsert";
-    private static final String DELETE = "Delete";*/
     private static final String COL_ID = "id";
 
     private static final int UPSERT_ATTEMPTS = 15;
 
-    //private static final String ZIP_ENTRY = "EnterpriseData.xml";
-
-    //private static String keywordEscapeChar = null; //different DBs use different chars to escape keywords (" on pg, ` on mysql)
-
-    private static Map<String, HikariDataSource> connectionPools = new ConcurrentHashMap<>();
-    private static Map<String, String> escapeCharacters = new ConcurrentHashMap<>();
-    private static Map<String, Integer> batchSizes = new ConcurrentHashMap<>();
 
     public static void file(UUID batchId, UUID queuedMessageId, String base64, String configName) throws Exception {
 
         byte[] bytes = Base64.getDecoder().decode(base64);
-        LOG.trace("Filing " + FileUtils.byteCountToDisplaySize(bytes.length) + " from batch " + batchId + " into " + configName);
+        LOG.debug("Filing " + FileUtils.byteCountToDisplaySize(bytes.length) + " from batch " + batchId + " into " + configName);
 
         //we may have multiple connections if we have replicas
         List<EnterpriseConnector.ConnectionWrapper> connectionWrappers = EnterpriseConnector.openConnection(configName);
@@ -61,8 +49,7 @@ public class SubscriberFiler {
         if (StringUtils.isNotEmpty(connectionWrappers.get(0).getRemoteSubscriberId())) {
             int subscriberId = Integer.valueOf(connectionWrappers.get(0).getRemoteSubscriberId());
             SubscriberZipFileUUIDsDalI szfudi = DalProvider.factorySubscriberZipFileUUIDs();
-            szfudi.createSubscriberZipFileUUIDsEntity(subscriberId, batchId.toString(),
-                    queuedMessageId.toString(), base64);
+            szfudi.createSubscriberZipFileUUIDsEntity(subscriberId, batchId.toString(), queuedMessageId.toString(), base64);
 
             // JAB 20/09/2019, as per subscriber_databases slack channel discussion
             // Added temporarily to test internally the filing of Barts data, to the new subscriber schema
@@ -116,10 +103,10 @@ public class SubscriberFiler {
                     continue;
                 }
 
-                processCsvData(entryFileName, entryBytes, columnClassMappings, connection, keywordEscapeChar, batchSize, deletes);
+                processCsvEntry(entryFileName, entryBytes, columnClassMappings, connection, keywordEscapeChar, batchSize, deletes);
             }
 
-            //now files the deletes
+            //now files the deletes once all upserts are done
             fileDeletes(deletes, connection);
 
         } catch (Exception ex) {
@@ -139,10 +126,10 @@ public class SubscriberFiler {
         File f = new File("EnterpriseFileError.zip");
         try {
             FileUtils.writeByteArrayToFile(f, bytes);
-            LOG.error("Written ZIP file to " + f);
+            LOG.error("Written error dump ZIP file to " + f);
 
         } catch (IOException ex) {
-            LOG.error("Failed to write ZIP file to " + f, ex);
+            LOG.error("Failed to write error dump ZIP file to " + f, ex);
         }
     }
 
@@ -154,12 +141,15 @@ public class SubscriberFiler {
         Map<String, Class> currentColumnClasses = null;
         boolean patientWasDeleted = false;
 
-        //LOG.trace("Got " + deletes.size() + " deletes");
-
         //go backwards, so we delete dependent records first
         for (int i=deletes.size()-1; i>=0; i--) {
             DeleteWrapper wrapper = deletes.get(i);
             String tableName = wrapper.getTableName();
+
+            //if deleting anything from patient, then we need to do some special housekeeping
+            if (tableName.equalsIgnoreCase("patient")) {
+                patientWasDeleted = true;
+            }
 
             if (currentTable == null
                     || !currentTable.equals(tableName)) {
@@ -167,11 +157,7 @@ public class SubscriberFiler {
                 //file any deletes we've already built up
                 if (currentRecords != null
                         && !currentRecords.isEmpty()) {
-                    LOG.trace("Deleting " + currentRecords.size() + " from " + currentTable);
-                    fileDeletes(currentRecords, currentColumns, currentColumnClasses, currentTable, connection);
-                    if (currentTable.equalsIgnoreCase("patient")) {
-                        patientWasDeleted = true;
-                    }
+                    fileDeletesForTable(currentRecords, currentColumns, currentColumnClasses, currentTable, connection);
                 }
 
                 currentTable = tableName;
@@ -186,8 +172,7 @@ public class SubscriberFiler {
         //file any deletes we've already built up
         if (currentRecords != null
                 && !currentRecords.isEmpty()) {
-            LOG.trace("Deleting " + currentRecords.size() + " from " + currentTable);
-            fileDeletes(currentRecords, currentColumns, currentColumnClasses, currentTable, connection);
+            fileDeletesForTable(currentRecords, currentColumns, currentColumnClasses, currentTable, connection);
         }
 
         if (patientWasDeleted) {
@@ -214,7 +199,12 @@ public class SubscriberFiler {
         return baos.toByteArray();
     }
 
-    private static void processCsvData(String entryFileName, byte[] csvBytes, JsonNode columnClassJson, Connection connection, String keywordEscapeChar, int batchSize, List<DeleteWrapper> deletes) throws Exception {
+    /**
+     * processes a single entry from the zip file (i.e. one CSV file). Any deletes are simply
+     * added to a list as all deletes are done after all upserts are out of the way.
+     */
+    private static void processCsvEntry(String entryFileName, byte[] csvBytes, JsonNode columnClassJson, Connection connection,
+                                        String keywordEscapeChar, int batchSize, List<DeleteWrapper> deletes) throws Exception {
 
         String tableName = Files.getNameWithoutExtension(entryFileName);
 
@@ -260,20 +250,24 @@ public class SubscriberFiler {
             row ++;
         }
 
-        //when doing a bulk, we can have 300,000+ practitioners, so do them in batches, so we're
-        //not keeping huge DB transactions open
-        List<CSVRecord> batch = new ArrayList<>();
-        for (CSVRecord record: upserts) {
-            batch.add(record);
+        if (!upserts.isEmpty()) {
+            LOG.trace("Upserting " + upserts.size() + " records in " + tableName);
 
-            //in testing, batches of 20000 seemed best, although there wasn't much difference between batches of 5000 up to 100000
-            if (batch.size() >= batchSize) {
-                fileUpsertsWithRetry(batch, columns, columnClasses, tableName, connection, keywordEscapeChar);
-                batch = new ArrayList<>();
+            //when doing a bulk, we can have 300,000+ practitioners, so do them in batches, so we're
+            //not keeping huge DB transactions open
+            List<CSVRecord> batch = new ArrayList<>();
+            for (CSVRecord record : upserts) {
+                batch.add(record);
+
+                //in testing, batches of 20000 seemed best, although there wasn't much difference between batches of 5000 up to 100000
+                if (batch.size() >= batchSize) {
+                    fileUpsertsWithRetry(batch, columns, columnClasses, tableName, connection, keywordEscapeChar);
+                    batch = new ArrayList<>();
+                }
             }
-        }
-        if (!batch.isEmpty()) {
-            fileUpsertsWithRetry(batch, columns, columnClasses, tableName, connection, keywordEscapeChar);
+            if (!batch.isEmpty()) {
+                fileUpsertsWithRetry(batch, columns, columnClasses, tableName, connection, keywordEscapeChar);
+            }
         }
     }
 
@@ -331,24 +325,40 @@ public class SubscriberFiler {
     }
 
 
-    private static void fileDeletes(List<CSVRecord> csvRecords, List<String> columns, Map<String, Class> columnClasses,
-                                    String tableName, Connection connection) throws Exception {
+    private static void fileDeletesForTable(List<CSVRecord> csvRecords, List<String> columns, Map<String, Class> columnClasses,
+                                            String tableName, Connection connection) throws Exception {
 
         if (csvRecords.isEmpty()) {
             return;
         }
 
-        PreparedStatement delete = connection.prepareStatement("delete from " + tableName + " where id = ?");
+        LOG.trace("Deleting " + csvRecords.size() + " records from " + tableName);
 
-        for (CSVRecord csvRecord: csvRecords) {
+        PreparedStatement psDelete = null;
+        try {
+            psDelete = connection.prepareStatement("delete from " + tableName + " where id = ?");
 
-            addToStatement(delete, csvRecord, COL_ID, columnClasses, 1);
-            delete.addBatch();
+            for (CSVRecord csvRecord : csvRecords) {
+
+                addToStatement(psDelete, csvRecord, COL_ID, columnClasses, 1);
+                psDelete.addBatch();
+            }
+
+            psDelete.executeBatch();
+            connection.commit();
+
+            LOG.trace("Deletes committed " + csvRecords.size() + " records from " + tableName);
+
+        } catch (Exception ex) {
+            connection.rollback();
+
+            throw new Exception("Exception with upsert " + psDelete.toString(), ex);
+
+        } finally {
+            if (psDelete != null) {
+                psDelete.close();
+            }
         }
-
-        delete.executeBatch();
-        delete.close(); //was forgetting to do this
-        connection.commit();
     }
 
     private static void addToStatement(PreparedStatement statement, CSVRecord csvRecord, String column, Map<String, Class> columnClasses, int index) throws Exception {
@@ -648,44 +658,48 @@ public class SubscriberFiler {
         columns = new ArrayList<>(columns);
         columns.remove(COL_IS_DELETE);
 
-        PreparedStatement insert = createUpsertPreparedStatement(tableName, columns, connection, keywordEscapeChar);
+        PreparedStatement psInsert = null;
 
         //wrap in try/catch so we can log out the SQL that failed
         try {
+            LOG.trace("Upserting batch of " + csvRecords.size() + " to " + tableName);
+
+            psInsert = createUpsertPreparedStatement(tableName, columns, connection, keywordEscapeChar);
 
             for (CSVRecord csvRecord: csvRecords) {
 
                 int index = 1;
                 for (String column: columns) {
-                    addToStatement(insert, csvRecord, column, columnClasses, index);
+                    addToStatement(psInsert, csvRecord, column, columnClasses, index);
                     index ++;
                 }
 
                 //if SQL Server, then we need to add the values a SECOND time because the UPSEERT syntax used needs it
                 if (ConnectionManager.isSqlServer(connection)) {
                     for (String column: columns) {
-                        addToStatement(insert, csvRecord, column, columnClasses, index);
+                        addToStatement(psInsert, csvRecord, column, columnClasses, index);
                         index ++;
                     }
                 }
 
-                //LOG.debug("" + insert);
-                insert.addBatch();
+                psInsert.addBatch();
             }
 
-            insert.executeBatch();
+            psInsert.executeBatch();
 
             connection.commit();
+
+            LOG.trace("Upsert committed " + csvRecords.size() + " to " + tableName);
 
         } catch (Exception ex) {
             connection.rollback();
 
-            throw new Exception("Exception with upsert " + insert.toString(), ex);
+            throw new Exception("Exception with upsert " + psInsert.toString(), ex);
 
         } finally {
 
-            if (insert != null) {
-                insert.close();
+            if (psInsert != null) {
+                psInsert.close();
             }
         }
     }
