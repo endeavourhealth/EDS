@@ -48,8 +48,6 @@ public class SubscriberFiler {
 
         if (StringUtils.isNotEmpty(connectionWrappers.get(0).getRemoteSubscriberId())) {
             int subscriberId = Integer.valueOf(connectionWrappers.get(0).getRemoteSubscriberId());
-            SubscriberZipFileUUIDsDalI szfudi = DalProvider.factorySubscriberZipFileUUIDs();
-            szfudi.createSubscriberZipFileUUIDsEntity(subscriberId, batchId.toString(), queuedMessageId.toString(), base64);
 
             // JAB 20/09/2019, as per subscriber_databases slack channel discussion
             // Added temporarily to test internally the filing of Barts data, to the new subscriber schema
@@ -58,6 +56,12 @@ public class SubscriberFiler {
                     file(connectionWrapper, bytes);
                 }
             }
+
+            //moved to happen AFTER the filing to the database because if that fails for any reason, then we won't already
+            //have written the zip to the below table. When restarted, all the above filing is 100% happy with running again
+            //because it uses upserts, but the below stuff doesn't handle that
+            SubscriberZipFileUUIDsDalI szfudi = DalProvider.factorySubscriberZipFileUUIDs();
+            szfudi.createSubscriberZipFileUUIDsEntity(subscriberId, batchId.toString(), queuedMessageId.toString(), base64);
 
 
         } else {
