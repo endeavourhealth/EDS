@@ -105,11 +105,9 @@ export class QueueReaderStatusComponent {
 
     private cacheRabbitConfig() {
         var vm = this;
-        //console.log('getting rabbit config');
         vm.rabbitService.getRoutings()
             .subscribe(
                 (result) => {
-                    //console.log('got rabbit config');
                     vm.populateRoutingMap(result);
                     vm.refreshQueueReaders();
                 },
@@ -132,13 +130,11 @@ export class QueueReaderStatusComponent {
             var exchangeName = r.exchangeName;
             if ($.inArray(exchangeName, vm.routingExchangeNames) == -1) {
                 vm.routingExchangeNames.push(exchangeName);
-                //console.log('got exchange name ' + exchangeName);
             }
 
             var routingKey = r.routeKey;
             if ($.inArray(routingKey, vm.routingKeys) == -1) {
                 vm.routingKeys.push(routingKey);
-                //console.log('got routing key ' + routingKey);
             }
 
             var combined = vm.combineIntoQueueName(exchangeName, routingKey);
@@ -147,8 +143,6 @@ export class QueueReaderStatusComponent {
 
         //sort the routing key array so they appear as expected (but don't sort the exchange names)
         vm.routingKeys = linq(vm.routingKeys).OrderBy(s => s.toLowerCase()).ToArray();
-
-        //console.log('got routingExchangeNames ' + vm.routingExchangeNames.length);
     }
 
     refreshQueueReaders() {
@@ -159,69 +153,8 @@ export class QueueReaderStatusComponent {
         vm.queueReaderStatusService.getStatus().subscribe(
             (result) => {
 
-                vm.queueReaderStatusList = linq(result).OrderBy(s => s.applicationInstanceName).ToArray();
-
-                //also hash the QueueReaderStatus objects by their queue name, so
-                vm.queueReaderStatusMapByQueue = {};
-                vm.queueReaderStatusMapByHostName = {};
-                vm.queueReaderCpuMapByHostName = {};
-                vm.queueReaderPhysicalMemoryMapByHostName = {};
-
-                //find the most recent CPU usage for each host
-                var statusByTimestamp = linq(result).OrderBy(s => s.timestmp).ToArray();
-                //console.log('result ' + result.length + ' -> ' + statusByTimestamp.length);
-                for (var i=statusByTimestamp.length-1; i>=0; i--) {
-                    //console.log('doing ' + i);
-                    var status = statusByTimestamp[i] as QueueReaderStatus;
-                    var hostName = status.hostName;
-
-                    var cpu = status.cpuLoad;
-                    //console.log('status ' + status.applicationInstanceName + ' has cpu ' + cpu);
-                    if (cpu) {
-                        if (!vm.queueReaderCpuMapByHostName[hostName]) {
-                            vm.queueReaderCpuMapByHostName[hostName] = cpu + '%';
-                        }
-                    }
-
-                    var physicalMemoryDesc = status.physicalMemoryDesc;
-                    if (physicalMemoryDesc) {
-                        if (!vm.queueReaderPhysicalMemoryMapByHostName[hostName]) {
-                            vm.queueReaderPhysicalMemoryMapByHostName[hostName] = physicalMemoryDesc;
-                        }
-                    }
-                }
-
-                var len = vm.queueReaderStatusList.length;
-                for (var i=0; i<len; i++) {
-                    var status = vm.queueReaderStatusList[i] as QueueReaderStatus;
-                    var queueName = status.queueName;
-                    var hostName = status.hostName;
-
-                    var statusesForQueue = vm.queueReaderStatusMapByQueue[queueName];
-                    //console.log(statusesForQueue);
-                    if (!statusesForQueue) {
-                        statusesForQueue = [];
-                        vm.queueReaderStatusMapByQueue[queueName] = statusesForQueue;
-                    }
-                    statusesForQueue.push(status);
-
-                    var statusesForHostName = vm.queueReaderStatusMapByHostName[hostName];
-                    if (!statusesForHostName) {
-                        statusesForHostName = [];
-                        vm.queueReaderStatusMapByHostName[hostName] = statusesForHostName;
-                    }
-                    statusesForHostName.push(status);
-                }
-
-                //need to work out distinct server names
-                vm.calculateDistinctHostNames();
-
-                //work out a quick visual indicator for memory usage
-                vm.calculateMemoryGraphs();
-
-                //generate unique colours for each host name
-                vm.calculateColours();
-
+                vm.queueReaderStatusList = result;
+                vm.processQueueReaderResults();
                 vm.refreshingQueueReaderStatus = false;
 
             },
@@ -230,6 +163,68 @@ export class QueueReaderStatusComponent {
                 vm.refreshingQueueReaderStatus = false;
             }
         );
+    }
+
+    processQueueReaderResults(): void {
+
+        var vm = this;
+
+        //also hash the QueueReaderStatus objects by their queue name, so
+        vm.queueReaderStatusMapByQueue = {};
+        vm.queueReaderStatusMapByHostName = {};
+        vm.queueReaderCpuMapByHostName = {};
+        vm.queueReaderPhysicalMemoryMapByHostName = {};
+
+        //find the most recent CPU usage for each host
+        var statusByTimestamp = linq(vm.queueReaderStatusList).OrderBy(s => s.timestmp).ToArray();
+        for (var i=statusByTimestamp.length-1; i>=0; i--) {
+            var status = statusByTimestamp[i] as QueueReaderStatus;
+            var hostName = status.hostName;
+
+            var cpu = status.cpuLoad;
+            if (cpu) {
+                if (!vm.queueReaderCpuMapByHostName[hostName]) {
+                    vm.queueReaderCpuMapByHostName[hostName] = cpu + '%';
+                }
+            }
+
+            var physicalMemoryDesc = status.physicalMemoryDesc;
+            if (physicalMemoryDesc) {
+                if (!vm.queueReaderPhysicalMemoryMapByHostName[hostName]) {
+                    vm.queueReaderPhysicalMemoryMapByHostName[hostName] = physicalMemoryDesc;
+                }
+            }
+        }
+
+        var statusByName = linq(vm.queueReaderStatusList).OrderBy(s => s.applicationInstanceName).ToArray();
+        for (var i=0; i<statusByName.length; i++) {
+            var status = statusByName[i] as QueueReaderStatus;
+            var queueName = status.queueName;
+            var hostName = status.hostName;
+
+            var statusesForQueue = vm.queueReaderStatusMapByQueue[queueName];
+            if (!statusesForQueue) {
+                statusesForQueue = [];
+                vm.queueReaderStatusMapByQueue[queueName] = statusesForQueue;
+            }
+            statusesForQueue.push(status);
+
+            var statusesForHostName = vm.queueReaderStatusMapByHostName[hostName];
+            if (!statusesForHostName) {
+                statusesForHostName = [];
+                vm.queueReaderStatusMapByHostName[hostName] = statusesForHostName;
+            }
+            statusesForHostName.push(status);
+        }
+
+        //need to work out distinct server names
+        vm.calculateDistinctHostNames();
+
+        //work out a quick visual indicator for memory usage
+        vm.calculateMemoryGraphs();
+
+        //generate unique colours for each host name
+        vm.calculateColours();
     }
 
     calculateDistinctHostNames(): void {
