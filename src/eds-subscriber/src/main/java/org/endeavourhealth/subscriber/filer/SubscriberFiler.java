@@ -355,8 +355,8 @@ public class SubscriberFiler {
 
         } catch (Exception ex) {
             connection.rollback();
-
-            throw new Exception("Exception with upsert " + psDelete.toString(), ex);
+            LOG.error("Exception with upsert " + psDelete.toString());
+            throw new Exception("Exception with upsert. Details in log " +  ex);
 
         } finally {
             if (psDelete != null) {
