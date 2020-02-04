@@ -4,5 +4,5 @@ export class SftpReaderBatchContents {
     notified: boolean;
     result: string;
     error: string;
-
+    selected: boolean;
 }
