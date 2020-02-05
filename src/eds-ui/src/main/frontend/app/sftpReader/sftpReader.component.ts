@@ -179,7 +179,7 @@ export class SftpReaderComponent {
     }
 
 
-    ignoreBatchSplit(content: SftpReaderBatchContents, status: SftpReaderChannelStatus) {
+    /*ignoreBatchSplit(content: SftpReaderBatchContents, status: SftpReaderChannelStatus) {
         var vm = this;
 
         var reason = prompt('Enter reason');
@@ -197,6 +197,58 @@ export class SftpReaderComponent {
                 vm.logger.error('Failed to ignore batch split', error, 'SFTP Reader Error');
             }
         )
+    }*/
+
+    selectAllBatchSpitErrors(status: SftpReaderChannelStatus) {
+        var vm = this;
+
+        for (var i=0; i<status.completeBatchContents.length; i++) {
+            var batchSplit = status.completeBatchContents[i] as SftpReaderBatchContents;
+            if (!batchSplit.notified) {
+                batchSplit.selected = true;
+            }
+        }
     }
 
+    ignoreBatchSplits(status: SftpReaderChannelStatus) {
+        var vm = this;
+
+        var selected = [];
+        for (var i=0; i<status.completeBatchContents.length; i++) {
+            var batchSplit = status.completeBatchContents[i];
+            if (batchSplit.selected) {
+                selected.push(batchSplit);
+            }
+        }
+
+        if (selected.length == 0) {
+            vm.logger.warning("No errors selected");
+            return;
+        }
+
+        var reason = prompt('Enter reason');
+        if (reason == null) {
+            return;
+        }
+
+        for (var j=0; j<selected.length; j++) {
+            var batchSplit = selected[j] as SftpReaderBatchContents;
+            vm.ignoreBatchSplit(status, batchSplit, reason);
+        }
+    }
+
+    ignoreBatchSplit(status: SftpReaderChannelStatus, batchSplit: SftpReaderBatchContents, reason: string) {
+        var vm = this;
+
+        vm.sftpReaderService.ignoreBatchSplit(status.latestBatchId, batchSplit.batchSplitId, status.id, reason).subscribe(
+            (result) => {
+                batchSplit.error = null;
+                batchSplit.result = reason;
+                batchSplit.notified = true;
+            },
+            (error) => {
+                vm.logger.error('Failed to ignore batch split', error, 'SFTP Reader Error');
+            }
+        )
+    }
 }
