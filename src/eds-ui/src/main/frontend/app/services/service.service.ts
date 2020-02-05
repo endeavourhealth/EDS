@@ -217,12 +217,12 @@ export class ServiceService extends BaseHttp2Service {
 					console.log('sort mode = ' + vm.serviceStatusFilter + ' val = ' + desiredVal);
 
 					var statusVal = vm.getSortingStatusValue(service);
-console.log('service ' + service.localIdentifier + ' has status val ' + statusVal + ' looking for ' + vm.serviceStatusFilter);
+					//console.log('service ' + service.localIdentifier + ' has status val ' + statusVal + ' looking for ' + vm.serviceStatusFilter);
 					if (statusVal != desiredVal) {
-console.log('skipped');
+						//console.log('skipped');
 						continue;
  					} else {
-console.log('include');
+						//console.log('include');
 					}
 
 					/*if (vm.serviceStatusFilter == 'NoStatus') {
