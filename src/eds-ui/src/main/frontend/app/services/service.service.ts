@@ -336,10 +336,14 @@ export class ServiceService extends BaseHttp2Service {
 				//only apply the name filter if it's valid regex
 				if (validNameFilterRegex) {
 					var name = service.name;
+					var alias = service.alias;
 					var id = service.localIdentifier;
 
 					var include = false;
 					if (name && name.toLowerCase().match(validNameFilterRegex)) {
+						include = true;
+
+					} if (alias && alias.toLowerCase().match(validNameFilterRegex)) {
 						include = true;
 
 					} else if (id && id.toLowerCase().match(validNameFilterRegex)) {

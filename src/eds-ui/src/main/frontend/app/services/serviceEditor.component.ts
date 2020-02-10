@@ -516,13 +516,13 @@ export class ServiceEditComponent {
 			|| !vm.service.tags) {
 			return [];
 		}
-console.log('getting tags for ' + JSON.stringify(vm.service));
+		//console.log('getting tags for ' + JSON.stringify(vm.service));
 		var ret = Object.keys(vm.service.tags);
 
-		for (var i=0; i<ret.length; i++) {
+		/*for (var i=0; i<ret.length; i++) {
 			var tagName = ret[i];
 			console.log('tag ' + tagName + ' has val = ' + vm.service.tags[tagName])
-		}
+		}*/
 
 		return ret;
 	}
@@ -530,7 +530,7 @@ console.log('getting tags for ' + JSON.stringify(vm.service));
 	removeTag(tag: Tag) {
 		var vm = this;
 		var index = vm.tags.indexOf(tag);
-		vm.tags.splice(index, index);
+		vm.tags.splice(index, 1);
 		//delete vm.service.tags[tagName];
 	}
 
