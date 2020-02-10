@@ -25,7 +25,7 @@
 								<label for="inputType" class="control-label">Name/ID</label>
 
 								<div class="pull-right">
-									<label for="serviceNameSearchIncludeTags" class="control-label">Match on tags</label>
+									<label for="serviceNameSearchIncludeTags" class="control-label">Match tags</label>
 									<input type="checkbox" id="serviceNameSearchIncludeTags" [(ngModel)]="serviceService.serviceNameSearchIncludeTags" name="serviceNameSearchIncludeTags" (ngModelChange)="applyFiltering()">
 									<span *ngIf="serviceService.serviceNameSearchIncludeTags">
 										<select id="serviceNameSearchSpecificTag" [(ngModel)]="serviceService.serviceNameSearchSpecificTag" name="serviceNameSearchSpecificTag" (ngModelChange)="applyFiltering()">
