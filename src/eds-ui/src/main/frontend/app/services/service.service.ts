@@ -200,18 +200,32 @@ export class ServiceService extends BaseHttp2Service {
 				if (vm.serviceStatusFilter
 					&& !transformErrorsView) { //only applies to full service list
 
+					var desiredVal;
+					if (vm.serviceStatusFilter == 'NoStatus') {
+						desiredVal = 0;
+					} else if (vm.serviceStatusFilter == 'NoData') {
+						desiredVal = 1;
+					} else if (vm.serviceStatusFilter == 'OK') {
+						desiredVal = 2;
+					} else if (vm.serviceStatusFilter == 'Behind') {
+						desiredVal = 3;
+					} else if (vm.serviceStatusFilter == 'Error') {
+						desiredVal = 4;
+					} else {
+						console.log('Unknown sort mode ' + vm.serviceStatusFilter);
+					}
+					console.log('sort mode = ' + vm.serviceStatusFilter + ' val = ' + desiredVal);
+
 					var statusVal = vm.getSortingStatusValue(service);
-
-					if ((vm.serviceStatusFilter == 'NoStatus' && statusVal != 4)
-						|| (vm.serviceStatusFilter == 'NoData' && statusVal != 3)
-						|| (vm.serviceStatusFilter == 'OK' && statusVal != 2)
-						|| (vm.serviceStatusFilter == 'Behind' && statusVal != 1)
-						|| (vm.serviceStatusFilter == 'Error' && statusVal == 0)) {
-
+					//console.log('service ' + service.localIdentifier + ' has status val ' + statusVal + ' looking for ' + vm.serviceStatusFilter);
+					if (statusVal != desiredVal) {
+						//console.log('skipped');
 						continue;
+ 					} else {
+						//console.log('include');
 					}
 
-					if (vm.serviceStatusFilter == 'NoStatus') {
+					/*if (vm.serviceStatusFilter == 'NoStatus') {
 						include = !service.systemStatuses;
 
 					} else {
@@ -254,7 +268,7 @@ export class ServiceService extends BaseHttp2Service {
 
 					if (!include) {
 						continue;
-					}
+					}*/
 				}
 
 				if (vm.servicePublisherModeFilter
@@ -449,7 +463,7 @@ export class ServiceService extends BaseHttp2Service {
 
 				} else if (!status.processingInError //behind
 					&& !status.processingUpToDate) {
-					thisVal = 4;
+					thisVal = 3;
 
 				} else { //error
 					thisVal = 4

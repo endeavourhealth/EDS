@@ -32,6 +32,7 @@ import org.endeavourhealth.core.database.dal.audit.models.Exchange;
 import org.endeavourhealth.core.database.dal.audit.models.ExchangeBatch;
 import org.endeavourhealth.core.database.dal.audit.models.ExchangeTransformAudit;
 import org.endeavourhealth.core.database.dal.audit.models.HeaderKeys;
+import org.endeavourhealth.core.database.dal.datagenerator.SubscriberZipFileUUIDsDalI;
 import org.endeavourhealth.core.database.dal.eds.PatientLinkDalI;
 import org.endeavourhealth.core.database.dal.eds.PatientSearchDalI;
 import org.endeavourhealth.core.database.dal.eds.models.PatientLinkPair;
@@ -74,6 +75,7 @@ import org.endeavourhealth.transform.emis.csv.helpers.IssueRecordIssueDate;
 import org.endeavourhealth.transform.emis.csv.transforms.careRecord.ObservationTransformer;
 import org.endeavourhealth.transform.enterprise.ObservationCodeHelper;
 import org.endeavourhealth.transform.subscriber.json.LinkDistributorConfig;
+import org.endeavourhealth.transform.subscriber.targetTables.OutputContainer;
 import org.endeavourhealth.transform.subscriber.targetTables.SubscriberTableId;
 import org.endeavourhealth.transform.subscriber.transforms.PatientTransformer;
 import org.hibernate.internal.SessionImpl;
@@ -125,6 +127,15 @@ public class Main {
 			deleteEnterpriseObs(filePath, configName, batchSize);
 			System.exit(0);
 		}*/
+
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("CreateDeleteZipsForSubscriber")) {
+			int batchSize = Integer.parseInt(args[1]);
+			String sourceTable = args[2];
+			int subscriberId = Integer.parseInt(args[3]);
+			createDeleteZipsForSubscriber(batchSize, sourceTable, subscriberId);
+			System.exit(0);
+		}
 
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("TestJMX")) {
@@ -906,6 +917,82 @@ public class Main {
 		RabbitHandler rabbitHandler = new RabbitHandler(configuration, configId);
 		rabbitHandler.start();
 		LOG.info("EDS Queue reader running (kill file location " + TransformConfig.instance().getKillFileLocation() + ")");
+	}
+
+	private static void createDeleteZipsForSubscriber(int batchSize, String sourceTable, int subscriberId) {
+		LOG.info("Create Zips For Subscriber from " + sourceTable + " subscriberId " + subscriberId + " and batchSize " + batchSize);
+		try {
+
+			Connection conn = ConnectionManager.getEdsNonPooledConnection();
+			String sql = "SELECT enterprise_id FROM " + sourceTable + " WHERE done = 0 AND subscriber_id = ? LIMIT " + batchSize;
+			PreparedStatement psSelect = conn.prepareStatement(sql);
+
+			sql = "UPDATE " + sourceTable + " SET done = 1 WHERE enterprise_id = ?";
+			PreparedStatement psDone = conn.prepareStatement(sql);
+
+			int batchesDone = 0;
+			int idsDone = 0;
+
+			while (true) {
+
+				List<Long> ids = new ArrayList<>();
+
+				psSelect.setInt(1, subscriberId);
+				ResultSet rs = psSelect.executeQuery();
+
+
+				while (rs.next()) {
+					long id = rs.getLong(1);
+					ids.add(new Long(id));
+				}
+
+				if (ids.isEmpty()) {
+					break;
+				}
+
+				OutputContainer container = new OutputContainer();
+				org.endeavourhealth.transform.subscriber.targetTables.Observation obsWriter = container.getObservations();
+
+				for (Long id: ids) {
+					SubscriberId idWrapper = new SubscriberId(SubscriberTableId.OBSERVATION.getId(), id.longValue(), null, null);
+					obsWriter.writeDelete(idWrapper);
+				}
+
+				byte[] bytes = container.writeToZip();
+				String base64 = Base64.getEncoder().encodeToString(bytes);
+
+				SubscriberZipFileUUIDsDalI szfudi = DalProvider.factorySubscriberZipFileUUIDs();
+				szfudi.createSubscriberZipFileUUIDsEntity(subscriberId, UUID.randomUUID().toString(), UUID.randomUUID().toString(), base64);
+
+				//update the table to say done
+				batchesDone ++;
+
+				for (Long id: ids) {
+					psDone.setLong(1, id.longValue());
+					psDone.addBatch();
+					idsDone ++;
+				}
+
+				psDone.executeBatch();
+				conn.commit();
+
+				LOG.debug("Done " + batchesDone + ", total = " + idsDone);
+
+				if (ids.size() < batchSize) {
+					break;
+				}
+			}
+
+			psSelect.close();
+			psDone.close();
+			conn.close();
+
+			LOG.debug("Finished at " + batchesDone + ", total = " + idsDone);
+
+			LOG.info("Finished Create Zips For Subscriber");
+		} catch (Throwable t) {
+			LOG.error("", t);
+		}
 	}
 
 	private static void testJmx() {

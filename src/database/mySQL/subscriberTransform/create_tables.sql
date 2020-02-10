@@ -1,6 +1,7 @@
 USE subscriber_transform_???? -- db name varies
 
 DROP TABLE IF EXISTS enterprise_id_map;
+DROP TABLE IF EXISTS enterprise_id_map_3;
 DROP TABLE IF EXISTS enterprise_organisation_id_map;
 DROP TABLE IF EXISTS household_id_map; -- obsolete table
 DROP TABLE IF EXISTS pseudo_id_map;
@@ -37,6 +38,22 @@ CREATE UNIQUE INDEX uix_enterprise_id_map_auto_increment
 ON enterprise_id_map (enterprise_id);
 
 ALTER TABLE enterprise_id_map MODIFY COLUMN enterprise_id bigint auto_increment;
+
+
+CREATE TABLE enterprise_id_map_3
+(
+  resource_type varchar(50) NOT NULL,
+  resource_id char(36) NOT NULL,
+  enterprise_id bigint NOT NULL,
+  CONSTRAINT pk_enterprise_id_map_3 PRIMARY KEY (resource_id, resource_type)
+);
+
+-- this unique index is required to make the column auto-increment
+CREATE UNIQUE INDEX uix_enterprise_id_map_3_auto_increment
+ON enterprise_id_map_3 (enterprise_id);
+
+ALTER TABLE enterprise_id_map_3 MODIFY COLUMN enterprise_id bigint auto_increment;
+
 
 
 
