@@ -16,7 +16,6 @@ import org.endeavourhealth.common.fhir.schema.MaritalStatus;
 import org.endeavourhealth.common.ods.OdsOrganisation;
 import org.endeavourhealth.common.ods.OdsWebService;
 import org.endeavourhealth.common.utility.FileHelper;
-import org.endeavourhealth.common.utility.JsonSerializer;
 import org.endeavourhealth.common.utility.ThreadPool;
 import org.endeavourhealth.common.utility.ThreadPoolError;
 import org.endeavourhealth.core.configuration.ConfigDeserialiser;
@@ -64,14 +63,10 @@ import org.endeavourhealth.core.messaging.pipeline.components.PostMessageToExcha
 import org.endeavourhealth.core.queueing.QueueHelper;
 import org.endeavourhealth.core.terminology.TerminologyService;
 import org.endeavourhealth.core.xml.QueryDocument.*;
-import org.endeavourhealth.core.xml.transformError.TransformError;
 import org.endeavourhealth.transform.common.*;
-import org.endeavourhealth.transform.common.resourceBuilders.MedicationOrderBuilder;
-import org.endeavourhealth.transform.common.resourceBuilders.MedicationStatementBuilder;
 import org.endeavourhealth.transform.common.resourceBuilders.PatientBuilder;
 import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
 import org.endeavourhealth.transform.emis.csv.helpers.EmisCsvHelper;
-import org.endeavourhealth.transform.emis.csv.helpers.IssueRecordIssueDate;
 import org.endeavourhealth.transform.emis.csv.transforms.careRecord.ObservationTransformer;
 import org.endeavourhealth.transform.enterprise.ObservationCodeHelper;
 import org.endeavourhealth.transform.subscriber.json.LinkDistributorConfig;
@@ -168,7 +163,7 @@ public class Main {
 			System.exit(0);
 		}
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("FixEmisDrugRecords")) {
 			String odsCodeRegex = null;
 			if (args.length > 1) {
@@ -176,7 +171,7 @@ public class Main {
 			}
 			fixEmisDrugRecords(odsCodeRegex);
 			System.exit(0);
-		}
+		}*/
 
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("PopulateSubscriberDBPseudoId")) {
@@ -1929,7 +1924,7 @@ public class Main {
 		}
 	}
 
-	private static void fixEmisDrugRecords(String odsCodeRegex) {
+	/*private static void fixEmisDrugRecords(String odsCodeRegex) {
 		LOG.info("Fixing Emis drug records");
 		try {
 			ServiceDalI serviceDal = DalProvider.factoryServiceDal();
@@ -2128,7 +2123,7 @@ public class Main {
 			LOG.error("", t);
 		}
 
-	}
+	}*/
 
 	/**
 	 * populates the pseudo_id table on a new-style subscriber DB (MySQL or SQL Server) with pseudo_ids generated

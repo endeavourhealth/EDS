@@ -25,8 +25,14 @@
 								<label for="inputType" class="control-label">Name/ID</label>
 
 								<div class="pull-right">
-									<label for="serviceNameSearchIncludeNotes" class="control-label">Match on notes</label>
-									<input type="checkbox" id="serviceNameSearchIncludeNotes" [(ngModel)]="serviceService.serviceNameSearchIncludeNotes" name="serviceNameSearchIncludeNotes" (ngModelChange)="applyFiltering()">
+									<label for="serviceNameSearchIncludeTags" class="control-label">Match on tags</label>
+									<input type="checkbox" id="serviceNameSearchIncludeTags" [(ngModel)]="serviceService.serviceNameSearchIncludeTags" name="serviceNameSearchIncludeTags" (ngModelChange)="applyFiltering()">
+									<span *ngIf="serviceService.serviceNameSearchIncludeTags">
+										<select id="serviceNameSearchSpecificTag" [(ngModel)]="serviceService.serviceNameSearchSpecificTag" name="serviceNameSearchSpecificTag" (ngModelChange)="applyFiltering()">
+											<option value="">All Tags</option>
+											<option *ngFor="let tagName of serviceService.getTagNamesFromCache()" value="{{tagName}}">{{tagName}}</option>
+										</select>
+									</span>
 								</div>
 
 								<input type="text" class="form-control" id="inputType" placeholder="Regex" [(ngModel)]="serviceService.serviceNameFilter" name="serviceNameFilter" (ngModelChange)="applyFiltering()">
@@ -120,9 +126,9 @@
 										<th class="col-md-1">ID</th>
 										<th class="col-md-1">Parent</th>
 										<th class="col-md-1">Publisher Config</th>
-										<th class="col-md-2">Last Data</th>
+										<th class="col-md-1">Last Data</th>
 										<th class="col-md-1">Status</th>
-										<th class="col-md-2">Notes</th>
+										<th class="col-md-3">Tags</th>
 										<th class="col-md-1">Actions</th>
 									</tr>
 								</thead>
@@ -131,10 +137,8 @@
 										<td>
 											<a (click)="edit(service)">{{service.name}}</a>
 
-											<!-- if we have any additional info, show it after the service name-->
-											<!--<span class="bg-danger" *ngIf="service.additionalInfo">
-												{{service.additionalInfo}}
-											</span>-->
+											<!-- icon with tooltip showing alias -->
+											<span class="fa fa-info-circle fa-right-pad text-muted" ngbTooltip="{{service.alias}}" *ngIf="service.alias"></span>
 
 										</td>
 										<td>{{service.localIdentifier}}</td>
@@ -166,10 +170,8 @@
 										</td>
 
 										<td>
-											<div *ngIf="service.notes">
-												{{getNotesPrefix(service)}}
-												<span class="fa fa-info-circle fa-right-pad text-muted" ngbTooltip="{{service.notes}}" *ngIf="service.notes.length > 10"></span>
-											</div>
+											{{getTagStrPrefix(service)}}
+											<span class="fa fa-info-circle fa-right-pad text-muted" ngbTooltip="{{getTagStr(service)}}" *ngIf="getTagStr(service).length > 10"></span>
 										</td>
 										<td>
 											<!--<button type="button" class="btn btn-danger btn-xs child-to-show" (click)="delete(item)">Delete Service</button>

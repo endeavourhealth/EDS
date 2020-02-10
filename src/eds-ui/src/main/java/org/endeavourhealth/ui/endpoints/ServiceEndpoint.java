@@ -46,7 +46,7 @@ public final class ServiceEndpoint extends AbstractEndpoint {
     private static final UserAuditDalI userAuditRepository = DalProvider.factoryUserAuditDal(AuditModule.EdsUiModule.Service);
     private static final ExchangeDalI exchangeAuditRepository = DalProvider.factoryExchangeDal();
 
-    //private static final Map<UUID, FhirDeletionService> dataBeingDeleted = new ConcurrentHashMap<>();
+    private static List<String> cachedTagNames = null;
 
     @POST
     @Produces(MediaType.APPLICATION_JSON)
@@ -67,13 +67,27 @@ public final class ServiceEndpoint extends AbstractEndpoint {
         dbService.setName(service.getName());
         dbService.setLocalId(service.getLocalIdentifier());
         dbService.setPublisherConfigName(service.getPublisherConfigName());
-        dbService.setNotes(service.getNotes());
         dbService.setPostcode(service.getPostcode());
         dbService.setCcgCode(service.getCcgCode());
         if (!Strings.isNullOrEmpty(service.getOrganisationTypeCode())) {
             dbService.setOrganisationType(OrganisationType.fromCode(service.getOrganisationTypeCode()));
         }
         dbService.setEndpointsList(service.getEndpoints());
+        dbService.setAlias(service.getAlias());
+        if (service.getTags() != null) {
+            dbService.setTags(new HashMap<>(service.getTags()));
+
+            //make sure any new ones are added to the cached list
+            if (cachedTagNames != null) {
+                Set<String> hs = new HashSet<>(cachedTagNames);
+                for (String tagName: service.getTags().keySet()) {
+                    hs.add(tagName);
+                }
+                List<String> l = new ArrayList<>(hs);
+                l.sort(((o1, o2) -> o1.toLowerCase().compareToIgnoreCase(o2.toLowerCase())));
+                cachedTagNames = l;
+            }
+        }
 
         UUID serviceId = serviceRepository.save(dbService);
 
@@ -762,6 +776,40 @@ public final class ServiceEndpoint extends AbstractEndpoint {
         return Response
                 .ok()
                 .entity(ret)
+                .build();
+    }
+
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name = "ServiceEndpoint.OrganisationTypeList")
+    @Path("/tagNames")
+    public Response getTagNames(@Context SecurityContext sc) throws Exception {
+        super.setLogbackMarkers(sc);
+
+        if (cachedTagNames == null) {
+
+            Set<String> all = new HashSet<>();
+
+            List<Service> services = serviceRepository.getAll();
+            for (Service service: services) {
+                if (service.getTags() != null) {
+                    Set<String> set = service.getTags().keySet();
+                    all.addAll(set);
+                }
+            }
+
+            List<String> l = new ArrayList<>(all);
+            l.sort(((o1, o2) -> o1.toLowerCase().compareToIgnoreCase(o2.toLowerCase())));
+            cachedTagNames = l;
+        }
+
+        clearLogbackMarkers();
+
+        return Response
+                .ok()
+                .entity(cachedTagNames)
                 .build();
     }
 }

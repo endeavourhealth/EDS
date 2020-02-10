@@ -17,12 +17,10 @@ import {OdsSearchDialog} from "./odsSearch.dialog";
 export class ServiceListComponent implements OnInit, OnDestroy{
 
 	services : Service[];
-	timer: Subscription = null;
-
-	//filtering
 	filteredServices: Service[];
 	allPublisherConfigNames: string[];
 	allCcgCodes: string[];
+
 
 	static $inject = ['$uibModal', 'ServiceService', 'LoggerService','$state'];
 
@@ -39,10 +37,7 @@ export class ServiceListComponent implements OnInit, OnDestroy{
 	}
 
 	ngOnDestroy() {
-		if (this.timer) {
-			this.timer.unsubscribe();
-			this.timer = null;
-		}
+
 	}
 
 
@@ -91,10 +86,10 @@ export class ServiceListComponent implements OnInit, OnDestroy{
 
 		var endpoints = service.endpoints;
 		if (endpoints.length == 0) {
-			vm.log.error('No systems in this serviec');
+			//vm.log.error('No systems in this serviec');
 
 		} else if (endpoints.length == 1) {
-			console.log('servvice = ' + service.name + ' only one endpoint');
+			//console.log('servvice = ' + service.name + ' only one endpoint');
 			var endpoint = endpoints[0];
 			var systemId = endpoint.systemUuid;
 			callback(service, systemId);
@@ -139,7 +134,9 @@ export class ServiceListComponent implements OnInit, OnDestroy{
 
 	applyFiltering() {
 		var vm = this;
+		//console.log('applying filtering from ' + vm.services.length);
 		vm.filteredServices = vm.serviceService.applyFiltering(vm.services, false);
+		//console.log('filtered down to ' + vm.filteredServices.length);
 	}
 
 	toggleFilters() {
@@ -179,16 +176,9 @@ export class ServiceListComponent implements OnInit, OnDestroy{
 		vm.allCcgCodes.sort();
 	}
 
-	getNotesPrefix(service: Service) : string {
 
-		if (service.notes
-			&& service.notes.length > 25) {
-			return service.notes.substr(0, 25) + '...';
 
-		} else {
-			return service.notes;
-		}
-	}
+
 
 	formatLastDataTooltip(service: Service, status: SystemStatus) : string {
 
@@ -429,5 +419,28 @@ export class ServiceListComponent implements OnInit, OnDestroy{
 	odsSearch() {
 		var vm = this;
 		OdsSearchDialog.open(vm.$modal);
+	}
+
+
+
+	getTagStrPrefix(service: Service) : string {
+		var vm = this;
+		var str = vm.getTagStr(service);
+		if (str
+			&& str.length > 25) {
+			return str.substr(0, 25) + '...';
+
+		} else {
+			return str;
+		}
+	}
+
+	getTagStr(service: Service) : string {
+		var vm = this;
+
+		if (!service.cachedTagStr) {
+			service.cachedTagStr = vm.serviceService.createTagStr(service);
+		}
+		return service.cachedTagStr
 	}
 }

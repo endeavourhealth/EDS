@@ -571,4 +571,13 @@ export class ExchangeAuditComponent {
 				(error) => vm.log.error('Error saving', error, 'Error')
 			);
 	}
+
+	getTagStr(service: Service) : string {
+		var vm = this;
+
+		if (!service.cachedTagStr) {
+			service.cachedTagStr = vm.serviceService.createTagStr(service);
+		}
+		return service.cachedTagStr
+	}
 }

@@ -11,6 +11,8 @@ import {SystemService} from "../system/system.service";
 import {EdsLibraryItem} from "../edsLibrary/models/EdsLibraryItem";
 import {OdsSearchDialog} from "./odsSearch.dialog";
 import {OrganisationType} from "./models/OrganisationType";
+import {linq} from "eds-common-js/dist/index";
+import {Tag} from "./models/Tag";
 
 @Component({
 	template : require('./serviceEditor.html')
@@ -21,17 +23,16 @@ export class ServiceEditComponent {
 	systems : System[];
 	technicalInterfaces : TechnicalInterface[];
 	protocols: EdsLibraryItem[];
-	//protocolJson: string;
-
 	selectedEndpoint : Endpoint;
+	tags: Tag[];
 
-
-	//keep this here so it only needs getting once
+	//for populating the org type combo
 	organisationTypes: OrganisationType[];
+	comboSelectedTagName: string;
 
 	constructor(private $modal : NgbModal,
 							private $window : StateService,
-							private log:LoggerService,
+							private log : LoggerService,
 							private adminService : AdminService,
 							private serviceService : ServiceService,
 							private systemService : SystemService,
@@ -41,8 +42,11 @@ export class ServiceEditComponent {
 		vm.loadOrganisationTypes();
 		vm.loadSystems();
 
-		vm.performAction(transition.params()['itemAction'], transition.params()['itemUuid']);
+		var action = transition.params()['itemAction'];
+		var serviceId = transition.params()['itemUuid'];
+		vm.performAction(action, serviceId);
 	}
+
 
 	protected performAction(action:string, itemUuid:string) {
 		switch (action) {
@@ -56,11 +60,15 @@ export class ServiceEditComponent {
 	}
 
 	create(uuid : string) {
-		this.service = {
+		var vm = this;
+		vm.service = {
 			uuid : uuid,
 			name : '',
-			endpoints : []
+			endpoints : [],
+			tags: {}
 		} as Service;
+
+		vm.tags = [];
 	}
 
 	load(uuid : string) {
@@ -70,6 +78,8 @@ export class ServiceEditComponent {
 				(result) => {
 					vm.service = result;
 					vm.getServiceProtocols();
+					vm.populateTags();
+					//vm.getTagNames();
 				},
 				(error) => vm.log.error('Error loading', error, 'Error')
 			);
@@ -77,6 +87,8 @@ export class ServiceEditComponent {
 
 	save(close : boolean) {
 		var vm = this;
+
+		vm.saveTags();
 
 		//doesn't immediately save - calls validation function first which checks the save is safe
 		vm.serviceService.validateSave(vm.service)
@@ -204,8 +216,8 @@ export class ServiceEditComponent {
 				(result) => {
 				vm.systems = result;
 				vm.technicalInterfaces = [];
-				console.log(vm.systems[0].technicalInterface.length);
-				console.log(vm.systems[0].technicalInterface[0].name);
+				/*console.log(vm.systems[0].technicalInterface.length);
+				console.log(vm.systems[0].technicalInterface[0].name);*/
 
 				for (var i = 0; i < vm.systems.length; ++i) {
 					for (var j = 0; j < vm.systems[i].technicalInterface.length; ++j) {
@@ -376,5 +388,180 @@ export class ServiceEditComponent {
 					vm.log.error('Failed to find ODS record');
 				}
 			);
+	}
+
+	addNewTag() {
+		var vm = this;
+
+		var newTag = prompt('Tag name');
+		if (newTag == null) {
+			return;
+		}
+
+		//validate not already present in cache
+		for (var i=0; i<vm.serviceService.tagNameCache.length; i++) {
+			var tagName = vm.serviceService.tagNameCache[i];
+			if (tagName.toLowerCase() == newTag.toLowerCase()) {
+				vm.log.warning('Tag name already used');
+				return;
+			}
+		}
+
+		//add
+		var list = vm.serviceService.tagNameCache;
+		list.push(newTag);
+		vm.serviceService.tagNameCache = linq(list).OrderBy(s => s.toLowerCase()).ToArray();
+
+		vm.comboSelectedTagName = newTag;
+		vm.addTag();
+	}
+
+	addTag() {
+		var vm = this;
+
+		//validate something in the combo is selected
+		if (!vm.comboSelectedTagName) {
+			vm.log.warning('No tag selected');
+			return;
+		}
+
+		//validate the tag isn't already added
+		for (var i=0; i<vm.tags.length; i++) {
+			var tag = vm.tags[i];
+			if (tag.name == vm.comboSelectedTagName) {
+				vm.log.warning('Tag already added');
+				return;
+			}
+		}
+
+		//add to the service
+		var newTag = {} as Tag;
+		newTag.name = vm.comboSelectedTagName;
+		newTag.value = '';
+		vm.tags.push(newTag);
+
+		vm.tags = linq(vm.tags).OrderBy(s => s.name.toLowerCase()).ToArray();
+	}
+
+	getTagValue(tagName: string): string {
+		var vm = this;
+		return vm.service.tags[tagName];
+	}
+
+	/**
+	 * finds list of all tag names in use
+	 */
+	/*getTagNames() {
+		var vm = this;
+
+		var list = [];
+
+		//get from service (and make sure non-null)
+		if (!vm.service.tags) {
+			vm.service.tags = {};
+		}
+		var keys = Object.keys(vm.service.tags);
+		for (var i=0; i<keys.length; i++) {
+			var key = keys[i];
+			var tagName = vm.service.tags[key];
+			list.push(tagName);
+			console.log('found key ' + tagName);
+		}
+
+		//get from all other services
+		if (vm.serviceService.tagNameCache) {
+			for (var j=0; j<vm.serviceService.tagNameCache.length; j++) {
+				var otherTagName = vm.serviceService.tagNameCache[j];
+				if (list.indexOf(otherTagName) == -1) {
+					list.push(otherTagName);
+				}
+			}
+			console.log('adding extra ' + otherTagName);
+		}
+
+
+		vm.tagNames = list;
+		vm.sortTagNames();
+	}
+
+	sortTagNames() {
+		var vm = this;
+		vm.tagNames = linq(vm.tagNames).OrderBy(s => s.toLowerCase()).ToArray();
+	}
+
+
+	tidyTags() {
+		var vm = this;
+
+		for (var i=0; i<vm.tagNames.length; i++) {
+			var tagName = vm.tagNames[i];
+			var tagValue = vm.service.tags[tagName];
+
+			//if the value is empty, properly delete it from the object
+			console.log('tag [' + tagName + '] val [' + tagValue + ']');
+			if (!tagValue) {
+				console.log('delete tag ' + tagName);
+				delete vm.service.tags[tagValue];
+			}
+		}
+		console.log('saving tags ' + JSON.stringify(vm.service.tags));
+
+		//make sure our service cache of tag names is updated with the lastest list of known tags
+		vm.serviceService.tagNameCache = vm.tagNames;
+	}*/
+
+	getTagNames(): string[] {
+		var vm = this;
+		if (!vm.service
+			|| !vm.service.tags) {
+			return [];
+		}
+console.log('getting tags for ' + JSON.stringify(vm.service));
+		var ret = Object.keys(vm.service.tags);
+
+		for (var i=0; i<ret.length; i++) {
+			var tagName = ret[i];
+			console.log('tag ' + tagName + ' has val = ' + vm.service.tags[tagName])
+		}
+
+		return ret;
+	}
+
+	removeTag(tag: Tag) {
+		var vm = this;
+		var index = vm.tags.indexOf(tag);
+		vm.tags.splice(index, index);
+		//delete vm.service.tags[tagName];
+	}
+
+	populateTags() {
+		var vm = this;
+		vm.tags = [];
+
+		var tagNames = Object.keys(vm.service.tags);
+		for (var i=0; i<tagNames.length; i++) {
+			var tagName = tagNames[i];
+			var tagValue = vm.service.tags[tagName];
+
+			var tag = {} as Tag;
+			tag.name = tagName;
+			tag.value = tagValue;
+
+			vm.tags.push(tag);
+		}
+	}
+
+	saveTags() {
+		var vm = this;
+		var newObj = {};
+		//console.log('saving tags');
+		for (var i=0; i<vm.tags.length; i++) {
+			var tag = vm.tags[i];
+			//console.log('tag ' + tag.name + ' val ' + tag.value)
+			newObj[tag.name] = tag.value;
+		}
+
+		vm.service.tags = newObj;
+		//console.log('sevice now ' + JSON.stringify(vm.service));
 	}
 }

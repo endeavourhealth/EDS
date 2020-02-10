@@ -37,6 +37,10 @@
 
 				<div class="row">
 					<div class="form-group col-md-6">
+						<label class="control-label">Alias</label>
+						<input type="text" class="form-control" placeholder="Also known as" [(ngModel)]="service.alias" name="alias">
+					</div>
+					<div class="form-group col-md-6">
 						<label class="control-label">Organisation type</label>
 						<select class="form-control" [(ngModel)]="service.organisationTypeCode" name="organisationTypeCode">
 
@@ -54,17 +58,53 @@
 
 				<div class="row">
 					<div class="form-group col-md-6">
+						<label class="control-label">Tags</label>
+						<select [(ngModel)]="comboSelectedTagName" name="comboSelectedTagName">
+							<option value=""></option>
+							<option *ngFor="let tagName of serviceService.getTagNamesFromCache()" value="{{tagName}}">{{tagName}}</option>
+						</select>
+						<button type="button" class="btn btn-xs btn-success" (click)="addTag()">Add Tag</button>
+						<button type="button" class="btn btn-xs btn-success" (click)="addNewTag()">New Tag</button>
+
+						<div class="table scroll-box-200">
+							<table class="table table-striped table-condensed">
+								<thead>
+									<th class="col-md-3"></th>
+									<th class="col-md-8"></th>
+									<th class="col-md-1"></th>
+								</thead>
+								<tbody>
+									<tr class="hover-box show-child-on-hover" *ngFor="let tag of tags">
+										<td>{{tag.name}}</td>
+										<td>
+											<input type="text" class="form-control" placeholder="Tag value" [(ngModel)]="tag.value" name="editTag{{tag.name}}">
+										</td>
+										<td>
+											<div class="child-to-show">
+												<button type="button" class="btn btn-danger btn-xs pull-right" (click)="removeTag(tag)">
+													<span class="fa fa-remove"></span>
+												</button>
+											</div>
+										</td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+					</div>
+					<div class="form-group col-md-6">
 						<label class="control-label">Publisher Config Name</label>
 						<input type="text" class="form-control" placeholder="" [(ngModel)]="service.publisherConfigName" name="publisherConfigName">
 					</div>
+
 				</div>
 
-				<div class="row">
-					<div class="form-group col-md-12">
+				<!--<div class="row">
+					<div class="form-group col-md-6">
 						<label class="control-label">Notes</label>
 						<textarea class="form-control" id="description" [(ngModel)]="service.notes" placeholder="Notes on this service" name="notes"></textarea>
 					</div>
-				</div>
+				</div>-->
+
 				<div class="row">
 					<div class="form-group col-md-8">
 						<label class="control-label">Endpoints</label>
