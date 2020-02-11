@@ -976,6 +976,13 @@ public class Main {
 						for (int j=i+1; j<exchanges.size(); j++) {
 							Exchange priorExchange = exchanges.get(j);
 
+							//skip any other special exchanges that are for bulk loads etc
+							Boolean priorAllowRequeuing = priorExchange.getHeaderAsBoolean(HeaderKeys.AllowQueueing);
+							if (priorAllowRequeuing != null
+									&& !priorAllowRequeuing.booleanValue()) {
+								continue;
+							}
+
 							//skip any where the header contains the same protocol ID, as this data will have gone
 							//to the subscriber anyway
 							boolean hadSameProtocol = false;
@@ -996,13 +1003,6 @@ public class Main {
 							ExchangeBatchDalI exchangeBatchDal = DalProvider.factoryExchangeBatchDal();
 							List<ExchangeBatch> batches = exchangeBatchDal.retrieveForExchangeId(priorExchange.getId());
 							if (batches.isEmpty()) {
-								continue;
-							}
-
-							//skip any other special exchanges that are for bulk loads etc
-							Boolean priorAllowRequeuing = priorExchange.getHeaderAsBoolean(HeaderKeys.AllowQueueing);
-							if (priorAllowRequeuing != null
-									&& !priorAllowRequeuing.booleanValue()) {
 								continue;
 							}
 
