@@ -902,6 +902,18 @@ public class Main {
 		LOG.info("EDS Queue reader running (kill file location " + TransformConfig.instance().getKillFileLocation() + ")");
 	}
 
+	/**
+	 * checks Services to see if any queued up exchange was not yet processed when a bulk subscriber load was started,
+	 * meaning that some data was not sent to that subscriber. Populates a table with IDs that can then be queued up
+	 * for sending
+	 *
+	 * tableName should be of a table with this schema:
+	 * create table tmp.patients_to_requeue (
+		 service_id char(36),
+		 protocol_id char(36),
+		 patient_id char(36)
+	 );
+     */
 	private static void findMissedExchanges(String tableName, String odsCodeRegex) {
 		LOG.info("Finding missed exchanges filtering on orgs using " + odsCodeRegex + ", storing results in " + tableName);
 		try {
@@ -976,6 +988,13 @@ public class Main {
 								continue;
 							}
 
+							//skip any that didn't actually transform any dta
+							ExchangeBatchDalI exchangeBatchDal = DalProvider.factoryExchangeBatchDal();
+							List<ExchangeBatch> batches = exchangeBatchDal.retrieveForExchangeId(priorExchange.getId());
+							if (batches.isEmpty()) {
+								continue;
+							}
+
 							List<ExchangeTransformAudit> transformAudits = exchangeDal.getAllExchangeTransformAudits(service.getId(), systemId, priorExchange.getId());
 							if (transformAudits.isEmpty()) {
 								throw new Exception("No transform audits for exchange " + priorExchange.getId());
@@ -990,9 +1009,6 @@ public class Main {
 							//if the transform didn't finish until AFTER the bulk was started, then this exchange's data
 							//won't have gone to the subscriber
 							LOG.debug("Exchange " + priorExchange.getId() + " finished transform on " + dtTransform + " so missed going to subscriber");
-
-							ExchangeBatchDalI exchangeBatchDal = DalProvider.factoryExchangeBatchDal();
-							List<ExchangeBatch> batches = exchangeBatchDal.retrieveForExchangeId(priorExchange.getId());
 
 							for (ExchangeBatch b: batches) {
 								UUID patientId = b.getEdsPatientId();
