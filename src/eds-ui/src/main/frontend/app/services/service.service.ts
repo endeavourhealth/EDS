@@ -32,7 +32,7 @@ export class ServiceService extends BaseHttp2Service {
 
 		var vm = this;
 		vm.showFilters = true;
-		vm.serviceNameSearchIncludeTags = true;
+		vm.serviceNameSearchIncludeTags = false;
 		vm.serviceNameSearchSpecificTag = '';
 		vm.sortFilter = 'NameAsc';
 	}
@@ -809,22 +809,28 @@ export class ServiceService extends BaseHttp2Service {
 	}*/
 
 	public createTagStr(service: Service): string {
-		//var vm = this;
+		var vm = this;
 
+		var list = vm.getTagNamesFromCache();
 		var ret = '' as string;
-		if (service.tags) {
-			var tagNames = Object.keys(service.tags);
-			for (var i=0; i<tagNames.length; i++) {
-				var tagName = tagNames[i];
-				var tagValue = service.tags[tagName];
 
-				if (ret.length > 0) {
-					ret += ', ';
-				}
-				ret += tagName;
-				if (tagValue) {
-					ret += ' ';
-					ret += tagValue;
+		if (service.tags
+			&& list) {
+
+			for (var i=0; i<list.length; i++) {
+				var tagName = list[i];
+
+				if (service.tags.hasOwnProperty(tagName)) {
+					var tagValue = service.tags[tagName];
+
+					if (ret.length > 0) {
+						ret += ', ';
+					}
+					ret += tagName;
+					if (tagValue) {
+						ret += ' ';
+						ret += tagValue;
+					}
 				}
 			}
 		}

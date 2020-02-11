@@ -409,8 +409,7 @@ export class ServiceEditComponent {
 
 		//add
 		var list = vm.serviceService.tagNameCache;
-		list.push(newTag);
-		vm.serviceService.tagNameCache = linq(list).OrderBy(s => s.toLowerCase()).ToArray();
+		list.push(newTag); //just stick it on the end for now
 
 		vm.comboSelectedTagName = newTag;
 		vm.addTag();

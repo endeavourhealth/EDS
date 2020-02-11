@@ -20,7 +20,7 @@ export class ServiceListComponent implements OnInit, OnDestroy{
 	filteredServices: Service[];
 	allPublisherConfigNames: string[];
 	allCcgCodes: string[];
-
+	tagStrDisplayLimit: number;
 
 	static $inject = ['$uibModal', 'ServiceService', 'LoggerService','$state'];
 
@@ -33,7 +33,10 @@ export class ServiceListComponent implements OnInit, OnDestroy{
 	}
 
 	ngOnInit() {
-		this.refreshAllServices();
+		var vm = this;
+		vm.tagStrDisplayLimit = 50;
+		vm.refreshAllServices();
+		vm.serviceService.getTagNamesFromCache(); //just call this to pre-cache the tag names
 	}
 
 	ngOnDestroy() {
@@ -427,8 +430,8 @@ export class ServiceListComponent implements OnInit, OnDestroy{
 		var vm = this;
 		var str = vm.getTagStr(service);
 		if (str
-			&& str.length > 25) {
-			return str.substr(0, 25) + '...';
+			&& str.length > vm.tagStrDisplayLimit) {
+			return str.substr(0, vm.tagStrDisplayLimit) + '...';
 
 		} else {
 			return str;

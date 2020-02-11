@@ -83,9 +83,7 @@ public final class ServiceEndpoint extends AbstractEndpoint {
                 for (String tagName: service.getTags().keySet()) {
                     hs.add(tagName);
                 }
-                List<String> l = new ArrayList<>(hs);
-                l.sort(((o1, o2) -> o1.toLowerCase().compareToIgnoreCase(o2.toLowerCase())));
-                cachedTagNames = l;
+                setTagNameCache(hs);
             }
         }
 
@@ -800,9 +798,7 @@ public final class ServiceEndpoint extends AbstractEndpoint {
                 }
             }
 
-            List<String> l = new ArrayList<>(all);
-            l.sort(((o1, o2) -> o1.toLowerCase().compareToIgnoreCase(o2.toLowerCase())));
-            cachedTagNames = l;
+            setTagNameCache(all);
         }
 
         clearLogbackMarkers();
@@ -811,5 +807,22 @@ public final class ServiceEndpoint extends AbstractEndpoint {
                 .ok()
                 .entity(cachedTagNames)
                 .build();
+    }
+
+    private void setTagNameCache(Set<String> s) {
+        List<String> l = new ArrayList<>(s);
+
+        //sort by length so shorter ones are first, which has the end result of moving
+        //the more interesting tags to the start
+        //l.sort(((o1, o2) -> o1.toLowerCase().compareToIgnoreCase(o2.toLowerCase())));
+        l.sort((o1, o2) -> new Integer(o1.length()).compareTo(new Integer(o2.length())));
+
+        //always put NOTES at the end
+        if (l.contains("Notes")) {
+            l.remove("Notes");
+            l.add("Notes");
+        }
+
+        cachedTagNames = l;
     }
 }
