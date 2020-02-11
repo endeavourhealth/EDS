@@ -948,7 +948,8 @@ public class Main {
 							List<ExchangeEvent> events = exchangeDal.getExchangeEvents(bulkExchange.getId());
 							for (ExchangeEvent event: events) {
 								String eventDesc = event.getEventDesc();
-								if (eventDesc.contains("created exchange to populate subscribers in protocol")) {
+								//note weird text check to handle the two versions of this message used
+								if (eventDesc.contains("reated exchange to populate subscribers in protocol")) {
 									isBulkLoad = true;
 									LOG.debug("Bulk load found in exchange " + bulkExchange.getId() + " on " + bulkExchange.getTimestamp() + ": " + eventDesc);
 									break;
