@@ -980,6 +980,9 @@ public class Main {
 							//to the subscriber anyway
 							boolean hadSameProtocol = false;
 							String[] priorProtocolIds = priorExchange.getHeaderAsStringArray(HeaderKeys.ProtocolIds);
+							if (priorProtocolIds == null) {
+								throw new Exception("Null protocol IDs for exchange " + priorExchange.getId());
+							}
 							for (String priorProtocolId: priorProtocolIds) {
 								if (priorProtocolId.equals(protocolId)) {
 									hadSameProtocol = true;
