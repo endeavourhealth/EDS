@@ -995,6 +995,13 @@ public class Main {
 								continue;
 							}
 
+							//skip any other special exchanges that are for bulk loads etc
+							Boolean priorAllowRequeuing = priorExchange.getHeaderAsBoolean(HeaderKeys.AllowQueueing);
+							if (priorAllowRequeuing != null
+									&& !priorAllowRequeuing.booleanValue()) {
+								continue;
+							}
+
 							List<ExchangeTransformAudit> transformAudits = exchangeDal.getAllExchangeTransformAudits(service.getId(), systemId, priorExchange.getId());
 							if (transformAudits.isEmpty()) {
 								throw new Exception("No transform audits for exchange " + priorExchange.getId());
