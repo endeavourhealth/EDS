@@ -8,8 +8,6 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.common.config.ConfigManager;
-import org.endeavourhealth.common.fhir.schema.EthnicCategory;
-import org.endeavourhealth.common.fhir.schema.MaritalStatus;
 import org.endeavourhealth.common.utility.FileHelper;
 import org.endeavourhealth.common.utility.ThreadPool;
 import org.endeavourhealth.common.utility.ThreadPoolError;
@@ -38,7 +36,6 @@ import org.endeavourhealth.core.database.dal.subscriberTransform.models.Subscrib
 import org.endeavourhealth.core.database.rdbms.ConnectionManager;
 import org.endeavourhealth.core.database.rdbms.enterprise.EnterpriseConnector;
 import org.endeavourhealth.core.exceptions.TransformException;
-import org.endeavourhealth.core.fhirStorage.FhirSerializationHelper;
 import org.endeavourhealth.core.fhirStorage.FhirStorageService;
 import org.endeavourhealth.core.fhirStorage.ServiceInterfaceEndpoint;
 import org.endeavourhealth.core.messaging.pipeline.components.MessageTransformOutbound;
@@ -47,13 +44,11 @@ import org.endeavourhealth.core.messaging.pipeline.components.PostMessageToExcha
 import org.endeavourhealth.core.queueing.QueueHelper;
 import org.endeavourhealth.core.xml.QueryDocument.*;
 import org.endeavourhealth.transform.common.*;
-import org.endeavourhealth.transform.common.resourceBuilders.PatientBuilder;
 import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
 import org.endeavourhealth.transform.subscriber.targetTables.OutputContainer;
 import org.endeavourhealth.transform.subscriber.targetTables.SubscriberTableId;
 import org.hibernate.internal.SessionImpl;
 import org.hl7.fhir.instance.model.MedicationStatement;
-import org.hl7.fhir.instance.model.Patient;
 import org.hl7.fhir.instance.model.ResourceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -110,6 +105,15 @@ public class Main {
 			findMissedExchanges(tableName, odsCodeRegex);
 			System.exit(0);
 		}
+
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("SendPatientsToSubscriber")) {
+			String tableName = args[1];
+			sendPatientsToSubscriber(tableName);
+			System.exit(0);
+		}
+
+
 
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("CreateDeleteZipsForSubscriber")) {
@@ -189,7 +193,7 @@ public class Main {
 			System.exit(0);
 		}
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("FixMissingEmisEthnicities")) {
 			String filePath = args[1];
 			String odsCodeRegex = null;
@@ -198,7 +202,7 @@ public class Main {
 			}
 			fixMissingEmisEthnicities(filePath, odsCodeRegex);
 			System.exit(0);
-		}
+		}*/
 
 		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("UpdatePatientSearch")) {
@@ -900,6 +904,62 @@ public class Main {
 		RabbitHandler rabbitHandler = new RabbitHandler(configuration, configId);
 		rabbitHandler.start();
 		LOG.info("EDS Queue reader running (kill file location " + TransformConfig.instance().getKillFileLocation() + ")");
+	}
+
+	private static void sendPatientsToSubscriber(String tableName) {
+		LOG.info("Sending patients to subscriber from " + tableName);
+		try {
+
+			Connection conn = ConnectionManager.getEdsConnection();
+
+			String sql = "SELECT service_id, protocol_id, patient_id FROM " + tableName + " ORDER BY service_id, protocol_id";
+			PreparedStatement ps = conn.prepareStatement(sql);
+			ps.setFetchSize(5000);
+
+			List<UUID> batchPatientIds = new ArrayList<>();
+			UUID batchServiceId = null;
+			UUID batchProtocolId = null;
+
+			ResultSet rs = ps.executeQuery();
+			while (rs.next()) {
+				int col = 1;
+
+				UUID serviceId = UUID.fromString(rs.getString(col++));
+				UUID protocolId = UUID.fromString(rs.getString(col++));
+				UUID patientId = UUID.fromString(rs.getString(col++));
+
+				if (batchServiceId == null
+						|| batchProtocolId == null
+						|| !serviceId.equals(batchServiceId)
+						|| !protocolId.equals(batchProtocolId)) {
+
+					//send any found previously
+					if (!batchPatientIds.isEmpty()) {
+						LOG.debug("Doing batch of " + batchPatientIds.size() + " for service " + batchServiceId + " and protocol " + batchProtocolId);
+						QueueHelper.queueUpFullServiceForPopulatingSubscriber(batchServiceId, batchProtocolId, batchPatientIds);
+					}
+
+					batchServiceId = serviceId;
+					batchProtocolId = protocolId;
+					batchPatientIds = new ArrayList<>();
+				}
+
+				batchPatientIds.add(patientId);
+			}
+
+			//do the remainder
+			if (!batchPatientIds.isEmpty()) {
+				LOG.debug("Doing batch of " + batchPatientIds.size() + " for service " + batchServiceId + " and protocol " + batchProtocolId);
+				QueueHelper.queueUpFullServiceForPopulatingSubscriber(batchServiceId, batchProtocolId, batchPatientIds);
+			}
+
+			conn.close();
+
+			LOG.info("Finished sending patients to subscriber from " + tableName);
+		} catch (Throwable t) {
+			LOG.error("", t);
+		}
+
 	}
 
 	/**
@@ -3611,7 +3671,7 @@ public class Main {
 	 * the patient resource was re-created from the patient file but the ethnicity and marital status weren't carried
 	 * over from the pre-deleted version.
      */
-	private static void fixMissingEmisEthnicities(String filePath, String filterRegexOdsCode) {
+	/*private static void fixMissingEmisEthnicities(String filePath, String filterRegexOdsCode) {
 		LOG.info("Fixing Missing Emis Ethnicities to " + filePath + " matching orgs using " + filterRegexOdsCode);
 		try {
 
@@ -3776,7 +3836,7 @@ public class Main {
 			LOG.error("", t);
 		}
 
-	}
+	}*/
 
 	/**
 	 * updates patient_search and patient_link tables for explicit list of patient UUIDs
