@@ -1010,7 +1010,16 @@ public class Main {
 							if (transformAudits.isEmpty()) {
 								throw new Exception("No transform audits for exchange " + priorExchange.getId());
 							}
-							ExchangeTransformAudit firstTransformAudit = transformAudits.get(0);
+							ExchangeTransformAudit firstTransformAudit = null;
+							for (ExchangeTransformAudit transformAudit: transformAudits) {
+								if (transformAudit.getEnded() != null) {
+									firstTransformAudit = transformAudit;
+									break;
+								}
+							}
+							if (firstTransformAudit == null) {
+								throw new Exception("No finished transform audit found for exchange " + priorExchange.getId());
+							}
 							Date dtTransform = firstTransformAudit.getEnded();
 							if (dtTransform.before(dtBulk)) {
 								//if the transform finished before the bulk, then we're OK and don't need to look at any more exchanges
