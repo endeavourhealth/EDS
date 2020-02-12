@@ -112,7 +112,7 @@
                                     <!--<td>{{summary.service.publisherConfigName}}</td>-->
                                     <td>
                                         {{getTagStrPrefix(summary.service)}}
-                                        <span class="fa fa-info-circle fa-right-pad text-muted" ngbTooltip="{{getTagStr(summary.service)}}" *ngIf="getTagStr(summary.service).length > 10"></span>
+                                        <span class="fa fa-info-circle fa-right-pad text-muted" ngbTooltip="{{getTagStr(summary.service)}}" *ngIf="getTagStr(summary.service).length > tagStrDisplayLimit"></span>
                                     </td>
                                     <td>{{summary.systemName}}</td>
                                     <td>{{summary.countExchanges}}</td>

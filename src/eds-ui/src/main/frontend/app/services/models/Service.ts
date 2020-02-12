@@ -15,9 +15,6 @@ export class Service {
 	alias: string;
 	tags: {};
 
-	//cached version of the tag object
-	cachedTagStr: string;
-
 	constructor() {}
 
 

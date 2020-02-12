@@ -21,6 +21,7 @@ export class ServiceListComponent implements OnInit, OnDestroy{
 	allPublisherConfigNames: string[];
 	allCcgCodes: string[];
 	tagStrDisplayLimit: number;
+	cachedTagStrs: {};
 
 	static $inject = ['$uibModal', 'ServiceService', 'LoggerService','$state'];
 
@@ -35,6 +36,7 @@ export class ServiceListComponent implements OnInit, OnDestroy{
 	ngOnInit() {
 		var vm = this;
 		vm.tagStrDisplayLimit = 50;
+		vm.cachedTagStrs = {}
 		vm.refreshAllServices();
 		vm.serviceService.getTagNamesFromCache(); //just call this to pre-cache the tag names
 	}
@@ -441,9 +443,10 @@ export class ServiceListComponent implements OnInit, OnDestroy{
 	getTagStr(service: Service) : string {
 		var vm = this;
 
-		if (!service.cachedTagStr) {
-			service.cachedTagStr = vm.serviceService.createTagStr(service);
+		if (!vm.cachedTagStrs[service.uuid]) {
+			var str = vm.serviceService.createTagStr(service);
+			vm.cachedTagStrs[service.uuid] = str;
 		}
-		return service.cachedTagStr
+		return vm.cachedTagStrs[service.uuid]
 	}
 }

@@ -12,9 +12,11 @@ import {Service} from "../services/models/Service";
 	template : require('./transformErrors.html')
 })
 export class TransformErrorsComponent {
-	transformErrorSummaries:TransformErrorSummary[];
-	selectedSummary:TransformErrorSummary;
-	selectedExchangeIndex:number;
+	transformErrorSummaries: TransformErrorSummary[];
+	selectedSummary: TransformErrorSummary;
+	selectedExchangeIndex: number;
+	tagStrDisplayLimit: number;
+	cachedTagStrs: {};
 
 	selectExchangeErrorDetail:TransformErrorDetail;
 	busyPostingToExchange: Subscription;
@@ -33,6 +35,9 @@ export class TransformErrorsComponent {
 	}
 
 	ngOnInit() {
+		var vm = this;
+		vm.tagStrDisplayLimit = 10;
+		vm.cachedTagStrs = {}
 		this.refreshSummaries();
 	}
 
@@ -318,8 +323,8 @@ console.log('filtering now');
 		var vm = this;
 		var str = vm.getTagStr(service);
 		if (str
-			&& str.length > 10) {
-			return str.substr(0, 10) + '...';
+			&& str.length > vm.tagStrDisplayLimit) {
+			return str.substr(0, vm.tagStrDisplayLimit) + '...';
 
 		} else {
 			return str;
@@ -329,9 +334,10 @@ console.log('filtering now');
 	getTagStr(service: Service) : string {
 		var vm = this;
 
-		if (!service.cachedTagStr) {
-			service.cachedTagStr = vm.serviceService.createTagStr(service);
+		if (!vm.cachedTagStrs[service.uuid]) {
+			var str = vm.serviceService.createTagStr(service);
+			vm.cachedTagStrs[service.uuid] = str;
 		}
-		return service.cachedTagStr
+		return vm.cachedTagStrs[service.uuid]
 	}
 }

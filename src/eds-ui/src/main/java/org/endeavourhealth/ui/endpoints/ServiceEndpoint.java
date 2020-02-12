@@ -193,42 +193,10 @@ public final class ServiceEndpoint extends AbstractEndpoint {
                             //if the publisher mode has changed, then validate that there's nothing in the queue
                             if (!endpointStr.equals(existingEndpointStr)) {
 
-                                ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
-                                List<Exchange> mostRecentExchanges = exchangeDal.getExchangesByService(existingServiceId, systemUuid, 1);
-                                if (!mostRecentExchanges.isEmpty()) {
-                                    Exchange mostRecentExchange = mostRecentExchanges.get(0);
-                                    ExchangeTransformAudit latestTransform = exchangeDal.getLatestExchangeTransformAudit(existingServiceId, systemUuid, mostRecentExchange.getId());
-
-                                    boolean inQueue = false;
-
-                                    //if the exchange has never been transformed or the transform hasn't ended, we
-                                    //can infer that it's in the queue
-                                    if (latestTransform == null
-                                            || latestTransform.getEnded() == null) {
-                                        LOG.debug("Exchange " + mostRecentExchange.getId() + " has never been transformed or hasn't finished yet");
-                                        inQueue = true;
-
-                                    } else {
-                                        Date transformFinished = latestTransform.getEnded();
-                                        List<ExchangeEvent> events = exchangeDal.getExchangeEvents(mostRecentExchange.getId());
-                                        if (!events.isEmpty()) {
-                                            ExchangeEvent mostRecentEvent = events.get(events.size() - 1);
-                                            String eventDesc = mostRecentEvent.getEventDesc();
-                                            Date eventDate = mostRecentEvent.getTimestamp();
-
-                                            if (eventDesc.startsWith("Manually pushed into")
-                                                    && eventDate.after(transformFinished)) {
-
-                                                LOG.debug("Exchange " + mostRecentExchange.getId() + " latest event is being inserted into queue");
-                                                inQueue = true;
-                                            }
-                                        }
-                                    }
-
-                                    if (inQueue) {
-                                        error = "Cannot change publisher mode while inbound messages are queued";
-                                        break;
-                                    }
+                                boolean inQueue = isAnythingInInboundQueue(existingServiceId, systemUuid);
+                                if (inQueue) {
+                                    error = "Cannot change publisher mode while inbound messages are queued";
+                                    break;
                                 }
                             }
                         }
@@ -251,6 +219,41 @@ public final class ServiceEndpoint extends AbstractEndpoint {
                     .build();
 
         }
+    }
+
+    public static boolean isAnythingInInboundQueue(UUID serviceId, UUID systemId) throws Exception {
+        ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
+        List<Exchange> mostRecentExchanges = exchangeDal.getExchangesByService(serviceId, systemId, 1);
+        if (!mostRecentExchanges.isEmpty()) {
+            Exchange mostRecentExchange = mostRecentExchanges.get(0);
+            ExchangeTransformAudit latestTransform = exchangeDal.getLatestExchangeTransformAudit(serviceId, systemId, mostRecentExchange.getId());
+
+            //if the exchange has never been transformed or the transform hasn't ended, we
+            //can infer that it's in the queue
+            if (latestTransform == null
+                    || latestTransform.getEnded() == null) {
+                LOG.debug("Exchange " + mostRecentExchange.getId() + " has never been transformed or hasn't finished yet");
+                return true;
+
+            } else {
+                Date transformFinished = latestTransform.getEnded();
+                List<ExchangeEvent> events = exchangeDal.getExchangeEvents(mostRecentExchange.getId());
+                if (!events.isEmpty()) {
+                    ExchangeEvent mostRecentEvent = events.get(events.size() - 1);
+                    String eventDesc = mostRecentEvent.getEventDesc();
+                    Date eventDate = mostRecentEvent.getTimestamp();
+
+                    if (eventDesc.startsWith("Manually pushed into")
+                            && eventDate.after(transformFinished)) {
+
+                        LOG.debug("Exchange " + mostRecentExchange.getId() + " latest event is being inserted into queue");
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
     }
 
     @DELETE
