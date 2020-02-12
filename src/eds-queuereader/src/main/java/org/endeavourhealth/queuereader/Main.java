@@ -908,10 +908,11 @@ public class Main {
 	 * for sending
 	 *
 	 * tableName should be of a table with this schema:
-	 * create table tmp.patients_to_requeue (
-		 service_id char(36),
-		 protocol_id char(36),
-		 patient_id char(36)
+	 create table tmp.patients_to_requeue (
+	 service_id char(36),
+	 protocol_id char(36),
+	 bulk_exchange_id char(36),
+	 patient_id char(36)
 	 );
      */
 	private static void findMissedExchanges(String tableName, String odsCodeRegex) {
@@ -1044,11 +1045,13 @@ public class Main {
 						//save the list of patients to a table
 						if (!patientsToFix.isEmpty()) {
 							Connection conn = ConnectionManager.getEdsConnection();
-							PreparedStatement ps = conn.prepareStatement("INSERT INTO " + tableName + " VALUES (?, ?, ?)");
+							PreparedStatement ps = conn.prepareStatement("INSERT INTO " + tableName + " VALUES (?, ?, ?, ?)");
 							for (UUID patientId : patientsToFix) {
-								ps.setString(1, service.getId().toString());
-								ps.setString(2, protocolId);
-								ps.setString(3, patientId.toString());
+								int col = 1;
+								ps.setString(col++, service.getId().toString());
+								ps.setString(col++, protocolId);
+								ps.setString(col++, bulkExchange.getId().toString());
+								ps.setString(col++, patientId.toString());
 								ps.addBatch();
 							}
 							ps.executeBatch();
