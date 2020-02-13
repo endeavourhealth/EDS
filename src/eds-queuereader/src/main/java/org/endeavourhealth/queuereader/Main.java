@@ -71,6 +71,7 @@ import java.util.regex.Pattern;
 public class Main {
 	private static final Logger LOG = LoggerFactory.getLogger(Main.class);
 
+
 	public static void main(String[] args) throws Exception {
 
 		String configId = args[0];
