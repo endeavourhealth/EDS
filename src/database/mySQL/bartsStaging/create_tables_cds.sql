@@ -453,29 +453,29 @@ create table cds_emergency_target
       episode_id               	    int COMMENT ' episode ID associated with the emergency encounter, derived from tail ',
       performer_personnel_id     	int COMMENT ' responsible personnel ID for the emergency encounter ',
       department_type			   	varchar(2),
-      ambulance_no				varchar(50),
-      organisation_code			varchar(12) COMMENT ' ODS code of A&E treatment organisation ',
-      attendance_id				varchar(20),
-      arrival_mode				varchar(20) COMMENT ' Snomed coded ',
+      ambulance_no				    varchar(50),
+      organisation_code			    varchar(12) COMMENT ' ODS code of A&E treatment organisation ',
+      attendance_id				    varchar(20) COMMENT ' unique Id for this set of emergency instances',
+      arrival_mode				    varchar(20) COMMENT ' Snomed coded ',
       attendance_category			varchar(20),
-      arrival_date				datetime,
-      initial_assessment_date		datetime,
-      chief_complaint				varchar(20) COMMENT ' Snomed coded ',
-      seen_for_treatment_date		datetime,
-      decided_to_admit_date		datetime,
+      arrival_date				    datetime    COMMENT ' The date and time of arrival at A&E ',
+      initial_assessment_date		datetime    COMMENT ' The date and time of initial assessment ',
+      chief_complaint				varchar(20) COMMENT ' Snomed coded. Determined at initial assessment ',
+      seen_for_treatment_date		datetime    COMMENT ' The date and time the Diagnosis and Investigations and Treatments begin ',
+      decided_to_admit_date		    datetime    COMMENT ' The date and time the patient is admitted as an in-patient ',
       treatment_function_code		varchar(12),
-      discharge_status			varchar(20) COMMENT ' Snomed coded ',
-      discharge_destination		varchar(20) COMMENT ' Snomed coded ',
-      conclusion_date				datetime,
-      departure_date				datetime,
-      mh_classifications			mediumtext COMMENT ' start datetime~end datetime~code in upto 10 | delimetered groups',
-      diagnosis					mediumtext COMMENT ' code in upto 20 | delimetered groups',
-      investigations              mediumtext COMMENT ' datetime~code in upto 10 | delimetered groups',
-      treatments                  mediumtext COMMENT ' datetime~code in upto 10 | delimetered groups',
-      referred_to_services        mediumtext COMMENT ' request date~assessment date~code  in upto 10 | delimetered groups',
-      safeguarding_concerns       mediumtext COMMENT ' code in upto 10 | delimetered groups',
-      audit_json                  mediumtext   null comment 'Used for Audit Purposes',
-      is_confidential             bool COMMENT 'if this procedure should be confidential or not, i.e. withheld flag set',
+      discharge_status			    varchar(20) COMMENT ' Snomed coded ',
+      discharge_destination		    varchar(20) COMMENT ' Snomed coded ',
+      conclusion_date				datetime    COMMENT ' The date and time the patient is either admitted or last treatment done',
+      departure_date				datetime    COMMENT ' The date and time the patient leaves / discharged from A&E ',
+      mh_classifications			mediumtext  COMMENT ' start datetime~end datetime~code in upto 10 | delimetered groups',
+      diagnosis					    mediumtext  COMMENT ' code in upto 20 | delimetered groups',
+      investigations                mediumtext  COMMENT ' datetime~code in upto 10 | delimetered groups',
+      treatments                    mediumtext  COMMENT ' datetime~code in upto 10 | delimetered groups',
+      referred_to_services          mediumtext  COMMENT ' request date~assessment date~code  in upto 10 | delimetered groups',
+      safeguarding_concerns         mediumtext  COMMENT ' code in upto 10 | delimetered groups',
+      audit_json                    mediumtext  null comment 'Used for Audit Purposes',
+      is_confidential               bool        COMMENT 'if this procedure should be confidential or not, i.e. withheld flag set',
 
       CONSTRAINT pk_emergency_target PRIMARY KEY (exchange_id, unique_id)
   );
@@ -625,7 +625,7 @@ create table cds_critical_care_target
     unique_id                            varchar(255) NOT NULL COMMENT ' unique ID derived from source IDs ',
     is_delete                            bool         NOT NULL COMMENT ' if this critical care encounter should be deleted or upserted ',
     person_id                            int COMMENT ' person ID for the critical care encounter ',
-    performer_personnel_id     	         int COMMENT ' responsible personnel ID for the critical care encounter ',
+    performer_personnel_id     	         int COMMENT ' responsible personnel ID for the critical care encounter. Derived from Inpatient ',
 
     critical_care_type_id                varchar(2) COMMENT '01 - Neonatal, 02 - Paediatric, 03 - Adult',
     spell_number                         varchar(12) COMMENT 'Links to the Inpatient spell_number with episode_number ',
@@ -736,6 +736,9 @@ create table cds_home_delivery_birth_latest
     CONSTRAINT pk_cds_home_delivery_birth_latest PRIMARY KEY (cds_unique_identifier)
 );
 CREATE INDEX ix_cds_home_delivery_birth_latest_join_helper on cds_home_delivery_birth_latest (exchange_id, cds_unique_identifier);
+
+
+
 
 -- records from sus inpatient, outpatient and emergency tail files are all written to this table with sus_record_type
 -- telling us which is which and there there is an encounter_id for every entry
