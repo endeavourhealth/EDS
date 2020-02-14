@@ -73,7 +73,7 @@ export class ExchangeAuditService extends BaseHttp2Service {
     }*/
 
     postToExchange(exchangeId: string, serviceId: string, systemId: string, exchangeName: string, postMode: string,
-                   postSpecificProtocol: string, fileTypesToFilterOn: string, deleteErrorState: boolean):Observable<any> {
+                   postSpecificProtocol: string, fileTypesToFilterOn: string, deleteErrorState: boolean) : Observable<string> {
 
         var request = {
             'exchangeId': exchangeId,

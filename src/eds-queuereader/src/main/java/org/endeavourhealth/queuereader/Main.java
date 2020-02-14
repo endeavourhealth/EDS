@@ -2,21 +2,13 @@ package org.endeavourhealth.queuereader;
 
 import OpenPseudonymiser.Crypto;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.google.common.base.Strings;
 import org.apache.commons.csv.*;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.common.config.ConfigManager;
-import org.endeavourhealth.common.fhir.*;
-import org.endeavourhealth.common.fhir.schema.EthnicCategory;
-import org.endeavourhealth.common.fhir.schema.MaritalStatus;
-import org.endeavourhealth.common.ods.OdsOrganisation;
-import org.endeavourhealth.common.ods.OdsWebService;
 import org.endeavourhealth.common.utility.FileHelper;
-import org.endeavourhealth.common.utility.JsonSerializer;
 import org.endeavourhealth.common.utility.ThreadPool;
 import org.endeavourhealth.common.utility.ThreadPoolError;
 import org.endeavourhealth.core.configuration.ConfigDeserialiser;
@@ -28,26 +20,15 @@ import org.endeavourhealth.core.database.dal.admin.ServiceDalI;
 import org.endeavourhealth.core.database.dal.admin.models.Service;
 import org.endeavourhealth.core.database.dal.audit.ExchangeBatchDalI;
 import org.endeavourhealth.core.database.dal.audit.ExchangeDalI;
-import org.endeavourhealth.core.database.dal.audit.models.Exchange;
-import org.endeavourhealth.core.database.dal.audit.models.ExchangeBatch;
-import org.endeavourhealth.core.database.dal.audit.models.ExchangeTransformAudit;
-import org.endeavourhealth.core.database.dal.audit.models.HeaderKeys;
+import org.endeavourhealth.core.database.dal.audit.models.*;
 import org.endeavourhealth.core.database.dal.datagenerator.SubscriberZipFileUUIDsDalI;
 import org.endeavourhealth.core.database.dal.eds.PatientLinkDalI;
 import org.endeavourhealth.core.database.dal.eds.PatientSearchDalI;
-import org.endeavourhealth.core.database.dal.eds.models.PatientLinkPair;
-import org.endeavourhealth.core.database.dal.eds.models.PatientSearch;
 import org.endeavourhealth.core.database.dal.ehr.ResourceDalI;
 import org.endeavourhealth.core.database.dal.ehr.models.ResourceWrapper;
-import org.endeavourhealth.core.database.dal.hl7receiver.Hl7ResourceIdDalI;
-import org.endeavourhealth.core.database.dal.hl7receiver.models.ResourceId;
-import org.endeavourhealth.core.database.dal.publisherCommon.EmisTransformDalI;
-import org.endeavourhealth.core.database.dal.publisherCommon.models.EmisCsvCodeMap;
-import org.endeavourhealth.core.database.dal.publisherTransform.ResourceIdTransformDalI;
 import org.endeavourhealth.core.database.dal.publisherTransform.models.ResourceFieldMappingAudit;
 import org.endeavourhealth.core.database.dal.reference.PostcodeDalI;
 import org.endeavourhealth.core.database.dal.reference.models.PostcodeLookup;
-import org.endeavourhealth.core.database.dal.subscriberTransform.PseudoIdDalI;
 import org.endeavourhealth.core.database.dal.subscriberTransform.SubscriberOrgMappingDalI;
 import org.endeavourhealth.core.database.dal.subscriberTransform.SubscriberPersonMappingDalI;
 import org.endeavourhealth.core.database.dal.subscriberTransform.SubscriberResourceMappingDalI;
@@ -55,41 +36,26 @@ import org.endeavourhealth.core.database.dal.subscriberTransform.models.Subscrib
 import org.endeavourhealth.core.database.rdbms.ConnectionManager;
 import org.endeavourhealth.core.database.rdbms.enterprise.EnterpriseConnector;
 import org.endeavourhealth.core.exceptions.TransformException;
-import org.endeavourhealth.core.fhirStorage.FhirSerializationHelper;
 import org.endeavourhealth.core.fhirStorage.FhirStorageService;
 import org.endeavourhealth.core.fhirStorage.ServiceInterfaceEndpoint;
 import org.endeavourhealth.core.messaging.pipeline.components.MessageTransformOutbound;
 import org.endeavourhealth.core.messaging.pipeline.components.OpenEnvelope;
 import org.endeavourhealth.core.messaging.pipeline.components.PostMessageToExchange;
 import org.endeavourhealth.core.queueing.QueueHelper;
-import org.endeavourhealth.core.terminology.TerminologyService;
 import org.endeavourhealth.core.xml.QueryDocument.*;
-import org.endeavourhealth.core.xml.transformError.TransformError;
 import org.endeavourhealth.transform.common.*;
-import org.endeavourhealth.transform.common.resourceBuilders.MedicationOrderBuilder;
-import org.endeavourhealth.transform.common.resourceBuilders.MedicationStatementBuilder;
-import org.endeavourhealth.transform.common.resourceBuilders.PatientBuilder;
 import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
-import org.endeavourhealth.transform.emis.csv.helpers.EmisCsvHelper;
-import org.endeavourhealth.transform.emis.csv.helpers.IssueRecordIssueDate;
-import org.endeavourhealth.transform.emis.csv.transforms.careRecord.ObservationTransformer;
-import org.endeavourhealth.transform.enterprise.ObservationCodeHelper;
-import org.endeavourhealth.transform.subscriber.json.LinkDistributorConfig;
 import org.endeavourhealth.transform.subscriber.targetTables.OutputContainer;
 import org.endeavourhealth.transform.subscriber.targetTables.SubscriberTableId;
-import org.endeavourhealth.transform.subscriber.transforms.PatientTransformer;
 import org.hibernate.internal.SessionImpl;
-import org.hl7.fhir.instance.model.*;
-import org.hl7.fhir.instance.model.Resource;
+import org.hl7.fhir.instance.model.MedicationStatement;
+import org.hl7.fhir.instance.model.ResourceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.persistence.EntityManager;
 import java.io.*;
 import java.lang.System;
-import java.lang.management.ManagementFactory;
-import java.lang.management.MemoryMXBean;
-import java.lang.management.OperatingSystemMXBean;
 import java.lang.reflect.Constructor;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
@@ -104,6 +70,7 @@ import java.util.regex.Pattern;
 
 public class Main {
 	private static final Logger LOG = LoggerFactory.getLogger(Main.class);
+
 
 	public static void main(String[] args) throws Exception {
 
@@ -129,6 +96,26 @@ public class Main {
 		}*/
 
 		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("FindMissedExchanges")) {
+			String tableName = args[1];
+			String odsCodeRegex = null;
+			if (args.length > 2) {
+				odsCodeRegex = args[2];
+			}
+			findMissedExchanges(tableName, odsCodeRegex);
+			System.exit(0);
+		}
+
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("SendPatientsToSubscriber")) {
+			String tableName = args[1];
+			sendPatientsToSubscriber(tableName);
+			System.exit(0);
+		}
+
+
+
+		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("CreateDeleteZipsForSubscriber")) {
 			int batchSize = Integer.parseInt(args[1]);
 			String sourceTable = args[2];
@@ -137,28 +124,28 @@ public class Main {
 			System.exit(0);
 		}
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("TestJMX")) {
 			testJmx();
 			System.exit(0);
-		}
+		}*/
 
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("TestDatabases")) {
 			String serviceIdStr = args[1];
 			String subscriberConfigName = args[2];
 			testDatabases(serviceIdStr, subscriberConfigName);
 			System.exit(0);
-		}
+		}*/
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("PopulatePatientSearchEpisodeOdsCode")) {
 			populatePatientSearchEpisodeOdsCode();
 			System.exit(0);
-		}
+		}*/
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("FixEmisSnomedCodes")) {
 			String odsCodeRegex = null;
 			if (args.length > 1) {
@@ -166,9 +153,9 @@ public class Main {
 			}
 			fixEmisSnomedCodes(odsCodeRegex);
 			System.exit(0);
-		}
+		}*/
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("FixEmisDrugRecords")) {
 			String odsCodeRegex = null;
 			if (args.length > 1) {
@@ -176,17 +163,17 @@ public class Main {
 			}
 			fixEmisDrugRecords(odsCodeRegex);
 			System.exit(0);
-		}
+		}*/
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("PopulateSubscriberDBPseudoId")) {
 			String subscriberConfigName = args[1];
 			String saltKeyName = args[2];
 			populateSubscriberPseudoId(subscriberConfigName, saltKeyName);
 			System.exit(0);
-		}
+		}*/
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("InvestigateMissingPatients")) {
 			String nhsNumberFile = args[1];
 			String protocolName = args[2];
@@ -194,7 +181,7 @@ public class Main {
 			String odsCodeRegex = args[4];
 			investigateMissingPatients(nhsNumberFile, protocolName, subscriberConfigName, odsCodeRegex);
 			System.exit(0);
-		}
+		}*/
 
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("FixMedicationStatementIsActive")) {
@@ -206,7 +193,7 @@ public class Main {
 			System.exit(0);
 		}
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("FixMissingEmisEthnicities")) {
 			String filePath = args[1];
 			String odsCodeRegex = null;
@@ -215,14 +202,14 @@ public class Main {
 			}
 			fixMissingEmisEthnicities(filePath, odsCodeRegex);
 			System.exit(0);
-		}
+		}*/
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("UpdatePatientSearch")) {
 			String filePath = args[1];
 			updatePatientSearch(filePath);
 			System.exit(0);
-		}
+		}*/
 
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("SubscriberFullLoad")) {
@@ -919,6 +906,247 @@ public class Main {
 		LOG.info("EDS Queue reader running (kill file location " + TransformConfig.instance().getKillFileLocation() + ")");
 	}
 
+	private static void sendPatientsToSubscriber(String tableName) {
+		LOG.info("Sending patients to subscriber from " + tableName);
+		try {
+
+			Connection conn = ConnectionManager.getEdsConnection();
+
+			String sql = "SELECT service_id, protocol_id, patient_id FROM " + tableName + " ORDER BY service_id, protocol_id";
+			PreparedStatement ps = conn.prepareStatement(sql);
+			ps.setFetchSize(5000);
+
+			List<UUID> batchPatientIds = new ArrayList<>();
+			UUID batchServiceId = null;
+			UUID batchProtocolId = null;
+
+			ResultSet rs = ps.executeQuery();
+			while (rs.next()) {
+				int col = 1;
+
+				UUID serviceId = UUID.fromString(rs.getString(col++));
+				UUID protocolId = UUID.fromString(rs.getString(col++));
+				UUID patientId = UUID.fromString(rs.getString(col++));
+
+				if (batchServiceId == null
+						|| batchProtocolId == null
+						|| !serviceId.equals(batchServiceId)
+						|| !protocolId.equals(batchProtocolId)) {
+
+					//send any found previously
+					if (!batchPatientIds.isEmpty()) {
+						LOG.debug("Doing batch of " + batchPatientIds.size() + " for service " + batchServiceId + " and protocol " + batchProtocolId);
+						QueueHelper.queueUpFullServiceForPopulatingSubscriber(batchServiceId, batchProtocolId, batchPatientIds);
+					}
+
+					batchServiceId = serviceId;
+					batchProtocolId = protocolId;
+					batchPatientIds = new ArrayList<>();
+				}
+
+				batchPatientIds.add(patientId);
+			}
+
+			//do the remainder
+			if (!batchPatientIds.isEmpty()) {
+				LOG.debug("Doing batch of " + batchPatientIds.size() + " for service " + batchServiceId + " and protocol " + batchProtocolId);
+				QueueHelper.queueUpFullServiceForPopulatingSubscriber(batchServiceId, batchProtocolId, batchPatientIds);
+			}
+
+			conn.close();
+
+			LOG.info("Finished sending patients to subscriber from " + tableName);
+		} catch (Throwable t) {
+			LOG.error("", t);
+		}
+
+	}
+
+	/**
+	 * checks Services to see if any queued up exchange was not yet processed when a bulk subscriber load was started,
+	 * meaning that some data was not sent to that subscriber. Populates a table with IDs that can then be queued up
+	 * for sending
+	 *
+	 * tableName should be of a table with this schema:
+	 create table tmp.patients_to_requeue (
+	 service_id char(36),
+	 protocol_id char(36),
+	 bulk_exchange_id char(36),
+	 patient_id char(36)
+	 );
+     */
+	private static void findMissedExchanges(String tableName, String odsCodeRegex) {
+		LOG.info("Finding missed exchanges filtering on orgs using " + odsCodeRegex + ", storing results in " + tableName);
+		try {
+			ServiceDalI serviceDal = DalProvider.factoryServiceDal();
+			List<Service> services = serviceDal.getAll();
+
+			for (Service service: services) {
+				if (shouldSkipService(service, odsCodeRegex)) {
+					continue;
+				}
+
+				LOG.debug("Doing " + service);
+
+				List<UUID> systemIds = findSystemIds(service);
+				for (UUID systemId: systemIds) {
+					LOG.debug("Doing system " + systemId);
+
+					ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
+					List<Exchange> exchanges = exchangeDal.getExchangesByService(service.getId(), systemId, Integer.MAX_VALUE);
+
+					//go through exchanges and look for ones that were created for a bulk subscriber load
+					for (int i=0; i<exchanges.size(); i++) {
+						Exchange bulkExchange = exchanges.get(i);
+
+						//if the exchange contains the header key to prevent re-queueing then it's possible
+						//it's one for the bulk load
+						boolean isBulkLoad = false;
+						Boolean allowRequeuing = bulkExchange.getHeaderAsBoolean(HeaderKeys.AllowQueueing);
+						if (allowRequeuing != null
+								&& !allowRequeuing.booleanValue()) {
+
+							List<ExchangeEvent> events = exchangeDal.getExchangeEvents(bulkExchange.getId());
+							for (ExchangeEvent event: events) {
+								String eventDesc = event.getEventDesc();
+								//note weird text check to handle the two versions of this message used
+								if (eventDesc.contains("reated exchange to populate subscribers in protocol")) {
+									isBulkLoad = true;
+									LOG.debug("Bulk load found in exchange " + bulkExchange.getId() + " on " + bulkExchange.getTimestamp() + ": " + eventDesc);
+									break;
+								}
+							}
+						}
+
+						if (!isBulkLoad) {
+							continue;
+						}
+
+						//if this exchange is a bulk load, then we need to check any exchanges received BEFORE it
+						//that didn't contain the protocol in their headers were 100% finished with their inbound
+						//transform before the bulk load
+						String[] protocolIds = bulkExchange.getHeaderAsStringArray(HeaderKeys.ProtocolIds);
+						if (protocolIds.length != 1) {
+							throw new Exception("Bulk Exchange " + bulkExchange.getId() + " has " + protocolIds.length + " protocol IDs in its header");
+						}
+						String protocolId = protocolIds[0];
+						Date dtBulk = bulkExchange.getTimestamp();
+
+						Set<UUID> patientsToFix = new HashSet<>();
+
+						for (int j=i+1; j<exchanges.size(); j++) {
+							Exchange priorExchange = exchanges.get(j);
+
+							//skip any other special exchanges that are for bulk loads etc
+							Boolean priorAllowRequeuing = priorExchange.getHeaderAsBoolean(HeaderKeys.AllowQueueing);
+							if (priorAllowRequeuing != null
+									&& !priorAllowRequeuing.booleanValue()) {
+								continue;
+							}
+
+							//skip any where the header contains the same protocol ID, as this data will have gone
+							//to the subscriber anyway
+							boolean hadSameProtocol = false;
+							String[] priorProtocolIds = priorExchange.getHeaderAsStringArray(HeaderKeys.ProtocolIds);
+							if (priorProtocolIds == null) {
+								throw new Exception("Null protocol IDs for exchange " + priorExchange.getId());
+							}
+							for (String priorProtocolId: priorProtocolIds) {
+								if (priorProtocolId.equals(protocolId)) {
+									hadSameProtocol = true;
+								}
+							}
+							if (hadSameProtocol) {
+								continue;
+							}
+
+							//skip any that didn't actually transform any dta
+							ExchangeBatchDalI exchangeBatchDal = DalProvider.factoryExchangeBatchDal();
+							List<ExchangeBatch> batches = exchangeBatchDal.retrieveForExchangeId(priorExchange.getId());
+							if (batches.isEmpty()) {
+								continue;
+							}
+
+							List<ExchangeTransformAudit> transformAudits = exchangeDal.getAllExchangeTransformAudits(service.getId(), systemId, priorExchange.getId());
+							if (transformAudits.isEmpty()) {
+								throw new Exception("No transform audits for exchange " + priorExchange.getId());
+							}
+							ExchangeTransformAudit firstTransformAudit = null;
+							for (ExchangeTransformAudit transformAudit: transformAudits) {
+								if (transformAudit.getEnded() != null) {
+									firstTransformAudit = transformAudit;
+									break;
+								}
+							}
+							if (firstTransformAudit == null) {
+								throw new Exception("No finished transform audit found for exchange " + priorExchange.getId());
+							}
+							Date dtTransform = firstTransformAudit.getEnded();
+							if (dtTransform.before(dtBulk)) {
+								//if the transform finished before the bulk, then we're OK and don't need to look at any more exchanges
+								break;
+							}
+
+							//if the transform didn't finish until AFTER the bulk was started, then this exchange's data
+							//won't have gone to the subscriber
+							LOG.debug("Exchange " + priorExchange.getId() + " finished transform on " + dtTransform + " so missed going to subscriber");
+
+							for (ExchangeBatch b: batches) {
+								UUID patientId = b.getEdsPatientId();
+								if (patientId != null) {
+									patientsToFix.add(patientId);
+								}
+							}
+							LOG.debug("Found " + batches.size() + " batches, patients to fix = " + patientsToFix.size());
+						}
+
+						LOG.debug("Found total " + patientsToFix.size() + " patients to fix");
+
+						//save the list of patients to a table
+						if (!patientsToFix.isEmpty()) {
+							Connection conn = ConnectionManager.getEdsConnection();
+							PreparedStatement ps = conn.prepareStatement("INSERT INTO " + tableName + " VALUES (?, ?, ?, ?)");
+							for (UUID patientId : patientsToFix) {
+								int col = 1;
+								ps.setString(col++, service.getId().toString());
+								ps.setString(col++, protocolId);
+								ps.setString(col++, bulkExchange.getId().toString());
+								ps.setString(col++, patientId.toString());
+								ps.addBatch();
+							}
+							ps.executeBatch();
+							conn.commit();
+
+							ps.close();
+							conn.close();
+						}
+					}
+				}
+
+
+			}
+
+			LOG.info("Finished finding missed exchanges");
+		} catch (Throwable t) {
+			LOG.error("", t);
+		}
+	}
+
+	private static boolean shouldSkipService(Service service, String odsCodeRegex) {
+		if (odsCodeRegex == null) {
+			return false;
+		}
+
+		String odsCode = service.getLocalId();
+		if (Strings.isNullOrEmpty(odsCode)
+				|| !Pattern.matches(odsCodeRegex, odsCode)) {
+			LOG.debug("Skipping " + service + " due to regex");
+			return true;
+		}
+
+		return false;
+	}
+
 	private static void createDeleteZipsForSubscriber(int batchSize, String sourceTable, int subscriberId) {
 		LOG.info("Create Zips For Subscriber from " + sourceTable + " subscriberId " + subscriberId + " and batchSize " + batchSize);
 		try {
@@ -995,7 +1223,7 @@ public class Main {
 		}
 	}
 
-	private static void testJmx() {
+	/*private static void testJmx() {
 		LOG.info("Testing JMX");
 		try {
 			LOG.debug("----OperatingSystemMXBean--------------------------------");
@@ -1021,9 +1249,9 @@ public class Main {
 		} catch (Throwable t) {
 			LOG.error("", t);
 		}
-	}
+	}*/
 
-	private static void testDatabases(String odsCodesStr, String subscriberConfigNamesStr) {
+	/*private static void testDatabases(String odsCodesStr, String subscriberConfigNamesStr) {
 		LOG.info("Testing all databases");
 		try {
 
@@ -1147,20 +1375,20 @@ public class Main {
 					}
 				}
 
-				/*
+				*//*
 						FhirAudit("db_fhir_audit", true, "FhirAuditDb"),
 						PublisherStaging("db_publisher_staging", false, "PublisherStagingDb"),
 						DataGenerator("db_data_generator", true, "DataGeneratorDb"),
-				*/
+				*//*
 			}
 
 			LOG.info("Finished testing all databases");
 		} catch (Exception ex) {
 			LOG.error("", ex);
 		}
-	}
+	}*/
 
-	private static void fixEmisSnomedCodes(String odsCodeRegex) {
+	/*private static void fixEmisSnomedCodes(String odsCodeRegex) {
 		LOG.info("Finished Fixing Emis Snomed codes for orgs " + odsCodeRegex);
 		try {
 
@@ -1834,9 +2062,9 @@ public class Main {
 		} catch (Throwable t) {
 			LOG.error("", t);
 		}
-	}
+	}*/
 
-	private static void populatePatientSearchEpisodeOdsCode() {
+	/*private static void populatePatientSearchEpisodeOdsCode() {
 		LOG.info("Populating Patient Search Episode ODS Codes");
 		try {
 
@@ -1927,9 +2155,9 @@ public class Main {
 		} catch (Throwable t) {
 			LOG.error("", t);
 		}
-	}
+	}*/
 
-	private static void fixEmisDrugRecords(String odsCodeRegex) {
+	/*private static void fixEmisDrugRecords(String odsCodeRegex) {
 		LOG.info("Fixing Emis drug records");
 		try {
 			ServiceDalI serviceDal = DalProvider.factoryServiceDal();
@@ -2128,13 +2356,13 @@ public class Main {
 			LOG.error("", t);
 		}
 
-	}
+	}*/
 
 	/**
 	 * populates the pseudo_id table on a new-style subscriber DB (MySQL or SQL Server) with pseudo_ids generated
 	 * from a salt
      */
-	private static void populateSubscriberPseudoId(String subscriberConfigName, String saltKeyName) {
+	/*private static void populateSubscriberPseudoId(String subscriberConfigName, String saltKeyName) {
 		LOG.info("Populating subscriber DB pseudo ID for " + subscriberConfigName + " using " + saltKeyName);
 		try {
 			//find salt details
@@ -2283,9 +2511,9 @@ public class Main {
 		} catch (Throwable t) {
 			LOG.error("", t);
 		}
-	}
+	}*/
 
-	private static void investigateMissingPatients(String nhsNumberFile, String protocolName, String subscriberConfigName, String ccgCodeRegex) {
+	/*private static void investigateMissingPatients(String nhsNumberFile, String protocolName, String subscriberConfigName, String ccgCodeRegex) {
 		LOG.info("Investigating Missing Patients from " + nhsNumberFile + " in Protocol " + protocolName);
 		try {
 			SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
@@ -2389,8 +2617,8 @@ public class Main {
 					if (current.isDeleted()) {
 						lines.add("Patient resource is deleted");
 
-						/*finding = "Deleted";
-						comment = "Patient record has been deleted from DDS";*/
+						*//*finding = "Deleted";
+						comment = "Patient record has been deleted from DDS";*//*
 						continue;
 					}
 
@@ -2577,7 +2805,7 @@ public class Main {
 		public String toString() {
 			return "ods " + odsCode + ", ccgCode " + ccgCode + ", serviceUuid " + serviceUuid + ", patientUUID " + patientUuid;
 		}
-	}
+	}*/
 
 	/*static class NhsNumberInfo {
 		String odsCode;
@@ -3443,7 +3671,7 @@ public class Main {
 	 * the patient resource was re-created from the patient file but the ethnicity and marital status weren't carried
 	 * over from the pre-deleted version.
      */
-	private static void fixMissingEmisEthnicities(String filePath, String filterRegexOdsCode) {
+	/*private static void fixMissingEmisEthnicities(String filePath, String filterRegexOdsCode) {
 		LOG.info("Fixing Missing Emis Ethnicities to " + filePath + " matching orgs using " + filterRegexOdsCode);
 		try {
 
@@ -3608,12 +3836,12 @@ public class Main {
 			LOG.error("", t);
 		}
 
-	}
+	}*/
 
 	/**
 	 * updates patient_search and patient_link tables for explicit list of patient UUIDs
      */
-	private static void updatePatientSearch(String filePath) throws Exception {
+	/*private static void updatePatientSearch(String filePath) throws Exception {
 		LOG.info("Updating patient search from " + filePath);
 		try {
 			File f = new File(filePath);
@@ -3764,7 +3992,7 @@ public class Main {
 		} catch (Throwable t) {
 			LOG.error("", t);
 		}
-	}
+	}*/
 
 
 	/*private static void runPersonUpdater(String enterpriseConfigName) throws Exception {
@@ -3822,7 +4050,7 @@ public class Main {
 
 	}*/
 
-	private static void deleteOrphanedPersons(Connection connection) throws Exception {
+	/*private static void deleteOrphanedPersons(Connection connection) throws Exception {
 
 		String sql = "SELECT id FROM person"
 				+ " WHERE NOT EXISTS ("
@@ -3862,9 +4090,9 @@ public class Main {
 		}
 
 		connection.commit();
-	}
+	}*/
 
-	private static List<UpdateJob> convertChangesToEnterprise(String enterpriseConfigName, List<PatientLinkPair> changes) throws Exception {
+	/*private static List<UpdateJob> convertChangesToEnterprise(String enterpriseConfigName, List<PatientLinkPair> changes) throws Exception {
 		List<UpdateJob> updatesForConfig = new ArrayList<>();
 
 		for (PatientLinkPair change: changes) {
@@ -3891,7 +4119,7 @@ public class Main {
 		}
 
 		return updatesForConfig;
-	}
+	}*/
 
 	private static void changePersonId(UpdateJob change, Connection connection, List<String> tables) throws Exception {
 
@@ -3926,7 +4154,7 @@ public class Main {
         LOG.info("Updated person ID from " + change.getOldEnterprisePersonId() + " to " + change.getNewEnterprisePersonId() + " for patient " + change.getEnterprisePatientId());
     }*/
 
-	private static List<String> findTablesWithPersonId(Connection connection) throws Exception {
+	/*private static List<String> findTablesWithPersonId(Connection connection) throws Exception {
 
 		Statement statement = connection.createStatement();
 
@@ -3956,7 +4184,7 @@ public class Main {
 		statement.close();
 
 		return ret;
-	}
+	}*/
 
 
 	private static void changePersonIdOnTable(String tableName, UpdateJob change, Connection connection) throws Exception {

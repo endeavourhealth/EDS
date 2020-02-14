@@ -410,7 +410,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
     }*/
 
     @POST
-    @Produces(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.TEXT_PLAIN)
     @Consumes(MediaType.APPLICATION_JSON)
     @Timed(absolute = true, name="ExchangeAuditEndpoint.PostToExchange")
     @Path("/postToExchange")
@@ -461,6 +461,15 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
 
             if (!exchangeName.equalsIgnoreCase(QueueHelper.EXCHANGE_PROTOCOL)) {
                 throw new IllegalArgumentException("Invalid post mode [" + postMode + "] when exchange name is [" + exchangeName + "]");
+            }
+
+            //make sure there's nothing in the inbound queue otherwise data could be missed (see https://endeavourhealth.atlassian.net/browse/SD-40)
+            boolean inQueue = ServiceEndpoint.isAnythingInInboundQueue(serviceId, systemId);
+            if (inQueue) {
+                return Response
+                        .ok()
+                        .entity("Cannot queue full load while inbound messages are queued")
+                        .build();
             }
 
             QueueHelper.queueUpFullServiceForPopulatingSubscriber(serviceId, specificProtocolId);
@@ -514,7 +523,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
             //nothing extra for this
 
         } else {
-            throw new IllegalArgumentException("Invalid exhange name [" + exchangeName + "]");
+            throw new IllegalArgumentException("Invalid exchange name [" + exchangeName + "]");
         }
 
         //post the exchanges to RabbitMQ

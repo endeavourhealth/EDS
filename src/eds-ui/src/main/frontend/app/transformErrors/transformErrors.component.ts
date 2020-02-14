@@ -12,9 +12,11 @@ import {Service} from "../services/models/Service";
 	template : require('./transformErrors.html')
 })
 export class TransformErrorsComponent {
-	transformErrorSummaries:TransformErrorSummary[];
-	selectedSummary:TransformErrorSummary;
-	selectedExchangeIndex:number;
+	transformErrorSummaries: TransformErrorSummary[];
+	selectedSummary: TransformErrorSummary;
+	selectedExchangeIndex: number;
+	tagStrDisplayLimit: number;
+	cachedTagStrs: {};
 
 	selectExchangeErrorDetail:TransformErrorDetail;
 	busyPostingToExchange: Subscription;
@@ -33,6 +35,9 @@ export class TransformErrorsComponent {
 	}
 
 	ngOnInit() {
+		var vm = this;
+		vm.tagStrDisplayLimit = 10;
+		vm.cachedTagStrs = {}
 		this.refreshSummaries();
 	}
 
@@ -241,16 +246,7 @@ console.log('filtering now');
 		vm.allCcgCodes.sort();
 	}
 
-	getNotesPrefix(transformErrorSummary: TransformErrorSummary) : string {
 
-		if (transformErrorSummary.service.notes
-			&& transformErrorSummary.service.notes.length > 10) {
-			return transformErrorSummary.service.notes.substr(0, 10) + '...';
-
-		} else {
-			return transformErrorSummary.service.notes;
-		}
-	}
 
 	checkAll() {
 		var vm = this;
@@ -323,4 +319,25 @@ console.log('filtering now');
 		this.$state.go('app.serviceEdit', {itemUuid: item.uuid, itemAction: 'edit'});
 	}
 
+	getTagStrPrefix(service: Service) : string {
+		var vm = this;
+		var str = vm.getTagStr(service);
+		if (str
+			&& str.length > vm.tagStrDisplayLimit) {
+			return str.substr(0, vm.tagStrDisplayLimit) + '...';
+
+		} else {
+			return str;
+		}
+	}
+
+	getTagStr(service: Service) : string {
+		var vm = this;
+
+		if (!vm.cachedTagStrs[service.uuid]) {
+			var str = vm.serviceService.createTagStr(service);
+			vm.cachedTagStrs[service.uuid] = str;
+		}
+		return vm.cachedTagStrs[service.uuid]
+	}
 }

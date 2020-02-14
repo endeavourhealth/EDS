@@ -7,12 +7,15 @@ export class Service {
 	publisherConfigName: string;
 	name: string;
 	endpoints: Endpoint[];
-	notes: string;
 	postcode: string;
 	ccgCode: string;
 	organisationTypeDesc: string;
 	organisationTypeCode: string;
 	systemStatuses: SystemStatus[];
+	alias: string;
+	tags: {};
 
 	constructor() {}
+
+
 }

@@ -286,7 +286,8 @@ public class RabbitConsumer extends DefaultConsumer
 		}
 
 		//tell us this has happened
-		if (sendSlackMessageIfPossible) {
+		//taking this out since there's already a separate Slack message when a QR exits
+		/*if (sendSlackMessageIfPossible) {
 			String host;
 			try {
 				host = MetricsHelper.getHostName();
@@ -294,7 +295,7 @@ public class RabbitConsumer extends DefaultConsumer
 				host = "UNKNOWN";
 			}
 			SlackHelper.sendSlackMessage(SlackHelper.Channel.QueueReaderAlerts, "Queue Reader " + configId + " Stopping on " + host + ":\r\n" + reason);
-		}
+		}*/
 
 		//and halt
 		LOG.info("Queue Reader " + ConfigManager.getAppId() + " exiting: " + reason);
