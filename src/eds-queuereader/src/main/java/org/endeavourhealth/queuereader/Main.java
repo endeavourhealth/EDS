@@ -8,6 +8,10 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.common.config.ConfigManager;
+import org.endeavourhealth.common.security.datasharingmanagermodel.models.database.DataSharingAgreementEntity;
+import org.endeavourhealth.common.security.usermanagermodel.models.caching.DataSharingAgreementCache;
+import org.endeavourhealth.common.security.usermanagermodel.models.caching.OrganisationCache;
+import org.endeavourhealth.common.security.usermanagermodel.models.caching.ProjectCache;
 import org.endeavourhealth.common.utility.FileHelper;
 import org.endeavourhealth.common.utility.ThreadPool;
 import org.endeavourhealth.common.utility.ThreadPoolError;
@@ -94,6 +98,14 @@ public class Main {
 			deleteEnterpriseObs(filePath, configName, batchSize);
 			System.exit(0);
 		}*/
+
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("TestDSM")) {
+			String odsCode = args[1];
+			String projectId = args[2];
+			testDsm(odsCode, projectId);
+			System.exit(0);
+		}
 
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("FindMissedExchanges")) {
@@ -904,6 +916,39 @@ public class Main {
 		RabbitHandler rabbitHandler = new RabbitHandler(configuration, configId);
 		rabbitHandler.start();
 		LOG.info("EDS Queue reader running (kill file location " + TransformConfig.instance().getKillFileLocation() + ")");
+	}
+
+	private static void testDsm(String odsCode, String projectId) {
+		LOG.info("Testing DSM for " + odsCode + " and project " + projectId);
+		try {
+
+			LOG.debug("Testing getAllPublishersForProjectWithSubscriberCheck");
+			List<String> results = ProjectCache.getAllPublishersForProjectWithSubscriberCheck(projectId, odsCode);
+			LOG.debug("Got " + results);
+			LOG.debug("");
+			LOG.debug("");
+
+			LOG.debug("Testing doesOrganisationHaveDPA");
+			Boolean b = OrganisationCache.doesOrganisationHaveDPA(odsCode);
+			LOG.debug("Got " + b);
+			LOG.debug("");
+			LOG.debug("");
+
+			LOG.debug("Testing getAllDSAsForPublisherOrg");
+			List<DataSharingAgreementEntity> list = DataSharingAgreementCache.getAllDSAsForPublisherOrg(odsCode);
+			if (list == null) {
+				LOG.debug("Got NULL");
+			} else {
+				LOG.debug("Got " + list.size());
+				for (DataSharingAgreementEntity e: list) {
+					LOG.debug(" -> " + e.getName() + " " + e.getUuid());
+				}
+			}
+
+			LOG.info("Finished Testing DSM for " + odsCode);
+		} catch (Throwable t) {
+			LOG.error("", t);
+		}
 	}
 
 	private static void sendPatientsToSubscriber(String tableName) {
