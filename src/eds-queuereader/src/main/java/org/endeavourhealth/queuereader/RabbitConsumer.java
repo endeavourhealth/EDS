@@ -22,6 +22,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -269,11 +270,11 @@ public class RabbitConsumer extends DefaultConsumer
 		//if we've failed on the same exchange X times, then halt the queue reader
 		if (lastExchangeAttempts >= TransformConfig.instance().getAttemptsPermmitedPerExchange()) {
 			String reason = "Failed " + lastExchangeAttempts + " times on exchange " + lastExchangeAttempted.getExchangeId() + " so halting queue reader";
-			stop(reason, true);
+			stop(reason, true, 1024); //just use non-standard exit code
 		}
 	}
 
-	private void stop(String reason, boolean sendSlackMessageIfPossible) {
+	private void stop(String reason, boolean sendSlackMessageIfPossible, int exitCode) {
 
 		//stop our checking thread
 		this.killCheckingRunnable.stop();
@@ -299,7 +300,7 @@ public class RabbitConsumer extends DefaultConsumer
 
 		//and halt
 		LOG.info("Queue Reader " + ConfigManager.getAppId() + " exiting: " + reason);
-		System.exit(0);
+		System.exit(exitCode);
 	}
 
 	/**
@@ -309,11 +310,11 @@ public class RabbitConsumer extends DefaultConsumer
 	private synchronized void checkIfKillFileExistsAndStopIfSo() {
 		if (checkIfKillFileExists(FILE_EXT_KILL)) {
 			String reason = "Detected kill file";
-			stop(reason, true);
+			stop(reason, true, 0);
 
 		} else if (checkIfKillFileExists(FILE_EXT_KILL_QUIET)) {
 			String reason = "Detected quiet kill file";
-			stop(reason, false);
+			stop(reason, false, 0);
 		}
 	}
 
@@ -346,15 +347,39 @@ public class RabbitConsumer extends DefaultConsumer
      */
 	@Override
 	public void populateIsBusy(ApplicationHeartbeat applicationHeartbeat) {
-		applicationHeartbeat.setBusy(new Boolean(isBusy()));
+
+		String desc = isBusyDesc();
+
+		boolean isBusy = !Strings.isNullOrEmpty(desc);
+		applicationHeartbeat.setBusy(new Boolean(isBusy));
+		applicationHeartbeat.setIsBusyDetail(desc); //give some more detail about what we're doing
 	}
 
 	private boolean isBusy() {
-		boolean busy;
+		return !Strings.isNullOrEmpty(isBusyDesc());
+	}
+
+	/**
+	 * provides a short summary of what the QR is currently doing
+     */
+	private String isBusyDesc() {
+
+		StringBuilder sb = new StringBuilder();
+
 		synchronized (messagesBeingProcessed) {
-			busy = !messagesBeingProcessed.isEmpty();
+			for (RabbitConsumer_State state: messagesBeingProcessed) {
+				String odsCode = "" + state.getHeader(HeaderKeys.SenderLocalIdentifier);
+				String exchangeId = new String(state.getBody());
+				String dtCreatedDesc = new SimpleDateFormat("dd-MM-yyyy HH:mm").format(state.getDtCreated());
+				sb.append("Exchange " + exchangeId + " for " + odsCode + " since " + dtCreatedDesc);
+			}
 		}
-		return busy;
+
+		if (sb.length() == 0) {
+			return null;
+		} else {
+			return sb.toString();
+		}
 	}
 
 	/**
@@ -409,10 +434,24 @@ class RabbitConsumer_State {
 	private AtomicInteger processingCount = new AtomicInteger(); //count of threads processing the same delivery tag
 	private Boolean shouldAck;
 	private UUID exchangeId;
+	private Date dtCreated;
 
 	public RabbitConsumer_State(byte[] body, Map<String, Object> headers) {
 		this.body = body;
 		this.headers = headers;
+		this.dtCreated = new Date();
+	}
+
+	public byte[] getBody() {
+		return body;
+	}
+
+	public Object getHeader(String key) {
+		return headers.get(key);
+	}
+
+	public Date getDtCreated() {
+		return dtCreated;
 	}
 
 	@Override
