@@ -51,6 +51,7 @@ import org.endeavourhealth.transform.common.*;
 import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
 import org.endeavourhealth.transform.subscriber.targetTables.OutputContainer;
 import org.endeavourhealth.transform.subscriber.targetTables.SubscriberTableId;
+import org.endeavourhealth.transform.tpp.TppCsvToFhirTransformer;
 import org.hibernate.internal.SessionImpl;
 import org.hl7.fhir.instance.model.MedicationStatement;
 import org.hl7.fhir.instance.model.ResourceType;
@@ -98,6 +99,17 @@ public class Main {
 			deleteEnterpriseObs(filePath, configName, batchSize);
 			System.exit(0);
 		}*/
+
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("FixTppStaffBulks")) {
+			boolean testMode = Boolean.parseBoolean(args[1]);
+			String odsCodeRegex = null;
+			if (args.length > 2) {
+				odsCodeRegex = args[2];
+			}
+			fixTppStaffBulks(testMode, odsCodeRegex);
+			System.exit(0);
+		}
 
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("TestDSM")) {
@@ -916,6 +928,180 @@ public class Main {
 		RabbitHandler rabbitHandler = new RabbitHandler(configuration, configId);
 		rabbitHandler.start();
 		LOG.info("EDS Queue reader running (kill file location " + TransformConfig.instance().getKillFileLocation() + ")");
+	}
+
+	private static void fixTppStaffBulks(boolean testMode, String odsCodeRegex) {
+		LOG.info("Fixing TPP Staff Bulks using testMode " + testMode + " and regex " + odsCodeRegex);
+		try {
+
+			Set<String> hsNonPatientFiles = new HashSet<>();
+			hsNonPatientFiles.add("Ccg");
+			hsNonPatientFiles.add("Ctv3");
+			hsNonPatientFiles.add("Mapping");
+			hsNonPatientFiles.add("MappingGroup");
+			hsNonPatientFiles.add("ConfiguredListOption");
+			hsNonPatientFiles.add("Ctv3ToVersion2");
+			hsNonPatientFiles.add("Ctv3ToSnomed");
+			hsNonPatientFiles.add("Ctv3Hierarchy");
+			hsNonPatientFiles.add("ImmunisationContent");
+			hsNonPatientFiles.add("MedicationReadCodeDetails");
+			hsNonPatientFiles.add("Organisation");
+			hsNonPatientFiles.add("OrganisationBranch");
+			hsNonPatientFiles.add("Staff");
+			hsNonPatientFiles.add("StaffMemberProfile");
+			hsNonPatientFiles.add("StaffMember");
+			hsNonPatientFiles.add("StaffMemberProfileRole");
+			hsNonPatientFiles.add("Trust");
+			hsNonPatientFiles.add("Questionnaire");
+			hsNonPatientFiles.add("Template");
+			hsNonPatientFiles.add("Manifest");
+
+
+			ServiceDalI serviceDal = DalProvider.factoryServiceDal();
+			List<Service> services = serviceDal.getAll();
+
+			for (Service service: services) {
+				//check regex
+				if (shouldSkipService(service, odsCodeRegex)) {
+					continue;
+				}
+
+				//skip non-TPP
+				if (service.getTags() == null
+						|| !service.getTags().containsKey("TPP")) {
+					continue;
+				}
+
+				LOG.debug("Doing " + service);
+
+				List<UUID> systemIds = findSystemIds(service);
+				for (UUID systemId: systemIds) {
+
+					//find all exchanges
+					ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
+					List<Exchange> exchanges = exchangeDal.getExchangesByService(service.getId(), systemId, Integer.MAX_VALUE);
+
+					for (Exchange exchange: exchanges) {
+
+						//check if the exchange contains ONLY the non-patient files
+						List<ExchangePayloadFile> files = ExchangeHelper.parseExchangeBody(exchange.getBody());
+						if (files.isEmpty()) {
+							continue;
+						}
+
+						boolean hasPatientFile = false;
+						for (ExchangePayloadFile file: files) {
+							String fileType = file.getType();
+							if (!hsNonPatientFiles.contains(fileType)) {
+								hasPatientFile = true;
+							}
+						}
+
+						//if we have a patient file in the exchange it wasn't affected by the bug
+						if (hasPatientFile) {
+							continue;
+						}
+						LOG.debug("    Exchange " + exchange.getId() + " only contains non-patient files");
+
+						//if the exchange only contains non-patient files, then we need to check the manifest file
+						//to see if those files were bulks
+						ExchangePayloadFile firstFile = files.get(0);
+						File f = new File(firstFile.getPath()); //e.g. s3://<bucket>/<root>/sftpReader/TPP/YDDH3_07Y_GWR/2020-01-18T18.41.00/Split/E85697/SRCtv3Hierarchy.csv
+						f = f.getParentFile(); //e.g. s3://<bucket>/<root>/sftpReader/TPP/YDDH3_07Y_GWR/2020-01-18T18.41.00/Split/E85697/
+						f = f.getParentFile(); //e.g. s3://<bucket>/<root>/sftpReader/TPP/YDDH3_07Y_GWR/2020-01-18T18.41.00/Split/
+						f = f.getParentFile(); //e.g. s3://<bucket>/<root>/sftpReader/TPP/YDDH3_07Y_GWR/2020-01-18T18.41.00/
+						f = new File(f, "SRManifest.csv");
+						String manifestPath = f.getAbsolutePath();
+						LOG.debug("    Checking manifest at " + manifestPath);
+
+						InputStreamReader reader = FileHelper.readFileReaderFromSharedStorage(manifestPath, TppCsvToFhirTransformer.ENCODING);
+						CSVParser csvParser = new CSVParser(reader, TppCsvToFhirTransformer.CSV_FORMAT.withHeader());
+
+						Map<String, Boolean> hmManifestContents = new HashMap<>();
+
+						try {
+							Iterator<CSVRecord> csvIterator = csvParser.iterator();
+
+							while (csvIterator.hasNext()) {
+								CSVRecord csvRecord = csvIterator.next();
+								String fileName = csvRecord.get("FileName");
+								String isDeltaStr = csvRecord.get("IsDelta");
+
+								if (isDeltaStr.equalsIgnoreCase("Y")) {
+									hmManifestContents.put(fileName, Boolean.TRUE);
+
+								} else if (isDeltaStr.equalsIgnoreCase("N")) {
+									hmManifestContents.put(fileName, Boolean.FALSE);
+
+								} else {
+									//something wrong
+									throw new Exception("Unexpected value [" + isDeltaStr + "] in " + manifestPath);
+								}
+							}
+						} finally {
+							csvParser.close();
+						}
+
+						Boolean firstIsDelta = null;
+						String firstFileName = null;
+
+						for (ExchangePayloadFile file: files) {
+							String name = FilenameUtils.getBaseName(file.getPath());
+
+							//the Manifest file doesn't contain itself or the SRMapping files
+							//and the Mapping file is processed into publisher_common so we don't need to worry about copying
+							//that to every split directory
+							if (name.equals("SRManifest")
+									|| name.equals("SRMapping")
+									|| name.equals("SRMappingGroup")) {
+								continue;
+							}
+
+							//the map doesn't contain file extensions
+							Boolean isDelta = hmManifestContents.get(name);
+							if (isDelta == null) {
+								throw new Exception("Failed to find file " + name + " in SRManifest in " + manifestPath);
+							}
+
+							if (firstIsDelta == null) {
+								firstIsDelta = isDelta;
+								firstFileName = name;
+
+							} else if (firstIsDelta.booleanValue() != isDelta.booleanValue()) {
+								//if this file is different to a previous one, we don't have a way to handle this
+								throw new Exception("Mis-match in delta state for non-patient files in " + manifestPath
+										+ " " + name + " isDelta = " + isDelta + " but "
+										+ firstFileName + " isDelta = " + firstIsDelta);
+							}
+						}
+
+						//if all the files were bulk files then these non-patient were wrongly copied over to our
+						//service from the bulk of another service so this exchange should not have been created
+						if (firstIsDelta == null
+							|| firstIsDelta.booleanValue()) {
+							continue;
+						}
+						LOG.debug("    Exchange " + exchange.getId() + " should not have been created");
+
+						if (testMode) {
+							LOG.debug("    NOT FIXING AS TEST MODE");
+							continue;
+						}
+
+						//add header
+						exchange.setHeaderAsBoolean(HeaderKeys.AllowQueueing, new Boolean(false));
+
+						//save exchange
+						AuditWriter.writeExchange(exchange);
+					}
+				}
+
+			}
+
+			LOG.info("Finished Fixing TPP Staff Bulks");
+		} catch (Throwable t) {
+			LOG.error("", t);
+		}
 	}
 
 	private static void testDsm(String odsCode, String projectId) {
