@@ -1011,7 +1011,7 @@ public class Main {
 						f = f.getParentFile(); //e.g. s3://<bucket>/<root>/sftpReader/TPP/YDDH3_07Y_GWR/2020-01-18T18.41.00/Split/
 						f = f.getParentFile(); //e.g. s3://<bucket>/<root>/sftpReader/TPP/YDDH3_07Y_GWR/2020-01-18T18.41.00/
 						f = new File(f, "SRManifest.csv");
-						String manifestPath = f.getAbsolutePath();
+						String manifestPath = f.getPath();
 						LOG.debug("    Checking manifest at " + manifestPath);
 
 						InputStreamReader reader = FileHelper.readFileReaderFromSharedStorage(manifestPath, TppCsvToFhirTransformer.ENCODING);
