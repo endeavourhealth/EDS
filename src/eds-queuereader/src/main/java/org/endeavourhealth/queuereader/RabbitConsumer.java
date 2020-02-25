@@ -31,7 +31,7 @@ public class RabbitConsumer extends DefaultConsumer
 	private static final Logger LOG = LoggerFactory.getLogger(RabbitConsumer.class);
 
 	private static final String FILE_EXT_KILL = "kill";
-	private static final String FILE_EXT_KILL_QUIET = "killQuiet";
+	private static final String FILE_EXT_RESTART = "restart";
 
 	//variables to prevent duplicate processing in the event of Rabbit fail-overs
 	private static final List<RabbitConsumer_State> messagesBeingProcessed = new ArrayList<>();
@@ -56,7 +56,7 @@ public class RabbitConsumer extends DefaultConsumer
 
 		//call this to delete any pre-existing kill file
 		checkIfKillFileExists(FILE_EXT_KILL);
-		checkIfKillFileExists(FILE_EXT_KILL_QUIET);
+		checkIfKillFileExists(FILE_EXT_RESTART);
 
 		startKillCheckingThread();
 	}
@@ -270,11 +270,11 @@ public class RabbitConsumer extends DefaultConsumer
 		//if we've failed on the same exchange X times, then halt the queue reader
 		if (lastExchangeAttempts >= TransformConfig.instance().getAttemptsPermmitedPerExchange()) {
 			String reason = "Failed " + lastExchangeAttempts + " times on exchange " + lastExchangeAttempted.getExchangeId() + " so halting queue reader";
-			stop(reason, true, 1024); //just use non-standard exit code
+			stop(reason, 1024); //just use non-standard exit code
 		}
 	}
 
-	private void stop(String reason, boolean sendSlackMessageIfPossible, int exitCode) {
+	private void stop(String reason, int exitCode) {
 
 		//stop our checking thread
 		this.killCheckingRunnable.stop();
@@ -285,18 +285,6 @@ public class RabbitConsumer extends DefaultConsumer
 		} catch (Exception ex) {
 			LOG.error("Failed to close Rabbit channel or connection", ex);
 		}
-
-		//tell us this has happened
-		//taking this out since there's already a separate Slack message when a QR exits
-		/*if (sendSlackMessageIfPossible) {
-			String host;
-			try {
-				host = MetricsHelper.getHostName();
-			} catch (IOException ioe) {
-				host = "UNKNOWN";
-			}
-			SlackHelper.sendSlackMessage(SlackHelper.Channel.QueueReaderAlerts, "Queue Reader " + configId + " Stopping on " + host + ":\r\n" + reason);
-		}*/
 
 		//and halt
 		LOG.info("Queue Reader " + ConfigManager.getAppId() + " exiting: " + reason);
@@ -310,11 +298,11 @@ public class RabbitConsumer extends DefaultConsumer
 	private synchronized void checkIfKillFileExistsAndStopIfSo() {
 		if (checkIfKillFileExists(FILE_EXT_KILL)) {
 			String reason = "Detected kill file";
-			stop(reason, true, 0);
+			stop(reason, 0);
 
-		} else if (checkIfKillFileExists(FILE_EXT_KILL_QUIET)) {
-			String reason = "Detected quiet kill file";
-			stop(reason, false, 0);
+		} else if (checkIfKillFileExists(FILE_EXT_RESTART)) {
+			String reason = "Detected restart file";
+			stop(reason, 1025);
 		}
 	}
 
