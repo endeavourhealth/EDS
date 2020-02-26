@@ -52,6 +52,10 @@ create table cds_inpatient
     discharge_destination_code     varchar(12)   COMMENT 'LKP_CDS_DISCH_DEST',
     discharge_method               char(1)      COMMENT 'LKP_CDS_DISCH_METHOD',
 
+    -- store and maternity data
+    maternity_data_birth           mediumtext   COMMENT 'if the CDS type is 120 (baby birth), store JSON maternity birth data here',
+    maternity_data_delivery        mediumtext   COMMENT 'if the CDS type is 140 (mother baby delivery), store JSON maternity delivery data here',
+
     -- store any diagnosis and procedure data
     primary_diagnosis_ICD          varchar(6),
     secondary_diagnosis_ICD        varchar(6),
@@ -101,6 +105,10 @@ create table cds_inpatient_latest
     discharge_destination_code     varchar(12)   COMMENT 'LKP_CDS_DISCH_DEST',
     discharge_method               char(1)      COMMENT 'LKP_CDS_DISCH_METHOD',
 
+    -- store and maternity data
+    maternity_data_birth           mediumtext   COMMENT 'if the CDS type is 120 (baby birth), store JSON maternity birth data here',
+    maternity_data_delivery        mediumtext   COMMENT 'if the CDS type is 140 (mother baby delivery), store JSON maternity delivery data here',
+
     -- store any diagnosis and procedure data
     primary_diagnosis_ICD          varchar(6),
     secondary_diagnosis_ICD        varchar(6),
@@ -145,6 +153,10 @@ create table cds_inpatient_target
     discharge_destination_code     varchar(12)   COMMENT 'LKP_CDS_DISCH_DEST',
     discharge_method               char(1)      COMMENT 'LKP_CDS_DISCH_METHOD',
 
+    -- store and maternity data
+    maternity_data_birth           mediumtext   COMMENT 'if the CDS type is 120 (baby birth), store JSON maternity birth data here',
+    maternity_data_delivery        mediumtext   COMMENT 'if the CDS type is 140 (mother baby delivery), store JSON maternity delivery data here',
+
     -- store any diagnosis and procedure data
     primary_diagnosis_ICD          varchar(6),
     secondary_diagnosis_ICD        varchar(6),
@@ -187,6 +199,10 @@ create table cds_inpatient_target_latest
     discharge_date                 datetime     COMMENT 'date and time of discharge',
     discharge_destination_code     varchar(12)   COMMENT 'LKP_CDS_DISCH_DEST',
     discharge_method               char(1)      COMMENT 'LKP_CDS_DISCH_METHOD',
+
+    -- store and maternity data
+    maternity_data_birth           mediumtext   COMMENT 'if the CDS type is 120 (baby birth), store JSON maternity birth data here',
+    maternity_data_delivery        mediumtext   COMMENT 'if the CDS type is 140 (mother baby delivery), store JSON maternity delivery data here',
 
     -- store any diagnosis and procedure data
     primary_diagnosis_ICD          varchar(6),
