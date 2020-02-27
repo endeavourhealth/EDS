@@ -21,8 +21,14 @@
                             <label for="inputType" class="control-label">Name/ID</label>
 
                             <div class="pull-right">
-                                <label for="serviceNameSearchIncludeNotes" class="control-label">Match on notes</label>
-                                <input type="checkbox" id="serviceNameSearchIncludeNotes" [(ngModel)]="serviceService.serviceNameSearchIncludeNotes" name="serviceNameSearchIncludeNotes" (ngModelChange)="applyFiltering()">
+                                <label for="serviceNameSearchIncludeTags" class="control-label">Match tags</label>
+                                <input type="checkbox" id="serviceNameSearchIncludeTags" [(ngModel)]="serviceService.serviceNameSearchIncludeTags" name="serviceNameSearchIncludeTags" (ngModelChange)="applyFiltering()">
+                                <span *ngIf="serviceService.serviceNameSearchIncludeTags">
+                                    <select id="serviceNameSearchSpecificTag" [(ngModel)]="serviceService.serviceNameSearchSpecificTag" name="serviceNameSearchSpecificTag" (ngModelChange)="applyFiltering()">
+                                        <option value="">All Tags</option>
+                                        <option *ngFor="let tagName of serviceService.getTagNamesFromCache()" value="{{tagName}}">{{tagName}}</option>
+                                    </select>
+                                </span>
                             </div>
 
                             <input type="text" class="form-control" id="inputType" placeholder="Regex" [(ngModel)]="serviceService.serviceNameFilter" name="serviceNameFilter" (ngModelChange)="applyFiltering()">
@@ -87,7 +93,7 @@
                                     <th class="col-md-3">Name</th>
                                     <th class="col-md-1">ID</th>
                                     <!--<th class="col-md-2">Publisher Config</th>-->
-                                    <th class="col-md-2">Notes</th>
+                                    <th class="col-md-2">Tags</th>
                                     <th class="col-md-3">System</th>
                                     <th class="col-md-1">Exchanges in Error</th>
                                 </tr>
@@ -105,10 +111,8 @@
                                     <td>{{summary.service.localIdentifier}}</td>
                                     <!--<td>{{summary.service.publisherConfigName}}</td>-->
                                     <td>
-                                        <div *ngIf="summary.service.notes">
-                                            {{getNotesPrefix(summary)}}
-                                            <span class="fa fa-info-circle fa-right-pad text-muted" ngbTooltip="{{summary.service.notes}}" *ngIf="summary.service.notes.length > 10"></span>
-                                        </div>
+                                        {{getTagStrPrefix(summary.service)}}
+                                        <span class="fa fa-info-circle fa-right-pad text-muted" ngbTooltip="{{getTagStr(summary.service)}}" *ngIf="getTagStr(summary.service).length > tagStrDisplayLimit"></span>
                                     </td>
                                     <td>{{summary.systemName}}</td>
                                     <td>{{summary.countExchanges}}</td>

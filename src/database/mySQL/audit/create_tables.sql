@@ -314,6 +314,7 @@ create table application_heartbeat (
   current_heap_mb int COMMENT 'JVM heap allocated',
   server_memory_mb int COMMENT 'server physical memory',
   server_cpu_usage_percent int COMMENT 'server total CPU load',
+  is_busy_detail varchar(255) COMMENT 'free-text desc of what it is busy doing',
   CONSTRAINT pk_application_heartbeat PRIMARY KEY (application_name, application_instance_name)
 )
   ROW_FORMAT=COMPRESSED

@@ -4,7 +4,9 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import org.endeavourhealth.core.database.dal.admin.models.Service;
 import org.endeavourhealth.core.fhirStorage.ServiceInterfaceEndpoint;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -14,12 +16,13 @@ public final class JsonService {
     private String publisherConfigName = null;
     private String name = null;
     private List<ServiceInterfaceEndpoint> endpoints = null;
-    private String notes = null;
     private String postcode;
     private String ccgCode;
     private String organisationTypeDesc;
     private String organisationTypeCode;
     private List<JsonServiceSystemStatus> systemStatuses;
+    private String alias;
+    private Map<String, String> tags;
 
     public JsonService() {
     }
@@ -31,12 +34,15 @@ public final class JsonService {
         this.name = service.getName();
         //this.additionalInfo = additionalInfo;
         this.endpoints = service.getEndpointsList();
-        this.notes = service.getNotes();
         this.postcode = service.getPostcode();
         this.ccgCode = service.getCcgCode();
         if (service.getOrganisationType() != null) {
             this.organisationTypeDesc = service.getOrganisationType().getDescription();
             this.organisationTypeCode = service.getOrganisationType().getCode();
+        }
+        this.alias = service.getAlias();
+        if (service.getTags() != null) {
+            this.tags = new HashMap<>(service.getTags());
         }
         this.systemStatuses = statuses;
     }
@@ -84,14 +90,6 @@ public final class JsonService {
         this.endpoints = endpoints;
     }
 
-    public String getNotes() {
-        return notes;
-    }
-
-    public void setNotes(String notes) {
-        this.notes = notes;
-    }
-
     public String getPostcode() {
         return postcode;
     }
@@ -130,6 +128,22 @@ public final class JsonService {
 
     public void setSystemStatuses(List<JsonServiceSystemStatus> systemStatuses) {
         this.systemStatuses = systemStatuses;
+    }
+
+    public String getAlias() {
+        return alias;
+    }
+
+    public void setAlias(String alias) {
+        this.alias = alias;
+    }
+
+    public Map<String, String> getTags() {
+        return tags;
+    }
+
+    public void setTags(Map<String, String> tags) {
+        this.tags = tags;
     }
 }
 

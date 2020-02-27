@@ -48,11 +48,11 @@
                                                     {{getStatusMemoryDesc(status)}}
 
                                                     <span *ngIf="isStatusTooOld(status)">
-                                                        <span class="label label-danger"><span class="fa fa-warning"></span> {{getStatusAgeDesc(status)}}</span>
+                                                        <span class="label label-danger"><span class="fa fa-warning" ngbTooltip="{{status.isBusyDetail}}"></span> {{getStatusAgeDesc(status)}}</span>
                                                     </span>
 
                                                     <span *ngIf="!isStatusTooOld(status)">
-                                                        <span *ngIf="status.isBusy" class="fa fa-play"></span>
+                                                        <span *ngIf="status.isBusy" class="fa fa-play" ngbTooltip="{{status.isBusyDetail}}"></span>
                                                         <span *ngIf="!status.isBusy" class="fa fa-pause"></span>
                                                     </span>
                                                 </span>
@@ -101,11 +101,11 @@
                                         {{status.queueName}}
                                         {{getStatusMemoryDesc(status)}}
                                         <span *ngIf="isStatusTooOld(status)">
-                                            <span class="label label-danger"><span class="fa fa-warning"></span> ({{getStatusAgeDesc(status)}})</span>
+                                            <span class="label label-danger"><span class="fa fa-warning" ngbTooltip="{{status.isBusyDetail}}"></span> ({{getStatusAgeDesc(status)}})</span>
                                         </span>
 
                                         <span *ngIf="!isStatusTooOld(status)">
-                                            <span *ngIf="status.isBusy" class="fa fa-play"></span>
+                                            <span *ngIf="status.isBusy" class="fa fa-play" ngbTooltip="{{status.isBusyDetail}}"></span>
                                             <span *ngIf="!status.isBusy" class="fa fa-pause"></span>
                                         </span>
 

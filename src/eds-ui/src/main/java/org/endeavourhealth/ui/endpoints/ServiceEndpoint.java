@@ -46,7 +46,7 @@ public final class ServiceEndpoint extends AbstractEndpoint {
     private static final UserAuditDalI userAuditRepository = DalProvider.factoryUserAuditDal(AuditModule.EdsUiModule.Service);
     private static final ExchangeDalI exchangeAuditRepository = DalProvider.factoryExchangeDal();
 
-    //private static final Map<UUID, FhirDeletionService> dataBeingDeleted = new ConcurrentHashMap<>();
+    private static List<String> cachedTagNames = null;
 
     @POST
     @Produces(MediaType.APPLICATION_JSON)
@@ -67,13 +67,25 @@ public final class ServiceEndpoint extends AbstractEndpoint {
         dbService.setName(service.getName());
         dbService.setLocalId(service.getLocalIdentifier());
         dbService.setPublisherConfigName(service.getPublisherConfigName());
-        dbService.setNotes(service.getNotes());
         dbService.setPostcode(service.getPostcode());
         dbService.setCcgCode(service.getCcgCode());
         if (!Strings.isNullOrEmpty(service.getOrganisationTypeCode())) {
             dbService.setOrganisationType(OrganisationType.fromCode(service.getOrganisationTypeCode()));
         }
         dbService.setEndpointsList(service.getEndpoints());
+        dbService.setAlias(service.getAlias());
+        if (service.getTags() != null) {
+            dbService.setTags(new HashMap<>(service.getTags()));
+
+            //make sure any new ones are added to the cached list
+            if (cachedTagNames != null) {
+                Set<String> hs = new HashSet<>(cachedTagNames);
+                for (String tagName: service.getTags().keySet()) {
+                    hs.add(tagName);
+                }
+                setTagNameCache(hs);
+            }
+        }
 
         UUID serviceId = serviceRepository.save(dbService);
 
@@ -181,42 +193,10 @@ public final class ServiceEndpoint extends AbstractEndpoint {
                             //if the publisher mode has changed, then validate that there's nothing in the queue
                             if (!endpointStr.equals(existingEndpointStr)) {
 
-                                ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
-                                List<Exchange> mostRecentExchanges = exchangeDal.getExchangesByService(existingServiceId, systemUuid, 1);
-                                if (!mostRecentExchanges.isEmpty()) {
-                                    Exchange mostRecentExchange = mostRecentExchanges.get(0);
-                                    ExchangeTransformAudit latestTransform = exchangeDal.getLatestExchangeTransformAudit(existingServiceId, systemUuid, mostRecentExchange.getId());
-
-                                    boolean inQueue = false;
-
-                                    //if the exchange has never been transformed or the transform hasn't ended, we
-                                    //can infer that it's in the queue
-                                    if (latestTransform == null
-                                            || latestTransform.getEnded() == null) {
-                                        LOG.debug("Exchange " + mostRecentExchange.getId() + " has never been transformed or hasn't finished yet");
-                                        inQueue = true;
-
-                                    } else {
-                                        Date transformFinished = latestTransform.getEnded();
-                                        List<ExchangeEvent> events = exchangeDal.getExchangeEvents(mostRecentExchange.getId());
-                                        if (!events.isEmpty()) {
-                                            ExchangeEvent mostRecentEvent = events.get(events.size() - 1);
-                                            String eventDesc = mostRecentEvent.getEventDesc();
-                                            Date eventDate = mostRecentEvent.getTimestamp();
-
-                                            if (eventDesc.startsWith("Manually pushed into")
-                                                    && eventDate.after(transformFinished)) {
-
-                                                LOG.debug("Exchange " + mostRecentExchange.getId() + " latest event is being inserted into queue");
-                                                inQueue = true;
-                                            }
-                                        }
-                                    }
-
-                                    if (inQueue) {
-                                        error = "Cannot change publisher mode while inbound messages are queued";
-                                        break;
-                                    }
+                                boolean inQueue = isAnythingInInboundQueue(existingServiceId, systemUuid);
+                                if (inQueue) {
+                                    error = "Cannot change publisher mode while inbound messages are queued";
+                                    break;
                                 }
                             }
                         }
@@ -239,6 +219,41 @@ public final class ServiceEndpoint extends AbstractEndpoint {
                     .build();
 
         }
+    }
+
+    public static boolean isAnythingInInboundQueue(UUID serviceId, UUID systemId) throws Exception {
+        ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
+        List<Exchange> mostRecentExchanges = exchangeDal.getExchangesByService(serviceId, systemId, 1);
+        if (!mostRecentExchanges.isEmpty()) {
+            Exchange mostRecentExchange = mostRecentExchanges.get(0);
+            ExchangeTransformAudit latestTransform = exchangeDal.getLatestExchangeTransformAudit(serviceId, systemId, mostRecentExchange.getId());
+
+            //if the exchange has never been transformed or the transform hasn't ended, we
+            //can infer that it's in the queue
+            if (latestTransform == null
+                    || latestTransform.getEnded() == null) {
+                LOG.debug("Exchange " + mostRecentExchange.getId() + " has never been transformed or hasn't finished yet");
+                return true;
+
+            } else {
+                Date transformFinished = latestTransform.getEnded();
+                List<ExchangeEvent> events = exchangeDal.getExchangeEvents(mostRecentExchange.getId());
+                if (!events.isEmpty()) {
+                    ExchangeEvent mostRecentEvent = events.get(events.size() - 1);
+                    String eventDesc = mostRecentEvent.getEventDesc();
+                    Date eventDate = mostRecentEvent.getTimestamp();
+
+                    if (eventDesc.startsWith("Manually pushed into")
+                            && eventDate.after(transformFinished)) {
+
+                        LOG.debug("Exchange " + mostRecentExchange.getId() + " latest event is being inserted into queue");
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
     }
 
     @DELETE
@@ -763,5 +778,54 @@ public final class ServiceEndpoint extends AbstractEndpoint {
                 .ok()
                 .entity(ret)
                 .build();
+    }
+
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name = "ServiceEndpoint.OrganisationTypeList")
+    @Path("/tagNames")
+    public Response getTagNames(@Context SecurityContext sc) throws Exception {
+        super.setLogbackMarkers(sc);
+
+        if (cachedTagNames == null) {
+
+            Set<String> all = new HashSet<>();
+
+            List<Service> services = serviceRepository.getAll();
+            for (Service service: services) {
+                if (service.getTags() != null) {
+                    Set<String> set = service.getTags().keySet();
+                    all.addAll(set);
+                }
+            }
+
+            setTagNameCache(all);
+        }
+
+        clearLogbackMarkers();
+
+        return Response
+                .ok()
+                .entity(cachedTagNames)
+                .build();
+    }
+
+    private void setTagNameCache(Set<String> s) {
+        List<String> l = new ArrayList<>(s);
+
+        //sort by length so shorter ones are first, which has the end result of moving
+        //the more interesting tags to the start
+        //l.sort(((o1, o2) -> o1.toLowerCase().compareToIgnoreCase(o2.toLowerCase())));
+        l.sort((o1, o2) -> new Integer(o1.length()).compareTo(new Integer(o2.length())));
+
+        //always put NOTES at the end
+        if (l.contains("Notes")) {
+            l.remove("Notes");
+            l.add("Notes");
+        }
+
+        cachedTagNames = l;
     }
 }

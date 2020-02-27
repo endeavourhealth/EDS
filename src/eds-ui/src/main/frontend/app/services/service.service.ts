@@ -14,7 +14,8 @@ export class ServiceService extends BaseHttp2Service {
 	//common filter options used by the Service list and Transform Errors page
 	showFilters: boolean;
 	serviceNameFilter: string;
-	serviceNameSearchIncludeNotes: boolean;
+	serviceNameSearchIncludeTags: boolean;
+	serviceNameSearchSpecificTag: string;
 	servicePublisherConfigFilter: string;
 	//serviceHasErrorsFilter: boolean;
 	serviceStatusFilter: string;
@@ -24,14 +25,15 @@ export class ServiceService extends BaseHttp2Service {
 	sortFilter: string;
 
 	ccgNameCache: {};
-
+	tagNameCache: string[];
 
 	constructor(http : Http) {
 		super (http);
 
 		var vm = this;
 		vm.showFilters = true;
-		vm.serviceNameSearchIncludeNotes = true;
+		vm.serviceNameSearchIncludeTags = false;
+		vm.serviceNameSearchSpecificTag = '';
 		vm.sortFilter = 'NameAsc';
 	}
 
@@ -93,6 +95,10 @@ export class ServiceService extends BaseHttp2Service {
 
 	getOrganisationTypeList() : Observable<OrganisationType[]> {
 		return this.httpGet('api/service/organisationTypeList', {});
+	}
+
+	getTagNames() : Observable<string[]> {
+		return this.httpGet('api/service/tagNames', {});
 	}
 
 	toggleFiltering() {
@@ -200,18 +206,32 @@ export class ServiceService extends BaseHttp2Service {
 				if (vm.serviceStatusFilter
 					&& !transformErrorsView) { //only applies to full service list
 
+					var desiredVal;
+					if (vm.serviceStatusFilter == 'NoStatus') {
+						desiredVal = 0;
+					} else if (vm.serviceStatusFilter == 'NoData') {
+						desiredVal = 1;
+					} else if (vm.serviceStatusFilter == 'OK') {
+						desiredVal = 2;
+					} else if (vm.serviceStatusFilter == 'Behind') {
+						desiredVal = 3;
+					} else if (vm.serviceStatusFilter == 'Error') {
+						desiredVal = 4;
+					} else {
+						console.log('Unknown sort mode ' + vm.serviceStatusFilter);
+					}
+					//console.log('sort mode = ' + vm.serviceStatusFilter + ' val = ' + desiredVal);
+
 					var statusVal = vm.getSortingStatusValue(service);
-
-					if ((vm.serviceStatusFilter == 'NoStatus' && statusVal != 4)
-						|| (vm.serviceStatusFilter == 'NoData' && statusVal != 3)
-						|| (vm.serviceStatusFilter == 'OK' && statusVal != 2)
-						|| (vm.serviceStatusFilter == 'Behind' && statusVal != 1)
-						|| (vm.serviceStatusFilter == 'Error' && statusVal == 0)) {
-
+					//console.log('service ' + service.localIdentifier + ' has status val ' + statusVal + ' looking for ' + vm.serviceStatusFilter);
+					if (statusVal != desiredVal) {
+						//console.log('skipped');
 						continue;
+ 					} else {
+						//console.log('include');
 					}
 
-					if (vm.serviceStatusFilter == 'NoStatus') {
+					/*if (vm.serviceStatusFilter == 'NoStatus') {
 						include = !service.systemStatuses;
 
 					} else {
@@ -254,7 +274,7 @@ export class ServiceService extends BaseHttp2Service {
 
 					if (!include) {
 						continue;
-					}
+					}*/
 				}
 
 				if (vm.servicePublisherModeFilter
@@ -302,21 +322,54 @@ export class ServiceService extends BaseHttp2Service {
 					}
 
 				}
+				
+				//if filtering by a specific tag, this rules out any service WITHOUT that tag
+				if (vm.serviceNameSearchIncludeTags
+					&& vm.serviceNameSearchSpecificTag) {
+
+					if (!service.tags
+						|| !service.tags.hasOwnProperty(vm.serviceNameSearchSpecificTag)) {
+						continue;
+					}
+				}
 
 				//only apply the name filter if it's valid regex
 				if (validNameFilterRegex) {
 					var name = service.name;
+					var alias = service.alias;
 					var id = service.localIdentifier;
 
-					//only include notes if the checkbox is ticked
-					var notes;
-					if (vm.serviceNameSearchIncludeNotes) {
-						notes = service.notes;
+					var include = false;
+					if (name && name.toLowerCase().match(validNameFilterRegex)) {
+						include = true;
+
+					} if (alias && alias.toLowerCase().match(validNameFilterRegex)) {
+						include = true;
+
+					} else if (id && id.toLowerCase().match(validNameFilterRegex)) {
+						include = true;
+
+					} else if (service.tags && vm.serviceNameSearchIncludeTags ) {
+
+						var tagNames = Object.keys(service.tags);
+						for (var j=0; j<tagNames.length; j++) {
+							var tagName = tagNames[j];
+							var tagValue = service.tags[tagName];
+
+							//if restricting to a specific tag, skip any others
+							if (!vm.serviceNameSearchSpecificTag
+									|| tagName == vm.serviceNameSearchSpecificTag) {
+
+								if (tagName.toLowerCase().match(validNameFilterRegex)
+									|| (tagValue && tagValue.toLowerCase().match(validNameFilterRegex))) {
+									include = true;
+									break;
+								}
+							}
+						}
 					}
 
-					if ((!name || !name.toLowerCase().match(validNameFilterRegex))
-						&& (!id || !id.toLowerCase().match(validNameFilterRegex))
-						&& (!notes || !notes.toLowerCase().match(validNameFilterRegex))) {
+					if (!include) {
 						continue;
 					}
 				}
@@ -449,7 +502,7 @@ export class ServiceService extends BaseHttp2Service {
 
 				} else if (!status.processingInError //behind
 					&& !status.processingUpToDate) {
-					thisVal = 4;
+					thisVal = 3;
 
 				} else { //error
 					thisVal = 4
@@ -710,6 +763,79 @@ export class ServiceService extends BaseHttp2Service {
 		//return 'CCG name for ' + ccgCode + ' here!';
 	}
 
+	public getTagNamesFromCache(): string[] {
+		var vm = this;
 
+		//if we've pre-cached this, then just return it
+		if (vm.tagNameCache) {
+			return vm.tagNameCache;
+		}
+
+		//if not pre-cached it, then we
+		vm.getTagNames()
+			.subscribe(
+				(result) => {
+					vm.tagNameCache = result;
+				},
+				(error) => {}
+			);
+
+		//return an empty string until the above has come back
+		return [];
+	}
+
+	/**
+	 * populates our cache of tag names from the service array provided
+	 */
+	/*public cacheAllTagNames(services: Service[]) {
+		var vm = this;
+
+		var tagNames = [];
+
+		for (var i=0; i<services.length; i++) {
+			var service = services[i];
+			if (service.tags) {
+				var keys = Object.keys(service.tags);
+				for (var j=0; j<keys.length; j++) {
+					var key = keys[j];
+					if (tagNames.indexOf(key) == -1) {
+						tagNames.push(key);
+					}
+				}
+			}
+		}
+
+		vm.tagNameCache = linq(tagNames).OrderBy(s => s.toLowerCase()).ToArray();
+	}*/
+
+	public createTagStr(service: Service): string {
+		var vm = this;
+
+		var list = vm.getTagNamesFromCache();
+		var ret = '' as string;
+
+		if (service.tags
+			&& list) {
+
+			for (var i=0; i<list.length; i++) {
+				var tagName = list[i];
+
+				if (service.tags.hasOwnProperty(tagName)) {
+					var tagValue = service.tags[tagName];
+
+					if (ret.length > 0) {
+						ret += ', ';
+					}
+					ret += tagName;
+					if (tagValue) {
+						ret += ' ';
+						ret += tagValue;
+					}
+				}
+			}
+		}
+
+		return ret;
+	}
 }
 

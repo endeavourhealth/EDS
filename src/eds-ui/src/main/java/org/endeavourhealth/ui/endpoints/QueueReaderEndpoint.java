@@ -107,6 +107,7 @@ public class QueueReaderEndpoint extends AbstractEndpoint {
             objectNode.put("physicalMemoryMb", h.getServerMemoryMb());
             objectNode.put("physicalMemoryDesc", physicalMemoryDesc);
             objectNode.put("cpuLoad", h.getServerCpuUsagePercent());
+            objectNode.put("isBusyDetail", h.getIsBusyDetail());
             objectNode.put("queueName", queueName);
         }
 

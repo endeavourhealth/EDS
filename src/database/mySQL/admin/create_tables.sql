@@ -107,6 +107,8 @@ CREATE TABLE service
 	postcode varchar(50),
 	ccg_code varchar(50),
 	organisation_type varchar(50),
+	alias varchar(250) COMMENT 'secondary name',
+	tags json COMMENT 'custom tags for filtering and info',
   CONSTRAINT pk_service PRIMARY KEY (id)
 );
 

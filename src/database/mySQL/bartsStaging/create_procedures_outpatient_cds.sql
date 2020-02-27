@@ -207,3 +207,42 @@ BEGIN
 
 END$$
 DELIMITER ;
+
+DROP PROCEDURE IF EXISTS `get_target_outpatient_cds_exchange`;
+
+DELIMITER $$
+CREATE PROCEDURE `get_target_outpatient_cds_exchange`(
+    IN _exchange_id char(36)
+)
+BEGIN
+
+    select
+        ot.unique_id,
+        ot.is_delete,
+        ot.person_id,
+        ot.encounter_id,
+        ot.episode_id,
+        ot.performer_personnel_id,
+        ot.patient_pathway_identifier,
+        ot.appt_attendance_identifier,
+        ot.appt_attended_code,
+        ot.appt_outcome_code,
+        ot.appt_date,
+        ot.appt_site_code,
+        ot.primary_diagnosis_ICD,
+        ot.secondary_diagnosis_ICD,
+        ot.other_diagnosis_ICD,
+        ot.primary_procedure_OPCS,
+        ot.primary_procedure_date,
+        ot.secondary_procedure_OPCS,
+        ot.secondary_procedure_date,
+        ot.other_procedures_OPCS,
+        ot.audit_json,
+        ot.is_confidential
+    from
+        cds_outpatient_target ot
+    where
+        ot.exchange_id = _exchange_id;
+
+END$$
+DELIMITER ;

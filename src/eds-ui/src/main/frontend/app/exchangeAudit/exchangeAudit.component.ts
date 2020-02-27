@@ -21,6 +21,7 @@ export class ExchangeAuditComponent {
 	service: Service;
 	systemId: string;
 	publisherMode: string;
+	cachedTagStr: string;
 
 	//exchange filters
 	searchMode: string;
@@ -286,12 +287,20 @@ export class ExchangeAuditComponent {
 
 		this.busyPostingToExchange = vm.exchangeAuditService.postToExchange(exchangeId, serviceId, vm.systemId, exchangeName, mode, protocolId, fileTypesToFilterOn, deleteErrorState).subscribe(
 			(result) => {
-				vm.log.success('Successfully posted to ' + exchangeName + ' exchange', 'Post to Exchange');
 
-				//re-load the events for the exchange, as we'll have added to them
-				this.loadTransformAudits(vm.selectedExchange);
-				//this.loadExchangeEvents(vm.selectedExchange);
+				//it may return nothing (which is good) or a string (which will be an error messag)
+				var errorMessage = result as string;
+				if (errorMessage) {
+					vm.log.warning(errorMessage);
+
+				} else {
+					vm.log.success('Successfully posted to ' + exchangeName + ' exchange', 'Post to Exchange');
+
+					//re-load the events for the exchange, as we'll have added to them
+					this.loadTransformAudits(vm.selectedExchange);
+				}
 				this.busyPostingToExchange = null;
+
 			},
 			(error) => {
 				vm.log.error('Failed to post to ' + exchangeName + ' exchange', error, 'Post to Exchange')
@@ -570,5 +579,14 @@ export class ExchangeAuditComponent {
 				},
 				(error) => vm.log.error('Error saving', error, 'Error')
 			);
+	}
+
+	getTagStr(service: Service) : string {
+		var vm = this;
+
+		if (!vm.cachedTagStr) {
+			vm.cachedTagStr = vm.serviceService.createTagStr(service);
+		}
+		return vm.cachedTagStr
 	}
 }
