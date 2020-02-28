@@ -221,34 +221,66 @@ public final class ServiceEndpoint extends AbstractEndpoint {
         }
     }
 
+    /**
+     * works out if there's anything in the inbound queue for the given service
+     * Note that this doesn't actually test RabbitMQ but looks at the transform audit of the most
+     * recent exchange to infer whether it is still in the queue or not
+     */
     public static boolean isAnythingInInboundQueue(UUID serviceId, UUID systemId) throws Exception {
         ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
         List<Exchange> mostRecentExchanges = exchangeDal.getExchangesByService(serviceId, systemId, 1);
-        if (!mostRecentExchanges.isEmpty()) {
-            Exchange mostRecentExchange = mostRecentExchanges.get(0);
-            ExchangeTransformAudit latestTransform = exchangeDal.getLatestExchangeTransformAudit(serviceId, systemId, mostRecentExchange.getId());
+        if (mostRecentExchanges.isEmpty()) {
+            return false;
+        }
 
-            //if the exchange has never been transformed or the transform hasn't ended, we
-            //can infer that it's in the queue
-            if (latestTransform == null
-                    || latestTransform.getEnded() == null) {
-                LOG.debug("Exchange " + mostRecentExchange.getId() + " has never been transformed or hasn't finished yet");
-                return true;
+        Exchange mostRecentExchange = mostRecentExchanges.get(0);
 
-            } else {
-                Date transformFinished = latestTransform.getEnded();
-                List<ExchangeEvent> events = exchangeDal.getExchangeEvents(mostRecentExchange.getId());
-                if (!events.isEmpty()) {
-                    ExchangeEvent mostRecentEvent = events.get(events.size() - 1);
-                    String eventDesc = mostRecentEvent.getEventDesc();
-                    Date eventDate = mostRecentEvent.getTimestamp();
+        //if the most recent exchange is flagged for not queueing, then we need to go back to the last one not flagged like that
+        Boolean allowQueueing = mostRecentExchange.getHeaderAsBoolean(HeaderKeys.AllowQueueing);
+        if (allowQueueing != null
+                && !allowQueueing.booleanValue()) {
 
-                    if (eventDesc.startsWith("Manually pushed into")
-                            && eventDate.after(transformFinished)) {
+            mostRecentExchange = null;
 
-                        LOG.debug("Exchange " + mostRecentExchange.getId() + " latest event is being inserted into queue");
-                        return true;
-                    }
+            mostRecentExchanges = exchangeDal.getExchangesByService(serviceId, systemId, 100);
+            for (Exchange exchange: mostRecentExchanges) {
+
+                allowQueueing = exchange.getHeaderAsBoolean(HeaderKeys.AllowQueueing);
+                if (allowQueueing == null
+                        || allowQueueing.booleanValue()) {
+                    mostRecentExchange = exchange;
+                    break;
+                }
+            }
+
+            //if we still didn't find one, after checking the last 100, then just assume we're OK
+            if (mostRecentExchange == null) {
+                return false;
+            }
+        }
+
+        ExchangeTransformAudit latestTransform = exchangeDal.getLatestExchangeTransformAudit(serviceId, systemId, mostRecentExchange.getId());
+
+        //if the exchange has never been transformed or the transform hasn't ended, we
+        //can infer that it's in the queue
+        if (latestTransform == null
+                || latestTransform.getEnded() == null) {
+            LOG.debug("Exchange " + mostRecentExchange.getId() + " has never been transformed or hasn't finished yet");
+            return true;
+
+        } else {
+            Date transformFinished = latestTransform.getEnded();
+            List<ExchangeEvent> events = exchangeDal.getExchangeEvents(mostRecentExchange.getId());
+            if (!events.isEmpty()) {
+                ExchangeEvent mostRecentEvent = events.get(events.size() - 1);
+                String eventDesc = mostRecentEvent.getEventDesc();
+                Date eventDate = mostRecentEvent.getTimestamp();
+
+                if (eventDesc.startsWith("Manually pushed into")
+                        && eventDate.after(transformFinished)) {
+
+                    LOG.debug("Exchange " + mostRecentExchange.getId() + " latest event is being inserted into queue");
+                    return true;
                 }
             }
         }

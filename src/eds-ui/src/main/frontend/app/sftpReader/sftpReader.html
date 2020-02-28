@@ -186,10 +186,10 @@
                                                     <thead>
                                                     <tr>
                                                         <th class="col-md-1"></th> <!-- checkbox col -->
-                                                        <th class="col-md-2">ODS Code</th>
-                                                        <th class="col-md-2">Status</th>
-                                                        <th class="col-md-7">Message</th>
-                                                        <!--<th class="col-md-1">Action</th>-->
+                                                        <th class="col-md-1">ODS</th>
+                                                        <th class="col-md-1">Bulk</th>
+                                                        <th class="col-md-1">Status</th>
+                                                        <th class="col-md-8">Message</th>
                                                     </tr>
                                                     </thead>
                                                     <tbody>
@@ -200,13 +200,19 @@
                                                             </div>
                                                         </td>
                                                         <td>{{content.orgId}}</td>
+
+                                                        <!-- bulk -->
+                                                        <td *ngIf="content.isBulk">Y</td>
+                                                        <td *ngIf="!content.isBulk"></td>
+
+                                                        <!-- status -->
                                                         <td *ngIf="content.notified">OK</td>
-                                                        <td *ngIf="content.notified">{{content.result}}</td>
                                                         <td *ngIf="!content.notified">Error</td>
+
+                                                        <!-- message -->
+                                                        <td *ngIf="content.notified">{{content.result}}</td>
                                                         <td *ngIf="!content.notified">{{content.error}}</td>
-                                                        <!--<td>
-                                                            <button *ngIf="!content.notified" type="button" class="btn btn-default btn-xs child-to-show" (click)="ignoreBatchSplit(content, status)">Ignore</button>
-                                                        </td>-->
+
                                                     </tr>
                                                     </tbody>
                                                 </table>
@@ -224,10 +230,10 @@
                                                         <thead>
                                                         <tr>
                                                             <th class="col-md-1"></th> <!-- checkbox col -->
-                                                            <th class="col-md-2">ODS Code</th>
-                                                            <th class="col-md-2">Status</th>
-                                                            <th class="col-md-7">Message</th>
-                                                            <!--<th class="col-md-1">Action</th>-->
+                                                            <th class="col-md-1">ODS</th>
+                                                            <th class="col-md-1">Bulk</th>
+                                                            <th class="col-md-1">Status</th>
+                                                            <th class="col-md-8">Message</th>
                                                         </tr>
                                                         </thead>
                                                         <tbody>
@@ -238,13 +244,18 @@
                                                                 </div>
                                                             </td>
                                                             <td>{{content.orgId}}</td>
+
+                                                            <!-- bulk -->
+                                                            <td *ngIf="content.isBulk">Y</td>
+                                                            <td *ngIf="!content.isBulk"></td>
+
+                                                            <!-- status -->
                                                             <td *ngIf="content.notified">OK</td>
-                                                            <td *ngIf="content.notified">{{content.result}}</td>
                                                             <td *ngIf="!content.notified">Error</td>
+
+                                                            <!-- message -->
+                                                            <td *ngIf="content.notified">{{content.result}}</td>
                                                             <td *ngIf="!content.notified">{{content.error}}</td>
-                                                            <!--<td>
-                                                                <button *ngIf="!content.notified" type="button" class="btn btn-default btn-xs child-to-show" (click)="ignoreBatchSplit(content, status)">Ignore</button>
-                                                            </td>-->
                                                         </tr>
                                                         </tbody>
                                                     </table>
@@ -265,10 +276,10 @@
                                                         <thead>
                                                         <tr>
                                                             <th class="col-md-1"></th> <!-- checkbox col -->
-                                                            <th class="col-md-2">ODS Code</th>
-                                                            <th class="col-md-2">Status</th>
-                                                            <th class="col-md-7">Message</th>
-                                                            <!--<th class="col-md-1">Action</th>-->
+                                                            <th class="col-md-1">ODS</th>
+                                                            <th class="col-md-1">Bulk</th>
+                                                            <th class="col-md-1">Status</th>
+                                                            <th class="col-md-8">Message</th>
                                                         </tr>
                                                         </thead>
                                                         <tbody>
@@ -279,13 +290,19 @@
                                                                 </div>
                                                             </td>
                                                             <td>{{content.orgId}}</td>
+
+                                                            <!-- bulk -->
+                                                            <td *ngIf="content.isBulk">Y</td>
+                                                            <td *ngIf="!content.isBulk"></td>
+
+                                                            <!-- status -->
                                                             <td *ngIf="content.notified">OK</td>
-                                                            <td *ngIf="content.notified">{{content.result}}</td>
                                                             <td *ngIf="!content.notified">Error</td>
+
+                                                            <!-- message -->
+                                                            <td *ngIf="content.notified">{{content.result}}</td>
                                                             <td *ngIf="!content.notified">{{content.error}}</td>
-                                                            <!--<td>
-                                                                <button *ngIf="!content.notified" type="button" class="btn btn-default btn-xs child-to-show" (click)="ignoreBatchSplit(content, status)">Ignore</button>
-                                                            </td>-->
+
                                                         </tr>
                                                         </tbody>
                                                     </table>
