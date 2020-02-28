@@ -22,6 +22,8 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.StandardOpenOption;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -57,6 +59,7 @@ public class RabbitConsumer extends DefaultConsumer
 		//call this to delete any pre-existing kill file
 		checkIfKillFileExists(FILE_EXT_KILL);
 		checkIfKillFileExists(FILE_EXT_RESTART);
+		deleteExitCodeFile();
 
 		startKillCheckingThread();
 	}
@@ -288,7 +291,42 @@ public class RabbitConsumer extends DefaultConsumer
 
 		//and halt
 		LOG.info("Queue Reader " + ConfigManager.getAppId() + " exiting: " + reason);
+
+		//write out exit code to file - due to RabbitMQ and/or Hikari, we believe the exit code passed to System.exit(..) gets overwritten
+		writeExitCodeFileAndExit(exitCode);
+	}
+
+	private void writeExitCodeFileAndExit(int exitCode) {
+		File f = getExitCodeFile();
+		if (f != null) {
+			String s = "" + exitCode;
+			byte[] bytes = s.getBytes();
+			try {
+				Files.write(f.toPath(), bytes, StandardOpenOption.CREATE_NEW, StandardOpenOption.TRUNCATE_EXISTING);
+			} catch (IOException ioe) {
+				LOG.error("Failed to write exit file", ioe);
+			}
+		}
+
 		System.exit(exitCode);
+	}
+
+	private void deleteExitCodeFile() {
+		File f = getExitCodeFile();
+		if (f != null
+				&& f.exists()) {
+			f.delete();
+		}
+	}
+
+	private File getExitCodeFile() {
+		String killFileLocation = TransformConfig.instance().getKillFileLocation();
+		if (Strings.isNullOrEmpty(killFileLocation)) {
+			LOG.error("No kill file location set in common queue reader config");
+			return null;
+		}
+
+		return new File(killFileLocation, configId + ".exit");
 	}
 
 	/**
