@@ -992,6 +992,11 @@ public class Main {
 					tagKeys.sort(((o1, o2) -> o1.compareToIgnoreCase(o2)));
 
 					for (String tagKey: tagKeys) {
+						if (tagKey.equals("Error")
+								|| tagKey.equals("Bulk received")) {
+							continue;
+						}
+
 						if (!tagStr.isEmpty()) {
 							tagStr += ", ";
 						}
