@@ -47,6 +47,11 @@ import org.endeavourhealth.core.messaging.pipeline.components.OpenEnvelope;
 import org.endeavourhealth.core.messaging.pipeline.components.PostMessageToExchange;
 import org.endeavourhealth.core.queueing.QueueHelper;
 import org.endeavourhealth.core.xml.QueryDocument.*;
+import org.endeavourhealth.core.xml.TransformErrorSerializer;
+import org.endeavourhealth.core.xml.transformError.Arg;
+import org.endeavourhealth.core.xml.transformError.Error;
+import org.endeavourhealth.core.xml.transformError.ExceptionLine;
+import org.endeavourhealth.core.xml.transformError.TransformError;
 import org.endeavourhealth.transform.common.*;
 import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
 import org.endeavourhealth.transform.subscriber.targetTables.OutputContainer;
@@ -1037,6 +1042,71 @@ public class Main {
 		}
 	}
 
+
+	private static List<String> formatTransformAuditErrorLines(ExchangeTransformAudit transformAudit) throws Exception {
+
+		//until we need something more powerful, I'm displaying the errors just as a string, to
+		//save sending complex JSON objects back to the client
+		List<String> lines = new ArrayList<>();
+
+		if (Strings.isNullOrEmpty(transformAudit.getErrorXml())) {
+			return lines;
+		}
+
+		TransformError errors = TransformErrorSerializer.readFromXml(transformAudit.getErrorXml());
+
+		for (Error error : errors.getError()) {
+
+			//the error will only be null for older errors, from before the field was introduced
+			if (error.getDatetime() != null) {
+				Calendar calendar = error.getDatetime().toGregorianCalendar();
+				SimpleDateFormat formatter = new SimpleDateFormat("yyyy/MM/dd HH:mm");
+				formatter.setTimeZone(calendar.getTimeZone());
+				String dateString = formatter.format(calendar.getTime());
+				lines.add(dateString);
+			}
+
+			for (Arg arg : error.getArg()) {
+				String argName = arg.getName();
+				String argValue = arg.getValue();
+				if (argValue != null) {
+					lines.add(argName + " = " + argValue);
+				} else {
+					lines.add(argName);
+				}
+			}
+			lines.add("");
+
+			org.endeavourhealth.core.xml.transformError.Exception exception = error.getException();
+			while (exception != null) {
+
+				if (exception.getMessage() != null) {
+					lines.add(exception.getMessage());
+				}
+
+				for (ExceptionLine line : exception.getLine()) {
+					String cls = line.getClazz();
+					String method = line.getMethod();
+					Integer lineNumber = line.getLine();
+
+					lines.add("\u00a0\u00a0\u00a0\u00a0at " + cls + "." + method + ":" + lineNumber);
+
+					//lines.add("&nbsp;&nbsp;&nbsp;&nbsp;at " + cls + "." + method + ":" + lineNumber);
+				}
+
+				exception = exception.getCause();
+				if (exception != null) {
+					lines.add("Caused by:");
+				}
+			}
+
+			//add some space between the separate errors in the audit
+			lines.add("");
+			lines.add("------------------------------------------------------------------------");
+		}
+
+		return lines;
+	}
 
 	private static void fixTppStaffBulks(boolean testMode, String odsCodeRegex) {
 		LOG.info("Fixing TPP Staff Bulks using testMode " + testMode + " and regex " + odsCodeRegex);
