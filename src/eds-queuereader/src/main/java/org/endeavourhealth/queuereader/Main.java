@@ -83,6 +83,11 @@ public class Main {
 		LOG.info("Initialising config manager");
 		ConfigManager.initialize("queuereader", configId);
 
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("FindEmisMissingCodes")) {
+			findEmisMissingCodes();
+			System.exit(0);
+		}
 
 		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("FixEncounters")) {
@@ -929,6 +934,109 @@ public class Main {
 		rabbitHandler.start();
 		LOG.info("EDS Queue reader running (kill file location " + TransformConfig.instance().getKillFileLocation() + ")");
 	}
+
+
+	private static void findEmisMissingCodes() {
+		LOG.info("Finding Emis Missing Codes");
+		try {
+
+			ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
+			ServiceDalI serviceRepository = DalProvider.factoryServiceDal();
+
+			List<ExchangeTransformErrorState> errors = exchangeDal.getAllErrorStates();
+
+			List<String> missingCodeLines = new ArrayList<>();
+			List<String> missingDrugLines = new ArrayList<>();
+			List<String> otherLines = new ArrayList<>();
+
+			for (ExchangeTransformErrorState error: errors) {
+				UUID serviceId = error.getServiceId();
+				List<UUID> exchangeIds = error.getExchangeIdsInError();
+				UUID exchangeId = exchangeIds.get(0);
+				UUID systemId = error.getSystemId();
+
+				Service service = serviceRepository.getById(serviceId);
+
+				Exchange exchange = exchangeDal.getExchange(exchangeId);
+				String exchangeDateStr = exchange.getHeader(HeaderKeys.DataDate);
+
+				ExchangeTransformAudit transformAudit = exchangeDal.getMostRecentExchangeTransform(serviceId, systemId, exchangeId);
+				List<String> lines = formatTransformAuditErrorLines(transformAudit);
+
+				String drugId = null;
+				String codeId = null;
+
+				for (String line: lines) {
+					if (line.contains("Failed to find drug code for codeId")) {
+						String[] toks = line.split(" ");
+						drugId = toks[toks.length-1];
+						break;
+
+					} else if (line.contains("Failed to find clinical code for codeId")) {
+						String[] toks = line.split(" ");
+						codeId = toks[toks.length-1];
+						break;
+
+					}
+				}
+
+				String name = service.getName();
+				String ods = service.getLocalId();
+
+				String tagStr = "";
+				if (service.getTags() != null) {
+					List<String> tagKeys = new ArrayList<>(service.getTags().keySet());
+					tagKeys.sort(((o1, o2) -> o1.compareToIgnoreCase(o2)));
+
+					for (String tagKey: tagKeys) {
+						if (!tagStr.isEmpty()) {
+							tagStr += ", ";
+						}
+						tagStr += tagKey;
+						String tagVal = service.getTags().get(tagKey);
+						if (!Strings.isNullOrEmpty(tagVal)) {
+							tagStr += " ";
+							tagStr += tagVal;
+						}
+					}
+				}
+
+				if (drugId != null) {
+					missingDrugLines.add("\"" + name + "\",\"" + ods + "\",\"" + tagStr + "\",\"" + exchangeDateStr + "\",\"" + drugId + "\"");
+
+				} else if (codeId != null) {
+					missingCodeLines.add("\"" + name + "\",\"" + ods + "\",\"" + tagStr + "\",\"" + exchangeDateStr + "\",\"" + codeId + "\"");
+
+				} else {
+					otherLines.add("\"" + name + "\",\"" + ods + "\",\"" + tagStr + "\"");
+				}
+			}
+
+			System.out.println("Missing drugs");
+			for (String line: missingDrugLines) {
+				System.out.println(line);
+			}
+
+			System.out.println("");
+			System.out.println("");
+			System.out.println("Missing codes");
+			for (String line: missingCodeLines) {
+				System.out.println(line);
+			}
+
+			System.out.println("");
+			System.out.println("");
+			System.out.println("Others");
+			for (String line: otherLines) {
+				System.out.println(line);
+			}
+
+			LOG.info("Finished Finding Emis Missing Codes");
+		} catch (Throwable t) {
+			LOG.error("", t);
+		}
+	}
+
 
 	private static void fixTppStaffBulks(boolean testMode, String odsCodeRegex) {
 		LOG.info("Fixing TPP Staff Bulks using testMode " + testMode + " and regex " + odsCodeRegex);
