@@ -9,8 +9,6 @@ import org.apache.commons.io.FilenameUtils;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.common.utility.FileHelper;
-import org.endeavourhealth.common.utility.ThreadPool;
-import org.endeavourhealth.common.utility.ThreadPoolError;
 import org.endeavourhealth.core.configuration.ConfigDeserialiser;
 import org.endeavourhealth.core.configuration.PostMessageToExchangeConfig;
 import org.endeavourhealth.core.configuration.QueueReaderConfiguration;
@@ -304,7 +302,7 @@ public class Main {
 			System.exit(0);
 		}
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("ConvertAudits2")) {
 			String configName = args[1];
 			String tempTable = args[2];
@@ -313,7 +311,7 @@ public class Main {
 			boolean testMode = Boolean.parseBoolean(args[5]);
 			convertFhirAudits2(configName, tempTable, threads, batchSize, testMode);
 			System.exit(0);
-		}
+		}*/
 
 		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("ConvertAudits")) {
@@ -6898,7 +6896,7 @@ public class Main {
 		throw new Exception("Failed to find suitable service ID for publisher [" + publisherConfigName + "]");
 	}
 
-	private static void convertFhirAudits2(String publisherConfigName, String tempTable, int threads, int batchSize, boolean testMode) throws Exception {
+	/*private static void convertFhirAudits2(String publisherConfigName, String tempTable, int threads, int batchSize, boolean testMode) throws Exception {
 		LOG.info("Converting FHIR audit for " + publisherConfigName);
 		try {
 			//find a suitable service ID
@@ -7059,7 +7057,7 @@ public class Main {
 		} else if (cause instanceof Error) {
 			throw (Error)cause;
 		}
-	}
+	}*/
 
 	static class ConvertFhirAuditCallable implements Callable {
 
