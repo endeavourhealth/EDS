@@ -9,8 +9,6 @@ import org.apache.commons.io.FilenameUtils;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.common.utility.FileHelper;
-import org.endeavourhealth.common.utility.ThreadPool;
-import org.endeavourhealth.common.utility.ThreadPoolError;
 import org.endeavourhealth.core.configuration.ConfigDeserialiser;
 import org.endeavourhealth.core.configuration.PostMessageToExchangeConfig;
 import org.endeavourhealth.core.configuration.QueueReaderConfiguration;
@@ -47,6 +45,11 @@ import org.endeavourhealth.core.messaging.pipeline.components.OpenEnvelope;
 import org.endeavourhealth.core.messaging.pipeline.components.PostMessageToExchange;
 import org.endeavourhealth.core.queueing.QueueHelper;
 import org.endeavourhealth.core.xml.QueryDocument.*;
+import org.endeavourhealth.core.xml.TransformErrorSerializer;
+import org.endeavourhealth.core.xml.transformError.Arg;
+import org.endeavourhealth.core.xml.transformError.Error;
+import org.endeavourhealth.core.xml.transformError.ExceptionLine;
+import org.endeavourhealth.core.xml.transformError.TransformError;
 import org.endeavourhealth.transform.common.*;
 import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
 import org.endeavourhealth.transform.subscriber.targetTables.OutputContainer;
@@ -101,6 +104,12 @@ public class Main {
 		}*/
 
 		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("FindEmisMissingCodes")) {
+			findEmisMissingCodes();
+			System.exit(0);
+		}
+
+		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("FixTppStaffBulks")) {
 			boolean testMode = Boolean.parseBoolean(args[1]);
 			String odsCodeRegex = null;
@@ -133,7 +142,8 @@ public class Main {
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("SendPatientsToSubscriber")) {
 			String tableName = args[1];
-			sendPatientsToSubscriber(tableName);
+			String reason = args[2];
+			sendPatientsToSubscriber(tableName, reason);
 			System.exit(0);
 		}
 
@@ -262,7 +272,8 @@ public class Main {
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("TransformPatients")) {
 			String sourceFile = args[1];
-			transformPatients(sourceFile);
+			String reason = args[2];
+			transformPatients(sourceFile, reason);
 			System.exit(0);
 		}
 
@@ -294,7 +305,7 @@ public class Main {
 			System.exit(0);
 		}
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("ConvertAudits2")) {
 			String configName = args[1];
 			String tempTable = args[2];
@@ -303,7 +314,7 @@ public class Main {
 			boolean testMode = Boolean.parseBoolean(args[5]);
 			convertFhirAudits2(configName, tempTable, threads, batchSize, testMode);
 			System.exit(0);
-		}
+		}*/
 
 		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("ConvertAudits")) {
@@ -930,6 +941,172 @@ public class Main {
 		LOG.info("EDS Queue reader running (kill file location " + TransformConfig.instance().getKillFileLocation() + ")");
 	}
 
+	private static void findEmisMissingCodes() {
+		LOG.info("Finding Emis Missing Codes");
+		try {
+
+			ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
+			ServiceDalI serviceRepository = DalProvider.factoryServiceDal();
+
+			List<ExchangeTransformErrorState> errors = exchangeDal.getAllErrorStates();
+
+			List<String> missingCodeLines = new ArrayList<>();
+			List<String> missingDrugLines = new ArrayList<>();
+			List<String> otherLines = new ArrayList<>();
+
+			for (ExchangeTransformErrorState error: errors) {
+				UUID serviceId = error.getServiceId();
+				List<UUID> exchangeIds = error.getExchangeIdsInError();
+				UUID exchangeId = exchangeIds.get(0);
+				UUID systemId = error.getSystemId();
+
+				Service service = serviceRepository.getById(serviceId);
+
+				Exchange exchange = exchangeDal.getExchange(exchangeId);
+				String exchangeDateStr = exchange.getHeader(HeaderKeys.DataDate);
+
+				ExchangeTransformAudit transformAudit = exchangeDal.getMostRecentExchangeTransform(serviceId, systemId, exchangeId);
+				List<String> lines = formatTransformAuditErrorLines(transformAudit);
+
+				String drugId = null;
+				String codeId = null;
+
+				for (String line: lines) {
+					if (line.contains("Failed to find drug code for codeId")) {
+						String[] toks = line.split(" ");
+						drugId = toks[toks.length-1];
+						break;
+
+					} else if (line.contains("Failed to find clinical code for codeId")) {
+						String[] toks = line.split(" ");
+						codeId = toks[toks.length-1];
+						break;
+
+					}
+				}
+
+				String name = service.getName();
+				String ods = service.getLocalId();
+
+				String tagStr = "";
+				if (service.getTags() != null) {
+					List<String> tagKeys = new ArrayList<>(service.getTags().keySet());
+					tagKeys.sort(((o1, o2) -> o1.compareToIgnoreCase(o2)));
+
+					for (String tagKey: tagKeys) {
+						if (!tagStr.isEmpty()) {
+							tagStr += ", ";
+						}
+						tagStr += tagKey;
+						String tagVal = service.getTags().get(tagKey);
+						if (!Strings.isNullOrEmpty(tagVal)) {
+							tagStr += " ";
+							tagStr += tagVal;
+						}
+					}
+				}
+
+				if (drugId != null) {
+					missingDrugLines.add("\"" + name + "\",\"" + ods + "\",\"" + tagStr + "\",\"" + exchangeDateStr + "\",\"" + drugId + "\"");
+
+				} else if (codeId != null) {
+					missingCodeLines.add("\"" + name + "\",\"" + ods + "\",\"" + tagStr + "\",\"" + exchangeDateStr + "\",\"" + codeId + "\"");
+
+				} else {
+					otherLines.add("\"" + name + "\",\"" + ods + "\",\"" + tagStr + "\"");
+				}
+			}
+
+			System.out.println("Missing drugs");
+			for (String line: missingDrugLines) {
+				System.out.println(line);
+			}
+
+			System.out.println("");
+			System.out.println("");
+			System.out.println("Missing codes");
+			for (String line: missingCodeLines) {
+				System.out.println(line);
+			}
+
+			System.out.println("");
+			System.out.println("");
+			System.out.println("Others");
+			for (String line: otherLines) {
+				System.out.println(line);
+			}
+
+			LOG.info("Finished Finding Emis Missing Codes");
+		} catch (Throwable t) {
+			LOG.error("", t);
+		}
+	}
+
+	private static List<String> formatTransformAuditErrorLines(ExchangeTransformAudit transformAudit) throws Exception {
+
+		//until we need something more powerful, I'm displaying the errors just as a string, to
+		//save sending complex JSON objects back to the client
+		List<String> lines = new ArrayList<>();
+
+		if (Strings.isNullOrEmpty(transformAudit.getErrorXml())) {
+			return lines;
+		}
+
+		TransformError errors = TransformErrorSerializer.readFromXml(transformAudit.getErrorXml());
+
+		for (Error error : errors.getError()) {
+
+			//the error will only be null for older errors, from before the field was introduced
+			if (error.getDatetime() != null) {
+				Calendar calendar = error.getDatetime().toGregorianCalendar();
+				SimpleDateFormat formatter = new SimpleDateFormat("yyyy/MM/dd HH:mm");
+				formatter.setTimeZone(calendar.getTimeZone());
+				String dateString = formatter.format(calendar.getTime());
+				lines.add(dateString);
+			}
+
+			for (Arg arg : error.getArg()) {
+				String argName = arg.getName();
+				String argValue = arg.getValue();
+				if (argValue != null) {
+					lines.add(argName + " = " + argValue);
+				} else {
+					lines.add(argName);
+				}
+			}
+			lines.add("");
+
+			org.endeavourhealth.core.xml.transformError.Exception exception = error.getException();
+			while (exception != null) {
+
+				if (exception.getMessage() != null) {
+					lines.add(exception.getMessage());
+				}
+
+				for (ExceptionLine line : exception.getLine()) {
+					String cls = line.getClazz();
+					String method = line.getMethod();
+					Integer lineNumber = line.getLine();
+
+					lines.add("\u00a0\u00a0\u00a0\u00a0at " + cls + "." + method + ":" + lineNumber);
+
+					//lines.add("&nbsp;&nbsp;&nbsp;&nbsp;at " + cls + "." + method + ":" + lineNumber);
+				}
+
+				exception = exception.getCause();
+				if (exception != null) {
+					lines.add("Caused by:");
+				}
+			}
+
+			//add some space between the separate errors in the audit
+			lines.add("");
+			lines.add("------------------------------------------------------------------------");
+		}
+
+		return lines;
+	}
+
 	private static void fixTppStaffBulks(boolean testMode, String odsCodeRegex) {
 		LOG.info("Fixing TPP Staff Bulks using testMode " + testMode + " and regex " + odsCodeRegex);
 		try {
@@ -1137,7 +1314,7 @@ public class Main {
 		}
 	}
 
-	private static void sendPatientsToSubscriber(String tableName) {
+	private static void sendPatientsToSubscriber(String tableName, String reason) {
 		LOG.info("Sending patients to subscriber from " + tableName);
 		try {
 
@@ -1167,7 +1344,7 @@ public class Main {
 					//send any found previously
 					if (!batchPatientIds.isEmpty()) {
 						LOG.debug("Doing batch of " + batchPatientIds.size() + " for service " + batchServiceId + " and protocol " + batchProtocolId);
-						QueueHelper.queueUpFullServiceForPopulatingSubscriber(batchServiceId, batchProtocolId, batchPatientIds);
+						QueueHelper.queueUpFullServiceForPopulatingSubscriber(batchServiceId, batchProtocolId, batchPatientIds, reason);
 					}
 
 					batchServiceId = serviceId;
@@ -1181,7 +1358,7 @@ public class Main {
 			//do the remainder
 			if (!batchPatientIds.isEmpty()) {
 				LOG.debug("Doing batch of " + batchPatientIds.size() + " for service " + batchServiceId + " and protocol " + batchProtocolId);
-				QueueHelper.queueUpFullServiceForPopulatingSubscriber(batchServiceId, batchProtocolId, batchPatientIds);
+				QueueHelper.queueUpFullServiceForPopulatingSubscriber(batchServiceId, batchProtocolId, batchPatientIds, reason);
 			}
 
 			conn.close();
@@ -4608,7 +4785,7 @@ public class Main {
 		}
 	}*/
 
-	private static void transformPatients(String sourceFile) {
+	private static void transformPatients(String sourceFile, String reason) {
 		LOG.info("Transforming patients from " + sourceFile);
 		try {
 			List<UUID> patientIds = new ArrayList<>();
@@ -4635,7 +4812,7 @@ public class Main {
 			}
 			LOG.info("Found " + patientIds.size() + " patient IDs");
 
-			QueueHelper.queueUpPatientsForTransform(patientIds);
+			QueueHelper.queueUpPatientsForTransform(patientIds, reason);
 
 			LOG.info("Finished transforming patients from " + sourceFile);
 		} catch (Throwable t) {
@@ -6720,7 +6897,7 @@ public class Main {
 		throw new Exception("Failed to find suitable service ID for publisher [" + publisherConfigName + "]");
 	}
 
-	private static void convertFhirAudits2(String publisherConfigName, String tempTable, int threads, int batchSize, boolean testMode) throws Exception {
+	/*private static void convertFhirAudits2(String publisherConfigName, String tempTable, int threads, int batchSize, boolean testMode) throws Exception {
 		LOG.info("Converting FHIR audit for " + publisherConfigName);
 		try {
 			//find a suitable service ID
@@ -6881,7 +7058,7 @@ public class Main {
 		} else if (cause instanceof Error) {
 			throw (Error)cause;
 		}
-	}
+	}*/
 
 	static class ConvertFhirAuditCallable implements Callable {
 
