@@ -273,6 +273,11 @@ public class SftpReaderEndpoint extends AbstractEndpoint {
                 int col = 1;
                 String instanceName = rs.getString(col++);
 
+                //configurations that are no longer in use are assigned to a special instance name
+                if (instanceName.equals("NOT_USED")) {
+                    continue;
+                }
+
                 ObjectNode obj = root.addObject();
                 obj.put("name", instanceName);
             }
@@ -337,12 +342,14 @@ public class SftpReaderEndpoint extends AbstractEndpoint {
                     //include all
 
                 } else if (filterInstanceName.equals("active")) {
-                    if (Strings.isNullOrEmpty(instanceName)) {
+                    if (Strings.isNullOrEmpty(instanceName)
+                            || instanceName.equals("NOT_USED")) {
                         continue;
                     }
 
                 } else if (filterInstanceName.equals("inactive")) {
-                    if (!Strings.isNullOrEmpty(instanceName)) {
+                    if (!Strings.isNullOrEmpty(instanceName)
+                            && !instanceName.equals("NOT_USED")) {
                         continue;
                     }
 
