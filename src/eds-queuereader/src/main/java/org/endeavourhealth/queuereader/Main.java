@@ -961,7 +961,11 @@ public class Main {
 				Service service = serviceRepository.getById(serviceId);
 
 				Exchange exchange = exchangeDal.getExchange(exchangeId);
-				String exchangeDateStr = exchange.getHeader(HeaderKeys.DataDate);
+				Date exchangeDate = exchange.getHeaderAsDate(HeaderKeys.DataDate);
+				String exchangeDateStr = "";
+				if (exchangeDate != null) {
+					exchangeDateStr = new SimpleDateFormat("yyyy-MM-dd").format(exchangeDate);
+				}
 
 				ExchangeTransformAudit transformAudit = exchangeDal.getMostRecentExchangeTransform(serviceId, systemId, exchangeId);
 				List<String> lines = formatTransformAuditErrorLines(transformAudit);
@@ -984,6 +988,8 @@ public class Main {
 				}
 
 				String name = service.getName();
+				name = name.replace(",", "");
+
 				String ods = service.getLocalId();
 
 				String tagStr = "";
@@ -993,7 +999,8 @@ public class Main {
 
 					for (String tagKey: tagKeys) {
 						if (tagKey.equals("Error")
-								|| tagKey.equals("Bulk received")) {
+								|| tagKey.equals("Bulk received")
+								|| tagKey.equals("Notes")) {
 							continue;
 						}
 
