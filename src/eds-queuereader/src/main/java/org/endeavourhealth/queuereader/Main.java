@@ -88,7 +88,11 @@ public class Main {
 
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("FindEmisMissingCodes")) {
-			findEmisMissingCodes();
+			String ccgCodeRegex = null;
+			if (args.length > 1) {
+				ccgCodeRegex = args[1];
+			}
+			findEmisMissingCodes(ccgCodeRegex);
 			System.exit(0);
 		}
 
@@ -939,7 +943,7 @@ public class Main {
 	}
 
 
-	private static void findEmisMissingCodes() {
+	private static void findEmisMissingCodes(String ccgCodeRegex) {
 		LOG.info("Finding Emis Missing Codes");
 		try {
 
@@ -949,7 +953,11 @@ public class Main {
 			List<ExchangeTransformErrorState> errors = exchangeDal.getAllErrorStates();
 
 			List<String> missingCodeLines = new ArrayList<>();
+			missingCodeLines.add("\"Name\",\"ODS Code\",\"CDB/Comments\",\"Date Used\",\"Code ID\"");
+
 			List<String> missingDrugLines = new ArrayList<>();
+			missingDrugLines.add("\"Name\",\"ODS Code\",\"CDB/Comments\",\"Date Used\",\"Code ID\"");
+
 			List<String> otherLines = new ArrayList<>();
 
 			for (ExchangeTransformErrorState error: errors) {
@@ -959,6 +967,12 @@ public class Main {
 				UUID systemId = error.getSystemId();
 
 				Service service = serviceRepository.getById(serviceId);
+
+				String ccgCode = service.getCcgCode();
+				if (!Strings.isNullOrEmpty(ccgCodeRegex)
+					&& !Pattern.matches(ccgCodeRegex, ccgCode)) {
+					continue;
+				}
 
 				Exchange exchange = exchangeDal.getExchange(exchangeId);
 				Date exchangeDate = exchange.getHeaderAsDate(HeaderKeys.DataDate);
