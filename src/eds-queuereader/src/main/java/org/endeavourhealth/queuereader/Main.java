@@ -79,12 +79,17 @@ import java.util.regex.Pattern;
 public class Main {
 	private static final Logger LOG = LoggerFactory.getLogger(Main.class);
 
-
 	public static void main(String[] args) throws Exception {
 
 		String configId = args[0];
 		LOG.info("Initialising config manager");
 		ConfigManager.initialize("queuereader", configId);
+
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("FindOutOfOrderTppServices")) {
+			SpecialRoutines.findOutOfOrderTppServices();
+			System.exit(0);
+		}
 
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("FindEmisMissingCodes")) {
@@ -145,7 +150,8 @@ public class Main {
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("SendPatientsToSubscriber")) {
 			String tableName = args[1];
-			sendPatientsToSubscriber(tableName);
+			String reason = args[2];
+			sendPatientsToSubscriber(tableName, reason);
 			System.exit(0);
 		}
 
@@ -274,7 +280,8 @@ public class Main {
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("TransformPatients")) {
 			String sourceFile = args[1];
-			transformPatients(sourceFile);
+			String reason = args[2];
+			transformPatients(sourceFile, reason);
 			System.exit(0);
 		}
 
@@ -1339,7 +1346,7 @@ public class Main {
 		}
 	}
 
-	private static void sendPatientsToSubscriber(String tableName) {
+	private static void sendPatientsToSubscriber(String tableName, String reason) {
 		LOG.info("Sending patients to subscriber from " + tableName);
 		try {
 
@@ -1369,7 +1376,7 @@ public class Main {
 					//send any found previously
 					if (!batchPatientIds.isEmpty()) {
 						LOG.debug("Doing batch of " + batchPatientIds.size() + " for service " + batchServiceId + " and protocol " + batchProtocolId);
-						QueueHelper.queueUpFullServiceForPopulatingSubscriber(batchServiceId, batchProtocolId, batchPatientIds);
+						QueueHelper.queueUpFullServiceForPopulatingSubscriber(batchServiceId, batchProtocolId, batchPatientIds, reason);
 					}
 
 					batchServiceId = serviceId;
@@ -1383,7 +1390,7 @@ public class Main {
 			//do the remainder
 			if (!batchPatientIds.isEmpty()) {
 				LOG.debug("Doing batch of " + batchPatientIds.size() + " for service " + batchServiceId + " and protocol " + batchProtocolId);
-				QueueHelper.queueUpFullServiceForPopulatingSubscriber(batchServiceId, batchProtocolId, batchPatientIds);
+				QueueHelper.queueUpFullServiceForPopulatingSubscriber(batchServiceId, batchProtocolId, batchPatientIds, reason);
 			}
 
 			conn.close();
@@ -4810,7 +4817,7 @@ public class Main {
 		}
 	}*/
 
-	private static void transformPatients(String sourceFile) {
+	private static void transformPatients(String sourceFile, String reason) {
 		LOG.info("Transforming patients from " + sourceFile);
 		try {
 			List<UUID> patientIds = new ArrayList<>();
@@ -4837,7 +4844,7 @@ public class Main {
 			}
 			LOG.info("Found " + patientIds.size() + " patient IDs");
 
-			QueueHelper.queueUpPatientsForTransform(patientIds);
+			QueueHelper.queueUpPatientsForTransform(patientIds, reason);
 
 			LOG.info("Finished transforming patients from " + sourceFile);
 		} catch (Throwable t) {

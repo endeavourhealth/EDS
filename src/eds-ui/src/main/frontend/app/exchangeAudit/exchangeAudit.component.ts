@@ -589,4 +589,10 @@ export class ExchangeAuditComponent {
 		}
 		return vm.cachedTagStr
 	}
+
+	isBulk(exchange: Exchange): boolean {
+		var headers = exchange.headers;
+		return headers.hasOwnProperty('IsBulk')
+			&& headers['IsBulk'];
+	}
 }

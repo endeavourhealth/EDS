@@ -1,13 +1,15 @@
 package org.endeavourhealth.core.messaging.pipeline.components;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import org.endeavourhealth.common.cache.ObjectMapperPool;
+import org.endeavourhealth.common.utility.SlackHelper;
 import org.endeavourhealth.core.configuration.DetermineRelevantProtocolIdsConfig;
 import org.endeavourhealth.core.database.dal.DalProvider;
 import org.endeavourhealth.core.database.dal.admin.LibraryRepositoryHelper;
 import org.endeavourhealth.core.database.dal.audit.ExchangeProtocolErrorDalI;
 import org.endeavourhealth.core.database.dal.audit.models.Exchange;
 import org.endeavourhealth.core.database.dal.audit.models.HeaderKeys;
+import org.endeavourhealth.core.database.dal.usermanager.caching.DataSharingAgreementCache;
+import org.endeavourhealth.core.database.dal.usermanager.caching.OrganisationCache;
+import org.endeavourhealth.core.database.rdbms.datasharingmanager.models.DataSharingAgreementEntity;
 import org.endeavourhealth.core.messaging.pipeline.PipelineComponent;
 import org.endeavourhealth.core.messaging.pipeline.PipelineException;
 import org.endeavourhealth.core.xml.QueryDocument.*;
@@ -17,7 +19,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 public class DetermineRelevantProtocolIds extends PipelineComponent {
 	private static final Logger LOG = LoggerFactory.getLogger(DetermineRelevantProtocolIds.class);
@@ -31,89 +32,75 @@ public class DetermineRelevantProtocolIds extends PipelineComponent {
 
 	@Override
 	public void process(Exchange exchange) throws PipelineException {
-		String serviceUuid = exchange.getHeader(HeaderKeys.SenderServiceUuid);
-		String systemUuid = exchange.getHeader(HeaderKeys.SenderSystemUuid);
 
-		String json = getProtocolIdsForPublisherService(serviceUuid, systemUuid, exchange.getId());
-		exchange.setHeader(HeaderKeys.ProtocolIds, json);
-
-		//commit what we've just received to the DB
 		try {
+			//DDS-UI approach
+			String serviceUuid = exchange.getHeader(HeaderKeys.SenderServiceUuid);
+			List<String> protocolIdsOldWay = getProtocolIdsForPublisherServiceOldWay(serviceUuid);
+			exchange.setHeaderAsStringList(HeaderKeys.ProtocolIds, protocolIdsOldWay);
+			boolean hasDpaOldWay = !protocolIdsOldWay.isEmpty(); //in the old way, we count as having a DPA if they're in any protocol
+
+			//DSM approach
+			String odsCode = exchange.getHeader(HeaderKeys.SenderLocalIdentifier);
+			List<String> sharingAgreementIdsNewWay = getSharingAgreementIdsNewWay(odsCode);
+			exchange.setHeaderAsStringList(HeaderKeys.SharingAgreementIds, sharingAgreementIdsNewWay);
+			boolean hasDpaNewWay = OrganisationCache.doesOrganisationHaveDPA(odsCode);
+
+			//compare DSM and DDS-UI protocols to make sure nothing is configured wrong
+			if (hasDpaNewWay != hasDpaOldWay) {
+				String msg = "Difference between DSM processing agreement and DDS-UI protocols for " + odsCode + "\r\n"
+						+ "DSM DPA = " + hasDpaNewWay
+						+ "DDS-UI = " + hasDpaOldWay;
+				SlackHelper.sendSlackMessage(SlackHelper.Channel.QueueReaderAlerts, msg);
+			}
+
+			if (!hasDpaOldWay) {
+				errorDal.save(exchange.getId());
+				throw new PipelineException("No publisher protocols found for service " + serviceUuid);
+			}
+
 			AuditWriter.writeExchange(exchange);
+
+		} catch (PipelineException pe) {
+			//if we get a pipeline exception, just throw as is
+			throw pe;
+
 		} catch (Exception ex) {
-			throw new PipelineException("Failed write exchange " + exchange.getId() + " to database", ex);
+			//if we get any other type of exception, it needs to be re-packaged
+			throw new PipelineException("Error processing exchange " + exchange.getId(), ex);
 		}
 
-		LOG.debug("Data distribution protocols identified");
+		//LOG.debug("Data distribution protocols identified");
 	}
 
-	public static String getProtocolIdsForPublisherService(String serviceUuid, String systemUuid, UUID exchangeId) throws PipelineException {
+	private List<String> getSharingAgreementIdsNewWay(String odsCode) throws Exception {
+
+		List<String> ret = new ArrayList<>();
+
+		List<DataSharingAgreementEntity> sharingAgreements = DataSharingAgreementCache.getAllDSAsForPublisherOrg(odsCode);
+		for (DataSharingAgreementEntity sharingAgreement: sharingAgreements) {
+			String id = sharingAgreement.getUuid();
+			ret.add(id);
+		}
+
+		return ret;
+	}
+
+	public static List<String> getProtocolIdsForPublisherServiceOldWay(String serviceUuid) throws PipelineException {
 
 		//find all protocols where our service is an active publisher
-		//LOG.debug("Getting protocols for service " + serviceUuid);
-		List<LibraryItem> protocolsForService = getProtocolsForPublisherService(serviceUuid);
-		//LOG.debug("Found " + protocolsForService.size() + " protocols for service " + serviceUuid);
+		List<LibraryItem> protocolsForService = getProtocolsForPublisherServiceOldWay(serviceUuid);
 
-		if (protocolsForService.isEmpty()) {
-			saveProtocolError(exchangeId);
-			throw new PipelineException("No publisher protocols found for service " + serviceUuid);
-		}
-
-		//the above list of protocols is filtered by service only and NOT system, as we don't want to filter
-		//by system on outbound transforms (e.g. FHIR->subscriber DB). But we do want to validate on system
-		//before inbound transforms
-		List<LibraryItem> protocolsForServiceAndSystem = new ArrayList<>();
-
+		List<String> protocolIds = new ArrayList<>();
 		for (LibraryItem libraryItem: protocolsForService) {
-			Protocol protocol = libraryItem.getProtocol();
-			for (ServiceContract serviceContract : protocol.getServiceContract()) {
-				if (serviceContract.getType().equals(ServiceContractType.PUBLISHER)
-						&& serviceContract.getService().getUuid().equals(serviceUuid)
-						&& serviceContract.getSystem().getUuid().equals(systemUuid)
-						&& serviceContract.getActive() == ServiceContractActive.TRUE) { //added missing check
-
-					protocolsForServiceAndSystem.add(libraryItem);
-					break;
-				}
-			}
+			protocolIds.add(libraryItem.getUuid());
 		}
-
-		//if there's no protocol covering our service AND system as a publisher, then that's an error
-		//LOG.debug("Found " + protocolsForServiceAndSystem.size() + " protocols for service " + serviceUuid + " and system " + systemUuid);
-		if (protocolsForServiceAndSystem.isEmpty()) {
-			saveProtocolError(exchangeId);
-			throw new PipelineException("No publisher protocols found for service " + serviceUuid + " and system " + systemUuid);
-		}
-
-		//return the list of protocols for our service ONLY. When sending to subscribers, the feed can't be filtered by
-		//system. Even if a subscriber protocol is set up just to take a specific system from this service,
-		//we actually want to include all systems, otherwise the feed is incomplete.
-		try {
-			List<String> protocolIds = new ArrayList<>();
-			for (LibraryItem libraryItem: protocolsForService) {
-				protocolIds.add(libraryItem.getUuid());
-			}
-			String json = ObjectMapperPool.getInstance().writeValueAsString(protocolIds.toArray());
-			//LOG.debug("Returning " + json + " for service " + serviceUuid);
-			return json;
-
-		} catch (JsonProcessingException e) {
-			LOG.error("Unable to serialize protocols to JSON");
-			throw new PipelineException(e.getMessage(), e);
-		}
+		return protocolIds;
 
 	}
 
-	private static void saveProtocolError(UUID exchangeId) throws PipelineException {
 
-		try {
-			errorDal.save(exchangeId);
-		} catch (Exception e) {
-			throw new PipelineException("Error saving exchange protocol error for exchange " + exchangeId);
-		}
-	}
-
-	private static List<LibraryItem> getProtocolsForPublisherService(String serviceUuid) throws PipelineException {
+	private static List<LibraryItem> getProtocolsForPublisherServiceOldWay(String serviceUuid) throws PipelineException {
 
 		try {
 			List<LibraryItem> ret = new ArrayList<>();

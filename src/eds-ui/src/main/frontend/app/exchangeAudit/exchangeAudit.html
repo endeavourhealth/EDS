@@ -101,7 +101,7 @@
                                         <span [ngStyle]="getCellColour(exchange)">
                                             {{exchange.exchangeSizeDesc}}
                                         </span>
-
+                                        <span class="fa fa-plus-circle" *ngIf="isBulk(exchange)" ngbTooltip="Bulk extract"></span>
                                     </td>
                                     <td>
                                         <div *ngIf="exchange.inError">

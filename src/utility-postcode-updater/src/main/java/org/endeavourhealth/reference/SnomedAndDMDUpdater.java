@@ -44,6 +44,10 @@ public class SnomedAndDMDUpdater {
     /**
      * updates the snomed_lookup and snomed_description_link reference tables from TRUD files
      *
+     * example file names:
+     * uk_sct2cl_28.0.0_20191001000001.zip <- snomed release
+     * uk_sct2dr_28.2.0_20191030000001.zip <- drug extensions (i.e. DM+D)
+     *
      * Usage
      * =================================================================================
      * 1. Download the latest Snomed or DM+D release from TRUD (if using the latest delta extract, be sure we've not missed any other deltas, otherwise use the full extract)

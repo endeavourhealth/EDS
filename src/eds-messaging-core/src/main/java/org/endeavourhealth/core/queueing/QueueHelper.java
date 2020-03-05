@@ -54,14 +54,14 @@ public class QueueHelper {
             return;
         }
 
-        String newProtocolIdsJson = null;
+        String[] newProtocolIds = null;
         if (recalculateProtocols) {
             UUID firstExchangeId = exchangeIds.get(0);
             Exchange firstExchange = AuditWriter.readExchange(firstExchangeId);
             String serviceUuid = firstExchange.getHeader(HeaderKeys.SenderServiceUuid);
-            String systemUuid = firstExchange.getHeader(HeaderKeys.SenderSystemUuid);
 
-            newProtocolIdsJson = DetermineRelevantProtocolIds.getProtocolIdsForPublisherService(serviceUuid, systemUuid, firstExchangeId);
+            List<String> protocolIdsOldWay = DetermineRelevantProtocolIds.getProtocolIdsForPublisherServiceOldWay(serviceUuid);
+            newProtocolIds = protocolIdsOldWay.toArray(new String[]{});
         }
 
         for (int i=0; i<exchangeIds.size(); i++) {
@@ -80,26 +80,14 @@ public class QueueHelper {
 
             //to make sure the latest setup applies, re-calculate the protocols that apply to this exchange
             if (recalculateProtocols) {
-                String oldProtocolIdsJson = exchange.getHeader(HeaderKeys.ProtocolIds);
-                if (!newProtocolIdsJson.equals(oldProtocolIdsJson)) {
-                    exchange.setHeader(HeaderKeys.ProtocolIds, newProtocolIdsJson);
+                String[] oldProtocolIds = exchange.getHeaderAsStringArray(HeaderKeys.ProtocolIds);
+                if (oldProtocolIds == null || !Arrays.equals(newProtocolIds, oldProtocolIds)) {
+                    exchange.setHeaderAsStringArray(HeaderKeys.ProtocolIds, newProtocolIds);
                     AuditWriter.writeExchange(exchange);
                 }
             }
 
-            String[] protocolIds = null;
-            try {
-                protocolIds = exchange.getHeaderAsStringArray(HeaderKeys.ProtocolIds);
-            } catch (Exception ex) {
-                //if an exchange has no valid protocols, then don't let it go into the queue.
-                //If a publishing service isn't in a protocol, then whenever the SFTP Reader tries to post data for it,
-                //it'll still create the exchange, but without any protocols. So we don't want these exchanges
-                //then accidentally going into the inbound queues.
-                LOG.debug("Skipping exchange " + exchangeId + " as it has no publisher protocol ID");
-
-                AuditWriter.writeExchangeEvent(exchange, "Not re-queuing into " + exchangeName + " because no protocols found");
-                continue;
-            }
+            String[] protocolIds = exchange.getHeaderAsStringArray(HeaderKeys.ProtocolIds);
 
             //if we want to restrict the protocols applied (e.g. only want to populate a specific subscriber)
             //then filter the protocols in the header
@@ -372,10 +360,10 @@ public class QueueHelper {
         PatientSearchDalI patientSearchDal = DalProvider.factoryPatientSearchDal();
         List<UUID> patientUuids = patientSearchDal.getPatientIds(serviceId);
 
-        queueUpFullServiceForPopulatingSubscriber(serviceId, specificProtocolId, patientUuids);
+        queueUpFullServiceForPopulatingSubscriber(serviceId, specificProtocolId, patientUuids, "Full load of all patients");
     }
 
-    public static void queueUpFullServiceForPopulatingSubscriber(UUID serviceId, UUID specificProtocolId, List<UUID> patientUuids) throws Exception {
+    public static void queueUpFullServiceForPopulatingSubscriber(UUID serviceId, UUID specificProtocolId, List<UUID> patientUuids, String reason) throws Exception {
 
         ServiceDalI serviceDal = DalProvider.factoryServiceDal();
         Service service = serviceDal.getById(serviceId);
@@ -411,9 +399,14 @@ public class QueueHelper {
             exchange.setServiceId(serviceId);
             exchange.setSystemId(systemId);
 
+            String eventDesc = "Manually created exchange to populate subscribers in protocol " + protocol.getName();
+            if (!Strings.isNullOrEmpty(reason)) {
+                eventDesc += " (" + reason + ")";
+            }
+
             //LOG.info("Saving exchange");
             AuditWriter.writeExchange(exchange);
-            AuditWriter.writeExchangeEvent(exchange, "Manually created exchange to populate subscribers in protocol " + protocol.getName());
+            AuditWriter.writeExchangeEvent(exchange, eventDesc);
 
             //for audit purposes, we create an exchange per systemId, but only need to post one to Rabbit to do the work
             if (!postedToRabbit) {
@@ -562,7 +555,7 @@ public class QueueHelper {
     /**
      * takes a list of patient IDs and groups them by service and queues them up for all relevant subscriber transforms
      */
-    public static void queueUpPatientsForTransform(List<UUID> patientIds) throws Exception {
+    public static void queueUpPatientsForTransform(List<UUID> patientIds, String reason) throws Exception {
 
         //find service for each one
         Map<UUID, List<UUID>> hmPatientByService = new HashMap<>();
@@ -623,7 +616,7 @@ public class QueueHelper {
 
                 //for each protocol, create exchange and exchange batches and post to protocol queue
                 UUID protocolUuid = UUID.fromString(libraryItem.getUuid());
-                queueUpFullServiceForPopulatingSubscriber(serviceId, protocolUuid, patientIdsForService);
+                queueUpFullServiceForPopulatingSubscriber(serviceId, protocolUuid, patientIdsForService, reason);
             }
         }
     }

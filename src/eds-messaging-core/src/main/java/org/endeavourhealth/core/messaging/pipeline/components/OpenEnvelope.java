@@ -2,24 +2,25 @@ package org.endeavourhealth.core.messaging.pipeline.components;
 
 import com.google.common.base.Strings;
 import org.endeavourhealth.common.cache.ParserPool;
+import org.endeavourhealth.common.fhir.schema.OrganisationType;
+import org.endeavourhealth.common.ods.OdsOrganisation;
+import org.endeavourhealth.common.ods.OdsWebService;
+import org.endeavourhealth.common.utility.SlackHelper;
 import org.endeavourhealth.core.configuration.OpenEnvelopeConfig;
 import org.endeavourhealth.core.database.dal.DalProvider;
-import org.endeavourhealth.core.database.dal.admin.LibraryDalI;
 import org.endeavourhealth.core.database.dal.admin.ServiceDalI;
-import org.endeavourhealth.core.database.dal.admin.models.ActiveItem;
-import org.endeavourhealth.core.database.dal.admin.models.Item;
+import org.endeavourhealth.core.database.dal.admin.SystemHelper;
 import org.endeavourhealth.core.database.dal.admin.models.Service;
 import org.endeavourhealth.core.database.dal.audit.ExchangeDalI;
 import org.endeavourhealth.core.database.dal.audit.models.Exchange;
 import org.endeavourhealth.core.database.dal.audit.models.HeaderKeys;
 import org.endeavourhealth.core.database.dal.audit.models.LastDataReceived;
+import org.endeavourhealth.core.database.dal.usermanager.caching.OrganisationCache;
 import org.endeavourhealth.core.fhirStorage.ServiceInterfaceEndpoint;
 import org.endeavourhealth.core.messaging.pipeline.PipelineComponent;
 import org.endeavourhealth.core.messaging.pipeline.PipelineException;
-import org.endeavourhealth.core.xml.QueryDocument.LibraryItem;
 import org.endeavourhealth.core.xml.QueryDocument.System;
 import org.endeavourhealth.core.xml.QueryDocument.TechnicalInterface;
-import org.endeavourhealth.core.xml.QueryDocumentSerializer;
 import org.endeavourhealth.transform.common.AuditWriter;
 import org.endeavourhealth.transform.common.MessageFormat;
 import org.hl7.fhir.instance.model.Binary;
@@ -31,16 +32,16 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.UUID;
-import java.util.regex.Pattern;
+import java.util.*;
 
 public class OpenEnvelope extends PipelineComponent {
 	private static final Logger LOG = LoggerFactory.getLogger(OpenEnvelope.class);
 
+	private static final String TAG_BULK = "Bulk";
+
 	private OpenEnvelopeConfig config;
+
+	private static ServiceDalI serviceDal = DalProvider.factoryServiceDal();
 
 	public OpenEnvelope(OpenEnvelopeConfig config) {
 		this.config = config;
@@ -76,7 +77,8 @@ public class OpenEnvelope extends PipelineComponent {
 
 			processHeader(exchange, messageHeader);
 			processBody(exchange, binary);
-			calculateLastDate(exchange); //work out when the data was from
+			calculateLastDataDate(exchange); //work out when the data was from
+			populateBulkTag(exchange);
 
 			//commit what we've just received to the DB
 			AuditWriter.writeExchange(exchange);
@@ -88,7 +90,41 @@ public class OpenEnvelope extends PipelineComponent {
 		LOG.debug("Message envelope processed");
 	}
 
-	private void calculateLastDate(Exchange exchange) throws PipelineException {
+	/**
+	 * if the exchange is flagged as a bulk, then populate the tag on the service
+     */
+	private void populateBulkTag(Exchange exchange) throws Exception {
+		Boolean isBulk = exchange.getHeaderAsBoolean(HeaderKeys.IsBulk);
+		if (isBulk == null
+				|| !isBulk.booleanValue()) {
+			return;
+		}
+
+		UUID serviceId = exchange.getServiceId();
+		Service service = serviceDal.getById(serviceId);
+
+		Map<String, String> tags = service.getTags();
+		if (tags == null) {
+			tags = new HashMap<>();
+		}
+
+		//if this is another bulk, don't bother updating the service again
+		if (tags.containsKey(TAG_BULK)) {
+			return;
+		}
+
+		Date dataData = exchange.getHeaderAsDate(HeaderKeys.DataDate);
+		if (dataData == null) {
+			tags.put(TAG_BULK, "Exchange " + exchange.getId());
+		} else {
+			tags.put(TAG_BULK, new SimpleDateFormat("yyyy-MM-dd").format(dataData));
+		}
+
+		service.setTags(tags);
+		serviceDal.save(service);
+	}
+
+	private void calculateLastDataDate(Exchange exchange) throws PipelineException {
 
 		UUID serviceId = exchange.getServiceId();
 		UUID systemId = exchange.getSystemId();
@@ -213,16 +249,18 @@ public class OpenEnvelope extends PipelineComponent {
 
 	private void processHeader(Exchange exchange, MessageHeader messageHeader) throws PipelineException {
 
+		//just carry over fields from the request to the exchange
 		exchange.setHeader(HeaderKeys.MessageId, messageHeader.getId());
-
 		exchange.setHeader(HeaderKeys.SenderLocalIdentifier, messageHeader.getSource().getName());
 		exchange.setHeader(HeaderKeys.SourceSystem, messageHeader.getSource().getSoftware());
 		exchange.setHeader(HeaderKeys.SystemVersion, messageHeader.getSource().getVersion());
-
 		exchange.setHeader(HeaderKeys.ResponseUri, messageHeader.getSource().getEndpoint());
 		exchange.setHeader(HeaderKeys.MessageEvent, messageHeader.getEvent().getCode());
 
+		//validate that the sender is one we know off
 		processSender(exchange);
+
+		//carry over any explicit destinations
 		processDestinations(exchange, messageHeader);
 	}
 
@@ -233,23 +271,10 @@ public class OpenEnvelope extends PipelineComponent {
 		String version = exchange.getHeader(HeaderKeys.SystemVersion);
 
 		//ensure we can match to a Service
-		ServiceDalI serviceRepository = DalProvider.factoryServiceDal();
-		Service service = null;
-		try {
-			service = serviceRepository.getByLocalIdentifier(organisationOds);
-		} catch (Exception ex) {
-			throw new PipelineException("Exception getting service for ODS code " + organisationOds, ex);
-		}
-
-		if (service == null) {
-			throw new PipelineException("No service found for ODS code " + organisationOds + " opening exchange " + exchange.getId());
-		}
+		Service service = findOrCreateService(organisationOds);
 
 		//ensure we can match to a System at that Service
 		UUID systemUuid = findSystemId(service, software, version);
-		if (systemUuid == null) {
-			throw new PipelineException("No system found for service " + service.getId() + " software " + software + " version " + version + " opening exchange " + exchange.getId());
-		}
 
 		exchange.setHeader(HeaderKeys.SenderServiceUuid, service.getId().toString());
 		exchange.setHeader(HeaderKeys.SenderSystemUuid, systemUuid.toString());
@@ -258,58 +283,108 @@ public class OpenEnvelope extends PipelineComponent {
 		exchange.setSystemId(systemUuid);
 	}
 
+	private Service findOrCreateService(String organisationOds) throws PipelineException {
+		try {
+			//see if we've already got a service
+			Service s = serviceDal.getByLocalIdentifier(organisationOds);
+			if (s != null) {
+				return s;
+			}
+
+			//if no service already exists, then see if we can create one, but only if we have a DPA
+			Boolean hasDpa = OrganisationCache.doesOrganisationHaveDPA(organisationOds);
+			if (!hasDpa.booleanValue()) {
+				throw new PipelineException("Data received for ODS code " + organisationOds + " but will not auto-create bacause no DPA exists");
+			}
+
+			OdsOrganisation odsOrg = OdsWebService.lookupOrganisationViaRest(organisationOds);
+			if (odsOrg == null) {
+				throw new PipelineException("Data received for ODS code " + organisationOds + " but could not find on ODS, so service needs manually setting up in DDS-UI");
+			}
+
+			s = new Service();
+			s.setLocalId(organisationOds);
+
+			String name = odsOrg.getOrganisationName();
+			s.setName(name);
+
+			String postcode = odsOrg.getPostcode();
+			s.setPostcode(postcode);
+
+			OrganisationType type = odsOrg.getOrganisationType();
+			s.setOrganisationType(type);
+
+			String parentCode = OdsOrganisation.getBestParentCode(odsOrg);
+			s.setCcgCode(parentCode);
+
+			//tell us because we need to manually do a couple of steps
+			String msg = "Auto-created Service for ODS code " + organisationOds + " in Messaging API\r\n"
+					+ s.toString()
+					+ "\r\nPublisher config name and tags need setting in DDS-UI";
+			SlackHelper.sendSlackMessage(SlackHelper.Channel.QueueReaderAlerts, msg);
+
+			serviceDal.save(s);
+
+			return s;
+
+		} catch (PipelineException pe) {
+			//any pipeline exceptions, just throw them as is
+			throw pe;
+
+		} catch (Exception ex) {
+			//any other exception (e.g. from database error), then we need to wrap up
+			throw new PipelineException("Failed at auto-creating Service for ODS code " + organisationOds, ex);
+		}
+	}
+
+
+
 
 	private UUID findSystemId(Service service, String software, String messageVersion) throws PipelineException {
 
-		List<ServiceInterfaceEndpoint> endpoints = null;
 		try {
-			endpoints = service.getEndpointsList();
+			ServiceInterfaceEndpoint endpoint = SystemHelper.findEndpointForSoftwareAndVersion(service, software, messageVersion);
 
-			for (ServiceInterfaceEndpoint endpoint: endpoints) {
+			if (endpoint == null) {
+				//create new draft service
+				createDraftEndpoint(service, software, messageVersion);
+				throw new PipelineException("Endpoint for " + software + " has been automatically added to service " + service.getLocalId() + " but in draft mode - manually change when data ready to process");
 
-				UUID endpointSystemId = endpoint.getSystemUuid();
-				String endpointInterfaceId = endpoint.getTechnicalInterfaceUuid().toString();
+			} else if (endpoint.getEndpoint() != null
+					&& endpoint.getEndpoint().equals(ServiceInterfaceEndpoint.STATUS_DRAFT)) {
+				//endpoint exists but is in DRAFT mode
+				throw new PipelineException("Endpoint for " + software + " already exists in draft mode - manually change to process data");
 
-				//if the interface has been added to the service but is in "draft" mode then it's not to be used yet
-				String status = endpoint.getEndpoint();
-				if (status != null
-						&& status.equals(ServiceInterfaceEndpoint.STATUS_DRAFT)) {
-					continue;
-				}
-
-				LibraryDalI libraryRepository = DalProvider.factoryLibraryDal();
-				ActiveItem activeItem = libraryRepository.getActiveItemByItemId(endpointSystemId);
-				Item item = libraryRepository.getItemByKey(endpointSystemId, activeItem.getAuditId());
-				LibraryItem libraryItem = QueryDocumentSerializer.readLibraryItemFromXml(item.getXmlContent());
-				System system = libraryItem.getSystem();
-				for (TechnicalInterface technicalInterface: system.getTechnicalInterface()) {
-
-					String technicalInterfaceId = technicalInterface.getUuid();
-					String technicalInterfaceFormat = technicalInterface.getMessageFormat();
-
-					//the system version is now a regex that allows multiple versions to be supported in one system
-					if (endpointInterfaceId.equals(technicalInterfaceId)
-							&& technicalInterfaceFormat.equalsIgnoreCase(software)) {
-
-						String technicalInterfaceVersion = technicalInterface.getMessageFormatVersion();
-						if (Pattern.matches(technicalInterfaceVersion, messageVersion)) {
-							return endpointSystemId;
-						}
-					}
-
-					/*if (endpointInterfaceId.equals(technicalInterface.getUuid())
-							&& technicalInterface.getMessageFormat().equalsIgnoreCase(software)
-							&& technicalInterface.getMessageFormatVersion().equalsIgnoreCase(messageVersion)) {
-
-						return endpointSystemId;
-					}*/
-				}
+			} else {
+				//endpoint exists and is OK
+				return endpoint.getSystemUuid();
 			}
-		} catch (Exception e) {
-			throw new PipelineException("Failed to process endpoints from service " + service.getId(), e);
-		}
 
-		return null;
+		} catch (PipelineException pe) {
+			//any pipeline exceptions, just throw them as is
+			throw pe;
+
+		} catch (Exception e) {
+			throw new PipelineException("Failed to find or create system for service " + service.getId() + " software " + software + " version " + messageVersion);
+		}
+	}
+
+	private void createDraftEndpoint(Service service, String software, String messageVersion) throws Exception {
+
+		System system = SystemHelper.findSystemForSoftwareAndVersion(software, messageVersion);
+		TechnicalInterface technicalInterface = SystemHelper.getTechnicalInterface(system);
+		String technicalInterfaceId = technicalInterface.getUuid();
+
+		ServiceInterfaceEndpoint endpoint = new ServiceInterfaceEndpoint();
+		endpoint.setEndpoint(ServiceInterfaceEndpoint.STATUS_DRAFT); //set in draft mode
+		endpoint.setSystemUuid(UUID.fromString(system.getUuid()));
+		endpoint.setTechnicalInterfaceUuid(UUID.fromString(technicalInterfaceId));
+
+		List<ServiceInterfaceEndpoint> endpoints = service.getEndpointsList();
+		endpoints.add(endpoint);
+		service.setEndpointsList(endpoints);
+
+		serviceDal.save(service);
 	}
 
 	private void processBody(Exchange exchange, Binary binary) {
@@ -330,6 +405,8 @@ public class OpenEnvelope extends PipelineComponent {
 			}
 		}
 
-		exchange.setHeader(HeaderKeys.DestinationAddress, String.join(",", destinationUriList));
+		if (!destinationUriList.isEmpty()) {
+			exchange.setHeader(HeaderKeys.DestinationAddress, String.join(",", destinationUriList));
+		}
 	}
 }

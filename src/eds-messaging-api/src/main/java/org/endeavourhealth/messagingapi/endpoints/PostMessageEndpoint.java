@@ -105,7 +105,7 @@ public class PostMessageEndpoint {
         exchange.setHeaders(new HashMap<>());
 
         //until we pass all validation, this exchange should not be allowed to be queued
-        exchange.setHeaderAsBoolean(HeaderKeys.AllowQueueing, new Boolean(false));
+        exchange.setHeaderAsBoolean(HeaderKeys.AllowQueueing, Boolean.FALSE);
 
         for (String key : headers.getRequestHeaders().keySet()) {
             //skip the authorization header, since that's comparatively huge and there's no need to carry it through RabbbitMQ
@@ -125,22 +125,12 @@ public class PostMessageEndpoint {
         PipelineProcessor processor = new PipelineProcessor(pipeline);
         if (processor.execute(exchange)) {
 
-            //changed to return the exchange ID to the poster, so they can log that against what they sent
             return Response
                     .ok()
                     .entity(exchangeId.toString())
                     .build();
 
-			/*return Response
-					.ok()
-					.entity(exchange.getBody())
-					.build();*/
         } else {
-
-            //possibly take out later, but for testing purposes, having visibility of these is useful
-            if (exchange.getException() != null) {
-                LOG.error("Error processing exchange " + exchange.getId(), exchange.getException());
-            }
 
             return Response
                     .status(HttpStatus.SC_INTERNAL_SERVER_ERROR)

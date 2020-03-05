@@ -78,7 +78,6 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 		UUID exchangeId = exchange.getId();
 
 		List<LibraryItem> protocolsToRun = getProtocols(exchange);
-		//LibraryItem[] protocolsToRun = getProtocols(exchange);
 		List<TransformBatch> transformBatches = new ArrayList<>();
 
 		UUID serviceId = exchange.getHeaderAsUuid(HeaderKeys.SenderServiceUuid);

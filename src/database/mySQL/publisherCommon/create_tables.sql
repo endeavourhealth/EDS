@@ -8,6 +8,7 @@ DROP TABLE IF EXISTS tpp_ctv3_hierarchy_ref;
 DROP TABLE IF EXISTS tpp_ctv3_lookup;
 DROP TABLE IF EXISTS tpp_multilex_to_ctv3_map;
 DROP TABLE IF EXISTS tpp_mapping_ref;
+DROP TABLE IF EXISTS emis_missing_code_error;
 
 CREATE TABLE emis_csv_code_map (
 	medication boolean,
@@ -52,14 +53,13 @@ ROW_FORMAT=COMPRESSED
 KEY_BLOCK_SIZE=8;
 
 CREATE TABLE tpp_ctv3_lookup (
-	row_id bigint(20) not null comment 'The value of RowIdentifier',
-	ctv3_code varchar(5) null COLLATE utf8_bin,
-	ctv3_text varchar(255) null,
+	ctv3_code varchar(5) COLLATE utf8_bin COMMENT 'ctv3 code itself',
+	ctv3_text varchar(255) null COMMENT 'term for ctv3 code',
 	audit_json mediumtext null comment 'Used for Audit Purposes',
-	CONSTRAINT pk_tpp_ctv3_lookup PRIMARY KEY (row_id)
+	CONSTRAINT pk_tpp_ctv3_lookup PRIMARY KEY (ctv3_code)
 )
-ROW_FORMAT=COMPRESSED
-KEY_BLOCK_SIZE=8;
+	ROW_FORMAT=COMPRESSED
+	KEY_BLOCK_SIZE=8;
 
 CREATE INDEX ix_tpp_ctv3_lookup_ctv3_code
   ON tpp_ctv3_lookup (ctv3_code);
@@ -108,3 +108,19 @@ create table tpp_mapping_ref (
 );
 
 CREATE INDEX ix_tpp_mapping_ref ON tpp_mapping_ref (row_id);
+
+
+CREATE TABLE emis_missing_code_error (
+	service_id char(36) NOT NULL,
+	exchange_id char(36) NOT NULL,
+	timestmp datetime NOT NULL,
+	file_type varchar(255) NOT NULL,
+	patient_guid varchar(255) NOT NULL,
+	code_id bigint NOT NULL,
+	record_guid varchar(255) NOT NULL,
+	dt_fixed datetime,
+	code_type char(1) NOT NULL,
+	CONSTRAINT pk_emis_missing_code_error PRIMARY KEY (service_id, exchange_id, file_type, patient_guid, code_id, record_guid)
+)
+	ROW_FORMAT=COMPRESSED
+	KEY_BLOCK_SIZE=8;
