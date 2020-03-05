@@ -147,7 +147,9 @@ public abstract class SpecialRoutines {
                                     String name = FilenameUtils.getName(path);
                                     ExchangePayloadFile file = hmFilesByName.get(name);
                                     if (file == null) {
-                                        throw new Exception("No info for file " + path + " found");
+                                        LOG.debug("No info for file " + path + " found");
+                                        continue;
+                                        //throw new Exception();
                                     }
 
                                     file.setSize(new Long(size));
