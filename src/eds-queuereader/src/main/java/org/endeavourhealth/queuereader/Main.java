@@ -92,6 +92,16 @@ public class Main {
 		}
 
 		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("PopulateExchangeFileSizes")) {
+			String odsCodeRegex = null;
+			if (args.length > 1) {
+				odsCodeRegex = args[1];
+			}
+			SpecialRoutines.populateExchangeFileSizes(odsCodeRegex);
+			System.exit(0);
+		}
+
+		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("FindEmisMissingCodes")) {
 			String ccgCodeRegex = null;
 			if (args.length > 1) {
@@ -950,6 +960,7 @@ public class Main {
 	}
 
 
+
 	private static void findEmisMissingCodes(String ccgCodeRegex) {
 		LOG.info("Finding Emis Missing Codes");
 		try {
@@ -1171,7 +1182,7 @@ public class Main {
 
 			for (Service service: services) {
 				//check regex
-				if (shouldSkipService(service, odsCodeRegex)) {
+				if (SpecialRoutines.shouldSkipService(service, odsCodeRegex)) {
 					continue;
 				}
 
@@ -1422,7 +1433,7 @@ public class Main {
 			List<Service> services = serviceDal.getAll();
 
 			for (Service service: services) {
-				if (shouldSkipService(service, odsCodeRegex)) {
+				if (SpecialRoutines.shouldSkipService(service, odsCodeRegex)) {
 					continue;
 				}
 
@@ -1572,20 +1583,7 @@ public class Main {
 		}
 	}
 
-	private static boolean shouldSkipService(Service service, String odsCodeRegex) {
-		if (odsCodeRegex == null) {
-			return false;
-		}
 
-		String odsCode = service.getLocalId();
-		if (Strings.isNullOrEmpty(odsCode)
-				|| !Pattern.matches(odsCodeRegex, odsCode)) {
-			LOG.debug("Skipping " + service + " due to regex");
-			return true;
-		}
-
-		return false;
-	}
 
 	private static void createDeleteZipsForSubscriber(int batchSize, String sourceTable, int subscriberId) {
 		LOG.info("Create Zips For Subscriber from " + sourceTable + " subscriberId " + subscriberId + " and batchSize " + batchSize);
