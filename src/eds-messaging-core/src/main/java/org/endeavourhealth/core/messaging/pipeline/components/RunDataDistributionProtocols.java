@@ -451,38 +451,6 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 	}
 
 
-
-
-
-
-	/**
-	 * filters down resources in the batch to just those that match the protocol data set
-	 * //TODO - apply protocol dataset filtering
-     */
-	public static Map<ResourceType, List<UUID>> filterResources(UUID serviceId, Protocol protocol, String batchId) throws Exception {
-
-		Map<ResourceType, List<UUID>> ret = new HashMap<>();
-
-		UUID batchUuid = UUID.fromString(batchId);
-		ResourceDalI resourceDal = DalProvider.factoryResourceDal();
-		List<ResourceWrapper> resourcesByExchangeBatch = resourceDal.getResourcesForBatch(batchUuid, serviceId);
-		for (ResourceWrapper resourceByExchangeBatch: resourcesByExchangeBatch) {
-			String resourceType = resourceByExchangeBatch.getResourceType();
-			ResourceType fhirResourceType = ResourceType.valueOf(resourceType);
-			UUID resourceId = resourceByExchangeBatch.getResourceId();
-
-			List<UUID> list = ret.get(fhirResourceType);
-			if (list == null) {
-				list = new ArrayList<>();
-				ret.put(fhirResourceType, list);
-			}
-			list.add(resourceId);
-		}
-
-		return ret;
-	}
-
-
 	private List<LibraryItem> getProtocols(Exchange exchange) throws PipelineException {
 
 		List<LibraryItem> ret = new ArrayList<>();
