@@ -37,8 +37,9 @@ create table cds_inpatient
 
     patient_pathway_identifier     varchar(20)  COMMENT 'links to the EpisodeId from the tail file if present',
     spell_number                   varchar(12),
-    admission_method_code          varchar(12)   COMMENT 'LKP_CDS_ADMISS_METHOD',
-    admission_source_code          varchar(12)   COMMENT 'LKP_CDS_ADMISS_SOURCE',
+    administrative_category_code   varchar(12),
+    admission_method_code          varchar(12)  COMMENT 'LKP_CDS_ADMISS_METHOD',
+    admission_source_code          varchar(12)  COMMENT 'LKP_CDS_ADMISS_SOURCE',
     patient_classification         char(1)      COMMENT 'LKP_CDS_PATIENT_CLASS',
     spell_start_date               datetime     COMMENT 'start date and time of hospital spell',
     episode_number                 varchar(2),
@@ -90,6 +91,7 @@ create table cds_inpatient_latest
 
     patient_pathway_identifier     varchar(20)  COMMENT 'links to the EpisodeId from the tail file if present',
     spell_number                   varchar(12),
+    administrative_category_code   varchar(12),
     admission_method_code          varchar(12)   COMMENT 'LKP_CDS_ADMISS_METHOD',
     admission_source_code          varchar(12)   COMMENT 'LKP_CDS_ADMISS_SOURCE',
     patient_classification         char(1)      COMMENT 'LKP_CDS_PATIENT_CLASS',
@@ -138,6 +140,7 @@ create table cds_inpatient_target
 
     patient_pathway_identifier     varchar(20)  COMMENT 'links to the EpisodeId from the tail file if present',
     spell_number                   varchar(12),
+    administrative_category_code   varchar(12),
     admission_method_code          varchar(12)   COMMENT 'LKP_CDS_ADMISS_METHOD',
     admission_source_code          varchar(12)   COMMENT 'LKP_CDS_ADMISS_SOURCE',
     patient_classification         char(1)      COMMENT 'LKP_CDS_PATIENT_CLASS',
@@ -185,6 +188,7 @@ create table cds_inpatient_target_latest
     performer_personnel_id     	int COMMENT ' responsible personnel ID for the inpatient encounter ',
     patient_pathway_identifier     varchar(20)  COMMENT 'links to the EpisodeId from the tail file if present',
     spell_number                   varchar(12),
+    administrative_category_code   varchar(12),
     admission_method_code          varchar(12)   COMMENT 'LKP_CDS_ADMISS_METHOD',
     admission_source_code          varchar(12)   COMMENT 'LKP_CDS_ADMISS_SOURCE',
     patient_classification         char(1)      COMMENT 'LKP_CDS_PATIENT_CLASS',
@@ -238,6 +242,7 @@ create table cds_outpatient
 
     patient_pathway_identifier      varchar(20)  COMMENT 'links to the EpisodeId from the tail file if present',
     appt_attendance_identifier      varchar(20),
+    administrative_category_code    varchar(12),
     appt_attended_code              char(1)      COMMENT 'Attended or DNA code: LKP_CDS_ATTENDED',
     appt_outcome_code               char(1)      COMMENT 'LKP_CDS_ATTENDANCE_OUTCOME',
     appt_date                       datetime     COMMENT 'date and time of the outpatient appointment',
@@ -277,6 +282,7 @@ create table cds_outpatient_latest
 
     patient_pathway_identifier      varchar(20)  COMMENT 'links to the EpisodeId from the tail file if present',
     appt_attendance_identifier      varchar(20),
+    administrative_category_code    varchar(12),
     appt_attended_code              char(1)      COMMENT 'Attended or DNA code: LKP_CDS_ATTENDED',
     appt_outcome_code               char(1)      COMMENT 'LKP_CDS_ATTENDANCE_OUTCOME',
     appt_date                       datetime     COMMENT 'date and time of the outpatient appointment',
@@ -311,6 +317,7 @@ create table cds_outpatient_target
 
     patient_pathway_identifier  varchar(20)  COMMENT 'links to the EpisodeId from the tail file if present',
     appt_attendance_identifier  varchar(20),
+    administrative_category_code varchar(12),
     appt_attended_code          char(1)      COMMENT 'Attended or DNA code: LKP_CDS_ATTENDED',
     appt_outcome_code           char(1)      COMMENT 'LKP_CDS_ATTENDANCE_OUTCOME',
     appt_date                   datetime     COMMENT 'date and time of the outpatient appointment',
@@ -345,6 +352,7 @@ create table cds_outpatient_target_latest
 
     patient_pathway_identifier  varchar(20)  COMMENT 'links to the EpisodeId from the tail file if present',
     appt_attendance_identifier  varchar(20),
+    administrative_category_code varchar(12),
     appt_attended_code          char(1)      COMMENT 'Attended or DNA code: LKP_CDS_ATTENDED',
     appt_outcome_code           char(1)      COMMENT 'LKP_CDS_ATTENDANCE_OUTCOME',
     appt_date                   datetime     COMMENT 'date and time of the outpatient appointment',
