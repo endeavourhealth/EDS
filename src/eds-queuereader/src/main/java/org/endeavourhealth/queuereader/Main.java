@@ -9,19 +9,12 @@ import org.apache.commons.io.FilenameUtils;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.common.utility.FileHelper;
-import org.endeavourhealth.common.utility.ThreadPool;
-import org.endeavourhealth.common.utility.ThreadPoolError;
-import org.endeavourhealth.common.utility.XmlSerializer;
 import org.endeavourhealth.core.configuration.ConfigDeserialiser;
 import org.endeavourhealth.core.configuration.PostMessageToExchangeConfig;
 import org.endeavourhealth.core.configuration.QueueReaderConfiguration;
 import org.endeavourhealth.core.database.dal.DalProvider;
-import org.endeavourhealth.core.database.dal.admin.LibraryDalI;
 import org.endeavourhealth.core.database.dal.admin.LibraryRepositoryHelper;
 import org.endeavourhealth.core.database.dal.admin.ServiceDalI;
-import org.endeavourhealth.core.database.dal.admin.models.ActiveItem;
-import org.endeavourhealth.core.database.dal.admin.models.DefinitionItemType;
-import org.endeavourhealth.core.database.dal.admin.models.Item;
 import org.endeavourhealth.core.database.dal.admin.models.Service;
 import org.endeavourhealth.core.database.dal.audit.ExchangeBatchDalI;
 import org.endeavourhealth.core.database.dal.audit.ExchangeDalI;
@@ -52,9 +45,13 @@ import org.endeavourhealth.core.messaging.pipeline.components.OpenEnvelope;
 import org.endeavourhealth.core.messaging.pipeline.components.PostMessageToExchange;
 import org.endeavourhealth.core.queueing.QueueHelper;
 import org.endeavourhealth.core.xml.QueryDocument.*;
+import org.endeavourhealth.core.xml.TransformErrorSerializer;
+import org.endeavourhealth.core.xml.transformError.Arg;
+import org.endeavourhealth.core.xml.transformError.Error;
+import org.endeavourhealth.core.xml.transformError.ExceptionLine;
+import org.endeavourhealth.core.xml.transformError.TransformError;
 import org.endeavourhealth.transform.common.*;
 import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
-import org.endeavourhealth.transform.enterprise.EnterpriseTransformHelper;
 import org.endeavourhealth.transform.subscriber.targetTables.OutputContainer;
 import org.endeavourhealth.transform.subscriber.targetTables.SubscriberTableId;
 import org.endeavourhealth.transform.tpp.TppCsvToFhirTransformer;
@@ -79,11 +76,6 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
-import org.endeavourhealth.transform.enterprise.transforms.AbstractEnterpriseTransformer;
-import static org.endeavourhealth.core.xml.QueryDocument.ServiceContractType.PUBLISHER;
-import org.hl7.fhir.instance.model.*;
-import org.endeavourhealth.transform.subscriber.UPRN;
-
 public class Main {
 	private static final Logger LOG = LoggerFactory.getLogger(Main.class);
 
@@ -94,6 +86,31 @@ public class Main {
 		LOG.info("Initialising config manager");
 		ConfigManager.initialize("queuereader", configId);
 
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("FindOutOfOrderTppServices")) {
+			SpecialRoutines.findOutOfOrderTppServices();
+			System.exit(0);
+		}
+
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("PopulateExchangeFileSizes")) {
+			String odsCodeRegex = null;
+			if (args.length > 1) {
+				odsCodeRegex = args[1];
+			}
+			SpecialRoutines.populateExchangeFileSizes(odsCodeRegex);
+			System.exit(0);
+		}
+
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("FindEmisMissingCodes")) {
+			String ccgCodeRegex = null;
+			if (args.length > 1) {
+				ccgCodeRegex = args[1];
+			}
+			findEmisMissingCodes(ccgCodeRegex);
+			System.exit(0);
+		}
 
 		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("FixEncounters")) {
@@ -144,7 +161,8 @@ public class Main {
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("SendPatientsToSubscriber")) {
 			String tableName = args[1];
-			sendPatientsToSubscriber(tableName);
+			String reason = args[2];
+			sendPatientsToSubscriber(tableName, reason);
 			System.exit(0);
 		}
 
@@ -165,11 +183,6 @@ public class Main {
 			System.exit(0);
 		}*/
 
-		if (args.length >=1 && args[0].equalsIgnoreCase("UPRN")) {
-			String odsCode = args[1];
-			String subscriberConfigNamesStr = args[2];
-			DumpOutAddresses(odsCode, subscriberConfigNamesStr);
-		}
 
 		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("TestDatabases")) {
@@ -278,7 +291,8 @@ public class Main {
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("TransformPatients")) {
 			String sourceFile = args[1];
-			transformPatients(sourceFile);
+			String reason = args[2];
+			transformPatients(sourceFile, reason);
 			System.exit(0);
 		}
 
@@ -310,7 +324,7 @@ public class Main {
 			System.exit(0);
 		}
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("ConvertAudits2")) {
 			String configName = args[1];
 			String tempTable = args[2];
@@ -319,7 +333,7 @@ public class Main {
 			boolean testMode = Boolean.parseBoolean(args[5]);
 			convertFhirAudits2(configName, tempTable, threads, batchSize, testMode);
 			System.exit(0);
-		}
+		}*/
 
 		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("ConvertAudits")) {
@@ -946,6 +960,197 @@ public class Main {
 		LOG.info("EDS Queue reader running (kill file location " + TransformConfig.instance().getKillFileLocation() + ")");
 	}
 
+
+
+	private static void findEmisMissingCodes(String ccgCodeRegex) {
+		LOG.info("Finding Emis Missing Codes");
+		try {
+
+			ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
+			ServiceDalI serviceRepository = DalProvider.factoryServiceDal();
+
+			List<ExchangeTransformErrorState> errors = exchangeDal.getAllErrorStates();
+
+			List<String> missingCodeLines = new ArrayList<>();
+			missingCodeLines.add("\"Name\",\"ODS Code\",\"CDB/Comments\",\"Date Used\",\"Code ID\"");
+
+			List<String> missingDrugLines = new ArrayList<>();
+			missingDrugLines.add("\"Name\",\"ODS Code\",\"CDB/Comments\",\"Date Used\",\"Code ID\"");
+
+			List<String> otherLines = new ArrayList<>();
+
+			for (ExchangeTransformErrorState error: errors) {
+				UUID serviceId = error.getServiceId();
+				List<UUID> exchangeIds = error.getExchangeIdsInError();
+				UUID exchangeId = exchangeIds.get(0);
+				UUID systemId = error.getSystemId();
+
+				Service service = serviceRepository.getById(serviceId);
+
+				String ccgCode = service.getCcgCode();
+				if (!Strings.isNullOrEmpty(ccgCodeRegex)
+					&& !Pattern.matches(ccgCodeRegex, ccgCode)) {
+					continue;
+				}
+
+				Exchange exchange = exchangeDal.getExchange(exchangeId);
+				Date exchangeDate = exchange.getHeaderAsDate(HeaderKeys.DataDate);
+				String exchangeDateStr = "";
+				if (exchangeDate != null) {
+					exchangeDateStr = new SimpleDateFormat("yyyy-MM-dd").format(exchangeDate);
+				}
+
+				ExchangeTransformAudit transformAudit = exchangeDal.getMostRecentExchangeTransform(serviceId, systemId, exchangeId);
+				List<String> lines = formatTransformAuditErrorLines(transformAudit);
+
+				String drugId = null;
+				String codeId = null;
+
+				for (String line: lines) {
+					if (line.contains("Failed to find drug code for codeId")) {
+						String[] toks = line.split(" ");
+						drugId = toks[toks.length-1];
+						break;
+
+					} else if (line.contains("Failed to find clinical code for codeId")) {
+						String[] toks = line.split(" ");
+						codeId = toks[toks.length-1];
+						break;
+
+					}
+				}
+
+				String name = service.getName();
+				name = name.replace(",", "");
+
+				String ods = service.getLocalId();
+
+				String tagStr = "";
+				if (service.getTags() != null) {
+					List<String> tagKeys = new ArrayList<>(service.getTags().keySet());
+					tagKeys.sort(((o1, o2) -> o1.compareToIgnoreCase(o2)));
+
+					for (String tagKey: tagKeys) {
+						if (tagKey.equals("Error")
+								|| tagKey.equals("Bulk received")
+								|| tagKey.equals("Notes")) {
+							continue;
+						}
+
+						if (!tagStr.isEmpty()) {
+							tagStr += ", ";
+						}
+						tagStr += tagKey;
+						String tagVal = service.getTags().get(tagKey);
+						if (!Strings.isNullOrEmpty(tagVal)) {
+							tagStr += " ";
+							tagStr += tagVal;
+						}
+					}
+				}
+
+				if (drugId != null) {
+					missingDrugLines.add("\"" + name + "\",\"" + ods + "\",\"" + tagStr + "\",\"" + exchangeDateStr + "\",\"" + drugId + "\"");
+
+				} else if (codeId != null) {
+					missingCodeLines.add("\"" + name + "\",\"" + ods + "\",\"" + tagStr + "\",\"" + exchangeDateStr + "\",\"" + codeId + "\"");
+
+				} else {
+					otherLines.add("\"" + name + "\",\"" + ods + "\",\"" + tagStr + "\"");
+				}
+			}
+
+			System.out.println("Missing drugs");
+			for (String line: missingDrugLines) {
+				System.out.println(line);
+			}
+
+			System.out.println("");
+			System.out.println("");
+			System.out.println("Missing codes");
+			for (String line: missingCodeLines) {
+				System.out.println(line);
+			}
+
+			System.out.println("");
+			System.out.println("");
+			System.out.println("Others");
+			for (String line: otherLines) {
+				System.out.println(line);
+			}
+
+			LOG.info("Finished Finding Emis Missing Codes");
+		} catch (Throwable t) {
+			LOG.error("", t);
+		}
+	}
+
+
+	private static List<String> formatTransformAuditErrorLines(ExchangeTransformAudit transformAudit) throws Exception {
+
+		//until we need something more powerful, I'm displaying the errors just as a string, to
+		//save sending complex JSON objects back to the client
+		List<String> lines = new ArrayList<>();
+
+		if (Strings.isNullOrEmpty(transformAudit.getErrorXml())) {
+			return lines;
+		}
+
+		TransformError errors = TransformErrorSerializer.readFromXml(transformAudit.getErrorXml());
+
+		for (Error error : errors.getError()) {
+
+			//the error will only be null for older errors, from before the field was introduced
+			if (error.getDatetime() != null) {
+				Calendar calendar = error.getDatetime().toGregorianCalendar();
+				SimpleDateFormat formatter = new SimpleDateFormat("yyyy/MM/dd HH:mm");
+				formatter.setTimeZone(calendar.getTimeZone());
+				String dateString = formatter.format(calendar.getTime());
+				lines.add(dateString);
+			}
+
+			for (Arg arg : error.getArg()) {
+				String argName = arg.getName();
+				String argValue = arg.getValue();
+				if (argValue != null) {
+					lines.add(argName + " = " + argValue);
+				} else {
+					lines.add(argName);
+				}
+			}
+			lines.add("");
+
+			org.endeavourhealth.core.xml.transformError.Exception exception = error.getException();
+			while (exception != null) {
+
+				if (exception.getMessage() != null) {
+					lines.add(exception.getMessage());
+				}
+
+				for (ExceptionLine line : exception.getLine()) {
+					String cls = line.getClazz();
+					String method = line.getMethod();
+					Integer lineNumber = line.getLine();
+
+					lines.add("\u00a0\u00a0\u00a0\u00a0at " + cls + "." + method + ":" + lineNumber);
+
+					//lines.add("&nbsp;&nbsp;&nbsp;&nbsp;at " + cls + "." + method + ":" + lineNumber);
+				}
+
+				exception = exception.getCause();
+				if (exception != null) {
+					lines.add("Caused by:");
+				}
+			}
+
+			//add some space between the separate errors in the audit
+			lines.add("");
+			lines.add("------------------------------------------------------------------------");
+		}
+
+		return lines;
+	}
+
 	private static void fixTppStaffBulks(boolean testMode, String odsCodeRegex) {
 		LOG.info("Fixing TPP Staff Bulks using testMode " + testMode + " and regex " + odsCodeRegex);
 		try {
@@ -978,7 +1183,7 @@ public class Main {
 
 			for (Service service: services) {
 				//check regex
-				if (shouldSkipService(service, odsCodeRegex)) {
+				if (SpecialRoutines.shouldSkipService(service, odsCodeRegex)) {
 					continue;
 				}
 
@@ -1094,7 +1299,7 @@ public class Main {
 						//if all the files were bulk files then these non-patient were wrongly copied over to our
 						//service from the bulk of another service so this exchange should not have been created
 						if (firstIsDelta == null
-							|| firstIsDelta.booleanValue()) {
+								|| firstIsDelta.booleanValue()) {
 							continue;
 						}
 						LOG.debug("    Exchange " + exchange.getId() + " should not have been created");
@@ -1153,7 +1358,7 @@ public class Main {
 		}
 	}
 
-	private static void sendPatientsToSubscriber(String tableName) {
+	private static void sendPatientsToSubscriber(String tableName, String reason) {
 		LOG.info("Sending patients to subscriber from " + tableName);
 		try {
 
@@ -1183,7 +1388,7 @@ public class Main {
 					//send any found previously
 					if (!batchPatientIds.isEmpty()) {
 						LOG.debug("Doing batch of " + batchPatientIds.size() + " for service " + batchServiceId + " and protocol " + batchProtocolId);
-						QueueHelper.queueUpFullServiceForPopulatingSubscriber(batchServiceId, batchProtocolId, batchPatientIds);
+						QueueHelper.queueUpFullServiceForPopulatingSubscriber(batchServiceId, batchProtocolId, batchPatientIds, reason);
 					}
 
 					batchServiceId = serviceId;
@@ -1197,7 +1402,7 @@ public class Main {
 			//do the remainder
 			if (!batchPatientIds.isEmpty()) {
 				LOG.debug("Doing batch of " + batchPatientIds.size() + " for service " + batchServiceId + " and protocol " + batchProtocolId);
-				QueueHelper.queueUpFullServiceForPopulatingSubscriber(batchServiceId, batchProtocolId, batchPatientIds);
+				QueueHelper.queueUpFullServiceForPopulatingSubscriber(batchServiceId, batchProtocolId, batchPatientIds, reason);
 			}
 
 			conn.close();
@@ -1221,7 +1426,7 @@ public class Main {
 	 bulk_exchange_id char(36),
 	 patient_id char(36)
 	 );
-     */
+	 */
 	private static void findMissedExchanges(String tableName, String odsCodeRegex) {
 		LOG.info("Finding missed exchanges filtering on orgs using " + odsCodeRegex + ", storing results in " + tableName);
 		try {
@@ -1229,7 +1434,7 @@ public class Main {
 			List<Service> services = serviceDal.getAll();
 
 			for (Service service: services) {
-				if (shouldSkipService(service, odsCodeRegex)) {
+				if (SpecialRoutines.shouldSkipService(service, odsCodeRegex)) {
 					continue;
 				}
 
@@ -1379,20 +1584,7 @@ public class Main {
 		}
 	}
 
-	private static boolean shouldSkipService(Service service, String odsCodeRegex) {
-		if (odsCodeRegex == null) {
-			return false;
-		}
 
-		String odsCode = service.getLocalId();
-		if (Strings.isNullOrEmpty(odsCode)
-				|| !Pattern.matches(odsCodeRegex, odsCode)) {
-			LOG.debug("Skipping " + service + " due to regex");
-			return true;
-		}
-
-		return false;
-	}
 
 	private static void createDeleteZipsForSubscriber(int batchSize, String sourceTable, int subscriberId) {
 		LOG.info("Create Zips For Subscriber from " + sourceTable + " subscriberId " + subscriberId + " and batchSize " + batchSize);
@@ -1497,128 +1689,6 @@ public class Main {
 			LOG.error("", t);
 		}
 	}*/
-
-	private static void DumpOutAddresses(String odsCode, String subscriberConfigNamesStr) throws Exception {
-
-		//String protocolName = "Enterprise Protocol";
-
-		JsonNode config = ConfigManager.getConfigurationAsJson("UPRN", "db_enterprise");
-		if (config==null) {return;}
-		JsonNode token_endpoint=config.get("token_endpoint");
-
-		// String uprn_token=UPRN.getUPRNToken();
-
-		config = ConfigManager.getConfigurationAsJson("enterprise_data", "db_subscriber");
-		JsonNode pseudoNode = config.get("pseudonymisation");
-		JsonNode saltNode = pseudoNode.get("salt");
-		String base64Salt = saltNode.asText();
-		byte[] saltBytes = Base64.getDecoder().decode(base64Salt);
-
-		long uprn=1234567890;
-		String pseuoUprn = null;
-		TreeMap<String, String> keys = new TreeMap<>();
-		keys.put("UPRN", "" + uprn);
-
-		Crypto crypto = new Crypto();
-		crypto.SetEncryptedSalt(saltBytes);
-		pseuoUprn = crypto.GetDigest(keys);
-
-		System.out.println(pseuoUprn);
-
-
-		String protocolName = "Discovery East London";
-		LibraryItem matchedLibraryItem = null;
-		LibraryDalI repository = DalProvider.factoryLibraryDal();
-		List<ActiveItem> activeItems = repository.getActiveItemByTypeId(Integer.valueOf(DefinitionItemType.Protocol.getValue()), Boolean.valueOf(false));
-		for (ActiveItem activeItem: activeItems) {
-			Item item = repository.getItemByKey(activeItem.getItemId(), activeItem.getAuditId());
-			String xml = item.getXmlContent();
-			LibraryItem libraryItem = (LibraryItem) XmlSerializer.deserializeFromString(LibraryItem.class, xml, (String)null);
-			String name = libraryItem.getName();
-			if (name.equals(protocolName)) {
-				matchedLibraryItem = libraryItem;
-				break;
-			}
-		}
-
-		List<ServiceContract> l = matchedLibraryItem.getProtocol().getServiceContract();
-		String serviceId = "";
-
-		ResourceDalI dal = DalProvider.factoryResourceDal();
-
-		EnterpriseTransformHelper params = new EnterpriseTransformHelper(null, null, null, null, null, "enterprise_data", Collections.emptyList(), null);
-
-		PatientSearchDalI patientSearchDal = DalProvider.factoryPatientSearchDal();
-		PatientLinkDalI patientLinkDal = DalProvider.factoryPatientLinkDal();
-		SubscriberPersonMappingDalI personMappingDal = DalProvider.factorySubscriberPersonMappingDal("enterprise_data");
-
-		for (ServiceContract sc: l) {
-			if (sc.getType() == PUBLISHER) {
-				// UUID serviceId = sc.getService().getId();
-				serviceId = sc.getService().getUuid();
-				UUID uid = UUID.fromString(serviceId);
-				List<UUID> patientIds = patientSearchDal.getPatientIds(uid);
-				for (UUID patientId : patientIds) {
-					Patient fhirPatient = (Patient) dal.getCurrentVersionAsResource(uid, ResourceType.Patient, patientId.toString());
-
-					String patientUuid = patientId.toString();
-
-					Long enterpriseId = AbstractEnterpriseTransformer.findEnterpriseId(params, ResourceType.Patient.toString(), patientUuid);
-
-					String personIdStr = patientLinkDal.getPersonId(patientUuid);
-					Long subscriberPersonId = personMappingDal.findOrCreateEnterprisePersonId(personIdStr);
-
-					// Long pEnterpriseId = AbstractEnterpriseTransformer.findEnterpriseId(params, ResourceType.Person.toString(), personIdStr);
-
-					System.out.println(enterpriseId);
-					System.out.println(subscriberPersonId);
-
-					for (Address address: fhirPatient.getAddress()) {
-						System.out.println(address.getText());
-						// fr.write(address.getText()+System.getProperty("line.separator"));
-					}
-				}
-			}
-		}
-
-		/*
-		ServiceDalI serviceDalI = DalProvider.factoryServiceDal();
-		Service service = serviceDalI.getByLocalIdentifier(odsCode);
-		UUID serviceId = service.getId();
-
-		PatientSearchDalI patientSearchDal = DalProvider.factoryPatientSearchDal();
-		List<UUID> patientIds = patientSearchDal.getPatientIds(serviceId);
-
-		ResourceDalI dal = DalProvider.factoryResourceDal();
-
-		// mysql_pi
-		EnterpriseTransformHelper params = new EnterpriseTransformHelper(null, null, null, null, null, "mysql_pi", null, Collections.emptyList(), null);
-
-		File file = new File("c:\\temp\\EDS-Addresses.txt");
-		FileWriter fr = new FileWriter(file);
-		// UUID patientId = patientIds.get(0);
-		for (UUID patientId : patientIds) {
-
-			Patient fhirPatient = (Patient) dal.getCurrentVersionAsResource(serviceId, ResourceType.Patient, patientId.toString());
-
-			// don't need this
-			// for (Identifier id: fhirPatient.getIdentifier()) {
-			//	LOG.info(id.getSystem());
-			//	LOG.info(id.getValue());
-			//}
-			//
-
-			for (Address address: fhirPatient.getAddress()) {
-				//LOG.info(address.getText());
-				fr.write(address.getText()+System.getProperty("line.separator"));
-			}
-
-			String patientUuid = patientId.toString();
-			Long enterpriseId = AbstractEnterpriseTransformer.findEnterpriseId(params, ResourceType.Patient.toString(), patientUuid);
-		}
-		fr.close();
-		 */
-	}
 
 	/*private static void testDatabases(String odsCodesStr, String subscriberConfigNamesStr) {
 		LOG.info("Testing all databases");
@@ -2730,7 +2800,7 @@ public class Main {
 	/**
 	 * populates the pseudo_id table on a new-style subscriber DB (MySQL or SQL Server) with pseudo_ids generated
 	 * from a salt
-     */
+	 */
 	/*private static void populateSubscriberPseudoId(String subscriberConfigName, String saltKeyName) {
 		LOG.info("Populating subscriber DB pseudo ID for " + subscriberConfigName + " using " + saltKeyName);
 		try {
@@ -4039,7 +4109,7 @@ public class Main {
 	 * if the "re-registrated patients" fix was run before the "deleted patients" fix. This meant that
 	 * the patient resource was re-created from the patient file but the ethnicity and marital status weren't carried
 	 * over from the pre-deleted version.
-     */
+	 */
 	/*private static void fixMissingEmisEthnicities(String filePath, String filterRegexOdsCode) {
 		LOG.info("Fixing Missing Emis Ethnicities to " + filePath + " matching orgs using " + filterRegexOdsCode);
 		try {
@@ -4209,7 +4279,7 @@ public class Main {
 
 	/**
 	 * updates patient_search and patient_link tables for explicit list of patient UUIDs
-     */
+	 */
 	/*private static void updatePatientSearch(String filePath) throws Exception {
 		LOG.info("Updating patient search from " + filePath);
 		try {
@@ -4746,7 +4816,7 @@ public class Main {
 		}
 	}*/
 
-	private static void transformPatients(String sourceFile) {
+	private static void transformPatients(String sourceFile, String reason) {
 		LOG.info("Transforming patients from " + sourceFile);
 		try {
 			List<UUID> patientIds = new ArrayList<>();
@@ -4773,7 +4843,7 @@ public class Main {
 			}
 			LOG.info("Found " + patientIds.size() + " patient IDs");
 
-			QueueHelper.queueUpPatientsForTransform(patientIds);
+			QueueHelper.queueUpPatientsForTransform(patientIds, reason);
 
 			LOG.info("Finished transforming patients from " + sourceFile);
 		} catch (Throwable t) {
@@ -6858,7 +6928,7 @@ public class Main {
 		throw new Exception("Failed to find suitable service ID for publisher [" + publisherConfigName + "]");
 	}
 
-	private static void convertFhirAudits2(String publisherConfigName, String tempTable, int threads, int batchSize, boolean testMode) throws Exception {
+	/*private static void convertFhirAudits2(String publisherConfigName, String tempTable, int threads, int batchSize, boolean testMode) throws Exception {
 		LOG.info("Converting FHIR audit for " + publisherConfigName);
 		try {
 			//find a suitable service ID
@@ -7019,7 +7089,7 @@ public class Main {
 		} else if (cause instanceof Error) {
 			throw (Error)cause;
 		}
-	}
+	}*/
 
 	static class ConvertFhirAuditCallable implements Callable {
 
@@ -9585,10 +9655,10 @@ create table uprn_pseudo_map (
 				//the reference and eds databases are on the same server
 				//String sql = "SELECT service_id, patient_id, uprn, qualifier, abp_address, `algorithm`, `match`, no_address, invalid_address, missing_postcode, invalid_postcode FROM patient_address_uprn";
 				String sql = "SELECT a.service_id, a.patient_id, a.uprn, a.qualifier, a.abp_address, a.`algorithm`,"
-							+ " a.`match`, a.no_address, a.invalid_address, a.missing_postcode, a.invalid_postcode, c.property_class"
-							+ " FROM patient_address_uprn a"
-							+ " LEFT OUTER JOIN reference.uprn_property_class c"
-							+ " ON c.uprn = a.uprn";
+						+ " a.`match`, a.no_address, a.invalid_address, a.missing_postcode, a.invalid_postcode, c.property_class"
+						+ " FROM patient_address_uprn a"
+						+ " LEFT OUTER JOIN reference.uprn_property_class c"
+						+ " ON c.uprn = a.uprn";
 
 				//support one patient at a time for debugging
 				if (specificPatientId != null) {

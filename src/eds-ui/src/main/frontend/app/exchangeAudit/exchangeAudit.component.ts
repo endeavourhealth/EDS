@@ -58,7 +58,7 @@ export class ExchangeAuditComponent {
 		this.service = new Service();
 		this.exchangesToShow = 100;
 		//this.postAllExchanges = false;
-		this.postMode = 'This';
+		this.postMode = 'Onwards';
 		this.searchMode = 'Recent';
 
 		this.systemId = transition.params()['systemId'];
@@ -592,7 +592,7 @@ export class ExchangeAuditComponent {
 
 	isBulk(exchange: Exchange): boolean {
 		var headers = exchange.headers;
-		return headers.hasOwnProperty('IsBulk')
-			&& headers['IsBulk'];
+		return headers.hasOwnProperty('is-bulk')
+			&& headers['is-bulk'];
 	}
 }

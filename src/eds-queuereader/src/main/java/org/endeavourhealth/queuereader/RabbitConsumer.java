@@ -94,7 +94,7 @@ public class RabbitConsumer extends DefaultConsumer
 		Exchange exchange = decodeExchange(properties, bytes);
 		if (exchange != null) {
 			processingState.setExchangeId(exchange.getId());
-			LOG.info("Received " + configId + " exchange " + exchange.getId() + " from Rabbit");
+			LOG.info(configId + " received exchange " + exchange.getId() + " for " + exchange.getHeader(HeaderKeys.SenderLocalIdentifier));
 
 			// Process the message
 			if (pipeline.execute(exchange)) {

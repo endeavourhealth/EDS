@@ -124,3 +124,5 @@ CREATE TABLE emis_missing_code_error (
 )
 	ROW_FORMAT=COMPRESSED
 	KEY_BLOCK_SIZE=8;
+
+CREATE INDEX ix on emis_missing_code_error (code_id);

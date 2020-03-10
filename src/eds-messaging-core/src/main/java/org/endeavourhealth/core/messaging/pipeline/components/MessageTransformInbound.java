@@ -37,6 +37,7 @@ import org.hl7.fhir.instance.model.Resource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 //import org.endeavourhealth.transform.barts.BartsCsvToFhirTransformer;
@@ -332,13 +333,18 @@ public class MessageTransformInbound extends PipelineComponent {
 			serviceDesc = serviceId.toString();
 		}
 
-		String message = ConfigManager.getAppSubId() + " error ";
+		String countStr = "";
 		int countErrors = currentErrors.getError().size();
 		if (countErrors > 1) {
-			message += "1 of " + countErrors + " ";
+			countStr = "(1 of " + countErrors + ") ";
 		}
-		message += "in transform from " + software + " for exchange " + exchange.getId() + " and service " + serviceDesc + "\n";
-		message += "view the full error details on the Transform Errors page of EDS-UI";
+
+		String exchangeDateStr = new SimpleDateFormat("yyyy-MM-dd").format(exchange.getTimestamp());
+		String appId = ConfigManager.getAppSubId();
+
+		String message = appId + " error " + countStr + "in " + software + " transform for " + serviceDesc + "\n";
+		message += "Exchange " + exchange.getId() + " received " + exchangeDateStr + "\n";
+		message += "View the full error details on the Transform Errors page of EDS-UI";
 
 		Error error = currentErrors.getError().get(0);
 		List<String> lines = new ArrayList<>();
