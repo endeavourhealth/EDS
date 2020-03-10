@@ -240,6 +240,7 @@ create table cds_outpatient
     date_of_birth                   date COMMENT 'from PersonBirthDate',
     consultant_code                 varchar(20) NOT NULL COMMENT 'GMC number of consultant, from ConsultantCode',
 
+    referral_source                 varchar(12),
     patient_pathway_identifier      varchar(20)  COMMENT 'links to the EpisodeId from the tail file if present',
     appt_attendance_identifier      varchar(20),
     administrative_category_code    varchar(12),
@@ -280,6 +281,7 @@ create table cds_outpatient_latest
     date_of_birth                   date COMMENT 'from PersonBirthDate',
     consultant_code                 varchar(20) NOT NULL COMMENT 'GMC number of consultant, from ConsultantCode',
 
+    referral_source                 varchar(12),
     patient_pathway_identifier      varchar(20)  COMMENT 'links to the EpisodeId from the tail file if present',
     appt_attendance_identifier      varchar(20),
     administrative_category_code    varchar(12),
@@ -315,6 +317,7 @@ create table cds_outpatient_target
     episode_id               	int COMMENT ' episode ID associated with the outpatient encounter, derived from tail ',
     performer_personnel_id     	int COMMENT ' responsible personnel ID for the outpatient encounter ',
 
+    referral_source             varchar(12),
     patient_pathway_identifier  varchar(20)  COMMENT 'links to the EpisodeId from the tail file if present',
     appt_attendance_identifier  varchar(20),
     administrative_category_code varchar(12),
@@ -350,6 +353,7 @@ create table cds_outpatient_target_latest
     episode_id               	int COMMENT ' episode ID associated with the outpatient encounter, derived from tail ',
     performer_personnel_id     	int COMMENT ' responsible personnel ID for the outpatient encounter ',
 
+    referral_source             varchar(12),
     patient_pathway_identifier  varchar(20)  COMMENT 'links to the EpisodeId from the tail file if present',
     appt_attendance_identifier  varchar(20),
     administrative_category_code varchar(12),
