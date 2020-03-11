@@ -50,11 +50,13 @@ import org.endeavourhealth.core.xml.transformError.Arg;
 import org.endeavourhealth.core.xml.transformError.Error;
 import org.endeavourhealth.core.xml.transformError.ExceptionLine;
 import org.endeavourhealth.core.xml.transformError.TransformError;
+import org.endeavourhealth.subscriber.filer.EnterpriseFiler;
 import org.endeavourhealth.transform.common.*;
 import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
 import org.endeavourhealth.transform.subscriber.targetTables.OutputContainer;
 import org.endeavourhealth.transform.subscriber.targetTables.SubscriberTableId;
 import org.endeavourhealth.transform.tpp.TppCsvToFhirTransformer;
+import org.endeavourhealth.transform.ui.helpers.BulkHelper;
 import org.hibernate.internal.SessionImpl;
 import org.hl7.fhir.instance.model.MedicationStatement;
 import org.hl7.fhir.instance.model.ResourceType;
@@ -75,6 +77,8 @@ import java.util.Date;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
+
+import static org.endeavourhealth.core.xml.QueryDocument.ServiceContractType.PUBLISHER;
 
 public class Main {
 	private static final Logger LOG = LoggerFactory.getLogger(Main.class);
@@ -144,6 +148,16 @@ public class Main {
 			String odsCode = args[1];
 			String projectId = args[2];
 			testDsm(odsCode, projectId);
+			System.exit(0);
+		}
+
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("UPRN")) {
+			String configName = args[1];
+			String protocolName = args[2];
+			String outputFormat = args[3];
+			bulkProcessUPRN(configName, protocolName, outputFormat);
+
 			System.exit(0);
 		}
 
@@ -1659,6 +1673,57 @@ public class Main {
 			LOG.info("Finished Create Zips For Subscriber");
 		} catch (Throwable t) {
 			LOG.error("", t);
+		}
+	}
+
+	private static void bulkProcessUPRN(String subscriberConfigName, String protocolName, String outputFormat) throws Exception {
+
+		LibraryItem matchedLibraryItem = BulkHelper.findProtocolLibraryItem(protocolName);
+
+		if (matchedLibraryItem == null) {
+			System.out.println("Protocol not found : " + protocolName);
+			return;
+		}
+		List<ServiceContract> l = matchedLibraryItem.getProtocol().getServiceContract();
+		String serviceId = "";
+		ResourceDalI dal = DalProvider.factoryResourceDal();
+		PatientSearchDalI patientSearchDal = DalProvider.factoryPatientSearchDal();
+
+		List<ResourceWrapper> resources = new ArrayList<>();
+		for (ServiceContract serviceContract : l) {
+			if (serviceContract.getType().equals(PUBLISHER)
+					&& serviceContract.getActive() == ServiceContractActive.TRUE) {
+
+				UUID batchUUID = UUID.randomUUID();
+				serviceId = serviceContract.getService().getUuid();
+				UUID serviceUUID = UUID.fromString(serviceId);
+				List<UUID> patientIds = patientSearchDal.getPatientIds(serviceUUID);
+				for (UUID patientId : patientIds) {
+
+					resources.clear();
+
+					ResourceWrapper patientWrapper = dal.getCurrentVersion(serviceUUID, ResourceType.Patient.toString(), patientId);
+
+					resources.add(patientWrapper);
+
+					if (outputFormat.equals("SUBSCRIBER")) {
+
+						String containerString = BulkHelper.getSubscriberContainerForUPRNData(resources, serviceUUID, batchUUID, subscriberConfigName, patientId);
+
+						//  Is a random UUID ok to use as a queued message ID
+						if (containerString != null) {
+							org.endeavourhealth.subscriber.filer.SubscriberFiler.file(batchUUID,  UUID.randomUUID(), containerString, subscriberConfigName);
+						}
+
+					} else {
+						String containerString = BulkHelper.getEnterpriseContainerForUPRNData(resources, serviceUUID, batchUUID, subscriberConfigName, patientId);
+
+						if (containerString != null) {
+							EnterpriseFiler.file(batchUUID, containerString, subscriberConfigName);
+						}
+					}
+				}
+			}
 		}
 	}
 
@@ -3743,7 +3808,7 @@ public class Main {
 				for (LibraryItem libraryItem: libraryItems) {
 					for (ServiceContract serviceContract: libraryItem.getProtocol().getServiceContract()) {
 						if (serviceContract.getService().getUuid().equals(serviceIdStr)
-								&& serviceContract.getType() == ServiceContractType.PUBLISHER
+								&& serviceContract.getType() == PUBLISHER
 								&& serviceContract.getActive() == ServiceContractActive.TRUE) {
 							publisherLibraryItems.add(libraryItem);
 							break;
@@ -9707,7 +9772,7 @@ create table uprn_pseudo_map (
 							//check to make sure that this service is actually a PUBLISHER to this protocol
 							boolean isProtocolPublisher = false;
 							for (ServiceContract serviceContract : protocol.getServiceContract()) {
-								if (serviceContract.getType().equals(ServiceContractType.PUBLISHER)
+								if (serviceContract.getType().equals(PUBLISHER)
 										&& serviceContract.getService().getUuid().equals(serviceId)
 										&& serviceContract.getActive() == ServiceContractActive.TRUE) {
 
