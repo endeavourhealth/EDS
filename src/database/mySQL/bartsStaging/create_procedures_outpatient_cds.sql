@@ -136,6 +136,7 @@ BEGIN
         cdsop.appt_outcome_code,
         cdsop.appt_date,
         cdsop.appt_site_code,
+        tail.treatment_function_code,
         cdsop.primary_diagnosis_ICD,
         cdsop.secondary_diagnosis_ICD,
         cdsop.other_diagnosis_ICD,
@@ -171,6 +172,7 @@ BEGIN
         appt_outcome_code,
         appt_date,
         appt_site_code,
+        treatment_function_code,
 
         -- store any diagnosis and procedure data
         primary_diagnosis_ICD,
@@ -204,6 +206,7 @@ BEGIN
          appt_outcome_code = VALUES(appt_outcome_code),
          appt_date = VALUES(appt_date),
          appt_site_code = VALUES(appt_site_code),
+         treatment_function_code = VALUES(treatment_function_code),
          primary_diagnosis_ICD = VALUES(primary_diagnosis_ICD),
          secondary_diagnosis_ICD = VALUES(secondary_diagnosis_ICD),
          other_diagnosis_ICD = VALUES(other_diagnosis_ICD),
@@ -241,6 +244,7 @@ BEGIN
         ot.appt_outcome_code,
         ot.appt_date,
         ot.appt_site_code,
+        ot.treatment_function_code,
         ot.primary_diagnosis_ICD,
         ot.secondary_diagnosis_ICD,
         ot.other_diagnosis_ICD,
