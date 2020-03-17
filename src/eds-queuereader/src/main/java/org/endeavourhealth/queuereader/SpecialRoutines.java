@@ -12,10 +12,13 @@ import org.endeavourhealth.core.database.dal.admin.models.Service;
 import org.endeavourhealth.core.database.dal.audit.ExchangeDalI;
 import org.endeavourhealth.core.database.dal.audit.models.Exchange;
 import org.endeavourhealth.core.database.dal.audit.models.HeaderKeys;
+import org.endeavourhealth.core.database.dal.ehr.ResourceDalI;
+import org.endeavourhealth.core.database.dal.ehr.models.ResourceWrapper;
 import org.endeavourhealth.transform.common.AuditWriter;
 import org.endeavourhealth.transform.common.ExchangeHelper;
 import org.endeavourhealth.transform.common.ExchangePayloadFile;
 import org.endeavourhealth.transform.common.TransformConfig;
+import org.hl7.fhir.instance.model.ResourceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -189,5 +192,31 @@ public abstract class SpecialRoutines {
         }
 
         return false;
+    }
+
+    public static void getResourceHistory(String serviceIdStr, String resourceTypeStr, String resourceIdStr) {
+        LOG.debug("Getting resource history for " + resourceTypeStr + " " + resourceIdStr + " for service " + serviceIdStr);
+        try {
+
+            UUID serviceId = UUID.fromString(serviceIdStr);
+            UUID resourceId = UUID.fromString(resourceIdStr);
+
+            ResourceType resourceType = ResourceType.valueOf(resourceTypeStr);
+
+            ResourceDalI resourceDal = DalProvider.factoryResourceDal();
+
+            ResourceWrapper retrieved = resourceDal.getCurrentVersion(serviceId, resourceType.toString(), resourceId);
+            LOG.debug("Retrieved current: " + retrieved);
+
+            List<ResourceWrapper> history = resourceDal.getResourceHistory(serviceId, resourceType.toString(), resourceId);
+            LOG.debug("Retrieved history " + history.size());
+            for (ResourceWrapper h: history) {
+                LOG.debug("" + h);
+            }
+
+
+        } catch (Throwable t) {
+            LOG.error("", t);
+        }
     }
 }
