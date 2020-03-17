@@ -38,7 +38,6 @@ import org.endeavourhealth.core.database.rdbms.ConnectionManager;
 import org.endeavourhealth.core.database.rdbms.datasharingmanager.models.DataSharingAgreementEntity;
 import org.endeavourhealth.core.database.rdbms.enterprise.EnterpriseConnector;
 import org.endeavourhealth.core.exceptions.TransformException;
-import org.endeavourhealth.core.fhirStorage.FhirStorageService;
 import org.endeavourhealth.core.fhirStorage.ServiceInterfaceEndpoint;
 import org.endeavourhealth.core.messaging.pipeline.components.MessageTransformOutbound;
 import org.endeavourhealth.core.messaging.pipeline.components.OpenEnvelope;
@@ -11489,7 +11488,7 @@ create table uprn_pseudo_map (
 			LOG.error("", t);
 		}
 	}*/
-	private static void saveResourceWrapper(UUID serviceId, ResourceWrapper wrapper) throws Exception {
+	/*private static void saveResourceWrapper(UUID serviceId, ResourceWrapper wrapper) throws Exception {
 
 		if (wrapper.getVersion() == null) {
 			throw new Exception("Can't update resource history without version UUID");
@@ -11542,7 +11541,7 @@ create table uprn_pseudo_map (
 		//LOG.debug(updateSql);
 
 		entityManager.getTransaction().commit();
-	}
+	}*/
 
 	/*private static void populateNewSearchTable(String table) {
 		LOG.info("Populating New Search Table");
