@@ -8,6 +8,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.common.config.ConfigManager;
+import org.endeavourhealth.common.fhir.IdentifierHelper;
 import org.endeavourhealth.common.utility.FileHelper;
 import org.endeavourhealth.core.configuration.ConfigDeserialiser;
 import org.endeavourhealth.core.configuration.PostMessageToExchangeConfig;
@@ -87,6 +88,15 @@ public class Main {
 		String configId = args[0];
 		LOG.info("Initialising config manager");
 		ConfigManager.initialize("queuereader", configId);
+
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("ValidateNhsNumbers")) {
+			String filePath = args[1];
+			boolean addCommas = Boolean.parseBoolean(args[2]);
+			SpecialRoutines.validateNhsNumbers(filePath, addCommas);
+			System.exit(0);
+		}
+
 
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("GetResourceHistory")) {
@@ -5167,8 +5177,16 @@ public class Main {
 				if (o == null) {
 					int col = 1;
 					if (validNhsNumberCol != null) {
-						int validNhsNunmber = isValidNhsNumber(value);
-						psUpdateNull.setInt(col++, validNhsNunmber);
+						Boolean isValid = IdentifierHelper.isValidNhsNumber(value);
+						int validNhsNumber;
+						if (isValid == null) {
+							validNhsNumber = -1;
+						} else if (!isValid.booleanValue()) {
+							validNhsNumber = 0;
+						} else {
+							validNhsNumber = 1;
+						}
+						psUpdateNull.setInt(col++, validNhsNumber);
 					}
 					psUpdateNull.setString(col++, pseudoId);
 					psUpdateNull.executeUpdate();
@@ -5177,8 +5195,16 @@ public class Main {
 
 					int col = 1;
 					if (validNhsNumberCol != null) {
-						int validNhsNunmber = isValidNhsNumber(value);
-						psUpdate.setInt(col++, validNhsNunmber);
+						Boolean isValid = IdentifierHelper.isValidNhsNumber(value);
+						int validNhsNumber;
+						if (isValid == null) {
+							validNhsNumber = -1;
+						} else if (!isValid.booleanValue()) {
+							validNhsNumber = 0;
+						} else {
+							validNhsNumber = 1;
+						}
+						psUpdate.setInt(col++, validNhsNumber);
 					}
 					psUpdate.setString(col++, pseudoId);
 					psUpdate.setString(col++, value);
@@ -5217,54 +5243,6 @@ public class Main {
 		}
 	}
 
-	private static int isValidNhsNumber(String fieldValue) {
-		if (fieldValue == null) {
-			return -1;
-		}
-
-		if (fieldValue.isEmpty()) {
-			return -1;
-		}
-
-		if (fieldValue.length() != 10) {
-			return 0;
-		}
-
-		int sum = 0;
-
-		char[] chars = fieldValue.toCharArray();
-		for (int i=0; i<9; i++) {
-			char c = chars[i];
-
-			if (!Character.isDigit(c)) {
-				return 0;
-			}
-
-			int val = Character.getNumericValue(c);
-			int weight = 10 - i;
-			int m = val * weight;
-			sum += m;
-			//LOG.trace("" + c + " x " + weight + " = " + m + " sum = " + sum);
-		}
-
-		int remainder = sum % 11;
-		int check = 11 - remainder;
-		//LOG.trace("sum = " + sum + " mod 11 = " + remainder + " check = " + check);
-		if (check == 11) {
-			check = 0;
-		}
-		if (check == 10) {
-			return 0;
-		}
-
-		char lastChar = chars[9];
-		int actualCheck = Character.getNumericValue(lastChar);
-		if (check != actualCheck) {
-			return 0;
-		}
-
-		return 1;
-	}
 
 	/*private static void checkForBartsMissingFiles(String sinceDate) {
 		LOG.info("Checking for Barts missing files");

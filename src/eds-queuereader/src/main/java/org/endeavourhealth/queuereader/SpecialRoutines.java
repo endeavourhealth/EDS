@@ -1,7 +1,9 @@
 package org.endeavourhealth.queuereader;
 
 import com.google.common.base.Strings;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
+import org.endeavourhealth.common.fhir.IdentifierHelper;
 import org.endeavourhealth.common.utility.FileHelper;
 import org.endeavourhealth.common.utility.FileInfo;
 import org.endeavourhealth.common.utility.JsonSerializer;
@@ -197,6 +199,8 @@ public abstract class SpecialRoutines {
     public static void getResourceHistory(String serviceIdStr, String resourceTypeStr, String resourceIdStr) {
         LOG.debug("Getting resource history for " + resourceTypeStr + " " + resourceIdStr + " for service " + serviceIdStr);
         try {
+            LOG.debug("");
+            LOG.debug("");
 
             UUID serviceId = UUID.fromString(serviceIdStr);
             UUID resourceId = UUID.fromString(resourceIdStr);
@@ -206,14 +210,88 @@ public abstract class SpecialRoutines {
             ResourceDalI resourceDal = DalProvider.factoryResourceDal();
 
             ResourceWrapper retrieved = resourceDal.getCurrentVersion(serviceId, resourceType.toString(), resourceId);
-            LOG.debug("Retrieved current: " + retrieved);
+            LOG.debug("Retrieved current>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
+            LOG.debug("");
+            LOG.debug("" + retrieved);
+            LOG.debug("");
+            LOG.debug("");
 
             List<ResourceWrapper> history = resourceDal.getResourceHistory(serviceId, resourceType.toString(), resourceId);
-            LOG.debug("Retrieved history " + history.size());
+            LOG.debug("Retrieved history " + history.size() + ">>>>>>>>>>>>>>>>>>>>>>>>>>>>");
+            LOG.debug("");
             for (ResourceWrapper h: history) {
                 LOG.debug("" + h);
+                LOG.debug("");
             }
 
+
+        } catch (Throwable t) {
+            LOG.error("", t);
+        }
+    }
+
+    /**
+     * validates NHS numbers from a file, outputting valid and invalid ones to separate output files
+     * if the addComma parameter is true it'll add a comma to the end of each line, so it's ready
+     * for sending to the National Data Opt-out service
+     */
+    public static void validateNhsNumbers(String filePath, boolean addCommas) {
+        LOG.info("Validating NHS Numbers in " + filePath);
+        LOG.info("Adding commas = " + addCommas);
+        try {
+            File f = new File(filePath);
+            if (!f.exists()) {
+                throw new Exception("File " + f + " doesn't exist");
+            }
+            List<String> lines = FileUtils.readLines(f);
+
+            List<String> valid = new ArrayList<>();
+            List<String> invalid = new ArrayList<>();
+
+            for (String line: lines) {
+
+                if (line.length() > 10) {
+                    String c = line.substring(10);
+                    if (c.equals(",")) {
+                        line = line.substring(0, 10);
+                    } else {
+                        invalid.add(line);
+                        continue;
+                    }
+                }
+
+                if (line.length() < 10) {
+                    invalid.add(line);
+                    continue;
+                }
+
+                Boolean isValid = IdentifierHelper.isValidNhsNumber(line);
+                if (isValid == null) {
+                    continue;
+                }
+
+                if (!isValid.booleanValue()) {
+                    invalid.add(line);
+                    continue;
+                }
+
+                //if we make it here, we're valid
+                if (addCommas) {
+                    line += ",";
+                }
+                valid.add(line);
+            }
+
+            File dir = f.getParentFile();
+            String fileName = f.getName();
+
+            File fValid = new File(dir, "VALID_" + fileName);
+            FileUtils.writeLines(fValid, valid);
+            LOG.info("" + valid.size() + " NHS numbers written to " + fValid);
+
+            File fInvalid = new File(dir, "INVALID_" + fileName);
+            FileUtils.writeLines(fInvalid, invalid);
+            LOG.info("" + invalid.size() + " NHS numbers written to " + fInvalid);
 
         } catch (Throwable t) {
             LOG.error("", t);
