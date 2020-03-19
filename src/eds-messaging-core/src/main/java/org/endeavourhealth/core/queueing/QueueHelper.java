@@ -72,7 +72,10 @@ public class QueueHelper {
             UUID exchangeId = exchangeIds.get(i);
             Exchange exchange = AuditWriter.readExchange(exchangeId);
 
+            String exchangeEventStr = "Manually pushed into " + exchangeName + " exchange";
+
             //short-term hack to skip Emis Left & Dead extracts and allow us to catch up from the missing code issue
+            //this will need removing when we're ready to start processing these exchanges
             if (exchangeName.equalsIgnoreCase(EXCHANGE_INBOUND)) { //difference case used on different servers
                 String software = exchange.getHeader(HeaderKeys.SourceSystem);
                 if (software.equals(MessageFormat.EMIS_CSV)) {
@@ -81,7 +84,15 @@ public class QueueHelper {
                             && isLeftAndDead.booleanValue()) {
 
                         auditSkippingExchange(exchange);
-                        continue;
+
+                        //actually, due to patient registrations being in the Left & Dead bulks, we need to process
+                        //a bare minimum from those files
+                        Set<String> filterForBulk = new HashSet<>();
+                        filterForBulk.add("Agreements_SharingOrganisation"); //always need to do this
+                        filterForBulk.add("Admin_Patient"); //only do this
+                        exchangeEventStr += filterOnFileTypes(filterForBulk, exchange);
+
+                        //continue;
                     }
                 }
             }
@@ -128,26 +139,9 @@ public class QueueHelper {
                 exchange.setHeader(HeaderKeys.ProtocolIds, specificProtocolJson);
             }
 
-            String exchangeEventStr = "Manually pushed into " + exchangeName + " exchange";
-
             //apply any filtering on file type
             if (fileTypesToFilterOn != null) {
-                List<ExchangePayloadFile> filteredFiles = new ArrayList<>();
-
-                List<ExchangePayloadFile> files = ExchangeHelper.parseExchangeBody(exchange.getBody(), false);
-                for (ExchangePayloadFile file: files) {
-                    String fileType = file.getType();
-                    if (fileTypesToFilterOn.contains(fileType)) {
-                        filteredFiles.add(file);
-                    }
-                }
-
-                String newBody = JsonSerializer.serialize(filteredFiles);
-                exchange.setBody(newBody);
-
-                List<String> list = new ArrayList<>(fileTypesToFilterOn);
-                list.sort(((o1, o2) -> o1.compareToIgnoreCase(o2)));
-                exchangeEventStr += "\nFiltered on file types:\n" + String.join("\n", list);
+                exchangeEventStr += filterOnFileTypes(fileTypesToFilterOn, exchange);
             }
 
             //work out what multicast header we need
@@ -189,10 +183,37 @@ public class QueueHelper {
         }
     }
 
+    private static String filterOnFileTypes(Set<String> fileTypesToFilterOn, Exchange exchange) {
+
+        if (fileTypesToFilterOn == null
+                || fileTypesToFilterOn.isEmpty()) {
+            return "";
+        }
+
+        List<ExchangePayloadFile> filteredFiles = new ArrayList<>();
+
+        List<ExchangePayloadFile> files = ExchangeHelper.parseExchangeBody(exchange.getBody(), false);
+        for (ExchangePayloadFile file: files) {
+            String fileType = file.getType();
+            if (fileTypesToFilterOn.contains(fileType)) {
+                filteredFiles.add(file);
+            }
+        }
+
+        String newBody = JsonSerializer.serialize(filteredFiles);
+        exchange.setBody(newBody);
+
+        //return a desc of what we've done
+        List<String> list = new ArrayList<>(fileTypesToFilterOn);
+        list.sort(((o1, o2) -> o1.compareToIgnoreCase(o2)));
+        return "\nFiltered on file types:\n" + String.join("\n", list);
+    }
+
     private static void auditSkippingExchange(Exchange exchange) throws Exception {
 
-        LOG.info("Skipping exchange " + exchange.getId() + " because it's a Left & Dead exchange");
-        AuditWriter.writeExchangeEvent(exchange.getId(), "Skipped re-queueing because Left & Dead exchange");
+        LOG.info("Filtering exchange " + exchange.getId() + " just to do patient file because it's a Left & Dead exchange");
+        //LOG.info("Skipping exchange " + exchange.getId() + " because it's a Left & Dead exchange");
+        //AuditWriter.writeExchangeEvent(exchange.getId(), "Skipped re-queueing because Left & Dead exchange");
 
         //write to audit table so we can find out
         Connection connection = ConnectionManager.getAuditConnection();
