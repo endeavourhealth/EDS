@@ -155,6 +155,7 @@ create table cds_inpatient_target
     discharge_date                 datetime     COMMENT 'date and time of discharge',
     discharge_destination_code     varchar(12)   COMMENT 'LKP_CDS_DISCH_DEST',
     discharge_method               char(1)      COMMENT 'LKP_CDS_DISCH_METHOD',
+    treatment_function_code		   varchar(12),
 
     -- store and maternity data
     maternity_data_birth           mediumtext   COMMENT 'if the CDS type is 120 (baby birth), store JSON maternity birth data here',
@@ -203,6 +204,7 @@ create table cds_inpatient_target_latest
     discharge_date                 datetime     COMMENT 'date and time of discharge',
     discharge_destination_code     varchar(12)   COMMENT 'LKP_CDS_DISCH_DEST',
     discharge_method               char(1)      COMMENT 'LKP_CDS_DISCH_METHOD',
+    treatment_function_code		   varchar(12),
 
     -- store and maternity data
     maternity_data_birth           mediumtext   COMMENT 'if the CDS type is 120 (baby birth), store JSON maternity birth data here',
@@ -325,6 +327,7 @@ create table cds_outpatient_target
     appt_outcome_code           char(1)      COMMENT 'LKP_CDS_ATTENDANCE_OUTCOME',
     appt_date                   datetime     COMMENT 'date and time of the outpatient appointment',
     appt_site_code              varchar(12)  COMMENT 'location of outpatient appointment',
+    treatment_function_code		varchar(12),
 
     -- store any diagnosis and procedure data
     primary_diagnosis_ICD           varchar(6),
@@ -361,6 +364,7 @@ create table cds_outpatient_target_latest
     appt_outcome_code           char(1)      COMMENT 'LKP_CDS_ATTENDANCE_OUTCOME',
     appt_date                   datetime     COMMENT 'date and time of the outpatient appointment',
     appt_site_code              varchar(12)  COMMENT 'location of outpatient appointment',
+    treatment_function_code		varchar(12),
 
     -- store any diagnosis and procedure data
     primary_diagnosis_ICD           varchar(6),
@@ -406,7 +410,6 @@ create table cds_emergency
     chief_complaint                     varchar(20),
     seen_for_treatment_date             datetime,
     decided_to_admit_date               datetime,
-    treatment_function_code             varchar(12),
     discharge_status                    varchar(20) COMMENT 'Snomed coded',
     discharge_destination               varchar(20),
     discharge_destination_site_id       varchar(20),
@@ -452,7 +455,6 @@ create table cds_emergency_latest
     chief_complaint                     varchar(20),
     seen_for_treatment_date             datetime,
     decided_to_admit_date               datetime,
-    treatment_function_code             varchar(12),
     discharge_status                    varchar(20) COMMENT 'Snomed coded',
     discharge_destination               varchar(20),
     discharge_destination_site_id       varchar(20),

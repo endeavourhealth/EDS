@@ -1,5 +1,9 @@
 USE ehr_??; -- we can have multiple EHR databases
 
+drop trigger if exists after_resource_current_insert;
+drop trigger if exists after_resource_current_update;
+drop trigger if exists after_resource_current_delete;
+
 DROP TABLE IF EXISTS resource_history;
 DROP TABLE IF EXISTS resource_current;
 DROP TABLE IF EXISTS encounter_history;
@@ -120,3 +124,83 @@ CREATE INDEX ix_encounter_current_service_id
 -- index used to retrieve current version of a composition encounter and check its checksum to work out if it has changed
 CREATE INDEX ix_encounter_current_id_type_checksum
     ON encounter_current (composition_resource_id, encounter_id, composition_encounter_checksum);
+
+-- trigger to update resource_history when a new resource_current is inserted
+DELIMITER $$
+CREATE TRIGGER after_resource_current_insert
+  AFTER INSERT ON resource_current
+  FOR EACH ROW
+  BEGIN
+    INSERT INTO resource_history (
+		service_id,
+        system_id,
+        resource_type,
+        resource_id,
+        created_at,
+        patient_id,
+        resource_data,
+        resource_checksum,
+        is_deleted,
+        exchange_batch_id,
+        version
+    ) VALUES (
+		NEW.service_id,
+        NEW.system_id,
+        NEW.resource_type,
+        NEW.resource_id,
+        NEW.updated_at,
+        NEW.patient_id,
+        null, -- the JSON field is for the OLD record, hence null
+        null,
+        IF (NEW.resource_data is null, true, false),
+        SUBSTRING(NEW.resource_metadata, 1, 36), -- batch_id is put into this field to make this work
+        SUBSTRING(NEW.resource_metadata, 38, 36) -- version is put into this field to make this work
+    );
+  END$$
+DELIMITER ;
+
+-- trigger to update resource_history when resource_current is updated (including logical deletes)
+DELIMITER $$
+CREATE TRIGGER after_resource_current_update
+  AFTER UPDATE ON resource_current
+  FOR EACH ROW
+  BEGIN
+    INSERT INTO resource_history (
+		service_id,
+        system_id,
+        resource_type,
+        resource_id,
+        created_at,
+        patient_id,
+        resource_data,
+        resource_checksum,
+        is_deleted,
+        exchange_batch_id,
+        version
+    ) VALUES (
+		NEW.service_id,
+        NEW.system_id,
+        NEW.resource_type,
+        NEW.resource_id,
+        NEW.updated_at,
+        NEW.patient_id,
+        OLD.resource_data,
+        OLD.resource_checksum,
+        IF (NEW.resource_data is null, true, false),
+        SUBSTRING(NEW.resource_metadata, 1, 36), -- batch_id is put into this field to make this work
+        SUBSTRING(NEW.resource_metadata, 38, 36) -- version is put into this field to make this work
+    );
+  END$$
+DELIMITER ;
+
+-- trigger to update resource_history when a resource_current record is deleted (physical delete)
+DELIMITER $$
+CREATE TRIGGER after_resource_current_delete
+  AFTER DELETE ON resource_current
+  FOR EACH ROW
+  BEGIN
+	DELETE FROM resource_history
+    WHERE resource_id = OLD.resource_id
+    AND resource_type = OLD.resource_type;
+  END$$
+DELIMITER ;

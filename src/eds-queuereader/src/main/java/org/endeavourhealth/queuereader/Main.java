@@ -8,6 +8,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.common.config.ConfigManager;
+import org.endeavourhealth.common.fhir.IdentifierHelper;
 import org.endeavourhealth.common.utility.FileHelper;
 import org.endeavourhealth.core.configuration.ConfigDeserialiser;
 import org.endeavourhealth.core.configuration.PostMessageToExchangeConfig;
@@ -38,7 +39,6 @@ import org.endeavourhealth.core.database.rdbms.ConnectionManager;
 import org.endeavourhealth.core.database.rdbms.datasharingmanager.models.DataSharingAgreementEntity;
 import org.endeavourhealth.core.database.rdbms.enterprise.EnterpriseConnector;
 import org.endeavourhealth.core.exceptions.TransformException;
-import org.endeavourhealth.core.fhirStorage.FhirStorageService;
 import org.endeavourhealth.core.fhirStorage.ServiceInterfaceEndpoint;
 import org.endeavourhealth.core.messaging.pipeline.components.MessageTransformOutbound;
 import org.endeavourhealth.core.messaging.pipeline.components.OpenEnvelope;
@@ -50,11 +50,13 @@ import org.endeavourhealth.core.xml.transformError.Arg;
 import org.endeavourhealth.core.xml.transformError.Error;
 import org.endeavourhealth.core.xml.transformError.ExceptionLine;
 import org.endeavourhealth.core.xml.transformError.TransformError;
+import org.endeavourhealth.subscriber.filer.EnterpriseFiler;
 import org.endeavourhealth.transform.common.*;
 import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
 import org.endeavourhealth.transform.subscriber.targetTables.OutputContainer;
 import org.endeavourhealth.transform.subscriber.targetTables.SubscriberTableId;
 import org.endeavourhealth.transform.tpp.TppCsvToFhirTransformer;
+import org.endeavourhealth.transform.ui.helpers.BulkHelper;
 import org.hibernate.internal.SessionImpl;
 import org.hl7.fhir.instance.model.MedicationStatement;
 import org.hl7.fhir.instance.model.ResourceType;
@@ -76,15 +78,35 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
+import static org.endeavourhealth.core.xml.QueryDocument.ServiceContractType.PUBLISHER;
+
 public class Main {
 	private static final Logger LOG = LoggerFactory.getLogger(Main.class);
-
 
 	public static void main(String[] args) throws Exception {
 
 		String configId = args[0];
 		LOG.info("Initialising config manager");
 		ConfigManager.initialize("queuereader", configId);
+
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("ValidateNhsNumbers")) {
+			String filePath = args[1];
+			boolean addCommas = Boolean.parseBoolean(args[2]);
+			SpecialRoutines.validateNhsNumbers(filePath, addCommas);
+			System.exit(0);
+		}
+
+
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("GetResourceHistory")) {
+			String serviceId = args[1];
+			String resourceType = args[2];
+			String resourceId = args[3];
+			SpecialRoutines.getResourceHistory(serviceId, resourceType, resourceId);
+			System.exit(0);
+		}
+
 
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("FindOutOfOrderTppServices")) {
@@ -144,6 +166,16 @@ public class Main {
 			String odsCode = args[1];
 			String projectId = args[2];
 			testDsm(odsCode, projectId);
+			System.exit(0);
+		}
+
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("UPRN")) {
+			String configName = args[1];
+			String protocolName = args[2];
+			String outputFormat = args[3];
+			bulkProcessUPRN(configName, protocolName, outputFormat);
+
 			System.exit(0);
 		}
 
@@ -1659,6 +1691,57 @@ public class Main {
 			LOG.info("Finished Create Zips For Subscriber");
 		} catch (Throwable t) {
 			LOG.error("", t);
+		}
+	}
+
+	private static void bulkProcessUPRN(String subscriberConfigName, String protocolName, String outputFormat) throws Exception {
+
+		LibraryItem matchedLibraryItem = BulkHelper.findProtocolLibraryItem(protocolName);
+
+		if (matchedLibraryItem == null) {
+			System.out.println("Protocol not found : " + protocolName);
+			return;
+		}
+		List<ServiceContract> l = matchedLibraryItem.getProtocol().getServiceContract();
+		String serviceId = "";
+		ResourceDalI dal = DalProvider.factoryResourceDal();
+		PatientSearchDalI patientSearchDal = DalProvider.factoryPatientSearchDal();
+
+		List<ResourceWrapper> resources = new ArrayList<>();
+		for (ServiceContract serviceContract : l) {
+			if (serviceContract.getType().equals(PUBLISHER)
+					&& serviceContract.getActive() == ServiceContractActive.TRUE) {
+
+				UUID batchUUID = UUID.randomUUID();
+				serviceId = serviceContract.getService().getUuid();
+				UUID serviceUUID = UUID.fromString(serviceId);
+				List<UUID> patientIds = patientSearchDal.getPatientIds(serviceUUID);
+				for (UUID patientId : patientIds) {
+
+					resources.clear();
+
+					ResourceWrapper patientWrapper = dal.getCurrentVersion(serviceUUID, ResourceType.Patient.toString(), patientId);
+
+					resources.add(patientWrapper);
+
+					if (outputFormat.equals("SUBSCRIBER")) {
+
+						String containerString = BulkHelper.getSubscriberContainerForUPRNData(resources, serviceUUID, batchUUID, subscriberConfigName, patientId);
+
+						//  Is a random UUID ok to use as a queued message ID
+						if (containerString != null) {
+							org.endeavourhealth.subscriber.filer.SubscriberFiler.file(batchUUID,  UUID.randomUUID(), containerString, subscriberConfigName);
+						}
+
+					} else {
+						String containerString = BulkHelper.getEnterpriseContainerForUPRNData(resources, serviceUUID, batchUUID, subscriberConfigName, patientId);
+
+						if (containerString != null) {
+							EnterpriseFiler.file(batchUUID, containerString, subscriberConfigName);
+						}
+					}
+				}
+			}
 		}
 	}
 
@@ -3743,7 +3826,7 @@ public class Main {
 				for (LibraryItem libraryItem: libraryItems) {
 					for (ServiceContract serviceContract: libraryItem.getProtocol().getServiceContract()) {
 						if (serviceContract.getService().getUuid().equals(serviceIdStr)
-								&& serviceContract.getType() == ServiceContractType.PUBLISHER
+								&& serviceContract.getType() == PUBLISHER
 								&& serviceContract.getActive() == ServiceContractActive.TRUE) {
 							publisherLibraryItems.add(libraryItem);
 							break;
@@ -5094,8 +5177,16 @@ public class Main {
 				if (o == null) {
 					int col = 1;
 					if (validNhsNumberCol != null) {
-						int validNhsNunmber = isValidNhsNumber(value);
-						psUpdateNull.setInt(col++, validNhsNunmber);
+						Boolean isValid = IdentifierHelper.isValidNhsNumber(value);
+						int validNhsNumber;
+						if (isValid == null) {
+							validNhsNumber = -1;
+						} else if (!isValid.booleanValue()) {
+							validNhsNumber = 0;
+						} else {
+							validNhsNumber = 1;
+						}
+						psUpdateNull.setInt(col++, validNhsNumber);
 					}
 					psUpdateNull.setString(col++, pseudoId);
 					psUpdateNull.executeUpdate();
@@ -5104,8 +5195,16 @@ public class Main {
 
 					int col = 1;
 					if (validNhsNumberCol != null) {
-						int validNhsNunmber = isValidNhsNumber(value);
-						psUpdate.setInt(col++, validNhsNunmber);
+						Boolean isValid = IdentifierHelper.isValidNhsNumber(value);
+						int validNhsNumber;
+						if (isValid == null) {
+							validNhsNumber = -1;
+						} else if (!isValid.booleanValue()) {
+							validNhsNumber = 0;
+						} else {
+							validNhsNumber = 1;
+						}
+						psUpdate.setInt(col++, validNhsNumber);
 					}
 					psUpdate.setString(col++, pseudoId);
 					psUpdate.setString(col++, value);
@@ -5144,54 +5243,6 @@ public class Main {
 		}
 	}
 
-	private static int isValidNhsNumber(String fieldValue) {
-		if (fieldValue == null) {
-			return -1;
-		}
-
-		if (fieldValue.isEmpty()) {
-			return -1;
-		}
-
-		if (fieldValue.length() != 10) {
-			return 0;
-		}
-
-		int sum = 0;
-
-		char[] chars = fieldValue.toCharArray();
-		for (int i=0; i<9; i++) {
-			char c = chars[i];
-
-			if (!Character.isDigit(c)) {
-				return 0;
-			}
-
-			int val = Character.getNumericValue(c);
-			int weight = 10 - i;
-			int m = val * weight;
-			sum += m;
-			//LOG.trace("" + c + " x " + weight + " = " + m + " sum = " + sum);
-		}
-
-		int remainder = sum % 11;
-		int check = 11 - remainder;
-		//LOG.trace("sum = " + sum + " mod 11 = " + remainder + " check = " + check);
-		if (check == 11) {
-			check = 0;
-		}
-		if (check == 10) {
-			return 0;
-		}
-
-		char lastChar = chars[9];
-		int actualCheck = Character.getNumericValue(lastChar);
-		if (check != actualCheck) {
-			return 0;
-		}
-
-		return 1;
-	}
 
 	/*private static void checkForBartsMissingFiles(String sinceDate) {
 		LOG.info("Checking for Barts missing files");
@@ -9707,7 +9758,7 @@ create table uprn_pseudo_map (
 							//check to make sure that this service is actually a PUBLISHER to this protocol
 							boolean isProtocolPublisher = false;
 							for (ServiceContract serviceContract : protocol.getServiceContract()) {
-								if (serviceContract.getType().equals(ServiceContractType.PUBLISHER)
+								if (serviceContract.getType().equals(PUBLISHER)
 										&& serviceContract.getService().getUuid().equals(serviceId)
 										&& serviceContract.getActive() == ServiceContractActive.TRUE) {
 
@@ -11424,7 +11475,7 @@ create table uprn_pseudo_map (
 			LOG.error("", t);
 		}
 	}*/
-	private static void saveResourceWrapper(UUID serviceId, ResourceWrapper wrapper) throws Exception {
+	/*private static void saveResourceWrapper(UUID serviceId, ResourceWrapper wrapper) throws Exception {
 
 		if (wrapper.getVersion() == null) {
 			throw new Exception("Can't update resource history without version UUID");
@@ -11477,7 +11528,7 @@ create table uprn_pseudo_map (
 		//LOG.debug(updateSql);
 
 		entityManager.getTransaction().commit();
-	}
+	}*/
 
 	/*private static void populateNewSearchTable(String table) {
 		LOG.info("Populating New Search Table");
