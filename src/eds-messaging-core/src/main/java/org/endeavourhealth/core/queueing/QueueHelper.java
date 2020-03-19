@@ -20,6 +20,7 @@ import org.endeavourhealth.core.database.dal.audit.models.HeaderKeys;
 import org.endeavourhealth.core.database.dal.eds.PatientLinkDalI;
 import org.endeavourhealth.core.database.dal.eds.PatientSearchDalI;
 import org.endeavourhealth.core.database.dal.eds.models.PatientSearch;
+import org.endeavourhealth.core.database.rdbms.ConnectionManager;
 import org.endeavourhealth.core.fhirStorage.ServiceInterfaceEndpoint;
 import org.endeavourhealth.core.messaging.pipeline.components.DetermineRelevantProtocolIds;
 import org.endeavourhealth.core.messaging.pipeline.components.PostMessageToExchange;
@@ -29,6 +30,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.BadRequestException;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -68,6 +71,20 @@ public class QueueHelper {
 
             UUID exchangeId = exchangeIds.get(i);
             Exchange exchange = AuditWriter.readExchange(exchangeId);
+
+            //short-term hack to skip Emis Left & Dead extracts and allow us to catch up from the missing code issue
+            if (exchangeName.equalsIgnoreCase(EXCHANGE_INBOUND)) { //difference case used on different servers
+                String software = exchange.getHeader(HeaderKeys.SourceSystem);
+                if (software.equals(MessageFormat.EMIS_CSV)) {
+                    Boolean isLeftAndDead = exchange.getHeaderAsBoolean("possible-left-and-dead");
+                    if (isLeftAndDead != null
+                            && isLeftAndDead.booleanValue()) {
+
+                        auditSkippingExchange(exchange);
+                        continue;
+                    }
+                }
+            }
 
             //no longer required as these special exchanges now have the AllowQueueing=false header which PostMessageToExchange detects
             /*String sourceSystem = exchange.getHeader(HeaderKeys.SourceSystem);
@@ -169,6 +186,33 @@ public class QueueHelper {
             if (i % 1000 == 0) {
                 LOG.info("Posted " + (i+1) + " / " + exchangeIds.size() + " exchanges to " + exchangeName);
             }
+        }
+    }
+
+    private static void auditSkippingExchange(Exchange exchange) throws Exception {
+
+        LOG.info("Skipping exchange " + exchange.getId() + " because it's a Left & Dead exchange");
+        AuditWriter.writeExchangeEvent(exchange.getId(), "Skipped re-queueing because Left & Dead exchange");
+
+        //write to audit table so we can find out
+        Connection connection = ConnectionManager.getAuditConnection();
+        PreparedStatement ps = null;
+        try {
+            String sql = "INSERT INTO skipped_exchanges_left_and_dead VALUES (?, ?, ?, ?, ?)";
+            ps = connection.prepareStatement(sql);
+
+            int col = 1;
+            ps.setString(col++, exchange.getServiceId().toString());
+            ps.setString(col++, exchange.getSystemId().toString());
+            ps.setString(col++, exchange.getId().toString());
+            ps.setTimestamp(col++, new java.sql.Timestamp(exchange.getHeaderAsDate(HeaderKeys.DataDate).getTime()));
+            ps.setTimestamp(col++, new java.sql.Timestamp(new Date().getTime()));
+
+            ps.executeUpdate();
+            connection.commit();
+
+        } finally {
+            connection.close();
         }
     }
 
