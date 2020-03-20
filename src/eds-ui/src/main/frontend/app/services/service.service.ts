@@ -19,7 +19,9 @@ export class ServiceService extends BaseHttp2Service {
 	servicePublisherConfigFilter: string;
 	//serviceHasErrorsFilter: boolean;
 	serviceStatusFilter: string;
-	serviceCcgCodeFilter: string;
+	serviceCcgCodeFilterStr: string;
+	serviceCcgCodeFilterRegex: string;
+	serviceCcgCodeFilterIsRegex: boolean;
 	serviceLastDataFilter: string;
 	servicePublisherModeFilter: string;
 	sortFilter: string;
@@ -34,6 +36,7 @@ export class ServiceService extends BaseHttp2Service {
 		vm.showFilters = true;
 		vm.serviceNameSearchIncludeTags = false;
 		vm.serviceNameSearchSpecificTag = '';
+		vm.serviceCcgCodeFilterIsRegex = false;
 		vm.sortFilter = 'NameAsc';
 	}
 
@@ -133,6 +136,18 @@ export class ServiceService extends BaseHttp2Service {
 			}
 		}
 
+		//validate parent/CCG search text is valid regex
+		var validParentFilterRegex;
+		if (vm.serviceCcgCodeFilterIsRegex
+			&& vm.serviceCcgCodeFilterRegex) {
+			try {
+				new RegExp(vm.serviceCcgCodeFilterRegex);
+				validParentFilterRegex = vm.serviceCcgCodeFilterRegex.toLowerCase();
+			} catch (e) {
+				//do nothing
+			}
+		}
+
 		//work out the bounding dates if searching by last data
 		var minLastData;
 		var maxLastData;
@@ -196,9 +211,22 @@ export class ServiceService extends BaseHttp2Service {
 					}
 				}
 
-				if (vm.serviceCcgCodeFilter) {
+				//if it's not regex, then just compare strings
+				if (!vm.serviceCcgCodeFilterIsRegex
+					&& vm.serviceCcgCodeFilterStr) {
+
 					var ccgCode = service.ccgCode;
-					if (!ccgCode || ccgCode != vm.serviceCcgCodeFilter) {
+					if (!ccgCode || ccgCode != vm.serviceCcgCodeFilterStr) {
+						continue;
+					}
+				}
+
+				//if it's not regex, then just compare strings
+				if (vm.serviceCcgCodeFilterIsRegex
+					&& validParentFilterRegex) {
+
+					var ccgCode = service.ccgCode;
+					if (!ccgCode || !ccgCode.toLowerCase().match(validParentFilterRegex)) {
 						continue;
 					}
 				}
@@ -230,51 +258,6 @@ export class ServiceService extends BaseHttp2Service {
  					} else {
 						//console.log('include');
 					}
-
-					/*if (vm.serviceStatusFilter == 'NoStatus') {
-						include = !service.systemStatuses;
-
-					} else {
-
-						if (service.systemStatuses) {
-							for (var j=0; j<service.systemStatuses.length; j++) {
-								var systemStatus = service.systemStatuses[j];
-
-								if (vm.serviceStatusFilter == 'Error'
-									&& systemStatus.processingInError) {
-									include = true;
-									break;
-								}
-
-								if (vm.serviceStatusFilter == 'Behind'
-									&& systemStatus.lastDataReceived //only count if we've received some data
-									&& !systemStatus.processingInError //if looking for behind, don't include any in error
-									&& !systemStatus.processingUpToDate) {
-									include = true;
-									break;
-								}
-
-								if (vm.serviceStatusFilter == 'OK'
-									&& !systemStatus.processingInError
-									&& systemStatus.processingUpToDate) {
-									include = true;
-									break;
-								}
-
-								if (vm.serviceStatusFilter == 'NoData'
-									&& !systemStatus.lastDataReceived) {
-									include = true;
-									break;
-								}
-
-
-							}
-						}
-					}
-
-					if (!include) {
-						continue;
-					}*/
 				}
 
 				if (vm.servicePublisherModeFilter

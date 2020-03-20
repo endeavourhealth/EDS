@@ -20,6 +20,7 @@
 					<form class="form-horizontal" role="form">
 						<div class="form-group">
 
+							<!-- name and ID filtering -->
 							<div class="col-sm-2">
 
 								<label for="inputType" class="control-label">Name/ID</label>
@@ -39,14 +40,26 @@
 
 							</div>
 
+							<!-- parent / CCG filtering -->
 							<div class="col-sm-2">
 								<label for="inputType2" class="control-label">Parent</label>
-								<select id="inputType2" class="form-control" [(ngModel)]="serviceService.serviceCcgCodeFilter" name="serviceCcgCodeFilter" (ngModelChange)="applyFiltering()">
+
+								<div class="pull-right">
+									<label for="serviceCcgCodeFilterIsRegex" class="control-label">Regex</label>
+									<input type="checkbox" id="serviceCcgCodeFilterIsRegex" [(ngModel)]="serviceService.serviceCcgCodeFilterIsRegex" name="serviceCcgCodeFilterIsRegex" (ngModelChange)="applyFiltering()">
+								</div>
+
+								<!-- if not searching regex, show the combo -->
+								<select *ngIf="!serviceService.serviceCcgCodeFilterIsRegex" id="inputType2" class="form-control" [(ngModel)]="serviceService.serviceCcgCodeFilterStr" name="serviceCcgCodeFilter" (ngModelChange)="applyFiltering()">
 									<option value=""></option>
 									<option *ngFor="let ccgCode of allCcgCodes" value="{{ccgCode}}">{{ccgCode}} {{serviceService.getCcgName(ccgCode)}}</option>
 								</select>
+
+								<!-- if searching regex just show a text box -->
+								<input *ngIf="serviceService.serviceCcgCodeFilterIsRegex" type="text" class="form-control" id="inputType2" placeholder="Regex" [(ngModel)]="serviceService.serviceCcgCodeFilterRegex" name="serviceCcgCodeFilter" (ngModelChange)="applyFiltering()">
 							</div>
 
+							<!-- publisher config filtering -->
 							<div class="col-sm-2">
 								<label for="inputType5" class="control-label">Publisher Config</label>
 								<select id="inputType5" class="form-control" [(ngModel)]="serviceService.servicePublisherConfigFilter" name="servicePublisherConfigFilter" (ngModelChange)="applyFiltering()">
@@ -55,6 +68,7 @@
 								</select>
 							</div>
 
+							<!-- last data date filtering -->
 							<div class="col-sm-1">
 								<label for="inputType4" class="control-label">Last Data</label>
 								<select id="inputType4" class="form-control" [(ngModel)]="serviceService.serviceLastDataFilter" name="lastDataFilter" (ngModelChange)="applyFiltering()">
@@ -127,13 +141,15 @@
 										<th class="col-md-1">Parent</th>
 										<th class="col-md-1">Publisher Config</th>
 										<th class="col-md-1">Last Data</th>
-										<th class="col-md-1">Status</th>
-										<th class="col-md-3">Tags</th>
+										<th class="col-md-2">Status</th>
+										<th class="col-md-2">Tags</th>
 										<th class="col-md-1">Actions</th>
 									</tr>
 								</thead>
 								<tbody>
 									<tr class="hover-box show-child-on-hover" *ngFor="let service of filteredServices">
+
+										<!-- service name -->
 										<td>
 											<a (click)="edit(service)">{{service.name}}</a>
 
@@ -141,12 +157,18 @@
 											<span class="fa fa-info-circle fa-right-pad text-muted" ngbTooltip="{{service.alias}}" *ngIf="service.alias"></span>
 
 										</td>
+
+										<!-- service ID -->
 										<td>{{service.localIdentifier}}</td>
+
+										<!-- service parent -->
 										<td>
 											<span ngbTooltip="{{serviceService.getCcgName(service.ccgCode)}}">
 												{{service.ccgCode}}
 											</span>
 										</td>
+
+										<!-- publisher config -->
 										<td>{{service.publisherConfigName}}</td>
 
 										<!-- last data -->
@@ -169,13 +191,14 @@
 											</div>
 										</td>
 
+										<!-- tags -->
 										<td>
 											{{getTagStrPrefix(service)}}
 											<span class="fa fa-info-circle fa-right-pad text-muted" ngbTooltip="{{getTagStr(service)}}" *ngIf="getTagStr(service).length > tagStrDisplayLimit"></span>
 										</td>
+
+										<!-- action button -->
 										<td>
-											<!--<button type="button" class="btn btn-danger btn-xs child-to-show" (click)="delete(item)">Delete Service</button>
-											<button type="button" class="btn btn-danger btn-xs child-to-show" (click)="deleteData(item)">Delete Data</button>-->
 											<button type="button" class="btn btn-default btn-xs child-to-show" (click)="viewExchanges(service)">Exchanges</button>
 										</td>
 									</tr>

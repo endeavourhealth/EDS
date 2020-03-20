@@ -6,8 +6,10 @@ export class SystemStatus {
     processingUpToDate: boolean;
     processingInError: boolean;
     lastDateSuccessfullyProcessed: number;
-    cachedLastDataDateDesc: string;
+    lastDataDateSuccessfullyProcessed: number;
     publisherMode: string;
+    cachedLastDataDateDesc: string;
+    lastDataDateSuccessfullyProcessedDesc: string;
 
     constructor() {}
 }

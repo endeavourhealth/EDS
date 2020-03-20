@@ -20,6 +20,7 @@ import org.endeavourhealth.core.database.dal.audit.models.HeaderKeys;
 import org.endeavourhealth.core.database.dal.eds.PatientLinkDalI;
 import org.endeavourhealth.core.database.dal.eds.PatientSearchDalI;
 import org.endeavourhealth.core.database.dal.eds.models.PatientSearch;
+import org.endeavourhealth.core.database.rdbms.ConnectionManager;
 import org.endeavourhealth.core.fhirStorage.ServiceInterfaceEndpoint;
 import org.endeavourhealth.core.messaging.pipeline.components.DetermineRelevantProtocolIds;
 import org.endeavourhealth.core.messaging.pipeline.components.PostMessageToExchange;
@@ -29,6 +30,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.BadRequestException;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -68,6 +71,31 @@ public class QueueHelper {
 
             UUID exchangeId = exchangeIds.get(i);
             Exchange exchange = AuditWriter.readExchange(exchangeId);
+
+            String exchangeEventStr = "Manually pushed into " + exchangeName + " exchange";
+
+            //short-term hack to skip Emis Left & Dead extracts and allow us to catch up from the missing code issue
+            //this will need removing when we're ready to start processing these exchanges
+            if (exchangeName.equalsIgnoreCase(EXCHANGE_INBOUND)) { //difference case used on different servers
+                String software = exchange.getHeader(HeaderKeys.SourceSystem);
+                if (software.equals(MessageFormat.EMIS_CSV)) {
+                    Boolean isLeftAndDead = exchange.getHeaderAsBoolean("possible-left-and-dead");
+                    if (isLeftAndDead != null
+                            && isLeftAndDead.booleanValue()) {
+
+                        auditSkippingExchange(exchange);
+
+                        //actually, due to patient registrations being in the Left & Dead bulks, we need to process
+                        //a bare minimum from those files
+                        Set<String> filterForBulk = new HashSet<>();
+                        filterForBulk.add("Agreements_SharingOrganisation"); //always need to do this
+                        filterForBulk.add("Admin_Patient"); //only do this
+                        exchangeEventStr += filterOnFileTypes(filterForBulk, exchange);
+
+                        //continue;
+                    }
+                }
+            }
 
             //no longer required as these special exchanges now have the AllowQueueing=false header which PostMessageToExchange detects
             /*String sourceSystem = exchange.getHeader(HeaderKeys.SourceSystem);
@@ -111,26 +139,9 @@ public class QueueHelper {
                 exchange.setHeader(HeaderKeys.ProtocolIds, specificProtocolJson);
             }
 
-            String exchangeEventStr = "Manually pushed into " + exchangeName + " exchange";
-
             //apply any filtering on file type
             if (fileTypesToFilterOn != null) {
-                List<ExchangePayloadFile> filteredFiles = new ArrayList<>();
-
-                List<ExchangePayloadFile> files = ExchangeHelper.parseExchangeBody(exchange.getBody(), false);
-                for (ExchangePayloadFile file: files) {
-                    String fileType = file.getType();
-                    if (fileTypesToFilterOn.contains(fileType)) {
-                        filteredFiles.add(file);
-                    }
-                }
-
-                String newBody = JsonSerializer.serialize(filteredFiles);
-                exchange.setBody(newBody);
-
-                List<String> list = new ArrayList<>(fileTypesToFilterOn);
-                list.sort(((o1, o2) -> o1.compareToIgnoreCase(o2)));
-                exchangeEventStr += "\nFiltered on file types:\n" + String.join("\n", list);
+                exchangeEventStr += filterOnFileTypes(fileTypesToFilterOn, exchange);
             }
 
             //work out what multicast header we need
@@ -169,6 +180,63 @@ public class QueueHelper {
             if (i % 1000 == 0) {
                 LOG.info("Posted " + (i+1) + " / " + exchangeIds.size() + " exchanges to " + exchangeName);
             }
+        }
+    }
+
+    private static String filterOnFileTypes(Set<String> fileTypesToFilterOn, Exchange exchange) {
+
+        if (fileTypesToFilterOn == null
+                || fileTypesToFilterOn.isEmpty()) {
+            return "";
+        }
+
+        List<ExchangePayloadFile> filteredFiles = new ArrayList<>();
+
+        List<ExchangePayloadFile> files = ExchangeHelper.parseExchangeBody(exchange.getBody(), false);
+        for (ExchangePayloadFile file: files) {
+            String fileType = file.getType();
+            if (fileTypesToFilterOn.contains(fileType)) {
+                filteredFiles.add(file);
+            }
+        }
+
+        String newBody = JsonSerializer.serialize(filteredFiles);
+        exchange.setBody(newBody);
+
+        //return a desc of what we've done
+        List<String> list = new ArrayList<>(fileTypesToFilterOn);
+        list.sort(((o1, o2) -> o1.compareToIgnoreCase(o2)));
+        return "\nFiltered on file types:\n" + String.join("\n", list);
+    }
+
+    private static void auditSkippingExchange(Exchange exchange) throws Exception {
+
+        LOG.info("Filtering exchange " + exchange.getId() + " just to do patient file because it's a Left & Dead exchange");
+        //LOG.info("Skipping exchange " + exchange.getId() + " because it's a Left & Dead exchange");
+        //AuditWriter.writeExchangeEvent(exchange.getId(), "Skipped re-queueing because Left & Dead exchange");
+
+        //write to audit table so we can find out
+        Connection connection = ConnectionManager.getAuditConnection();
+        PreparedStatement ps = null;
+        try {
+            String sql = "INSERT INTO skipped_exchanges_left_and_dead VALUES (?, ?, ?, ?, ?)";
+            ps = connection.prepareStatement(sql);
+
+            int col = 1;
+            ps.setString(col++, exchange.getServiceId().toString());
+            ps.setString(col++, exchange.getSystemId().toString());
+            ps.setString(col++, exchange.getId().toString());
+            ps.setTimestamp(col++, new java.sql.Timestamp(exchange.getHeaderAsDate(HeaderKeys.DataDate).getTime()));
+            ps.setTimestamp(col++, new java.sql.Timestamp(new Date().getTime()));
+
+            ps.executeUpdate();
+            connection.commit();
+
+        } finally {
+            if (ps != null) {
+                ps.close();
+            }
+            connection.close();
         }
     }
 

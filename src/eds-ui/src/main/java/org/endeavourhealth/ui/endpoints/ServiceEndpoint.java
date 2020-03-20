@@ -502,6 +502,9 @@ public final class ServiceEndpoint extends AbstractEndpoint {
                             Date lastDataProcessedDate = processedObj.getProcessedDate();
                             status.setLastDateSuccessfullyProcessed(lastDataProcessedDate);
 
+                            Date lastDataDateProcessed = processedObj.getDataDate();
+                            status.setLastDataDateSuccessfullyProcessed(lastDataDateProcessed);
+
                             UUID lastExchangeProcessed = processedObj.getExchangeId();
                             if (lastExchangeProcessed.equals(exchangeIdLastReceived)) {
 

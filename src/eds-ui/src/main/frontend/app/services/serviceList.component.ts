@@ -195,7 +195,7 @@ export class ServiceListComponent implements OnInit, OnDestroy{
 			var lastDataReceived = new Date();
 			lastDataReceived.setTime(status.lastDataReceived);
 
-			return 'Last data from ' + this.formatDate(lastDate) + ', ' + 'received on ' + this.formatDate(lastDataReceived);
+			return 'Last data received ' + this.formatDate(lastDataReceived) + ' for ' + this.formatDate(lastDate);
 
 		} else {
 			return 'No data received';
@@ -339,6 +339,14 @@ export class ServiceListComponent implements OnInit, OnDestroy{
 			d.setTime(status.lastDateSuccessfullyProcessed);
 			ret += 'Last successfully processed on ' + this.formatDate(d);
 
+			if (status.lastDataDateSuccessfullyProcessed) {
+				var d2 = new Date();
+				d2.setTime(status.lastDataDateSuccessfullyProcessed);
+				ret += ' for ' + this.formatDate(d2);
+			}
+
+			//ret += ' [' + status.lastDataDateSuccessfullyProcessed + ']';
+
 		} else {
 			ret += 'Not successfully processed any data yet';
 		}
@@ -350,6 +358,7 @@ export class ServiceListComponent implements OnInit, OnDestroy{
 
 		var ret = '';
 
+		//show the publisher mode if not "normal"
 		if (status.publisherMode) {
 			if (status.publisherMode == 'Publisher_Draft') {
 				ret += '(D) ';
@@ -387,6 +396,26 @@ export class ServiceListComponent implements OnInit, OnDestroy{
 
 		} else {
 			ret += 'No data';
+		}
+
+		//show how far behind we are if error or behind
+		if (status.processingInError
+			|| !status.processingUpToDate) {
+
+			//note that we're showing the data date of the last successfully processed data not WHEN it was processed
+			if (status.lastDataDateSuccessfullyProcessed) {
+
+				//cache on status object so we're not constantly calculating it
+				if (!status.lastDataDateSuccessfullyProcessedDesc) {
+					var d = new Date();
+					d.setTime(status.lastDataDateSuccessfullyProcessed);
+
+					var today = new Date();
+					status.lastDataDateSuccessfullyProcessedDesc = ServiceListComponent.getDateDiffDesc(d, today);
+				}
+
+				ret += ' (' + status.lastDataDateSuccessfullyProcessedDesc + ')';
+			}
 		}
 
 		return ret;
