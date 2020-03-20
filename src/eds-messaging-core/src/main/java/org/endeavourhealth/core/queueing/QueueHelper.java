@@ -233,6 +233,9 @@ public class QueueHelper {
             connection.commit();
 
         } finally {
+            if (ps != null) {
+                ps.close();
+            }
             connection.close();
         }
     }
