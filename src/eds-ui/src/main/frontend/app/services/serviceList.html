@@ -127,13 +127,15 @@
 										<th class="col-md-1">Parent</th>
 										<th class="col-md-1">Publisher Config</th>
 										<th class="col-md-1">Last Data</th>
-										<th class="col-md-1">Status</th>
-										<th class="col-md-3">Tags</th>
+										<th class="col-md-2">Status</th>
+										<th class="col-md-2">Tags</th>
 										<th class="col-md-1">Actions</th>
 									</tr>
 								</thead>
 								<tbody>
 									<tr class="hover-box show-child-on-hover" *ngFor="let service of filteredServices">
+
+										<!-- service name -->
 										<td>
 											<a (click)="edit(service)">{{service.name}}</a>
 
@@ -141,12 +143,18 @@
 											<span class="fa fa-info-circle fa-right-pad text-muted" ngbTooltip="{{service.alias}}" *ngIf="service.alias"></span>
 
 										</td>
+
+										<!-- service ID -->
 										<td>{{service.localIdentifier}}</td>
+
+										<!-- service parent -->
 										<td>
 											<span ngbTooltip="{{serviceService.getCcgName(service.ccgCode)}}">
 												{{service.ccgCode}}
 											</span>
 										</td>
+
+										<!-- publisher config -->
 										<td>{{service.publisherConfigName}}</td>
 
 										<!-- last data -->
@@ -169,13 +177,14 @@
 											</div>
 										</td>
 
+										<!-- tags -->
 										<td>
 											{{getTagStrPrefix(service)}}
 											<span class="fa fa-info-circle fa-right-pad text-muted" ngbTooltip="{{getTagStr(service)}}" *ngIf="getTagStr(service).length > tagStrDisplayLimit"></span>
 										</td>
+
+										<!-- action button -->
 										<td>
-											<!--<button type="button" class="btn btn-danger btn-xs child-to-show" (click)="delete(item)">Delete Service</button>
-											<button type="button" class="btn btn-danger btn-xs child-to-show" (click)="deleteData(item)">Delete Data</button>-->
 											<button type="button" class="btn btn-default btn-xs child-to-show" (click)="viewExchanges(service)">Exchanges</button>
 										</td>
 									</tr>
