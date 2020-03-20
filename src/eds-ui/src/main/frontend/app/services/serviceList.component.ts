@@ -398,18 +398,23 @@ export class ServiceListComponent implements OnInit, OnDestroy{
 			ret += 'No data';
 		}
 
-		//show how far behind we are
+		//show how far behind we are if error or behind
 		if (status.processingInError
 			|| !status.processingUpToDate) {
 
-			//note that we're showing the data date of the last successfully processed data
-			//note WHEN it was processed
+			//note that we're showing the data date of the last successfully processed data not WHEN it was processed
 			if (status.lastDataDateSuccessfullyProcessed) {
-				var d = new Date();
-				d.setTime(status.lastDataDateSuccessfullyProcessed);
 
-				var today = new Date();
-				ret += ' (' + ServiceListComponent.getDateDiffDesc(d, today) + ')';
+				//cache on status object so we're not constantly calculating it
+				if (!status.lastDataDateSuccessfullyProcessedDesc) {
+					var d = new Date();
+					d.setTime(status.lastDataDateSuccessfullyProcessed);
+
+					var today = new Date();
+					status.lastDataDateSuccessfullyProcessedDesc = ServiceListComponent.getDateDiffDesc(d, today);
+				}
+
+				ret += ' (' + status.lastDataDateSuccessfullyProcessedDesc + ')';
 			}
 		}
 

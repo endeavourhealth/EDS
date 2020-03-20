@@ -20,6 +20,7 @@
 					<form class="form-horizontal" role="form">
 						<div class="form-group">
 
+							<!-- name and ID filtering -->
 							<div class="col-sm-2">
 
 								<label for="inputType" class="control-label">Name/ID</label>
@@ -39,14 +40,26 @@
 
 							</div>
 
+							<!-- parent / CCG filtering -->
 							<div class="col-sm-2">
 								<label for="inputType2" class="control-label">Parent</label>
-								<select id="inputType2" class="form-control" [(ngModel)]="serviceService.serviceCcgCodeFilter" name="serviceCcgCodeFilter" (ngModelChange)="applyFiltering()">
+
+								<div class="pull-right">
+									<label for="serviceCcgCodeFilterIsRegex" class="control-label">Regex</label>
+									<input type="checkbox" id="serviceCcgCodeFilterIsRegex" [(ngModel)]="serviceService.serviceCcgCodeFilterIsRegex" name="serviceCcgCodeFilterIsRegex" (ngModelChange)="applyFiltering()">
+								</div>
+
+								<!-- if not searching regex, show the combo -->
+								<select *ngIf="!serviceService.serviceCcgCodeFilterIsRegex" id="inputType2" class="form-control" [(ngModel)]="serviceService.serviceCcgCodeFilterStr" name="serviceCcgCodeFilter" (ngModelChange)="applyFiltering()">
 									<option value=""></option>
 									<option *ngFor="let ccgCode of allCcgCodes" value="{{ccgCode}}">{{ccgCode}} {{serviceService.getCcgName(ccgCode)}}</option>
 								</select>
+
+								<!-- if searching regex just show a text box -->
+								<input *ngIf="serviceService.serviceCcgCodeFilterIsRegex" type="text" class="form-control" id="inputType2" placeholder="Regex" [(ngModel)]="serviceService.serviceCcgCodeFilterRegex" name="serviceCcgCodeFilter" (ngModelChange)="applyFiltering()">
 							</div>
 
+							<!-- publisher config filtering -->
 							<div class="col-sm-2">
 								<label for="inputType5" class="control-label">Publisher Config</label>
 								<select id="inputType5" class="form-control" [(ngModel)]="serviceService.servicePublisherConfigFilter" name="servicePublisherConfigFilter" (ngModelChange)="applyFiltering()">
@@ -55,6 +68,7 @@
 								</select>
 							</div>
 
+							<!-- last data date filtering -->
 							<div class="col-sm-1">
 								<label for="inputType4" class="control-label">Last Data</label>
 								<select id="inputType4" class="form-control" [(ngModel)]="serviceService.serviceLastDataFilter" name="lastDataFilter" (ngModelChange)="applyFiltering()">
