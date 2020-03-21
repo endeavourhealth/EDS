@@ -25,6 +25,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.net.URI;
+import java.net.URL;
+import java.security.CodeSource;
+import java.security.ProtectionDomain;
 import java.util.*;
 import java.util.regex.Pattern;
 
@@ -296,5 +300,31 @@ public abstract class SpecialRoutines {
         } catch (Throwable t) {
             LOG.error("", t);
         }
+    }
+
+
+    public static void getJarDetails() {
+        LOG.debug("Get Jar Details");
+        try {
+            Class cls = SpecialRoutines.class;
+            LOG.debug("Cls = " + cls);
+            ProtectionDomain domain = cls.getProtectionDomain();
+            LOG.debug("Domain = " + domain);
+            CodeSource source = domain.getCodeSource();
+            LOG.debug("Source = " + source);
+            URL loc = source.getLocation();
+            LOG.debug("Location = " + loc);
+            URI uri = loc.toURI();
+            LOG.debug("URI = " + uri);
+            File f = new File(uri);
+            LOG.debug("File = " + f);
+
+            Date d = new Date(f.lastModified());
+            LOG.debug("Last Modified = " + d);
+
+        } catch (Throwable t) {
+            LOG.error("", t);
+        }
+
     }
 }

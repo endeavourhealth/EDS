@@ -90,6 +90,12 @@ public class Main {
 		ConfigManager.initialize("queuereader", configId);
 
 		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("GetJarDetails")) {
+			SpecialRoutines.getJarDetails();
+			System.exit(0);
+		}
+
+		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("ValidateNhsNumbers")) {
 			String filePath = args[1];
 			boolean addCommas = Boolean.parseBoolean(args[2]);
