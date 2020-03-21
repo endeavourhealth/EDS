@@ -384,7 +384,16 @@ export class QueueReaderStatusComponent {
 
     getStatusAgeDesc(status: QueueReaderStatus): string {
         var vm = this;
-        return ServiceListComponent.getDateDiffDesc(new Date(status.timestmp), vm.statusLastRefreshed);
+        return ServiceListComponent.getDateDiffDesc(new Date(status.timestmp), vm.statusLastRefreshed, 2);
+    }
+
+    getStatusBusyDesc(status: QueueReaderStatus): string {
+        var vm = this;
+        if (!status.isBusySince) {
+            return '';
+        } else {
+            return ServiceListComponent.getDateDiffDesc(new Date(status.isBusySince), new Date(status.timestmp), 1);
+        }
     }
 
 

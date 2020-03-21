@@ -223,7 +223,7 @@ export class ServiceListComponent implements OnInit, OnDestroy{
 
 			var today = new Date();
 
-			ret += ServiceListComponent.getDateDiffDesc(lastDate, today);
+			ret += ServiceListComponent.getDateDiffDesc(lastDate, today, 2);
 
 		} else {
 			ret += 'n/a';
@@ -236,7 +236,13 @@ export class ServiceListComponent implements OnInit, OnDestroy{
 
 	}
 
-	static getDateDiffDesc(earlier: Date, later: Date): string {
+	/*static getDateDiffDesc(earlier: Date, later: Date): string {
+		return ServiceListComponent.getDateDiffDesc(earlier, later, 2);
+	}*/
+
+	static getDateDiffDesc(earlier: Date, later: Date, numToks: number): string {
+
+		//optionalArg = (typeof optionalArg === 'undefined') ? 'default' : optionalArg;
 
 		var diffMs = later.getTime() - earlier.getTime();
 
@@ -249,7 +255,7 @@ export class ServiceListComponent implements OnInit, OnDestroy{
 
 		var toks = [];
 
-		if (toks.length < 2) {
+		if (toks.length < numToks) {
 			var years = Math.floor(diffMs / durYear);
 			if (years > 0) {
 				toks.push('' + years + 'y');
@@ -257,7 +263,7 @@ export class ServiceListComponent implements OnInit, OnDestroy{
 			}
 		}
 
-		if (toks.length < 2) {
+		if (toks.length < numToks) {
 			var weeks = Math.floor(diffMs / durWeek);
 			if (weeks > 0) {
 				toks.push('' + weeks + 'w');
@@ -265,7 +271,7 @@ export class ServiceListComponent implements OnInit, OnDestroy{
 			}
 		}
 
-		if (toks.length < 2) {
+		if (toks.length < numToks) {
 			var days = Math.floor(diffMs / durDay);
 			if (days > 0) {
 				toks.push('' + days + 'd');
@@ -273,7 +279,7 @@ export class ServiceListComponent implements OnInit, OnDestroy{
 			}
 		}
 
-		if (toks.length < 2) {
+		if (toks.length < numToks) {
 			var hours = Math.floor(diffMs / durHour);
 			if (hours > 0) {
 				toks.push('' + hours + 'h');
@@ -281,7 +287,7 @@ export class ServiceListComponent implements OnInit, OnDestroy{
 			}
 		}
 
-		if (toks.length < 2) {
+		if (toks.length < numToks) {
 			var mins = Math.floor(diffMs / durMin);
 			if (mins > 0 ) {
 				toks.push('' + mins + 'm');
@@ -289,7 +295,7 @@ export class ServiceListComponent implements OnInit, OnDestroy{
 			}
 		}
 
-		if (toks.length < 2) {
+		if (toks.length < numToks) {
 			var secs = Math.floor(diffMs / durSec);
 			if (secs > 0 ) {
 				toks.push('' + secs + 's');
@@ -297,7 +303,7 @@ export class ServiceListComponent implements OnInit, OnDestroy{
 			}
 		}
 
-		if (toks.length < 2) {
+		if (toks.length < numToks) {
 			if (diffMs > 0) {
 				toks.push('' + diffMs + 'ms');
 			}
@@ -411,7 +417,7 @@ export class ServiceListComponent implements OnInit, OnDestroy{
 					d.setTime(status.lastDataDateSuccessfullyProcessed);
 
 					var today = new Date();
-					status.lastDataDateSuccessfullyProcessedDesc = ServiceListComponent.getDateDiffDesc(d, today);
+					status.lastDataDateSuccessfullyProcessedDesc = ServiceListComponent.getDateDiffDesc(d, today, 2);
 				}
 
 				ret += ' (' + status.lastDataDateSuccessfullyProcessedDesc + ')';

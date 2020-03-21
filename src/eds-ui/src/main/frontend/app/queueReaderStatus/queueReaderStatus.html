@@ -52,9 +52,15 @@
                                                     </span>
 
                                                     <span *ngIf="!isStatusTooOld(status)">
+
+                                                        <!-- if busy, show the play icon and when it was busy from -->
                                                         <span *ngIf="status.isBusy" class="fa fa-play" ngbTooltip="{{status.isBusyDetail}}"></span>
+                                                        <span *ngIf="status.isBusy" class="text-muted"> {{getStatusBusyDesc(status)}}</span>
+
+                                                        <!-- if not doing anything show a pause icon -->
                                                         <span *ngIf="!status.isBusy" class="fa fa-pause"></span>
                                                     </span>
+
                                                 </span>
                                             </div>
                                         </div>

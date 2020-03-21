@@ -12,5 +12,6 @@ export class QueueReaderStatus {
     physicalMemoryDesc: string;
     cpuLoad: number;
     isBusyDetail: string;
+    isBusySince: number;
     queueName: string;
 }

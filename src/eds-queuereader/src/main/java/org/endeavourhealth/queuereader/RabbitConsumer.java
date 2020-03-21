@@ -394,10 +394,19 @@ public class RabbitConsumer extends DefaultConsumer
 
 		synchronized (messagesBeingProcessed) {
 			for (RabbitConsumer_State state: messagesBeingProcessed) {
-				String odsCode = "" + state.getHeader(HeaderKeys.SenderLocalIdentifier);
-				String exchangeId = new String(state.getBody());
-				String dtCreatedDesc = new SimpleDateFormat("dd-MM-yyyy HH:mm").format(state.getDtCreated());
-				sb.append("Exchange " + exchangeId + " for " + odsCode + " since " + dtCreatedDesc);
+				Object odsCode = state.getHeader(HeaderKeys.SenderLocalIdentifier);
+				Object dataDate = state.getHeader(HeaderKeys.DataDate);
+				//String exchangeId = new String(state.getBody());
+				String dtCreatedDesc = new SimpleDateFormat("yyyy-MM-dd HH:mm").format(state.getDtCreated());
+
+				if (dataDate != null) {
+					sb.append(dataDate.toString());
+					sb.append(" ");
+				}
+				sb.append("data for ");
+				sb.append(odsCode.toString());
+				sb.append(" since ");
+				sb.append(dtCreatedDesc);
 			}
 		}
 
