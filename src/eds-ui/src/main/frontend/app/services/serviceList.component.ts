@@ -35,7 +35,7 @@ export class ServiceListComponent implements OnInit, OnDestroy{
 
 	ngOnInit() {
 		var vm = this;
-		vm.tagStrDisplayLimit = 50;
+		vm.tagStrDisplayLimit = 35;
 		vm.cachedTagStrs = {}
 		vm.refreshAllServices();
 		vm.serviceService.getTagNamesFromCache(); //just call this to pre-cache the tag names
