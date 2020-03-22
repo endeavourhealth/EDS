@@ -83,12 +83,17 @@ import static org.endeavourhealth.core.xml.QueryDocument.ServiceContractType.PUB
 public class Main {
 	private static final Logger LOG = LoggerFactory.getLogger(Main.class);
 
-
 	public static void main(String[] args) throws Exception {
 
 		String configId = args[0];
 		LOG.info("Initialising config manager");
 		ConfigManager.initialize("queuereader", configId);
+
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("GetJarDetails")) {
+			SpecialRoutines.getJarDetails();
+			System.exit(0);
+		}
 
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("ValidateNhsNumbers")) {

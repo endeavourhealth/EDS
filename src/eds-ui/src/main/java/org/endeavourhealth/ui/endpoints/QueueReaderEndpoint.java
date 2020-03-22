@@ -28,6 +28,8 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 
 @Path("/queueReader")
@@ -95,6 +97,25 @@ public class QueueReaderEndpoint extends AbstractEndpoint {
                 physicalMemoryDesc = FileUtils.byteCountToDisplaySize(h.getServerMemoryMb() * (1024L * 1024L));
             }
 
+            String busyDetail = h.getIsBusyDetail();
+
+            //work out the busy since date from the busy desc string
+            Long busySince = null;
+            if (!Strings.isNullOrEmpty(busyDetail)) {
+                String sinceStr = "since ";
+                int sinceIndex = busyDetail.indexOf(sinceStr);
+                if (sinceIndex > -1) {
+                    String dateStr = busyDetail.substring(sinceIndex + sinceStr.length());
+                    try {
+                        Date d = new SimpleDateFormat("yyyy-MM-dd HH:mm").parse(dateStr);
+                        busySince = new Long(d.getTime());
+
+                    } catch (Exception ex) {
+                        //if not a valid date, just leave it
+                    }
+                }
+            }
+
             ObjectNode objectNode = root.addObject();
             objectNode.put("applicationName", h.getApplicationName());
             objectNode.put("applicationInstanceName", h.getApplicationInstanceName());
@@ -107,7 +128,8 @@ public class QueueReaderEndpoint extends AbstractEndpoint {
             objectNode.put("physicalMemoryMb", h.getServerMemoryMb());
             objectNode.put("physicalMemoryDesc", physicalMemoryDesc);
             objectNode.put("cpuLoad", h.getServerCpuUsagePercent());
-            objectNode.put("isBusyDetail", h.getIsBusyDetail());
+            objectNode.put("isBusyDetail", busyDetail);
+            objectNode.put("isBusySince", busySince);
             objectNode.put("queueName", queueName);
         }
 

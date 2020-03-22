@@ -422,7 +422,7 @@ export class ExchangeAuditComponent {
 		var endDate = new Date();
 		endDate.setTime(transformAudit.transformEnd);
 
-		return ServiceListComponent.getDateDiffDesc(startDate, endDate);
+		return ServiceListComponent.getDateDiffDesc(startDate, endDate, 2);
 	}
 
 	getCellColour(exchange: Exchange): any {
