@@ -11484,6 +11484,10 @@ create table uprn_pseudo_map (
 	}*/
 	/*private static void saveResourceWrapper(UUID serviceId, ResourceWrapper wrapper) throws Exception {
 
+		if (true) {
+			throw new Exception("This function needs updating to deal with the resource_current triggers = can't directly update resource_history");
+		}
+
 		if (wrapper.getVersion() == null) {
 			throw new Exception("Can't update resource history without version UUID");
 		}

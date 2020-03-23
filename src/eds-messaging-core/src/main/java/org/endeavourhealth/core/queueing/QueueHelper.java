@@ -76,7 +76,7 @@ public class QueueHelper {
 
             //short-term hack to skip Emis Left & Dead extracts and allow us to catch up from the missing code issue
             //this will need removing when we're ready to start processing these exchanges
-            if (exchangeName.equalsIgnoreCase(EXCHANGE_INBOUND)) { //difference case used on different servers
+            /*if (exchangeName.equalsIgnoreCase(EXCHANGE_INBOUND)) { //difference case used on different servers
                 String software = exchange.getHeader(HeaderKeys.SourceSystem);
                 if (software.equals(MessageFormat.EMIS_CSV)) {
                     Boolean isLeftAndDead = exchange.getHeaderAsBoolean("possible-left-and-dead");
@@ -95,16 +95,8 @@ public class QueueHelper {
                         //continue;
                     }
                 }
-            }
-
-            //no longer required as these special exchanges now have the AllowQueueing=false header which PostMessageToExchange detects
-            /*String sourceSystem = exchange.getHeader(HeaderKeys.SourceSystem);
-            if (exchangeIds.size() > 1
-                && sourceSystem.equals(MessageFormat.DUMMY_SENDER_SOFTWARE_FOR_BULK_DELETE)) {
-                // Skip dummy exchanges used to do bulk deletes unless this is ONLY a delete in which case size will be exactly 1.
-                AuditWriter.writeExchangeEvent(exchange, "Not re-queuing into " + exchangeName + " as exchange cannot be re-queued");
-                continue;
             }*/
+
 
             //to make sure the latest setup applies, re-calculate the protocols that apply to this exchange
             if (recalculateProtocols) {
