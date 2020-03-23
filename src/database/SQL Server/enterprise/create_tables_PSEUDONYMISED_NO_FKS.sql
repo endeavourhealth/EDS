@@ -1000,3 +1000,146 @@ GO
 
 create index ix_patient_uprn_patient_org_uprn on patient_uprn (patient_id, organization_id, pseudo_uprn)
 GO
+
+CREATE PROCEDURE update_person_record_2(@_new_person_id bigint)
+AS
+BEGIN
+SET NOCOUNT ON;
+
+		DECLARE @best_patient_id bigint;
+
+		SET @best_patient_id = (
+		SELECT id
+        FROM
+		(SELECT TOP 1
+			p.id as [id],
+			CASE WHEN  rt.code = 'R' THEN  1 ELSE  0 END as [registration_type_rank], -- if reg type = GMS then up-rank
+			CASE WHEN  e.registration_status_id is null or rs.code not in ('PR1', 'PR2', 'PR3') THEN  1 ELSE  0 END as [registration_status_rank], -- if pre-registered status, then down-rank
+			CASE WHEN  p.date_of_death is not null THEN  1 ELSE  0 END as [death_rank], --  records is a date of death more likely to be actively used, so up-vote
+			CASE WHEN  e.date_registered_end is null THEN  '9999-12-31' ELSE  e.date_registered_end END as [date_registered_end_sortable] -- up-vote non-ended ones
+		FROM patient p
+		LEFT OUTER JOIN episode_of_care e
+			ON e.organization_id = p.organization_id
+			AND e.patient_id = p.id
+		LEFT OUTER JOIN registration_type rt
+			ON rt.id = e.registration_type_id
+		LEFT OUTER JOIN registration_status rs
+			ON rs.id = e.registration_status_id
+		WHERE
+			p.person_id = @_new_person_id
+		ORDER BY
+			registration_status_rank desc, -- avoid pre-registered records if possible
+			death_rank desc, -- records marked as deceased are more likely to be used than ones not
+			registration_type_rank desc, -- prefer GMS registrations over others
+			date_registered desc, -- want the most recent registration
+			date_registered_end_sortable desc
+		) as [tmp]
+		);
+
+		MERGE person e
+		USING (
+			SELECT person_id, patient_gender_id, pseudo_id, age_years, age_months, age_weeks, date_of_death, postcode_prefix, lsoa_code, msoa_code, ethnic_code, ward_code, local_authority_code, registered_practice_organization_id
+			FROM patient
+			WHERE id = @best_patient_id
+		) as a
+		ON (a.person_id = e.id)
+		WHEN MATCHED
+			THEN UPDATE SET
+				-- e.id = a.person_id,
+				e.patient_gender_id = a.patient_gender_id,
+				e.pseudo_id = a.pseudo_id,
+				e.age_years = a.age_years,
+				e.age_months = a.age_months,
+				e.age_weeks = a.age_weeks,
+				e.date_of_death = a.date_of_death,
+				e.postcode_prefix = a.postcode_prefix,
+				e.lsoa_code = a.lsoa_code,
+				e.msoa_code = a.msoa_code,
+				e.ethnic_code = a.ethnic_code,
+				e.ward_code = a.ward_code,
+				e.local_authority_code = a.local_authority_code,
+				e.registered_practice_organization_id = a.registered_practice_organization_id
+		WHEN NOT MATCHED BY TARGET
+			THEN INSERT (id, patient_gender_id, pseudo_id, age_years, age_months, age_weeks, date_of_death, postcode_prefix, lsoa_code, msoa_code, ethnic_code, ward_code, local_authority_code, registered_practice_organization_id)
+			VALUES (a.person_id, a.patient_gender_id, a.pseudo_id, a.age_years, a.age_months, a.age_weeks, a.date_of_death, a.postcode_prefix, a.lsoa_code, a.msoa_code, a.ethnic_code, a.ward_code, a.local_authority_code, a.registered_practice_organization_id);
+
+END
+GO
+
+CREATE PROCEDURE update_person_record(@_new_person_id bigint, @_old_person_id bigint)
+AS
+BEGIN
+SET NOCOUNT ON;
+
+	DECLARE @_best_patient_id bigint = -1;
+    DECLARE @_patients_remaning INT = 1;
+
+	IF (@_new_person_id IS NOT NULL) BEGIN
+		EXEC update_person_record_2 @_new_person_id;
+	END 
+
+    IF (@_old_person_id IS NOT NULL) BEGIN
+
+	 select @_patients_remaning = COUNT(1) from patient where person_id = @_old_person_id;
+
+        IF (@_patients_remaning = 0) BEGIN
+			DELETE FROM person
+            WHERE id = @_old_person_id;
+        END
+        ELSE BEGIN
+			EXEC update_person_record_2 @_old_person_id;
+        END 
+
+    END 
+END 
+GO
+
+CREATE TRIGGER [after_patient_insert]
+ON [patient]
+WITH EXECUTE AS CALLER
+After INSERT
+AS
+BEGIN
+	DECLARE @new_person_id BIGINT;
+	SET @new_person_id = (SELECT person_id FROM inserted);
+	EXEC update_person_record @new_person_id, null;
+
+  END
+GO
+
+ALTER TABLE [patient] ENABLE TRIGGER [after_patient_insert]
+GO
+
+CREATE TRIGGER [after_patient_update]
+ON [patient]
+WITH EXECUTE AS CALLER
+After UPDATE
+AS
+BEGIN
+	DECLARE @new_person_id BIGINT;
+	SET @new_person_id = (SELECT person_id FROM inserted);
+	DECLARE @old_person_id BIGINT;
+	SET @old_person_id = (SELECT person_id FROM deleted);
+	EXEC update_person_record @new_person_id, @old_person_id;
+
+  END
+GO
+
+ALTER TABLE [patient] ENABLE TRIGGER [after_patient_update]
+GO
+
+CREATE TRIGGER [after_patient_delete]
+ON [patient]
+WITH EXECUTE AS CALLER
+After DELETE
+AS
+BEGIN
+	DECLARE @old_person_id BIGINT;
+	SET @old_person_id = (SELECT person_id FROM deleted);
+	EXEC update_person_record null, @old_person_id;
+
+  END
+GO
+
+ALTER TABLE [patient] ENABLE TRIGGER [after_patient_delete]
+GO
