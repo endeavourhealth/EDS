@@ -33,46 +33,6 @@ function getAuthToken() {
 	}
 }
 
-
-// *************** Patient resources ***************
-
-function exampleStructuredRecord() {
-	document.getElementById('apihost3').value = "https://devgateway.discoverydataservice.net/care-connect";
-	document.getElementById('token3').value = token;
-	document.getElementById('nhs1').value = '5558580216';
-}
-
-function getStructuredRecord() {
-	var host = document.getElementById('apihost3').value;
-	var token3 = document.getElementById('token3').value;
-	var nhs1 = document.getElementById('nhs1').value;
-
-	var request = '{"meta": {"profile": ["https://fhir.hl7.org.uk/STU3/OperationDefinition/CareConnect-GetStructuredRecord-Operation-1"]},\n' +
-        '"resourceType": "Parameters",\n' +
-        '"parameter": [{"name": "patientNHSNumber","valueIdentifier": {"system": "https://fhir.hl7.org.uk/Id/nhs-number","value": "' + nhs1 + '"}}]}';
-
-	var xhttp = new XMLHttpRequest();
-	xhttp.open("POST", host + "/patient/$getstructuredrecord", false);
-	xhttp.setRequestHeader("Accept","*/*")
-	xhttp.setRequestHeader("Content-Type","application/json")
-/*
-	xhttp.withCredentials = true;
-	xhttp.setRequestHeader("Authorization", "Bearer " + token3);
-	xhttp.setRequestHeader("Content-Type", "Application/Json");
-*/
-	try {
-		xhttp.send(request);
-		try {
-			var response = JSON.parse(xhttp.responseText);
-			document.getElementById('resourceresponse').value = JSON.stringify(response, null, 2);
-		} catch (error) {
-			document.getElementById('resourceresponse').value = xhttp.responseText;
-		}
-	} catch (error) {
-		document.getElementById('resourceresponse').value = error;
-	}
-}
-
 // *************** Patient flag (frailty) ***************
 
 function exampleFlag() {
