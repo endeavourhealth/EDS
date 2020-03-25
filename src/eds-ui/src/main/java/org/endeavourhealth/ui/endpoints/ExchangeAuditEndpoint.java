@@ -249,6 +249,12 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
      */
     private Long getExchangeSize(Exchange exchange) {
 
+        //the SFTP Reader now adds a header giving us the total size, so use that if present
+        Long l = exchange.getHeaderAsLong(HeaderKeys.TotalFileSize);
+        if (l != null) {
+            return l;
+        }
+
         String body = exchange.getBody();
 
         try {
