@@ -36,10 +36,10 @@
 							<div class="card-body">
 								<div class="card-title">
 									<table class="table table-sm table-bordered">
-										<tr class="d-flex"><td class="col-3"><b>Method</b></td>  <td class="col-9">POST</td></tr>
-										<tr class="d-flex"><td class="col-3"><b>Path</b></td>    <td class="col-9"><b>&lt;auth host&gt;</b>/auth/realms/endeavour/protocol/openid-connect/token</td></tr>
-										<tr class="d-flex"><td class="col-3"><b>Header</b></td>  <td class="col-9">Content-Type: application/x-www-form-urlencoded</td></tr>
-										<tr class="d-flex"><td class="col-3"><b>Body</b></td>    <td class="col-9">
+										<tr class="d-flex"><td class="col-2"><b>Method</b></td>  <td class="col-10">POST</td></tr>
+										<tr class="d-flex"><td class="col-2"><b>Path</b></td>    <td class="col-10"><b>&lt;auth host&gt;</b>/auth/realms/endeavour/protocol/openid-connect/token</td></tr>
+										<tr class="d-flex"><td class="col-2"><b>Header</b></td>  <td class="col-10">Content-Type: application/x-www-form-urlencoded</td></tr>
+										<tr class="d-flex"><td class="col-2"><b>Body</b></td>    <td class="col-10">
 											client_id  = <b>&lt;client&gt;</b><br>
 											username   = <b>&lt;username&gt;</b><br>
 											password   = <b>&lt;password&gt;</b><br>
@@ -111,322 +111,6 @@
 					</div>
 				</div>
 				<br>
-				<!-- Resource types -->
-				<div class="row">
-					<div class="col-md-12">
-						<div class="card" id="resourceTypes">
-							<div class="card-header">
-								<h3>Get FHIR resource types
-									<div class="pull-right">
-										<button class="btn btn-sm btn-info" onclick="exampleResourceTypes()">Example</button>
-										<button class="btn btn-sm btn-success" onclick="getResourceTypes()">Run</button>
-									</div>
-								</h3>
-							</div>
-							<div class="card-body">
-								<div class="card-title">
-									<table class="table table-sm table-bordered">
-										<tr class="d-flex"><td class="col-3"><b>Method</b></td>  <td class="col-9">GET</td></tr>
-										<tr class="d-flex"><td class="col-3"><b>Path</b></td>    <td class="col-9"><b>&lt;api host&gt;</b>/api/fhir/resourceType</tr>
-										<tr class="d-flex"><td class="col-3"><b>Header</b></td>  <td class="col-9">Authorization: Bearer <b>&lt;Token&gt;</b><small class="pull-right">(for client eds-data-checker)</small></td></tr>
-									</table>
-								</div>
-								<hr>
-								<div class="card-text">
-									<div class="row">
-										<div class="col-md-12">
-											<div class="input-group mb-3">
-												<div class="input-group-prepend">
-													<span class="input-group-text" id="basic-addon5"><i class="fa fa-fw fa-globe"></i></span>
-												</div>
-												<input id="apihost" type="text" class="form-control" placeholder="API host" aria-label="Host" aria-describedby="basic-addon5">
-											</div>
-										</div>
-										<div class="col-md-12">
-											<div class="input-group mb-3">
-												<div class="input-group-prepend">
-													<span class="input-group-text" id="token1-addon"><i class="fa fa-fw fa-key"></i></span>
-												</div>
-												<input id="token1" type="text" class="form-control" placeholder="Token" aria-label="Token" aria-describedby="token1-addon">
-											</div>
-										</div>
-									</div>
-									<hr>
-									<div class="row">
-										<div class="col-md-12">
-											<div class="input-group mb-3">
-												<div class="input-group-prepend">
-													<span class="input-group-text" id="basic-addon6"><i class="fa fa-fw fa-reply"></i></span>
-												</div>
-												<textarea id="typesresponse" type="text" class="form-control" placeholder="Example response: -
-[
-  { 'id': 'AllergyIntolerance', 'name': 'Allergy/Intolerance'},
-  { 'id': 'Appointment', 'name': 'Appointment' },
-  ...
-]
-" aria-label="Response" aria-describedby="basic-addon6" rows="10" style="font-family: monospace; font-size: 10pt"></textarea>
-											</div>
-										</div>
-									</div>
-								</div>
-							</div>
-						</div>
-					</div>
-				</div>
-				<br>
-				<!-- Get patient(s) -->
-				<div class="row">
-					<div class="col-md-12">
-						<div class="card" id="patientByNHS">
-							<div class="card-header">
-								<h3>Get patients for NHS Number
-									<div class="pull-right">
-										<button class="btn btn-sm btn-info" onclick="examplePatients()">Example</button>
-										<button class="btn btn-sm btn-success" onclick="getPatients()">Run</button>
-									</div>
-								</h3>
-							</div>
-							<div class="card-body">
-								<div class="card-title">
-									<table class="table table-sm table-bordered">
-										<tr class="d-flex"><td class="col-3"><b>Method</b></td>            <td class="col-9">GET</td></tr>
-										<tr class="d-flex"><td class="col-3"><b>Path</b></td>              <td class="col-9"><b>&lt;api host&gt;</b>/api/fhir/patients
-										<tr class="d-flex"><td class="col-3"><b>Header</b></td>            <td class="col-9">Authorization: Bearer <b>&lt;Token&gt;</b><small class="pull-right">(for client eds-data-checker)</small></td></tr>
-										<tr class="d-flex"><td class="col-3"><b>Query parameters</b></td>  <td class="col-9">nhsNumber=<b>&lt;NHS number&gt;</b></td></tr>
-									</table>
-								</div>
-								<hr>
-								<div class="card-text">
-									<div class="row">
-										<div class="col-md-12">
-											<div class="input-group mb-3">
-												<div class="input-group-prepend">
-													<span class="input-group-text" id="basic-addon7"><i class="fa fa-fw fa-globe"></i></span>
-												</div>
-												<input id="apihost2" type="text" class="form-control" placeholder="API host" aria-label="Host" aria-describedby="basic-addon7">
-											</div>
-										</div>
-										<div class="col-md-12">
-											<div class="input-group mb-3">
-												<div class="input-group-prepend">
-													<span class="input-group-text" id="token2-addon"><i class="fa fa-fw fa-key"></i></span>
-												</div>
-												<input id="token2" type="text" class="form-control" placeholder="Token" aria-label="Token" aria-describedby="token2-addon">
-											</div>
-										</div>
-										<div class="col-md-4">
-											<div class="input-group mb-3">
-												<div class="input-group-prepend">
-													<span class="input-group-text" id="basic-addon8"><i class="fa fa-fw fa-id-card"></i></span>
-												</div>
-												<input id="nhsnumber" type="text" class="form-control" placeholder="NHS Number" aria-label="Host" aria-describedby="basic-addon8">
-											</div>
-										</div>
-									</div>
-									<hr>
-									<div class="row">
-										<div class="col-md-12">
-											<div class="input-group mb-3">
-												<div class="input-group-prepend">
-													<span class="input-group-text" id="basic-addon9"><i class="fa fa-fw fa-reply"></i></span>
-												</div>
-												<textarea id="patientresponse" type="text" class="form-control" placeholder="Example response: -
-{
-  'resourceType': 'Bundle',
-  'entry': [
-    {
-      'resource': {
-        'resourceType': 'Patient',
-        'id': '<Patient ID>',
-        'identifier': [
-          { 'system': 'patient-number', 'value': '1234' },
-          ...
-        ],
-        'name': [
-          {
-            'text': '<Patient name>'
-          }
-        ],
-        'birthDate': '<Birth date (yyyy-mm-dd)>',
-        'managingOrganization': {
-          'reference': 'Organization/<Organisation ID>'
-        }
-      }
-    }
-  ]
-}
-" aria-label="Response" aria-describedby="basic-addon9" rows="10" style="font-family: monospace; font-size: 10pt"></textarea>
-											</div>
-										</div>
-									</div>
-								</div>
-							</div>
-						</div>
-					</div>
-				</div>
-				<br>
-				<!-- Get patient resource(s) -->
-				<div class="row">
-					<div class="col-md-12">
-						<div class="card" id="patientResources">
-							<div class="card-header">
-								<h3>Get resources for patients
-									<div class="pull-right">
-										<button class="btn btn-sm btn-info" onclick="exampleResources()">Example</button>
-										<button class="btn btn-sm btn-success" onclick="getResources()">Run</button>
-									</div>
-								</h3>
-							</div>
-							<div class="card-body">
-								<div class="card-title">
-									<table class="table table-sm table-bordered">
-										<tr class="d-flex"><td class="col-3"><b>Method</b></td>            <td class="col-9">POST</td></tr>
-										<tr class="d-flex"><td class="col-3"><b>Path</b></td>              <td class="col-9"><b>&lt;api host&gt;</b>/api/fhir/resources
-										<tr class="d-flex"><td class="col-3"><b>Headers</b></td>           <td class="col-9">Authorization: Bearer <b>&lt;Token&gt;</b><small class="pull-right">(for client eds-data-checker)</small><br>Content-Type: Application/Json</td></tr>
-										<tr class="d-flex"><td class="col-3"><b>Body</b></td>              <td class="col-9">
-											{<br>
-											&nbsp;&nbsp;&nbsp;&nbsp;&quot;resources&quot;: [<b>&lt;resource&gt;, ...],</b><br>
-											&nbsp;&nbsp;&nbsp;&nbsp;&quot;patients&quot;:  <b>&lt;patient bundle&gt;</b><br>
-											}</td></tr>
-									</table>
-								</div>
-								<hr>
-								<div class="card-text">
-									<div class="row">
-										<div class="col-md-12">
-											<div class="input-group mb-3">
-												<div class="input-group-prepend">
-													<span class="input-group-text" id="basic-addon10"><i class="fa fa-fw fa-globe"></i></span>
-												</div>
-												<input id="apihost3" type="text" class="form-control" placeholder="API host" aria-label="Host" aria-describedby="basic-addon10">
-											</div>
-										</div>
-										<div class="col-md-12">
-											<div class="input-group mb-3">
-												<div class="input-group-prepend">
-													<span class="input-group-text" id="token3-addon"><i class="fa fa-fw fa-key"></i></span>
-												</div>
-												<input id="token3" type="text" class="form-control" placeholder="Token" aria-label="Token" aria-describedby="token3-addon">
-											</div>
-										</div>
-										<div class="col-md-12">
-											<div class="input-group mb-3">
-												<div class="input-group-prepend">
-													<span class="input-group-text" id="basic-addon11"><i class="fa fa-fw fa-list-ol"></i></span>
-												</div>
-												<input id="resources" type="text" class="form-control" placeholder='List of FHIR resource types' aria-label="Host" aria-describedby="basic-addon11">
-											</div>
-										</div>
-										<div class="col-md-12">
-											<div class="input-group mb-3">
-												<div class="input-group-prepend">
-													<span class="input-group-text" id="basic-addon12"><i class="fa fa-fw fa-users"></i></span>
-												</div>
-												<textarea id="patients" type="text" class="form-control" placeholder="<Patient bundle JSON>" aria-label="Response" aria-describedby="basic-addon12" rows="10" style="font-family: monospace; font-size: 10pt"></textarea>
-											</div>
-										</div>
-									</div>
-									<hr>
-									<div class="row">
-										<div class="col-md-12">
-											<div class="input-group mb-3">
-												<div class="input-group-prepend">
-													<span class="input-group-text" id="basic-addon13"><i class="fa fa-fw fa-reply"></i></span>
-												</div>
-												<textarea id="resourceresponse" type="text" class="form-control" placeholder="Example response: -
-{
-  'resourceType': 'Bundle',
-  'entry': [
-    {<FHIR Resource data>},
-    {<FHIR Resource data>},
-    ...
-  ]
-}
-" aria-label="Response" aria-describedby="basic-addon13" rows="10" style="font-family: monospace; font-size: 10pt"></textarea>
-											</div>
-										</div>
-									</div>
-								</div>
-							</div>
-						</div>
-					</div>
-				</div>
-				<br>
-				<!-- Get admin resource(s) -->
-				<div class="row">
-					<div class="col-md-12">
-						<div class="card" id="adminResources">
-							<div class="card-header">
-								<h3>Get referenced resource
-									<div class="pull-right">
-										<button class="btn btn-sm btn-info" onclick="exampleReference()">Example</button>
-										<button class="btn btn-sm btn-success" onclick="getReference()">Run</button>
-									</div>
-								</h3>
-							</div>
-							<div class="card-body">
-								<div class="card-title">
-									<table class="table table-sm table-bordered">
-										<tr class="d-flex"><td class="col-3"><b>Method</b></td>            <td class="col-9">GET</td></tr>
-										<tr class="d-flex"><td class="col-3"><b>Path</b></td>              <td class="col-9"><b>&lt;api host&gt;</b>/api/fhir/reference
-										<tr class="d-flex"><td class="col-3"><b>Headers</b></td>           <td class="col-9">Authorization: Bearer <b>&lt;Token&gt;</b><small class="pull-right">(for client eds-data-checker)</small><br>Content-Type: Application/Json</td></tr>
-										<tr class="d-flex"><td class="col-3"><b>Query parameters</b></td>  <td class="col-9">reference=<b>&lt;Reference&gt;</b></td></tr>
-									</table>
-								</div>
-								<hr>
-								<div class="card-text">
-									<div class="row">
-										<div class="col-md-12">
-											<div class="input-group mb-3">
-												<div class="input-group-prepend">
-													<span class="input-group-text" id="reference_api_addon"><i class="fa fa-fw fa-globe"></i></span>
-												</div>
-												<input id="reference-api" type="text" class="form-control" placeholder="API host" aria-label="Host" aria-describedby="reference_api_addon">
-											</div>
-										</div>
-										<div class="col-md-12">
-											<div class="input-group mb-3">
-												<div class="input-group-prepend">
-													<span class="input-group-text" id="reference-token-addon"><i class="fa fa-fw fa-key"></i></span>
-												</div>
-												<input id="reference-token" type="text" class="form-control" placeholder="Token" aria-label="Token" aria-describedby="reference-token-addon">
-											</div>
-										</div>
-										<div class="col-md-12">
-											<div class="input-group mb-3">
-												<div class="input-group-prepend">
-													<span class="input-group-text" id="reference-reference-addon"><i class="fa fa-fw fa-sign-out"></i></span>
-												</div>
-												<input id="reference-reference" type="text" class="form-control" placeholder="Reference" aria-label="Response" aria-describedby="reference-reference-addon">
-											</div>
-										</div>
-									</div>
-									<hr>
-									<div class="row">
-										<div class="col-md-12">
-											<div class="input-group mb-3">
-												<div class="input-group-prepend">
-													<span class="input-group-text" id="reference-response-addon"><i class="fa fa-fw fa-reply"></i></span>
-												</div>
-												<textarea id="reference-response" type="text" class="form-control" placeholder="Example response: -
-{
-  'resourceType': 'Bundle',
-  'entry': [
-    {<FHIR Resource data>},
-    {<FHIR Resource data>},
-    ...
-  ]
-}
-" aria-label="Response" aria-describedby="reference-response-addon" rows="10" style="font-family: monospace; font-size: 10pt"></textarea>
-											</div>
-										</div>
-									</div>
-								</div>
-							</div>
-						</div>
-					</div>
-				</div>
-				<br>
 				<!-- Get patient flag -->
 				<div class="row">
 					<div class="col-md-12">
@@ -442,12 +126,12 @@
 							<div class="card-body">
 								<div class="card-title">
 									<table class="table table-sm table-bordered">
-										<tr class="d-flex"><td class="col-3"><b>Method</b></td>            <td class="col-9">GET</td></tr>
-										<tr class="d-flex"><td class="col-3"><b>Path</b></td>              <td class="col-9"><b>&lt;api host&gt;</b>/api/subscriber/flag
-										<tr class="d-flex"><td class="col-3"><b>Headers</b></td>           <td class="col-9">
+										<tr class="d-flex"><td class="col-2"><b>Method</b></td>            <td class="col-10">GET</td></tr>
+										<tr class="d-flex"><td class="col-2"><b>Path</b></td>              <td class="col-10"><b>&lt;api host&gt;</b>/api/subscriber/flag
+										<tr class="d-flex"><td class="col-2"><b>Headers</b></td>           <td class="col-10">
 											Authorization: Bearer <b>&lt;Token&gt;</b><small class="pull-right">(for client eds-subscriber)</small><br>
 											OdsCode: <b>&lt;ODS Code&gt;</b>
-										<tr class="d-flex"><td class="col-3"><b>Query parameters</b></td>  <td class="col-9">
+										<tr class="d-flex"><td class="col-2"><b>Query parameters</b></td>  <td class="col-10">
 											code=<b>&lt;Flag code&gt;</b><br>
 											subject=<b>&lt;NHS number&gt;</b>
 										</td></tr>
@@ -548,11 +232,11 @@
               <div class="card-body">
                 <div class="card-title">
                   <table class="table table-sm table-bordered">
-                    <tr class="d-flex"><td class="col-3"><b>Method</b></td>            <td class="col-9">GET</td></tr>
-                    <tr class="d-flex"><td class="col-3"><b>Path</b></td>              <td class="col-9"><b>&lt;api host&gt;</b>/api/getinfo
-                    <tr class="d-flex"><td class="col-3"><b>Headers</b></td>           <td class="col-9">
+                    <tr class="d-flex"><td class="col-2"><b>Method</b></td>            <td class="col-10">GET</td></tr>
+                    <tr class="d-flex"><td class="col-2"><b>Path</b></td>              <td class="col-10"><b>&lt;api host&gt;</b>/api/getinfo
+                    <tr class="d-flex"><td class="col-2"><b>Headers</b></td>           <td class="col-10">
                       Authorization: Bearer <b>&lt;Token&gt;</b><small class="pull-right">(for client uprn)</small>
-                    <tr class="d-flex"><td class="col-3"><b>Query parameters</b></td>  <td class="col-9">
+                    <tr class="d-flex"><td class="col-2"><b>Query parameters</b></td>  <td class="col-10">
                       adrec=<b>&lt;Address string, ending with Post Code&gt;</b><br>
                       qpost=<b>&lt;List of Post Code areas&gt;</b> (optional)<br>
                       orgpost=<b>&lt;Local organisation post code&gt;</b> (optional)<br>
