@@ -1728,6 +1728,10 @@ public class Main {
 					resources.clear();
 
 					ResourceWrapper patientWrapper = dal.getCurrentVersion(serviceUUID, ResourceType.Patient.toString(), patientId);
+					if (patientWrapper == null) {
+						LOG.warn("Null patient resource for Patient " + patientId);
+						continue;
+					}
 
 					resources.add(patientWrapper);
 
