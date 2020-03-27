@@ -1714,7 +1714,7 @@ public class Main {
 		ResourceDalI dal = DalProvider.factoryResourceDal();
 		PatientSearchDalI patientSearchDal = DalProvider.factoryPatientSearchDal();
 
-		List<ResourceWrapper> resources = new ArrayList<>();
+		//List<ResourceWrapper> resources = new ArrayList<>();
 		for (ServiceContract serviceContract : l) {
 			if (serviceContract.getType().equals(PUBLISHER)
 					&& serviceContract.getActive() == ServiceContractActive.TRUE) {
@@ -1725,7 +1725,8 @@ public class Main {
 				List<UUID> patientIds = patientSearchDal.getPatientIds(serviceUUID);
 				for (UUID patientId : patientIds) {
 
-					resources.clear();
+					//resources.clear();
+					List<ResourceWrapper> resources = new ArrayList<>();
 
 					ResourceWrapper patientWrapper = dal.getCurrentVersion(serviceUUID, ResourceType.Patient.toString(), patientId);
 					if (patientWrapper == null) {
