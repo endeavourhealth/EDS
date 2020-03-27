@@ -119,13 +119,20 @@ public abstract class SpecialRoutines {
 
                     ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
                     List<Exchange> exchanges = exchangeDal.getExchangesByService(service.getId(), systemId, Integer.MAX_VALUE);
+                    LOG.debug("Found " + exchanges.size() + " exchanges");
+
+                    int done = 0;
 
                     for (Exchange exchange: exchanges) {
-                        String body = exchange.getBody();
+
+                        boolean saveExchange = false;
+
+                        //make sure the individual file sizes are in the JSON body
                         try {
                             String rootDir = null;
                             Map<String, ExchangePayloadFile> hmFilesByName = new HashMap<>();
 
+                            String body = exchange.getBody();
                             List<ExchangePayloadFile> files = ExchangeHelper.parseExchangeBody(body, false);
                             for (ExchangePayloadFile file: files) {
                                 if (file.getSize() != null) {
@@ -168,14 +175,45 @@ public abstract class SpecialRoutines {
                                 String newJson = JsonSerializer.serialize(files);
                                 exchange.setBody(newJson);
 
-                                //save to DB
-                                AuditWriter.writeExchange(exchange);
+                                saveExchange = true;
                             }
 
                         } catch (Throwable t) {
                             throw new Exception("Failed on exchange " + exchange.getId(), t);
                         }
+
+                        //and make sure the total size is in the headers
+                        Long totalSize = exchange.getHeaderAsLong(HeaderKeys.TotalFileSize);
+                        if (totalSize == null) {
+
+                            long size = 0;
+
+                            String body = exchange.getBody();
+                            List<ExchangePayloadFile> files = ExchangeHelper.parseExchangeBody(body, false);
+                            for (ExchangePayloadFile file: files) {
+                                if (file.getSize() == null) {
+                                    throw new Exception("No file size for " + file.getPath() + " in exchange " + exchange.getId());
+                                }
+
+                                size += file.getSize().longValue();
+                            }
+
+                            exchange.setHeaderAsLong(HeaderKeys.TotalFileSize, new Long(size));
+                            saveExchange = true;
+                        }
+
+                        //save to DB
+                        if (saveExchange) {
+                            AuditWriter.writeExchange(exchange);
+                        }
+
+                        done ++;
+                        if (done % 100 == 0) {
+                            LOG.debug("Done " + done);
+                        }
                     }
+
+                    LOG.debug("Finished at " + done);
                 }
             }
 
