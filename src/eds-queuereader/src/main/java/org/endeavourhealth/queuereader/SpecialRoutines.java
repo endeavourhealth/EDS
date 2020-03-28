@@ -500,11 +500,11 @@ public abstract class SpecialRoutines {
                                     PreparedStatement psIndexTempTable = null;
                                     PreparedStatement psUpdateHistory = null;
 
-                                    sql = "DROP TEMPORARY TABLE IF EXISTS tmp_admin_batch_fix";
+                                    sql = "DROP TEMPORARY TABLE IF EXISTS tmp.tmp_admin_batch_fix";
                                     psDropTempTable = ehrConnection.prepareStatement(sql);
                                     psDropTempTable.executeUpdate();
 
-                                    sql = "CREATE TEMPORARY TABLE tmp_admin_batch_fix AS"
+                                    sql = "CREATE TEMPORARY TABLE tmp.tmp_admin_batch_fix AS"
                                             + " SELECT resource_id, resource_type, created_at, version"
                                             + " FROM resource_history"
                                             + " WHERE exchange_batch_id = ?"
@@ -514,12 +514,12 @@ public abstract class SpecialRoutines {
                                     psCreateTempTable.setString(1, batch.getBatchId().toString());
                                     psCreateTempTable.executeUpdate();
 
-                                    sql = "CREATE INDEX ix ON tmp_admin_batch_fix (resource_id, resource_type, created_at, version)";
+                                    sql = "CREATE INDEX ix ON tmp.tmp_admin_batch_fix (resource_id, resource_type, created_at, version)";
                                     psIndexTempTable = ehrConnection.prepareStatement(sql);
                                     psIndexTempTable.executeUpdate();
 
                                     sql = "UPDATE resource_history"
-                                            + " INNER JOIN tmp_admin_batch_fix f"
+                                            + " INNER JOIN tmp.tmp_admin_batch_fix f"
                                             + " ON f.resource_id = resource_history.resource_id"
                                             + " AND f.resource_type = f.resource_type"
                                             + " AND f.created_at = f.created_at"
