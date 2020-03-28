@@ -11,11 +11,14 @@ import org.endeavourhealth.core.database.dal.DalProvider;
 import org.endeavourhealth.core.database.dal.admin.ServiceDalI;
 import org.endeavourhealth.core.database.dal.admin.SystemHelper;
 import org.endeavourhealth.core.database.dal.admin.models.Service;
+import org.endeavourhealth.core.database.dal.audit.ExchangeBatchDalI;
 import org.endeavourhealth.core.database.dal.audit.ExchangeDalI;
 import org.endeavourhealth.core.database.dal.audit.models.Exchange;
+import org.endeavourhealth.core.database.dal.audit.models.ExchangeBatch;
 import org.endeavourhealth.core.database.dal.audit.models.HeaderKeys;
 import org.endeavourhealth.core.database.dal.ehr.ResourceDalI;
 import org.endeavourhealth.core.database.dal.ehr.models.ResourceWrapper;
+import org.endeavourhealth.core.database.rdbms.ConnectionManager;
 import org.endeavourhealth.transform.common.AuditWriter;
 import org.endeavourhealth.transform.common.ExchangeHelper;
 import org.endeavourhealth.transform.common.ExchangePayloadFile;
@@ -29,6 +32,9 @@ import java.net.URI;
 import java.net.URL;
 import java.security.CodeSource;
 import java.security.ProtectionDomain;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.util.*;
 import java.util.regex.Pattern;
 
@@ -364,5 +370,192 @@ public abstract class SpecialRoutines {
             LOG.error("", t);
         }
 
+    }
+
+    public static void breakUpAdminBatches(String odsCodeRegex) {
+        try {
+            LOG.debug("Breaking up admin batches for " + odsCodeRegex);
+
+            ServiceDalI serviceDal = DalProvider.factoryServiceDal();
+            List<Service> services = serviceDal.getAll();
+
+            for (Service service: services) {
+                //check regex
+                if (shouldSkipService(service, odsCodeRegex)) {
+                    continue;
+                }
+
+                String publisherConfig = service.getPublisherConfigName();
+                if (Strings.isNullOrEmpty(publisherConfig)) {
+                    continue;
+                }
+
+                Connection ehrConnection = ConnectionManager.getEhrNonPooledConnection(service.getId());
+                Connection auditConnection = ConnectionManager.getAuditNonPooledConnection();
+                int maxSize = TransformConfig.instance().getAdminBatchMaxSize();
+
+                LOG.debug("Doing " + service);
+
+                List<UUID> systemIds = SystemHelper.getSystemIdsForService(service);
+                for (UUID systemId: systemIds) {
+
+                    ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
+                    ExchangeBatchDalI exchangeBatchDal = DalProvider.factoryExchangeBatchDal();
+
+                    List<Exchange> exchanges = exchangeDal.getExchangesByService(service.getId(), systemId, Integer.MAX_VALUE);
+                    LOG.debug("Found " + exchanges.size() + " exchanges");
+
+                    int done = 0;
+                    int fixed = 0;
+
+                    for (Exchange exchange: exchanges) {
+                        List<ExchangeBatch> batches = exchangeBatchDal.retrieveForExchangeId(exchange.getId());
+                        for (ExchangeBatch batch: batches) {
+                            if (batch.getEdsPatientId() != null) {
+                                continue;
+                            }
+
+                            String sql = "SELECT COUNT(1) FROM resource_history WHERE exchange_batch_id = ?";
+
+                            PreparedStatement psSelectCount = ehrConnection.prepareStatement(sql);
+                            psSelectCount.setString(1, batch.getBatchId().toString());
+                            ResultSet rs = psSelectCount.executeQuery();
+                            rs.next();
+                            int count = rs.getInt(1);
+                            psSelectCount.close();
+
+                            if (count > maxSize) {
+                                LOG.debug("Fixing batch " + batch.getBatchId() + " for exchange " + exchange.getId() + " with " + count + " resources");
+
+                                //work backwards
+                                int numBlocks = count / maxSize;
+                                if (count % maxSize > 0) {
+                                    numBlocks ++;
+                                }
+
+                                //exchange_event - to audit this
+                                PreparedStatement psExchangeEvent = null;
+
+                                sql = "INSERT INTO exchange_event"
+                                        + " VALUES (?, ?, ?, ?)";
+                                psExchangeEvent = auditConnection.prepareStatement(sql);
+                                psExchangeEvent.setString(1, UUID.randomUUID().toString());
+                                psExchangeEvent.setString(2, exchange.getId().toString());
+                                psExchangeEvent.setTimestamp(3, new java.sql.Timestamp(new Date().getTime()));
+                                psExchangeEvent.setString(4, "Split large admin batch of " + count + " resources into blocks of " + maxSize);
+                                psExchangeEvent.executeUpdate();
+
+                                auditConnection.commit();
+                                psExchangeEvent.close();
+
+                                for (int blockNum=numBlocks; blockNum>1; blockNum--) { //skip block one as we want to leave it alone
+
+                                    UUID newId = UUID.randomUUID();
+                                    int rangeStart = (blockNum-1) * maxSize;
+
+                                    LOG.debug("Updating " + batch.getBatchId() + " " + rangeStart + " to " + (rangeStart+maxSize) + " to batch ID " + newId);
+
+                                    PreparedStatement psExchangeBatch = null;
+                                    PreparedStatement psSendAudit = null;
+                                    PreparedStatement psTransformAudit = null;
+
+                                    //insert into exchange_batch table
+                                    sql = "INSERT INTO exchange_batch"
+                                            + " SELECT exchange_id, '" + newId.toString() + "', inserted_at, eds_patient_id"
+                                            + " FROM exchange_batch"
+                                            + " WHERE exchange_id = ? AND batch_id = ?";
+                                    psExchangeBatch = auditConnection.prepareStatement(sql);
+                                    psExchangeBatch.setString(1, exchange.getId().toString());
+                                    psExchangeBatch.setString(2, batch.getBatchId().toString());
+                                    psExchangeBatch.executeUpdate();
+
+                                    //exchange_subscriber_send_audit
+                                    sql = "INSERT INTO exchange_subscriber_send_audit"
+                                            + " SELECT exchange_id, '" + newId.toString() + "', subscriber_config_name, inserted_at, error_xml, queued_message_id"
+                                            + " FROM exchange_subscriber_send_audit"
+                                            + " WHERE exchange_id = ? AND exchange_batch_id = ?";
+                                    psSendAudit = auditConnection.prepareStatement(sql);
+                                    psSendAudit.setString(1, exchange.getId().toString());
+                                    psSendAudit.setString(2, batch.getBatchId().toString());
+                                    psSendAudit.executeUpdate();
+
+                                    //exchange_subscriber_transform_audit
+                                    sql = "INSERT INTO exchange_subscriber_transform_audit"
+                                            + " SELECT exchange_id, '" + newId.toString() + "', subscriber_config_name, started, ended, error_xml, number_resources_transformed, queued_message_id"
+                                            + " FROM exchange_subscriber_transform_audit"
+                                            + " WHERE exchange_id = ? AND exchange_batch_id = ?";
+                                    psTransformAudit = auditConnection.prepareStatement(sql);
+                                    psTransformAudit.setString(1, exchange.getId().toString());
+                                    psTransformAudit.setString(2, batch.getBatchId().toString());
+                                    psTransformAudit.executeUpdate();
+
+                                    auditConnection.commit();
+                                    psExchangeBatch.close();
+                                    psSendAudit.close();
+                                    psTransformAudit.close();
+
+                                    //update history
+                                    PreparedStatement psDropTempTable = null;
+                                    PreparedStatement psCreateTempTable = null;
+                                    PreparedStatement psIndexTempTable = null;
+                                    PreparedStatement psUpdateHistory = null;
+
+                                    sql = "DROP TEMPORARY TABLE IF EXISTS tmp_admin_batch_fix";
+                                    psDropTempTable = ehrConnection.prepareStatement(sql);
+                                    psDropTempTable.executeUpdate();
+
+                                    sql = "CREATE TEMPORARY TABLE tmp_admin_batch_fix AS"
+                                            + " SELECT resource_id, resource_type, created_at, version"
+                                            + " FROM resource_history"
+                                            + " WHERE exchange_batch_id = ?"
+                                            + " ORDER BY resource_type, resource_id"
+                                            + " LIMIT " + rangeStart + ", " + maxSize;
+                                    psCreateTempTable = ehrConnection.prepareStatement(sql);
+                                    psCreateTempTable.setString(1, batch.getBatchId().toString());
+                                    psCreateTempTable.executeUpdate();
+
+                                    sql = "CREATE INDEX ix ON tmp_admin_batch_fix (resource_id, resource_type, created_at, version)";
+                                    psIndexTempTable = ehrConnection.prepareStatement(sql);
+                                    psIndexTempTable.executeUpdate();
+
+                                    sql = "UPDATE resource_history"
+                                            + " INNER JOIN tmp_admin_batch_fix f"
+                                            + " ON f.resource_id = resource_history.resource_id"
+                                            + " AND f.resource_type = f.resource_type"
+                                            + " AND f.created_at = f.created_at"
+                                            + " AND f.version = f.version"
+                                            + " SET resource_history.created_at = resource_history.created_at,"
+                                            + " resource_history.exchange_batch_id = ?";
+                                    psUpdateHistory = ehrConnection.prepareStatement(sql);
+                                    psUpdateHistory.setString(1, newId.toString());
+                                    psUpdateHistory.executeUpdate();
+
+                                    ehrConnection.commit();
+                                    psDropTempTable.close();
+                                    psCreateTempTable.close();
+                                    psIndexTempTable.close();
+                                    psUpdateHistory.close();
+                                }
+                            }
+                        }
+
+                        done ++;
+                        if (done % 100 == 0) {
+                            LOG.debug("Checked " + done + " exchanges and fixed " + fixed);
+                        }
+                    }
+
+                    LOG.debug("Checked " + done + " exchanges and fixed " + fixed);
+                }
+
+                ehrConnection.close();
+                auditConnection.close();
+
+            }
+
+            LOG.debug("Finished breaking up admin batches for " + odsCodeRegex);
+        } catch (Throwable t) {
+            LOG.error("", t);
+        }
     }
 }

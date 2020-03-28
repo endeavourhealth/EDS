@@ -315,6 +315,8 @@ create table application_heartbeat (
   server_memory_mb int COMMENT 'server physical memory',
   server_cpu_usage_percent int COMMENT 'server total CPU load',
   is_busy_detail varchar(255) COMMENT 'free-text desc of what it is busy doing',
+  dt_started datetime COMMENT 'when this app instance started',
+  dt_jar datetime COMMENT 'build date time of the jar on this server (may be later than start time)',
   CONSTRAINT pk_application_heartbeat PRIMARY KEY (application_name, application_instance_name)
 )
   ROW_FORMAT=COMPRESSED
