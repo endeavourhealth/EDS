@@ -91,6 +91,12 @@ public class Main {
 		ConfigManager.initialize("queuereader", configId);
 
 		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("TestInformationModel")) {
+			SpecialRoutines.testInformationModel();
+			System.exit(0);
+		}
+
+		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("BreakUpAdminBatches")) {
 			String odsCodeRegex = null;
 			if (args.length > 1) {

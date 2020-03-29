@@ -123,6 +123,7 @@ create table clinical_event_target
     lookup_mrn				   	   varchar(255)	COMMENT 'the lookup mrn for the person',
     audit_json                     mediumtext   null comment 'Used for Audit Purposes',
     is_confidential            	   bool COMMENT 'if this procedure should be confidential or not',
+    event_result_txt varchar(255) COMMENT 'free text result string',
     CONSTRAINT pk_condition_cds PRIMARY KEY (exchange_id, event_id)
 );
 

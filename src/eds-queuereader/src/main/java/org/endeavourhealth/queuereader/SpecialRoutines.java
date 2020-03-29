@@ -19,10 +19,13 @@ import org.endeavourhealth.core.database.dal.audit.models.HeaderKeys;
 import org.endeavourhealth.core.database.dal.ehr.ResourceDalI;
 import org.endeavourhealth.core.database.dal.ehr.models.ResourceWrapper;
 import org.endeavourhealth.core.database.rdbms.ConnectionManager;
+import org.endeavourhealth.im.client.IMClient;
 import org.endeavourhealth.transform.common.AuditWriter;
 import org.endeavourhealth.transform.common.ExchangeHelper;
 import org.endeavourhealth.transform.common.ExchangePayloadFile;
 import org.endeavourhealth.transform.common.TransformConfig;
+import org.endeavourhealth.transform.subscriber.IMConstant;
+import org.endeavourhealth.transform.subscriber.IMHelper;
 import org.hl7.fhir.instance.model.ResourceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -557,5 +560,233 @@ public abstract class SpecialRoutines {
         } catch (Throwable t) {
             LOG.error("", t);
         }
+    }
+
+    public static void testInformationModel() {
+        LOG.debug("Testing Information Model");
+        try {
+            LOG.debug("----getMappedCoreCodeForSchemeCode------------------------------------------------");
+            LOG.debug("    gets Snomed concept ID for legacy code and scheme");
+
+            String legacyCode = "C10..";
+            String legacyScheme = IMConstant.READ2;
+            String mappedCoreCode = IMClient.getMappedCoreCodeForSchemeCode(legacyScheme, legacyCode);
+            LOG.debug("For " + legacyScheme + " " + legacyCode + ", got Snomed Concept ID " + mappedCoreCode);
+
+            legacyCode =  "C10..";
+            legacyScheme = IMConstant.CTV3;
+            mappedCoreCode = IMClient.getMappedCoreCodeForSchemeCode(legacyScheme, legacyCode);
+            LOG.debug("For " + legacyScheme + " " + legacyCode + ", got Snomed Concept ID " + mappedCoreCode);
+
+            legacyCode = "G33..";
+            legacyScheme = IMConstant.READ2;
+            mappedCoreCode = IMClient.getMappedCoreCodeForSchemeCode(legacyScheme, legacyCode);
+            LOG.debug("For " + legacyScheme + " " + legacyCode + ", got Snomed Concept ID " + mappedCoreCode);
+
+            legacyCode = "G33..";
+            legacyScheme = IMConstant.CTV3;
+            mappedCoreCode = IMClient.getMappedCoreCodeForSchemeCode(legacyScheme, legacyCode);
+            LOG.debug("For " + legacyScheme + " " + legacyCode + ", got Snomed Concept ID " + mappedCoreCode);
+
+            legacyCode = "687309281";
+            legacyScheme = IMConstant.BARTS_CERNER;
+            mappedCoreCode = IMClient.getMappedCoreCodeForSchemeCode(legacyScheme, legacyCode);
+            LOG.debug("For " + legacyScheme + " " + legacyCode + ", got Snomed Concept ID " + mappedCoreCode);
+
+
+            LOG.debug("----getConceptDbidForSchemeCode------------------------------------------------");
+            LOG.debug("    gets NON-CORE DBID for legacy code and scheme");
+
+            legacyCode = "C10..";
+            legacyScheme = IMConstant.READ2;
+            Integer dbid = IMClient.getConceptDbidForSchemeCode(legacyScheme, legacyCode);
+            LOG.debug("For " + legacyScheme + " " + legacyCode + ", got non-core DBID " + dbid);
+
+            legacyCode = "C10..";
+            legacyScheme = IMConstant.CTV3;
+            dbid = IMClient.getConceptDbidForSchemeCode(legacyScheme, legacyCode);
+            LOG.debug("For " + legacyScheme + " " + legacyCode + ", got non-core DBID " + dbid);
+
+            legacyCode = "G33..";
+            legacyScheme = IMConstant.READ2;
+            dbid = IMClient.getConceptDbidForSchemeCode(legacyScheme, legacyCode);
+            LOG.debug("For " + legacyScheme + " " + legacyCode + ", got non-core DBID " + dbid);
+
+            legacyCode = "G33..";
+            legacyScheme = IMConstant.CTV3;
+            dbid = IMClient.getConceptDbidForSchemeCode(legacyScheme, legacyCode);
+            LOG.debug("For " + legacyScheme + " " + legacyCode + ", got non-core DBID " + dbid);
+
+            legacyCode = "687309281";
+            legacyScheme = IMConstant.BARTS_CERNER;
+            dbid = IMClient.getConceptDbidForSchemeCode(legacyScheme, legacyCode);
+            LOG.debug("For " + legacyScheme + " " + legacyCode + ", got non-core DBID " + dbid);
+
+
+            LOG.debug("----getMappedCoreConceptDbidForSchemeCode------------------------------------------------");
+            LOG.debug("    gets CORE DBID for legacy code and scheme");
+
+            legacyCode = "C10..";
+            legacyScheme = IMConstant.READ2;
+            dbid = IMClient.getMappedCoreConceptDbidForSchemeCode(legacyScheme, legacyCode);
+            LOG.debug("For " + legacyScheme + " " + legacyCode + ", got core DBID " + dbid);
+
+            legacyCode = "C10..";
+            legacyScheme = IMConstant.CTV3;
+            dbid = IMClient.getMappedCoreConceptDbidForSchemeCode(legacyScheme, legacyCode);
+            LOG.debug("For " + legacyScheme + " " + legacyCode + ", got core DBID " + dbid);
+
+            legacyCode = "G33..";
+            legacyScheme = IMConstant.READ2;
+            dbid = IMClient.getMappedCoreConceptDbidForSchemeCode(legacyScheme, legacyCode);
+            LOG.debug("For " + legacyScheme + " " + legacyCode + ", got core DBID " + dbid);
+
+            legacyCode = "G33..";
+            legacyScheme = IMConstant.CTV3;
+            dbid = IMClient.getMappedCoreConceptDbidForSchemeCode(legacyScheme, legacyCode);
+            LOG.debug("For " + legacyScheme + " " + legacyCode + ", got core DBID " + dbid);
+
+            legacyCode = "687309281";
+            legacyScheme = IMConstant.BARTS_CERNER;
+            dbid = IMClient.getMappedCoreConceptDbidForSchemeCode(legacyScheme, legacyCode);
+            LOG.debug("For " + legacyScheme + " " + legacyCode + ", got core DBID " + dbid);
+
+
+            LOG.debug("----getCodeForConceptDbid------------------------------------------------");
+            LOG.debug("    get Snomed concept ID for CORE DBID");
+
+            Integer coreConceptDbId = new Integer(61367);
+            String codeForConcept = IMClient.getCodeForConceptDbid(coreConceptDbId);
+            LOG.debug("For core DBID " + coreConceptDbId + " got " + codeForConcept);
+
+            coreConceptDbId = new Integer(123390);
+            codeForConcept = IMClient.getCodeForConceptDbid(coreConceptDbId);
+            LOG.debug("For core DBID " + coreConceptDbId + " got " + codeForConcept);
+
+            coreConceptDbId = new Integer(1406482);
+            codeForConcept = IMClient.getCodeForConceptDbid(coreConceptDbId);
+            LOG.debug("For core DBID " + coreConceptDbId + " got " + codeForConcept);
+
+            LOG.debug("----getConceptDbidForTypeTerm------------------------------------------------");
+            LOG.debug("    gets NON-CORE DBID for encounter type text");
+
+            String encounterScheme = IMConstant.DCE_Type_of_encounter;
+            String encounterTerm = "Clinical";
+            Integer encounterConceptId = IMClient.getConceptDbidForTypeTerm(encounterScheme, encounterTerm);
+            LOG.debug("For " + encounterScheme + " " + encounterTerm + " got " + encounterConceptId);
+
+            encounterScheme = IMConstant.DCE_Type_of_encounter;
+            encounterTerm = "Administrative";
+            encounterConceptId = IMClient.getConceptDbidForTypeTerm(encounterScheme, encounterTerm);
+            LOG.debug("For " + encounterScheme + " " + encounterTerm + " got " + encounterConceptId);
+
+            encounterScheme = IMConstant.DCE_Type_of_encounter;
+            encounterTerm = "GP Surgery";
+            encounterConceptId = IMClient.getConceptDbidForTypeTerm(encounterScheme, encounterTerm);
+            LOG.debug("For " + encounterScheme + " " + encounterTerm + " got " + encounterConceptId);
+
+
+            LOG.debug("----getMappedCoreConceptDbidForTypeTerm------------------------------------------------");
+            LOG.debug("    gets CORE DBID for encounter type text");
+
+            encounterScheme = IMConstant.DCE_Type_of_encounter;
+            encounterTerm = "Clinical";
+            encounterConceptId = IMClient.getMappedCoreConceptDbidForTypeTerm(encounterScheme, encounterTerm);
+            LOG.debug("For " + encounterScheme + " " + encounterTerm + " got " + encounterConceptId);
+
+            encounterScheme = IMConstant.DCE_Type_of_encounter;
+            encounterTerm = "Administrative";
+            encounterConceptId = IMClient.getMappedCoreConceptDbidForTypeTerm(encounterScheme, encounterTerm);
+            LOG.debug("For " + encounterScheme + " " + encounterTerm + " got " + encounterConceptId);
+
+            encounterScheme = IMConstant.DCE_Type_of_encounter;
+            encounterTerm = "GP Surgery";
+            encounterConceptId = IMClient.getMappedCoreConceptDbidForTypeTerm(encounterScheme, encounterTerm);
+            LOG.debug("For " + encounterScheme + " " + encounterTerm + " got " + encounterConceptId);
+
+            LOG.debug("----getCodeForTypeTerm------------------------------------------------");
+            LOG.debug("    gets locally generated Cerner code for test code and result text");
+
+            String code = "687309281";
+            String scheme = IMConstant.BARTS_CERNER;
+            String term = "SARS-CoV-2 RNA DETECTED";
+            String codeForTypeTerm = IMClient.getCodeForTypeTerm(scheme, code, term);
+            LOG.debug("For " + scheme + " " + code + " [" + term + "] got " + codeForTypeTerm);
+
+            code = "687309281";
+            scheme = IMConstant.BARTS_CERNER;
+            term = "SARS-CoV-2 RNA NOT detected";
+            codeForTypeTerm = IMClient.getCodeForTypeTerm(scheme, code, term);
+            LOG.debug("For " + scheme + " " + code + " [" + term + "] got " + codeForTypeTerm);
+
+            LOG.debug("");
+            LOG.debug("");
+            LOG.debug("----Coronavirus test IMCLIENT------------------------------------------------");
+
+            String testCode = "687309281";
+            String positiveResult = "SARS-CoV-2 RNA DETECTED";
+            String negativeResult = "SARS-CoV-2 RNA NOT detected";
+
+            LOG.debug("Want to find Snomed concept 1240511000000106 from Cerner test code 687309281");
+            String testCodeSnomedConceptId = IMClient.getMappedCoreCodeForSchemeCode(IMConstant.BARTS_CERNER, testCode);
+            LOG.debug("Got Snomed test code " + testCodeSnomedConceptId);
+            LOG.debug("");
+
+            LOG.debug("Want to get locally generated Cerner code for test code and positive textual result");
+            String locallyGeneratedPositiveCode = IMClient.getCodeForTypeTerm(IMConstant.BARTS_CERNER, testCode, positiveResult);
+            LOG.debug("Got locally generated code " + locallyGeneratedPositiveCode);
+            LOG.debug("");
+
+            LOG.debug("Want to get locally generated Cerner code for test code and negative textual result");
+            String locallyGeneratedNegativeCode = IMClient.getCodeForTypeTerm(IMConstant.BARTS_CERNER, testCode, negativeResult);
+            LOG.debug("Got locally generated code " + locallyGeneratedNegativeCode);
+            LOG.debug("");
+
+            LOG.debug("Want to get Snomed concept ID for test code and positive result");
+            String snomedPositiveCode = IMClient.getMappedCoreCodeForSchemeCode(IMConstant.BARTS_CERNER, locallyGeneratedPositiveCode);
+            LOG.debug("Got positive snomed code " + snomedPositiveCode);
+            LOG.debug("");
+
+            LOG.debug("Want to get Snomed concept ID for test code and negative result");
+            String snomedNegativeCode = IMClient.getMappedCoreCodeForSchemeCode(IMConstant.BARTS_CERNER, locallyGeneratedNegativeCode);
+            LOG.debug("Got negative snomed code " + snomedNegativeCode);
+            LOG.debug("");
+
+
+            LOG.debug("");
+            LOG.debug("");
+            LOG.debug("----Coronavirus test IMHELPER------------------------------------------------");
+
+            LOG.debug("Want to find Snomed concept 1240511000000106 from Cerner test code 687309281");
+            testCodeSnomedConceptId = IMHelper.getMappedSnomedConceptForSchemeCode(IMConstant.BARTS_CERNER, testCode);
+            LOG.debug("Got Snomed test code " + testCodeSnomedConceptId);
+            LOG.debug("");
+
+            LOG.debug("Want to get locally generated Cerner code for test code and positive textual result");
+            locallyGeneratedPositiveCode = IMHelper.getMappedLegacyCodeForLegacyCodeAndTerm(IMConstant.BARTS_CERNER, testCode, positiveResult);
+            LOG.debug("Got locally generated code " + locallyGeneratedPositiveCode);
+            LOG.debug("");
+
+            LOG.debug("Want to get locally generated Cerner code for test code and negative textual result");
+            locallyGeneratedNegativeCode = IMHelper.getMappedLegacyCodeForLegacyCodeAndTerm(IMConstant.BARTS_CERNER, testCode, negativeResult);
+            LOG.debug("Got locally generated code " + locallyGeneratedNegativeCode);
+            LOG.debug("");
+
+            LOG.debug("Want to get Snomed concept ID for test code and positive result");
+            snomedPositiveCode = IMHelper.getMappedSnomedConceptForSchemeCode(IMConstant.BARTS_CERNER, locallyGeneratedPositiveCode);
+            LOG.debug("Got positive snomed code " + snomedPositiveCode);
+            LOG.debug("");
+
+            LOG.debug("Want to get Snomed concept ID for test code and negative result");
+            snomedNegativeCode = IMHelper.getMappedSnomedConceptForSchemeCode(IMConstant.BARTS_CERNER, locallyGeneratedNegativeCode);
+            LOG.debug("Got negative snomed code " + snomedNegativeCode);
+            LOG.debug("");
+
+
+            LOG.debug("Finished Testing Information Model");
+        } catch (Throwable t) {
+            LOG.error("", t);
+        }
+
     }
 }

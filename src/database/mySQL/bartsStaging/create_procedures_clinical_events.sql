@@ -1,9 +1,10 @@
 USE staging_barts;
 
-DROP PROCEDURE IF EXISTS `process_clinical_events_staging_exchange`;
+
+DROP PROCEDURE IF EXISTS process_clinical_events_staging_exchange;
 
 DELIMITER $$
-CREATE PROCEDURE `process_clinical_events_staging_exchange`(
+CREATE DEFINER=`root`@`localhost` PROCEDURE `process_clinical_events_staging_exchange`(
   IN _exchange_id char(36)
 )
 BEGIN
@@ -104,7 +105,7 @@ BEGIN
 	select
 		_exchange_id as exchange_id,
 		concat('CLEVE-', cleve.event_id) as unique_id,
-		if (cleve.active_ind = 0 
+		if (cleve.active_ind = 0
 			or ifnull(cleve.event_result_txt, '') = "DELETED"
             or cleve.event_result_status_cd in (24, 26, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 39, 40, 654643)
             , true, false) as is_delete,
@@ -129,7 +130,8 @@ BEGIN
 		cleve.lookup_record_status_code as lookup_record_status_code,
 		cleve.lookup_mrn as lookup_mrn,
 		cleve.audit_json as audit_json,
-		null as is_confidential
+		null as is_confidential,
+        cleve.event_result_txt as event_result_txt
 	from
 		clinical_event_latest cleve
 	where
