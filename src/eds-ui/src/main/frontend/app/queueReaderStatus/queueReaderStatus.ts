@@ -13,5 +13,9 @@ export class QueueReaderStatus {
     cpuLoad: number;
     isBusyDetail: string;
     isBusySince: number;
+    isBusyOdsCode: string;
+    isBusyDataDate: string;
+    dtStarted: number;
+    dtJar: number;
     queueName: string;
 }

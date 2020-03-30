@@ -1,12 +1,16 @@
 package org.endeavourhealth.ui.endpoints;
 
 import com.codahale.metrics.annotation.Timed;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.base.Strings;
 import org.endeavourhealth.common.fhir.schema.OrganisationType;
 import org.endeavourhealth.common.ods.OdsOrganisation;
 import org.endeavourhealth.common.ods.OdsWebService;
 import org.endeavourhealth.common.security.SecurityUtils;
 import org.endeavourhealth.common.security.annotations.RequiresAdmin;
+import org.endeavourhealth.common.utility.ExpiringObject;
 import org.endeavourhealth.common.utility.XmlSerializer;
 import org.endeavourhealth.core.database.dal.DalProvider;
 import org.endeavourhealth.core.database.dal.admin.LibraryDalI;
@@ -19,6 +23,11 @@ import org.endeavourhealth.core.database.dal.audit.ExchangeDalI;
 import org.endeavourhealth.core.database.dal.audit.UserAuditDalI;
 import org.endeavourhealth.core.database.dal.audit.models.*;
 import org.endeavourhealth.core.database.dal.ehr.ResourceDalI;
+import org.endeavourhealth.core.database.dal.usermanager.caching.DataSharingAgreementCache;
+import org.endeavourhealth.core.database.dal.usermanager.caching.OrganisationCache;
+import org.endeavourhealth.core.database.dal.usermanager.caching.ProjectCache;
+import org.endeavourhealth.core.database.rdbms.datasharingmanager.models.DataSharingAgreementEntity;
+import org.endeavourhealth.core.database.rdbms.datasharingmanager.models.ProjectEntity;
 import org.endeavourhealth.core.fhirStorage.ServiceInterfaceEndpoint;
 import org.endeavourhealth.core.queueing.QueueHelper;
 import org.endeavourhealth.core.xml.QueryDocument.*;
@@ -36,6 +45,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 @Path("/service")
@@ -46,7 +56,9 @@ public final class ServiceEndpoint extends AbstractEndpoint {
     private static final UserAuditDalI userAuditRepository = DalProvider.factoryUserAuditDal(AuditModule.EdsUiModule.Service);
     private static final ExchangeDalI exchangeAuditRepository = DalProvider.factoryExchangeDal();
 
-    private static List<String> cachedTagNames = null;
+    private static ExpiringObject<List<String>> cachedTagNames = ExpiringObject.factoryFiveMinutes();
+    private static ExpiringObject<List<String>> cachedPublisherNames = ExpiringObject.factoryFiveMinutes();
+    private static ExpiringObject<List<String>> cachedCcgCodes = ExpiringObject.factoryFiveMinutes();
 
     @POST
     @Produces(MediaType.APPLICATION_JSON)
@@ -62,13 +74,40 @@ public final class ServiceEndpoint extends AbstractEndpoint {
         //if no postcode etc. are set, see if we can find them via Open ODS
         //populateFromOds(service); //done on the front end now
 
+        boolean refreshCaches = false;
+
         Service dbService = new Service();
         dbService.setId(service.getUuid());
         dbService.setName(service.getName());
         dbService.setLocalId(service.getLocalIdentifier());
-        dbService.setPublisherConfigName(service.getPublisherConfigName());
+
+        if (service.getPublisherConfigName() != null) {
+            String publisherConfigName = service.getPublisherConfigName();
+            dbService.setPublisherConfigName(publisherConfigName);
+
+            //make sure config name is in the cache otherwise we'll need to refresh it
+            List<String> configNames = cachedPublisherNames.get();
+            if (configNames != null
+                    && !configNames.contains(publisherConfigName)) {
+                refreshCaches = true;
+            }
+        }
+
         dbService.setPostcode(service.getPostcode());
-        dbService.setCcgCode(service.getCcgCode());
+
+        if (service.getCcgCode() != null) {
+            String ccgCode = service.getCcgCode();
+            dbService.setCcgCode(ccgCode);
+
+            //make sure config name is in the cache otherwise we'll need to refresh it
+            List<String> ccgCodes = cachedCcgCodes.get();
+            if (ccgCodes != null
+                    && !ccgCodes.contains(ccgCode)) {
+                refreshCaches = true;
+            }
+        }
+
+
         if (!Strings.isNullOrEmpty(service.getOrganisationTypeCode())) {
             dbService.setOrganisationType(OrganisationType.fromCode(service.getOrganisationTypeCode()));
         }
@@ -77,20 +116,28 @@ public final class ServiceEndpoint extends AbstractEndpoint {
         if (service.getTags() != null) {
             dbService.setTags(new HashMap<>(service.getTags()));
 
-            //make sure any new ones are added to the cached list
-            if (cachedTagNames != null) {
-                Set<String> hs = new HashSet<>(cachedTagNames);
+            //make sure all tags are in the cache otherwise we'll need to refresh it
+            List<String> tagNames = cachedTagNames.get();
+            if (tagNames != null) {
                 for (String tagName: service.getTags().keySet()) {
-                    hs.add(tagName);
+                    if (!tagNames.contains(tagName)) {
+                        refreshCaches = true;
+                    }
                 }
-                setTagNameCache(hs);
             }
         }
 
+        //save
         UUID serviceId = serviceRepository.save(dbService);
 
         if (service.getUuid() == null) {
             service.setUuid(serviceId);
+        }
+
+        //if we've added a new tag or publisher, call this after the save
+        if (refreshCaches) {
+            LOG.debug("New tag, CCG code or publisher config, so will refresh caches");
+            refreshServiceCaches(true);
         }
 
         clearLogbackMarkers();
@@ -346,24 +393,33 @@ public final class ServiceEndpoint extends AbstractEndpoint {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     @Timed(absolute = true, name = "ServiceEndpoint.GetServiceList")
-    public Response get(@Context SecurityContext sc, @QueryParam("uuid") String uuid, @QueryParam("searchData") String searchData) throws Exception {
+    public Response get(@Context SecurityContext sc,
+                        @QueryParam("uuid") String uuid,
+                        @QueryParam("odsCode") String odsCode,
+                        @QueryParam("searchText") String searchText) throws Exception {
         super.setLogbackMarkers(sc);
         userAuditRepository.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
                 "Service(s)",
                 "Service Id", uuid,
-                "Search Data", searchData);
+                "Search Data", searchText);
 
-        if (uuid == null && searchData == null) {
+        if (Strings.isNullOrEmpty(uuid)
+                && Strings.isNullOrEmpty(odsCode)
+                && Strings.isNullOrEmpty(searchText)) {
             LOG.trace("Get Service list");
             return getServiceList();
 
-        } else if (uuid != null) {
-            LOG.trace("Get Service single - " + uuid);
-            return getSingleService(uuid);
+        } else if (!Strings.isNullOrEmpty(uuid)) {
+            LOG.trace("Get Service single for UUID " + uuid);
+            return getSingleServiceForUuid(uuid);
+
+        } else if (!Strings.isNullOrEmpty(odsCode)) {
+            LOG.trace("Get Service single for ODS " + odsCode);
+            return getSingleServiceForOds(odsCode);
 
         } else {
-            LOG.trace("Search services - " + searchData);
-            return getServicesMatchingText(searchData);
+            LOG.trace("Search services [" + searchText + "]");
+            return getServicesMatchingText(searchText);
         }
     }
 
@@ -379,9 +435,26 @@ public final class ServiceEndpoint extends AbstractEndpoint {
                 .build();
     }
 
-    private Response getSingleService(String uuid) throws Exception {
+    private Response getSingleServiceForUuid(String uuid) throws Exception {
         UUID serviceUuid = UUID.fromString(uuid);
         Service service = serviceRepository.getById(serviceUuid);
+
+        List<Service> services = new ArrayList<>();
+        services.add(service);
+
+        List<JsonService> jsonServices = createAndPopulateJsonServices(services);
+        JsonService ret = jsonServices.get(0);
+
+        clearLogbackMarkers();
+        return Response
+                .ok()
+                .entity(ret)
+                .build();
+    }
+
+    private Response getSingleServiceForOds(String odsCode) throws Exception {
+
+        Service service = serviceRepository.getByLocalIdentifier(odsCode);
 
         List<Service> services = new ArrayList<>();
         services.add(service);
@@ -679,7 +752,7 @@ public final class ServiceEndpoint extends AbstractEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    @Timed(absolute = true, name = "ServiceEndpoint.GetSystemsForService")
+    @Timed(absolute = true, name = "ServiceEndpoint.systemsForService")
     @Path("/systemsForService")
     public Response getSystemsForService(@Context SecurityContext sc, @QueryParam("serviceId") String serviceIdStr) throws Exception {
         super.setLogbackMarkers(sc);
@@ -719,7 +792,7 @@ public final class ServiceEndpoint extends AbstractEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    @Timed(absolute = true, name = "ServiceEndpoint.GetServiceOrganisations")
+    @Timed(absolute = true, name = "ServiceEndpoint.openOdsRecord")
     @Path("/openOdsRecord")
     public Response getOpenOdsRecord(@Context SecurityContext sc, @QueryParam("odsCode") String odsCode) throws Exception {
         super.setLogbackMarkers(sc);
@@ -743,7 +816,7 @@ public final class ServiceEndpoint extends AbstractEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    @Timed(absolute = true, name = "ServiceEndpoint.GetProtocolsForService")
+    @Timed(absolute = true, name = "ServiceEndpoint.protocolsForService")
     @Path("/protocolsForService")
     public Response getProtocolsForService(@Context SecurityContext sc, @QueryParam("serviceId") String serviceIdStr) throws Exception {
         super.setLogbackMarkers(sc);
@@ -793,7 +866,7 @@ public final class ServiceEndpoint extends AbstractEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    @Timed(absolute = true, name = "ServiceEndpoint.OrganisationTypeList")
+    @Timed(absolute = true, name = "ServiceEndpoint.organisationTypeList")
     @Path("/organisationTypeList")
     public Response getOrganisationTypeList(@Context SecurityContext sc) throws Exception {
         super.setLogbackMarkers(sc);
@@ -819,37 +892,125 @@ public final class ServiceEndpoint extends AbstractEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    @Timed(absolute = true, name = "ServiceEndpoint.OrganisationTypeList")
+    @Timed(absolute = true, name = "ServiceEndpoint.tagNames")
     @Path("/tagNames")
     public Response getTagNames(@Context SecurityContext sc) throws Exception {
         super.setLogbackMarkers(sc);
 
-        if (cachedTagNames == null) {
-
-            Set<String> all = new HashSet<>();
-
-            List<Service> services = serviceRepository.getAll();
-            for (Service service: services) {
-                if (service.getTags() != null) {
-                    Set<String> set = service.getTags().keySet();
-                    all.addAll(set);
-                }
-            }
-
-            setTagNameCache(all);
+        List<String> ret = cachedTagNames.get();
+        if (ret == null) {
+            LOG.debug("Tag name cache is empty, so will refresh");
+            refreshServiceCaches(false);
+            ret = cachedTagNames.get();
         }
 
         clearLogbackMarkers();
 
         return Response
                 .ok()
-                .entity(cachedTagNames)
+                .entity(ret)
                 .build();
     }
 
-    private void setTagNameCache(Set<String> s) {
-        List<String> l = new ArrayList<>(s);
 
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name = "ServiceEndpoint.publisherConfigNames")
+    @Path("/publisherConfigNames")
+    public Response getPublisherConfigNames(@Context SecurityContext sc) throws Exception {
+        super.setLogbackMarkers(sc);
+
+        //check cache
+        List<String> ret = cachedPublisherNames.get();
+        if (ret == null) {
+            LOG.debug("Publisher config cache is empty, so will refresh");
+            refreshServiceCaches(false);
+            ret = cachedPublisherNames.get();
+        }
+
+        clearLogbackMarkers();
+
+        return Response
+                .ok()
+                .entity(ret)
+                .build();
+    }
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name = "ServiceEndpoint.ccgCodes")
+    @Path("/ccgCodes")
+    public Response getCcgCodes(@Context SecurityContext sc) throws Exception {
+        super.setLogbackMarkers(sc);
+
+        //check cache
+        List<String> ret = cachedCcgCodes.get();
+        if (ret == null) {
+            LOG.debug("CCG code cache is empty, so will refresh");
+            refreshServiceCaches(false);
+            ret = cachedCcgCodes.get();
+        }
+
+        clearLogbackMarkers();
+
+        return Response
+                .ok()
+                .entity(ret)
+                .build();
+    }
+
+    /**
+     * builds/refreshes the caches of CCG codes, tags and publisher config names
+     * synchronized to prevent multiple calls from a browser kicking this off repeatedly
+     */
+    private synchronized void refreshServiceCaches(boolean force) throws Exception {
+
+        //if we've already refreshed them and they're valid, just return out
+        if (!force) {
+            if (cachedPublisherNames.get() != null
+                    && cachedCcgCodes.get() != null
+                    && cachedTagNames.get() != null) {
+                return;
+            }
+        }
+
+        Set<String> hsPublisherConfigNames = new HashSet<>();
+        Set<String> hsCcgCodes = new HashSet<>();
+        Set<String> hsTags = new HashSet<>();
+
+        List<Service> services = serviceRepository.getAll();
+        for (Service service: services) {
+
+            String publisherConfigName = service.getPublisherConfigName();
+            if (!Strings.isNullOrEmpty(publisherConfigName)) {
+                hsPublisherConfigNames.add(publisherConfigName);
+            }
+
+            String ccgCode = service.getCcgCode();
+            if (!Strings.isNullOrEmpty(ccgCode)) {
+                hsCcgCodes.add(ccgCode);
+            }
+
+            if (service.getTags() != null) {
+                Set<String> set = service.getTags().keySet();
+                hsTags.addAll(set);
+            }
+        }
+
+        //set in caches
+        List<String> l = new ArrayList<>(hsPublisherConfigNames);
+        l.sort(((o1, o2) -> o1.toLowerCase().compareToIgnoreCase(o2.toLowerCase())));
+        cachedPublisherNames.set(l);
+
+        l = new ArrayList<>(hsCcgCodes);
+        l.sort(((o1, o2) -> o1.toLowerCase().compareToIgnoreCase(o2.toLowerCase())));
+        cachedCcgCodes.set(l);
+
+
+        l = new ArrayList<>(hsTags);
         //sort by length so shorter ones are first, which has the end result of moving
         //the more interesting tags to the start
         //l.sort(((o1, o2) -> o1.toLowerCase().compareToIgnoreCase(o2.toLowerCase())));
@@ -861,6 +1022,94 @@ public final class ServiceEndpoint extends AbstractEndpoint {
             l.add("Notes");
         }
 
-        cachedTagNames = l;
+        cachedTagNames.set(l);
     }
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name = "ServiceEndpoint.dsmDetails")
+    @Path("/dsmDetails")
+    public Response getDsmDetails(@Context SecurityContext sc, @QueryParam("odsCode") String odsCode) throws Exception {
+        super.setLogbackMarkers(sc);
+
+        ObjectMapper mapper = new ObjectMapper();
+        ObjectNode obj = new ObjectNode(mapper.getNodeFactory());
+
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+
+        try {
+
+            Boolean b = OrganisationCache.doesOrganisationHaveDPA(odsCode);
+            obj.put("hasDPA", b);
+
+            List<DataSharingAgreementEntity> publisherDsasList = DataSharingAgreementCache.getAllDSAsForPublisherOrg(odsCode);
+            obj.put("countPublisherDSAs", publisherDsasList.size());
+
+            ArrayNode arr = obj.putArray("publisherDSAs");
+            for (DataSharingAgreementEntity dsa: publisherDsasList) {
+
+                ObjectNode dsaNode = arr.addObject();
+                dsaNode.put("uuid", dsa.getUuid());
+                dsaNode.put("name", dsa.getName());
+                dsaNode.put("description", dsa.getDescription());
+                dsaNode.put("derivation", dsa.getDerivation());
+                dsaNode.put("dsaStatusId", dsa.getDsaStatusId());
+                dsaNode.put("consentModelId", dsa.getConsentModelId());
+                dsaNode.put("startDate", (dsa.getStartDate() != null ? dateFormat.format(dsa.getStartDate()): null));
+                dsaNode.put("endDate", (dsa.getEndDate() != null ? dateFormat.format(dsa.getEndDate()): null));
+            }
+
+
+            List<ProjectEntity> subscribersDsasList = ProjectCache.getAllProjectsForSubscriberOrg(odsCode);
+            obj.put("countSubscriberDSAs", subscribersDsasList.size());
+
+            arr = obj.putArray("subscriberDSAs");
+            for (ProjectEntity dsa: subscribersDsasList) {
+
+                ObjectNode dsaNode = arr.addObject();
+                dsaNode.put("uuid", dsa.getUuid());
+                dsaNode.put("name;", dsa.getName());
+                dsaNode.put("leadUser", dsa.getLeadUser());
+                dsaNode.put("technicalLeadUser", dsa.getTechnicalLeadUser());
+                dsaNode.put("consentModelId", dsa.getConsentModelId());
+                dsaNode.put("deidentificationLevel", dsa.getDeidentificationLevel());
+                dsaNode.put("projectTypeId", dsa.getProjectTypeId());
+                dsaNode.put("securityInfrastructureId", dsa.getSecurityInfrastructureId());
+                dsaNode.put("ipAddress", dsa.getIpAddress());
+                dsaNode.put("summary", dsa.getSummary());
+                dsaNode.put("businessCase", dsa.getBusinessCase());
+                dsaNode.put("objectives", dsa.getObjectives());
+                dsaNode.put("securityArchitectureId", dsa.getSecurityArchitectureId());
+                dsaNode.put("storageProtocolId", dsa.getStorageProtocolId());
+                dsaNode.put("businessCaseStatus", dsa.getBusinessCaseStatus());
+                dsaNode.put("flowScheduleId", dsa.getFlowScheduleId());
+                dsaNode.put("projectStatusId", dsa.getProjectStatusId());
+                dsaNode.put("startDate", (dsa.getStartDate() != null ? dateFormat.format(dsa.getStartDate()): null));
+                dsaNode.put("endDate", (dsa.getEndDate() != null ? dateFormat.format(dsa.getEndDate()): null));
+
+
+                ArrayNode odsCodeArr = obj.putArray("publisherOdsCodes");
+                String uuid = dsa.getUuid();
+                List<String> publisherOdsCodes = ProjectCache.getAllPublishersForProjectWithSubscriberCheck(uuid, odsCode);
+                for (String publisherOdsCode: publisherOdsCodes) {
+                    odsCodeArr.add(publisherOdsCode);
+                }
+            }
+
+        } catch (Throwable t) {
+            String msg = t.getMessage();
+            obj.put("error", msg);
+        }
+
+        String retJson = mapper.writeValueAsString(obj);
+
+        clearLogbackMarkers();
+
+        return Response
+                .ok()
+                .entity(retJson)
+                .build();
+    }
+
 }

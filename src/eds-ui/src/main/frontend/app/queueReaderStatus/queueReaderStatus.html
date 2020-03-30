@@ -43,18 +43,22 @@
                                         </div>
                                         <div *ngIf="!refreshingQueueReaderStatus">
                                             <div *ngFor="let status of getStatusesForExchangeAndKey(exchangeName, routingKey)">
+
                                                 <span [ngStyle]="getCellColour(status)">
                                                     {{status.hostName}}
                                                     {{getStatusMemoryDesc(status)}}
 
                                                     <span *ngIf="isStatusTooOld(status)">
-                                                        <span class="label label-danger"><span class="fa fa-warning" ngbTooltip="{{status.isBusyDetail}}"></span> {{getStatusAgeDesc(status)}}</span>
+                                                        <span class="label label-danger"><span class="fa fa-warning" ngbTooltip="{{status.isBusyDetail}}" (click)="warningButtonClicked(status)"></span> {{getStatusAgeDesc(status)}}</span>
                                                     </span>
 
                                                     <span *ngIf="!isStatusTooOld(status)">
 
+                                                        <!-- icon if new jar deployed but app not restarted -->
+                                                        <span *ngIf="needsRestart(status)" class="fa fa-clock-o" ngbTooltip="{{getNeedsRestartDesc(status)}}"></span>
+
                                                         <!-- if busy, show the play icon and when it was busy from -->
-                                                        <span *ngIf="status.isBusy" class="fa fa-play" ngbTooltip="{{status.isBusyDetail}}"></span>
+                                                        <span *ngIf="status.isBusy" class="fa fa-play" ngbTooltip="{{status.isBusyDetail}}" (click)="playButtonClicked(status)"></span>
                                                         <span *ngIf="status.isBusy" class="text-muted"> {{getStatusBusyDesc(status)}}</span>
 
                                                         <!-- if not doing anything show a pause icon -->
@@ -107,11 +111,15 @@
                                         {{status.queueName}}
                                         {{getStatusMemoryDesc(status)}}
                                         <span *ngIf="isStatusTooOld(status)">
-                                            <span class="label label-danger"><span class="fa fa-warning" ngbTooltip="{{status.isBusyDetail}}"></span> ({{getStatusAgeDesc(status)}})</span>
+                                            <span class="label label-danger"><span class="fa fa-warning" ngbTooltip="{{status.isBusyDetail}}" (click)="warningButtonClicked(status)"></span> ({{getStatusAgeDesc(status)}})</span>
                                         </span>
 
                                         <span *ngIf="!isStatusTooOld(status)">
-                                            <span *ngIf="status.isBusy" class="fa fa-play" ngbTooltip="{{status.isBusyDetail}}"></span>
+
+                                            <!-- icon if new jar deployed but app not restarted -->
+                                            <span *ngIf="needsRestart(status)" class="fa fa-clock-o" ngbTooltip="{{getNeedsRestartDesc(status)}}"></span>
+
+                                            <span *ngIf="status.isBusy" class="fa fa-play" ngbTooltip="{{status.isBusyDetail}}" (click)="playButtonClicked(status)"></span>
                                             <span *ngIf="status.isBusy" class="text-muted"> {{getStatusBusyDesc(status)}}</span>
 
                                             <span *ngIf="!status.isBusy" class="fa fa-pause"></span>

@@ -13,10 +13,11 @@
 
                     <label for="inputType" class="col-sm-3 control-label">ODS Code</label>
                     <div class="col-sm-3">
-                        <input type="text" class="form-control" id="inputType" placeholder="" [(ngModel)]="odsCode" name="odsCode" (keyup)="$event.keyCode == 13 && search()" autofocus name="odsCode">
+                        <input type="text" class="form-control" id="inputType" placeholder="" [(ngModel)]="odsCode" name="odsCode" (keyup)="$event.keyCode == 13 && search(true)" autofocus name="odsCode">
                     </div>
 
-                    <button type="button" class="btn" (click)="search()">Search</button>
+                    <button type="button" class="btn" (click)="search(true)">Search Open ODS</button>
+                    <button type="button" class="btn" (click)="search(false)">Search DSM</button>
 
                     <span class="fa fa-sm fa-refresh fa-refresh-animate" *ngIf="searching"></span>
 

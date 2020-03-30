@@ -15,7 +15,7 @@
                 <form class="form-horizontal" role="form">
                     <div class="form-group">
 
-
+                        <!-- name and ID filtering -->
                         <div class="col-sm-2">
 
                             <label for="inputType" class="control-label">Name/ID</label>
@@ -35,6 +35,7 @@
 
                         </div>
 
+                        <!-- parent / CCG filtering -->
                         <div class="col-sm-2">
                             <label for="inputType2" class="control-label">Parent</label>
 
@@ -46,25 +47,20 @@
                             <!-- if not searching regex, show the combo -->
                             <select *ngIf="!serviceService.serviceCcgCodeFilterIsRegex" id="inputType2" class="form-control" [(ngModel)]="serviceService.serviceCcgCodeFilterStr" name="serviceCcgCodeFilter" (ngModelChange)="applyFiltering()">
                                 <option value=""></option>
-                                <option *ngFor="let ccgCode of allCcgCodes" value="{{ccgCode}}">{{ccgCode}} {{serviceService.getCcgName(ccgCode)}}</option>
+                                <option *ngFor="let ccgCode of serviceService.getCcgCodesFromCache()" value="{{ccgCode}}">{{ccgCode}} {{serviceService.getCcgName(ccgCode)}}</option>
                             </select>
 
                             <!-- if searching regex just show a text box -->
                             <input *ngIf="serviceService.serviceCcgCodeFilterIsRegex" type="text" class="form-control" id="inputType2" placeholder="Regex" [(ngModel)]="serviceService.serviceCcgCodeFilterRegex" name="serviceCcgCodeFilter" (ngModelChange)="applyFiltering()">
 
-
-                            <!--<label for="inputType2" class="control-label">Parent</label>
-                            <select id="inputType2" class="form-control" [(ngModel)]="serviceService.serviceCcgCodeFilter" name="serviceCcgCodeFilter" (ngModelChange)="applyFiltering()">
-                                <option value=""></option>
-                                <option *ngFor="let ccgCode of allCcgCodes" value="{{ccgCode}}">{{ccgCode}} {{serviceService.getCcgName(ccgCode)}}</option>
-                            </select>-->
                         </div>
 
+                        <!-- publisher config filtering -->
                         <div class="col-sm-2">
                             <label for="inputType5" class="control-label">Publisher Config</label>
                             <select id="inputType5" class="form-control" [(ngModel)]="serviceService.servicePublisherConfigFilter" name="servicePublisherConfigFilter" (ngModelChange)="applyFiltering()">
                                 <option value=""></option>
-                                <option *ngFor="let publisherConfigName of allPublisherConfigNames" value="{{publisherConfigName}}">{{publisherConfigName}}</option>
+                                <option *ngFor="let publisherConfigName of serviceService.getPublisherConfigNamesFromCache()" value="{{publisherConfigName}}">{{publisherConfigName}}</option>
                             </select>
                         </div>
 

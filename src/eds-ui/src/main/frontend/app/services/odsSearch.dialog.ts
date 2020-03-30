@@ -35,7 +35,10 @@ export class OdsSearchDialog  {
         //console.log('Cancel Pressed');
     }
 
-    search() {
+    /**
+     * boolean indicates whether to search Open ODS or DSM for data
+     */
+    search(odsSearch: boolean) {
         var vm = this;
         if (!vm.odsCode) {
             vm.log.error('Enter an ODS code');
@@ -48,20 +51,42 @@ export class OdsSearchDialog  {
         vm.searching = true;
         vm.resultStr = 'searching...';
 
-        vm.serviceService.getOpenOdsRecord(vm.odsCode).subscribe(
-            (result) => {
-                vm.searching = false;
+        if (odsSearch) {
 
-                if (result) {
-                    vm.resultStr = JSON.stringify(result, null, 2);
-                } else {
-                    vm.resultStr = 'no match found';
+            vm.serviceService.getOpenOdsRecord(vm.odsCode).subscribe(
+                (result) => {
+                    vm.searching = false;
+
+                    if (result) {
+                        vm.resultStr = JSON.stringify(result, null, 2);
+                    } else {
+                        vm.resultStr = 'no match found';
+                    }
+                },
+                (error) => {
+                    vm.searching = false;
+                    vm.log.error('Error searching');
                 }
-            },
-            (error) => {
-                vm.searching = false;
-                vm.log.error('Error searching');
-            }
-        );
+            );
+
+        } else {
+
+            vm.serviceService.getDsmDetails(vm.odsCode).subscribe(
+                (result) => {
+                    vm.searching = false;
+
+                    if (result) {
+                        vm.resultStr = JSON.stringify(result, null, 2);
+                    } else {
+                        vm.resultStr = 'no match found';
+                    }
+                },
+                (error) => {
+                    vm.searching = false;
+                    vm.log.error('Error searching');
+                }
+            );
+
+        }
     }
 }

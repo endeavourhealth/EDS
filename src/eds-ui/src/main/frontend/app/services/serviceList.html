@@ -52,7 +52,7 @@
 								<!-- if not searching regex, show the combo -->
 								<select *ngIf="!serviceService.serviceCcgCodeFilterIsRegex" id="inputType2" class="form-control" [(ngModel)]="serviceService.serviceCcgCodeFilterStr" name="serviceCcgCodeFilter" (ngModelChange)="applyFiltering()">
 									<option value=""></option>
-									<option *ngFor="let ccgCode of allCcgCodes" value="{{ccgCode}}">{{ccgCode}} {{serviceService.getCcgName(ccgCode)}}</option>
+									<option *ngFor="let ccgCode of serviceService.getCcgCodesFromCache()" value="{{ccgCode}}">{{ccgCode}} {{serviceService.getCcgName(ccgCode)}}</option>
 								</select>
 
 								<!-- if searching regex just show a text box -->
@@ -64,7 +64,7 @@
 								<label for="inputType5" class="control-label">Publisher Config</label>
 								<select id="inputType5" class="form-control" [(ngModel)]="serviceService.servicePublisherConfigFilter" name="servicePublisherConfigFilter" (ngModelChange)="applyFiltering()">
 									<option value=""></option>
-									<option *ngFor="let publisherConfigName of allPublisherConfigNames" value="{{publisherConfigName}}">{{publisherConfigName}}</option>
+									<option *ngFor="let publisherConfigName of serviceService.getPublisherConfigNamesFromCache()" value="{{publisherConfigName}}">{{publisherConfigName}}</option>
 								</select>
 							</div>
 

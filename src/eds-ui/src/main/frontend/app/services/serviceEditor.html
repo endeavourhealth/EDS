@@ -93,7 +93,20 @@
 					</div>
 					<div class="form-group col-md-6">
 						<label class="control-label">Publisher Config Name</label>
-						<input type="text" class="form-control" placeholder="" [(ngModel)]="service.publisherConfigName" name="publisherConfigName">
+						<button type="button" class="btn btn-xs btn-success" (click)="addNewConfigName()">New Config</button>
+						<select class="form-control" [(ngModel)]="service.publisherConfigName" name="publisherConfigName">
+
+							<!-- blank option -->
+							<option value=""></option>
+
+							<!-- if cached list not loaded yet, just populate with what's on the service already -->
+							<option *ngIf="!serviceService.getPublisherConfigNamesFromCache()" value="{{service.publisherConfigName}}">{{service.publisherConfigName}}</option>
+
+							<!-- once org type list loaded, fully populate with everything in the list -->
+							<option *ngFor="let publisherConfigName of serviceService.getPublisherConfigNamesFromCache()" value="{{publisherConfigName}}">{{publisherConfigName}}</option>
+						</select>
+
+						<!--<input type="text" class="form-control" placeholder="" [(ngModel)]="service.publisherConfigName" name="publisherConfigName">-->
 					</div>
 
 				</div>
@@ -223,6 +236,14 @@
 								</tbody>
 							</table>
 						</div>
+					</div>
+				</div>
+
+				<div class="row">
+					<div class="form-group col-md-12">
+						<label class="control-label">Data Sharing Mananger</label>
+
+						<pre>{{dsmDetailsJson}}</pre>
 					</div>
 				</div>
 

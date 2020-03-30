@@ -19,7 +19,12 @@ import org.endeavourhealth.core.database.dal.audit.models.ExchangeBatch;
 import org.endeavourhealth.core.database.dal.audit.models.HeaderKeys;
 import org.endeavourhealth.core.database.dal.ehr.ResourceDalI;
 import org.endeavourhealth.core.database.dal.ehr.models.ResourceWrapper;
+import org.endeavourhealth.core.database.dal.usermanager.caching.DataSharingAgreementCache;
+import org.endeavourhealth.core.database.dal.usermanager.caching.OrganisationCache;
+import org.endeavourhealth.core.database.dal.usermanager.caching.ProjectCache;
 import org.endeavourhealth.core.database.rdbms.ConnectionManager;
+import org.endeavourhealth.core.database.rdbms.datasharingmanager.models.DataSharingAgreementEntity;
+import org.endeavourhealth.core.database.rdbms.datasharingmanager.models.ProjectEntity;
 import org.endeavourhealth.im.client.IMClient;
 import org.endeavourhealth.transform.common.AuditWriter;
 import org.endeavourhealth.transform.common.ExchangeHelper;
@@ -810,5 +815,66 @@ public abstract class SpecialRoutines {
             LOG.error("", t);
         }
 
+    }
+
+    public static void testDsm(String odsCode) {
+        LOG.info("Testing DSM for " + odsCode);
+        try {
+
+            LOG.debug("Testing doesOrganisationHaveDPA");
+            Boolean b = OrganisationCache.doesOrganisationHaveDPA(odsCode);
+            LOG.debug("Got " + b);
+            LOG.debug("");
+            LOG.debug("");
+
+            LOG.debug("Testing getAllDSAsForPublisherOrg");
+            List<DataSharingAgreementEntity> list = DataSharingAgreementCache.getAllDSAsForPublisherOrg(odsCode);
+            if (list == null) {
+                LOG.debug("Got NULL");
+            } else {
+                LOG.debug("Got " + list.size());
+                for (DataSharingAgreementEntity e: list) {
+                    LOG.debug(" -> " + e.getName() + " " + e.getUuid());
+                }
+            }
+            LOG.debug("");
+            LOG.debug("");
+
+            LOG.debug("Testing getAllProjectsForSubscriberOrg");
+            List<ProjectEntity> projects = ProjectCache.getAllProjectsForSubscriberOrg(odsCode);
+            Set<String> projectIds = new HashSet<>();
+            if (list == null) {
+                LOG.debug("Got NULL");
+            } else {
+                LOG.debug("Got " + list.size());
+                for (ProjectEntity project: projects) {
+                    LOG.debug(" -> " + project.getName() + " " + project.getUuid());
+
+                    String projectUuid = project.getUuid();
+                    projectIds.add(projectUuid);
+                }
+            }
+            LOG.debug("");
+            LOG.debug("");
+
+            LOG.debug("Testing getAllPublishersForProjectWithSubscriberCheck");
+            if (projectIds.isEmpty()) {
+                LOG.debug(" -> no project IDs");
+            } else {
+                for (String projectId: projectIds) {
+                    LOG.debug("PROJECT ID " + projectId);
+                    List<String> results = ProjectCache.getAllPublishersForProjectWithSubscriberCheck(projectId, odsCode);
+                    LOG.debug("Got publisher ODS codes: " + results);
+                }
+            }
+
+            LOG.debug("");
+            LOG.debug("");
+
+
+            LOG.info("Finished Testing DSM for " + odsCode);
+        } catch (Throwable t) {
+            LOG.error("", t);
+        }
     }
 }

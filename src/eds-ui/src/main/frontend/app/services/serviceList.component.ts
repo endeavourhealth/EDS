@@ -18,8 +18,6 @@ export class ServiceListComponent implements OnInit, OnDestroy{
 
 	services : Service[];
 	filteredServices: Service[];
-	allPublisherConfigNames: string[];
-	allCcgCodes: string[];
 	tagStrDisplayLimit: number;
 	cachedTagStrs: {};
 
@@ -54,7 +52,6 @@ export class ServiceListComponent implements OnInit, OnDestroy{
 				(result) => {
 					vm.services = result;
 					vm.applyFiltering();
-					vm.findAllPublisherConfigNames();
 				},
 				(error) => vm.log.error('Failed to load services', error, 'Load services')
 			)
@@ -86,23 +83,6 @@ export class ServiceListComponent implements OnInit, OnDestroy{
 	}
 
 
-	private selectSystemId(service: Service, callback) {
-		var vm = this;
-
-		var endpoints = service.endpoints;
-		if (endpoints.length == 0) {
-			//vm.log.error('No systems in this serviec');
-
-		} else if (endpoints.length == 1) {
-			//console.log('servvice = ' + service.name + ' only one endpoint');
-			var endpoint = endpoints[0];
-			var systemId = endpoint.systemUuid;
-			callback(service, systemId);
-
-		} else {
-			SystemPickerDialog.open(vm.$modal, service, callback);
-		}
-	}
 
 
 	private refreshService(oldService : Service) {
@@ -127,15 +107,60 @@ export class ServiceListComponent implements OnInit, OnDestroy{
 	}
 
 	viewExchanges(service: Service) {
+		var vm = this;
+		ServiceListComponent.viewExchanges(service, vm.$state, vm.$modal);
+	}
 
-		/*var vm = this;
-		vm.selectSystemId(selectedService, vm.viewExchangesForServiceAndSystem);*/
+	static viewExchanges(service: Service, $state: StateService, $modal: NgbModal) {
+
+		ServiceListComponent.selectSystemId(service, $modal, function(service: Service, systemId: string) {
+			$state.go('app.exchangeAudit', {serviceId: service.uuid, systemId: systemId});
+		});
+	}
+
+	private static selectSystemId(service: Service, $modal: NgbModal, callback) {
+
+		var endpoints = service.endpoints;
+		if (endpoints.length == 0) {
+			//vm.log.error('No systems in this serviec');
+
+		} else if (endpoints.length == 1) {
+			//console.log('servvice = ' + service.name + ' only one endpoint');
+			var endpoint = endpoints[0];
+			var systemId = endpoint.systemUuid;
+			callback(service, systemId);
+
+		} else {
+			SystemPickerDialog.open($modal, service, callback);
+		}
+	}
+
+	/*viewExchanges(service: Service) {
 
 		var vm = this;
 		vm.selectSystemId(service, function(service: Service, systemId: string) {
 			vm.$state.go('app.exchangeAudit', {serviceId: service.uuid, systemId: systemId});
 		});
 	}
+
+	private selectSystemId(service: Service, callback) {
+		var vm = this;
+
+		var endpoints = service.endpoints;
+		if (endpoints.length == 0) {
+			//vm.log.error('No systems in this serviec');
+
+		} else if (endpoints.length == 1) {
+			//console.log('servvice = ' + service.name + ' only one endpoint');
+			var endpoint = endpoints[0];
+			var systemId = endpoint.systemUuid;
+			callback(service, systemId);
+
+		} else {
+			SystemPickerDialog.open(vm.$modal, service, callback);
+		}
+	}*/
+
 
 	applyFiltering() {
 		var vm = this;
@@ -151,37 +176,6 @@ export class ServiceListComponent implements OnInit, OnDestroy{
 		//call the filtered changed method to remove the applied filtering
 		vm.applyFiltering();
 	}
-
-	private findAllPublisherConfigNames() {
-		var vm = this;
-		vm.allPublisherConfigNames = [];
-		vm.allCcgCodes = [];
-
-		var arrayLength = vm.services.length;
-		for (var i = 0; i < arrayLength; i++) {
-			var service = vm.services[i];
-			var publisherConfigName = service.publisherConfigName;
-			if (publisherConfigName) {
-				var index = vm.allPublisherConfigNames.indexOf(publisherConfigName);
-				if (index == -1) {
-					vm.allPublisherConfigNames.push(publisherConfigName);
-				}
-			}
-
-			var ccgCode = service.ccgCode;
-			if (ccgCode) {
-				var index = vm.allCcgCodes.indexOf(ccgCode);
-				if (index == -1) {
-					vm.allCcgCodes.push(ccgCode);
-				}
-			}
-		}
-
-		vm.allPublisherConfigNames.sort();
-		vm.allCcgCodes.sort();
-	}
-
-
 
 
 

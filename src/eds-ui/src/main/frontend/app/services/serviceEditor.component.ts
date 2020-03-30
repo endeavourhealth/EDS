@@ -25,6 +25,7 @@ export class ServiceEditComponent {
 	protocols: EdsLibraryItem[];
 	selectedEndpoint : Endpoint;
 	tags: Tag[];
+	dsmDetailsJson: string;
 
 	//for populating the org type combo
 	organisationTypes: OrganisationType[];
@@ -79,7 +80,7 @@ export class ServiceEditComponent {
 					vm.service = result;
 					vm.getServiceProtocols();
 					vm.populateTags();
-					//vm.getTagNames();
+					vm.populateDsmDetails();
 				},
 				(error) => vm.log.error('Error loading', error, 'Error')
 			);
@@ -383,11 +384,37 @@ export class ServiceEditComponent {
 
 					}
 
+					vm.populateDsmDetails();
 				},
 				(error) => {
 					vm.log.error('Failed to find ODS record');
 				}
 			);
+	}
+
+	addNewConfigName() {
+		var vm = this;
+
+		var newConfigName = prompt('Config name');
+		if (newConfigName == null) {
+			return;
+		}
+
+		//validate not already present in cache
+		for (var i=0; i<vm.serviceService.publisherConfigNameCache.length; i++) {
+			var configName = vm.serviceService.publisherConfigNameCache[i];
+			if (configName.toLowerCase() == newConfigName.toLowerCase()) {
+				vm.log.warning('Config name already used');
+				return;
+			}
+		}
+
+		//add to cache
+		var list = vm.serviceService.publisherConfigNameCache;
+		list.push(newConfigName); //just stick it on the end for now
+
+		//set on service
+		vm.service.publisherConfigName = newConfigName;
 	}
 
 	addNewTag() {
@@ -562,5 +589,23 @@ export class ServiceEditComponent {
 
 		vm.service.tags = newObj;
 		//console.log('sevice now ' + JSON.stringify(vm.service));
+	}
+
+	populateDsmDetails() {
+		var vm = this;
+		var odsCode = vm.service.localIdentifier;
+		vm.serviceService.getDsmDetails(odsCode).subscribe(
+			(result) => {
+
+				if (result) {
+					vm.dsmDetailsJson = JSON.stringify(result, null, 2);
+				} else {
+					vm.dsmDetailsJson = 'no DSM details found';
+				}
+			},
+			(error) => {
+				vm.log.error('Error searching');
+			}
+		);
 	}
 }

@@ -32,11 +32,7 @@ import org.endeavourhealth.core.database.dal.subscriberTransform.SubscriberOrgMa
 import org.endeavourhealth.core.database.dal.subscriberTransform.SubscriberPersonMappingDalI;
 import org.endeavourhealth.core.database.dal.subscriberTransform.SubscriberResourceMappingDalI;
 import org.endeavourhealth.core.database.dal.subscriberTransform.models.SubscriberId;
-import org.endeavourhealth.core.database.dal.usermanager.caching.DataSharingAgreementCache;
-import org.endeavourhealth.core.database.dal.usermanager.caching.OrganisationCache;
-import org.endeavourhealth.core.database.dal.usermanager.caching.ProjectCache;
 import org.endeavourhealth.core.database.rdbms.ConnectionManager;
-import org.endeavourhealth.core.database.rdbms.datasharingmanager.models.DataSharingAgreementEntity;
 import org.endeavourhealth.core.database.rdbms.enterprise.EnterpriseConnector;
 import org.endeavourhealth.core.exceptions.TransformException;
 import org.endeavourhealth.core.fhirStorage.ServiceInterfaceEndpoint;
@@ -187,8 +183,7 @@ public class Main {
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("TestDSM")) {
 			String odsCode = args[1];
-			String projectId = args[2];
-			testDsm(odsCode, projectId);
+			SpecialRoutines.testDsm(odsCode);
 			System.exit(0);
 		}
 
@@ -1380,38 +1375,7 @@ public class Main {
 		}
 	}
 
-	private static void testDsm(String odsCode, String projectId) {
-		LOG.info("Testing DSM for " + odsCode + " and project " + projectId);
-		try {
 
-			LOG.debug("Testing getAllPublishersForProjectWithSubscriberCheck");
-			List<String> results = ProjectCache.getAllPublishersForProjectWithSubscriberCheck(projectId, odsCode);
-			LOG.debug("Got " + results);
-			LOG.debug("");
-			LOG.debug("");
-
-			LOG.debug("Testing doesOrganisationHaveDPA");
-			Boolean b = OrganisationCache.doesOrganisationHaveDPA(odsCode);
-			LOG.debug("Got " + b);
-			LOG.debug("");
-			LOG.debug("");
-
-			LOG.debug("Testing getAllDSAsForPublisherOrg");
-			List<DataSharingAgreementEntity> list = DataSharingAgreementCache.getAllDSAsForPublisherOrg(odsCode);
-			if (list == null) {
-				LOG.debug("Got NULL");
-			} else {
-				LOG.debug("Got " + list.size());
-				for (DataSharingAgreementEntity e: list) {
-					LOG.debug(" -> " + e.getName() + " " + e.getUuid());
-				}
-			}
-
-			LOG.info("Finished Testing DSM for " + odsCode);
-		} catch (Throwable t) {
-			LOG.error("", t);
-		}
-	}
 
 	private static void sendPatientsToSubscriber(String tableName, String reason) {
 		LOG.info("Sending patients to subscriber from " + tableName);

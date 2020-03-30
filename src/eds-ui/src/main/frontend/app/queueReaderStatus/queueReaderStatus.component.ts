@@ -9,6 +9,8 @@ import {RabbitService} from "../queueing/rabbit.service";
 import {Routing} from "../queueing/Routing";
 import {ServiceListComponent} from "../services/serviceList.component";
 import {RabbitNode} from "../queueing/models/RabbitNode";
+import {Service} from "../services/models/Service";
+import {NgbModal} from "@ng-bootstrap/ng-bootstrap";
 
 @Component({
     template : require('./queueReaderStatus.html')
@@ -39,7 +41,9 @@ export class QueueReaderStatusComponent {
     presetColours: string[];
     hostNameColourMap: {};
 
-    constructor(private queueReaderStatusService:QueueReaderStatusService,
+    constructor(private $modal : NgbModal,
+                private serviceService : ServiceService,
+                private queueReaderStatusService:QueueReaderStatusService,
                 private rabbitService: RabbitService,
                 private logger: LoggerService,
                 private $state: StateService) {
@@ -501,4 +505,68 @@ export class QueueReaderStatusComponent {
 
         return false;
     }
+
+    needsRestart(status: QueueReaderStatus): boolean {
+        if (!status.dtJar
+            || !status.dtStarted) {
+            return false;
+        }
+
+        //it needs a restart if the jar date is more recent than the start date
+        return status.dtJar > status.dtStarted;
+    }
+
+    getNeedsRestartDesc(status: QueueReaderStatus): string {
+
+        var vm = this;
+
+        if (!status.dtJar
+            || !status.dtStarted) {
+            return '';
+        }
+
+        var dtJar = new Date(status.dtJar);
+        var dtStarted = new Date(status.dtStarted);
+        return 'Jar built: ' + vm.formatDate(dtJar) + ', app started: ' + vm.formatDate(dtStarted);
+    }
+
+    formatDate(d: Date): string {
+        if (!d) {
+            return '<missing date>';
+        }
+        
+        return d.getFullYear() + '-' + ('0'+(d.getMonth()+1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2)
+            + ' ' + ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);
+    }
+
+    playButtonClicked(status: QueueReaderStatus) {
+        var vm = this;
+        vm.viewExchangesForStatus(status);
+    }
+
+    warningButtonClicked(status: QueueReaderStatus) {
+        var vm = this;
+        vm.viewExchangesForStatus(status);
+    }
+
+    private viewExchangesForStatus(status: QueueReaderStatus) {
+        var vm = this;
+        if (!status.isBusyOdsCode) {
+            vm.logger.warning('No ODS code found');
+            return;
+        }
+
+        console.log('viewing ODS code ' + status.isBusyOdsCode);
+
+        //retrieve service for ODS code
+        vm.serviceService.getForOdsCode(status.isBusyOdsCode)
+            .subscribe(
+                data => {
+                    ServiceListComponent.viewExchanges(data, vm.$state, vm.$modal);
+                },
+                (error) => vm.logger.error('Failed get service', error)
+            );
+
+    }
+
 }

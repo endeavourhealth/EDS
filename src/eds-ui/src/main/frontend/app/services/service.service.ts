@@ -26,8 +26,14 @@ export class ServiceService extends BaseHttp2Service {
 	servicePublisherModeFilter: string;
 	sortFilter: string;
 
-	ccgNameCache: {};
 	tagNameCache: string[];
+	refreshingTagNameCache: boolean;
+	publisherConfigNameCache: string[];
+	refreshingPublisherConfigNameCache: boolean;
+	ccgCodeCache: string[];
+	refreshingCcgCodeCache: boolean;
+	ccgNameCache: {};
+
 
 	constructor(http : Http) {
 		super (http);
@@ -48,6 +54,12 @@ export class ServiceService extends BaseHttp2Service {
 	get(uuid : string) : Observable<Service> {
 		let params = new URLSearchParams();
 		params.set('uuid',uuid);
+		return this.httpGet('api/service', { search : params });
+	}
+
+	getForOdsCode(odsCode : string) : Observable<Service> {
+		let params = new URLSearchParams();
+		params.set('odsCode', odsCode);
 		return this.httpGet('api/service', { search : params });
 	}
 
@@ -72,9 +84,9 @@ export class ServiceService extends BaseHttp2Service {
 		return this.httpDelete('api/service/data', { search : params });
 	}
 
-	search(searchData : string) : Observable<Service[]> {
+	search(searchText: string) : Observable<Service[]> {
 		let params = new URLSearchParams();
-		params.set('searchData',searchData);
+		params.set('searchText', searchText);
 		return this.httpGet('api/service', { search : params });
 	}
 
@@ -90,6 +102,12 @@ export class ServiceService extends BaseHttp2Service {
 		return this.httpGet('api/service/openOdsRecord', { search : params });
 	}
 
+	getDsmDetails(odsCode : string) : Observable<{}> {
+		let params = new URLSearchParams();
+		params.set('odsCode', odsCode);
+		return this.httpGet('api/service/dsmDetails', { search : params });
+	}
+
 	getServiceProtocols(serviceId: string) : Observable<EdsLibraryItem[]> {
 		let params = new URLSearchParams();
 		params.set('serviceId', serviceId);
@@ -100,8 +118,16 @@ export class ServiceService extends BaseHttp2Service {
 		return this.httpGet('api/service/organisationTypeList', {});
 	}
 
-	getTagNames() : Observable<string[]> {
+	private getTagNames() : Observable<string[]> {
 		return this.httpGet('api/service/tagNames', {});
+	}
+
+	private getPublisherConfigNames() : Observable<string[]> {
+		return this.httpGet('api/service/publisherConfigNames', {});
+	}
+
+	private getCcgCodes() : Observable<string[]> {
+		return this.httpGet('api/service/ccgCodes', {});
 	}
 
 	toggleFiltering() {
@@ -754,42 +780,82 @@ export class ServiceService extends BaseHttp2Service {
 			return vm.tagNameCache;
 		}
 
-		//if not pre-cached it, then we
-		vm.getTagNames()
-			.subscribe(
-				(result) => {
-					vm.tagNameCache = result;
-				},
-				(error) => {}
-			);
+		//if not pre-cached it, then hit the server
+		if (!vm.refreshingTagNameCache) {
+			vm.refreshingTagNameCache = true;
+
+			vm.getTagNames()
+				.subscribe(
+					(result) => {
+						vm.tagNameCache = result;
+						vm.refreshingTagNameCache = false;
+					},
+					(error) => {
+						vm.refreshingTagNameCache = false;
+					}
+				);
+		}
 
 		//return an empty string until the above has come back
 		return [];
 	}
 
-	/**
-	 * populates our cache of tag names from the service array provided
-	 */
-	/*public cacheAllTagNames(services: Service[]) {
+	public getPublisherConfigNamesFromCache(): string[] {
 		var vm = this;
 
-		var tagNames = [];
-
-		for (var i=0; i<services.length; i++) {
-			var service = services[i];
-			if (service.tags) {
-				var keys = Object.keys(service.tags);
-				for (var j=0; j<keys.length; j++) {
-					var key = keys[j];
-					if (tagNames.indexOf(key) == -1) {
-						tagNames.push(key);
-					}
-				}
-			}
+		//if we've pre-cached this, then just return it
+		if (vm.publisherConfigNameCache) {
+			return vm.publisherConfigNameCache;
 		}
 
-		vm.tagNameCache = linq(tagNames).OrderBy(s => s.toLowerCase()).ToArray();
-	}*/
+		//if not pre-cached it, then we hit the server
+		if (!vm.refreshingPublisherConfigNameCache) {
+			vm.refreshingPublisherConfigNameCache = true;
+
+			vm.getPublisherConfigNames()
+				.subscribe(
+					(result) => {
+						vm.publisherConfigNameCache = result;
+						vm.refreshingPublisherConfigNameCache = false;
+					},
+					(error) => {
+						vm.refreshingPublisherConfigNameCache = false;
+					}
+				);
+		}
+
+		//return an empty string until the above has come back
+		return [];
+	}
+
+	public getCcgCodesFromCache(): string[] {
+		var vm = this;
+
+		//if we've pre-cached this, then just return it
+		if (vm.ccgCodeCache) {
+			return vm.ccgCodeCache;
+		}
+
+		//if not pre-cached it, then we
+		if (!vm.refreshingCcgCodeCache) {
+			vm.refreshingCcgCodeCache = true;
+
+			vm.getCcgCodes()
+				.subscribe(
+					(result) => {
+						vm.ccgCodeCache = result;
+						vm.refreshingCcgCodeCache = false;
+					},
+					(error) => {
+						vm.refreshingCcgCodeCache = false;
+					}
+				);
+		}
+
+		//return an empty string until the above has come back
+		return [];
+	}
+
 
 	public createTagStr(service: Service): string {
 		var vm = this;

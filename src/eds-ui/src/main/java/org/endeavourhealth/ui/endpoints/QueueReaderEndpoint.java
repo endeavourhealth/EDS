@@ -99,21 +99,56 @@ public class QueueReaderEndpoint extends AbstractEndpoint {
 
             String busyDetail = h.getIsBusyDetail();
 
-            //work out the busy since date from the busy desc string
+            //extract various bits of info from the busy detail String
+            //string format is: <data date> data for <ODS code> since <processing start time>
             Long busySince = null;
+            String busyOdsCode = null;
+            String busyDataDate = null;
             if (!Strings.isNullOrEmpty(busyDetail)) {
-                String sinceStr = "since ";
+                String sinceStr = "since";
+                String dataForStr = "data for";
+
+                int dataForIndex = busyDetail.indexOf(dataForStr);
                 int sinceIndex = busyDetail.indexOf(sinceStr);
+
+                if (dataForIndex > -1) {
+                    String s = busyDetail.substring(0, dataForIndex);
+                    s = s.trim();
+                    if (!Strings.isNullOrEmpty(s)) {
+                        busyDataDate = s;
+                    }
+                }
+
+                if (dataForIndex > -1
+                        && sinceIndex > -1) {
+                    String s = busyDetail.substring(dataForIndex + dataForStr.length(), sinceIndex);
+                    s = s.trim();
+                    if (!Strings.isNullOrEmpty(s)) {
+                        busyOdsCode = s;
+                    }
+                }
+
                 if (sinceIndex > -1) {
-                    String dateStr = busyDetail.substring(sinceIndex + sinceStr.length());
+                    String s = busyDetail.substring(sinceIndex + sinceStr.length());
+                    s = s.trim();
                     try {
-                        Date d = new SimpleDateFormat("yyyy-MM-dd HH:mm").parse(dateStr);
+                        Date d = new SimpleDateFormat("yyyy-MM-dd HH:mm").parse(s);
                         busySince = new Long(d.getTime());
 
                     } catch (Exception ex) {
                         //if not a valid date, just leave it
                     }
                 }
+            }
+
+            Long dtStartedTime = null;
+            if (h.getDtStarted() != null) {
+                dtStartedTime = h.getDtStarted().getTime();
+            }
+
+            Long dtJarTime = null;
+            if (h.getDtJar() != null) {
+                dtJarTime = h.getDtJar().getTime();
             }
 
             ObjectNode objectNode = root.addObject();
@@ -130,6 +165,10 @@ public class QueueReaderEndpoint extends AbstractEndpoint {
             objectNode.put("cpuLoad", h.getServerCpuUsagePercent());
             objectNode.put("isBusyDetail", busyDetail);
             objectNode.put("isBusySince", busySince);
+            objectNode.put("isBusyOdsCode", busyOdsCode);
+            objectNode.put("isBusyDataDate", busyDataDate);
+            objectNode.put("dtStarted", dtStartedTime);
+            objectNode.put("dtJar", dtJarTime);
             objectNode.put("queueName", queueName);
         }
 

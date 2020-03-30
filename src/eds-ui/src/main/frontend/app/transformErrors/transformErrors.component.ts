@@ -23,8 +23,6 @@ export class TransformErrorsComponent {
 
 	//filtering
 	filteredErrorSummaries: TransformErrorSummary[];
-	allPublisherConfigNames: string[];
-	allCcgCodes: string[];
 
 	constructor(private serviceService : ServiceService,
 				protected exchangeAuditService:ExchangeAuditService,
@@ -52,7 +50,6 @@ export class TransformErrorsComponent {
 					vm.transformErrorSummaries = linq(result).OrderBy(s => s.service.name.toLowerCase()).ToArray();
 					/*vm.transformErrorSummaries = linq(result).OrderBy(s => s.service.name).ToArray();*/
 					vm.applyFiltering();
-					vm.findAllPublisherConfigNames();
 
 					if (result.length == 0) {
 						vm.logger.success('No transform errors found');
@@ -214,38 +211,6 @@ console.log('filtering now');
 		//call the filtered changed method to remove the applied filtering
 		vm.applyFiltering();
 	}
-
-	private findAllPublisherConfigNames() {
-		var vm = this;
-		vm.allPublisherConfigNames = [];
-		vm.allCcgCodes = [];
-
-		var arrayLength = vm.transformErrorSummaries.length;
-		for (var i = 0; i < arrayLength; i++) {
-			var transformErrorSummary = vm.transformErrorSummaries[i];
-			var service = transformErrorSummary.service;
-
-			var publisherConfigName = service.publisherConfigName;
-			if (publisherConfigName) {
-				var index = vm.allPublisherConfigNames.indexOf(publisherConfigName);
-				if (index == -1) {
-					vm.allPublisherConfigNames.push(publisherConfigName);
-				}
-			}
-
-			var ccgCode = service.ccgCode;
-			if (ccgCode) {
-				var index = vm.allCcgCodes.indexOf(ccgCode);
-				if (index == -1) {
-					vm.allCcgCodes.push(ccgCode);
-				}
-			}
-		}
-
-		vm.allPublisherConfigNames.sort();
-		vm.allCcgCodes.sort();
-	}
-
 
 
 	checkAll() {
