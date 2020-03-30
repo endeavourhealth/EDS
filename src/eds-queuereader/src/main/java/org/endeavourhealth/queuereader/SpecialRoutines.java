@@ -7,6 +7,7 @@ import org.endeavourhealth.common.fhir.IdentifierHelper;
 import org.endeavourhealth.common.utility.FileHelper;
 import org.endeavourhealth.common.utility.FileInfo;
 import org.endeavourhealth.common.utility.JsonSerializer;
+import org.endeavourhealth.core.application.ApplicationHeartbeatHelper;
 import org.endeavourhealth.core.database.dal.DalProvider;
 import org.endeavourhealth.core.database.dal.admin.ServiceDalI;
 import org.endeavourhealth.core.database.dal.admin.SystemHelper;
@@ -351,7 +352,7 @@ public abstract class SpecialRoutines {
 
 
     public static void getJarDetails() {
-        LOG.debug("Get Jar Details");
+        LOG.debug("Get Jar Details OLD");
         try {
             Class cls = SpecialRoutines.class;
             LOG.debug("Cls = " + cls);
@@ -373,6 +374,27 @@ public abstract class SpecialRoutines {
             LOG.error("", t);
         }
 
+        LOG.debug("");
+        LOG.debug("");
+        LOG.debug("Get Jar Details THIS class");
+        try {
+            Class cls = SpecialRoutines.class;
+            ApplicationHeartbeatHelper.findJarDateTime(cls);
+
+        } catch (Throwable t) {
+            LOG.error("", t);
+        }
+
+        LOG.debug("");
+        LOG.debug("");
+        LOG.debug("Get Jar Details CORE class");
+        try {
+            Class cls = ApplicationHeartbeatHelper.class;
+            ApplicationHeartbeatHelper.findJarDateTime(cls);
+
+        } catch (Throwable t) {
+            LOG.error("", t);
+        }
     }
 
     public static void breakUpAdminBatches(String odsCodeRegex) {
