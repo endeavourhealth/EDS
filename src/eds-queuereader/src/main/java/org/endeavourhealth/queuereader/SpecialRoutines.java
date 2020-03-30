@@ -379,7 +379,7 @@ public abstract class SpecialRoutines {
         LOG.debug("Get Jar Details THIS class");
         try {
             Class cls = SpecialRoutines.class;
-            ApplicationHeartbeatHelper.findJarDateTime(cls);
+            ApplicationHeartbeatHelper.findJarDateTime(cls, true);
 
         } catch (Throwable t) {
             LOG.error("", t);
@@ -390,7 +390,7 @@ public abstract class SpecialRoutines {
         LOG.debug("Get Jar Details CORE class");
         try {
             Class cls = ApplicationHeartbeatHelper.class;
-            ApplicationHeartbeatHelper.findJarDateTime(cls);
+            ApplicationHeartbeatHelper.findJarDateTime(cls, true);
 
         } catch (Throwable t) {
             LOG.error("", t);
