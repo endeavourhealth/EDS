@@ -1721,11 +1721,10 @@ public class Main {
 						LOG.info("Service: " + serviceUUID.toString());
 						LOG.info("Configname: " + subscriberConfigName);
 						LOG.info("Patientid: " + patientId.toString());
-						LOG.info("resources: " + resources.toString());
-						System.out.println("Press Enter key to continue...");
-						Scanner scan = new Scanner(System.in);
-						//System.in.read();
-						scan.nextLine();
+						//LOG.info("resources: " + resources.toString());
+						//System.out.println("Press Enter key to continue...");
+						//Scanner scan = new Scanner(System.in);
+						//scan.nextLine();
 					}
 
 					if (outputFormat.equals("SUBSCRIBER")) {
@@ -1738,7 +1737,7 @@ public class Main {
 						}
 
 					} else {
-						String containerString = BulkHelper.getEnterpriseContainerForUPRNData(resources, serviceUUID, batchUUID, subscriberConfigName, patientId);
+						String containerString = BulkHelper.getEnterpriseContainerForUPRNData(resources, serviceUUID, batchUUID, subscriberConfigName, patientId, debug);
 
 						if (containerString != null) {
 							EnterpriseFiler.file(batchUUID, containerString, subscriberConfigName);
