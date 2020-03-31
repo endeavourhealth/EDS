@@ -8,7 +8,10 @@ import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
+import org.endeavourhealth.core.database.dal.DalProvider;
+import org.endeavourhealth.core.database.dal.datagenerator.SubscriberZipFileUUIDsDalI;
 import org.endeavourhealth.core.database.rdbms.ConnectionManager;
 import org.endeavourhealth.core.database.rdbms.enterprise.EnterpriseConnector;
 import org.slf4j.Logger;
@@ -49,17 +52,25 @@ public class EnterpriseFiler {
     private static Map<String, String> escapeCharacters = new ConcurrentHashMap<>();
     private static Map<String, Integer> batchSizes = new ConcurrentHashMap<>();
 
-    public static void file(UUID batchId, String base64, String configName) throws Exception {
+    public static void file(UUID batchId, UUID queuedMessageId, String base64, String configName) throws Exception {
 
         byte[] bytes = Base64.getDecoder().decode(base64);
         LOG.trace("Filing " + FileUtils.byteCountToDisplaySize(bytes.length) + " from batch " + batchId + " into " + configName);
 
         //we may have multiple connections if we have replicas
         List<EnterpriseConnector.ConnectionWrapper> connectionWrappers = EnterpriseConnector.openConnection(configName);
-        for (EnterpriseConnector.ConnectionWrapper connectionWrapper: connectionWrappers) {
-            file(connectionWrapper, bytes);
+
+        if (StringUtils.isNotEmpty(connectionWrappers.get(0).getRemoteSubscriberId())) {
+            int subscriberId = Integer.valueOf(connectionWrappers.get(0).getRemoteSubscriberId());
+            SubscriberZipFileUUIDsDalI szfudi = DalProvider.factorySubscriberZipFileUUIDs();
+            szfudi.createSubscriberZipFileUUIDsEntity(subscriberId, batchId.toString(), queuedMessageId.toString(), base64);
+        } else {
+            for (EnterpriseConnector.ConnectionWrapper connectionWrapper: connectionWrappers) {
+                file(connectionWrapper, bytes);
+            }
         }
     }
+
 
     private static void file(EnterpriseConnector.ConnectionWrapper connectionWrapper, byte[] bytes) throws Exception {
 

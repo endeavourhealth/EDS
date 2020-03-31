@@ -644,7 +644,7 @@ CREATE TABLE encounter
   clinical_effective_date date,
   date_precision_id smallint,
   snomed_concept_id bigint,
-  original_code character varying(20) collate Latin1_General_100_BIN2,
+  original_code character varying(100) collate Latin1_General_100_BIN2,
   original_term character varying(1000),
   episode_of_care_id bigint,
   service_provider_organization_id bigint,
@@ -728,7 +728,7 @@ CREATE TABLE encounter_raw (
   fhir_type varchar(50),
   fhir_status varchar(50),
   fhir_snomed_concept_id bigint,
-  fhir_original_code character varying(20),
+  fhir_original_code character varying(100),
   fhir_original_term character varying(1000),
   CONSTRAINT pk_encounter_raw_id PRIMARY KEY (organization_id, person_id, id)
 )
@@ -757,7 +757,7 @@ CREATE TABLE allergy_intolerance
   clinical_effective_date date,
   date_precision_id smallint,
   snomed_concept_id bigint,
-  original_code character varying(20) collate Latin1_General_100_BIN2,
+  original_code character varying(100) collate Latin1_General_100_BIN2,
   original_term character varying(1000),
   is_review bit NOT NULL,
   CONSTRAINT pk_allergy_intolerance_id PRIMARY KEY ([organization_id],[person_id],[id])
@@ -871,7 +871,7 @@ CREATE TABLE observation
   result_date date,
   result_text varchar(max),
   result_concept_id bigint,
-  original_code character varying(20) collate Latin1_General_100_BIN2,
+  original_code character varying(100) collate Latin1_General_100_BIN2,
   is_problem bit NOT NULL,
   original_term character varying(1000),
   is_review bit NOT NULL,
@@ -920,7 +920,7 @@ CREATE TABLE procedure_request
   date_precision_id smallint,
   snomed_concept_id bigint,
   procedure_request_status_id smallint,
-  original_code character varying(20) collate Latin1_General_100_BIN2,
+  original_code character varying(100) collate Latin1_General_100_BIN2,
   original_term character varying(1000),
   CONSTRAINT pk_procedure_request_id PRIMARY KEY ([organization_id],[person_id],[id])
 )
@@ -949,7 +949,7 @@ CREATE TABLE referral_request
   type_id smallint,
   mode character varying(50),
   outgoing_referral bit,
-  original_code character varying(20) collate Latin1_General_100_BIN2,
+  original_code character varying(100) collate Latin1_General_100_BIN2,
   original_term character varying(1000),
   is_review bit NOT NULL,
   CONSTRAINT pk_referral_request_id PRIMARY KEY ([organization_id],[person_id],[id])

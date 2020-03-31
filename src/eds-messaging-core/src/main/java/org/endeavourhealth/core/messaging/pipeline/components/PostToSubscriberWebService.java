@@ -129,7 +129,7 @@ public class PostToSubscriberWebService extends PipelineComponent {
 	private void sendToSubscriber(String payload, UUID exchangeId, UUID batchId, UUID queuedMessageId, String software, String softwareVersion, String endpoint) throws Exception {
 
 		if (software.equals(MessageFormat.ENTERPRISE_CSV)) {
-			EnterpriseFiler.file(batchId, payload, endpoint);
+			EnterpriseFiler.file(batchId, queuedMessageId, payload, endpoint);
 
 		} else if (software.equals(MessageFormat.PCR_CSV)) {
 			PCRFiler.file(batchId, payload, endpoint);

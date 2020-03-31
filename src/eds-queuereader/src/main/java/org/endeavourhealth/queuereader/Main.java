@@ -1742,8 +1742,9 @@ public class Main {
 					} else {
 						String containerString = BulkHelper.getEnterpriseContainerForUPRNData(resources, serviceUUID, batchUUID, subscriberConfigName, patientId, debug);
 
+						//  Is a random UUID ok to use as a queued message ID
 						if (containerString != null) {
-							EnterpriseFiler.file(batchUUID, containerString, subscriberConfigName);
+							EnterpriseFiler.file(batchUUID, UUID.randomUUID(), containerString, subscriberConfigName);
 						}
 					}
 				}
