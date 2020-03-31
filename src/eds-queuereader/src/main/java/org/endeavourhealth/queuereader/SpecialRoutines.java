@@ -150,7 +150,41 @@ public abstract class SpecialRoutines {
 
                         //make sure the individual file sizes are in the JSON body
                         try {
-                            String rootDir = null;
+                            String body = exchange.getBody();
+                            List<ExchangePayloadFile> files = ExchangeHelper.parseExchangeBody(body, false);
+                            for (ExchangePayloadFile file: files) {
+                                if (file.getSize() != null) {
+                                    continue;
+                                }
+
+                                String path = file.getPath();
+                                path = FilenameUtils.concat(sharedStoragePath, path);
+
+                                String name = FilenameUtils.getName(path);
+                                String dir = new File(path).getParent();
+
+                                List<FileInfo> s3Listing = FileHelper.listFilesInSharedStorageWithInfo(dir);
+                                for (FileInfo s3Info : s3Listing) {
+                                    String s3Path = s3Info.getFilePath();
+                                    long size = s3Info.getSize();
+
+                                    String s3Name = FilenameUtils.getName(s3Path);
+                                    if (s3Name.equals(name)) {
+
+                                        file.setSize(new Long(size));
+
+                                        //write back to JSON
+                                        String newJson = JsonSerializer.serialize(files);
+                                        exchange.setBody(newJson);
+
+                                        saveExchange = true;
+                                        break;
+                                    }
+                                }
+                            }
+
+
+                            /*String rootDir = null;
                             Map<String, ExchangePayloadFile> hmFilesByName = new HashMap<>();
 
                             String body = exchange.getBody();
@@ -197,7 +231,7 @@ public abstract class SpecialRoutines {
                                 exchange.setBody(newJson);
 
                                 saveExchange = true;
-                            }
+                            }*/
 
                         } catch (Throwable t) {
                             throw new Exception("Failed on exchange " + exchange.getId(), t);
