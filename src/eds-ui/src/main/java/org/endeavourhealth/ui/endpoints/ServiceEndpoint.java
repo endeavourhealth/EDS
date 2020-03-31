@@ -47,6 +47,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.concurrent.locks.ReentrantLock;
 
 @Path("/service")
 public final class ServiceEndpoint extends AbstractEndpoint {
@@ -59,6 +60,7 @@ public final class ServiceEndpoint extends AbstractEndpoint {
     private static ExpiringObject<List<String>> cachedTagNames = ExpiringObject.factoryFiveMinutes();
     private static ExpiringObject<List<String>> cachedPublisherNames = ExpiringObject.factoryFiveMinutes();
     private static ExpiringObject<List<String>> cachedCcgCodes = ExpiringObject.factoryFiveMinutes();
+    private static ReentrantLock cacheLock = new ReentrantLock();
 
     @POST
     @Produces(MediaType.APPLICATION_JSON)
@@ -971,72 +973,95 @@ public final class ServiceEndpoint extends AbstractEndpoint {
      * builds/refreshes the caches of CCG codes, tags and publisher config names
      * synchronized to prevent multiple calls from a browser kicking this off repeatedly
      */
-    private synchronized void refreshServiceCaches(boolean force) throws Exception {
+    private void refreshServiceCaches(boolean force) throws Exception {
 
         LOG.trace("refreshServiceCaches, force = " + force);
 
-        //if we've already refreshed them and they're valid, just return out
-        if (!force) {
-            LOG.trace("Publisher cache = " + (cachedPublisherNames.get() != null));
-            LOG.trace("CCG cache = " + (cachedCcgCodes.get() != null));
-            LOG.trace("Tag cache = " + (cachedTagNames.get() != null));
+        //quick check before getting the lock
+        if (!force && areCachesValid()) {
+            LOG.trace("Not forced and caches OK");
+            return;
+        }
 
-            if (cachedPublisherNames.get() != null
-                    && cachedCcgCodes.get() != null
-                    && cachedTagNames.get() != null) {
-                LOG.trace("Caches all OK, so returning out");
+        try {
+            cacheLock.lock();
+            LOG.trace("Got lock");
+
+            //second check now we've got the lock
+            if (!force && areCachesValid()) {
+                LOG.trace("Got lock and not forced and caches OK");
                 return;
             }
-        }
 
-        Set<String> hsPublisherConfigNames = new HashSet<>();
-        Set<String> hsCcgCodes = new HashSet<>();
-        Set<String> hsTags = new HashSet<>();
+            Set<String> hsPublisherConfigNames = new HashSet<>();
+            Set<String> hsCcgCodes = new HashSet<>();
+            Set<String> hsTags = new HashSet<>();
 
-        List<Service> services = serviceRepository.getAll();
-        for (Service service: services) {
+            List<Service> services = serviceRepository.getAll();
+            for (Service service : services) {
 
-            String publisherConfigName = service.getPublisherConfigName();
-            if (!Strings.isNullOrEmpty(publisherConfigName)) {
-                hsPublisherConfigNames.add(publisherConfigName);
+                String publisherConfigName = service.getPublisherConfigName();
+                if (!Strings.isNullOrEmpty(publisherConfigName)) {
+                    hsPublisherConfigNames.add(publisherConfigName);
+                }
+
+                String ccgCode = service.getCcgCode();
+                if (!Strings.isNullOrEmpty(ccgCode)) {
+                    hsCcgCodes.add(ccgCode);
+                }
+
+                if (service.getTags() != null) {
+                    Set<String> set = service.getTags().keySet();
+                    hsTags.addAll(set);
+                }
             }
 
-            String ccgCode = service.getCcgCode();
-            if (!Strings.isNullOrEmpty(ccgCode)) {
-                hsCcgCodes.add(ccgCode);
+            //set in caches
+            List<String> l = new ArrayList<>(hsPublisherConfigNames);
+            l.sort(((o1, o2) -> o1.toLowerCase().compareToIgnoreCase(o2.toLowerCase())));
+            cachedPublisherNames.set(l);
+
+            l = new ArrayList<>(hsCcgCodes);
+            l.sort(((o1, o2) -> o1.toLowerCase().compareToIgnoreCase(o2.toLowerCase())));
+            cachedCcgCodes.set(l);
+
+
+            l = new ArrayList<>(hsTags);
+            //sort by length so shorter ones are first, which has the end result of moving
+            //the more interesting tags to the start
+            //l.sort(((o1, o2) -> o1.toLowerCase().compareToIgnoreCase(o2.toLowerCase())));
+            l.sort((o1, o2) -> new Integer(o1.length()).compareTo(new Integer(o2.length())));
+
+            //always put NOTES at the end
+            if (l.contains("Notes")) {
+                l.remove("Notes");
+                l.add("Notes");
             }
 
-            if (service.getTags() != null) {
-                Set<String> set = service.getTags().keySet();
-                hsTags.addAll(set);
-            }
+            cachedTagNames.set(l);
+
+            LOG.trace("Caches rebuilt");
+
+        } finally {
+            cacheLock.unlock();
         }
+    }
 
-        //set in caches
-        List<String> l = new ArrayList<>(hsPublisherConfigNames);
-        l.sort(((o1, o2) -> o1.toLowerCase().compareToIgnoreCase(o2.toLowerCase())));
-        cachedPublisherNames.set(l);
+    private static boolean areCachesValid() {
 
-        l = new ArrayList<>(hsCcgCodes);
-        l.sort(((o1, o2) -> o1.toLowerCase().compareToIgnoreCase(o2.toLowerCase())));
-        cachedCcgCodes.set(l);
+        LOG.trace("Are caches valid:");
+        LOG.trace("Publisher cache empty = " + (cachedPublisherNames.get() == null));
+        LOG.trace("CCG cache empty = " + (cachedCcgCodes.get() == null));
+        LOG.trace("Tag cache empty = " + (cachedTagNames.get() == null));
 
+        if (cachedPublisherNames.get() == null
+                || cachedCcgCodes.get() == null
+                || cachedTagNames.get() == null) {
+            return false;
 
-        l = new ArrayList<>(hsTags);
-        //sort by length so shorter ones are first, which has the end result of moving
-        //the more interesting tags to the start
-        //l.sort(((o1, o2) -> o1.toLowerCase().compareToIgnoreCase(o2.toLowerCase())));
-        l.sort((o1, o2) -> new Integer(o1.length()).compareTo(new Integer(o2.length())));
-
-        //always put NOTES at the end
-        if (l.contains("Notes")) {
-            l.remove("Notes");
-            l.add("Notes");
+        } else {
+            return true;
         }
-
-        cachedTagNames.set(l);
-
-        LOG.trace("Caches rebuilt");
     }
 
     @GET
