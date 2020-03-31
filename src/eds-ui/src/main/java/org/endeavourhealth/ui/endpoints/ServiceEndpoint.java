@@ -403,29 +403,29 @@ public final class ServiceEndpoint extends AbstractEndpoint {
                 "Service Id", uuid,
                 "Search Data", searchText);
 
-        try {
-            if (Strings.isNullOrEmpty(uuid)
-                    && Strings.isNullOrEmpty(odsCode)
-                    && Strings.isNullOrEmpty(searchText)) {
-                LOG.trace("Get Service list");
-                return getServiceList();
+        Response response = null;
 
-            } else if (!Strings.isNullOrEmpty(uuid)) {
-                LOG.trace("Get Service single for UUID " + uuid);
-                return getSingleServiceForUuid(uuid);
+        if (Strings.isNullOrEmpty(uuid)
+                && Strings.isNullOrEmpty(odsCode)
+                && Strings.isNullOrEmpty(searchText)) {
+            LOG.trace("Get Service list");
+            response = getServiceList();
 
-            } else if (!Strings.isNullOrEmpty(odsCode)) {
-                LOG.trace("Get Service single for ODS " + odsCode);
-                return getSingleServiceForOds(odsCode);
+        } else if (!Strings.isNullOrEmpty(uuid)) {
+            LOG.trace("Get Service single for UUID " + uuid);
+            response = getSingleServiceForUuid(uuid);
 
-            } else {
-                LOG.trace("Search services [" + searchText + "]");
-                return getServicesMatchingText(searchText);
-            }
+        } else if (!Strings.isNullOrEmpty(odsCode)) {
+            LOG.trace("Get Service single for ODS " + odsCode);
+            response = getSingleServiceForOds(odsCode);
 
-        } finally {
-            LOG.trace("Returned service list");
+        } else {
+            LOG.trace("Search services [" + searchText + "]");
+            response = getServicesMatchingText(searchText);
         }
+
+        LOG.trace("Returning service list");
+        return response;
     }
 
     private Response getServiceList() throws Exception {
@@ -973,11 +973,18 @@ public final class ServiceEndpoint extends AbstractEndpoint {
      */
     private synchronized void refreshServiceCaches(boolean force) throws Exception {
 
+        LOG.trace("refreshServiceCaches, force = " + force);
+
         //if we've already refreshed them and they're valid, just return out
         if (!force) {
+            LOG.trace("Publisher cache = " + (cachedPublisherNames.get() != null));
+            LOG.trace("CCG cache = " + (cachedCcgCodes.get() != null));
+            LOG.trace("Tag cache = " + (cachedTagNames.get() != null));
+
             if (cachedPublisherNames.get() != null
                     && cachedCcgCodes.get() != null
                     && cachedTagNames.get() != null) {
+                LOG.trace("Caches all OK, so returning out");
                 return;
             }
         }
@@ -1028,6 +1035,8 @@ public final class ServiceEndpoint extends AbstractEndpoint {
         }
 
         cachedTagNames.set(l);
+
+        LOG.trace("Caches rebuilt");
     }
 
     @GET
