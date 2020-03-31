@@ -403,23 +403,28 @@ public final class ServiceEndpoint extends AbstractEndpoint {
                 "Service Id", uuid,
                 "Search Data", searchText);
 
-        if (Strings.isNullOrEmpty(uuid)
-                && Strings.isNullOrEmpty(odsCode)
-                && Strings.isNullOrEmpty(searchText)) {
-            LOG.trace("Get Service list");
-            return getServiceList();
+        try {
+            if (Strings.isNullOrEmpty(uuid)
+                    && Strings.isNullOrEmpty(odsCode)
+                    && Strings.isNullOrEmpty(searchText)) {
+                LOG.trace("Get Service list");
+                return getServiceList();
 
-        } else if (!Strings.isNullOrEmpty(uuid)) {
-            LOG.trace("Get Service single for UUID " + uuid);
-            return getSingleServiceForUuid(uuid);
+            } else if (!Strings.isNullOrEmpty(uuid)) {
+                LOG.trace("Get Service single for UUID " + uuid);
+                return getSingleServiceForUuid(uuid);
 
-        } else if (!Strings.isNullOrEmpty(odsCode)) {
-            LOG.trace("Get Service single for ODS " + odsCode);
-            return getSingleServiceForOds(odsCode);
+            } else if (!Strings.isNullOrEmpty(odsCode)) {
+                LOG.trace("Get Service single for ODS " + odsCode);
+                return getSingleServiceForOds(odsCode);
 
-        } else {
-            LOG.trace("Search services [" + searchText + "]");
-            return getServicesMatchingText(searchText);
+            } else {
+                LOG.trace("Search services [" + searchText + "]");
+                return getServicesMatchingText(searchText);
+            }
+
+        } finally {
+            LOG.trace("Returned service list");
         }
     }
 
