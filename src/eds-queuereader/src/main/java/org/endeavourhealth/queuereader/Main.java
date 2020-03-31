@@ -188,6 +188,16 @@ public class Main {
 		}
 
 		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("CompareDSM")) {
+			String odsCode = null;
+			if (args.length > 1) {
+				odsCode = args[1];
+			}
+			SpecialRoutines.compareDsm(odsCode);
+			System.exit(0);
+		}
+
+		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("UPRN")) {
 			String configName = args[1];
 			String protocolName = args[2];

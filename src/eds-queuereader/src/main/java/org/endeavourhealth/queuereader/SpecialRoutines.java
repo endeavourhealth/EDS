@@ -25,6 +25,7 @@ import org.endeavourhealth.core.database.dal.usermanager.caching.ProjectCache;
 import org.endeavourhealth.core.database.rdbms.ConnectionManager;
 import org.endeavourhealth.core.database.rdbms.datasharingmanager.models.DataSharingAgreementEntity;
 import org.endeavourhealth.core.database.rdbms.datasharingmanager.models.ProjectEntity;
+import org.endeavourhealth.core.messaging.pipeline.components.DetermineRelevantProtocolIds;
 import org.endeavourhealth.im.client.IMClient;
 import org.endeavourhealth.transform.common.AuditWriter;
 import org.endeavourhealth.transform.common.ExchangeHelper;
@@ -862,7 +863,7 @@ public abstract class SpecialRoutines {
         try {
 
             LOG.debug("Testing doesOrganisationHaveDPA");
-            Boolean b = OrganisationCache.doesOrganisationHaveDPA(odsCode);
+            boolean b = OrganisationCache.doesOrganisationHaveDPA(odsCode);
             LOG.debug("Got " + b);
             LOG.debug("");
             LOG.debug("");
@@ -913,6 +914,56 @@ public abstract class SpecialRoutines {
 
 
             LOG.info("Finished Testing DSM for " + odsCode);
+        } catch (Throwable t) {
+            LOG.error("", t);
+        }
+    }
+
+    public static void compareDsm(String filterOdsCode) {
+        LOG.debug("Comparing DSM to DDS-UI for " + filterOdsCode);
+        try {
+
+            ServiceDalI serviceDal = DalProvider.factoryServiceDal();
+            List<Service> services = serviceDal.getAll();
+            for (Service service: services) {
+
+                String odsCode = service.getLocalId();
+                UUID serviceId = service.getId();
+
+                //skip if filtering on ODS code
+                if (!Strings.isNullOrEmpty(filterOdsCode)
+                        && !odsCode.equalsIgnoreCase(filterOdsCode)) {
+                    continue;
+                }
+
+                //only do if a publisher
+                String publisherConfig = service.getPublisherConfigName();
+                if (Strings.isNullOrEmpty(publisherConfig)) {
+                    continue;
+                }
+
+                LOG.debug("Doing " + service + "--------------------------------------------------------------------");
+
+                //check if publisher to DDS protocol
+                List<String> protocolIdsOldWay = DetermineRelevantProtocolIds.getProtocolIdsForPublisherServiceOldWay(serviceId.toString());
+                boolean hasDpaOldWay = !protocolIdsOldWay.isEmpty(); //in the old way, we count as having a DPA if they're in any protocol
+
+                //check if DSM DPA
+                boolean hasDpaNewWay = OrganisationCache.doesOrganisationHaveDPA(odsCode);
+
+                if (hasDpaNewWay != hasDpaOldWay) {
+                    LOG.error("Old and new DPA do not match (old = " + hasDpaOldWay + ", new = " + hasDpaNewWay + ")");
+                    continue;
+                }
+
+                LOG.debug("Old and new DPA match (" + hasDpaOldWay + ")");
+
+                //TODO - go on to check subscribers
+
+                LOG.debug("");
+            }
+
+            LOG.debug("Finished Comparing DSM to DDS-UI for " + filterOdsCode);
         } catch (Throwable t) {
             LOG.error("", t);
         }
