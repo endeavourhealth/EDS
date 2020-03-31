@@ -3,7 +3,6 @@ package org.endeavourhealth.queuereader;
 import OpenPseudonymiser.Crypto;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.base.Strings;
-import com.google.gson.JsonSyntaxException;
 import org.apache.commons.csv.*;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
@@ -11,15 +10,12 @@ import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.common.fhir.IdentifierHelper;
 import org.endeavourhealth.common.utility.FileHelper;
-import org.endeavourhealth.common.utility.FileInfo;
-import org.endeavourhealth.common.utility.JsonSerializer;
 import org.endeavourhealth.core.configuration.ConfigDeserialiser;
 import org.endeavourhealth.core.configuration.PostMessageToExchangeConfig;
 import org.endeavourhealth.core.configuration.QueueReaderConfiguration;
 import org.endeavourhealth.core.database.dal.DalProvider;
 import org.endeavourhealth.core.database.dal.admin.LibraryRepositoryHelper;
 import org.endeavourhealth.core.database.dal.admin.ServiceDalI;
-import org.endeavourhealth.core.database.dal.admin.SystemHelper;
 import org.endeavourhealth.core.database.dal.admin.models.Service;
 import org.endeavourhealth.core.database.dal.audit.ExchangeBatchDalI;
 import org.endeavourhealth.core.database.dal.audit.ExchangeDalI;
@@ -745,11 +741,11 @@ public class Main {
 		}*/
 
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("ConvertExchangeBody")) {
 			convertExchangeBody();
 			System.exit(0);
-		}
+		}*/
 
 
 		/*if (args.length >= 1
@@ -10741,7 +10737,7 @@ create table uprn_pseudo_map (
 		return null;
 	}*/
 
-	private static void convertExchangeBody() {
+	/*private static void convertExchangeBody() {
 		try {
 			LOG.info("Converting exchange bodies to JSON");
 
@@ -10797,7 +10793,7 @@ create table uprn_pseudo_map (
 							}
 
 							//emis
-							/*if (systemUuid.toString().equalsIgnoreCase("991a9068-01d3-4ff2-86ed-249bd0541fb3") //live
+							*//*if (systemUuid.toString().equalsIgnoreCase("991a9068-01d3-4ff2-86ed-249bd0541fb3") //live
 									|| systemUuid.toString().equalsIgnoreCase("55c08fa5-ef1e-4e94-aadc-e3d6adc80774")) { //dev
 
 								String name = FilenameUtils.getName(file);
@@ -10807,10 +10803,10 @@ create table uprn_pseudo_map (
 								String second = toks[2];
 								fileObj.setType(first + "_" + second);
 
-							}*/
+							}*//*
 
 							//Barts Cerner
-							/*if (systemUuid.toString().equalsIgnoreCase("e517fa69-348a-45e9-a113-d9b59ad13095") //live
+							*//*if (systemUuid.toString().equalsIgnoreCase("e517fa69-348a-45e9-a113-d9b59ad13095") //live
 								|| systemUuid.toString().equalsIgnoreCase("b0277098-0b6c-4d9d-86ef-5f399fb25f34")) { //dev
 
 								String name = FilenameUtils.getName(file);
@@ -10823,7 +10819,7 @@ create table uprn_pseudo_map (
 								} catch (Exception ex2) {
 									throw new Exception("Failed to parse file name " + name + " on exchange " + exchange.getId());
 								}
-							}*/
+							}*//*
 
 							//Vision
 							if (systemUuid.toString().equalsIgnoreCase("4809b277-6b8d-4e5c-be9c-d1f1d62975c6") //live
@@ -10886,7 +10882,7 @@ create table uprn_pseudo_map (
 		} catch (Exception ex) {
 			LOG.error("", ex);
 		}
-	}
+	}*/
 
 	/*private static void fixBartsOrgs(String serviceId) {
 		try {

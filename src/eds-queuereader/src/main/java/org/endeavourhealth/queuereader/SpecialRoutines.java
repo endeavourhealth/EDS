@@ -132,6 +132,12 @@ public abstract class SpecialRoutines {
                 List<UUID> systemIds = SystemHelper.getSystemIdsForService(service);
                 for (UUID systemId: systemIds) {
 
+                    //skip ADT feeds because their JSON isn't the same
+                    if (systemId.equals(UUID.fromString("d874c58c-91fd-41bb-993e-b1b8b22038b2"))//live
+                            || systemId.equals(UUID.fromString("68096181-9e5d-4cca-821f-a9ecaa0ebc50"))) { //dev
+                        continue;
+                    }
+
                     ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
                     List<Exchange> exchanges = exchangeDal.getExchangesByService(service.getId(), systemId, Integer.MAX_VALUE);
                     LOG.debug("Found " + exchanges.size() + " exchanges");
