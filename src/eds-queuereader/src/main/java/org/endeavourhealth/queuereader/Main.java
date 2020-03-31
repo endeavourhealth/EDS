@@ -192,7 +192,8 @@ public class Main {
 			String configName = args[1];
 			String protocolName = args[2];
 			String outputFormat = args[3];
-			bulkProcessUPRN(configName, protocolName, outputFormat);
+			String debug = args[4];
+			bulkProcessUPRN(configName, protocolName, outputFormat, debug);
 
 			System.exit(0);
 		}
@@ -1681,7 +1682,7 @@ public class Main {
 		}
 	}
 
-	private static void bulkProcessUPRN(String subscriberConfigName, String protocolName, String outputFormat) throws Exception {
+	private static void bulkProcessUPRN(String subscriberConfigName, String protocolName, String outputFormat, String debug) throws Exception {
 
 		LibraryItem matchedLibraryItem = BulkHelper.findProtocolLibraryItem(protocolName);
 
@@ -1715,6 +1716,17 @@ public class Main {
 					}
 
 					resources.add(patientWrapper);
+
+					if (debug.equals("1")) {
+						LOG.info("Service: " + serviceUUID.toString());
+						LOG.info("Configname: " + subscriberConfigName);
+						LOG.info("Patientid: " + patientId.toString());
+						LOG.info("resources: " + resources.toString());
+						System.out.println("Press Enter key to continue...");
+						Scanner scan = new Scanner(System.in);
+						//System.in.read();
+						scan.nextLine();
+					}
 
 					if (outputFormat.equals("SUBSCRIBER")) {
 
