@@ -1049,10 +1049,10 @@ public final class ServiceEndpoint extends AbstractEndpoint {
 
     private static boolean areCachesValid() {
 
-        LOG.trace("Are caches valid:");
+        /*LOG.trace("Are caches valid:");
         LOG.trace("Publisher cache empty = " + (cachedPublisherNames.get() == null));
         LOG.trace("CCG cache empty = " + (cachedCcgCodes.get() == null));
-        LOG.trace("Tag cache empty = " + (cachedTagNames.get() == null));
+        LOG.trace("Tag cache empty = " + (cachedTagNames.get() == null));*/
 
         if (cachedPublisherNames.get() == null
                 || cachedCcgCodes.get() == null
