@@ -10754,8 +10754,8 @@ create table uprn_pseudo_map (
 				for (UUID systemUuid: systemIds) {
 
 					//skip ADT feeds because they will already be JSON
-					if (systemIds.equals(UUID.fromString("d874c58c-91fd-41bb-993e-b1b8b22038b2"))//live
-						|| systemIds.equals(UUID.fromString("68096181-9e5d-4cca-821f-a9ecaa0ebc50"))) { //dev
+					if (systemUuid.equals(UUID.fromString("d874c58c-91fd-41bb-993e-b1b8b22038b2"))//live
+						|| systemUuid.equals(UUID.fromString("68096181-9e5d-4cca-821f-a9ecaa0ebc50"))) { //dev
 						continue;
 					}
 
