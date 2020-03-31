@@ -3,6 +3,7 @@ package org.endeavourhealth.queuereader;
 import OpenPseudonymiser.Crypto;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.base.Strings;
+import com.google.gson.JsonSyntaxException;
 import org.apache.commons.csv.*;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
@@ -10,12 +11,15 @@ import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.common.fhir.IdentifierHelper;
 import org.endeavourhealth.common.utility.FileHelper;
+import org.endeavourhealth.common.utility.FileInfo;
+import org.endeavourhealth.common.utility.JsonSerializer;
 import org.endeavourhealth.core.configuration.ConfigDeserialiser;
 import org.endeavourhealth.core.configuration.PostMessageToExchangeConfig;
 import org.endeavourhealth.core.configuration.QueueReaderConfiguration;
 import org.endeavourhealth.core.database.dal.DalProvider;
 import org.endeavourhealth.core.database.dal.admin.LibraryRepositoryHelper;
 import org.endeavourhealth.core.database.dal.admin.ServiceDalI;
+import org.endeavourhealth.core.database.dal.admin.SystemHelper;
 import org.endeavourhealth.core.database.dal.admin.models.Service;
 import org.endeavourhealth.core.database.dal.audit.ExchangeBatchDalI;
 import org.endeavourhealth.core.database.dal.audit.ExchangeDalI;
@@ -741,12 +745,11 @@ public class Main {
 		}*/
 
 
-		/*if (args.length >= 1
+		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("ConvertExchangeBody")) {
-			String systemId = args[1];
-			convertExchangeBody(UUID.fromString(systemId));
+			convertExchangeBody();
 			System.exit(0);
-		}*/
+		}
 
 
 		/*if (args.length >= 1
@@ -10737,9 +10740,9 @@ create table uprn_pseudo_map (
 		return null;
 	}*/
 
-	/*private static void convertExchangeBody(UUID systemUuid) {
+	private static void convertExchangeBody() {
 		try {
-			LOG.info("Converting exchange bodies for system " + systemUuid);
+			LOG.info("Converting exchange bodies to JSON");
 
 			ServiceDalI serviceDal = DalProvider.factoryServiceDal();
 			ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
@@ -10747,87 +10750,136 @@ create table uprn_pseudo_map (
 			List<Service> services = serviceDal.getAll();
 			for (Service service: services) {
 
-				List<Exchange> exchanges = exchangeDal.getExchangesByService(service.getId(), systemUuid, Integer.MAX_VALUE);
-				if (exchanges.isEmpty()) {
-					continue;
-				}
+				List<UUID> systemIds = SystemHelper.getSystemIdsForService(service);
+				for (UUID systemUuid: systemIds) {
 
-				LOG.debug("doing " + service.getName() + " with " + exchanges.size() + " exchanges");
-
-				for (Exchange exchange: exchanges) {
-
-					String exchangeBody = exchange.getBody();
-					try {
-						//already done
-						ExchangePayloadFile[] files = JsonSerializer.deserialize(exchangeBody, ExchangePayloadFile[].class);
+					List<Exchange> exchanges = exchangeDal.getExchangesByService(service.getId(), systemUuid, Integer.MAX_VALUE);
+					if (exchanges.isEmpty()) {
 						continue;
-					} catch (JsonSyntaxException ex) {
-						//if the JSON can't be parsed, then it'll be the old format of body that isn't JSON
 					}
 
-					List<ExchangePayloadFile> newFiles = new ArrayList<>();
+					LOG.debug("doing " + service.getName() + " with " + exchanges.size() + " exchanges");
 
-					String[] files = ExchangeHelper.parseExchangeBodyOldWay(exchangeBody);
-					for (String file: files) {
-						ExchangePayloadFile fileObj = new ExchangePayloadFile();
+					for (Exchange exchange : exchanges) {
 
-						String fileWithoutSharedStorage = file.substring(TransformConfig.instance().getSharedStoragePath().length()+1);
-						fileObj.setPath(fileWithoutSharedStorage);
-
-						//size
-						List<FileInfo> fileInfos = FileHelper.listFilesInSharedStorageWithInfo(file);
-						for (FileInfo info: fileInfos) {
-							if (info.getFilePath().equals(file)) {
-								long size = info.getSize();
-								fileObj.setSize(new Long(size));
-							}
+						String exchangeBody = exchange.getBody();
+						try {
+							//already done
+							ExchangePayloadFile[] files = JsonSerializer.deserialize(exchangeBody, ExchangePayloadFile[].class);
+							continue;
+						} catch (JsonSyntaxException ex) {
+							//if the JSON can't be parsed, then it'll be the old format of body that isn't JSON
 						}
 
-						//type
-						if (systemUuid.toString().equalsIgnoreCase("991a9068-01d3-4ff2-86ed-249bd0541fb3") //live
-								|| systemUuid.toString().equalsIgnoreCase("55c08fa5-ef1e-4e94-aadc-e3d6adc80774")) { //dev
+						List<ExchangePayloadFile> newFiles = new ArrayList<>();
+
+						String[] files = ExchangeHelper.parseExchangeBodyOldWay(exchangeBody);
+						for (String file : files) {
+							ExchangePayloadFile fileObj = new ExchangePayloadFile();
+
+							String fileWithoutSharedStorage = file.substring(TransformConfig.instance().getSharedStoragePath().length() + 1);
+							fileObj.setPath(fileWithoutSharedStorage);
+
+							//size
+							List<FileInfo> fileInfos = FileHelper.listFilesInSharedStorageWithInfo(file);
+							for (FileInfo info : fileInfos) {
+								if (info.getFilePath().equals(file)) {
+									long size = info.getSize();
+									fileObj.setSize(new Long(size));
+								}
+							}
+
 							//emis
-							String name = FilenameUtils.getName(file);
-							String[] toks = name.split("_");
+							/*if (systemUuid.toString().equalsIgnoreCase("991a9068-01d3-4ff2-86ed-249bd0541fb3") //live
+									|| systemUuid.toString().equalsIgnoreCase("55c08fa5-ef1e-4e94-aadc-e3d6adc80774")) { //dev
 
-							String first = toks[1];
-							String second = toks[2];
-							fileObj.setType(first + "_" + second);
+								String name = FilenameUtils.getName(file);
+								String[] toks = name.split("_");
 
-*//*						} else if (systemUuid.toString().equalsIgnoreCase("e517fa69-348a-45e9-a113-d9b59ad13095")
-							|| systemUuid.toString().equalsIgnoreCase("b0277098-0b6c-4d9d-86ef-5f399fb25f34")) { //dev
+								String first = toks[1];
+								String second = toks[2];
+								fileObj.setType(first + "_" + second);
 
-							//cerner
-							String name = FilenameUtils.getName(file);
-							if (Strings.isNullOrEmpty(name)) {
-								continue;
+							}*/
+
+							//Barts Cerner
+							/*if (systemUuid.toString().equalsIgnoreCase("e517fa69-348a-45e9-a113-d9b59ad13095") //live
+								|| systemUuid.toString().equalsIgnoreCase("b0277098-0b6c-4d9d-86ef-5f399fb25f34")) { //dev
+
+								String name = FilenameUtils.getName(file);
+								if (Strings.isNullOrEmpty(name)) {
+									continue;
+								}
+								try {
+									String type = BartsCsvToFhirTransformer.identifyFileType(name);
+									fileObj.setType(type);
+								} catch (Exception ex2) {
+									throw new Exception("Failed to parse file name " + name + " on exchange " + exchange.getId());
+								}
+							}*/
+
+							//Vision
+							if (systemUuid.toString().equalsIgnoreCase("4809b277-6b8d-4e5c-be9c-d1f1d62975c6") //live
+									|| systemUuid.toString().equalsIgnoreCase("bdb30ed3-8fe4-4436-8d5a-dabcda938d3a")) { //dev
+
+								String name = FilenameUtils.getName(file);
+								if (name.contains("_encounter_data_extract")) {
+									fileObj.setType("encounter_data_extract");
+
+								} else if (name.contains("journal_data_extract")) {
+									fileObj.setType("journal_data_extract");
+
+								} else if (name.contains("patient_data_extract")) {
+									fileObj.setType("patient_data_extract");
+
+								} else if (name.contains("staff_data_extract")) {
+									fileObj.setType("staff_data_extract");
+
+								} else if (name.contains("referral_data_extract")) {
+									fileObj.setType("referral_data_extract");
+
+								} else if (name.contains("practice_data_extract")) {
+									fileObj.setType("practice_data_extract");
+
+								} else if (name.contains("patient_check_sum")) {
+									fileObj.setType("patient_check_sum_data_extract");
+
+								} else if (name.contains("active_user_data_extract")) {
+									fileObj.setType("active_user_data_extract");
+
+								} else {
+									throw new Exception("Unknown Vision file type for [" + name + "]");
+								}
 							}
-							try {
-								String type = BartsCsvToFhirTransformer.identifyFileType(name);
-								fileObj.setType(type);
-							} catch (Exception ex2) {
-								throw new Exception("Failed to parse file name " + name + " on exchange " + exchange.getId());
-							}*//*
 
-						} else {
-							throw new Exception("Unknown system ID " + systemUuid);
+							//Homerton
+							if (systemUuid.toString().equalsIgnoreCase("bf9a81ff-e167-4d80-a6e8-884f573ebce2")) { //dev only
+
+								//only patient files present
+								fileObj.setType("PATIENT");
+							}
+
+							if (fileObj.getType() == null) {
+								throw new Exception("Unhandled system ID " + systemUuid);
+							}
+
+							newFiles.add(fileObj);
 						}
 
-						newFiles.add(fileObj);
+						String json = JsonSerializer.serialize(newFiles);
+						exchange.setBody(json);
+
+						LOG.debug("Fixing exchange " + exchange.getId());
+						exchangeDal.save(exchange);
 					}
-
-					String json = JsonSerializer.serialize(newFiles);
-					exchange.setBody(json);
-
-					exchangeDal.save(exchange);
 				}
 			}
 
-			LOG.info("Finished Converting exchange bodies for system " + systemUuid);
+			LOG.info("Finished Converting exchange bodies to JSON");
 		} catch (Exception ex) {
 			LOG.error("", ex);
 		}
-	}*/
+	}
 
 	/*private static void fixBartsOrgs(String serviceId) {
 		try {
