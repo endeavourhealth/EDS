@@ -10753,6 +10753,12 @@ create table uprn_pseudo_map (
 				List<UUID> systemIds = SystemHelper.getSystemIdsForService(service);
 				for (UUID systemUuid: systemIds) {
 
+					//skip ADT feeds because they will already be JSON
+					if (systemIds.equals(UUID.fromString("d874c58c-91fd-41bb-993e-b1b8b22038b2"))//live
+						|| systemIds.equals(UUID.fromString("68096181-9e5d-4cca-821f-a9ecaa0ebc50"))) { //dev
+						continue;
+					}
+
 					List<Exchange> exchanges = exchangeDal.getExchangesByService(service.getId(), systemUuid, Integer.MAX_VALUE);
 					if (exchanges.isEmpty()) {
 						continue;
