@@ -638,6 +638,7 @@ CREATE TABLE encounter
   original_term character varying(1000),
   episode_of_care_id bigint,
   service_provider_organization_id bigint,
+  date_recorded date,
   CONSTRAINT pk_encounter_id PRIMARY KEY (organization_id,person_id,id),
   /*got Emis consultations referring to missing appts, so this can't be enforced
   CONSTRAINT fk_encounter_appointment_id FOREIGN KEY (appointment_id)
