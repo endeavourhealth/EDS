@@ -205,6 +205,25 @@ public class SubscriberFiler {
         return baos.toByteArray();
     }
 
+    private static ArrayList<String> getTableColumns(Connection connection, String tableName) throws Exception{
+        ArrayList<String> columns = new ArrayList<>();
+        String sql = null;
+        if (ConnectionManager.isSqlServer(connection) || ConnectionManager.isPostgreSQL(connection)) {
+            sql = "select column_name as field from information_schema.columns where table_name = '" + tableName + "';";
+        } else {
+            sql = "describe " + tableName + ";";
+        }
+        PreparedStatement ps = connection.prepareStatement(sql);
+        ps.executeQuery();
+        ResultSet resultSet = ps.getResultSet();
+        while (resultSet.next()) {
+            columns.add(resultSet.getString("field"));
+        }
+        resultSet.close();
+        ps.close();
+        return columns;
+    }
+
     /**
      * processes a single entry from the zip file (i.e. one CSV file). Any deletes are simply
      * added to a list as all deletes are done after all upserts are out of the way.
@@ -213,6 +232,7 @@ public class SubscriberFiler {
                                         String keywordEscapeChar, int batchSize, List<DeleteWrapper> deletes) throws Exception {
 
         String tableName = Files.getNameWithoutExtension(entryFileName);
+        ArrayList<String> actualColumns = getTableColumns(connection, tableName);
 
         ByteArrayInputStream bais = new ByteArrayInputStream(csvBytes);
         InputStreamReader isr = new InputStreamReader(bais);
@@ -220,6 +240,14 @@ public class SubscriberFiler {
 
         //find out what columns we've got
         List<String> columns = createHeaderList(csvParser);
+        for (String column : columns) {
+            if (!column.equals(COL_IS_DELETE) || !column.equals(COL_ID)) {
+                if (!actualColumns.contains(column)) {
+                    columns.remove(column);
+                }
+            }
+        }
+
         Map<String, Class> columnClasses = createHeaderColumnMap(entryFileName, columnClassJson, columns);
 
         //validate that file has "id" and "is_delete" always

@@ -61,6 +61,10 @@ public class EnterpriseFiler {
         List<EnterpriseConnector.ConnectionWrapper> connectionWrappers = EnterpriseConnector.openConnection(configName);
 
         if (StringUtils.isNotEmpty(connectionWrappers.get(0).getRemoteSubscriberId())) {
+            //TODO remove when no longer needed
+            for (EnterpriseConnector.ConnectionWrapper connectionWrapper: connectionWrappers) {
+                file(connectionWrapper, bytes);
+            }
             int subscriberId = Integer.valueOf(connectionWrappers.get(0).getRemoteSubscriberId());
             SubscriberZipFileUUIDsDalI szfudi = DalProvider.factorySubscriberZipFileUUIDs();
             szfudi.createSubscriberZipFileUUIDsEntity(subscriberId, batchId.toString(), queuedMessageId.toString(), base64);
@@ -192,9 +196,29 @@ public class EnterpriseFiler {
         return baos.toByteArray();
     }
 
+    private static ArrayList<String> getTableColumns(Connection connection, String tableName) throws Exception{
+        ArrayList<String> columns = new ArrayList<>();
+        String sql = null;
+        if (ConnectionManager.isSqlServer(connection) || ConnectionManager.isPostgreSQL(connection)) {
+            sql = "select column_name as field from information_schema.columns where table_name = '" + tableName + "';";
+        } else {
+            sql = "describe " + tableName + ";";
+        }
+        PreparedStatement ps = connection.prepareStatement(sql);
+        ps.executeQuery();
+        ResultSet resultSet = ps.getResultSet();
+        while (resultSet.next()) {
+            columns.add(resultSet.getString("field"));
+        }
+        resultSet.close();
+        ps.close();
+        return columns;
+    }
+
     private static void processCsvData(String entryFileName, byte[] csvBytes, JsonNode allColumnClassMappings, Connection connection, String keywordEscapeChar, int batchSize, List<DeleteWrapper> deletes) throws Exception {
 
         String tableName = Files.getNameWithoutExtension(entryFileName);
+        ArrayList<String> actualColumns = getTableColumns(connection, tableName);
 
         ByteArrayInputStream bais = new ByteArrayInputStream(csvBytes);
         InputStreamReader isr = new InputStreamReader(bais);
@@ -202,6 +226,14 @@ public class EnterpriseFiler {
 
         //find out what columns we've got
         Map<String, Integer> csvHeaderMap = csvParser.getHeaderMap();
+        for (String column : csvHeaderMap.keySet()) {
+            if (!column.equals(COL_SAVE_MODE)) {
+                if (!actualColumns.contains(column)) {
+                    csvHeaderMap.remove(column);
+                }
+            }
+        }
+
         List<String> columns = new ArrayList<>();
         HashMap<String, Class> columnClasses = new HashMap<>();
         createHeaderColumnMap(csvHeaderMap, entryFileName, allColumnClassMappings, columns, columnClasses);

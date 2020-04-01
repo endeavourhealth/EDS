@@ -412,6 +412,7 @@ CREATE TABLE practitioner
   name character varying(1024),
   role_code character varying(50),
   role_desc character varying(255),
+  gmc_code character varying(7),
   CONSTRAINT pk_practitioner_id PRIMARY KEY (id)
 );
 

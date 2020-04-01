@@ -142,6 +142,7 @@ CREATE TABLE practitioner
   name character varying(1024),
   role_code character varying(50),
   role_desc character varying(255),
+  gmc_code character varying(7),
   CONSTRAINT pk_practitioner_id PRIMARY KEY (id),
   CONSTRAINT fk_practitioner_organisation_id FOREIGN KEY (organization_id)
       REFERENCES organization (id) MATCH SIMPLE
