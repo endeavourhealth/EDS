@@ -240,13 +240,15 @@ public class SubscriberFiler {
 
         //find out what columns we've got
         List<String> columns = createHeaderList(csvParser);
+        List<String> columnsRemove = new ArrayList<>();
         for (String column : columns) {
-            if (!column.equals(COL_IS_DELETE) || !column.equals(COL_ID)) {
+            if (!column.equals(COL_IS_DELETE) && !column.equals(COL_ID)) {
                 if (!actualColumns.contains(column)) {
-                    columns.remove(column);
+                    columnsRemove.add(column);
                 }
             }
         }
+        columns.removeAll(columnsRemove);
 
         Map<String, Class> columnClasses = createHeaderColumnMap(entryFileName, columnClassJson, columns);
 
