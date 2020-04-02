@@ -49,6 +49,7 @@ DROP TABLE IF EXISTS msoa_lookup;
 DROP TABLE IF EXISTS ward_lookup;
 DROP TABLE IF EXISTS local_authority_lookup;
 DROP TABLE IF EXISTS ethnicity_lookup;
+DROP TABLE IF EXISTS patient_address;
 
 
 CREATE TABLE ethnicity_lookup
@@ -460,6 +461,9 @@ CREATE TABLE person
   ward_code varchar(50),
   local_authority_code varchar(50),
   registered_practice_organization_id bigint,
+  title character varying(50),
+  first_names character varying(255),
+  last_names character varying(255),
   CONSTRAINT pk_person_id PRIMARY KEY (id)
 );
 
@@ -489,6 +493,10 @@ CREATE TABLE patient
   ward_code varchar(50),
   local_authority_code varchar(50),
   registered_practice_organization_id bigint,
+  title character varying(50),
+  first_names character varying(255),
+  last_names character varying(255),
+  current_address_id bigint,  
   CONSTRAINT pk_patient_id_organization_id PRIMARY KEY (`organization_id`,`person_id`,`id`)
 );
 
@@ -994,6 +1002,30 @@ CREATE UNIQUE INDEX patient_uprn_id
   (patient_id);
 
 
+create table patient_address (
+	id bigint NOT NULL,
+	organization_id bigint NOT NULL,
+	patient_id bigint NOT NULL,
+	person_id bigint,
+	address_line_1 varchar(255),
+	address_line_2 varchar(255),
+	address_line_3 varchar(255),
+	address_line_4 varchar(255),
+	city varchar(255),
+	postcode varchar(255),
+	use_concept_id int NOT NULL COMMENT 'use of address (e.g. home, temporary)',
+	start_date date,
+	end_date date,
+	lsoa_2001_code varchar(9),
+	lsoa_2011_code varchar(9),
+	msoa_2001_code varchar(9),
+	msoa_2011_code varchar(9),
+	ward_code varchar(9),
+	local_authority_code varchar(9),
+	CONSTRAINT pk_organization_id_id_patient_id_person_id PRIMARY KEY (`organization_id`,`id`,`patient_id`,`person_id`)
+) COMMENT 'stores address details for patients';
+
+CREATE UNIQUE INDEX ux_patient_address_id on patient_address (id);
 
 
 DELIMITER //
@@ -1033,7 +1065,7 @@ BEGIN
 	);
 
 	REPLACE INTO person
-	SELECT person_id, patient_gender_id, nhs_number, date_of_birth, date_of_death, postcode, lsoa_code, msoa_code, ethnic_code, ward_code, local_authority_code, registered_practice_organization_id
+	SELECT person_id, patient_gender_id, nhs_number, date_of_birth, date_of_death, postcode, lsoa_code, msoa_code, ethnic_code, ward_code, local_authority_code, registered_practice_organization_id, title, first_names, last_names
 	FROM patient
 	WHERE id = _best_patient_id;
 

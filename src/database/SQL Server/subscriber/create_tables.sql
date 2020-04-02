@@ -66,6 +66,7 @@ CREATE TABLE [allergy_intolerance] (
 [core_concept_id] int NULL DEFAULT NULL,
 [non_core_concept_id] int NULL DEFAULT NULL,
 [age_at_event] decimal(5,2) NULL DEFAULT NULL,
+[date_recorded] datetime NULL DEFAULT NULL,
 PRIMARY KEY ([organization_id], [person_id], [id])
 )
 GO
@@ -183,6 +184,7 @@ CREATE TABLE [encounter] (
 [admission_method] varchar(40) NULL DEFAULT NULL,
 [end_date] date NULL DEFAULT NULL,
 [institution_location_id] varchar(MAX) NULL DEFAULT NULL,
+[date_recorded] datetime NULL DEFAULT NULL,
 PRIMARY KEY ([organization_id], [person_id], [id])
 )
 GO
@@ -378,6 +380,7 @@ CREATE TABLE [observation] (
 [age_at_event] decimal(5,2) NULL DEFAULT NULL,
 [episodicity_concept_id] int NULL DEFAULT NULL,
 [is_primary] tinyint NULL DEFAULT NULL,
+[date_recorded] datetime NULL DEFAULT NULL,
 PRIMARY KEY ([organization_id], [person_id], [id])
 )
 GO
@@ -542,6 +545,7 @@ CREATE TABLE [practitioner] (
 [name] varchar(1024) NULL DEFAULT NULL,
 [role_code] varchar(50) NULL DEFAULT NULL,
 [role_desc] varchar(255) NULL DEFAULT NULL,
+[gmc_code] varchar(50) NULL DEFAULT NULL,
 PRIMARY KEY ([id])
 )
 GO
@@ -564,6 +568,7 @@ CREATE TABLE [procedure_request] (
 [core_concept_id] int NULL DEFAULT NULL,
 [non_core_concept_id] int NULL DEFAULT NULL,
 [age_at_event] decimal(5,2) NULL DEFAULT NULL,
+[date_recorded] datetime NULL DEFAULT NULL,
 PRIMARY KEY ([organization_id], [person_id], [id])
 )
 GO
@@ -612,6 +617,7 @@ CREATE TABLE [referral_request] (
 [core_concept_id] int NULL DEFAULT NULL,
 [non_core_concept_id] int NULL DEFAULT NULL,
 [age_at_event] decimal(5,2) NULL DEFAULT NULL,
+[date_recorded] datetime NULL DEFAULT NULL,
 PRIMARY KEY ([organization_id], [person_id], [id])
 )
 GO

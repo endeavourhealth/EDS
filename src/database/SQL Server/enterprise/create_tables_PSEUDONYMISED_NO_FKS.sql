@@ -537,6 +537,9 @@ CREATE TABLE person
   ward_code varchar(50),
   local_authority_code varchar(50),
   registered_practice_organization_id bigint,
+  title character varying(50),
+  first_names character varying(255),
+  last_names character varying(255),
   CONSTRAINT pk_person_id PRIMARY KEY (id)
 )
 GO
@@ -562,6 +565,10 @@ CREATE TABLE patient
   ward_code varchar(50),
   local_authority_code varchar(50),
   registered_practice_organization_id bigint,
+  title character varying(50),
+  first_names character varying(255),
+  last_names character varying(255),
+  current_address_id bigint,  
   CONSTRAINT pk_patient_id_organization_id PRIMARY KEY ([organization_id],[person_id],[id])
 )
 GO
@@ -1007,6 +1014,34 @@ GO
 create index ix_patient_uprn_patient_org_uprn on patient_uprn (patient_id, organization_id, pseudo_uprn)
 GO
 
+CREATE TABLE patient_address
+(
+  id                       bigint 			NOT NULL,
+  organization_id 		   bigint		    NOT NULL,
+  patient_id               bigint          	NOT NULL,
+  person_id 			   bigint,
+  address_line_1           varchar(255),
+  address_line_2           varchar(255),
+  address_line_3           varchar(255),
+  address_line_4           varchar(255),
+  city varchar(255),
+  postcode                 varchar(255),
+  use_concept_id          int	NOT NULL ,
+  start_date date,
+  end_date				   date,
+  lsoa_2001_code           varchar(9),
+  lsoa_2011_code           varchar(9),
+  msoa_2001_code           varchar(9),
+  msoa_2011_code           varchar(9),
+  ward_code                varchar(9),
+  local_authority_code     varchar(9),
+  CONSTRAINT pk_organization_id_id_patient_id_person_id PRIMARY KEY ([organization_id],[id],[patient_id],[person_id])
+)
+GO
+
+create unique index ux_patient_address_id on patient_address (id)
+GO
+
 CREATE PROCEDURE update_person_record_2(@_new_person_id bigint)
 AS
 BEGIN
@@ -1044,7 +1079,7 @@ SET NOCOUNT ON;
 
 		MERGE person e
 		USING (
-			SELECT person_id, patient_gender_id, pseudo_id, age_years, age_months, age_weeks, date_of_death, postcode_prefix, lsoa_code, msoa_code, ethnic_code, ward_code, local_authority_code, registered_practice_organization_id
+			SELECT person_id, patient_gender_id, pseudo_id, age_years, age_months, age_weeks, date_of_death, postcode_prefix, lsoa_code, msoa_code, ethnic_code, ward_code, local_authority_code, registered_practice_organization_id, title, first_names, last_names
 			FROM patient
 			WHERE id = @best_patient_id
 		) as a
@@ -1064,10 +1099,13 @@ SET NOCOUNT ON;
 				e.ethnic_code = a.ethnic_code,
 				e.ward_code = a.ward_code,
 				e.local_authority_code = a.local_authority_code,
-				e.registered_practice_organization_id = a.registered_practice_organization_id
+				e.registered_practice_organization_id = a.registered_practice_organization_id,
+				e.title = a.title,
+				e.first_names = a.first_names,
+				e.last_names = a.last_names
 		WHEN NOT MATCHED BY TARGET
-			THEN INSERT (id, patient_gender_id, pseudo_id, age_years, age_months, age_weeks, date_of_death, postcode_prefix, lsoa_code, msoa_code, ethnic_code, ward_code, local_authority_code, registered_practice_organization_id)
-			VALUES (a.person_id, a.patient_gender_id, a.pseudo_id, a.age_years, a.age_months, a.age_weeks, a.date_of_death, a.postcode_prefix, a.lsoa_code, a.msoa_code, a.ethnic_code, a.ward_code, a.local_authority_code, a.registered_practice_organization_id);
+			THEN INSERT (id, patient_gender_id, pseudo_id, age_years, age_months, age_weeks, date_of_death, postcode_prefix, lsoa_code, msoa_code, ethnic_code, ward_code, local_authority_code, registered_practice_organization_id, title, first_names, last_names)
+			VALUES (a.person_id, a.patient_gender_id, a.pseudo_id, a.age_years, a.age_months, a.age_weeks, a.date_of_death, a.postcode_prefix, a.lsoa_code, a.msoa_code, a.ethnic_code, a.ward_code, a.local_authority_code, a.registered_practice_organization_id, a.title, a.first_names, a.last_names);
 
 END
 GO
