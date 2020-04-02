@@ -412,7 +412,7 @@ CREATE TABLE practitioner
   name character varying(1024),
   role_code character varying(50),
   role_desc character varying(255),
-  gmc_code character varying(7),
+  gmc_code character varying(50),
   CONSTRAINT pk_practitioner_id PRIMARY KEY (id)
 );
 
@@ -593,7 +593,7 @@ CREATE TABLE encounter
   original_term character varying(1000),
   episode_of_care_id bigint,
   service_provider_organization_id bigint,
-  date_recorded date,
+  date_recorded datetime,
   CONSTRAINT pk_encounter_id PRIMARY KEY (organization_id,person_id,id)
 );
 
@@ -727,6 +727,7 @@ CREATE TABLE allergy_intolerance
   original_code character varying(100) binary,
   original_term character varying(1000),
   is_review boolean NOT NULL,
+  date_recorded datetime,
   CONSTRAINT pk_allergy_intolerance_id PRIMARY KEY (`organization_id`,`person_id`,`id`)
 );
 
@@ -859,6 +860,7 @@ CREATE TABLE observation
   is_review boolean NOT NULL,
   problem_end_date date,
   parent_observation_id bigint,
+  date_recorded datetime,  
   CONSTRAINT pk_observation_id PRIMARY KEY (`organization_id`,`person_id`,`id`)
 );
 
@@ -917,6 +919,7 @@ CREATE TABLE procedure_request
   procedure_request_status_id smallint,
   original_code character varying(100) binary,
   original_term character varying(1000),
+  date_recorded datetime,
   CONSTRAINT pk_procedure_request_id PRIMARY KEY (`organization_id`,`person_id`,`id`)
 );
 
@@ -953,6 +956,7 @@ CREATE TABLE referral_request
   original_code character varying(100) binary,
   original_term character varying(1000),
   is_review boolean NOT NULL,
+  date_recorded datetime,
   CONSTRAINT pk_referral_request_id PRIMARY KEY (`organization_id`,`person_id`,`id`)
 );
 

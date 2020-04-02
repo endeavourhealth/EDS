@@ -142,7 +142,7 @@ CREATE TABLE practitioner
   name character varying(1024),
   role_code character varying(50),
   role_desc character varying(255),
-  gmc_code character varying(7),
+  gmc_code character varying(50),
   CONSTRAINT pk_practitioner_id PRIMARY KEY (id),
   CONSTRAINT fk_practitioner_organisation_id FOREIGN KEY (organization_id)
       REFERENCES organization (id) MATCH SIMPLE
@@ -341,7 +341,7 @@ CREATE TABLE encounter
   admission_method varchar(40),
   end_date date,
   institution_location_id text,
-  date_recorded date,
+  date_recorded datetime,
   CONSTRAINT pk_encounter_id PRIMARY KEY (organization_id,person_id,id),
   /*known examples of Emis consultations referring to unknown appointments, so removed this
   CONSTRAINT fk_encounter_appointment_id FOREIGN KEY (appointment_id)
@@ -397,6 +397,7 @@ CREATE TABLE allergy_intolerance
   core_concept_id int,
   non_core_concept_id int,
   age_at_event decimal (5,2),
+  date_recorded datetime,
   CONSTRAINT pk_allergy_intolerance_id PRIMARY KEY (`organization_id`,`person_id`,`id`),
   CONSTRAINT fk_allergy_intolerance_encounter_id FOREIGN KEY (encounter_id)
       REFERENCES encounter (id) MATCH SIMPLE
@@ -567,6 +568,7 @@ CREATE TABLE observation
   age_at_event decimal (5,2),
   episodicity_concept_id int,
   is_primary boolean,
+  date_recorded datetime,
   CONSTRAINT pk_observation_id PRIMARY KEY (`organization_id`,`person_id`,`id`),
   CONSTRAINT fk_observation_encounter_id FOREIGN KEY (encounter_id)
       REFERENCES encounter (id) MATCH SIMPLE
@@ -705,6 +707,7 @@ CREATE TABLE procedure_request
   core_concept_id int,
   non_core_concept_id int,
   age_at_event decimal (5,2),
+  date_recorded datetime,
   CONSTRAINT pk_procedure_request_id PRIMARY KEY (`organization_id`,`person_id`,`id`),
   /*got an Emis procedure request referring to a confidential encounter, so can't enforce this
   CONSTRAINT fk_procedure_request_encounter_id FOREIGN KEY (encounter_id)
@@ -748,6 +751,7 @@ CREATE TABLE referral_request
   core_concept_id int,
   non_core_concept_id int,
   age_at_event decimal (5,2),
+  date_recorded datetime,
   CONSTRAINT pk_referral_request_id PRIMARY KEY (`organization_id`,`person_id`,`id`),
   /*got an Emis referral request referring to a confidential encounter, so can't enforce this
   CONSTRAINT fk_referral_request_encounter_id FOREIGN KEY (encounter_id)

@@ -417,7 +417,7 @@ CREATE TABLE practitioner
   name character varying(1024),
   role_code character varying(50),
   role_desc character varying(255),
-  gmc_code character varying(7),
+  gmc_code character varying(50),
   CONSTRAINT pk_practitioner_id PRIMARY KEY (id),
   CONSTRAINT fk_practitioner_organisation_id FOREIGN KEY (organization_id)
       REFERENCES organization (id) MATCH SIMPLE
@@ -638,7 +638,7 @@ CREATE TABLE encounter
   original_term character varying(1000),
   episode_of_care_id bigint,
   service_provider_organization_id bigint,
-  date_recorded date,
+  date_recorded datetime,
   CONSTRAINT pk_encounter_id PRIMARY KEY (organization_id,person_id,id),
   /*got Emis consultations referring to missing appts, so this can't be enforced
   CONSTRAINT fk_encounter_appointment_id FOREIGN KEY (appointment_id)
@@ -829,6 +829,7 @@ CREATE TABLE allergy_intolerance
   original_code character varying(100) binary,
   original_term character varying(1000),
   is_review boolean NOT NULL,
+  date_recorded datetime,
   CONSTRAINT pk_allergy_intolerance_id PRIMARY KEY (`organization_id`,`person_id`,`id`),
   CONSTRAINT fk_allergy_intolerance_encounter_id FOREIGN KEY (encounter_id)
       REFERENCES encounter (id) MATCH SIMPLE
@@ -1010,6 +1011,7 @@ CREATE TABLE observation
   is_review boolean NOT NULL,
   problem_end_date date,
   parent_observation_id bigint,
+  date_recorded datetime,  
   CONSTRAINT pk_observation_id PRIMARY KEY (`organization_id`,`person_id`,`id`),
   CONSTRAINT fk_observation_encounter_id FOREIGN KEY (encounter_id)
       REFERENCES encounter (id) MATCH SIMPLE
@@ -1078,6 +1080,7 @@ CREATE TABLE procedure_request
   procedure_request_status_id smallint,
   original_code character varying(100) binary,
   original_term character varying(1000),
+  date_recorded datetime,
   CONSTRAINT pk_procedure_request_id PRIMARY KEY (`organization_id`,`person_id`,`id`),
   /*got records referring to confidential encounters, so can't enforce this
   CONSTRAINT fk_procedure_request_encounter_id FOREIGN KEY (encounter_id)
@@ -1130,6 +1133,7 @@ CREATE TABLE referral_request
   original_code character varying(100) binary,
   original_term character varying(1000),
   is_review boolean NOT NULL,
+  date_recorded datetime,
   CONSTRAINT pk_referral_request_id PRIMARY KEY (`organization_id`,`person_id`,`id`),
   CONSTRAINT fk_referral_request_date_precision FOREIGN KEY (date_precision_id)
       REFERENCES date_precision (id) MATCH SIMPLE

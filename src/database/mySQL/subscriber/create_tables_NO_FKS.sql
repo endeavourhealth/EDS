@@ -139,7 +139,7 @@ CREATE TABLE practitioner
   name character varying(1024),
   role_code character varying(50),
   role_desc character varying(255),
-  gmc_code character varying(7),
+  gmc_code character varying(50),
   CONSTRAINT pk_practitioner_id PRIMARY KEY (id)
 );
 
@@ -317,7 +317,7 @@ CREATE TABLE encounter
   admission_method varchar(40),
   end_date date,
   institution_location_id text,
-  date_recorded date,
+  date_recorded datetime,
   CONSTRAINT pk_encounter_id PRIMARY KEY (organization_id,person_id,id)
 );
 
@@ -357,6 +357,7 @@ CREATE TABLE allergy_intolerance
   core_concept_id int,
   non_core_concept_id int,
   age_at_event decimal (5,2),
+  date_recorded datetime,
   CONSTRAINT pk_allergy_intolerance_id PRIMARY KEY (`organization_id`,`person_id`,`id`)
 );
 
@@ -497,6 +498,7 @@ CREATE TABLE observation
   age_at_event decimal (5,2),
   episodicity_concept_id int,
   is_primary boolean,
+  date_recorded datetime,
   CONSTRAINT pk_observation_id PRIMARY KEY (`organization_id`,`person_id`,`id`)
 );
 
@@ -617,6 +619,7 @@ CREATE TABLE procedure_request
   core_concept_id int,
   non_core_concept_id int,
   age_at_event decimal (5,2),
+  date_recorded datetime,
   CONSTRAINT pk_procedure_request_id PRIMARY KEY (`organization_id`,`person_id`,`id`)
 );
 
@@ -650,6 +653,7 @@ CREATE TABLE referral_request
   core_concept_id int,
   non_core_concept_id int,
   age_at_event decimal (5,2),
+  date_recorded datetime,
   CONSTRAINT pk_referral_request_id PRIMARY KEY (`organization_id`,`person_id`,`id`)
 );
 
