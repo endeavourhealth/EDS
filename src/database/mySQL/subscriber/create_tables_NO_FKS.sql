@@ -317,6 +317,7 @@ CREATE TABLE encounter
   admission_method varchar(40),
   end_date date,
   institution_location_id text,
+  date_recorded date,
   CONSTRAINT pk_encounter_id PRIMARY KEY (organization_id,person_id,id)
 );
 
