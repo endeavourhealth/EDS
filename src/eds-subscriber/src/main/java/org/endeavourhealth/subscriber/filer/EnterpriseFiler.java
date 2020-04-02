@@ -342,14 +342,6 @@ public class EnterpriseFiler {
         String value = csvRecord.get(column);
         Class fieldCls = columnClasses.get(column);
 
-        //hack to get around the UUIDs that have been used as proxy Cerner codes. Lets us file the data in the short term.
-        //TODO - remove once similar change to FHIR->enterprise transform is in place
-        if (column.equals("original_code")
-                && !Strings.isNullOrEmpty(value)
-                && value.length() > 20) {
-            value = value.substring(0, 20);
-        }
-
         if (fieldCls == String.class) {
             if (Strings.isNullOrEmpty(value)) {
                 statement.setNull(index, Types.VARCHAR);

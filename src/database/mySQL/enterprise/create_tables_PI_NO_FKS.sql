@@ -794,7 +794,7 @@ CREATE TABLE medication_order
   dose character varying(1000),
   quantity_value real,
   quantity_unit character varying(255),
-  duration_days integer,
+  duration_days integer NULL,
   estimated_cost real,
   medication_statement_id bigint,
   original_term character varying(1000),
