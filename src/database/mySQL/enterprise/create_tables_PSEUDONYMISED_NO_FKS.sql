@@ -1073,7 +1073,7 @@ CREATE UNIQUE INDEX ux_patient_contact_id on patient_contact (id);
 CREATE TABLE `patient_address_match` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `patient_address_id` bigint(20) NOT NULL,
-  `uprn` bigint(20) NOT NULL,
+  `uprn` varchar(255) NOT NULL,
   `status` tinyint(1) DEFAULT NULL,
   `classification` varchar(45) CHARACTER SET utf8 DEFAULT NULL,
   `latitude` double DEFAULT NULL,
