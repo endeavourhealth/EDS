@@ -510,14 +510,14 @@ public class MessageTransformInbound extends PipelineComponent {
 
 	private void processEmisCsvTransform(Exchange exchange, FhirResourceFiler fhirResourceFiler, String version) throws Exception {
 
-		String exchangeBody = exchange.getBody();
+//		String exchangeBody = exchange.getBody();
 
 		//if the version is this specific string, then invoke the custom transformer, otherwise the regular one
 		if (version != null && version.equalsIgnoreCase("CUSTOM")) {
-			EmisCustomCsvToFhirTransformer.transform(exchangeBody, fhirResourceFiler, version);
+			EmisCustomCsvToFhirTransformer.transform(exchange, fhirResourceFiler, version);
 
 		} else {
-			EmisCsvToFhirTransformer.transform(exchangeBody, fhirResourceFiler, version);
+			EmisCsvToFhirTransformer.transform(exchange, fhirResourceFiler, version);
 		}
 	}
 
