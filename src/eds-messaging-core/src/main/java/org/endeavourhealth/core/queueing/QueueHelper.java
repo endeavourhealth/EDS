@@ -46,10 +46,10 @@ public class QueueHelper {
     private static ExpiringCache<String, PostMessageToExchangeConfig> configCache = new ExpiringCache<>(1000L * 60L * 5L);
 
     public static void postToExchange(List<UUID> exchangeIds, String exchangeName, UUID specificProtocolId, boolean recalculateProtocols) throws Exception {
-        postToExchange(exchangeIds, exchangeName, specificProtocolId, recalculateProtocols, null);
+        postToExchange(exchangeIds, exchangeName, specificProtocolId, recalculateProtocols, null, null);
     }
 
-    public static void postToExchange(List<UUID> exchangeIds, String exchangeName, UUID specificProtocolId, boolean recalculateProtocols, Set<String> fileTypesToFilterOn) throws Exception {
+    public static void postToExchange(List<UUID> exchangeIds, String exchangeName, UUID specificProtocolId, boolean recalculateProtocols, Set<String> fileTypesToFilterOn, List<String> patientGuids) throws Exception {
 
         PostMessageToExchangeConfig exchangeConfig = findExchangeConfig(exchangeName);
 
@@ -142,6 +142,13 @@ public class QueueHelper {
                 if (exchange.getHeader(multicastHeader) == null) {
                     populateMulticastHeader(exchange, multicastHeader);
                 }
+            }
+
+            //Add to the header and re-process the missing codes from the SFTP reader
+            if (patientGuids != null && patientGuids.size() > 0) {
+                LOG.info("EmisPatientGuids to reprocess :: " + patientGuids.toString());
+                String patientGuid = patientGuids.toString().replaceAll("\\[|\\]", "");
+                exchange.setHeader(HeaderKeys.EmisPatientGuids, patientGuid);
             }
 
             //re-post back into Rabbit using the same pipeline component as used by the messaging API
