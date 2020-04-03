@@ -144,6 +144,12 @@ GO
 IF OBJECT_ID('dbo.link_distributor', 'U') IS NOT NULL DROP TABLE dbo.link_distributor
 GO
 
+IF OBJECT_ID('dbo.patient_address', 'U') IS NOT NULL DROP TABLE dbo.patient_address
+GO
+
+IF OBJECT_ID('dbo.patient_contact', 'U') IS NOT NULL DROP TABLE dbo.patient_contact
+GO
+
 
 -- create TABLES
 CREATE TABLE [ethnicity_lookup] 
@@ -1041,6 +1047,25 @@ GO
 
 create unique index ux_patient_address_id on patient_address (id)
 GO
+
+
+CREATE TABLE patient_contact
+(
+  id bigint NOT NULL,
+  organization_id bigint NOT NULL,
+  patient_id bigint NOT NULL,
+  person_id bigint,
+  use_concept_id int ,
+  type_concept_id int ,
+  start_date date,
+  end_date date,
+  value varchar(255) ,
+  CONSTRAINT pk_organization_id_id_patient_id_person_id PRIMARY KEY ([organization_id],[id],[patient_id],[person_id])
+);
+
+create unique index ux_patient_contact_id on patient_contact (id);
+
+
 
 CREATE PROCEDURE update_person_record_2(@_new_person_id bigint)
 AS

@@ -51,7 +51,8 @@ DROP TABLE IF EXISTS local_authority_lookup;
 DROP TABLE IF EXISTS ethnicity_lookup;
 DROP TABLE IF EXISTS link_distributor;
 DROP TABLE IF EXISTS patient_address;
-
+DROP TABLE IF EXISTS patient_contact;
+DROP TABLE IF EXISTS patient_address_match;
 
 CREATE TABLE ethnicity_lookup
 (
@@ -1250,7 +1251,57 @@ create table patient_address (
 
 CREATE UNIQUE INDEX ux_patient_address_id on patient_address (id);
 
+-- Table: patient_contact
 
+CREATE TABLE patient_contact
+(
+	id bigint NOT NULL,
+	organization_id bigint NOT NULL,
+	patient_id bigint NOT NULL,
+	person_id bigint,
+	use_concept_id int COMMENT 'use of contact (e.g. mobile, home, work)',
+	type_concept_id int COMMENT 'type of contact (e.g. phone, email)',
+	start_date date,
+	end_date date,
+	value varchar(255) COMMENT 'the actual phone number or email address',
+	CONSTRAINT pk_organization_id_id_patient_id_person_id PRIMARY KEY (`organization_id`,`id`,`patient_id`,`person_id`),
+	CONSTRAINT fk_patient_contact_patient_id_organisation_id FOREIGN KEY (patient_id, organization_id)
+	REFERENCES patient (id, organization_id)
+) COMMENT 'stores contact details (e.g. phone) for patients';
+
+CREATE UNIQUE INDEX ux_patient_contact_id on patient_contact (id);
+
+CREATE TABLE `patient_address_match` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `patient_address_id` bigint(20) NOT NULL,
+  `uprn` bigint(20) NOT NULL,
+  `status` tinyint(1) DEFAULT NULL,
+  `classification` varchar(45) CHARACTER SET utf8 DEFAULT NULL,
+  `latitude` double DEFAULT NULL,
+  `longitude` double DEFAULT NULL,
+  `xcoordinate` double DEFAULT NULL,
+  `ycoordinate` double DEFAULT NULL,
+  `qualifier` varchar(50) CHARACTER SET utf8 DEFAULT NULL,
+  `algorithm` varchar(50) CHARACTER SET utf8 DEFAULT NULL,
+  `match_date` datetime DEFAULT NULL,
+  `abp_address_number` varchar(255) CHARACTER SET utf8 DEFAULT NULL,
+  `abp_address_street` varchar(255) CHARACTER SET utf8 DEFAULT NULL,
+  `abp_address_locality` varchar(255) CHARACTER SET utf8 DEFAULT NULL,
+  `abp_address_town` varchar(255) CHARACTER SET utf8 DEFAULT NULL,
+  `abp_address_postcode` varchar(10) CHARACTER SET utf8 DEFAULT NULL,
+  `abp_address_organization` varchar(255) CHARACTER SET utf8 DEFAULT NULL,
+  `match_pattern_postcode` varchar(20) CHARACTER SET utf8 DEFAULT NULL,
+  `match_pattern_street` varchar(20) CHARACTER SET utf8 DEFAULT NULL,
+  `match_pattern_number` varchar(20) CHARACTER SET utf8 DEFAULT NULL,
+  `match_pattern_building` varchar(20) CHARACTER SET utf8 DEFAULT NULL,
+  `match_pattern_flat` varchar(20) CHARACTER SET utf8 DEFAULT NULL,
+  `algorithm_version` varchar(20) CHARACTER SET utf8 DEFAULT NULL,
+  `epoc` varchar(20) COLLATE utf8_bin DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `id_UNIQUE` (`id`),
+  KEY `patient_address_uprn_index` (`uprn`),
+  KEY `patient_address_patient_address_id` (`patient_address_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8 COLLATE=utf8_bin COMMENT='stores uprn details for addresses';
 
 DELIMITER //
 CREATE PROCEDURE update_person_record_2(

@@ -225,13 +225,17 @@ public class EnterpriseFiler {
         CSVParser csvParser = new CSVParser(isr, CSV_FORMAT.withHeader());
 
         //find out what columns we've got
+        ArrayList<String> removeCols = new ArrayList<>();
         Map<String, Integer> csvHeaderMap = csvParser.getHeaderMap();
         for (String column : csvHeaderMap.keySet()) {
             if (!column.equals(COL_SAVE_MODE)) {
                 if (!actualColumns.contains(column)) {
-                    csvHeaderMap.remove(column);
+                    removeCols.add(column);
                 }
             }
+        }
+        for (String column : removeCols) {
+            csvHeaderMap.remove(column);
         }
 
         List<String> columns = new ArrayList<>();
