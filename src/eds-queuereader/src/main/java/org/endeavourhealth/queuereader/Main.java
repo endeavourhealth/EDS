@@ -9472,7 +9472,7 @@ public class Main {
 				UUID exchangeId = exchangeIds.get(i);
 				List<UUID> tmp = new ArrayList<>();
 				tmp.add(exchangeId);
-				QueueHelper.postToExchange(tmp, exchangeName, null, true);
+				QueueHelper.postToExchange(tmp, exchangeName, null, true, null);
 
 				printWriter.println(exchangeId.toString());
 				printWriter.flush();
@@ -9520,7 +9520,7 @@ public class Main {
 			}
 
 			LOG.info("Posting " + exchangeIds.size() + " to Protocol queue");
-			QueueHelper.postToExchange(exchangeIds, "EdsProtocol", null, false);
+			QueueHelper.postToExchange(exchangeIds, "EdsProtocol", null, false, null);
 
 			LOG.info("Finished Posting to protocol from " + srcFile);
 		} catch (Throwable t) {

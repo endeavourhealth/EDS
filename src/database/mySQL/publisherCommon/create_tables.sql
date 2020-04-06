@@ -126,3 +126,8 @@ CREATE TABLE emis_missing_code_error (
 	KEY_BLOCK_SIZE=8;
 
 CREATE INDEX ix on emis_missing_code_error (code_id);
+
+CREATE INDEX ix2 ON emis_missing_code_error (service_id, dt_fixed, code_type);
+
+CREATE INDEX ix3 ON emis_missing_code_error (service_id, dt_fixed, code_id);
+

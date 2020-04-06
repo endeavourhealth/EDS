@@ -45,11 +45,14 @@ public class QueueHelper {
 
     private static ExpiringCache<String, PostMessageToExchangeConfig> configCache = new ExpiringCache<>(1000L * 60L * 5L);
 
-    public static void postToExchange(List<UUID> exchangeIds, String exchangeName, UUID specificProtocolId, boolean recalculateProtocols) throws Exception {
-        postToExchange(exchangeIds, exchangeName, specificProtocolId, recalculateProtocols, null, null);
+    public static void postToExchange(List<UUID> exchangeIds, String exchangeName, UUID specificProtocolId,
+                                      boolean recalculateProtocols, String reason) throws Exception {
+        postToExchange(exchangeIds, exchangeName, specificProtocolId, recalculateProtocols, reason, null, null);
     }
 
-    public static void postToExchange(List<UUID> exchangeIds, String exchangeName, UUID specificProtocolId, boolean recalculateProtocols, Set<String> fileTypesToFilterOn, List<String> patientGuids) throws Exception {
+    public static void postToExchange(List<UUID> exchangeIds, String exchangeName, UUID specificProtocolId,
+                                      boolean recalculateProtocols, String reason, Set<String> fileTypesToFilterOn,
+                                      Map<String, String> additionalHeaders) throws Exception {
 
         PostMessageToExchangeConfig exchangeConfig = findExchangeConfig(exchangeName);
 
@@ -73,6 +76,9 @@ public class QueueHelper {
             Exchange exchange = AuditWriter.readExchange(exchangeId);
 
             String exchangeEventStr = "Manually pushed into " + exchangeName + " exchange";
+            if (!Strings.isNullOrEmpty(reason)) {
+                exchangeEventStr += " (" + reason + ")";
+            }
 
             //short-term hack to skip Emis Left & Dead extracts and allow us to catch up from the missing code issue
             //this will need removing when we're ready to start processing these exchanges
@@ -131,6 +137,15 @@ public class QueueHelper {
                 exchange.setHeader(HeaderKeys.ProtocolIds, specificProtocolJson);
             }
 
+            //if we have any additional headers, add them
+            if (additionalHeaders != null) {
+                for (String headerKey: additionalHeaders.keySet()) {
+                    String value = additionalHeaders.get(headerKey);
+                    exchange.setHeader(headerKey, value);
+                }
+            }
+
+
             //apply any filtering on file type
             if (fileTypesToFilterOn != null) {
                 exchangeEventStr += filterOnFileTypes(fileTypesToFilterOn, exchange);
@@ -142,13 +157,6 @@ public class QueueHelper {
                 if (exchange.getHeader(multicastHeader) == null) {
                     populateMulticastHeader(exchange, multicastHeader);
                 }
-            }
-
-            //Add to the header and re-process the missing codes from the SFTP reader
-            if (patientGuids != null && patientGuids.size() > 0) {
-                LOG.info("EmisPatientGuids to reprocess :: " + patientGuids.toString());
-                String patientGuid = patientGuids.toString().replaceAll("\\[|\\]", "");
-                exchange.setHeader(HeaderKeys.EmisPatientGuids, patientGuid);
             }
 
             //re-post back into Rabbit using the same pipeline component as used by the messaging API
@@ -486,7 +494,7 @@ public class QueueHelper {
                 LOG.info("Posting to protocol queue");
                 List<UUID> exchangeIds = new ArrayList<>();
                 exchangeIds.add(exchange.getId());
-                QueueHelper.postToExchange(exchangeIds, EXCHANGE_PROTOCOL, specificProtocolId, false);
+                QueueHelper.postToExchange(exchangeIds, EXCHANGE_PROTOCOL, specificProtocolId, false, null);
                 LOG.info("Exchange posted to protocol queue");
             } else {
                 LOG.info("Not posting to Rabbit as already done that for another system");
@@ -587,7 +595,7 @@ public class QueueHelper {
                 LOG.info("Posting to inbound queue");
                 List<UUID> exchangeIds = new ArrayList<>();
                 exchangeIds.add(exchange.getId());
-                postToExchange(exchangeIds, EXCHANGE_INBOUND, null, true);
+                postToExchange(exchangeIds, EXCHANGE_INBOUND, null, true, null);
                 LOG.info("Exchange posted to inbound queue");
 
             } else {

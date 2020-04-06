@@ -181,11 +181,16 @@
                                 <div class="row" *ngIf="postExchange=='edsInbound'">
                                     <div class="form-group col-md-12">
 
+                                        Reason:
+                                        <input type="text" id="postReason" [(ngModel)]="postReason" name="postReason">
+
                                         Delete error state:
                                         <input type="checkbox" id="deleteErrorStateCheckbox" [(ngModel)]="postDeleteErrorState" name="postDeleteErrorState">
 
                                         Filter file types:
                                         <input type="checkbox" id="filterFileTypesCheckbox" [(ngModel)]="postFilterFileTypes" name="filterFileTypes">
+
+
 
                                     </div>
                                 </div>

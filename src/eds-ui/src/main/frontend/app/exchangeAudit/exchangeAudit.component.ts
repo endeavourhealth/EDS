@@ -43,6 +43,7 @@ export class ExchangeAuditComponent {
 	postFilterFileTypesSelected: string;
 	postExchange: string;
 	postDeleteErrorState: boolean;
+	postReason: string;
 
 	//for colouring exchanges
 	exchangeSizeColours: {}; //cached colours dynamically calculated for each exchange
@@ -285,7 +286,9 @@ export class ExchangeAuditComponent {
 			}
 		}
 
-		this.busyPostingToExchange = vm.exchangeAuditService.postToExchange(exchangeId, serviceId, vm.systemId, exchangeName, mode, protocolId, fileTypesToFilterOn, deleteErrorState).subscribe(
+		var reason = vm.postReason;
+
+		this.busyPostingToExchange = vm.exchangeAuditService.postToExchange(exchangeId, serviceId, vm.systemId, exchangeName, mode, protocolId, fileTypesToFilterOn, deleteErrorState, reason).subscribe(
 			(result) => {
 
 				//it may return nothing (which is good) or a string (which will be an error messag)

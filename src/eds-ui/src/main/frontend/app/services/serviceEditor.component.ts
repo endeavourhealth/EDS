@@ -215,24 +215,26 @@ export class ServiceEditComponent {
 		vm.systemService.getSystems()
 			.subscribe(
 				(result) => {
-				vm.systems = result;
-				vm.technicalInterfaces = [];
-				/*console.log(vm.systems[0].technicalInterface.length);
-				console.log(vm.systems[0].technicalInterface[0].name);*/
+					//vm.systems = result;
+					vm.systems = linq(result).OrderBy(s => s.name.toLowerCase()).ToArray();
 
-				for (var i = 0; i < vm.systems.length; ++i) {
-					for (var j = 0; j < vm.systems[i].technicalInterface.length; ++j) {
-						var technicalInterface = {
-							uuid: vm.systems[i].technicalInterface[j].uuid,
-							name: vm.systems[i].technicalInterface[j].name,
-							messageType: vm.systems[i].technicalInterface[j].messageType,
-							messageFormat: vm.systems[i].technicalInterface[j].messageFormat,
-							messageFormatVersion: vm.systems[i].technicalInterface[j].messageFormatVersion
-						} as TechnicalInterface;
-						vm.technicalInterfaces.push(technicalInterface);
+					vm.technicalInterfaces = [];
+					/*console.log(vm.systems[0].technicalInterface.length);
+					console.log(vm.systems[0].technicalInterface[0].name);*/
+
+					for (var i = 0; i < vm.systems.length; ++i) {
+						for (var j = 0; j < vm.systems[i].technicalInterface.length; ++j) {
+							var technicalInterface = {
+								uuid: vm.systems[i].technicalInterface[j].uuid,
+								name: vm.systems[i].technicalInterface[j].name,
+								messageType: vm.systems[i].technicalInterface[j].messageType,
+								messageFormat: vm.systems[i].technicalInterface[j].messageFormat,
+								messageFormatVersion: vm.systems[i].technicalInterface[j].messageFormatVersion
+							} as TechnicalInterface;
+							vm.technicalInterfaces.push(technicalInterface);
+						}
 					}
-				}
-			},
+				},
 				(error) => {
 				vm.log.error('Failed to load systems', error, 'Load systems');
 				MessageBoxDialog.open(vm.$modal, 'Load systems', 'Failed to load Systems.  Ensure Systems are configured in the protocol manager', 'OK', null);

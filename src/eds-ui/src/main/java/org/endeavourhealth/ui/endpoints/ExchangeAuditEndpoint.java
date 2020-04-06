@@ -532,8 +532,11 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
             throw new IllegalArgumentException("Invalid exchange name [" + exchangeName + "]");
         }
 
+        String reason = request.getReason();
+        Map<String, String> additionalHeaders = request.getAdditionalHeaders();
+
         //post the exchanges to RabbitMQ
-        QueueHelper.postToExchange(exchangeIds, exchangeName, specificProtocolId, true, fileTypesSet, null);
+        QueueHelper.postToExchange(exchangeIds, exchangeName, specificProtocolId, true, reason, fileTypesSet, additionalHeaders);
 
         //and update any past transform audits to say we've resubmitted them to rabbit, if it's the inbound queue
         /*if (exchangeName.equals(INBOUND_EXCHANGE)) {
@@ -802,59 +805,6 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    @Timed(absolute = true, name="ExchangeAuditEndpoint.RerunEmisMissingCodeExchanges")
-    @Path("/rerunEmisMissingCodeExchanges")
-    @RequiresAdmin
-    public Response rerunEmisMissingCodeExchanges(@Context SecurityContext sc, Map<String, List<String>> map) throws Exception {
-
-        JsonTransformRerunRequest request = new JsonTransformRerunRequest();
-        List<String> exchangeIds = new ArrayList<String>();
-        List<String> patientGuids = new ArrayList<String>();
-        List<String> systemIds = new ArrayList<String>();
-        List<String> serviceIds = new ArrayList<String>();
-        for (String key : map.keySet()) {
-            if (key.equalsIgnoreCase("patientGuids")) {
-                patientGuids = map.get(key);
-            }
-            if (key.equalsIgnoreCase("exchangeIds")) {
-                exchangeIds = map.get(key);
-            }
-            if (key.equalsIgnoreCase("systemId")) {
-                systemIds = map.get(key);
-            }
-            if (key.equalsIgnoreCase("serviceId")) {
-                serviceIds = map.get(key);
-            }
-        }
-        for(String systemId:systemIds){
-            request.setSystemId(UUID.fromString(systemId));
-        }
-        for(String serviceId:serviceIds){
-            request.setServiceId(UUID.fromString(serviceId));
-        }
-        super.setLogbackMarkers(sc);
-        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Save, "rerun EmisMissingCodeExchanges", "Request", request);
-        LOG.trace("rerun EmisMissingCodeExchanges for " + request);
-        rerunEmisMissingPatientGuids(exchangeIds, patientGuids, false);
-        clearLogbackMarkers();
-
-        return Response
-                .ok()
-                .build();
-    }
-    private void rerunEmisMissingPatientGuids(List<String> exchangeIds,List<String> patientGuids, boolean firstOnly) throws Exception {
-
-        List<UUID> exchangeIdsToRePost = new ArrayList<>();
-        for (String exchange : exchangeIds) {
-            exchangeIdsToRePost.add(UUID.fromString(exchange));
-        }
-        //post to rabbit
-        QueueHelper.postToExchange(exchangeIdsToRePost, QueueHelper.EXCHANGE_INBOUND, null, true, null, patientGuids);
-    }
-
-    @POST
-    @Produces(MediaType.APPLICATION_JSON)
-    @Consumes(MediaType.APPLICATION_JSON)
     @Timed(absolute = true, name="ExchangeAuditEndpoint.RerunAllExchangeInError")
     @Path("/rerunAllExchangesInError")
     @RequiresAdmin
@@ -908,7 +858,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
         }
 
         //post to rabbit
-        QueueHelper.postToExchange(exchangeIdsToRePost, QueueHelper.EXCHANGE_INBOUND, null, true);
+        QueueHelper.postToExchange(exchangeIdsToRePost, QueueHelper.EXCHANGE_INBOUND, null, true, null);
 
     }
 

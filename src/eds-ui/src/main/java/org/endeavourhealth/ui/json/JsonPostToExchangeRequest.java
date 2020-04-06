@@ -2,6 +2,7 @@ package org.endeavourhealth.ui.json;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 
+import java.util.Map;
 import java.util.UUID;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -15,6 +16,8 @@ public class JsonPostToExchangeRequest {
     private UUID specificProtocolId;
     private String fileTypesToFilterOn;
     private Boolean deleteTransformErrorState;
+    private String reason; //why we're posting
+    private Map<String, String> additionalHeaders; //anything extra to be added to the exchange
 
     public JsonPostToExchangeRequest() {}
 
@@ -80,5 +83,21 @@ public class JsonPostToExchangeRequest {
 
     public void setDeleteTransformErrorState(Boolean deleteTransformErrorState) {
         this.deleteTransformErrorState = deleteTransformErrorState;
+    }
+
+    public String getReason() {
+        return reason;
+    }
+
+    public void setReason(String reason) {
+        this.reason = reason;
+    }
+
+    public Map<String, String> getAdditionalHeaders() {
+        return additionalHeaders;
+    }
+
+    public void setAdditionalHeaders(Map<String, String> additionalHeaders) {
+        this.additionalHeaders = additionalHeaders;
     }
 }
