@@ -87,6 +87,14 @@ public class Main {
 		ConfigManager.initialize("queuereader", configId);
 
 		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("TestBulkLoad")) {
+			String s3Path = args[1];
+			String tableName = args[2];
+			SpecialRoutines.testBulkLoad(s3Path, tableName);
+			System.exit(0);
+		}
+
+		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("TestInformationModel")) {
 			SpecialRoutines.testInformationModel();
 			System.exit(0);

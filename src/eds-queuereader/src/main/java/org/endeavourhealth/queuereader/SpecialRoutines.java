@@ -38,13 +38,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.io.InputStream;
 import java.net.URI;
 import java.net.URL;
+import java.nio.file.Files;
 import java.security.CodeSource;
 import java.security.ProtectionDomain;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.Statement;
 import java.util.*;
 import java.util.regex.Pattern;
 
@@ -964,6 +967,65 @@ public abstract class SpecialRoutines {
             }
 
             LOG.debug("Finished Comparing DSM to DDS-UI for " + filterOdsCode);
+        } catch (Throwable t) {
+            LOG.error("", t);
+        }
+    }
+
+    public static void testBulkLoad(String s3Path, String tableName) {
+        LOG.debug("Testing Bulk Load from " + s3Path + " to " + tableName);
+        try {
+
+            String homeDir = System.getProperty("user.home");
+            LOG.debug("Home = " + homeDir);
+            File tmpDir = new File(homeDir, "QueueReaderTmp");
+            LOG.debug("Tmp = " + tmpDir);
+            if (!tmpDir.exists()) {
+                boolean created = tmpDir.mkdirs();
+                LOG.debug("Created Tmp = " + created);
+            }
+            String fileName = "" + UUID.randomUUID().toString() + "_" + FilenameUtils.getName(s3Path);
+            File dst = new File(tmpDir, fileName);
+            LOG.debug("Copying to " + dst);
+
+            //copy from S3 to tmp
+            LOG.debug("Starting copy");
+            InputStream is = FileHelper.readFileFromSharedStorage(s3Path);
+            Files.copy(is, dst.toPath());
+            is.close();
+            LOG.debug("Copy complete");
+
+            LOG.debug("Dst exists = " + dst.exists());
+            LOG.debug("Dst len = " + dst.length());
+
+            //bulk load
+            Connection connection = ConnectionManager.getEdsConnection();
+            connection.setAutoCommit(true);
+
+            String path = dst.getAbsolutePath();
+            path = path.replace("\\", "\\\\");
+
+            String sql = "LOAD DATA LOCAL INFILE '" + path + "'"
+                    + " INTO TABLE " + tableName
+                    + " FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '\\\"'"
+                    + " LINES TERMINATED BY '\\r\\n'"
+                    + " IGNORE 1 LINES";
+            LOG.debug("Load SQL = " + sql);
+
+            LOG.debug("Starting bulk load");
+            Statement statement = connection.createStatement();
+            statement.executeUpdate(sql);
+            //connection.commit();
+            LOG.debug("Finished bulk load");
+
+            statement.close();
+
+            connection.setAutoCommit(false);
+            connection.close();
+
+            dst.delete();
+
+            LOG.debug("Finished Testing Bulk Load from " + s3Path + " to " + tableName);
         } catch (Throwable t) {
             LOG.error("", t);
         }
