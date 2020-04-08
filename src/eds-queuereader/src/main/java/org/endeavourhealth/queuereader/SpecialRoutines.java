@@ -1,9 +1,12 @@
 package org.endeavourhealth.queuereader;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.base.Strings;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
+import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.common.fhir.IdentifierHelper;
+import org.endeavourhealth.common.security.keycloak.client.KeycloakClient;
 import org.endeavourhealth.common.utility.FileHelper;
 import org.endeavourhealth.common.utility.FileInfo;
 import org.endeavourhealth.common.utility.JsonSerializer;
@@ -37,6 +40,11 @@ import org.hl7.fhir.instance.model.ResourceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.swing.*;
+import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.client.Invocation;
+import javax.ws.rs.client.WebTarget;
+import javax.ws.rs.core.Response;
 import java.io.File;
 import java.io.InputStream;
 import java.net.URI;
@@ -1029,5 +1037,49 @@ public abstract class SpecialRoutines {
         } catch (Throwable t) {
             LOG.error("", t);
         }
+    }
+
+    public static void testCallToDdsUi() {
+
+        try {
+            //get the Keycloak details from the EMIS config
+            JsonNode json = ConfigManager.getConfigurationAsJson("emis_config", "queuereader");
+            json = json.get("missing_code_fix");
+
+            String ddsUrl = json.get("dds-ui-url").asText();
+            String keyCloakUrl = json.get("keycloak-url").asText();
+            String keyCloakRealm = json.get("keycloak-realm").asText();
+            String keyCloakUser = json.get("keycloak-username").asText();
+            String keyCloakPass = json.get("keycloak-password").asText();
+            String keyCloakClientId = json.get("keycloak-client-id").asText();
+
+            KeycloakClient kcClient = new KeycloakClient(keyCloakUrl, keyCloakRealm, keyCloakUser, keyCloakPass, keyCloakClientId);
+
+            WebTarget testTarget = ClientBuilder.newClient().target(ddsUrl).path("api/service/ccgCodes");
+
+            String token = kcClient.getToken().getToken();
+            token = JOptionPane.showInputDialog("TOKEN", token);
+            LOG.debug("Token = token");
+
+            Invocation.Builder builder = testTarget.request();
+            builder = builder.header("Authorization", "Bearer " + token);
+            Response response = builder.get();
+
+            /*Response response = testTarget.
+                    .request()
+                    .header("Authorization", "Bearer " + kcClient.getToken().getToken())
+                    .get();*/
+
+            //request.Headers.Add("Authorization", this.token);
+
+            int status = response.getStatus();
+            LOG.debug("Status = " + status);
+            String responseStr = response.readEntity(String.class);
+            LOG.debug("responseStr = " + responseStr);
+
+        } catch (Throwable t) {
+            LOG.error("", t);
+        }
+
     }
 }

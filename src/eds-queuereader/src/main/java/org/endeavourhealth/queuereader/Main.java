@@ -86,6 +86,12 @@ public class Main {
 		ConfigManager.initialize("queuereader", configId);
 
 		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("TestCallToDDSUI")) {
+			SpecialRoutines.testCallToDdsUi();
+			System.exit(0);
+		}
+
+		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("TestBulkLoad")) {
 			String s3Path = args[1];
 			String tableName = args[2];
