@@ -3,6 +3,7 @@ package org.endeavourhealth.subscriber.filer;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.base.Strings;
 import com.google.common.io.Files;
+import com.zaxxer.hikari.pool.HikariProxyConnection;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
@@ -205,19 +206,25 @@ public class SubscriberFiler {
         return baos.toByteArray();
     }
 
-    private static ArrayList<String> getTableColumns(Connection connection, String tableName) throws Exception{
+    private static ArrayList<String> getTableColumns(Connection connection, String tableName) throws Exception {
+
+        HikariProxyConnection con = (HikariProxyConnection) connection;
+
         ArrayList<String> columns = new ArrayList<>();
+        String schema = con.getCatalog();
         String sql = null;
         if (ConnectionManager.isSqlServer(connection) || ConnectionManager.isPostgreSQL(connection)) {
             sql = "select column_name as field from information_schema.columns where table_name = '" + tableName + "';";
         } else {
-            sql = "describe " + tableName + ";";
+            sql = "describe " +  schema + "." +  tableName + ";";
         }
         PreparedStatement ps = connection.prepareStatement(sql);
         ps.executeQuery();
         ResultSet resultSet = ps.getResultSet();
+        String value = "";
         while (resultSet.next()) {
-            columns.add(resultSet.getString("field"));
+            value = resultSet.getString("field");
+            columns.add(value);
         }
         resultSet.close();
         ps.close();
@@ -248,7 +255,10 @@ public class SubscriberFiler {
                 }
             }
         }
-        columns.removeAll(columnsRemove);
+        for (String column : columnsRemove) {
+            LOG.debug("Removing column:" + column + " from the header map for table:" + tableName);
+            columns.remove(column);
+        }
 
         Map<String, Class> columnClasses = createHeaderColumnMap(entryFileName, columnClassJson, columns);
 
