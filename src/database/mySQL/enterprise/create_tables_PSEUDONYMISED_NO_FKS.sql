@@ -53,6 +53,7 @@ DROP TABLE IF EXISTS link_distributor;
 DROP TABLE IF EXISTS patient_address;
 DROP TABLE IF EXISTS patient_contact;
 DROP TABLE IF EXISTS patient_address_match;
+DROP TABLE IF EXISTS registration_status_history;
 
 
 CREATE TABLE ethnicity_lookup
@@ -455,6 +456,9 @@ CREATE TABLE person
 (
   id bigint NOT NULL,
   patient_gender_id smallint NOT NULL,
+        nhs_number character varying(255),
+        date_of_birth date,
+        postcode character varying(20),
   pseudo_id character varying(255),
   age_years integer,
   age_months integer,
@@ -489,6 +493,8 @@ CREATE TABLE patient
   organization_id bigint NOT NULL,
   person_id bigint NOT NULL,
   patient_gender_id smallint NOT NULL,
+            nhs_number character varying(255),
+            date_of_birth date,
   pseudo_id character varying(255),
   age_years integer,
   age_months integer,
@@ -970,6 +976,8 @@ CREATE TABLE referral_request
   original_code character varying(100) binary,
   original_term character varying(1000),
   is_review boolean NOT NULL,
+  referral_to_specialty varchar(50),
+  ubrn varchar(50),
   date_recorded datetime,
   CONSTRAINT pk_referral_request_id PRIMARY KEY (`organization_id`,`person_id`,`id`)
 );
@@ -1101,6 +1109,19 @@ CREATE TABLE `patient_address_match` (
   KEY `patient_address_uprn_index` (`uprn`),
   KEY `patient_address_patient_address_id` (`patient_address_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8 COLLATE=utf8_bin COMMENT='stores uprn details for addresses';
+
+CREATE TABLE `registration_status_history` (
+    `id` bigint(20) NOT NULL,
+    `organization_id` bigint(20) NOT NULL,
+    `patient_id` bigint(20) NOT NULL,
+    `person_id` bigint(20) NOT NULL,
+    `episode_of_care_id` bigint(20) DEFAULT NULL,
+    `registration_status_id` int(11) DEFAULT NULL,
+    `start_date` datetime DEFAULT NULL,
+    `end_date` datetime DEFAULT NULL,
+    PRIMARY KEY (`organization_id`,`id`,`patient_id`,`person_id`),
+    UNIQUE KEY `ux_registration_status_history_id` (`id`)
+) COMMENT='stores registration status history for GP registrations';
 
 DELIMITER //
 CREATE PROCEDURE update_person_record_2(

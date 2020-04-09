@@ -49,9 +49,11 @@ DROP TABLE IF EXISTS msoa_lookup;
 DROP TABLE IF EXISTS ward_lookup;
 DROP TABLE IF EXISTS local_authority_lookup;
 DROP TABLE IF EXISTS ethnicity_lookup;
+DROP TABLE IF EXISTS link_distributor;
 DROP TABLE IF EXISTS patient_address;
 DROP TABLE IF EXISTS patient_contact;
 DROP TABLE IF EXISTS patient_address_match;
+DROP TABLE IF EXISTS registration_status_history;
 
 CREATE TABLE ethnicity_lookup
 (
@@ -456,6 +458,11 @@ CREATE TABLE person
   date_of_birth date,
   date_of_death date,
   postcode character varying(20),
+        pseudo_id character varying(255),
+        age_years integer,
+        age_months integer,
+        age_weeks integer,
+        postcode_prefix character varying(20),
   lsoa_code character varying(50),
   msoa_code character varying(50),
   ethnic_code character(1),
@@ -486,7 +493,12 @@ CREATE TABLE patient
   patient_gender_id smallint NOT NULL,
   nhs_number character varying(255),
   date_of_birth date,
+            pseudo_id character varying(255),
+            age_years integer,
+            age_months integer,
+            age_weeks integer,
   date_of_death date,
+            postcode_prefix character varying(20),
   postcode character varying(20),
   lsoa_code character varying(50),
   msoa_code character varying(50),
@@ -965,6 +977,8 @@ CREATE TABLE referral_request
   original_code character varying(100) binary,
   original_term character varying(1000),
   is_review boolean NOT NULL,
+  referral_to_specialty varchar(50),
+  ubrn varchar(50),
   date_recorded datetime,
   CONSTRAINT pk_referral_request_id PRIMARY KEY (`organization_id`,`person_id`,`id`)
 );
@@ -980,6 +994,20 @@ CREATE INDEX referral_request_patient_id
 CREATE INDEX referral_request_snomed_concept_id
   ON referral_request
   (snomed_concept_id);
+
+-- Table: link_distributor
+
+CREATE TABLE link_distributor
+(
+    source_skid character varying(255) NOT NULL,
+    target_salt_key_name varchar(50) NOT NULL,
+    target_skid character varying(255) NULL,
+    CONSTRAINT pk_link_distributor PRIMARY KEY (`source_skid`, `target_salt_key_name`)
+);
+
+CREATE INDEX link_distributor_target_skid
+    ON link_distributor
+        (target_skid);
 
 create table patient_uprn (
 	patient_id bigint,
@@ -1076,6 +1104,19 @@ CREATE TABLE `patient_address_match` (
   KEY `patient_address_uprn_index` (`uprn`),
   KEY `patient_address_patient_address_id` (`patient_address_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8 COLLATE=utf8_bin COMMENT='stores uprn details for addresses';
+
+CREATE TABLE `registration_status_history` (
+    `id` bigint(20) NOT NULL,
+    `organization_id` bigint(20) NOT NULL,
+    `patient_id` bigint(20) NOT NULL,
+    `person_id` bigint(20) NOT NULL,
+    `episode_of_care_id` bigint(20) DEFAULT NULL,
+    `registration_status_id` int(11) DEFAULT NULL,
+    `start_date` datetime DEFAULT NULL,
+    `end_date` datetime DEFAULT NULL,
+    PRIMARY KEY (`organization_id`,`id`,`patient_id`,`person_id`),
+    UNIQUE KEY `ux_registration_status_history_id` (`id`)
+) COMMENT='stores registration status history for GP registrations';
 
 DELIMITER //
 CREATE PROCEDURE update_person_record_2(
