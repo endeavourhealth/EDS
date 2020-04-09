@@ -46,10 +46,8 @@ import javax.ws.rs.client.Invocation;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Response;
 import java.io.File;
-import java.io.InputStream;
 import java.net.URI;
 import java.net.URL;
-import java.nio.file.Files;
 import java.security.CodeSource;
 import java.security.ProtectionDomain;
 import java.sql.Connection;
@@ -984,24 +982,8 @@ public abstract class SpecialRoutines {
         LOG.debug("Testing Bulk Load from " + s3Path + " to " + tableName);
         try {
 
-            String homeDir = System.getProperty("user.home");
-            LOG.debug("Home = " + homeDir);
-            File tmpDir = new File(homeDir, "QueueReaderTmp");
-            LOG.debug("Tmp = " + tmpDir);
-            if (!tmpDir.exists()) {
-                boolean created = tmpDir.mkdirs();
-                LOG.debug("Created Tmp = " + created);
-            }
-            String fileName = "" + UUID.randomUUID().toString() + "_" + FilenameUtils.getName(s3Path);
-            File dst = new File(tmpDir, fileName);
-            LOG.debug("Copying to " + dst);
-
-            //copy from S3 to tmp
-            LOG.debug("Starting copy");
-            InputStream is = FileHelper.readFileFromSharedStorage(s3Path);
-            Files.copy(is, dst.toPath());
-            is.close();
-            LOG.debug("Copy complete");
+            File dst = FileHelper.copyFileFromStorageToTempDirIfNecessary(s3Path);
+            LOG.debug("Tmp file = " + dst);
 
             LOG.debug("Dst exists = " + dst.exists());
             LOG.debug("Dst len = " + dst.length());
@@ -1031,7 +1013,9 @@ public abstract class SpecialRoutines {
             connection.setAutoCommit(false);
             connection.close();
 
-            dst.delete();
+            LOG.debug("Deleting temp file " + dst);
+            FileHelper.deleteFileFromTempDirIfNecessary(dst);
+            LOG.debug("Dst exists = " + dst.exists());
 
             LOG.debug("Finished Testing Bulk Load from " + s3Path + " to " + tableName);
         } catch (Throwable t) {
