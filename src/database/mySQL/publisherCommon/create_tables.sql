@@ -3,12 +3,21 @@ use publisher_common;
 DROP TABLE IF EXISTS emis_csv_code_map;
 DROP TABLE IF EXISTS emis_admin_resource_cache;
 DROP TABLE IF EXISTS emis_admin_resource_cache_applied;
-DROP TABLE IF EXISTS tpp_immunisation_content;
-DROP TABLE IF EXISTS tpp_ctv3_hierarchy_ref;
-DROP TABLE IF EXISTS tpp_ctv3_lookup;
-DROP TABLE IF EXISTS tpp_multilex_to_ctv3_map;
-DROP TABLE IF EXISTS tpp_mapping_ref;
 DROP TABLE IF EXISTS emis_missing_code_error;
+DROP TABLE IF EXISTS tpp_immunisation_content; -- old table
+DROP TABLE IF EXISTS tpp_immunisation_content_2;
+DROP TABLE IF EXISTS tpp_ctv3_hierarchy_ref; -- old table
+DROP TABLE IF EXISTS tpp_ctv3_hierarchy_ref_2;
+DROP TABLE IF EXISTS tpp_ctv3_lookup; -- old table
+DROP TABLE IF EXISTS tpp_ctv3_lookup_2;
+DROP TABLE IF EXISTS tpp_multilex_to_ctv3_map; -- old table
+DROP TABLE IF EXISTS tpp_multilex_to_ctv3_map_2;
+DROP TABLE IF EXISTS tpp_mapping_ref; -- old table
+DROP TABLE IF EXISTS tpp_mapping_ref_2;
+DROP TABLE IF EXISTS tpp_config_list_option_2;
+DROP TABLE IF EXISTS tpp_staff_member;
+DROP TABLE IF EXISTS tpp_staff_member_profile;
+
 
 CREATE TABLE emis_csv_code_map (
 	medication boolean,
@@ -52,7 +61,19 @@ CREATE TABLE emis_admin_resource_cache_applied (
 ROW_FORMAT=COMPRESSED
 KEY_BLOCK_SIZE=8;
 
-CREATE TABLE tpp_ctv3_lookup (
+
+CREATE TABLE tpp_ctv3_lookup_2 (
+	ctv3_code varchar(5) binary COMMENT 'ctv3 code itself',
+	ctv3_term varchar(255) null COMMENT 'term for ctv3 code',
+	dt_last_updated datetime NOT NULL,
+	CONSTRAINT pk_tpp_ctv3_lookup_2 PRIMARY KEY (ctv3_code)
+)
+	ROW_FORMAT=COMPRESSED
+	KEY_BLOCK_SIZE=8;
+
+CREATE INDEX ix_code_updated ON tpp_ctv3_lookup_2 (ctv3_code, dt_last_updated);
+
+/*CREATE TABLE tpp_ctv3_lookup (
 	ctv3_code varchar(5) COLLATE utf8_bin COMMENT 'ctv3 code itself',
 	ctv3_text varchar(255) null COMMENT 'term for ctv3 code',
 	audit_json mediumtext null comment 'Used for Audit Purposes',
@@ -63,8 +84,26 @@ CREATE TABLE tpp_ctv3_lookup (
 
 CREATE INDEX ix_tpp_ctv3_lookup_ctv3_code
   ON tpp_ctv3_lookup (ctv3_code);
+*/
 
-CREATE TABLE tpp_multilex_to_ctv3_map
+
+CREATE TABLE tpp_multilex_to_ctv3_map_2
+(
+	multilex_product_id int NOT NULL,
+	ctv3_code varchar(5) NOT NULL,
+	ctv3_term text NOT NULL,
+	dt_last_updated datetime NOT NULL,
+	constraint pk primary key (multilex_product_id)
+)
+	ROW_FORMAT=COMPRESSED
+	KEY_BLOCK_SIZE=8;
+
+CREATE INDEX ix_row_date ON tpp_multilex_to_ctv3_map_2 (multilex_product_id, dt_last_updated);
+
+
+
+
+/*CREATE TABLE tpp_multilex_to_ctv3_map
 (
   row_id bigint NOT NULL PRIMARY KEY,
   multilex_product_id bigint NOT NULL,
@@ -74,21 +113,51 @@ CREATE TABLE tpp_multilex_to_ctv3_map
 );
 
 CREATE INDEX ix_tpp_multilex_to_ctv3_map_multilex_product_id
-  ON tpp_multilex_to_ctv3_map (multilex_product_id);
+  ON tpp_multilex_to_ctv3_map (multilex_product_id);*/
 
 
+
+CREATE TABLE tpp_ctv3_hierarchy_ref_2
+(
+	parent_code varchar(5) binary NOT NULL,
+	child_code varchar(5) binary NOT NULL,
+	child_level integer NOT NULL,
+	dt_last_updated datetime NOT NULL,
+	CONSTRAINT pk_tpp_ctv3_hierarchy_ref_2 PRIMARY KEY (child_code, parent_code)
+)
+	ROW_FORMAT=COMPRESSED
+	KEY_BLOCK_SIZE=8;
+
+/*
 CREATE TABLE tpp_ctv3_hierarchy_ref
 (
   row_id bigint NOT NULL PRIMARY KEY,
   ctv3_parent_read_code varchar(5) NOT NULL COLLATE utf8_bin,
   ctv3_child_read_code varchar(5) NOT NULL COLLATE utf8_bin,
   child_level integer NOT NULL
-);
+)
+	ROW_FORMAT=COMPRESSED
+	KEY_BLOCK_SIZE=8;
 
 CREATE INDEX ix_tpp_ctv3_hierarchy_ref_parent_read_code_child_read_code
   ON tpp_ctv3_hierarchy_ref (ctv3_parent_read_code, ctv3_child_read_code);
+*/
 
-create table tpp_immunisation_content (
+create table tpp_immunisation_content_2 (
+	row_id int not null comment 'The value of RowIdentifier',
+	name varchar(100) not null comment 'The name of the immunisation',
+	content varchar(255) not null comment 'The contents of the immunisation',
+	dt_last_updated datetime NOT NULL,
+	constraint pk primary key (row_id)
+)
+	ROW_FORMAT=COMPRESSED
+	KEY_BLOCK_SIZE=8;
+
+CREATE INDEX ix_row_date ON tpp_immunisation_content_2 (row_id, dt_last_updated);
+
+
+
+/*create table tpp_immunisation_content (
   row_id bigint(20) not null comment 'The value of RowIdentifier',
   name varchar(100) not null comment 'The name of the immunisation',
   content varchar(255) not null comment 'The contents of the immunisation',
@@ -97,8 +166,24 @@ create table tpp_immunisation_content (
 
   constraint tpp_immunisation_content_pk primary key (row_id)
 );
+*/
 
-create table tpp_mapping_ref (
+
+create table tpp_mapping_ref_2 (
+	row_id int not null comment 'The value of RowIdentifier',
+	group_id int not null comment 'Mapping group identifier',
+	mapped_term varchar(1000) not null comment 'The mapped term of the RowIdentifier',
+	dt_last_updated datetime NOT NULL,
+	constraint pk primary key (row_id)
+)
+	ROW_FORMAT=COMPRESSED
+	KEY_BLOCK_SIZE=8;
+
+CREATE INDEX ix_row_date ON tpp_mapping_ref_2 (row_id, dt_last_updated);
+
+
+
+/*create table tpp_mapping_ref (
 	row_id bigint(20) not null comment 'The value of RowIdentifier',
 	group_id bigint(20) not null comment 'Mapping group identifier',
 	mapped_term varchar(1000) not null comment 'The mapped term of the RowIdentifier',
@@ -107,7 +192,7 @@ create table tpp_mapping_ref (
 	constraint tpp_mapping_ref_pk primary key (group_id, row_id)
 );
 
-CREATE INDEX ix_tpp_mapping_ref ON tpp_mapping_ref (row_id);
+CREATE INDEX ix_tpp_mapping_ref ON tpp_mapping_ref (row_id);*/
 
 
 CREATE TABLE emis_missing_code_error (
@@ -130,4 +215,67 @@ CREATE INDEX ix on emis_missing_code_error (code_id);
 CREATE INDEX ix2 ON emis_missing_code_error (service_id, dt_fixed, code_type);
 
 CREATE INDEX ix3 ON emis_missing_code_error (service_id, dt_fixed, code_id);
+
+
+create table tpp_config_list_option_2 (
+	row_id int not null comment 'The value of RowIdentifier',
+	config_list_id int not null comment 'Configuration list identifier',
+	list_option_name varchar(1000) not null comment 'The configuration list option name',
+	dt_last_updated datetime NOT NULL,
+	constraint tpp_config_list_option_pk primary key (row_id)
+)
+	ROW_FORMAT=COMPRESSED
+	KEY_BLOCK_SIZE=8;
+
+CREATE INDEX ix_row_date ON tpp_config_list_option_2 (row_id, dt_last_updated);
+
+
+
+create table tpp_staff_member (
+	row_id int NOT NULL COMMENT 'unique TPP identifier',
+	staff_name varchar(255),
+	username varchar(255),
+	national_id_type varchar(50),
+	national_id varchar(50),
+	smartcard_id varchar(50),
+	published_file_id INT COMMENT 'where this came from, relates to audit.published_file',
+	published_file_record_number INT COMMENT 'record number in source file',
+	dt_last_updated datetime COMMENT 'data date time that this was last updated from',
+	CONSTRAINT pk_tpp_staging_staff_member PRIMARY KEY (row_id)
+)
+	ROW_FORMAT=COMPRESSED
+	KEY_BLOCK_SIZE=8;
+
+CREATE INDEX ix ON tpp_staff_member (row_id, dt_last_updated);
+
+
+
+
+
+create table tpp_staff_member_profile (
+	row_id int NOT NULL COMMENT 'unique TPP identifier',
+	organisation_id varchar(255) COMMENT 'ODS code of owning org',
+	staff_member_row_id int COMMENT 'unique TPP ID of the staff member record this is for',
+	start_date date,
+	end_date date,
+	role_name varchar(255) COMMENT 'textual description of role type',
+	ppa_id varchar(255),
+	gp_local_code varchar(255),
+	gmp_id varchar(255),
+	removed_data boolean,
+	published_file_id INT COMMENT 'where this came from, relates to audit.published_file',
+	published_file_record_number INT COMMENT 'record number in source file',
+	dt_last_updated datetime COMMENT 'data date time that this was last updated from',
+	CONSTRAINT pk_tpp_staging_staff_member_profile PRIMARY KEY (row_id)
+)
+	ROW_FORMAT=COMPRESSED
+	KEY_BLOCK_SIZE=8;
+
+CREATE INDEX ix ON tpp_staff_member_profile (row_id, dt_last_updated);
+
+-- indexes for finding profiles for staff members
+CREATE INDEX ix2 ON tpp_staff_member_profile (staff_member_row_id, organisation_id, row_id);
+CREATE INDEX ix3 ON tpp_staff_member_profile (staff_member_row_id, row_id);
+
+
 

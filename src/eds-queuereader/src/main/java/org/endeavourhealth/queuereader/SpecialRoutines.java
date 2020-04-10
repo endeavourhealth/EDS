@@ -22,6 +22,7 @@ import org.endeavourhealth.core.database.dal.audit.models.ExchangeBatch;
 import org.endeavourhealth.core.database.dal.audit.models.HeaderKeys;
 import org.endeavourhealth.core.database.dal.ehr.ResourceDalI;
 import org.endeavourhealth.core.database.dal.ehr.models.ResourceWrapper;
+import org.endeavourhealth.core.database.dal.publisherCommon.*;
 import org.endeavourhealth.core.database.dal.usermanager.caching.DataSharingAgreementCache;
 import org.endeavourhealth.core.database.dal.usermanager.caching.OrganisationCache;
 import org.endeavourhealth.core.database.dal.usermanager.caching.ProjectCache;
@@ -36,6 +37,10 @@ import org.endeavourhealth.transform.common.ExchangePayloadFile;
 import org.endeavourhealth.transform.common.TransformConfig;
 import org.endeavourhealth.transform.subscriber.IMConstant;
 import org.endeavourhealth.transform.subscriber.IMHelper;
+import org.endeavourhealth.transform.tpp.TppCsvToFhirTransformer;
+import org.endeavourhealth.transform.tpp.csv.helpers.TppCsvHelper;
+import org.endeavourhealth.transform.tpp.csv.schema.staff.SRStaffMember;
+import org.endeavourhealth.transform.tpp.csv.schema.staff.SRStaffMemberProfile;
 import org.hl7.fhir.instance.model.ResourceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -1065,5 +1070,114 @@ public abstract class SpecialRoutines {
             LOG.error("", t);
         }
 
+    }
+
+    public static void loadTppStagingData(String odsCode, UUID fromExchange) {
+        LOG.debug("Loading TPP Staging Data for " + odsCode + " from Exchange " + fromExchange);
+        try {
+
+            ServiceDalI serviceDal = DalProvider.factoryServiceDal();
+            Service service = serviceDal.getByLocalIdentifier(odsCode);
+
+            List<UUID> systemIds = SystemHelper.getSystemIdsForService(service);
+            if (systemIds.size() != 1) {
+                throw new Exception("" + systemIds.size() + " system IDs found");
+            }
+            UUID systemId = systemIds.get(0);
+
+            ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
+            List<Exchange> exchanges = exchangeDal.getExchangesByService(service.getId(), systemId, Integer.MAX_VALUE);
+            LOG.debug("Got " + exchanges.size() + " exchanges");
+
+            //go backwards, as they're most-recent-first
+            for (int i=exchanges.size()-1; i>=0; i--) {
+                Exchange exchange = exchanges.get(i);
+
+                if (fromExchange != null) {
+                    if (!exchange.getId().equals(fromExchange)) {
+                        LOG.debug("Skipping exchange " + exchange.getId());
+                        continue;
+                    }
+                    fromExchange = null;
+                }
+
+                LOG.debug("Doing exchange " + exchange.getId() + " from " + exchange.getHeader(HeaderKeys.DataDate));
+
+                Date dataDate = exchange.getHeaderAsDate(HeaderKeys.DataDate);
+
+                List<ExchangePayloadFile> files = ExchangeHelper.parseExchangeBody(exchange.getBody());
+                for (ExchangePayloadFile file: files) {
+
+                    String type = file.getType();
+                    String filePath = file.getPath();
+
+                    if (type.equals("Ctv3")) {
+                        TppCtv3LookupDalI dal = DalProvider.factoryTppCtv3LookupDal();
+                        dal.updateLookupTable(filePath, dataDate);
+
+                    } else if (type.equals("Ctv3Hierarchy")) {
+                        TppCtv3HierarchyRefDalI dal = DalProvider.factoryTppCtv3HierarchyRefDal();
+                        dal.updateHierarchyTable(filePath, dataDate);
+
+                    } else if (type.equals("ImmunisationContent")) {
+                        TppImmunisationContentDalI dal = DalProvider.factoryTppImmunisationContentDal();
+                        dal.updateLookupTable(filePath, dataDate);
+
+                    } else if (type.equals("ConfiguredListOption")) {
+                        TppConfigListOptionDalI dal = DalProvider.factoryTppConfigListOptionDal();
+                        dal.updateLookupTable(filePath, dataDate);
+
+                    } else if (type.equals("MedicationReadCodeDetails")) {
+                        TppMultiLexToCtv3MapDalI dal = DalProvider.factoryTppMultiLexToCtv3MapDal();
+                        dal.updateLookupTable(filePath, dataDate);
+
+                    } else if (type.equals("Mapping")) {
+                        TppMappingRefDalI dal = DalProvider.factoryTppMappingRefDal();
+                        dal.updateLookupTable(filePath, dataDate);
+
+                    } else if (type.equals("StaffMember")) {
+
+                        TppCsvHelper helper = new TppCsvHelper(service.getId(), systemId, exchange.getId());
+                        String[] arr = new String[]{filePath};
+                        Map<String, String> versions = TppCsvToFhirTransformer.buildParserToVersionsMap(arr, helper);
+                        String version = versions.get(filePath);
+
+                        SRStaffMember parser = new SRStaffMember(service.getId(), systemId, exchange.getId(), version, filePath);
+                        while (parser.nextRecord()) {
+                            //just spin through it
+                        }
+
+                        //bulk load the file into the DB
+                        int fileId = parser.getFileAuditId().intValue();
+                        TppStaffDalI dal = DalProvider.factoryTppStaffMemberDal();
+                        dal.updateStaffMemberLookupTable(filePath, dataDate, fileId);
+
+                    } else if (type.equals("StaffMemberProfile")) {
+
+                        TppCsvHelper helper = new TppCsvHelper(service.getId(), systemId, exchange.getId());
+                        String[] arr = new String[]{filePath};
+                        Map<String, String> versions = TppCsvToFhirTransformer.buildParserToVersionsMap(arr, helper);
+                        String version = versions.get(filePath);
+
+                        SRStaffMemberProfile parser = new SRStaffMemberProfile(service.getId(), systemId, exchange.getId(), version, filePath);
+                        while (parser.nextRecord()) {
+                            //just spin through it
+                        }
+
+                        //bulk load the file into the DB
+                        int fileId = parser.getFileAuditId().intValue();
+                        TppStaffDalI dal = DalProvider.factoryTppStaffMemberDal();
+                        dal.updateStaffProfileLookupTable(filePath, dataDate, fileId);
+
+                    } else {
+                        //ignore any other file types
+                    }
+
+                }
+            }
+
+        } catch (Throwable t) {
+            LOG.error("", t);
+        }
     }
 }

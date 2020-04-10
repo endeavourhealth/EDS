@@ -87,6 +87,17 @@ public class Main {
 		ConfigManager.initialize("queuereader", configId);
 
 		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("LoadTppStagingData")) {
+			String odsCode = args[1];
+			UUID fromExchange = null;
+			if (args.length > 2) {
+				fromExchange = UUID.fromString(args[2]);
+			}
+			SpecialRoutines.loadTppStagingData(odsCode, fromExchange);
+			System.exit(0);
+		}
+
+		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("TestCallToDDSUI")) {
 			SpecialRoutines.testCallToDdsUi();
 			System.exit(0);

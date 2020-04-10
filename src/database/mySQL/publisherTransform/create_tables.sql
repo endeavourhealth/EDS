@@ -12,8 +12,16 @@ DROP TABLE IF EXISTS internal_id_map;
 DROP TABLE IF EXISTS cerner_code_value_ref;
 DROP TABLE IF EXISTS cerner_nomenclature_ref;
 DROP TABLE IF EXISTS cerner_clinical_event_mapping_state;
-DROP TABLE IF EXISTS tpp_config_list_option;
 DROP TABLE IF EXISTS source_file_record_audit;
+DROP TABLE IF EXISTS tpp_config_list_option; -- moved to publisher_common
+DROP TABLE IF EXISTS tpp_immunisation_content; -- moved to publisher_common
+DROP TABLE IF EXISTS tpp_ctv3_hierarchy_ref; -- moved to publisher_common
+DROP TABLE IF EXISTS tpp_ctv3_lookup; -- moved to publisher_common
+DROP TABLE IF EXISTS tpp_multilex_to_ctv3_map; -- moved to publisher_common
+DROP TABLE IF EXISTS tpp_mapping_ref; -- moved to publisher_common
+DROP TABLE IF EXISTS tpp_staging_staff_member; -- moved to publisher_common
+DROP TABLE IF EXISTS tpp_staging_staff_member_profile; -- moved to publisher_common
+
 
 CREATE TABLE resource_id_map (
 	service_id char(36),
@@ -174,7 +182,7 @@ CREATE TABLE cerner_clinical_event_mapping_state (
   CONSTRAINT pk_internal_id_map PRIMARY KEY (service_id, event_id)
 );
 
-create table tpp_config_list_option (
+/*create table tpp_config_list_option (
   row_id bigint(20) not null comment 'The value of RowIdentifier',
   config_list_id bigint(20) not null comment 'Configuration list identifier',
   list_option_name varchar(1000) not null comment 'The configuration list option name',
@@ -185,7 +193,7 @@ create table tpp_config_list_option (
 );
 
 CREATE INDEX ix_tpp_config_list_option ON tpp_config_list_option (row_id);
-
+*/
 
 CREATE TABLE source_file_record_audit (
   id int,
