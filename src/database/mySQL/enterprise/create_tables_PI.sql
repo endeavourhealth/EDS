@@ -1151,7 +1151,7 @@ CREATE TABLE referral_request
   original_code character varying(100) binary,
   original_term character varying(1000),
   is_review boolean NOT NULL,
-  referral_to_specialty varchar(50),
+  specialty varchar(50),
   ubrn varchar(50),
   date_recorded datetime,
   CONSTRAINT pk_referral_request_id PRIMARY KEY (`organization_id`,`person_id`,`id`),
@@ -1322,7 +1322,9 @@ CREATE TABLE `registration_status_history` (
     `start_date` datetime DEFAULT NULL,
     `end_date` datetime DEFAULT NULL,
     PRIMARY KEY (`organization_id`,`id`,`patient_id`,`person_id`),
-    UNIQUE KEY `ux_registration_status_history_id` (`id`)
+    UNIQUE KEY `ux_registration_status_history_id` (`id`),
+    CONSTRAINT fk_registration_status_history_patient_id_organisation_id FOREIGN KEY (patient_id, organization_id)
+    REFERENCES patient (id, organization_id)
 ) COMMENT='stores registration status history for GP registrations';
 
 DELIMITER //
@@ -1361,7 +1363,7 @@ BEGIN
 		LIMIT 1) AS `tmp`
 	);
 
-	REPLACE INTO person
+	REPLACE INTO person (id, patient_gender_id, nhs_number, date_of_birth, date_of_death, postcode, lsoa_code, msoa_code, ethnic_code, ward_code, local_authority_code, registered_practice_organization_id, title, first_names, last_names)
 	SELECT person_id, patient_gender_id, nhs_number, date_of_birth, date_of_death, postcode, lsoa_code, msoa_code, ethnic_code, ward_code, local_authority_code, registered_practice_organization_id, title, first_names, last_names
 	FROM patient
 	WHERE id = _best_patient_id;

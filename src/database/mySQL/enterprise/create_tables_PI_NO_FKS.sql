@@ -977,7 +977,7 @@ CREATE TABLE referral_request
   original_code character varying(100) binary,
   original_term character varying(1000),
   is_review boolean NOT NULL,
-  referral_to_specialty varchar(50),
+  specialty varchar(50),
   ubrn varchar(50),
   date_recorded datetime,
   CONSTRAINT pk_referral_request_id PRIMARY KEY (`organization_id`,`person_id`,`id`)
