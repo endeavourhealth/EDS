@@ -10,6 +10,8 @@ import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.common.fhir.IdentifierHelper;
 import org.endeavourhealth.common.utility.FileHelper;
+import org.endeavourhealth.common.utility.ThreadPool;
+import org.endeavourhealth.common.utility.ThreadPoolError;
 import org.endeavourhealth.core.configuration.ConfigDeserialiser;
 import org.endeavourhealth.core.configuration.PostMessageToExchangeConfig;
 import org.endeavourhealth.core.configuration.QueueReaderConfiguration;
@@ -831,13 +833,13 @@ public class Main {
 		}*/
 
 
-		/*if (args.length >= 1
+		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("PopulateLastDataDate")) {
 			int threads = Integer.parseInt(args[1]);
 			int batchSize = Integer.parseInt(args[2]);
 			populateLastDataDate(threads, batchSize);
 			System.exit(0);
-		}*/
+		}
 
 
 		/*if (args.length >= 1
@@ -6447,7 +6449,7 @@ public class Main {
 
 
 
-	/*private static void populateLastDataDate(int threads, int batchSize) {
+	private static void populateLastDataDate(int threads, int batchSize) {
 		LOG.debug("Populating last data date");
 		try {
 
@@ -6507,7 +6509,7 @@ public class Main {
 		} catch (Throwable t) {
 			LOG.error("", t);
 		}
-	}*/
+	}
 
 
 
