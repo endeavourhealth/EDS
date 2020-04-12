@@ -18005,6 +18005,7 @@ class PopulateDataDateCallable implements Callable {
 			doWork();
 		} catch (Throwable ex) {
 			LOG.error("Error with " + exchangeId, ex);
+			markAsDone(); //get out of the way
 		}
 		return null;
 	}
