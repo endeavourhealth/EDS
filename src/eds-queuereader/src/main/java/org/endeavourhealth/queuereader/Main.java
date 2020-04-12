@@ -78,6 +78,7 @@ import java.util.regex.Pattern;
 
 import static org.endeavourhealth.core.xml.QueryDocument.ServiceContractType.PUBLISHER;
 
+
 public class Main {
 	private static final Logger LOG = LoggerFactory.getLogger(Main.class);
 
