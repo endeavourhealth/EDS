@@ -1196,7 +1196,7 @@ public abstract class SpecialRoutines {
 
             while (true) {
 
-                String sql = "select s.local_id, a,exchange_id"
+                String sql = "select s.local_id, a.exchange_id"
                         + " from audit.skipped_admin_data a"
                         + " inner join admin.service s"
                         + " on s.id = a.service_id"
