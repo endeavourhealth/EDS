@@ -100,6 +100,14 @@ public class Main {
 		}
 
 		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("RequeueTppSkippedAdminData")) {
+			boolean tpp = Boolean.valueOf(args[1]);
+			boolean onAtATime = Boolean.valueOf(args[2]);
+			SpecialRoutines.requeueSkippedAdminData(tpp, onAtATime);
+			System.exit(0);
+		}
+
+		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("TestCallToDDSUI")) {
 			SpecialRoutines.testCallToDdsUi();
 			System.exit(0);

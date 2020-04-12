@@ -30,6 +30,7 @@ import org.endeavourhealth.core.database.rdbms.ConnectionManager;
 import org.endeavourhealth.core.database.rdbms.datasharingmanager.models.DataSharingAgreementEntity;
 import org.endeavourhealth.core.database.rdbms.datasharingmanager.models.ProjectEntity;
 import org.endeavourhealth.core.messaging.pipeline.components.DetermineRelevantProtocolIds;
+import org.endeavourhealth.core.queueing.QueueHelper;
 import org.endeavourhealth.im.client.IMClient;
 import org.endeavourhealth.transform.common.AuditWriter;
 import org.endeavourhealth.transform.common.ExchangeHelper;
@@ -1178,6 +1179,124 @@ public abstract class SpecialRoutines {
 
         } catch (Throwable t) {
             LOG.error("", t);
+        }
+    }
+
+    public static void requeueSkippedAdminData(boolean tpp, boolean oneAtATime) {
+        LOG.debug("Re-queueing skipped admin data for TPP = " + tpp);
+        try {
+            Connection connection = ConnectionManager.getAuditNonPooledConnection();
+
+            String tagsLike = null;
+            if (tpp) {
+                tagsLike = "TPP";
+            } else {
+                tagsLike = "EMIS";
+            }
+
+            while (true) {
+
+                String sql = "select s.local_id, a,exchange_id"
+                        + " from audit.skipped_admin_data a"
+                        + " inner join admin.service s"
+                        + " on s.id = a.service_id"
+                        + " where s.tags like '%" + tagsLike + "%'"
+                        + " and a.queued = false"
+                        + " order by a.service_id, a.dt_skipped"
+                        + " limit 1";
+                Statement statement = connection.createStatement();
+                ResultSet rs = statement.executeQuery(sql);
+                if (!rs.next()) {
+                    LOG.debug("Finished");
+                    break;
+                }
+
+                String odsCode = rs.getString(1);
+                UUID firstExchangeId = UUID.fromString(rs.getString(2));
+                LOG.debug("Found " + odsCode + " from " + firstExchangeId);
+
+                ServiceDalI serviceDal = DalProvider.factoryServiceDal();
+                Service service = serviceDal.getByLocalIdentifier(odsCode);
+
+                List<UUID> systemIds = SystemHelper.getSystemIdsForService(service);
+                if (systemIds.size() != 1) {
+                    throw new Exception("Not one system ID for " + service);
+                }
+                UUID systemId = systemIds.get(0);
+
+                List<UUID> exchangeIds = new ArrayList<>();
+
+                ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
+                List<UUID> allExchangeIds = exchangeDal.getExchangeIdsForService(service.getId(), systemId);
+                int index = allExchangeIds.indexOf(firstExchangeId);
+                for (int i=index; i<allExchangeIds.size(); i++) {
+                    UUID exchangeId = allExchangeIds.get(i);
+                    exchangeIds.add(exchangeId);
+                }
+
+                Set<String> fileTypesToFilterOn = new HashSet<>();
+                if (tpp) {
+                    fileTypesToFilterOn.add("Ctv3");
+                    fileTypesToFilterOn.add("Ctv3Hierarchy");
+                    fileTypesToFilterOn.add("ImmunisationContent");
+                    fileTypesToFilterOn.add("Mapping");
+                    fileTypesToFilterOn.add("ConfiguredListOption");
+                    fileTypesToFilterOn.add("MedicationReadCodeDetails");
+                    fileTypesToFilterOn.add("Ccg");
+                    fileTypesToFilterOn.add("Trust");
+                    fileTypesToFilterOn.add("Organisation");
+                    fileTypesToFilterOn.add("OrganisationBranch");
+                    fileTypesToFilterOn.add("StaffMember");
+                    fileTypesToFilterOn.add("StaffMemberProfile");
+
+
+                } else {
+                    fileTypesToFilterOn.add("Agreements_SharingOrganisation");
+                    fileTypesToFilterOn.add("Admin_OrganisationLocation");
+                    fileTypesToFilterOn.add("Admin_Location");
+                    fileTypesToFilterOn.add("Admin_Organisation");
+                    fileTypesToFilterOn.add("Admin_UserInRole");
+                    fileTypesToFilterOn.add("Appointment_SessionUser");
+                    fileTypesToFilterOn.add("Appointment_Session");
+                    fileTypesToFilterOn.add("Appointment_Slot");
+                }
+
+                QueueHelper.postToExchange(exchangeIds, QueueHelper.EXCHANGE_INBOUND, null, true, "Going back to skipped admin", fileTypesToFilterOn, null);
+
+                //update table after re-queuing
+                sql = "update audit.skipped_admin_data a"
+                        + " inner join admin.service s"
+                        + " on s.id = a.service_id"
+                        + " set a.queued = true"
+                        + " where s.local_id = '" + odsCode + "'";
+                statement.executeUpdate(sql);
+                connection.commit();
+
+                LOG.debug("Requeued " + exchangeIds.size() + " for " + odsCode);
+
+                if (oneAtATime) {
+                    continueOrQuit();
+                }
+            }
+
+            connection.close();
+
+            LOG.debug("Finished Re-queueing skipped admin data for " + tagsLike);
+        } catch (Throwable t) {
+            LOG.error("", t);
+        }
+
+    }
+
+    private static void continueOrQuit() throws Exception {
+        LOG.info("Enter y to continue, anything else to quit");
+
+        byte[] bytes = new byte[10];
+        System.in.read(bytes);
+        char c = (char) bytes[0];
+        if (c != 'y' && c != 'Y') {
+            System.out.println("Read " + c);
+            System.exit(1);
         }
     }
 }
