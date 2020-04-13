@@ -36,6 +36,14 @@ import org.endeavourhealth.transform.common.AuditWriter;
 import org.endeavourhealth.transform.common.ExchangeHelper;
 import org.endeavourhealth.transform.common.ExchangePayloadFile;
 import org.endeavourhealth.transform.common.TransformConfig;
+import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
+import org.endeavourhealth.transform.emis.csv.helpers.EmisCsvHelper;
+import org.endeavourhealth.transform.emis.csv.schema.admin.Location;
+import org.endeavourhealth.transform.emis.csv.schema.admin.Organisation;
+import org.endeavourhealth.transform.emis.csv.schema.admin.OrganisationLocation;
+import org.endeavourhealth.transform.emis.csv.schema.admin.UserInRole;
+import org.endeavourhealth.transform.emis.csv.schema.coding.ClinicalCode;
+import org.endeavourhealth.transform.emis.csv.transforms.coding.ClinicalCodeTransformer;
 import org.endeavourhealth.transform.subscriber.IMConstant;
 import org.endeavourhealth.transform.subscriber.IMHelper;
 import org.endeavourhealth.transform.tpp.TppCsvToFhirTransformer;
@@ -1169,6 +1177,127 @@ public abstract class SpecialRoutines {
                         int fileId = parser.getFileAuditId().intValue();
                         TppStaffDalI dal = DalProvider.factoryTppStaffMemberDal();
                         dal.updateStaffProfileLookupTable(filePath, dataDate, fileId);
+
+                    } else {
+                        //ignore any other file types
+                    }
+
+                }
+            }
+
+        } catch (Throwable t) {
+            LOG.error("", t);
+        }
+    }
+
+    public static void loadEmisStagingData(String odsCode, UUID fromExchange) {
+        LOG.debug("Loading EMIS Staging Data for " + odsCode + " from Exchange " + fromExchange);
+        try {
+
+            ServiceDalI serviceDal = DalProvider.factoryServiceDal();
+            Service service = serviceDal.getByLocalIdentifier(odsCode);
+
+            List<UUID> systemIds = SystemHelper.getSystemIdsForService(service);
+            if (systemIds.size() != 1) {
+                throw new Exception("" + systemIds.size() + " system IDs found");
+            }
+            UUID systemId = systemIds.get(0);
+
+            ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
+            List<Exchange> exchanges = exchangeDal.getExchangesByService(service.getId(), systemId, Integer.MAX_VALUE);
+            LOG.debug("Got " + exchanges.size() + " exchanges");
+
+            //go backwards, as they're most-recent-first
+            for (int i=exchanges.size()-1; i>=0; i--) {
+                Exchange exchange = exchanges.get(i);
+
+                if (fromExchange != null) {
+                    if (!exchange.getId().equals(fromExchange)) {
+                        LOG.debug("Skipping exchange " + exchange.getId());
+                        continue;
+                    }
+                    fromExchange = null;
+                }
+
+                LOG.debug("Doing exchange " + exchange.getId() + " from " + exchange.getHeader(HeaderKeys.DataDate));
+
+                Date dataDate = exchange.getHeaderAsDate(HeaderKeys.DataDate);
+
+                List<ExchangePayloadFile> files = ExchangeHelper.parseExchangeBody(exchange.getBody());
+
+                //skip custom extracts
+                if (files.size() <= 2) {
+                    continue;
+                }
+                String version = EmisCsvToFhirTransformer.determineVersion(files);
+
+                for (ExchangePayloadFile file: files) {
+
+                    String type = file.getType();
+                    String filePath = file.getPath();
+
+                    if (type.equals("Admin_Location")) {
+
+                        Location parser = new Location(service.getId(), systemId, exchange.getId(), version, filePath);
+                        while (parser.nextRecord()) {
+                            //just spin through it
+                        }
+
+                        //the above will have audited the table, so now we can load the bulk staging table with our file
+                        EmisLocationDalI dal = DalProvider.factoryEmisLocationDal();
+                        int fileId = parser.getFileAuditId().intValue();
+                        dal.updateLocationStagingTable(filePath, dataDate, fileId);
+
+                    } else if (type.equals("Admin_OrganisationLocation")) {
+
+                        OrganisationLocation parser = new OrganisationLocation(service.getId(), systemId, exchange.getId(), version, filePath);
+                        while (parser.nextRecord()) {
+                            //just spin through it
+                        }
+
+                        //the above will have audited the table, so now we can load the bulk staging table with our file
+                        EmisLocationDalI dal = DalProvider.factoryEmisLocationDal();
+                        int fileId = parser.getFileAuditId().intValue();
+                        dal.updateOrganisationLocationStagingTable(filePath, dataDate, fileId);
+
+                    } else if (type.equals("Admin_Organisation")) {
+
+                        Organisation parser = new Organisation(service.getId(), systemId, exchange.getId(), version, filePath);
+                        while (parser.nextRecord()) {
+                            //just spin through it
+                        }
+
+                        //the above will have audited the table, so now we can load the bulk staging table with our file
+                        EmisOrganisationDalI dal = DalProvider.factoryEmisOrganisationDal();
+                        int fileId = parser.getFileAuditId().intValue();
+                        dal.updateStagingTable(filePath, dataDate, fileId);
+
+                    } else if (type.equals("Admin_UserInRole")) {
+
+                        UserInRole parser = new UserInRole(service.getId(), systemId, exchange.getId(), version, filePath);
+                        while (parser.nextRecord()) {
+                            //just spin through it
+                        }
+
+                        EmisUserInRoleDalI dal = DalProvider.factoryEmisUserInRoleDal();
+                        int fileId = parser.getFileAuditId().intValue();
+                        dal.updateStagingTable(filePath, dataDate, fileId);
+
+                    } else if (type.equals("Coding_ClinicalCode")) {
+
+                        EmisCsvHelper helper = new EmisCsvHelper(service.getId(), systemId, exchange.getId(), null, null);
+                        ClinicalCode parser = new ClinicalCode(service.getId(), systemId, exchange.getId(), version, filePath);
+
+                        File extraColsFile = ClinicalCodeTransformer.createExtraColsFile(parser, helper);
+
+                        EmisCodeDalI dal = DalProvider.factoryEmisCodeDal();
+                        dal.updateClinicalCodeTable(filePath, extraColsFile.getAbsolutePath(), dataDate);
+
+                        FileHelper.deleteRecursiveIfExists(extraColsFile);
+
+                    } else if (type.equals("Coding_DrugCode")) {
+                        EmisCodeDalI dal = DalProvider.factoryEmisCodeDal();
+                        dal.updateDrugCodeTable(filePath, dataDate);
 
                     } else {
                         //ignore any other file types

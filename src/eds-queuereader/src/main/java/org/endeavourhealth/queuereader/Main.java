@@ -101,6 +101,17 @@ public class Main {
 		}
 
 		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("LoadEmisStagingData")) {
+			String odsCode = args[1];
+			UUID fromExchange = null;
+			if (args.length > 2) {
+				fromExchange = UUID.fromString(args[2]);
+			}
+			SpecialRoutines.loadEmisStagingData(odsCode, fromExchange);
+			System.exit(0);
+		}
+
+		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("RequeueTppSkippedAdminData")) {
 			boolean tpp = Boolean.valueOf(args[1]);
 			boolean onAtATime = Boolean.valueOf(args[2]);
