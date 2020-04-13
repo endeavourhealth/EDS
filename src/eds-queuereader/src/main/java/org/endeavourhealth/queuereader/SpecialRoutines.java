@@ -40,7 +40,10 @@ import org.endeavourhealth.core.fhirStorage.FhirSerializationHelper;
 import org.endeavourhealth.core.messaging.pipeline.components.DetermineRelevantProtocolIds;
 import org.endeavourhealth.core.queueing.QueueHelper;
 import org.endeavourhealth.im.client.IMClient;
-import org.endeavourhealth.transform.common.*;
+import org.endeavourhealth.transform.common.AuditWriter;
+import org.endeavourhealth.transform.common.ExchangeHelper;
+import org.endeavourhealth.transform.common.ExchangePayloadFile;
+import org.endeavourhealth.transform.common.TransformConfig;
 import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
 import org.endeavourhealth.transform.emis.csv.helpers.EmisCsvHelper;
 import org.endeavourhealth.transform.emis.csv.schema.admin.Location;
@@ -1457,7 +1460,7 @@ public abstract class SpecialRoutines {
                     .withHeader("patientId", "episodeId", "id", "startDateDesc", "endDateDesc", "messageTypeCode",
                             "messageTypeDesc", "statusDesc", "statusHistorySize", "classDesc", "typeDesc",
                             "practitionerId", "dtRecordedDesc", "exchangeDateDesc", "currentLocation",
-                            "locationHistorySize", "serviceProvider", "edsId", "cegEnterpriseId", "bhrEnterpriseId", "json"
+                            "locationHistorySize", "serviceProvider", "cegEnterpriseId", "bhrEnterpriseId", "json"
                     );
 
 
@@ -1581,20 +1584,18 @@ public abstract class SpecialRoutines {
                                 serviceProvider = ReferenceHelper.getReferenceId(ref);
                             }
 
-                            UUID edsId = IdHelper.getEdsResourceId(serviceId, ResourceType.Encounter, id);
-
                             SubscriberResourceMappingDalI dal = DalProvider.factorySubscriberResourceMappingDal("ceg_enterprise");
-                            Long cegEnterpriseId = dal.findEnterpriseIdOldWay(ResourceType.Encounter.toString(), edsId.toString());
+                            Long cegEnterpriseId = dal.findEnterpriseIdOldWay(ResourceType.Encounter.toString(), id);
 
                             dal = DalProvider.factorySubscriberResourceMappingDal("pcr_01_enterprise_pi");
-                            Long bhrEnterpriseId = dal.findEnterpriseIdOldWay(ResourceType.Encounter.toString(), edsId.toString());
+                            Long bhrEnterpriseId = dal.findEnterpriseIdOldWay(ResourceType.Encounter.toString(), id);
 
                             String json = FhirSerializationHelper.serializeResource(encounter);
 
                             printer.printRecord(patientId, episodeId, id, startDateDesc, endDateDesc, messageTypeCode,
                                     messageTypeDesc, statusDesc, statusHistorySize, classDesc, typeDesc,
                                     practitionerId, dtRecordedDesc, exchangeDateDesc, currentLocation,
-                                    locationHistorySize, serviceProvider, edsId, cegEnterpriseId, bhrEnterpriseId, json);
+                                    locationHistorySize, serviceProvider, cegEnterpriseId, bhrEnterpriseId, json);
 
                         }
                     }
