@@ -90,6 +90,14 @@ public class Main {
 		ConfigManager.initialize("queuereader", configId);
 
 		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("CatptureBartsEncounters")) {
+			Integer count = Integer.parseInt(args[1]);
+			String toFile = args[2];
+			SpecialRoutines.catptureBartsEncounters(count, toFile);
+			System.exit(0);
+		}
+
+		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("LoadTppStagingData")) {
 			String odsCode = args[1];
 			UUID fromExchange = null;

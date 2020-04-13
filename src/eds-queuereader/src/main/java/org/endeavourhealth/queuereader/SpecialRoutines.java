@@ -2,10 +2,15 @@ package org.endeavourhealth.queuereader;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.base.Strings;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.endeavourhealth.common.config.ConfigManager;
+import org.endeavourhealth.common.fhir.ExtensionConverter;
+import org.endeavourhealth.common.fhir.FhirExtensionUri;
 import org.endeavourhealth.common.fhir.IdentifierHelper;
+import org.endeavourhealth.common.fhir.ReferenceHelper;
 import org.endeavourhealth.common.security.keycloak.client.KeycloakClient;
 import org.endeavourhealth.common.utility.FileHelper;
 import org.endeavourhealth.common.utility.FileInfo;
@@ -29,6 +34,8 @@ import org.endeavourhealth.core.database.dal.usermanager.caching.ProjectCache;
 import org.endeavourhealth.core.database.rdbms.ConnectionManager;
 import org.endeavourhealth.core.database.rdbms.datasharingmanager.models.DataSharingAgreementEntity;
 import org.endeavourhealth.core.database.rdbms.datasharingmanager.models.ProjectEntity;
+import org.endeavourhealth.core.fhirStorage.FhirResourceHelper;
+import org.endeavourhealth.core.fhirStorage.FhirSerializationHelper;
 import org.endeavourhealth.core.messaging.pipeline.components.DetermineRelevantProtocolIds;
 import org.endeavourhealth.core.queueing.QueueHelper;
 import org.endeavourhealth.im.client.IMClient;
@@ -50,7 +57,7 @@ import org.endeavourhealth.transform.tpp.TppCsvToFhirTransformer;
 import org.endeavourhealth.transform.tpp.csv.helpers.TppCsvHelper;
 import org.endeavourhealth.transform.tpp.csv.schema.staff.SRStaffMember;
 import org.endeavourhealth.transform.tpp.csv.schema.staff.SRStaffMemberProfile;
-import org.hl7.fhir.instance.model.ResourceType;
+import org.hl7.fhir.instance.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -59,7 +66,10 @@ import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Invocation;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Response;
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.OutputStreamWriter;
 import java.net.URI;
 import java.net.URL;
 import java.security.CodeSource;
@@ -68,6 +78,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.regex.Pattern;
 
@@ -1427,5 +1438,177 @@ public abstract class SpecialRoutines {
             System.out.println("Read " + c);
             System.exit(1);
         }
+    }
+
+    public static void catptureBartsEncounters(int count, String toFile) {
+        LOG.debug("Capturing " + count + " Barts Encounters to " + toFile);
+        try {
+            UUID serviceId = UUID.fromString("b5a08769-cbbe-4093-93d6-b696cd1da483");
+            UUID systemId = UUID.fromString("d874c58c-91fd-41bb-993e-b1b8b22038b2");
+
+            File dstFile = new File(toFile);
+            FileOutputStream fos = new FileOutputStream(dstFile);
+            OutputStreamWriter osw = new OutputStreamWriter(fos);
+            BufferedWriter bufferedWriter = new BufferedWriter(osw);
+
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
+            //the Emis records use Windows record separators, so we need to match that otherwise
+            //the bulk import routine will fail
+            CSVFormat format = EmisCsvToFhirTransformer.CSV_FORMAT
+                    .withHeader("patientId", "episodeId", "id", "startDateDesc", "endDateDesc", "messageTypeCode",
+                            "messageTypeDesc", "statusDesc", "statusHistorySize", "classDesc", "typeDesc",
+                            "practitionerId", "dtRecordedDesc", "exchangeDateDesc", "currentLocation",
+                            "locationHistorySize", "serviceProvider", "json"
+                    );
+
+
+            CSVPrinter printer = new CSVPrinter(bufferedWriter, format);
+
+            ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
+            List<Exchange> exchanges = exchangeDal.getExchangesByService(serviceId, systemId, count);
+            LOG.debug("Found " + count + " exchanges");
+
+            int done = 0;
+            for (Exchange exchange: exchanges) {
+
+                String body = exchange.getBody();
+
+                try {
+                    Bundle bundle = (Bundle)FhirResourceHelper.deserialiseResouce(body);
+                    List<Bundle.BundleEntryComponent> entries = bundle.getEntry();
+                    for (Bundle.BundleEntryComponent entry: entries) {
+                        Resource resource = entry.getResource();
+                        if (resource instanceof Encounter) {
+
+                            Encounter encounter = (Encounter)resource;
+
+                            String id = encounter.getId();
+
+                            String dtRecordedDesc = null;
+                            DateTimeType dtRecorded = (DateTimeType)ExtensionConverter.findExtensionValue(encounter, FhirExtensionUri.RECORDED_DATE);
+                            if (dtRecorded != null) {
+                                Date d = dtRecorded.getValue();
+                                dtRecordedDesc = sdf.format(d);
+                            }
+
+                            String messageTypeDesc = null;
+                            String messageTypeCode = null;
+                            CodeableConcept messageTypeConcept = (CodeableConcept)ExtensionConverter.findExtensionValue(encounter, FhirExtensionUri.HL7_MESSAGE_TYPE);
+                            if (messageTypeConcept != null) {
+                                messageTypeDesc = messageTypeConcept.getText();
+
+                                if (messageTypeConcept.hasCoding()) {
+                                    Coding coding = messageTypeConcept.getCoding().get(0);
+                                    messageTypeCode = coding.getCode();
+                                }
+                            }
+
+                            String statusDesc = null;
+                            if (encounter.hasStatus()) {
+                                statusDesc = "" + encounter.getStatus();
+                            }
+
+                            Integer statusHistorySize = 0;
+                            if (encounter.hasStatusHistory()) {
+                                statusHistorySize = new Integer(encounter.getStatusHistory().size());
+                            }
+
+                            String classDesc = null;
+                            if (encounter.hasClass_()) {
+                                classDesc = "" + encounter.getClass_();
+                            }
+
+                            String typeDesc = null;
+                            if (encounter.hasType()) {
+                                List<CodeableConcept> types = encounter.getType();
+                                CodeableConcept type = types.get(0);
+                                typeDesc = type.getText();
+                            }
+
+                            String patientId = null;
+                            if (encounter.hasPatient()) {
+                                Reference ref = encounter.getPatient();
+                                patientId = ReferenceHelper.getReferenceId(ref);
+                            }
+
+                            String episodeId = null;
+                            if (encounter.hasEpisodeOfCare()) {
+                                List<Reference> refs = encounter.getEpisodeOfCare();
+                                Reference ref = refs.get(0);
+                                episodeId = ReferenceHelper.getReferenceId(ref);
+                            }
+
+                            String practitionerId = null;
+                            if (encounter.hasParticipant()) {
+                                List<Encounter.EncounterParticipantComponent> parts = encounter.getParticipant();
+                                Encounter.EncounterParticipantComponent part = parts.get(0);
+                                if (part.hasIndividual()) {
+                                    Reference ref = part.getIndividual();
+                                    practitionerId = ReferenceHelper.getReferenceId(ref);
+                                }
+                            }
+
+                            String startDateDesc = null;
+                            String endDateDesc = null;
+                            if (encounter.hasPeriod()) {
+                                Period p = encounter.getPeriod();
+                                if (p.hasStart()) {
+                                    startDateDesc = sdf.format(p.getStart());
+                                }
+                                if (p.hasEnd()) {
+                                    endDateDesc = sdf.format(p.getEnd());
+                                }
+                            }
+
+                            Date dataDate = exchange.getHeaderAsDate(HeaderKeys.DataDate);
+                            String exchangeDateDesc = sdf.format(dataDate);
+
+                            Integer locationHistorySize = 0;
+                            String currentLocation = null;
+                            if (encounter.hasLocation()) {
+                                locationHistorySize = new Integer(encounter.getLocation().size());
+
+                                for (Encounter.EncounterLocationComponent loc: encounter.getLocation()) {
+                                    if (loc.getStatus() == Encounter.EncounterLocationStatus.ACTIVE) {
+                                        Reference ref = loc.getLocation();
+                                        currentLocation = ReferenceHelper.getReferenceId(ref);
+                                    }
+                                }
+                            }
+
+                            String serviceProvider = null;
+                            if (encounter.hasServiceProvider()) {
+                                Reference ref = encounter.getServiceProvider();
+                                serviceProvider = ReferenceHelper.getReferenceId(ref);
+                            }
+
+                            String json = FhirSerializationHelper.serializeResource(encounter);
+
+                            printer.printRecord(patientId, episodeId, id, startDateDesc, endDateDesc, messageTypeCode,
+                                    messageTypeDesc, statusDesc, statusHistorySize, classDesc, typeDesc,
+                                    practitionerId, dtRecordedDesc, exchangeDateDesc, currentLocation,
+                                    locationHistorySize, serviceProvider, json);
+
+                        }
+                    }
+
+                } catch (Exception ex) {
+                    throw new Exception("Exception on exchange " + exchange.getId(), ex);
+                }
+
+                done ++;
+                if (done % 100 == 0) {
+                    LOG.debug("Done " + done);
+                }
+            }
+
+            printer.close();
+
+            LOG.debug("Finished Capturing Barts Encounters to " + dstFile);
+        } catch (Throwable t) {
+            LOG.error("", t);
+        }
+
     }
 }
