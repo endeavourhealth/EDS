@@ -1041,7 +1041,7 @@ CREATE TABLE patient_address
   msoa_2011_code           varchar(9),
   ward_code                varchar(9),
   local_authority_code     varchar(9),
-  CONSTRAINT pk_organization_id_id_patient_id_person_id PRIMARY KEY ([organization_id],[id],[patient_id],[person_id])
+  CONSTRAINT pk_patient_address_organization_id_id_patient_id_person_id PRIMARY KEY ([organization_id],[id],[patient_id],[person_id])
 )
 GO
 
@@ -1060,11 +1060,11 @@ CREATE TABLE patient_contact
   start_date date,
   end_date date,
   value varchar(255) ,
-  CONSTRAINT pk_organization_id_id_patient_id_person_id PRIMARY KEY ([organization_id],[id],[patient_id],[person_id])
+  CONSTRAINT pk_patient_contact_organization_id_id_patient_id_person_id PRIMARY KEY ([organization_id],[id],[patient_id],[person_id])
 );
 
 create unique index ux_patient_contact_id on patient_contact (id);
-
+GO
 
 
 CREATE PROCEDURE update_person_record_2(@_new_person_id bigint)
