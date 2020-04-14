@@ -435,10 +435,32 @@ public class QueueHelper {
         PatientSearchDalI patientSearchDal = DalProvider.factoryPatientSearchDal();
         List<UUID> patientUuids = patientSearchDal.getPatientIds(serviceId);
 
-        queueUpFullServiceForPopulatingSubscriber(serviceId, specificProtocolId, patientUuids, "Full load of all patients");
+        queueUpFullServiceForPopulatingSubscriber(serviceId, specificProtocolId, patientUuids, "Full load of all patients", null);
     }
 
-    public static void queueUpFullServiceForPopulatingSubscriber(UUID serviceId, UUID specificProtocolId, List<UUID> patientUuids, String reason) throws Exception {
+    public static void queueUpFullServiceForPopulatingSubscriberFilteredFiles(UUID serviceId, UUID specificProtocolId, String filteredFiles) throws Exception {
+        //find all patients
+        PatientSearchDalI patientSearchDal = DalProvider.factoryPatientSearchDal();
+        List<UUID> patientUuids = patientSearchDal.getPatientIds(serviceId);
+
+        Set<String> fileTypesSet = null;
+        //tokenise and validate the filtering file types
+        if (!Strings.isNullOrEmpty(filteredFiles)) {
+            fileTypesSet = new HashSet<>();
+
+            String[] toks = filteredFiles.split("\r|\n|,| |;");
+            for (String tok: toks) {
+                tok = tok.trim();
+                if (!Strings.isNullOrEmpty(tok)) {
+                    fileTypesSet.add(tok);
+                }
+            }
+        }
+
+        queueUpFullServiceForPopulatingSubscriber(serviceId, specificProtocolId, patientUuids, "Full load of all patients - Filtered Files", fileTypesSet);
+    }
+
+    public static void queueUpFullServiceForPopulatingSubscriber(UUID serviceId, UUID specificProtocolId, List<UUID> patientUuids, String reason, Set<String> fileTypesSet) throws Exception {
 
         ServiceDalI serviceDal = DalProvider.factoryServiceDal();
         Service service = serviceDal.getById(serviceId);
@@ -494,7 +516,10 @@ public class QueueHelper {
                 LOG.info("Posting to protocol queue");
                 List<UUID> exchangeIds = new ArrayList<>();
                 exchangeIds.add(exchange.getId());
-                QueueHelper.postToExchange(exchangeIds, EXCHANGE_PROTOCOL, specificProtocolId, false, null);
+                //QueueHelper.postToExchange(exchangeIds, EXCHANGE_PROTOCOL, specificProtocolId, false, null);
+
+                QueueHelper.postToExchange(exchangeIds, EXCHANGE_PROTOCOL, specificProtocolId, false, null, fileTypesSet,null);
+
                 LOG.info("Exchange posted to protocol queue");
             } else {
                 LOG.info("Not posting to Rabbit as already done that for another system");
@@ -691,7 +716,7 @@ public class QueueHelper {
 
                 //for each protocol, create exchange and exchange batches and post to protocol queue
                 UUID protocolUuid = UUID.fromString(libraryItem.getUuid());
-                queueUpFullServiceForPopulatingSubscriber(serviceId, protocolUuid, patientIdsForService, reason);
+                queueUpFullServiceForPopulatingSubscriber(serviceId, protocolUuid, patientIdsForService, reason, null);
             }
         }
     }

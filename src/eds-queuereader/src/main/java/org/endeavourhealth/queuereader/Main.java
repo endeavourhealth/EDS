@@ -387,6 +387,15 @@ public class Main {
 			System.exit(0);
 		}
 
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("SubscriberFullLoadFilteredFiles")) {
+			UUID serviceId = UUID.fromString(args[1]);
+			UUID protocolId = UUID.fromString(args[2]);
+			String filteredFiles = args[3];
+			QueueHelper.queueUpFullServiceForPopulatingSubscriberFilteredFiles(serviceId, protocolId, filteredFiles);
+			System.exit(0);
+		}
+
 
 		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("RunPersonUpdater")) {
@@ -1471,7 +1480,7 @@ public class Main {
 					//send any found previously
 					if (!batchPatientIds.isEmpty()) {
 						LOG.debug("Doing batch of " + batchPatientIds.size() + " for service " + batchServiceId + " and protocol " + batchProtocolId);
-						QueueHelper.queueUpFullServiceForPopulatingSubscriber(batchServiceId, batchProtocolId, batchPatientIds, reason);
+						QueueHelper.queueUpFullServiceForPopulatingSubscriber(batchServiceId, batchProtocolId, batchPatientIds, reason, null);
 					}
 
 					batchServiceId = serviceId;
@@ -1485,7 +1494,7 @@ public class Main {
 			//do the remainder
 			if (!batchPatientIds.isEmpty()) {
 				LOG.debug("Doing batch of " + batchPatientIds.size() + " for service " + batchServiceId + " and protocol " + batchProtocolId);
-				QueueHelper.queueUpFullServiceForPopulatingSubscriber(batchServiceId, batchProtocolId, batchPatientIds, reason);
+				QueueHelper.queueUpFullServiceForPopulatingSubscriber(batchServiceId, batchProtocolId, batchPatientIds, reason, null);
 			}
 
 			conn.close();
