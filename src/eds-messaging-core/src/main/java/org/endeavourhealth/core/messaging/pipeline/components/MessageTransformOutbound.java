@@ -543,19 +543,17 @@ public class MessageTransformOutbound extends PipelineComponent {
         if (filterElementsNodeJSON == null) {
             return allResources;
         }
-
         List<ResourceWrapper> ret = new ArrayList<>();
         for (ResourceWrapper resource : allResources) {
-            if (resource.getResourceType().equalsIgnoreCase("Patient")) {
-                LOG.info("Patient " + resource.getResourceId() + ", inclusion :" + includeResource(serviceId, resource, filterElementsNodeJSON));
-            }
-            // perform filtering on patient resources.  Non patient resources are always included
-            if (isPatientResource(resource) && !includeResource(serviceId, resource, filterElementsNodeJSON)) {
-                continue;
-            }
 
-            //resource is either non patient or passes patient filter criteria so add
-            ret.add(resource);
+            //if (resource.getResourceType().equalsIgnoreCase("Patient")) {
+            //    LOG.info("Patient " + resource.getResourceId() + ", inclusion :" + includeResource(serviceId, resource, filterElementsNodeJSON));
+            //}
+            // perform filtering on the resource to see if it is included in the transform.
+            if (includeResource(serviceId, resource, filterElementsNodeJSON)) {
+
+                ret.add(resource);
+            }
         }
 
         return ret;
@@ -563,7 +561,7 @@ public class MessageTransformOutbound extends PipelineComponent {
 
     // FHIR resources are filtered based on the subscriber configuration "filterElements" JSON
     // Only resources which match any of the resources AND any of the age ranges will be included,
-    // i.e. A Patient resource who is 44.  An Immunization resource whose patient reference resource is 12.
+    // i.e. A Patient resource who is 44.  An Immunization resource whose patient reference resource is 12. An Organization
     //
     //  JSON filter structure:
     //	"filterElements": {
