@@ -3,7 +3,6 @@ package org.endeavourhealth.subscriber.filer;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.base.Strings;
 import com.google.common.io.Files;
-import com.zaxxer.hikari.HikariDataSource;
 import com.zaxxer.hikari.pool.HikariProxyConnection;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
@@ -25,7 +24,6 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.Date;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -45,13 +43,7 @@ public class EnterpriseFiler {
 
     private static final int UPSERT_ATTEMPTS = 15;
 
-    //private static final String ZIP_ENTRY = "EnterpriseData.xml";
 
-    //private static String keywordEscapeChar = null; //different DBs use different chars to escape keywords (" on pg, ` on mysql)
-
-    private static Map<String, HikariDataSource> connectionPools = new ConcurrentHashMap<>();
-    private static Map<String, String> escapeCharacters = new ConcurrentHashMap<>();
-    private static Map<String, Integer> batchSizes = new ConcurrentHashMap<>();
 
     public static void file(UUID batchId, UUID queuedMessageId, String base64, String configName) throws Exception {
 
@@ -432,6 +424,10 @@ public class EnterpriseFiler {
 
             //keywordEscapeChar = "";
 
+            if (tableName.equals("link_distributor")) {
+                return getSqlServerLinkDistributerSql(connection);
+            }
+
             /*
             SQL Server doesn't support upserts in a single statement, so we need to handle this with an attempted update
             and then an insert if that didn't work
@@ -702,6 +698,29 @@ public class EnterpriseFiler {
             }
         }
 
+    }
+
+    /**
+     * the link_distributor table doesn't have an ID and the regular SQL Server upsert mechanism
+     * depends on having on. So we need special syntax for this table to accept the parameters in
+     * the order they're supplied and to actually work
+     */
+    public static PreparedStatement getSqlServerLinkDistributerSql(Connection connection) throws Exception {
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("DECLARE @source_skid_tmp varchar(255); ");
+        sb.append("SET @source_skid_tmp = ?; ");
+        sb.append("DECLARE @target_salt_key_name_tmp varchar(50); ");
+        sb.append("SET @target_salt_key_name_tmp=?; ");
+
+        sb.append("UPDATE link_distributor SET \"target_skid\" = ? ");
+        sb.append("WHERE \"source_skid\" = @source_skid_tmp ");
+        sb.append("AND \"target_salt_key_name\" = @target_salt_key_name_tmp; ");
+
+        sb.append("INSERT INTO link_distributor(\"source_skid\", \"target_salt_key_name\", \"target_skid\") ");
+        sb.append("SELECT ?, ?, ? WHERE @@ROWCOUNT=0;");
+
+        return connection.prepareStatement(sb.toString());
     }
 
 
