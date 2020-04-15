@@ -33,6 +33,8 @@ IF OBJECT_ID('dbo.patient_uprn', 'U') IS NOT NULL DROP TABLE dbo.patient_uprn
 GO
 IF OBJECT_ID('dbo.event_log', 'U') IS NOT NULL DROP TABLE dbo.event_log
 GO
+IF OBJECT_ID('dbo.encounter_event', 'U') IS NOT NULL DROP TABLE dbo.encounter_event
+GO
 IF OBJECT_ID('dbo.encounter', 'U') IS NOT NULL DROP TABLE dbo.encounter
 GO
 IF OBJECT_ID('dbo.appointment', 'U') IS NOT NULL DROP TABLE dbo.appointment
@@ -205,6 +207,49 @@ GO
 CREATE INDEX [encounter_core_concept_id_clinical_effective_date] ON [encounter] ([core_concept_id], [clinical_effective_date])
 GO
 
+
+
+CREATE TABLE [encounter_event] (
+[id] bigint,
+[organization_id] bigint NOT NULL,
+[patient_id] bigint NOT NULL,
+[person_id] bigint NOT NULL,
+[encounter_id] bigint NOT NULL,
+[practitioner_id] bigint NULL DEFAULT NULL,
+[appointment_id] bigint NULL DEFAULT NULL,
+[clinical_effective_date] datetime NULL DEFAULT NULL,
+[date_precision_concept_id] int NULL DEFAULT NULL,
+[episode_of_care_id] bigint NULL DEFAULT NULL,
+[service_provider_organization_id] bigint NULL DEFAULT NULL,
+[core_concept_id] int NULL DEFAULT NULL,
+[non_core_concept_id] int NULL DEFAULT NULL,
+[age_at_event] decimal(5,2) NULL DEFAULT NULL,
+[type] varchar(MAX) NULL DEFAULT NULL,
+[sub_type] varchar(MAX) NULL DEFAULT NULL,
+[admission_method] varchar(40) NULL DEFAULT NULL,
+[end_date] date NULL DEFAULT NULL,
+[institution_location_id] varchar(MAX) NULL DEFAULT NULL,
+[date_recorded] datetime NULL DEFAULT NULL,
+[finished] bit NOT NULL,
+PRIMARY KEY ([organization_id], [person_id], [id])
+)
+GO
+CREATE UNIQUE INDEX [encounter_event_id] ON [encounter_event] ([id])
+GO
+CREATE INDEX [fk_encounter_event_practitioner_id] ON [encounter_event] ([practitioner_id])
+GO
+CREATE INDEX [fk_encounter_event_episode_of_care_id] ON [encounter_event] ([episode_of_care_id])
+GO
+CREATE INDEX [fk_encounter_event_service_provider_organization_id] ON [encounter_event] ([service_provider_organization_id])
+GO
+CREATE INDEX [encounter_event_patient_id] ON [encounter_event] ([patient_id])
+GO
+CREATE INDEX [fki_encounter_event_appointment_id] ON [encounter_event] ([appointment_id])
+GO
+CREATE INDEX [fki_encounter_event_patient_id_organization_id] ON [encounter_event] ([patient_id], [organization_id])
+GO
+CREATE INDEX [encounter_event_core_concept_id_clinical_effective_date] ON [encounter_event] ([core_concept_id], [clinical_effective_date])
+GO
 
 CREATE TABLE [episode_of_care] (
 [id] bigint,
@@ -951,6 +996,69 @@ BEGIN
 GO
 ALTER TABLE [appointment] ENABLE TRIGGER [after_appointment_delete]
 GO
+
+
+CREATE TRIGGER [after_encounter_event_insert]
+ON [encounter_event]
+WITH EXECUTE AS CALLER
+After INSERT
+AS
+BEGIN
+    INSERT INTO event_log (
+		dt_change,
+        change_type,
+        table_id,
+        record_id
+	) select
+		GETDATE(), -- current time inc ms
+        0, -- insert
+        25, -- encounter_event
+        id from inserted
+  END
+GO
+ALTER TABLE [encounter_event] ENABLE TRIGGER [after_encounter_event_insert]
+GO
+CREATE TRIGGER [after_encounter_event_update]
+ON [encounter_event]
+WITH EXECUTE AS CALLER
+After UPDATE
+AS
+BEGIN
+    INSERT INTO event_log (
+		dt_change,
+        change_type,
+        table_id,
+        record_id
+	) select
+		GETDATE(), -- current time inc ms
+        1, -- update
+        25, -- encounter_event
+        id from deleted
+  END
+GO
+ALTER TABLE [encounter_event] ENABLE TRIGGER [after_encounter_event_update]
+GO
+CREATE TRIGGER [after_encounter_event_delete]
+ON [encounter_event]
+WITH EXECUTE AS CALLER
+After DELETE
+AS
+BEGIN
+    INSERT INTO event_log (
+		dt_change,
+        change_type,
+        table_id,
+        record_id
+	) select
+		GETDATE(), -- current time inc ms
+        2, -- delete
+        25, -- encounter_event
+        id from deleted
+  END
+GO
+ALTER TABLE [encounter_event] ENABLE TRIGGER [after_encounter_event_delete]
+GO
+
 
 CREATE TRIGGER [after_encounter_insert]
 ON [encounter]

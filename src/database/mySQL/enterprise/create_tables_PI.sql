@@ -1,14 +1,14 @@
--- Data Checking (PI) database WITH foreign keys
-
--- create database enterprise_pi;
-
-use enterprise_pi;
 
 DROP TRIGGER IF EXISTS after_patient_insert;
 DROP TRIGGER IF EXISTS after_patient_update;
 DROP TRIGGER IF EXISTS after_patient_delete;
 DROP PROCEDURE IF EXISTS update_person_record;
 DROP PROCEDURE IF EXISTS update_person_record_2;
+DROP TABLE IF EXISTS link_distributor;
+DROP TABLE IF EXISTS patient_address;
+DROP TABLE IF EXISTS patient_contact;
+DROP TABLE IF EXISTS patient_address_match;
+DROP TABLE IF EXISTS registration_status_history;
 DROP TABLE IF EXISTS patient_uprn;
 DROP TABLE IF EXISTS medication_order;
 DROP TABLE IF EXISTS medication_statement;
@@ -26,6 +26,7 @@ DROP TABLE IF EXISTS procedure_request;
 DROP TABLE IF EXISTS referral_request;
 DROP TABLE IF EXISTS encounter_raw;
 DROP TABLE IF EXISTS encounter_detail;
+DROP TABLE IF EXISTS encounter_event;
 DROP TABLE IF EXISTS encounter;
 DROP TABLE IF EXISTS appointment;
 DROP TABLE IF EXISTS episode_of_care;
@@ -49,12 +50,7 @@ DROP TABLE IF EXISTS msoa_lookup;
 DROP TABLE IF EXISTS ward_lookup;
 DROP TABLE IF EXISTS local_authority_lookup;
 DROP TABLE IF EXISTS ethnicity_lookup;
-DROP TABLE IF EXISTS link_distributor;
-DROP TABLE IF EXISTS patient_address;
-DROP TABLE IF EXISTS patient_contact;
-DROP TABLE IF EXISTS patient_address_match;
-DROP TABLE IF EXISTS registration_status_history;
-
+-- DO NOT JUST ADD NEW TABLES AT THE BOTTOM - make sure they're added where suitable to deal with foreign keys
 
 CREATE TABLE ethnicity_lookup
 (
@@ -470,11 +466,6 @@ CREATE TABLE person
   date_of_birth date,
   date_of_death date,
   postcode character varying(20),
-        pseudo_id character varying(255),
-        age_years integer,
-        age_months integer,
-        age_weeks integer,
-        postcode_prefix character varying(20),
   lsoa_code character varying(50),
   msoa_code character varying(50),
   ethnic_code character(1),
@@ -699,6 +690,54 @@ CREATE INDEX fki_encounter_patient_id_organization_id
 CREATE INDEX encounter_snomed_concept_id_clinical_effective_date
   ON encounter
   (snomed_concept_id, clinical_effective_date);
+
+
+
+-- Table: encounter_event
+
+
+CREATE TABLE encounter_event
+(
+  id bigint NOT NULL,
+  organization_id bigint NOT NULL,
+  patient_id bigint NOT NULL,
+  person_id bigint NOT NULL,
+  encounter_id bigint NOT NULL COMMENT 'parent encounter record',
+  practitioner_id bigint,
+  appointment_id bigint,
+  clinical_effective_date datetime,
+  date_precision_id smallint,
+  snomed_concept_id bigint,
+  original_code character varying(100) binary,
+  original_term character varying(1000),
+  episode_of_care_id bigint,
+  service_provider_organization_id bigint,
+  date_recorded datetime,
+  location_id bigint,
+  finished boolean,
+  CONSTRAINT pk_encounter_event_id PRIMARY KEY (organization_id, person_id, id),
+  CONSTRAINT fk_encounter_event_patient_id_organization_id FOREIGN KEY (patient_id, organization_id)
+      REFERENCES patient (id, organization_id) MATCH SIMPLE
+      ON UPDATE NO ACTION ON DELETE NO ACTION,
+  CONSTRAINT fk_encounter_event_practitioner_id FOREIGN KEY (practitioner_id)
+      REFERENCES practitioner (id) MATCH SIMPLE
+      ON UPDATE NO ACTION ON DELETE NO ACTION,
+  CONSTRAINT fk_encounter_event_date_precision FOREIGN KEY (date_precision_id)
+      REFERENCES date_precision (id) MATCH SIMPLE
+      ON UPDATE NO ACTION ON DELETE NO ACTION,
+  CONSTRAINT fk_encounter_event_episode_of_care_id FOREIGN KEY (episode_of_care_id)
+      REFERENCES episode_of_care (id) MATCH SIMPLE
+      ON UPDATE NO ACTION ON DELETE NO ACTION,
+  CONSTRAINT fk_encounter_event_service_provider_organization_id FOREIGN KEY (service_provider_organization_id)
+      REFERENCES organization (id) MATCH SIMPLE
+      ON UPDATE NO ACTION ON DELETE NO ACTION
+);
+
+-- required for upserts to work
+CREATE UNIQUE INDEX encounter_event_id
+  ON encounter_event
+  (id);
+
 
 
 -- Table: encounter_detail

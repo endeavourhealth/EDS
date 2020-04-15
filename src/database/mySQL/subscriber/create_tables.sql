@@ -12,6 +12,9 @@ drop trigger if exists after_person_delete;
 drop trigger if exists after_allergy_intolerance_insert;
 drop trigger if exists after_allergy_intolerance_update;
 drop trigger if exists after_allergy_intolerance_delete;
+drop trigger if exists after_encounter_event_insert;
+drop trigger if exists after_encounter_event_update;
+drop trigger if exists after_encounter_event_delete;
 drop trigger if exists after_encounter_insert;
 drop trigger if exists after_encounter_update;
 drop trigger if exists after_encounter_delete;
@@ -76,6 +79,7 @@ DROP TABLE IF EXISTS patient_contact;
 DROP TABLE IF EXISTS patient_address;
 DROP TABLE IF EXISTS patient_uprn;
 DROP TABLE IF EXISTS event_log;
+DROP TABLE IF EXISTS encounter_event;
 DROP TABLE IF EXISTS encounter;
 DROP TABLE IF EXISTS appointment;
 DROP TABLE IF EXISTS episode_of_care;
@@ -380,6 +384,56 @@ CREATE INDEX fki_encounter_patient_id_organization_id
 CREATE INDEX encounter_core_concept_id_clinical_effective_date
   ON encounter
   (core_concept_id, clinical_effective_date);
+
+
+
+
+-- Table: encounter_event
+
+
+CREATE TABLE encounter_event
+(
+  id bigint NOT NULL,
+  organization_id bigint NOT NULL,
+  patient_id bigint NOT NULL,
+  person_id bigint NOT NULL,
+  encounter_id bigint NOT NULL COMMENT 'parent encounter record',
+  practitioner_id bigint,
+  appointment_id bigint,
+  clinical_effective_date datetime,
+  date_precision_concept_id int,
+  episode_of_care_id bigint,
+  service_provider_organization_id bigint,
+  core_concept_id int,
+  non_core_concept_id int,
+  age_at_event decimal (5,2),
+  type text,
+  sub_type text,
+  admission_method varchar(40),
+  end_date date,
+  institution_location_id bigint,
+  date_recorded datetime,
+  finished boolean,
+  CONSTRAINT pk_encounter_event_id PRIMARY KEY (organization_id, person_id, id),
+  CONSTRAINT fk_encounter_event_patient_id_organization_id FOREIGN KEY (patient_id, organization_id)
+      REFERENCES patient (id, organization_id) MATCH SIMPLE
+      ON UPDATE NO ACTION ON DELETE NO ACTION,
+  CONSTRAINT fk_encounter_event_practitioner_id FOREIGN KEY (practitioner_id)
+      REFERENCES practitioner (id) MATCH SIMPLE
+      ON UPDATE NO ACTION ON DELETE NO ACTION,
+  CONSTRAINT fk_encounter_event_episode_of_care_id FOREIGN KEY (episode_of_care_id)
+      REFERENCES episode_of_care (id) MATCH SIMPLE
+      ON UPDATE NO ACTION ON DELETE NO ACTION,
+  CONSTRAINT fk_encounter_event_service_provider_organization_id FOREIGN KEY (service_provider_organization_id)
+      REFERENCES organization (id) MATCH SIMPLE
+      ON UPDATE NO ACTION ON DELETE NO ACTION
+);
+
+-- required for upserts to work
+CREATE UNIQUE INDEX encounter_event_id
+  ON encounter_event
+  (id);
+
 
 -- Table: allergy_intolerance
 
@@ -1225,6 +1279,67 @@ CREATE TRIGGER after_encounter_delete
 DELIMITER ;
 
 
+
+
+
+DELIMITER $$
+CREATE TRIGGER after_encounter_event_insert
+  AFTER INSERT ON encounter_event
+  FOR EACH ROW
+  BEGIN
+    INSERT INTO event_log (
+		dt_change,
+        change_type,
+        table_id,
+        record_id
+    ) VALUES (
+		now(3), -- current time inc ms
+        0, -- insert
+        25, -- encounter_event
+        NEW.id
+    );
+  END$$
+DELIMITER ;
+
+
+DELIMITER $$
+CREATE TRIGGER after_encounter_event_update
+  AFTER UPDATE ON encounter_event
+  FOR EACH ROW
+  BEGIN
+    INSERT INTO event_log (
+		dt_change,
+        change_type,
+        table_id,
+        record_id
+    ) VALUES (
+		now(3), -- current time inc ms
+        1, -- update
+        25, -- encounter_event
+        NEW.id
+    );
+  END$$
+DELIMITER ;
+
+
+DELIMITER $$
+CREATE TRIGGER after_encounter_event_delete
+  AFTER DELETE ON encounter_event
+  FOR EACH ROW
+  BEGIN
+    INSERT INTO event_log (
+		dt_change,
+        change_type,
+        table_id,
+        record_id
+    ) VALUES (
+		now(3), -- current time inc ms
+        2, -- delete
+        25, -- encounter_event
+        OLD.id
+    );
+  END$$
+DELIMITER ;
 
 
 DELIMITER $$

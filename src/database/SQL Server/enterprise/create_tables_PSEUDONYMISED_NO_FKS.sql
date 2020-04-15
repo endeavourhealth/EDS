@@ -1,5 +1,3 @@
-USE enterprise_pseudo
-GO
 
 -- drop TRIGGER
 IF OBJECT_ID('dbo.after_patient_insert') IS NOT NULL DROP TRIGGER after_patient_insert
@@ -70,6 +68,9 @@ IF OBJECT_ID('dbo.encounter_raw', 'U') IS NOT NULL DROP TABLE dbo.encounter_raw
 GO
 
 IF OBJECT_ID('dbo.encounter_detail', 'U') IS NOT NULL DROP TABLE dbo.encounter_detail
+GO
+
+IF OBJECT_ID('dbo.encounter_event', 'U') IS NOT NULL DROP TABLE dbo.encounter_event
 GO
 
 IF OBJECT_ID('dbo.encounter', 'U') IS NOT NULL DROP TABLE dbo.encounter
@@ -148,6 +149,9 @@ IF OBJECT_ID('dbo.patient_address', 'U') IS NOT NULL DROP TABLE dbo.patient_addr
 GO
 
 IF OBJECT_ID('dbo.patient_contact', 'U') IS NOT NULL DROP TABLE dbo.patient_contact
+GO
+
+IF OBJECT_ID('dbo.registration_status_history', 'U') IS NOT NULL DROP TABLE dbo.registration_status_history
 GO
 
 
@@ -546,6 +550,7 @@ CREATE TABLE person
   title character varying(50),
   first_names character varying(255),
   last_names character varying(255),
+  current_address_id bigint,
   CONSTRAINT pk_person_id PRIMARY KEY (id)
 )
 GO
@@ -681,6 +686,50 @@ GO
 
 CREATE INDEX encounter_snomed_concept_id_clinical_effective_date ON encounter(snomed_concept_id, clinical_effective_date)
 GO
+
+
+
+
+CREATE TABLE encounter_event
+(
+  id bigint NOT NULL,
+  organization_id bigint NOT NULL,
+  patient_id bigint NOT NULL,
+  person_id bigint NOT NULL,
+  encounter_id bigint NOT NULL,
+  practitioner_id bigint,
+  appointment_id bigint,
+  clinical_effective_date datetime,
+  date_precision_id smallint,
+  snomed_concept_id bigint,
+  original_code character varying(100) collate Latin1_General_100_BIN2,
+  original_term character varying(1000),
+  episode_of_care_id bigint,
+  service_provider_organization_id bigint,
+  date_recorded datetime,
+  location_id bigint,
+  finished bit NOT NULL,
+  CONSTRAINT pk_encounter_event_id PRIMARY KEY  (organization_id,person_id,id)
+)
+GO
+
+CREATE UNIQUE INDEX encounter_event_id ON encounter_event(id)
+GO
+
+CREATE INDEX encounter_event_patient_id ON encounter_event(patient_id)
+GO
+
+CREATE INDEX fki_encounter_event_appointment_id ON encounter_event(appointment_id)
+GO
+
+CREATE INDEX fki_encounter_event_patient_id_organization_id ON encounter_event(patient_id, organization_id)
+GO
+
+CREATE INDEX encounter_event_snomed_concept_id_clinical_effective_date ON encounter_event(snomed_concept_id, clinical_effective_date)
+GO
+
+
+
 
 CREATE TABLE encounter_detail (
   id bigint NOT NULL,
@@ -970,6 +1019,8 @@ CREATE TABLE referral_request
   original_code character varying(100) collate Latin1_General_100_BIN2,
   original_term character varying(1000),
   is_review bit NOT NULL,
+  specialty varchar(50),
+  ubrn varchar(50),
   date_recorded datetime,
   CONSTRAINT pk_referral_request_id PRIMARY KEY ([organization_id],[person_id],[id])
 )
@@ -1041,7 +1092,7 @@ CREATE TABLE patient_address
   msoa_2011_code           varchar(9),
   ward_code                varchar(9),
   local_authority_code     varchar(9),
-  CONSTRAINT pk_patient_address_organization_id_id_patient_id_person_id PRIMARY KEY ([organization_id],[id],[patient_id],[person_id])
+  CONSTRAINT pk_organization_id_id_patient_id_person_id PRIMARY KEY ([organization_id],[id],[patient_id],[person_id])
 )
 GO
 
@@ -1060,11 +1111,26 @@ CREATE TABLE patient_contact
   start_date date,
   end_date date,
   value varchar(255) ,
-  CONSTRAINT pk_patient_contact_organization_id_id_patient_id_person_id PRIMARY KEY ([organization_id],[id],[patient_id],[person_id])
+  CONSTRAINT pk_patient_contact PRIMARY KEY ([organization_id],[id],[patient_id],[person_id])
 );
 
 create unique index ux_patient_contact_id on patient_contact (id);
 GO
+
+
+CREATE TABLE [registration_status_history] (
+    [id] bigint NOT NULL,
+    [organization_id] bigint NOT NULL,
+    [patient_id] bigint NOT NULL,
+    [person_id] bigint NOT NULL,
+    [episode_of_care_id] bigint DEFAULT NULL,
+    [registration_status_id] int DEFAULT NULL,
+    [start_date] datetime DEFAULT NULL,
+    [end_date] datetime DEFAULT NULL,
+    PRIMARY KEY ([organization_id],[id],[patient_id],[person_id])
+);
+
+CREATE UNIQUE INDEX [ux_registration_status_history_id] ON [registration_status_history] ([id]);
 
 
 CREATE PROCEDURE update_person_record_2(@_new_person_id bigint)
