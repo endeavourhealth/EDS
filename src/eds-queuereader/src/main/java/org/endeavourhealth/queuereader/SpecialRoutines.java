@@ -773,17 +773,17 @@ public abstract class SpecialRoutines {
             LOG.debug("----getConceptDbidForTypeTerm------------------------------------------------");
             LOG.debug("    gets NON-CORE DBID for encounter type text");
 
-            String encounterScheme = IMConstant.DCE_Type_of_encounter;
+            String encounterScheme = IMConstant.ENCOUNTER_LEGACY;
             String encounterTerm = "Clinical";
             Integer encounterConceptId = IMClient.getConceptDbidForTypeTerm(encounterScheme, encounterTerm);
             LOG.debug("For " + encounterScheme + " " + encounterTerm + " got " + encounterConceptId);
 
-            encounterScheme = IMConstant.DCE_Type_of_encounter;
+            encounterScheme = IMConstant.ENCOUNTER_LEGACY;
             encounterTerm = "Administrative";
             encounterConceptId = IMClient.getConceptDbidForTypeTerm(encounterScheme, encounterTerm);
             LOG.debug("For " + encounterScheme + " " + encounterTerm + " got " + encounterConceptId);
 
-            encounterScheme = IMConstant.DCE_Type_of_encounter;
+            encounterScheme = IMConstant.ENCOUNTER_LEGACY;
             encounterTerm = "GP Surgery";
             encounterConceptId = IMClient.getConceptDbidForTypeTerm(encounterScheme, encounterTerm);
             LOG.debug("For " + encounterScheme + " " + encounterTerm + " got " + encounterConceptId);
@@ -792,17 +792,17 @@ public abstract class SpecialRoutines {
             LOG.debug("----getMappedCoreConceptDbidForTypeTerm------------------------------------------------");
             LOG.debug("    gets CORE DBID for encounter type text");
 
-            encounterScheme = IMConstant.DCE_Type_of_encounter;
+            encounterScheme = IMConstant.ENCOUNTER_LEGACY;
             encounterTerm = "Clinical";
             encounterConceptId = IMClient.getMappedCoreConceptDbidForTypeTerm(encounterScheme, encounterTerm);
             LOG.debug("For " + encounterScheme + " " + encounterTerm + " got " + encounterConceptId);
 
-            encounterScheme = IMConstant.DCE_Type_of_encounter;
+            encounterScheme = IMConstant.ENCOUNTER_LEGACY;
             encounterTerm = "Administrative";
             encounterConceptId = IMClient.getMappedCoreConceptDbidForTypeTerm(encounterScheme, encounterTerm);
             LOG.debug("For " + encounterScheme + " " + encounterTerm + " got " + encounterConceptId);
 
-            encounterScheme = IMConstant.DCE_Type_of_encounter;
+            encounterScheme = IMConstant.ENCOUNTER_LEGACY;
             encounterTerm = "GP Surgery";
             encounterConceptId = IMClient.getMappedCoreConceptDbidForTypeTerm(encounterScheme, encounterTerm);
             LOG.debug("For " + encounterScheme + " " + encounterTerm + " got " + encounterConceptId);
@@ -935,7 +935,7 @@ public abstract class SpecialRoutines {
                 LOG.debug("" + encTerm + " -> " + (legacyEncCode != null ? legacyEncCode : "NULL") + " -> " + (snomedCode != null ? snomedCode : "NULL"));*/
 
                 Integer legacyDbId = IMHelper.getConceptDbidForTypeTerm(null, IMConstant.ENCOUNTER_LEGACY, encTerm);
-                Integer coreDbId = IMHelper.getIMMappedConceptForTypeTerm(null, null, IMConstant.ENCOUNTER_LEGACY, encTerm);
+                Integer coreDbId = IMHelper.getIMMappedConceptForTypeTerm(null, IMConstant.ENCOUNTER_LEGACY, encTerm);
                 LOG.debug("        legacy DB ID = " + legacyDbId + ", core DB ID = " + coreDbId);
 
 //                Integer oldLegacyDbId = IMHelper.getConceptDbidForTypeTerm(null, IMConstant.DCE_Type_of_encounter, encTerm);
