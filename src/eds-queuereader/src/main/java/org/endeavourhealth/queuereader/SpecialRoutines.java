@@ -938,9 +938,9 @@ public abstract class SpecialRoutines {
                 Integer coreDbId = IMHelper.getIMMappedConceptForTypeTerm(null, null, IMConstant.ENCOUNTER_LEGACY, encTerm);
                 LOG.debug("        legacy DB ID = " + legacyDbId + ", core DB ID = " + coreDbId);
 
-                Integer oldLegacyDbId = IMHelper.getConceptDbidForTypeTerm(null, IMConstant.DCE_Type_of_encounter, encTerm);
-                Integer oldCoreDbId = IMHelper.getIMMappedConceptForTypeTerm(null, null, IMConstant.DCE_Type_of_encounter, encTerm);
-                LOG.debug("        OLD legacy DB ID = " + oldLegacyDbId + ", OLD core DB ID = " + oldCoreDbId);
+//                Integer oldLegacyDbId = IMHelper.getConceptDbidForTypeTerm(null, IMConstant.DCE_Type_of_encounter, encTerm);
+//                Integer oldCoreDbId = IMHelper.getIMMappedConceptForTypeTerm(null, null, IMConstant.DCE_Type_of_encounter, encTerm);
+//                LOG.debug("        OLD legacy DB ID = " + oldLegacyDbId + ", OLD core DB ID = " + oldCoreDbId);
 
 
 
