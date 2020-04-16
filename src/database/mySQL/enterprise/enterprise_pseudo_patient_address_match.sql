@@ -1,6 +1,6 @@
 -- MySQL dump 10.13  Distrib 8.0.17, for Win64 (x86_64)
 --
--- Host: localhost    Database: enterprise_pi
+-- Host: localhost    Database: enterprise_pseudo
 -- ------------------------------------------------------
 -- Server version	5.7.23-log
 
@@ -25,27 +25,12 @@ DROP TABLE IF EXISTS `patient_address_match`;
 CREATE TABLE `patient_address_match` (
   `patient_id` bigint(20) NOT NULL,
   `person_id` bigint(20) NOT NULL,
-  `uprn` bigint(20) NOT NULL,
+  `uprn` varchar(255) COLLATE utf8_bin NOT NULL,
   `status` tinyint(1) DEFAULT NULL,
   `classification` varchar(45) CHARACTER SET utf8 DEFAULT NULL,
-  `latitude` double DEFAULT NULL,
-  `longitude` double DEFAULT NULL,
-  `xcoordinate` double DEFAULT NULL,
-  `ycoordinate` double DEFAULT NULL,
-  `qualifier` varchar(50) CHARACTER SET utf8 DEFAULT NULL,
+  `qualifier` varchar(255) CHARACTER SET utf8 DEFAULT NULL,
   `algorithm` varchar(255) CHARACTER SET utf8 DEFAULT NULL,
   `match_date` datetime DEFAULT NULL,
-  `abp_address_number` varchar(255) CHARACTER SET utf8 DEFAULT NULL,
-  `abp_address_street` varchar(255) CHARACTER SET utf8 DEFAULT NULL,
-  `abp_address_locality` varchar(255) CHARACTER SET utf8 DEFAULT NULL,
-  `abp_address_town` varchar(255) CHARACTER SET utf8 DEFAULT NULL,
-  `abp_address_postcode` varchar(10) CHARACTER SET utf8 DEFAULT NULL,
-  `abp_address_organization` varchar(255) CHARACTER SET utf8 DEFAULT NULL,
-  `match_pattern_postcode` varchar(255) CHARACTER SET utf8 DEFAULT NULL,
-  `match_pattern_street` varchar(255) CHARACTER SET utf8 DEFAULT NULL,
-  `match_pattern_number` varchar(255) CHARACTER SET utf8 DEFAULT NULL,
-  `match_pattern_building` varchar(255) CHARACTER SET utf8 DEFAULT NULL,
-  `match_pattern_flat` varchar(255) CHARACTER SET utf8 DEFAULT NULL,
   `algorithm_version` varchar(255) CHARACTER SET utf8 DEFAULT NULL,
   `epoc` varchar(255) COLLATE utf8_bin DEFAULT NULL,
   PRIMARY KEY (`patient_id`,`uprn`),
@@ -64,4 +49,4 @@ CREATE TABLE `patient_address_match` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2020-03-12 14:31:56
+-- Dump completed on 2020-03-12 14:30:00
