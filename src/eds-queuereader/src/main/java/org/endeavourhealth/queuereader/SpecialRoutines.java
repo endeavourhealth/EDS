@@ -885,6 +885,68 @@ public abstract class SpecialRoutines {
             LOG.debug("Got negative snomed code " + snomedNegativeCode);
             LOG.debug("");
 
+            LOG.debug("");
+            LOG.debug("");
+            LOG.debug("----ENCOUNTER TERM test IMHELPER------------------------------------------------");
+
+            List<String> encounterTerms = new ArrayList<>();
+
+            //hospital terms
+            encounterTerms.add("Outpatient Register a patient");
+            encounterTerms.add("Outpatient Discharge/end visit");
+            encounterTerms.add("Outpatient Update patient information");
+            encounterTerms.add("Emergency department Register a patient (emergency)");
+            encounterTerms.add("Inpatient Transfer a patient");
+            encounterTerms.add("Emergency department Discharge/end visit (emergency)");
+            encounterTerms.add("Outpatient Referral Update patient information (waitinglist)");
+            encounterTerms.add("Outpatient Referral Pre-admit a patient (waitinglist)");
+            encounterTerms.add("Inpatient Discharge/end visit");
+            encounterTerms.add("Inpatient Admit/visit notification");
+            encounterTerms.add("Emergency department Update patient information (emergency)");
+            encounterTerms.add("Outpatient Change an inpatient to an outpatient");
+
+            //primary care terms
+            encounterTerms.add("Telephone call to a patient");
+            encounterTerms.add("G.P.Surgery");
+            encounterTerms.add("Externally entered");
+            encounterTerms.add("Third party");
+            encounterTerms.add("GP Surgery");
+            encounterTerms.add("Scanned document");
+            encounterTerms.add("Docman");
+            encounterTerms.add("D.N.A.");
+            encounterTerms.add("Telephone");
+            encounterTerms.add("Message");
+            encounterTerms.add("Path. Lab.");
+            encounterTerms.add("Administration note");
+            encounterTerms.add("Telephone consultation");
+            encounterTerms.add("Main Surgery");
+
+            for (String encTerm: encounterTerms) {
+
+                LOG.debug("" + encTerm + " -> ");
+
+                String legacyEncCode = IMHelper.getMappedLegacyCodeForLegacyCodeAndTerm(IMConstant.ENCOUNTER_LEGACY, "TYPE", encTerm);
+                LOG.debug("        legacy code = " + legacyEncCode);
+
+                /*String snomedCode = null;
+                if (!Strings.isNullOrEmpty(legacyEncCode)) {
+                    snomedCode = IMHelper.getMappedSnomedConceptForSchemeCode(IMConstant.ENCOUNTER_LEGACY, legacyEncCode);
+                }
+                LOG.debug("" + encTerm + " -> " + (legacyEncCode != null ? legacyEncCode : "NULL") + " -> " + (snomedCode != null ? snomedCode : "NULL"));*/
+
+                Integer legacyDbId = IMHelper.getConceptDbidForTypeTerm(null, IMConstant.ENCOUNTER_LEGACY, encTerm);
+                Integer coreDbId = IMHelper.getIMMappedConceptForTypeTerm(null, null, IMConstant.ENCOUNTER_LEGACY, encTerm);
+                LOG.debug("        legacy DB ID = " + legacyDbId + ", core DB ID = " + coreDbId);
+
+                Integer oldLegacyDbId = IMHelper.getConceptDbidForTypeTerm(null, IMConstant.DCE_Type_of_encounter, encTerm);
+                Integer oldCoreDbId = IMHelper.getIMMappedConceptForTypeTerm(null, null, IMConstant.DCE_Type_of_encounter, encTerm);
+                LOG.debug("        OLD legacy DB ID = " + oldLegacyDbId + ", OLD core DB ID = " + oldCoreDbId);
+
+
+
+            }
+
+
 
             LOG.debug("Finished Testing Information Model");
         } catch (Throwable t) {
