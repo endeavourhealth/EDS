@@ -1685,103 +1685,126 @@ public abstract class SpecialRoutines {
 
     }
 
-    public static void transformBartsEncounters(String odsCode, String dFrom, String dTo) {
-        LOG.debug("Transforming " + odsCode + " Encounters from " + dFrom + " to " + dTo);
+    public static void transformAdtEncounters(String odsCode, String tableName) {
+        LOG.debug("Transforming " + odsCode + " Encounters from " + tableName);
         try {
 
             ServiceDalI serviceDal = DalProvider.factoryServiceDal();
             Service service = serviceDal.getByLocalIdentifier(odsCode);
             LOG.debug("Running for " + service);
 
-            SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
-
+            /*SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
             Date from = sdf.parse(dFrom);
-            Date to = sdf.parse(dTo);
+            Date to = sdf.parse(dTo);*/
 
             UUID serviceId = service.getId();
             UUID systemId = UUID.fromString("d874c58c-91fd-41bb-993e-b1b8b22038b2");
 
-            ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
-            List<Exchange> exchanges = exchangeDal.getExchangesByService(serviceId, systemId, Integer.MAX_VALUE, from, to);
-            LOG.debug("Found " + exchanges.size() + " exchanges");
-
             ResourceDalI resourceDal = DalProvider.factoryResourceDal();
+            ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
 
             int done = 0;
 
-            //remember to go backwards as they're returned most-recent-first
-            for (int i=exchanges.size()-1; i>=0; i--) {
-                Exchange exchange = exchanges.get(i);
+            while (true) {
 
-                String body = exchange.getBody();
+                Connection connection = ConnectionManager.getEdsNonPooledConnection();
+                Statement statement = connection.createStatement();
 
-                try {
-                    Bundle bundle = (Bundle)FhirResourceHelper.deserialiseResouce(body);
-                    List<Bundle.BundleEntryComponent> entries = bundle.getEntry();
-                    for (Bundle.BundleEntryComponent entry: entries) {
-                        Resource resource = entry.getResource();
-                        if (resource instanceof Encounter) {
+                List<UUID> ids = new ArrayList<>();
 
-                            Encounter encounter = (Encounter)resource;
+                ResultSet rs = statement.executeQuery("SELECT exchange_id FROM " + tableName + " WHERE done = 0 ORDER BY timestamp LIMIT 1000");
+                while (rs.next()) {
+                    UUID exchangeId = UUID.fromString(rs.getString(1));
+                    ids.add(exchangeId);
 
-                            ResourceWrapper currentWrapper = resourceDal.getCurrentVersion(serviceId, encounter.getResourceType().toString(), UUID.fromString(encounter.getId()));
-                            if (currentWrapper != null
-                                    && !currentWrapper.isDeleted()) {
+                    Exchange exchange = exchangeDal.getExchange(exchangeId);
+                    String body = exchange.getBody();
 
-                                List<UUID> batchIdsCreated = new ArrayList<>();
-                                TransformError transformError = new TransformError();
-                                FhirResourceFiler fhirResourceFiler = new FhirResourceFiler(exchange.getId(), serviceId, systemId, transformError, batchIdsCreated);
+                    try {
+                        Bundle bundle = (Bundle) FhirResourceHelper.deserialiseResouce(body);
+                        List<Bundle.BundleEntryComponent> entries = bundle.getEntry();
+                        for (Bundle.BundleEntryComponent entry : entries) {
+                            Resource resource = entry.getResource();
+                            if (resource instanceof Encounter) {
 
-                                ExchangeTransformAudit transformAudit = new ExchangeTransformAudit();
-                                transformAudit.setServiceId(serviceId);
-                                transformAudit.setSystemId(systemId);
-                                transformAudit.setExchangeId(exchange.getId());
-                                transformAudit.setId(UUID.randomUUID());
-                                transformAudit.setStarted(new Date());
+                                Encounter encounter = (Encounter) resource;
 
-                                AuditWriter.writeExchangeEvent(exchange.getId(), "Re-transforming Encounter for encounter_event");
+                                ResourceWrapper currentWrapper = resourceDal.getCurrentVersion(serviceId, encounter.getResourceType().toString(), UUID.fromString(encounter.getId()));
+                                if (currentWrapper != null
+                                        && !currentWrapper.isDeleted()) {
 
-                                //actually call the transform code
-                                Encounter currentEncounter = (Encounter)currentWrapper.getResource();
-                                EncounterTransformer.updateEncounter(currentEncounter, encounter, fhirResourceFiler);
+                                    List<UUID> batchIdsCreated = new ArrayList<>();
+                                    TransformError transformError = new TransformError();
+                                    FhirResourceFiler fhirResourceFiler = new FhirResourceFiler(exchange.getId(), serviceId, systemId, transformError, batchIdsCreated);
 
-                                fhirResourceFiler.waitToFinish();
+                                    ExchangeTransformAudit transformAudit = new ExchangeTransformAudit();
+                                    transformAudit.setServiceId(serviceId);
+                                    transformAudit.setSystemId(systemId);
+                                    transformAudit.setExchangeId(exchange.getId());
+                                    transformAudit.setId(UUID.randomUUID());
+                                    transformAudit.setStarted(new Date());
 
-                                transformAudit.setEnded(new Date());
-                                transformAudit.setNumberBatchesCreated(new Integer(batchIdsCreated.size()));
+                                    AuditWriter.writeExchangeEvent(exchange.getId(), "Re-transforming Encounter for encounter_event");
 
-                                if (transformError.getError().size() > 0) {
-                                    transformAudit.setErrorXml(TransformErrorSerializer.writeToXml(transformError));
+                                    //actually call the transform code
+                                    Encounter currentEncounter = (Encounter) currentWrapper.getResource();
+                                    EncounterTransformer.updateEncounter(currentEncounter, encounter, fhirResourceFiler);
+
+                                    fhirResourceFiler.waitToFinish();
+
+                                    transformAudit.setEnded(new Date());
+                                    transformAudit.setNumberBatchesCreated(new Integer(batchIdsCreated.size()));
+
+                                    if (transformError.getError().size() > 0) {
+                                        transformAudit.setErrorXml(TransformErrorSerializer.writeToXml(transformError));
+                                    }
+                                    exchangeDal.save(transformAudit);
+
+                                    if (!transformError.getError().isEmpty()) {
+                                        throw new Exception("Had error on Exchange " + exchange.getId());
+                                    }
+
+                                    String batchIdString = ObjectMapperPool.getInstance().writeValueAsString(batchIdsCreated.toArray());
+                                    exchange.setHeader(HeaderKeys.BatchIdsJson, batchIdString);
+
+                                    //send on to protocol queue
+                                    PostMessageToExchangeConfig exchangeConfig = QueueHelper.findExchangeConfig("EdsProtocol");
+                                    PostMessageToExchange component = new PostMessageToExchange(exchangeConfig);
+                                    component.process(exchange);
                                 }
-                                exchangeDal.save(transformAudit);
-
-                                if (!transformError.getError().isEmpty()) {
-                                    throw new Exception("Had error on Exchange " + exchange.getId());
-                                }
-
-                                String batchIdString = ObjectMapperPool.getInstance().writeValueAsString(batchIdsCreated.toArray());
-                                exchange.setHeader(HeaderKeys.BatchIdsJson, batchIdString);
-
-                                //send on to protocol queue
-                                PostMessageToExchangeConfig exchangeConfig = QueueHelper.findExchangeConfig("EdsProtocol");
-                                PostMessageToExchange component = new PostMessageToExchange(exchangeConfig);
-                                component.process(exchange);
                             }
                         }
+
+                        //mark as done
+                        Connection connection2 = ConnectionManager.getEdsConnection();
+                        PreparedStatement ps = connection2.prepareStatement("UPDATE " + tableName + " SET done = 1 WHERE exchange_id = ?");
+                        ps.setString(1, exchangeId.toString());
+                        ps.executeUpdate();
+                        connection2.commit();
+                        ps.close();
+                        connection2.close();
+
+                    } catch (Exception ex) {
+                        throw new Exception("Exception on exchange " + exchange.getId(), ex);
                     }
 
-                } catch (Exception ex) {
-                    throw new Exception("Exception on exchange " + exchange.getId(), ex);
+                    done++;
+                    if (done % 100 == 0) {
+                        LOG.debug("Done " + done);
+                    }
+
                 }
 
-                done ++;
-                if (done % 100 == 0) {
-                    LOG.debug("Done " + done);
+                statement.close();
+                connection.close();
+
+                if (ids.isEmpty()) {
+                    break;
                 }
             }
             LOG.debug("Done " + done);
 
-            LOG.debug("Finished Transforming Barts Encounters from " + dFrom + " to " + dTo);
+            LOG.debug("Finished Transforming Barts Encounters from " + tableName);
         } catch (Throwable t) {
             LOG.error("", t);
         }

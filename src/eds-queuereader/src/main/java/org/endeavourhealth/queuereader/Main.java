@@ -91,9 +91,8 @@ public class Main {
 				&& args[0].equalsIgnoreCase("TransformBartsEncounters")) {
 
 			String odsCode = args[1];
-			String dtFrom = args[2];
-			String dtTo = args[3];
-			SpecialRoutines.transformBartsEncounters(odsCode, dtFrom, dtTo);
+			String tableName = args[2];
+			SpecialRoutines.transformAdtEncounters(odsCode, tableName);
 			System.exit(0);
 		}
 
