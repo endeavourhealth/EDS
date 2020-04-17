@@ -343,6 +343,15 @@ public class EnterpriseFiler {
         Class fieldCls = columnClasses.get(column);
 
         if (fieldCls == String.class) {
+
+            //hack to get around the bad IM result for Barts textual results
+            if (column.equals("original_code")) {
+                String s = (String)value;
+                if (s.startsWith("BC_BC_")) {
+                    value = s.substring(3);
+                }
+            }
+
             if (Strings.isNullOrEmpty(value)) {
                 statement.setNull(index, Types.VARCHAR);
             } else {
