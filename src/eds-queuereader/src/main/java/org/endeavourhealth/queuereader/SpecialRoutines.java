@@ -6,6 +6,7 @@ import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
+import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.common.fhir.ExtensionConverter;
 import org.endeavourhealth.common.fhir.FhirExtensionUri;
@@ -16,6 +17,7 @@ import org.endeavourhealth.common.utility.FileHelper;
 import org.endeavourhealth.common.utility.FileInfo;
 import org.endeavourhealth.common.utility.JsonSerializer;
 import org.endeavourhealth.core.application.ApplicationHeartbeatHelper;
+import org.endeavourhealth.core.configuration.PostMessageToExchangeConfig;
 import org.endeavourhealth.core.database.dal.DalProvider;
 import org.endeavourhealth.core.database.dal.admin.ServiceDalI;
 import org.endeavourhealth.core.database.dal.admin.SystemHelper;
@@ -24,6 +26,7 @@ import org.endeavourhealth.core.database.dal.audit.ExchangeBatchDalI;
 import org.endeavourhealth.core.database.dal.audit.ExchangeDalI;
 import org.endeavourhealth.core.database.dal.audit.models.Exchange;
 import org.endeavourhealth.core.database.dal.audit.models.ExchangeBatch;
+import org.endeavourhealth.core.database.dal.audit.models.ExchangeTransformAudit;
 import org.endeavourhealth.core.database.dal.audit.models.HeaderKeys;
 import org.endeavourhealth.core.database.dal.ehr.ResourceDalI;
 import org.endeavourhealth.core.database.dal.ehr.models.ResourceWrapper;
@@ -38,12 +41,12 @@ import org.endeavourhealth.core.database.rdbms.datasharingmanager.models.Project
 import org.endeavourhealth.core.fhirStorage.FhirResourceHelper;
 import org.endeavourhealth.core.fhirStorage.FhirSerializationHelper;
 import org.endeavourhealth.core.messaging.pipeline.components.DetermineRelevantProtocolIds;
+import org.endeavourhealth.core.messaging.pipeline.components.PostMessageToExchange;
 import org.endeavourhealth.core.queueing.QueueHelper;
+import org.endeavourhealth.core.xml.TransformErrorSerializer;
+import org.endeavourhealth.core.xml.transformError.TransformError;
 import org.endeavourhealth.im.client.IMClient;
-import org.endeavourhealth.transform.common.AuditWriter;
-import org.endeavourhealth.transform.common.ExchangeHelper;
-import org.endeavourhealth.transform.common.ExchangePayloadFile;
-import org.endeavourhealth.transform.common.TransformConfig;
+import org.endeavourhealth.transform.common.*;
 import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
 import org.endeavourhealth.transform.emis.csv.helpers.EmisCsvHelper;
 import org.endeavourhealth.transform.emis.csv.schema.admin.Location;
@@ -52,6 +55,7 @@ import org.endeavourhealth.transform.emis.csv.schema.admin.OrganisationLocation;
 import org.endeavourhealth.transform.emis.csv.schema.admin.UserInRole;
 import org.endeavourhealth.transform.emis.csv.schema.coding.ClinicalCode;
 import org.endeavourhealth.transform.emis.csv.transforms.coding.ClinicalCodeTransformer;
+import org.endeavourhealth.transform.fhirhl7v2.transforms.EncounterTransformer;
 import org.endeavourhealth.transform.subscriber.IMConstant;
 import org.endeavourhealth.transform.subscriber.IMHelper;
 import org.endeavourhealth.transform.tpp.TppCsvToFhirTransformer;
@@ -1679,5 +1683,107 @@ public abstract class SpecialRoutines {
             LOG.error("", t);
         }
 
+    }
+
+    public static void transformBartsEncounters(String odsCode, String dFrom, String dTo) {
+        LOG.debug("Transforming " + odsCode + " Encounters from " + dFrom + " to " + dTo);
+        try {
+
+            ServiceDalI serviceDal = DalProvider.factoryServiceDal();
+            Service service = serviceDal.getByLocalIdentifier(odsCode);
+            LOG.debug("Running for " + service);
+
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
+
+            Date from = sdf.parse(dFrom);
+            Date to = sdf.parse(dTo);
+
+            UUID serviceId = service.getId();
+            UUID systemId = UUID.fromString("d874c58c-91fd-41bb-993e-b1b8b22038b2");
+
+            ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
+            List<Exchange> exchanges = exchangeDal.getExchangesByService(serviceId, systemId, Integer.MAX_VALUE, from, to);
+            LOG.debug("Found " + exchanges.size() + " exchanges");
+
+            ResourceDalI resourceDal = DalProvider.factoryResourceDal();
+
+            int done = 0;
+
+            //remember to go backwards as they're returned most-recent-first
+            for (int i=exchanges.size()-1; i>=0; i--) {
+                Exchange exchange = exchanges.get(i);
+
+                String body = exchange.getBody();
+
+                try {
+                    Bundle bundle = (Bundle)FhirResourceHelper.deserialiseResouce(body);
+                    List<Bundle.BundleEntryComponent> entries = bundle.getEntry();
+                    for (Bundle.BundleEntryComponent entry: entries) {
+                        Resource resource = entry.getResource();
+                        if (resource instanceof Encounter) {
+
+                            Encounter encounter = (Encounter)resource;
+
+                            ResourceWrapper currentWrapper = resourceDal.getCurrentVersion(serviceId, encounter.getResourceType().toString(), UUID.fromString(encounter.getId()));
+                            if (currentWrapper != null
+                                    && !currentWrapper.isDeleted()) {
+
+                                List<UUID> batchIdsCreated = new ArrayList<>();
+                                TransformError transformError = new TransformError();
+                                FhirResourceFiler fhirResourceFiler = new FhirResourceFiler(exchange.getId(), serviceId, systemId, transformError, batchIdsCreated);
+
+                                ExchangeTransformAudit transformAudit = new ExchangeTransformAudit();
+                                transformAudit.setServiceId(serviceId);
+                                transformAudit.setSystemId(systemId);
+                                transformAudit.setExchangeId(exchange.getId());
+                                transformAudit.setId(UUID.randomUUID());
+                                transformAudit.setStarted(new Date());
+
+                                AuditWriter.writeExchangeEvent(exchange.getId(), "Re-transforming Encounter for encounter_event");
+
+                                //actually call the transform code
+                                Encounter currentEncounter = (Encounter)currentWrapper.getResource();
+                                EncounterTransformer.updateEncounter(currentEncounter, encounter, fhirResourceFiler);
+
+                                fhirResourceFiler.waitToFinish();
+
+                                transformAudit.setEnded(new Date());
+                                transformAudit.setNumberBatchesCreated(new Integer(batchIdsCreated.size()));
+
+                                if (transformError.getError().size() > 0) {
+                                    transformAudit.setErrorXml(TransformErrorSerializer.writeToXml(transformError));
+                                }
+                                exchangeDal.save(transformAudit);
+
+                                if (!transformError.getError().isEmpty()) {
+                                    throw new Exception("Had error on Exchange " + exchange.getId());
+                                }
+
+                                String batchIdString = ObjectMapperPool.getInstance().writeValueAsString(batchIdsCreated.toArray());
+                                exchange.setHeader(HeaderKeys.BatchIdsJson, batchIdString);
+
+                                //send on to protocol queue
+                                PostMessageToExchangeConfig exchangeConfig = QueueHelper.findExchangeConfig("EdsProtocol");
+                                PostMessageToExchange component = new PostMessageToExchange(exchangeConfig);
+                                component.process(exchange);
+                            }
+                        }
+                    }
+
+                } catch (Exception ex) {
+                    throw new Exception("Exception on exchange " + exchange.getId(), ex);
+                }
+
+                done ++;
+                if (done % 100 == 0) {
+                    LOG.debug("Done " + done);
+                }
+            }
+            LOG.debug("Done " + done);
+
+            LOG.debug("Finished Transforming Barts Encounters from " + dFrom + " to " + dTo);
+        } catch (Throwable t) {
+            LOG.error("", t);
+        }
     }
 }

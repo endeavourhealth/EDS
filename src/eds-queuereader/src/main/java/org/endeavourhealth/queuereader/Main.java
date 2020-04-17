@@ -89,6 +89,16 @@ public class Main {
 		ConfigManager.initialize("queuereader", configId);
 
 		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("TransformBartsEncounters")) {
+
+			String odsCode = args[1];
+			String dtFrom = args[2];
+			String dtTo = args[3];
+			SpecialRoutines.transformBartsEncounters(odsCode, dtFrom, dtTo);
+			System.exit(0);
+		}
+
+		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("CatptureBartsEncounters")) {
 			Integer count = Integer.parseInt(args[1]);
 			String toFile = args[2];
