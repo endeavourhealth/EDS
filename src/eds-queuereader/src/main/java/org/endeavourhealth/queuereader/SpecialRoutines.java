@@ -1721,56 +1721,58 @@ public abstract class SpecialRoutines {
                     String body = exchange.getBody();
 
                     try {
-                        Bundle bundle = (Bundle) FhirResourceHelper.deserialiseResouce(body);
-                        List<Bundle.BundleEntryComponent> entries = bundle.getEntry();
-                        for (Bundle.BundleEntryComponent entry : entries) {
-                            Resource resource = entry.getResource();
-                            if (resource instanceof Encounter) {
+                        if (!body.equals("[]")) {
+                            Bundle bundle = (Bundle) FhirResourceHelper.deserialiseResouce(body);
+                            List<Bundle.BundleEntryComponent> entries = bundle.getEntry();
+                            for (Bundle.BundleEntryComponent entry : entries) {
+                                Resource resource = entry.getResource();
+                                if (resource instanceof Encounter) {
 
-                                Encounter encounter = (Encounter) resource;
+                                    Encounter encounter = (Encounter) resource;
 
-                                ResourceWrapper currentWrapper = resourceDal.getCurrentVersion(serviceId, encounter.getResourceType().toString(), UUID.fromString(encounter.getId()));
-                                if (currentWrapper != null
-                                        && !currentWrapper.isDeleted()) {
+                                    ResourceWrapper currentWrapper = resourceDal.getCurrentVersion(serviceId, encounter.getResourceType().toString(), UUID.fromString(encounter.getId()));
+                                    if (currentWrapper != null
+                                            && !currentWrapper.isDeleted()) {
 
-                                    List<UUID> batchIdsCreated = new ArrayList<>();
-                                    TransformError transformError = new TransformError();
-                                    FhirResourceFiler fhirResourceFiler = new FhirResourceFiler(exchange.getId(), serviceId, systemId, transformError, batchIdsCreated);
+                                        List<UUID> batchIdsCreated = new ArrayList<>();
+                                        TransformError transformError = new TransformError();
+                                        FhirResourceFiler fhirResourceFiler = new FhirResourceFiler(exchange.getId(), serviceId, systemId, transformError, batchIdsCreated);
 
-                                    ExchangeTransformAudit transformAudit = new ExchangeTransformAudit();
-                                    transformAudit.setServiceId(serviceId);
-                                    transformAudit.setSystemId(systemId);
-                                    transformAudit.setExchangeId(exchange.getId());
-                                    transformAudit.setId(UUID.randomUUID());
-                                    transformAudit.setStarted(new Date());
+                                        ExchangeTransformAudit transformAudit = new ExchangeTransformAudit();
+                                        transformAudit.setServiceId(serviceId);
+                                        transformAudit.setSystemId(systemId);
+                                        transformAudit.setExchangeId(exchange.getId());
+                                        transformAudit.setId(UUID.randomUUID());
+                                        transformAudit.setStarted(new Date());
 
-                                    AuditWriter.writeExchangeEvent(exchange.getId(), "Re-transforming Encounter for encounter_event");
+                                        AuditWriter.writeExchangeEvent(exchange.getId(), "Re-transforming Encounter for encounter_event");
 
-                                    //actually call the transform code
-                                    Encounter currentEncounter = (Encounter) currentWrapper.getResource();
-                                    EncounterTransformer.updateEncounter(currentEncounter, encounter, fhirResourceFiler);
+                                        //actually call the transform code
+                                        Encounter currentEncounter = (Encounter) currentWrapper.getResource();
+                                        EncounterTransformer.updateEncounter(currentEncounter, encounter, fhirResourceFiler);
 
-                                    fhirResourceFiler.waitToFinish();
+                                        fhirResourceFiler.waitToFinish();
 
-                                    transformAudit.setEnded(new Date());
-                                    transformAudit.setNumberBatchesCreated(new Integer(batchIdsCreated.size()));
+                                        transformAudit.setEnded(new Date());
+                                        transformAudit.setNumberBatchesCreated(new Integer(batchIdsCreated.size()));
 
-                                    if (transformError.getError().size() > 0) {
-                                        transformAudit.setErrorXml(TransformErrorSerializer.writeToXml(transformError));
+                                        if (transformError.getError().size() > 0) {
+                                            transformAudit.setErrorXml(TransformErrorSerializer.writeToXml(transformError));
+                                        }
+                                        exchangeDal.save(transformAudit);
+
+                                        if (!transformError.getError().isEmpty()) {
+                                            throw new Exception("Had error on Exchange " + exchange.getId());
+                                        }
+
+                                        String batchIdString = ObjectMapperPool.getInstance().writeValueAsString(batchIdsCreated.toArray());
+                                        exchange.setHeader(HeaderKeys.BatchIdsJson, batchIdString);
+
+                                        //send on to protocol queue
+                                        PostMessageToExchangeConfig exchangeConfig = QueueHelper.findExchangeConfig("EdsProtocol");
+                                        PostMessageToExchange component = new PostMessageToExchange(exchangeConfig);
+                                        component.process(exchange);
                                     }
-                                    exchangeDal.save(transformAudit);
-
-                                    if (!transformError.getError().isEmpty()) {
-                                        throw new Exception("Had error on Exchange " + exchange.getId());
-                                    }
-
-                                    String batchIdString = ObjectMapperPool.getInstance().writeValueAsString(batchIdsCreated.toArray());
-                                    exchange.setHeader(HeaderKeys.BatchIdsJson, batchIdString);
-
-                                    //send on to protocol queue
-                                    PostMessageToExchangeConfig exchangeConfig = QueueHelper.findExchangeConfig("EdsProtocol");
-                                    PostMessageToExchange component = new PostMessageToExchange(exchangeConfig);
-                                    component.process(exchange);
                                 }
                             }
                         }
