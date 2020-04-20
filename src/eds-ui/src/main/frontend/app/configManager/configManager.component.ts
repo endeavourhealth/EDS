@@ -23,7 +23,10 @@ export class ConfigManagerComponent {
     invalidJsonMessage: string;
     filterAppId: string;
     filterAppIdIncludeGlobal: boolean;
-    filterConfigDataSearch: string;
+    filterSearchText: string;
+    filterSearchOnAppId: boolean;
+    filterSearchOnConfigId: boolean;
+    filterSearchOnData: boolean;
     filteredRecords: ConfigRecord[];
     historyMap: {};
     refreshingHistory: boolean;
@@ -36,6 +39,7 @@ export class ConfigManagerComponent {
 
         var vm = this;
         vm.filterAppIdIncludeGlobal = true;
+        vm.filterSearchOnConfigId = true;
     }
 
     ngOnInit() {
@@ -239,10 +243,10 @@ export class ConfigManagerComponent {
 
         //work out if the name/ID search text is valid regex and force it to lower case if so
         var validConfigDataSearchRegex;
-        if (vm.filterConfigDataSearch) {
+        if (vm.filterSearchText) {
             try {
-                new RegExp(vm.filterConfigDataSearch);
-                validConfigDataSearchRegex = vm.filterConfigDataSearch.toLowerCase();
+                new RegExp(vm.filterSearchText);
+                validConfigDataSearchRegex = vm.filterSearchText.toLowerCase();
             } catch (e) {
                 //do nothing and it'll ignore it in the search
             }
@@ -262,9 +266,20 @@ export class ConfigManagerComponent {
                 }
 
                 if (validConfigDataSearchRegex) {
+
+                    var matches = false;
+
+                    var appId = record.appId;
+                    var configId = record.configId;
                     var data = record.configData;
-                    if (!data
-                        || !data.toLowerCase().match(validConfigDataSearchRegex)) {
+                    if (
+                        (vm.filterSearchOnAppId && appId && appId.toLowerCase().match(validConfigDataSearchRegex))
+                        || (vm.filterSearchOnConfigId && configId && configId.toLowerCase().match(validConfigDataSearchRegex))
+                        || (vm.filterSearchOnData && data && data.toLowerCase().match(validConfigDataSearchRegex))) {
+                        matches = true;
+                    }
+
+                    if (!matches) {
                         continue;
                     }
                 }

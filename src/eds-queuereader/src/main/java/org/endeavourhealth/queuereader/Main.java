@@ -90,7 +90,11 @@ public class Main {
 
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("FindEmisServicesNeedReprocessing")) {
-			SpecialRoutines.findEmisServicesNeedReprocessing();
+			String odsCodeRegex = null;
+			if (args.length > 1) {
+				odsCodeRegex = args[1];
+			}
+			SpecialRoutines.findEmisServicesNeedReprocessing(odsCodeRegex);
 			System.exit(0);
 		}
 

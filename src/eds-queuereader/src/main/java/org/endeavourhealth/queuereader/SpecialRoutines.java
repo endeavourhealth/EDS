@@ -1843,8 +1843,8 @@ public abstract class SpecialRoutines {
     }
 
 
-    public static void findEmisServicesNeedReprocessing() {
-        LOG.debug("Finding Emis Services that Need Re-processing");
+    public static void findEmisServicesNeedReprocessing(String odsCodeRegex) {
+        LOG.debug("Finding Emis Services that Need Re-processing for " + odsCodeRegex);
         try {
             ServiceDalI serviceDal = DalProvider.factoryServiceDal();
             List<Service> services = serviceDal.getAll();
@@ -1856,6 +1856,12 @@ public abstract class SpecialRoutines {
                         || !tags.containsKey("EMIS")) {
                     continue;
                 }
+
+                if (shouldSkipService(service, odsCodeRegex)) {
+                    continue;
+                }
+
+                LOG.debug("CHECKING " + service + ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
 
                 List<UUID> systemIds = SystemHelper.getSystemIdsForService(service);
                 if (systemIds.size() != 1) {
@@ -1875,24 +1881,33 @@ public abstract class SpecialRoutines {
                         continue;
                     }
 
+                    //skip any custom extracts
+                    String body = exchange.getBody();
+                    List<ExchangePayloadFile> files = ExchangeHelper.parseExchangeBody(body, false);
+                    if (files.size() <= 1) {
+                        continue;
+                    }
+
                     List<ExchangeTransformAudit> audits = exchangeDal.getAllExchangeTransformAudits(service.getId(), systemId, exchange.getId());
                     List<ExchangeEvent> events = exchangeDal.getExchangeEvents(exchange.getId());
 
                     //was it transformed OK before it was re-queued with filtering?
                     boolean transformedWithoutFiltering = false;
+                    List<String> logging = new ArrayList<>();
 
                     for (ExchangeTransformAudit audit: audits) {
 
                         //transformed OK
                         boolean transformedOk = audit.getEnded() != null && audit.getErrorXml() == null;
                         if (!transformedOk) {
+                            logging.add("Audit " + audit.getStarted() + " didn't complete OK, so not counting");
                             continue;
                         }
 
                         //if transformed OK see whether filtering was applied BEFORE
                         Date dtTransformStart = audit.getStarted();
 
-                        //find immediately preceeding event showing loading into inbound queue
+                        //find immediately proceeding event showing loading into inbound queue
                         ExchangeEvent previousLoadingEvent = null;
                         for (ExchangeEvent event: events) {
                             Date dtEvent = event.getTimestamp();
@@ -1903,6 +1918,7 @@ public abstract class SpecialRoutines {
                             String eventDesc = event.getEventDesc();
                             if (eventDesc.startsWith("Manually pushed into edsInbound exchange")) {
                                 previousLoadingEvent = event;
+                                logging.add("Proceeding event from " + dtEvent + " [" + eventDesc);
                                 break;
                             }
                         }
