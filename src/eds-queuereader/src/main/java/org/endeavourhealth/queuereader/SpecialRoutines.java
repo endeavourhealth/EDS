@@ -1918,7 +1918,7 @@ public abstract class SpecialRoutines {
                             String eventDesc = event.getEventDesc();
                             if (eventDesc.startsWith("Manually pushed into edsInbound exchange")) {
                                 previousLoadingEvent = event;
-                                logging.add("Proceeding event from " + dtEvent + " [" + eventDesc);
+                                logging.add("Proceeding event from " + dtEvent + " [" + eventDesc + "]");
                                 break;
                             }
                         }
@@ -1932,12 +1932,18 @@ public abstract class SpecialRoutines {
                             String eventDesc = previousLoadingEvent.getEventDesc();
                             if (!eventDesc.contains("Filtered on file types")) {
                                 transformedWithoutFiltering = true;
+
+                            } else {
+                                logging.add("Event desc filters on file types");
                             }
                         }
                     }
 
                     if (!transformedWithoutFiltering) {
                         LOG.error("" + service + " -> exchange " + exchange.getId() + " from " + exchange.getHeaderAsDate(HeaderKeys.DataDate));
+                        for (String line: logging) {
+                            LOG.error("    " + line);
+                        }
                     }
                 }
             }
