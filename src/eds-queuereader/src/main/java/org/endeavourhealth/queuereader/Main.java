@@ -405,6 +405,14 @@ public class Main {
 			System.exit(0);
 		}
 
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("SubscriberFullLoadAllProtocolServices")) {
+			String protocolName = args[1];
+
+			SpecialRoutines.queueUpAllServicesForPopulatingSubscriberProtocol(protocolName);
+			System.exit(0);
+		}
+
 
 		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("RunPersonUpdater")) {

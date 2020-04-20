@@ -1163,7 +1163,7 @@ BEGIN
     ) VALUES (
                  now(3), -- current time inc ms
                  1, -- update
-                 21, -- registration_status_history
+                 23, -- registration_status_history
                  NEW.id
              );
 END$$
@@ -1182,7 +1182,7 @@ BEGIN
     ) VALUES (
                  now(3), -- current time inc ms
                  2, -- delete
-                 21, -- registration_status_history
+                 23, -- registration_status_history
                  OLD.id
              );
 END$$

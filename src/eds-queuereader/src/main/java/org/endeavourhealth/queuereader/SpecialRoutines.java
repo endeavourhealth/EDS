@@ -43,6 +43,9 @@ import org.endeavourhealth.core.fhirStorage.FhirSerializationHelper;
 import org.endeavourhealth.core.messaging.pipeline.components.DetermineRelevantProtocolIds;
 import org.endeavourhealth.core.messaging.pipeline.components.PostMessageToExchange;
 import org.endeavourhealth.core.queueing.QueueHelper;
+import org.endeavourhealth.core.xml.QueryDocument.LibraryItem;
+import org.endeavourhealth.core.xml.QueryDocument.ServiceContract;
+import org.endeavourhealth.core.xml.QueryDocument.ServiceContractActive;
 import org.endeavourhealth.core.xml.TransformErrorSerializer;
 import org.endeavourhealth.core.xml.transformError.TransformError;
 import org.endeavourhealth.im.client.IMClient;
@@ -62,6 +65,7 @@ import org.endeavourhealth.transform.tpp.TppCsvToFhirTransformer;
 import org.endeavourhealth.transform.tpp.csv.helpers.TppCsvHelper;
 import org.endeavourhealth.transform.tpp.csv.schema.staff.SRStaffMember;
 import org.endeavourhealth.transform.tpp.csv.schema.staff.SRStaffMemberProfile;
+import org.endeavourhealth.transform.ui.helpers.BulkHelper;
 import org.hl7.fhir.instance.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -86,6 +90,8 @@ import java.sql.Statement;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.regex.Pattern;
+
+import static org.endeavourhealth.core.xml.QueryDocument.ServiceContractType.PUBLISHER;
 
 public abstract class SpecialRoutines {
     private static final Logger LOG = LoggerFactory.getLogger(SpecialRoutines.class);
@@ -1809,6 +1815,33 @@ public abstract class SpecialRoutines {
             LOG.debug("Finished Transforming Barts Encounters from " + tableName);
         } catch (Throwable t) {
             LOG.error("", t);
+        }
+    }
+
+    // For the protocol name provided, get the list of services which are publishers and queue up a full
+    // service protocol load for that service. Add any FHIR resource filtering via filterElements db_subscriber config;
+    // see MessageTransformOutbound.filterPatientResources
+    public static void queueUpAllServicesForPopulatingSubscriberProtocol (String protocolName) throws Exception {
+
+        //find the protocol using the name parameter
+        LibraryItem matchedLibraryItem = BulkHelper.findProtocolLibraryItem(protocolName);
+        if (matchedLibraryItem == null) {
+            System.out.println("Protocol not found : " + protocolName);
+            return;
+        }
+        UUID protocolUuid = UUID.fromString(matchedLibraryItem.getUuid());
+
+        //get all the active publishing services for this protocol
+        List<ServiceContract> serviceContracts = matchedLibraryItem.getProtocol().getServiceContract();
+        for (ServiceContract serviceContract : serviceContracts) {
+            if (serviceContract.getType().equals(PUBLISHER)
+                    && serviceContract.getActive() == ServiceContractActive.TRUE) {
+
+                UUID serviceUuid = UUID.fromString(serviceContract.getService().getUuid());
+
+                //queue up a full subscriber protocol load exchange for this service
+                QueueHelper.queueUpFullServiceForPopulatingSubscriber(serviceUuid, protocolUuid);
+            }
         }
     }
 }

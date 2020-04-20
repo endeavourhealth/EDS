@@ -1296,7 +1296,8 @@ create table patient_address (
 	local_authority_code varchar(9),
 	CONSTRAINT pk_organization_id_id_patient_id_person_id PRIMARY KEY (`organization_id`,`id`,`patient_id`,`person_id`),
 	CONSTRAINT fk_patient_address_patient_id_organization_id FOREIGN KEY (patient_id, organization_id)
-	REFERENCES patient (id, organization_id)
+	    REFERENCES patient (id, organization_id) MATCH SIMPLE
+        ON UPDATE NO ACTION ON DELETE NO ACTION
 ) COMMENT 'stores address details for patients';
 
 CREATE UNIQUE INDEX ux_patient_address_id on patient_address (id);
@@ -1316,7 +1317,8 @@ CREATE TABLE patient_contact
 	value varchar(255) COMMENT 'the actual phone number or email address',
 	CONSTRAINT pk_organization_id_id_patient_id_person_id PRIMARY KEY (`organization_id`,`id`,`patient_id`,`person_id`),
 	CONSTRAINT fk_patient_contact_patient_id_organisation_id FOREIGN KEY (patient_id, organization_id)
-	REFERENCES patient (id, organization_id)
+	    REFERENCES patient (id, organization_id) MATCH SIMPLE
+        ON UPDATE NO ACTION ON DELETE NO ACTION
 ) COMMENT 'stores contact details (e.g. phone) for patients';
 
 CREATE UNIQUE INDEX ux_patient_contact_id on patient_contact (id);
@@ -1353,19 +1355,20 @@ CREATE TABLE `patient_address_match` (
   KEY `patient_address_patient_address_id` (`patient_address_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8 COLLATE=utf8_bin COMMENT='stores uprn details for addresses';
 
-CREATE TABLE `registration_status_history` (
-    `id` bigint(20) NOT NULL,
-    `organization_id` bigint(20) NOT NULL,
-    `patient_id` bigint(20) NOT NULL,
-    `person_id` bigint(20) NOT NULL,
-    `episode_of_care_id` bigint(20) DEFAULT NULL,
-    `registration_status_id` int(11) DEFAULT NULL,
-    `start_date` datetime DEFAULT NULL,
-    `end_date` datetime DEFAULT NULL,
+CREATE TABLE registration_status_history (
+    id bigint(20) NOT NULL,
+    organization_id bigint(20) NOT NULL,
+    patient_id bigint(20) NOT NULL,
+    person_id bigint(20) NOT NULL,
+    episode_of_care_id bigint(20) DEFAULT NULL,
+    registration_status_id int(11) DEFAULT NULL,
+    start_date datetime DEFAULT NULL,
+    end_date datetime DEFAULT NULL,
     PRIMARY KEY (`organization_id`,`id`,`patient_id`,`person_id`),
-    UNIQUE KEY `ux_registration_status_history_id` (`id`),
+    UNIQUE KEY ux_registration_status_history_id (`id`),
     CONSTRAINT fk_registration_status_history_patient_id_organisation_id FOREIGN KEY (patient_id, organization_id)
-    REFERENCES patient (id, organization_id)
+        REFERENCES patient (id, organization_id) MATCH SIMPLE
+        ON UPDATE NO ACTION ON DELETE NO ACTION
 ) COMMENT='stores registration status history for GP registrations';
 
 DELIMITER //

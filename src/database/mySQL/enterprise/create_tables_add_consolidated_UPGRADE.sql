@@ -15,6 +15,7 @@ alter table person add last_names  varchar(255);
 alter table practitioner add gmc_code varchar(50);
 alter table referral_request add specialty varchar(50);
 alter table referral_request add ubrn varchar(50);
+alter table appointment add booked_date datetime;
 
 -- from pseudo to pi
 alter table patient add pseudo_id varchar(255);
@@ -28,14 +29,12 @@ alter table person add age_months integer;
 alter table person add age_weeks integer;
 alter table person add postcode_prefix varchar(20);
 
--- alter table appointment add booked_date datetime;
-
 -- NOTE:  the Patient to Person trigger will need updating (see create tables) to process the additional columns
 
 -- NOTE: lookup to following table creation scripts from the create_tables_PI.sql file
     -- link_distributer
     -- patient_address
-    -- patient_address_match  (if not already exists)
+    -- patient_address_match  (ensure consolidated version, i.e. that in PI version is applied)
     -- patient_contact
     -- registration_status_history
 
@@ -63,7 +62,7 @@ alter table person add last_names  varchar(255);
 alter table practitioner add gmc_code varchar(50);
 alter table referral_request add specialty varchar(50);
 alter table referral_request add ubrn varchar(50);
--- alter table appointment add booked_date datetime;
+alter table appointment add booked_date datetime;
 
 -- NOTE:  the Patient to Person trigger will need updating (see create tables) to process the additional columns
 -- NOTE:  event_log script with triggers
@@ -79,7 +78,7 @@ alter table person add postcode varchar(20);
 -- NOTE: lookup to following table creation scripts from the create_tables_PSUDONYMISED.sql file
 -- link_distributer  (already exists)
 -- patient_address
--- patient_address_match  (if not already exists)
+-- patient_address_match  (ensure consolidated version, i.e. that in PI version is applied)
 -- patient_contact
 -- registration_status_history
 
