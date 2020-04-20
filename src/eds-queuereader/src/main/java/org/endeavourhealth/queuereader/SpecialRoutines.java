@@ -1951,9 +1951,9 @@ public abstract class SpecialRoutines {
 
                     if (!transformedWithoutFiltering) {
                         LOG.error("" + service + " -> exchange " + exchange.getId() + " from " + exchange.getHeaderAsDate(HeaderKeys.DataDate));
-                        for (String line: logging) {
+                        /*for (String line: logging) {
                             LOG.error("    " + line);
-                        }
+                        }*/
                     }
                 }
             }
