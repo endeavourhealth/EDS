@@ -17,6 +17,7 @@ public class JsonTransformExchangeError {
     private Integer numberBatchIdsCreated = null;
     private boolean transformError;
     private boolean transformSuccess;
+    private boolean transformInProgress;
     private boolean resubmitted;
     private Date deleted = null;
     private List<String> lines = null;
@@ -83,6 +84,14 @@ public class JsonTransformExchangeError {
 
     public void setTransformSuccess(boolean transformSuccess) {
         this.transformSuccess = transformSuccess;
+    }
+
+    public boolean isTransformInProgress() {
+        return transformInProgress;
+    }
+
+    public void setTransformInProgress(boolean transformInProgress) {
+        this.transformInProgress = transformInProgress;
     }
 
     public boolean isResubmitted() {

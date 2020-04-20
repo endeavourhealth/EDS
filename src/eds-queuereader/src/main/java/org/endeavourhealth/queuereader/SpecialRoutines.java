@@ -24,10 +24,7 @@ import org.endeavourhealth.core.database.dal.admin.SystemHelper;
 import org.endeavourhealth.core.database.dal.admin.models.Service;
 import org.endeavourhealth.core.database.dal.audit.ExchangeBatchDalI;
 import org.endeavourhealth.core.database.dal.audit.ExchangeDalI;
-import org.endeavourhealth.core.database.dal.audit.models.Exchange;
-import org.endeavourhealth.core.database.dal.audit.models.ExchangeBatch;
-import org.endeavourhealth.core.database.dal.audit.models.ExchangeTransformAudit;
-import org.endeavourhealth.core.database.dal.audit.models.HeaderKeys;
+import org.endeavourhealth.core.database.dal.audit.models.*;
 import org.endeavourhealth.core.database.dal.ehr.ResourceDalI;
 import org.endeavourhealth.core.database.dal.ehr.models.ResourceWrapper;
 import org.endeavourhealth.core.database.dal.publisherCommon.*;
@@ -1866,7 +1863,23 @@ public abstract class SpecialRoutines {
                 }
                 UUID systemId = systemIds.get(0);
 
+                ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
+                List<Exchange> exchanges = exchangeDal.getExchangesByService(service.getId(), systemId, Integer.MAX_VALUE);
+                for (int i=exchanges.size()-1; i>=0; i--) {
+                    Exchange exchange = exchanges.get(i);
 
+                    //if can't be queued, ignore it
+                    Boolean allowQueueing = exchange.getHeaderAsBoolean(HeaderKeys.AllowQueueing);
+                    if (allowQueueing != null
+                            && !allowQueueing.booleanValue()) {
+                        continue;
+                    }
+
+                    List<ExchangeTransformAudit> audits = exchangeDal.getAllExchangeTransformAudits(service.getId(), systemId, exchange.getId());
+                    List<ExchangeEvent> events = exchangeDal.getExchangeEvents(exchange.getId());
+
+                    //was it transformed OK before it was re-queued with filtering?
+                }
             }
 
             LOG.debug("Finished Finding Emis Services that Need Re-processing");

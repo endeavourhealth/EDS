@@ -7,6 +7,7 @@ export class TransformErrorDetail {
     numberBatchIdsCreated: number;
     transformError: boolean;
     transformSuccess: boolean;
+    transformInProgress: boolean;
     resubmitted: boolean;
     deleted: number;
     lines: string[];

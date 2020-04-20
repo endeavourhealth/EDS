@@ -690,8 +690,9 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
             jsonObj.setTransformStart(transformAudit.getStarted());
             jsonObj.setTransformEnd(transformAudit.getEnded());
             jsonObj.setNumberBatchIdsCreated(transformAudit.getNumberBatchesCreated());
-            jsonObj.setTransformError(transformAudit.getErrorXml() != null);
-            jsonObj.setTransformSuccess(transformAudit.getErrorXml() == null);
+            jsonObj.setTransformError(transformAudit.getEnded() != null && transformAudit.getErrorXml() != null);
+            jsonObj.setTransformSuccess(transformAudit.getEnded() != null && transformAudit.getErrorXml() == null);
+            jsonObj.setTransformInProgress(transformAudit.getEnded() == null);
             jsonObj.setResubmitted(transformAudit.isResubmitted());
             jsonObj.setDeleted(transformAudit.getDeleted());
             ret.add(jsonObj);

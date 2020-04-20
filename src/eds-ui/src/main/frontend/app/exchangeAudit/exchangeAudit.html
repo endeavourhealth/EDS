@@ -297,6 +297,8 @@
                                         {{transformAudit.eventDesc}}
                                         <span *ngIf="transformAudit.transformError" class="fa fa-warning" ngbTooltip="Transform failed with error"></span>
                                         <span *ngIf="transformAudit.transformSuccess" class="fa fa-check" ngbTooltip="Transform completed OK"></span>
+                                        <span *ngIf="transformAudit.transformInProgress" class="fa fa-clock-o" ngbTooltip="Transform in progress (or failed without error)"></span>
+
                                     </td>
                                     <td>{{transformAudit.transformStart | date:'yyyy-MM-dd HH:mm:ss'}}</td>
                                     <td>{{transformAudit.transformEnd | date:'yyyy-MM-dd HH:mm:ss'}}</td>
