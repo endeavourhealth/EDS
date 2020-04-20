@@ -1879,6 +1879,50 @@ public abstract class SpecialRoutines {
                     List<ExchangeEvent> events = exchangeDal.getExchangeEvents(exchange.getId());
 
                     //was it transformed OK before it was re-queued with filtering?
+                    boolean transformedWithoutFiltering = false;
+
+                    for (ExchangeTransformAudit audit: audits) {
+
+                        //transformed OK
+                        boolean transformedOk = audit.getEnded() != null && audit.getErrorXml() == null;
+                        if (!transformedOk) {
+                            continue;
+                        }
+
+                        //if transformed OK see whether filtering was applied BEFORE
+                        Date dtTransformStart = audit.getStarted();
+
+                        //find immediately preceeding event showing loading into inbound queue
+                        ExchangeEvent previousLoadingEvent = null;
+                        for (ExchangeEvent event: events) {
+                            Date dtEvent = event.getTimestamp();
+                            if (dtEvent.after(dtTransformStart)) {
+                                continue;
+                            }
+
+                            String eventDesc = event.getEventDesc();
+                            if (eventDesc.startsWith("Manually pushed into edsInbound exchange")) {
+                                previousLoadingEvent = event;
+                                break;
+                            }
+                        }
+
+                        if (previousLoadingEvent == null) {
+                            //if transformed OK and no previous manual loading event, then it was OK
+                            transformedWithoutFiltering = true;
+
+                        } else {
+                            //if transformed OK and was manually loaded into queue, then see if event applied filtering or not
+                            String eventDesc = previousLoadingEvent.getEventDesc();
+                            if (!eventDesc.contains("Filtered on file types")) {
+                                transformedWithoutFiltering = true;
+                            }
+                        }
+                    }
+
+                    if (!transformedWithoutFiltering) {
+                        LOG.error("" + service + " -> exchange " + exchange.getId() + " from " + exchange.getHeaderAsDate(HeaderKeys.DataDate));
+                    }
                 }
             }
 
