@@ -37,6 +37,7 @@ import org.endeavourhealth.core.database.rdbms.datasharingmanager.models.DataSha
 import org.endeavourhealth.core.database.rdbms.datasharingmanager.models.ProjectEntity;
 import org.endeavourhealth.core.fhirStorage.FhirResourceHelper;
 import org.endeavourhealth.core.fhirStorage.FhirSerializationHelper;
+import org.endeavourhealth.core.fhirStorage.ServiceInterfaceEndpoint;
 import org.endeavourhealth.core.messaging.pipeline.components.DetermineRelevantProtocolIds;
 import org.endeavourhealth.core.messaging.pipeline.components.PostMessageToExchange;
 import org.endeavourhealth.core.queueing.QueueHelper;
@@ -1868,6 +1869,22 @@ public abstract class SpecialRoutines {
                     throw new Exception("Wrong number of system IDs for " + service);
                 }
                 UUID systemId = systemIds.get(0);
+
+                String publisherStatus = null;
+                for (ServiceInterfaceEndpoint serviceInterface: service.getEndpointsList()) {
+                    if (serviceInterface.getSystemUuid().equals(systemId)) {
+                        publisherStatus = serviceInterface.getEndpoint();
+                    }
+                }
+
+                if (publisherStatus == null) {
+                    throw new Exception("Failed to find publisher status for service");
+                }
+
+                if (publisherStatus.equals(ServiceInterfaceEndpoint.STATUS_AUTO_FAIL)) {
+                    LOG.debug("Skipping service because set to auto-fail");
+                    continue;
+                }
 
                 ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
                 List<Exchange> exchanges = exchangeDal.getExchangesByService(service.getId(), systemId, Integer.MAX_VALUE);
