@@ -1910,7 +1910,8 @@ public abstract class SpecialRoutines {
 
                         //find immediately proceeding event showing loading into inbound queue
                         ExchangeEvent previousLoadingEvent = null;
-                        for (ExchangeEvent event: events) {
+                        for (int j=events.size()-1; j>=0; j--) {
+                            ExchangeEvent event = events.get(j);
                             Date dtEvent = event.getTimestamp();
                             if (dtEvent.after(dtTransformStart)) {
                                 logging.add("Ignoring event from " + dtEvent + " as AFTER transform");
