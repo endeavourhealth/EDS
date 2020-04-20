@@ -1888,6 +1888,8 @@ public abstract class SpecialRoutines {
                         continue;
                     }
 
+                    //LOG.debug("Doing exchange " + exchange.getId() + " from " + exchange.getHeaderAsDate(HeaderKeys.DataDate));
+
                     List<ExchangeTransformAudit> audits = exchangeDal.getAllExchangeTransformAudits(service.getId(), systemId, exchange.getId());
                     List<ExchangeEvent> events = exchangeDal.getExchangeEvents(exchange.getId());
 
@@ -1919,7 +1921,8 @@ public abstract class SpecialRoutines {
                             }
 
                             String eventDesc = event.getEventDesc();
-                            if (eventDesc.startsWith("Manually pushed into edsInbound exchange")) {
+                            if (eventDesc.startsWith("Manually pushed into edsInbound exchange")
+                                    || eventDesc.startsWith("Manually pushed into EdsInbound exchange")) {
                                 previousLoadingEvent = event;
                                 logging.add("Proceeding event from " + dtEvent + " [" + eventDesc + "]");
                                 break;
@@ -1931,12 +1934,14 @@ public abstract class SpecialRoutines {
                         if (previousLoadingEvent == null) {
                             //if transformed OK and no previous manual loading event, then it was OK
                             transformedWithoutFiltering = true;
+//LOG.debug("Audit from " + audit.getStarted() + " was transformed OK without being manually loaded = OK");
 
                         } else {
                             //if transformed OK and was manually loaded into queue, then see if event applied filtering or not
                             String eventDesc = previousLoadingEvent.getEventDesc();
                             if (!eventDesc.contains("Filtered on file types")) {
                                 transformedWithoutFiltering = true;
+//LOG.debug("Audit from " + audit.getStarted() + " was transformed OK and was manually loaded without filtering = OK");
 
                             } else {
                                 logging.add("Event desc filters on file types, so DIDN'T transform OK");
