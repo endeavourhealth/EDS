@@ -28,7 +28,9 @@ export class DataServiceManagerMenuService implements  MenuService {
 			{caption: 'Statistics', state: 'app.stats', icon: 'fa fa-line-chart', role: 'eds-ui:monitoring'},
 			{caption: 'Audit', state: 'app.audit', icon: 'fa fa-list-ul', role: 'eds-ui:audit'},
 			{caption: 'Monitoring', state: 'app.monitoring', icon: 'fa fa-list-alt', role: 'eds-ui:monitoring'},
-            {caption: 'Remote Filing', state: 'app.remoteFiling', icon: 'fa fa-external-link-square', role: 'eds-ui:audit'}
+            {caption: 'Remote Filing', state: 'app.remoteFiling', icon: 'fa fa-external-link-square', role: 'eds-ui:audit'},
+			{caption: 'Config Manager', state: 'app.configManager', icon: 'fa-umbrella', role: 'eds-ui:services'}
+
 		];
 	}
 }

@@ -348,7 +348,7 @@ export class ExchangeAuditComponent {
 
 	showTransformErrors(transformAudit: TransformErrorDetail) {
 
-		if (!transformAudit.hadErrors) {
+		if (!transformAudit.transformError) {
 			this.log.success('No errors to view');
 			return;
 		}

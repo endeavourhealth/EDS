@@ -1,0 +1,165 @@
+<div class="module">
+    <div class="module-heading">
+        Config Manager
+        <div class="pull-right">
+
+            <button class="btn btn-sm btn-default" [disabled]="refreshingStatus" (click)="newRecord()" title="Add Record">Add Record</button>
+            <button class="btn btn-sm btn-success" [disabled]="refreshingStatus" (click)="refreshStatusWithValidation()" title="Refresh">Refresh&nbsp;<span class="fa fa-sm fa-refresh fa-refresh-animate" *ngIf="refreshingStatus"></span></button>
+
+        </div>
+    </div>
+    <div class="module-body">
+
+
+        <div class="container-fluid" *ngIf="records">
+
+            <div class="row">
+                <div class="col-md-4">
+
+                    <div class="form-group">
+                        <label>App ID:</label>
+                        <select id="appIdCombo" [(ngModel)]="filterAppId" (ngModelChange)="applyFiltering()">
+                            <option value=""></option>
+                            <option *ngFor="let appId of getAppIds()" value="{{appId}}">{{appId}}</option>
+                        </select>
+                        &nbsp;&nbsp;&nbsp;
+                        <label for="checkBoxFilterAppIdIncludeGlobal" class="control-label">Always Include Global</label>
+                        <input type="checkbox" id="checkBoxFilterAppIdIncludeGlobal" [(ngModel)]="filterAppIdIncludeGlobal" name="checkBoxFilterAppIdIncludeGlobal" (ngModelChange)="applyFiltering()">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="textBoxFilterSearchText" class="control-label">Search</label>
+                        <input type="text" id="textBoxFilterSearchText" placeholder="Regex" [(ngModel)]="filterSearchText" name="textBoxFilterSearchText" (ngModelChange)="applyFiltering()">
+
+                        &nbsp;&nbsp;&nbsp;
+                        <label for="checkBoxFilterSearchOnAppId" class="control-label">App ID</label>
+                        <input type="checkbox" id="checkBoxFilterSearchOnAppId" [(ngModel)]="filterSearchOnAppId" name="checkBoxFilterSearchOnAppId" (ngModelChange)="applyFiltering()">
+                        &nbsp;&nbsp;&nbsp;
+                        <label for="checkBoxFilterSearchOnConfigId" class="control-label">Config ID</label>
+                        <input type="checkbox" id="checkBoxFilterSearchOnConfigId" [(ngModel)]="filterSearchOnConfigId" name="checkBoxFilterSearchOnConfigId" (ngModelChange)="applyFiltering()">
+                        &nbsp;&nbsp;&nbsp;
+                        <label for="checkBoxFilterSearchOnData" class="control-label">Data</label>
+                        <input type="checkbox" id="checkBoxFilterSearchOnData" [(ngModel)]="filterSearchOnData" name="checkBoxFilterSearchOnData" (ngModelChange)="applyFiltering()">
+                    </div>
+
+
+
+                    <div class="table scroll-box-500">
+                        <table class="table table-striped table-condensed">
+                            <thead>
+                                <tr>
+                                    <th class="col-md-6">App ID</th>
+                                    <th class="col-md-6">Config ID</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="hover-box show-child-on-hover" *ngFor="let record of filteredRecords" (click)="selectRecord(record);" [ngClass]="{'selection': record == selectedRecord}">
+                                    <td>{{record.appId}}</td>
+
+                                    <td>
+                                        <!-- icon if unsaved changes found -->
+                                        <span *ngIf="isNewRecord(record) || isChangedRecord(record)" class="fa fa-save"></span>
+                                        {{record.configId}}
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {{records.length}} records found
+                </div>
+
+                <div class="col-md-8" *ngIf="selectedRecord">
+
+                    <form>
+                        <div class="row">
+                            <div class="form-group col-md-12">
+                                <label class="control-label">App ID</label>
+                                <input type="text" class="form-control" [(ngModel)]="selectedRecord.appId" [disabled]="!isNewRecord(selectedRecord)" name="appId">
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="form-group col-md-12">
+                                <label class="control-label">Config ID</label>
+                                <input type="text" class="form-control" [(ngModel)]="selectedRecord.configId" [disabled]="!isNewRecord(selectedRecord)" name="configId">
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="form-group col-md-12">
+                                <textarea rows="25" class="form-control" id="description" [(ngModel)]="selectedRecord.configData" name="configData" wrap="off" style="font-family:monospace;" (ngModelChange)="configJsonChanged(selectedRecord)"></textarea>
+                            </div>
+                        </div>
+
+                        <div class="row" *ngIf="validJsonMessage">
+                            <div class="form-group col-md-12">
+                                <span class="label label-success">{{validJsonMessage}}</span>
+                            </div>
+                        </div>
+                        <div class="row" *ngIf="invalidJsonMessage">
+                            <div class="form-group col-md-12">
+                                <span class="label label-danger">{{invalidJsonMessage}}</span>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="form-group col-md-12">
+                                <button class="btn btn-sm btn-default" (click)="validateJSON()" title="Validate Json">Validate JSON</button>
+                                <button class="btn btn-sm btn-default" [disabled]="hasHistory(selectedRecord)" (click)="retrieveHistory(selectedRecord)" title="View History">View History</button>
+                                <button class="btn btn-sm btn-success" (click)="saveRecord()" title="Save Record">Save Record</button>
+                                <button class="btn btn-sm btn-danger" (click)="deleteRecord()" title="Delete Record">Delete Record</button>
+                            </div>
+                        </div>
+
+                        <div class="row" *ngIf="hasHistory(selectedRecord)">
+                            <div class="col-md-2">
+
+                                <div class="table scroll-box-300">
+                                    <table class="table table-striped table-condensed">
+                                        <thead>
+                                            <tr>
+                                                <th class="col-md-12">Changed</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr class="hover-box show-child-on-hover" *ngFor="let history of getHistory(selectedRecord)" (click)="selectHistory(history);" [ngClass]="{'selection': history == selectedHistory}">
+                                                <td>{{history.dtChanged | date:'yyyy-MM-dd HH:mm:ss'}}</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                            </div>
+
+                            <div class="col-md-10" *ngIf="selectedHistory">
+
+                                <form>
+                                    <div class="row">
+                                        <div class="form-group col-md-6">
+                                            <label class="control-label">Changed From</label>
+                                            <textarea disabled rows="12" class="form-control" id="changedFrom" [(ngModel)]="selectedHistory.changedFrom" name="changedFrom" wrap="off" style="font-family:monospace;"></textarea>
+                                        </div>
+
+                                        <div class="form-group col-md-6">
+                                            <label class="control-label">Changed To</label>
+                                            <textarea disabled rows="12" class="form-control" id="changedTo" [(ngModel)]="selectedHistory.changedTo" name="changedTo" wrap="off" style="font-family:monospace;"></textarea>
+                                        </div>
+                                    </div>
+
+                                </form>
+
+                            </div>
+
+                        </div>
+
+                    </form>
+
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+

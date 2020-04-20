@@ -81,7 +81,7 @@
 											</thead>
 											<tbody>
 												<tr *ngFor="let event of getFilteredEvents(this)">
-													<td>{{event.timestamp | date:'dd-MMM-yyyy HH:mm:ss'}}</td>
+													<td>{{event.timestamp | date:'yyyy-MM-dd HH:mm:ss'}}</td>
 													<td>{{event.module}}</td>
 													<td>{{event.subModule}}</td>
 													<td>{{event.action}}</td>

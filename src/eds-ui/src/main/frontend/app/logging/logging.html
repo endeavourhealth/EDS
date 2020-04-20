@@ -54,7 +54,7 @@
 									</thead>
 									<tbody>
 										<tr *ngFor="let event of loggingEvents">
-											<td>{{event.timestmp | date:'dd-MMM-yyyy HH:mm:ss'}}</td>
+											<td>{{event.timestmp | date:'yyyy-MM-dd HH:mm:ss'}}</td>
 											<td><i [ngClass]="getLevelIcon(event.levelString)"></i> {{event.levelString}}</td>
 											<td>
 												<a style="cursor:pointer" (click)="actionItem(event,'view')">{{event.formattedMessage}}</a>

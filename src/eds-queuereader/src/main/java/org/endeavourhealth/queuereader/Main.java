@@ -89,6 +89,16 @@ public class Main {
 		ConfigManager.initialize("queuereader", configId);
 
 		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("FindEmisServicesNeedReprocessing")) {
+			String odsCodeRegex = null;
+			if (args.length > 1) {
+				odsCodeRegex = args[1];
+			}
+			SpecialRoutines.findEmisServicesNeedReprocessing(odsCodeRegex);
+			System.exit(0);
+		}
+
+		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("TransformBartsEncounters")) {
 
 			String odsCode = args[1];
