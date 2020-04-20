@@ -41,7 +41,7 @@
 												<a style="cursor: pointer" (click)="actionItem({uuid:item.uuid, type:item.type, action:'edit'})">{{item.name}}</a>
 												<span class="fa fa-info-circle fa-right-pad text-muted" ngbTooltip="{{item.description}}" *ngIf="item.description"></span>
 											</td>
-											<td>{{item.lastModified | date:'dd-MMM-yyyy HH:mm:ss'}}</td>
+											<td>{{item.lastModified | date:'yyyy-MM-dd HH:mm:ss'}}</td>
 											<td><span class="fa fa-right-pad {{item.type | itemTypeIdToIcon}} text-muted"></span>{{item.type | itemTypeIdToString}}</td>
 											<td>
 												<div ngbDropdown class="child-to-show">

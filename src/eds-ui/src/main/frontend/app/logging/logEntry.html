@@ -1,6 +1,6 @@
 <div class="modal-header">
 	<button type="button" class="close" (click)="cancel()" aria-hidden="true">&times;</button>
-	<h4 class="modal-title"><i [ngClass]="getLevelIcon(logEntry.levelString)"></i> Log Entry : {{logEntry.timestmp | date:'dd-MMM-yyyy HH:mm:ss'}}</h4>
+	<h4 class="modal-title"><i [ngClass]="getLevelIcon(logEntry.levelString)"></i> Log Entry : {{logEntry.timestmp | date:'yyyy-MM-dd HH:mm:ss'}}</h4>
 </div>
 <div class="modal-body">
 	<form endUserRole="form" class="container-fluid">

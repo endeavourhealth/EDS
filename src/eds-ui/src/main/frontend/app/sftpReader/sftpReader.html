@@ -67,7 +67,7 @@
                                                 <span class="label label-danger" *ngIf="isLastPollAttemptTooOld(status)">Warning</span>
                                                 &nbsp;
                                             </span>
-                                                {{status.latestPollingStart | date:'dd-MMM-yyyy HH:mm:ss'}}
+                                                {{status.latestPollingStart | date:'yyyy-MM-dd HH:mm:ss'}}
                                         </div>
                                         <div *ngIf="!status.latestPollingStart">
                                             <span class="label label-danger">Warning</span>&nbsp;NEVER
@@ -81,7 +81,7 @@
                                                     <span class="label label-danger" *ngIf="isLastExtractTooOld(status)">Warning</span>
                                                     &nbsp;
                                                 </span>
-                                                {{status.latestBatchReceived | date:'dd-MMM-yyyy HH:mm:ss'}}
+                                                {{status.latestBatchReceived | date:'yyyy-MM-dd HH:mm:ss'}}
                                             </div>
                                         </div>
                                         <div *ngIf="!status.latestBatchId">
@@ -128,7 +128,7 @@
                                         <span class="label label-danger" *ngIf="isLastPollAttemptTooOld(status)">Warning</span>
                                         &nbsp;
                                     </span>
-                                    Last Checked for Data: {{status.latestPollingStart | date:'dd-MMM-yyyy HH:mm:ss'}}
+                                    Last Checked for Data: {{status.latestPollingStart | date:'yyyy-MM-dd HH:mm:ss'}}
                                 </div>
                                 <div *ngIf="!status.latestPollingStart">
                                     <span class="label label-danger">Warning</span>&nbsp;Last Checked for Data: NEVER
@@ -146,7 +146,7 @@
                                         <span class="label label-danger" *ngIf="isLastExtractTooOld(status)">Warning</span>
                                         &nbsp;
                                     </span>
-                                        Last Extract Received: {{status.latestBatchReceived | date:'dd-MMM-yyyy HH:mm:ss'}}
+                                        Last Extract Received: {{status.latestBatchReceived | date:'yyyy-MM-dd HH:mm:ss'}}
                                     </div>
                                     <div>Data From: {{status.latestBatchIdentifier}}</div>
                                     <div>Files Received: {{status.latestBatchFileCount}}, Extract Size: {{status.latestBatchSizeBytes}}</div>
@@ -174,7 +174,7 @@
 
 
                                 <div *ngIf="status.completeBatchId">
-                                    <div>Extract Received: {{status.completeBatchReceived | date:'dd-MMM-yyyy HH:mm:ss'}}</div>
+                                    <div>Extract Received: {{status.completeBatchReceived | date:'yyyy-MM-dd HH:mm:ss'}}</div>
                                     <div>Data From: {{status.completeBatchIdentifier}}</div>
                                     <div>Extract Sequence No: {{status.completeBatchSequenceNumber}}</div>
 

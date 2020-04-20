@@ -1844,4 +1844,35 @@ public abstract class SpecialRoutines {
             }
         }
     }
+
+
+    public static void findEmisServicesNeedReprocessing() {
+        LOG.debug("Finding Emis Services that Need Re-processing");
+        try {
+            ServiceDalI serviceDal = DalProvider.factoryServiceDal();
+            List<Service> services = serviceDal.getAll();
+
+            for (Service service: services) {
+
+                Map<String, String> tags = service.getTags();
+                if (tags == null
+                        || !tags.containsKey("EMIS")) {
+                    continue;
+                }
+
+                List<UUID> systemIds = SystemHelper.getSystemIdsForService(service);
+                if (systemIds.size() != 1) {
+                    throw new Exception("Wrong number of system IDs for " + service);
+                }
+                UUID systemId = systemIds.get(0);
+
+
+            }
+
+            LOG.debug("Finished Finding Emis Services that Need Re-processing");
+        } catch (Throwable t) {
+            LOG.error("", t);
+        }
+
+    }
 }

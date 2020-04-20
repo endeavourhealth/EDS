@@ -15,7 +15,8 @@ public class JsonTransformExchangeError {
     private Date transformStart = null;
     private Date transformEnd = null;
     private Integer numberBatchIdsCreated = null;
-    private boolean hadErrors;
+    private boolean transformError;
+    private boolean transformSuccess;
     private boolean resubmitted;
     private Date deleted = null;
     private List<String> lines = null;
@@ -68,12 +69,20 @@ public class JsonTransformExchangeError {
         this.numberBatchIdsCreated = numberBatchIdsCreated;
     }
 
-    public boolean isHadErrors() {
-        return hadErrors;
+    public boolean isTransformError() {
+        return transformError;
     }
 
-    public void setHadErrors(boolean hadErrors) {
-        this.hadErrors = hadErrors;
+    public void setTransformError(boolean transformError) {
+        this.transformError = transformError;
+    }
+
+    public boolean isTransformSuccess() {
+        return transformSuccess;
+    }
+
+    public void setTransformSuccess(boolean transformSuccess) {
+        this.transformSuccess = transformSuccess;
     }
 
     public boolean isResubmitted() {

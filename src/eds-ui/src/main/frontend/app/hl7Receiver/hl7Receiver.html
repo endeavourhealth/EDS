@@ -21,7 +21,7 @@
                                 <h4>Hospital->HL7 Receiver</h4>
 
                                 <div *ngIf="channel.lastMessageId">
-                                    <div>Last Message Received: {{channel.lastMessageReceived | date:'dd-MMM-yyyy HH:mm:ss'}}</div>
+                                    <div>Last Message Received: {{channel.lastMessageReceived | date:'yyyy-MM-dd HH:mm:ss'}}</div>
                                     <div>Last Message ID: {{channel.lastMessageId}}</div>
                                 </div>
                                 <div *ngIf="!channel.lastMessageId">
@@ -37,7 +37,7 @@
                                     <div>Status: ERROR ({{channel.transformQueueSize}} messages in queue)</div>
                                     <br>
                                     <b>Message in Error:</b>
-                                    <div>Received: {{channel.errorMessageReceived | date:'dd-MMM-yyyy HH:mm:ss'}}</div>
+                                    <div>Received: {{channel.errorMessageReceived | date:'yyyy-MM-dd HH:mm:ss'}}</div>
                                     <div>Type: {{channel.errorMessageType}}</div>
                                     <div>ID: {{channel.errorMessageId}}</div>
                                     <pre>{{channel.errorMessage}}</pre>
@@ -55,7 +55,7 @@
 
                                         <br>
                                         <b>First Message in Queue:</b>
-                                        <div>Received: {{channel.transformQueueFirstMessageDate | date:'dd-MMM-yyyy HH:mm:ss'}}</div>
+                                        <div>Received: {{channel.transformQueueFirstMessageDate | date:'yyyy-MM-dd HH:mm:ss'}}</div>
                                         <div>Type: {{channel.transformQueueFirstMessageType}}</div>
                                         <div>ID: {{channel.transformQueueFirstMessageId}}</div>
 
@@ -75,7 +75,7 @@
                                     </thead>
                                     <tbody>
                                     <tr class="hover-box" *ngFor="let status of channel.transformQueueFirstStatus">
-                                        <td>{{status.date | date:'dd-MMM-yyyy HH:mm:ss'}}</td>
+                                        <td>{{status.date | date:'yyyy-MM-dd HH:mm:ss'}}</td>
                                         <td>{{status.status}}</td>
                                         <td><pre *ngIf="status.error">{{status.error}}</pre></td>
                                     </tr>

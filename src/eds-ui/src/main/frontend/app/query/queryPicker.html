@@ -34,7 +34,7 @@
                                     <a style="cursor: pointer" (click)="actionItem(item,'edit')">{{item.name}}</a>
                                     <span class="fa fa-info-circle fa-right-pad text-muted" ngbTooltip="{{item.description}}" *ngIf="item.description"></span>
                                 </td>
-                                <td>{{item.lastModified | date:'dd-MMM-yyyy HH:mm:ss'}}</td>
+                                <td>{{item.lastModified | date:'yyyy-MM-dd HH:mm:ss'}}</td>
                             </tr>
                             </tbody>
                         </table>
