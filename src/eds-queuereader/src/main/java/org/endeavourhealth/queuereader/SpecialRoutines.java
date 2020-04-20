@@ -28,6 +28,7 @@ import org.endeavourhealth.core.database.dal.audit.models.Exchange;
 import org.endeavourhealth.core.database.dal.audit.models.ExchangeBatch;
 import org.endeavourhealth.core.database.dal.audit.models.ExchangeTransformAudit;
 import org.endeavourhealth.core.database.dal.audit.models.HeaderKeys;
+import org.endeavourhealth.core.database.dal.eds.PatientSearchDalI;
 import org.endeavourhealth.core.database.dal.ehr.ResourceDalI;
 import org.endeavourhealth.core.database.dal.ehr.models.ResourceWrapper;
 import org.endeavourhealth.core.database.dal.publisherCommon.*;
@@ -49,6 +50,7 @@ import org.endeavourhealth.core.xml.QueryDocument.ServiceContractActive;
 import org.endeavourhealth.core.xml.TransformErrorSerializer;
 import org.endeavourhealth.core.xml.transformError.TransformError;
 import org.endeavourhealth.im.client.IMClient;
+import org.endeavourhealth.subscriber.filer.EnterpriseFiler;
 import org.endeavourhealth.transform.common.*;
 import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
 import org.endeavourhealth.transform.emis.csv.helpers.EmisCsvHelper;
@@ -1818,10 +1820,9 @@ public abstract class SpecialRoutines {
         }
     }
 
-    // For the protocol name provided, get the list of services which are publishers and queue up a full
-    // service protocol load for that service. Add any FHIR resource filtering via filterElements db_subscriber config;
-    // see MessageTransformOutbound.filterPatientResources
-    public static void queueUpAllServicesForPopulatingSubscriberProtocol (String protocolName) throws Exception {
+    // For the protocol name provided, get the list of services which are publishers and send
+    // their transformed Patient and EpisodeOfCare FHIR resources to the Enterprise Filer
+    public static void transformAndFilePatientsAndEpisodesForProtocolServices (String protocolName, String subscriberConfigName) throws Exception {
 
         //find the protocol using the name parameter
         LibraryItem matchedLibraryItem = BulkHelper.findProtocolLibraryItem(protocolName);
@@ -1830,6 +1831,8 @@ public abstract class SpecialRoutines {
             return;
         }
         UUID protocolUuid = UUID.fromString(matchedLibraryItem.getUuid());
+        ResourceDalI dal = DalProvider.factoryResourceDal();
+        PatientSearchDalI patientSearchDal = DalProvider.factoryPatientSearchDal();
 
         //get all the active publishing services for this protocol
         List<ServiceContract> serviceContracts = matchedLibraryItem.getProtocol().getServiceContract();
@@ -1839,8 +1842,37 @@ public abstract class SpecialRoutines {
 
                 UUID serviceUuid = UUID.fromString(serviceContract.getService().getUuid());
 
-                //queue up a full subscriber protocol load exchange for this service
-                QueueHelper.queueUpFullServiceForPopulatingSubscriber(serviceUuid, protocolUuid);
+                List<UUID> patientIds = patientSearchDal.getPatientIds(serviceUuid);
+                for (UUID patientId : patientIds) {
+
+                    List<ResourceWrapper> resources = new ArrayList<>();
+                    UUID batchUuid = UUID.randomUUID();
+
+                    //need the Patient and the EpisodeOfCare resources for each service patient
+                    ResourceWrapper patientWrapper
+                            = dal.getCurrentVersion(serviceUuid, ResourceType.Patient.toString(), patientId);
+                    if (patientWrapper == null) {
+                        LOG.warn("Null patient resource for Patient " + patientId);
+                        continue;
+                    }
+                    resources.add(patientWrapper);
+
+                    ResourceWrapper episodeWrapper
+                            = dal.getCurrentVersion(serviceUuid, ResourceType.EpisodeOfCare.toString(), patientId);
+                    if (episodeWrapper == null) {
+                        LOG.warn("Null episode resource for Patient " + patientId);
+                        continue;
+                    }
+                    resources.add(episodeWrapper);
+
+                    String containerString
+                            = BulkHelper.getEnterpriseContainerForPatientAndEpisodeData(resources, serviceUuid, batchUuid, protocolUuid, subscriberConfigName, patientId);
+
+                    //  Use  a random UUID for a queued message ID
+                    if (containerString != null) {
+                        EnterpriseFiler.file(batchUuid, UUID.randomUUID(), containerString, subscriberConfigName);
+                    }
+                }
             }
         }
     }

@@ -406,10 +406,11 @@ public class Main {
 		}
 
 		if (args.length >= 1
-				&& args[0].equalsIgnoreCase("SubscriberFullLoadAllProtocolServices")) {
+				&& args[0].equalsIgnoreCase("TransformAndFilePatientsAndEpisodesForProtocolServices")) {
 			String protocolName = args[1];
+			String subscriberConfigName= args[2];
 
-			SpecialRoutines.queueUpAllServicesForPopulatingSubscriberProtocol(protocolName);
+			SpecialRoutines.transformAndFilePatientsAndEpisodesForProtocolServices(protocolName, subscriberConfigName);
 			System.exit(0);
 		}
 
