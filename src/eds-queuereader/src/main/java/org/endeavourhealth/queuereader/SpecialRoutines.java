@@ -1906,12 +1906,14 @@ public abstract class SpecialRoutines {
 
                         //if transformed OK see whether filtering was applied BEFORE
                         Date dtTransformStart = audit.getStarted();
+                        logging.add("Audit completed OK from " + audit.getStarted());
 
                         //find immediately proceeding event showing loading into inbound queue
                         ExchangeEvent previousLoadingEvent = null;
                         for (ExchangeEvent event: events) {
                             Date dtEvent = event.getTimestamp();
                             if (dtEvent.after(dtTransformStart)) {
+                                logging.add("Ignoring event from " + dtEvent + " as AFTER transform");
                                 continue;
                             }
 
@@ -1920,6 +1922,8 @@ public abstract class SpecialRoutines {
                                 previousLoadingEvent = event;
                                 logging.add("Proceeding event from " + dtEvent + " [" + eventDesc + "]");
                                 break;
+                            } else {
+                                logging.add("Ignoring event from " + dtEvent + " as doesn't match text [" + eventDesc + "]");
                             }
                         }
 
@@ -1934,7 +1938,7 @@ public abstract class SpecialRoutines {
                                 transformedWithoutFiltering = true;
 
                             } else {
-                                logging.add("Event desc filters on file types");
+                                logging.add("Event desc filters on file types, so DIDN'T transform OK");
                             }
                         }
                     }
