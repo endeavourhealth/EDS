@@ -1077,7 +1077,9 @@ public abstract class SpecialRoutines {
                 //check DSAs
 
                 //want to find target subscriber config names OLD way
-                List<String> subscriberConfigNamesOldWay = new ArrayList<>();
+                Set<String> subscriberConfigNamesOldWay = new HashSet<>();
+                Map<String, Set<String>> subscriberConfigToCohortOldWay = new HashMap<>();
+
                 for (String oldProtocolId: protocolIdsOldWay) {
                     LibraryItem libraryItem = LibraryRepositoryHelper.getLibraryItemUsingCache(UUID.fromString(oldProtocolId));
                     Protocol protocol = libraryItem.getProtocol();
@@ -1094,14 +1096,48 @@ public abstract class SpecialRoutines {
                             .filter(sc -> sc.getActive() == ServiceContractActive.TRUE) //skip disabled service contracts
                             .collect(Collectors.toList());
 
-                    for (ServiceContract serviceContract: subscribers) {
+                    for (ServiceContract serviceContract : subscribers) {
                         String subscriberConfigName = MessageTransformOutbound.getSubscriberEndpoint(serviceContract);
                         subscriberConfigNamesOldWay.add(subscriberConfigName);
+
+                        //get cohort details
+                        Set<String> cohortSet = new HashSet<>();
+                        subscriberConfigToCohortOldWay.put(subscriberConfigName, cohortSet);
+
+                        String cohort = protocol.getCohort();
+                        if (cohort.equals("All Patients")) {
+                            cohortSet.add("all_patients");
+
+                        } else if (cohort.equals("Explicit Patients")) {
+                            //database is dependent on protocol ID, but I don't think this used
+                            throw new Exception("Protocol uses explicit patient cohort so cannot be converted");
+                            //cohortRoot.put("type", "explicit_patients");
+
+                        } else if (cohort.startsWith("Defining Services")) {
+                            cohortSet.add("registered_at");
+
+                            int index = cohort.indexOf(":");
+                            if (index == -1) {
+                                throw new RuntimeException("Invalid cohort format " + cohort);
+                            }
+                            String suffix = cohort.substring(index + 1);
+                            String[] toks = suffix.split("\r|\n|,| |;");
+                            for (String tok : toks) {
+                                String cohortOdsCode = tok.trim().toUpperCase();  //when checking, we always make uppercase
+                                if (!Strings.isNullOrEmpty(cohortOdsCode)) {
+                                    cohortSet.add(cohortOdsCode);
+                                }
+                            }
+
+                        } else {
+                            throw new PipelineException("Unknown cohort [" + cohort + "]");
+                        }
                     }
                 }
 
                 //find target subscriber config names NEW way
-                List<String> subscriberConfigNamesNewWay = new ArrayList<>();
+                Set<String> subscriberConfigNamesNewWay = new HashSet<>();
+                Map<String, Set<String>> subscriberConfigToCohortNewWay = new HashMap<>();
 
                 List<DataSharingAgreementEntity> list = DataSharingAgreementCache.getAllDSAsForPublisherOrg(odsCode);
                 if (list == null) {
@@ -1131,6 +1167,28 @@ public abstract class SpecialRoutines {
                                     String subscriberConfigName = subscriberNode.asText();
 
                                     subscriberConfigNamesNewWay.add(subscriberConfigName);
+
+                                    //get cohort details
+                                    Set<String> cohortSet = new HashSet<>();
+                                    subscriberConfigToCohortNewWay.put(subscriberConfigName, cohortSet);
+
+                                    //cohort
+                                    ObjectNode cohortNode = (ObjectNode)jsonNode.get("cohort");
+                                    if (cohortNode == null) {
+                                        logging.add("No cohort node found in JSON for DSA " + dsaUuid + " (" + dsaName + ")");
+                                    } else {
+
+                                        String cohortType = cohortNode.get("type").asText();
+                                        cohortSet.add(cohortType);
+
+                                        if (cohortType.equals("registered_at")) {
+                                            ArrayNode cohortArray = (ArrayNode)cohortNode.get("services");
+                                            for (int j=0; j<cohortArray.size(); j++) {
+                                                String cohortOdsCode = cohortArray.get(j).asText();
+                                                cohortSet.add(cohortOdsCode);
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -1138,13 +1196,18 @@ public abstract class SpecialRoutines {
                 }
 
                 //compare the two
-                subscriberConfigNamesOldWay.sort(((o1, o2) -> o1.compareToIgnoreCase(o2)));
-                String subscribersOldWay = String.join(", ", subscriberConfigNamesOldWay);
+                List<String> l = new ArrayList<>(subscriberConfigNamesOldWay);
+                l.sort(((o1, o2) -> o1.compareToIgnoreCase(o2)));
+                String subscribersOldWay = String.join(", ", l);
 
-                subscriberConfigNamesNewWay.sort(((o1, o2) -> o1.compareToIgnoreCase(o2)));
-                String subscribersNewWay = String.join(", ", subscriberConfigNamesNewWay);
+                l = new ArrayList<>(subscriberConfigNamesNewWay);
+                l.sort(((o1, o2) -> o1.compareToIgnoreCase(o2)));
+                String subscribersNewWay = String.join(", ", l);
 
                 boolean dsaMatches = subscribersOldWay.equals(subscribersNewWay);
+
+                //compare DSA cohorts
+                //TODO
 
                 printer.printRecord(service.getName(), odsCode, service.getCcgCode(), dpaMatches, hasDpaOldWay, hasDpaNewWay, dsaMatches, subscribersOldWay, subscribersNewWay);
 
@@ -1169,7 +1232,7 @@ public abstract class SpecialRoutines {
     /**
      * generates the JSON for the config record to move config from DDS-UI protocols to DSM (+JSON)
      */
-    private static void createConfigJsonForDSM(String ddsUiProtocolName, String dsmDsaId) {
+    public static void createConfigJsonForDSM(String ddsUiProtocolName, String dsmDsaId) {
         LOG.debug("Creating Config JSON for DDS-UI -> DSM migration");
         try {
             //get DDS-UI protocol details
