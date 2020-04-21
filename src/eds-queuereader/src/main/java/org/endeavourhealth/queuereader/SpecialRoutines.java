@@ -2016,13 +2016,17 @@ public abstract class SpecialRoutines {
                     }
                     resources.add(patientWrapper);
 
-                    ResourceWrapper episodeWrapper
-                            = dal.getCurrentVersion(serviceUuid, ResourceType.EpisodeOfCare.toString(), patientId);
-                    if (episodeWrapper == null) {
-                        LOG.warn("Null episode resource for Patient " + patientId);
+                    //patient may have multiple episodes of care at the service, so pass them in
+                    List<ResourceWrapper> episodeWrappers
+                            = dal.getResourcesByPatient(serviceUuid, patientId, ResourceType.EpisodeOfCare.toString());
+
+                    if (episodeWrappers.isEmpty()) {
+                        LOG.warn("No episode resources for Patient " + patientId);
                         continue;
                     }
-                    resources.add(episodeWrapper);
+                    for (ResourceWrapper episodeWrapper: episodeWrappers  ) {
+                        resources.add(episodeWrapper);
+                    }
 
                     String containerString
                             = BulkHelper.getEnterpriseContainerForPatientAndEpisodeData(resources, serviceUuid, batchUuid, protocolUuid, subscriberConfigName, patientId);
