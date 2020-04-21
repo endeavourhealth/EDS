@@ -53,7 +53,6 @@ import org.endeavourhealth.transform.common.*;
 import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
 import org.endeavourhealth.transform.subscriber.targetTables.OutputContainer;
 import org.endeavourhealth.transform.subscriber.targetTables.SubscriberTableId;
-import org.endeavourhealth.transform.tpp.TppCsvToFhirTransformer;
 import org.endeavourhealth.transform.ui.helpers.BulkHelper;
 import org.hibernate.internal.SessionImpl;
 import org.hl7.fhir.instance.model.MedicationStatement;
@@ -115,7 +114,7 @@ public class Main {
 			System.exit(0);
 		}
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("LoadTppStagingData")) {
 			String odsCode = args[1];
 			UUID fromExchange = null;
@@ -124,9 +123,9 @@ public class Main {
 			}
 			SpecialRoutines.loadTppStagingData(odsCode, fromExchange);
 			System.exit(0);
-		}
+		}*/
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("LoadEmisStagingData")) {
 			String odsCode = args[1];
 			UUID fromExchange = null;
@@ -135,21 +134,21 @@ public class Main {
 			}
 			SpecialRoutines.loadEmisStagingData(odsCode, fromExchange);
 			System.exit(0);
-		}
+		}*/
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("RequeueTppSkippedAdminData")) {
 			boolean tpp = Boolean.valueOf(args[1]);
 			boolean onAtATime = Boolean.valueOf(args[2]);
 			SpecialRoutines.requeueSkippedAdminData(tpp, onAtATime);
 			System.exit(0);
-		}
+		}*/
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("TestCallToDDSUI")) {
 			SpecialRoutines.testCallToDdsUi();
 			System.exit(0);
-		}
+		}*/
 
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("TestBulkLoad")) {
@@ -206,7 +205,7 @@ public class Main {
 			System.exit(0);
 		}
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("PopulateExchangeFileSizes")) {
 			String odsCodeRegex = null;
 			if (args.length > 1) {
@@ -214,9 +213,9 @@ public class Main {
 			}
 			SpecialRoutines.populateExchangeFileSizes(odsCodeRegex);
 			System.exit(0);
-		}
+		}*/
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("FindEmisMissingCodes")) {
 			String ccgCodeRegex = null;
 			if (args.length > 1) {
@@ -224,7 +223,7 @@ public class Main {
 			}
 			findEmisMissingCodes(ccgCodeRegex);
 			System.exit(0);
-		}
+		}*/
 
 		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("FixEncounters")) {
@@ -242,7 +241,7 @@ public class Main {
 			System.exit(0);
 		}*/
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("FixTppStaffBulks")) {
 			boolean testMode = Boolean.parseBoolean(args[1]);
 			String odsCodeRegex = null;
@@ -251,7 +250,7 @@ public class Main {
 			}
 			fixTppStaffBulks(testMode, odsCodeRegex);
 			System.exit(0);
-		}
+		}*/
 
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("TestDSM")) {
@@ -262,11 +261,13 @@ public class Main {
 
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("CompareDSM")) {
+			boolean logDifferencesOnly = Boolean.parseBoolean(args[1]);
+			String toFile = args[2];
 			String odsCode = null;
 			if (args.length > 1) {
-				odsCode = args[1];
+				odsCode = args[3];
 			}
-			SpecialRoutines.compareDsm(odsCode);
+			SpecialRoutines.compareDsm(logDifferencesOnly, toFile, odsCode);
 			System.exit(0);
 		}
 
@@ -1113,7 +1114,7 @@ public class Main {
 
 
 
-	private static void findEmisMissingCodes(String ccgCodeRegex) {
+	/*private static void findEmisMissingCodes(String ccgCodeRegex) {
 		LOG.info("Finding Emis Missing Codes");
 		try {
 
@@ -1234,7 +1235,7 @@ public class Main {
 		} catch (Throwable t) {
 			LOG.error("", t);
 		}
-	}
+	}*/
 
 
 	private static List<String> formatTransformAuditErrorLines(ExchangeTransformAudit transformAudit) throws Exception {
@@ -1302,7 +1303,7 @@ public class Main {
 		return lines;
 	}
 
-	private static void fixTppStaffBulks(boolean testMode, String odsCodeRegex) {
+	/*private static void fixTppStaffBulks(boolean testMode, String odsCodeRegex) {
 		LOG.info("Fixing TPP Staff Bulks using testMode " + testMode + " and regex " + odsCodeRegex);
 		try {
 
@@ -1474,7 +1475,7 @@ public class Main {
 		} catch (Throwable t) {
 			LOG.error("", t);
 		}
-	}
+	}*/
 
 
 

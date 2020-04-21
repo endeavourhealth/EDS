@@ -1,21 +1,15 @@
 package org.endeavourhealth.queuereader;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.base.Strings;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.FilenameUtils;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
-import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.common.fhir.ExtensionConverter;
 import org.endeavourhealth.common.fhir.FhirExtensionUri;
 import org.endeavourhealth.common.fhir.IdentifierHelper;
 import org.endeavourhealth.common.fhir.ReferenceHelper;
-import org.endeavourhealth.common.security.keycloak.client.KeycloakClient;
 import org.endeavourhealth.common.utility.FileHelper;
-import org.endeavourhealth.common.utility.FileInfo;
-import org.endeavourhealth.common.utility.JsonSerializer;
 import org.endeavourhealth.core.application.ApplicationHeartbeatHelper;
 import org.endeavourhealth.core.configuration.PostMessageToExchangeConfig;
 import org.endeavourhealth.core.database.dal.DalProvider;
@@ -28,7 +22,6 @@ import org.endeavourhealth.core.database.dal.audit.models.*;
 import org.endeavourhealth.core.database.dal.eds.PatientSearchDalI;
 import org.endeavourhealth.core.database.dal.ehr.ResourceDalI;
 import org.endeavourhealth.core.database.dal.ehr.models.ResourceWrapper;
-import org.endeavourhealth.core.database.dal.publisherCommon.*;
 import org.endeavourhealth.core.database.dal.subscriberTransform.SubscriberResourceMappingDalI;
 import org.endeavourhealth.core.database.dal.usermanager.caching.DataSharingAgreementCache;
 import org.endeavourhealth.core.database.dal.usermanager.caching.OrganisationCache;
@@ -51,30 +44,14 @@ import org.endeavourhealth.im.client.IMClient;
 import org.endeavourhealth.subscriber.filer.EnterpriseFiler;
 import org.endeavourhealth.transform.common.*;
 import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
-import org.endeavourhealth.transform.emis.csv.helpers.EmisCsvHelper;
-import org.endeavourhealth.transform.emis.csv.schema.admin.Location;
-import org.endeavourhealth.transform.emis.csv.schema.admin.Organisation;
-import org.endeavourhealth.transform.emis.csv.schema.admin.OrganisationLocation;
-import org.endeavourhealth.transform.emis.csv.schema.admin.UserInRole;
-import org.endeavourhealth.transform.emis.csv.schema.coding.ClinicalCode;
-import org.endeavourhealth.transform.emis.csv.transforms.coding.ClinicalCodeTransformer;
 import org.endeavourhealth.transform.fhirhl7v2.transforms.EncounterTransformer;
 import org.endeavourhealth.transform.subscriber.IMConstant;
 import org.endeavourhealth.transform.subscriber.IMHelper;
-import org.endeavourhealth.transform.tpp.TppCsvToFhirTransformer;
-import org.endeavourhealth.transform.tpp.csv.helpers.TppCsvHelper;
-import org.endeavourhealth.transform.tpp.csv.schema.staff.SRStaffMember;
-import org.endeavourhealth.transform.tpp.csv.schema.staff.SRStaffMemberProfile;
 import org.endeavourhealth.transform.ui.helpers.BulkHelper;
 import org.hl7.fhir.instance.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.swing.*;
-import javax.ws.rs.client.ClientBuilder;
-import javax.ws.rs.client.Invocation;
-import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.Response;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -158,7 +135,7 @@ public abstract class SpecialRoutines {
     }
 
 
-    public static void populateExchangeFileSizes(String odsCodeRegex) {
+    /*public static void populateExchangeFileSizes(String odsCodeRegex) {
         LOG.info("Populating Exchange File Sizes for " + odsCodeRegex);
         try {
 
@@ -230,7 +207,7 @@ public abstract class SpecialRoutines {
                             }
 
 
-                            /*String rootDir = null;
+                            *//*String rootDir = null;
                             Map<String, ExchangePayloadFile> hmFilesByName = new HashMap<>();
 
                             String body = exchange.getBody();
@@ -277,7 +254,7 @@ public abstract class SpecialRoutines {
                                 exchange.setBody(newJson);
 
                                 saveExchange = true;
-                            }*/
+                            }*//*
 
                         } catch (Throwable t) {
                             throw new Exception("Failed on exchange " + exchange.getId(), t);
@@ -322,7 +299,7 @@ public abstract class SpecialRoutines {
         } catch (Throwable t) {
             LOG.error("", t);
         }
-    }
+    }*/
 
     public static boolean shouldSkipService(Service service, String odsCodeRegex) {
         if (odsCodeRegex == null) {
@@ -1026,9 +1003,23 @@ public abstract class SpecialRoutines {
         }
     }
 
-    public static void compareDsm(String filterOdsCode) {
+    public static void compareDsm(boolean logDifferencesOnly, String toFile, String filterOdsCode) {
         LOG.debug("Comparing DSM to DDS-UI for " + filterOdsCode);
+        LOG.debug("logDifferencesOnly = " + logDifferencesOnly);
+        LOG.debug("toFile = " + toFile);
         try {
+
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
+            File dstFile = new File(toFile);
+            FileOutputStream fos = new FileOutputStream(dstFile);
+            OutputStreamWriter osw = new OutputStreamWriter(fos);
+            BufferedWriter bufferedWriter = new BufferedWriter(osw);
+
+            CSVFormat format = EmisCsvToFhirTransformer.CSV_FORMAT
+                    .withHeader("ods_code", "DDS-UI DSA", "DSM DSA"
+                    );
+            CSVPrinter printer = new CSVPrinter(bufferedWriter, format);
 
             ServiceDalI serviceDal = DalProvider.factoryServiceDal();
             List<Service> services = serviceDal.getAll();
@@ -1049,7 +1040,10 @@ public abstract class SpecialRoutines {
                     continue;
                 }
 
-                LOG.debug("Doing " + service + "--------------------------------------------------------------------");
+                List<String> logging = new ArrayList<>();
+                boolean gotDifference = false;
+
+                logging.add("Doing " + service + "--------------------------------------------------------------------");
 
                 //check if publisher to DDS protocol
                 List<String> protocolIdsOldWay = DetermineRelevantProtocolIds.getProtocolIdsForPublisherServiceOldWay(serviceId.toString());
@@ -1058,19 +1052,34 @@ public abstract class SpecialRoutines {
                 //check if DSM DPA
                 boolean hasDpaNewWay = OrganisationCache.doesOrganisationHaveDPA(odsCode);
 
+                printer.printRecord(odsCode, hasDpaOldWay, hasDpaNewWay);
+
                 if (hasDpaNewWay != hasDpaOldWay) {
-                    LOG.error("Old and new DPA do not match (old = " + hasDpaOldWay + ", new = " + hasDpaNewWay + ")");
-                    continue;
+                    logging.add("Old and new DPA do not match (old = " + hasDpaOldWay + ", new = " + hasDpaNewWay + ")");
+                    gotDifference = true;
+
+                } else {
+
+                    logging.add("Old and new DPA match (" + hasDpaOldWay + ")");
+
+
+                    //TODO - go on to check subscribers
+
                 }
 
-                LOG.debug("Old and new DPA match (" + hasDpaOldWay + ")");
+                logging.add("");
 
-                //TODO - go on to check subscribers
-
-                LOG.debug("");
+                //log what we found if we need to
+                if (!logDifferencesOnly || gotDifference) {
+                    for (String line: logging) {
+                        LOG.debug(line);
+                    }
+                }
             }
 
-            LOG.debug("Finished Comparing DSM to DDS-UI for " + filterOdsCode);
+            printer.close();
+
+            LOG.debug("Finished Comparing DSM to DDS-UI for " + filterOdsCode + " to " + toFile);
         } catch (Throwable t) {
             LOG.error("", t);
         }
@@ -1121,7 +1130,7 @@ public abstract class SpecialRoutines {
         }
     }
 
-    public static void testCallToDdsUi() {
+    /*public static void testCallToDdsUi() {
 
         try {
             //get the Keycloak details from the EMIS config
@@ -1147,10 +1156,10 @@ public abstract class SpecialRoutines {
             builder = builder.header("Authorization", "Bearer " + token);
             Response response = builder.get();
 
-            /*Response response = testTarget.
+            *//*Response response = testTarget.
                     .request()
                     .header("Authorization", "Bearer " + kcClient.getToken().getToken())
-                    .get();*/
+                    .get();*//*
 
             //request.Headers.Add("Authorization", this.token);
 
@@ -1163,9 +1172,9 @@ public abstract class SpecialRoutines {
             LOG.error("", t);
         }
 
-    }
+    }*/
 
-    public static void loadTppStagingData(String odsCode, UUID fromExchange) {
+    /*public static void loadTppStagingData(String odsCode, UUID fromExchange) {
         LOG.debug("Loading TPP Staging Data for " + odsCode + " from Exchange " + fromExchange);
         try {
 
@@ -1272,9 +1281,9 @@ public abstract class SpecialRoutines {
         } catch (Throwable t) {
             LOG.error("", t);
         }
-    }
+    }*/
 
-    public static void loadEmisStagingData(String odsCode, UUID fromExchange) {
+    /*public static void loadEmisStagingData(String odsCode, UUID fromExchange) {
         LOG.debug("Loading EMIS Staging Data for " + odsCode + " from Exchange " + fromExchange);
         try {
 
@@ -1393,9 +1402,9 @@ public abstract class SpecialRoutines {
         } catch (Throwable t) {
             LOG.error("", t);
         }
-    }
+    }*/
 
-    public static void requeueSkippedAdminData(boolean tpp, boolean oneAtATime) {
+    /*public static void requeueSkippedAdminData(boolean tpp, boolean oneAtATime) {
         LOG.debug("Re-queueing skipped admin data for TPP = " + tpp);
         try {
             Connection connection = ConnectionManager.getAuditNonPooledConnection();
@@ -1499,7 +1508,7 @@ public abstract class SpecialRoutines {
             LOG.error("", t);
         }
 
-    }
+    }*/
 
     private static void continueOrQuit() throws Exception {
         LOG.info("Enter y to continue, anything else to quit");
