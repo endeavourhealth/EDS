@@ -264,7 +264,7 @@ public class Main {
 			boolean logDifferencesOnly = Boolean.parseBoolean(args[1]);
 			String toFile = args[2];
 			String odsCode = null;
-			if (args.length > 1) {
+			if (args.length > 3) {
 				odsCode = args[3];
 			}
 			SpecialRoutines.compareDsm(logDifferencesOnly, toFile, odsCode);
