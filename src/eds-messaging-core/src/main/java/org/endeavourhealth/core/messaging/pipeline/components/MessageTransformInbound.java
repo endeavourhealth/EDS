@@ -339,12 +339,22 @@ public class MessageTransformInbound extends PipelineComponent {
 			countStr = "(1 of " + countErrors + ") ";
 		}
 
-		String exchangeDateStr = new SimpleDateFormat("yyyy-MM-dd").format(exchange.getTimestamp());
+		//String exchangeDateStr = new SimpleDateFormat("yyyy-MM-dd").format(exchange.getTimestamp());
+		String exchangeDateStr = "";
+		try {
+			Date dataDate = exchange.getHeaderAsDate(HeaderKeys.DataDate);
+			if (dataDate != null) {
+				exchangeDateStr = " from " +  new SimpleDateFormat("yyyy-MM-dd").format(dataDate);
+			}
+		} catch (Exception ex) {
+			exchangeDateStr += " <FAILED TO GET DATA DATA>";
+		}
+
 		String appId = ConfigManager.getAppSubId();
 
 		String message = appId + " error " + countStr + "in " + software + " transform for " + serviceDesc + "\n";
-		message += "Exchange " + exchange.getId() + " received " + exchangeDateStr + "\n";
-		message += "View the full error details on the Transform Errors page of EDS-UI";
+		message += "Exchange " + exchange.getId() + exchangeDateStr;
+		//message += "View the full error details on the Transform Errors page of EDS-UI";
 
 		Error error = currentErrors.getError().get(0);
 		List<String> lines = new ArrayList<>();

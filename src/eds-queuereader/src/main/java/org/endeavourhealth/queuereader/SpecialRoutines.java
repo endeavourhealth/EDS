@@ -1836,8 +1836,6 @@ public abstract class SpecialRoutines {
                     continue;
                 }
 
-                LOG.debug("CHECKING " + service + ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
-
                 List<UUID> systemIds = SystemHelper.getSystemIdsForService(service);
                 if (systemIds.size() != 1) {
                     throw new Exception("Wrong number of system IDs for " + service);
@@ -1852,12 +1850,28 @@ public abstract class SpecialRoutines {
                 }
 
                 if (publisherStatus == null) {
-                    throw new Exception("Failed to find publisher status for service");
+                    throw new Exception("Failed to find publisher status for service " + service);
                 }
+
+                LOG.debug("");
+                LOG.debug("CHECKING " + service + " " + publisherStatus + " >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
 
                 if (publisherStatus.equals(ServiceInterfaceEndpoint.STATUS_AUTO_FAIL)) {
                     LOG.debug("Skipping service because set to auto-fail");
                     continue;
+                }
+
+                //check if in the bulks skipped table and are waiting to be re-queued
+                Connection connection = ConnectionManager.getEdsConnection();
+                String sql = "select 1 from audit.skipped_exchanges_left_and_dead where ods_code = ? and (queued = false or queued is null)";
+                PreparedStatement ps = connection.prepareStatement(sql);
+                ps.setString(1, service.getLocalId());
+                ResultSet rs = ps.executeQuery();
+                boolean needsRequeueing = rs.next();
+                ps.close();
+                connection.close();
+                if (needsRequeueing) {
+                    LOG.debug(">>>>> NEEDS REQUEUEING FOR SKIPPED BULK");
                 }
 
                 ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
