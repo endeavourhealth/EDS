@@ -2004,7 +2004,7 @@ public abstract class SpecialRoutines {
                 List<UUID> patientIds = patientSearchDal.getPatientIds(serviceUuid);
                 for (UUID patientId : patientIds) {
 
-                    List<ResourceWrapper> resources = new ArrayList<>();
+                    List<ResourceWrapper> patientResources = new ArrayList<>();
                     UUID batchUuid = UUID.randomUUID();
 
                     //need the Patient and the EpisodeOfCare resources for each service patient
@@ -2014,7 +2014,17 @@ public abstract class SpecialRoutines {
                         LOG.warn("Null patient resource for Patient " + patientId);
                         continue;
                     }
-                    resources.add(patientWrapper);
+                    patientResources.add(patientWrapper);
+
+                    String patientContainerString
+                            = BulkHelper.getEnterpriseContainerForPatientData(patientResources, serviceUuid, batchUuid, protocolUuid, subscriberConfigName, patientId);
+
+                    //  Use  a random UUID for a queued message ID
+                    if (patientContainerString != null) {
+                        EnterpriseFiler.file(batchUuid, UUID.randomUUID(), patientContainerString, subscriberConfigName);
+                    }
+
+                    List<ResourceWrapper> episodeResources = new ArrayList<>();
 
                     //patient may have multiple episodes of care at the service, so pass them in
                     List<ResourceWrapper> episodeWrappers
@@ -2025,15 +2035,15 @@ public abstract class SpecialRoutines {
                         continue;
                     }
                     for (ResourceWrapper episodeWrapper: episodeWrappers  ) {
-                        resources.add(episodeWrapper);
+                        episodeResources.add(episodeWrapper);
                     }
 
-                    String containerString
-                            = BulkHelper.getEnterpriseContainerForPatientAndEpisodeData(resources, serviceUuid, batchUuid, protocolUuid, subscriberConfigName, patientId);
+                    String episodeContainerString
+                            = BulkHelper.getEnterpriseContainerForEpisodeData(episodeResources, serviceUuid, batchUuid, protocolUuid, subscriberConfigName, patientId);
 
                     //  Use  a random UUID for a queued message ID
-                    if (containerString != null) {
-                        EnterpriseFiler.file(batchUuid, UUID.randomUUID(), containerString, subscriberConfigName);
+                    if (episodeContainerString != null) {
+                        EnterpriseFiler.file(batchUuid, UUID.randomUUID(), episodeContainerString, subscriberConfigName);
                     }
                 }
             }
