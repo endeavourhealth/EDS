@@ -1,10 +1,15 @@
 package org.endeavourhealth.queuereader;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.base.Strings;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.io.FileUtils;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
+import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.common.fhir.ExtensionConverter;
 import org.endeavourhealth.common.fhir.FhirExtensionUri;
 import org.endeavourhealth.common.fhir.IdentifierHelper;
@@ -13,6 +18,7 @@ import org.endeavourhealth.common.utility.FileHelper;
 import org.endeavourhealth.core.application.ApplicationHeartbeatHelper;
 import org.endeavourhealth.core.configuration.PostMessageToExchangeConfig;
 import org.endeavourhealth.core.database.dal.DalProvider;
+import org.endeavourhealth.core.database.dal.admin.LibraryRepositoryHelper;
 import org.endeavourhealth.core.database.dal.admin.ServiceDalI;
 import org.endeavourhealth.core.database.dal.admin.SystemHelper;
 import org.endeavourhealth.core.database.dal.admin.models.Service;
@@ -32,12 +38,12 @@ import org.endeavourhealth.core.database.rdbms.datasharingmanager.models.Project
 import org.endeavourhealth.core.fhirStorage.FhirResourceHelper;
 import org.endeavourhealth.core.fhirStorage.FhirSerializationHelper;
 import org.endeavourhealth.core.fhirStorage.ServiceInterfaceEndpoint;
+import org.endeavourhealth.core.messaging.pipeline.PipelineException;
 import org.endeavourhealth.core.messaging.pipeline.components.DetermineRelevantProtocolIds;
+import org.endeavourhealth.core.messaging.pipeline.components.MessageTransformOutbound;
 import org.endeavourhealth.core.messaging.pipeline.components.PostMessageToExchange;
 import org.endeavourhealth.core.queueing.QueueHelper;
-import org.endeavourhealth.core.xml.QueryDocument.LibraryItem;
-import org.endeavourhealth.core.xml.QueryDocument.ServiceContract;
-import org.endeavourhealth.core.xml.QueryDocument.ServiceContractActive;
+import org.endeavourhealth.core.xml.QueryDocument.*;
 import org.endeavourhealth.core.xml.TransformErrorSerializer;
 import org.endeavourhealth.core.xml.transformError.TransformError;
 import org.endeavourhealth.im.client.IMClient;
@@ -49,6 +55,7 @@ import org.endeavourhealth.transform.subscriber.IMConstant;
 import org.endeavourhealth.transform.subscriber.IMHelper;
 import org.endeavourhealth.transform.ui.helpers.BulkHelper;
 import org.hl7.fhir.instance.model.*;
+import org.hl7.fhir.instance.model.Resource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -56,6 +63,7 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
+import java.lang.System;
 import java.net.URI;
 import java.net.URL;
 import java.security.CodeSource;
@@ -67,6 +75,7 @@ import java.sql.Statement;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static org.endeavourhealth.core.xml.QueryDocument.ServiceContractType.PUBLISHER;
 
@@ -1017,7 +1026,7 @@ public abstract class SpecialRoutines {
             BufferedWriter bufferedWriter = new BufferedWriter(osw);
 
             CSVFormat format = EmisCsvToFhirTransformer.CSV_FORMAT
-                    .withHeader("ods_code", "DDS-UI DSA", "DSM DSA"
+                    .withHeader("name", "ods_code", "parent_code", "DPA matches", "DDS-UI DPA", "DSM DPA", "DSA matches", "DDS-UI Endpoints", "DSM Endpoints"
                     );
             CSVPrinter printer = new CSVPrinter(bufferedWriter, format);
 
@@ -1045,6 +1054,8 @@ public abstract class SpecialRoutines {
 
                 logging.add("Doing " + service + "--------------------------------------------------------------------");
 
+                //check DPAs
+
                 //check if publisher to DDS protocol
                 List<String> protocolIdsOldWay = DetermineRelevantProtocolIds.getProtocolIdsForPublisherServiceOldWay(serviceId.toString());
                 boolean hasDpaOldWay = !protocolIdsOldWay.isEmpty(); //in the old way, we count as having a DPA if they're in any protocol
@@ -1052,20 +1063,153 @@ public abstract class SpecialRoutines {
                 //check if DSM DPA
                 boolean hasDpaNewWay = OrganisationCache.doesOrganisationHaveDPA(odsCode);
 
-                printer.printRecord(odsCode, hasDpaOldWay, hasDpaNewWay);
+                boolean dpaMatches = hasDpaNewWay == hasDpaOldWay;
 
-                if (hasDpaNewWay != hasDpaOldWay) {
+                if (!dpaMatches) {
                     logging.add("Old and new DPA do not match (old = " + hasDpaOldWay + ", new = " + hasDpaNewWay + ")");
                     gotDifference = true;
 
                 } else {
 
                     logging.add("Old and new DPA match (" + hasDpaOldWay + ")");
-
-
-                    //TODO - go on to check subscribers
-
                 }
+
+                //check DSAs
+
+                //want to find target subscriber config names OLD way
+                Set<String> subscriberConfigNamesOldWay = new HashSet<>();
+                Map<String, Set<String>> subscriberConfigToCohortOldWay = new HashMap<>();
+
+                for (String oldProtocolId: protocolIdsOldWay) {
+                    LibraryItem libraryItem = LibraryRepositoryHelper.getLibraryItemUsingCache(UUID.fromString(oldProtocolId));
+                    Protocol protocol = libraryItem.getProtocol();
+
+                    //skip disabled protocols
+                    if (protocol.getEnabled() != ProtocolEnabled.TRUE) {
+                        continue;
+                    }
+
+                    List<ServiceContract> subscribers = protocol
+                            .getServiceContract()
+                            .stream()
+                            .filter(sc -> sc.getType().equals(ServiceContractType.SUBSCRIBER))
+                            .filter(sc -> sc.getActive() == ServiceContractActive.TRUE) //skip disabled service contracts
+                            .collect(Collectors.toList());
+
+                    for (ServiceContract serviceContract : subscribers) {
+                        String subscriberConfigName = MessageTransformOutbound.getSubscriberEndpoint(serviceContract);
+                        subscriberConfigNamesOldWay.add(subscriberConfigName);
+
+                        //get cohort details
+                        Set<String> cohortSet = new HashSet<>();
+                        subscriberConfigToCohortOldWay.put(subscriberConfigName, cohortSet);
+
+                        String cohort = protocol.getCohort();
+                        if (cohort.equals("All Patients")) {
+                            cohortSet.add("all_patients");
+
+                        } else if (cohort.equals("Explicit Patients")) {
+                            //database is dependent on protocol ID, but I don't think this used
+                            throw new Exception("Protocol uses explicit patient cohort so cannot be converted");
+                            //cohortRoot.put("type", "explicit_patients");
+
+                        } else if (cohort.startsWith("Defining Services")) {
+                            cohortSet.add("registered_at");
+
+                            int index = cohort.indexOf(":");
+                            if (index == -1) {
+                                throw new RuntimeException("Invalid cohort format " + cohort);
+                            }
+                            String suffix = cohort.substring(index + 1);
+                            String[] toks = suffix.split("\r|\n|,| |;");
+                            for (String tok : toks) {
+                                String cohortOdsCode = tok.trim().toUpperCase();  //when checking, we always make uppercase
+                                if (!Strings.isNullOrEmpty(cohortOdsCode)) {
+                                    cohortSet.add(cohortOdsCode);
+                                }
+                            }
+
+                        } else {
+                            throw new PipelineException("Unknown cohort [" + cohort + "]");
+                        }
+                    }
+                }
+
+                //find target subscriber config names NEW way
+                Set<String> subscriberConfigNamesNewWay = new HashSet<>();
+                Map<String, Set<String>> subscriberConfigToCohortNewWay = new HashMap<>();
+
+                List<DataSharingAgreementEntity> list = DataSharingAgreementCache.getAllDSAsForPublisherOrg(odsCode);
+                if (list == null) {
+                    logging.add("Got NULL DSAs for " + odsCode);
+
+                } else {
+                    for (DataSharingAgreementEntity e: list) {
+                        String dsaUuid = e.getUuid();
+                        String dsaName = e.getName();
+
+                        //how to get subscriber config name from the above
+
+                        //new config record for the PROTOCOL
+                        //giving details of subscriber config names for each protocol
+                        //giving cohort details
+                        JsonNode jsonNode = ConfigManager.getConfigurationAsJson(dsaUuid, "data-sharing-agreement");
+                        if (jsonNode == null) {
+                            logging.add("NO config record found for DSA " + dsaUuid + " (" + dsaName + ")");
+
+                        } else {
+                            ArrayNode arr = (ArrayNode)jsonNode.get("subscribers");
+                            if (arr == null) {
+                                logging.add("No subscribers array in JSON for DSA " + dsaUuid + " (" + dsaName + ")");
+                            } else {
+                                for (int i=0; i<arr.size(); i++) {
+                                    ObjectNode subscriberNode = (ObjectNode)arr.get(i);
+                                    String subscriberConfigName = subscriberNode.asText();
+
+                                    subscriberConfigNamesNewWay.add(subscriberConfigName);
+
+                                    //get cohort details
+                                    Set<String> cohortSet = new HashSet<>();
+                                    subscriberConfigToCohortNewWay.put(subscriberConfigName, cohortSet);
+
+                                    //cohort
+                                    ObjectNode cohortNode = (ObjectNode)jsonNode.get("cohort");
+                                    if (cohortNode == null) {
+                                        logging.add("No cohort node found in JSON for DSA " + dsaUuid + " (" + dsaName + ")");
+                                    } else {
+
+                                        String cohortType = cohortNode.get("type").asText();
+                                        cohortSet.add(cohortType);
+
+                                        if (cohortType.equals("registered_at")) {
+                                            ArrayNode cohortArray = (ArrayNode)cohortNode.get("services");
+                                            for (int j=0; j<cohortArray.size(); j++) {
+                                                String cohortOdsCode = cohortArray.get(j).asText();
+                                                cohortSet.add(cohortOdsCode);
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                //compare the two
+                List<String> l = new ArrayList<>(subscriberConfigNamesOldWay);
+                l.sort(((o1, o2) -> o1.compareToIgnoreCase(o2)));
+                String subscribersOldWay = String.join(", ", l);
+
+                l = new ArrayList<>(subscriberConfigNamesNewWay);
+                l.sort(((o1, o2) -> o1.compareToIgnoreCase(o2)));
+                String subscribersNewWay = String.join(", ", l);
+
+                boolean dsaMatches = subscribersOldWay.equals(subscribersNewWay);
+
+                //compare DSA cohorts
+                //TODO
+
+                printer.printRecord(service.getName(), odsCode, service.getCcgCode(), dpaMatches, hasDpaOldWay, hasDpaNewWay, dsaMatches, subscribersOldWay, subscribersNewWay);
 
                 logging.add("");
 
@@ -1080,6 +1224,91 @@ public abstract class SpecialRoutines {
             printer.close();
 
             LOG.debug("Finished Comparing DSM to DDS-UI for " + filterOdsCode + " to " + toFile);
+        } catch (Throwable t) {
+            LOG.error("", t);
+        }
+    }
+
+    /**
+     * generates the JSON for the config record to move config from DDS-UI protocols to DSM (+JSON)
+     */
+    public static void createConfigJsonForDSM(String ddsUiProtocolName, String dsmDsaId) {
+        LOG.debug("Creating Config JSON for DDS-UI -> DSM migration");
+        try {
+            //get DDS-UI protocol details
+            LibraryItem libraryItem = BulkHelper.findProtocolLibraryItem(ddsUiProtocolName);
+            LOG.debug("DDS-UI protocol [" + ddsUiProtocolName + "]");
+            LOG.debug("DDS-UI protocol UUID " + libraryItem.getUuid());
+
+            //get DSM DPA details
+            DataSharingAgreementEntity dsa = DataSharingAgreementCache.getDSADetails(dsmDsaId);
+            LOG.debug("DSM DSA [" + dsa.getName() + "]");
+            LOG.debug("DSM DSA UUID " + dsa.getUuid());
+
+            ObjectMapper mapper = new ObjectMapper();
+            ObjectNode root = new ObjectNode(mapper.getNodeFactory());
+
+            //put in DSA name for visibility
+            root.put("dsa_name", dsa.getName());
+
+            //subscriber config
+            ArrayNode subscriberArray = root.putArray("subscribers");
+
+            Protocol protocol = libraryItem.getProtocol();
+            if (protocol.getEnabled() != ProtocolEnabled.TRUE) {
+                throw new Exception("Protocol isn't enabled");
+            }
+
+            List<ServiceContract> subscribers = protocol
+                    .getServiceContract()
+                    .stream()
+                    .filter(sc -> sc.getType().equals(ServiceContractType.SUBSCRIBER))
+                    .filter(sc -> sc.getActive() == ServiceContractActive.TRUE) //skip disabled service contracts
+                    .collect(Collectors.toList());
+
+            for (ServiceContract serviceContract: subscribers) {
+                String subscriberConfigName = MessageTransformOutbound.getSubscriberEndpoint(serviceContract);
+                subscriberArray.add(subscriberConfigName);
+            }
+
+            //cohort stuff
+            ObjectNode cohortRoot = root.putObject("cohort");
+
+            String cohort = protocol.getCohort();
+            if (cohort.equals("All Patients")) {
+                cohortRoot.put("type", "all_patients");
+
+            } else if (cohort.equals("Explicit Patients")) {
+                //database is dependent on protocol ID, but I don't think this used
+                throw new Exception("Protocol uses explicit patient cohort so cannot be converted");
+                //cohortRoot.put("type", "explicit_patients");
+
+            } else if (cohort.startsWith("Defining Services")) {
+                cohortRoot.put("type", "registered_at");
+
+                ArrayNode registeredAtRoot = cohortRoot.putArray("services");
+
+                int index = cohort.indexOf(":");
+                if (index == -1) {
+                    throw new RuntimeException("Invalid cohort format " + cohort);
+                }
+                String suffix = cohort.substring(index+1);
+                String[] toks = suffix.split("\r|\n|,| |;");
+                for (String tok: toks) {
+                    String odsCode = tok.trim().toUpperCase();  //when checking, we always make uppercase
+                    if (!Strings.isNullOrEmpty(tok)) {
+                        registeredAtRoot.add(odsCode);
+                    }
+                }
+
+            } else {
+                throw new PipelineException("Unknown cohort [" + cohort + "]");
+            }
+
+            String json = mapper.writeValueAsString(root);
+            LOG.debug("JSON:\r\n\r\n" + json + "\r\n\r\n");
+
+            LOG.debug("Finished Creating Config JSON for DDS-UI -> DSM migration");
         } catch (Throwable t) {
             LOG.error("", t);
         }
@@ -1510,6 +1739,9 @@ public abstract class SpecialRoutines {
 
     }*/
 
+    /**
+     * handy fn to stop a routine for manual inspection before continuing (or quitting)
+     */
     private static void continueOrQuit() throws Exception {
         LOG.info("Enter y to continue, anything else to quit");
 
@@ -2049,4 +2281,6 @@ public abstract class SpecialRoutines {
             }
         }
     }
+
+
 }

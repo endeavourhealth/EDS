@@ -272,6 +272,16 @@ public class Main {
 		}
 
 		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("GenerateConfigForDSM")) {
+
+			String ddsUiProtocolName = args[1];
+			String dsmDsaId = args[2];
+			SpecialRoutines.createConfigJsonForDSM(ddsUiProtocolName, dsmDsaId);
+			System.exit(0);
+		}
+
+
+		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("UPRN")) {
 			String configName = args[1];
 			String protocolName = args[2];
