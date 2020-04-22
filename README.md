@@ -38,7 +38,7 @@ rabbitmq-service.bat start
 Finally, navigate to [here] (http://localhost:15672/#/ "Rabbit MQ") and use a username and password of 'guest' to login and you should see an overview page.  This means RabbitMQ is installed correctly.
 
 ### MySQL and MySQL Workbench
-Download MySQL and MySQL Workbench from https://dev.mysql.com/downloads/installer/ then install it
+Download MySQL and MySQL Workbench from https://dev.mysql.com/downloads/mysql/5.7.html then install it. Note that later versions may not be supported.
 
 Once installed, restore the sample databases found at https://1drv.ms/u/s!AhdraGkSN4_agdYZB2A9tSB_lotG8w
 Inside this zip file is an "Instructions.txt" file, which contains steps on how to restore the DBs from the zip - follow this
