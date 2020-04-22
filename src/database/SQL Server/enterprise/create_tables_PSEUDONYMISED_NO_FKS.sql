@@ -634,14 +634,14 @@ CREATE TABLE appointment
   person_id bigint NOT NULL,
   practitioner_id bigint,
   schedule_id bigint,
-  start_date datetime2(0),
+  start_date datetime,
   planned_duration integer,
   actual_duration integer,
   appointment_status_id smallint NOT NULL,
   patient_wait integer,
   patient_delay integer,
-  sent_in datetime2(0),
-  [left] datetime2(0),
+  sent_in datetime,
+  [left] datetime,
   CONSTRAINT pk_appointment_id PRIMARY KEY (organization_id,person_id,id)
 )
 GO
