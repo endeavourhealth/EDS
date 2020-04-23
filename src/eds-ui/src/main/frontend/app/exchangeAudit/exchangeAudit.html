@@ -141,7 +141,8 @@
                     <ngb-accordion #acc="ngbAccordion">
                         <ngb-panel title="View Body">
                             <template ngbPanelContent>
-                                <button type="button" class="btn btn-default btn-xs" (click)="copyBodyToClipboard()">Copy to Clipboard</button>
+                                <button type="button" class="btn btn-default btn-xs" (click)="copyBodyToClipboard(false)">Copy to Clipboard</button>
+                                <button type="button" class="btn btn-default btn-xs" (click)="copyBodyToClipboard(true)">Copy as JSON</button>
                                 <div *ngFor="let item of getSelectedExchangeHBodyLines()">
                                     {{ item }}
                                 </div>

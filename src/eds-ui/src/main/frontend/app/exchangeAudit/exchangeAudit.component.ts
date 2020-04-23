@@ -361,15 +361,27 @@ export class ExchangeAuditComponent {
 	}
 
 
+	copyBodyToClipboard(asJson: boolean) {
+		var vm = this;
 
-
-
-
-
-	copyBodyToClipboard() {
 		//join the body lines into a single string
 		var lines = this.getSelectedExchangeHBodyLines();
 		var joined = lines.join('\r\n');
+
+		//if we want it formatted as JSON, then try that
+		if (asJson) {
+			try {
+				//turn into object
+				var obj = JSON.parse(joined);
+
+				//pretty-print object
+				joined = JSON.stringify(obj, null, 2);
+
+			} catch (e) {
+				vm.log.error('Not valid JSON');
+				return;
+			}
+		}
 
 		//create a text area containing the text and insert into the document
 		var txtArea = document.createElement("textarea");
@@ -377,8 +389,6 @@ export class ExchangeAuditComponent {
 		txtArea.value = joined;
 		document.body.appendChild(txtArea);
 		txtArea.select();
-
-		var vm = this;
 
 		//invoke the copy action on the text area
 		try {
