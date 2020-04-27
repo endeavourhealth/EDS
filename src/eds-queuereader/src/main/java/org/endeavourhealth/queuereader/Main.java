@@ -51,6 +51,7 @@ import org.endeavourhealth.core.xml.transformError.TransformError;
 import org.endeavourhealth.subscriber.filer.EnterpriseFiler;
 import org.endeavourhealth.transform.common.*;
 import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
+import org.endeavourhealth.transform.enterprise.transforms.AbstractEnterpriseTransformer;
 import org.endeavourhealth.transform.subscriber.targetTables.OutputContainer;
 import org.endeavourhealth.transform.subscriber.targetTables.SubscriberTableId;
 import org.endeavourhealth.transform.ui.helpers.BulkHelper;
@@ -287,6 +288,16 @@ public class Main {
 			String outputFormat = args[3];
 			String debug = args[4];
 			bulkProcessUPRN(configName, protocolName, outputFormat, debug);
+
+			System.exit(0);
+		}
+
+		if (args.length >=1 && args[0].equalsIgnoreCase("UPRNTHREADED")) {
+			String configName = args[1];
+			String protocolName = args[2];
+			String outputFormat = args[3];
+			String debug = args[4];
+			bulkProcessUPRNThreaded(configName, protocolName, outputFormat, debug);
 
 			System.exit(0);
 		}
@@ -1790,6 +1801,136 @@ public class Main {
 		} catch (Throwable t) {
 			LOG.error("", t);
 		}
+	}
+
+	static class UPRNCallable implements Callable {
+		private UUID serviceUUID;
+		private String ResourceType;
+		private UUID patientId;
+		private String debug;
+		private ResourceDalI dal;
+		private String outputFormat;
+		private String subscriberConfigName;
+		private UUID batchUUID;
+		public UPRNCallable(UUID serviceUUID, String ResourceType, UUID patientId, String debug, ResourceDalI dal, String outputFormat, String subscriberConfigName, UUID batchUUID) {
+			this.serviceUUID = serviceUUID;
+			this.ResourceType = ResourceType;
+			this.patientId = patientId;
+			this.debug = debug;
+			this.dal = dal;
+			this.outputFormat = outputFormat;
+			this.subscriberConfigName = subscriberConfigName;
+			this.batchUUID = batchUUID;
+		}
+		@Override
+		public Object call() throws Exception {
+
+			try {
+				List<ResourceWrapper> resources = new ArrayList<>();
+
+				ResourceWrapper patientWrapper = dal.getCurrentVersion(serviceUUID, ResourceType, patientId);
+
+				if (patientWrapper == null) {
+					// LOG.warn("Null patient resource for Patient " + patientId);
+					return null;
+				}
+
+				resources.add(patientWrapper);
+
+				if (debug.equals("1")) {
+					LOG.info("Service: " + serviceUUID.toString());
+					LOG.info("Configname: " + subscriberConfigName);
+					LOG.info("Patientid: " + patientId.toString());
+				}
+
+				if (outputFormat.equals("SUBSCRIBER")) {
+
+					String containerString = BulkHelper.getSubscriberContainerForUPRNData(resources, serviceUUID, batchUUID, subscriberConfigName, patientId);
+
+					//  Is a random UUID ok to use as a queued message ID
+					if (containerString != null) {
+						org.endeavourhealth.subscriber.filer.SubscriberFiler.file(batchUUID, UUID.randomUUID(), containerString, subscriberConfigName);
+					}
+
+				} else {
+					String containerString = BulkHelper.getEnterpriseContainerForUPRNData(resources, serviceUUID, batchUUID, subscriberConfigName, patientId, debug);
+
+					//  Is a random UUID ok to use as a queued message ID
+					if (containerString != null) {
+						EnterpriseFiler.file(batchUUID, UUID.randomUUID(), containerString, subscriberConfigName);
+					}
+				}
+				return null;
+			}
+			catch(Exception e) {
+				LOG.error(e.toString());
+			}
+			return null;
+		}
+	}
+
+	/*
+	private static void handleErrors(List<ThreadPoolError> errors) throws Exception {
+		if (errors == null || errors.isEmpty()) {
+			return;
+		}
+
+		//if we've had multiple errors, just throw the first one, since they'll most-likely be the same
+		ThreadPoolError first = errors.get(0);
+		Throwable cause = first.getException();
+		//the cause may be an Exception or Error so we need to explicitly
+		//cast to the right type to throw it without changing the method signature
+		if (cause instanceof Exception) {
+			throw (Exception) cause;
+		} else if (cause instanceof Error) {
+			throw (Error) cause;
+		}
+	}
+	*/
+
+	private static void bulkProcessUPRNThreaded(String subscriberConfigName, String protocolName, String outputFormat, String debug) throws Exception {
+
+		LibraryItem matchedLibraryItem = BulkHelper.findProtocolLibraryItem(protocolName);
+
+		if (matchedLibraryItem == null) {
+			System.out.println("Protocol not found : " + protocolName);
+			return;
+		}
+		List<ServiceContract> l = matchedLibraryItem.getProtocol().getServiceContract();
+		String serviceId = "";
+		ResourceDalI dal = DalProvider.factoryResourceDal();
+		PatientSearchDalI patientSearchDal = DalProvider.factoryPatientSearchDal();
+
+		SubscriberResourceMappingDalI enterpriseIdDal = DalProvider.factorySubscriberResourceMappingDal(subscriberConfigName);
+
+		ThreadPool threadPool = new ThreadPool(5, 10);
+
+		Long ret;
+
+		for (ServiceContract serviceContract : l) {
+			if (serviceContract.getType().equals(PUBLISHER)
+					&& serviceContract.getActive() == ServiceContractActive.TRUE) {
+
+				UUID batchUUID = UUID.randomUUID();
+				serviceId = serviceContract.getService().getUuid();
+				UUID serviceUUID = UUID.fromString(serviceId);
+				List<UUID> patientIds = patientSearchDal.getPatientIds(serviceUUID);
+
+				for (UUID patientId : patientIds) {
+					LOG.info(patientId.toString());
+					ret = enterpriseIdDal.findEnterpriseIdOldWay("Patient", patientId.toString());
+					if (ret != null) {
+						// check if the patient has previously been processed?
+						LOG.info(ret.toString());
+					}
+					List<ThreadPoolError> errors = threadPool.submit(new UPRNCallable(serviceUUID, ResourceType.Patient.toString(), patientId, debug, dal, outputFormat, subscriberConfigName, batchUUID));
+					//handleErrors(errors);
+				}
+			}
+		}
+
+		List<ThreadPoolError> errors = threadPool.waitAndStop();
+		//handleErrors(errors);
 	}
 
 	private static void bulkProcessUPRN(String subscriberConfigName, String protocolName, String outputFormat, String debug) throws Exception {
