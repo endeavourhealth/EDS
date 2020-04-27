@@ -50,6 +50,7 @@ import org.endeavourhealth.im.client.IMClient;
 import org.endeavourhealth.subscriber.filer.EnterpriseFiler;
 import org.endeavourhealth.transform.common.*;
 import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
+import org.endeavourhealth.transform.fhirhl7v2.FhirHl7v2Filer;
 import org.endeavourhealth.transform.fhirhl7v2.transforms.EncounterTransformer;
 import org.endeavourhealth.transform.subscriber.IMConstant;
 import org.endeavourhealth.transform.subscriber.IMHelper;
@@ -1983,7 +1984,8 @@ public abstract class SpecialRoutines {
 
                                         List<UUID> batchIdsCreated = new ArrayList<>();
                                         TransformError transformError = new TransformError();
-                                        FhirResourceFiler fhirResourceFiler = new FhirResourceFiler(exchange.getId(), serviceId, systemId, transformError, batchIdsCreated);
+                                        FhirResourceFiler innerFiler = new FhirResourceFiler(exchange.getId(), serviceId, systemId, transformError, batchIdsCreated);
+                                        FhirHl7v2Filer.AdtResourceFiler filer = new FhirHl7v2Filer.AdtResourceFiler(innerFiler);
 
                                         ExchangeTransformAudit transformAudit = new ExchangeTransformAudit();
                                         transformAudit.setServiceId(serviceId);
@@ -1996,9 +1998,9 @@ public abstract class SpecialRoutines {
 
                                         //actually call the transform code
                                         Encounter currentEncounter = (Encounter) currentWrapper.getResource();
-                                        EncounterTransformer.updateEncounter(currentEncounter, encounter, fhirResourceFiler);
+                                        EncounterTransformer.updateEncounter(currentEncounter, encounter, filer);
 
-                                        fhirResourceFiler.waitToFinish();
+                                        innerFiler.waitToFinish();
 
                                         transformAudit.setEnded(new Date());
                                         transformAudit.setNumberBatchesCreated(new Integer(batchIdsCreated.size()));
