@@ -22,6 +22,7 @@ DROP TABLE IF EXISTS pcr_event_id_map;
 DROP TABLE IF EXISTS code_set_codes;
 DROP TABLE IF EXISTS code_set;
 DROP TABLE IF EXISTS subscriber_id_map;
+DROP TABLE IF EXISTS subscriber_id_map_3;
 DROP TABLE IF EXISTS subscriber_pseudo_id_map;
 DROP TABLE IF EXISTS pseudo_id_audit;
 
@@ -282,6 +283,23 @@ CREATE UNIQUE INDEX uix_subscriber_id_map_auto_increment
 ON subscriber_id_map (subscriber_id);
 
 ALTER TABLE subscriber_id_map MODIFY COLUMN subscriber_id bigint auto_increment;
+
+
+
+CREATE TABLE subscriber_id_map_3
+(
+  subscriber_table tinyint NOT NULL COMMENT 'ID of the target table this ID is for',
+  subscriber_id bigint NOT NULL COMMENT 'unique ID allocated for the subscriber DB',
+  source_id varchar(250) NOT NULL COMMENT 'Source ID (e.g. FHIR reference) that this ID is mapped from',
+  dt_previously_sent datetime NULL COMMENT 'the date time of the previously sent version of this resource (or null if deleted)',
+  CONSTRAINT pk_subscriber_id_map_3 PRIMARY KEY (source_id, subscriber_table)
+);
+
+-- this unique index is required to make the column auto-increment
+CREATE UNIQUE INDEX uix_subscriber_id_map_3_auto_increment
+ON subscriber_id_map_3 (subscriber_id);
+
+ALTER TABLE subscriber_id_map_3 MODIFY COLUMN subscriber_id bigint auto_increment;
 
 
 
