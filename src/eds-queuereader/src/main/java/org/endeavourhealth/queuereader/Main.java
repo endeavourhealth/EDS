@@ -286,8 +286,9 @@ public class Main {
 			String configName = args[1];
 			String protocolName = args[2];
 			String outputFormat = args[3];
-			String debug = args[4];
-			bulkProcessUPRN(configName, protocolName, outputFormat, debug);
+			String fileName = args[4];
+			String debug = args[5];
+			bulkProcessUPRN(configName, protocolName, outputFormat, fileName, debug);
 
 			System.exit(0);
 		}
@@ -296,8 +297,9 @@ public class Main {
 			String configName = args[1];
 			String protocolName = args[2];
 			String outputFormat = args[3];
-			String debug = args[4];
-			bulkProcessUPRNThreaded(configName, protocolName, outputFormat, debug);
+			String filePath = args[4];
+			String debug = args[5];
+			bulkProcessUPRNThreaded(configName, protocolName, outputFormat, filePath, debug);
 
 			System.exit(0);
 		}
@@ -1888,7 +1890,16 @@ public class Main {
 	}
 	*/
 
-	private static void bulkProcessUPRNThreaded(String subscriberConfigName, String protocolName, String outputFormat, String debug) throws Exception {
+	private static void bulkProcessUPRNThreaded(String subscriberConfigName, String protocolName, String outputFormat, String filePath, String debug) throws Exception {
+
+		Set<UUID> hsPatientUuids = new HashSet<>();
+		File f = new File(filePath);
+		if (f.exists()) {
+			List<String> lines = Files.readAllLines(f.toPath());
+			for (String line : lines) {
+				hsPatientUuids.add(UUID.fromString(line));
+			}
+		}
 
 		LibraryItem matchedLibraryItem = BulkHelper.findProtocolLibraryItem(protocolName);
 
@@ -1917,6 +1928,15 @@ public class Main {
 				List<UUID> patientIds = patientSearchDal.getPatientIds(serviceUUID);
 
 				for (UUID patientId : patientIds) {
+
+					// check if we have processed the patient already
+					if (hsPatientUuids.contains(patientId)) {
+						continue;
+					}
+					List<String> newLines = new ArrayList<>();
+					newLines.add(patientId.toString());
+					Files.write(f.toPath(), newLines, StandardOpenOption.CREATE, StandardOpenOption.APPEND, StandardOpenOption.WRITE);
+
 					LOG.info(patientId.toString());
 					ret = enterpriseIdDal.findEnterpriseIdOldWay("Patient", patientId.toString());
 					if (ret != null) {
@@ -1933,7 +1953,16 @@ public class Main {
 		//handleErrors(errors);
 	}
 
-	private static void bulkProcessUPRN(String subscriberConfigName, String protocolName, String outputFormat, String debug) throws Exception {
+	private static void bulkProcessUPRN(String subscriberConfigName, String protocolName, String outputFormat, String filePath, String debug) throws Exception {
+
+		Set<UUID> hsPatientUuids = new HashSet<>();
+		File f = new File(filePath);
+		if (f.exists()) {
+			List<String> lines = Files.readAllLines(f.toPath());
+			for (String line : lines) {
+				hsPatientUuids.add(UUID.fromString(line));
+			}
+		}
 
 		LibraryItem matchedLibraryItem = BulkHelper.findProtocolLibraryItem(protocolName);
 
@@ -1956,6 +1985,14 @@ public class Main {
 				UUID serviceUUID = UUID.fromString(serviceId);
 				List<UUID> patientIds = patientSearchDal.getPatientIds(serviceUUID);
 				for (UUID patientId : patientIds) {
+
+					// check if we have processed the patient already
+					if (hsPatientUuids.contains(patientId)) {
+						continue;
+					}
+					List<String> newLines = new ArrayList<>();
+					newLines.add(patientId.toString());
+					Files.write(f.toPath(), newLines, StandardOpenOption.CREATE, StandardOpenOption.APPEND, StandardOpenOption.WRITE);
 
 					//resources.clear();
 					List<ResourceWrapper> resources = new ArrayList<>();
