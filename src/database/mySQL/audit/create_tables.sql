@@ -307,6 +307,7 @@ KEY_BLOCK_SIZE=8;
 create table application_heartbeat (
   application_name varchar(255) not null COMMENT 'top-level name of the app e.g. QueueReader',
   application_instance_name varchar(255) not null COMMENT 'identifies the instance of the app e.g. InboundA',
+  application_instance_number int not null COMMENT 'further identifies multiple versions of the same instance',
   timestmp datetime NOT NULL COMMENT 'timestamp of last heartbeat',
   host_name varchar(255) not null COMMENT 'server name last heartbeat from',
   is_busy boolean COMMENT 'whether the application is busy (depends on context what this means)',
@@ -317,7 +318,7 @@ create table application_heartbeat (
   is_busy_detail varchar(255) COMMENT 'free-text desc of what it is busy doing',
   dt_started datetime COMMENT 'when this app instance started',
   dt_jar datetime COMMENT 'build date time of the jar on this server (may be later than start time)',
-  CONSTRAINT pk_application_heartbeat PRIMARY KEY (application_name, application_instance_name)
+  CONSTRAINT pk_application_heartbeat PRIMARY KEY (application_name, application_instance_name, application_instance_number)
 )
   ROW_FORMAT=COMPRESSED
   KEY_BLOCK_SIZE=8;

@@ -1,5 +1,6 @@
 package org.endeavourhealth.queuereader;
 
+import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import org.endeavourhealth.common.utility.MetricsHelper;
@@ -59,12 +60,16 @@ public class RabbitHandler {
 	public void start() throws IOException {
 
 		// Begin consuming messages
-		channel.queueDeclare(
+		AMQP.Queue.DeclareOk response = channel.queueDeclare(
 				configuration.getQueue(),
 				true,		// Durable
 				false, 	// Exclusive (but not the same as the exclusive parameter used below)
 				false, 	// Auto delete
 				null);
+
+		int consumerCount = response.getConsumerCount();
+		consumer.setInstanceNumber(consumerCount+1);
+		//LOG.debug("consumerCount = " + consumerCount);
 
 		//pass true for the exclusive parameter, so we can only have one consumer per queue
 		//channel.basicConsume(configuration.getQueue(), false, consumer);

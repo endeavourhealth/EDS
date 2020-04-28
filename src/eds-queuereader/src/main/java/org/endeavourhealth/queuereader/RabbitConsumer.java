@@ -43,6 +43,7 @@ public class RabbitConsumer extends DefaultConsumer
 	private final String configId;
 	private final RabbitHandler handler;
 	private final PipelineProcessor pipeline;
+	private int instanceNumber;
 
 	private RabbitConsumer_State lastExchangeAttempted;
 	private int lastExchangeAttempts;
@@ -381,8 +382,21 @@ public class RabbitConsumer extends DefaultConsumer
 		applicationHeartbeat.setIsBusyDetail(desc); //give some more detail about what we're doing
 	}
 
+	@Override
+	public void populateInstanceNumber(ApplicationHeartbeat applicationHeartbeat) {
+		applicationHeartbeat.setApplicationInstanceNumber(this.instanceNumber);
+	}
+
 	private boolean isBusy() {
 		return !Strings.isNullOrEmpty(isBusyDesc());
+	}
+
+	public int getInstanceNumber() {
+		return instanceNumber;
+	}
+
+	public void setInstanceNumber(int instanceNumber) {
+		this.instanceNumber = instanceNumber;
 	}
 
 	/**
