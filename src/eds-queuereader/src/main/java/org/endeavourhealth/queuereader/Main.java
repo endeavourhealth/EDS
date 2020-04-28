@@ -51,7 +51,6 @@ import org.endeavourhealth.core.xml.transformError.TransformError;
 import org.endeavourhealth.subscriber.filer.EnterpriseFiler;
 import org.endeavourhealth.transform.common.*;
 import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
-import org.endeavourhealth.transform.enterprise.transforms.AbstractEnterpriseTransformer;
 import org.endeavourhealth.transform.subscriber.targetTables.OutputContainer;
 import org.endeavourhealth.transform.subscriber.targetTables.SubscriberTableId;
 import org.endeavourhealth.transform.ui.helpers.BulkHelper;
@@ -80,6 +79,7 @@ import static org.endeavourhealth.core.xml.QueryDocument.ServiceContractType.PUB
 
 public class Main {
 	private static final Logger LOG = LoggerFactory.getLogger(Main.class);
+
 
 	public static void main(String[] args) throws Exception {
 
