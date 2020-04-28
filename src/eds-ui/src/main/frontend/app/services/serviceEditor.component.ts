@@ -254,11 +254,21 @@ export class ServiceEditComponent {
 		var vm = this;
 		vm.serviceService.delete(item.uuid)
 			.subscribe(
-				() => {
-					vm.log.success('Service deleted', item, 'Delete Service');
-					vm.close();
+				(result) => {
+					console.log('result = ' + result);
+					if (result) {
+						//if the delete fn returns a string, then it's a validation error
+						vm.log.error(result);
+
+					} else {
+						vm.log.success('Service deleted', item, 'Delete Service');
+						vm.close();
+					}
 				},
-				(error) => vm.log.error('Failed to delete Service', error, 'Delete Service')
+				(error) => {
+					console.log('err = ' + error);
+					vm.log.error('Failed to delete Service', error, 'Delete Service');
+				}
 			);
 	}
 

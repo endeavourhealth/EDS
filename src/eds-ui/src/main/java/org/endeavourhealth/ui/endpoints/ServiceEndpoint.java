@@ -16,13 +16,13 @@ import org.endeavourhealth.core.database.dal.DalProvider;
 import org.endeavourhealth.core.database.dal.admin.LibraryDalI;
 import org.endeavourhealth.core.database.dal.admin.LibraryRepositoryHelper;
 import org.endeavourhealth.core.database.dal.admin.ServiceDalI;
+import org.endeavourhealth.core.database.dal.admin.SystemHelper;
 import org.endeavourhealth.core.database.dal.admin.models.ActiveItem;
 import org.endeavourhealth.core.database.dal.admin.models.Item;
 import org.endeavourhealth.core.database.dal.admin.models.Service;
 import org.endeavourhealth.core.database.dal.audit.ExchangeDalI;
 import org.endeavourhealth.core.database.dal.audit.UserAuditDalI;
 import org.endeavourhealth.core.database.dal.audit.models.*;
-import org.endeavourhealth.core.database.dal.ehr.ResourceDalI;
 import org.endeavourhealth.core.database.dal.usermanager.caching.DataSharingAgreementCache;
 import org.endeavourhealth.core.database.dal.usermanager.caching.OrganisationCache;
 import org.endeavourhealth.core.database.dal.usermanager.caching.ProjectCache;
@@ -34,6 +34,7 @@ import org.endeavourhealth.core.xml.QueryDocument.*;
 import org.endeavourhealth.core.xml.QueryDocument.System;
 import org.endeavourhealth.core.xml.QueryDocumentSerializer;
 import org.endeavourhealth.coreui.endpoints.AbstractEndpoint;
+import org.endeavourhealth.transform.common.MessageFormat;
 import org.endeavourhealth.ui.json.JsonOrganisationType;
 import org.endeavourhealth.ui.json.JsonService;
 import org.endeavourhealth.ui.json.JsonServiceSystemStatus;
@@ -338,7 +339,7 @@ public final class ServiceEndpoint extends AbstractEndpoint {
     }
 
     @DELETE
-    @Produces(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.TEXT_PLAIN)
     @Consumes(MediaType.APPLICATION_JSON)
     @Timed(absolute = true, name = "ServiceEndpoint.DeleteService")
     @RequiresAdmin
@@ -351,20 +352,91 @@ public final class ServiceEndpoint extends AbstractEndpoint {
         UUID serviceUuid = UUID.fromString(uuid);
         Service service = serviceRepository.getById(serviceUuid);
 
+        String err = null;
+
         //validate that there's no data in the EHR repo before allowing a delete
         if (!Strings.isNullOrEmpty(service.getPublisherConfigName())) {
-            ResourceDalI resourceRepository = DalProvider.factoryResourceDal();
+            //DDS-UI is no longer allowed to connect to the FHIR databases, so perform a similar check via
+            //the audit DB which we can access
+            err = canDeleteService(service);
+
+            /*ResourceDalI resourceRepository = DalProvider.factoryResourceDal();
             if (resourceRepository.dataExists(serviceUuid)) {
                 throw new BadRequestException("Cannot delete service without deleting data first");
+            }*/
+        }
+
+        if (Strings.isNullOrEmpty(err)) {
+            //if no error, let the service be deleted
+            serviceRepository.delete(service);
+
+            clearLogbackMarkers();
+            return Response
+                    .ok()
+                    .build();
+
+        } else {
+
+            clearLogbackMarkers();
+            return Response
+                    .ok(err)
+                    .build();
+        }
+    }
+
+    /**
+     * checks the audit trail for a service to make sure there's no data remaining
+     * returns a String error message or NULL if OK to delete
+     */
+    private String canDeleteService(Service service) throws Exception {
+
+        ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
+
+        //if no systems, then nothing to worry about
+        List<UUID> systemIds = SystemHelper.getSystemIdsForService(service);
+        if (systemIds.isEmpty()) {
+            return null;
+        }
+
+        boolean deleteProcessedOk = false;
+        boolean receivedExchanges = false;
+
+        for (UUID systemId: systemIds) {
+
+            List<Exchange> l = exchangeDal.getExchangesByService(service.getId(), systemId, 1);
+            if (l.isEmpty()) {
+                //if no exchanges, then nothing was received
+                continue;
+            }
+
+            receivedExchanges = true;
+            Exchange lastExchange = l.get(0);
+
+            //if the last exchange WASN'T one for a delete, then that's wrong
+            String lastExchangeSystem = lastExchange.getHeader(HeaderKeys.SourceSystem);
+            if (!lastExchangeSystem.equals(MessageFormat.DUMMY_SENDER_SOFTWARE_FOR_BULK_DELETE)) {
+                return "Must delete data first";
+            }
+
+            //if the last exchange WAS a mass delete, then make sure it's finished first
+            List<ExchangeTransformAudit> transformAudits = exchangeDal.getAllExchangeTransformAudits(service.getId(), systemId, lastExchange.getId());
+            for (ExchangeTransformAudit audit: transformAudits) {
+                if (audit.getEnded() != null
+                        && audit.getErrorXml() == null) {
+                    deleteProcessedOk = true;
+                }
             }
         }
 
-        serviceRepository.delete(service);
+        //we create a "delete" exchange for each system, but only send one of them through the queues
+        //so check this OUTSIDE the loop on system IDs
+        if (receivedExchanges
+            && !deleteProcessedOk) {
+            return "Delete not finished yet";
+        }
 
-        clearLogbackMarkers();
-        return Response
-                .ok()
-                .build();
+        //if we make it here, we're good
+        return null;
     }
 
     @DELETE
