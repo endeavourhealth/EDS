@@ -1893,6 +1893,7 @@ public class Main {
 	private static void bulkProcessUPRNThreaded(String subscriberConfigName, String protocolName, String outputFormat, String filePath, String debug) throws Exception {
 
 		Set<UUID> hsPatientUuids = new HashSet<>();
+        Set<UUID> hsServiceUuids = new HashSet<>();
 		File f = new File(filePath);
 		if (f.exists()) {
 			List<String> lines = Files.readAllLines(f.toPath());
@@ -1925,6 +1926,12 @@ public class Main {
 				UUID batchUUID = UUID.randomUUID();
 				serviceId = serviceContract.getService().getUuid();
 				UUID serviceUUID = UUID.fromString(serviceId);
+
+				if (hsServiceUuids.contains(serviceUUID)) {
+				    // already processed the service
+				    continue;
+                }
+
 				List<UUID> patientIds = patientSearchDal.getPatientIds(serviceUUID);
 
 				for (UUID patientId : patientIds) {
@@ -1946,6 +1953,8 @@ public class Main {
 					List<ThreadPoolError> errors = threadPool.submit(new UPRNCallable(serviceUUID, ResourceType.Patient.toString(), patientId, debug, dal, outputFormat, subscriberConfigName, batchUUID));
 					//handleErrors(errors);
 				}
+
+				hsServiceUuids.add(serviceUUID);
 			}
 		}
 
@@ -1956,6 +1965,7 @@ public class Main {
 	private static void bulkProcessUPRN(String subscriberConfigName, String protocolName, String outputFormat, String filePath, String debug) throws Exception {
 
 		Set<UUID> hsPatientUuids = new HashSet<>();
+		Set<UUID> hsServiceUuids = new HashSet<>();
 		File f = new File(filePath);
 		if (f.exists()) {
 			List<String> lines = Files.readAllLines(f.toPath());
@@ -1980,9 +1990,16 @@ public class Main {
 			if (serviceContract.getType().equals(PUBLISHER)
 					&& serviceContract.getActive() == ServiceContractActive.TRUE) {
 
+
 				UUID batchUUID = UUID.randomUUID();
 				serviceId = serviceContract.getService().getUuid();
 				UUID serviceUUID = UUID.fromString(serviceId);
+
+				if (hsServiceUuids.contains(serviceUUID)) {
+					// already processed the service so skip it entirely
+					continue;
+				}
+
 				List<UUID> patientIds = patientSearchDal.getPatientIds(serviceUUID);
 				for (UUID patientId : patientIds) {
 
@@ -2033,6 +2050,7 @@ public class Main {
 						}
 					}
 				}
+				hsServiceUuids.add(serviceUUID);
 			}
 		}
 	}
