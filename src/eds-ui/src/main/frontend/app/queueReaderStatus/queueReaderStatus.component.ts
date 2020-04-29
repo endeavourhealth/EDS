@@ -157,8 +157,7 @@ export class QueueReaderStatusComponent {
         vm.queueReaderStatusService.getStatus().subscribe(
             (result) => {
 
-                vm.queueReaderStatusList = result;
-                vm.processQueueReaderResults();
+                vm.processQueueReaderResults(result);
                 vm.refreshingQueueReaderStatus = false;
 
             },
@@ -169,15 +168,61 @@ export class QueueReaderStatusComponent {
         );
     }
 
-    processQueueReaderResults(): void {
+    processQueueReaderResults(results: QueueReaderStatus[]): void {
 
         var vm = this;
 
-        //also hash the QueueReaderStatus objects by their queue name, so
+        //clear any caches
         vm.queueReaderStatusMapByQueue = {};
         vm.queueReaderStatusMapByHostName = {};
         vm.queueReaderCpuMapByHostName = {};
         vm.queueReaderPhysicalMemoryMapByHostName = {};
+
+        //filter the results to remove any with >1 instance numbers that aren't interesting
+
+        //work out the maximum "interesting" >1 instance number for each instance name
+        console.log('Finding max num per app');
+
+        var maxInterestingInstanceNumberPerApp = {};
+        for (var i=0; i<results.length; i++) {
+            var result = results[i];
+            //console.log('Doing ' + result.applicationInstanceName + ' num ' + result.applicationInstanceNumber);
+            if (result.applicationInstanceNumber > 1) {
+
+                var instanceNum = result.applicationInstanceNumber;
+                var currentNum = maxInterestingInstanceNumberPerApp[result.applicationInstanceName];
+                console.log('    current num = ' + currentNum);
+                console.log('    is too old = ' + vm.isStatusTooOld(result));
+                if ((!currentNum || instanceNum > currentNum)
+                     && !vm.isStatusTooOld(result)) {
+
+                    maxInterestingInstanceNumberPerApp[result.applicationInstanceName] = instanceNum;
+                    console.log('max num for ' + result.applicationInstanceName + ' now ' + currentNum);
+                }
+            }
+        }
+
+        //then filter our results to only include >1 instance nums when they're interesting
+        vm.queueReaderStatusList = [];
+
+        console.log('Filtering results');
+
+        for (var i=0; i<results.length; i++) {
+            var result = results[i];
+
+            //if the instance num is >1 but it's higher than any that's currently running, then ignore it
+            if (result.applicationInstanceNumber > 1) {
+                var instanceNum = result.applicationInstanceNumber;
+                var maxInteresting = maxInterestingInstanceNumberPerApp[result.applicationInstanceName];
+                console.log('Result for ' + result.applicationInstanceName + ' has num ' + instanceNum + ' and max interesting ' + maxInteresting) ;
+                if (!maxInteresting
+                    || instanceNum > maxInteresting) {
+                    console.log('Skipping');
+                    continue;
+                }
+            }
+            vm.queueReaderStatusList.push(result);
+        }
 
         //find the most recent CPU usage for each host
         var statusByTimestamp = linq(vm.queueReaderStatusList).OrderBy(s => s.timestmp).ToArray();
@@ -567,6 +612,14 @@ export class QueueReaderStatusComponent {
                 (error) => vm.logger.error('Failed get service', error)
             );
 
+    }
+
+    getInstanceNumber(status: QueueReaderStatus): string {
+        if (status.applicationInstanceNumber > 1) {
+            return ' #' + status.applicationInstanceNumber;
+        } else {
+            return '';
+        }
     }
 
 }

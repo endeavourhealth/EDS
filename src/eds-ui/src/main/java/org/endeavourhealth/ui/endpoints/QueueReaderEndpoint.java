@@ -154,6 +154,7 @@ public class QueueReaderEndpoint extends AbstractEndpoint {
             ObjectNode objectNode = root.addObject();
             objectNode.put("applicationName", h.getApplicationName());
             objectNode.put("applicationInstanceName", h.getApplicationInstanceName());
+            objectNode.put("applicationInstanceNumber", h.getApplicationInstanceNumber());
             objectNode.put("timestmp", h.getTimestmp().getTime());
             objectNode.put("hostName", h.getHostName());
             objectNode.put("isBusy", h.getBusy());

@@ -46,6 +46,7 @@
 
                                                 <span [ngStyle]="getCellColour(status)">
                                                     {{status.hostName}}
+                                                    {{getInstanceNumber(status)}}
                                                     {{getStatusMemoryDesc(status)}}
 
                                                     <span *ngIf="isStatusTooOld(status)">

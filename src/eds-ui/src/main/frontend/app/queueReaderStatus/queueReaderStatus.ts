@@ -2,6 +2,7 @@ export class QueueReaderStatus {
 
     applicationName: string;
     applicationInstanceName: string;
+    applicationInstanceNumber: number;
     timestmp: number;
     hostName: string;
     isBusy: boolean;
