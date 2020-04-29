@@ -110,6 +110,7 @@
                                     <div *ngFor="let status of getStatusesForHostName(hostName)">
 
                                         {{status.queueName}}
+                                        {{getInstanceNumber(status)}}
                                         {{getStatusMemoryDesc(status)}}
                                         <span *ngIf="isStatusTooOld(status)">
                                             <span class="label label-danger"><span class="fa fa-warning" ngbTooltip="{{status.isBusyDetail}}" (click)="warningButtonClicked(status)"></span> ({{getStatusAgeDesc(status)}})</span>
