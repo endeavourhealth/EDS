@@ -2,7 +2,8 @@
     <div class="module-heading">
         Transform Errors
         <div class="pull-right">
-            <button class="btn btn-sm btn-default" (click)="toggleFilters()" title="Toggle Filters">Toggle Filters</button>
+            <button class="btn btn-sm btn-default" (click)="clearFilters()" title="Clear Filters">Clear Filters</button>
+            <button class="btn btn-sm btn-default" (click)="toggleFilter()" title="Toggle Filter">Toggle Filter</button>
             <button class="btn btn-sm btn-default" (click)="checkAll()" title="Check All Services">Check All</button>
             <button class="btn btn-sm btn-success" (click)="requeueChecked()" title="Re-queue Checked" [disabled]="busyPostingToExchange">Re-queue Checked ({{getCheckedCount()}} selected)</button>
             <button class="btn btn-sm btn-success" (click)="refreshSummaries()" title="Refresh">Refresh </button>

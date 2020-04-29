@@ -169,7 +169,7 @@ export class ServiceListComponent implements OnInit, OnDestroy{
 		//console.log('filtered down to ' + vm.filteredServices.length);
 	}
 
-	toggleFilters() {
+	toggleFilter() {
 		var vm = this;
 		vm.serviceService.toggleFiltering();
 
@@ -177,6 +177,13 @@ export class ServiceListComponent implements OnInit, OnDestroy{
 		vm.applyFiltering();
 	}
 
+	clearFilters() {
+		var vm = this;
+		vm.serviceService.clearFilters();
+
+		//call the filtered changed method to remove the applied filtering
+		vm.applyFiltering();
+	}
 
 
 	formatLastDataTooltip(service: Service, status: SystemStatus) : string {

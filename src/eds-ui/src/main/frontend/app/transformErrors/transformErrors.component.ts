@@ -204,13 +204,22 @@ console.log('filtering now');
 
 	}
 
-	toggleFilters() {
+	toggleFilter() {
 		var vm = this;
 		vm.serviceService.toggleFiltering();
 
 		//call the filtered changed method to remove the applied filtering
 		vm.applyFiltering();
 	}
+
+	clearFilters() {
+		var vm = this;
+		vm.serviceService.clearFilters();
+
+		//call the filtered changed method to remove the applied filtering
+		vm.applyFiltering();
+	}
+
 
 
 	checkAll() {

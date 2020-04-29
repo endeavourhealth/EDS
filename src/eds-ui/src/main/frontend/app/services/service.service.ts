@@ -40,10 +40,7 @@ export class ServiceService extends BaseHttp2Service {
 
 		var vm = this;
 		vm.showFilters = true;
-		vm.serviceNameSearchIncludeTags = false;
-		vm.serviceNameSearchSpecificTag = '';
-		vm.serviceCcgCodeFilterIsRegex = false;
-		vm.sortFilter = 'NameAsc';
+		vm.clearFilters();
 	}
 
 
@@ -885,6 +882,22 @@ export class ServiceService extends BaseHttp2Service {
 		}
 
 		return ret;
+	}
+
+	clearFilters() {
+		var vm = this;
+
+		vm.serviceNameSearchIncludeTags = false;
+		vm.serviceNameSearchSpecificTag = '';
+		vm.serviceCcgCodeFilterIsRegex = false;
+		vm.sortFilter = 'NameAsc';
+		vm.serviceNameFilter = null;
+		vm.servicePublisherConfigFilter = null;
+		vm.serviceStatusFilter = null;
+		vm.serviceCcgCodeFilterStr = null;
+		vm.serviceCcgCodeFilterRegex = null;
+		vm.serviceLastDataFilter = null;
+		vm.servicePublisherModeFilter = null;
 	}
 }
 
