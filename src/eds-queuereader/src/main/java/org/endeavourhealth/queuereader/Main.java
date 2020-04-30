@@ -293,13 +293,19 @@ public class Main {
 			System.exit(0);
 		}
 
-		if (args.length >=1 && args[0].equalsIgnoreCase("UPRNTHREADED")) {
+		if (args.length >=1 && args[0].contains("UPRNTHREADED")) {
+
+			Integer threads = 5; Integer QBeforeBlock = 10;
+			String[] tb = args[0].split(":",-1);
+			if (!tb[1].isEmpty()) {threads = Integer.parseInt(tb[1]);}
+			if (!tb[2].isEmpty()) { QBeforeBlock = Integer.parseInt(tb[2]);}
+
 			String configName = args[1];
 			String protocolName = args[2];
 			String outputFormat = args[3];
 			String filePath = args[4];
 			String debug = args[5];
-			bulkProcessUPRNThreaded(configName, protocolName, outputFormat, filePath, debug);
+			bulkProcessUPRNThreaded(configName, protocolName, outputFormat, filePath, debug, threads, QBeforeBlock);
 
 			System.exit(0);
 		}
@@ -1890,7 +1896,7 @@ public class Main {
 	}
 	*/
 
-	private static void bulkProcessUPRNThreaded(String subscriberConfigName, String protocolName, String outputFormat, String filePath, String debug) throws Exception {
+	private static void bulkProcessUPRNThreaded(String subscriberConfigName, String protocolName, String outputFormat, String filePath, String debug, Integer threads, Integer QBeforeBlock) throws Exception {
 
 		Set<UUID> hsPatientUuids = new HashSet<>();
         Set<UUID> hsServiceUuids = new HashSet<>();
@@ -1915,7 +1921,7 @@ public class Main {
 
 		SubscriberResourceMappingDalI enterpriseIdDal = DalProvider.factorySubscriberResourceMappingDal(subscriberConfigName);
 
-		ThreadPool threadPool = new ThreadPool(5, 10);
+		ThreadPool threadPool = new ThreadPool(threads, QBeforeBlock);
 
 		Long ret;
 
