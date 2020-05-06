@@ -627,7 +627,7 @@ export class ExchangeAuditComponent {
 
 		setTimeout(()=>{
 			ServiceListComponent.editService(serviceUuid, vm.$state);
-		}, 1000)
+		}, 2000);
 
 		//ServiceListComponent.editService(serviceUuid, fromState);
 		//ServiceListComponent.editService(serviceUuid, vm.$state);
