@@ -8,9 +8,12 @@ import com.google.common.base.Strings;
 import org.apache.commons.io.FileUtils;
 import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.common.security.SecurityUtils;
+import org.endeavourhealth.common.utility.ExpiringCache;
 import org.endeavourhealth.core.configuration.ConfigDeserialiser;
 import org.endeavourhealth.core.configuration.QueueReaderConfiguration;
 import org.endeavourhealth.core.database.dal.DalProvider;
+import org.endeavourhealth.core.database.dal.admin.ServiceDalI;
+import org.endeavourhealth.core.database.dal.admin.models.Service;
 import org.endeavourhealth.core.database.dal.audit.ApplicationHeartbeatDalI;
 import org.endeavourhealth.core.database.dal.audit.UserAuditDalI;
 import org.endeavourhealth.core.database.dal.audit.models.ApplicationHeartbeat;
@@ -37,6 +40,8 @@ public class QueueReaderEndpoint extends AbstractEndpoint {
     private static final Logger LOG = LoggerFactory.getLogger(QueueReaderEndpoint.class);
 
     private static final UserAuditDalI userAudit = DalProvider.factoryUserAuditDal(AuditModule.EdsUiModule.Library);
+
+    private static ExpiringCache<String, String> odsCodeToPublisherCache = new ExpiringCache<>(1000 * 60 * 5); //cache for five mins
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
@@ -104,6 +109,7 @@ public class QueueReaderEndpoint extends AbstractEndpoint {
             Long busySince = null;
             String busyOdsCode = null;
             String busyDataDate = null;
+            String busyPublisherConfigName = null;
             if (!Strings.isNullOrEmpty(busyDetail)) {
                 String sinceStr = "since";
                 String dataForStr = "data for";
@@ -125,6 +131,7 @@ public class QueueReaderEndpoint extends AbstractEndpoint {
                     s = s.trim();
                     if (!Strings.isNullOrEmpty(s)) {
                         busyOdsCode = s;
+                        busyPublisherConfigName = findPublisherConfigName(busyOdsCode);
                     }
                 }
 
@@ -168,12 +175,27 @@ public class QueueReaderEndpoint extends AbstractEndpoint {
             objectNode.put("isBusySince", busySince);
             objectNode.put("isBusyOdsCode", busyOdsCode);
             objectNode.put("isBusyDataDate", busyDataDate);
+            objectNode.put("isBusyPublisherConfigName", busyPublisherConfigName);
             objectNode.put("dtStarted", dtStartedTime);
             objectNode.put("dtJar", dtJarTime);
             objectNode.put("queueName", queueName);
         }
 
         return mapper.writeValueAsString(root);
+    }
+
+    /**
+     * looks up the publisher config name (e.g. publisher_01) for the given ODS code
+     */
+    private static String findPublisherConfigName(String odsCode) throws Exception {
+        String publisherConfigName = odsCodeToPublisherCache.get(odsCode);
+        if (publisherConfigName == null) {
+            ServiceDalI serviceDal = DalProvider.factoryServiceDal();
+            Service service = serviceDal.getByLocalIdentifier(odsCode);
+            publisherConfigName = service.getPublisherConfigName();
+            odsCodeToPublisherCache.put(odsCode, publisherConfigName);
+        }
+        return publisherConfigName;
     }
 
 }

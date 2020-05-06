@@ -6,7 +6,7 @@ import {System} from "../system/models/System";
 import {TechnicalInterface} from "../system/models/TechnicalInterface";
 import {Endpoint} from "./models/Endpoint";
 import {ServiceService} from "./service.service";
-import {AdminService, LoggerService, MessageBoxDialog} from "eds-common-js";
+import {LoggerService, MessageBoxDialog} from "eds-common-js";
 import {SystemService} from "../system/system.service";
 import {EdsLibraryItem} from "../edsLibrary/models/EdsLibraryItem";
 import {OdsSearchDialog} from "./odsSearch.dialog";
@@ -32,9 +32,8 @@ export class ServiceEditComponent {
 	comboSelectedTagName: string;
 
 	constructor(private $modal : NgbModal,
-							private $window : StateService,
+							private $state : StateService,
 							private log : LoggerService,
-							private adminService : AdminService,
 							private serviceService : ServiceService,
 							private systemService : SystemService,
 							private transition : Transition) {
@@ -116,10 +115,9 @@ export class ServiceEditComponent {
 			.subscribe(
 				(saved) => {
 					vm.service.uuid = saved.uuid;
-					vm.adminService.clearPendingChanges();
 					vm.log.success('Item saved', vm.service, 'Saved');
 					if (close) {
-						vm.$window.go(vm.transition.from());
+						vm.$state.go(vm.transition.from());
 					}
 				},
 				(error) => vm.log.error('Error saving', error, 'Error')
@@ -127,8 +125,11 @@ export class ServiceEditComponent {
 	}
 
 	close() {
-		this.adminService.clearPendingChanges();
-		this.$window.go(this.transition.from());
+		var vm = this;
+		console.log('Closing service editor');
+		console.log('Transition = ' + vm.transition);
+
+		vm.$state.go(vm.transition.from());
 	}
 
 	private addEndpoint(publisher: boolean) {

@@ -16,6 +16,7 @@ export class QueueReaderStatus {
     isBusySince: number;
     isBusyOdsCode: string;
     isBusyDataDate: string;
+    isBusyPublisherConfigName: string;
     dtStarted: number;
     dtJar: number;
     queueName: string;

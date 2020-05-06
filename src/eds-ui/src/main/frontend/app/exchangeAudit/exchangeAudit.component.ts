@@ -50,11 +50,11 @@ export class ExchangeAuditComponent {
 	minLog: number; //cached for calculating colours
 
 	constructor(private $modal : NgbModal,
-				private $window : StateService,
 				private log : LoggerService,
 				private serviceService : ServiceService,
 				private exchangeAuditService : ExchangeAuditService,
-				private transition : Transition) {
+				private transition : Transition,
+				private $state : StateService) {
 
 		this.service = new Service();
 		this.exchangesToShow = 100;
@@ -80,7 +80,8 @@ export class ExchangeAuditComponent {
 
 
 	close() {
-		this.$window.go(this.transition.from());
+		var vm = this;
+		vm.$state.go(vm.transition.from());
 	}
 
 	refreshProtocols() {
@@ -607,5 +608,31 @@ export class ExchangeAuditComponent {
 		var headers = exchange.headers;
 		return headers.hasOwnProperty('is-bulk')
 			&& headers['is-bulk'];
+	}
+
+	editService() {
+		var vm = this;
+
+		//first close this view
+		vm.$state.go(vm.transition.from());
+
+		//var fromState = vm.transition.from();
+		//var fromState = vm.transition.$from;
+
+		//this.$state.go(vm.transition.from());
+
+		//then invoke the new one from the new view
+
+		var serviceUuid = vm.service.uuid;
+
+		setTimeout(()=>{
+			ServiceListComponent.editService(serviceUuid, vm.$state);
+		}, 1000)
+
+		//ServiceListComponent.editService(serviceUuid, fromState);
+		//ServiceListComponent.editService(serviceUuid, vm.$state);
+
+
+		//vm.$state.go(vm.transition.from());
 	}
 }

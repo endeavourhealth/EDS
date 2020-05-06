@@ -28,14 +28,15 @@ public class Main {
 
         ConfigManager.Initialize("EnterpriseAgeUpdater");
 
-        try {
-            if (args.length != 1) {
-                LOG.error("Parameter required: <enterprise config name>");
-                return;
-            }
+        if (args.length != 1) {
+            LOG.error("Parameter required: <enterprise config name>");
+            return;
+        }
 
-            String enterpriseConfigName = args[0];
-            LOG.info("Age updater starting for " + enterpriseConfigName);
+        String enterpriseConfigName = args[0];
+        LOG.info("Age updater starting for " + enterpriseConfigName);
+
+        try {
 
             EnterpriseAgeUpdaterlDalI enterpriseAgeUpdaterDal = DalProvider.factoryEnterpriseAgeUpdaterlDal(enterpriseConfigName);
             List<EnterpriseAge> agesToUpdate = enterpriseAgeUpdaterDal.findAgesToUpdate();
@@ -75,7 +76,7 @@ public class Main {
 
         } catch (Exception ex) {
             LOG.error("", ex);
-            SlackHelper.sendSlackMessage(SlackHelper.Channel.EnterpriseAgeUpdaterAlerts, "Exception in Enterprise Age Updater", ex);
+            SlackHelper.sendSlackMessage(SlackHelper.Channel.EnterpriseAgeUpdaterAlerts, "Exception in Enterprise Age Updater (" + enterpriseConfigName + ")", ex);
         }
 
         System.exit(0);

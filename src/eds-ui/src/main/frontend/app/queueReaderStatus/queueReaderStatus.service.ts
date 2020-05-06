@@ -9,11 +9,18 @@ import {QueueReaderStatus} from "./queueReaderStatus";
 export class QueueReaderStatusService extends BaseHttp2Service {
 
     showMissingQueueReadersOnEmptyQueues: boolean;
+    showOdsCode: boolean;
+    showDataDate: boolean;
+    showPublisherConfig: boolean;
+    showExecutionTime: boolean;
+    showJarDate: boolean;
+    showStartDate: boolean;
 
     constructor(http : Http) {
         super (http);
 
         this.showMissingQueueReadersOnEmptyQueues = true;
+        this.showExecutionTime = true;
     }
 
     getStatus() : Observable<QueueReaderStatus[]> {

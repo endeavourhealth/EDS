@@ -181,7 +181,7 @@ export class QueueReaderStatusComponent {
         //filter the results to remove any with >1 instance numbers that aren't interesting
 
         //work out the maximum "interesting" >1 instance number for each instance name
-        console.log('Finding max num per app');
+        //console.log('Finding max num per app');
 
         var maxInterestingInstanceNumberPerApp = {};
         for (var i=0; i<results.length; i++) {
@@ -191,13 +191,13 @@ export class QueueReaderStatusComponent {
 
                 var instanceNum = result.applicationInstanceNumber;
                 var currentNum = maxInterestingInstanceNumberPerApp[result.applicationInstanceName];
-                console.log('    current num = ' + currentNum);
-                console.log('    is too old = ' + vm.isStatusTooOld(result));
+                //console.log('    current num = ' + currentNum);
+                //console.log('    is too old = ' + vm.isStatusDead(result));
                 if ((!currentNum || instanceNum > currentNum)
-                     && !vm.isStatusTooOld(result)) {
+                     && !vm.isStatusDead(result)) {
 
                     maxInterestingInstanceNumberPerApp[result.applicationInstanceName] = instanceNum;
-                    console.log('max num for ' + result.applicationInstanceName + ' now ' + currentNum);
+                    //console.log('max num for ' + result.applicationInstanceName + ' now ' + currentNum);
                 }
             }
         }
@@ -205,7 +205,7 @@ export class QueueReaderStatusComponent {
         //then filter our results to only include >1 instance nums when they're interesting
         vm.queueReaderStatusList = [];
 
-        console.log('Filtering results');
+        //console.log('Filtering results');
 
         for (var i=0; i<results.length; i++) {
             var result = results[i];
@@ -214,15 +214,23 @@ export class QueueReaderStatusComponent {
             if (result.applicationInstanceNumber > 1) {
                 var instanceNum = result.applicationInstanceNumber;
                 var maxInteresting = maxInterestingInstanceNumberPerApp[result.applicationInstanceName];
-                console.log('Result for ' + result.applicationInstanceName + ' has num ' + instanceNum + ' and max interesting ' + maxInteresting) ;
+                //console.log('Result for ' + result.applicationInstanceName + ' has num ' + instanceNum + ' and max interesting ' + maxInteresting) ;
                 if (!maxInteresting
                     || instanceNum > maxInteresting) {
-                    console.log('Skipping');
+                    //console.log('Skipping');
                     continue;
                 }
             }
             vm.queueReaderStatusList.push(result);
+
+            console.log(result);
         }
+
+        //sort results by instance name (and then number)
+        vm.queueReaderStatusList = linq(vm.queueReaderStatusList)
+            .OrderBy(s => s.applicationInstanceName)
+            .ThenBy(s => s.applicationInstanceNumber)
+            .ToArray();
 
         //find the most recent CPU usage for each host
         var statusByTimestamp = linq(vm.queueReaderStatusList).OrderBy(s => s.timestmp).ToArray();
@@ -245,9 +253,11 @@ export class QueueReaderStatusComponent {
             }
         }
 
-        var statusByName = linq(vm.queueReaderStatusList).OrderBy(s => s.applicationInstanceName).ToArray();
-        for (var i=0; i<statusByName.length; i++) {
-            var status = statusByName[i] as QueueReaderStatus;
+        /*var statusByName = linq(vm.queueReaderStatusList)
+            .OrderBy(s => s.applicationInstanceName).ToArray();*/
+
+        for (var i=0; i<vm.queueReaderStatusList.length; i++) {
+            var status = vm.queueReaderStatusList[i] as QueueReaderStatus;
             var queueName = status.queueName;
             var hostName = status.hostName;
 
@@ -315,7 +325,7 @@ export class QueueReaderStatusComponent {
             }
 
             //and if the app is running, add up the max heap allocated
-            if (!vm.isStatusTooOld(s)) {
+            if (!vm.isStatusDead(s)) {
                 var memoryUsed = s.maxHeapMb;
                 var used = memoryUsedMap[hostName];
                 if (!used) {
@@ -422,7 +432,7 @@ export class QueueReaderStatusComponent {
         }
     }
 
-    isStatusTooOld(status: QueueReaderStatus): boolean {
+    isStatusDead(status: QueueReaderStatus): boolean {
         var vm = this;
 
         var statusTime = status.timestmp;
@@ -436,7 +446,7 @@ export class QueueReaderStatusComponent {
         return ServiceListComponent.getDateDiffDesc(new Date(status.timestmp), vm.statusLastRefreshed, 2);
     }
 
-    getStatusBusyDesc(status: QueueReaderStatus): string {
+    getExecutionTime(status: QueueReaderStatus): string {
         var vm = this;
         if (!status.isBusySince) {
             return '';
@@ -544,7 +554,7 @@ export class QueueReaderStatusComponent {
         }
 
         //if status is NOT in warning state return true
-        if (!vm.isStatusTooOld(status)) {
+        if (!vm.isStatusDead(status)) {
             return true;
         }
 
@@ -601,7 +611,7 @@ export class QueueReaderStatusComponent {
             return;
         }
 
-        console.log('viewing ODS code ' + status.isBusyOdsCode);
+        //console.log('viewing ODS code ' + status.isBusyOdsCode);
 
         //retrieve service for ODS code
         vm.serviceService.getForOdsCode(status.isBusyOdsCode)

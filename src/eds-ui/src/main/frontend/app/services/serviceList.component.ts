@@ -63,7 +63,8 @@ export class ServiceListComponent implements OnInit, OnDestroy{
 	}
 
 	edit(item : Service) {
-		this.$state.go('app.serviceEdit', {itemUuid: item.uuid, itemAction: 'edit'});
+		var vm = this;
+		ServiceListComponent.editService(item.uuid, vm.$state);
 	}
 
 	save(original : Service, edited : Service) {
@@ -117,6 +118,11 @@ export class ServiceListComponent implements OnInit, OnDestroy{
 			$state.go('app.exchangeAudit', {serviceId: service.uuid, systemId: systemId});
 		});
 	}
+
+	static editService(serviceUuid: string, $state: StateService) {
+		$state.go('app.serviceEdit', {itemUuid: serviceUuid, itemAction: 'edit'});
+	}
+
 
 	private static selectSystemId(service: Service, $modal: NgbModal, callback) {
 
