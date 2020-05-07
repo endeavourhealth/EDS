@@ -76,7 +76,7 @@ export class ConfigManagerComponent {
 
         vm.configManagerService.getRecords().subscribe(
             (result) => {
-                vm.logger.success('Successfully config records');
+                vm.logger.success('Successfully got config records');
 
                 vm.records = linq(result)
                         .OrderBy(s => s.appId.toLowerCase())
@@ -116,6 +116,18 @@ export class ConfigManagerComponent {
         if (!record.configData) {
             vm.logger.error('Config data not set');
             return;
+        }
+
+        //validate not a duplicate that will overwrite something else
+        for (var i=0; i<vm.records.length; i++) {
+            var otherRecord = vm.records[i];
+            if (otherRecord != record) {
+                if (otherRecord.appId == record.appId
+                    && otherRecord.configId == record.configId) {
+                    vm.logger.error('Duplicate record');
+                    return;
+                }
+            }
         }
 
         vm.configManagerService.saveRecord(record).subscribe(
@@ -167,12 +179,33 @@ export class ConfigManagerComponent {
         );
     }
 
+    copyRecord() {
+        var vm = this;
+        var record = vm.selectedRecord;
+        if (!record) {
+            return;
+        }
+
+        vm.newRecordImpl(record);
+    }
+
     newRecord() {
+        var vm = this;
+        vm.newRecordImpl(null);
+    }
+
+    private newRecordImpl(copyFrom: ConfigRecord) {
 
         var vm = this;
         vm.selectedRecord = {} as ConfigRecord;
         vm.selectedRecord.appId = '<app_id>';
         vm.selectedRecord.configId = '<config_id>';
+
+        if (copyFrom) {
+            vm.selectedRecord.appId = copyFrom.appId;
+            vm.selectedRecord.configId = copyFrom.configId + ' (copy)';
+            vm.selectedRecord.configData = copyFrom.configData;
+        }
 
         vm.records.push(vm.selectedRecord);
         vm.newRecords.push(vm.selectedRecord);
