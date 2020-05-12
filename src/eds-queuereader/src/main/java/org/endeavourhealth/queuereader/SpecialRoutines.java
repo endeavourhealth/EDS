@@ -15,6 +15,7 @@ import org.endeavourhealth.common.fhir.FhirExtensionUri;
 import org.endeavourhealth.common.fhir.IdentifierHelper;
 import org.endeavourhealth.common.fhir.ReferenceHelper;
 import org.endeavourhealth.common.utility.FileHelper;
+import org.endeavourhealth.common.utility.JsonSerializer;
 import org.endeavourhealth.core.application.ApplicationHeartbeatHelper;
 import org.endeavourhealth.core.configuration.PostMessageToExchangeConfig;
 import org.endeavourhealth.core.database.dal.DalProvider;
@@ -49,6 +50,7 @@ import org.endeavourhealth.core.xml.transformError.TransformError;
 import org.endeavourhealth.im.client.IMClient;
 import org.endeavourhealth.subscriber.filer.EnterpriseFiler;
 import org.endeavourhealth.transform.common.*;
+import org.endeavourhealth.transform.common.resourceBuilders.EpisodeOfCareBuilder;
 import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
 import org.endeavourhealth.transform.fhirhl7v2.FhirHl7v2Filer;
 import org.endeavourhealth.transform.fhirhl7v2.transforms.EncounterTransformer;
@@ -2284,5 +2286,140 @@ public abstract class SpecialRoutines {
         }
     }
 
+    /**
+     * we've found that the TPP data contains registration data for other organisations, which
+     * is causing a lot of confusion (and potential duplication). The transform now doesn't process these
+     * records, and this routine will tidy up any existing data
+     */
+    public static void deleteTppEpisodesElsewhere(String odsCodeRegex, boolean testMode) {
+        LOG.debug("Deleting TPP Episodes Elsewhere for " + odsCodeRegex);
+        try {
 
+            ServiceDalI serviceDal = DalProvider.factoryServiceDal();
+            List<Service> services = serviceDal.getAll();
+
+            for (Service service: services) {
+
+                Map<String, String> tags = service.getTags();
+                if (tags == null
+                        || !tags.containsKey("EMIS")) {
+                    continue;
+                }
+
+                if (shouldSkipService(service, odsCodeRegex)) {
+                    continue;
+                }
+
+                LOG.debug("Doing " + service);
+
+                List<UUID> systemIds = SystemHelper.getSystemIdsForService(service);
+                if (systemIds.size() != 1) {
+                    throw new Exception("Wrong number of system IDs for " + service);
+                }
+                UUID systemId = systemIds.get(0);
+
+                PatientSearchDalI patientSearchDal = DalProvider.factoryPatientSearchDal();
+                ResourceDalI resourceDal = DalProvider.factoryResourceDal();
+
+                List<UUID> patientIds = patientSearchDal.getPatientIds(service.getId(), false);
+                LOG.debug("Found " + patientIds);
+
+
+                //create dummy exchange
+                String bodyJson = JsonSerializer.serialize(new ArrayList<ExchangePayloadFile>());
+                String odsCode = service.getLocalId();
+
+                Exchange exchange = null;
+                UUID exchangeId = UUID.randomUUID();
+
+                List<UUID> batchIdsCreated = new ArrayList<>();
+                FhirResourceFiler filer = new FhirResourceFiler(exchangeId, service.getId(), systemId, new TransformError(), batchIdsCreated);
+
+                int deleted = 0;
+
+                for (int i=0; i<patientIds.size(); i++) {
+                    UUID patientId = patientIds.get(i);
+
+                    Patient patient = (Patient)resourceDal.getCurrentVersionAsResource(service.getId(), ResourceType.Patient, patientId.toString());
+                    if (!patient.hasManagingOrganization()) {
+                        throw new Exception("No managing organization on Patient " + patientId);
+                    }
+                    Reference patientManagingOrgRef = patient.getManagingOrganization();
+
+                    List<ResourceWrapper> wrappers = resourceDal.getResourcesByPatient(service.getId(), patientId, ResourceType.EpisodeOfCare.toString());
+                    for (ResourceWrapper wrapper: wrappers) {
+                        if (wrapper.isDeleted()) {
+                            throw new Exception("Unexpected deleted resource " + wrapper.getResourceType() + " " + wrapper.getResourceId());
+                        }
+                        EpisodeOfCare episodeOfCare = (EpisodeOfCare)wrapper.getResource();
+                        if (!episodeOfCare.hasManagingOrganization()) {
+                            throw new Exception("No managing organization on Episode " + episodeOfCare.getId());
+                        }
+                        Reference episodeManagingOrgRef = episodeOfCare.getManagingOrganization();
+                        if (!ReferenceHelper.equals(patientManagingOrgRef, episodeManagingOrgRef)) {
+
+                            deleted ++;
+
+                            //delete this episode
+                            if (testMode) {
+                                LOG.debug("Would delete episode " + episodeOfCare.getId());
+
+                            } else {
+
+                                if (exchange == null) {
+                                    exchange = new Exchange();
+                                    exchange.setId(exchangeId);
+                                    exchange.setBody(bodyJson);
+                                    exchange.setTimestamp(new Date());
+                                    exchange.setHeaders(new HashMap<>());
+                                    exchange.setHeaderAsUuid(HeaderKeys.SenderServiceUuid, service.getId());
+                                    exchange.setHeader(HeaderKeys.ProtocolIds, ""); //just set to non-null value, so postToExchange(..) can safely recalculate
+                                    exchange.setHeader(HeaderKeys.SenderLocalIdentifier, odsCode);
+                                    exchange.setHeaderAsUuid(HeaderKeys.SenderSystemUuid, systemId);
+                                    exchange.setHeader(HeaderKeys.SourceSystem, MessageFormat.TPP_CSV);
+                                    exchange.setHeaderAsBoolean(HeaderKeys.AllowQueueing, Boolean.FALSE); //don't allow this to be queued
+                                    exchange.setServiceId(service.getId());
+                                    exchange.setSystemId(systemId);
+
+                                    AuditWriter.writeExchange(exchange);
+                                    AuditWriter.writeExchangeEvent(exchange, "Manually created to delete Episodes at other organisations");
+                                }
+
+                                //delete resource
+                                filer.deletePatientResource(null, false, new EpisodeOfCareBuilder(episodeOfCare));
+
+                            }
+                        }
+                    }
+
+                    if (i % 1000 == 0) {
+                        LOG.debug("Done " + i);
+                    }
+                }
+
+                LOG.debug("Finished processing " + patientIds.size() + " patients and deleted " + deleted + " episodes");
+
+                if (!testMode) {
+
+                    //close down filer
+                    filer.waitToFinish();
+
+                    if (exchange != null) {
+                        //set multicast header
+                        String batchIdString = ObjectMapperPool.getInstance().writeValueAsString(batchIdsCreated.toArray());
+                        exchange.setHeader(HeaderKeys.BatchIdsJson, batchIdString);
+
+                        //post to Rabbit protocol queue
+                        List<UUID> exchangeIds = new ArrayList<>();
+                        exchangeIds.add(exchange.getId());
+                        QueueHelper.postToExchange(exchangeIds, "EdsProtocol", null, true, null);
+                    }
+                }
+            }
+
+            LOG.debug("Finished Deleting TPP Episodes Elsewhere for " + odsCodeRegex);
+        } catch (Throwable t) {
+            LOG.error("", t);
+        }
+    }
 }

@@ -228,7 +228,7 @@ public class MessageTransformInbound extends PipelineComponent {
 	 * tests if the service and system have been set into "auto-fail" mode which will automatically
 	 * fail any exchanges to allow us to safely get data out of a RabbitMQ queue
      */
-	private boolean shouldAutoFailExchange(UUID serviceId, UUID systemId) throws Exception {
+	public static boolean shouldAutoFailExchange(UUID serviceId, UUID systemId) throws Exception {
 		ServiceDalI serviceDal = DalProvider.factoryServiceDal();
 		Service service = serviceDal.getById(serviceId);
 		for (ServiceInterfaceEndpoint serviceInterface: service.getEndpointsList()) {

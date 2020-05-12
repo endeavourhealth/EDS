@@ -88,6 +88,18 @@ public class Main {
 		ConfigManager.initialize("queuereader", configId);
 
 		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("DeleteTppEpisodesElsewhere")) {
+
+			boolean testMode = Boolean.parseBoolean(args[1]);
+			String odsCodeRegex = null;
+			if (args.length > 2) {
+				odsCodeRegex = args[2];
+			}
+			SpecialRoutines.deleteTppEpisodesElsewhere(odsCodeRegex, testMode);
+			System.exit(0);
+		}
+
+		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("FindEmisServicesNeedReprocessing")) {
 			String odsCodeRegex = null;
 			if (args.length > 1) {

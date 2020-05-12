@@ -344,6 +344,7 @@ export class ServiceService extends BaseHttp2Service {
 					var name = service.name;
 					var alias = service.alias;
 					var id = service.localIdentifier;
+					var uuid = service.uuid;
 
 					var include = false;
 					if (name && name.toLowerCase().match(validNameFilterRegex)) {
@@ -353,6 +354,9 @@ export class ServiceService extends BaseHttp2Service {
 						include = true;
 
 					} else if (id && id.toLowerCase().match(validNameFilterRegex)) {
+						include = true;
+
+					} else if (uuid && uuid.toLowerCase().match(validNameFilterRegex)) {
 						include = true;
 
 					} else if (service.tags && vm.serviceNameSearchIncludeTags ) {
