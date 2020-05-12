@@ -1938,7 +1938,7 @@ public class Main {
 				    continue;
                 }
 
-				List<UUID> patientIds = patientSearchDal.getPatientIds(serviceUUID);
+				List<UUID> patientIds = patientSearchDal.getPatientIds(serviceUUID, true);
 
 				for (UUID patientId : patientIds) {
 
@@ -2006,7 +2006,7 @@ public class Main {
 					continue;
 				}
 
-				List<UUID> patientIds = patientSearchDal.getPatientIds(serviceUUID);
+				List<UUID> patientIds = patientSearchDal.getPatientIds(serviceUUID, true);
 				for (UUID patientId : patientIds) {
 
 					// check if we have processed the patient already
@@ -4215,7 +4215,7 @@ public class Main {
 					LOG.info("Protocol " + libraryItem.getName() + " -> " + softwareName + " @ " + subscriberConfigName);
 				}
 
-				List<UUID> patientUuids = patientSearchDal.getPatientIds(serviceId);
+				List<UUID> patientUuids = patientSearchDal.getPatientIds(serviceId, true);
 				LOG.info("Found " + patientUuids.size() + " patient UUIDs at service");
 
 				Map<String, List<Long>> hmMedicationStatementIdsForService = new HashMap<>();

@@ -1,10 +1,12 @@
 package org.endeavourhealth.core.messaging.pipeline;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import org.endeavourhealth.core.xml.QueryDocument.ServiceContract;
 import org.hl7.fhir.instance.model.ResourceType;
 
 import java.util.*;
 
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class TransformBatch {
 	private UUID batchId;
 	private UUID protocolId;

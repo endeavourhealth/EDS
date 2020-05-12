@@ -2235,7 +2235,7 @@ public abstract class SpecialRoutines {
 
                 UUID serviceUuid = UUID.fromString(serviceContract.getService().getUuid());
 
-                List<UUID> patientIds = patientSearchDal.getPatientIds(serviceUuid);
+                List<UUID> patientIds = patientSearchDal.getPatientIds(serviceUuid, true);
                 for (UUID patientId : patientIds) {
 
                     List<ResourceWrapper> patientResources = new ArrayList<>();

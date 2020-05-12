@@ -433,7 +433,7 @@ public class QueueHelper {
     public static void queueUpFullServiceForPopulatingSubscriber(UUID serviceId, UUID specificProtocolId) throws Exception {
         //find all patients
         PatientSearchDalI patientSearchDal = DalProvider.factoryPatientSearchDal();
-        List<UUID> patientUuids = patientSearchDal.getPatientIds(serviceId);
+        List<UUID> patientUuids = patientSearchDal.getPatientIds(serviceId, true);
 
         queueUpFullServiceForPopulatingSubscriber(serviceId, specificProtocolId, patientUuids, "Full load of all patients", null);
     }
@@ -441,7 +441,7 @@ public class QueueHelper {
     public static void queueUpFullServiceForPopulatingSubscriberFilteredFiles(UUID serviceId, UUID specificProtocolId, String filteredFiles) throws Exception {
         //find all patients
         PatientSearchDalI patientSearchDal = DalProvider.factoryPatientSearchDal();
-        List<UUID> patientUuids = patientSearchDal.getPatientIds(serviceId);
+        List<UUID> patientUuids = patientSearchDal.getPatientIds(serviceId, true);
 
         Set<String> fileTypesSet = null;
         //tokenise and validate the filtering file types

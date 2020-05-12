@@ -61,13 +61,12 @@ public class MessageTransformOutbound extends PipelineComponent {
 
     @Override
     public void process(Exchange exchange) throws PipelineException {
-        // Get the transformation data from the exchange
-        // List of resources and subscriber service contracts
-        TransformBatch transformBatch = getTransformBatch(exchange);
+
         UUID exchangeId = exchange.getId();
+
+        TransformBatch transformBatch = getTransformBatch(exchange);
         UUID batchId = transformBatch.getBatchId();
         UUID protocolId = transformBatch.getProtocolId();
-        Map<ResourceType, List<UUID>> resourceIds = transformBatch.getResourceIds();
 
         // Run the transform, creating a subscriber batch for each
         // (Holds transformed message id and destination endpoints)
@@ -105,7 +104,7 @@ public class MessageTransformOutbound extends PipelineComponent {
 
                 //retrieve our resources if necessary
                 if (filteredResources == null) {
-                    filteredResources = getResources(exchange, batchId, resourceIds, endpoint);
+                    filteredResources = getResources(exchange, batchId, endpoint);
                     resourceCount = new Integer(filteredResources.size());
                 }
 
@@ -366,7 +365,7 @@ public class MessageTransformOutbound extends PipelineComponent {
     }
 
 
-    private static List<ResourceWrapper> getResources(Exchange exchange, UUID batchId, Map<ResourceType, List<UUID>> resourceIds, String subscriberConfigName) throws Exception {
+    private static List<ResourceWrapper> getResources(Exchange exchange, UUID batchId, String subscriberConfigName) throws Exception {
 
         //get the resources actually in the batch we're transforming
         ResourceDalI resourceDal = DalProvider.factoryResourceDal();
@@ -433,9 +432,6 @@ public class MessageTransformOutbound extends PipelineComponent {
             }
         }
 
-        //then filter to remove ones excluded by the data set
-        resources = filterResources(resources, resourceIds);
-
         //finally, filter out any patient resources that do not meet the filterElements configuration if
         //it is present for the subscriber config.  Used to filter FHIR -> subscriber output
         resources = filterPatientResources(serviceId, resources, subscriberConfigName);
@@ -443,95 +439,6 @@ public class MessageTransformOutbound extends PipelineComponent {
         return resources;
     }
 
-    /**
-     * we can end up with multiple instances of the same resource in a batch (or at least the Emis test data can)
-     * so strip out all but the latest version of each resource, so we're not wasting time sending over
-     * data that will immediately be overwritten and also we don't need to make sure to process them in order
-     * <p>
-     * no longer required, as the new getCurrentVersionOfResourcesForBatch(..) already filters out duplicates
-     */
-	/*private static List<ResourceWrapper> pruneOlderDuplicates(List<ResourceWrapper> resources) {
-
-		HashMap<UUID, UUID> hmLatestVersion = new HashMap<>();
-		List<ResourceWrapper> ret = new ArrayList<>();
-
-		for (ResourceWrapper resource: resources) {
-			UUID id = resource.getResourceId();
-			UUID version = resource.getVersion();
-
-			//we'll have a null version for resource wrappers that we've added as "extra" to the exchange
-			//batch using the exchange_batch_extra_resource table, as we just load the most recent version,
-			//so just skip these as we'll automatically keep anything with a null version, below
-			if (version == null) {
-				continue;
-			}
-
-			UUID latestVersion = hmLatestVersion.get(id);
-			if (latestVersion == null) {
-				hmLatestVersion.put(id, version);
-
-			} else {
-				int comp = version.compareTo(latestVersion);
-				if (comp > 0) {
-					hmLatestVersion.put(id, latestVersion);
-				}
-			}
-		}
-
-		for (ResourceWrapper resource: resources) {
-			UUID id = resource.getResourceId();
-			UUID version = resource.getVersion();
-
-			//we'll have a null version for resource wrappers that we've added as "extra" to the exchange
-			//batch using the exchange_batch_extra_resource table, as we just load the most recent version,
-			//so always just add these
-			if (version == null) {
-				ret.add(resource);
-
-			} else {
-				//if we have a version, make sure ours is the latest version according to our map
-				UUID latestVersion = hmLatestVersion.get(id);
-				if (latestVersion.equals(version)) {
-					ret.add(resource);
-				}
-			}
-		}
-
-		return ret;
-	}*/
-    private static List<ResourceWrapper> filterResources(List<ResourceWrapper> allResources,
-                                                         Map<ResourceType, List<UUID>> resourceIdsToKeep) throws Exception {
-
-        List<ResourceWrapper> ret = new ArrayList<>();
-
-        for (ResourceWrapper resource : allResources) {
-            UUID resourceId = resource.getResourceId();
-            ResourceType resourceType = ResourceType.valueOf(resource.getResourceType());
-
-            //the map of resource IDs tells us the resources that passed the protocol and should be passed
-            //to the subscriber. However, any resources that should be deleted should be passed, whether the
-            //protocol says to include it or not, since it may have previously been passed to the subscriber anyway
-            if (resource.isDeleted()) {
-                ret.add(resource);
-
-            } else {
-
-                //during testing, the resource ID is null, so handle this
-                if (resourceIdsToKeep == null) {
-                    ret.add(resource);
-                    continue;
-                }
-
-                List<UUID> uuidsToKeep = resourceIdsToKeep.get(resourceType);
-                if (uuidsToKeep != null
-                        || uuidsToKeep.contains(resourceId)) {
-                    ret.add(resource);
-                }
-            }
-        }
-
-        return ret;
-    }
 
     private static List<ResourceWrapper> filterPatientResources(UUID serviceId, List<ResourceWrapper> allResources, String subscriberConfigName) throws Exception {
 
