@@ -2338,6 +2338,9 @@ public abstract class SpecialRoutines {
                     UUID patientId = patientIds.get(i);
 
                     Patient patient = (Patient)resourceDal.getCurrentVersionAsResource(service.getId(), ResourceType.Patient, patientId.toString());
+                    if (patient == null) {
+                        continue;
+                    }
                     if (!patient.hasManagingOrganization()) {
                         throw new Exception("No managing organization on Patient " + patientId);
                     }
