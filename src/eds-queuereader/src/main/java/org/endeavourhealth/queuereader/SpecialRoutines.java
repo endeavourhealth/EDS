@@ -2319,7 +2319,7 @@ public abstract class SpecialRoutines {
                 ResourceDalI resourceDal = DalProvider.factoryResourceDal();
 
                 List<UUID> patientIds = patientSearchDal.getPatientIds(service.getId(), false);
-                LOG.debug("Found " + patientIds);
+                LOG.debug("Found " + patientIds.size());
 
 
                 //create dummy exchange
