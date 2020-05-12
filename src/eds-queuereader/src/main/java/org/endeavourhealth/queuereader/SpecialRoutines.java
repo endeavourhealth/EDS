@@ -62,10 +62,7 @@ import org.hl7.fhir.instance.model.Resource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.OutputStreamWriter;
+import java.io.*;
 import java.lang.System;
 import java.net.URI;
 import java.net.URL;
@@ -2420,6 +2417,94 @@ public abstract class SpecialRoutines {
             LOG.debug("Finished Deleting TPP Episodes Elsewhere for " + odsCodeRegex);
         } catch (Throwable t) {
             LOG.error("", t);
+        }
+    }
+
+    public static void postToInboundFromFile(String filePath, String reason) {
+
+        try {
+            LOG.info("Posting to inbound exchange from file " + filePath);
+
+            //read in file into map keyed by service and system
+            Map<UUID, Map<UUID, List<UUID>>> hmExchangeIds = new HashMap<>();
+
+            FileReader fr = new FileReader(filePath);
+            BufferedReader br = new BufferedReader(fr);
+
+            ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
+            ServiceDalI serviceDalI = DalProvider.factoryServiceDal();
+
+            while (true) {
+                String line = br.readLine();
+                if (line == null) {
+                    break;
+                }
+
+                UUID exchangeId = UUID.fromString(line);
+                Exchange exchange = exchangeDal.getExchange(exchangeId);
+                UUID serviceId = exchange.getServiceId();
+                UUID systemId = exchange.getSystemId();
+
+                Map<UUID, List<UUID>> inner = hmExchangeIds.get(serviceId);
+                if (inner == null) {
+                    inner = new HashMap<>();
+                    hmExchangeIds.put(serviceId, inner);
+                }
+
+                List<UUID> list = inner.get(systemId);
+                if (list == null) {
+                    list = new ArrayList<>();
+                    inner.put(systemId, list);
+                }
+                list.add(exchangeId);
+            }
+            br.close();
+
+            LOG.debug("Found exchanges for " + hmExchangeIds.size() + " services");
+
+            for (UUID serviceId: hmExchangeIds.keySet()) {
+                Map<UUID, List<UUID>> inner = hmExchangeIds.get(serviceId);
+
+                Service service = serviceDalI.getById(serviceId);
+                LOG.debug("Doing " + service);
+
+                for (UUID systemId: inner.keySet()) {
+
+                    List<UUID> exchangeIds = inner.get(systemId);
+
+                    int count = 0;
+                    List<UUID> exchangeIdBatch = new ArrayList<>();
+
+                    for (UUID exchangeId : exchangeIds) {
+
+                        count++;
+                        exchangeIdBatch.add(exchangeId);
+
+                        //update the transform audit, so EDS UI knows we've re-queued this exchange
+                        ExchangeTransformAudit audit = exchangeDal.getMostRecentExchangeTransform(serviceId, systemId, exchangeId);
+                        if (audit != null
+                                && !audit.isResubmitted()) {
+                            audit.setResubmitted(true);
+                            exchangeDal.save(audit);
+                        }
+
+                        if (exchangeIdBatch.size() >= 1000) {
+                            QueueHelper.postToExchange(exchangeIdBatch, "EdsInbound", null, false, reason);
+                            exchangeIdBatch = new ArrayList<>();
+                            LOG.info("Done " + count);
+                        }
+                    }
+
+                    if (!exchangeIdBatch.isEmpty()) {
+                        QueueHelper.postToExchange(exchangeIdBatch, "EdsInbound", null, false, reason);
+                        LOG.info("Done " + count);
+                    }
+                }
+            }
+
+            LOG.info("Finished Posting to inbound");
+        } catch (Throwable ex) {
+            LOG.error("", ex);
         }
     }
 }
