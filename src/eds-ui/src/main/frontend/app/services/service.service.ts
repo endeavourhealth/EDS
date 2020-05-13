@@ -356,7 +356,7 @@ export class ServiceService extends BaseHttp2Service {
 					} else if (id && id.toLowerCase().match(validNameFilterRegex)) {
 						include = true;
 
-					} else if (uuid && uuid.toLowerCase().match(validNameFilterRegex)) {
+					} else if (uuid && uuid.toLowerCase() == validNameFilterRegex) { //don't compare this as regex
 						include = true;
 
 					} else if (service.tags && vm.serviceNameSearchIncludeTags ) {
