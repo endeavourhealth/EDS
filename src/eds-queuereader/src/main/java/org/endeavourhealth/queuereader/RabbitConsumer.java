@@ -462,8 +462,6 @@ public class RabbitConsumer extends DefaultConsumer
      */
 	private void checkIfServiceHasBecomeAutoFailAndStopIfSo() throws Exception {
 
-		LOG.debug(">>>>>>>>>>>>> Is inbound QR = " + isInboundQueueReader());
-
 		//this is only applicable if we're an INBOUND queue reader, so make sure our configuration matches
 		if (!isInboundQueueReader()) {
 			return;
