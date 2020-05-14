@@ -1002,6 +1002,19 @@ public abstract class SpecialRoutines {
                 }
             }
 
+            LOG.debug("Testing getValidDistributionProjectsForPublisher");
+            List<ProjectEntity> validDistributionProjects = ProjectCache.getValidDistributionProjectsForPublisher(odsCode);
+            if (validDistributionProjects.size() < 1) {
+                LOG.debug("Got no valid projects");
+            } else {
+                LOG.debug("Got " + validDistributionProjects.size() + " valid projects");
+                for (ProjectEntity project: validDistributionProjects) {
+                    LOG.debug(" -> " + project.getName() + " " + project.getUuid());
+                }
+            }
+            LOG.debug("");
+            LOG.debug("");
+
             LOG.debug("");
             LOG.debug("");
 
