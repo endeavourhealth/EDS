@@ -8,7 +8,6 @@ import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.core.database.dal.DalProvider;
 import org.endeavourhealth.core.database.dal.datagenerator.SubscriberZipFileUUIDsDalI;
@@ -51,15 +50,21 @@ public class EnterpriseFiler {
         LOG.trace("Filing " + FileUtils.byteCountToDisplaySize(bytes.length) + " from batch " + batchId + " into " + configName);
 
         //we may have multiple connections if we have replicas
-        List<EnterpriseConnector.ConnectionWrapper> connectionWrappers = EnterpriseConnector.openConnection(configName);
+        List<EnterpriseConnector.ConnectionWrapper> connectionWrappers = EnterpriseConnector.openSubscriberConnections(configName);
 
-        if (StringUtils.isNotEmpty(connectionWrappers.get(0).getRemoteSubscriberId())) {
-            int subscriberId = Integer.valueOf(connectionWrappers.get(0).getRemoteSubscriberId());
-            SubscriberZipFileUUIDsDalI szfudi = DalProvider.factorySubscriberZipFileUUIDs();
-            szfudi.createSubscriberZipFileUUIDsEntity(subscriberId, batchId.toString(), queuedMessageId.toString(), base64);
-        } else {
-            for (EnterpriseConnector.ConnectionWrapper connectionWrapper: connectionWrappers) {
-                file(connectionWrapper, bytes);
+        for (EnterpriseConnector.ConnectionWrapper wrapper: connectionWrappers) {
+
+            //if we have a direct DB connection, then write to the DB (do this first, so any failure here will mean
+            //we won't already have written to the remote subscriber table, resulting in duplicates if we try again)
+            if (wrapper.hasDatabaseConnection()) {
+                file(wrapper, bytes);
+            }
+
+            //if we have a remote subscriber ID, then write the CSV data out for sending
+            if (wrapper.hasRemoteSubscriberId()) {
+                int subscriberId = wrapper.getRemoteSubscriberId().intValue();
+                SubscriberZipFileUUIDsDalI szfudi = DalProvider.factorySubscriberZipFileUUIDs();
+                szfudi.createSubscriberZipFileUUIDsEntity(subscriberId, batchId.toString(), queuedMessageId.toString(), base64);
             }
         }
     }
@@ -593,47 +598,43 @@ public class EnterpriseFiler {
         while (true) {
 
             try {
-                fileUpserts(csvRecords, columns, columnClasses, tableName, connection, keywordEscapeChar);
+                fileUpsertImpl(csvRecords, columns, columnClasses, tableName, connection, keywordEscapeChar);
 
                 //if we execute without error, break out
                 break;
 
-            } catch (BatchUpdateException ex) {
-                String msg = ex.getMessage();
+            } catch (Exception ex) {
+
                 if (attemptsMade < UPSERT_ATTEMPTS
-                        && msg != null
-                        && (msg.startsWith("Deadlock found when trying to get lock; try restarting transaction")
-                            || msg.startsWith("Lock wait timeout exceeded; try restarting transaction"))) {
+                        && SubscriberFiler.isDeadlockOrTimeout(ex)) {
 
                     //if the message matches the deadlock one, then wait a while and try again
                     attemptsMade ++;
-                    long delay = getMsDelayForRetry(attemptsMade);
-                    LOG.error("Upsert to " + tableName + " failed due to deadlock, so will try again in " + (delay/1000L) + " seconds");
-                    Thread.sleep(delay);
+                    long msDelay = getMsDelayForRetry(attemptsMade);
+                    LOG.error("Upsert to " + tableName + " failed due to deadlock, so will try again in " + (msDelay/1000L) + " seconds");
+                    Thread.sleep(msDelay);
                     continue;
-
-                } else {
-                    //log the records we failed on
-                    LOG.error("Failed on batch:");
-                    try {
-                        LOG.error("" + String.join(", ", columns));
-                        for (CSVRecord record : csvRecords) {
-                            List<String> recordList = new ArrayList<>();
-                            for (String col : columns) {
-                                String val = record.get(col);
-                                recordList.add(val);
-                            }
-                            LOG.error("" + String.join(", ", recordList));
-                        }
-                    } catch (Throwable t) {
-                        LOG.error("ERROR LOGGING FAILED BATCH", t);
-                    }
-
-                    //if the message isn't exactly the one we're looking for, just throw the exception as normal
-                    throw ex;
                 }
-            }
 
+                //if it's a different error, if we've had too many goes, then log the details of the batch and throw the exception up
+                LOG.error("Failed on batch:");
+                try {
+                    LOG.error("" + String.join(", ", columns));
+                    for (CSVRecord record : csvRecords) {
+                        List<String> recordList = new ArrayList<>();
+                        for (String col : columns) {
+                            String val = record.get(col);
+                            recordList.add(val);
+                        }
+                        LOG.error("" + String.join(", ", recordList));
+                    }
+                } catch (Throwable t) {
+                    LOG.error("ERROR LOGGING FAILED BATCH", t);
+                }
+
+                //if the message isn't exactly the one we're looking for, just throw the exception as normal
+                throw ex;
+            }
         }
     }
 
@@ -642,8 +643,8 @@ public class EnterpriseFiler {
         return (long)(d * 1000D);
     }
 
-    private static void fileUpserts(List<CSVRecord> csvRecords, List<String> columns, HashMap<String, Class> columnClasses,
-                                    String tableName, Connection connection, String keywordEscapeChar) throws Exception {
+    private static void fileUpsertImpl(List<CSVRecord> csvRecords, List<String> columns, HashMap<String, Class> columnClasses,
+                                       String tableName, Connection connection, String keywordEscapeChar) throws Exception {
 
         if (csvRecords.isEmpty()) {
             return;
@@ -686,21 +687,12 @@ public class EnterpriseFiler {
             connection.commit();
 
         } catch (Exception ex) {
-
             connection.rollback();
+            LOG.error("Exception with upsert to " + tableName + ": " + ex.getMessage());
 
-            //if we get an error, try again, but one record at a time so we can find out exactly which record caused the problem
-            if (csvRecords.size() == 1) {
-                LOG.error(insert.toString());
-                throw ex;
-            } else {
-                LOG.error("Had exception saving batch (" + ex.getMessage() + " so will try saving one at a time");
-                for (CSVRecord r: csvRecords) {
-                    List<CSVRecord> l = new ArrayList<>();
-                    l.add(r);
-                    fileUpserts(l, columns, columnClasses, tableName, connection, keywordEscapeChar);
-                }
-            }
+            //throw the original exception up
+            throw ex;
+
         } finally {
             if (insert != null) {
                 insert.close();

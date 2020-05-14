@@ -9971,9 +9971,15 @@ create table uprn_pseudo_map (
 				saltBytes = Base64.getDecoder().decode(base64Salt);
 			}*/
 
-			List<EnterpriseConnector.ConnectionWrapper> connectionWrappers = EnterpriseConnector.openConnection(subscriberConfigName);
+			List<EnterpriseConnector.ConnectionWrapper> connectionWrappers = EnterpriseConnector.openSubscriberConnections(subscriberConfigName);
 			for (EnterpriseConnector.ConnectionWrapper connectionWrapper: connectionWrappers) {
 				Connection subscriberConnection = connectionWrapper.getConnection();
+
+				//we don't have a way to update the age for subscribers that don't have direct DB connectivity
+				if (!connectionWrapper.hasDatabaseConnection()) {
+					throw new Exception("Cannot update subscriber " + connectionWrapper + " for config " + subscriberConfigName + " without direct database connectivity");
+				}
+
 				LOG.info("Populating " + connectionWrapper);
 
 				String upsertSql;

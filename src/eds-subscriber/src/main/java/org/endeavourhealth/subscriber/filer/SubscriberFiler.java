@@ -8,7 +8,6 @@ import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.core.database.dal.DalProvider;
 import org.endeavourhealth.core.database.dal.datagenerator.SubscriberZipFileUUIDsDalI;
@@ -47,29 +46,21 @@ public class SubscriberFiler {
         LOG.debug("Filing " + FileUtils.byteCountToDisplaySize(bytes.length) + " from batch " + batchId + " into " + configName);
 
         //we may have multiple connections if we have replicas
-        List<EnterpriseConnector.ConnectionWrapper> connectionWrappers = EnterpriseConnector.openConnection(configName);
+        List<EnterpriseConnector.ConnectionWrapper> connectionWrappers = EnterpriseConnector.openSubscriberConnections(configName);
 
-        if (StringUtils.isNotEmpty(connectionWrappers.get(0).getRemoteSubscriberId())) {
-            int subscriberId = Integer.valueOf(connectionWrappers.get(0).getRemoteSubscriberId());
+        for (EnterpriseConnector.ConnectionWrapper wrapper: connectionWrappers) {
 
-            // JAB 20/09/2019, as per subscriber_databases slack channel discussion
-            // Added temporarily to test internally the filing of Barts data, to the new subscriber schema
-            if (subscriberId == 2) {
-                for (EnterpriseConnector.ConnectionWrapper connectionWrapper: connectionWrappers) {
-                    file(connectionWrapper, bytes);
-                }
+            //if we have a direct DB connection, then write to the DB (do this first, so any failure here will mean
+            //we won't already have written to the remote subscriber table, resulting in duplicates if we try again)
+            if (wrapper.hasDatabaseConnection()) {
+                file(wrapper, bytes);
             }
 
-            //moved to happen AFTER the filing to the database because if that fails for any reason, then we won't already
-            //have written the zip to the below table. When restarted, all the above filing is 100% happy with running again
-            //because it uses upserts, but the below stuff doesn't handle that
-            SubscriberZipFileUUIDsDalI szfudi = DalProvider.factorySubscriberZipFileUUIDs();
-            szfudi.createSubscriberZipFileUUIDsEntity(subscriberId, batchId.toString(), queuedMessageId.toString(), base64);
-
-
-        } else {
-            for (EnterpriseConnector.ConnectionWrapper connectionWrapper: connectionWrappers) {
-                file(connectionWrapper, bytes);
+            //if we have a remote subscriber ID, then write the CSV data out for sending
+            if (wrapper.hasRemoteSubscriberId()) {
+                int subscriberId = wrapper.getRemoteSubscriberId().intValue();
+                SubscriberZipFileUUIDsDalI szfudi = DalProvider.factorySubscriberZipFileUUIDs();
+                szfudi.createSubscriberZipFileUUIDsEntity(subscriberId, batchId.toString(), queuedMessageId.toString(), base64);
             }
         }
     }
@@ -653,17 +644,15 @@ public class SubscriberFiler {
         while (true) {
 
             try {
-                fileUpserts(csvRecords, columns, columnClasses, tableName, connection, keywordEscapeChar);
+                fileUpsertImpl(csvRecords, columns, columnClasses, tableName, connection, keywordEscapeChar);
 
                 //if we execute without error, break out
                 break;
 
-            } catch (BatchUpdateException ex) {
-                String msg = ex.getMessage();
+            } catch (Exception ex) {
+
                 if (attemptsMade < UPSERT_ATTEMPTS
-                        && msg != null
-                        && (msg.startsWith("Deadlock found when trying to get lock; try restarting transaction")
-                        || msg.startsWith("Lock wait timeout exceeded; try restarting transaction"))) {
+                        && isDeadlockOrTimeout(ex)) {
 
                     //if the message matches the deadlock one, then wait a while and try again
                     attemptsMade ++;
@@ -671,30 +660,48 @@ public class SubscriberFiler {
                     LOG.error("Upsert to " + tableName + " failed due to deadlock, so will try again in " + (msDelay/1000L) + " seconds");
                     Thread.sleep(msDelay);
                     continue;
-
-                } else {
-                    //log the records we failed on
-                    LOG.error("Failed on batch:");
-                    try {
-                        LOG.error("" + String.join(", ", columns));
-                        for (CSVRecord record : csvRecords) {
-                            List<String> recordList = new ArrayList<>();
-                            for (String col : columns) {
-                                String val = record.get(col);
-                                recordList.add(val);
-                            }
-                            LOG.error("" + String.join(", ", recordList));
-                        }
-                    } catch (Throwable t) {
-                        LOG.error("ERROR LOGGING FAILED BATCH", t);
-                    }
-
-                    //if the message isn't exactly the one we're looking for, just throw the exception as normal
-                    throw ex;
                 }
+
+                //if it's a different error, if we've had too many goes, then log the details of the batch and throw the exception up
+                LOG.error("Failed on batch:");
+                try {
+                    LOG.error("" + String.join(", ", columns));
+                    for (CSVRecord record : csvRecords) {
+                        List<String> recordList = new ArrayList<>();
+                        for (String col : columns) {
+                            String val = record.get(col);
+                            recordList.add(val);
+                        }
+                        LOG.error("" + String.join(", ", recordList));
+                    }
+                } catch (Throwable t) {
+                    LOG.error("ERROR LOGGING FAILED BATCH", t);
+                }
+
+                //if the message isn't exactly the one we're looking for, just throw the exception as normal
+                throw ex;
             }
 
         }
+    }
+
+    /**
+     * tests if an exception (or a nested one) is a timeout or deadlock one, so we can wait and try again
+     */
+    public static boolean isDeadlockOrTimeout(Throwable t) {
+
+        String msg = t.getMessage();
+        if (!Strings.isNullOrEmpty(msg)
+                && msg.startsWith("Deadlock found when trying to get lock; try restarting transaction")
+                || msg.startsWith("Lock wait timeout exceeded; try restarting transaction")) {
+            return true;
+        }
+
+        if (t.getCause() != null) {
+            return isDeadlockOrTimeout(t.getCause());
+        }
+
+        return false;
     }
 
     private static long getMsDelayForRetry(int attemptNumber) {
@@ -702,8 +709,8 @@ public class SubscriberFiler {
         return (long)(d * 1000D);
     }
 
-    private static void fileUpserts(List<CSVRecord> csvRecords, List<String> columns, Map<String, Class> columnClasses,
-                                    String tableName, Connection connection, String keywordEscapeChar) throws Exception {
+    private static void fileUpsertImpl(List<CSVRecord> csvRecords, List<String> columns, Map<String, Class> columnClasses,
+                                       String tableName, Connection connection, String keywordEscapeChar) throws Exception {
 
         if (csvRecords.isEmpty()) {
             return;
@@ -744,12 +751,14 @@ public class SubscriberFiler {
 
             connection.commit();
 
-            LOG.trace("Upsert committed " + csvRecords.size() + " to " + tableName);
+            //LOG.trace("Upsert committed " + csvRecords.size() + " to " + tableName);
 
         } catch (Exception ex) {
             connection.rollback();
-            LOG.error("Exception with upsert " + psInsert.toString());
-            throw new Exception("Exception with upsert. Details in log " , ex);
+            LOG.error("Exception with upsert to " + tableName + ": " + ex.getMessage());
+
+            //throw the original exception up
+            throw ex;
 
         } finally {
 

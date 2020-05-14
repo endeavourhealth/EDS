@@ -1077,9 +1077,7 @@ create table patient_address (
 	msoa_2011_code varchar(9),
 	ward_code varchar(9),
 	local_authority_code varchar(9),
-	CONSTRAINT pk_organization_id_id_patient_id_person_id PRIMARY KEY (`organization_id`,`id`,`patient_id`,`person_id`),
-	CONSTRAINT fk_patient_address_patient_id_organization_id FOREIGN KEY (patient_id, organization_id)
-	REFERENCES patient (id, organization_id)
+	CONSTRAINT pk_organization_id_id_patient_id_person_id PRIMARY KEY (`organization_id`,`id`,`patient_id`,`person_id`)
 ) COMMENT 'stores address details for patients';
 
 CREATE UNIQUE INDEX ux_patient_address_id on patient_address (id);

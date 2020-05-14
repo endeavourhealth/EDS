@@ -1171,6 +1171,34 @@ public final class ServiceEndpoint extends AbstractEndpoint {
                 dsaNode.put("endDate", (dsa.getEndDate() != null ? dateFormat.format(dsa.getEndDate()): null));
             }
 
+            List<ProjectEntity> distributionProjects = ProjectCache.getValidDistributionProjectsForPublisher(odsCode);
+            obj.put("countDistributionProjects", distributionProjects.size());
+
+            arr = obj.putArray("distributionProjects");
+            for (ProjectEntity dsa: distributionProjects) {
+
+                ObjectNode dsaNode = arr.addObject();
+                dsaNode.put("uuid", dsa.getUuid());
+                dsaNode.put("name", dsa.getName());
+                dsaNode.put("configName", dsa.getConfigName());
+                dsaNode.put("leadUser", dsa.getLeadUser());
+                dsaNode.put("technicalLeadUser", dsa.getTechnicalLeadUser());
+                dsaNode.put("consentModelId", dsa.getConsentModelId());
+                dsaNode.put("deidentificationLevel", dsa.getDeidentificationLevel());
+                dsaNode.put("projectTypeId", dsa.getProjectTypeId());
+                dsaNode.put("securityInfrastructureId", dsa.getSecurityInfrastructureId());
+                dsaNode.put("ipAddress", dsa.getIpAddress());
+                dsaNode.put("summary", dsa.getSummary());
+                dsaNode.put("businessCase", dsa.getBusinessCase());
+                dsaNode.put("objectives", dsa.getObjectives());
+                dsaNode.put("securityArchitectureId", dsa.getSecurityArchitectureId());
+                dsaNode.put("storageProtocolId", dsa.getStorageProtocolId());
+                dsaNode.put("businessCaseStatus", dsa.getBusinessCaseStatus());
+                dsaNode.put("flowScheduleId", dsa.getFlowScheduleId());
+                dsaNode.put("projectStatusId", dsa.getProjectStatusId());
+                dsaNode.put("startDate", (dsa.getStartDate() != null ? dateFormat.format(dsa.getStartDate()): null));
+                dsaNode.put("endDate", (dsa.getEndDate() != null ? dateFormat.format(dsa.getEndDate()): null));
+            }
 
             List<ProjectEntity> subscribersDsasList = ProjectCache.getAllProjectsForSubscriberOrg(odsCode);
             obj.put("countSubscriberDSAs", subscribersDsasList.size());
@@ -1180,7 +1208,8 @@ public final class ServiceEndpoint extends AbstractEndpoint {
 
                 ObjectNode dsaNode = arr.addObject();
                 dsaNode.put("uuid", dsa.getUuid());
-                dsaNode.put("name;", dsa.getName());
+                dsaNode.put("name", dsa.getName());
+                dsaNode.put("configName", dsa.getConfigName());
                 dsaNode.put("leadUser", dsa.getLeadUser());
                 dsaNode.put("technicalLeadUser", dsa.getTechnicalLeadUser());
                 dsaNode.put("consentModelId", dsa.getConsentModelId());
@@ -1207,6 +1236,8 @@ public final class ServiceEndpoint extends AbstractEndpoint {
                     odsCodeArr.add(publisherOdsCode);
                 }
             }
+
+
 
         } catch (Throwable t) {
             String msg = t.getMessage();

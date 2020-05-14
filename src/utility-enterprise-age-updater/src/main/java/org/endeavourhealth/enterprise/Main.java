@@ -42,7 +42,7 @@ public class Main {
             List<EnterpriseAge> agesToUpdate = enterpriseAgeUpdaterDal.findAgesToUpdate();
             LOG.info("Found " + agesToUpdate.size() + " ages to update");
 
-            List<EnterpriseConnector.ConnectionWrapper> connectionWrappers = EnterpriseConnector.openConnection(enterpriseConfigName);
+            List<EnterpriseConnector.ConnectionWrapper> connectionWrappers = EnterpriseConnector.openSubscriberConnections(enterpriseConfigName);
 
             //NOTE: the agesToUpdate list doesn't contain deceased patients, as they are deleted
             //out of the enterprise_age table when the date_of_death is set
@@ -53,12 +53,14 @@ public class Main {
                 Integer[] ages = enterpriseAgeUpdaterDal.reCalculateAgeValues(ageToUpdate);
 
                 for (EnterpriseConnector.ConnectionWrapper connectionWrapper: connectionWrappers) {
+
+                    //we don't have a way to update the age for subscribers that don't have direct DB connectivity
+                    if (!connectionWrapper.hasDatabaseConnection()) {
+                        throw new Exception("Cannot update subscriber " + connectionWrapper + " for config " + enterpriseConfigName + " without direct database connectivity");
+                    }
+
                     Connection enterpriseConnection = connectionWrapper.getConnection();
-
                     updateEnterprisePatient(ageToUpdate.getEnterprisePatientId(), ages, enterpriseConnection);
-
-                    //no need to manually update the person table, as updates to patient will fire off a trigger that does it for us
-                    //updateEnterprisePerson(ageToUpdate.getEnterprisePatientId(), ages, enterpriseConnection);
                     enterpriseConnection.close();
                 }
 
