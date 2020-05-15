@@ -88,6 +88,15 @@ public class Main {
 		ConfigManager.initialize("queuereader", configId);
 
 		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("DeleteDataFromOldCoreDB")) {
+
+			UUID serviceId = UUID.fromString(args[1]);
+			String previousPublisherConfig = args[2];
+			SpecialRoutines.deleteDataFromOldCoreDB(serviceId, previousPublisherConfig);
+			System.exit(0);
+		}
+
+		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("DeleteTppEpisodesElsewhere")) {
 
 			boolean testMode = Boolean.parseBoolean(args[1]);

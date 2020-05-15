@@ -386,7 +386,7 @@ public class SubscriberFiler {
             psDelete.executeBatch();
             connection.commit();
 
-            LOG.trace("Deletes committed " + csvRecords.size() + " records from " + tableName);
+            //LOG.trace("Deletes committed " + csvRecords.size() + " records from " + tableName);
 
         } catch (Exception ex) {
             connection.rollback();

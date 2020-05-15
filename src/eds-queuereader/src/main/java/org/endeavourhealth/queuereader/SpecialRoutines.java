@@ -1,6 +1,5 @@
 package org.endeavourhealth.queuereader;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -9,7 +8,6 @@ import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.io.FileUtils;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
-import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.common.fhir.ExtensionConverter;
 import org.endeavourhealth.common.fhir.FhirExtensionUri;
 import org.endeavourhealth.common.fhir.IdentifierHelper;
@@ -30,6 +28,7 @@ import org.endeavourhealth.core.database.dal.eds.PatientSearchDalI;
 import org.endeavourhealth.core.database.dal.ehr.ResourceDalI;
 import org.endeavourhealth.core.database.dal.ehr.models.ResourceWrapper;
 import org.endeavourhealth.core.database.dal.subscriberTransform.SubscriberResourceMappingDalI;
+import org.endeavourhealth.core.database.dal.subscriberTransform.models.SubscriberId;
 import org.endeavourhealth.core.database.dal.usermanager.caching.DataSharingAgreementCache;
 import org.endeavourhealth.core.database.dal.usermanager.caching.OrganisationCache;
 import org.endeavourhealth.core.database.dal.usermanager.caching.ProjectCache;
@@ -49,6 +48,7 @@ import org.endeavourhealth.core.xml.TransformErrorSerializer;
 import org.endeavourhealth.core.xml.transformError.TransformError;
 import org.endeavourhealth.im.client.IMClient;
 import org.endeavourhealth.subscriber.filer.EnterpriseFiler;
+import org.endeavourhealth.subscriber.filer.SubscriberFiler;
 import org.endeavourhealth.transform.common.*;
 import org.endeavourhealth.transform.common.resourceBuilders.EpisodeOfCareBuilder;
 import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
@@ -56,6 +56,8 @@ import org.endeavourhealth.transform.fhirhl7v2.FhirHl7v2Filer;
 import org.endeavourhealth.transform.fhirhl7v2.transforms.EncounterTransformer;
 import org.endeavourhealth.transform.subscriber.IMConstant;
 import org.endeavourhealth.transform.subscriber.IMHelper;
+import org.endeavourhealth.transform.subscriber.targetTables.OutputContainer;
+import org.endeavourhealth.transform.subscriber.targetTables.SubscriberTableId;
 import org.endeavourhealth.transform.ui.helpers.BulkHelper;
 import org.hl7.fhir.instance.model.*;
 import org.hl7.fhir.instance.model.Resource;
@@ -1025,8 +1027,8 @@ public abstract class SpecialRoutines {
         }
     }
 
-    public static void compareDsm(boolean logDifferencesOnly, String toFile, String filterOdsCode) {
-        LOG.debug("Comparing DSM to DDS-UI for " + filterOdsCode);
+    public static void compareDsm(boolean logDifferencesOnly, String toFile, String odsCodeRegex) {
+        LOG.debug("Comparing DSM to DDS-UI for " + odsCodeRegex);
         LOG.debug("logDifferencesOnly = " + logDifferencesOnly);
         LOG.debug("toFile = " + toFile);
         try {
@@ -1039,7 +1041,7 @@ public abstract class SpecialRoutines {
             BufferedWriter bufferedWriter = new BufferedWriter(osw);
 
             CSVFormat format = EmisCsvToFhirTransformer.CSV_FORMAT
-                    .withHeader("name", "ods_code", "parent_code", "DPA matches", "DDS-UI DPA", "DSM DPA", "DSA matches", "DDS-UI Endpoints", "DSM Endpoints"
+                    .withHeader("Name", "ODS Code", "Parent Code", "Notes", "DDS-UI DPA", "DSM DPA", "DPA matches", "DDS-UI Endpoints", "DSM Endpoints", "DSA matches"
                     );
             CSVPrinter printer = new CSVPrinter(bufferedWriter, format);
 
@@ -1051,8 +1053,7 @@ public abstract class SpecialRoutines {
                 UUID serviceId = service.getId();
 
                 //skip if filtering on ODS code
-                if (!Strings.isNullOrEmpty(filterOdsCode)
-                        && !odsCode.equalsIgnoreCase(filterOdsCode)) {
+                if (shouldSkipService(service, odsCodeRegex)) {
                     continue;
                 }
 
@@ -1091,7 +1092,6 @@ public abstract class SpecialRoutines {
 
                 //want to find target subscriber config names OLD way
                 Set<String> subscriberConfigNamesOldWay = new HashSet<>();
-                Map<String, Set<String>> subscriberConfigToCohortOldWay = new HashMap<>();
 
                 for (String oldProtocolId: protocolIdsOldWay) {
                     LibraryItem libraryItem = LibraryRepositoryHelper.getLibraryItemUsingCache(UUID.fromString(oldProtocolId));
@@ -1111,99 +1111,24 @@ public abstract class SpecialRoutines {
 
                     for (ServiceContract serviceContract : subscribers) {
                         String subscriberConfigName = MessageTransformOutbound.getSubscriberEndpoint(serviceContract);
-                        subscriberConfigNamesOldWay.add(subscriberConfigName);
-
-                        //get cohort details
-                        Set<String> cohortSet = new HashSet<>();
-                        subscriberConfigToCohortOldWay.put(subscriberConfigName, cohortSet);
-
-                        String cohort = protocol.getCohort();
-                        if (cohort.equals("All Patients")) {
-                            cohortSet.add("all_patients");
-
-                        } else if (cohort.equals("Explicit Patients")) {
-                            //database is dependent on protocol ID, but I don't think this used
-                            throw new Exception("Protocol uses explicit patient cohort so cannot be converted");
-                            //cohortRoot.put("type", "explicit_patients");
-
-                        } else if (cohort.startsWith("Defining Services")) {
-                            cohortSet.add("registered_at");
-
-                            int index = cohort.indexOf(":");
-                            if (index == -1) {
-                                throw new RuntimeException("Invalid cohort format " + cohort);
-                            }
-                            String suffix = cohort.substring(index + 1);
-                            String[] toks = suffix.split("\r|\n|,| |;");
-                            for (String tok : toks) {
-                                String cohortOdsCode = tok.trim().toUpperCase();  //when checking, we always make uppercase
-                                if (!Strings.isNullOrEmpty(cohortOdsCode)) {
-                                    cohortSet.add(cohortOdsCode);
-                                }
-                            }
-
-                        } else {
-                            throw new PipelineException("Unknown cohort [" + cohort + "]");
+                        if (!Strings.isNullOrEmpty(subscriberConfigName)) {
+                            subscriberConfigNamesOldWay.add(subscriberConfigName);
                         }
                     }
                 }
 
                 //find target subscriber config names NEW way
                 Set<String> subscriberConfigNamesNewWay = new HashSet<>();
-                Map<String, Set<String>> subscriberConfigToCohortNewWay = new HashMap<>();
 
-                List<DataSharingAgreementEntity> list = DataSharingAgreementCache.getAllDSAsForPublisherOrg(odsCode);
-                if (list == null) {
-                    logging.add("Got NULL DSAs for " + odsCode);
+                List<ProjectEntity> distributionProjects = ProjectCache.getValidDistributionProjectsForPublisher(odsCode);
+                if (distributionProjects == null) {
+                    logging.add("Got NULL distribution projects for " + odsCode);
 
                 } else {
-                    for (DataSharingAgreementEntity e: list) {
-                        String dsaUuid = e.getUuid();
-                        String dsaName = e.getName();
-
-                        //how to get subscriber config name from the above
-
-                        //new config record for the PROTOCOL
-                        //giving details of subscriber config names for each protocol
-                        //giving cohort details
-                        JsonNode jsonNode = ConfigManager.getConfigurationAsJson(dsaUuid, "data-sharing-agreement");
-                        if (jsonNode == null) {
-                            logging.add("NO config record found for DSA " + dsaUuid + " (" + dsaName + ")");
-
-                        } else {
-                            ArrayNode arr = (ArrayNode)jsonNode.get("subscribers");
-                            if (arr == null) {
-                                logging.add("No subscribers array in JSON for DSA " + dsaUuid + " (" + dsaName + ")");
-                            } else {
-                                for (int i=0; i<arr.size(); i++) {
-                                    ObjectNode subscriberNode = (ObjectNode)arr.get(i);
-                                    String subscriberConfigName = subscriberNode.asText();
-
-                                    subscriberConfigNamesNewWay.add(subscriberConfigName);
-
-                                    //get cohort details
-                                    Set<String> cohortSet = new HashSet<>();
-                                    subscriberConfigToCohortNewWay.put(subscriberConfigName, cohortSet);
-
-                                    //cohort
-                                    ObjectNode cohortNode = (ObjectNode)jsonNode.get("cohort");
-                                    if (cohortNode == null) {
-                                        logging.add("No cohort node found in JSON for DSA " + dsaUuid + " (" + dsaName + ")");
-                                    } else {
-
-                                        String cohortType = cohortNode.get("type").asText();
-                                        cohortSet.add(cohortType);
-
-                                        if (cohortType.equals("registered_at")) {
-                                            ArrayNode cohortArray = (ArrayNode)cohortNode.get("services");
-                                            for (int j=0; j<cohortArray.size(); j++) {
-                                                String cohortOdsCode = cohortArray.get(j).asText();
-                                                cohortSet.add(cohortOdsCode);
-                                            }
-                                        }
-                                    }
-                                }
-                            }
+                    for (ProjectEntity distributionProject: distributionProjects) {
+                        String configName = distributionProject.getConfigName();
+                        if (!Strings.isNullOrEmpty(configName)) {
+                            subscriberConfigNamesNewWay.add(configName);
                         }
                     }
                 }
@@ -1219,10 +1144,30 @@ public abstract class SpecialRoutines {
 
                 boolean dsaMatches = subscribersOldWay.equals(subscribersNewWay);
 
-                //compare DSA cohorts
-                //TODO
 
-                printer.printRecord(service.getName(), odsCode, service.getCcgCode(), dpaMatches, hasDpaOldWay, hasDpaNewWay, dsaMatches, subscribersOldWay, subscribersNewWay);
+                //flatten the tags to a String
+                String notesStr = "";
+                if (service.getTags() != null) {
+                    List<String> toks = new ArrayList<>();
+
+                    Map<String, String> tags = service.getTags();
+                    List<String> keys = new ArrayList<>(tags.keySet());
+                    keys.sort(((o1, o2) -> o1.compareToIgnoreCase(o2)));
+
+                    for (String key: keys) {
+
+                        String s = key;
+                        String val = tags.get(key);
+                        if (val != null) {
+                            s += " " + val;
+                        }
+                        toks.add(s);
+                    }
+
+                    notesStr = String.join(", ", toks);
+                }
+
+                printer.printRecord(service.getName(), odsCode, service.getCcgCode(), notesStr, hasDpaOldWay, hasDpaNewWay, dpaMatches, subscribersOldWay, subscribersNewWay, dsaMatches);
 
                 logging.add("");
 
@@ -1236,7 +1181,7 @@ public abstract class SpecialRoutines {
 
             printer.close();
 
-            LOG.debug("Finished Comparing DSM to DDS-UI for " + filterOdsCode + " to " + toFile);
+            LOG.debug("Finished Comparing DSM to DDS-UI for " + odsCodeRegex + " to " + toFile);
         } catch (Throwable t) {
             LOG.error("", t);
         }
@@ -2521,6 +2466,233 @@ public abstract class SpecialRoutines {
             LOG.info("Finished Posting to inbound");
         } catch (Throwable ex) {
             LOG.error("", ex);
+        }
+    }
+
+    public static void deleteDataFromOldCoreDB(UUID serviceId, String previousPublisherConfigName) {
+        LOG.debug("Deleting data from old Core DB server for " + serviceId);
+        try {
+            ServiceDalI serviceDal = DalProvider.factoryServiceDal();
+            Service service = serviceDal.getById(serviceId);
+            LOG.debug("Service = " + service);
+
+            //find a service on the OLD config DB
+            UUID altServiceId = null;
+            for (Service s: serviceDal.getAll()) {
+                if (s.getPublisherConfigName() != null
+                        && s.getPublisherConfigName().equals(previousPublisherConfigName)) {
+                    altServiceId = s.getId();
+                    break;
+                }
+            }
+            if (altServiceId == null) {
+                throw new Exception("Failed to find any service on publisher " + previousPublisherConfigName);
+            }
+
+            //find all subscriber config names
+            Set<String> subscriberConfigNames = new HashSet<>();
+
+            List<String> protocolIds = DetermineRelevantProtocolIds.getProtocolIdsForPublisherServiceOldWay(serviceId.toString());
+            for (String oldProtocolId: protocolIds) {
+                LibraryItem libraryItem = LibraryRepositoryHelper.getLibraryItemUsingCache(UUID.fromString(oldProtocolId));
+                Protocol protocol = libraryItem.getProtocol();
+
+                //skip disabled protocols
+                if (protocol.getEnabled() != ProtocolEnabled.TRUE) {
+                    continue;
+                }
+
+                List<ServiceContract> subscribers = protocol
+                        .getServiceContract()
+                        .stream()
+                        .filter(sc -> sc.getType().equals(ServiceContractType.SUBSCRIBER))
+                        .filter(sc -> sc.getActive() == ServiceContractActive.TRUE) //skip disabled service contracts
+                        .collect(Collectors.toList());
+
+                for (ServiceContract serviceContract : subscribers) {
+                    String subscriberConfigName = MessageTransformOutbound.getSubscriberEndpoint(serviceContract);
+                    subscriberConfigNames.add(subscriberConfigName);
+                }
+            }
+            LOG.debug("Found " + subscriberConfigNames.size() + " subscribers: " + subscriberConfigNames);
+
+            PatientSearchDalI patientSearchDal = DalProvider.factoryPatientSearchDal();
+            List<UUID> patientIds = patientSearchDal.getPatientIds(serviceId, true);
+            LOG.debug("Found " + patientIds.size());
+            patientIds.add(null); //for admin resources
+
+            Connection ehrConnection = ConnectionManager.getEhrNonPooledConnection(altServiceId);
+
+            int done = 0;
+            for (UUID patientId: patientIds) {
+
+                //send to each subscriber
+                for (String subscriberConfigName: subscriberConfigNames) {
+
+                    SubscriberResourceMappingDalI subscriberDal = DalProvider.factorySubscriberResourceMappingDal(subscriberConfigName);
+                    OutputContainer output = new OutputContainer();
+
+                    String sql = "SELECT resource_id, resource_type"
+                            + " FROM resource_current"
+                            + " WHERE service_id = ?"
+                            + " AND patient_id = ?";
+                    PreparedStatement ps = ehrConnection.prepareStatement(sql);
+                    ps.setFetchSize(500);
+                    ps.setString(1, serviceId.toString());
+                    if (patientId == null) {
+                        ps.setString(2, ""); //get admin data
+                    } else {
+                        ps.setString(2, patientId.toString());
+                    }
+
+                    ResultSet rs = ps.executeQuery();
+                    while (rs.next()) {
+
+                        String resourceId = rs.getString(1);
+                        String resourceType = rs.getString(2);
+                        String sourceId = ReferenceHelper.createResourceReference(resourceType, resourceId);
+                        SubscriberTableId subscriberTableId = null;
+
+                        if (resourceType.equals("Patient")) {
+                            subscriberTableId = SubscriberTableId.PATIENT;
+                        } else if (resourceType.equals("AllergyIntolerance")) {
+                            subscriberTableId = SubscriberTableId.ALLERGY_INTOLERANCE;
+                        } else if (resourceType.equals("Encounter")) {
+                            subscriberTableId = SubscriberTableId.ENCOUNTER;
+                        } else if (resourceType.equals("EpisodeOfCare")) {
+                            subscriberTableId = SubscriberTableId.EPISODE_OF_CARE;
+                        } else if (resourceType.equals("Flag")) {
+                            subscriberTableId = SubscriberTableId.FLAG;
+                        } else if (resourceType.equals("Location")) {
+                            subscriberTableId = SubscriberTableId.LOCATION;
+                        } else if (resourceType.equals("MedicationOrder")) {
+                            subscriberTableId = SubscriberTableId.MEDICATION_ORDER;
+                        } else if (resourceType.equals("MedicationStatement")) {
+                            subscriberTableId = SubscriberTableId.MEDICATION_STATEMENT;
+                        } else if (resourceType.equals("Observation")
+                                || resourceType.equals("Condition")
+                                || resourceType.equals("Immunization")
+                                || resourceType.equals("FamilyMemberHistory")) {
+                            subscriberTableId = SubscriberTableId.OBSERVATION;
+                        } else if (resourceType.equals("Organization")) {
+                            subscriberTableId = SubscriberTableId.ORGANIZATION;
+                        } else if (resourceType.equals("Practitioner")) {
+                            subscriberTableId = SubscriberTableId.PRACTITIONER;
+                        } else if (resourceType.equals("ProcedureRequest")) {
+                            subscriberTableId = SubscriberTableId.PROCEDURE_REQUEST;
+                        } else if (resourceType.equals("ReferralRequest")) {
+                            subscriberTableId = SubscriberTableId.REFERRAL_REQUEST;
+                        } else if (resourceType.equals("Schedule")) {
+                            subscriberTableId = SubscriberTableId.SCHEDULE;
+                        } else if (resourceType.equals("Appointment")) {
+                            subscriberTableId = SubscriberTableId.APPOINTMENT;
+                        } else if (resourceType.equals("DiagnosticOrder")) {
+                            subscriberTableId = SubscriberTableId.DIAGNOSTIC_ORDER;
+                        } else if (resourceType.equals("Slot")) {
+                            //these were ignored
+                            continue;
+                        } else {
+                            throw new Exception("Unexpected resource type " + resourceType + " " + resourceId);
+                        }
+
+
+                        SubscriberId subscriberId = subscriberDal.findSubscriberId(subscriberTableId.getId(), sourceId);
+                        if (subscriberId == null) {
+                            continue;
+                        }
+
+                        if (resourceType.equals("Patient")) {
+                            output.getPatients().writeDelete(subscriberId);
+
+                            //the database doesn't have any pseudo IDs, so don't need to worry about that table
+
+                            int maxAddresses = 0;
+                            int maxTelecoms = 0;
+                            ResourceDalI resourceDal = DalProvider.factoryResourceDal();
+                            List<ResourceWrapper> history = resourceDal.getResourceHistory(altServiceId, resourceType, UUID.fromString(resourceId));
+                            for (ResourceWrapper h: history) {
+                                Patient p = (Patient)h.getResource();
+                                if (p != null) {
+                                    maxAddresses = Math.max(maxAddresses, p.getAddress().size());
+                                    maxTelecoms = Math.max(maxTelecoms, p.getTelecom().size());
+                                }
+                            }
+                            for (int i=0; i<maxAddresses; i++) {
+                                String subSourceId = sourceId + "-ADDR-" + i;
+                                SubscriberId subTableId = subscriberDal.findSubscriberId(SubscriberTableId.PATIENT_ADDRESS.getId(), subSourceId);
+                                if (subTableId != null) {
+                                    output.getPatientAddresses().writeDelete(subTableId);
+                                }
+                            }
+                            for (int i=0; i<maxTelecoms; i++) {
+                                String subSourceId = sourceId + "-TELECOM-" + i;
+                                SubscriberId subTableId = subscriberDal.findSubscriberId(SubscriberTableId.PATIENT_CONTACT.getId(), subSourceId);
+                                if (subTableId != null) {
+                                    output.getPatientContacts().writeDelete(subTableId);
+                                }
+                            }
+
+                        } else if (resourceType.equals("AllergyIntolerance")) {
+                            output.getAllergyIntolerances().writeDelete(subscriberId);
+                        } else if (resourceType.equals("Encounter")) {
+                            output.getEncounters().writeDelete(subscriberId);
+                        } else if (resourceType.equals("EpisodeOfCare")) {
+                            output.getEpisodesOfCare().writeDelete(subscriberId);
+                            //reg status history table isn't populated yet, so can ignore that
+                        } else if (resourceType.equals("Flag")) {
+                            output.getFlags().writeDelete(subscriberId);
+                        } else if (resourceType.equals("Location")) {
+                            output.getLocations().writeDelete(subscriberId);
+                        } else if (resourceType.equals("MedicationOrder")) {
+                            output.getMedicationOrders().writeDelete(subscriberId);
+                        } else if (resourceType.equals("MedicationStatement")) {
+                            output.getMedicationStatements().writeDelete(subscriberId);
+                        } else if (resourceType.equals("Observation")
+                                || resourceType.equals("Condition")
+                                || resourceType.equals("Immunization")
+                                || resourceType.equals("FamilyMemberHistory")) {
+                            output.getObservations().writeDelete(subscriberId);
+                        } else if (resourceType.equals("Organization")) {
+                            output.getOrganisations().writeDelete(subscriberId);
+                        } else if (resourceType.equals("Practitioner")) {
+                            output.getPractitioners().writeDelete(subscriberId);
+                        } else if (resourceType.equals("ProcedureRequest")) {
+                            output.getProcedureRequests().writeDelete(subscriberId);
+                        } else if (resourceType.equals("ReferralRequest")) {
+                            output.getReferralRequests().writeDelete(subscriberId);
+                        } else if (resourceType.equals("Schedule")) {
+                            output.getSchedules().writeDelete(subscriberId);
+                        } else if (resourceType.equals("Appointment")) {
+                            output.getAppointments().writeDelete(subscriberId);
+                        } else if (resourceType.equals("DiagnosticOrder")) {
+                            output.getDiagnosticOrder().writeDelete(subscriberId);
+                        } else {
+                            throw new Exception("Unexpected resource type " + resourceType + " " + resourceId);
+                        }
+                    }
+
+                    ps.close();
+
+                    byte[] bytes = output.writeToZip();
+                    String base64 = Base64.getEncoder().encodeToString(bytes);
+
+                    UUID batchId = UUID.randomUUID();
+
+                    SubscriberFiler.file(batchId, UUID.randomUUID(), base64, subscriberConfigName);
+                }
+
+                done ++;
+                if (done % 100 == 0) {
+                    LOG.debug("Done " + done);
+                }
+            }
+            LOG.debug("Done " + done);
+
+            ehrConnection.close();
+
+            LOG.debug("Finished Deleting data from old Core DB server for " + serviceId);
+        } catch (Throwable t) {
+            LOG.error("", t);
         }
     }
 }
