@@ -2531,6 +2531,7 @@ public abstract class SpecialRoutines {
 
                     SubscriberResourceMappingDalI subscriberDal = DalProvider.factorySubscriberResourceMappingDal(subscriberConfigName);
                     OutputContainer output = new OutputContainer();
+                    boolean doneSomething = false;
 
                     String sql = "SELECT resource_id, resource_type"
                             + " FROM resource_current"
@@ -2600,6 +2601,8 @@ public abstract class SpecialRoutines {
                         if (subscriberId == null) {
                             continue;
                         }
+
+                        doneSomething = true;
 
                         if (resourceType.equals("Patient")) {
                             output.getPatients().writeDelete(subscriberId);
@@ -2673,12 +2676,15 @@ public abstract class SpecialRoutines {
 
                     ps.close();
 
-                    byte[] bytes = output.writeToZip();
-                    String base64 = Base64.getEncoder().encodeToString(bytes);
+                    if (doneSomething) {
 
-                    UUID batchId = UUID.randomUUID();
+                        byte[] bytes = output.writeToZip();
+                        String base64 = Base64.getEncoder().encodeToString(bytes);
 
-                    SubscriberFiler.file(batchId, UUID.randomUUID(), base64, subscriberConfigName);
+                        UUID batchId = UUID.randomUUID();
+
+                        SubscriberFiler.file(batchId, UUID.randomUUID(), base64, subscriberConfigName);
+                    }
                 }
 
                 done ++;
