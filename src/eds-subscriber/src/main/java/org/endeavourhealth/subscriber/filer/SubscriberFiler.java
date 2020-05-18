@@ -12,6 +12,7 @@ import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.core.database.dal.DalProvider;
 import org.endeavourhealth.core.database.dal.datagenerator.SubscriberZipFileUUIDsDalI;
 import org.endeavourhealth.core.database.rdbms.ConnectionManager;
+import org.endeavourhealth.core.database.rdbms.DeadlockHandler;
 import org.endeavourhealth.core.database.rdbms.enterprise.EnterpriseConnector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -640,74 +641,41 @@ public class SubscriberFiler {
     private static void fileUpsertsWithRetry(List<CSVRecord> csvRecords, List<String> columns, Map<String, Class> columnClasses,
                                     String tableName, Connection connection, String keywordEscapeChar) throws Exception {
 
-        int attemptsMade = 0;
+        DeadlockHandler h = new DeadlockHandler();
+        h.setDelayBackOff(true);
+        h.setMaxAttempts(20); //this will give it a couple of hours
         while (true) {
-
             try {
                 fileUpsertImpl(csvRecords, columns, columnClasses, tableName, connection, keywordEscapeChar);
-
-                //if we execute without error, break out
                 break;
 
             } catch (Exception ex) {
-
-                if (attemptsMade < UPSERT_ATTEMPTS
-                        && isDeadlockOrTimeout(ex)) {
-
-                    //if the message matches the deadlock one, then wait a while and try again
-                    attemptsMade ++;
-                    long msDelay = getMsDelayForRetry(attemptsMade);
-                    LOG.error("Upsert to " + tableName + " failed due to deadlock, so will try again in " + (msDelay/1000L) + " seconds");
-                    Thread.sleep(msDelay);
-                    continue;
+                if (!h.canHandleError(ex)) {
+                    //if we've had too many goes or its an unexpected error, then log the details of the batch and throw the exception up
+                    logBatchError(csvRecords, columns);
+                    throw ex;
                 }
-
-                //if it's a different error, if we've had too many goes, then log the details of the batch and throw the exception up
-                LOG.error("Failed on batch:");
-                try {
-                    LOG.error("" + String.join(", ", columns));
-                    for (CSVRecord record : csvRecords) {
-                        List<String> recordList = new ArrayList<>();
-                        for (String col : columns) {
-                            String val = record.get(col);
-                            recordList.add(val);
-                        }
-                        LOG.error("" + String.join(", ", recordList));
-                    }
-                } catch (Throwable t) {
-                    LOG.error("ERROR LOGGING FAILED BATCH", t);
-                }
-
-                //if the message isn't exactly the one we're looking for, just throw the exception as normal
-                throw ex;
             }
-
         }
     }
 
-    /**
-     * tests if an exception (or a nested one) is a timeout or deadlock one, so we can wait and try again
-     */
-    public static boolean isDeadlockOrTimeout(Throwable t) {
-
-        String msg = t.getMessage();
-        if (!Strings.isNullOrEmpty(msg)
-                && msg.startsWith("Deadlock found when trying to get lock; try restarting transaction")
-                || msg.startsWith("Lock wait timeout exceeded; try restarting transaction")) {
-            return true;
+    private static void logBatchError(List<CSVRecord> csvRecords, List<String> columns) {
+        LOG.error("Failed on batch:");
+        try {
+            LOG.error("" + String.join(", ", columns));
+            for (CSVRecord record : csvRecords) {
+                List<String> recordList = new ArrayList<>();
+                for (String col : columns) {
+                    String val = record.get(col);
+                    recordList.add(val);
+                }
+                LOG.error("" + String.join(", ", recordList));
+            }
+        } catch (Throwable t) {
+            LOG.error("ERROR LOGGING FAILED BATCH", t);
         }
-
-        if (t.getCause() != null) {
-            return isDeadlockOrTimeout(t.getCause());
-        }
-
-        return false;
     }
 
-    private static long getMsDelayForRetry(int attemptNumber) {
-        double d = Math.exp(attemptNumber);
-        return (long)(d * 1000D);
-    }
 
     private static void fileUpsertImpl(List<CSVRecord> csvRecords, List<String> columns, Map<String, Class> columnClasses,
                                        String tableName, Connection connection, String keywordEscapeChar) throws Exception {
