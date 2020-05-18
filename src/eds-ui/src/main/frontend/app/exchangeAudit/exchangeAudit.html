@@ -233,16 +233,38 @@
                                 <div *ngIf="publisherMode" class="row">
                                     <div class="form-group">
 
-                                        Publisher mode:
+                                        <div>
+                                            Publisher mode:
 
-                                        <select id="publisherStatus" [(ngModel)]="publisherMode" name="publisherStatus">
-                                            <option value="Publisher_Draft">Draft</option>
-                                            <option value="Publisher_Normal">Normal</option>
-                                            <option value="Publisher_Auto_Fail">Auto-fail</option>
-                                            <option value="Publisher_Bulk">Bulk</option>
-                                        </select>
+                                            <select id="publisherStatus" [(ngModel)]="publisherMode" name="publisherStatus">
+                                                <option value="Publisher_Draft">Draft</option>
+                                                <option value="Publisher_Normal">Normal</option>
+                                                <option value="Publisher_Auto_Fail">Auto-fail</option>
+                                                <option value="Publisher_Bulk">Bulk</option>
+                                            </select>
+                                        </div>
 
-                                        <button type="button" class="btn btn-sm btn-success" (click)="savePublisherMode()">Save</button>
+                                        <div>
+                                            Publisher config:
+
+                                            <select id="publisherConfigName" [(ngModel)]="service.publisherConfigName" name="publisherConfigName">
+
+                                                <!-- blank option -->
+                                                <option value=""></option>
+
+                                                <!-- if cached list not loaded yet, just populate with what's on the service already -->
+                                                <option *ngIf="!serviceService.getPublisherConfigNamesFromCache()" value="{{service.publisherConfigName}}">{{service.publisherConfigName}}</option>
+
+                                                <!-- once org type list loaded, fully populate with everything in the list -->
+                                                <option *ngFor="let publisherConfigName of serviceService.getPublisherConfigNamesFromCache()" value="{{publisherConfigName}}">{{publisherConfigName}}</option>
+
+
+                                            </select>
+
+                                            <button type="button" class="btn btn-sm btn-success" (click)="savePublisherMode()">Save</button>
+                                        </div>
+
+
 
                                     </div>
 

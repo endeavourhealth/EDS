@@ -23,6 +23,7 @@ import org.endeavourhealth.core.database.dal.admin.models.Service;
 import org.endeavourhealth.core.database.dal.audit.ExchangeDalI;
 import org.endeavourhealth.core.database.dal.audit.UserAuditDalI;
 import org.endeavourhealth.core.database.dal.audit.models.*;
+import org.endeavourhealth.core.database.dal.ehr.ResourceDalI;
 import org.endeavourhealth.core.database.dal.usermanager.caching.DataSharingAgreementCache;
 import org.endeavourhealth.core.database.dal.usermanager.caching.OrganisationCache;
 import org.endeavourhealth.core.database.dal.usermanager.caching.ProjectCache;
@@ -176,10 +177,10 @@ public final class ServiceEndpoint extends AbstractEndpoint {
         ServiceDalI dal = DalProvider.factoryServiceDal();
 
         if (error == null) {
-            Service existingService = dal.getByLocalIdentifier(localId);
-            if (existingService != null
+            Service serviceForOds = dal.getByLocalIdentifier(localId);
+            if (serviceForOds != null
                     && (serviceToSave.getUuid() == null
-                        || !serviceToSave.getUuid().equals(existingService.getId()))) {
+                        || !serviceToSave.getUuid().equals(serviceForOds.getId()))) {
                 error = "ODS code " + localId + " already in use";
             }
         }
@@ -216,41 +217,58 @@ public final class ServiceEndpoint extends AbstractEndpoint {
             }
         }
 
+        UUID existingServiceId = serviceToSave.getUuid();
+        Service existingService = null;
+        if (existingServiceId != null) {
+            existingService = dal.getById(existingServiceId);
+        }
+
         //ensure don't change publisher state to normal or bulk when there's stuff in the queue already
-        if (error == null) {
-            UUID existingServiceId = serviceToSave.getUuid();
-            if (existingServiceId != null) {
-                Service existingService = dal.getById(existingServiceId);
-                if (existingService != null) {
+        if (error == null
+                && existingService != null) {
 
-                    for (ServiceInterfaceEndpoint endpoint : serviceToSave.getEndpoints()) {
-                        String endpointStr = endpoint.getEndpoint();
-                        UUID systemUuid = endpoint.getSystemUuid();
+            for (ServiceInterfaceEndpoint endpoint : serviceToSave.getEndpoints()) {
+                String endpointStr = endpoint.getEndpoint();
+                UUID systemUuid = endpoint.getSystemUuid();
 
-                        if (endpointStr != null
-                                && (endpointStr.equals(ServiceInterfaceEndpoint.STATUS_BULK_PROCESSING)
-                                || endpointStr.equals(ServiceInterfaceEndpoint.STATUS_NORMAL))) {
+                if (endpointStr != null
+                        && (endpointStr.equals(ServiceInterfaceEndpoint.STATUS_BULK_PROCESSING)
+                        || endpointStr.equals(ServiceInterfaceEndpoint.STATUS_NORMAL))) {
 
-                            //check the existing instance to see if changed
-                            String existingEndpointStr = null;
-                            for (ServiceInterfaceEndpoint existingEndpoint : existingService.getEndpointsList()) {
-                                if (existingEndpoint.getSystemUuid().equals(systemUuid)) {
-                                    existingEndpointStr = existingEndpoint.getEndpoint();
-                                    break;
-                                }
-                            }
-
-                            //if the publisher mode has changed, then validate that there's nothing in the queue
-                            if (!endpointStr.equals(existingEndpointStr)) {
-
-                                boolean inQueue = isAnythingInInboundQueue(existingServiceId, systemUuid);
-                                if (inQueue) {
-                                    error = "Cannot change publisher mode while inbound messages are queued";
-                                    break;
-                                }
-                            }
+                    //check the existing instance to see if changed
+                    String existingEndpointStr = null;
+                    for (ServiceInterfaceEndpoint existingEndpoint : existingService.getEndpointsList()) {
+                        if (existingEndpoint.getSystemUuid().equals(systemUuid)) {
+                            existingEndpointStr = existingEndpoint.getEndpoint();
+                            break;
                         }
                     }
+
+                    //if the publisher mode has changed, then validate that there's nothing in the queue
+                    if (!endpointStr.equals(existingEndpointStr)) {
+
+                        boolean inQueue = isAnythingInInboundQueue(existingServiceId, systemUuid);
+                        if (inQueue) {
+                            error = "Cannot change publisher mode while inbound messages are queued";
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        //ensure can't change publisher config name if any data exists in the current DB
+        if (error == null
+                && existingService != null) {
+
+            String originalPublisher = existingService.getPublisherConfigName();
+            String currentPublisher = serviceToSave.getPublisherConfigName();
+            if (!originalPublisher.equals(currentPublisher)) {
+
+                ResourceDalI resourceDal = DalProvider.factoryResourceDal();
+                boolean dataExists = resourceDal.dataExists(existingServiceId);
+                if (dataExists) {
+                    error = "Cannot change publisher config while data exists in database";
                 }
             }
         }
