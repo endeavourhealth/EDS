@@ -23,7 +23,6 @@ import org.endeavourhealth.core.database.dal.admin.models.Service;
 import org.endeavourhealth.core.database.dal.audit.ExchangeDalI;
 import org.endeavourhealth.core.database.dal.audit.UserAuditDalI;
 import org.endeavourhealth.core.database.dal.audit.models.*;
-import org.endeavourhealth.core.database.dal.ehr.ResourceDalI;
 import org.endeavourhealth.core.database.dal.usermanager.caching.DataSharingAgreementCache;
 import org.endeavourhealth.core.database.dal.usermanager.caching.OrganisationCache;
 import org.endeavourhealth.core.database.dal.usermanager.caching.ProjectCache;
@@ -265,11 +264,14 @@ public final class ServiceEndpoint extends AbstractEndpoint {
             String currentPublisher = serviceToSave.getPublisherConfigName();
             if (!originalPublisher.equals(currentPublisher)) {
 
-                ResourceDalI resourceDal = DalProvider.factoryResourceDal();
+                //DDS-UI can't access EHR databases, so use the same validation fn as when trying to delete a service
+                error = canDeleteService(existingService);
+
+                /*ResourceDalI resourceDal = DalProvider.factoryResourceDal();
                 boolean dataExists = resourceDal.dataExists(existingServiceId);
                 if (dataExists) {
                     error = "Cannot change publisher config while data exists in database";
-                }
+                }*/
             }
         }
 
