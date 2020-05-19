@@ -210,7 +210,10 @@ public class OpenEnvelope extends PipelineComponent {
 		} else if (software.equalsIgnoreCase(MessageFormat.ADASTRA_CSV)) {
 			dateFormat = "yyyy-MM-dd'T'HH'.'mm'.'ss";
 
-			//NOTE: If adding support for a new publisher software, remember to add to the OpenEnvelope class too
+		} else if (software.equalsIgnoreCase(MessageFormat.BHRUT_CSV)) {
+			dateFormat = "yyyy-MM-dd'T'HH'.'mm'.'ss";
+
+		  //NOTE: If adding support for a new publisher software, remember to add to the MessageTransformInbound class too
 		} else {
 			throw new Exception("Software [" + software + "} not supported for calculating last data date");
 		}

@@ -24,6 +24,7 @@ import org.endeavourhealth.core.xml.transformError.TransformError;
 import org.endeavourhealth.transform.adastra.AdastraCsvToFhirTransformer;
 import org.endeavourhealth.transform.adastra.AdastraXmlToFhirTransformer;
 import org.endeavourhealth.transform.barts.BartsCsvToFhirTransformer;
+import org.endeavourhealth.transform.bhrut.BhrutCsvToFhirTransformer;
 import org.endeavourhealth.transform.common.*;
 import org.endeavourhealth.transform.common.exceptions.SoftwareNotSupportedException;
 import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
@@ -165,7 +166,10 @@ public class MessageTransformInbound extends PipelineComponent {
 				} else if (software.equalsIgnoreCase(MessageFormat.ADASTRA_CSV)) {
 					processAdastraCsvTransform(exchange, fhirResourceFiler, messageVersion);
 
-				//NOTE: If adding support for a new publisher software, remember to add to the OpenEnvelope class too
+				} else if (software.equalsIgnoreCase(MessageFormat.BHRUT_CSV)) {
+					processBhrutCsvTransform(exchange, fhirResourceFiler, messageVersion);
+
+					//NOTE: If adding support for a new publisher software, remember to add to the OpenEnvelope class too
 				} else {
 					throw new SoftwareNotSupportedException(software, messageVersion);
 				}
@@ -592,5 +596,11 @@ public class MessageTransformInbound extends PipelineComponent {
 
 		FhirHl7v2Filer fhirHl7v2Filer = new FhirHl7v2Filer();
 		fhirHl7v2Filer.file(exchangeBody, fhirResourceFiler, version);
+	}
+
+	private void processBhrutCsvTransform(Exchange exchange, FhirResourceFiler fhirResourceFiler, String messageVersion) throws Exception {
+
+		String exchangeBody = exchange.getBody();
+		BhrutCsvToFhirTransformer.transform(exchangeBody, fhirResourceFiler, messageVersion);
 	}
 }
