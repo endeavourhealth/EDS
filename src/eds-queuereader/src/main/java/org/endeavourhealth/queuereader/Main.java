@@ -88,6 +88,15 @@ public class Main {
 		ConfigManager.initialize("queuereader", configId);
 
 		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("PopulateMissingOrgsInCompassV1")) {
+
+			String subscriberConfigName = args[1];
+			boolean testMode = Boolean.parseBoolean(args[2]);
+			SpecialRoutines.populateMissingOrgsInCompassV1(subscriberConfigName, testMode);
+			System.exit(0);
+		}
+
+		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("PopulateMissingOrgsInCompassV2")) {
 
 			String subscriberConfigName = args[1];

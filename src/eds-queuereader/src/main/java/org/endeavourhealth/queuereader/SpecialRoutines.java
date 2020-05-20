@@ -51,6 +51,8 @@ import org.endeavourhealth.subscriber.filer.SubscriberFiler;
 import org.endeavourhealth.transform.common.*;
 import org.endeavourhealth.transform.common.resourceBuilders.EpisodeOfCareBuilder;
 import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
+import org.endeavourhealth.transform.enterprise.EnterpriseTransformHelper;
+import org.endeavourhealth.transform.enterprise.transforms.OrganisationEnterpriseTransformer;
 import org.endeavourhealth.transform.fhirhl7v2.FhirHl7v2Filer;
 import org.endeavourhealth.transform.fhirhl7v2.transforms.EncounterTransformer;
 import org.endeavourhealth.transform.subscriber.IMConstant;
@@ -2702,8 +2704,122 @@ public abstract class SpecialRoutines {
         }
     }
 
+    public static void populateMissingOrgsInCompassV1(String subscriberConfigName, boolean testMode) {
+        LOG.debug("Populating Missing Orgs In CompassV1 " + subscriberConfigName + " testMode = " + testMode);
+        try {
+
+            Connection subscriberTransformConnection = ConnectionManager.getSubscriberTransformNonPooledConnection(subscriberConfigName);
+
+            //get orgs in that subscriber DB
+            Map<UUID, Long> hmOrgs = new HashMap<>();
+
+            String sql = "SELECT service_id, enterprise_id FROM enterprise_organisation_id_map";
+            Statement statement = subscriberTransformConnection.createStatement();
+            ResultSet rs = statement.executeQuery(sql);
+            while (rs.next()) {
+                String s = rs.getString(1);
+                long id = rs.getLong(2);
+                hmOrgs.put(UUID.fromString(s), new Long(id));
+            }
+            LOG.debug("Found " + hmOrgs.size() + " orgs");
+
+            for (UUID serviceId: hmOrgs.keySet()) {
+                Long enterpriseId = hmOrgs.get(serviceId);
+                LOG.debug("Doing service " + serviceId + ", enterprise ID " + enterpriseId);
+
+                /*ServiceDalI serviceDal = DalProvider.factoryServiceDal();
+                Service service = serviceDal.getById(serviceId);*/
+
+                //find the FHIR Organization this is from
+                sql = "SELECT resource_id FROM enterprise_id_map WHERE enterprise_id = " + enterpriseId;
+                rs = statement.executeQuery(sql);
+                if (!rs.next()) {
+                    sql = "SELECT resource_id FROM enterprise_id_map_3 WHERE enterprise_id = " + enterpriseId;
+                    rs = statement.executeQuery(sql);
+                    if (!rs.next()) {
+                        throw new Exception("Failed to find resource ID for service ID " + serviceId + " and enterprise ID " + enterpriseId);
+                    }
+                }
+
+                String resourceId = rs.getString(1);
+                Reference orgRef = ReferenceHelper.createReference(ResourceType.Organization, resourceId);
+
+                //make sure our org is on the CoreXX server we expect and take over any instance mapping
+                orgRef = findNewOrgRefOnCoreDb(subscriberConfigName, orgRef, serviceId, testMode);
+                if (orgRef == null) {
+                    LOG.warn("<<<<<<<<No Organization resource could be found for " + resourceId + ">>>>>>>>>>>>>>>>>>>>>>>>>");
+                    continue;
+                }
+
+                //find the org and work up to find all its parents too
+                List<ResourceWrapper> resourceWrappers = new ArrayList<>();
+
+                while (orgRef != null) {
+
+                    ReferenceComponents comps = ReferenceHelper.getReferenceComponents(orgRef);
+                    if (comps.getResourceType() != ResourceType.Organization) {
+                        throw new Exception("Found non-organisation resource mapping for enterprise ID " + enterpriseId + ": " + resourceId);
+                    }
+                    UUID orgId = UUID.fromString(comps.getId());
+
+                    ResourceDalI resourceDal = DalProvider.factoryResourceDal();
+                    ResourceWrapper wrapper = resourceDal.getCurrentVersion(serviceId, ResourceType.Organization.toString(), orgId);
+                    if (wrapper == null) {
+                        throw new Exception("Failed to find resource wrapper for parent org with resource ID " + resourceId);
+                    }
+
+                    resourceWrappers.add(wrapper);
+
+                    Organization org = (Organization)wrapper.getResource();
+                    if (org.hasPartOf()) {
+                        orgRef = org.getPartOf();
+                    } else {
+                        orgRef = null;
+                    }
+                }
+
+                if (testMode) {
+                    LOG.debug("Found " + resourceWrappers.size() + " orgs");
+                    for (ResourceWrapper wrapper: resourceWrappers) {
+                        Organization org = (Organization)wrapper.getResource();
+                        String odsCode = IdentifierHelper.findOdsCode(org);
+                        LOG.debug("    Got " + org.getName() + " [" + odsCode + "]");
+                    }
+
+                } else {
+                    EnterpriseTransformHelper helper = new EnterpriseTransformHelper(serviceId, null, null, null, subscriberConfigName, resourceWrappers);
+                    org.endeavourhealth.transform.enterprise.outputModels.Organization orgWriter = helper.getOutputContainer().getOrganisations();
+
+                    OrganisationEnterpriseTransformer t = new OrganisationEnterpriseTransformer();
+                    t.transformResources(resourceWrappers, orgWriter, helper);
+
+                    org.endeavourhealth.transform.enterprise.outputModels.OutputContainer output = helper.getOutputContainer();
+                    byte[] bytes = output.writeToZip();
+                    if (bytes == null) {
+                        LOG.debug("Generated NULL bytes");
+
+                    } else {
+                        LOG.debug("Generated " + bytes.length + " bytes");
+
+                        String base64 = Base64.getEncoder().encodeToString(bytes);
+                        UUID batchId = UUID.randomUUID();
+                        EnterpriseFiler.file(batchId, UUID.randomUUID(), base64, subscriberConfigName);
+                    }
+                }
+            }
+
+            statement.close();
+            subscriberTransformConnection.close();
+
+            LOG.debug("Finished Populating Missing Orgs In CompassV1 " + subscriberConfigName);
+        } catch (Throwable t) {
+            LOG.error("", t);
+        }
+
+    }
+
     public static void populateMissingOrgsInCompassV2(String subscriberConfigName, boolean testMode) {
-        LOG.debug("Populating Missing Orgs In Compass " + subscriberConfigName + " testMode = " + testMode);
+        LOG.debug("Populating Missing Orgs In CompassV2 " + subscriberConfigName + " testMode = " + testMode);
         try {
 
             Connection subscriberTransformConnection = ConnectionManager.getSubscriberTransformNonPooledConnection(subscriberConfigName);
@@ -2808,7 +2924,7 @@ public abstract class SpecialRoutines {
             statement.close();
             subscriberTransformConnection.close();
 
-            LOG.debug("Finished Populating Missing Orgs In Compass " + subscriberConfigName);
+            LOG.debug("Finished Populating Missing Orgs In CompassV2 " + subscriberConfigName);
         } catch (Throwable t) {
             LOG.error("", t);
         }
