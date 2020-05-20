@@ -105,8 +105,13 @@ public class MessageTransformOutbound extends PipelineComponent {
                 //retrieve our resources if necessary
                 if (filteredResources == null) {
                     filteredResources = getResources(exchange, batchId, endpoint);
-                    resourceCount = new Integer(filteredResources.size());
                 }
+
+                //add any resources we've previously calculated need adding
+                //this must be done FOR EACH subscriber, as extra resources may be added by the first transform
+                //and we need to pick them up for the subsequent ones
+                addExtraResources(filteredResources, exchange, batchId, endpoint);
+                resourceCount = new Integer(filteredResources.size());
 
                 //if we have resources, then perform the transform
                 String outboundData = null;
@@ -368,27 +373,7 @@ public class MessageTransformOutbound extends PipelineComponent {
     private static List<ResourceWrapper> getResources(Exchange exchange, UUID batchId, String subscriberConfigName) throws Exception {
 
         //get the resources actually in the batch we're transforming
-        ResourceDalI resourceDal = DalProvider.factoryResourceDal();
-        UUID serviceId = exchange.getServiceId();
-
-        List<ResourceWrapper> resources = null;
-
-        //we use a special exchange with a specific header key to bulk populate subscribers
-        String sourceSystem = exchange.getHeader(HeaderKeys.SourceSystem);
-        if (sourceSystem.equals(MessageFormat.DUMMY_SENDER_SOFTWARE_FOR_BULK_TRANSFORM)) {
-
-            ExchangeBatchDalI exchangeBatchDal = DalProvider.factoryExchangeBatchDal();
-            ExchangeBatch exchangeBatch = exchangeBatchDal.getForExchangeAndBatchId(exchange.getId(), batchId);
-            UUID patientId = exchangeBatch.getEdsPatientId();
-            resources = resourceDal.getResourcesByPatient(serviceId, patientId); //passing in a null patient ID will get us the admin resources
-            LOG.debug("Transforming all " + resources.size() + " resources for patient " + patientId + " to populate " + subscriberConfigName);
-
-        } else {
-
-            //if not a special bulk load, then just get the CURRENT VERSION of each resource in our exchange batch
-            resources = resourceDal.getCurrentVersionOfResourcesForBatch(serviceId, batchId);
-            //LOG.trace("Found " + resources.size() + " resources in batch " + batchId);
-        }
+        List<ResourceWrapper> resources = getResourcesInBatch(exchange, batchId, subscriberConfigName);
 
         //if there are no resources, then there won't be any extra resources, so no point wasting time
         //on looking for them or doing any filtering
@@ -396,14 +381,53 @@ public class MessageTransformOutbound extends PipelineComponent {
             return resources;
         }
 
-        UUID exchangeId = exchange.getId();
+        //filter out any patient resources that do not meet the filterElements configuration if
+        //it is present for the subscriber config.  Used to filter FHIR -> subscriber output
+        resources = filterPatientResources(exchange.getServiceId(), resources, subscriberConfigName);
 
-        //then add in any EXTRA resources we've previously calculated we'll need to include
+        return resources;
+    }
+
+    private static void addExtraResources(List<ResourceWrapper> resources, Exchange exchange, UUID batchId, String subscriberConfigName) throws Exception {
+
+        //hash our current resources by type and ID so we know what we've already got
+        //this is required for cases where we have multiple subscribers using the same subscriber_transform DB
+        //as the transform for the first subscriber may detect that extra resources are required, and we need to call
+        //this fn again before invoking the second transform
+        Map<ResourceType, Set<UUID>> hmResourcesGot = new HashMap<>();
+        for (ResourceWrapper w: resources) {
+            ResourceType type = w.getResourceTypeObj();
+            UUID id = w.getResourceId();
+
+            Set<UUID> inner = hmResourcesGot.get(type);
+            if (inner == null) {
+                inner = new HashSet<>();
+                hmResourcesGot.put(type, inner);
+            }
+            inner.add(id);
+        }
+
+        ResourceDalI resourceDal = DalProvider.factoryResourceDal();
         ExchangeBatchExtraResourceDalI exchangeBatchExtraResourceDalI = DalProvider.factoryExchangeBatchExtraResourceDal(subscriberConfigName);
-        Map<ResourceType, List<UUID>> extraReourcesByType = exchangeBatchExtraResourceDalI.findExtraResources(exchangeId, batchId);
-        for (ResourceType resourceType : extraReourcesByType.keySet()) {
-            List<UUID> extraIds = extraReourcesByType.get(resourceType);
-            for (UUID extraId : extraIds) {
+
+        UUID exchangeId = exchange.getId();
+        UUID serviceId = exchange.getServiceId();
+        //int sizeBefore = resources.size();
+
+        Map<ResourceType, List<UUID>> extraResourcesByType = exchangeBatchExtraResourceDalI.findExtraResources(exchangeId, batchId);
+        for (ResourceType resourceType : extraResourcesByType.keySet()) {
+
+            List<UUID> extraIdsRequired = extraResourcesByType.get(resourceType);
+            Set<UUID> idsInMemory = hmResourcesGot.get(resourceType);
+
+            for (UUID extraId : extraIdsRequired) {
+
+                //see if it's already in memory and skip if already present
+                if (idsInMemory != null
+                        && idsInMemory.contains(extraId)) {
+                    continue;
+                }
+
                 ResourceWrapper extraResource = resourceDal.getCurrentVersion(serviceId, resourceType.toString(), extraId);
 
                 //if the resource is null then it means the resource has been deleted and our subscriber transform
@@ -432,9 +456,34 @@ public class MessageTransformOutbound extends PipelineComponent {
             }
         }
 
-        //finally, filter out any patient resources that do not meet the filterElements configuration if
-        //it is present for the subscriber config.  Used to filter FHIR -> subscriber output
-        resources = filterPatientResources(serviceId, resources, subscriberConfigName);
+        //int sizeAfter = resources.size();
+        //LOG.trace("Added " + (sizeAfter - sizeBefore) + " extra resources");
+    }
+
+    private static List<ResourceWrapper> getResourcesInBatch(Exchange exchange, UUID batchId, String subscriberConfigName) throws Exception {
+
+        //get the resources actually in the batch we're transforming
+        ResourceDalI resourceDal = DalProvider.factoryResourceDal();
+        UUID serviceId = exchange.getServiceId();
+
+        List<ResourceWrapper> resources = null;
+
+        //we use a special exchange with a specific header key to bulk populate subscribers
+        String sourceSystem = exchange.getHeader(HeaderKeys.SourceSystem);
+        if (sourceSystem.equals(MessageFormat.DUMMY_SENDER_SOFTWARE_FOR_BULK_TRANSFORM)) {
+
+            ExchangeBatchDalI exchangeBatchDal = DalProvider.factoryExchangeBatchDal();
+            ExchangeBatch exchangeBatch = exchangeBatchDal.getForExchangeAndBatchId(exchange.getId(), batchId);
+            UUID patientId = exchangeBatch.getEdsPatientId();
+            resources = resourceDal.getResourcesByPatient(serviceId, patientId); //passing in a null patient ID will get us the admin resources
+            LOG.debug("Transforming all " + resources.size() + " resources for patient " + patientId + " to populate " + subscriberConfigName);
+
+        } else {
+
+            //if not a special bulk load, then just get the CURRENT VERSION of each resource in our exchange batch
+            resources = resourceDal.getCurrentVersionOfResourcesForBatch(serviceId, batchId);
+            //LOG.trace("Found " + resources.size() + " resources in batch " + batchId);
+        }
 
         return resources;
     }
