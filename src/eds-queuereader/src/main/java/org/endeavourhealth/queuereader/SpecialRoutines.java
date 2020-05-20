@@ -2744,6 +2744,10 @@ public abstract class SpecialRoutines {
 
                 //make sure our org is on the CoreXX server we expect and take over any instance mapping
                 orgRef = findNewOrgRefOnCoreDb(subscriberConfigName, orgRef, serviceId, testMode);
+                if (orgRef == null) {
+                    LOG.warn("<<<<<<<<No Organization resource could be found for " + sourceId + ">>>>>>>>>>>>>>>>>>>>>>>>>");
+                    continue;
+                }
 
                 //find the org and work up to find all its parents too
                 List<ResourceWrapper> resourceWrappers = new ArrayList<>();
@@ -2825,14 +2829,10 @@ public abstract class SpecialRoutines {
 
         LOG.debug("Org doesn't exist at service, so need to take over instance mapping");
 
-        PatientSearchDalI patientSearchDal = DalProvider.factoryPatientSearchDal();
-        List<UUID> patientIds = patientSearchDal.getPatientIds(serviceId, false, 10000);
-        if (patientIds.isEmpty()) {
-            return null;
-        }
-
         Reference newOrgRef = null;
 
+        PatientSearchDalI patientSearchDal = DalProvider.factoryPatientSearchDal();
+        List<UUID> patientIds = patientSearchDal.getPatientIds(serviceId, false, 10000);
         for (UUID patientId: patientIds) {
 
             ResourceDalI resourceRepository = DalProvider.factoryResourceDal();
@@ -2854,6 +2854,11 @@ public abstract class SpecialRoutines {
         }
 
         String newOrgId = ReferenceHelper.getReferenceId(newOrgRef);
+
+        if (newOrgId.equals(oldOrgId)) {
+            LOG.debug("Org ref correct but doesn't exist on DB - reference data is missing???");
+            return null;
+        }
 
         if (testMode) {
             LOG.debug("Would need to take over instance mapping from " + oldOrgId + " -> " + newOrgId);
