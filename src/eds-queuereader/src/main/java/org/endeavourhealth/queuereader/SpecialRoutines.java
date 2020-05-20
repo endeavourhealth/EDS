@@ -24,6 +24,7 @@ import org.endeavourhealth.core.database.dal.audit.models.*;
 import org.endeavourhealth.core.database.dal.eds.PatientSearchDalI;
 import org.endeavourhealth.core.database.dal.ehr.ResourceDalI;
 import org.endeavourhealth.core.database.dal.ehr.models.ResourceWrapper;
+import org.endeavourhealth.core.database.dal.subscriberTransform.SubscriberInstanceMappingDalI;
 import org.endeavourhealth.core.database.dal.subscriberTransform.SubscriberResourceMappingDalI;
 import org.endeavourhealth.core.database.dal.subscriberTransform.models.SubscriberId;
 import org.endeavourhealth.core.database.dal.usermanager.caching.DataSharingAgreementCache;
@@ -32,6 +33,7 @@ import org.endeavourhealth.core.database.dal.usermanager.caching.ProjectCache;
 import org.endeavourhealth.core.database.rdbms.ConnectionManager;
 import org.endeavourhealth.core.database.rdbms.datasharingmanager.models.DataSharingAgreementEntity;
 import org.endeavourhealth.core.database.rdbms.datasharingmanager.models.ProjectEntity;
+import org.endeavourhealth.core.exceptions.TransformException;
 import org.endeavourhealth.core.fhirStorage.FhirResourceHelper;
 import org.endeavourhealth.core.fhirStorage.FhirSerializationHelper;
 import org.endeavourhealth.core.fhirStorage.ServiceInterfaceEndpoint;
@@ -2740,6 +2742,9 @@ public abstract class SpecialRoutines {
                 String sourceId = rs.getString(1);
                 Reference orgRef = ReferenceHelper.createReference(sourceId);
 
+                //make sure our org is on the CoreXX server we expect and take over any instance mapping
+                orgRef = findNewOrgRefOnCoreDb(subscriberConfigName, orgRef, serviceId, testMode);
+
                 //find the org and work up to find all its parents too
                 List<ResourceWrapper> resourceWrappers = new ArrayList<>();
 
@@ -2754,7 +2759,7 @@ public abstract class SpecialRoutines {
                     ResourceDalI resourceDal = DalProvider.factoryResourceDal();
                     ResourceWrapper wrapper = resourceDal.getCurrentVersion(serviceId, ResourceType.Organization.toString(), orgId);
                     if (wrapper == null) {
-                        throw new Exception("Failed to find resource wrapper for source ID " + sourceId);
+                        throw new Exception("Failed to find resource wrapper for parent org with source ID " + sourceId);
                     }
 
                     resourceWrappers.add(wrapper);
@@ -2804,5 +2809,66 @@ public abstract class SpecialRoutines {
             LOG.error("", t);
         }
 
+    }
+
+
+    private static Reference findNewOrgRefOnCoreDb(String subscriberConfigName, Reference oldOrgRef, UUID serviceId, boolean testMode) throws Exception {
+
+        String oldOrgId = ReferenceHelper.getReferenceId(oldOrgRef);
+
+        ResourceDalI resourceDal = DalProvider.factoryResourceDal();
+        ResourceWrapper wrapper = resourceDal.getCurrentVersion(serviceId, ResourceType.Organization.toString(), UUID.fromString(oldOrgId));
+        if (wrapper != null) {
+            LOG.trace("Organization exists at service");
+            return oldOrgRef;
+        }
+
+        LOG.debug("Org doesn't exist at service, so need to take over instance mapping");
+
+        PatientSearchDalI patientSearchDal = DalProvider.factoryPatientSearchDal();
+        List<UUID> patientIds = patientSearchDal.getPatientIds(serviceId, false, 10000);
+        if (patientIds.isEmpty()) {
+            return null;
+        }
+
+        Reference newOrgRef = null;
+
+        for (UUID patientId: patientIds) {
+
+            ResourceDalI resourceRepository = DalProvider.factoryResourceDal();
+            Patient patient = (Patient) resourceRepository.getCurrentVersionAsResource(serviceId, ResourceType.Patient, patientId.toString());
+            if (patient == null) {
+                continue;
+            }
+
+            if (!patient.hasManagingOrganization()) {
+                throw new TransformException("Patient " + patient.getId() + " doesn't have a managing org for service " + serviceId);
+            }
+
+            newOrgRef = patient.getManagingOrganization();
+            break;
+        }
+
+        if (newOrgRef == null) {
+            throw new Exception("Failed to find new org ref from patient records");
+        }
+
+        String newOrgId = ReferenceHelper.getReferenceId(newOrgRef);
+
+        if (testMode) {
+            LOG.debug("Would need to take over instance mapping from " + oldOrgId + " -> " + newOrgId);
+
+        } else {
+
+            LOG.debug("Taking over instance mapping from " + oldOrgId + " -> " + newOrgId);
+
+            //we need to update the subscriber transform DB to make this new org ref the defacto one
+            SubscriberInstanceMappingDalI dal = DalProvider.factorySubscriberInstanceMappingDal(subscriberConfigName);
+            dal.takeOverInstanceMapping(ResourceType.Organization, UUID.fromString(oldOrgId), UUID.fromString(newOrgId));
+
+            LOG.debug("Done");
+        }
+
+        return newOrgRef;
     }
 }
