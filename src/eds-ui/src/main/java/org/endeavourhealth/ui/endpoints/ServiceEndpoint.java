@@ -20,6 +20,7 @@ import org.endeavourhealth.core.database.dal.admin.SystemHelper;
 import org.endeavourhealth.core.database.dal.admin.models.ActiveItem;
 import org.endeavourhealth.core.database.dal.admin.models.Item;
 import org.endeavourhealth.core.database.dal.admin.models.Service;
+import org.endeavourhealth.core.database.dal.audit.ExchangeBatchDalI;
 import org.endeavourhealth.core.database.dal.audit.ExchangeDalI;
 import org.endeavourhealth.core.database.dal.audit.UserAuditDalI;
 import org.endeavourhealth.core.database.dal.audit.models.*;
@@ -407,6 +408,10 @@ public final class ServiceEndpoint extends AbstractEndpoint {
     /**
      * checks the audit trail for a service to make sure there's no data remaining
      * returns a String error message or NULL if OK to delete
+     *
+     * checks to see if the last exchange (for any system ID) was a "delete" that was processed OK -> OK to delete
+     * if not, checks to see if the first exchange has any exchange batches if not -> OK to delete
+     * other wise -> NOT OK to delete
      */
     private String canDeleteService(Service service) throws Exception {
 
@@ -418,9 +423,9 @@ public final class ServiceEndpoint extends AbstractEndpoint {
             return null;
         }
 
+        //check if the last exchange is a DELETE, and if so, make sure it was fully processed
+        boolean lastExchangeWasDelete = false;
         boolean deleteProcessedOk = false;
-        boolean receivedExchanges = false;
-
         for (UUID systemId: systemIds) {
 
             List<Exchange> l = exchangeDal.getExchangesByService(service.getId(), systemId, 1);
@@ -429,30 +434,50 @@ public final class ServiceEndpoint extends AbstractEndpoint {
                 continue;
             }
 
-            receivedExchanges = true;
-            Exchange lastExchange = l.get(0);
-
             //if the last exchange WASN'T one for a delete, then that's wrong
+            Exchange lastExchange = l.get(0);
             String lastExchangeSystem = lastExchange.getHeader(HeaderKeys.SourceSystem);
-            if (!lastExchangeSystem.equals(MessageFormat.DUMMY_SENDER_SOFTWARE_FOR_BULK_DELETE)) {
-                return "Must delete data first";
-            }
+            if (lastExchangeSystem.equals(MessageFormat.DUMMY_SENDER_SOFTWARE_FOR_BULK_DELETE)) {
 
-            //if the last exchange WAS a mass delete, then make sure it's finished first
-            List<ExchangeTransformAudit> transformAudits = exchangeDal.getAllExchangeTransformAudits(service.getId(), systemId, lastExchange.getId());
-            for (ExchangeTransformAudit audit: transformAudits) {
-                if (audit.getEnded() != null
-                        && audit.getErrorXml() == null) {
-                    deleteProcessedOk = true;
+                lastExchangeWasDelete = true;
+
+                //if the last exchange WAS a mass delete, then make sure it's finished first
+                List<ExchangeTransformAudit> transformAudits = exchangeDal.getAllExchangeTransformAudits(service.getId(), systemId, lastExchange.getId());
+                for (ExchangeTransformAudit audit: transformAudits) {
+                    if (audit.getEnded() != null
+                            && audit.getErrorXml() == null) {
+                        deleteProcessedOk = true;
+                    }
                 }
             }
         }
 
         //we create a "delete" exchange for each system, but only send one of them through the queues
         //so check this OUTSIDE the loop on system IDs
-        if (receivedExchanges
-            && !deleteProcessedOk) {
-            return "Delete not finished yet";
+        if (lastExchangeWasDelete) {
+            if (deleteProcessedOk) {
+                //if the delete completed, then let the service be deleted
+                return null;
+            } else {
+                //if the delete hasn't completed, then we can't allow the delete
+                return "Data delete not finished yet";
+            }
+        }
+
+        ExchangeBatchDalI exchangeBatchDal = DalProvider.factoryExchangeBatchDal();
+
+        //if the last exchange wasn't a delete, then verify if we've ever let any data through in the first place
+        for (UUID systemId: systemIds) {
+
+            //just testing the FIRST exchange seems risky, since that's often something we ignore, so sample all of them for safety
+            //but this will most likely just fall over if we ever try to delete a service with more than a few thousand exchanges
+            List<Exchange> exchanges = exchangeDal.getExchangesByService(service.getId(), systemId, Integer.MAX_VALUE);
+            for (Exchange exchange: exchanges) {
+                ExchangeBatch firstBatch = exchangeBatchDal.retrieveFirstForExchangeId(exchange.getId());
+                if (firstBatch != null) {
+                    return "Transformed data must be deleted first";
+                }
+            }
         }
 
         //if we make it here, we're good
