@@ -190,10 +190,7 @@ public class MessageTransformOutbound extends PipelineComponent {
         if (software.equals(MessageFormat.ENTERPRISE_CSV)) {
 
             UUID systemId = exchange.getHeaderAsUuid(HeaderKeys.SenderSystemUuid);
-
-            //have to pass in the exchange body now
-            String body = exchange.getBody();
-            return FhirToEnterpriseCsvTransformer.transformFromFhir(serviceId, systemId, exchangeId, batchId, filteredResources, endpoint, protocolId, body);
+            return FhirToEnterpriseCsvTransformer.transformFromFhir(serviceId, systemId, exchangeId, batchId, filteredResources, endpoint);
 
         } else if (software.equals(MessageFormat.PCR_CSV)) {
 
@@ -205,9 +202,7 @@ public class MessageTransformOutbound extends PipelineComponent {
         } else if (software.equals(MessageFormat.SUBSCRIBER_CSV)) {
 
             UUID systemId = exchange.getHeaderAsUuid(HeaderKeys.SenderSystemUuid);
-            String body = exchange.getBody();
-
-            return FhirToSubscriberCsvTransformer.transformFromFhir(serviceId, systemId, exchangeId, batchId, filteredResources, endpoint, protocolId, body);
+            return FhirToSubscriberCsvTransformer.transformFromFhir(serviceId, systemId, exchangeId, batchId, filteredResources, endpoint);
 
         } else if (software.equals(MessageFormat.JSON_API)) {
             //this is a pull-request message format, so there's no outbound transformation required

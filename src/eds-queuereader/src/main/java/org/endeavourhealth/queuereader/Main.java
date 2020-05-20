@@ -88,6 +88,14 @@ public class Main {
 		ConfigManager.initialize("queuereader", configId);
 
 		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("PopulateMissingOrgsInCompassV2")) {
+
+			String subscriberConfigName = args[1];
+			SpecialRoutines.populateMissingOrgsInCompassV2(subscriberConfigName);
+			System.exit(0);
+		}
+
+		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("DeleteDataFromOldCoreDB")) {
 
 			UUID serviceId = UUID.fromString(args[1]);
