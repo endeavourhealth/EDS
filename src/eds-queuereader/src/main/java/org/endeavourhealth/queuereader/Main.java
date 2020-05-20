@@ -91,7 +91,8 @@ public class Main {
 				&& args[0].equalsIgnoreCase("PopulateMissingOrgsInCompassV2")) {
 
 			String subscriberConfigName = args[1];
-			SpecialRoutines.populateMissingOrgsInCompassV2(subscriberConfigName);
+			boolean testMode = Boolean.parseBoolean(args[2]);
+			SpecialRoutines.populateMissingOrgsInCompassV2(subscriberConfigName, testMode);
 			System.exit(0);
 		}
 

@@ -2700,8 +2700,8 @@ public abstract class SpecialRoutines {
         }
     }
 
-    public static void populateMissingOrgsInCompassV2(String subscriberConfigName) {
-        LOG.debug("Populating Missing Orgs In Compass " + subscriberConfigName);
+    public static void populateMissingOrgsInCompassV2(String subscriberConfigName, boolean testMode) {
+        LOG.debug("Populating Missing Orgs In Compass " + subscriberConfigName + " testMode = " + testMode);
         try {
 
             Connection subscriberTransformConnection = ConnectionManager.getSubscriberTransformNonPooledConnection(subscriberConfigName);
@@ -2723,8 +2723,8 @@ public abstract class SpecialRoutines {
                 Long subscriberId = hmOrgs.get(serviceId);
                 LOG.debug("Doing service " + serviceId + ", subscriber ID " + subscriberId);
 
-                ServiceDalI serviceDal = DalProvider.factoryServiceDal();
-                Service service = serviceDal.getById(serviceId);
+                /*ServiceDalI serviceDal = DalProvider.factoryServiceDal();
+                Service service = serviceDal.getById(serviceId);*/
 
                 //find the FHIR Organization this is from
                 sql = "SELECT source_id FROM subscriber_id_map WHERE subscriber_id = " + subscriberId;
@@ -2767,21 +2767,32 @@ public abstract class SpecialRoutines {
                     }
                 }
 
-                SubscriberTransformHelper helper = new SubscriberTransformHelper(serviceId, null, null, null, subscriberConfigName, resourceWrappers);
-
-                OrganisationTransformer t = new OrganisationTransformer();
-                t.transformResources(resourceWrappers, helper);
-
-                OutputContainer output = helper.getOutputContainer();
-                byte[] bytes = output.writeToZip();
-                if (bytes == null) {
-                    LOG.debug("Generated NULL bytes");
+                if (testMode) {
+                    LOG.debug("Found " + resourceWrappers.size() + " orgs");
+                    for (ResourceWrapper wrapper: resourceWrappers) {
+                        Organization org = (Organization)wrapper.getResource();
+                        String odsCode = IdentifierHelper.findOdsCode(org);
+                        LOG.debug("    Got " + org.getName() + " [" + odsCode + "]");
+                    }
 
                 } else {
-                    LOG.debug("Generated " + bytes.length + " bytes");
-                    String base64 = Base64.getEncoder().encodeToString(bytes);
-                    UUID batchId = UUID.randomUUID();
-                    SubscriberFiler.file(batchId, UUID.randomUUID(), base64, subscriberConfigName);
+                    SubscriberTransformHelper helper = new SubscriberTransformHelper(serviceId, null, null, null, subscriberConfigName, resourceWrappers);
+
+                    OrganisationTransformer t = new OrganisationTransformer();
+                    t.transformResources(resourceWrappers, helper);
+
+                    OutputContainer output = helper.getOutputContainer();
+                    byte[] bytes = output.writeToZip();
+                    if (bytes == null) {
+                        LOG.debug("Generated NULL bytes");
+
+                    } else {
+                        LOG.debug("Generated " + bytes.length + " bytes");
+
+                        String base64 = Base64.getEncoder().encodeToString(bytes);
+                        UUID batchId = UUID.randomUUID();
+                        SubscriberFiler.file(batchId, UUID.randomUUID(), base64, subscriberConfigName);
+                    }
                 }
             }
 
