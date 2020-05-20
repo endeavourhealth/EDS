@@ -15,6 +15,7 @@ import java.util.regex.Pattern;
 public class Main {
     private static final Logger LOG = LoggerFactory.getLogger(Main.class);
 
+
     /**
      * utility to update the various tables in the reference DB
      */
