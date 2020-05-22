@@ -635,4 +635,11 @@ export class ExchangeAuditComponent {
 
 		//vm.$state.go(vm.transition.from());
 	}
+
+	showLast(numExchanges: number) {
+		var vm = this;
+		vm.exchangesToShow = numExchanges;
+
+		vm.refreshExchanges();
+	}
 }
