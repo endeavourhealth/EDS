@@ -146,6 +146,8 @@ public class MessageTransformOutbound extends PipelineComponent {
                     subscriberBatch.setTechnicalInterfaceId(UUID.fromString(technicalInterfaceUuidStr));
 
                     subscriberBatches.add(subscriberBatch);
+
+                    LOG.trace("Written base64 length " + outboundData.length() + " for " + endpoint + " to queued message " + queuedMessageId);
                 }
 
                 //audit the transformation
