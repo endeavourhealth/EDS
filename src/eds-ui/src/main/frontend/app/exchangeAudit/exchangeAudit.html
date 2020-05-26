@@ -40,6 +40,7 @@
                                                 <label>Showing Last:</label>
                                                 <input name="ExchangesToShow" type="number" [(ngModel)]="exchangesToShow" required>
 
+                                                <button type="button" class="btn btn-sm btn-default" (click)="showLast(500)">500</button>
                                                 <button type="button" class="btn btn-sm btn-default" (click)="showLast(1000)">1000</button>
                                                 <button type="button" class="btn btn-sm btn-default" (click)="showLast(10000)">10000</button>
                                             </div>
