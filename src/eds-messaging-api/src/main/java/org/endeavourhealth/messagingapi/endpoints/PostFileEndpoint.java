@@ -20,7 +20,7 @@ import org.apache.commons.io.FileCleaningTracker;
 import org.apache.http.entity.ContentType;
 import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.common.utility.MetricsHelper;
-import org.endeavourhealth.datasharingmanagermodel.models.database.DataProcessingAgreementEntity;
+import org.endeavourhealth.core.database.dal.usermanager.caching.OrganisationCache;
 
 import javax.annotation.security.RolesAllowed;
 import javax.servlet.ServletContext;
@@ -172,9 +172,9 @@ public class PostFileEndpoint {
 			organisationId = parts [0];
 		}
 		try {
-			List<DataProcessingAgreementEntity> matchingDpa = DataProcessingAgreementEntity.getDataProcessingAgreementsForOrganisation(organisationId);
-
-			return matchingDpa.size()>0;
+			return OrganisationCache.doesOrganisationHaveDPA(organisationId);
+			/*List<DataProcessingAgreementEntity> matchingDpa = DataProcessingAgreementEntity.getDataProcessingAgreementsForOrganisation(organisationId);
+			return matchingDpa.size()>0;*/
 		}
 		catch (Exception Ex) {
 			System.out.println("Exception in publisherHasDPA for organisationId ("+organisationId+") : " + Ex.getMessage());

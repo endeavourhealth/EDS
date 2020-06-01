@@ -126,10 +126,7 @@ CREATE TABLE patient_search_local_identifier
 	patient_id char(36) NOT NULL,
 	last_updated timestamp NOT NULL,
 	dt_deleted datetime,
-	CONSTRAINT pk_patient_search_local_identifier PRIMARY KEY (service_id, patient_id, local_id_system, local_id),
-	CONSTRAINT fk_patient_search_local_identifier_patient_id FOREIGN KEY (service_id, patient_id)
-		REFERENCES patient_search (service_id, patient_id) MATCH SIMPLE
-		ON UPDATE NO ACTION ON DELETE NO ACTION
+	CONSTRAINT pk_patient_search_local_identifier PRIMARY KEY (service_id, patient_id, local_id_system, local_id)
 );
 
 -- index so patient search by local ID works in timely fashion

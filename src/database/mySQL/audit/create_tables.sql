@@ -215,8 +215,9 @@ CREATE TABLE subscriber_api_audit (
 ) ROW_FORMAT=COMPRESSED
   KEY_BLOCK_SIZE=8;
 
+create index ix on subscriber_api_audit (user_uuid, timestmp);
 
-
+create index ix2 on subscriber_api_audit (timestmp);
 
 
 

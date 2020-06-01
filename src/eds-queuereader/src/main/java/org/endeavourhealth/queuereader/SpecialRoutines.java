@@ -4,15 +4,24 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.base.Strings;
+import com.google.common.hash.HashCode;
+import com.google.common.hash.HashFunction;
+import com.google.common.hash.Hasher;
+import com.google.common.hash.Hashing;
 import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVPrinter;
+import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.common.fhir.*;
 import org.endeavourhealth.common.utility.FileHelper;
 import org.endeavourhealth.common.utility.JsonSerializer;
+import org.endeavourhealth.common.utility.ThreadPool;
 import org.endeavourhealth.core.application.ApplicationHeartbeatHelper;
 import org.endeavourhealth.core.configuration.PostMessageToExchangeConfig;
+import org.endeavourhealth.core.csv.CsvHelper;
 import org.endeavourhealth.core.database.dal.DalProvider;
 import org.endeavourhealth.core.database.dal.admin.LibraryRepositoryHelper;
 import org.endeavourhealth.core.database.dal.admin.ServiceDalI;
@@ -71,6 +80,9 @@ import java.io.*;
 import java.lang.System;
 import java.net.URI;
 import java.net.URL;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.security.CodeSource;
 import java.security.ProtectionDomain;
 import java.sql.Connection;
@@ -79,6 +91,8 @@ import java.sql.ResultSet;
 import java.sql.Statement;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -2991,5 +3005,269 @@ public abstract class SpecialRoutines {
         }
 
         return newOrgRef;
+    }
+
+    public static void testHashedFileFilteringForSRCode(String filePath, String uniqueKey) {
+        LOG.info("Testing Hashed File Filtering for SRCode using " + filePath);
+        try {
+
+
+            //HashFunction hf = Hashing.md5();
+            //HashFunction hf = Hashing.murmur3_128();
+            HashFunction hf = Hashing.sha512();
+
+            Hasher hasher = hf.newHasher();
+            hasher.putString(filePath, Charset.defaultCharset());
+            HashCode hc = hasher.hash();
+            int fileUniqueId = hc.asInt();
+
+            //copy file to local file
+            String name = FilenameUtils.getName(filePath);
+            String srcTempName = "TMP_SRC_" + name;
+            String dstTempName = "TMP_DST_" + name;
+
+            File srcFile = new File(srcTempName);
+            File dstFile = new File(dstTempName);
+
+            InputStream is = FileHelper.readFileFromSharedStorage(filePath);
+            Files.copy(is, srcFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            is.close();
+            LOG.debug("Copied " + srcFile.length() + "byte file from S3");
+
+            CSVParser parser = CSVParser.parse(srcFile, Charset.defaultCharset(), CSVFormat.DEFAULT.withHeader());
+            Map<String, Integer> headers = parser.getHeaderMap();
+            if (!headers.containsKey(uniqueKey)) {
+                LOG.debug("Headers found: " + headers);
+                throw new Exception("Couldn't find unique key " + uniqueKey);
+            }
+
+            String[] headerArray = CsvHelper.getHeaderMapAsArray(parser);
+            int uniqueKeyIndex = headers.get(uniqueKey).intValue();
+
+            Map<String, String> hmHashes = new ConcurrentHashMap<>();
+
+            LOG.debug("Starting hash calculations");
+
+            int done = 0;
+            Iterator<CSVRecord> iterator = parser.iterator();
+            while (iterator.hasNext()) {
+                CSVRecord record = iterator.next();
+
+                String uniqueVal = record.get(uniqueKey);
+
+                Hasher hashser = hf.newHasher();
+
+                int size = record.size();
+                for (int i=0; i<size; i++) {
+                    if (i == uniqueKeyIndex) {
+                        continue;
+                    }
+
+                    String val = record.get(i);
+                    hashser.putString(val, Charset.defaultCharset());
+                }
+
+                hc = hashser.hash();
+                String hashString = hc.toString();
+
+                if (hmHashes.containsKey(uniqueVal)) {
+                    LOG.error("Duplicate unique value [" + uniqueVal + "]");
+                }
+                hmHashes.put(uniqueVal, hashString);
+
+                done ++;
+                if (done % 1000 == 0) {
+                    LOG.debug("Done " + done);
+                }
+            }
+
+            parser.close();
+
+            LOG.debug("Finished hash calculations for " + hmHashes.size());
+
+            //hit DB for each record
+            int threadPoolSize = 10;
+            ThreadPool threadPool = new ThreadPool(threadPoolSize, 1000, "Tester");
+            Map<String, String> batch = new HashMap<>();
+
+            for (String uniqueVal: hmHashes.keySet()) {
+                String hash = hmHashes.get(uniqueVal);
+
+                batch.put(uniqueVal, hash);
+
+                if (batch.size() > TransformConfig.instance().getResourceSaveBatchSize()) {
+                    threadPool.submit(new FindHashForBatchCallable(fileUniqueId, batch, hmHashes));
+                    batch = new HashMap<>();
+                }
+            }
+            if (!batch.isEmpty()) {
+                threadPool.submit(new FindHashForBatchCallable(fileUniqueId, batch, hmHashes));
+                batch = new HashMap<>();
+            }
+            threadPool.waitUntilEmpty();
+            LOG.debug("Finished looking for hashes on DB, filtering down to " + hmHashes.size());
+
+            //filter file
+            CSVFormat format = CSVFormat.DEFAULT.withHeader(headerArray);
+
+            FileOutputStream fos = new FileOutputStream(dstFile);
+            OutputStreamWriter osw = new OutputStreamWriter(fos);
+            BufferedWriter bufferedWriter = new BufferedWriter(osw);
+            CSVPrinter csvPrinter = new CSVPrinter(bufferedWriter, format);
+
+            parser = CSVParser.parse(srcFile, Charset.defaultCharset(), CSVFormat.DEFAULT.withHeader());
+
+            while (iterator.hasNext()) {
+                CSVRecord record = iterator.next();
+
+                String uniqueVal = record.get(uniqueKey);
+                if (hmHashes.containsKey(uniqueVal)) {
+                    csvPrinter.printRecord(record);
+                }
+            }
+
+            parser.close();
+            csvPrinter.close();
+            LOG.debug("Finished filtering file with " + hmHashes.size() + " records");
+
+            //store hashes in DB
+            batch = new HashMap<>();
+
+            for (String uniqueVal: hmHashes.keySet()) {
+                String hash = hmHashes.get(uniqueVal);
+
+                batch.put(uniqueVal, hash);
+
+                if (batch.size() > TransformConfig.instance().getResourceSaveBatchSize()) {
+                    threadPool.submit(new SaveHashForBatchCallable(fileUniqueId, batch));
+                    batch = new HashMap<>();
+                }
+            }
+            if (!batch.isEmpty()) {
+                threadPool.submit(new SaveHashForBatchCallable(fileUniqueId, batch));
+                batch = new HashMap<>();
+            }
+            threadPool.waitUntilEmpty();
+            LOG.debug("Finished saving hashes to DB");
+
+            //delete all files
+            srcFile.delete();
+            dstFile.delete();
+
+            LOG.info("Finished Testing Hashed File Filtering for SRCode using " + filePath);
+        } catch (Throwable t) {
+            LOG.error("", t);
+        }
+
+    }
+
+    static class SaveHashForBatchCallable implements Callable {
+
+        private int fileUniqueId;
+        private Map<String, String> batch;
+
+        public SaveHashForBatchCallable(int fileUniqueId, Map<String, String> batch) {
+            this.fileUniqueId = fileUniqueId;
+            this.batch = batch;
+        }
+
+        @Override
+        public Object call() throws Exception {
+
+            try {
+                Connection connection = ConnectionManager.getEdsConnection();
+
+                String sql = "INSERT INTO tmp.file_record_hash (file_id, record_id, record_hash) VALUES (?, ?, ?)"
+                        + " ON DUPLICATE KEY UPDATE"
+                        + " record_hash = VALUES(record_hash)";
+                PreparedStatement ps = connection.prepareStatement(sql);
+
+                for (String uniqueId: batch.keySet()) {
+                    String hash = batch.get(uniqueId);
+
+                    int col = 1;
+                    ps.setInt(col++, fileUniqueId);
+                    ps.setString(col++, uniqueId);
+                    ps.setString(col++, hash);
+                    ps.addBatch();
+                }
+
+                ps.executeBatch();
+                connection.commit();
+
+                ps.close();
+                connection.close();
+
+            } catch (Throwable t) {
+                LOG.error("", t);
+            }
+
+            return null;
+        }
+    }
+
+    static class FindHashForBatchCallable implements Callable {
+
+        private int fileUniqueId;
+        private Map<String, String> batch;
+        private Map<String, String> hmHashs;
+
+        public FindHashForBatchCallable(int fileUniqueId, Map<String, String> batch, Map<String, String> hmHashs) {
+            this.fileUniqueId = fileUniqueId;
+            this.batch = batch;
+            this.hmHashs = hmHashs;
+        }
+
+
+        @Override
+        public Object call() throws Exception {
+            try {
+                Connection connection = ConnectionManager.getEdsConnection();
+
+                String sql = "SELECT record_id, record_hash FROM tmp.file_record_hash"
+                        + " WHERE file_id = ? AND record_id IN (";
+                for (int i=0; i<batch.size(); i++) {
+                    if (i > 0) {
+                        sql += ", ";
+                    }
+                    sql += "?";
+                }
+                sql += ")";
+                PreparedStatement ps = connection.prepareStatement(sql);
+
+                int col = 1;
+                ps.setInt(col++, fileUniqueId);
+                for (String uniqueId: batch.keySet()) {
+                    ps.setString(col++, uniqueId);
+                }
+
+                ResultSet rs = ps.executeQuery();
+
+                Map<String, String> hmResults = new HashMap<>();
+                while (rs.next()) {
+                    String recordId = rs.getString(1);
+                    String hash = rs.getString(2);
+                    hmResults.put(recordId, hash);
+                }
+
+                ps.close();
+                connection.close();
+
+                for (String uniqueId: batch.keySet()) {
+                    String newHash = batch.get(uniqueId);
+                    String dbHash = hmResults.get(uniqueId);
+
+                    if (dbHash != null
+                            && dbHash.equals(newHash)) {
+                        hmHashs.remove(uniqueId);
+                    }
+                }
+
+            } catch (Throwable t) {
+                LOG.error("", t);
+            }
+
+            return null;
+        }
     }
 }

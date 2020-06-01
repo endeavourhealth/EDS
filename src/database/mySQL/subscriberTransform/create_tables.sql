@@ -25,6 +25,7 @@ DROP TABLE IF EXISTS subscriber_id_map;
 DROP TABLE IF EXISTS subscriber_id_map_3;
 DROP TABLE IF EXISTS subscriber_pseudo_id_map;
 DROP TABLE IF EXISTS pseudo_id_audit;
+DROP TABLE IF EXISTS patient_version_sent;
 
 CREATE TABLE enterprise_id_map
 (
@@ -263,10 +264,7 @@ CREATE TABLE code_set_codes
   read2_concept_id varchar(12) COLLATE utf8_bin,
   ctv3_concept_id varchar(12) COLLATE utf8_bin,
   sct_concept_id varchar (18),
-  CONSTRAINT pk_code_set PRIMARY KEY (code_set_id, read2_concept_id, ctv3_concept_id, sct_concept_id),
-  CONSTRAINT code_set_codes_code_set_id
-  FOREIGN KEY (code_set_id)
-  REFERENCES code_set (id)
+  CONSTRAINT pk_code_set PRIMARY KEY (code_set_id, read2_concept_id, ctv3_concept_id, sct_concept_id)
 );
 
 CREATE TABLE subscriber_id_map
@@ -321,3 +319,11 @@ CREATE TABLE pseudo_id_audit (
 ) COMMENT 'audit of all pseudo IDs ever generated and what from';
 
 CREATE INDEX ix ON pseudo_id_audit (pseudo_id);
+
+create table patient_version_sent (
+	patient_id char(36) COMMENT 'FHIR Patient resource UUID',
+    subscriber_config_name varchar(50) COMMENT 'necessary for when multiple feeds use the same subscriber_transform DB',
+    dt_version_sent datetime COMMENT 'datetime of the FHIR Patient version',
+    version_id char(36) COMMENT 'UUID of the FHIR Patient version',
+	CONSTRAINT pk_patient_version_sent PRIMARY KEY (patient_id, subscriber_config_name)
+) COMMENT 'records the specific version of the Patient resource last sent to the the subscriber';

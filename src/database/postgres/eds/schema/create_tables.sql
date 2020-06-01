@@ -78,10 +78,7 @@ CREATE TABLE public.patient_search_local_identifier
   local_id_system character varying(1000) NOT NULL,
   patient_id character(36) NOT NULL,
   last_updated timestamp without time zone NOT NULL,
-  CONSTRAINT pk_patient_search_local_identifier PRIMARY KEY (service_id, system_id, patient_id, local_id_system, local_id),
-  CONSTRAINT fk_patient_search_local_identifier_patient_id FOREIGN KEY (service_id, system_id, patient_id)
-      REFERENCES public.patient_search (service_id, system_id, patient_id) MATCH SIMPLE
-      ON UPDATE NO ACTION ON DELETE NO ACTION
+  CONSTRAINT pk_patient_search_local_identifier PRIMARY KEY (service_id, system_id, patient_id, local_id_system, local_id)
 )
 WITH (
   OIDS=FALSE

@@ -88,6 +88,15 @@ public class Main {
 		ConfigManager.initialize("queuereader", configId);
 
 		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("TestHashedFileFilteringForSRCode")) {
+
+			String filePath = args[1];
+			String uniqueKey = args[2];
+			SpecialRoutines.testHashedFileFilteringForSRCode(filePath, uniqueKey);
+			System.exit(0);
+		}
+
+		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("PopulateMissingOrgsInCompassV1")) {
 
 			String subscriberConfigName = args[1];

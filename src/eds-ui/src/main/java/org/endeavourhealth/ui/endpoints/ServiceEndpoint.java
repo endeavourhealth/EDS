@@ -1196,7 +1196,7 @@ public final class ServiceEndpoint extends AbstractEndpoint {
 
         try {
 
-            Boolean b = OrganisationCache.doesOrganisationHaveDPA(odsCode);
+            boolean b = OrganisationCache.doesOrganisationHaveDPA(odsCode);
             obj.put("hasDPA", b);
 
             List<DataSharingAgreementEntity> publisherDsasList = DataSharingAgreementCache.getAllDSAsForPublisherOrg(odsCode);

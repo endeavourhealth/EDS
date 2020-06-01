@@ -57,11 +57,6 @@
         </dependency>
 
         <dependency>
-            <groupId>org.endeavourhealth.dataSharingManager</groupId>
-            <artifactId>Models</artifactId>
-        </dependency>
-
-        <dependency>
             <groupId>org.endeavourhealth.common</groupId>
             <artifactId>utility</artifactId>
         </dependency>
