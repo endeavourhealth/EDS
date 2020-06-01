@@ -37,7 +37,7 @@ import java.util.*;
 public class OpenEnvelope extends PipelineComponent {
 	private static final Logger LOG = LoggerFactory.getLogger(OpenEnvelope.class);
 
-	private static final String TAG_BULK = "Bulk";
+	private static final String TAG_BULK = "Bulk received";
 
 	private OpenEnvelopeConfig config;
 
