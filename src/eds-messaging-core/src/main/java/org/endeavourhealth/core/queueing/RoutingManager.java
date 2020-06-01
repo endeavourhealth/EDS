@@ -95,43 +95,4 @@ public class RoutingManager implements ICache {
 		cachedRoutingsByExchangeName = null;
 	}
 
-	/*public String getRoutingKeyForIdentifier(String identifier) {
-		RouteGroup[] routingMap = getRoutingMap();
-
-		for (RouteGroup routeGroup : routingMap) {
-			if (Pattern.matches(routeGroup.getRegex(), identifier)) {
-				//LOG.debug("Routing key [" + routeGroup.getRouteKey()+ "] found for identifier [" + identifier + "]");
-				return routeGroup.getRouteKey();
-			}
-		}
-
-		LOG.error("No routing key found for identifier [" + identifier + "] - set to [Unknown]");
-		return "Unknown";
-	}
-
-	private RouteGroup[] getRoutingMap() {
-		if (routingMap == null) {
-			String routings = ConfigManager.getConfiguration("routings");
-
-			try {
-				routingMap = ObjectMapperPool.getInstance().readValue(routings, RouteGroup[].class);
-				LOG.debug("Routing table loaded : " + routings);
-			}
-			catch (Exception e) {
-				LOG.error("Error reading routing config, falling back to defaults", e);
-				routingMap = new RouteGroup[]{
-						new RouteGroup("Default A-M", "Default fallback group, initial character A-M", "A-M", "[A-M].*"),
-						new RouteGroup("Default A-Z", "Default fallback group, initial character N-Z", "N-Z", "[N-Z].*"),
-						new RouteGroup("Fallback", "Default fallback group, all remaining", "Fallback", ".*"),
-						// Any others will fall back to the "Unknown" routing key
-				};
-			}
-		}
-
-		return routingMap;
-	}
-
-	public void clearCache() {
-		routingMap = null;
-	}*/
 }
