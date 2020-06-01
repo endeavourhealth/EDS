@@ -3076,7 +3076,7 @@ public abstract class SpecialRoutines {
                 hmHashes.put(new StringMemorySaver(uniqueVal), new StringMemorySaver(hashString));
 
                 done ++;
-                if (done % 10000 == 0) {
+                if (done % 100000 == 0) {
                     LOG.debug("Done " + done);
                 }
             }
