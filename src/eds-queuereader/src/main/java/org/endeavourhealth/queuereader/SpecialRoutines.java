@@ -3044,7 +3044,7 @@ public abstract class SpecialRoutines {
             String[] headerArray = CsvHelper.getHeaderMapAsArray(parser);
             int uniqueKeyIndex = headers.get(uniqueKey).intValue();
 
-            Map<String, String> hmHashes = new ConcurrentHashMap<>();
+            Map<StringMemorySaver, StringMemorySaver> hmHashes = new ConcurrentHashMap<>();
 
             LOG.debug("Starting hash calculations");
 
@@ -3073,10 +3073,10 @@ public abstract class SpecialRoutines {
                 if (hmHashes.containsKey(uniqueVal)) {
                     LOG.error("Duplicate unique value [" + uniqueVal + "]");
                 }
-                hmHashes.put(uniqueVal, hashString);
+                hmHashes.put(new StringMemorySaver(uniqueVal), new StringMemorySaver(hashString));
 
                 done ++;
-                if (done % 1000 == 0) {
+                if (done % 10000 == 0) {
                     LOG.debug("Done " + done);
                 }
             }
@@ -3090,10 +3090,10 @@ public abstract class SpecialRoutines {
             ThreadPool threadPool = new ThreadPool(threadPoolSize, 1000, "Tester");
             Map<String, String> batch = new HashMap<>();
 
-            for (String uniqueVal: hmHashes.keySet()) {
-                String hash = hmHashes.get(uniqueVal);
+            for (StringMemorySaver uniqueVal: hmHashes.keySet()) {
+                StringMemorySaver hash = hmHashes.get(uniqueVal);
 
-                batch.put(uniqueVal, hash);
+                batch.put(uniqueVal.toString(), hash.toString());
 
                 if (batch.size() > TransformConfig.instance().getResourceSaveBatchSize()) {
                     threadPool.submit(new FindHashForBatchCallable(fileUniqueId, batch, hmHashes));
@@ -3121,7 +3121,7 @@ public abstract class SpecialRoutines {
                 CSVRecord record = iterator.next();
 
                 String uniqueVal = record.get(uniqueKey);
-                if (hmHashes.containsKey(uniqueVal)) {
+                if (hmHashes.containsKey(new StringMemorySaver(uniqueVal))) {
                     csvPrinter.printRecord(record);
                 }
             }
@@ -3133,10 +3133,10 @@ public abstract class SpecialRoutines {
             //store hashes in DB
             batch = new HashMap<>();
 
-            for (String uniqueVal: hmHashes.keySet()) {
-                String hash = hmHashes.get(uniqueVal);
+            for (StringMemorySaver uniqueVal: hmHashes.keySet()) {
+                StringMemorySaver hash = hmHashes.get(uniqueVal);
 
-                batch.put(uniqueVal, hash);
+                batch.put(uniqueVal.toString(), hash.toString());
 
                 if (batch.size() > TransformConfig.instance().getResourceSaveBatchSize()) {
                     threadPool.submit(new SaveHashForBatchCallable(fileUniqueId, batch));
@@ -3210,9 +3210,9 @@ public abstract class SpecialRoutines {
 
         private int fileUniqueId;
         private Map<String, String> batch;
-        private Map<String, String> hmHashs;
+        private Map<StringMemorySaver, StringMemorySaver> hmHashs;
 
-        public FindHashForBatchCallable(int fileUniqueId, Map<String, String> batch, Map<String, String> hmHashs) {
+        public FindHashForBatchCallable(int fileUniqueId, Map<String, String> batch, Map<StringMemorySaver, StringMemorySaver> hmHashs) {
             this.fileUniqueId = fileUniqueId;
             this.batch = batch;
             this.hmHashs = hmHashs;
@@ -3259,7 +3259,7 @@ public abstract class SpecialRoutines {
 
                     if (dbHash != null
                             && dbHash.equals(newHash)) {
-                        hmHashs.remove(uniqueId);
+                        hmHashs.remove(new StringMemorySaver(uniqueId));
                     }
                 }
 
