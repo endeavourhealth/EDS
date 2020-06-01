@@ -18,7 +18,6 @@ import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.common.fhir.*;
 import org.endeavourhealth.common.utility.FileHelper;
 import org.endeavourhealth.common.utility.JsonSerializer;
-import org.endeavourhealth.common.utility.ThreadPool;
 import org.endeavourhealth.core.application.ApplicationHeartbeatHelper;
 import org.endeavourhealth.core.configuration.PostMessageToExchangeConfig;
 import org.endeavourhealth.core.csv.CsvHelper;
@@ -91,8 +90,6 @@ import java.sql.ResultSet;
 import java.sql.Statement;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -3007,7 +3004,7 @@ public abstract class SpecialRoutines {
         return newOrgRef;
     }
 
-    public static void testHashedFileFilteringForSRCode(String filePath, String uniqueKey) {
+    /*public static void testHashedFileFilteringForSRCode(String filePath, String uniqueKey) {
         LOG.info("Testing Hashed File Filtering for SRCode using " + filePath);
         try {
 
@@ -3269,5 +3266,224 @@ public abstract class SpecialRoutines {
 
             return null;
         }
+    }*/
+
+    public static void testHashedFileFilteringForSRCode(String filePath, String uniqueKey) {
+        LOG.info("Testing Hashed File Filtering for SRCode using " + filePath);
+        try {
+
+
+            //HashFunction hf = Hashing.md5();
+            //HashFunction hf = Hashing.murmur3_128();
+            HashFunction hf = Hashing.sha512();
+
+            //copy file to local file
+            String name = FilenameUtils.getName(filePath);
+            String srcTempName = "TMP_SRC_" + name;
+            String dstTempName = "TMP_DST_" + name;
+
+            File srcFile = new File(srcTempName);
+            File dstFile = new File(dstTempName);
+
+            InputStream is = FileHelper.readFileFromSharedStorage(filePath);
+            Files.copy(is, srcFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            is.close();
+            LOG.debug("Copied " + srcFile.length() + "byte file from S3");
+
+            CSVParser parser = CSVParser.parse(srcFile, Charset.defaultCharset(), CSVFormat.DEFAULT.withHeader());
+            Map<String, Integer> headers = parser.getHeaderMap();
+            if (!headers.containsKey(uniqueKey)) {
+                LOG.debug("Headers found: " + headers);
+                throw new Exception("Couldn't find unique key " + uniqueKey);
+            }
+
+            String[] headerArray = CsvHelper.getHeaderMapAsArray(parser);
+            int uniqueKeyIndex = headers.get(uniqueKey).intValue();
+
+            LOG.debug("Starting hash calculations");
+
+            String hashTempName = "TMP_HSH_" + name;
+            File hashFile = new File(hashTempName);
+            FileOutputStream fos = new FileOutputStream(hashFile);
+            OutputStreamWriter osw = new OutputStreamWriter(fos);
+            BufferedWriter bufferedWriter = new BufferedWriter(osw);
+            CSVPrinter csvPrinter = new CSVPrinter(bufferedWriter, CSVFormat.DEFAULT.withHeader("record_id", "record_hash"));
+
+            int done = 0;
+            Iterator<CSVRecord> iterator = parser.iterator();
+            while (iterator.hasNext()) {
+                CSVRecord record = iterator.next();
+
+                String uniqueVal = record.get(uniqueKey);
+
+                Hasher hashser = hf.newHasher();
+
+                int size = record.size();
+                for (int i=0; i<size; i++) {
+                    if (i == uniqueKeyIndex) {
+                        continue;
+                    }
+
+                    String val = record.get(i);
+                    hashser.putString(val, Charset.defaultCharset());
+                }
+
+                HashCode hc = hashser.hash();
+                String hashString = hc.toString();
+
+                csvPrinter.printRecord(uniqueVal, hashString);
+
+                done ++;
+                if (done % 100000 == 0) {
+                    LOG.debug("Done " + done);
+                }
+            }
+
+            csvPrinter.close();
+            parser.close();
+
+            LOG.debug("Finished hash calculations for " + done + " records to " + hashFile);
+
+            Set<StringMemorySaver> hsUniqueIdsToKeep = new HashSet<>();
+
+            String tempTableName = ConnectionManager.generateTempTableName(FilenameUtils.getBaseName(filePath));
+
+
+            //load into TEMP table
+            Connection connection = ConnectionManager.getEdsNonPooledConnection();
+            try {
+                //turn on auto commit so we don't need to separately commit these large SQL operations
+                connection.setAutoCommit(true);
+
+                //create a temporary table to load the data into
+                LOG.debug("Loading " + hashFile + " into " + tempTableName);
+                String sql = "CREATE TABLE " + tempTableName + " ("
+                        + "record_id varchar(255), "
+                        + "record_hash char(128), "
+                        + "key_exists boolean DEFAULT FALSE, "
+                        + "hash_matches boolean DEFAULT FALSE, "
+                        + "CONSTRAINT pk PRIMARY KEY (record_id), "
+                        + "KEY ix_key_exists (key_exists, hash_matches), "
+                        + "KEY ix_hash_matches (hash_matches))";
+                Statement statement = connection.createStatement(); //one-off SQL due to table name, so don't use prepared statement
+                statement.executeUpdate(sql);
+                statement.close();
+
+                //bulk load temp table, adding record number as we go
+                LOG.debug("Starting bulk load into " + tempTableName);
+                statement = connection.createStatement(); //one-off SQL due to table name, so don't use prepared statement
+                sql = "LOAD DATA LOCAL INFILE '" + hashFile.getAbsolutePath().replace("\\", "\\\\") + "'"
+                        + " INTO TABLE " + tempTableName
+                        + " FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '\\\"'"
+                        + " LINES TERMINATED BY '\\r\\n'"
+                        + " IGNORE 1 LINES";
+                statement.executeUpdate(sql);
+                statement.close();
+
+                //work out which records already exist in the target table
+                LOG.debug("Finding records that exist in file_record_hash");
+                sql = "UPDATE " + tempTableName + " s"
+                        + " INNER JOIN tmp.file_record_hash t"
+                        + " ON t.record_id = s.record_id"
+                        + " SET s.key_exists = true,"
+                        + " s.hash_matches = IF (s.record_hash = t.record_hash, true, false)";
+                statement = connection.createStatement(); //one-off SQL due to table name, so don't use prepared statement
+                statement.executeUpdate(sql);
+                statement.close();
+
+                LOG.debug("Selecting IDs with different hashes");
+                sql = "SELECT record_id FROM " + tempTableName + " s"
+                        + " WHERE hash_matches = false";
+                statement = connection.createStatement(); //one-off SQL due to table name, so don't use prepared statement
+                statement.setFetchSize(10000);
+                ResultSet rs = statement.executeQuery(sql);
+                while (rs.next()) {
+                    String id = rs.getString(1);
+                    hsUniqueIdsToKeep.add(new StringMemorySaver(id));
+                }
+
+            } finally {
+                //MUST change this back to false
+                connection.setAutoCommit(false);
+                connection.close();
+            }
+            LOG.debug("Found " + hsUniqueIdsToKeep.size() + " records to retain");
+
+
+            //filter file
+            CSVFormat format = CSVFormat.DEFAULT.withHeader(headerArray);
+
+            fos = new FileOutputStream(dstFile);
+            osw = new OutputStreamWriter(fos);
+            bufferedWriter = new BufferedWriter(osw);
+            csvPrinter = new CSVPrinter(bufferedWriter, format);
+
+            parser = CSVParser.parse(srcFile, Charset.defaultCharset(), CSVFormat.DEFAULT.withHeader());
+
+            while (iterator.hasNext()) {
+                CSVRecord record = iterator.next();
+
+                String uniqueVal = record.get(uniqueKey);
+                if (hsUniqueIdsToKeep.contains(new StringMemorySaver(uniqueVal))) {
+                    csvPrinter.printRecord(record);
+                }
+            }
+
+            parser.close();
+            csvPrinter.close();
+            LOG.debug("Finished filtering file with " + hsUniqueIdsToKeep.size() + " records");
+
+            connection = ConnectionManager.getEdsNonPooledConnection();
+            try {
+                //turn on auto commit so we don't need to separately commit these large SQL operations
+                connection.setAutoCommit(true);
+
+                //insert records into the target table where the staging has new records
+                //LOG.debug("Copying new records into target table tpp_staff_member_profile");
+                String sql = "INSERT IGNORE INTO tmp.file_record_hash (record_id, record_hash)"
+                        + " SELECT record_id, record_hash"
+                        + " FROM " + tempTableName
+                        + " WHERE key_exists = false";
+                Statement statement = connection.createStatement(); //one-off SQL due to table name, so don't use prepared statement
+                statement.executeUpdate(sql);
+                statement.close();
+
+                //update any records that previously existed, but have a changed term
+                //LOG.debug("Updating existing records in target table tpp_staff_member_profile");
+                sql = "UPDATE tmp.file_record_hash t"
+                        + " INNER JOIN " + tempTableName + " s"
+                        + " ON t.record_id = s.record_id"
+                        + " SET t.record_hash = s.record_hash"
+                        + " WHERE s.hash_matches = false";
+                statement = connection.createStatement(); //one-off SQL due to table name, so don't use prepared statement
+                statement.executeUpdate(sql);
+                statement.close();
+
+                //delete the temp table
+                //LOG.debug("Deleting temp table");
+                sql = "DROP TABLE " + tempTableName;
+                statement = connection.createStatement(); //one-off SQL due to table name, so don't use prepared statement
+                statement.executeUpdate(sql);
+                statement.close();
+
+
+            } finally {
+                //MUST change this back to false
+                connection.setAutoCommit(false);
+                connection.close();
+            }
+
+            LOG.debug("Finished saving hashes to DB");
+
+            //delete all files
+            srcFile.delete();
+            hashFile.delete();
+            dstFile.delete();
+
+            LOG.info("Finished Testing Hashed File Filtering for SRCode using " + filePath);
+        } catch (Throwable t) {
+            LOG.error("", t);
+        }
+
     }
 }
