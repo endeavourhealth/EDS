@@ -3288,7 +3288,7 @@ public abstract class SpecialRoutines {
             InputStream is = FileHelper.readFileFromSharedStorage(filePath);
             Files.copy(is, srcFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
             is.close();
-            LOG.debug("Copied " + srcFile.length() + "byte file from S3");
+            LOG.debug("Copied " + srcFile.length() + " byte file from S3");
 
             CSVParser parser = CSVParser.parse(srcFile, Charset.defaultCharset(), CSVFormat.DEFAULT.withHeader());
             Map<String, Integer> headers = parser.getHeaderMap();
@@ -3334,7 +3334,7 @@ public abstract class SpecialRoutines {
                 csvPrinter.printRecord(uniqueVal, hashString);
 
                 done ++;
-                if (done % 100000 == 0) {
+                if (done % 200000 == 0) {
                     LOG.debug("Done " + done);
                 }
             }
@@ -3363,8 +3363,9 @@ public abstract class SpecialRoutines {
                         + "key_exists boolean DEFAULT FALSE, "
                         + "hash_matches boolean DEFAULT FALSE, "
                         + "CONSTRAINT pk PRIMARY KEY (record_id), "
-                        + "KEY ix_key_exists (key_exists, hash_matches), "
-                        + "KEY ix_hash_matches (hash_matches))";
+                        + "KEY ix_id_hash (record_id, record_hash), "
+                        + "KEY ix_exists_matches (key_exists, hash_matches), "
+                        + "KEY ix_matches (hash_matches))";
                 Statement statement = connection.createStatement(); //one-off SQL due to table name, so don't use prepared statement
                 statement.executeUpdate(sql);
                 statement.close();
@@ -3438,29 +3439,29 @@ public abstract class SpecialRoutines {
                 //turn on auto commit so we don't need to separately commit these large SQL operations
                 connection.setAutoCommit(true);
 
-                //insert records into the target table where the staging has new records
-                //LOG.debug("Copying new records into target table tpp_staff_member_profile");
-                String sql = "INSERT IGNORE INTO tmp.file_record_hash (record_id, record_hash)"
-                        + " SELECT record_id, record_hash"
-                        + " FROM " + tempTableName
-                        + " WHERE key_exists = false";
-                Statement statement = connection.createStatement(); //one-off SQL due to table name, so don't use prepared statement
-                statement.executeUpdate(sql);
-                statement.close();
-
                 //update any records that previously existed, but have a changed term
-                //LOG.debug("Updating existing records in target table tpp_staff_member_profile");
-                sql = "UPDATE tmp.file_record_hash t"
+                LOG.debug("Updating existing records in target table file_record_hash");
+                String sql = "UPDATE tmp.file_record_hash t"
                         + " INNER JOIN " + tempTableName + " s"
                         + " ON t.record_id = s.record_id"
                         + " SET t.record_hash = s.record_hash"
                         + " WHERE s.hash_matches = false";
+                Statement statement = connection.createStatement(); //one-off SQL due to table name, so don't use prepared statement
+                statement.executeUpdate(sql);
+                statement.close();
+
+                //insert records into the target table where the staging has new records
+                LOG.debug("Inserting new records in target table file_record_hash");
+                sql = "INSERT IGNORE INTO tmp.file_record_hash (record_id, record_hash)"
+                        + " SELECT record_id, record_hash"
+                        + " FROM " + tempTableName
+                        + " WHERE key_exists = false";
                 statement = connection.createStatement(); //one-off SQL due to table name, so don't use prepared statement
                 statement.executeUpdate(sql);
                 statement.close();
 
                 //delete the temp table
-                //LOG.debug("Deleting temp table");
+                LOG.debug("Deleting temp table");
                 sql = "DROP TABLE " + tempTableName;
                 statement = connection.createStatement(); //one-off SQL due to table name, so don't use prepared statement
                 statement.executeUpdate(sql);
