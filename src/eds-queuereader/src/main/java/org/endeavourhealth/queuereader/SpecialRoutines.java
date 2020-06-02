@@ -3271,8 +3271,6 @@ public abstract class SpecialRoutines {
     public static void testHashedFileFilteringForSRCode(String filePath, String uniqueKey) {
         LOG.info("Testing Hashed File Filtering for SRCode using " + filePath);
         try {
-
-
             //HashFunction hf = Hashing.md5();
             //HashFunction hf = Hashing.murmur3_128();
             HashFunction hf = Hashing.sha512();
@@ -3289,6 +3287,8 @@ public abstract class SpecialRoutines {
             Files.copy(is, srcFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
             is.close();
             LOG.debug("Copied " + srcFile.length() + " byte file from S3");
+
+            long msStart = System.currentTimeMillis();
 
             CSVParser parser = CSVParser.parse(srcFile, Charset.defaultCharset(), CSVFormat.DEFAULT.withHeader());
             Map<String, Integer> headers = parser.getHeaderMap();
@@ -3475,6 +3475,9 @@ public abstract class SpecialRoutines {
             }
 
             LOG.debug("Finished saving hashes to DB");
+
+            long msEnd = System.currentTimeMillis();
+            LOG.debug("Took " + ((msEnd - msStart) / 1000) + " s");
 
             //delete all files
             srcFile.delete();
