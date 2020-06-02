@@ -3268,9 +3268,12 @@ public abstract class SpecialRoutines {
         }
     }*/
 
-    public static void testHashedFileFilteringForSRCode(String filePath, String uniqueKey) {
+    public static void testHashedFileFilteringForSRCode(String filePath, String uniqueKey, String dataDateStr) {
         LOG.info("Testing Hashed File Filtering for SRCode using " + filePath);
         try {
+
+            Date dataDate = new SimpleDateFormat("YYYY-MM-DD").parse(dataDateStr);
+
             //HashFunction hf = Hashing.md5();
             //HashFunction hf = Hashing.murmur3_128();
             HashFunction hf = Hashing.sha512();
@@ -3360,12 +3363,9 @@ public abstract class SpecialRoutines {
                 String sql = "CREATE TABLE " + tempTableName + " ("
                         + "record_id varchar(255), "
                         + "record_hash char(128), "
-                        + "key_exists boolean DEFAULT FALSE, "
-                        + "hash_matches boolean DEFAULT FALSE, "
-                        + "CONSTRAINT pk PRIMARY KEY (record_id), "
-                        + "KEY ix_id_hash (record_id, record_hash), "
-                        + "KEY ix_exists_matches (key_exists, hash_matches), "
-                        + "KEY ix_matches (hash_matches))";
+                        + "record_exists boolean DEFAULT FALSE, "
+                        + "ignore_record boolean DEFAULT FALSE, "
+                        + "PRIMARY KEY (record_id))";
                 Statement statement = connection.createStatement(); //one-off SQL due to table name, so don't use prepared statement
                 statement.executeUpdate(sql);
                 statement.close();
@@ -3386,15 +3386,21 @@ public abstract class SpecialRoutines {
                 sql = "UPDATE " + tempTableName + " s"
                         + " INNER JOIN tmp.file_record_hash t"
                         + " ON t.record_id = s.record_id"
-                        + " SET s.key_exists = true,"
-                        + " s.hash_matches = IF (s.record_hash = t.record_hash, true, false)";
+                        + " SET s.record_exists = true,"
+                        + " s.ignore_record = IF (s.record_hash = t.record_hash OR t.dt_last_updated > " + ConnectionManager.formatDateString(dataDate, true) + ", true, false)";
+                statement = connection.createStatement(); //one-off SQL due to table name, so don't use prepared statement
+                statement.executeUpdate(sql);
+                statement.close();
+
+                LOG.debug("Creating index on temp table");
+                sql = "CREATE INDEX ix ON " + tempTableName + " (ignore_record)";
                 statement = connection.createStatement(); //one-off SQL due to table name, so don't use prepared statement
                 statement.executeUpdate(sql);
                 statement.close();
 
                 LOG.debug("Selecting IDs with different hashes");
                 sql = "SELECT record_id FROM " + tempTableName + " s"
-                        + " WHERE hash_matches = false";
+                        + " WHERE ignore_record = false";
                 statement = connection.createStatement(); //one-off SQL due to table name, so don't use prepared statement
                 statement.setFetchSize(10000);
                 ResultSet rs = statement.executeQuery(sql);
@@ -3444,18 +3450,19 @@ public abstract class SpecialRoutines {
                 String sql = "UPDATE tmp.file_record_hash t"
                         + " INNER JOIN " + tempTableName + " s"
                         + " ON t.record_id = s.record_id"
-                        + " SET t.record_hash = s.record_hash"
-                        + " WHERE s.hash_matches = false";
+                        + " SET t.record_hash = s.record_hash,"
+                        + " t.dt_last_updated = " + ConnectionManager.formatDateString(dataDate, true)
+                        + " WHERE s.record_exists = true";
                 Statement statement = connection.createStatement(); //one-off SQL due to table name, so don't use prepared statement
                 statement.executeUpdate(sql);
                 statement.close();
 
                 //insert records into the target table where the staging has new records
                 LOG.debug("Inserting new records in target table file_record_hash");
-                sql = "INSERT IGNORE INTO tmp.file_record_hash (record_id, record_hash)"
-                        + " SELECT record_id, record_hash"
+                sql = "INSERT IGNORE INTO tmp.file_record_hash (record_id, record_hash, dt_last_updated)"
+                        + " SELECT record_id, record_hash, " + ConnectionManager.formatDateString(dataDate, true)
                         + " FROM " + tempTableName
-                        + " WHERE key_exists = false";
+                        + " WHERE record_exists = false";
                 statement = connection.createStatement(); //one-off SQL due to table name, so don't use prepared statement
                 statement.executeUpdate(sql);
                 statement.close();

@@ -5,7 +5,7 @@
         <div class="pull-right">
 
             <button type="button" class="btn btn-sm btn-default" (click)="editService()">Edit Service</button>
-            <button type="button" class="btn btn-sm btn-success" (click)="refreshExchanges()">Refresh</button>
+            <button type="button" class="btn btn-sm btn-success" (click)="refreshExchanges(false)">Refresh</button>
             <!--<button type="button" class="btn btn-sm btn-danger" (click)="createMissingData()">Create Data</button>-->
             <button type="button" class="btn btn-sm btn-default" (click)="close()">Close</button>
             <!--<button type="button" class="btn btn-sm btn-danger" (click)="postTest()">Test Post</button>-->
@@ -27,7 +27,7 @@
 
                                         <div class="form-group">
                                             <label>Search mode:</label>
-                                            <select id="searchMode" [(ngModel)]="searchMode">
+                                            <select id="searchMode" [(ngModel)]="exchangeAuditService.searchMode">
                                                 <option value="Recent">Most Recent</option>
                                                 <option value="DateRange">Date Range</option>
                                                 <option value="FirstError">First Error</option>
@@ -35,10 +35,10 @@
                                             </select>
                                         </div>
 
-                                        <div *ngIf="searchMode=='Recent'">
+                                        <div *ngIf="exchangeAuditService.searchMode=='Recent'">
                                             <div class="form-group">
                                                 <label>Showing Last:</label>
-                                                <input name="ExchangesToShow" type="number" [(ngModel)]="exchangesToShow" required>
+                                                <input name="ExchangesToShow" type="number" [(ngModel)]="exchangeAuditService.exchangesToShow" required>
 
                                                 <button type="button" class="btn btn-sm btn-default" (click)="showLast(250)">250</button>
                                                 <button type="button" class="btn btn-sm btn-default" (click)="showLast(500)">500</button>
@@ -47,39 +47,39 @@
                                             </div>
                                         </div>
 
-                                        <div *ngIf="searchMode=='DateRange'">
+                                        <div *ngIf="exchangeAuditService.searchMode=='DateRange'">
                                             <div class="form-group">
                                                 <label>Search From:</label>
-                                                <datetime [timepicker]="{ showMeridian: false }" [(ngModel)]="exchangeSearchFrom" [datepicker]="{ format: 'dd-M-yyyy', autoclose: true, todayHighlight: true }" (blur)="filterDateToChange(filterDateFrom)" placeholder="Select date to"></datetime>
+                                                <datetime [timepicker]="{ showMeridian: false }" [(ngModel)]="exchangeAuditService.exchangeSearchFrom" [datepicker]="{ format: 'dd-M-yyyy', autoclose: true, todayHighlight: true }" (blur)="filterDateToChange(filterDateFrom)" placeholder="Select date to"></datetime>
                                             </div>
 
                                             <div class="form-group">
                                                 <label>Search To:</label>
-                                                <datetime [timepicker]="{ showMeridian: false }" [(ngModel)]="exchangeSearchTo" [datepicker]="{ format: 'dd-M-yyyy', autoclose: true, todayHighlight: true }" (blur)="filterDateToChange(filterDateFrom)" placeholder="Select date to"></datetime>
+                                                <datetime [timepicker]="{ showMeridian: false }" [(ngModel)]="exchangeAuditService.exchangeSearchTo" [datepicker]="{ format: 'dd-M-yyyy', autoclose: true, todayHighlight: true }" (blur)="filterDateToChange(filterDateFrom)" placeholder="Select date to"></datetime>
                                             </div>
 
                                             <div class="form-group">
                                                 <label>Showing Last:</label>
-                                                <input name="ExchangesToShow" type="number" class="form-control" [(ngModel)]="exchangesToShow" required>
+                                                <input name="ExchangesToShow" type="number" class="form-control" [(ngModel)]="exchangeAuditService.exchangesToShow" required>
                                             </div>
                                         </div>
 
-                                        <div *ngIf="searchMode=='FirstError'">
+                                        <div *ngIf="exchangeAuditService.searchMode=='FirstError'">
                                             <div class="form-group">
                                                 <label>Plus Following Exchanges:</label>
-                                                <input name="ExchangesToShow" type="number" class="form-control" [(ngModel)]="exchangesToShow" required>
+                                                <input name="ExchangesToShow" type="number" class="form-control" [(ngModel)]="exchangeAuditService.exchangesToShow" required>
                                             </div>
                                         </div>
 
-                                        <div *ngIf="searchMode=='ExchangeId'">
+                                        <div *ngIf="exchangeAuditService.searchMode=='ExchangeId'">
                                             <div class="form-group">
                                                 <label>Exchange ID</label>
-                                                <input name="ExchangeIdSearch" class="form-control" [(ngModel)]="exchangeIdSearch">
+                                                <input name="ExchangeIdSearch" class="form-control" [(ngModel)]="exchangeAuditService.exchangeIdSearch">
                                             </div>
                                         </div>
 
 
-                                        <button type="button" class="btn btn-default" (click)="refreshExchanges()">Go</button>
+                                        <button type="button" class="btn btn-default" (click)="refreshExchanges(false)">Go</button>
 
                                     </template>
                                 </ngb-panel>

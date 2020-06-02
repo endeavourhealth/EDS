@@ -9,7 +9,22 @@ import {Protocol} from "./Protocol";
 
 @Injectable()
 export class ExchangeAuditService extends BaseHttp2Service {
-    constructor(http:Http) { super(http); }
+
+    //search filters
+    searchMode: string;
+    exchangesToShow: number;
+    exchangeIdSearch: string;
+    exchangeSearchFrom: Date;
+    exchangeSearchTo: Date;
+
+
+    constructor(http:Http) {
+        super(http);
+
+        var vm = this;
+        vm.exchangesToShow = 100;
+        vm.searchMode = 'Recent';
+    }
 
 
     getExchangesByDate(serviceId: string, systemId: string, maxRows: number, dateFrom: Date, dateTo: Date) : Observable<Exchange[]> {

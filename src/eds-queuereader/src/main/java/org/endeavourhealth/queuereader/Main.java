@@ -92,7 +92,8 @@ public class Main {
 
 			String filePath = args[1];
 			String uniqueKey = args[2];
-			SpecialRoutines.testHashedFileFilteringForSRCode(filePath, uniqueKey);
+			String dataDateStr = args[3];
+			SpecialRoutines.testHashedFileFilteringForSRCode(filePath, uniqueKey, dataDateStr);
 			System.exit(0);
 		}
 

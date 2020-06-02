@@ -24,11 +24,11 @@ export class ExchangeAuditComponent {
 	cachedTagStr: string;
 
 	//exchange filters
-	searchMode: string;
+	/*searchMode: string;
 	exchangesToShow: number;
 	exchangeIdSearch: string;
 	exchangeSearchFrom: Date;
-	exchangeSearchTo: Date;
+	exchangeSearchTo: Date;*/
 
 	//results
 	exchanges: Exchange[];
@@ -57,10 +57,9 @@ export class ExchangeAuditComponent {
 				private $state : StateService) {
 
 		this.service = new Service();
-		this.exchangesToShow = 100;
-		//this.postAllExchanges = false;
 		this.postMode = 'Onwards';
-		this.searchMode = 'Recent';
+		/*this.exchangesToShow = 100;
+		this.searchMode = 'Recent';*/
 
 		this.systemId = transition.params()['systemId'];
 		var serviceId = transition.params()['serviceId'];
@@ -69,7 +68,7 @@ export class ExchangeAuditComponent {
 			.subscribe(
 				(result) => {
 					this.service = result;
-					this.refreshExchanges();
+					this.refreshExchanges(true);
 					this.refreshProtocols();
 					this.refreshPublisherMode();
 				},
@@ -98,7 +97,7 @@ export class ExchangeAuditComponent {
 		);
 	}
 
-	refreshExchanges() {
+	refreshExchanges(autoSelectFirst: boolean) {
 		var vm = this;
 		var serviceId = vm.service.uuid;
 
@@ -107,74 +106,87 @@ export class ExchangeAuditComponent {
 
 		//console.log('searchMode = ' + this.searchMode);
 
-		if (vm.searchMode == 'Recent') {
+		if (vm.exchangeAuditService.searchMode == 'Recent') {
 
-			vm.exchangeAuditService.getRecentExchanges(serviceId, vm.systemId, vm.exchangesToShow).subscribe(
+			vm.exchangeAuditService.getRecentExchanges(serviceId, vm.systemId, vm.exchangeAuditService.exchangesToShow).subscribe(
 				(result) => {
 					vm.exchanges = result;
 					if (result.length == 0) {
 						vm.log.success('No exchanges found');
+					} else if (autoSelectFirst) {
+						vm.selectFirstExchange();
 					}
 				},
 				(error) => vm.log.error('Failed to retrieve exchanges', error, 'View Exchanges')
 			)
 
-		} else if (vm.searchMode == 'DateRange') {
+		} else if (vm.exchangeAuditService.searchMode == 'DateRange') {
 
-			if (this.exchangeSearchFrom
-				&& this.exchangeSearchTo
-				&& this.exchangeSearchTo.getTime() < this.exchangeSearchFrom.getTime()) {
+			if (this.exchangeAuditService.exchangeSearchFrom
+				&& this.exchangeAuditService.exchangeSearchTo
+				&& this.exchangeAuditService.exchangeSearchTo.getTime() < this.exchangeAuditService.exchangeSearchFrom.getTime()) {
 				this.log.error('Search date range is invalid');
 				return;
 			}
 
-			vm.exchangeAuditService.getExchangesByDate(serviceId, vm.systemId, vm.exchangesToShow, this.exchangeSearchFrom, this.exchangeSearchTo).subscribe(
+			vm.exchangeAuditService.getExchangesByDate(serviceId, vm.systemId, vm.exchangeAuditService.exchangesToShow, vm.exchangeAuditService.exchangeSearchFrom, vm.exchangeAuditService.exchangeSearchTo).subscribe(
 				(result) => {
 					vm.exchanges = result;
 					if (result.length == 0) {
 						vm.log.success('No exchanges found');
+					} else if (autoSelectFirst) {
+						vm.selectFirstExchange();
 					}
 				},
 				(error) => vm.log.error('Failed to retrieve exchanges', error, 'View Exchanges')
 			)
 
-		} else if (vm.searchMode == 'FirstError') {
+		} else if (vm.exchangeAuditService.searchMode == 'FirstError') {
 
-			vm.exchangeAuditService.getExchangesFromFirstError(serviceId, vm.systemId, vm.exchangesToShow).subscribe(
+			vm.exchangeAuditService.getExchangesFromFirstError(serviceId, vm.systemId, vm.exchangeAuditService.exchangesToShow).subscribe(
 				(result) => {
 					vm.exchanges = result;
 					if (result.length == 0) {
 						vm.log.success('No exchanges found');
+					} else if (autoSelectFirst) {
+						vm.selectFirstExchange();
 					}
 				},
 				(error) => vm.log.error('Failed to retrieve exchanges', error, 'View Exchanges')
 			)
 
-		} else if (vm.searchMode == 'ExchangeId') {
+		} else if (vm.exchangeAuditService.searchMode == 'ExchangeId') {
 
-			if (!this.exchangeIdSearch) {
+			if (!vm.exchangeAuditService.exchangeIdSearch) {
 				this.log.error('Enter an exchange ID to search');
 				return;
 			}
 
-			vm.exchangeAuditService.getExchangeById(serviceId, vm.systemId, this.exchangeIdSearch).subscribe(
+			vm.exchangeAuditService.getExchangeById(serviceId, vm.systemId, vm.exchangeAuditService.exchangeIdSearch).subscribe(
 				(result) => {
 					vm.exchanges = result;
 					if (result.length == 0) {
 						vm.log.success('No exchanges found');
+					} else if (autoSelectFirst) {
+						vm.selectFirstExchange();
 					}
+
 				},
 				(error) => vm.log.error('Failed to retrieve exchanges', error, 'View Exchanges')
 			)
 
 		} else {
-			vm.log.error('Unknown search mode ' + vm.searchMode);
+			vm.log.error('Unknown search mode ' + vm.exchangeAuditService.searchMode);
 		}
 	}
 
+	selectFirstExchange() {
+		var vm = this;
+		var firstExchange = vm.exchanges[0];
+		vm.selectExchange(firstExchange);
+	}
 
 	selectExchange(exchange : Exchange) {
-
 		var vm = this;
 		vm.selectedExchange = exchange;
 
@@ -638,8 +650,8 @@ export class ExchangeAuditComponent {
 
 	showLast(numExchanges: number) {
 		var vm = this;
-		vm.exchangesToShow = numExchanges;
+		vm.exchangeAuditService.exchangesToShow = numExchanges;
 
-		vm.refreshExchanges();
+		vm.refreshExchanges(false);
 	}
 }
