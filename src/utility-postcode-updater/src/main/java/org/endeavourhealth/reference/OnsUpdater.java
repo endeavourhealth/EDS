@@ -14,8 +14,10 @@ public class OnsUpdater {
     /*
     * 1. Download the latest "NHS Postcode Directory UK Full" dataset from the ONS:
     * https://ons.maps.arcgis.com/home/search.html?q=NHS%20Postcode%20Directory%20UK%20Full&start=1&sortOrder=desc&sortField=modified#content
+    *
     * 2. Run this app with parameters: ons_all <path to zip file>
     *
+    * Old releases (this list not maintained):
     * Nov 2019 data at: https://ons.maps.arcgis.com/home/item.html?id=d7b33b66949b4bc9b9065de7544ae4d1
     * Aug 2019 data at: https://ons.maps.arcgis.com/home/item.html?id=054714ceec2743c0b59884f5619f4efa
     * May 2019 data at: https://ons.maps.arcgis.com/home/item.html?id=fd3ffbae5dfe4b9db21070486c6a0d64

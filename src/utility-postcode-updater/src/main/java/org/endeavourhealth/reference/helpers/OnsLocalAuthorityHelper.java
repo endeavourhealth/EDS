@@ -17,10 +17,14 @@ import java.util.Map;
 public class OnsLocalAuthorityHelper {
     private static final Logger LOG = LoggerFactory.getLogger(OnsLocalAuthorityHelper.class);
 
+    //cols changes May 2020
+    private static final String COL_CODE = "\uFEFFLAD20CD";
+    private static final String COL_NAME = "LAD20NM";
+    private static final String COL_NAME_WELSH = "LAD20NMW";
     //cols changes Apr 2019
-    private static final String COL_CODE = "\uFEFFLAD19CD";
+    /*private static final String COL_CODE = "\uFEFFLAD19CD";
     private static final String COL_NAME = "LAD19NM";
-    private static final String COL_NAME_WELSH = "LAD19NMW";
+    private static final String COL_NAME_WELSH = "LAD19NMW";*/
     /*private static final String COL_CODE = "\uFEFFLAD18CD";
     private static final String COL_NAME = "LAD18NM";
     private static final String COL_NAME_WELSH = "LAD18NMW";*/

@@ -17,10 +17,14 @@ import java.util.Map;
 public class OnsCcgHelper {
     private static final Logger LOG = LoggerFactory.getLogger(OnsCcgHelper.class);
 
+    //cols changed May 2020
+    private static final String COL_UNKNOWN = "\uFEFFCCG20CD"; //like most ONS files, has a weird character at the start
+    private static final String COL_CODE = "CCG20CDH";
+    private static final String COL_NAME = "CCG20NM";
     //cols changed Apr 2019
-    private static final String COL_UNKNOWN = "\uFEFFCCG19CD"; //like most ONS files, has a weird character at the start
+    /*private static final String COL_UNKNOWN = "\uFEFFCCG19CD"; //like most ONS files, has a weird character at the start
     private static final String COL_CODE = "CCG19CDH";
-    private static final String COL_NAME = "CCG19NM";
+    private static final String COL_NAME = "CCG19NM";*/
     /*private static final String COL_UNKNOWN = "\uFEFFCCG18CD"; //not sure what this code is, but we don't use it
     private static final String COL_CODE = "CCG18CDH";
     private static final String COL_NAME = "CCG18NM";

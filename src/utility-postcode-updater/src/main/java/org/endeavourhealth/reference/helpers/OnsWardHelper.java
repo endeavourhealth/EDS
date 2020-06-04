@@ -3,7 +3,6 @@ package org.endeavourhealth.reference.helpers;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
-import org.endeavourhealth.core.csv.CsvHelper;
 import org.endeavourhealth.core.database.dal.DalProvider;
 import org.endeavourhealth.core.database.dal.reference.ReferenceUpdaterDalI;
 import org.slf4j.Logger;
@@ -17,9 +16,12 @@ import java.util.Map;
 public class OnsWardHelper {
     private static final Logger LOG = LoggerFactory.getLogger(OnsWardHelper.class);
 
+    //cols changed May 20202
+    private static final String COL_CODE = "\uFEFFWD20CD";
+    private static final String COL_NAME = "WD20NM";
     //cols changed Apr 2018
-    private static final String COL_CODE = "\uFEFFWD19CD";
-    private static final String COL_NAME = "WD19NM";
+    /*private static final String COL_CODE = "\uFEFFWD19CD";
+    private static final String COL_NAME = "WD19NM";*/
     //private static final String COL_NAME_WELSH = "WD19NMW"; //removed in Dec 2019 version
     /*private static final String COL_CODE = "\uFEFFWD18CD";
     private static final String COL_NAME = "WD18NM";
@@ -55,13 +57,21 @@ public class OnsWardHelper {
 
         CSVParser parser = null;
         try {
-            parser = new CSVParser(r, format.withHeader());
+            //in the May 2020 release they had a load of extra empty columns, so need to turn on the option to allow them
+            parser = new CSVParser(r, format.withHeader().withAllowMissingColumnNames());
+            //parser = new CSVParser(r, format.withHeader());
             Iterator<CSVRecord> iterator = parser.iterator();
 
             //validate the headers are what we expect
-            //String[] expectedHeaders = new String[]{COL_CODE, COL_NAME, COL_NAME_WELSH};
-            String[] expectedHeaders = new String[]{COL_CODE, COL_NAME};
-            CsvHelper.validateCsvHeaders(parser, "Ward File", expectedHeaders);
+
+            //because of garbage empty columns, this fails. So just check manually
+            Map<String, Integer> headers = parser.getHeaderMap();
+            if (!headers.containsKey(COL_CODE)
+                    || !headers.containsKey(COL_NAME)) {
+                throw new Exception("Missing column header in Ward file with headers [" + headers + "]");
+            }
+            /*String[] expectedHeaders = new String[]{COL_CODE, COL_NAME};
+            CsvHelper.validateCsvHeaders(parser, "Ward File", expectedHeaders);*/
 
             while (iterator.hasNext()) {
                 CSVRecord record = iterator.next();
