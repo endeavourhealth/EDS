@@ -15,6 +15,9 @@ drop trigger if exists after_allergy_intolerance_delete;
 drop trigger if exists after_encounter_event_insert;
 drop trigger if exists after_encounter_event_update;
 drop trigger if exists after_encounter_event_delete;
+drop trigger if exists after_encounter_additional_insert;
+drop trigger if exists after_encounter_additional_update;
+drop trigger if exists after_encounter_additional_delete;
 drop trigger if exists after_encounter_insert;
 drop trigger if exists after_encounter_update;
 drop trigger if exists after_encounter_delete;
@@ -80,6 +83,7 @@ DROP TABLE IF EXISTS patient_address;
 DROP TABLE IF EXISTS patient_uprn;
 DROP TABLE IF EXISTS event_log;
 DROP TABLE IF EXISTS encounter_event;
+DROP TABLE IF EXISTS encounter_additional;
 DROP TABLE IF EXISTS encounter;
 DROP TABLE IF EXISTS appointment;
 DROP TABLE IF EXISTS episode_of_care;
@@ -433,6 +437,16 @@ CREATE TABLE encounter_event
 CREATE UNIQUE INDEX encounter_event_id
   ON encounter_event
   (id);
+
+-- Table: encounter_additional
+CREATE TABLE encounter_additional (
+  id bigint NOT NULL COMMENT 'same as the id column on the encounter table',
+  property_id bigint NOT NULL COMMENT 'IM reference (i.e. Admission method)',
+  value_id bigint NOT NULL COMMENT 'IM reference (i.e. Emergency admission)',
+  CONSTRAINT pk_encounter_additional_id PRIMARY KEY (id, property_id, value_id)
+);
+-- required for upserts to work
+CREATE UNIQUE INDEX ix_encounter_additional_id ON encounter_additional (id);
 
 
 -- Table: allergy_intolerance
@@ -1341,6 +1355,64 @@ CREATE TRIGGER after_encounter_event_delete
   END$$
 DELIMITER ;
 
+DELIMITER $$
+CREATE TRIGGER after_encounter_additional_insert
+  AFTER INSERT ON encounter_additional
+  FOR EACH ROW
+  BEGIN
+    INSERT INTO event_log (
+		dt_change,
+        change_type,
+        table_id,
+        record_id
+    ) VALUES (
+		now(3), -- current time inc ms
+        0, -- insert
+        26, -- encounter_additional
+        NEW.id
+    );
+  END$$
+DELIMITER ;
+
+
+DELIMITER $$
+CREATE TRIGGER after_encounter_additional_update
+  AFTER UPDATE ON encounter_additional
+  FOR EACH ROW
+  BEGIN
+    INSERT INTO event_log (
+		dt_change,
+        change_type,
+        table_id,
+        record_id
+    ) VALUES (
+		now(3), -- current time inc ms
+        1, -- update
+        26, -- encounter_additional
+        NEW.id
+    );
+  END$$
+DELIMITER ;
+
+
+DELIMITER $$
+CREATE TRIGGER after_encounter_additional_delete
+  AFTER DELETE ON encounter_additional
+  FOR EACH ROW
+  BEGIN
+    INSERT INTO event_log (
+		dt_change,
+        change_type,
+        table_id,
+        record_id
+    ) VALUES (
+		now(3), -- current time inc ms
+        2, -- delete
+        26, -- encounter_additional
+        OLD.id
+    );
+  END$$
+DELIMITER ;
 
 DELIMITER $$
 CREATE TRIGGER after_episode_of_care_insert

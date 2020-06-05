@@ -27,6 +27,7 @@ DROP TABLE IF EXISTS referral_request;
 DROP TABLE IF EXISTS encounter_raw;
 DROP TABLE IF EXISTS encounter_detail;
 DROP TABLE IF EXISTS encounter_event;
+DROP TABLE IF EXISTS encounter_additional;
 DROP TABLE IF EXISTS encounter;
 DROP TABLE IF EXISTS appointment;
 DROP TABLE IF EXISTS episode_of_care;
