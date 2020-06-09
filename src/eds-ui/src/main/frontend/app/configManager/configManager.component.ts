@@ -222,14 +222,13 @@ export class ConfigManagerComponent {
         return vm.changedRecords.indexOf(record) > -1;
     }
 
-
-
     validateJSON() {
         var vm = this;
         vm.validJsonMessage = null;
         vm.invalidJsonMessage = null;
 
         var str = vm.selectedRecord.configData;
+
         try {
             JSON.parse(str);
             vm.validJsonMessage = 'Valid JSON';
@@ -239,7 +238,47 @@ export class ConfigManagerComponent {
             vm.invalidJsonMessage = 'Invalid JSON: ' + e.message;
             //console.log('error: '+ e.message);
             //vm.logger.error('Invalid JSON');
+         }
+    }
+
+    validateXML() {
+        var vm = this;
+        vm.validJsonMessage = null;
+        vm.invalidJsonMessage = null;
+
+        var str = vm.selectedRecord.configData;
+
+        var oParser = new DOMParser();
+        var oDOM = oParser.parseFromString(str, "text/xml");
+
+        if (oDOM.getElementsByTagName('parsererror').length > 0) {
+            vm.invalidJsonMessage = oDOM.getElementsByTagName('parsererror')[0].getElementsByTagName('div')[0].innerHTML;
+        } else {
+            vm.validJsonMessage = 'Valid XML';
         }
+
+        /*var error = oDOM.getElementsByTagName('parsererror');
+        console.log('error = [' + error + ']');*/
+
+    /*.length ?
+            (new XMLSerializer()).serializeToString(oDOM) : "all good"
+        );
+
+        var root = (oDOM.documentElement.nodeName == "parsererror" ? "error while parsing" : oDOM.documentElement.nodeName);
+        console.log('parsed = [' + root + ']');
+        console.log(oDOM);*/
+
+        /*
+        try {
+            JSON.parse(str);
+            vm.validJsonMessage = 'Valid JSON';
+            //vm.logger.success('Valid JSON');
+
+        } catch (e) {
+            vm.invalidJsonMessage = 'Invalid JSON: ' + e.message;
+            //console.log('error: '+ e.message);
+            //vm.logger.error('Invalid JSON');
+        }*/
     }
 
     configJsonChanged(record: ConfigRecord) {
