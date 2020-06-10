@@ -31,6 +31,7 @@ import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
 import org.endeavourhealth.transform.emis.EmisCustomCsvToFhirTransformer;
 import org.endeavourhealth.transform.emis.EmisOpenToFhirTransformer;
 import org.endeavourhealth.transform.fhirhl7v2.FhirHl7v2Filer;
+import org.endeavourhealth.transform.hl7v2fhir.ImperialHL7FhirTransformer;
 import org.endeavourhealth.transform.homerton.HomertonCsvToFhirTransformer;
 import org.endeavourhealth.transform.tpp.TppCsvToFhirTransformer;
 import org.endeavourhealth.transform.vision.VisionCsvToFhirTransformer;
@@ -168,6 +169,9 @@ public class MessageTransformInbound extends PipelineComponent {
 
 				} else if (software.equalsIgnoreCase(MessageFormat.BHRUT_CSV)) {
 					processBhrutCsvTransform(exchange, fhirResourceFiler, messageVersion);
+
+				} else if (software.equalsIgnoreCase(MessageFormat.IMPERIAL_HL7_V2)) {
+					processImperialHL7Transform(exchange, fhirResourceFiler, messageVersion);
 
 					//NOTE: If adding support for a new publisher software, remember to add to the OpenEnvelope class too
 				} else {
@@ -603,4 +607,12 @@ public class MessageTransformInbound extends PipelineComponent {
 		String exchangeBody = exchange.getBody();
 		BhrutCsvToFhirTransformer.transform(exchangeBody, fhirResourceFiler, messageVersion);
 	}
+
+	private void processImperialHL7Transform(Exchange exchange, FhirResourceFiler fhirResourceFiler, String version) throws Exception {
+		UUID exchangeId = exchange.getId();
+		String exchangeBody = exchange.getBody();
+
+		ImperialHL7FhirTransformer.transform(exchangeBody, fhirResourceFiler, version);
+	}
+
 }
