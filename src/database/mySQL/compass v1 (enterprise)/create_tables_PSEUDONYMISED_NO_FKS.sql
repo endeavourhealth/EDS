@@ -27,6 +27,7 @@ DROP TABLE IF EXISTS referral_request;
 DROP TABLE IF EXISTS encounter_raw;
 DROP TABLE IF EXISTS encounter_detail;
 DROP TABLE IF EXISTS encounter_event;
+DROP TABLE IF EXISTS encounter_additional;
 DROP TABLE IF EXISTS encounter;
 DROP TABLE IF EXISTS appointment;
 DROP TABLE IF EXISTS episode_of_care;
@@ -662,6 +663,16 @@ CREATE UNIQUE INDEX encounter_event_id
   (id);
 
 
+-- Table: encounter_additional
+
+CREATE TABLE encounter_additional (
+  id bigint NOT NULL COMMENT 'same as the id column on the encounter table',
+  property_id character varying(36)  NOT NULL COMMENT 'IM reference (i.e. Admission method)',
+  value_id character varying(36) NOT NULL COMMENT 'IM reference (i.e. Emergency admission)',
+  CONSTRAINT pk_encounter_additional_id PRIMARY KEY (id, property_id, value_id)
+);
+-- required for upserts to work
+CREATE UNIQUE INDEX ix_encounter_additional_id ON encounter_additional (id);
 
 
 -- Table: encounter_detail
