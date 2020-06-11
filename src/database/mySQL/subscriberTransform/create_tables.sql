@@ -150,6 +150,9 @@ CREATE TABLE enterprise_instance_map
 CREATE INDEX ix_enterprise_instance_map_type_value
 ON enterprise_instance_map (resource_type, mapping_value);
 
+create index ix_resource_to
+on enterprise_instance_map (resource_id_to);
+
 CREATE TABLE pcr_id_map
 (
   resource_id   varchar(36) NOT NULL COMMENT 'resourceId from source',
