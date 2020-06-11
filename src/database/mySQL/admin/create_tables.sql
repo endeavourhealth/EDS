@@ -118,6 +118,7 @@ CREATE TABLE service
 CREATE INDEX ix_service_local_id
 ON service (local_id);
 
+/*
 
 CREATE TABLE organisation
 (
@@ -133,6 +134,7 @@ CREATE TABLE organisation
 -- an update on the existing service
 CREATE INDEX ix_organisation_national_identifier
 ON organisation (national_id);
+*/
 
 
  CREATE TABLE patient_cohort (

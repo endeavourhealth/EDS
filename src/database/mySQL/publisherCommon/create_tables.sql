@@ -17,6 +17,7 @@ DROP TABLE IF EXISTS tpp_mapping_ref_2;
 DROP TABLE IF EXISTS tpp_config_list_option_2;
 DROP TABLE IF EXISTS tpp_staff_member;
 DROP TABLE IF EXISTS tpp_staff_member_profile;
+DROP TABLE IF EXISTS tpp_multilex_action_group_lookup;
 DROP TABLE IF EXISTS emis_location;
 DROP TABLE IF EXISTS emis_organisation;
 DROP TABLE IF EXISTS emis_user_in_role;
@@ -414,3 +415,11 @@ create table emis_clinical_code (
 
 CREATE INDEX ix_row_date ON emis_clinical_code (code_id, dt_last_updated);
 
+
+CREATE TABLE tpp_multilex_action_group_lookup (
+	action_group_id int NOT NULL,
+	action_group_name varchar(255) NOT NULL,
+	constraint pk primary key (action_group_id)
+)
+ROW_FORMAT=COMPRESSED
+KEY_BLOCK_SIZE=8;
