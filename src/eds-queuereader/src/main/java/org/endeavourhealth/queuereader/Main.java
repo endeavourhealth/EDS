@@ -88,6 +88,16 @@ public class Main {
 		ConfigManager.initialize("queuereader", configId);
 
 		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("DeleteResourcesForDeletedPatients")) {
+			String odsCodeRegex = null;
+			if (args.length > 1) {
+				odsCodeRegex = args[1];
+			}
+			SpecialRoutines.deleteResourcesForDeletedPatients(odsCodeRegex);
+			System.exit(0);
+		}
+
+		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("TestHashedFileFilteringForSRCode")) {
 
 			String filePath = args[1];

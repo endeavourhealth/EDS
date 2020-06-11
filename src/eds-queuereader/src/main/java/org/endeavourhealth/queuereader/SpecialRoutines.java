@@ -2169,7 +2169,8 @@ public abstract class SpecialRoutines {
                     }
 
                     if (!transformedWithoutFiltering) {
-                        LOG.error("" + service + " -> exchange " + exchange.getId() + " from " + exchange.getHeaderAsDate(HeaderKeys.DataDate));
+                        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                        LOG.error("" + service + " -> exchange " + exchange.getId() + " from " + sdf.format(exchange.getHeaderAsDate(HeaderKeys.DataDate)));
                         /*for (String line: logging) {
                             LOG.error("    " + line);
                         }*/
@@ -3496,5 +3497,53 @@ public abstract class SpecialRoutines {
             LOG.error("", t);
         }
 
+    }
+
+    public static void deleteResourcesForDeletedPatients(String odsCodeRegex) {
+        LOG.debug("Deleting Resources for Deleted Patients using " + odsCodeRegex);
+        try {
+
+            Connection conn = ConnectionManager.getEdsNonPooledConnection();
+
+            ServiceDalI serviceDal = DalProvider.factoryServiceDal();
+            List<Service> services = serviceDal.getAll();
+            for (Service service: services) {
+                if (shouldSkipService(service, odsCodeRegex)) {
+                    continue;
+                }
+
+                LOG.debug("Doing " + service);
+
+                List<UUID> patientIds = new ArrayList<>();
+                String sql = "SELECT patient_id FROM patient_search WHERE service_id = ? AND dt_deleted IS NOT NULL";
+                PreparedStatement ps = conn.prepareStatement(sql);
+                ps.setString(1, service.getId().toString());
+                ResultSet rs = ps.executeQuery();
+                while (rs.next()) {
+                    String id = rs.getString(1);
+                    patientIds.add(UUID.fromString(id));
+                }
+                ps.close();
+
+                if (patientIds.isEmpty()) {
+                    LOG.debug("No deleted patients found, so skipping");
+                    continue;
+                }
+
+                LOG.debug("Found " + patientIds.size() + " deleted patients");
+
+                //TODO delete all resources
+                //TODO save tp FHIR
+                //TODO save exchange Event
+                //TODO send through to RabbitMQ
+
+            }
+
+            conn.close();
+
+            LOG.debug("Finally Deleting Resources for Deleted Patients using " + odsCodeRegex);
+        } catch (Throwable t) {
+            LOG.error("", t);
+        }
     }
 }
