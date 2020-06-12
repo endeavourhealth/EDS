@@ -528,10 +528,10 @@ public class Main {
 		}*/
 
 		if (args.length >= 1
-				&& args[0].equalsIgnoreCase("TransformPatients")) {
+				&& args[0].equalsIgnoreCase("SubscriberTransformPatients")) {
 			String sourceFile = args[1];
 			String reason = args[2];
-			transformPatients(sourceFile, reason);
+			subscriberTransformPatients(sourceFile, reason);
 			System.exit(0);
 		}
 
@@ -5275,8 +5275,8 @@ public class Main {
 		}
 	}*/
 
-	private static void transformPatients(String sourceFile, String reason) {
-		LOG.info("Transforming patients from " + sourceFile);
+	private static void subscriberTransformPatients(String sourceFile, String reason) {
+		LOG.info("Subscriber transforming patients from " + sourceFile);
 		try {
 			List<UUID> patientIds = new ArrayList<>();
 
@@ -5302,7 +5302,7 @@ public class Main {
 			}
 			LOG.info("Found " + patientIds.size() + " patient IDs");
 
-			QueueHelper.queueUpPatientsForTransform(patientIds, reason);
+			QueueHelper.queueUpPatientsForSusbscriberTransform(patientIds, reason);
 
 			LOG.info("Finished transforming patients from " + sourceFile);
 		} catch (Throwable t) {

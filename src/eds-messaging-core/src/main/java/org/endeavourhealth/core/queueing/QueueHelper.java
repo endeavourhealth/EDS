@@ -571,7 +571,7 @@ public class QueueHelper {
      * creates a "dummy" exchange and injects into the inbound queue which gets routed to a special
      * inbound transform that will delete all data
      */
-    public static void queueUpFullServiceForDelete(UUID serviceId) throws Exception {
+    public static void queueUpFullServiceForDeleteAllData(UUID serviceId) throws Exception {
 
         ServiceDalI serviceDal = DalProvider.factoryServiceDal();
         Service service = serviceDal.getById(serviceId);
@@ -655,7 +655,7 @@ public class QueueHelper {
     /**
      * takes a list of patient IDs and groups them by service and queues them up for all relevant subscriber transforms
      */
-    public static void queueUpPatientsForTransform(List<UUID> patientIds, String reason) throws Exception {
+    public static void queueUpPatientsForSusbscriberTransform(List<UUID> patientIds, String reason) throws Exception {
 
         //find service for each one
         Map<UUID, List<UUID>> hmPatientByService = new HashMap<>();
@@ -720,4 +720,78 @@ public class QueueHelper {
             }
         }
     }
+
+    /**
+     * generates a dummy Exchange and sends through the protocol queue to delete all content from subscriber DBs
+     */
+    /*public static void queueUpFullServiceForDeletingSubscriber(UUID serviceId, UUID specificProtocolId, List<UUID> patientUuids, String reason, Set<String> fileTypesSet) throws Exception {
+
+        ServiceDalI serviceDal = DalProvider.factoryServiceDal();
+        Service service = serviceDal.getById(serviceId);
+
+        LibraryItem protocol = LibraryRepositoryHelper.getLibraryItem(specificProtocolId);
+
+        LOG.info("Deleting from subscriber for " + patientUuids.size() + " patients at " + service.getName() + " " + service.getLocalId() + " and protocol " + protocol.getName());
+
+        //create a new "dummy" exchange which we need to get anything sent through the pipeline
+        String bodyJson = JsonSerializer.serialize(new ArrayList<ExchangePayloadFile>());
+
+        String[] specificProtocolArr = new String[]{specificProtocolId.toString()};
+        String specificProtocolJson = ObjectMapperPool.getInstance().writeValueAsString(specificProtocolArr);
+
+        String odsCode = service.getLocalId();
+
+        boolean postedToRabbit = false;
+
+        List<UUID> systemIds = findSystemIds(service);
+        for (UUID systemId: systemIds) {
+            LOG.debug("Doing system ID " + systemId);
+
+            Exchange exchange = new Exchange();
+            exchange.setId(UUID.randomUUID());
+            exchange.setBody(bodyJson);
+            exchange.setTimestamp(new Date());
+            exchange.setHeaders(new HashMap<>());
+            exchange.setHeaderAsUuid(HeaderKeys.SenderServiceUuid, serviceId);
+            exchange.setHeader(HeaderKeys.ProtocolIds, specificProtocolJson);
+            exchange.setHeader(HeaderKeys.SenderLocalIdentifier, odsCode);
+            exchange.setHeaderAsUuid(HeaderKeys.SenderSystemUuid, systemId);
+            exchange.setHeader(HeaderKeys.SourceSystem, MessageFormat.DUMMY_SENDER_SOFTWARE_FOR_BULK_TRANSFORM); //routing requires a source system name and this tells us it's this special case
+            exchange.setServiceId(serviceId);
+            exchange.setSystemId(systemId);
+
+            String eventDesc = "Manually created exchange to populate subscribers in protocol " + protocol.getName();
+            if (!Strings.isNullOrEmpty(reason)) {
+                eventDesc += " (" + reason + ")";
+            }
+
+            //LOG.info("Saving exchange");
+            AuditWriter.writeExchange(exchange);
+            AuditWriter.writeExchangeEvent(exchange, eventDesc);
+
+            //for audit purposes, we create an exchange per systemId, but only need to post one to Rabbit to do the work
+            if (!postedToRabbit) {
+                postedToRabbit = true;
+
+                //LOG.info("Creating exchange batches for " + patientUuids.size() + " patients");
+                createExchangeBatches(exchange, patientUuids);
+
+                //post to InboundQueue
+                LOG.info("Posting to protocol queue");
+                List<UUID> exchangeIds = new ArrayList<>();
+                exchangeIds.add(exchange.getId());
+                //QueueHelper.postToExchange(exchangeIds, EXCHANGE_PROTOCOL, specificProtocolId, false, null);
+
+                QueueHelper.postToExchange(exchangeIds, EXCHANGE_PROTOCOL, specificProtocolId, false, null, fileTypesSet,null);
+
+                LOG.info("Exchange posted to protocol queue");
+            } else {
+                LOG.info("Not posting to Rabbit as already done that for another system");
+            }
+
+            //set this header key to prevent re-queuing
+            exchange.setHeaderAsBoolean(HeaderKeys.AllowQueueing, new Boolean(false)); //don't allow this to be re-queued
+            AuditWriter.writeExchange(exchange);
+        }
+    }*/
 }
