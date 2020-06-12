@@ -152,7 +152,7 @@ public class EnterpriseFiler {
                 //file any deletes we've already built up
                 if (currentRecords != null
                         && !currentRecords.isEmpty()) {
-                    LOG.trace("Deleting " + currentRecords.size() + " from " + currentTable);
+                    //LOG.trace("Deleting " + currentRecords.size() + " from " + currentTable);
                     fileDeletes(currentRecords, currentColumns, currentColumnClasses, currentTable, connection);
                 }
 

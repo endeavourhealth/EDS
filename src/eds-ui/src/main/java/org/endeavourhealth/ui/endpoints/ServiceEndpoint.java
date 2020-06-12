@@ -347,7 +347,7 @@ public final class ServiceEndpoint extends AbstractEndpoint {
                 String eventDesc = mostRecentEvent.getEventDesc();
                 Date eventDate = mostRecentEvent.getTimestamp();
 
-                if (eventDesc.startsWith("Manually pushed into")
+                if (eventDesc.startsWith("Manually pushed into EdsInbound")
                         && eventDate.after(transformFinished)) {
 
                     LOG.debug("Exchange " + mostRecentExchange.getId() + " latest event is being inserted into queue");

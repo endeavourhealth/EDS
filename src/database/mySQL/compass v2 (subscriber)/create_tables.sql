@@ -21,6 +21,9 @@ drop trigger if exists after_encounter_additional_delete;
 drop trigger if exists after_encounter_insert;
 drop trigger if exists after_encounter_update;
 drop trigger if exists after_encounter_delete;
+drop trigger if exists after_registration_status_history_insert;
+drop trigger if exists after_registration_status_history_update;
+drop trigger if exists after_registration_status_history_delete;
 drop trigger if exists after_episode_of_care_insert;
 drop trigger if exists after_episode_of_care_update;
 drop trigger if exists after_episode_of_care_delete;
@@ -86,6 +89,7 @@ DROP TABLE IF EXISTS encounter_event;
 DROP TABLE IF EXISTS encounter_additional;
 DROP TABLE IF EXISTS encounter;
 DROP TABLE IF EXISTS appointment;
+DROP TABLE IF EXISTS registration_status_history;
 DROP TABLE IF EXISTS episode_of_care;
 DROP TABLE IF EXISTS patient;
 DROP TABLE IF EXISTS person;
@@ -289,6 +293,27 @@ CREATE INDEX episode_of_care_person_id
 CREATE INDEX episode_of_care_organization_id
   ON episode_of_care
   (organization_id);
+
+
+-- Table: registration_status_history
+
+CREATE TABLE registration_status_history (
+   id bigint(20) NOT NULL,
+   organization_id bigint(20) NOT NULL,
+   patient_id bigint(20) NOT NULL,
+   person_id bigint(20) NOT NULL,
+   episode_of_care_id bigint(20) DEFAULT NULL,
+   registration_status_concept_id int(11) DEFAULT NULL,
+   start_date datetime DEFAULT NULL,
+   end_date datetime DEFAULT NULL,
+   PRIMARY KEY (organization_id, id, patient_id, person_id),
+  CONSTRAINT fk_registration_status_history_episode_id FOREIGN KEY (episode_of_care_id)
+      REFERENCES episode_of_care (id) MATCH SIMPLE
+      ON UPDATE NO ACTION ON DELETE NO ACTION
+ );
+
+ CREATE UNIQUE INDEX ux_registration_status_history_id ON registration_status_history (id);
+
 
 -- Table: appointment
 
@@ -1468,6 +1493,70 @@ CREATE TRIGGER after_episode_of_care_delete
 		now(3), -- current time inc ms
         2, -- delete
         6, -- episode_of_care
+        OLD.id
+    );
+  END$$
+DELIMITER ;
+
+
+
+
+
+
+DELIMITER $$
+CREATE TRIGGER after_registration_status_history_insert
+  AFTER INSERT ON registration_status_history
+  FOR EACH ROW
+  BEGIN
+    INSERT INTO event_log (
+		dt_change,
+        change_type,
+        table_id,
+        record_id
+    ) VALUES (
+		now(3), -- current time inc ms
+        0, -- insert
+        23, -- registration_status_history
+        NEW.id
+    );
+  END$$
+DELIMITER ;
+
+
+DELIMITER $$
+CREATE TRIGGER after_registration_status_history_update
+  AFTER UPDATE ON registration_status_history
+  FOR EACH ROW
+  BEGIN
+    INSERT INTO event_log (
+		dt_change,
+        change_type,
+        table_id,
+        record_id
+    ) VALUES (
+		now(3), -- current time inc ms
+        1, -- update
+        23, -- registration_status_history
+        NEW.id
+    );
+  END$$
+DELIMITER ;
+
+
+DELIMITER $$
+CREATE TRIGGER after_registration_status_history_delete
+  AFTER DELETE ON registration_status_history
+  FOR EACH ROW
+  BEGIN
+    INSERT INTO event_log (
+		dt_change,
+        change_type,
+        table_id,
+        record_id
+    ) VALUES (
+		now(3), -- current time inc ms
+        2, -- delete
+        23, -- registration_status_history
         OLD.id
     );
   END$$
