@@ -177,6 +177,7 @@
                                             <option value="Onwards">This Exchange and Onwards</option>
                                             <option value="All">All Exchanges</option>
                                             <option *ngIf="postExchange=='edsProtocol'" value="FullLoad">Full Load of Data</option>
+                                            <option *ngIf="postExchange=='edsProtocol'" value="FullDelete">Full Delete of Data</option>
                                         </select>
 
                                         Queues [Inbound={{selectedExchange.queueRoutingKeys['EdsInbound']}}, Protocol={{selectedExchange.queueRoutingKeys['EdsProtocol']}}]

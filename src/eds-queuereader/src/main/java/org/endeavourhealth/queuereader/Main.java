@@ -490,7 +490,8 @@ public class Main {
 				&& args[0].equalsIgnoreCase("SubscriberFullLoad")) {
 			UUID serviceId = UUID.fromString(args[1]);
 			UUID protocolId = UUID.fromString(args[2]);
-			QueueHelper.queueUpFullServiceForPopulatingSubscriber(serviceId, protocolId);
+			String reason = args[3];
+			QueueHelper.queueUpFullServiceForPopulatingSubscriber(serviceId, protocolId, reason);
 			System.exit(0);
 		}
 

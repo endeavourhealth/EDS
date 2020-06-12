@@ -442,6 +442,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
         UUID specificProtocolId = request.getSpecificProtocolId();
         String fileTypesToFilterOn = request.getFileTypesToFilterOn();
         Boolean deleteErrorState = request.getDeleteTransformErrorState();
+        String reason = request.getReason();
 
         //work out the exchange IDs to post
         List<UUID> exchangeIds = null;
@@ -463,7 +464,8 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
         } else if (postMode.equalsIgnoreCase("All")) {
             exchangeIds = auditRepository.getExchangeIdsForService(serviceId, systemId);
 
-        } else if (postMode.equalsIgnoreCase("FullLoad")) {
+        } else if (postMode.equalsIgnoreCase("FullLoad")
+                || postMode.equalsIgnoreCase("FullDelete")) {
 
             if (!exchangeName.equalsIgnoreCase(QueueHelper.EXCHANGE_PROTOCOL)) {
                 throw new IllegalArgumentException("Invalid post mode [" + postMode + "] when exchange name is [" + exchangeName + "]");
@@ -474,11 +476,20 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
             if (inQueue) {
                 return Response
                         .ok()
-                        .entity("Cannot queue full load while inbound messages are queued")
+                        .entity("Cannot queue full load or delete while inbound messages are queued")
                         .build();
             }
 
-            QueueHelper.queueUpFullServiceForPopulatingSubscriber(serviceId, specificProtocolId);
+            if (postMode.equalsIgnoreCase("FullLoad")) {
+                QueueHelper.queueUpFullServiceForPopulatingSubscriber(serviceId, specificProtocolId, reason);
+
+            } else if (postMode.equalsIgnoreCase("FullLoad")) {
+                QueueHelper.queueUpFullServiceForDeletingFromSubscriber(serviceId, specificProtocolId, reason);
+
+            } else {
+                throw new Exception("Unhandled mode [" + postMode + "]");
+            }
+
             exchangeIds = new ArrayList<>(); //just create an empty list so the rest of this function does nothing
 
         } else {
@@ -532,7 +543,6 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
             throw new IllegalArgumentException("Invalid exchange name [" + exchangeName + "]");
         }
 
-        String reason = request.getReason();
         Map<String, String> additionalHeaders = request.getAdditionalHeaders();
 
         //post the exchanges to RabbitMQ

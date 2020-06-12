@@ -189,12 +189,19 @@ public class MessageTransformOutbound extends PipelineComponent {
 
         UUID exchangeId = exchange.getId();
 
+        String sourceSystem = exchange.getHeader(HeaderKeys.SourceSystem);
+        boolean isBulkDeleteFromSubscriber = sourceSystem.equals(MessageFormat.DUMMY_SENDER_SOFTWARE_FOR_BULK_DELETE_FROM_SUBSCRIBER);
+
         if (software.equals(MessageFormat.ENTERPRISE_CSV)) {
 
             UUID systemId = exchange.getHeaderAsUuid(HeaderKeys.SenderSystemUuid);
-            return FhirToEnterpriseCsvTransformer.transformFromFhir(serviceId, systemId, exchangeId, batchId, filteredResources, endpoint);
+            return FhirToEnterpriseCsvTransformer.transformFromFhir(serviceId, systemId, exchangeId, batchId, filteredResources, endpoint, isBulkDeleteFromSubscriber);
 
         } else if (software.equals(MessageFormat.PCR_CSV)) {
+
+            if (isBulkDeleteFromSubscriber) {
+                throw new Exception("Bulk delete from subscriber not implemented for PCR transform");
+            }
 
             UUID systemId = exchange.getHeaderAsUuid(HeaderKeys.SenderSystemUuid);
             String body = exchange.getBody();
@@ -204,7 +211,7 @@ public class MessageTransformOutbound extends PipelineComponent {
         } else if (software.equals(MessageFormat.SUBSCRIBER_CSV)) {
 
             UUID systemId = exchange.getHeaderAsUuid(HeaderKeys.SenderSystemUuid);
-            return FhirToSubscriberCsvTransformer.transformFromFhir(serviceId, systemId, exchangeId, batchId, filteredResources, endpoint);
+            return FhirToSubscriberCsvTransformer.transformFromFhir(serviceId, systemId, exchangeId, batchId, filteredResources, endpoint, isBulkDeleteFromSubscriber);
 
         } else if (software.equals(MessageFormat.JSON_API)) {
             //this is a pull-request message format, so there's no outbound transformation required
@@ -467,7 +474,8 @@ public class MessageTransformOutbound extends PipelineComponent {
 
         //we use a special exchange with a specific header key to bulk populate subscribers
         String sourceSystem = exchange.getHeader(HeaderKeys.SourceSystem);
-        if (sourceSystem.equals(MessageFormat.DUMMY_SENDER_SOFTWARE_FOR_BULK_TRANSFORM)) {
+        if (sourceSystem.equals(MessageFormat.DUMMY_SENDER_SOFTWARE_FOR_BULK_TRANSFORM)
+                || sourceSystem.equals(MessageFormat.DUMMY_SENDER_SOFTWARE_FOR_BULK_DELETE_FROM_SUBSCRIBER)) {
 
             ExchangeBatchDalI exchangeBatchDal = DalProvider.factoryExchangeBatchDal();
             ExchangeBatch exchangeBatch = exchangeBatchDal.getForExchangeAndBatchId(exchange.getId(), batchId);

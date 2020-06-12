@@ -290,6 +290,12 @@ export class ExchangeAuditComponent {
 			return;
 		}
 
+		if (mode == 'FullDelete'
+			&& !protocolId) {
+			vm.log.error('Select a protocol to delete for');
+			return;
+		}
+
 		var fileTypesToFilterOn;
 		if (vm.postFilterFileTypes) {
 			fileTypesToFilterOn = vm.postFilterFileTypesSelected;

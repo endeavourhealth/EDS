@@ -2799,7 +2799,7 @@ public abstract class SpecialRoutines {
                     }
 
                 } else {
-                    EnterpriseTransformHelper helper = new EnterpriseTransformHelper(serviceId, null, null, null, subscriberConfigName, resourceWrappers);
+                    EnterpriseTransformHelper helper = new EnterpriseTransformHelper(serviceId, null, null, null, subscriberConfigName, resourceWrappers, false);
                     org.endeavourhealth.transform.enterprise.outputModels.Organization orgWriter = helper.getOutputContainer().getOrganisations();
 
                     OrganisationEnterpriseTransformer t = new OrganisationEnterpriseTransformer();
@@ -2913,7 +2913,7 @@ public abstract class SpecialRoutines {
                     }
 
                 } else {
-                    SubscriberTransformHelper helper = new SubscriberTransformHelper(serviceId, null, null, null, subscriberConfigName, resourceWrappers);
+                    SubscriberTransformHelper helper = new SubscriberTransformHelper(serviceId, null, null, null, subscriberConfigName, resourceWrappers, false);
 
                     OrganisationTransformer t = new OrganisationTransformer();
                     t.transformResources(resourceWrappers, helper);

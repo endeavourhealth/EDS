@@ -430,12 +430,12 @@ public class QueueHelper {
      * creates a "dummy" exchange and an exchange_batch for each patient and injects into the protocol queue
      * that will cause all resources for each patient to be transformed
      */
-    public static void queueUpFullServiceForPopulatingSubscriber(UUID serviceId, UUID specificProtocolId) throws Exception {
+    public static void queueUpFullServiceForPopulatingSubscriber(UUID serviceId, UUID specificProtocolId, String reason) throws Exception {
         //find all patients
         PatientSearchDalI patientSearchDal = DalProvider.factoryPatientSearchDal();
         List<UUID> patientUuids = patientSearchDal.getPatientIds(serviceId, true);
 
-        queueUpFullServiceForPopulatingSubscriber(serviceId, specificProtocolId, patientUuids, "Full load of all patients", null);
+        queueUpFullServiceForPopulatingSubscriber(serviceId, specificProtocolId, patientUuids, reason, null);
     }
 
     public static void queueUpFullServiceForPopulatingSubscriberFilteredFiles(UUID serviceId, UUID specificProtocolId, String filteredFiles) throws Exception {
@@ -460,7 +460,8 @@ public class QueueHelper {
         queueUpFullServiceForPopulatingSubscriber(serviceId, specificProtocolId, patientUuids, "Full load of all patients - Filtered Files", fileTypesSet);
     }
 
-    public static void queueUpFullServiceForPopulatingSubscriber(UUID serviceId, UUID specificProtocolId, List<UUID> patientUuids, String reason, Set<String> fileTypesSet) throws Exception {
+    public static void queueUpFullServiceForPopulatingSubscriber(UUID serviceId, UUID specificProtocolId, List<UUID> patientUuids,
+                                                                 String reason, Set<String> fileTypesSet) throws Exception {
 
         ServiceDalI serviceDal = DalProvider.factoryServiceDal();
         Service service = serviceDal.getById(serviceId);
@@ -734,7 +735,7 @@ public class QueueHelper {
 
     public static void queueUpPatientsForDeletingFromSubscriber(UUID serviceId, UUID specificProtocolId, List<UUID> patientUuids, String reason) throws Exception {
 
-        /*ServiceDalI serviceDal = DalProvider.factoryServiceDal();
+        ServiceDalI serviceDal = DalProvider.factoryServiceDal();
         Service service = serviceDal.getById(serviceId);
 
         LibraryItem protocol = LibraryRepositoryHelper.getLibraryItem(specificProtocolId);
@@ -764,11 +765,11 @@ public class QueueHelper {
             exchange.setHeader(HeaderKeys.ProtocolIds, specificProtocolJson);
             exchange.setHeader(HeaderKeys.SenderLocalIdentifier, odsCode);
             exchange.setHeaderAsUuid(HeaderKeys.SenderSystemUuid, systemId);
-            exchange.setHeader(HeaderKeys.SourceSystem, MessageFormat.DUMMY_SENDER_SOFTWARE_FOR_BULK_TRANSFORM); //routing requires a source system name and this tells us it's this special case
+            exchange.setHeader(HeaderKeys.SourceSystem, MessageFormat.DUMMY_SENDER_SOFTWARE_FOR_BULK_DELETE_FROM_SUBSCRIBER); //routing requires a source system name and this tells us it's this special case
             exchange.setServiceId(serviceId);
             exchange.setSystemId(systemId);
 
-            String eventDesc = "Manually created exchange to populate subscribers in protocol " + protocol.getName();
+            String eventDesc = "Manually created exchange to delete from subscribers in protocol " + protocol.getName();
             if (!Strings.isNullOrEmpty(reason)) {
                 eventDesc += " (" + reason + ")";
             }
@@ -788,18 +789,17 @@ public class QueueHelper {
                 LOG.info("Posting to protocol queue");
                 List<UUID> exchangeIds = new ArrayList<>();
                 exchangeIds.add(exchange.getId());
-                //QueueHelper.postToExchange(exchangeIds, EXCHANGE_PROTOCOL, specificProtocolId, false, null);
 
-                QueueHelper.postToExchange(exchangeIds, EXCHANGE_PROTOCOL, specificProtocolId, false, null, fileTypesSet,null);
+                QueueHelper.postToExchange(exchangeIds, EXCHANGE_PROTOCOL, specificProtocolId, false, null, null ,null);
 
                 LOG.info("Exchange posted to protocol queue");
             } else {
                 LOG.info("Not posting to Rabbit as already done that for another system");
             }
 
-            //set this header key to prevent re-queuing
+            //set this header key to prevent re-queuing, AFTER we've already queued
             exchange.setHeaderAsBoolean(HeaderKeys.AllowQueueing, new Boolean(false)); //don't allow this to be re-queued
             AuditWriter.writeExchange(exchange);
-        }*/
+        }
     }
 }
