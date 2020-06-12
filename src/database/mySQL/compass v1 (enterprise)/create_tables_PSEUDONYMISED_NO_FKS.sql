@@ -671,8 +671,7 @@ CREATE TABLE encounter_additional (
   value_id character varying(36) NOT NULL COMMENT 'IM reference (i.e. Emergency admission)',
   CONSTRAINT pk_encounter_additional_id PRIMARY KEY (id, property_id, value_id)
 );
--- required for upserts to work
-CREATE UNIQUE INDEX ix_encounter_additional_id ON encounter_additional (id);
+CREATE INDEX ix_encounter_additional_id ON encounter_additional (id);
 
 
 -- Table: encounter_detail
