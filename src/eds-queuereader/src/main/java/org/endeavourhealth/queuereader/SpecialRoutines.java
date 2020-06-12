@@ -3529,13 +3529,14 @@ public abstract class SpecialRoutines {
                 }
                 UUID systemId = systemIds.get(0);
 
-                Exchange exchange = null;
+
                 UUID exchangeId = UUID.randomUUID();
                 List<UUID> batchIdsCreated = new ArrayList<>();
                 String bodyJson = JsonSerializer.serialize(new ArrayList<ExchangePayloadFile>());
                 String odsCode = service.getLocalId();
-                FhirResourceFiler filer = new FhirResourceFiler(exchangeId, service.getId(), systemId, new TransformError(), batchIdsCreated);
 
+                FhirResourceFiler filer = null;
+                Exchange exchange = null;
 
                 List<UUID> patientIds = new ArrayList<>();
                 String sql = "SELECT patient_id FROM patient_search WHERE service_id = ? AND dt_deleted IS NOT NULL";
@@ -3568,6 +3569,8 @@ public abstract class SpecialRoutines {
                         } else {
 
                             if (exchange == null) {
+                                filer = new FhirResourceFiler(exchangeId, service.getId(), systemId, new TransformError(), batchIdsCreated);
+
                                 exchange = new Exchange();
                                 exchange.setId(exchangeId);
                                 exchange.setBody(bodyJson);
@@ -3594,10 +3597,11 @@ public abstract class SpecialRoutines {
 
                 if (!testMode) {
 
-                    //close down filer
-                    filer.waitToFinish();
-
                     if (exchange != null) {
+
+                        //close down filer
+                        filer.waitToFinish();
+
                         //set multicast header
                         String batchIdString = ObjectMapperPool.getInstance().writeValueAsString(batchIdsCreated.toArray());
                         exchange.setHeader(HeaderKeys.BatchIdsJson, batchIdString);
