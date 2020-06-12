@@ -655,7 +655,7 @@ public class QueueHelper {
     /**
      * takes a list of patient IDs and groups them by service and queues them up for all relevant subscriber transforms
      */
-    public static void queueUpPatientsForSusbscriberTransform(List<UUID> patientIds, String reason) throws Exception {
+    public static void queueUpPatientsForSubscriberTransform(List<UUID> patientIds, String reason) throws Exception {
 
         //find service for each one
         Map<UUID, List<UUID>> hmPatientByService = new HashMap<>();
@@ -724,9 +724,17 @@ public class QueueHelper {
     /**
      * generates a dummy Exchange and sends through the protocol queue to delete all content from subscriber DBs
      */
-    /*public static void queueUpFullServiceForDeletingSubscriber(UUID serviceId, UUID specificProtocolId, List<UUID> patientUuids, String reason, Set<String> fileTypesSet) throws Exception {
+    public static void queueUpFullServiceForDeletingFromSubscriber(UUID serviceId, UUID specificProtocolId, String reason) throws Exception {
 
-        ServiceDalI serviceDal = DalProvider.factoryServiceDal();
+        PatientSearchDalI patientSearchDal = DalProvider.factoryPatientSearchDal();
+        List<UUID> patientUuids = patientSearchDal.getPatientIds(serviceId, true);
+
+        queueUpPatientsForDeletingFromSubscriber(serviceId, specificProtocolId, patientUuids, reason);
+    }
+
+    public static void queueUpPatientsForDeletingFromSubscriber(UUID serviceId, UUID specificProtocolId, List<UUID> patientUuids, String reason) throws Exception {
+
+        /*ServiceDalI serviceDal = DalProvider.factoryServiceDal();
         Service service = serviceDal.getById(serviceId);
 
         LibraryItem protocol = LibraryRepositoryHelper.getLibraryItem(specificProtocolId);
@@ -792,6 +800,6 @@ public class QueueHelper {
             //set this header key to prevent re-queuing
             exchange.setHeaderAsBoolean(HeaderKeys.AllowQueueing, new Boolean(false)); //don't allow this to be re-queued
             AuditWriter.writeExchange(exchange);
-        }
-    }*/
+        }*/
+    }
 }

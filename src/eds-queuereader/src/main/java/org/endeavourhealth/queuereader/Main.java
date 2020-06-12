@@ -5302,7 +5302,7 @@ public class Main {
 			}
 			LOG.info("Found " + patientIds.size() + " patient IDs");
 
-			QueueHelper.queueUpPatientsForSusbscriberTransform(patientIds, reason);
+			QueueHelper.queueUpPatientsForSubscriberTransform(patientIds, reason);
 
 			LOG.info("Finished transforming patients from " + sourceFile);
 		} catch (Throwable t) {
