@@ -58,6 +58,7 @@ import org.endeavourhealth.subscriber.filer.EnterpriseFiler;
 import org.endeavourhealth.subscriber.filer.SubscriberFiler;
 import org.endeavourhealth.transform.common.*;
 import org.endeavourhealth.transform.common.resourceBuilders.EpisodeOfCareBuilder;
+import org.endeavourhealth.transform.common.resourceBuilders.GenericBuilder;
 import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
 import org.endeavourhealth.transform.enterprise.EnterpriseTransformHelper;
 import org.endeavourhealth.transform.enterprise.transforms.OrganisationEnterpriseTransformer;
@@ -3499,20 +3500,42 @@ public abstract class SpecialRoutines {
 
     }
 
-    public static void deleteResourcesForDeletedPatients(String odsCodeRegex) {
+    public static void deleteResourcesForDeletedPatients(boolean testMode, String odsCodeRegex) {
         LOG.debug("Deleting Resources for Deleted Patients using " + odsCodeRegex);
         try {
 
             Connection conn = ConnectionManager.getEdsNonPooledConnection();
 
             ServiceDalI serviceDal = DalProvider.factoryServiceDal();
+            ResourceDalI resourceDal = DalProvider.factoryResourceDal();
+
             List<Service> services = serviceDal.getAll();
             for (Service service: services) {
+
+                //only do publishers
+                if (Strings.isNullOrEmpty(service.getPublisherConfigName())) {
+                    continue;
+                }
+
                 if (shouldSkipService(service, odsCodeRegex)) {
                     continue;
                 }
 
                 LOG.debug("Doing " + service);
+
+                List<UUID> systemIds = SystemHelper.getSystemIdsForService(service);
+                if (systemIds.isEmpty()) {
+                    continue;
+                }
+                UUID systemId = systemIds.get(0);
+
+                Exchange exchange = null;
+                UUID exchangeId = UUID.randomUUID();
+                List<UUID> batchIdsCreated = new ArrayList<>();
+                String bodyJson = JsonSerializer.serialize(new ArrayList<ExchangePayloadFile>());
+                String odsCode = service.getLocalId();
+                FhirResourceFiler filer = new FhirResourceFiler(exchangeId, service.getId(), systemId, new TransformError(), batchIdsCreated);
+
 
                 List<UUID> patientIds = new ArrayList<>();
                 String sql = "SELECT patient_id FROM patient_search WHERE service_id = ? AND dt_deleted IS NOT NULL";
@@ -3526,22 +3549,70 @@ public abstract class SpecialRoutines {
                 ps.close();
 
                 if (patientIds.isEmpty()) {
-                    LOG.debug("No deleted patients found, so skipping");
+                    LOG.debug("No deleted patients found");
                     continue;
                 }
 
                 LOG.debug("Found " + patientIds.size() + " deleted patients");
 
-                //TODO delete all resources
-                //TODO save tp FHIR
-                //TODO save exchange Event
-                //TODO send through to RabbitMQ
+                for (UUID patientId: patientIds) {
 
+                    List<ResourceWrapper> wrappers = resourceDal.getResourcesByPatient(service.getId(), patientId);
+                    LOG.debug("Doing patient " + patientId + " with " + wrappers.size() + " resources");
+
+                    for (ResourceWrapper wrapper: wrappers) {
+
+                        if (testMode) {
+                            LOG.debug("Would delete resource " + wrapper.getResourceType() + " " + wrapper.getResourceId());
+
+                        } else {
+
+                            if (exchange == null) {
+                                exchange = new Exchange();
+                                exchange.setId(exchangeId);
+                                exchange.setBody(bodyJson);
+                                exchange.setTimestamp(new Date());
+                                exchange.setHeaders(new HashMap<>());
+                                exchange.setHeaderAsUuid(HeaderKeys.SenderServiceUuid, service.getId());
+                                exchange.setHeader(HeaderKeys.ProtocolIds, ""); //just set to non-null value, so postToExchange(..) can safely recalculate
+                                exchange.setHeader(HeaderKeys.SenderLocalIdentifier, odsCode);
+                                exchange.setHeaderAsUuid(HeaderKeys.SenderSystemUuid, systemId);
+                                exchange.setHeader(HeaderKeys.SourceSystem, MessageFormat.TPP_CSV);
+                                exchange.setServiceId(service.getId());
+                                exchange.setSystemId(systemId);
+
+                                AuditWriter.writeExchange(exchange);
+                                AuditWriter.writeExchangeEvent(exchange, "Manually created to delete resources for deleted patients");
+                            }
+
+                            //delete resource
+                            Resource resource = wrapper.getResource();
+                            filer.deletePatientResource(null, false, new GenericBuilder(resource));
+                        }
+                    }
+                }
+
+                if (!testMode) {
+
+                    //close down filer
+                    filer.waitToFinish();
+
+                    if (exchange != null) {
+                        //set multicast header
+                        String batchIdString = ObjectMapperPool.getInstance().writeValueAsString(batchIdsCreated.toArray());
+                        exchange.setHeader(HeaderKeys.BatchIdsJson, batchIdString);
+
+                        //post to Rabbit protocol queue
+                        List<UUID> exchangeIds = new ArrayList<>();
+                        exchangeIds.add(exchange.getId());
+                        QueueHelper.postToExchange(exchangeIds, "EdsProtocol", null, true, null);
+                    }
+                }
             }
 
             conn.close();
 
-            LOG.debug("Finally Deleting Resources for Deleted Patients using " + odsCodeRegex);
+            LOG.debug("Finished Deleting Resources for Deleted Patients using " + odsCodeRegex);
         } catch (Throwable t) {
             LOG.error("", t);
         }

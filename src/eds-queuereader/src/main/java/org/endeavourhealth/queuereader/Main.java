@@ -89,11 +89,12 @@ public class Main {
 
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("DeleteResourcesForDeletedPatients")) {
+			boolean testMode = Boolean.parseBoolean(args[1]);
 			String odsCodeRegex = null;
-			if (args.length > 1) {
-				odsCodeRegex = args[1];
+			if (args.length > 2) {
+				odsCodeRegex = args[2];
 			}
-			SpecialRoutines.deleteResourcesForDeletedPatients(odsCodeRegex);
+			SpecialRoutines.deleteResourcesForDeletedPatients(testMode, odsCodeRegex);
 			System.exit(0);
 		}
 
