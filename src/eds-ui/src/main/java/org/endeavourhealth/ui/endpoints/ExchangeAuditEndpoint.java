@@ -483,7 +483,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
             if (postMode.equalsIgnoreCase("FullLoad")) {
                 QueueHelper.queueUpFullServiceForPopulatingSubscriber(serviceId, specificProtocolId, reason);
 
-            } else if (postMode.equalsIgnoreCase("FullLoad")) {
+            } else if (postMode.equalsIgnoreCase("FullDelete")) {
                 QueueHelper.queueUpFullServiceForDeletingFromSubscriber(serviceId, specificProtocolId, reason);
 
             } else {
