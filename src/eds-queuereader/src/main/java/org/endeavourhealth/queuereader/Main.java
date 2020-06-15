@@ -1842,7 +1842,7 @@ public class Main {
 				org.endeavourhealth.transform.subscriber.targetTables.Observation obsWriter = container.getObservations();
 
 				for (Long id: ids) {
-					SubscriberId idWrapper = new SubscriberId(SubscriberTableId.OBSERVATION.getId(), id.longValue(), null);
+					SubscriberId idWrapper = new SubscriberId(SubscriberTableId.OBSERVATION.getId(), id.longValue(), null, null);
 					obsWriter.writeDelete(idWrapper);
 				}
 
