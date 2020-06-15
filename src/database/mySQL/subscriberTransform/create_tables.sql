@@ -327,6 +327,7 @@ CREATE INDEX ix ON pseudo_id_audit (pseudo_id);
 CREATE TABLE patient_version_transformed (
   patient_id char(36) COMMENT 'FHIR Patient resource UUID',
   subscriber_config_name varchar(50) COMMENT 'necessary for when multiple feeds use the same subscriber_transform DB',
-  dt_version_sent datetime COMMENT 'datetime of the FHIR Patient version',
+  subscriber_id bigint COMMENT 'subscriber ID corresponding to the patient UUID',
+  dt_version datetime COMMENT 'datetime of the FHIR Patient version',
   CONSTRAINT pk_patient_version_sent PRIMARY KEY (patient_id, subscriber_config_name)
 ) COMMENT 'records the specific version of the Patient resource last sent to the the subscriber';

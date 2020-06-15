@@ -87,6 +87,16 @@ public class Main {
 		ConfigManager.initialize("queuereader", configId);
 
 		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("FindTppServicesNeedReprocessing")) {
+			String odsCodeRegex = null;
+			if (args.length > 1) {
+				odsCodeRegex = args[1];
+			}
+			SpecialRoutines.findTppServicesNeedReprocessing(odsCodeRegex);
+			System.exit(0);
+		}
+
+		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("DeleteResourcesForDeletedPatients")) {
 			boolean testMode = Boolean.parseBoolean(args[1]);
 			String odsCodeRegex = null;
@@ -1832,7 +1842,7 @@ public class Main {
 				org.endeavourhealth.transform.subscriber.targetTables.Observation obsWriter = container.getObservations();
 
 				for (Long id: ids) {
-					SubscriberId idWrapper = new SubscriberId(SubscriberTableId.OBSERVATION.getId(), id.longValue(), null, null);
+					SubscriberId idWrapper = new SubscriberId(SubscriberTableId.OBSERVATION.getId(), id.longValue(), null);
 					obsWriter.writeDelete(idWrapper);
 				}
 
