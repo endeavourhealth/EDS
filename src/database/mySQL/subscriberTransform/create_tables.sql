@@ -25,7 +25,7 @@ DROP TABLE IF EXISTS subscriber_id_map;
 DROP TABLE IF EXISTS subscriber_id_map_3;
 DROP TABLE IF EXISTS subscriber_pseudo_id_map;
 DROP TABLE IF EXISTS pseudo_id_audit;
-DROP TABLE IF EXISTS patient_version_sent;
+DROP TABLE IF EXISTS patient_version_transformed;
 
 CREATE TABLE enterprise_id_map
 (
@@ -323,10 +323,10 @@ CREATE TABLE pseudo_id_audit (
 
 CREATE INDEX ix ON pseudo_id_audit (pseudo_id);
 
-create table patient_version_sent (
-	patient_id char(36) COMMENT 'FHIR Patient resource UUID',
-    subscriber_config_name varchar(50) COMMENT 'necessary for when multiple feeds use the same subscriber_transform DB',
-    dt_version_sent datetime COMMENT 'datetime of the FHIR Patient version',
-    version_id char(36) COMMENT 'UUID of the FHIR Patient version',
-	CONSTRAINT pk_patient_version_sent PRIMARY KEY (patient_id, subscriber_config_name)
+
+CREATE TABLE patient_version_transformed (
+  patient_id char(36) COMMENT 'FHIR Patient resource UUID',
+  subscriber_config_name varchar(50) COMMENT 'necessary for when multiple feeds use the same subscriber_transform DB',
+  dt_version_sent datetime COMMENT 'datetime of the FHIR Patient version',
+  CONSTRAINT pk_patient_version_sent PRIMARY KEY (patient_id, subscriber_config_name)
 ) COMMENT 'records the specific version of the Patient resource last sent to the the subscriber';
