@@ -263,7 +263,8 @@ public final class ServiceEndpoint extends AbstractEndpoint {
 
             String originalPublisher = existingService.getPublisherConfigName();
             String currentPublisher = serviceToSave.getPublisherConfigName();
-            if (!originalPublisher.equals(currentPublisher)) {
+            if ((Strings.isNullOrEmpty(originalPublisher) != Strings.isNullOrEmpty(currentPublisher))
+                || (!Strings.isNullOrEmpty(originalPublisher) && !Strings.isNullOrEmpty(currentPublisher) && !originalPublisher.equals(currentPublisher))) {
 
                 //DDS-UI can't access EHR databases, so use the same validation fn as when trying to delete a service
                 error = canDeleteService(existingService);
