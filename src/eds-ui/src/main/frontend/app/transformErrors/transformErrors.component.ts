@@ -162,7 +162,7 @@ export class TransformErrorsComponent {
 
 	applyFiltering() {
 		var vm = this;
-console.log('filtering now');
+
 		//if we've not loaded our services yet, just return out
 		if (!vm.transformErrorSummaries) {
 			return;

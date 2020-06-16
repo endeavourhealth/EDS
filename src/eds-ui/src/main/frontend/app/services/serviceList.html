@@ -66,6 +66,7 @@
 								<select id="inputType5" class="form-control" [(ngModel)]="serviceService.servicePublisherConfigFilter" name="servicePublisherConfigFilter" (ngModelChange)="applyFiltering()">
 									<option value=""></option>
 									<option *ngFor="let publisherConfigName of serviceService.getPublisherConfigNamesFromCache()" value="{{publisherConfigName}}">{{publisherConfigName}}</option>
+									<option value="NoPublisher">No publisher set</option>
 								</select>
 							</div>
 

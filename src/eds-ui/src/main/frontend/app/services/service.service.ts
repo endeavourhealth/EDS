@@ -229,9 +229,18 @@ export class ServiceService extends BaseHttp2Service {
 
 				if (vm.servicePublisherConfigFilter) {
 					var publisherConfigName = service.publisherConfigName;
-					if (!publisherConfigName || publisherConfigName != vm.servicePublisherConfigFilter) {
-						continue;
+					if (vm.servicePublisherConfigFilter == 'NoPublisher') {
+						if (publisherConfigName) {
+							continue;
+						}
+
+					} else {
+						if (!publisherConfigName || publisherConfigName != vm.servicePublisherConfigFilter) {
+							continue;
+						}
+
 					}
+
 				}
 
 				//if it's not regex, then just compare strings
