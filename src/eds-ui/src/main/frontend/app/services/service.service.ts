@@ -153,7 +153,7 @@ export class ServiceService extends BaseHttp2Service {
 		if (vm.serviceNameFilter) {
 			try {
 				new RegExp(vm.serviceNameFilter);
-				validNameFilterRegex = vm.serviceNameFilter.toLowerCase();
+				validNameFilterRegex = vm.serviceNameFilter.toLowerCase().trim();
 			} catch (e) {
 				//do nothing
 			}
