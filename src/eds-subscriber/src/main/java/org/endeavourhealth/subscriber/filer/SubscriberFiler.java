@@ -692,7 +692,7 @@ public class SubscriberFiler {
 
         //wrap in try/catch so we can log out the SQL that failed
         try {
-            LOG.trace("Upserting batch of " + csvRecords.size() + " to " + tableName);
+            //LOG.trace("Upserting batch of " + csvRecords.size() + " to " + tableName);
 
             psInsert = createUpsertPreparedStatement(tableName, columns, connection, keywordEscapeChar);
 

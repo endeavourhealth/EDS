@@ -68,6 +68,9 @@ public class MessageTransformOutbound extends PipelineComponent {
         UUID batchId = transformBatch.getBatchId();
         UUID protocolId = transformBatch.getProtocolId();
 
+        //find our patient ID
+        UUID patientId = findPatientId(exchangeId, batchId);
+
         // Run the transform, creating a subscriber batch for each
         // (Holds transformed message id and destination endpoints)
         List<SubscriberBatch> subscriberBatches = new ArrayList<>();
@@ -104,13 +107,13 @@ public class MessageTransformOutbound extends PipelineComponent {
 
                 //retrieve our resources if necessary
                 if (filteredResources == null) {
-                    filteredResources = getResources(exchange, batchId, endpoint);
+                    filteredResources = getResources(exchange, batchId, patientId, endpoint);
                 }
 
                 //add any resources we've previously calculated need adding
                 //this must be done FOR EACH subscriber, as extra resources may be added by the first transform
                 //and we need to pick them up for the subsequent ones
-                addExtraResources(filteredResources, exchange, batchId, endpoint);
+                addExtraResources(filteredResources, exchange, batchId, patientId, endpoint);
                 resourceCount = new Integer(filteredResources.size());
 
                 //if we have resources, then perform the transform
@@ -176,6 +179,17 @@ public class MessageTransformOutbound extends PipelineComponent {
         }
         exchange.setHeader(HeaderKeys.SubscriberBatch, subscriberBatchesJson);
         //LOG.trace("Message transformed (outbound)");
+    }
+
+    private UUID findPatientId(UUID exchangeId, UUID batchId) throws PipelineException {
+
+        try {
+            ExchangeBatchDalI exchangeBatchDal = DalProvider.factoryExchangeBatchDal();
+            ExchangeBatch exchangeBatch = exchangeBatchDal.getForExchangeAndBatchId(exchangeId, batchId);
+            return exchangeBatch.getEdsPatientId();
+        } catch (Exception ex) {
+            throw new PipelineException("Failed to find patient UUID for batch " + batchId, ex);
+        }
     }
 
     private String transform(UUID serviceId,
@@ -374,10 +388,10 @@ public class MessageTransformOutbound extends PipelineComponent {
     }
 
 
-    private static List<ResourceWrapper> getResources(Exchange exchange, UUID batchId, String subscriberConfigName) throws Exception {
+    private static List<ResourceWrapper> getResources(Exchange exchange, UUID batchId, UUID patientId, String subscriberConfigName) throws Exception {
 
         //get the resources actually in the batch we're transforming
-        List<ResourceWrapper> resources = getResourcesInBatch(exchange, batchId, subscriberConfigName);
+        List<ResourceWrapper> resources = getResourcesInBatch(exchange, batchId, patientId, subscriberConfigName);
 
         //if there are no resources, then there won't be any extra resources, so no point wasting time
         //on looking for them or doing any filtering
@@ -392,7 +406,7 @@ public class MessageTransformOutbound extends PipelineComponent {
         return resources;
     }
 
-    private static void addExtraResources(List<ResourceWrapper> resources, Exchange exchange, UUID batchId, String subscriberConfigName) throws Exception {
+    private static void addExtraResources(List<ResourceWrapper> resources, Exchange exchange, UUID batchId, UUID patientId, String subscriberConfigName) throws Exception {
 
         //hash our current resources by type and ID so we know what we've already got
         //this is required for cases where we have multiple subscribers using the same subscriber_transform DB
@@ -460,15 +474,16 @@ public class MessageTransformOutbound extends PipelineComponent {
             }
         }
 
-        //int sizeAfter = resources.size();
-        //LOG.trace("Added " + (sizeAfter - sizeBefore) + " extra resources");
+        //filter our any resources that have since been amended to point to other patients
+        filterResourcesForOtherPatients(resources, patientId);
     }
 
-    private static List<ResourceWrapper> getResourcesInBatch(Exchange exchange, UUID batchId, String subscriberConfigName) throws Exception {
+    private static List<ResourceWrapper> getResourcesInBatch(Exchange exchange, UUID batchId, UUID patientId, String subscriberConfigName) throws Exception {
 
         //get the resources actually in the batch we're transforming
         ResourceDalI resourceDal = DalProvider.factoryResourceDal();
         UUID serviceId = exchange.getServiceId();
+
 
         List<ResourceWrapper> resources = null;
 
@@ -477,9 +492,6 @@ public class MessageTransformOutbound extends PipelineComponent {
         if (sourceSystem.equals(MessageFormat.DUMMY_SENDER_SOFTWARE_FOR_BULK_TRANSFORM)
                 || sourceSystem.equals(MessageFormat.DUMMY_SENDER_SOFTWARE_FOR_BULK_DELETE_FROM_SUBSCRIBER)) {
 
-            ExchangeBatchDalI exchangeBatchDal = DalProvider.factoryExchangeBatchDal();
-            ExchangeBatch exchangeBatch = exchangeBatchDal.getForExchangeAndBatchId(exchange.getId(), batchId);
-            UUID patientId = exchangeBatch.getEdsPatientId();
             resources = resourceDal.getResourcesByPatient(serviceId, patientId); //passing in a null patient ID will get us the admin resources
             LOG.debug("Transforming all " + resources.size() + " resources for patient " + patientId + " to populate " + subscriberConfigName);
 
@@ -491,6 +503,34 @@ public class MessageTransformOutbound extends PipelineComponent {
         }
 
         return resources;
+    }
+
+    /**
+     * resources can be moved from one patient to another, typically from the ADT feed, in which case we'll
+     * have a batch for the receiving patient and possibly a batch for the old patient. If this happens,
+     * then we want to make sure the batch for the old patient doesn't include any resource pointing to the new patient
+     * since the FHIR->compass transforms expect all resources passed in to belong to the same patient.
+     */
+    private static void filterResourcesForOtherPatients(List<ResourceWrapper> resources, UUID patientId) throws Exception {
+
+        for (int i=resources.size()-1; i>=0; i--) {
+            ResourceWrapper w = resources.get(i);
+            UUID wPatientId = w.getPatientId();
+
+            //if an admin batch, we shouldn't have any patient resources at all
+            if (patientId == null
+                    && wPatientId != null) {
+                throw new Exception("Unexpected patient-related resource " + w.getResourceType() + " " + w.getResourceId() + " in admin batch");
+            }
+
+            //if a patient batch, we may have admin resources, but remove any resources for other patients
+            if (patientId != null
+                    && wPatientId != null
+                    && !wPatientId.equals(patientId)) {
+                LOG.trace("Filtered out resource " + w.getResourceType() + " " + w.getResourceId() + " as belongs to patient " + w.getPatientId() + " not " + patientId);
+                resources.remove(i);
+            }
+        }
     }
 
 

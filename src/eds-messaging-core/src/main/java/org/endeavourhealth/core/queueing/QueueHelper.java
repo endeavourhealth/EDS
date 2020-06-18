@@ -643,8 +643,17 @@ public class QueueHelper {
         try {
             endpoints = service.getEndpointsList();
             for (ServiceInterfaceEndpoint endpoint : endpoints) {
-                UUID endpointSystemId = endpoint.getSystemUuid();
-                ret.add(endpointSystemId);
+                String endPointStr = endpoint.getEndpoint();
+
+                //this should only find PUBLISHER system IDs
+                if (endPointStr.equals(ServiceInterfaceEndpoint.STATUS_NORMAL)
+                        || endPointStr.equals(ServiceInterfaceEndpoint.STATUS_DRAFT)
+                        || endPointStr.equals(ServiceInterfaceEndpoint.STATUS_AUTO_FAIL)
+                        || endPointStr.equals(ServiceInterfaceEndpoint.STATUS_BULK_PROCESSING)) {
+
+                    UUID endpointSystemId = endpoint.getSystemUuid();
+                    ret.add(endpointSystemId);
+                }
             }
         } catch (Exception e) {
             throw new Exception("Failed to process endpoints from service " + service.getId());

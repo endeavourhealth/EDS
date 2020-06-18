@@ -2386,6 +2386,10 @@ public abstract class SpecialRoutines {
                         List<UUID> exchangeIds = new ArrayList<>();
                         exchangeIds.add(exchange.getId());
                         QueueHelper.postToExchange(exchangeIds, "EdsProtocol", null, true, null);
+
+                        //set the flag to prevent any re-queuing
+                        exchange.setHeaderAsBoolean(HeaderKeys.AllowQueueing, new Boolean(false)); //don't allow this to be re-queued
+                        AuditWriter.writeExchange(exchange);
                     }
                 }
             }
@@ -3610,6 +3614,10 @@ public abstract class SpecialRoutines {
                         List<UUID> exchangeIds = new ArrayList<>();
                         exchangeIds.add(exchange.getId());
                         QueueHelper.postToExchange(exchangeIds, "EdsProtocol", null, true, null);
+
+                        //set this after posting to rabbit so we can't re-queue it later
+                        exchange.setHeaderAsBoolean(HeaderKeys.AllowQueueing, new Boolean(false)); //don't allow this to be re-queued
+                        AuditWriter.writeExchange(exchange);
                     }
                 }
             }

@@ -42,21 +42,6 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 
 	private static final ParserPool parser = new ParserPool();
 
-	//private static final PatientIdentifierRepository patientIdentifierRepository = new PatientIdentifierRepository();
-	//private static JCS protocolCache = null;
-
-	/*static {
-		try {
-			protocolCache = JCS.getInstance("ProtocolCache");
-
-			IElementAttributes attributes = protocolCache.getDefaultElementAttributes();
-			attributes.setMaxLifeSeconds(60); //keep protocols cached for 60s max
-			protocolCache.setDefaultElementAttributes(attributes);
-
-		} catch (CacheException ex) {
-			throw new RuntimeException("Error creating protocol cache", ex);
-		}
-	}*/
 
 	public RunDataDistributionProtocols(RunDataDistributionProtocolsConfig config) {
 		this.config = config;
@@ -133,8 +118,18 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 		//LOG.debug("Data distribution protocols executed");
 	}
 
-
 	private boolean checkCohort(Protocol protocol, UUID protocolId, TmpCache tmpCache, String odsCode) throws PipelineException {
+
+		//check if previously in protocol or not
+		//TODO - if WAS and IS - OK
+		//TODO - if WAS NOT and IS - need full load
+		//TODO - if WAS and NOT NOW - do delete
+		//TODO - add all the extra resource stuff????
+
+		return checkCohortNow(protocol, protocolId, tmpCache, odsCode);
+	}
+
+	private boolean checkCohortNow(Protocol protocol, UUID protocolId, TmpCache tmpCache, String odsCode) throws PipelineException {
 
 		//if no cohort is defined, then treat this to mean we PASS the check
 		String cohort = protocol.getCohort();
