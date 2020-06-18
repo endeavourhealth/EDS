@@ -190,7 +190,7 @@
                                     <div class="form-group col-md-12">
 
                                         Reason:
-                                        <input type="text" id="postReason" [(ngModel)]="postReason" name="postReason">
+                                        <input type="text" id="postReason" [(ngModel)]="exchangeAuditService.postReason" name="postReason">
 
                                         Delete error state:
                                         <input type="checkbox" id="deleteErrorStateCheckbox" [(ngModel)]="postDeleteErrorState" name="postDeleteErrorState">
@@ -205,7 +205,7 @@
 
                                 <div class="row" *ngIf="postFilterFileTypes && postExchange=='edsInbound'">
                                     <div class="form-group col-md-12">
-                                        <textarea rows="8" class="form-control" id="description" [(ngModel)]="postFilterFileTypesSelected" placeholder="File types to filter on (space, comma or newline separated)" name="postFilterFileTypesSelected"></textarea>
+                                        <textarea rows="8" class="form-control" id="description" [(ngModel)]="exchangeAuditService.postFilterFileTypesSelected" placeholder="File types to filter on (space, comma or newline separated)" name="postFilterFileTypesSelected"></textarea>
                                     </div>
                                 </div>
 

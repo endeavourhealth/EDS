@@ -17,6 +17,9 @@ export class ExchangeAuditService extends BaseHttp2Service {
     exchangeSearchFrom: Date;
     exchangeSearchTo: Date;
 
+    //moved from the componenet so we don't lose their values
+    postFilterFileTypesSelected: string;
+    postReason: string;
 
     constructor(http:Http) {
         super(http);

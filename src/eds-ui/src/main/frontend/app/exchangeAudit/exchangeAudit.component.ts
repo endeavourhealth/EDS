@@ -40,10 +40,11 @@ export class ExchangeAuditComponent {
 	postMode: string;
 	postSpecificProtocol: string;
 	postFilterFileTypes: boolean;
-	postFilterFileTypesSelected: string;
 	postExchange: string;
 	postDeleteErrorState: boolean;
-	postReason: string;
+	//moved to the service to stop losing their values
+	/*postFilterFileTypesSelected: string;
+	postReason: string;*/
 
 	//for colouring exchanges
 	exchangeSizeColours: {}; //cached colours dynamically calculated for each exchange
@@ -298,14 +299,14 @@ export class ExchangeAuditComponent {
 
 		var fileTypesToFilterOn;
 		if (vm.postFilterFileTypes) {
-			fileTypesToFilterOn = vm.postFilterFileTypesSelected;
+			fileTypesToFilterOn = vm.exchangeAuditService.postFilterFileTypesSelected;
 			if (!fileTypesToFilterOn) {
 				vm.log.error('No file types selected');
 				return;
 			}
 		}
 
-		var reason = vm.postReason;
+		var reason = vm.exchangeAuditService.postReason;
 
 		this.busyPostingToExchange = vm.exchangeAuditService.postToExchange(exchangeId, serviceId, vm.systemId, exchangeName, mode, protocolId, fileTypesToFilterOn, deleteErrorState, reason).subscribe(
 			(result) => {
