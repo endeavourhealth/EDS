@@ -665,8 +665,8 @@ CREATE UNIQUE INDEX encounter_event_id
 
 CREATE TABLE encounter_additional (
   id bigint NOT NULL COMMENT 'same as the id column on the encounter table',
-  property_id character varying(36)  NOT NULL COMMENT 'IM reference (i.e. Admission method)',
-  value_id character varying(36) NOT NULL COMMENT 'IM reference (i.e. Emergency admission)',
+  property_id character varying(255)  NOT NULL COMMENT 'IM reference (i.e. Admission method)',
+  value_id character varying(255) NOT NULL COMMENT 'IM reference (i.e. Emergency admission)',
   CONSTRAINT pk_encounter_additional_id PRIMARY KEY (id, property_id, value_id)
 );
 CREATE INDEX ix_encounter_additional_id ON encounter_additional (id);
