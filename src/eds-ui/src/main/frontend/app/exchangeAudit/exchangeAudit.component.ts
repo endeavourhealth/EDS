@@ -37,13 +37,13 @@ export class ExchangeAuditComponent {
 
 	//for re-queuing
 	busyPostingToExchange: Subscription;
-	postMode: string;
-	postSpecificProtocol: string;
-	postFilterFileTypes: boolean;
-	postExchange: string;
-	postDeleteErrorState: boolean;
+	postSpecificProtocol: string; //this varies from publisher to publisher, so don't move to the service class
 	//moved to the service to stop losing their values
-	/*postFilterFileTypesSelected: string;
+	/*postMode: string;
+	postExchange: string;
+	postFilterFileTypes: boolean;
+	postDeleteErrorState: boolean;
+	postFilterFileTypesSelected: string;
 	postReason: string;*/
 
 	//for colouring exchanges
@@ -58,9 +58,7 @@ export class ExchangeAuditComponent {
 				private $state : StateService) {
 
 		this.service = new Service();
-		this.postMode = 'Onwards';
-		/*this.exchangesToShow = 100;
-		this.searchMode = 'Recent';*/
+		//this.postMode = 'Onwards';
 
 		this.systemId = transition.params()['systemId'];
 		var serviceId = transition.params()['serviceId'];
@@ -270,15 +268,15 @@ export class ExchangeAuditComponent {
 		var vm = this;
 		var exchangeId = vm.selectedExchange.exchangeId;
 		var serviceId = this.service.uuid;
-		var deleteErrorState = vm.postDeleteErrorState;
+		var deleteErrorState = vm.exchangeAuditService.postDeleteErrorState;
 
-		var exchangeName = vm.postExchange;
+		var exchangeName = vm.exchangeAuditService.postExchange;
 		if (!exchangeName) {
 			vm.log.error('No exchange selected');
 			return;
 		}
 
-		var mode = vm.postMode;
+		var mode = vm.exchangeAuditService.postMode;
 		if (!mode) {
 			vm.log.error('Select which exchanges to post');
 			return;
@@ -298,7 +296,7 @@ export class ExchangeAuditComponent {
 		}
 
 		var fileTypesToFilterOn;
-		if (vm.postFilterFileTypes) {
+		if (vm.exchangeAuditService.postFilterFileTypes) {
 			fileTypesToFilterOn = vm.exchangeAuditService.postFilterFileTypesSelected;
 			if (!fileTypesToFilterOn) {
 				vm.log.error('No file types selected');

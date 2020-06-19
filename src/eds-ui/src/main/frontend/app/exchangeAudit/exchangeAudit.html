@@ -165,14 +165,14 @@
                                     <div class="form-group col-md-12">
 
                                         Post to Exchange:
-                                        <select id="postExchange" [(ngModel)]="postExchange">
+                                        <select id="postExchange" [(ngModel)]="exchangeAuditService.postExchange">
                                             <option value=""></option>
                                             <option value="edsInbound">Inbound</option>
                                             <option value="edsProtocol">Protocol</option>
                                         </select>
 
                                         Exchanges to post:
-                                        <select id="postMode" [(ngModel)]="postMode">
+                                        <select id="postMode" [(ngModel)]="exchangeAuditService.postMode">
                                             <option value="This">This Exchange Only</option>
                                             <option value="Onwards">This Exchange and Onwards</option>
                                             <option value="All">All Exchanges</option>
@@ -184,32 +184,31 @@
                                         <!--Queues [Inbound={{selectedExchange.queueRoutingKeys['EdsInbound']}} Protocol={{selectedExchange.selectedExchange.queueRoutingKeys['EdsProtocol']}}]-->
 
                                     </div>
-
                                 </div>
-                                <div class="row" *ngIf="postExchange=='edsInbound'">
+
+
+                                <div class="row" *ngIf="exchangeAuditService.postExchange=='edsInbound'">
                                     <div class="form-group col-md-12">
 
                                         Reason:
                                         <input type="text" id="postReason" [(ngModel)]="exchangeAuditService.postReason" name="postReason">
 
                                         Delete error state:
-                                        <input type="checkbox" id="deleteErrorStateCheckbox" [(ngModel)]="postDeleteErrorState" name="postDeleteErrorState">
+                                        <input type="checkbox" id="deleteErrorStateCheckbox" [(ngModel)]="exchangeAuditService.postDeleteErrorState" name="postDeleteErrorState">
 
                                         Filter file types:
-                                        <input type="checkbox" id="filterFileTypesCheckbox" [(ngModel)]="postFilterFileTypes" name="filterFileTypes">
-
-
+                                        <input type="checkbox" id="filterFileTypesCheckbox" [(ngModel)]="exchangeAuditService.postFilterFileTypes" name="filterFileTypes">
 
                                     </div>
                                 </div>
 
-                                <div class="row" *ngIf="postFilterFileTypes && postExchange=='edsInbound'">
+                                <div class="row" *ngIf="exchangeAuditService.postExchange=='edsInbound' && exchangeAuditService.postFilterFileTypes">
                                     <div class="form-group col-md-12">
                                         <textarea rows="8" class="form-control" id="description" [(ngModel)]="exchangeAuditService.postFilterFileTypesSelected" placeholder="File types to filter on (space, comma or newline separated)" name="postFilterFileTypesSelected"></textarea>
                                     </div>
                                 </div>
 
-                                <div class="row" *ngIf="postExchange=='edsProtocol'">
+                                <div class="row" *ngIf="exchangeAuditService.postExchange=='edsProtocol'">
                                     <div class="form-group col-md-12">
 
                                         Protocol to apply:

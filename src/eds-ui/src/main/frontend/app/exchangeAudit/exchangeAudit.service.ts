@@ -17,9 +17,14 @@ export class ExchangeAuditService extends BaseHttp2Service {
     exchangeSearchFrom: Date;
     exchangeSearchTo: Date;
 
-    //moved from the componenet so we don't lose their values
+    //moved from the component so we don't lose their values
     postFilterFileTypesSelected: string;
     postReason: string;
+    postMode: string;
+    postExchange: string;
+    postFilterFileTypes: boolean;
+    postDeleteErrorState: boolean;
+
 
     constructor(http:Http) {
         super(http);
@@ -27,6 +32,7 @@ export class ExchangeAuditService extends BaseHttp2Service {
         var vm = this;
         vm.exchangesToShow = 100;
         vm.searchMode = 'Recent';
+        vm.postMode = 'Onwards';
     }
 
 
