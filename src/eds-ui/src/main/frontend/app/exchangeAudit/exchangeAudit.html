@@ -40,9 +40,10 @@
                                                 <label>Showing Last:</label>
                                                 <input name="ExchangesToShow" type="number" [(ngModel)]="exchangeAuditService.exchangesToShow" required>
 
+                                                <button type="button" class="btn btn-sm btn-default" (click)="showLast(10)">10</button>
+                                                <button type="button" class="btn btn-sm btn-default" (click)="showLast(100)">100</button>
                                                 <button type="button" class="btn btn-sm btn-default" (click)="showLast(250)">250</button>
                                                 <button type="button" class="btn btn-sm btn-default" (click)="showLast(500)">500</button>
-                                                <button type="button" class="btn btn-sm btn-default" (click)="showLast(1000)">1000</button>
                                                 <button type="button" class="btn btn-sm btn-default" (click)="showLast(10000)">10000</button>
                                             </div>
                                         </div>
@@ -108,6 +109,7 @@
                                             {{exchange.exchangeSizeDesc}}
                                         </span>
                                         <span class="fa fa-plus-circle" *ngIf="isBulk(exchange)" ngbTooltip="Bulk extract"></span>
+                                        <span class="fa fa-chevron-down" *ngIf="!canBeQueued(exchange)" ngbTooltip="Cannot be re-queued"></span>
                                     </td>
                                     <td>
                                         <div *ngIf="exchange.inError">
@@ -176,8 +178,8 @@
                                             <option value="This">This Exchange Only</option>
                                             <option value="Onwards">This Exchange and Onwards</option>
                                             <option value="All">All Exchanges</option>
-                                            <option *ngIf="postExchange=='edsProtocol'" value="FullLoad">Full Load of Data</option>
-                                            <option *ngIf="postExchange=='edsProtocol'" value="FullDelete">Full Delete of Data</option>
+                                            <option *ngIf="exchangeAuditService.postExchange=='edsProtocol'" value="FullLoad">Full Load of Data</option>
+                                            <option *ngIf="exchangeAuditService.postExchange=='edsProtocol'" value="FullDelete">Full Delete of Data</option>
                                         </select>
 
                                         Queues [Inbound={{selectedExchange.queueRoutingKeys['EdsInbound']}}, Protocol={{selectedExchange.queueRoutingKeys['EdsProtocol']}}]
