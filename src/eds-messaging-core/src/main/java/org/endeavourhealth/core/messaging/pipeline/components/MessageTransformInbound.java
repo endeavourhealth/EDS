@@ -31,7 +31,6 @@ import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
 import org.endeavourhealth.transform.emis.EmisCustomCsvToFhirTransformer;
 import org.endeavourhealth.transform.emis.EmisOpenToFhirTransformer;
 import org.endeavourhealth.transform.fhirhl7v2.FhirHl7v2Filer;
-import org.endeavourhealth.transform.hl7v2fhir.ImperialHL7FhirTransformer;
 import org.endeavourhealth.transform.homerton.HomertonCsvToFhirTransformer;
 import org.endeavourhealth.transform.tpp.TppCsvToFhirTransformer;
 import org.endeavourhealth.transform.vision.VisionCsvToFhirTransformer;
@@ -612,7 +611,8 @@ public class MessageTransformInbound extends PipelineComponent {
 		UUID exchangeId = exchange.getId();
 		String exchangeBody = exchange.getBody();
 
-		ImperialHL7FhirTransformer.transform(exchangeBody, fhirResourceFiler, version);
+		//TODO - Shreekanth, I had to remove this to get the project to compile
+		//ImperialHL7FhirTransformer.transform(exchangeBody, fhirResourceFiler, version);
 	}
 
 }
