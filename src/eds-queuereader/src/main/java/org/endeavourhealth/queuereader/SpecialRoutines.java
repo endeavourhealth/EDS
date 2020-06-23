@@ -2951,63 +2951,68 @@ public abstract class SpecialRoutines {
 
     private static Reference findNewOrgRefOnCoreDb(String subscriberConfigName, Reference oldOrgRef, UUID serviceId, boolean testMode) throws Exception {
 
-        String oldOrgId = ReferenceHelper.getReferenceId(oldOrgRef);
+        try {
+            String oldOrgId = ReferenceHelper.getReferenceId(oldOrgRef);
 
-        ResourceDalI resourceDal = DalProvider.factoryResourceDal();
-        ResourceWrapper wrapper = resourceDal.getCurrentVersion(serviceId, ResourceType.Organization.toString(), UUID.fromString(oldOrgId));
-        if (wrapper != null) {
-            LOG.trace("Organization exists at service");
-            return oldOrgRef;
-        }
-
-        LOG.debug("Org doesn't exist at service, so need to take over instance mapping");
-
-        Reference newOrgRef = null;
-
-        PatientSearchDalI patientSearchDal = DalProvider.factoryPatientSearchDal();
-        List<UUID> patientIds = patientSearchDal.getPatientIds(serviceId, false, 10000);
-        for (UUID patientId: patientIds) {
-
-            ResourceDalI resourceRepository = DalProvider.factoryResourceDal();
-            Patient patient = (Patient) resourceRepository.getCurrentVersionAsResource(serviceId, ResourceType.Patient, patientId.toString());
-            if (patient == null) {
-                continue;
+            ResourceDalI resourceDal = DalProvider.factoryResourceDal();
+            ResourceWrapper wrapper = resourceDal.getCurrentVersion(serviceId, ResourceType.Organization.toString(), UUID.fromString(oldOrgId));
+            if (wrapper != null) {
+                LOG.trace("Organization exists at service");
+                return oldOrgRef;
             }
 
-            if (!patient.hasManagingOrganization()) {
-                throw new TransformException("Patient " + patient.getId() + " doesn't have a managing org for service " + serviceId);
+            LOG.debug("Org doesn't exist at service, so need to take over instance mapping");
+
+            Reference newOrgRef = null;
+
+            PatientSearchDalI patientSearchDal = DalProvider.factoryPatientSearchDal();
+            List<UUID> patientIds = patientSearchDal.getPatientIds(serviceId, false, 10000);
+            for (UUID patientId : patientIds) {
+
+                ResourceDalI resourceRepository = DalProvider.factoryResourceDal();
+                Patient patient = (Patient) resourceRepository.getCurrentVersionAsResource(serviceId, ResourceType.Patient, patientId.toString());
+                if (patient == null) {
+                    continue;
+                }
+
+                if (!patient.hasManagingOrganization()) {
+                    throw new TransformException("Patient " + patient.getId() + " doesn't have a managing org for service " + serviceId);
+                }
+
+                newOrgRef = patient.getManagingOrganization();
+                break;
             }
 
-            newOrgRef = patient.getManagingOrganization();
-            break;
-        }
+            if (newOrgRef == null) {
+                throw new Exception("Failed to find new org ref from patient records");
+            }
 
-        if (newOrgRef == null) {
-            throw new Exception("Failed to find new org ref from patient records");
-        }
+            String newOrgId = ReferenceHelper.getReferenceId(newOrgRef);
 
-        String newOrgId = ReferenceHelper.getReferenceId(newOrgRef);
+            if (newOrgId.equals(oldOrgId)) {
+                LOG.debug("Org ref correct but doesn't exist on DB - reference data is missing???");
+                return null;
+            }
 
-        if (newOrgId.equals(oldOrgId)) {
-            LOG.debug("Org ref correct but doesn't exist on DB - reference data is missing???");
+            if (testMode) {
+                LOG.debug("Would need to take over instance mapping from " + oldOrgId + " -> " + newOrgId);
+
+            } else {
+
+                LOG.debug("Taking over instance mapping from " + oldOrgId + " -> " + newOrgId);
+
+                //we need to update the subscriber transform DB to make this new org ref the defacto one
+                SubscriberInstanceMappingDalI dal = DalProvider.factorySubscriberInstanceMappingDal(subscriberConfigName);
+                dal.takeOverInstanceMapping(ResourceType.Organization, UUID.fromString(oldOrgId), UUID.fromString(newOrgId));
+
+                LOG.debug("Done");
+            }
+
+            return newOrgRef;
+        } catch (Exception e) {
+            LOG.error("Exception finding org ref for service " + serviceId, e);
             return null;
         }
-
-        if (testMode) {
-            LOG.debug("Would need to take over instance mapping from " + oldOrgId + " -> " + newOrgId);
-
-        } else {
-
-            LOG.debug("Taking over instance mapping from " + oldOrgId + " -> " + newOrgId);
-
-            //we need to update the subscriber transform DB to make this new org ref the defacto one
-            SubscriberInstanceMappingDalI dal = DalProvider.factorySubscriberInstanceMappingDal(subscriberConfigName);
-            dal.takeOverInstanceMapping(ResourceType.Organization, UUID.fromString(oldOrgId), UUID.fromString(newOrgId));
-
-            LOG.debug("Done");
-        }
-
-        return newOrgRef;
     }
 
     /*public static void testHashedFileFilteringForSRCode(String filePath, String uniqueKey) {
