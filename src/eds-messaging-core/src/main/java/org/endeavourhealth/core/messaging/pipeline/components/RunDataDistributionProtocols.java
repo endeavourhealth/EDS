@@ -380,7 +380,7 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 		return odsCode;
 	}
 
-	private static Set<String> getOdsCodesForServiceDefinedProtocol(Protocol protocol) {
+	public static Set<String> getOdsCodesForServiceDefinedProtocol(Protocol protocol) {
 		Set<String> ret = new HashSet<>();
 
 		String cohort = protocol.getCohort();

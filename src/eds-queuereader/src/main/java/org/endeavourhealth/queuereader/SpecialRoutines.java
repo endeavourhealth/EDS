@@ -17,15 +17,22 @@ import org.apache.commons.io.FilenameUtils;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.common.fhir.*;
+import org.endeavourhealth.common.ods.OdsOrganisation;
+import org.endeavourhealth.common.ods.OdsWebService;
 import org.endeavourhealth.common.utility.FileHelper;
 import org.endeavourhealth.common.utility.JsonSerializer;
+import org.endeavourhealth.common.utility.XmlSerializer;
 import org.endeavourhealth.core.application.ApplicationHeartbeatHelper;
 import org.endeavourhealth.core.configuration.PostMessageToExchangeConfig;
 import org.endeavourhealth.core.csv.CsvHelper;
 import org.endeavourhealth.core.database.dal.DalProvider;
+import org.endeavourhealth.core.database.dal.admin.LibraryDalI;
 import org.endeavourhealth.core.database.dal.admin.LibraryRepositoryHelper;
 import org.endeavourhealth.core.database.dal.admin.ServiceDalI;
 import org.endeavourhealth.core.database.dal.admin.SystemHelper;
+import org.endeavourhealth.core.database.dal.admin.models.ActiveItem;
+import org.endeavourhealth.core.database.dal.admin.models.DefinitionItemType;
+import org.endeavourhealth.core.database.dal.admin.models.Item;
 import org.endeavourhealth.core.database.dal.admin.models.Service;
 import org.endeavourhealth.core.database.dal.audit.ExchangeBatchDalI;
 import org.endeavourhealth.core.database.dal.audit.ExchangeDalI;
@@ -51,6 +58,7 @@ import org.endeavourhealth.core.messaging.pipeline.SubscriberConfig;
 import org.endeavourhealth.core.messaging.pipeline.components.DetermineRelevantProtocolIds;
 import org.endeavourhealth.core.messaging.pipeline.components.MessageTransformOutbound;
 import org.endeavourhealth.core.messaging.pipeline.components.PostMessageToExchange;
+import org.endeavourhealth.core.messaging.pipeline.components.RunDataDistributionProtocols;
 import org.endeavourhealth.core.queueing.QueueHelper;
 import org.endeavourhealth.core.xml.QueryDocument.*;
 import org.endeavourhealth.core.xml.TransformErrorSerializer;
@@ -3755,5 +3763,107 @@ public abstract class SpecialRoutines {
             LOG.error("", t);
         }
 
+    }
+
+    public static void validateProtocolCohorts() {
+        LOG.debug("Validating Protocol Cohorts");
+        try {
+
+            DefinitionItemType itemType = DefinitionItemType.Protocol;
+
+            Iterable<ActiveItem> activeItems = null;
+            List<Item> items = new ArrayList();
+
+            LibraryDalI repository = DalProvider.factoryLibraryDal();
+            activeItems = repository.getActiveItemByTypeId(itemType.getValue(), false);
+
+            for (ActiveItem activeItem: activeItems) {
+                Item item = repository.getItemByKey(activeItem.getItemId(), activeItem.getAuditId());
+                if (!item.isDeleted()) {
+                    items.add(item);
+                }
+            }
+            //LOG.trace("Found " + items.size() + " protocols to check for service " + serviceId + " and system " + systemId);
+
+            for (int i = 0; i < items.size(); i++) {
+                Item item = items.get(i);
+
+                String xml = item.getXmlContent();
+                LibraryItem libraryItem = XmlSerializer.deserializeFromString(LibraryItem.class, xml, null);
+                Protocol protocol = libraryItem.getProtocol();
+
+                LOG.debug("");
+                LOG.debug("");
+                LOG.debug(">>>>>>>>>>>>>>>>> " + libraryItem.getName());
+
+                try {
+
+                    String cohort = protocol.getCohort();
+                    if (Strings.isNullOrEmpty(cohort)) {
+                        LOG.debug("Protocol doesn't have cohort explicitly set, so assuming ALL PATIENTS");
+
+                    } else {
+                        LOG.debug("Cohort = [" + cohort + "]");
+
+                        if (cohort.startsWith("Defining Services")) {
+                            Set<String> odsCodes = RunDataDistributionProtocols.getOdsCodesForServiceDefinedProtocol(protocol);
+                            LOG.debug("Cohort is " + odsCodes.size() + " size");
+
+                            List<String> list = new ArrayList<>(odsCodes);
+                            list.sort(((o1, o2) -> o1.compareToIgnoreCase(o2)));
+
+                            Map<String, List<String>> hmParents = new HashMap<>();
+
+                            for (String odsCode: list) {
+                                OdsOrganisation org = OdsWebService.lookupOrganisationViaRest(odsCode);
+                                if (org == null) {
+                                    LOG.error(odsCode + " -> Failed to find ODS record");
+                                } else {
+
+                                    if (!org.isActive()) {
+                                        LOG.error(odsCode + " -> ODS record not active");
+                                    }
+
+                                    Map<String, String> parents = org.getParents();
+                                    for (String parentOdsCode: parents.keySet()) {
+
+                                        List<String> l = hmParents.get(parentOdsCode);
+                                        if (l == null) {
+                                            l = new ArrayList<>();
+                                            hmParents.put(parentOdsCode, l);
+                                        }
+                                        l.add(odsCode);
+                                    }
+                                }
+                            }
+
+                            LOG.debug("Found " + hmParents.size() + " parents");
+                            for (String parentOdsCode: hmParents.keySet()) {
+                                List<String> childOdsCodes = hmParents.get(parentOdsCode);
+
+                                OdsOrganisation parentOrg = OdsWebService.lookupOrganisationViaRest(parentOdsCode);
+                                if (parentOrg == null) {
+                                    LOG.error(parentOdsCode + " -> Failed to find parent ODS record");
+                                } else {
+                                    LOG.error(parentOdsCode + " -> " + parentOrg.getOrganisationName());
+                                }
+                                LOG.debug("    Has " + childOdsCodes.size() + " children");
+                                LOG.debug("    " + String.join(", " + childOdsCodes));
+                            }
+                        }
+                    }
+
+                } catch (Exception ex) {
+                    LOG.error("", ex);
+                }
+
+
+            }
+
+
+            LOG.debug("Finished Validating Protocol Cohorts");
+        } catch (Throwable t) {
+            LOG.error("", t);
+        }
     }
 }
