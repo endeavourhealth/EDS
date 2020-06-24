@@ -3803,9 +3803,16 @@ public abstract class SpecialRoutines {
                         LOG.debug("Protocol doesn't have cohort explicitly set, so assuming ALL PATIENTS");
 
                     } else {
-                        LOG.debug("Cohort = [" + cohort + "]");
 
-                        if (cohort.startsWith("Defining Services")) {
+                        if (cohort.equals("All Patients")) {
+                            LOG.debug("Cohort = all patients");
+
+                        } else if (cohort.equals("Explicit Patients")) {
+                            LOG.debug("Cohort = explicit patients");
+
+                        } else if (cohort.startsWith("Defining Services")) {
+                            LOG.debug("Cohort = defining services");
+
                             Set<String> odsCodes = RunDataDistributionProtocols.getOdsCodesForServiceDefinedProtocol(protocol);
                             LOG.debug("Cohort is " + odsCodes.size() + " size");
 
@@ -3850,6 +3857,8 @@ public abstract class SpecialRoutines {
                                 LOG.debug("    Has " + childOdsCodes.size() + " children");
                                 LOG.debug("    " + String.join(", " + childOdsCodes));
                             }
+                        } else {
+                            throw new Exception("Unknown cohort type [" + cohort + "]");
                         }
                     }
 
