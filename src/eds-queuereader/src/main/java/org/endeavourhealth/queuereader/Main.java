@@ -89,6 +89,12 @@ public class Main {
 		ConfigManager.initialize("queuereader", configId);
 
 		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("TestSubscriberConfigs")) {
+			SpecialRoutines.testSubscriberConfigs();
+			System.exit(0);
+		}
+
+		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("FindTppServicesNeedReprocessing")) {
 			String odsCodeRegex = null;
 			if (args.length > 1) {
@@ -266,13 +272,6 @@ public class Main {
 			String resourceType = args[2];
 			String resourceId = args[3];
 			SpecialRoutines.getResourceHistory(serviceId, resourceType, resourceId);
-			System.exit(0);
-		}
-
-
-		if (args.length >= 1
-				&& args[0].equalsIgnoreCase("FindOutOfOrderTppServices")) {
-			SpecialRoutines.findOutOfOrderTppServices();
 			System.exit(0);
 		}
 

@@ -15,6 +15,7 @@ import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
+import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.common.fhir.*;
 import org.endeavourhealth.common.utility.FileHelper;
 import org.endeavourhealth.common.utility.JsonSerializer;
@@ -46,6 +47,7 @@ import org.endeavourhealth.core.fhirStorage.FhirResourceHelper;
 import org.endeavourhealth.core.fhirStorage.FhirSerializationHelper;
 import org.endeavourhealth.core.fhirStorage.ServiceInterfaceEndpoint;
 import org.endeavourhealth.core.messaging.pipeline.PipelineException;
+import org.endeavourhealth.core.messaging.pipeline.SubscriberConfig;
 import org.endeavourhealth.core.messaging.pipeline.components.DetermineRelevantProtocolIds;
 import org.endeavourhealth.core.messaging.pipeline.components.MessageTransformOutbound;
 import org.endeavourhealth.core.messaging.pipeline.components.PostMessageToExchange;
@@ -99,66 +101,6 @@ import static org.endeavourhealth.core.xml.QueryDocument.ServiceContractType.PUB
 public abstract class SpecialRoutines {
     private static final Logger LOG = LoggerFactory.getLogger(SpecialRoutines.class);
 
-    public static void findOutOfOrderTppServices() {
-        LOG.info("Finding Out of Order TPP Services");
-        try {
-
-            ServiceDalI serviceDal = DalProvider.factoryServiceDal();
-            List<Service> services = serviceDal.getAll();
-
-            for (Service service: services) {
-                if (service.getTags() == null
-                        && !service.getTags().containsKey("TPP")) {
-                    continue;
-                }
-
-                LOG.info("Checking " + service);
-
-                List<UUID> systemIds = SystemHelper.getSystemIdsForService(service);
-                for (UUID systemId: systemIds) {
-
-                    ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
-                    List<Exchange> exchanges = exchangeDal.getExchangesByService(service.getId(), systemId, Integer.MAX_VALUE);
-                    LOG.debug("Found " + exchanges.size() + " exchanges");
-
-                    //exchanges are in insert date order, most recent first
-                    Date previousDate = null;
-
-                    for (int i=0; i<exchanges.size(); i++) {
-                        Exchange exchange = exchanges.get(i);
-
-                        Date dataDate = exchange.getHeaderAsDate(HeaderKeys.DataDate);
-                        if (dataDate == null) {
-                            throw new Exception("No data date for exchange " + exchange.getId());
-                        }
-
-                        if (previousDate == null
-                                || dataDate.before(previousDate)) {
-                            previousDate = dataDate;
-
-                        } else {
-                            LOG.warn("Exchange " + exchange.getId() + " from " + exchange.getTimestamp() + " is out of order");
-                        }
-                    }
-
-                }
-            }
-
-            //find TPP services
-            //get exchanges
-            //work from MOST recent
-            //see if exchanges have data date out of order
-            //how to fix?...
-            //If queued up -
-            //If already processed - move exchange and re-queued from AFTER bulk
-            //If not processed & not queued - just move exchange?
-
-
-            LOG.info("Finished Finding Out of Order TPP Services");
-        } catch (Throwable t) {
-            LOG.error("", t);
-        }
-    }
 
 
     /*public static void populateExchangeFileSizes(String odsCodeRegex) {
@@ -3779,6 +3721,36 @@ public abstract class SpecialRoutines {
             }
 
             LOG.debug("Finished Finding Emis Services that Need Re-processing");
+        } catch (Throwable t) {
+            LOG.error("", t);
+        }
+
+    }
+
+    public static void testSubscriberConfigs() {
+        LOG.debug("Testing Subscriber Configs");
+        try {
+
+            Map<String, String> configs = ConfigManager.getConfigurations("db_subscriber");
+            LOG.debug("Found " + configs.size() + " configs");
+
+            for (String configId: configs.keySet()) {
+                String configData = configs.get(configId);
+                LOG.debug("Doing >>>>>>>>>>>>>>>> " + configId);
+                LOG.debug(configData);
+
+                try {
+                    SubscriberConfig configRecord = SubscriberConfig.readFromConfig(configId);
+                    LOG.debug("Parsed OK");
+                    LOG.debug("" + configRecord);
+
+                } catch (Exception ex) {
+                    LOG.error("Failed to parse");
+                    LOG.error("", ex);
+                }
+            }
+
+            LOG.debug("Finished Testing Subscriber Configs");
         } catch (Throwable t) {
             LOG.error("", t);
         }

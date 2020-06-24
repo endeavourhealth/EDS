@@ -26,6 +26,7 @@ DROP TABLE IF EXISTS subscriber_id_map_3;
 DROP TABLE IF EXISTS subscriber_pseudo_id_map;
 DROP TABLE IF EXISTS pseudo_id_audit;
 DROP TABLE IF EXISTS patient_version_transformed;
+DROP TABLE IF EXISTS subscriber_cohort;
 
 CREATE TABLE enterprise_id_map
 (
@@ -275,7 +276,7 @@ CREATE TABLE subscriber_id_map
   subscriber_table tinyint NOT NULL COMMENT 'ID of the target table this ID is for',
   subscriber_id bigint NOT NULL COMMENT 'unique ID allocated for the subscriber DB',
   source_id varchar(250) NOT NULL COMMENT 'Source ID (e.g. FHIR reference) that this ID is mapped from',
-  dt_previously_sent datetime NULL COMMENT 'the date time of the previously sent version of this resource (or null if deleted)',
+  -- dt_previously_sent datetime NULL COMMENT 'the date time of the previously sent version of this resource (or null if deleted)', -- removed
   CONSTRAINT pk_subscriber_id_map PRIMARY KEY (source_id, subscriber_table)
 );
 
@@ -292,7 +293,7 @@ CREATE TABLE subscriber_id_map_3
   subscriber_table tinyint NOT NULL COMMENT 'ID of the target table this ID is for',
   subscriber_id bigint NOT NULL COMMENT 'unique ID allocated for the subscriber DB',
   source_id varchar(250) NOT NULL COMMENT 'Source ID (e.g. FHIR reference) that this ID is mapped from',
-  dt_previously_sent datetime NULL COMMENT 'the date time of the previously sent version of this resource (or null if deleted)',
+  -- dt_previously_sent datetime NULL COMMENT 'the date time of the previously sent version of this resource (or null if deleted)', -- removed
   CONSTRAINT pk_subscriber_id_map_3 PRIMARY KEY (source_id, subscriber_table)
 );
 
@@ -331,3 +332,18 @@ CREATE TABLE patient_version_transformed (
   dt_version datetime COMMENT 'datetime of the FHIR Patient version',
   CONSTRAINT pk_patient_version_sent PRIMARY KEY (patient_id, subscriber_config_name)
 ) COMMENT 'records the specific version of the Patient resource last sent to the the subscriber';
+
+
+
+CREATE TABLE subscriber_cohort (
+   patient_id char(36) NOT NULL,
+   subscriber_config_name varchar(50) NOT NULL,
+   service_id char(36) NOT NULL,
+   in_cohort tinyint(1) NOT NULL,
+   reason varchar(255) DEFAULT NULL,
+   dt_updated datetime(3) NOT NULL,
+   PRIMARY KEY (patient_id,subscriber_config_name,dt_updated)
+ )
+ ROW_FORMAT=COMPRESSED
+ KEY_BLOCK_SIZE=8
+ COMMENT 'records when a patient entered or left a subscriber cohort';

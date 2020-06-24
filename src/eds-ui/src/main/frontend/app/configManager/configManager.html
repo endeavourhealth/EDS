@@ -23,7 +23,7 @@
                             <option *ngFor="let appId of getAppIds()" value="{{appId}}">{{appId}}</option>
                         </select>
                         &nbsp;&nbsp;&nbsp;
-                        <label for="checkBoxFilterAppIdIncludeGlobal" class="control-label">Always Include Global</label>
+                        <label for="checkBoxFilterAppIdIncludeGlobal" class="control-label">Include Global</label>
                         <input type="checkbox" id="checkBoxFilterAppIdIncludeGlobal" [(ngModel)]="filterAppIdIncludeGlobal" name="checkBoxFilterAppIdIncludeGlobal" (ngModelChange)="applyFiltering()">
                     </div>
 

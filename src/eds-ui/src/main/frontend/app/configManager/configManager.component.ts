@@ -38,7 +38,7 @@ export class ConfigManagerComponent {
                 private $state: StateService) {
 
         var vm = this;
-        vm.filterAppIdIncludeGlobal = true;
+        vm.filterAppIdIncludeGlobal = false;
         vm.filterSearchOnConfigId = true;
     }
 

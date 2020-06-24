@@ -1,5 +1,10 @@
 USE audit;
 
+DROP FUNCTION IF EXISTS isBulk;
+DROP FUNCTION IF EXISTS isAllowQueueing;
+DROP FUNCTION IF EXISTS isEmisCustom;
+DROP FUNCTION IF EXISTS isEmptyBody;
+DROP FUNCTION IF EXISTS getDataDate;
 DROP TABLE IF EXISTS `exchange`;
 DROP TABLE IF EXISTS exchange_event;
 DROP TABLE IF EXISTS exchange_transform_audit;
@@ -338,3 +343,95 @@ create table last_data_to_subscriber (
   KEY_BLOCK_SIZE=8;
 
 create index ix_service_id on last_data_to_subscriber (service_id, system_id);
+
+
+
+
+DELIMITER //
+CREATE FUNCTION isBulk ( exchange_headers TEXT )
+  RETURNS BOOLEAN
+  BEGIN
+
+    DECLARE ret BOOLEAN;
+    SET ret = IF (exchange_headers like '%"is-bulk":"true"%', TRUE, FALSE);
+    RETURN ret;
+
+  END; //
+DELIMITER ;
+
+
+DELIMITER //
+CREATE FUNCTION isAllowQueueing ( exchange_headers TEXT )
+  RETURNS BOOLEAN
+  BEGIN
+
+    DECLARE ret BOOLEAN;
+    SET ret = IF (exchange_headers NOT LIKE '%"AllowQueueing":"false"%', TRUE, FALSE);
+    RETURN ret;
+
+  END; //
+DELIMITER ;
+
+
+DELIMITER //
+CREATE FUNCTION isEmisCustom ( exchange_body MEDIUMTEXT )
+  RETURNS BOOLEAN
+  BEGIN
+
+    DECLARE ret BOOLEAN;
+    SET ret = IF (exchange_body like '%OriginalTerm%'
+                  OR exchange_body like '%RegistrationStatusHistory%'
+                  OR exchange_body like '%RegistrationHistory%',
+                  TRUE, FALSE);
+    RETURN ret;
+
+  END; //
+DELIMITER ;
+
+
+DELIMITER //
+CREATE FUNCTION isEmptyBody ( exchange_body MEDIUMTEXT )
+  RETURNS BOOLEAN
+  BEGIN
+
+    DECLARE ret BOOLEAN;
+    SET ret = IF (exchange_body = '[]', TRUE, FALSE);
+    RETURN ret;
+
+  END; //
+DELIMITER ;
+
+
+DELIMITER //
+CREATE FUNCTION getDataDate ( exchange_headers TEXT )
+  RETURNS DATETIME
+  BEGIN
+
+    DECLARE ret DATETIME;
+    DECLARE str varchar(50);
+
+    if (exchange_headers like '%"DataDate"%') THEN
+
+      SET str = SUBSTRING(
+          SUBSTRING(exchange_headers,
+                    INSTR(exchange_headers, 'DataDate') + 11
+          ),
+          1,
+          INSTR(
+              SUBSTRING(exchange_headers,
+                        INSTR(exchange_headers, 'DataDate') + 11
+              ),
+              '\"'
+          )-1);
+      SET ret = str; -- should auto-convert since it's in SQL format
+
+    END IF;
+    RETURN ret;
+
+  END; //
+DELIMITER ;
+
+
+
+
+
