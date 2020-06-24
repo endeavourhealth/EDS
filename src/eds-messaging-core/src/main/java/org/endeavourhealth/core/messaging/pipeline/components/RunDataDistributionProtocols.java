@@ -6,6 +6,9 @@ import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.common.cache.ParserPool;
 import org.endeavourhealth.common.fhir.*;
 import org.endeavourhealth.common.fhir.schema.RegistrationType;
+import org.endeavourhealth.common.ods.OdsOrganisation;
+import org.endeavourhealth.common.ods.OdsWebService;
+import org.endeavourhealth.common.utility.ExpiringCache;
 import org.endeavourhealth.core.configuration.RunDataDistributionProtocolsConfig;
 import org.endeavourhealth.core.database.dal.DalProvider;
 import org.endeavourhealth.core.database.dal.admin.LibraryRepositoryHelper;
@@ -41,6 +44,7 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 	private RunDataDistributionProtocolsConfig config;
 
 	private static final ParserPool parser = new ParserPool();
+	private static ExpiringCache<String, Set<String>> hmOrgParents = new ExpiringCache<>(1000 * 60 * 60 * 1); //cache for an hour
 
 
 	public RunDataDistributionProtocols(RunDataDistributionProtocolsConfig config) {
@@ -93,18 +97,24 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 				continue;
 			}
 
-			//check if this batch falls into the protocol cohort
-			UUID protocolId = UUID.fromString(libraryItem.getUuid());
-			if (!checkCohort(protocol, protocolId, tmpCache, odsCode)) {
-				continue;
+			try {
+				//check if this batch falls into the protocol cohort
+				UUID protocolId = UUID.fromString(libraryItem.getUuid());
+				if (!checkCohort(protocol, protocolId, tmpCache, odsCode)) {
+					continue;
+				}
+
+
+				TransformBatch transformBatch = new TransformBatch();
+				transformBatch.setBatchId(batchId);
+				transformBatch.setProtocolId(UUID.fromString(libraryItem.getUuid()));
+				transformBatch.setSubscribers(subscribers);
+
+				transformBatches.add(transformBatch);
+
+			} catch (Exception ex) {
+				throw new PipelineException("Error checking protocol " + libraryItem.getUuid(), ex);
 			}
-
-			TransformBatch transformBatch = new TransformBatch();
-			transformBatch.setBatchId(batchId);
-			transformBatch.setProtocolId(UUID.fromString(libraryItem.getUuid()));
-			transformBatch.setSubscribers(subscribers);
-
-			transformBatches.add(transformBatch);
 		}
 
 		// Add transformation batch list to the exchange
@@ -118,7 +128,7 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 		//LOG.debug("Data distribution protocols executed");
 	}
 
-	private boolean checkCohort(Protocol protocol, UUID protocolId, TmpCache tmpCache, String odsCode) throws PipelineException {
+	private boolean checkCohort(Protocol protocol, UUID protocolId, TmpCache tmpCache, String odsCode) throws Exception {
 
 		//check if previously in protocol or not
 		//TODO - if WAS and IS - OK
@@ -129,7 +139,7 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 		return checkCohortNow(protocol, protocolId, tmpCache, odsCode);
 	}
 
-	private boolean checkCohortNow(Protocol protocol, UUID protocolId, TmpCache tmpCache, String odsCode) throws PipelineException {
+	private boolean checkCohortNow(Protocol protocol, UUID protocolId, TmpCache tmpCache, String odsCode) throws Exception {
 
 		//if no cohort is defined, then treat this to mean we PASS the check
 		String cohort = protocol.getCohort();
@@ -154,7 +164,7 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 	}
 
 
-	private boolean checkServiceDefinedCohort(UUID protocolId, Protocol protocol, TmpCache tmpCache, String odsCode) throws PipelineException {
+	private boolean checkServiceDefinedCohort(UUID protocolId, Protocol protocol, TmpCache tmpCache, String odsCode) throws Exception {
 
 		//find the list of service UUIDs that define the cohort
 		Set<String> cohortOdsCodes = getOdsCodesForServiceDefinedProtocol(protocol);
@@ -167,19 +177,14 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 		}
 
 		//check to see if our service is one of the defining service contracts, in which case it automatically passes
-		if (cohortOdsCodes.contains(odsCode.toUpperCase())) {
+		if (isOdsCodeInCohort(odsCode, cohortOdsCodes)) {
 			LOG.debug("PASS - This service (" + odsCode + ") is in defining list for batch ID " + tmpCache.getBatchId());
 			return true;
 		}
 
 		//if our service isn't one of the cohort-defining ones, then we need to see if our patient is registered at one
 		//of the cohort-defining services
-		UUID patientUuid = null;
-		try {
-			patientUuid = tmpCache.findPatientId();
-		} catch (Exception ex) {
-			throw new PipelineException("Failed to find patient ID for batch " + tmpCache.getBatchId(), ex);
-		}
+		UUID patientUuid = tmpCache.findPatientId();
 
 		//if there's no patient ID, then this is admin resources batch, so return true so it goes through unfiltered
 		if (patientUuid == null) {
@@ -187,12 +192,43 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 			return true;
 		}
 
-		try {
-			return checkPatientIsRegisteredAtServices(tmpCache, cohortOdsCodes);
+		return checkPatientIsRegisteredAtServices(tmpCache, cohortOdsCodes);
+	}
 
-		} catch (Exception ex) {
-			throw new PipelineException("Failed to retrieve patient or organisation resources for patient ID " + patientUuid, ex);
+	private static boolean isOdsCodeInCohort(String odsCode, Set<String> cohortOdsCodes) throws Exception {
+
+		//the cohort is in caps, so make sure this is too
+		odsCode = odsCode.toUpperCase();
+
+		//if the ODS code is directly in the cohort, it passes
+		if (cohortOdsCodes.contains(odsCode)) {
+			return true;
 		}
+
+		//if not a direct hit, look up the parents for the org in ODS
+		Set<String> parentCodes = hmOrgParents.get(odsCode);
+		if (parentCodes == null) {
+
+			OdsOrganisation org = OdsWebService.lookupOrganisationViaRest(odsCode);
+
+			if (org != null
+					&& org.getParents() != null) {
+				parentCodes = new HashSet<>(org.getParents().keySet());
+
+			} else {
+				parentCodes = new HashSet<>();
+			}
+			hmOrgParents.put(odsCode, parentCodes);
+		}
+
+		//recurse for each parent code
+		for (String parentCode: parentCodes) {
+			if (isOdsCodeInCohort(parentCode, cohortOdsCodes)) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 
@@ -241,11 +277,6 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 			return false;
 		}
 
-		if (!fhirPatient.hasCareProvider()) {
-			LOG.debug("      Patient " + patientUuid + " has no care provider, returning false");
-			return false;
-		}
-
 		Extension isTestPatient = ExtensionConverter.findExtension(fhirPatient, FhirExtensionUri.PATIENT_IS_TEST_PATIENT);
 		if (isTestPatient != null) {
 			BooleanType b = (BooleanType)isTestPatient.getValue();
@@ -255,19 +286,24 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 			}
 		}
 
-
+		//do not check Care Provider, since this assumes the field is kept up to date, which it
+		//won't be, especially at non-GP services
+		/*if (!fhirPatient.hasCareProvider()) {
+			LOG.debug("      Patient " + patientUuid + " has no care provider, returning false");
+			return false;
+		}
 		for (Reference careProviderReference : fhirPatient.getCareProvider()) {
 
 			String odsCode = findOdsCodeFromReference(tmpCache, careProviderReference, serviceId);
 
 			if (!Strings.isNullOrEmpty(odsCode)) {
-				if (cohortOdsCodes.contains(odsCode.toUpperCase())) {
+				if (isOdsCodeInCohort(odsCode, cohortOdsCodes)) {
 					return true;
 				}
 			} else {
 				LOG.debug("      ODS Code could not be found for " + careProviderReference.getReference());
 			}
-		}
+		}*/
 
 		//if we couldn't find the registered practice code from the patient resource, see if we can do so via
 		//the EpisodeOfCare resources. We can only look at the current version because we can't search for
@@ -309,7 +345,7 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 			String odsCode = findOdsCodeFromReference(tmpCache, managingOrgReference, serviceId);
 
 			if (!Strings.isNullOrEmpty(odsCode)) {
-				if (cohortOdsCodes.contains(odsCode.toUpperCase())) {
+				if (isOdsCodeInCohort(odsCode, cohortOdsCodes)) {
 					return true;
 				}
 			} else {

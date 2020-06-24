@@ -15,7 +15,19 @@ public class SubscriberConfig {
 
     private static final int DEFAULT_TRANSFORM_BATCH_SIZE = 50;
 
+    public enum SubscriberType {
+        CompassV1,
+        CompassV2
+    }
+
+    public enum CohortType {
+        AllPatients,
+        ExplicitPatients,
+        GpRegisteredAt
+    }
+
     //common properties to subscribers
+    private String subscriberConfigName;
     private SubscriberType subscriberType;
     private boolean includeDateRecorded;
     private int batchSize = DEFAULT_TRANSFORM_BATCH_SIZE;
@@ -31,17 +43,10 @@ public class SubscriberConfig {
     //compass v2 properties
     private boolean v2HasEncounterEventTable;
 
-
-    public enum SubscriberType {
-        CompassV1,
-        CompassV2
+    public SubscriberConfig(String subscriberConfigName) {
+        this.subscriberConfigName = subscriberConfigName;
     }
 
-    public enum CohortType {
-        AllPatients,
-        ExplicitPatients,
-        GpRegisteredAt
-    }
 
     public SubscriberType getSubscriberType() {
         return subscriberType;
@@ -84,12 +89,12 @@ public class SubscriberConfig {
         if (config == null) {
             throw new Exception("No config record found for [" + subscriberConfigName + "]");
         }
-        return readFromJson(config);
+        return readFromJson(subscriberConfigName, config);
     }
 
-    public static SubscriberConfig readFromJson(JsonNode config) throws Exception {
+    public static SubscriberConfig readFromJson(String subscriberConfigName, JsonNode config) throws Exception {
 
-        SubscriberConfig ret = new SubscriberConfig();
+        SubscriberConfig ret = new SubscriberConfig(subscriberConfigName);
         ret.populateFromJson(config);
         return ret;
     }
@@ -247,6 +252,7 @@ public class SubscriberConfig {
 
         StringBuilder sb = new StringBuilder();
 
+        sb.append("subscriberConfigName = [" + subscriberConfigName + "], ");
         sb.append("subscriberType = [" + subscriberType + "], ");
         sb.append("isPseudonymised = [" + isPseudonymised + "], ");
         sb.append("cohortType = [" + cohortType + "], ");
