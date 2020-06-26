@@ -43,7 +43,7 @@ public class DetermineRelevantProtocolIds extends PipelineComponent {
 			//DSM approach
 			String odsCode = exchange.getHeader(HeaderKeys.SenderLocalIdentifier);
 			List<String> sharingAgreementIdsNewWay = getSharingAgreementIdsNewWay(odsCode);
-			exchange.setHeaderAsStringList(HeaderKeys.SharingAgreementIds, sharingAgreementIdsNewWay);
+			//exchange.setHeaderAsStringList(HeaderKeys.SharingAgreementIds, sharingAgreementIdsNewWay);
 			boolean hasDpaNewWay = OrganisationCache.doesOrganisationHaveDPA(odsCode);
 
 			//compare DSM and DDS-UI protocols to make sure nothing is configured wrong

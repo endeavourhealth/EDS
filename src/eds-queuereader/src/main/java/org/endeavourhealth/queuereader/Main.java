@@ -89,6 +89,16 @@ public class Main {
 		ConfigManager.initialize("queuereader", configId);
 
 		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("CountVaccinationCodes")) {
+			String ccgOdsCodes = null;
+			if (args.length > 1) {
+				ccgOdsCodes = args[1];
+			}
+			SpecialRoutines.countVaccinationCodes(ccgOdsCodes);
+			System.exit(0);
+		}
+
+		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("ValidateProtocolCohorts")) {
 			SpecialRoutines.validateProtocolCohorts();
 			System.exit(0);

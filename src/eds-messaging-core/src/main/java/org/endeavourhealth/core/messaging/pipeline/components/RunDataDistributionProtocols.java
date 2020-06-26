@@ -12,7 +12,6 @@ import org.endeavourhealth.common.utility.ExpiringCache;
 import org.endeavourhealth.core.configuration.RunDataDistributionProtocolsConfig;
 import org.endeavourhealth.core.database.dal.DalProvider;
 import org.endeavourhealth.core.database.dal.admin.LibraryRepositoryHelper;
-import org.endeavourhealth.core.database.dal.admin.PatientCohortDalI;
 import org.endeavourhealth.core.database.dal.audit.ExchangeBatchDalI;
 import org.endeavourhealth.core.database.dal.audit.models.Exchange;
 import org.endeavourhealth.core.database.dal.audit.models.ExchangeBatch;
@@ -461,12 +460,13 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 				return false;
 			}
 
+			throw new Exception("Not currently supported");
 			//no point moving the below to the TmpCache object since it only is specific to the protocol currently being checked
-			UUID serviceId = tmpCache.getServiceId();
+			/*UUID serviceId = tmpCache.getServiceId();
 			PatientCohortDalI cohortRepository = DalProvider.factoryPatientCohortDal();
 			boolean inCohort = cohortRepository.isInCohort(protocolId, serviceId, nhsNumber);
 			//LOG.trace("protocol " + protocolId + " service " + serviceId + " nhs number " + nhsNumber + " -> in cohort " + inCohort);
-			return inCohort;
+			return inCohort;*/
 		} catch (Exception ex) {
 			throw new PipelineException("Exception in protocol " + protocolId, ex);
 		}
