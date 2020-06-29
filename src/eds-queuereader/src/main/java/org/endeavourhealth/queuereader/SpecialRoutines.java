@@ -3888,9 +3888,12 @@ public abstract class SpecialRoutines {
         }
     }
 
-    public static void countVaccinationCodes(String ccgOdsCodes) {
+    public static void countVaccinationCodes(String sinceDateStr, String ccgOdsCodes) {
         LOG.debug("Counting VaccinationCodes at " + ccgOdsCodes);
         try {
+
+            Date cutoff = new SimpleDateFormat("yyyy-MM-dd").parse(sinceDateStr);
+            LOG.debug("Counting vaccinations since " + sinceDateStr);
 
             ServiceDalI serviceDal = DalProvider.factoryServiceDal();
             List<Service> services = serviceDal.getAll();
@@ -3957,6 +3960,15 @@ public abstract class SpecialRoutines {
                     List<ResourceWrapper> resources = resourceDal.getResourcesByPatient(service.getId(), patientId, ResourceType.Immunization.toString());
                     for (ResourceWrapper resourceWrapper: resources) {
                         Immunization imm = (Immunization)resourceWrapper.getResource();
+
+                        if (!imm.hasDateElement()) {
+                            continue;
+                        }
+                        DateTimeType dtVal = imm.getDateElement();
+                        Date dt = dtVal.getValue();
+                        if (dt.before(cutoff)) {
+                            continue;
+                        }
 
                         if (imm.hasVaccineCode()) {
                             CodeableConcept cc = imm.getVaccineCode();
