@@ -2891,11 +2891,11 @@ public abstract class SpecialRoutines {
                         LOG.debug("Generated NULL bytes");
 
                     } else {
-                        LOG.debug("Generated " + bytes.length + " bytes");
-
                         String base64 = Base64.getEncoder().encodeToString(bytes);
                         UUID batchId = UUID.randomUUID();
-                        SubscriberFiler.file(batchId, UUID.randomUUID(), base64, subscriberConfigName);
+                        UUID queuedMessageId = UUID.randomUUID();
+                        LOG.debug("Generated " + bytes.length + " bytes with batch ID " + batchId + " and queued message ID " + queuedMessageId);
+                        SubscriberFiler.file(batchId, queuedMessageId, base64, subscriberConfigName);
                     }
                 }
             }

@@ -62,6 +62,7 @@ public class SubscriberFiler {
                 int subscriberId = wrapper.getRemoteSubscriberId().intValue();
                 SubscriberZipFileUUIDsDalI szfudi = DalProvider.factorySubscriberZipFileUUIDs();
                 szfudi.createSubscriberZipFileUUIDsEntity(subscriberId, batchId.toString(), queuedMessageId.toString(), base64);
+                LOG.trace("Written data to remote sending table with subscriber ID " + subscriberId + " and queued message ID " + queuedMessageId);
             }
         }
     }
