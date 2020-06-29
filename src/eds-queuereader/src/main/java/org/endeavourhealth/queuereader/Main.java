@@ -90,11 +90,12 @@ public class Main {
 
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("CountVaccinationCodes")) {
+			String sinceDateStr = args[1];
 			String ccgOdsCodes = null;
-			if (args.length > 1) {
-				ccgOdsCodes = args[1];
+			if (args.length > 2) {
+				ccgOdsCodes = args[2];
 			}
-			SpecialRoutines.countVaccinationCodes(ccgOdsCodes);
+			SpecialRoutines.countVaccinationCodes(sinceDateStr, ccgOdsCodes);
 			System.exit(0);
 		}
 
