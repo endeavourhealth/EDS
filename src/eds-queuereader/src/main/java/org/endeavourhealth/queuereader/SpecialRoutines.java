@@ -3966,18 +3966,20 @@ public abstract class SpecialRoutines {
                             String originalCode = codes.getOriginalCode();
                             String originalTerm = codes.getOriginalTerm();
 
+                            //there are Vision immunizations with a Snomed code only
                             if (originalCode == null) {
-                                LOG.warn("Null original code " + imm.getId());
-                                continue;
-                            }
-
-                            String snomedConceptIdStr = "";
-                            if (snomedConceptId != null) {
-                                snomedConceptIdStr = "" + snomedConceptId;
+                                originalCode = "NULL";
                             }
 
                             if (originalTerm == null) {
-                                originalTerm = "";
+                                originalTerm = "NULL";
+                            }
+
+                            String snomedConceptIdStr;
+                            if (snomedConceptId != null) {
+                                snomedConceptIdStr = "" + snomedConceptId;
+                            } else {
+                                snomedConceptIdStr = "NULL";
                             }
 
                             String cacheKey = originalCode + "¬" + originalTerm + "¬" + snomedConceptIdStr;
@@ -4008,12 +4010,16 @@ public abstract class SpecialRoutines {
             for (String fileName: fileNames) {
 
                 Map<String, AtomicInteger> hmResults = null;
+                String localScheme = null;
                 if (fileName.equals("Immunisation_Codes_TPP.csv")) {
                     hmResults = tppResults;
+                    localScheme = "TPP local";
                 } else if (fileName.equals("Immunisation_Codes_Emis.csv")) {
                     hmResults = emisResults;
+                    localScheme = "EMIS local";
                 } else if (fileName.equals("Immunisation_Codes_Vision.csv")) {
                     hmResults = visionResults;
+                    localScheme = "Vision local";
                 } else {
                     throw new Exception("Unknown file name " + fileName);
                 }
@@ -4056,9 +4062,9 @@ public abstract class SpecialRoutines {
                         String[] toks = key.split("¬");
                         String originalCode = toks[0];
 
-                        String originalTerm = "";
-                        String snomedConceptId = "";
-                        String snomedTerm = "";
+                        String originalTerm = "NULL";
+                        String snomedConceptId = "NULL";
+                        String snomedTerm = "NULL";
 
                         if (toks.length > 1) {
                             originalTerm = toks[1];
@@ -4078,7 +4084,7 @@ public abstract class SpecialRoutines {
                         if (originalCode.startsWith("CTV3_")) {
                             originalCode = originalCode.substring(5);
                             if (originalCode.startsWith("Y")) {
-                                codeScheme = "TPP local";
+                                codeScheme = localScheme;
                             } else {
                                 codeScheme = "CTV3";
                             }
@@ -4086,7 +4092,7 @@ public abstract class SpecialRoutines {
                         } else {
                             Read2Code dbCode = TerminologyService.lookupRead2Code(originalCode);
                             if (dbCode == null) {
-                                codeScheme = "EMIS local";
+                                codeScheme = localScheme;
                             } else {
                                 codeScheme = "Read2";
                             }
