@@ -84,7 +84,7 @@ import org.endeavourhealth.transform.subscriber.SubscriberTransformHelper;
 import org.endeavourhealth.transform.subscriber.targetTables.OutputContainer;
 import org.endeavourhealth.transform.subscriber.targetTables.SubscriberTableId;
 import org.endeavourhealth.transform.subscriber.transforms.OrganisationTransformer;
-import org.endeavourhealth.transform.ui.helpers.BulkHelper;
+import org.endeavourhealth.transform.subscriber.BulkHelper;
 import org.hl7.fhir.instance.model.*;
 import org.hl7.fhir.instance.model.Resource;
 import org.slf4j.Logger;
@@ -113,6 +113,8 @@ import static org.endeavourhealth.core.xml.QueryDocument.ServiceContractType.PUB
 
 public abstract class SpecialRoutines {
     private static final Logger LOG = LoggerFactory.getLogger(SpecialRoutines.class);
+    private static final String COMPASS_V1 = "compass_v1";
+    private static final String COMPASS_V2 = "compass_v2";
 
 
 
@@ -2150,7 +2152,7 @@ public abstract class SpecialRoutines {
 
     // For the protocol name provided, get the list of services which are publishers and send
     // their transformed Patient and EpisodeOfCare FHIR resources to the Enterprise Filer
-    public static void transformAndFilePatientsAndEpisodesForProtocolServices (String protocolName, String subscriberConfigName) throws Exception {
+    public static void transformAndFilePatientsAndEpisodesForProtocolServices (String compassVersion, String protocolName, String subscriberConfigName) throws Exception {
 
         //find the protocol using the name parameter
         LibraryItem matchedLibraryItem = BulkHelper.findProtocolLibraryItem(protocolName);
@@ -2185,12 +2187,22 @@ public abstract class SpecialRoutines {
                     }
                     patientResources.add(patientWrapper);
 
-                    String patientContainerString
-                            = BulkHelper.getEnterpriseContainerForPatientData(patientResources, serviceUuid, batchUuid, protocolUuid, subscriberConfigName, patientId);
+                    if (compassVersion.equalsIgnoreCase(COMPASS_V1)) {
+                        String patientContainerString
+                                = BulkHelper.getEnterpriseContainerForPatientData(patientResources, serviceUuid, batchUuid, protocolUuid, subscriberConfigName, patientId);
 
-                    //  Use  a random UUID for a queued message ID
-                    if (patientContainerString != null) {
-                        EnterpriseFiler.file(batchUuid, UUID.randomUUID(), patientContainerString, subscriberConfigName);
+                        //  Use  a random UUID for a queued message ID
+                        if (patientContainerString != null) {
+                            EnterpriseFiler.file(batchUuid, UUID.randomUUID(), patientContainerString, subscriberConfigName);
+                        }
+                    } else if (compassVersion.equalsIgnoreCase(COMPASS_V2)) {
+                        String patientContainerString
+                                = BulkHelper.getSubscriberContainerForPatientData(patientResources, serviceUuid, batchUuid, protocolUuid, subscriberConfigName, patientId);
+
+                        //  Use  a random UUID for a queued message ID
+                        if (patientContainerString != null) {
+                            SubscriberFiler.file(batchUuid, UUID.randomUUID(), patientContainerString, subscriberConfigName);
+                        }
                     }
 
                     List<ResourceWrapper> episodeResources = new ArrayList<>();
@@ -2207,13 +2219,25 @@ public abstract class SpecialRoutines {
                         episodeResources.add(episodeWrapper);
                     }
 
-                    String episodeContainerString
-                            = BulkHelper.getEnterpriseContainerForEpisodeData(episodeResources, serviceUuid, batchUuid, protocolUuid, subscriberConfigName, patientId);
+                    if (compassVersion.equalsIgnoreCase(COMPASS_V1)) {
+                        String episodeContainerString
+                                = BulkHelper.getEnterpriseContainerForEpisodeData(episodeResources, serviceUuid, batchUuid, protocolUuid, subscriberConfigName, patientId);
 
-                    //  Use  a random UUID for a queued message ID
-                    if (episodeContainerString != null) {
-                        EnterpriseFiler.file(batchUuid, UUID.randomUUID(), episodeContainerString, subscriberConfigName);
+                        //  Use  a random UUID for a queued message ID
+                        if (episodeContainerString != null) {
+                            EnterpriseFiler.file(batchUuid, UUID.randomUUID(), episodeContainerString, subscriberConfigName);
+                        }
+                    } else if (compassVersion.equalsIgnoreCase(COMPASS_V2)) {
+                        String episodeContainerString
+                                = BulkHelper.getEnterpriseContainerForEpisodeData(episodeResources, serviceUuid, batchUuid, protocolUuid, subscriberConfigName, patientId);
+
+                        //  Use  a random UUID for a queued message ID
+                        if (episodeContainerString != null) {
+                            SubscriberFiler.file(batchUuid, UUID.randomUUID(), episodeContainerString, subscriberConfigName);
+                        }
                     }
+
+
                 }
             }
         }

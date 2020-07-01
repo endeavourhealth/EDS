@@ -53,7 +53,7 @@ import org.endeavourhealth.transform.common.*;
 import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
 import org.endeavourhealth.transform.subscriber.targetTables.OutputContainer;
 import org.endeavourhealth.transform.subscriber.targetTables.SubscriberTableId;
-import org.endeavourhealth.transform.ui.helpers.BulkHelper;
+import org.endeavourhealth.transform.subscriber.BulkHelper;
 import org.hibernate.internal.SessionImpl;
 import org.hl7.fhir.instance.model.MedicationStatement;
 import org.hl7.fhir.instance.model.ResourceType;
@@ -535,9 +535,10 @@ public class Main {
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("TransformAndFilePatientsAndEpisodesForProtocolServices")) {
 			String protocolName = args[1];
-			String subscriberConfigName= args[2];
+			String subscriberConfigName = args[2];
+			String compassVersion = args[3];
 
-			SpecialRoutines.transformAndFilePatientsAndEpisodesForProtocolServices(protocolName, subscriberConfigName);
+			SpecialRoutines.transformAndFilePatientsAndEpisodesForProtocolServices(compassVersion, protocolName, subscriberConfigName);
 			System.exit(0);
 		}
 
