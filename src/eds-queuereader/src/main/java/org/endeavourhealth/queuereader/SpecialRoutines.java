@@ -2229,7 +2229,7 @@ public abstract class SpecialRoutines {
                         }
                     } else if (compassVersion.equalsIgnoreCase(COMPASS_V2)) {
                         String episodeContainerString
-                                = BulkHelper.getEnterpriseContainerForEpisodeData(episodeResources, serviceUuid, batchUuid, protocolUuid, subscriberConfigName, patientId);
+                                = BulkHelper.getSubscriberContainerForEpisodeData(episodeResources, serviceUuid, batchUuid, protocolUuid, subscriberConfigName, patientId);
 
                         //  Use  a random UUID for a queued message ID
                         if (episodeContainerString != null) {
