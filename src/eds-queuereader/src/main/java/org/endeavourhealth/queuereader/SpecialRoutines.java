@@ -78,13 +78,13 @@ import org.endeavourhealth.transform.enterprise.ObservationCodeHelper;
 import org.endeavourhealth.transform.enterprise.transforms.OrganisationEnterpriseTransformer;
 import org.endeavourhealth.transform.fhirhl7v2.FhirHl7v2Filer;
 import org.endeavourhealth.transform.fhirhl7v2.transforms.EncounterTransformer;
+import org.endeavourhealth.transform.subscriber.BulkHelper;
 import org.endeavourhealth.transform.subscriber.IMConstant;
 import org.endeavourhealth.transform.subscriber.IMHelper;
 import org.endeavourhealth.transform.subscriber.SubscriberTransformHelper;
 import org.endeavourhealth.transform.subscriber.targetTables.OutputContainer;
 import org.endeavourhealth.transform.subscriber.targetTables.SubscriberTableId;
 import org.endeavourhealth.transform.subscriber.transforms.OrganisationTransformer;
-import org.endeavourhealth.transform.subscriber.BulkHelper;
 import org.hl7.fhir.instance.model.*;
 import org.hl7.fhir.instance.model.Resource;
 import org.slf4j.Logger;
@@ -923,6 +923,47 @@ public abstract class SpecialRoutines {
 
             }
 
+
+            LOG.debug("");
+            LOG.debug("");
+            LOG.debug("----EMIS Covid ------------------------------------------------");
+
+            String emisScheme = IMConstant.EMIS_LOCAL;
+
+            String emisCode = "^ESCT1299074";
+            String emisTerm = "2019-nCoV (novel coronavirus) detected";
+
+            Integer emisCoreConceptId = IMHelper.getIMMappedConcept(null, null, emisScheme, emisCode);
+            Integer emisNonCoreConceptId = IMHelper.getIMConcept(null, null, emisScheme, emisCode, emisTerm);
+            LOG.debug("    " + emisCode + " -> non-core " + emisNonCoreConceptId + " -> core " + emisCoreConceptId);
+
+            emisCode = "^ESCT1299077";
+            emisTerm = "2019-nCoV (novel coronavirus) not detected";
+
+            emisCoreConceptId = IMHelper.getIMMappedConcept(null, null, emisScheme, emisCode);
+            emisNonCoreConceptId = IMHelper.getIMConcept(null, null, emisScheme, emisCode, emisTerm);
+            LOG.debug("    " + emisCode + " -> non-core " + emisNonCoreConceptId + " -> core " + emisCoreConceptId);
+
+
+            LOG.debug("");
+            LOG.debug("");
+            LOG.debug("----TPP Covid ------------------------------------------------");
+
+            String tppScheme = IMConstant.TPP_LOCAL;
+
+            String tppCode = "Y20d1";
+            String tppTerm = "Confirmed 2019-nCoV (Wuhan) infection";
+
+            Integer tppCoreConceptId = IMHelper.getIMMappedConcept(null, null, tppScheme, tppCode);
+            Integer tppNonCoreConceptId = IMHelper.getIMConcept(null, null, tppScheme, tppCode, tppTerm);
+            LOG.debug("    " + tppCode + " -> non-core " + tppNonCoreConceptId + " -> core " + tppCoreConceptId);
+
+            tppCode = "Y20d2";
+            tppTerm = "Excluded 2019-nCoV (Wuhan) infection";
+
+            tppCoreConceptId = IMHelper.getIMMappedConcept(null, null, tppScheme, tppCode);
+            tppNonCoreConceptId = IMHelper.getIMConcept(null, null, tppScheme, tppCode, tppTerm);
+            LOG.debug("    " + tppCode + " -> non-core " + tppNonCoreConceptId + " -> core " + tppCoreConceptId);
 
 
             LOG.debug("Finished Testing Information Model");
