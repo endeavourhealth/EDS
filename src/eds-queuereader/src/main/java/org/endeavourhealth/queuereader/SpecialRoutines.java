@@ -113,8 +113,8 @@ import static org.endeavourhealth.core.xml.QueryDocument.ServiceContractType.PUB
 
 public abstract class SpecialRoutines {
     private static final Logger LOG = LoggerFactory.getLogger(SpecialRoutines.class);
-    private static final String COMPASS_V1 = "compass_v1";
-    private static final String COMPASS_V2 = "compass_v2";
+    public static final String COMPASS_V1 = "compass_v1";
+    public static final String COMPASS_V2 = "compass_v2";
 
 
 
