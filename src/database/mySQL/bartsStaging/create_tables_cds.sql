@@ -15,8 +15,8 @@ drop table if exists cds_emergency_target_latest;
 drop table if exists cds_critical_care;
 drop table if exists cds_critical_care_latest;
 drop table if exists cds_critical_care_target;
-drop table if exists cds_home_delivery_birth;
-drop table if exists cds_home_delivery_birth_latest;
+-- drop table if exists cds_home_delivery_birth;
+-- drop table if exists cds_home_delivery_birth_latest;
 drop table if exists cds_tail;
 drop table if exists cds_tail_latest;
 
@@ -413,6 +413,7 @@ create table cds_emergency
     discharge_status                    varchar(20) COMMENT 'Snomed coded',
     discharge_destination               varchar(20),
     discharge_destination_site_id       varchar(20),
+    discharge_follow_up                 varchar(20) COMMENT 'Snomed coded',
     conclusion_date                     datetime,
     departure_date                      datetime,
     mh_classifications                  mediumtext   COMMENT ' start datetime~end datetime~code in upto 10 | delimetered groups',
@@ -458,6 +459,7 @@ create table cds_emergency_latest
     discharge_status                    varchar(20) COMMENT 'Snomed coded',
     discharge_destination               varchar(20),
     discharge_destination_site_id       varchar(20),
+    discharge_follow_up                 varchar(20) COMMENT 'Snomed coded',
     conclusion_date                     datetime,
     departure_date                      datetime,
     mh_classifications                  mediumtext   COMMENT ' start datetime~end datetime~code in upto 10 | delimetered groups',
@@ -536,6 +538,7 @@ create table cds_emergency_target_latest
     treatment_function_code		varchar(12),
     discharge_status			varchar(20) COMMENT ' Snomed coded ',
     discharge_destination		varchar(20) COMMENT ' Snomed coded ',
+    discharge_follow_up         varchar(20) COMMENT ' Snomed coded ',
     conclusion_date				datetime,
     departure_date				datetime,
     mh_classifications			mediumtext COMMENT ' start datetime~end datetime~code in upto 10 | delimetered groups',
@@ -701,74 +704,74 @@ create table cds_critical_care_target
 );
 
 -- records from sus home delivery and birth files are written to this table (similar to Inpatient structure)
-create table cds_home_delivery_birth
-(
-    exchange_id                    char(36)     NOT NULL COMMENT 'links to audit.exchange table (but on a different server)',
-    dt_received                    datetime     NOT NULL COMMENT 'date time this record was received into Discovery',
-    record_checksum                bigint       NOT NULL COMMENT 'checksum of the columns below to easily spot duplicates',
-    cds_activity_date              datetime     NOT NULL COMMENT 'Date common to all sus files',
-    cds_unique_identifier          varchar(50)  NOT NULL COMMENT 'from CDSUniqueIdentifier',
-    cds_update_type                int          NOT NULL COMMENT 'from CDSUpdateType',
-    mrn                            varchar(10)  NOT NULL COMMENT 'patient MRN from LocalPatientID field',
-    nhs_number                     varchar(10)  NOT NULL COMMENT 'from NHSNumber',
-    withheld                       bool         COMMENT 'True if id is withheld',
-    date_of_birth                  date         COMMENT 'from PersonBirthDate',
-
-    birth_weight                            varchar(4),
-    live_or_still_birth_indicator           char(1),
-    total_previous_pregnancies              varchar(2),
-    number_of_babies                        int,
-    first_antenatal_assessment_date         date,
-    antenatal_care_practitioner             varchar(20),
-    antenatal_care_practice                 varchar(20),
-    delivery_place_intended                 varchar(2),
-    delivery_place_change_reason_code       varchar(2),
-    gestation_length_labour_onset           varchar(2),
-    delivery_date                           date,
-    delivery_place_actual                   varchar(2),
-    delivery_method                         varchar(2),
-    mother_nhs_number                       varchar(10),
-
-    lookup_person_id               int          COMMENT 'person ID looked up using NHS number, DoB and MRN',
-    audit_json                     mediumtext   null COMMENT 'Used for Audit Purposes',
-    CONSTRAINT pk_cds_home_delivery_birth PRIMARY KEY (exchange_id, cds_unique_identifier)
-);
--- index to make it easier to find last checksum for a CDS home deltivery and birth record
-CREATE INDEX ix_cds_home_delivery_birth_checksum_helper on cds_home_delivery_birth (cds_unique_identifier, dt_received);
-
-create table cds_home_delivery_birth_latest
-(
-    exchange_id                    char(36)     NOT NULL COMMENT 'links to audit.exchange table (but on a different server)',
-    dt_received                    datetime     NOT NULL COMMENT 'date time this record was received into Discovery',
-    record_checksum                bigint       NOT NULL COMMENT 'checksum of the columns below to easily spot duplicates',
-    cds_activity_date              datetime     NOT NULL COMMENT 'Date common to all sus files',
-    cds_unique_identifier          varchar(50)  NOT NULL COMMENT 'from CDSUniqueIdentifier',
-    cds_update_type                int          NOT NULL COMMENT 'from CDSUpdateType',
-    mrn                            varchar(10)  NOT NULL COMMENT 'patient MRN from LocalPatientID field',
-    nhs_number                     varchar(10)  NOT NULL COMMENT 'from NHSNumber',
-    withheld                       bool         COMMENT 'True if id is withheld',
-    date_of_birth                  date         COMMENT 'from PersonBirthDate',
-
-    birth_weight                            varchar(4),
-    live_or_still_birth_indicator           char(1),
-    total_previous_pregnancies              varchar(2),
-    number_of_babies                        int,
-    first_antenatal_assessment_date         date,
-    antenatal_care_practitioner             varchar(20),
-    antenatal_care_practice                 varchar(20),
-    delivery_place_intended                 varchar(2),
-    delivery_place_change_reason_code       varchar(2),
-    gestation_length_labour_onset           varchar(2),
-    delivery_date                           date,
-    delivery_place_actual                   varchar(2),
-    delivery_method                         varchar(2),
-    mother_nhs_number                       varchar(10),
-
-    lookup_person_id               int          COMMENT 'person ID looked up using NHS number, DoB and MRN',
-    audit_json                     mediumtext   null COMMENT 'Used for Audit Purposes',
-    CONSTRAINT pk_cds_home_delivery_birth_latest PRIMARY KEY (cds_unique_identifier)
-);
-CREATE INDEX ix_cds_home_delivery_birth_latest_join_helper on cds_home_delivery_birth_latest (exchange_id, cds_unique_identifier);
+# create table cds_home_delivery_birth
+# (
+#     exchange_id                    char(36)     NOT NULL COMMENT 'links to audit.exchange table (but on a different server)',
+#     dt_received                    datetime     NOT NULL COMMENT 'date time this record was received into Discovery',
+#     record_checksum                bigint       NOT NULL COMMENT 'checksum of the columns below to easily spot duplicates',
+#     cds_activity_date              datetime     NOT NULL COMMENT 'Date common to all sus files',
+#     cds_unique_identifier          varchar(50)  NOT NULL COMMENT 'from CDSUniqueIdentifier',
+#     cds_update_type                int          NOT NULL COMMENT 'from CDSUpdateType',
+#     mrn                            varchar(10)  NOT NULL COMMENT 'patient MRN from LocalPatientID field',
+#     nhs_number                     varchar(10)  NOT NULL COMMENT 'from NHSNumber',
+#     withheld                       bool         COMMENT 'True if id is withheld',
+#     date_of_birth                  date         COMMENT 'from PersonBirthDate',
+#
+#     birth_weight                            varchar(4),
+#     live_or_still_birth_indicator           char(1),
+#     total_previous_pregnancies              varchar(2),
+#     number_of_babies                        int,
+#     first_antenatal_assessment_date         date,
+#     antenatal_care_practitioner             varchar(20),
+#     antenatal_care_practice                 varchar(20),
+#     delivery_place_intended                 varchar(2),
+#     delivery_place_change_reason_code       varchar(2),
+#     gestation_length_labour_onset           varchar(2),
+#     delivery_date                           date,
+#     delivery_place_actual                   varchar(2),
+#     delivery_method                         varchar(2),
+#     mother_nhs_number                       varchar(10),
+#
+#     lookup_person_id               int          COMMENT 'person ID looked up using NHS number, DoB and MRN',
+#     audit_json                     mediumtext   null COMMENT 'Used for Audit Purposes',
+#     CONSTRAINT pk_cds_home_delivery_birth PRIMARY KEY (exchange_id, cds_unique_identifier)
+# );
+# -- index to make it easier to find last checksum for a CDS home deltivery and birth record
+# CREATE INDEX ix_cds_home_delivery_birth_checksum_helper on cds_home_delivery_birth (cds_unique_identifier, dt_received);
+#
+# create table cds_home_delivery_birth_latest
+# (
+#     exchange_id                    char(36)     NOT NULL COMMENT 'links to audit.exchange table (but on a different server)',
+#     dt_received                    datetime     NOT NULL COMMENT 'date time this record was received into Discovery',
+#     record_checksum                bigint       NOT NULL COMMENT 'checksum of the columns below to easily spot duplicates',
+#     cds_activity_date              datetime     NOT NULL COMMENT 'Date common to all sus files',
+#     cds_unique_identifier          varchar(50)  NOT NULL COMMENT 'from CDSUniqueIdentifier',
+#     cds_update_type                int          NOT NULL COMMENT 'from CDSUpdateType',
+#     mrn                            varchar(10)  NOT NULL COMMENT 'patient MRN from LocalPatientID field',
+#     nhs_number                     varchar(10)  NOT NULL COMMENT 'from NHSNumber',
+#     withheld                       bool         COMMENT 'True if id is withheld',
+#     date_of_birth                  date         COMMENT 'from PersonBirthDate',
+#
+#     birth_weight                            varchar(4),
+#     live_or_still_birth_indicator           char(1),
+#     total_previous_pregnancies              varchar(2),
+#     number_of_babies                        int,
+#     first_antenatal_assessment_date         date,
+#     antenatal_care_practitioner             varchar(20),
+#     antenatal_care_practice                 varchar(20),
+#     delivery_place_intended                 varchar(2),
+#     delivery_place_change_reason_code       varchar(2),
+#     gestation_length_labour_onset           varchar(2),
+#     delivery_date                           date,
+#     delivery_place_actual                   varchar(2),
+#     delivery_method                         varchar(2),
+#     mother_nhs_number                       varchar(10),
+#
+#     lookup_person_id               int          COMMENT 'person ID looked up using NHS number, DoB and MRN',
+#     audit_json                     mediumtext   null COMMENT 'Used for Audit Purposes',
+#     CONSTRAINT pk_cds_home_delivery_birth_latest PRIMARY KEY (cds_unique_identifier)
+# );
+# CREATE INDEX ix_cds_home_delivery_birth_latest_join_helper on cds_home_delivery_birth_latest (exchange_id, cds_unique_identifier);
 
 
 
