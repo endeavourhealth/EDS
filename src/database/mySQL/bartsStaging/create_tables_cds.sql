@@ -499,6 +499,7 @@ create table cds_emergency_target
       treatment_function_code		varchar(12),
       discharge_status			    varchar(20) COMMENT ' Snomed coded ',
       discharge_destination		    varchar(20) COMMENT ' Snomed coded ',
+      discharge_follow_up           varchar(20) COMMENT ' Snomed coded ',
       conclusion_date				datetime    COMMENT ' The date and time the patient is either admitted or last treatment done',
       departure_date				datetime    COMMENT ' The date and time the patient leaves / discharged from A&E ',
       mh_classifications			mediumtext  COMMENT ' start datetime~end datetime~code in upto 10 | delimetered groups',
