@@ -1,5 +1,5 @@
 
-export class MultiSelectOption {
+export class MultiSelecterOption {
     id: string;
     itemName: string;
 }

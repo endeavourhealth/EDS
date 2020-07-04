@@ -12,7 +12,7 @@ import {TransformErrorsDialog} from "./transformErrors.dialog";
 import {Protocol} from "./Protocol";
 import {MessageBoxDialog} from "eds-common-js/dist/index";
 import {ServiceListComponent} from "../services/serviceList.component";
-import {MultiSelectOption} from "./MultiSelectOption";
+import {MultiSelecterOption} from "./MultiSelecterOption";
 
 @Component({
 	template : require('./exchangeAudit.html')
@@ -34,14 +34,14 @@ export class ExchangeAuditComponent {
 	//results
 	exchanges: Exchange[];
 	//protocols: Protocol[];
-	subscriberConfigNames: MultiSelectOption[]; //String[];
+	subscriberConfigNames: MultiSelecterOption[]; //String[];
 
 	selectedExchange: Exchange;
 
 	//for re-queuing
 	busyPostingToExchange: Subscription;
 	//postSpecificProtocol: string; //this varies from publisher to publisher, so don't move to the service class
-	postSpecificProtocols: MultiSelectOption[]; //this varies from publisher to publisher, so don't move to the service class
+	postSpecificProtocols: MultiSelecterOption[]; //this varies from publisher to publisher, so don't move to the service class
 	//moved to the service to stop losing their values
 	/*postMode: string;
 	postExchange: string;
@@ -156,7 +156,7 @@ export class ExchangeAuditComponent {
 				vm.subscriberConfigNames = [];
 				for (var i=0; i<result.length; i++) {
 					var s = result[i];
-					var option = new MultiSelectOption;
+					var option = new MultiSelecterOption;
 					option.id = s;
 					option.itemName = s;
 					vm.subscriberConfigNames.push(option);
