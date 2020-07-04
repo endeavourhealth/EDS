@@ -1,24 +1,18 @@
 package org.endeavourhealth.core.messaging.pipeline.components;
 
-import org.endeavourhealth.common.utility.SlackHelper;
 import org.endeavourhealth.core.configuration.DetermineRelevantProtocolIdsConfig;
 import org.endeavourhealth.core.database.dal.DalProvider;
-import org.endeavourhealth.core.database.dal.admin.LibraryRepositoryHelper;
 import org.endeavourhealth.core.database.dal.audit.ExchangeProtocolErrorDalI;
 import org.endeavourhealth.core.database.dal.audit.models.Exchange;
 import org.endeavourhealth.core.database.dal.audit.models.HeaderKeys;
-import org.endeavourhealth.core.database.dal.usermanager.caching.DataSharingAgreementCache;
 import org.endeavourhealth.core.database.dal.usermanager.caching.OrganisationCache;
-import org.endeavourhealth.core.database.rdbms.datasharingmanager.models.DataSharingAgreementEntity;
 import org.endeavourhealth.core.messaging.pipeline.PipelineComponent;
 import org.endeavourhealth.core.messaging.pipeline.PipelineException;
-import org.endeavourhealth.core.xml.QueryDocument.*;
 import org.endeavourhealth.transform.common.AuditWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.UUID;
 
 public class DetermineRelevantProtocolIds extends PipelineComponent {
 	private static final Logger LOG = LoggerFactory.getLogger(DetermineRelevantProtocolIds.class);
@@ -34,29 +28,29 @@ public class DetermineRelevantProtocolIds extends PipelineComponent {
 	public void process(Exchange exchange) throws PipelineException {
 
 		try {
-			//DDS-UI approach
-			String serviceUuid = exchange.getHeader(HeaderKeys.SenderServiceUuid);
+
+			UUID serviceUuid = exchange.getHeaderAsUuid(HeaderKeys.SenderServiceUuid);
+
+			/*//DDS-UI approach
 			List<String> protocolIdsOldWay = getProtocolIdsForPublisherServiceOldWay(serviceUuid);
 			exchange.setHeaderAsStringList(HeaderKeys.ProtocolIds, protocolIdsOldWay);
-			boolean hasDpaOldWay = !protocolIdsOldWay.isEmpty(); //in the old way, we count as having a DPA if they're in any protocol
+			boolean hasDpaOldWay = !protocolIdsOldWay.isEmpty(); //in the old way, we count as having a DPA if they're in any protocol*/
 
 			//DSM approach
 			String odsCode = exchange.getHeader(HeaderKeys.SenderLocalIdentifier);
-			List<String> sharingAgreementIdsNewWay = getSharingAgreementIdsNewWay(odsCode);
-			//exchange.setHeaderAsStringList(HeaderKeys.SharingAgreementIds, sharingAgreementIdsNewWay);
 			boolean hasDpaNewWay = OrganisationCache.doesOrganisationHaveDPA(odsCode);
 
 			//compare DSM and DDS-UI protocols to make sure nothing is configured wrong
-			if (hasDpaNewWay != hasDpaOldWay) {
+			/*if (hasDpaNewWay != hasDpaOldWay) {
 				String msg = "Difference between DSM processing agreement and DDS-UI protocols for " + odsCode + "\r\n"
 						+ "DSM DPA = " + hasDpaNewWay
 						+ "DDS-UI = " + hasDpaOldWay;
 				SlackHelper.sendSlackMessage(SlackHelper.Channel.QueueReaderAlerts, msg);
-			}
+			}*/
 
-			if (!hasDpaOldWay) {
+			if (!hasDpaNewWay) {
 				errorDal.save(exchange.getId());
-				throw new PipelineException("No publisher protocols found for service " + serviceUuid);
+				throw new PipelineException("No DPA found for service " + serviceUuid);
 			}
 
 			AuditWriter.writeExchange(exchange);
@@ -73,7 +67,7 @@ public class DetermineRelevantProtocolIds extends PipelineComponent {
 		//LOG.debug("Data distribution protocols identified");
 	}
 
-	private List<String> getSharingAgreementIdsNewWay(String odsCode) throws Exception {
+	/*private List<String> getSharingAgreementIdsNewWay(String odsCode) throws Exception {
 
 		List<String> ret = new ArrayList<>();
 
@@ -84,9 +78,9 @@ public class DetermineRelevantProtocolIds extends PipelineComponent {
 		}
 
 		return ret;
-	}
+	}*/
 
-	public static List<String> getProtocolIdsForPublisherServiceOldWay(String serviceUuid) throws PipelineException {
+	/*public static List<String> getProtocolIdsForPublisherServiceOldWay(UUID serviceUuid) throws PipelineException {
 
 		//find all protocols where our service is an active publisher
 		List<LibraryItem> protocolsForService = getProtocolsForPublisherServiceOldWay(serviceUuid);
@@ -100,14 +94,14 @@ public class DetermineRelevantProtocolIds extends PipelineComponent {
 	}
 
 
-	private static List<LibraryItem> getProtocolsForPublisherServiceOldWay(String serviceUuid) throws PipelineException {
+	private static List<LibraryItem> getProtocolsForPublisherServiceOldWay(UUID serviceUuid) throws PipelineException {
 
 		try {
 			List<LibraryItem> ret = new ArrayList<>();
 
 			//the above fn will return is all protocols where the service is present, but we want to filter
 			//that down to only ones where our service is an active publisher
-			List<LibraryItem> libraryItems = LibraryRepositoryHelper.getProtocolsByServiceId(serviceUuid, null); //passing null means don't filter on system ID
+			List<LibraryItem> libraryItems = LibraryRepositoryHelper.getProtocolsByServiceId(serviceUuid.toString(), null); //passing null means don't filter on system ID
 
 			for (LibraryItem libraryItem: libraryItems) {
 				Protocol protocol = libraryItem.getProtocol();
@@ -130,7 +124,7 @@ public class DetermineRelevantProtocolIds extends PipelineComponent {
 		} catch (Exception ex) {
 			throw new PipelineException("Error getting protocols for service " + serviceUuid, ex);
 		}
-	}
+	}*/
 
 
 

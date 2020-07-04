@@ -38,7 +38,6 @@ import org.endeavourhealth.core.database.rdbms.ConnectionManager;
 import org.endeavourhealth.core.database.rdbms.enterprise.EnterpriseConnector;
 import org.endeavourhealth.core.exceptions.TransformException;
 import org.endeavourhealth.core.fhirStorage.ServiceInterfaceEndpoint;
-import org.endeavourhealth.core.messaging.pipeline.components.MessageTransformOutbound;
 import org.endeavourhealth.core.messaging.pipeline.components.OpenEnvelope;
 import org.endeavourhealth.core.messaging.pipeline.components.PostMessageToExchange;
 import org.endeavourhealth.core.queueing.QueueHelper;
@@ -52,11 +51,10 @@ import org.endeavourhealth.subscriber.filer.EnterpriseFiler;
 import org.endeavourhealth.subscriber.filer.SubscriberFiler;
 import org.endeavourhealth.transform.common.*;
 import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
+import org.endeavourhealth.transform.subscriber.BulkHelper;
 import org.endeavourhealth.transform.subscriber.targetTables.OutputContainer;
 import org.endeavourhealth.transform.subscriber.targetTables.SubscriberTableId;
-import org.endeavourhealth.transform.subscriber.BulkHelper;
 import org.hibernate.internal.SessionImpl;
-import org.hl7.fhir.instance.model.MedicationStatement;
 import org.hl7.fhir.instance.model.ResourceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -74,7 +72,6 @@ import java.util.*;
 import java.util.Date;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.regex.Pattern;
 
 import static org.endeavourhealth.core.xml.QueryDocument.ServiceContractType.PUBLISHER;
 
@@ -100,11 +97,11 @@ public class Main {
 			System.exit(0);
 		}
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("ValidateProtocolCohorts")) {
 			SpecialRoutines.validateProtocolCohorts();
 			System.exit(0);
-		}
+		}*/
 
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("TestSubscriberConfigs")) {
@@ -122,7 +119,7 @@ public class Main {
 			System.exit(0);
 		}
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("DeleteResourcesForDeletedPatients")) {
 			boolean testMode = Boolean.parseBoolean(args[1]);
 			String odsCodeRegex = null;
@@ -131,7 +128,7 @@ public class Main {
 			}
 			SpecialRoutines.deleteResourcesForDeletedPatients(testMode, odsCodeRegex);
 			System.exit(0);
-		}
+		}*/
 
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("TestHashedFileFilteringForSRCode")) {
@@ -166,11 +163,11 @@ public class Main {
 
 			UUID serviceId = UUID.fromString(args[1]);
 			String previousPublisherConfig = args[2];
-			SpecialRoutines.deleteDataFromOldCoreDB(serviceId, previousPublisherConfig);
+			SpecialRoutines.deleteDataForOldCoreDBFromSubscribers(serviceId, previousPublisherConfig);
 			System.exit(0);
 		}
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("DeleteTppEpisodesElsewhere")) {
 
 			boolean testMode = Boolean.parseBoolean(args[1]);
@@ -180,7 +177,7 @@ public class Main {
 			}
 			SpecialRoutines.deleteTppEpisodesElsewhere(odsCodeRegex, testMode);
 			System.exit(0);
-		}
+		}*/
 
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("FindEmisServicesNeedReprocessing")) {
@@ -350,21 +347,12 @@ public class Main {
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("CompareDSM")) {
 			boolean logDifferencesOnly = Boolean.parseBoolean(args[1]);
-			String toFile = args[2];
 			String odsCode = null;
-			if (args.length > 3) {
-				odsCode = args[3];
+			if (args.length > 2) {
+				odsCode = args[2];
 			}
-			SpecialRoutines.compareDsm(logDifferencesOnly, toFile, odsCode);
-			System.exit(0);
-		}
-
-		if (args.length >= 1
-				&& args[0].equalsIgnoreCase("GenerateConfigForDSM")) {
-
-			String ddsUiProtocolName = args[1];
-			String dsmDsaId = args[2];
-			SpecialRoutines.createConfigJsonForDSM(ddsUiProtocolName, dsmDsaId);
+			SpecialRoutines.compareDsmPublishers(logDifferencesOnly, odsCode);
+			SpecialRoutines.compareDsmSubscribers();
 			System.exit(0);
 		}
 
@@ -409,13 +397,13 @@ public class Main {
 			System.exit(0);
 		}
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("SendPatientsToSubscriber")) {
 			String tableName = args[1];
 			String reason = args[2];
 			sendPatientsToSubscriber(tableName, reason);
 			System.exit(0);
-		}
+		}*/
 
 
 
@@ -487,7 +475,7 @@ public class Main {
 			System.exit(0);
 		}*/
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("FixMedicationStatementIsActive")) {
 			String odsCodeRegex = null;
 			if (args.length > 1) {
@@ -495,7 +483,7 @@ public class Main {
 			}
 			fixMedicationStatementIsActive(odsCodeRegex);
 			System.exit(0);
-		}
+		}*/
 
 		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("FixMissingEmisEthnicities")) {
@@ -518,20 +506,30 @@ public class Main {
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("SubscriberFullLoad")) {
 			UUID serviceId = UUID.fromString(args[1]);
-			UUID protocolId = UUID.fromString(args[2]);
-			String reason = args[3];
-			QueueHelper.queueUpFullServiceForPopulatingSubscriber(serviceId, protocolId, reason);
+			String reason = args[2];
+			boolean bulkSendAllData = Boolean.valueOf(args[3]);
+			Set<String> subscribers = new HashSet<>();
+			for (int i=4; i<args.length; i++) {
+				String subscriberConfigName = args[i];
+				subscribers.add(subscriberConfigName);
+			}
+			if (subscribers.isEmpty()) {
+				LOG.debug("NO SUBSCRIBERS SPECIFICED - THIS WILL SEND TO ALL SUBSCRIBERS");
+				continueOrQuit();
+			}
+			QueueHelper.queueUpFullServiceForPopulatingSubscriber(serviceId, false, bulkSendAllData, subscribers, reason);
 			System.exit(0);
 		}
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("SubscriberFullLoadFilteredFiles")) {
 			UUID serviceId = UUID.fromString(args[1]);
-			UUID protocolId = UUID.fromString(args[2]);
-			String filteredFiles = args[3];
-			QueueHelper.queueUpFullServiceForPopulatingSubscriberFilteredFiles(serviceId, protocolId, filteredFiles);
+			String subscriberConfigName = args[2];
+			String reason = args[3];
+			String filteredFiles = args[4];
+			QueueHelper.queueUpFullServiceForPopulatingSubscriberFilteredFiles(serviceId, subscriberConfigName, reason, filteredFiles);
 			System.exit(0);
-		}
+		}*/
 
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("TransformAndFilePatientsAndEpisodesForProtocolServices")) {
@@ -944,18 +942,20 @@ public class Main {
 				&& args[0].equalsIgnoreCase("PostToRabbit")) {
 			String exchangeName = args[1];
 			String srcFile = args[2];
+			String reason = args[3];
 			Integer throttle = null;
-			if (args.length > 3) {
-				throttle = Integer.parseInt(args[3]);
+			if (args.length > 4) {
+				throttle = Integer.parseInt(args[4]);
 			}
-			postToRabbit(exchangeName, srcFile, throttle);
+			postToRabbit(exchangeName, srcFile, reason, throttle);
 			System.exit(0);
 		}
 
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("PostExchangesToProtocol")) {
 			String srcFile = args[1];
-			postExchangesToProtocol(srcFile);
+			String reason = args[2];
+			postExchangesToProtocol(srcFile, reason);
 			System.exit(0);
 		}
 
@@ -1627,7 +1627,7 @@ public class Main {
 
 
 
-	private static void sendPatientsToSubscriber(String tableName, String reason) {
+	/*private static void sendPatientsToSubscriber(String tableName, String reason) {
 		LOG.info("Sending patients to subscriber from " + tableName);
 		try {
 
@@ -1681,7 +1681,7 @@ public class Main {
 			LOG.error("", t);
 		}
 
-	}
+	}*/
 
 	/**
 	 * checks Services to see if any queued up exchange was not yet processed when a bulk subscriber load was started,
@@ -3481,7 +3481,7 @@ public class Main {
 						//post to Rabbit protocol queue
 						List<UUID> exchangeIds = new ArrayList<>();
 						exchangeIds.add(exchange.getId());
-						QueueHelper.postToExchange(exchangeIds, "EdsProtocol", null, true);
+						QueueHelper.postToExchange(exchangeIds, QueueHelper.EXCHANGE_PROTOCOL, null, true);
 					}
 				}
 			}
@@ -4410,7 +4410,7 @@ public class Main {
 		}
 	}*/
 
-	private static void fixMedicationStatementIsActive(String odsCodeRegex) {
+	/*private static void fixMedicationStatementIsActive(String odsCodeRegex) {
 		LOG.info("Fixing MedicationStatement IsActive for using " + odsCodeRegex);
 		try {
 
@@ -4478,8 +4478,8 @@ public class Main {
 
 								//ignore any service contracts not for these formats
 								if (!software.equals(MessageFormat.ENTERPRISE_CSV)) {
-								/*if (!software.equals(MessageFormat.ENTERPRISE_CSV)
-										&& !software.equals(MessageFormat.SUBSCRIBER_CSV)) {*/
+								*//*if (!software.equals(MessageFormat.ENTERPRISE_CSV)
+										&& !software.equals(MessageFormat.SUBSCRIBER_CSV)) {*//*
 									continue;
 								}
 
@@ -4611,7 +4611,7 @@ public class Main {
 		} catch (Throwable t) {
 			LOG.error("", t);
 		}
-	}
+	}*/
 
 	/*private static void fixMedicationStatementIsActive(String protocolName, String filePath, String odsCodeRegex) {
 		LOG.info("Fixing MedicationStatement IsActive for " + protocolName + " to " + filePath + " matching orgs using " + odsCodeRegex);
@@ -5539,7 +5539,7 @@ public class Main {
 			}
 			LOG.info("Found " + patientIds.size() + " patient IDs");
 
-			QueueHelper.queueUpPatientsForSubscriberTransform(patientIds, reason);
+			QueueHelper.queueUpPatientsForSubscriberTransform(patientIds, false, true, reason);
 
 			LOG.info("Finished transforming patients from " + sourceFile);
 		} catch (Throwable t) {
@@ -6298,7 +6298,7 @@ public class Main {
 					exchange.setHeader(HeaderKeys.BatchIdsJson, batchIdString);
 
 					//post new batch to protocol Q
-					PostMessageToExchangeConfig exchangeConfig = QueueHelper.findExchangeConfig("EdsProtocol");
+					PostMessageToExchangeConfig exchangeConfig = QueueHelper.findExchangeConfig(QueueHelper.EXCHANGE_PROTOCOL);
 					PostMessageToExchange component = new PostMessageToExchange(exchangeConfig);
 					component.process(exchange);
 				}
@@ -6356,7 +6356,7 @@ public class Main {
 					exchange.setHeader(HeaderKeys.BatchIdsJson, batchIdString);
 
 					//post new batch to protocol Q
-					PostMessageToExchangeConfig exchangeConfig = QueueHelper.findExchangeConfig("EdsProtocol");
+					PostMessageToExchangeConfig exchangeConfig = QueueHelper.findExchangeConfig(QueueHelper.ExchangeName.PROTOCOL);
 					PostMessageToExchange component = new PostMessageToExchange(exchangeConfig);
 					component.process(exchange);
 				}
@@ -6373,7 +6373,7 @@ public class Main {
 		LOG.info("Testing XML");
 		try {
 
-			//PostMessageToExchangeConfig exchangeConfig = QueueHelper.findExchangeConfig("EdsProtocol");
+			//PostMessageToExchangeConfig exchangeConfig = QueueHelper.findExchangeConfig(QueueHelper.EXCHANGE_PROTOCOL);
 
 			Map<String, String> queueReadConfigs = ConfigManager.getConfigurations("queuereader");
 			for (String configId: queueReadConfigs.keySet()) {
@@ -6728,7 +6728,7 @@ public class Main {
 					exchange.setHeader(HeaderKeys.BatchIdsJson, batchIdString);
 
 					//post new batch to protocol Q
-					PostMessageToExchangeConfig exchangeConfig = QueueHelper.findExchangeConfig("EdsProtocol");
+					PostMessageToExchangeConfig exchangeConfig = QueueHelper.findExchangeConfig(QueueHelper.EXCHANGE_PROTOCOL);
 					PostMessageToExchange component = new PostMessageToExchange(exchangeConfig);
 					component.process(exchange);
 				}
@@ -7109,7 +7109,7 @@ public class Main {
 			File auditFile = new File("SlotAudit_" + serviceOdsCode + ".csv");
 			LOG.debug("Auditing to " + auditFile);
 
-			PostMessageToExchangeConfig exchangeConfig = QueueHelper.findExchangeConfig("EdsProtocol");
+			PostMessageToExchangeConfig exchangeConfig = QueueHelper.findExchangeConfig(QueueHelper.EXCHANGE_PROTOCOL);
 			if (exchangeConfig == null) {
 				throw new Exception("Failed to find PostMessageToExchange config details for exchange EdsProtocol");
 			}
@@ -10007,13 +10007,16 @@ public class Main {
 		}
 	}*/
 
-	private static void postToRabbit(String exchangeName, String srcFile, Integer throttle) {
+	private static void postToRabbit(String exchangeName, String srcFile, String reason, Integer throttle) {
 		LOG.info("Posting to " + exchangeName + " from " + srcFile);
 		if (throttle != null) {
 			LOG.info("Throttled to " + throttle + " messages/second");
 		}
 
 		try {
+
+			QueueHelper.ExchangeName xName = QueueHelper.ExchangeName.fromName(exchangeName);
+
 			File src = new File(srcFile);
 
 			//create file of ones done
@@ -10073,7 +10076,7 @@ public class Main {
 				UUID exchangeId = exchangeIds.get(i);
 				List<UUID> tmp = new ArrayList<>();
 				tmp.add(exchangeId);
-				QueueHelper.postToExchange(tmp, exchangeName, null, true, null);
+				QueueHelper.postToExchange(tmp, xName, null, reason);
 
 				printWriter.println(exchangeId.toString());
 				printWriter.flush();
@@ -10107,7 +10110,7 @@ public class Main {
 		}
 	}
 
-	private static void postExchangesToProtocol(String srcFile) {
+	private static void postExchangesToProtocol(String srcFile, String reason) {
 		LOG.info("Posting to protocol from " + srcFile);
 		try {
 			List<UUID> exchangeIds = new ArrayList<>();
@@ -10121,7 +10124,7 @@ public class Main {
 			}
 
 			LOG.info("Posting " + exchangeIds.size() + " to Protocol queue");
-			QueueHelper.postToExchange(exchangeIds, "EdsProtocol", null, false, null);
+			QueueHelper.postToExchange(exchangeIds, QueueHelper.ExchangeName.PROTOCOL, null, reason);
 
 			LOG.info("Finished Posting to protocol from " + srcFile);
 		} catch (Throwable t) {
@@ -10129,15 +10132,6 @@ public class Main {
 		}
 	}
 
-	/*
-
-create table uprn_pseudo_map (
-	uprn bigint,
-    pseudo_uprn varchar(255),
-    property_class varchar(10)
-);
-
-	 */
 	private static void calculateUprnPseudoIds(String subscriberConfigName, String targetTable) throws Exception {
 		LOG.info("Calculating UPRN Pseudo IDs " + subscriberConfigName);
 		try {
@@ -12699,7 +12693,7 @@ create table uprn_pseudo_map (
 			UUID emisSystem = UUID.fromString("991a9068-01d3-4ff2-86ed-249bd0541fb3");
 			UUID emisSystemDev = UUID.fromString("55c08fa5-ef1e-4e94-aadc-e3d6adc80774");
 
-			PostMessageToExchangeConfig exchangeConfig = QueueHelper.findExchangeConfig("EdsProtocol");
+			PostMessageToExchangeConfig exchangeConfig = QueueHelper.findExchangeConfig(QueueHelper.EXCHANGE_PROTOCOL);
 
 			Date dateError = new SimpleDateFormat("yyyy-MM-dd").parse("2018-05-11");
 
@@ -12789,7 +12783,7 @@ create table uprn_pseudo_map (
 			UUID emisSystem = UUID.fromString("991a9068-01d3-4ff2-86ed-249bd0541fb3");
 			UUID emisSystemDev = UUID.fromString("55c08fa5-ef1e-4e94-aadc-e3d6adc80774");
 
-			PostMessageToExchangeConfig exchangeConfig = QueueHelper.findExchangeConfig("EdsProtocol");
+			PostMessageToExchangeConfig exchangeConfig = QueueHelper.findExchangeConfig(QueueHelper.EXCHANGE_PROTOCOL);
 
 			Date dateError = new SimpleDateFormat("yyyy-MM-dd").parse("2018-04-24");
 
@@ -13036,7 +13030,7 @@ create table uprn_pseudo_map (
 					String batchUuidsStr = ObjectMapperPool.getInstance().writeValueAsString(batchIds.toArray());
 					exchange.setHeader(HeaderKeys.BatchIdsJson, batchUuidsStr);
 
-					PostMessageToExchangeConfig exchangeConfig = QueueHelper.findExchangeConfig("EdsProtocol");
+					PostMessageToExchangeConfig exchangeConfig = QueueHelper.findExchangeConfig(QueueHelper.EXCHANGE_PROTOCOL);
 
 					PostMessageToExchange component = new PostMessageToExchange(exchangeConfig);
 					component.process(exchange);
@@ -13794,7 +13788,7 @@ create table uprn_pseudo_map (
 				auditRepository.save(audit);
 
 				//then re-submit the exchange to Rabbit MQ for the queue reader to pick up
-				QueueHelper.postToExchange(exchangeId, "EdsInbound", null, false);
+				QueueHelper.postToExchange(exchangeId, QueueHelper.EXCHANGE_INBOUND, null, false);
 
 				if (!all) {
 					LOG.info("Posted first exchange, so stopping");
@@ -14862,7 +14856,7 @@ create table uprn_pseudo_map (
 					}
 				}
 
-				QueueHelper.postToExchange(exchangeIds, "edsProtocol", null, true);
+				QueueHelper.postToExchange(exchangeIds, QueueHelper.EXCHANGE_PROTOCOL, null, true);
 			}
 
 		} catch (Exception ex) {
@@ -16615,7 +16609,7 @@ create table uprn_pseudo_map (
 							.stream()
 							.filter(t -> t instanceof PostMessageToExchangeConfig)
 							.map(t -> (PostMessageToExchangeConfig) t)
-							.filter(t -> t.getExchange().equalsIgnoreCase("EdsProtocol"))
+							.filter(t -> t.getExchange().equalsIgnoreCase(QueueHelper.EXCHANGE_PROTOCOL))
 							.collect(StreamExtension.singleOrNullCollector());
 
 					//post to the protocol exchange
@@ -17342,7 +17336,7 @@ create table uprn_pseudo_map (
 							.stream()
 							.filter(t -> t instanceof PostMessageToExchangeConfig)
 							.map(t -> (PostMessageToExchangeConfig) t)
-							.filter(t -> t.getExchange().equalsIgnoreCase("EdsProtocol"))
+							.filter(t -> t.getExchange().equalsIgnoreCase(QueueHelper.EXCHANGE_PROTOCOL))
 							.collect(StreamExtension.singleOrNullCollector());
 
 					//post to the protocol exchange
@@ -17422,7 +17416,7 @@ create table uprn_pseudo_map (
 					.stream()
 					.filter(t -> t instanceof PostMessageToExchangeConfig)
 					.map(t -> (PostMessageToExchangeConfig) t)
-					.filter(t -> t.getExchange().equalsIgnoreCase("EdsProtocol"))
+					.filter(t -> t.getExchange().equalsIgnoreCase(QueueHelper.EXCHANGE_PROTOCOL))
 					.collect(StreamExtension.singleOrNullCollector());
 
 			//post to the protocol exchange

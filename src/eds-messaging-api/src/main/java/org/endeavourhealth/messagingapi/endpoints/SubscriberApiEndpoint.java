@@ -2,11 +2,9 @@ package org.endeavourhealth.messagingapi.endpoints;
 
 import com.codahale.metrics.annotation.ResponseMetered;
 import com.codahale.metrics.annotation.Timed;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.base.Strings;
 import io.swagger.annotations.ApiParam;
 import org.apache.http.HttpStatus;
-import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.common.security.SecurityUtils;
 import org.endeavourhealth.common.utility.ExpiringCache;
 import org.endeavourhealth.common.utility.MetricsHelper;
@@ -25,6 +23,8 @@ import org.endeavourhealth.core.fhirStorage.FhirSerializationHelper;
 import org.endeavourhealth.core.fhirStorage.ServiceInterfaceEndpoint;
 import org.endeavourhealth.core.messaging.pipeline.PipelineException;
 import org.endeavourhealth.core.xml.QueryDocument.*;
+import org.endeavourhealth.transform.subscriber.SubscriberConfig;
+import org.endeavourhealth.transform.subscriber.json.LinkDistributorConfig;
 import org.hl7.fhir.instance.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,7 +53,7 @@ public class SubscriberApiEndpoint {
     private static final String METRIC_MS_DURATION = "frailty-api.ms-duration";
 
     private static final ServiceDalI serviceDal = DalProvider.factoryServiceDal();
-    private static final Map<String, String> mainSaltKeyCache = new ExpiringCache<>(1000 * 60 * 5); //cache for five mins
+    //private static final Map<String, String> mainSaltKeyCache = new ExpiringCache<>(1000 * 60 * 5); //cache for five mins
     private static final Map<String, UUID> odsCodeToServiceIdCache = new ExpiringCache<>(1000 * 60 * 5); //cache for five mins
     private static String lastDsmSlackMessage = null;
 
@@ -142,35 +142,22 @@ public class SubscriberApiEndpoint {
             LOG.debug("Getting service IDs for security context");
             Set<String> serviceIds = SecurityUtils.getUserAllowedOrganisationIdsFromSecurityContext(sc);
             LOG.debug("Got service IDs for security context");
-            /*LOG.debug("Found " + serviceIds + " services IDs from Keycloak and our service ID = " + serviceId.toString());
-            for (String s: serviceIds) {
-                LOG.debug("ServiceId = " + s + " match = " + (s.equals(serviceId.toString())));
-            }*/
+
             if (!serviceIds.contains(serviceId.toString())) {
                 return createErrorResponse(OperationOutcome.IssueType.BUSINESSRULE, "You are not permitted to request for ODS code " + headerOdsCode, audit);
             }
-            /*if (!headerOdsCode.equalsIgnoreCase("111TESTORG")
-                    && !headerOdsCode.equalsIgnoreCase("YGMX6")
-                    && !headerOdsCode.equalsIgnoreCase("ADASTRA")
-                    && !headerOdsCode.equalsIgnoreCase("NTP")
-                    && !headerOdsCode.equalsIgnoreCase("NKB")
-                    && !headerOdsCode.equalsIgnoreCase("8HD62")
-                    && !headerOdsCode.equalsIgnoreCase("RRU")
-                    && !headerOdsCode.equalsIgnoreCase("NLO")) {
-                return createErrorResponse(OperationOutcome.IssueType.BUSINESSRULE, "You are not permitted to request for ODS code " + headerOdsCode, audit);
-            }*/
 
             ServiceInterfaceEndpoint endpoint = SystemHelper.findEndpointForSoftware(requestingService, SUBSCRIBER_SYSTEM_NAME);
             if (endpoint == null) {
                 return createErrorResponse(OperationOutcome.IssueType.VALUE, "Requesting organisation not configured for " + SUBSCRIBER_SYSTEM_NAME, audit);
             }
-            UUID systemId = endpoint.getSystemUuid();
+            UUID requesterSystemId = endpoint.getSystemUuid();
 
             //ensure the service is a valid subscriber to at least one protocol
             LOG.debug("Checking protocols");
             Set<String> publisherServiceIds = null;
             try {
-                publisherServiceIds = findPublisherServiceIdsForSubscriber(headerOdsCode, headerProjectId, serviceId, systemId);
+                publisherServiceIds = findPublisherServiceIdsForSubscriber(headerOdsCode, headerProjectId, serviceId, requesterSystemId);
 
             } catch (Exception ex) {
                 //any exception from checking protocols the flag should be returned as a processing error
@@ -178,11 +165,10 @@ public class SubscriberApiEndpoint {
                 return createErrorResponse(OperationOutcome.IssueType.PROCESSING, err, audit);
             }
 
-            //find patient
+            //find patient (gets map of patient UUID and service UUID)
             LOG.debug("Searching on NHS number");
             PatientSearchDalI patientSearchDal = DalProvider.factoryPatientSearchDal();
             Map<UUID, UUID> patientSearchResults = patientSearchDal.findPatientIdsForNhsNumber(publisherServiceIds, subjectNhsNumber);
-            //List<PatientSearch> results = patientSearchDal.searchByNhsNumber(publisherServiceIds, subjectNhsNumber);
             LOG.debug("Done searching on NHS number");
 
             if (patientSearchResults.isEmpty()) {
@@ -192,7 +178,7 @@ public class SubscriberApiEndpoint {
             //calculate the flag (note that returning a NULL flag is a valid result if the patient isn't frail)
             try {
 
-                String enterpriseEndpoint = getEnterpriseEndpoint(requestingService, systemId);
+                String enterpriseEndpoint = getEnterpriseEndpoint(requestingService, requesterSystemId);
                 if (!Strings.isNullOrEmpty(enterpriseEndpoint)) {
                     LOG.debug("Calculating frailty using " + enterpriseEndpoint);
                     return calculateFrailtyFlagLive(enterpriseEndpoint, patientSearchResults, uriInfo, params, headerAuthToken, audit);
@@ -429,9 +415,11 @@ public class SubscriberApiEndpoint {
 
         PseudoIdDalI pseudoIdDal = DalProvider.factoryPseudoIdDal(enterpriseEndpoint);
 
+        SubscriberConfig subscriberConfig = SubscriberConfig.readFromConfig(enterpriseEndpoint);
+        String mainSaltKeyName = findMainSaltKeyName(subscriberConfig);
+
         for (UUID patientUuid: results.keySet()) {
             //String pseudoId = pseudoIdDal.findPseudoIdOldWay(patientUuid.toString());
-            String mainSaltKeyName = findMainSaltKeyName(enterpriseEndpoint);
             String pseudoId = pseudoIdDal.findSubscriberPseudoId(patientUuid, mainSaltKeyName);
             if (!Strings.isNullOrEmpty(pseudoId)) {
                 pseudoIds.add(pseudoId);
@@ -439,9 +427,7 @@ public class SubscriberApiEndpoint {
         }
 
         //make the call to the Enterprise web server
-        JsonNode jsonConfig = ConfigManager.getConfigurationAsJson(enterpriseEndpoint, "db_subscriber");
-        JsonNode jsonServer = jsonConfig.get("web_server");
-        String serverUrl = jsonServer.asText();
+        String serverUrl = subscriberConfig.getEnterpriseServerUrl();
 
         Map<String, String> hmResults = new HashMap<>();
 
@@ -530,28 +516,19 @@ public class SubscriberApiEndpoint {
         return createSuccessResponse(null, requestParams, audit);
     }
 
-    private String findMainSaltKeyName(String enterpriseEndpoint) throws Exception {
+    private String findMainSaltKeyName(SubscriberConfig subscriberConfig) throws Exception {
 
-        //check our cache first
-        String mainSaltKeyName = mainSaltKeyCache.get(enterpriseEndpoint);
-        if (mainSaltKeyName == null) {
-
-            //if not in the cache, hit the DB
-            JsonNode subscriberConfig = ConfigManager.getConfigurationAsJson(enterpriseEndpoint, "db_subscriber");
-            JsonNode mainPseudoNode = subscriberConfig.get("pseudonymisation");
-            if (mainPseudoNode == null) {
-                throw new Exception("No pseudonymisation node in JSON config for " + enterpriseEndpoint);
-            }
-            JsonNode saltKeyNameNode = mainPseudoNode.get("saltKeyName");
-            if (saltKeyNameNode == null) {
-                throw new Exception("No saltKeyName node in JSON config for " + enterpriseEndpoint);
-            }
-            mainSaltKeyName = saltKeyNameNode.asText();
-
-            //add to cache for next time
-            mainSaltKeyCache.put(enterpriseEndpoint, mainSaltKeyName);
+        if (!subscriberConfig.isPseudonymised()) {
+            throw new Exception("Subscriber " + subscriberConfig.getSubscriberConfigName() + " isn't pseudonymised");
         }
-        return mainSaltKeyName;
+
+        List<LinkDistributorConfig> pseudoIds = subscriberConfig.getPseudoSalts();
+        if (pseudoIds == null || pseudoIds.isEmpty()) {
+            throw new Exception("Subscriber " + subscriberConfig.getSubscriberConfigName() + " doesn't have any pseudo IDs set");
+        }
+
+        LinkDistributorConfig first = pseudoIds.get(0);
+        return first.getSaltKeyName();
     }
 
     /**

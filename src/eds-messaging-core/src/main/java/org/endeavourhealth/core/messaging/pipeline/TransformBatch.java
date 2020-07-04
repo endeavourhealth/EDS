@@ -4,18 +4,43 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import org.endeavourhealth.core.xml.QueryDocument.ServiceContract;
 import org.hl7.fhir.instance.model.ResourceType;
 
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class TransformBatch {
-	private UUID batchId;
+
+	public enum TransformAction {
+		DELTA,
+		FULL_LOAD,
+		FULL_DELETE;
+
+/*		@JsonCreator
+		public static TransformAction forValue(String value) {
+			for (TransformAction a: values()) {
+				if (a.name().equals(value)) {
+					return a;
+				}
+			}
+			throw new IllegalArgumentException("Unexpected action [" + value + "]");
+		}*/
+	}
+
+	private UUID batchId; //used for audit purposes
+
+	//TODO - remove once all old instances removed from RabbitMQ
 	private UUID protocolId;
 	private Map<ResourceType, List<UUID>> resourceIds;
 	private List<ServiceContract> subscribers;
 
+	//fields to replace the above
+	private String subscriberConfigName;
+	private TransformAction action;
+
 	public TransformBatch() {
-		resourceIds = new HashMap<>();
-		subscribers = new ArrayList<>();
+		//resourceIds = new HashMap<>(); don't set to non-null, so it won't get serialised to JSON and we can eventually remove
+		//subscribers = new ArrayList<>(); don't set to non-null, so it won't get serialised to JSON and we can eventually remove
 	}
 
 	public UUID getBatchId() {
@@ -48,5 +73,21 @@ public class TransformBatch {
 
 	public void setSubscribers(List<ServiceContract> subscribers) {
 		this.subscribers = subscribers;
+	}
+
+	public String getSubscriberConfigName() {
+		return subscriberConfigName;
+	}
+
+	public void setSubscriberConfigName(String subscriberConfigName) {
+		this.subscriberConfigName = subscriberConfigName;
+	}
+
+	public TransformAction getAction() {
+		return action;
+	}
+
+	public void setAction(TransformAction action) {
+		this.action = action;
 	}
 }

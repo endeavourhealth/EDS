@@ -97,7 +97,7 @@ export class ExchangeAuditService extends BaseHttp2Service {
     }*/
 
     postToExchange(exchangeId: string, serviceId: string, systemId: string, exchangeName: string, postMode: string,
-                   postSpecificProtocol: string, fileTypesToFilterOn: string, deleteErrorState: boolean,
+                   specificSubscriberConfigNames: string[], fileTypesToFilterOn: string, deleteErrorState: boolean,
                     reason: string) : Observable<string> {
 
         var request = {
@@ -106,7 +106,7 @@ export class ExchangeAuditService extends BaseHttp2Service {
             'systemId': systemId,
             'exchangeName': exchangeName,
             'postMode': postMode,
-            'specificProtocolId': postSpecificProtocol,
+            'specificSubscriberConfigNames': specificSubscriberConfigNames,
             'fileTypesToFilterOn': fileTypesToFilterOn,
             'deleteTransformErrorState': deleteErrorState,
             'reason': reason
@@ -150,13 +150,21 @@ export class ExchangeAuditService extends BaseHttp2Service {
         return this.httpGet('api/exchangeAudit/getTransformErrorLines', { search : params});
     }
 
-    getProtocolsList(serviceId:string, onlySubscriberProtocols:boolean) : Observable<Protocol[]> {
+    /*getProtocolsList(serviceId:string, onlySubscriberProtocols:boolean) : Observable<Protocol[]> {
 
         var params = new URLSearchParams();
         params.append('serviceId', serviceId);
         params.append('onlySubscriberProtocols', '' + onlySubscriberProtocols);
 
         return this.httpGet('api/exchangeAudit/getProtocolsForService', { search : params});
+    }*/
+
+    getSubscriberConfigNameList(serviceId:string) : Observable<string[]> {
+
+        var params = new URLSearchParams();
+        params.append('serviceId', serviceId);
+
+        return this.httpGet('api/exchangeAudit/getSubscriberConfigNamesForService', { search : params});
     }
 
     rerunAllExchangesInError(serviceId: string, systemId: string) : Observable<any> {

@@ -18,28 +18,28 @@
 
                     <div class="form-group">
                         <label>App ID:</label>
-                        <select id="appIdCombo" [(ngModel)]="filterAppId" (ngModelChange)="applyFiltering()">
+                        <select id="appIdCombo" [(ngModel)]="configManagerService.filterAppId" (ngModelChange)="applyFiltering()">
                             <option value=""></option>
                             <option *ngFor="let appId of getAppIds()" value="{{appId}}">{{appId}}</option>
                         </select>
                         &nbsp;&nbsp;&nbsp;
                         <label for="checkBoxFilterAppIdIncludeGlobal" class="control-label">Include Global</label>
-                        <input type="checkbox" id="checkBoxFilterAppIdIncludeGlobal" [(ngModel)]="filterAppIdIncludeGlobal" name="checkBoxFilterAppIdIncludeGlobal" (ngModelChange)="applyFiltering()">
+                        <input type="checkbox" id="checkBoxFilterAppIdIncludeGlobal" [(ngModel)]="configManagerService.filterAppIdIncludeGlobal" name="checkBoxFilterAppIdIncludeGlobal" (ngModelChange)="applyFiltering()">
                     </div>
 
                     <div class="form-group">
                         <label for="textBoxFilterSearchText" class="control-label">Search</label>
-                        <input type="text" id="textBoxFilterSearchText" placeholder="Regex" [(ngModel)]="filterSearchText" name="textBoxFilterSearchText" (ngModelChange)="applyFiltering()">
+                        <input type="text" id="textBoxFilterSearchText" placeholder="Regex" [(ngModel)]="configManagerService.filterSearchText" name="textBoxFilterSearchText" (ngModelChange)="applyFiltering()">
 
                         &nbsp;&nbsp;&nbsp;
                         <label for="checkBoxFilterSearchOnAppId" class="control-label">App ID</label>
-                        <input type="checkbox" id="checkBoxFilterSearchOnAppId" [(ngModel)]="filterSearchOnAppId" name="checkBoxFilterSearchOnAppId" (ngModelChange)="applyFiltering()">
+                        <input type="checkbox" id="checkBoxFilterSearchOnAppId" [(ngModel)]="configManagerService.filterSearchOnAppId" name="checkBoxFilterSearchOnAppId" (ngModelChange)="applyFiltering()">
                         &nbsp;&nbsp;&nbsp;
                         <label for="checkBoxFilterSearchOnConfigId" class="control-label">Config ID</label>
-                        <input type="checkbox" id="checkBoxFilterSearchOnConfigId" [(ngModel)]="filterSearchOnConfigId" name="checkBoxFilterSearchOnConfigId" (ngModelChange)="applyFiltering()">
+                        <input type="checkbox" id="checkBoxFilterSearchOnConfigId" [(ngModel)]="configManagerService.filterSearchOnConfigId" name="checkBoxFilterSearchOnConfigId" (ngModelChange)="applyFiltering()">
                         &nbsp;&nbsp;&nbsp;
                         <label for="checkBoxFilterSearchOnData" class="control-label">Data</label>
-                        <input type="checkbox" id="checkBoxFilterSearchOnData" [(ngModel)]="filterSearchOnData" name="checkBoxFilterSearchOnData" (ngModelChange)="applyFiltering()">
+                        <input type="checkbox" id="checkBoxFilterSearchOnData" [(ngModel)]="configManagerService.filterSearchOnData" name="checkBoxFilterSearchOnData" (ngModelChange)="applyFiltering()">
                     </div>
 
 

@@ -12,6 +12,7 @@ import {TransformErrorsDialog} from "./transformErrors.dialog";
 import {Protocol} from "./Protocol";
 import {MessageBoxDialog} from "eds-common-js/dist/index";
 import {ServiceListComponent} from "../services/serviceList.component";
+import {MultiSelectOption} from "./MultiSelectOption";
 
 @Component({
 	template : require('./exchangeAudit.html')
@@ -32,12 +33,15 @@ export class ExchangeAuditComponent {
 
 	//results
 	exchanges: Exchange[];
-	protocols: Protocol[];
+	//protocols: Protocol[];
+	subscriberConfigNames: MultiSelectOption[]; //String[];
+
 	selectedExchange: Exchange;
 
 	//for re-queuing
 	busyPostingToExchange: Subscription;
-	postSpecificProtocol: string; //this varies from publisher to publisher, so don't move to the service class
+	//postSpecificProtocol: string; //this varies from publisher to publisher, so don't move to the service class
+	postSpecificProtocols: MultiSelectOption[]; //this varies from publisher to publisher, so don't move to the service class
 	//moved to the service to stop losing their values
 	/*postMode: string;
 	postExchange: string;
@@ -49,6 +53,13 @@ export class ExchangeAuditComponent {
 	//for colouring exchanges
 	exchangeSizeColours: {}; //cached colours dynamically calculated for each exchange
 	minLog: number; //cached for calculating colours
+
+
+
+
+	/*dropdownList = [];
+	selectedItems = [];*/
+	dropdownSettings = {};
 
 	constructor(private $modal : NgbModal,
 				private log : LoggerService,
@@ -68,25 +79,99 @@ export class ExchangeAuditComponent {
 				(result) => {
 					this.service = result;
 					this.refreshExchanges(true);
-					this.refreshProtocols();
+					this.refreshSubscriberConfigNames();
+					//this.refreshProtocols();
 					this.refreshPublisherMode();
 				},
 				(error) => log.error('Failed to retrieve service', error, 'Refresh Service')
 			)
 
+
+
+
 	}
 
+
+	ngOnInit(){
+		/*this.dropdownList = [
+			{"id":1,"itemName":"India"},
+			{"id":2,"itemName":"Singapore"},
+			{"id":3,"itemName":"Australia"},
+			{"id":4,"itemName":"Canada"},
+			{"id":5,"itemName":"South Korea"},
+			{"id":6,"itemName":"Germany"},
+			{"id":7,"itemName":"France"},
+			{"id":8,"itemName":"Russia"},
+			{"id":9,"itemName":"Italy"},
+			{"id":10,"itemName":"Sweden"}
+		];
+		this.selectedItems = [
+			{"id":2,"itemName":"Singapore"},
+			{"id":3,"itemName":"Australia"},
+			{"id":4,"itemName":"Canada"},
+			{"id":5,"itemName":"South Korea"}
+		];*/
+
+		var vm = this;
+		vm.dropdownSettings = {
+			singleSelection: false,
+			text: '',
+			selectAllText: 'Select All',
+			unSelectAllText: 'Clear Selection',
+			enableSearchFilter: false
+		};
+
+		vm.postSpecificProtocols = [];
+		vm.subscriberConfigNames = []; //this will be populated soon after creation
+
+	}
+
+	/*onItemSelect(item:any){
+		console.log(item);
+		console.log(this.selectedItems);
+	}
+	OnItemDeSelect(item:any){
+		console.log(item);
+		console.log(this.selectedItems);
+	}
+	onSelectAll(items: any){
+		console.log(items);
+	}
+	onDeSelectAll(items: any){
+		console.log(items);
+	}*/
 
 	close() {
 		var vm = this;
 		vm.$state.go(vm.transition.from());
 	}
 
-	refreshProtocols() {
+	refreshSubscriberConfigNames() {
+
 		var vm = this;
 		var serviceId = vm.service.uuid;
 
+		this.exchangeAuditService.getSubscriberConfigNameList(serviceId).subscribe(
+			(result) => {
+				vm.subscriberConfigNames = [];
+				for (var i=0; i<result.length; i++) {
+					var s = result[i];
+					var option = new MultiSelectOption;
+					option.id = s;
+					option.itemName = s;
+					vm.subscriberConfigNames.push(option);
+				}
+				//vm.subscriberConfigNames = result;
+			},
+			(error) => vm.log.error('Failed to retrieve subscriber confignames', error, 'Get Subscriber Config Names')
+		);
 
+
+	}
+
+	/*refreshProtocols() {
+		var vm = this;
+		var serviceId = vm.service.uuid;
 
 		this.exchangeAuditService.getProtocolsList(serviceId, true).subscribe(
 			(result) => {
@@ -94,7 +179,7 @@ export class ExchangeAuditComponent {
 			},
 			(error) => vm.log.error('Failed to retrieve protocols', error, 'Get Protocols')
 		);
-	}
+	}*/
 
 	refreshExchanges(autoSelectFirst: boolean) {
 		var vm = this;
@@ -282,18 +367,24 @@ export class ExchangeAuditComponent {
 			return;
 		}
 
-		var protocolId = this.postSpecificProtocol;
-		if (mode == 'FullLoad'
-			&& !protocolId) {
-			vm.log.error('Select a protocol to load for');
-			return;
+		var specificSubscriberConfigNames = [];
+		if (vm.postSpecificProtocols) {
+			for (var i=0; i<vm.postSpecificProtocols.length; i++) {
+				var item = vm.postSpecificProtocols[i];
+				specificSubscriberConfigNames.push(item.id);
+			}
 		}
 
-		if (mode == 'FullDelete'
-			&& !protocolId) {
-			vm.log.error('Select a protocol to delete for');
+		/*if ((mode == 'FullDelete'
+				|| mode == 'FullRefresh'
+				|| mode == 'QuickRefresh'
+				|| mode == 'FullRefreshAdminOnly')
+			&& specificSubscriberConfigNames.length == 0) {
+				//TODO - confirm full load
+			vm.log.error('Select a protocol to refresh/delete for');
 			return;
-		}
+		}*/
+
 
 		var fileTypesToFilterOn;
 		if (vm.exchangeAuditService.postFilterFileTypes) {
@@ -306,7 +397,7 @@ export class ExchangeAuditComponent {
 
 		var reason = vm.exchangeAuditService.postReason;
 
-		this.busyPostingToExchange = vm.exchangeAuditService.postToExchange(exchangeId, serviceId, vm.systemId, exchangeName, mode, protocolId, fileTypesToFilterOn, deleteErrorState, reason).subscribe(
+		this.busyPostingToExchange = vm.exchangeAuditService.postToExchange(exchangeId, serviceId, vm.systemId, exchangeName, mode, specificSubscriberConfigNames, fileTypesToFilterOn, deleteErrorState, reason).subscribe(
 			(result) => {
 
 				//it may return nothing (which is good) or a string (which will be an error messag)
@@ -332,37 +423,6 @@ export class ExchangeAuditComponent {
 		)
 	}
 
-	/*postToExchange(exchangeName: string) {
-		var vm = this;
-		var exchangeId = vm.selectedExchange.exchangeId;
-		var serviceId = this.service.uuid;
-
-		var fileTypesToFilterOn;
-		if (vm.postFilterFileTypes) {
-			fileTypesToFilterOn = vm.postFilterFileTypesSelected;
-			if (!fileTypesToFilterOn) {
-				vm.log.error('No file types selected');
-				return;
-			}
-		}
-
-		this.busyPostingToExchange = vm.exchangeAuditService.postToExchange(exchangeId, serviceId, vm.systemId, exchangeName, this.postMode, this.postSpecificProtocol, fileTypesToFilterOn).subscribe(
-			(result) => {
-				vm.log.success('Successfully posted to ' + exchangeName + ' exchange', 'Post to Exchange');
-
-				//re-load the events for the exchange, as we'll have added to them
-				this.loadTransformAudits(vm.selectedExchange);
-				//this.loadExchangeEvents(vm.selectedExchange);
-				this.busyPostingToExchange = null;
-			},
-			(error) => {
-				vm.log.error('Failed to post to ' + exchangeName + ' exchange', error, 'Post to Exchange')
-
-				//clear down to say we're not busy
-				this.busyPostingToExchange = null;
-			}
-		)
-	}*/
 
 	showTransformErrors(transformAudit: TransformErrorDetail) {
 

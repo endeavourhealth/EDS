@@ -32,16 +32,16 @@ export class ProtocolEditComponent {
 	serviceUuidByOdsCode = {};
 	serviceNameByOdsCode = {};
 
-	cohortSelected: string;
+	/*cohortSelected: string;
 	cohortOdsCodes: string[];
 	cohortOdsCodesStr: string;
 
 	//hard-code two cohort strings until the cohort editor is implemented
 	cohorts: string[];
-	//cohorts : Cohort[];
+	//cohorts : Cohort[];*/
 
 	enabled = ["TRUE", "FALSE"];
-	consent = ["OPT-IN", "OPT-OUT"];
+	//consent = ["OPT-IN", "OPT-OUT"];
 	type = ["PUBLISHER", "SUBSCRIBER"];
 
 	constructor(
@@ -65,11 +65,7 @@ export class ProtocolEditComponent {
 		this.loadServices();
 		this.loadSystems();
 
-		this.cohorts = ['All Patients', 'Explicit Patients', 'Defining Services'];
-		//this.cohorts = ['All Patients', 'Explicit Patients'];
-		//this.loadCohorts(); //hard-coding these for now
-		//console.log('Cohorts = ' + this.cohorts);
-		//console.log('Cohorts = ' + this.cohorts.length);
+		//this.cohorts = ['All Patients', 'Explicit Patients', 'Defining Services'];
 
 		this.loadDatasets();
 	}
@@ -91,7 +87,7 @@ export class ProtocolEditComponent {
 			.subscribe(
 				(libraryItem) => {
 					vm.libraryItem = libraryItem;
-					vm.updateCohortOdsCodeDesc();
+					//vm.updateCohortOdsCodeDesc();
 				},
 				(data) => vm.logger.error('Error loading', data, 'Error')
 			);
@@ -137,7 +133,7 @@ export class ProtocolEditComponent {
 			protocol: protocol
 		} as EdsLibraryItem;
 
-		vm.updateCohortOdsCodeDesc();
+		//vm.updateCohortOdsCodeDesc();
 	}
 
 	addContract() {
@@ -264,12 +260,9 @@ export class ProtocolEditComponent {
 		vm.technicalInterfaces = linq(vm.technicalInterfaces).OrderBy(ti => ti.name).ToArray();
 	}
 
-	isCohortDefinedByServices(): boolean {
-		/*var p = this.libraryItem.protocol;
-		var cohort = p.cohort;
-		return cohort == 'Defining Services';*/
+	/*isCohortDefinedByServices(): boolean {
 		return this.cohortSelected == 'Defining Services';
-	}
+	}*/
 
 	getServiceContracts() {
 
@@ -352,7 +345,7 @@ export class ProtocolEditComponent {
 		}
 	}
 
-	cohortOdsCodesChanged() {
+	/*cohortOdsCodesChanged() {
 		var vm = this;
 
 		if (vm.cohortSelected.startsWith('Defining Services')) {
@@ -493,6 +486,12 @@ export class ProtocolEditComponent {
 		return false;
 	}
 
+	getCohortSize(): number {
+		var vm = this;
+		return vm.cohortOdsCodes.length;
+	}
+	*/
+
 	/**
 	 * looks up a local ID (i.e. ODS Code) for a service
 	 */
@@ -520,8 +519,5 @@ export class ProtocolEditComponent {
 		return ret;
 	}
 
-	getCohortSize(): number {
-		var vm = this;
-		return vm.cohortOdsCodes.length;
-	}
+
 }

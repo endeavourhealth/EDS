@@ -1,4 +1,3 @@
-
 package org.endeavourhealth.ui.endpoints;
 
 import com.codahale.metrics.annotation.Timed;
@@ -9,7 +8,6 @@ import org.endeavourhealth.common.security.annotations.RequiresAdmin;
 import org.endeavourhealth.core.configuration.PostMessageToExchangeConfig;
 import org.endeavourhealth.core.database.dal.DalProvider;
 import org.endeavourhealth.core.database.dal.admin.LibraryDalI;
-import org.endeavourhealth.core.database.dal.admin.LibraryRepositoryHelper;
 import org.endeavourhealth.core.database.dal.admin.ServiceDalI;
 import org.endeavourhealth.core.database.dal.admin.models.ActiveItem;
 import org.endeavourhealth.core.database.dal.admin.models.Item;
@@ -18,8 +16,8 @@ import org.endeavourhealth.core.database.dal.audit.ExchangeDalI;
 import org.endeavourhealth.core.database.dal.audit.UserAuditDalI;
 import org.endeavourhealth.core.database.dal.audit.models.*;
 import org.endeavourhealth.core.messaging.pipeline.components.PostMessageToExchange;
+import org.endeavourhealth.core.messaging.pipeline.components.RunDataDistributionProtocols;
 import org.endeavourhealth.core.queueing.QueueHelper;
-import org.endeavourhealth.core.xml.QueryDocument.*;
 import org.endeavourhealth.core.xml.TransformErrorSerializer;
 import org.endeavourhealth.core.xml.transformError.Arg;
 import org.endeavourhealth.core.xml.transformError.Error;
@@ -227,18 +225,18 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
 
     private Map<String, String> getRoutingKeys(Exchange exchange) throws Exception {
 
-        List<String> exchangeNames = new ArrayList<>();
-        exchangeNames.add(QueueHelper.EXCHANGE_INBOUND);
-        exchangeNames.add(QueueHelper.EXCHANGE_PROTOCOL);
-        exchangeNames.add(QueueHelper.EXCHANGE_TRANSFORM);
-        exchangeNames.add(QueueHelper.EXCHANGE_SUBSCRIBER);
+        List<QueueHelper.ExchangeName> exchangeNames = new ArrayList<>();
+        exchangeNames.add(QueueHelper.ExchangeName.INBOUND);
+        exchangeNames.add(QueueHelper.ExchangeName.PROTOCOL);
+        exchangeNames.add(QueueHelper.ExchangeName.TRANSFORM);
+        exchangeNames.add(QueueHelper.ExchangeName.SUBSCRIBER);
 
         Map<String, String> ret = new HashMap<>();
 
-        for (String exchangeName: exchangeNames) {
+        for (QueueHelper.ExchangeName exchangeName: exchangeNames) {
             PostMessageToExchangeConfig config = QueueHelper.findExchangeConfig(exchangeName);
             String routingKey = PostMessageToExchange.getRoutingKey(exchange, config);
-            ret.put(exchangeName, routingKey);
+            ret.put(exchangeName.getName(), routingKey);
         }
 
         return ret;
@@ -430,19 +428,21 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
                 "System ID", request.getSystemId(),
                 "Exchange Name", request.getExchangeName(),
                 "Post Mode", request.getPostMode(),
-                "Protocol ID", request.getSpecificProtocolId(),
+                "Subscriber Config", "" + request.getSpecificSubscriberConfigNames(),
                 "File Types to Filter", request.getFileTypesToFilterOn(),
                 "Delete Error State", request.getDeleteTransformErrorState());
 
         UUID selectedExchangeId = request.getExchangeId();
         UUID serviceId = request.getServiceId();
         UUID systemId = request.getSystemId();
-        String exchangeName = request.getExchangeName();
+        String exchangeNameStr = request.getExchangeName();
         String postMode = request.getPostMode();
-        UUID specificProtocolId = request.getSpecificProtocolId();
+        Set<String> specificSubscriberConfigNames = request.getSpecificSubscriberConfigNames();
         String fileTypesToFilterOn = request.getFileTypesToFilterOn();
         Boolean deleteErrorState = request.getDeleteTransformErrorState();
         String reason = request.getReason();
+
+        QueueHelper.ExchangeName exchangeName = QueueHelper.ExchangeName.fromName(exchangeNameStr);
 
         //work out the exchange IDs to post
         List<UUID> exchangeIds = null;
@@ -464,10 +464,12 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
         } else if (postMode.equalsIgnoreCase("All")) {
             exchangeIds = auditRepository.getExchangeIdsForService(serviceId, systemId);
 
-        } else if (postMode.equalsIgnoreCase("FullLoad")
-                || postMode.equalsIgnoreCase("FullDelete")) {
+        } else if (postMode.equalsIgnoreCase("FullDelete")
+                || postMode.equalsIgnoreCase("FullRefresh")
+                || postMode.equalsIgnoreCase("QuickRefresh")
+                || postMode.equalsIgnoreCase("FullRefreshAdminOnly")) {
 
-            if (!exchangeName.equalsIgnoreCase(QueueHelper.EXCHANGE_PROTOCOL)) {
+            if (exchangeName != QueueHelper.ExchangeName.PROTOCOL) {
                 throw new IllegalArgumentException("Invalid post mode [" + postMode + "] when exchange name is [" + exchangeName + "]");
             }
 
@@ -480,11 +482,17 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
                         .build();
             }
 
-            if (postMode.equalsIgnoreCase("FullLoad")) {
-                QueueHelper.queueUpFullServiceForPopulatingSubscriber(serviceId, specificProtocolId, reason);
+            if (postMode.equalsIgnoreCase("FullDelete")) {
+                QueueHelper.queueUpFullServiceForPopulatingSubscriber(serviceId, true, false, specificSubscriberConfigNames, reason);
 
-            } else if (postMode.equalsIgnoreCase("FullDelete")) {
-                QueueHelper.queueUpFullServiceForDeletingFromSubscriber(serviceId, specificProtocolId, reason);
+            } else if (postMode.equalsIgnoreCase("FullRefresh")) {
+                QueueHelper.queueUpFullServiceForPopulatingSubscriber(serviceId, false, true, specificSubscriberConfigNames, reason);
+
+            } else if (postMode.equalsIgnoreCase("QuickRefresh")) {
+                QueueHelper.queueUpFullServiceForPopulatingSubscriber(serviceId, false, false, specificSubscriberConfigNames, reason);
+
+            } else if (postMode.equalsIgnoreCase("FullRefreshAdminOnly")) {
+                QueueHelper.queueUpFullServiceForPopulatingSubscriber(serviceId, false, true, specificSubscriberConfigNames, new ArrayList<>(), reason);
 
             } else {
                 throw new Exception("Unhandled mode [" + postMode + "]");
@@ -502,7 +510,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
         Set<String> fileTypesSet = null;
 
         //the below only apply if posting to inbound queue
-        if (exchangeName.equalsIgnoreCase(QueueHelper.EXCHANGE_INBOUND)) {
+        if (exchangeName == QueueHelper.ExchangeName.INBOUND) {
 
             //this bit hasn't been working for a long time, and it's not been missed, so don't bother trying
             /*for (UUID exchangeId : exchangeIds) {
@@ -536,7 +544,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
                 ExchangeDalI auditRepository = DalProvider.factoryExchangeDal();
                 auditRepository.delete(state);
             }
-        } else if (exchangeName.equalsIgnoreCase(QueueHelper.EXCHANGE_PROTOCOL)) {
+        } else if (exchangeName == QueueHelper.ExchangeName.PROTOCOL) {
             //nothing extra for this
 
         } else {
@@ -546,15 +554,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
         Map<String, String> additionalHeaders = request.getAdditionalHeaders();
 
         //post the exchanges to RabbitMQ
-        QueueHelper.postToExchange(exchangeIds, exchangeName, specificProtocolId, true, reason, fileTypesSet, additionalHeaders);
-
-        //and update any past transform audits to say we've resubmitted them to rabbit, if it's the inbound queue
-        /*if (exchangeName.equals(INBOUND_EXCHANGE)) {
-            for (ExchangeTransformAudit audit : auditsToFlagAsResubmited) {
-                audit.setResubmitted(true);
-                auditRepository.save(audit);
-            }
-        }*/
+        QueueHelper.postToExchange(exchangeIds, exchangeName, specificSubscriberConfigNames, reason, fileTypesSet, additionalHeaders);
 
         clearLogbackMarkers();
 
@@ -870,7 +870,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
         }
 
         //post to rabbit
-        QueueHelper.postToExchange(exchangeIdsToRePost, QueueHelper.EXCHANGE_INBOUND, null, true, null);
+        QueueHelper.postToExchange(exchangeIdsToRePost, QueueHelper.ExchangeName.INBOUND, null, null);
 
     }
 
@@ -910,8 +910,32 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
                 .build();
     }
 
-
     @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="ExchangeAuditEndpoint.getSubscriberConfigNamesForService")
+    @Path("/getSubscriberConfigNamesForService")
+    public Response getProtocolsForService(@Context SecurityContext sc,
+                                           @QueryParam("serviceId") String serviceIdStr) throws Exception {
+        super.setLogbackMarkers(sc);
+
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
+                "Get Subscriber Config Names For Service",
+                "Service Id", serviceIdStr);
+
+        UUID serviceId = UUID.fromString(serviceIdStr);
+
+        List<String> ret = RunDataDistributionProtocols.getSubscriberConfigNamesFromOldProtocols(serviceId);
+
+        clearLogbackMarkers();
+
+        return Response
+                .ok()
+                .entity(ret)
+                .build();
+    }
+
+    /*@GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     @Timed(absolute = true, name="ExchangeAuditEndpoint.GetProtocolsForService")
@@ -980,7 +1004,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
                 .ok()
                 .entity(ret)
                 .build();
-    }
+    }*/
 
     @POST
     @Produces(MediaType.APPLICATION_JSON)

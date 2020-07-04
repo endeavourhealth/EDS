@@ -55,6 +55,10 @@ public class EnterpriseFiler {
 
         for (EnterpriseConnector.ConnectionWrapper wrapper: connectionWrappers) {
 
+            if (wrapper.isReplica()) {
+                LOG.trace("Writing to replica DB");
+            }
+
             //if we have a direct DB connection, then write to the DB (do this first, so any failure here will mean
             //we won't already have written to the remote subscriber table, resulting in duplicates if we try again)
             if (wrapper.hasDatabaseConnection()) {
@@ -264,6 +268,7 @@ public class EnterpriseFiler {
                 throw new Exception("Unknown save mode " + saveMode);
             }
         }
+        LOG.trace("Got " + upserts.size() + " upserts and " + deletes.size() + " deletes for " + tableName);
 
         //when doing a bulk, we can have 300,000+ practitioners, so do them in batches, so we're
         //not keeping huge DB transactions open

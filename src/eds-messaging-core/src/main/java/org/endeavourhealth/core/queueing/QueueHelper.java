@@ -8,7 +8,6 @@ import org.endeavourhealth.common.utility.ExpiringCache;
 import org.endeavourhealth.common.utility.JsonSerializer;
 import org.endeavourhealth.core.configuration.*;
 import org.endeavourhealth.core.database.dal.DalProvider;
-import org.endeavourhealth.core.database.dal.admin.LibraryRepositoryHelper;
 import org.endeavourhealth.core.database.dal.admin.ServiceDalI;
 import org.endeavourhealth.core.database.dal.admin.models.Service;
 import org.endeavourhealth.core.database.dal.audit.ExchangeBatchDalI;
@@ -22,9 +21,7 @@ import org.endeavourhealth.core.database.dal.eds.PatientSearchDalI;
 import org.endeavourhealth.core.database.dal.eds.models.PatientSearch;
 import org.endeavourhealth.core.database.rdbms.ConnectionManager;
 import org.endeavourhealth.core.fhirStorage.ServiceInterfaceEndpoint;
-import org.endeavourhealth.core.messaging.pipeline.components.DetermineRelevantProtocolIds;
 import org.endeavourhealth.core.messaging.pipeline.components.PostMessageToExchange;
-import org.endeavourhealth.core.xml.QueryDocument.*;
 import org.endeavourhealth.transform.common.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,20 +35,41 @@ import java.util.stream.Collectors;
 public class QueueHelper {
     private static final Logger LOG = LoggerFactory.getLogger(QueueHelper.class);
 
-    public static final String EXCHANGE_INBOUND = "EdsInbound";
-    public static final String EXCHANGE_PROTOCOL = "EdsProtocol";
-    public static final String EXCHANGE_TRANSFORM = "EdsTransform";
-    public static final String EXCHANGE_SUBSCRIBER = "EdsSubscriber";
 
-    private static ExpiringCache<String, PostMessageToExchangeConfig> configCache = new ExpiringCache<>(1000L * 60L * 5L);
+    public enum ExchangeName {
+        INBOUND("EdsInbound"),
+        PROTOCOL("EdsProtocol"),
+        TRANSFORM("EdsTransform"),
+        SUBSCRIBER("EdsSubscriber");
 
-    public static void postToExchange(List<UUID> exchangeIds, String exchangeName, UUID specificProtocolId,
-                                      boolean recalculateProtocols, String reason) throws Exception {
-        postToExchange(exchangeIds, exchangeName, specificProtocolId, recalculateProtocols, reason, null, null);
+        private String name = null;
+
+        public String getName() {
+            return this.name;
+        }
+
+        private ExchangeName(String name) {
+            this.name = name;
+        }
+
+        public static ExchangeName fromName(String s) {
+            for (ExchangeName n: values()) {
+                if (n.getName().equalsIgnoreCase(s)) {
+                    return n;
+                }
+            }
+            throw new IllegalArgumentException("Unknown exchange name [" + s + "]");
+        }
     }
 
-    public static void postToExchange(List<UUID> exchangeIds, String exchangeName, UUID specificProtocolId,
-                                      boolean recalculateProtocols, String reason, Set<String> fileTypesToFilterOn,
+    private static ExpiringCache<ExchangeName, PostMessageToExchangeConfig> configCache = new ExpiringCache<>(1000L * 60L * 5L);
+
+
+    public static void postToExchange(List<UUID> exchangeIds, ExchangeName exchangeName, Set<String> specificSubscriberConfigNames, String reason) throws Exception {
+        postToExchange(exchangeIds, exchangeName, specificSubscriberConfigNames, reason, null, null);
+    }
+
+    public static void postToExchange(List<UUID> exchangeIds, ExchangeName exchangeName, Set<String> specificSubscriberConfigNames, String reason, Set<String> fileTypesToFilterOn,
                                       Map<String, String> additionalHeaders) throws Exception {
 
         PostMessageToExchangeConfig exchangeConfig = findExchangeConfig(exchangeName);
@@ -60,22 +78,12 @@ public class QueueHelper {
             return;
         }
 
-        String[] newProtocolIds = null;
-        if (recalculateProtocols) {
-            UUID firstExchangeId = exchangeIds.get(0);
-            Exchange firstExchange = AuditWriter.readExchange(firstExchangeId);
-            String serviceUuid = firstExchange.getHeader(HeaderKeys.SenderServiceUuid);
-
-            List<String> protocolIdsOldWay = DetermineRelevantProtocolIds.getProtocolIdsForPublisherServiceOldWay(serviceUuid);
-            newProtocolIds = protocolIdsOldWay.toArray(new String[]{});
-        }
-
         for (int i=0; i<exchangeIds.size(); i++) {
 
             UUID exchangeId = exchangeIds.get(i);
             Exchange exchange = AuditWriter.readExchange(exchangeId);
 
-            String exchangeEventStr = "Manually pushed into " + exchangeName + " exchange";
+            String exchangeEventStr = "Manually pushed into " + exchangeName.getName() + " exchange";
             if (!Strings.isNullOrEmpty(reason)) {
                 exchangeEventStr += " (" + reason + ")";
             }
@@ -105,36 +113,14 @@ public class QueueHelper {
 
 
             //to make sure the latest setup applies, re-calculate the protocols that apply to this exchange
-            if (recalculateProtocols) {
-                String[] oldProtocolIds = exchange.getHeaderAsStringArray(HeaderKeys.ProtocolIds);
-                if (oldProtocolIds == null || !Arrays.equals(newProtocolIds, oldProtocolIds)) {
-                    exchange.setHeaderAsStringArray(HeaderKeys.ProtocolIds, newProtocolIds);
-                    AuditWriter.writeExchange(exchange);
-                }
-            }
+            if (specificSubscriberConfigNames != null
+                    && !specificSubscriberConfigNames.isEmpty()) {
+                String[] arr = specificSubscriberConfigNames.toArray(new String[]{});
+                exchange.setHeaderAsStringArray(HeaderKeys.SubscriberConfigNames, arr);
 
-            String[] protocolIds = exchange.getHeaderAsStringArray(HeaderKeys.ProtocolIds);
-
-            //if we want to restrict the protocols applied (e.g. only want to populate a specific subscriber)
-            //then filter the protocols in the header
-            if (specificProtocolId != null) {
-
-                //validate the selected protocol does apply to this exchange
-                boolean foundInHeader = false;
-                for (String protocolId : protocolIds) {
-                    if (protocolId.equals(specificProtocolId.toString())) {
-                        foundInHeader = true;
-                        break;
-                    }
-                }
-
-                if (!foundInHeader) {
-                    throw new BadRequestException("Restricting to protocol " + specificProtocolId + " but that doesn't apply to exchange " + exchangeId);
-                }
-
-                String[] specificProtocolArr = new String[]{specificProtocolId.toString()};
-                String specificProtocolJson = ObjectMapperPool.getInstance().writeValueAsString(specificProtocolArr);
-                exchange.setHeader(HeaderKeys.ProtocolIds, specificProtocolJson);
+            } else {
+                //probably not required to remove the header, since it won't be set, but can't hurt
+                exchange.getHeaders().remove(HeaderKeys.SubscriberConfigNames);
             }
 
             //if we have any additional headers, add them
@@ -144,7 +130,6 @@ public class QueueHelper {
                     exchange.setHeader(headerKey, value);
                 }
             }
-
 
             //apply any filtering on file type
             if (fileTypesToFilterOn != null) {
@@ -168,7 +153,7 @@ public class QueueHelper {
 
                 //if pushed into the Inbound queue, and it previously had an error in there, mark it as resubmitted
                 //LOG.trace("Posting " + exchange.getId() + " into exchange [" + exchangeName + "] for service " + exchange.getServiceId() + " and system " + exchange.getSystemId());
-                if (exchangeName.equalsIgnoreCase(EXCHANGE_INBOUND)) { //difference case used on different servers
+                if (exchangeName == ExchangeName.INBOUND) { //difference case used on different servers
 
                     UUID serviceId = exchange.getServiceId();
                     UUID systemId = exchange.getSystemId();
@@ -331,7 +316,7 @@ public class QueueHelper {
 
     }
 
-    public static PostMessageToExchangeConfig findExchangeConfig(String exchangeName) throws Exception {
+    public static PostMessageToExchangeConfig findExchangeConfig(ExchangeName exchangeName) throws Exception {
 
         PostMessageToExchangeConfig config = configCache.get(exchangeName);
         if (config == null) {
@@ -378,7 +363,7 @@ public class QueueHelper {
         return config;
     }
 
-    private static PostMessageToExchangeConfig findExchangeConfig(String configXml, String exchangeName) throws Exception {
+    private static PostMessageToExchangeConfig findExchangeConfig(String configXml, ExchangeName exchangeName) throws Exception {
 
         Pipeline pipeline = null;
 
@@ -408,7 +393,7 @@ public class QueueHelper {
             if (comp instanceof PostMessageToExchangeConfig) {
                 PostMessageToExchangeConfig exchangeConfig = (PostMessageToExchangeConfig)comp;
                 //LOG.debug("Config exchange name = [" + exchangeConfig.getExchange() + "]");
-                if (exchangeConfig.getExchange().equalsIgnoreCase(exchangeName)) {
+                if (exchangeConfig.getExchange().equalsIgnoreCase(exchangeName.getName())) {
                     //LOG.debug("Found match!");
                     return exchangeConfig;
                 }
@@ -427,58 +412,60 @@ public class QueueHelper {
     }
 
     /**
+     *
+     */
+    public static void queueUpFullServiceForPopulatingSubscriber(UUID serviceId, boolean isBulkDelete, boolean isBulkRefresh,
+                                                                 Set<String> subscriberConfigNames, String reason) throws Exception {
+        //find all patients
+        PatientSearchDalI patientSearchDal = DalProvider.factoryPatientSearchDal();
+        List<UUID> patientUuids = patientSearchDal.getPatientIds(serviceId, true);
+
+        queueUpFullServiceForPopulatingSubscriber(serviceId, isBulkDelete, isBulkRefresh, subscriberConfigNames, patientUuids, reason);
+    }
+
+
+    /**
      * creates a "dummy" exchange and an exchange_batch for each patient and injects into the protocol queue
      * that will cause all resources for each patient to be transformed
+     *
+     * NOTE: the patientUuids list may be empty if we just want to send admin data through - this is OK
      */
-    public static void queueUpFullServiceForPopulatingSubscriber(UUID serviceId, UUID specificProtocolId, String reason) throws Exception {
-        //find all patients
-        PatientSearchDalI patientSearchDal = DalProvider.factoryPatientSearchDal();
-        List<UUID> patientUuids = patientSearchDal.getPatientIds(serviceId, true);
+    public static void queueUpFullServiceForPopulatingSubscriber(UUID serviceId, boolean isBulkDelete, boolean isBulkRefresh,
+                                                                 Set<String> specificSubscriberConfigNames, List<UUID> patientUuids, String reason) throws Exception {
 
-        queueUpFullServiceForPopulatingSubscriber(serviceId, specificProtocolId, patientUuids, reason, null);
-    }
-
-    public static void queueUpFullServiceForPopulatingSubscriberFilteredFiles(UUID serviceId, UUID specificProtocolId, String filteredFiles) throws Exception {
-        //find all patients
-        PatientSearchDalI patientSearchDal = DalProvider.factoryPatientSearchDal();
-        List<UUID> patientUuids = patientSearchDal.getPatientIds(serviceId, true);
-
-        Set<String> fileTypesSet = null;
-        //tokenise and validate the filtering file types
-        if (!Strings.isNullOrEmpty(filteredFiles)) {
-            fileTypesSet = new HashSet<>();
-
-            String[] toks = filteredFiles.split("\r|\n|,| |;");
-            for (String tok: toks) {
-                tok = tok.trim();
-                if (!Strings.isNullOrEmpty(tok)) {
-                    fileTypesSet.add(tok);
-                }
-            }
+        if (isBulkDelete && isBulkRefresh) {
+            throw new Exception("Cannot both bulk delete and refresh");
         }
 
-        queueUpFullServiceForPopulatingSubscriber(serviceId, specificProtocolId, patientUuids, "Full load of all patients - Filtered Files", fileTypesSet);
-    }
+        //routing requires a source system name and this tells us it's this special case
+        String softwareKey = null;
+        if (isBulkDelete) {
+            //tell transform to delete all data for all patients
+            softwareKey = MessageFormat.DUMMY_SENDER_SOFTWARE_FOR_BULK_SUBSCRIBER_DELETE;
 
-    public static void queueUpFullServiceForPopulatingSubscriber(UUID serviceId, UUID specificProtocolId, List<UUID> patientUuids,
-                                                                 String reason, Set<String> fileTypesSet) throws Exception {
+        } else if (isBulkRefresh) {
+            //tell transform to recalculate cohort send all data for patients in cohort and delete all data for those not in cohort
+            softwareKey = MessageFormat.DUMMY_SENDER_SOFTWARE_FOR_BULK_SUBSCRIBER_REFRESH;
+
+        } else {
+            //tell transform to recalculate cohort send/delete all data for patients where inclusion has changed
+            softwareKey = MessageFormat.DUMMY_SENDER_SOFTWARE_FOR_BULK_SUBSCRIBER_QUICK_REFRESH;
+        }
 
         ServiceDalI serviceDal = DalProvider.factoryServiceDal();
         Service service = serviceDal.getById(serviceId);
 
-        LibraryItem protocol = LibraryRepositoryHelper.getLibraryItem(specificProtocolId);
-
-        LOG.info("Populating subscriber for " + patientUuids.size() + " patients at " + service.getName() + " " + service.getLocalId() + " and protocol " + protocol.getName());
+        String specificSubscriberConfigNamesStr = String.join(", ", specificSubscriberConfigNames);
+        LOG.info("" + softwareKey + " subscriber for " + patientUuids.size() + " patients at " + service.getName() + " " + service.getLocalId() + " and subscriber " + specificSubscriberConfigNamesStr);
 
         //create a new "dummy" exchange which we need to get anything sent through the pipeline
         String bodyJson = JsonSerializer.serialize(new ArrayList<ExchangePayloadFile>());
 
-        String[] specificProtocolArr = new String[]{specificProtocolId.toString()};
-        String specificProtocolJson = ObjectMapperPool.getInstance().writeValueAsString(specificProtocolArr);
-
         String odsCode = service.getLocalId();
 
         boolean postedToRabbit = false;
+
+
 
         List<UUID> systemIds = findSystemIds(service);
         for (UUID systemId: systemIds) {
@@ -490,14 +477,13 @@ public class QueueHelper {
             exchange.setTimestamp(new Date());
             exchange.setHeaders(new HashMap<>());
             exchange.setHeaderAsUuid(HeaderKeys.SenderServiceUuid, serviceId);
-            exchange.setHeader(HeaderKeys.ProtocolIds, specificProtocolJson);
             exchange.setHeader(HeaderKeys.SenderLocalIdentifier, odsCode);
             exchange.setHeaderAsUuid(HeaderKeys.SenderSystemUuid, systemId);
-            exchange.setHeader(HeaderKeys.SourceSystem, MessageFormat.DUMMY_SENDER_SOFTWARE_FOR_BULK_TRANSFORM); //routing requires a source system name and this tells us it's this special case
+            exchange.setHeader(HeaderKeys.SourceSystem, softwareKey);
             exchange.setServiceId(serviceId);
             exchange.setSystemId(systemId);
 
-            String eventDesc = "Manually created exchange to populate subscribers in protocol " + protocol.getName();
+            String eventDesc = "Manually created exchange to " + softwareKey + " for " + patientUuids.size() + " patients in subscriber " + specificSubscriberConfigNamesStr;
             if (!Strings.isNullOrEmpty(reason)) {
                 eventDesc += " (" + reason + ")";
             }
@@ -519,15 +505,16 @@ public class QueueHelper {
                 exchangeIds.add(exchange.getId());
                 //QueueHelper.postToExchange(exchangeIds, EXCHANGE_PROTOCOL, specificProtocolId, false, null);
 
-                QueueHelper.postToExchange(exchangeIds, EXCHANGE_PROTOCOL, specificProtocolId, false, null, fileTypesSet,null);
+                QueueHelper.postToExchange(exchangeIds, ExchangeName.PROTOCOL, specificSubscriberConfigNames, reason, null, null);
 
                 LOG.info("Exchange posted to protocol queue");
+
             } else {
                 LOG.info("Not posting to Rabbit as already done that for another system");
             }
 
             //set this header key to prevent re-queuing
-            exchange.setHeaderAsBoolean(HeaderKeys.AllowQueueing, new Boolean(false)); //don't allow this to be re-queued
+            exchange.setHeaderAsBoolean(HeaderKeys.AllowQueueing, Boolean.FALSE); //don't allow this to be re-queued
             AuditWriter.writeExchange(exchange);
         }
     }
@@ -538,9 +525,7 @@ public class QueueHelper {
         List<ExchangeBatch> batches = new ArrayList<>();
 
         //create an admin batch
-        // 22/08/2019 James commented out the line below at Drew's instruction to fix the
-        // memory problems with doing a "Full Load of Data" for bulk practice transforms
-        // batches.add(createBatch(exchange, null));
+        batches.add(createBatch(exchange, null));
 
         for (UUID patientId: patientUuids) {
             batches.add(createBatch(exchange, patientId));
@@ -572,7 +557,7 @@ public class QueueHelper {
      * creates a "dummy" exchange and injects into the inbound queue which gets routed to a special
      * inbound transform that will delete all data
      */
-    public static void queueUpFullServiceForDeleteAllData(UUID serviceId) throws Exception {
+    public static void queueUpFullServiceForDeleteAllFhirData(UUID serviceId) throws Exception {
 
         ServiceDalI serviceDal = DalProvider.factoryServiceDal();
         Service service = serviceDal.getById(serviceId);
@@ -601,7 +586,6 @@ public class QueueHelper {
             exchange.setTimestamp(new Date());
             exchange.setHeaders(new HashMap<>());
             exchange.setHeaderAsUuid(HeaderKeys.SenderServiceUuid, serviceId);
-            exchange.setHeader(HeaderKeys.ProtocolIds, ""); //just set to non-null value, so postToExchange(..) can safely recalculate
             exchange.setHeader(HeaderKeys.SenderLocalIdentifier, odsCode);
             exchange.setHeaderAsUuid(HeaderKeys.SenderSystemUuid, systemId);
             exchange.setHeader(HeaderKeys.SourceSystem, MessageFormat.DUMMY_SENDER_SOFTWARE_FOR_BULK_DELETE); //routing requires a source system name and this tells us it's this special case
@@ -610,7 +594,7 @@ public class QueueHelper {
 
             LOG.info("Saving exchange");
             AuditWriter.writeExchange(exchange);
-            AuditWriter.writeExchangeEvent(exchange, "Manually created exchange to delete data");
+            AuditWriter.writeExchangeEvent(exchange, "Manually created exchange to delete FHIR data");
             //AuditWriter.writeExchangeEvent(exchange, "NOTE: ANY ATTEMPT TO RE-QUEUE THIS EXCHANGE WILL BE IGNORED");
 
             //for audit purposes, we create an exchange per systemId, but only need to post one to Rabbit to do the work
@@ -621,7 +605,7 @@ public class QueueHelper {
                 LOG.info("Posting to inbound queue");
                 List<UUID> exchangeIds = new ArrayList<>();
                 exchangeIds.add(exchange.getId());
-                postToExchange(exchangeIds, EXCHANGE_INBOUND, null, true, null);
+                postToExchange(exchangeIds, ExchangeName.INBOUND, null, null);
                 LOG.info("Exchange posted to inbound queue");
 
             } else {
@@ -665,7 +649,7 @@ public class QueueHelper {
     /**
      * takes a list of patient IDs and groups them by service and queues them up for all relevant subscriber transforms
      */
-    public static void queueUpPatientsForSubscriberTransform(List<UUID> patientIds, String reason) throws Exception {
+    public static void queueUpPatientsForSubscriberTransform(List<UUID> patientIds, boolean isBulkDelete, boolean isBulkRefresh, String reason) throws Exception {
 
         //find service for each one
         Map<UUID, List<UUID>> hmPatientByService = new HashMap<>();
@@ -705,110 +689,8 @@ public class QueueHelper {
             List<UUID> patientIdsForService = hmPatientByService.get(serviceId);
             LOG.debug("Doing " + patientIdsForService.size() + " patients for service " + serviceId);
 
-            //find all protocols for service where there's a subscriber
-            List<LibraryItem> libraryItems = LibraryRepositoryHelper.getProtocolsByServiceId(serviceId.toString(), null);
-            for (LibraryItem libraryItem: libraryItems) {
-                Protocol protocol = libraryItem.getProtocol();
-
-                boolean hasSubscriber = false;
-                for (ServiceContract serviceContract: protocol.getServiceContract()) {
-                    if (serviceContract.getType() == ServiceContractType.SUBSCRIBER
-                            && serviceContract.getActive() == ServiceContractActive.TRUE) {
-                        hasSubscriber = true;
-                        break;
-                    }
-                }
-
-                //if no subscribers, then it's not interesting
-                if (!hasSubscriber) {
-                    continue;
-                }
-
-                //for each protocol, create exchange and exchange batches and post to protocol queue
-                UUID protocolUuid = UUID.fromString(libraryItem.getUuid());
-                queueUpFullServiceForPopulatingSubscriber(serviceId, protocolUuid, patientIdsForService, reason, null);
-            }
+            queueUpFullServiceForPopulatingSubscriber(serviceId, isBulkDelete, isBulkRefresh, null, patientIdsForService, reason);
         }
     }
 
-    /**
-     * generates a dummy Exchange and sends through the protocol queue to delete all content from subscriber DBs
-     */
-    public static void queueUpFullServiceForDeletingFromSubscriber(UUID serviceId, UUID specificProtocolId, String reason) throws Exception {
-
-        PatientSearchDalI patientSearchDal = DalProvider.factoryPatientSearchDal();
-        List<UUID> patientUuids = patientSearchDal.getPatientIds(serviceId, true);
-
-        queueUpPatientsForDeletingFromSubscriber(serviceId, specificProtocolId, patientUuids, reason);
-    }
-
-    public static void queueUpPatientsForDeletingFromSubscriber(UUID serviceId, UUID specificProtocolId, List<UUID> patientUuids, String reason) throws Exception {
-
-        ServiceDalI serviceDal = DalProvider.factoryServiceDal();
-        Service service = serviceDal.getById(serviceId);
-
-        LibraryItem protocol = LibraryRepositoryHelper.getLibraryItem(specificProtocolId);
-
-        LOG.info("Deleting from subscriber for " + patientUuids.size() + " patients at " + service.getName() + " " + service.getLocalId() + " and protocol " + protocol.getName());
-
-        //create a new "dummy" exchange which we need to get anything sent through the pipeline
-        String bodyJson = JsonSerializer.serialize(new ArrayList<ExchangePayloadFile>());
-
-        String[] specificProtocolArr = new String[]{specificProtocolId.toString()};
-        String specificProtocolJson = ObjectMapperPool.getInstance().writeValueAsString(specificProtocolArr);
-
-        String odsCode = service.getLocalId();
-
-        boolean postedToRabbit = false;
-
-        List<UUID> systemIds = findSystemIds(service);
-        for (UUID systemId: systemIds) {
-            LOG.debug("Doing system ID " + systemId);
-
-            Exchange exchange = new Exchange();
-            exchange.setId(UUID.randomUUID());
-            exchange.setBody(bodyJson);
-            exchange.setTimestamp(new Date());
-            exchange.setHeaders(new HashMap<>());
-            exchange.setHeaderAsUuid(HeaderKeys.SenderServiceUuid, serviceId);
-            exchange.setHeader(HeaderKeys.ProtocolIds, specificProtocolJson);
-            exchange.setHeader(HeaderKeys.SenderLocalIdentifier, odsCode);
-            exchange.setHeaderAsUuid(HeaderKeys.SenderSystemUuid, systemId);
-            exchange.setHeader(HeaderKeys.SourceSystem, MessageFormat.DUMMY_SENDER_SOFTWARE_FOR_BULK_DELETE_FROM_SUBSCRIBER); //routing requires a source system name and this tells us it's this special case
-            exchange.setServiceId(serviceId);
-            exchange.setSystemId(systemId);
-
-            String eventDesc = "Manually created exchange to delete from subscribers in protocol " + protocol.getName();
-            if (!Strings.isNullOrEmpty(reason)) {
-                eventDesc += " (" + reason + ")";
-            }
-
-            //LOG.info("Saving exchange");
-            AuditWriter.writeExchange(exchange);
-            AuditWriter.writeExchangeEvent(exchange, eventDesc);
-
-            //for audit purposes, we create an exchange per systemId, but only need to post one to Rabbit to do the work
-            if (!postedToRabbit) {
-                postedToRabbit = true;
-
-                //LOG.info("Creating exchange batches for " + patientUuids.size() + " patients");
-                createExchangeBatches(exchange, patientUuids);
-
-                //post to InboundQueue
-                LOG.info("Posting to protocol queue");
-                List<UUID> exchangeIds = new ArrayList<>();
-                exchangeIds.add(exchange.getId());
-
-                QueueHelper.postToExchange(exchangeIds, EXCHANGE_PROTOCOL, specificProtocolId, false, null, null ,null);
-
-                LOG.info("Exchange posted to protocol queue");
-            } else {
-                LOG.info("Not posting to Rabbit as already done that for another system");
-            }
-
-            //set this header key to prevent re-queuing, AFTER we've already queued
-            exchange.setHeaderAsBoolean(HeaderKeys.AllowQueueing, new Boolean(false)); //don't allow this to be re-queued
-            AuditWriter.writeExchange(exchange);
-        }
-    }
 }

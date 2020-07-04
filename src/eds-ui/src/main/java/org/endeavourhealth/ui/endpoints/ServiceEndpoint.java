@@ -500,7 +500,7 @@ public final class ServiceEndpoint extends AbstractEndpoint {
 
         UUID serviceUuid = UUID.fromString(serviceIdStr);
 
-        QueueHelper.queueUpFullServiceForDeleteAllData(serviceUuid);
+        QueueHelper.queueUpFullServiceForDeleteAllFhirData(serviceUuid);
 
         clearLogbackMarkers();
         return Response

@@ -3,6 +3,7 @@ package org.endeavourhealth.ui.json;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -13,7 +14,7 @@ public class JsonPostToExchangeRequest {
     private UUID systemId;
     private String exchangeName;
     private String postMode;
-    private UUID specificProtocolId;
+    private Set<String> specificSubscriberConfigNames;
     private String fileTypesToFilterOn;
     private Boolean deleteTransformErrorState;
     private String reason; //why we're posting
@@ -61,12 +62,12 @@ public class JsonPostToExchangeRequest {
         this.postMode = postMode;
     }
 
-    public UUID getSpecificProtocolId() {
-        return specificProtocolId;
+    public Set<String> getSpecificSubscriberConfigNames() {
+        return specificSubscriberConfigNames;
     }
 
-    public void setSpecificProtocolId(UUID specificProtocolId) {
-        this.specificProtocolId = specificProtocolId;
+    public void setSpecificSubscriberConfigNames(Set<String> specificSubscriberConfigNames) {
+        this.specificSubscriberConfigNames = specificSubscriberConfigNames;
     }
 
     public String getFileTypesToFilterOn() {

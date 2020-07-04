@@ -21,12 +21,7 @@ export class ConfigManagerComponent {
     changedRecords: ConfigRecord[];
     validJsonMessage: string;
     invalidJsonMessage: string;
-    filterAppId: string;
-    filterAppIdIncludeGlobal: boolean;
-    filterSearchText: string;
-    filterSearchOnAppId: boolean;
-    filterSearchOnConfigId: boolean;
-    filterSearchOnData: boolean;
+
     filteredRecords: ConfigRecord[];
     historyMap: {};
     refreshingHistory: boolean;
@@ -37,9 +32,7 @@ export class ConfigManagerComponent {
                 private logger: LoggerService,
                 private $state: StateService) {
 
-        var vm = this;
-        vm.filterAppIdIncludeGlobal = false;
-        vm.filterSearchOnConfigId = true;
+
     }
 
     ngOnInit() {
@@ -315,10 +308,10 @@ export class ConfigManagerComponent {
 
         //work out if the name/ID search text is valid regex and force it to lower case if so
         var validConfigDataSearchRegex;
-        if (vm.filterSearchText) {
+        if (vm.configManagerService.filterSearchText) {
             try {
-                new RegExp(vm.filterSearchText);
-                validConfigDataSearchRegex = vm.filterSearchText.toLowerCase();
+                new RegExp(vm.configManagerService.filterSearchText);
+                validConfigDataSearchRegex = vm.configManagerService.filterSearchText.toLowerCase();
             } catch (e) {
                 //do nothing and it'll ignore it in the search
             }
@@ -329,10 +322,10 @@ export class ConfigManagerComponent {
             for (var i=0; i<vm.records.length; i++) {
                 var record = vm.records[i];
 
-                if (vm.filterAppId) {
+                if (vm.configManagerService.filterAppId) {
                     var appId = record.appId;
-                    if (vm.filterAppId != appId
-                        && (appId != 'global' || !vm.filterAppIdIncludeGlobal)) {
+                    if (vm.configManagerService.filterAppId != appId
+                        && (appId != 'global' || !vm.configManagerService.filterAppIdIncludeGlobal)) {
                         continue;
                     }
                 }
@@ -345,9 +338,9 @@ export class ConfigManagerComponent {
                     var configId = record.configId;
                     var data = record.configData;
                     if (
-                        (vm.filterSearchOnAppId && appId && appId.toLowerCase().match(validConfigDataSearchRegex))
-                        || (vm.filterSearchOnConfigId && configId && configId.toLowerCase().match(validConfigDataSearchRegex))
-                        || (vm.filterSearchOnData && data && data.toLowerCase().match(validConfigDataSearchRegex))) {
+                        (vm.configManagerService.filterSearchOnAppId && appId && appId.toLowerCase().match(validConfigDataSearchRegex))
+                        || (vm.configManagerService.filterSearchOnConfigId && configId && configId.toLowerCase().match(validConfigDataSearchRegex))
+                        || (vm.configManagerService.filterSearchOnData && data && data.toLowerCase().match(validConfigDataSearchRegex))) {
                         matches = true;
                     }
 

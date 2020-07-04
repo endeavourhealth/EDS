@@ -1,14 +1,17 @@
 package org.endeavourhealth.core.messaging.pipeline;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+
 import java.util.UUID;
 
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class SubscriberBatch {
 
-	private UUID queuedMessageId = null;
-	private String endpoint = null;
-	private String software = null;
-	private String softwareVersion = null;
-	private UUID technicalInterfaceId = null;
+	private UUID queuedMessageId = null; //points to transformed data in DB
+	private String endpoint = null; //subscriber config name
+	private String software = null; //subscriber software type - remove once everything is in the config JSON
+	private String softwareVersion = null; //subscriber software version - remove once everything is in the config JSON
+	private UUID technicalInterfaceId = null; //can be removed once deployed and all queues clear
 
 	public UUID getQueuedMessageId() {
 		return queuedMessageId;

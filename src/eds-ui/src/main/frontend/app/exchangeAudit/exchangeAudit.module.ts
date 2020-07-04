@@ -7,11 +7,13 @@ import {NgbModule} from "@ng-bootstrap/ng-bootstrap";
 import {FormatBoolean} from "./format-boolean";
 import {TransformErrorsDialog} from "./transformErrors.dialog";
 import {NKDatetimeModule} from "ng2-datetime/ng2-datetime";
+import {AngularMultiSelectModule} from 'angular2-multiselect-dropdown';
 
 @NgModule({
 	imports : [
 		BrowserModule,
 		FormsModule,
+		AngularMultiSelectModule,
 		NgbModule,
 		NKDatetimeModule,
 	],

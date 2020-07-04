@@ -1,8 +1,5 @@
 package org.endeavourhealth.queuereader;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.base.Strings;
 import com.google.common.hash.HashCode;
 import com.google.common.hash.HashFunction;
@@ -17,22 +14,14 @@ import org.apache.commons.io.FilenameUtils;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.common.fhir.*;
-import org.endeavourhealth.common.ods.OdsOrganisation;
-import org.endeavourhealth.common.ods.OdsWebService;
 import org.endeavourhealth.common.utility.FileHelper;
-import org.endeavourhealth.common.utility.JsonSerializer;
-import org.endeavourhealth.common.utility.XmlSerializer;
 import org.endeavourhealth.core.application.ApplicationHeartbeatHelper;
 import org.endeavourhealth.core.configuration.PostMessageToExchangeConfig;
 import org.endeavourhealth.core.csv.CsvHelper;
 import org.endeavourhealth.core.database.dal.DalProvider;
-import org.endeavourhealth.core.database.dal.admin.LibraryDalI;
 import org.endeavourhealth.core.database.dal.admin.LibraryRepositoryHelper;
 import org.endeavourhealth.core.database.dal.admin.ServiceDalI;
 import org.endeavourhealth.core.database.dal.admin.SystemHelper;
-import org.endeavourhealth.core.database.dal.admin.models.ActiveItem;
-import org.endeavourhealth.core.database.dal.admin.models.DefinitionItemType;
-import org.endeavourhealth.core.database.dal.admin.models.Item;
 import org.endeavourhealth.core.database.dal.admin.models.Service;
 import org.endeavourhealth.core.database.dal.audit.ExchangeBatchDalI;
 import org.endeavourhealth.core.database.dal.audit.ExchangeDalI;
@@ -54,9 +43,6 @@ import org.endeavourhealth.core.fhirStorage.FhirResourceHelper;
 import org.endeavourhealth.core.fhirStorage.FhirSerializationHelper;
 import org.endeavourhealth.core.fhirStorage.ServiceInterfaceEndpoint;
 import org.endeavourhealth.core.messaging.pipeline.PipelineException;
-import org.endeavourhealth.core.messaging.pipeline.SubscriberConfig;
-import org.endeavourhealth.core.messaging.pipeline.components.DetermineRelevantProtocolIds;
-import org.endeavourhealth.core.messaging.pipeline.components.MessageTransformOutbound;
 import org.endeavourhealth.core.messaging.pipeline.components.PostMessageToExchange;
 import org.endeavourhealth.core.messaging.pipeline.components.RunDataDistributionProtocols;
 import org.endeavourhealth.core.queueing.QueueHelper;
@@ -70,18 +56,13 @@ import org.endeavourhealth.im.client.IMClient;
 import org.endeavourhealth.subscriber.filer.EnterpriseFiler;
 import org.endeavourhealth.subscriber.filer.SubscriberFiler;
 import org.endeavourhealth.transform.common.*;
-import org.endeavourhealth.transform.common.resourceBuilders.EpisodeOfCareBuilder;
-import org.endeavourhealth.transform.common.resourceBuilders.GenericBuilder;
 import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
 import org.endeavourhealth.transform.enterprise.EnterpriseTransformHelper;
 import org.endeavourhealth.transform.enterprise.ObservationCodeHelper;
 import org.endeavourhealth.transform.enterprise.transforms.OrganisationEnterpriseTransformer;
 import org.endeavourhealth.transform.fhirhl7v2.FhirHl7v2Filer;
 import org.endeavourhealth.transform.fhirhl7v2.transforms.EncounterTransformer;
-import org.endeavourhealth.transform.subscriber.BulkHelper;
-import org.endeavourhealth.transform.subscriber.IMConstant;
-import org.endeavourhealth.transform.subscriber.IMHelper;
-import org.endeavourhealth.transform.subscriber.SubscriberTransformHelper;
+import org.endeavourhealth.transform.subscriber.*;
 import org.endeavourhealth.transform.subscriber.targetTables.OutputContainer;
 import org.endeavourhealth.transform.subscriber.targetTables.SubscriberTableId;
 import org.endeavourhealth.transform.subscriber.transforms.OrganisationTransformer;
@@ -91,7 +72,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
-import java.lang.System;
 import java.net.URI;
 import java.net.URL;
 import java.nio.charset.Charset;
@@ -107,7 +87,6 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 import static org.endeavourhealth.core.xml.QueryDocument.ServiceContractType.PUBLISHER;
 
@@ -1047,15 +1026,12 @@ public abstract class SpecialRoutines {
         }
     }
 
-    public static void compareDsm(boolean logDifferencesOnly, String toFile, String odsCodeRegex) {
+    public static void compareDsmPublishers(boolean logDifferencesOnly, String odsCodeRegex) {
         LOG.debug("Comparing DSM to DDS-UI for " + odsCodeRegex);
         LOG.debug("logDifferencesOnly = " + logDifferencesOnly);
-        LOG.debug("toFile = " + toFile);
         try {
 
-            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-
-            File dstFile = new File(toFile);
+            File dstFile = new File("Publisher_DSM_Comparison.csv");
             FileOutputStream fos = new FileOutputStream(dstFile);
             OutputStreamWriter osw = new OutputStreamWriter(fos);
             BufferedWriter bufferedWriter = new BufferedWriter(osw);
@@ -1091,8 +1067,8 @@ public abstract class SpecialRoutines {
                 //check DPAs
 
                 //check if publisher to DDS protocol
-                List<String> protocolIdsOldWay = DetermineRelevantProtocolIds.getProtocolIdsForPublisherServiceOldWay(serviceId.toString());
-                boolean hasDpaOldWay = !protocolIdsOldWay.isEmpty(); //in the old way, we count as having a DPA if they're in any protocol
+                List<LibraryItem> protocolsOldWay = RunDataDistributionProtocols.getProtocolsForPublisherServiceOldWay(serviceId);
+                boolean hasDpaOldWay = !protocolsOldWay.isEmpty(); //in the old way, we count as having a DPA if they're in any protocol
 
                 //check if DSM DPA
                 boolean hasDpaNewWay = OrganisationCache.doesOrganisationHaveDPA(odsCode);
@@ -1111,34 +1087,11 @@ public abstract class SpecialRoutines {
                 //check DSAs
 
                 //want to find target subscriber config names OLD way
-                Set<String> subscriberConfigNamesOldWay = new HashSet<>();
+                List<String> subscriberConfigNamesOldWay = RunDataDistributionProtocols.getSubscriberConfigNamesFromOldProtocols(serviceId);
 
-                for (String oldProtocolId: protocolIdsOldWay) {
-                    LibraryItem libraryItem = LibraryRepositoryHelper.getLibraryItemUsingCache(UUID.fromString(oldProtocolId));
-                    Protocol protocol = libraryItem.getProtocol();
-
-                    //skip disabled protocols
-                    if (protocol.getEnabled() != ProtocolEnabled.TRUE) {
-                        continue;
-                    }
-
-                    List<ServiceContract> subscribers = protocol
-                            .getServiceContract()
-                            .stream()
-                            .filter(sc -> sc.getType().equals(ServiceContractType.SUBSCRIBER))
-                            .filter(sc -> sc.getActive() == ServiceContractActive.TRUE) //skip disabled service contracts
-                            .collect(Collectors.toList());
-
-                    for (ServiceContract serviceContract : subscribers) {
-                        String subscriberConfigName = MessageTransformOutbound.getSubscriberEndpoint(serviceContract);
-                        if (!Strings.isNullOrEmpty(subscriberConfigName)) {
-                            subscriberConfigNamesOldWay.add(subscriberConfigName);
-                        }
-                    }
-                }
 
                 //find target subscriber config names NEW way
-                Set<String> subscriberConfigNamesNewWay = new HashSet<>();
+                List<String> subscriberConfigNamesNewWay = new ArrayList<>();
 
                 List<ProjectEntity> distributionProjects = ProjectCache.getValidDistributionProjectsForPublisher(odsCode);
                 if (distributionProjects == null) {
@@ -1154,15 +1107,10 @@ public abstract class SpecialRoutines {
                 }
 
                 //compare the two
-                List<String> l = new ArrayList<>(subscriberConfigNamesOldWay);
-                l.sort(((o1, o2) -> o1.compareToIgnoreCase(o2)));
-                String subscribersOldWay = String.join(", ", l);
+                subscriberConfigNamesOldWay.sort(((o1, o2) -> o1.compareToIgnoreCase(o2)));
+                subscriberConfigNamesNewWay.sort(((o1, o2) -> o1.compareToIgnoreCase(o2)));
 
-                l = new ArrayList<>(subscriberConfigNamesNewWay);
-                l.sort(((o1, o2) -> o1.compareToIgnoreCase(o2)));
-                String subscribersNewWay = String.join(", ", l);
-
-                boolean dsaMatches = subscribersOldWay.equals(subscribersNewWay);
+                boolean dsaMatches = subscriberConfigNamesOldWay.equals(subscriberConfigNamesNewWay);
 
 
                 //flatten the tags to a String
@@ -1187,7 +1135,7 @@ public abstract class SpecialRoutines {
                     notesStr = String.join(", ", toks);
                 }
 
-                printer.printRecord(service.getName(), odsCode, service.getCcgCode(), notesStr, hasDpaOldWay, hasDpaNewWay, dpaMatches, subscribersOldWay, subscribersNewWay, dsaMatches);
+                printer.printRecord(service.getName(), odsCode, service.getCcgCode(), notesStr, hasDpaOldWay, hasDpaNewWay, dpaMatches, subscriberConfigNamesOldWay, subscriberConfigNamesNewWay, dsaMatches);
 
                 logging.add("");
 
@@ -1201,96 +1149,12 @@ public abstract class SpecialRoutines {
 
             printer.close();
 
-            LOG.debug("Finished Comparing DSM to DDS-UI for " + odsCodeRegex + " to " + toFile);
+            LOG.debug("Finished Comparing DSM to DDS-UI for " + odsCodeRegex + " to " + dstFile);
         } catch (Throwable t) {
             LOG.error("", t);
         }
     }
 
-    /**
-     * generates the JSON for the config record to move config from DDS-UI protocols to DSM (+JSON)
-     */
-    public static void createConfigJsonForDSM(String ddsUiProtocolName, String dsmDsaId) {
-        LOG.debug("Creating Config JSON for DDS-UI -> DSM migration");
-        try {
-            //get DDS-UI protocol details
-            LibraryItem libraryItem = BulkHelper.findProtocolLibraryItem(ddsUiProtocolName);
-            LOG.debug("DDS-UI protocol [" + ddsUiProtocolName + "]");
-            LOG.debug("DDS-UI protocol UUID " + libraryItem.getUuid());
-
-            //get DSM DPA details
-            DataSharingAgreementEntity dsa = DataSharingAgreementCache.getDSADetails(dsmDsaId);
-            LOG.debug("DSM DSA [" + dsa.getName() + "]");
-            LOG.debug("DSM DSA UUID " + dsa.getUuid());
-
-            ObjectMapper mapper = new ObjectMapper();
-            ObjectNode root = new ObjectNode(mapper.getNodeFactory());
-
-            //put in DSA name for visibility
-            root.put("dsa_name", dsa.getName());
-
-            //subscriber config
-            ArrayNode subscriberArray = root.putArray("subscribers");
-
-            Protocol protocol = libraryItem.getProtocol();
-            if (protocol.getEnabled() != ProtocolEnabled.TRUE) {
-                throw new Exception("Protocol isn't enabled");
-            }
-
-            List<ServiceContract> subscribers = protocol
-                    .getServiceContract()
-                    .stream()
-                    .filter(sc -> sc.getType().equals(ServiceContractType.SUBSCRIBER))
-                    .filter(sc -> sc.getActive() == ServiceContractActive.TRUE) //skip disabled service contracts
-                    .collect(Collectors.toList());
-
-            for (ServiceContract serviceContract: subscribers) {
-                String subscriberConfigName = MessageTransformOutbound.getSubscriberEndpoint(serviceContract);
-                subscriberArray.add(subscriberConfigName);
-            }
-
-            //cohort stuff
-            ObjectNode cohortRoot = root.putObject("cohort");
-
-            String cohort = protocol.getCohort();
-            if (cohort.equals("All Patients")) {
-                cohortRoot.put("type", "all_patients");
-
-            } else if (cohort.equals("Explicit Patients")) {
-                //database is dependent on protocol ID, but I don't think this used
-                throw new Exception("Protocol uses explicit patient cohort so cannot be converted");
-                //cohortRoot.put("type", "explicit_patients");
-
-            } else if (cohort.startsWith("Defining Services")) {
-                cohortRoot.put("type", "registered_at");
-
-                ArrayNode registeredAtRoot = cohortRoot.putArray("services");
-
-                int index = cohort.indexOf(":");
-                if (index == -1) {
-                    throw new RuntimeException("Invalid cohort format " + cohort);
-                }
-                String suffix = cohort.substring(index+1);
-                String[] toks = suffix.split("\r|\n|,| |;");
-                for (String tok: toks) {
-                    String odsCode = tok.trim().toUpperCase();  //when checking, we always make uppercase
-                    if (!Strings.isNullOrEmpty(tok)) {
-                        registeredAtRoot.add(odsCode);
-                    }
-                }
-
-            } else {
-                throw new PipelineException("Unknown cohort [" + cohort + "]");
-            }
-
-            String json = mapper.writeValueAsString(root);
-            LOG.debug("JSON:\r\n\r\n" + json + "\r\n\r\n");
-
-            LOG.debug("Finished Creating Config JSON for DDS-UI -> DSM migration");
-        } catch (Throwable t) {
-            LOG.error("", t);
-        }
-    }
 
     public static void testBulkLoad(String s3Path, String tableName) {
         LOG.debug("Testing Bulk Load from " + s3Path + " to " + tableName);
@@ -1724,11 +1588,11 @@ public abstract class SpecialRoutines {
         LOG.info("Enter y to continue, anything else to quit");
 
         byte[] bytes = new byte[10];
-        System.in.read(bytes);
+        java.lang.System.in.read(bytes);
         char c = (char) bytes[0];
         if (c != 'y' && c != 'Y') {
-            System.out.println("Read " + c);
-            System.exit(1);
+            java.lang.System.out.println("Read " + c);
+            java.lang.System.exit(1);
         }
     }
 
@@ -1995,7 +1859,7 @@ public abstract class SpecialRoutines {
                                         exchange.setHeader(HeaderKeys.BatchIdsJson, batchIdString);
 
                                         //send on to protocol queue
-                                        PostMessageToExchangeConfig exchangeConfig = QueueHelper.findExchangeConfig("EdsProtocol");
+                                        PostMessageToExchangeConfig exchangeConfig = QueueHelper.findExchangeConfig(QueueHelper.ExchangeName.PROTOCOL);
                                         PostMessageToExchange component = new PostMessageToExchange(exchangeConfig);
                                         component.process(exchange);
                                     }
@@ -2198,7 +2062,7 @@ public abstract class SpecialRoutines {
         //find the protocol using the name parameter
         LibraryItem matchedLibraryItem = BulkHelper.findProtocolLibraryItem(protocolName);
         if (matchedLibraryItem == null) {
-            System.out.println("Protocol not found : " + protocolName);
+            LOG.debug("Protocol not found : " + protocolName);
             return;
         }
         UUID protocolUuid = UUID.fromString(matchedLibraryItem.getUuid());
@@ -2289,7 +2153,7 @@ public abstract class SpecialRoutines {
      * is causing a lot of confusion (and potential duplication). The transform now doesn't process these
      * records, and this routine will tidy up any existing data
      */
-    public static void deleteTppEpisodesElsewhere(String odsCodeRegex, boolean testMode) {
+    /*public static void deleteTppEpisodesElsewhere(String odsCodeRegex, boolean testMode) {
         LOG.debug("Deleting TPP Episodes Elsewhere for " + odsCodeRegex);
         try {
 
@@ -2425,7 +2289,7 @@ public abstract class SpecialRoutines {
         } catch (Throwable t) {
             LOG.error("", t);
         }
-    }
+    }*/
 
     public static void postToInboundFromFile(String filePath, String reason) {
 
@@ -2496,14 +2360,14 @@ public abstract class SpecialRoutines {
                         }
 
                         if (exchangeIdBatch.size() >= 1000) {
-                            QueueHelper.postToExchange(exchangeIdBatch, "EdsInbound", null, false, reason);
+                            QueueHelper.postToExchange(exchangeIdBatch, QueueHelper.ExchangeName.INBOUND, null, reason);
                             exchangeIdBatch = new ArrayList<>();
                             LOG.info("Done " + count);
                         }
                     }
 
                     if (!exchangeIdBatch.isEmpty()) {
-                        QueueHelper.postToExchange(exchangeIdBatch, "EdsInbound", null, false, reason);
+                        QueueHelper.postToExchange(exchangeIdBatch, QueueHelper.ExchangeName.INBOUND, null, reason);
                         LOG.info("Done " + count);
                     }
                 }
@@ -2515,7 +2379,12 @@ public abstract class SpecialRoutines {
         }
     }
 
-    public static void deleteDataFromOldCoreDB(UUID serviceId, String previousPublisherConfigName) {
+    /**
+     * if a service was moved from one CoreXX DB to another, without maintaining the resource ID mappings,
+     * then we need to use this routine to tidy up the mess left on the subscriber DBs. SQL will need
+     * to be manually run on the CoreXX DB to delete theresources, but only AFTER this has run.
+     */
+    public static void deleteDataForOldCoreDBFromSubscribers(UUID serviceId, String previousPublisherConfigName) {
         LOG.debug("Deleting data from old Core DB server for " + serviceId);
         try {
             ServiceDalI serviceDal = DalProvider.factoryServiceDal();
@@ -2536,30 +2405,7 @@ public abstract class SpecialRoutines {
             }
 
             //find all subscriber config names
-            Set<String> subscriberConfigNames = new HashSet<>();
-
-            List<String> protocolIds = DetermineRelevantProtocolIds.getProtocolIdsForPublisherServiceOldWay(serviceId.toString());
-            for (String oldProtocolId: protocolIds) {
-                LibraryItem libraryItem = LibraryRepositoryHelper.getLibraryItemUsingCache(UUID.fromString(oldProtocolId));
-                Protocol protocol = libraryItem.getProtocol();
-
-                //skip disabled protocols
-                if (protocol.getEnabled() != ProtocolEnabled.TRUE) {
-                    continue;
-                }
-
-                List<ServiceContract> subscribers = protocol
-                        .getServiceContract()
-                        .stream()
-                        .filter(sc -> sc.getType().equals(ServiceContractType.SUBSCRIBER))
-                        .filter(sc -> sc.getActive() == ServiceContractActive.TRUE) //skip disabled service contracts
-                        .collect(Collectors.toList());
-
-                for (ServiceContract serviceContract : subscribers) {
-                    String subscriberConfigName = MessageTransformOutbound.getSubscriberEndpoint(serviceContract);
-                    subscriberConfigNames.add(subscriberConfigName);
-                }
-            }
+            List<String> subscriberConfigNames = RunDataDistributionProtocols.getSubscriberConfigNamesFromOldProtocols(serviceId);
             LOG.debug("Found " + subscriberConfigNames.size() + " subscribers: " + subscriberConfigNames);
 
             PatientSearchDalI patientSearchDal = DalProvider.factoryPatientSearchDal();
@@ -2752,6 +2598,11 @@ public abstract class SpecialRoutines {
         LOG.debug("Populating Missing Orgs In CompassV1 " + subscriberConfigName + " testMode = " + testMode);
         try {
 
+            SubscriberConfig subscriberConfig = SubscriberConfig.readFromConfig(subscriberConfigName);
+            if (subscriberConfig.getSubscriberType() != SubscriberConfig.SubscriberType.CompassV1) {
+                throw new Exception("Expecting compassv1 but got " + subscriberConfig.getSubscriberType());
+            }
+
             Connection subscriberTransformConnection = ConnectionManager.getSubscriberTransformNonPooledConnection(subscriberConfigName);
 
             //get orgs in that subscriber DB
@@ -2831,7 +2682,7 @@ public abstract class SpecialRoutines {
                     }
 
                 } else {
-                    EnterpriseTransformHelper helper = new EnterpriseTransformHelper(serviceId, null, null, null, subscriberConfigName, resourceWrappers, false);
+                    EnterpriseTransformHelper helper = new EnterpriseTransformHelper(serviceId, null, null, null, subscriberConfig, resourceWrappers, false);
                     org.endeavourhealth.transform.enterprise.outputModels.Organization orgWriter = helper.getOutputContainer().getOrganisations();
 
                     OrganisationEnterpriseTransformer t = new OrganisationEnterpriseTransformer();
@@ -2865,6 +2716,11 @@ public abstract class SpecialRoutines {
     public static void populateMissingOrgsInCompassV2(String subscriberConfigName, boolean testMode) {
         LOG.debug("Populating Missing Orgs In CompassV2 " + subscriberConfigName + " testMode = " + testMode);
         try {
+
+            SubscriberConfig subscriberConfig = SubscriberConfig.readFromConfig(subscriberConfigName);
+            if (subscriberConfig.getSubscriberType() != SubscriberConfig.SubscriberType.CompassV2) {
+                throw new Exception("Expecting compassv2 but got " + subscriberConfig.getSubscriberType());
+            }
 
             Connection subscriberTransformConnection = ConnectionManager.getSubscriberTransformNonPooledConnection(subscriberConfigName);
 
@@ -2945,7 +2801,7 @@ public abstract class SpecialRoutines {
                     }
 
                 } else {
-                    SubscriberTransformHelper helper = new SubscriberTransformHelper(serviceId, null, null, null, subscriberConfigName, resourceWrappers, false);
+                    SubscriberTransformHelper helper = new SubscriberTransformHelper(serviceId, null, null, null, subscriberConfig, resourceWrappers, false);
 
                     OrganisationTransformer t = new OrganisationTransformer();
                     t.transformResources(resourceWrappers, helper);
@@ -3329,7 +3185,7 @@ public abstract class SpecialRoutines {
             is.close();
             LOG.debug("Copied " + srcFile.length() + " byte file from S3");
 
-            long msStart = System.currentTimeMillis();
+            long msStart = java.lang.System.currentTimeMillis();
 
             CSVParser parser = CSVParser.parse(srcFile, Charset.defaultCharset(), CSVFormat.DEFAULT.withHeader());
             Map<String, Integer> headers = parser.getHeaderMap();
@@ -3521,7 +3377,7 @@ public abstract class SpecialRoutines {
 
             LOG.debug("Finished saving hashes to DB");
 
-            long msEnd = System.currentTimeMillis();
+            long msEnd = java.lang.System.currentTimeMillis();
             LOG.debug("Took " + ((msEnd - msStart) / 1000) + " s");
 
             //delete all files
@@ -3536,7 +3392,7 @@ public abstract class SpecialRoutines {
 
     }
 
-    public static void deleteResourcesForDeletedPatients(boolean testMode, String odsCodeRegex) {
+    /*public static void deleteResourcesForDeletedPatients(boolean testMode, String odsCodeRegex) {
         LOG.debug("Deleting Resources for Deleted Patients using " + odsCodeRegex);
         try {
 
@@ -3660,7 +3516,7 @@ public abstract class SpecialRoutines {
         } catch (Throwable t) {
             LOG.error("", t);
         }
-    }
+    }*/
 
     /**
      * checks to make sure that every exchange has been properly through the inbound transform without
@@ -3842,7 +3698,7 @@ public abstract class SpecialRoutines {
 
     }
 
-    public static void validateProtocolCohorts() {
+    /*public static void validateProtocolCohorts() {
         LOG.debug("Validating Protocol Cohorts");
         try {
 
@@ -3951,7 +3807,7 @@ public abstract class SpecialRoutines {
         } catch (Throwable t) {
             LOG.error("", t);
         }
-    }
+    }*/
 
     public static void countVaccinationCodes(String sinceDateStr, String ccgOdsCodes) {
         LOG.debug("Counting VaccinationCodes at " + ccgOdsCodes);
@@ -4188,4 +4044,150 @@ public abstract class SpecialRoutines {
             LOG.error("", t);
         }
     }
+
+    public static void compareDsmSubscribers() {
+        LOG.debug("Comparing DSM for Subscribers");
+        try {
+
+            String FRAILTY_PROJECT_ID = "320baf45-37e2-4c8b-b7ee-27a9f877b95c"; //specific ID for live Frailty project
+
+            String subscriberSystemName = "JSON_API";
+
+            List<String> subscriberOdsCodes = new ArrayList<>();
+            subscriberOdsCodes.add("ADASTRA");
+            subscriberOdsCodes.add("NTP");
+            subscriberOdsCodes.add("NKB");
+            subscriberOdsCodes.add("8HD62");
+            subscriberOdsCodes.add("YGMX6");
+            subscriberOdsCodes.add("NLO");
+
+            for (String subscriberOdsCode: subscriberOdsCodes) {
+
+                ServiceDalI serviceDal = DalProvider.factoryServiceDal();
+                Service subscriberService = serviceDal.getByLocalIdentifier(subscriberOdsCode);
+                LOG.debug(">>>>>>>>>>>>>>>>>>>>>> " + subscriberService);
+
+                UUID serviceId = subscriberService.getId();
+
+                ServiceInterfaceEndpoint endpoint = SystemHelper.findEndpointForSoftware(subscriberService, subscriberSystemName);
+                if (endpoint == null) {
+                    throw new Exception("Failed to find subscriber endpoint");
+                }
+                UUID requesterSystemId = endpoint.getSystemUuid();
+
+                Set<String> serviceIdsOldWay = findPublisherServiceIdsForSubscriberOldWay(subscriberOdsCode, serviceId, requesterSystemId);
+                Set<String> serviceIdsNewWay = findPublisherServiceIdsForSubscriberNewWay(subscriberOdsCode, FRAILTY_PROJECT_ID);
+
+                List<String> oldWayList = new ArrayList<>(serviceIdsOldWay);
+                List<String> newWayList = new ArrayList<>(serviceIdsNewWay);
+                oldWayList.sort(((o1, o2) -> o1.compareToIgnoreCase(o2)));
+                newWayList.sort(((o1, o2) -> o1.compareToIgnoreCase(o2)));
+
+                String oldWayStr = String.join(", ", oldWayList);
+                String newWayStr = String.join(", ", newWayList);
+
+                if (oldWayStr.equals(newWayStr)) {
+                    LOG.debug("Old way and new way are equal");
+                    LOG.debug(oldWayStr);
+
+                } else {
+                    LOG.debug("Old way and new way are NOT equal");
+                    LOG.debug("OLD way: " + oldWayStr);
+                    LOG.debug("NEW way: " + newWayStr);
+                }
+            }
+
+            LOG.debug("Finished Comparing DSM for Subscribers");
+        } catch (Throwable t) {
+            LOG.error("", t);
+        }
+    }
+
+
+    private static Set<String> findPublisherServiceIdsForSubscriberNewWay(String headerOdsCode, String headerProjectId) throws Exception {
+
+        List<String> publisherOdsCodes = ProjectCache.getAllPublishersForProjectWithSubscriberCheck(headerProjectId, headerOdsCode);
+
+        Set<String> ret = new HashSet<>();
+
+        for (String publisherOdsCode: publisherOdsCodes) {
+
+            ServiceDalI serviceDal = DalProvider.factoryServiceDal();
+            org.endeavourhealth.core.database.dal.admin.models.Service publisherService = serviceDal.getByLocalIdentifier(publisherOdsCode);
+            if (publisherService == null) {
+                //if the DSM is aware of a publisher that DDS isn't, then this is odd but possible
+                LOG.warn("Failed to find publisher service for publisher ODS code " + publisherOdsCode);
+                continue;
+            }
+
+            UUID publisherServiceId = publisherService.getId();
+            ret.add(publisherServiceId.toString());
+        }
+
+        return ret;
+    }
+
+    private static Set<String> findPublisherServiceIdsForSubscriberOldWay(String headerOdsCode, UUID serviceId, UUID systemId) throws Exception {
+
+        //find protocol
+        List<Protocol> protocols = getProtocolsForSubscriberService(serviceId.toString(), systemId.toString());
+        if (protocols.isEmpty()) {
+            throw new Exception("No valid subscriber agreement found for requesting ODS code " + headerOdsCode);
+        }
+
+        //the below only works properly if there's a single protocol. To support multiple protocols,
+        //it'll need to calculate the frailty against EACH subscriber DB and then return the one with the highest risk
+        if (protocols.size() > 1) {
+            throw new Exception("No support for multiple subscriber protocols in frailty calculation");
+        }
+
+        Protocol protocol = protocols.get(0);
+
+        Set<String> ret = new HashSet<>();
+
+        for (ServiceContract serviceContract : protocol.getServiceContract()) {
+            if (serviceContract.getType().equals(ServiceContractType.PUBLISHER)
+                    && serviceContract.getActive() == ServiceContractActive.TRUE) {
+
+                org.endeavourhealth.core.xml.QueryDocument.Service service = serviceContract.getService();
+                ret.add(service.getUuid());
+            }
+        }
+
+        return ret;
+    }
+
+    private static List<Protocol> getProtocolsForSubscriberService(String serviceUuid, String systemUuid) throws PipelineException {
+
+        try {
+            List<Protocol> ret = new ArrayList<>();
+
+            List<LibraryItem> libraryItems = LibraryRepositoryHelper.getProtocolsByServiceId(serviceUuid, systemUuid);
+
+            //the above fn will return is all protocols where the service and system are present, but we want to filter
+            //that down to only ones where our service and system are an active publisher
+            for (LibraryItem libraryItem: libraryItems) {
+                Protocol protocol = libraryItem.getProtocol();
+                if (protocol.getEnabled() == ProtocolEnabled.TRUE) { //added missing check
+
+                    for (ServiceContract serviceContract : protocol.getServiceContract()) {
+                        if (serviceContract.getType().equals(ServiceContractType.SUBSCRIBER)
+                                && serviceContract.getService().getUuid().equals(serviceUuid)
+                                && serviceContract.getSystem().getUuid().equals(systemUuid)
+                                && serviceContract.getActive() == ServiceContractActive.TRUE) { //added missing check
+
+                            ret.add(protocol);
+                            break;
+                        }
+                    }
+                }
+            }
+
+            return ret;
+
+        } catch (Exception ex) {
+            throw new PipelineException("Error getting protocols for service " + serviceUuid, ex);
+        }
+    }
+
 }

@@ -7,8 +7,8 @@ DROP TABLE IF EXISTS item;
 DROP TABLE IF EXISTS item_dependency;
 DROP TABLE IF EXISTS active_item;
 DROP TABLE IF EXISTS service;
-DROP TABLE IF EXISTS organisation;
-DROP TABLE IF EXISTS patient_cohort;
+DROP TABLE IF EXISTS organisation; -- no longer used, but keep the delete
+DROP TABLE IF EXISTS patient_cohort; -- no longer used, but keep the delete
 DROP TABLE IF EXISTS link_distributor_populator;
 DROP TABLE IF EXISTS link_distributor_task_list;
 
@@ -136,7 +136,7 @@ CREATE INDEX ix_organisation_national_identifier
 ON organisation (national_id);
 */
 
-
+/*
  CREATE TABLE patient_cohort (
     protocol_id varchar(36),
     service_id varchar(36),
@@ -144,7 +144,7 @@ ON organisation (national_id);
     inserted datetime,
     in_cohort boolean,
     CONSTRAINT pk_patient_cohort PRIMARY KEY (protocol_id, service_id, nhs_number, inserted DESC)
-);
+);*/
 
 CREATE TABLE link_distributor_populator
 (

@@ -15,9 +15,8 @@ import org.endeavourhealth.core.messaging.pipeline.TransformBatch;
 import org.endeavourhealth.core.xml.TransformErrorUtility;
 import org.endeavourhealth.core.xml.transformError.TransformError;
 import org.endeavourhealth.subscriber.filer.EnterpriseFiler;
-import org.endeavourhealth.subscriber.filer.PCRFiler;
 import org.endeavourhealth.subscriber.filer.SubscriberFiler;
-import org.endeavourhealth.transform.common.MessageFormat;
+import org.endeavourhealth.transform.subscriber.SubscriberConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,16 +39,16 @@ public class PostToSubscriberWebService extends PipelineComponent {
 	@Override
 	public void process(Exchange exchange) throws PipelineException {
 
-		TransformBatch transformBatch = getTransformBatch(exchange);
-		UUID batchId = transformBatch.getBatchId();
+		List<TransformBatch> transformBatches = MessageTransformOutbound.getTransformBatches(exchange);
+		UUID batchId = MessageTransformOutbound.getBatchId(transformBatches);
 
 		SubscriberBatch subscriberBatch = getSubscriberBatch(exchange);
 		UUID exchangeId = exchange.getId();
 
 		UUID queuedMessageId = subscriberBatch.getQueuedMessageId();
-		String software = subscriberBatch.getSoftware();
-		String softwareVersion = subscriberBatch.getSoftwareVersion();
-		String endpoint = subscriberBatch.getEndpoint();
+		//String software = subscriberBatch.getSoftware();
+		//String softwareVersion = subscriberBatch.getSoftwareVersion(); //never used, so don't bother
+		String subscriberConfigName = subscriberBatch.getEndpoint();
 
 		try {
 			QueuedMessageDalI queuedMessageDal = DalProvider.factoryQueuedMessageDal();
@@ -60,32 +59,23 @@ public class PostToSubscriberWebService extends PipelineComponent {
 			//has gone. So we should check our audit and see if we did successfully process this batch before,
 			//in which case we can just skip this message
 			if (payload == null
-					&& wasQueuedMessageAlreadyApplied(exchangeId, batchId, endpoint, queuedMessageId)) {
+					&& wasQueuedMessageAlreadyApplied(exchangeId, batchId, subscriberConfigName, queuedMessageId)) {
 				LOG.warn("Queued message " + queuedMessageId + " not found for batch " + batchId + " but audit shows this was sent to subscriber OK before");
 				return;
 			}
 
-			sendToSubscriber(payload, exchangeId, batchId, queuedMessageId, software, softwareVersion, endpoint);
+			sendToSubscriberNewWay(payload, exchangeId, batchId, queuedMessageId, subscriberConfigName);
 
-			auditSending(exchangeId, batchId, endpoint, queuedMessageId, null);
+			auditSending(exchangeId, batchId, subscriberConfigName, queuedMessageId, null);
 
-			// w/c 27/05/19
-			// queued messages need to be left in the table for the sender
-			// app to pick them up asynchronously; it will then delete them
-
-			// w/c 10/06/19
-			// queued messages are now being written to the DB of the sender
-			// app, so they can be deleted from the queued message table
-
-			// if (!(software.equals(MessageFormat.SUBSCRIBER_CSV))) {
-				queuedMessageDal.delete(queuedMessageId);
-			// }
+			queuedMessageDal.delete(queuedMessageId);
 
 		} catch (Exception ex) {
-			auditSending(exchangeId, batchId, endpoint, queuedMessageId, ex);
-			throw new PipelineException("Failed to send to " + software + " for exchange " + exchangeId + " and batch " + batchId + " and queued message " + queuedMessageId, ex);
+			auditSending(exchangeId, batchId, subscriberConfigName, queuedMessageId, ex);
+			throw new PipelineException("Failed to send to " + subscriberConfigName + " for exchange " + exchangeId + " and batch " + batchId + " and queued message " + queuedMessageId, ex);
 		}
 	}
+
 
 	private boolean wasQueuedMessageAlreadyApplied(UUID exchangeId, UUID batchId, String subscriberConfigName, UUID queuedMessageId) throws Exception {
 
@@ -126,7 +116,22 @@ public class PostToSubscriberWebService extends PipelineComponent {
 		}
 	}
 
-	private void sendToSubscriber(String payload, UUID exchangeId, UUID batchId, UUID queuedMessageId, String software, String softwareVersion, String endpoint) throws Exception {
+	private void sendToSubscriberNewWay(String payload, UUID exchangeId, UUID batchId, UUID queuedMessageId, String subscriberConfigName) throws Exception {
+
+		SubscriberConfig subscriberConfig = SubscriberConfig.readFromConfig(subscriberConfigName);
+
+		if (subscriberConfig.getSubscriberType() == SubscriberConfig.SubscriberType.CompassV1) {
+			EnterpriseFiler.file(batchId, queuedMessageId, payload, subscriberConfigName);
+
+		} else if (subscriberConfig.getSubscriberType() == SubscriberConfig.SubscriberType.CompassV2) {
+			SubscriberFiler.file(batchId, queuedMessageId, payload, subscriberConfigName);
+
+		} else {
+			throw new PipelineException("Unsupported outbound software " + subscriberConfig.getSubscriberType() + " for exchange " + exchangeId + " and batch " + batchId);
+		}
+	}
+
+	/*private void sendToSubscriberOldWay(String payload, UUID exchangeId, UUID batchId, UUID queuedMessageId, String software, String endpoint) throws Exception {
 
 		if (software.equals(MessageFormat.ENTERPRISE_CSV)) {
 			EnterpriseFiler.file(batchId, queuedMessageId, payload, endpoint);
@@ -140,7 +145,7 @@ public class PostToSubscriberWebService extends PipelineComponent {
 		} else {
 			throw new PipelineException("Unsupported outbound software " + software + " for exchange " + exchangeId + " and batch " + batchId);
 		}
-	}
+	}*/
 
 	/*private static void sendHttpPost(String payload, String configName) throws Exception {
 
@@ -195,31 +200,5 @@ public class PostToSubscriberWebService extends PipelineComponent {
 
 	}
 
-	private static TransformBatch getTransformBatch(Exchange exchange) throws PipelineException {
-		String transformBatchJson = exchange.getHeader(HeaderKeys.TransformBatch);
-		try {
-			return ObjectMapperPool.getInstance().readValue(transformBatchJson, TransformBatch.class);
-		} catch (IOException e) {
-			throw new PipelineException("Error deserializing transformation batch JSON", e);
-		}
-	}
 
-	/*@Override
-	public void process(Exchange exchange) throws PipelineException {
-		try {
-			SubscriberBatch subscriberBatch = ObjectMapperPool.getInstance().readValue(exchange.getHeader(HeaderKeys.SubscriberBatch), SubscriberBatch.class);
-			// Load transformed message from DB
-			String outboundMessage = new QueuedMessageRepository().getById(subscriberBatch.getOutputMessageId()).getMessageBody();
-			exchange.setBody(outboundMessage);
-			// Set list of destinations
-			exchange.setHeader(HeaderKeys.DestinationAddress, String.join(",", subscriberBatch.getEndpoints()));
-
-			//TODO - send subscriber payload to endpoints
-
-		} catch (IOException e) {
-			LOG.error("Error deserializing subscriber batch JSON", e);
-			throw new PipelineException("Error deserializing subscriber batch JSON", e);
-		}
-		LOG.trace("Message subscribers identified");
-	}*/
 }

@@ -27,6 +27,7 @@ DROP TABLE IF EXISTS subscriber_pseudo_id_map;
 DROP TABLE IF EXISTS pseudo_id_audit;
 DROP TABLE IF EXISTS patient_version_transformed;
 DROP TABLE IF EXISTS subscriber_cohort;
+DROP TABLE IF EXISTS explicit_cohort_patient;
 
 CREATE TABLE enterprise_id_map
 (
@@ -334,16 +335,28 @@ CREATE TABLE patient_version_transformed (
 ) COMMENT 'records the specific version of the Patient resource last sent to the the subscriber';
 
 
-
 CREATE TABLE subscriber_cohort (
    patient_id char(36) NOT NULL,
    subscriber_config_name varchar(50) NOT NULL,
    service_id char(36) NOT NULL,
    in_cohort tinyint(1) NOT NULL,
-   reason varchar(255) DEFAULT NULL,
+   reason varchar(255) NULL,
    dt_updated datetime(3) NOT NULL,
-   PRIMARY KEY (patient_id,subscriber_config_name,dt_updated)
- )
- ROW_FORMAT=COMPRESSED
- KEY_BLOCK_SIZE=8
- COMMENT 'records when a patient entered or left a subscriber cohort';
+   batch_id_updated char(36) NOT NULL,
+   PRIMARY KEY (patient_id, subscriber_config_name, batch_id_updated, dt_updated)
+)
+ROW_FORMAT=COMPRESSED
+KEY_BLOCK_SIZE=8
+COMMENT 'records when a patient entered or left a subscriber cohort';
+
+
+CREATE TABLE explicit_cohort_patient (
+  subscriber_config_name varchar(50) NOT NULL,
+  nhs_number varchar(10),
+  dt_updated datetime(3),
+  in_cohort boolean,
+  CONSTRAINT pk_explicit_cohort_patient PRIMARY KEY (subscriber_config_name, nhs_number, dt_updated)
+)
+ROW_FORMAT=COMPRESSED
+KEY_BLOCK_SIZE=8
+COMMENT 'defines patient list in explcit cohorts';

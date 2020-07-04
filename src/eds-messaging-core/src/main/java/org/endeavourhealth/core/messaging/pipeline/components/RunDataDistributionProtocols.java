@@ -12,38 +12,44 @@ import org.endeavourhealth.common.utility.ExpiringCache;
 import org.endeavourhealth.core.configuration.RunDataDistributionProtocolsConfig;
 import org.endeavourhealth.core.database.dal.DalProvider;
 import org.endeavourhealth.core.database.dal.admin.LibraryRepositoryHelper;
+import org.endeavourhealth.core.database.dal.admin.ServiceDalI;
 import org.endeavourhealth.core.database.dal.audit.ExchangeBatchDalI;
 import org.endeavourhealth.core.database.dal.audit.models.Exchange;
 import org.endeavourhealth.core.database.dal.audit.models.ExchangeBatch;
 import org.endeavourhealth.core.database.dal.audit.models.HeaderKeys;
 import org.endeavourhealth.core.database.dal.eds.PatientLinkDalI;
 import org.endeavourhealth.core.database.dal.eds.PatientSearchDalI;
-import org.endeavourhealth.core.database.dal.eds.models.PatientSearch;
 import org.endeavourhealth.core.database.dal.ehr.ResourceDalI;
 import org.endeavourhealth.core.database.dal.ehr.models.ResourceWrapper;
+import org.endeavourhealth.core.database.dal.subscriberTransform.SubscriberCohortDalI;
+import org.endeavourhealth.core.database.dal.subscriberTransform.models.SubscriberCohortRecord;
 import org.endeavourhealth.core.fhirStorage.FhirSerializationHelper;
+import org.endeavourhealth.core.fhirStorage.ServiceInterfaceEndpoint;
 import org.endeavourhealth.core.messaging.pipeline.PipelineComponent;
 import org.endeavourhealth.core.messaging.pipeline.PipelineException;
 import org.endeavourhealth.core.messaging.pipeline.TransformBatch;
 import org.endeavourhealth.core.xml.QueryDocument.*;
+import org.endeavourhealth.transform.common.MessageFormat;
+import org.endeavourhealth.transform.subscriber.SubscriberConfig;
 import org.hl7.fhir.instance.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class RunDataDistributionProtocols extends PipelineComponent {
 	private static final Logger LOG = LoggerFactory.getLogger(RunDataDistributionProtocols.class);
 
-	private static final String COHORT_ALL = "All Patients";
-	private static final String COHORT_EXPLICIT = "Explicit Patients";
-	private static final String COHORT_DEFINING_SERVICES = "Defining Services";
 
 	private RunDataDistributionProtocolsConfig config;
 
 	private static final ParserPool parser = new ParserPool();
 	private static ExpiringCache<String, Set<String>> hmOrgParents = new ExpiringCache<>(1000 * 60 * 60 * 1); //cache for an hour
+	private static Map<String, String> cachedEndpoints = new ConcurrentHashMap<>();
+
 
 
 	public RunDataDistributionProtocols(RunDataDistributionProtocolsConfig config) {
@@ -60,61 +66,48 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 			String s = ObjectMapperPool.getInstance().readValue(batchIdJson, String.class);
 			batchId = UUID.fromString(s);
 		} catch (Exception ex) {
-			throw new PipelineException("Error reading from JSON " + batchIdJson, ex);
+			throw new PipelineException("Error reading from JSON " + batchIdJson + " for exchange " + exchange.getId(), ex);
 		}
 
 		UUID exchangeId = exchange.getId();
 
-		List<LibraryItem> protocolsToRun = getProtocols(exchange);
+		//the objective of the below is to populate this list of work for the outbound transform to do
 		List<TransformBatch> transformBatches = new ArrayList<>();
 
-		UUID serviceId = exchange.getHeaderAsUuid(HeaderKeys.SenderServiceUuid);
-		String odsCode = exchange.getHeader(HeaderKeys.SenderLocalIdentifier);
+		UUID serviceId = exchange.getServiceId();
 
 		TmpCache tmpCache = new TmpCache(exchangeId, serviceId, batchId);
 
-		// Run each protocol, creating a transformation batch for each
-		// (Contains list of relevant resources and subscriber service contracts)
-		for (LibraryItem libraryItem : protocolsToRun) {
-
-			Protocol protocol = libraryItem.getProtocol();
-
-			//skip disabled protocols
-			if (protocol.getEnabled() != ProtocolEnabled.TRUE) {
-				continue;
-			}
-
-			List<ServiceContract> subscribers = protocol
-					.getServiceContract()
-					.stream()
-					.filter(sc -> sc.getType().equals(ServiceContractType.SUBSCRIBER))
-					.filter(sc -> sc.getActive() == ServiceContractActive.TRUE) //skip disabled service contracts
-					.collect(Collectors.toList());
-
-			//if there's no subscribers on this protocol, just skip it
-			if (subscribers.isEmpty()) {
-				continue;
-			}
+		List<String> subscriberConfigNames = findSubscriberConfigNames(exchange);
+		for (String subscriberConfigName: subscriberConfigNames) {
 
 			try {
+
+				TransformBatch.TransformAction action = null;
+
 				//check if this batch falls into the protocol cohort
-				UUID protocolId = UUID.fromString(libraryItem.getUuid());
-				if (!checkCohort(protocol, protocolId, tmpCache, odsCode)) {
-					continue;
+				UUID patientId = tmpCache.findPatientId();
+				if (patientId == null) {
+					//for admin data, we always just let the delta through
+					action = calculateActionForAdminData(exchange, batchId, subscriberConfigName);
+
+				} else {
+					action = calculateActionForPatientData(tmpCache, exchange, subscriberConfigName);
 				}
 
-
-				TransformBatch transformBatch = new TransformBatch();
-				transformBatch.setBatchId(batchId);
-				transformBatch.setProtocolId(UUID.fromString(libraryItem.getUuid()));
-				transformBatch.setSubscribers(subscribers);
-
-				transformBatches.add(transformBatch);
+				if (action != null) {
+					TransformBatch transformBatch = new TransformBatch();
+					transformBatch.setBatchId(batchId);
+					transformBatch.setSubscriberConfigName(subscriberConfigName);
+					transformBatch.setAction(action);
+					transformBatches.add(transformBatch);
+				}
 
 			} catch (Exception ex) {
-				throw new PipelineException("Error checking protocol " + libraryItem.getUuid(), ex);
+				throw new PipelineException("Error checking cohort for " + subscriberConfigName, ex);
 			}
 		}
+
 
 		// Add transformation batch list to the exchange
 		try {
@@ -127,71 +120,364 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 		//LOG.debug("Data distribution protocols executed");
 	}
 
-	private boolean checkCohort(Protocol protocol, UUID protocolId, TmpCache tmpCache, String odsCode) throws Exception {
+	/**
+	 * works out what action we should take (delta or full load) for admin data
+	 */
+	private TransformBatch.TransformAction calculateActionForAdminData(Exchange exchange, UUID batchId, String subscriberConfigName) throws Exception {
 
-		//check if previously in protocol or not
-		//TODO - if WAS and IS - OK
-		//TODO - if WAS NOT and IS - need full load
-		//TODO - if WAS and NOT NOW - do delete
-		//TODO - add all the extra resource stuff????
+		String sourceSystem = exchange.getHeader(HeaderKeys.SourceSystem);
+		if (sourceSystem.equals(MessageFormat.DUMMY_SENDER_SOFTWARE_FOR_BULK_SUBSCRIBER_REFRESH)) {
 
-		return checkCohortNow(protocol, protocolId, tmpCache, odsCode);
+			LOG.trace("Admin batch " + batchId + " for bulk refresh will be let through for " + subscriberConfigName);
+			return TransformBatch.TransformAction.FULL_LOAD;
+
+		} else if (sourceSystem.equals(MessageFormat.DUMMY_SENDER_SOFTWARE_FOR_BULK_SUBSCRIBER_DELETE)) {
+
+			//if a bulk delete, then we don't need to worry about admin data, so just ignore it
+			LOG.trace("Admin batch " + batchId + " for bulk delete will be ignored for " + subscriberConfigName);
+			return null;
+
+		} else { //this includes DUMMY_SENDER_SOFTWARE_FOR_BULK_SUBSCRIBER_QUICK_REFRESH
+
+			//if a normal delta, then let through
+			LOG.trace("Admin batch " + batchId + " for delta will be let through for " + subscriberConfigName);
+			return TransformBatch.TransformAction.DELTA;
+		}
 	}
 
-	private boolean checkCohortNow(Protocol protocol, UUID protocolId, TmpCache tmpCache, String odsCode) throws Exception {
+	/**
+	 * works out what action we should take (delta, full load, full delete) for patient data
+     */
+	private TransformBatch.TransformAction calculateActionForPatientData(TmpCache tmpCache, Exchange exchange, String subscriberConfigName) throws Exception {
 
-		//if no cohort is defined, then treat this to mean we PASS the check
-		String cohort = protocol.getCohort();
-		if (Strings.isNullOrEmpty(cohort)) {
-			LOG.info("Protocol doesn't have cohort explicitly set, so assuming ALL PATIENTS");
-			return true;
+		UUID serviceId = tmpCache.getServiceId();
+		UUID batchId = tmpCache.getBatchId();
+		UUID patientId = tmpCache.findPatientId();
+		String odsCode = exchange.getHeader(HeaderKeys.SenderLocalIdentifier);
+		SubscriberCohortDalI dal = DalProvider.factorySubscriberCohortDal();
+
+		//we need to work out if the patient is in or out of the cohort and
+		//compare against what we previously knew to see what we should do
+		SubscriberCohortRecord newResult = new SubscriberCohortRecord(subscriberConfigName, serviceId, batchId, new Date(), patientId);
+
+		//we use a special exchange with a specific source software to bulk populate or delete subscriber data
+		String sourceSystem = exchange.getHeader(HeaderKeys.SourceSystem);
+		if (sourceSystem.equals(MessageFormat.DUMMY_SENDER_SOFTWARE_FOR_BULK_SUBSCRIBER_REFRESH)) {
+
+			//work out if the patient should or shouldn't be in the cohort and save, so we've refreshed that
+			checkCohortNow(newResult, tmpCache, odsCode);
+			String reason = newResult.getReason() + " (bulk refresh used)";
+			newResult.setReason(reason);
+			dal.saveCohortRecord(newResult);
+
+			//base the action purely on the cohort calculation
+			if (newResult.isInCohort()) {
+				LOG.trace("Batch " + batchId + ", patient " + patientId + " is bulk loading in " + subscriberConfigName + " (" + reason + ")");
+				return TransformBatch.TransformAction.FULL_LOAD;
+			} else {
+				LOG.trace("Batch " + batchId + ", patient " + patientId + " is bulk deleting in " + subscriberConfigName + " (" + reason + ")");
+				return TransformBatch.TransformAction.FULL_DELETE;
+			}
+
+		} else if (sourceSystem.equals(MessageFormat.DUMMY_SENDER_SOFTWARE_FOR_BULK_SUBSCRIBER_DELETE)) {
+
+			//if a bulk delete, just overwrite everything to say they're no longer in the cohort
+			LOG.trace("Batch " + batchId + ", patient " + patientId + " is bulk deleting from " + subscriberConfigName);
+			newResult.setInCohort(false);
+			newResult.setReason("Bulk delete utility used");
+			dal.saveCohortRecord(newResult);
+
+			//always do a full delete, no matter what the previous state was
+			return TransformBatch.TransformAction.FULL_DELETE;
+
+		} else { //this includes DUMMY_SENDER_SOFTWARE_FOR_BULK_SUBSCRIBER_QUICK_REFRESH
+
+			//if no special software specified, then we need to calculate if the patient is in the cohort
+			checkCohortNow(newResult, tmpCache, odsCode);
+
+			//if doing a quick refresh, just append that fact to the reason
+			if (sourceSystem.equals(MessageFormat.DUMMY_SENDER_SOFTWARE_FOR_BULK_SUBSCRIBER_QUICK_REFRESH)) {
+				String reason = newResult.getReason() + " (quick refresh used)";
+				newResult.setReason(reason);
+			}
+
+			LOG.trace("Batch " + batchId + ", patient " + patientId + " in cohort = " + newResult.isInCohort() + " for " + subscriberConfigName + " (" + newResult.getReason() + ")");
+
+			//compare the current against previous state to work out what action should be taken
+			SubscriberCohortRecord previousResult = dal.getLatestCohortRecord(subscriberConfigName, patientId, batchId);
+
+			if (newResult.isInCohort()) {
+				if (previousResult == null
+						|| !previousResult.isInCohort()) {
+					//if in cohort now, but previously not, then we need to do a full load
+					LOG.trace("Previously not in cohort so will bulk load");
+					dal.saveCohortRecord(newResult);
+					return TransformBatch.TransformAction.FULL_LOAD;
+
+				} else {
+					//if in cohort now and previously was, then we just let the delta through
+					LOG.trace("Previously in cohort so will process delta");
+					return TransformBatch.TransformAction.DELTA;
+				}
+
+			} else {
+				if (previousResult == null
+						|| !previousResult.isInCohort()) {
+					//if not in cohort now and not previously, then just skip it all
+					//but save the calculation so we have an audit of why the patient isn't in the cohort
+					LOG.trace("Previously not in cohort so will ignore");
+					if (previousResult == null) {
+						dal.saveCohortRecord(newResult);
+					}
+					//leave ACTION null
+					return null;
+
+				} else {
+					//if not in cohort now but previously was, then we need to do a full delete
+					LOG.trace("Previously in cohort so will bulk delete");
+					dal.saveCohortRecord(newResult);
+					return TransformBatch.TransformAction.FULL_DELETE;
+				}
+			}
+		}
+	}
+
+	private List<String> findSubscriberConfigNames(Exchange exchange) throws PipelineException {
+
+		try {
+
+			if (exchange.hasHeader(HeaderKeys.SubscriberConfigNames)) {
+				//if our exchange has specific new-style config names to run, use them
+				return exchange.getHeaderAsStringList(HeaderKeys.SubscriberConfigNames);
+
+			} else {
+				//if the exchange has no specific configs to run, then work it out
+				return getSubscriberConfigNamesForPublisher(exchange.getServiceId());
+			}
+
+		} catch (Exception ex) {
+			throw new PipelineException("Failed to calculate subscribers for exchange " + exchange.getId(), ex);
+		}
+	}
+
+	public static List<String> getSubscriberConfigNamesForPublisher(UUID serviceId) throws Exception {
+
+		//TODO - change this to use DSM when in sync with protocols
+		return getSubscriberConfigNamesFromOldProtocols(serviceId);
+	}
+
+	/**
+	 * returns the subscriber config names from the old-style DDS-UI protocols
+     */
+	public static List<String> getSubscriberConfigNamesFromOldProtocols(UUID serviceId) throws Exception {
+
+		List<LibraryItem> protocols = getProtocolsForPublisherServiceOldWay(serviceId);
+
+		//populate a set, so we can't end up with duplicates
+		Set<String> ret = new HashSet<>();
+
+		for (LibraryItem libraryItem: protocols) {
+			Protocol protocol = libraryItem.getProtocol();
+
+			//skip disabled protocols
+			if (protocol.getEnabled() != ProtocolEnabled.TRUE) {
+				continue;
+			}
+
+			//get only active subscriber service contracts
+			List<ServiceContract> subscribers = protocol
+					.getServiceContract()
+					.stream()
+					.filter(sc -> sc.getType().equals(ServiceContractType.SUBSCRIBER))
+					.filter(sc -> sc.getActive() == ServiceContractActive.TRUE) //skip disabled service contracts
+					.collect(Collectors.toList());
+
+			for (ServiceContract serviceContract: subscribers) {
+				String subscriberConfigName = getSubscriberEndpoint(serviceContract);
+				if (!Strings.isNullOrEmpty(subscriberConfigName)) {
+					ret.add(subscriberConfigName);
+				}
+			}
 		}
 
-		if (cohort.equals(COHORT_ALL)) {
-			return true;
+		List<String> list = new ArrayList<>(ret);
+		list.sort(((o1, o2) -> o1.compareToIgnoreCase(o2))); //for consistency
+		return list;
+	}
 
-		} else if (cohort.equals(COHORT_EXPLICIT)) {
-			return checkExplicitCohort(protocolId, tmpCache);
+	public static List<LibraryItem> getProtocolsForPublisherServiceOldWay(UUID serviceUuid) throws PipelineException {
 
-		} else if (cohort.startsWith(COHORT_DEFINING_SERVICES)) {
-			return checkServiceDefinedCohort(protocolId, protocol, tmpCache, odsCode);
+		try {
+			List<LibraryItem> ret = new ArrayList<>();
+
+			String serviceIdStr = serviceUuid.toString();
+
+			//the above fn will return is all protocols where the service is present, but we want to filter
+			//that down to only ones where our service is an active publisher
+			List<LibraryItem> libraryItems = LibraryRepositoryHelper.getProtocolsByServiceId(serviceUuid.toString(), null); //passing null means don't filter on system ID
+
+			for (LibraryItem libraryItem: libraryItems) {
+				Protocol protocol = libraryItem.getProtocol();
+				if (protocol.getEnabled() == ProtocolEnabled.TRUE) { //added missing check
+
+					for (ServiceContract serviceContract : protocol.getServiceContract()) {
+						if (serviceContract.getType().equals(ServiceContractType.PUBLISHER)
+								&& serviceContract.getService().getUuid().equals(serviceIdStr)
+								&& serviceContract.getActive() == ServiceContractActive.TRUE) { //added missing check
+
+							ret.add(libraryItem);
+							break;
+						}
+					}
+				}
+			}
+
+			return ret;
+
+		} catch (Exception ex) {
+			throw new PipelineException("Error getting protocols for service " + serviceUuid, ex);
+		}
+	}
+
+	private static String getSubscriberEndpoint(ServiceContract contract) throws PipelineException {
+
+		try {
+			UUID serviceId = UUID.fromString(contract.getService().getUuid());
+			UUID technicalInterfaceId = UUID.fromString(contract.getTechnicalInterface().getUuid());
+
+			String cacheKey = serviceId.toString() + ":" + technicalInterfaceId.toString();
+			String endpoint = cachedEndpoints.get(cacheKey);
+			if (endpoint == null) {
+
+				ServiceDalI serviceRepository = DalProvider.factoryServiceDal();
+
+				org.endeavourhealth.core.database.dal.admin.models.Service service = serviceRepository.getById(serviceId);
+				List<ServiceInterfaceEndpoint> serviceEndpoints = service.getEndpointsList();
+				for (ServiceInterfaceEndpoint serviceEndpoint : serviceEndpoints) {
+					if (serviceEndpoint.getTechnicalInterfaceUuid().equals(technicalInterfaceId)) {
+						endpoint = serviceEndpoint.getEndpoint();
+
+						//concurrent map can't store null values, so only add to the cache if non-null
+						if (endpoint != null) {
+							cachedEndpoints.put(cacheKey, endpoint);
+						}
+						break;
+					}
+				}
+			}
+
+			return endpoint;
+
+		} catch (Exception ex) {
+			throw new PipelineException("Failed to get endpoint for contract", ex);
+		}
+	}
+
+
+	private void checkCohortNow(SubscriberCohortRecord newResult, TmpCache tmpCache, String odsCode) throws Exception {
+
+		SubscriberConfig subscriberConfig = SubscriberConfig.readFromConfig(newResult.getSubscriberConfigName());
+
+		UUID patientId = tmpCache.findPatientId();
+		Patient fhirPatient = tmpCache.findPatientResource(patientId, tmpCache.getServiceId());
+
+		//if the patient record has been deleted we need to make sure that delete reaches subscribers,
+		//so count the patient as being IN the cohort so the delta gets sent
+		if (fhirPatient == null) {
+			newResult.setInCohort(true);
+			newResult.setReason("Patient record was deleted");
+			return;
+		}
+
+		//exclude test patients
+		if (subscriberConfig.isExcludeTestPatients()) {
+			BooleanType isTestPatient = (BooleanType) ExtensionConverter.findExtensionValue(fhirPatient, FhirExtensionUri.PATIENT_IS_TEST_PATIENT);
+			if (isTestPatient != null
+					&& isTestPatient.hasValue()
+					&& isTestPatient.getValue().booleanValue()) {
+
+				newResult.setInCohort(false);
+				newResult.setReason("FHIR Patient is a test patient");
+				return;
+			}
+		}
+
+		//exclude by NHS number
+		String excludeNhsNumberRegex = subscriberConfig.getExcludeNhsNumberRegex();
+		if (!Strings.isNullOrEmpty(excludeNhsNumberRegex)) {
+			String nhsNumber = tmpCache.findPatientNhsNumber();
+			if (!Strings.isNullOrEmpty(nhsNumber)
+					&& Pattern.matches(excludeNhsNumberRegex, nhsNumber)) {
+
+				newResult.setInCohort(false);
+				newResult.setReason("NHS number " + nhsNumber + " is excluded by regex");
+				return;
+			}
+		}
+
+		SubscriberConfig.CohortType cohortType = subscriberConfig.getCohortType();
+
+		if (cohortType == SubscriberConfig.CohortType.AllPatients) {
+			newResult.setInCohort(true);
+			newResult.setReason("Cohort is all patients");
+
+		} else if (cohortType == SubscriberConfig.CohortType.ExplicitPatients) {
+			checkExplicitCohort(newResult, tmpCache);
+
+		} else if (cohortType == SubscriberConfig.CohortType.GpRegisteredAt) {
+			checkServiceDefinedCohort(newResult, tmpCache, odsCode);
 
 		} else {
-
-			throw new PipelineException("Unknown cohort " + cohort + " in protocol " + protocolId);
+			throw new PipelineException("Unknown cohort " + cohortType + " for subscriber " + newResult.getSubscriberConfigName());
 		}
 	}
 
 
-	private boolean checkServiceDefinedCohort(UUID protocolId, Protocol protocol, TmpCache tmpCache, String odsCode) throws Exception {
+	private void checkServiceDefinedCohort(SubscriberCohortRecord newResult, TmpCache tmpCache, String odsCode) throws Exception {
 
 		//find the list of service UUIDs that define the cohort
-		Set<String> cohortOdsCodes = getOdsCodesForServiceDefinedProtocol(protocol);
-		LOG.debug("Found " + cohortOdsCodes.size() + " ODS codes that define the cohort");
+		SubscriberConfig subscriberConfig = SubscriberConfig.readFromConfig(newResult.getSubscriberConfigName());
+		Set<String> cohortOdsCodes = subscriberConfig.getCohortGpServices();
+		cohortOdsCodes = makeUpperCase(cohortOdsCodes); //just in case, make everything uppercase
+		LOG.trace("Found " + cohortOdsCodes.size() + " ODS codes that define the cohort");
 
-		//if we've not activated any service contracts yet, this will be empty, which is fine
+		//if we've not added any ODS codes, then something is odd
 		if (cohortOdsCodes.isEmpty()) {
-			LOG.debug("FAIL - No ODS codes defining cohort found for batch ID " + tmpCache.getBatchId());
-			return false;
+			throw new Exception("No ODS codes set in config for " + newResult.getSubscriberConfigName());
 		}
 
 		//check to see if our service is one of the defining service contracts, in which case it automatically passes
 		if (isOdsCodeInCohort(odsCode, cohortOdsCodes)) {
-			LOG.debug("PASS - This service (" + odsCode + ") is in defining list for batch ID " + tmpCache.getBatchId());
-			return true;
+			LOG.trace("PASS - This service (" + odsCode + ") is in defining list for batch ID " + tmpCache.getBatchId());
+			newResult.setInCohort(true);
+			newResult.setReason("Publishing org " + odsCode + " is part of cohort");
+			return;
 		}
 
-		//if our service isn't one of the cohort-defining ones, then we need to see if our patient is registered at one
-		//of the cohort-defining services
-		UUID patientUuid = tmpCache.findPatientId();
+		//check the FHIR data to see if the patient is registered in our cohort
+		checkPersonIsRegisteredAtServices(newResult, tmpCache, cohortOdsCodes);
 
-		//if there's no patient ID, then this is admin resources batch, so return true so it goes through unfiltered
-		if (patientUuid == null) {
-			LOG.debug("PASS - No patient ID found for batch ID " + tmpCache.getBatchId());
-			return true;
+		//Ive been told - once a patient has entered the cohort, they don't leave
+		//So, if the patient is NOT in the cohort now (because we failed the above check) but the patient
+		//WAS previously in the cohort, then we change this result to true. This doesn't apply if the patient
+		//falls out of the cohort for other reasons (such as being flagged as a test patient)
+		if (!newResult.isInCohort()) {
+			SubscriberCohortDalI dal = DalProvider.factorySubscriberCohortDal();
+			boolean wasInCohort = dal.wasEverInCohort(newResult.getSubscriberConfigName(), newResult.getPatientId());
+			if (wasInCohort) {
+				LOG.trace("PASS - Patient is no longer registered in cohort but previously was, so changing to PASS");
+				newResult.setInCohort(true);
+				newResult.setReason("Patient fallen out of cohort, but retained due to previous inclusion");
+			}
 		}
+	}
 
-		return checkPatientIsRegisteredAtServices(tmpCache, cohortOdsCodes);
+	private Set<String> makeUpperCase(Set<String> codes) {
+		Set<String> ret = new HashSet<>();
+		for (String code: codes) {
+			ret.add(code.toUpperCase());
+		}
+		return ret;
 	}
 
 	private static boolean isOdsCodeInCohort(String odsCode, Set<String> cohortOdsCodes) throws Exception {
@@ -230,20 +516,24 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 		return false;
 	}
 
-
-	private boolean checkPatientIsRegisteredAtServices(TmpCache tmpCache, Set<String> cohortOdsCodes) throws Exception {
+	/**
+	 * checks if any patient record for the person is GMS/Regular registered within the cohort
+     */
+	private void checkPersonIsRegisteredAtServices(SubscriberCohortRecord newResult, TmpCache tmpCache, Set<String> cohortOdsCodes) throws Exception {
 
 		//first check the patient resource at our own service
-		LOG.debug("Checking patient " + tmpCache.findPatientId() + " at service " + tmpCache.getServiceId());
+		LOG.trace("Checking patient " + tmpCache.findPatientId() + " at service " + tmpCache.getServiceId());
 		if (checkPatientIsRegisteredAtServices(tmpCache.findPatientId(), tmpCache.getServiceId(), tmpCache, cohortOdsCodes)) {
-			LOG.debug("PASS - Patient " + tmpCache.findPatientId() + " is registered at one of defining services");
-			return true;
+			LOG.trace("PASS - Patient " + tmpCache.findPatientId() + " is registered at one of defining services");
+			newResult.setInCohort(true);
+			newResult.setReason("Patient resource at publisher is part of cohort");
+			return;
 		}
 
 		//if we couldn't work it out from our own patient resource, then check against any other patient resources
 		//that match to the same person record
 		Map<String, String> patientAndServiceIds = tmpCache.findOtherPatientsAndServices();
-		LOG.debug("Found " + patientAndServiceIds.size() + " patient IDs for person ID " + tmpCache.findPersonId());
+		LOG.trace("Found " + patientAndServiceIds.size() + " patient IDs for person ID " + tmpCache.findPersonId());
 
 		for (String otherPatientId: patientAndServiceIds.keySet()) {
 
@@ -252,20 +542,23 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 			String otherServiceUuidStr = patientAndServiceIds.get(otherPatientId);
 			UUID otherServiceUuid = UUID.fromString(otherServiceUuidStr);
 
-			//skip the patient ID we started with since we know our service doesn't define the cohort (otherwise we wouldn't be in this fn)
+			//skip the patient ID we started with since we've already done that one
 			if (otherPatientUuid.equals(tmpCache.findPatientId())) {
 				continue;
 			}
 
 			LOG.debug("Checking patient " + otherPatientId + " at service " + otherServiceUuidStr);
 			if (checkPatientIsRegisteredAtServices(otherPatientUuid, otherServiceUuid, tmpCache, cohortOdsCodes)) {
-				LOG.debug("PASS - Patient " + otherPatientId + " is registered at one of defining services");
-				return true;
+				LOG.trace("PASS - Patient " + otherPatientId + " is registered at one of defining services");
+				newResult.setInCohort(true);
+				newResult.setReason("Patient resource " + otherPatientId + " is part of cohort");
+				return;
 			}
 		}
 
-		LOG.debug("FAIL - Patient " + tmpCache.findPatientId() + " is NOT registered at one of defining services");
-		return false;
+		LOG.trace("FAIL - Patient " + tmpCache.findPatientId() + " is NOT registered at one of defining services");
+		newResult.setInCohort(false);
+		newResult.setReason("Patient resource not registered in cohort");
 	}
 
 	private boolean checkPatientIsRegisteredAtServices(UUID patientUuid, UUID serviceId, TmpCache tmpCache, Set<String> cohortOdsCodes) throws Exception {
@@ -415,7 +708,8 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 		return odsCode;
 	}
 
-	public static Set<String> getOdsCodesForServiceDefinedProtocol(Protocol protocol) {
+
+	/*public static Set<String> getOdsCodesForServiceDefinedProtocol(Protocol protocol) {
 		Set<String> ret = new HashSet<>();
 
 		String cohort = protocol.getCohort();
@@ -433,56 +727,40 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 		}
 
 		return ret;
+	}*/
+
+
+
+
+	private void checkExplicitCohort(SubscriberCohortRecord newResult, TmpCache tmpCache) throws Exception {
+
+		String nhsNumber = tmpCache.findPatientNhsNumber();
+		if (Strings.isNullOrEmpty(nhsNumber)) {
+			newResult.setInCohort(false);
+			newResult.setReason("No NHS number");
+			return;
+		}
+
+		//no point moving the below to the TmpCache object since it only is specific to the protocol currently being checked
+		SubscriberCohortDalI dal = DalProvider.factorySubscriberCohortDal();
+		boolean inCohort = dal.isInExplicitCohort(newResult.getSubscriberConfigName(), nhsNumber);
+		if (inCohort) {
+			newResult.setInCohort(true);
+			newResult.setReason("NHS number " + nhsNumber + " found in explicit cohort");
+			return;
+		}
+
+		newResult.setInCohort(false);
+		newResult.setReason("NHS number " + nhsNumber + " not found in explicit cohort");
+
 	}
 
 
-
-
-	private boolean checkExplicitCohort(UUID protocolId, TmpCache tmpCache) throws PipelineException {
-		//find the patient ID for the batch
-		UUID patientId = null;
-		try {
-			patientId = tmpCache.findPatientId();
-		} catch (Exception ex) {
-			throw new PipelineException("Failed to find patient ID for batch " + tmpCache.getBatchId(), ex);
-		}
-
-		//if there's no patient ID, then this is admin resources batch, so return true so it goes through unfiltered
-		if (patientId == null) {
-			return true;
-		}
-
-		try {
-			String nhsNumber = tmpCache.findPatientNhsNumber();
-			//LOG.trace("patient ID " + patientId + " -> nhs number " + nhsNumber);
-
-			if (Strings.isNullOrEmpty(nhsNumber)) {
-				return false;
-			}
-
-			throw new Exception("Not currently supported");
-			//no point moving the below to the TmpCache object since it only is specific to the protocol currently being checked
-			/*UUID serviceId = tmpCache.getServiceId();
-			PatientCohortDalI cohortRepository = DalProvider.factoryPatientCohortDal();
-			boolean inCohort = cohortRepository.isInCohort(protocolId, serviceId, nhsNumber);
-			//LOG.trace("protocol " + protocolId + " service " + serviceId + " nhs number " + nhsNumber + " -> in cohort " + inCohort);
-			return inCohort;*/
-		} catch (Exception ex) {
-			throw new PipelineException("Exception in protocol " + protocolId, ex);
-		}
-	}
-
-
-	private List<LibraryItem> getProtocols(Exchange exchange) throws PipelineException {
+	private List<LibraryItem> getProtocolsFromHeader(Exchange exchange) throws Exception {
 
 		List<LibraryItem> ret = new ArrayList<>();
 
-		String[] protocolIds = null;
-		try {
-			protocolIds = exchange.getHeaderAsStringArray(HeaderKeys.ProtocolIds);
-		} catch (Exception ex) {
-			throw new PipelineException("Failed to read protocol IDs from exchange " + exchange.getId());
-		}
+		String[] protocolIds = exchange.getHeaderAsStringArray(HeaderKeys.ProtocolIds);
 
 		Set<UUID> hsProtocolUuidsDone = new HashSet<>();
 
@@ -511,9 +789,8 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 	}
 
 	/**
-	 * if a patient has multiple subscribers, then we end up retrieving the same stuff from the DB multiple times, so
-	 * we can check if the patient falls into each subscribers cohort. This cache is intended to avoid that, by
-	 * caching resources for a patient just for the duration of this class being used.
+	 * if a patient has multiple subscribers, then we end up retrieving the same data from the DB multiple times, so
+	 * we can check if the patient falls into each subscribers cohort. This cache lets us avoid that.
 	 */
 	class TmpCache {
 
@@ -528,9 +805,6 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 
 		private boolean checkedForPatientId = false;
 		private UUID cachedPatientId = null;
-
-		private boolean checkedForNhsNumber = false;
-		private String cachedNhsNumber = null;
 
 		private boolean checkedForPersonId = false;
 		private String cachedPersonId = null;
@@ -566,16 +840,13 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 
 		public String findPatientNhsNumber() throws Exception {
 
-			if (!checkedForNhsNumber) {
-				PatientSearch patientSearchResult = patientSearchDal.searchByPatientId(findPatientId());
-				if (patientSearchResult != null) {
-					cachedNhsNumber = patientSearchResult.getNhsNumber();
-				} else {
-					cachedNhsNumber = null;
-				}
-				checkedForNhsNumber = true;
+			UUID patientId = findPatientId();
+			Patient p = findPatientResource(patientId, getServiceId());
+			if (p == null) {
+				return null;
+			} else {
+				return IdentifierHelper.findNhsNumber(p);
 			}
-			return cachedNhsNumber;
 		}
 
 		public String findPersonId() throws Exception {
@@ -610,18 +881,8 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 
 			if (!hmPatients.containsKey(patientUuid)) {
 
-				//if looking for the resource for our main patient, then go back to find a non-deleted one if it is deleted
-				boolean checkAllResourceHistory = patientUuid.equals(findPatientId());
-
-				Patient fhirPatient = null;
-				if (checkAllResourceHistory) {
-					//when checking the patient resource at our own service, check using the most recent non-deleted instance
-					fhirPatient = (Patient)retrieveNonDeletedResource(serviceId, ResourceType.Patient, patientUuid);
-				} else {
-					//when checking patient resources at other services, it makes sense to only count them if they're non-deleted
-					fhirPatient = (Patient)resourceRepository.getCurrentVersionAsResource(serviceId, ResourceType.Patient, patientUuid.toString());
-				}
-
+				//retrieve from the DB
+				Patient fhirPatient = (Patient)resourceRepository.getCurrentVersionAsResource(serviceId, ResourceType.Patient, patientUuid.toString());
 				hmPatients.put(patientUuid, fhirPatient);
 			}
 

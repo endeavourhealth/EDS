@@ -8,8 +8,20 @@ import {ConfigHistory} from "./ConfigHistory";
 @Injectable()
 export class ConfigManagerService extends BaseHttp2Service {
 
+    //put these here so they don't get reset when changing pages
+    filterAppId: string;
+    filterAppIdIncludeGlobal: boolean;
+    filterSearchText: string;
+    filterSearchOnAppId: boolean;
+    filterSearchOnConfigId: boolean;
+    filterSearchOnData: boolean;
+
     constructor(http : Http) {
         super (http);
+
+        var vm = this;
+        vm.filterAppIdIncludeGlobal = false;
+        vm.filterSearchOnConfigId = true;
     }
 
     getRecords() : Observable<ConfigRecord[]> {
