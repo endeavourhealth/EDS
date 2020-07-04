@@ -9,9 +9,9 @@ public class SubscriberBatch {
 
 	private UUID queuedMessageId = null; //points to transformed data in DB
 	private String endpoint = null; //subscriber config name
-	private String software = null; //subscriber software type - remove once everything is in the config JSON
+	/*private String software = null; //subscriber software type - remove once everything is in the config JSON
 	private String softwareVersion = null; //subscriber software version - remove once everything is in the config JSON
-	private UUID technicalInterfaceId = null; //can be removed once deployed and all queues clear
+	private UUID technicalInterfaceId = null; //can be removed once deployed and all queues clear*/
 
 	public UUID getQueuedMessageId() {
 		return queuedMessageId;
@@ -29,7 +29,7 @@ public class SubscriberBatch {
 		this.endpoint = endpoint;
 	}
 
-	public String getSoftware() {
+	/*public String getSoftware() {
 		return software;
 	}
 
@@ -51,5 +51,5 @@ public class SubscriberBatch {
 
 	public void setTechnicalInterfaceId(UUID technicalInterfaceId) {
 		this.technicalInterfaceId = technicalInterfaceId;
-	}
+	}*/
 }

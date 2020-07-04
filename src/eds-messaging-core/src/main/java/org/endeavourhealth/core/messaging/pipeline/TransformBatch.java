@@ -1,11 +1,7 @@
 package org.endeavourhealth.core.messaging.pipeline;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import org.endeavourhealth.core.xml.QueryDocument.ServiceContract;
-import org.hl7.fhir.instance.model.ResourceType;
 
-import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -29,10 +25,9 @@ public class TransformBatch {
 
 	private UUID batchId; //used for audit purposes
 
-	//TODO - remove once all old instances removed from RabbitMQ
-	private UUID protocolId;
+	/*private UUID protocolId;
 	private Map<ResourceType, List<UUID>> resourceIds;
-	private List<ServiceContract> subscribers;
+	private List<ServiceContract> subscribers;*/
 
 	//fields to replace the above
 	private String subscriberConfigName;
@@ -51,7 +46,7 @@ public class TransformBatch {
 		this.batchId = batchId;
 	}
 
-	public UUID getProtocolId() {
+	/*public UUID getProtocolId() {
 		return protocolId;
 	}
 
@@ -73,7 +68,7 @@ public class TransformBatch {
 
 	public void setSubscribers(List<ServiceContract> subscribers) {
 		this.subscribers = subscribers;
-	}
+	}*/
 
 	public String getSubscriberConfigName() {
 		return subscriberConfigName;
