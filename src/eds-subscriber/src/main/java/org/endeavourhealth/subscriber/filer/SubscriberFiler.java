@@ -289,8 +289,9 @@ public class SubscriberFiler {
             row ++;
         }
 
+        LOG.trace("Got " + upserts.size() + " upserts and " + deletes.size() + " deletes for " + tableName);
+
         if (!upserts.isEmpty()) {
-            LOG.trace("Upserting " + upserts.size() + " records in " + tableName);
 
             //when doing a bulk, we can have 300,000+ practitioners, so do them in batches, so we're
             //not keeping huge DB transactions open

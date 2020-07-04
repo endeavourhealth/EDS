@@ -48,7 +48,7 @@ public class EnterpriseFiler {
     public static void file(UUID batchId, UUID queuedMessageId, String base64, String configName) throws Exception {
 
         byte[] bytes = Base64.getDecoder().decode(base64);
-        LOG.trace("Filing " + FileUtils.byteCountToDisplaySize(bytes.length) + " from batch " + batchId + " into " + configName);
+        LOG.debug("Filing " + FileUtils.byteCountToDisplaySize(bytes.length) + " from batch " + batchId + " into " + configName);
 
         //we may have multiple connections if we have replicas
         List<EnterpriseConnector.ConnectionWrapper> connectionWrappers = EnterpriseConnector.openSubscriberConnections(configName);
