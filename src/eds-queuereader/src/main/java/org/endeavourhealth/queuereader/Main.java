@@ -75,7 +75,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.endeavourhealth.core.xml.QueryDocument.ServiceContractType.PUBLISHER;
 
-
 public class Main {
 	private static final Logger LOG = LoggerFactory.getLogger(Main.class);
 
