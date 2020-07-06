@@ -1,5 +1,8 @@
 USE admin;
 
+drop trigger if exists after_service_insert;
+drop trigger if exists after_service_update;
+drop trigger if exists after_service_delete;
 DROP TABLE IF EXISTS dependency_type;
 DROP TABLE IF EXISTS item_type;
 DROP TABLE IF EXISTS audit;
@@ -164,3 +167,142 @@ CREATE TABLE link_distributor_task_list
 
 
 
+CREATE TABLE service_history
+(
+	id varchar(36),
+	name varchar(250),
+	local_id varchar(50),
+	endpoints text,
+	organisations text,
+	publisher_config_name text,
+	notes text,
+	postcode varchar(50),
+	ccg_code varchar(50),
+	organisation_type varchar(50),
+	alias varchar(250) COMMENT 'secondary name',
+	tags json COMMENT 'custom tags for filtering and info',
+  transaction_type varchar(100) NOT NULL,
+  dt_changed datetime(3) NOT NULL
+) COMMENT 'stores history of updates to the service table';
+
+
+
+
+
+DELIMITER $$
+CREATE TRIGGER after_service_insert
+  AFTER INSERT ON service
+  FOR EACH ROW
+  BEGIN
+    INSERT INTO service_history (
+		id,
+		name,
+		local_id,
+		endpoints,
+		organisations,
+		publisher_config_name,
+		notes,
+		postcode,
+		ccg_code,
+		organisation_type,
+		alias,
+		tags,
+        transaction_type,
+        dt_changed
+    ) VALUES (
+		NEW.id,
+		NEW.name,
+		NEW.local_id,
+		NEW.endpoints,
+		NEW.organisations,
+		NEW.publisher_config_name,
+		NEW.notes,
+		NEW.postcode,
+		NEW.ccg_code,
+		NEW.organisation_type,
+		NEW.alias,
+		NEW.tags,
+        'insert',
+        now()
+    );
+  END$$
+DELIMITER ;
+
+
+DELIMITER $$
+CREATE TRIGGER after_service_update
+  AFTER UPDATE ON service
+  FOR EACH ROW
+  BEGIN
+    INSERT INTO service_history (
+		id,
+		name,
+		local_id,
+		endpoints,
+		organisations,
+		publisher_config_name,
+		notes,
+		postcode,
+		ccg_code,
+		organisation_type,
+		alias,
+		tags,
+        transaction_type,
+        dt_changed
+    ) VALUES (
+		NEW.id,
+		NEW.name,
+		NEW.local_id,
+		NEW.endpoints,
+		NEW.organisations,
+		NEW.publisher_config_name,
+		NEW.notes,
+		NEW.postcode,
+		NEW.ccg_code,
+		NEW.organisation_type,
+		NEW.alias,
+		NEW.tags,
+        'update',
+        now()
+    );
+  END$$
+DELIMITER ;
+
+DELIMITER $$
+CREATE TRIGGER after_service_delete
+  AFTER DELETE ON service
+  FOR EACH ROW
+  BEGIN
+    INSERT INTO service_history (
+		id,
+		name,
+		local_id,
+		endpoints,
+		organisations,
+		publisher_config_name,
+		notes,
+		postcode,
+		ccg_code,
+		organisation_type,
+		alias,
+		tags,
+        transaction_type,
+        dt_changed
+    ) VALUES (
+		OLD.id,
+		null,
+		null,
+		null,
+		null,
+		null,
+		null,
+		null,
+		null,
+		null,
+		null,
+		null,
+        'delete',
+        now()
+    );
+  END$$
+DELIMITER ;
