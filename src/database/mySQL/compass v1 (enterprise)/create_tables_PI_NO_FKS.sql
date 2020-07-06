@@ -4,6 +4,7 @@ DROP TRIGGER IF EXISTS after_patient_update;
 DROP TRIGGER IF EXISTS after_patient_delete;
 DROP PROCEDURE IF EXISTS update_person_record;
 DROP PROCEDURE IF EXISTS update_person_record_2;
+DROP TABLE IF EXISTS pseudo_id;
 DROP TABLE IF EXISTS link_distributor;
 DROP TABLE IF EXISTS patient_address;
 DROP TABLE IF EXISTS patient_contact;
@@ -1041,6 +1042,28 @@ CREATE TABLE link_distributor
 CREATE INDEX link_distributor_target_skid
     ON link_distributor
         (target_skid);
+
+
+-- Table: pseudo_id
+
+CREATE TABLE pseudo_id
+(
+  id bigint NOT NULL,
+  organization_id bigint NOT NULL,
+  patient_id bigint NOT NULL,
+  person_id bigint NOT NULL,
+  salt_key_name varchar(50) NOT NULL,
+  pseudo_id character varying(255) NULL,
+  CONSTRAINT pk_pseudo_id PRIMARY KEY (`patient_id`, `salt_key_name`)
+);
+
+CREATE UNIQUE INDEX pseudo_id_id
+  ON pseudo_id
+  (id);
+
+
+
+
 
 create table patient_uprn (
 	patient_id bigint,

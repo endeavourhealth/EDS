@@ -497,10 +497,11 @@ public class QueueHelper {
                 postedToRabbit = true;
 
                 //LOG.info("Creating exchange batches for " + patientUuids.size() + " patients");
+                LOG.debug("Creating exchange baches for new exchange " + exchange.getId() + " and " + patientUuids.size() + " patients");
                 createExchangeBatches(exchange, patientUuids);
 
                 //post to InboundQueue
-                LOG.info("Posting to protocol queue");
+                LOG.debug("Posting to protocol queue");
                 List<UUID> exchangeIds = new ArrayList<>();
                 exchangeIds.add(exchange.getId());
                 //QueueHelper.postToExchange(exchangeIds, EXCHANGE_PROTOCOL, specificProtocolId, false, null);
@@ -523,16 +524,23 @@ public class QueueHelper {
 
         ExchangeBatchDalI exchangeBatchDal = DalProvider.factoryExchangeBatchDal();
         List<ExchangeBatch> batches = new ArrayList<>();
+        int done = 0;
 
         //create an admin batch
         batches.add(createBatch(exchange, null));
+        done ++;
 
         for (UUID patientId: patientUuids) {
             batches.add(createBatch(exchange, patientId));
+            done ++;
 
             if (batches.size() >= TransformConfig.instance().getResourceSaveBatchSize()) {
                 exchangeBatchDal.save(batches);
                 batches.clear();
+            }
+
+            if (done % 1000 == 0) {
+                LOG.debug("Done " + done + " of " + patientUuids.size());
             }
         }
 

@@ -1,8 +1,6 @@
 -- This script contains the event_log creation and table triggers for the Compass v1 upgrade
 -- NOTE: run this AFTER the initial update scripts have completed
 
-use enterprise_pseudo;  -- change this as required <-> use enterprise_pi;
-
 drop table if exists event_log;
 
 -- drop these existing triggers and recreate with the event_log in
@@ -64,12 +62,15 @@ drop trigger if exists after_patient_address_delete;
 drop trigger if exists after_registration_status_history_insert;
 drop trigger if exists after_registration_status_history_update;
 drop trigger if exists after_registration_status_history_delete;
+drop trigger if exists after_pseudo_id_insert;
+drop trigger if exists after_pseudo_id_update;
+drop trigger if exists after_pseudo_id_delete;
 
 CREATE TABLE event_log (
-                           dt_change datetime(3) NOT NULL COMMENT 'date time the change was made to this DB',
-                           change_type tinyint NOT NULL COMMENT 'type of transaction 0=insert, 1=update, 2=delete',
-                           table_id tinyint NOT NULL COMMENT 'identifier of the table changed',
-                           record_id bigint NOT NULL COMMENT 'id of the record changed'
+       dt_change datetime(3) NOT NULL COMMENT 'date time the change was made to this DB',
+       change_type tinyint NOT NULL COMMENT 'type of transaction 0=insert, 1=update, 2=delete',
+       table_id tinyint NOT NULL COMMENT 'identifier of the table changed',
+       record_id bigint NOT NULL COMMENT 'id of the record changed'
 );
 -- note: purposefully no primary key or any other constraint
 
@@ -1113,25 +1114,6 @@ END$$
 DELIMITER ;
 
 DELIMITER $$
-CREATE TRIGGER after_diagnostic_order_insert
-    AFTER INSERT ON diagnostic_order
-    FOR EACH ROW
-BEGIN
-    INSERT INTO event_log (
-        dt_change,
-        change_type,
-        table_id,
-        record_id
-    ) VALUES (
-                 now(3), -- current time inc ms
-                 0, -- insert
-                 21, -- diagnostic_order
-                 NEW.id
-             );
-END$$
-DELIMITER ;
-
-DELIMITER $$
 CREATE TRIGGER after_registration_status_history_insert
     AFTER INSERT ON registration_status_history
     FOR EACH ROW
@@ -1183,6 +1165,65 @@ BEGIN
                  now(3), -- current time inc ms
                  2, -- delete
                  23, -- registration_status_history
+                 OLD.id
+             );
+END$$
+DELIMITER ;
+
+
+
+DELIMITER $$
+CREATE TRIGGER after_pseudo_id_insert
+    AFTER INSERT ON pseudo_id
+    FOR EACH ROW
+BEGIN
+    INSERT INTO event_log (
+        dt_change,
+        change_type,
+        table_id,
+        record_id
+    ) VALUES (
+                 now(3), -- current time inc ms
+                 0, -- insert
+                 15, -- pseudo_id
+                 NEW.id
+             );
+END$$
+DELIMITER ;
+
+DELIMITER $$
+CREATE TRIGGER after_pseudo_id_update
+    AFTER UPDATE ON pseudo_id
+    FOR EACH ROW
+BEGIN
+    INSERT INTO event_log (
+        dt_change,
+        change_type,
+        table_id,
+        record_id
+    ) VALUES (
+                 now(3), -- current time inc ms
+                 1, -- update
+                 15, -- pseudo_id
+                 NEW.id
+             );
+END$$
+DELIMITER ;
+
+DELIMITER $$
+CREATE TRIGGER after_pseudo_id_delete
+    AFTER DELETE ON pseudo_id
+    FOR EACH ROW
+BEGIN
+    INSERT INTO event_log (
+        dt_change,
+        change_type,
+        table_id,
+        record_id
+    ) VALUES (
+                 now(3), -- current time inc ms
+                 2, -- delete
+                 15, -- pseudo_id
                  OLD.id
              );
 END$$

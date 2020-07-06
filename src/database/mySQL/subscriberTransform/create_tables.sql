@@ -10,15 +10,15 @@ DROP TABLE IF EXISTS enterprise_person_id_map;
 DROP TABLE IF EXISTS enterprise_person_update_history;
 DROP TABLE IF EXISTS exchange_batch_extra_resources;
 DROP TABLE IF EXISTS enterprise_instance_map;
-DROP TABLE IF EXISTS vitru_care_patient_id_map;
-DROP TABLE IF EXISTS pcr_id_map;
-DROP TABLE IF EXISTS pcr_organisation_id_map;
-DROP TABLE IF EXISTS pcr_person_id_map;
-DROP TABLE IF EXISTS pcr_person_update_history;
-DROP TABLE IF EXISTS pcr_instance_map;
-DROP TABLE IF EXISTS pcr_free_text_id_map;
-DROP TABLE IF EXISTS pcr_practitioner_id_map;
-DROP TABLE IF EXISTS pcr_event_id_map;
+DROP TABLE IF EXISTS vitru_care_patient_id_map; -- obsolete table
+DROP TABLE IF EXISTS pcr_id_map; -- obsolete table
+DROP TABLE IF EXISTS pcr_organisation_id_map; -- obsolete table
+DROP TABLE IF EXISTS pcr_person_id_map; -- obsolete table
+DROP TABLE IF EXISTS pcr_person_update_history; -- obsolete table
+DROP TABLE IF EXISTS pcr_instance_map; -- obsolete table
+DROP TABLE IF EXISTS pcr_free_text_id_map; -- obsolete table
+DROP TABLE IF EXISTS pcr_practitioner_id_map; -- obsolete table
+DROP TABLE IF EXISTS pcr_event_id_map; -- obsolete table
 DROP TABLE IF EXISTS code_set_codes;
 DROP TABLE IF EXISTS code_set;
 DROP TABLE IF EXISTS subscriber_id_map;
@@ -124,6 +124,7 @@ CREATE TABLE enterprise_person_update_history
   CONSTRAINT pk_person_update_history PRIMARY KEY (date_run)
 );
 
+/*
 CREATE TABLE vitru_care_patient_id_map (
 	eds_patient_id char(36),
 	service_id char(36),
@@ -131,6 +132,7 @@ CREATE TABLE vitru_care_patient_id_map (
 	vitrucare_id varchar(250),
     CONSTRAINT pk_resource_id_map PRIMARY KEY (eds_patient_id)
 );
+*/
 
 CREATE TABLE exchange_batch_extra_resources (
 	exchange_id char(36) NOT NULL,
@@ -155,7 +157,7 @@ ON enterprise_instance_map (resource_type, mapping_value);
 create index ix_resource_to
 on enterprise_instance_map (resource_id_to);
 
-CREATE TABLE pcr_id_map
+/*CREATE TABLE pcr_id_map
 (
   resource_id   varchar(36) NOT NULL COMMENT 'resourceId from source',
   resource_type varchar(50) NOT NULL COMMENT 'resource type from source',
@@ -254,7 +256,7 @@ CREATE TABLE pcr_event_id_map
 CREATE UNIQUE INDEX uix_pcr_event_id_map_auto_increment
   ON pcr_event_id_map (pcr_id);
 
-ALTER TABLE pcr_event_id_map MODIFY COLUMN pcr_id bigint auto_increment;
+ALTER TABLE pcr_event_id_map MODIFY COLUMN pcr_id bigint auto_increment;*/
 
 CREATE TABLE code_set
 (

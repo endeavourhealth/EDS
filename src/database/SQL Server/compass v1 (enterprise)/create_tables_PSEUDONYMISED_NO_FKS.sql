@@ -154,6 +154,8 @@ GO
 IF OBJECT_ID('dbo.registration_status_history', 'U') IS NOT NULL DROP TABLE dbo.registration_status_history
 GO
 
+IF OBJECT_ID('dbo.pseduo_id', 'U') IS NOT NULL DROP TABLE dbo.pseduo_id
+GO
 
 -- create TABLES
 CREATE TABLE [ethnicity_lookup] 
@@ -1131,6 +1133,25 @@ CREATE TABLE [registration_status_history] (
 );
 
 CREATE UNIQUE INDEX [ux_registration_status_history_id] ON [registration_status_history] ([id]);
+
+
+-- Table: pseudo_id
+
+CREATE TABLE [pseudo_id]
+(
+  [id] bigint NOT NULL,
+  [organization_id] bigint NOT NULL,
+  [patient_id] bigint NOT NULL,
+  [person_id] bigint NOT NULL,
+  [salt_key_name] varchar(50) NOT NULL,
+  [pseudo_id] varchar(255) NULL,
+  PRIMARY KEY ([patient_id], [salt_key_name])
+);
+
+CREATE UNIQUE INDEX [ux_pseudo_id_id] ON [pseudo_id] ([id]);
+
+
+
 
 
 CREATE PROCEDURE update_person_record_2(@_new_person_id bigint)
