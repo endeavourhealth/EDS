@@ -418,7 +418,7 @@ public class QueueHelper {
                                                                  Set<String> subscriberConfigNames, String reason) throws Exception {
         //find all patients
         PatientSearchDalI patientSearchDal = DalProvider.factoryPatientSearchDal();
-        List<UUID> patientUuids = patientSearchDal.getPatientIds(serviceId, true);
+        List<UUID> patientUuids = patientSearchDal.getPatientIds(serviceId, true); //INCLUDE deleted patients too
 
         queueUpFullServiceForPopulatingSubscriber(serviceId, isBulkDelete, isBulkRefresh, subscriberConfigNames, patientUuids, reason);
     }

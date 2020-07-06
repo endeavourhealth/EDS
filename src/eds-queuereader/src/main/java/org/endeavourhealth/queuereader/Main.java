@@ -110,11 +110,12 @@ public class Main {
 
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("FindTppServicesNeedReprocessing")) {
+			boolean showLogging = Boolean.valueOf(args[1]);
 			String odsCodeRegex = null;
-			if (args.length > 1) {
-				odsCodeRegex = args[1];
+			if (args.length > 2) {
+				odsCodeRegex = args[2];
 			}
-			SpecialRoutines.findTppServicesNeedReprocessing(odsCodeRegex);
+			SpecialRoutines.findTppServicesNeedReprocessing(showLogging, odsCodeRegex);
 			System.exit(0);
 		}
 

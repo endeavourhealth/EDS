@@ -3522,7 +3522,7 @@ public abstract class SpecialRoutines {
      * checks to make sure that every exchange has been properly through the inbound transform without
      * being skipped, failing or being filtered on specific files
      */
-    public static void findTppServicesNeedReprocessing(String odsCodeRegex) {
+    public static void findTppServicesNeedReprocessing(boolean showLogging, String odsCodeRegex) {
         LOG.debug("Finding TPP Services that Need Re-processing for " + odsCodeRegex);
         try {
             ServiceDalI serviceDal = DalProvider.factoryServiceDal();
@@ -3614,7 +3614,7 @@ public abstract class SpecialRoutines {
 
                         //find immediately proceeding event showing loading into inbound queue
                         ExchangeEvent previousLoadingEvent = null;
-                        for (int j=events.size()-1; j>=0; j--) {
+                        for (int j = events.size() - 1; j >= 0; j--) {
                             ExchangeEvent event = events.get(j);
                             Date dtEvent = event.getTimestamp();
                             if (dtEvent.after(dtTransformStart)) {
@@ -3649,14 +3649,40 @@ public abstract class SpecialRoutines {
                                 logging.add("Event desc filters on file types, so DIDN'T transform OK");
                             }
                         }
+
+                        //see if we have an exchange event saying we skipped the SRCode file
+                        if (transformedWithoutFiltering) {
+                            Date dtTransformEnd = audit.getStarted();
+                            for (int j = events.size() - 1; j >= 0; j--) {
+                                ExchangeEvent event = events.get(j);
+                                Date dtEvent = event.getTimestamp();
+                                if (dtEvent.after(dtTransformEnd)
+                                        || dtEvent.before(dtTransformStart)) {
+                                    continue;
+                                }
+
+                                String eventDesc = event.getEventDesc();
+                                if (eventDesc.equals("Skipped SRCode")) {
+                                    logging.add("SRCode was skipped, so DIDN'T transform OK");
+                                    transformedWithoutFiltering = false;
+                                }
+                            }
+                        }
                     }
 
+                    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
                     if (!transformedWithoutFiltering) {
-                        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-                        LOG.error("" + service + " -> exchange " + exchange.getId() + " from " + sdf.format(exchange.getHeaderAsDate(HeaderKeys.DataDate)));
-                        /*for (String line: logging) {
+                        LOG.error("FAIL " + service + " -> exchange " + exchange.getId() + " from " + sdf.format(exchange.getHeaderAsDate(HeaderKeys.DataDate)));
+
+                    } else if (showLogging){
+                        LOG.info("PASS " + service + " -> exchange " + exchange.getId() + " from " + sdf.format(exchange.getHeaderAsDate(HeaderKeys.DataDate)));
+                    }
+
+                    if (showLogging) {
+                        for (String line: logging) {
                             LOG.error("    " + line);
-                        }*/
+                        }
                     }
                 }
             }
