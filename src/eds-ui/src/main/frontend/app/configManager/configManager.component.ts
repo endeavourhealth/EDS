@@ -215,32 +215,6 @@ export class ConfigManagerComponent {
         return vm.changedRecords.indexOf(record) > -1;
     }
 
-    /**
-     * pretty-formats the JSON
-     */
-    formatJSON() {
-        var vm = this;
-        var str = vm.selectedRecord.configData;
-
-        try {
-            //turn into object and pretty-print object
-            var obj = JSON.parse(str);
-            var newStr = JSON.stringify(obj, null, 4);
-
-            if (newStr == str) {
-                vm.logger.warning('Already formatted');
-
-            } else {
-                vm.selectedRecord.configData = newStr;
-                vm.configJsonChanged(vm.selectedRecord); //flag it as changed
-                vm.logger.info('Formatted OK');
-            }
-
-
-        } catch (e) {
-            vm.invalidJsonMessage = 'Invalid JSON: ' + e.message;
-        }
-    }
 
     validateJSON() {
         var vm = this;
@@ -250,9 +224,18 @@ export class ConfigManagerComponent {
         var str = vm.selectedRecord.configData;
 
         try {
-            JSON.parse(str);
-            vm.validJsonMessage = 'Valid JSON';
-            //vm.logger.success('Valid JSON');
+            var obj = JSON.parse(str);
+
+            //may as well format nicely it too
+            var newStr = JSON.stringify(obj, null, 4);
+            if (newStr == str) {
+                vm.validJsonMessage = 'Valid JSON';
+
+            } else {
+                vm.selectedRecord.configData = newStr;
+                vm.configJsonChanged(vm.selectedRecord); //flag it as changed
+                vm.validJsonMessage = 'Valid JSON (reformatted)';
+            }
 
         } catch (e) {
             vm.invalidJsonMessage = 'Invalid JSON: ' + e.message;
