@@ -110,6 +110,7 @@
                         <div class="row">
                             <div class="form-group col-md-12">
                                 <button class="btn btn-sm btn-default" (click)="validateJSON()" title="Validate Json">Validate JSON</button>
+                                <button class="btn btn-sm btn-default" (click)="formatJSON()" title="Format Json">Format JSON</button>
                                 <button class="btn btn-sm btn-default" (click)="validateXML()" title="Validate XML">Validate XML</button>
                                 <button class="btn btn-sm btn-default" [disabled]="hasHistory(selectedRecord)" (click)="retrieveHistory(selectedRecord)" title="View History">View History</button>
                                 <button class="btn btn-sm btn-default" (click)="copyRecord()" title="Copy Record">Copy Record</button>

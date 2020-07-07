@@ -395,11 +395,11 @@ public class MessageTransformOutbound extends PipelineComponent {
                 if (allResourcesCache == null) {
                     if (patientId == null) {
                         allResourcesCache = retrieveAllAdminResources(subscriberConfigName);
-                        LOG.debug("Transforming all " + allResourcesCache.size() + " admin resources for subscriber " + subscriberConfigName);
+                        LOG.debug("" + action + " all " + allResourcesCache.size() + " admin resources for subscriber " + subscriberConfigName);
 
                     } else {
                         allResourcesCache = retrieveAllPatientResources();
-                        LOG.debug("Transforming all " + allResourcesCache.size() + " resources for patient " + patientId + " and subscriber " + subscriberConfigName);
+                        LOG.debug("" + action + " all " + allResourcesCache.size() + " resources for patient " + patientId + " and subscriber " + subscriberConfigName);
                     }
                 }
 
