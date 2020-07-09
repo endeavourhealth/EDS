@@ -22,7 +22,10 @@ import org.endeavourhealth.core.database.dal.eds.models.PatientSearch;
 import org.endeavourhealth.core.database.rdbms.ConnectionManager;
 import org.endeavourhealth.core.fhirStorage.ServiceInterfaceEndpoint;
 import org.endeavourhealth.core.messaging.pipeline.components.PostMessageToExchange;
-import org.endeavourhealth.transform.common.*;
+import org.endeavourhealth.transform.common.AuditWriter;
+import org.endeavourhealth.transform.common.ExchangeHelper;
+import org.endeavourhealth.transform.common.ExchangePayloadFile;
+import org.endeavourhealth.transform.common.TransformConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -455,7 +458,13 @@ public class QueueHelper {
         ServiceDalI serviceDal = DalProvider.factoryServiceDal();
         Service service = serviceDal.getById(serviceId);
 
-        String specificSubscriberConfigNamesStr = String.join(", ", specificSubscriberConfigNames);
+        String specificSubscriberConfigNamesStr = null;
+        if (specificSubscriberConfigNames == null) {
+            specificSubscriberConfigNamesStr = "all subscribers";
+        } else {
+            specificSubscriberConfigNamesStr = String.join(", ", specificSubscriberConfigNames);
+        }
+
         LOG.info("" + softwareKey + " subscriber for " + patientUuids.size() + " patients at " + service.getName() + " " + service.getLocalId() + " and subscriber " + specificSubscriberConfigNamesStr);
 
         //create a new "dummy" exchange which we need to get anything sent through the pipeline
