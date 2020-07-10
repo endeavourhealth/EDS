@@ -85,6 +85,17 @@ public class Main {
 		ConfigManager.initialize("queuereader", configId);
 
 		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("BulkSubscriberTransformAdmin")) {
+			String reason = args[1];
+			String odsCodes = null;
+			if (args.length > 2) {
+				odsCodes = args[2];
+			}
+			SpecialRoutines.bulkSubscriberTransformAdmin(reason, odsCodes);
+			System.exit(0);
+		}
+
+		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("CountVaccinationCodes")) {
 			String sinceDateStr = args[1];
 			String ccgOdsCodes = null;

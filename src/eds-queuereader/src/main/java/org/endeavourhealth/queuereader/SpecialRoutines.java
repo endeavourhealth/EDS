@@ -4216,4 +4216,28 @@ public abstract class SpecialRoutines {
         }
     }
 
+    public static void bulkSubscriberTransformAdmin(String reason, String odsCodes) {
+        LOG.debug("Doing Bulk Subscriber Transform for Admin Data for " + odsCodes);
+        try {
+
+            ServiceDalI serviceDal = DalProvider.factoryServiceDal();
+            List<Service> services = serviceDal.getAll();
+
+            for (Service service: services) {
+
+                if (shouldSkipService(service, odsCodes)) {
+                    continue;
+                }
+
+                LOG.debug("Doing " + service);
+
+                UUID serviceId = service.getId();
+                QueueHelper.queueUpFullServiceForPopulatingSubscriber(serviceId, false, true, true, null, new ArrayList<>(), reason);
+            }
+
+            LOG.debug("Finished Doing Bulk Subscriber Transform for Admin Data foe " + odsCodes);
+        } catch (Throwable t) {
+            LOG.error("", t);
+        }
+    }
 }
