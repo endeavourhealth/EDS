@@ -28,8 +28,8 @@ import org.endeavourhealth.core.fhirStorage.ServiceInterfaceEndpoint;
 import org.endeavourhealth.core.messaging.pipeline.PipelineComponent;
 import org.endeavourhealth.core.messaging.pipeline.PipelineException;
 import org.endeavourhealth.core.messaging.pipeline.TransformBatch;
+import org.endeavourhealth.core.queueing.QueueHelper;
 import org.endeavourhealth.core.xml.QueryDocument.*;
-import org.endeavourhealth.transform.common.MessageFormat;
 import org.endeavourhealth.transform.subscriber.SubscriberConfig;
 import org.hl7.fhir.instance.model.*;
 import org.slf4j.Logger;
@@ -125,23 +125,33 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 	 */
 	private TransformBatch.TransformAction calculateActionForAdminData(Exchange exchange, UUID batchId, String subscriberConfigName) throws Exception {
 
-		String sourceSystem = exchange.getHeader(HeaderKeys.SourceSystem);
-		if (sourceSystem.equals(MessageFormat.DUMMY_SENDER_SOFTWARE_FOR_BULK_SUBSCRIBER_REFRESH)) {
+		QueueHelper.ProtocolAction subscriberAction = findSubscriberAction(exchange);
+		if (subscriberAction == QueueHelper.ProtocolAction.BULK_REFRESH) {
 
 			LOG.trace("Admin batch " + batchId + " for bulk refresh will be let through for " + subscriberConfigName);
 			return TransformBatch.TransformAction.FULL_LOAD;
 
-		} else if (sourceSystem.equals(MessageFormat.DUMMY_SENDER_SOFTWARE_FOR_BULK_SUBSCRIBER_DELETE)) {
+		} else if (subscriberAction == QueueHelper.ProtocolAction.BULK_DELETE) {
 
 			//if a bulk delete, then we don't need to worry about admin data, so just ignore it
 			LOG.trace("Admin batch " + batchId + " for bulk delete will be ignored for " + subscriberConfigName);
 			return null;
 
-		} else { //this includes DUMMY_SENDER_SOFTWARE_FOR_BULK_SUBSCRIBER_QUICK_REFRESH
+		} else { //this includes QUICK_REFRESH
 
 			//if a normal delta, then let through
 			LOG.trace("Admin batch " + batchId + " for delta will be let through for " + subscriberConfigName);
 			return TransformBatch.TransformAction.DELTA;
+		}
+	}
+
+	private static QueueHelper.ProtocolAction findSubscriberAction(Exchange exchange) {
+		if (exchange.hasHeader(HeaderKeys.ProtocolAction)) {
+			String s = exchange.getHeader(HeaderKeys.ProtocolAction);
+			return QueueHelper.ProtocolAction.fromName(s);
+
+		} else {
+			return QueueHelper.ProtocolAction.DELTA;
 		}
 	}
 
@@ -161,8 +171,8 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 		SubscriberCohortRecord newResult = new SubscriberCohortRecord(subscriberConfigName, serviceId, batchId, new Date(), patientId);
 
 		//we use a special exchange with a specific source software to bulk populate or delete subscriber data
-		String sourceSystem = exchange.getHeader(HeaderKeys.SourceSystem);
-		if (sourceSystem.equals(MessageFormat.DUMMY_SENDER_SOFTWARE_FOR_BULK_SUBSCRIBER_REFRESH)) {
+		QueueHelper.ProtocolAction subscriberAction = findSubscriberAction(exchange);
+		if (subscriberAction == QueueHelper.ProtocolAction.BULK_REFRESH) {
 
 			//work out if the patient should or shouldn't be in the cohort and save, so we've refreshed that
 			checkCohortNow(newResult, tmpCache, odsCode);
@@ -179,7 +189,7 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 				return TransformBatch.TransformAction.FULL_DELETE;
 			}
 
-		} else if (sourceSystem.equals(MessageFormat.DUMMY_SENDER_SOFTWARE_FOR_BULK_SUBSCRIBER_DELETE)) {
+		} else if (subscriberAction == QueueHelper.ProtocolAction.BULK_DELETE) {
 
 			//if a bulk delete, just overwrite everything to say they're no longer in the cohort
 			LOG.trace("Batch " + batchId + ", patient " + patientId + " is bulk deleting from " + subscriberConfigName);
@@ -196,7 +206,7 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 			checkCohortNow(newResult, tmpCache, odsCode);
 
 			//if doing a quick refresh, just append that fact to the reason
-			if (sourceSystem.equals(MessageFormat.DUMMY_SENDER_SOFTWARE_FOR_BULK_SUBSCRIBER_QUICK_REFRESH)) {
+			if (subscriberAction == QueueHelper.ProtocolAction.BULK_QUICK_REFRESH) {
 				String reason = newResult.getReason() + " (quick refresh used)";
 				newResult.setReason(reason);
 			}

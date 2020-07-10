@@ -7,7 +7,7 @@ import org.endeavourhealth.core.database.dal.audit.models.HeaderKeys;
 import org.endeavourhealth.core.messaging.pipeline.PipelineComponent;
 import org.endeavourhealth.core.messaging.pipeline.PipelineException;
 import org.glassfish.jersey.client.ClientConfig;
-import org.glassfish.jersey.filter.LoggingFilter;
+import org.glassfish.jersey.logging.LoggingFeature;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,7 +43,7 @@ public class PostToRest extends PipelineComponent {
 			headersToSend = config.getSendHeaders().split(",", -1);
 
 		for (String address : addressList) {
-			Client client = ClientBuilder.newClient(new ClientConfig().register(LoggingFilter.class));
+			Client client = ClientBuilder.newClient(new ClientConfig().register(LoggingFeature.class));
 			WebTarget webTarget = client.target(address);
 
 			String contentType = exchange.getHeader(HeaderKeys.ContentType);

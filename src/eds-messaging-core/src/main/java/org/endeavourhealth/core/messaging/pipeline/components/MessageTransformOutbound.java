@@ -392,25 +392,27 @@ public class MessageTransformOutbound extends PipelineComponent {
             if (action == TransformBatch.TransformAction.FULL_DELETE
                     || action == TransformBatch.TransformAction.FULL_LOAD) {
 
-                if (allResourcesCache == null) {
-                    if (patientId == null) {
-                        allResourcesCache = retrieveAllAdminResources(subscriberConfigName);
-                        LOG.debug("" + action + " all " + allResourcesCache.size() + " admin resources for subscriber " + subscriberConfigName);
+                //for full load of admin data we can't use a cache because the resources returned is dependent on the
+                //subscriber config, so if there are different config names, the list of resources may differ
+                if (patientId == null) {
+                    ret = retrieveAllAdminResources(subscriberConfigName);
+                    LOG.debug("" + action + " all " + ret.size() + " admin resources for subscriber " + subscriberConfigName);
 
-                    } else {
+                } else {
+                    //for patient resources, just retrieve and cache the full list
+                    if (allResourcesCache == null) {
                         allResourcesCache = retrieveAllPatientResources();
-                        LOG.debug("" + action + " all " + allResourcesCache.size() + " resources for patient " + patientId + " and subscriber " + subscriberConfigName);
                     }
+                    ret = new ArrayList<>(allResourcesCache); //copy the list so nothing done by the transform can change our cache
+                    LOG.debug("" + action + " all " + ret.size() + " resources for patient " + patientId + " and subscriber " + subscriberConfigName);
                 }
 
-                ret = new ArrayList<>(allResourcesCache); //copy the list so nothing done by the transform can change our cache
-
             } else {
+                //for delta transactions
                 if (deltaResourcesCache == null) {
                     ResourceDalI resourceDal = DalProvider.factoryResourceDal();
                     deltaResourcesCache = resourceDal.getCurrentVersionOfResourcesForBatch(serviceId, batchId);
                 }
-
                 ret = new ArrayList<>(deltaResourcesCache); //copy the list so nothing done by the transform can change our cache
             }
 

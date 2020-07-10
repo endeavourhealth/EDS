@@ -5,6 +5,7 @@ DROP FUNCTION IF EXISTS isAllowQueueing;
 DROP FUNCTION IF EXISTS isEmisCustom;
 DROP FUNCTION IF EXISTS isEmptyBody;
 DROP FUNCTION IF EXISTS getDataDate;
+DROP FUNCTION IF EXISTS getDataSize;
 DROP TABLE IF EXISTS `exchange`;
 DROP TABLE IF EXISTS exchange_event;
 DROP TABLE IF EXISTS exchange_transform_audit;
@@ -433,5 +434,33 @@ DELIMITER ;
 
 
 
+DELIMITER //
+CREATE FUNCTION getDataSize ( exchange_headers TEXT )
+  RETURNS BIGINT
+  BEGIN
+
+    DECLARE ret BIGINT;
+    DECLARE str varchar(50);
+
+    if (exchange_headers like '%"file-total-size"%') THEN
+
+      SET str = SUBSTRING(
+          SUBSTRING(exchange_headers,
+                    INSTR(exchange_headers, 'file-total-size') + 18
+          ),
+          1,
+          INSTR(
+              SUBSTRING(exchange_headers,
+                        INSTR(exchange_headers, 'file-total-size') + 18
+              ),
+              '\"'
+          )-1);
+      SET ret = str;
+
+    END IF;
+    RETURN ret;
+
+  END; //
+DELIMITER ;
 
 

@@ -22,7 +22,10 @@ import org.endeavourhealth.core.database.dal.eds.models.PatientSearch;
 import org.endeavourhealth.core.database.rdbms.ConnectionManager;
 import org.endeavourhealth.core.fhirStorage.ServiceInterfaceEndpoint;
 import org.endeavourhealth.core.messaging.pipeline.components.PostMessageToExchange;
-import org.endeavourhealth.transform.common.*;
+import org.endeavourhealth.transform.common.AuditWriter;
+import org.endeavourhealth.transform.common.ExchangeHelper;
+import org.endeavourhealth.transform.common.ExchangePayloadFile;
+import org.endeavourhealth.transform.common.TransformConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,6 +37,32 @@ import java.util.stream.Collectors;
 
 public class QueueHelper {
     private static final Logger LOG = LoggerFactory.getLogger(QueueHelper.class);
+
+    public enum ProtocolAction {
+        BULK_DELETE("BulkDelete"),
+        BULK_REFRESH("BulkRefresh"),
+        BULK_QUICK_REFRESH("QuickRefresh"),
+        DELTA("Delta");
+
+        private String name = null;
+
+        public String getName() {
+            return this.name;
+        }
+
+        private ProtocolAction(String name) {
+            this.name = name;
+        }
+
+        public static ProtocolAction fromName(String s) {
+            for (ProtocolAction n: values()) {
+                if (n.getName().equalsIgnoreCase(s)) {
+                    return n;
+                }
+            }
+            throw new IllegalArgumentException("Unknown exchange name [" + s + "]");
+        }
+    }
 
 
     public enum ExchangeName {
@@ -414,13 +443,13 @@ public class QueueHelper {
     /**
      *
      */
-    public static void queueUpFullServiceForPopulatingSubscriber(UUID serviceId, boolean isBulkDelete, boolean isBulkRefresh,
+    public static void queueUpFullServiceForPopulatingSubscriber(UUID serviceId, boolean isBulkDelete, boolean isBulkRefresh, boolean doAdminResources,
                                                                  Set<String> subscriberConfigNames, String reason) throws Exception {
         //find all patients
         PatientSearchDalI patientSearchDal = DalProvider.factoryPatientSearchDal();
         List<UUID> patientUuids = patientSearchDal.getPatientIds(serviceId, true); //INCLUDE deleted patients too
 
-        queueUpFullServiceForPopulatingSubscriber(serviceId, isBulkDelete, isBulkRefresh, subscriberConfigNames, patientUuids, reason);
+        queueUpFullServiceForPopulatingSubscriber(serviceId, isBulkDelete, isBulkRefresh, doAdminResources, subscriberConfigNames, patientUuids, reason);
     }
 
 
@@ -430,26 +459,30 @@ public class QueueHelper {
      *
      * NOTE: the patientUuids list may be empty if we just want to send admin data through - this is OK
      */
-    public static void queueUpFullServiceForPopulatingSubscriber(UUID serviceId, boolean isBulkDelete, boolean isBulkRefresh,
+    public static void queueUpFullServiceForPopulatingSubscriber(UUID serviceId, boolean isBulkDelete, boolean isBulkRefresh, boolean doAdminResources,
                                                                  Set<String> specificSubscriberConfigNames, List<UUID> patientUuids, String reason) throws Exception {
 
         if (isBulkDelete && isBulkRefresh) {
             throw new Exception("Cannot both bulk delete and refresh");
         }
 
+        if (patientUuids.isEmpty() && !doAdminResources) {
+            throw new Exception("Not passed in any patients and not doing admin resources");
+        }
+
         //routing requires a source system name and this tells us it's this special case
-        String softwareKey = null;
+        ProtocolAction subscriberAction = null;
         if (isBulkDelete) {
             //tell transform to delete all data for all patients
-            softwareKey = MessageFormat.DUMMY_SENDER_SOFTWARE_FOR_BULK_SUBSCRIBER_DELETE;
+            subscriberAction = ProtocolAction.BULK_DELETE;
 
         } else if (isBulkRefresh) {
             //tell transform to recalculate cohort send all data for patients in cohort and delete all data for those not in cohort
-            softwareKey = MessageFormat.DUMMY_SENDER_SOFTWARE_FOR_BULK_SUBSCRIBER_REFRESH;
+            subscriberAction = ProtocolAction.BULK_REFRESH;
 
         } else {
             //tell transform to recalculate cohort send/delete all data for patients where inclusion has changed
-            softwareKey = MessageFormat.DUMMY_SENDER_SOFTWARE_FOR_BULK_SUBSCRIBER_QUICK_REFRESH;
+            subscriberAction = ProtocolAction.BULK_QUICK_REFRESH;
         }
 
         ServiceDalI serviceDal = DalProvider.factoryServiceDal();
@@ -462,7 +495,7 @@ public class QueueHelper {
             specificSubscriberConfigNamesStr = String.join(", ", specificSubscriberConfigNames);
         }
 
-        LOG.info("" + softwareKey + " subscriber for " + patientUuids.size() + " patients at " + service.getName() + " " + service.getLocalId() + " and subscriber " + specificSubscriberConfigNamesStr);
+        LOG.info("" + subscriberAction + " subscriber for " + patientUuids.size() + " patients at " + service.getName() + " " + service.getLocalId() + " and subscriber " + specificSubscriberConfigNamesStr);
 
         //create a new "dummy" exchange which we need to get anything sent through the pipeline
         String bodyJson = JsonSerializer.serialize(new ArrayList<ExchangePayloadFile>());
@@ -477,6 +510,9 @@ public class QueueHelper {
         for (UUID systemId: systemIds) {
             LOG.debug("Doing system ID " + systemId);
 
+            //work out software string from past exchanges
+            String softwareKey = findSoftwareKey(service.getId(), systemId);
+
             Exchange exchange = new Exchange();
             exchange.setId(UUID.randomUUID());
             exchange.setBody(bodyJson);
@@ -486,10 +522,11 @@ public class QueueHelper {
             exchange.setHeader(HeaderKeys.SenderLocalIdentifier, odsCode);
             exchange.setHeaderAsUuid(HeaderKeys.SenderSystemUuid, systemId);
             exchange.setHeader(HeaderKeys.SourceSystem, softwareKey);
+            exchange.setHeader(HeaderKeys.ProtocolAction, subscriberAction.getName());
             exchange.setServiceId(serviceId);
             exchange.setSystemId(systemId);
 
-            String eventDesc = "Manually created exchange to " + softwareKey + " for " + patientUuids.size() + " patients in subscriber " + specificSubscriberConfigNamesStr;
+            String eventDesc = "Manually created exchange to " + subscriberAction + " for " + patientUuids.size() + " patients in subscriber " + specificSubscriberConfigNamesStr;
             if (!Strings.isNullOrEmpty(reason)) {
                 eventDesc += " (" + reason + ")";
             }
@@ -524,6 +561,52 @@ public class QueueHelper {
             exchange.setHeaderAsBoolean(HeaderKeys.AllowQueueing, Boolean.FALSE); //don't allow this to be re-queued
             AuditWriter.writeExchange(exchange);
         }
+    }
+
+    /**
+     * finds the software string used by a service and system
+     */
+    private static String findSoftwareKey(UUID serviceId, UUID systemId) throws Exception {
+
+        //to find the software key, we need to look back at past exchanges, so try looking only at the most
+        //recent and only hit the DB for more if necessary
+        String key = findSoftwareKey(serviceId, systemId, 1);
+        if (!Strings.isNullOrEmpty(key)) {
+            return key;
+        }
+
+        key = findSoftwareKey(serviceId, systemId, 100);
+        if (!Strings.isNullOrEmpty(key)) {
+            return key;
+        }
+
+        throw new Exception("Failed to find software from last five exchanges for service " + serviceId + " and system " + systemId);
+    }
+
+    private static String findSoftwareKey(UUID serviceId, UUID systemId, int checkNumber) throws Exception {
+        ExchangeDalI dal = DalProvider.factoryExchangeDal();
+
+        List<Exchange> exchanges = dal.getExchangesByService(serviceId, systemId, checkNumber);
+        if (exchanges.isEmpty()) {
+            throw new Exception("Failed to find exchange for service " + serviceId + " and system " + systemId);
+        }
+
+        for (Exchange exchange: exchanges) {
+
+            //if can't be queued, ignore it
+            Boolean allowQueueing = exchange.getHeaderAsBoolean(HeaderKeys.AllowQueueing);
+            if (allowQueueing != null
+                    && !allowQueueing.booleanValue()) {
+                continue;
+            }
+
+            String software = exchange.getHeader(HeaderKeys.SourceSystem);
+            if (!Strings.isNullOrEmpty(software)) {
+                return software;
+            }
+        }
+
+        return null;
     }
 
     private static void createExchangeBatches(Exchange exchange, List<UUID> patientUuids) throws Exception {
@@ -663,7 +746,7 @@ public class QueueHelper {
     /**
      * takes a list of patient IDs and groups them by service and queues them up for all relevant subscriber transforms
      */
-    public static void queueUpPatientsForSubscriberTransform(List<UUID> patientIds, boolean isBulkDelete, boolean isBulkRefresh, String reason) throws Exception {
+    public static void queueUpPatientsForSubscriberTransform(List<UUID> patientIds, boolean isBulkDelete, boolean isBulkRefresh, boolean doAdminResources, String reason) throws Exception {
 
         //find service for each one
         Map<UUID, List<UUID>> hmPatientByService = new HashMap<>();
@@ -703,7 +786,7 @@ public class QueueHelper {
             List<UUID> patientIdsForService = hmPatientByService.get(serviceId);
             LOG.debug("Doing " + patientIdsForService.size() + " patients for service " + serviceId);
 
-            queueUpFullServiceForPopulatingSubscriber(serviceId, isBulkDelete, isBulkRefresh, null, patientIdsForService, reason);
+            queueUpFullServiceForPopulatingSubscriber(serviceId, isBulkDelete, isBulkRefresh, doAdminResources, null, patientIdsForService, reason);
         }
     }
 

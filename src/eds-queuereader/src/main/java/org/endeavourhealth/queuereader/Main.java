@@ -516,7 +516,7 @@ public class Main {
 				LOG.debug("NO SUBSCRIBERS SPECIFICED - THIS WILL SEND TO ALL SUBSCRIBERS");
 				continueOrQuit();
 			}
-			QueueHelper.queueUpFullServiceForPopulatingSubscriber(serviceId, false, bulkSendAllData, subscribers, reason);
+			QueueHelper.queueUpFullServiceForPopulatingSubscriber(serviceId, false, bulkSendAllData, true, subscribers, reason);
 			System.exit(0);
 		}
 
@@ -5538,7 +5538,7 @@ public class Main {
 			}
 			LOG.info("Found " + patientIds.size() + " patient IDs");
 
-			QueueHelper.queueUpPatientsForSubscriberTransform(patientIds, false, true, reason);
+			QueueHelper.queueUpPatientsForSubscriberTransform(patientIds, false, true, false, reason);
 
 			LOG.info("Finished transforming patients from " + sourceFile);
 		} catch (Throwable t) {
