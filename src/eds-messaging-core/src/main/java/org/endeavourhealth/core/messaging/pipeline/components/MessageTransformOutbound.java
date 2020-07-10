@@ -476,15 +476,6 @@ public class MessageTransformOutbound extends PipelineComponent {
                 }
             }
 
-            //debugging
-            LOG.debug(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Dumping practitioners");
-            for (ResourceWrapper wrapper: ret) {
-                if (wrapper.getResourceTypeObj() == ResourceType.Practitioner) {
-                    LOG.debug("Doing Practitioner " + wrapper.getResourceId());
-                }
-            }
-            LOG.debug(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Finished Dumping practitioners");
-
             return ret;
         }
 
