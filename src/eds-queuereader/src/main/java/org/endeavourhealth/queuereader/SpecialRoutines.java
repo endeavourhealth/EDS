@@ -64,7 +64,6 @@ import org.endeavourhealth.transform.fhirhl7v2.FhirHl7v2Filer;
 import org.endeavourhealth.transform.fhirhl7v2.transforms.EncounterTransformer;
 import org.endeavourhealth.transform.subscriber.*;
 import org.endeavourhealth.transform.subscriber.targetTables.OutputContainer;
-import org.endeavourhealth.transform.subscriber.targetTables.SubscriberTableId;
 import org.endeavourhealth.transform.subscriber.transforms.OrganisationTransformer;
 import org.hl7.fhir.instance.model.*;
 import org.hl7.fhir.instance.model.Resource;
@@ -2380,11 +2379,154 @@ public abstract class SpecialRoutines {
     }
 
     /**
+     * routine to tidy up the mess left by moving part-transformed practices from Core06 to 07 and 08
+     */
+    public static void deleteCore06DataFromSubscribers(boolean testMode, String sourceSubscriberConfigName, String tableOfPatientIds, String tableForAudit, List<String> subscriberNames) {
+        LOG.debug("Deleting Core06 Data From Subscribers Using " + tableOfPatientIds + " from " + String.join(", ", subscriberNames));
+        try {
+            Set<Long> patientIds = new HashSet<>();
+
+            Connection connection = ConnectionManager.getSubscriberNonPooledConnection(sourceSubscriberConfigName);
+            String sql = "SELECT patient_id FROM " + tableOfPatientIds + " WHERE done = false";
+            Statement statement = connection.createStatement();
+            ResultSet rs = statement.executeQuery(sql);
+            while (rs.next()) {
+                long patientId = rs.getLong(1);
+                patientIds.add(new Long(patientId));
+            }
+            LOG.debug("Found " + patientIds.size() + " patient IDs");
+
+            List<String> tablesToDo = new ArrayList<>();
+            //tablesToDo.add("patient"); //do separately
+            tablesToDo.add("episode_of_care");
+            tablesToDo.add("appointment");
+            tablesToDo.add("encounter");
+            tablesToDo.add("allergy_intolerance");
+            tablesToDo.add("medication_statement");
+            tablesToDo.add("medication_order");
+            tablesToDo.add("flag");
+            tablesToDo.add("observation");
+            tablesToDo.add("diagnostic_order");
+            tablesToDo.add("procedure_request");
+            tablesToDo.add("referral_request");
+            tablesToDo.add("patient_contact");
+            tablesToDo.add("patient_address");
+            //all other tables with a patient_id are empty
+
+            int done = 0;
+            for (Long patientId: patientIds) {
+
+                OutputContainer output = new OutputContainer();
+
+                //do patient delete
+                output.getPatients().writeDelete(new SubscriberId((byte)0, patientId, null));
+                if (testMode) {
+                    LOG.debug("Would delete patient id " + patientId);
+                } else {
+                    //audit the ID being deleted
+                    sql = "INSERT INTO " + tableForAudit + " (patient_id, table_name, id) VALUES (" + patientId + ", 'patient', " + patientId + ")";
+                    statement.executeUpdate(sql);
+                    connection.commit();
+                }
+
+                //do dependent tables
+                for (String tableToDo: tablesToDo) {
+
+                    Set<Long> idsToDelete = new HashSet<>();
+                    sql = "SELECT id FROM " + tableToDo + " WHERE patient_id = " + patientId;
+                    rs = statement.executeQuery(sql);
+                    while (rs.next()) {
+                        long id = rs.getLong(1);
+                        idsToDelete.add(new Long(id));
+                    }
+                    LOG.debug("For " + tableToDo + " found " + idsToDelete.size());
+
+                    for (Long idToDelete: idsToDelete) {
+                        long id = idToDelete.longValue();
+
+                        if (tableToDo.equals("episode_of_care")) {
+                            output.getEpisodesOfCare().writeDelete(new SubscriberId((byte)0, id, null));
+                        } else if (tableToDo.equals("appointment")) {
+                            output.getAppointments().writeDelete(new SubscriberId((byte)0, id, null));
+                        } else if (tableToDo.equals("encounter")) {
+                            output.getEncounters().writeDelete(new SubscriberId((byte)0, id, null));
+                        } else if (tableToDo.equals("allergy_intolerance")) {
+                            output.getAllergyIntolerances().writeDelete(new SubscriberId((byte)0, id, null));
+                        } else if (tableToDo.equals("medication_statement")) {
+                            output.getMedicationStatements().writeDelete(new SubscriberId((byte)0, id, null));
+                        } else if (tableToDo.equals("medication_order")) {
+                            output.getMedicationOrders().writeDelete(new SubscriberId((byte)0, id, null));
+                        } else if (tableToDo.equals("flag")) {
+                            output.getFlags().writeDelete(new SubscriberId((byte)0, id, null));
+                        } else if (tableToDo.equals("observation")) {
+                            output.getObservations().writeDelete(new SubscriberId((byte)0, id, null));
+                        } else if (tableToDo.equals("diagnostic_order")) {
+                            output.getDiagnosticOrder().writeDelete(new SubscriberId((byte)0, id, null));
+                        } else if (tableToDo.equals("procedure_request")) {
+                            output.getProcedureRequests().writeDelete(new SubscriberId((byte)0, id, null));
+                        } else if (tableToDo.equals("referral_request")) {
+                            output.getReferralRequests().writeDelete(new SubscriberId((byte)0, id, null));
+                        } else if (tableToDo.equals("patient_contact")) {
+                            output.getPatientContacts().writeDelete(new SubscriberId((byte)0, id, null));
+                        } else if (tableToDo.equals("patient_address")) {
+                            output.getPatientAddresses().writeDelete(new SubscriberId((byte)0, id, null));
+                        } else {
+                            throw new Exception("Unexpected name [" + tableToDo + "]");
+                        }
+
+                        if (testMode) {
+                            LOG.debug("Would delete " + tableToDo + " id " + id);
+
+                        } else {
+                            //audit the ID being deleted
+                            sql = "INSERT INTO " + tableForAudit + " (patient_id, table_name, id) VALUES (" + patientId + ", '" + tableToDo + "', " + id + ")";
+                            statement.executeUpdate(sql);
+                            connection.commit();
+                        }
+                    }
+
+                }
+
+                //delete from the DB or queue up for sending to the remote DB
+                if (!testMode) {
+                    byte[] bytes = output.writeToZip();
+                    if (bytes != null) {
+                        String base64 = Base64.getEncoder().encodeToString(bytes);
+                        UUID batchId = UUID.randomUUID();
+                        for (String subscriberName : subscriberNames) {
+                            SubscriberFiler.file(batchId, UUID.randomUUID(), base64, subscriberName);
+                        }
+                    }
+
+                    //mark patient as done
+                    sql = "UPDATE " + tableOfPatientIds + " SET done = true WHERE patient_id = " + patientId;
+                    statement.executeUpdate(sql);
+                    connection.commit();
+                }
+
+                done ++;
+                if (done % 1000 == 0) {
+                    LOG.debug("Done " + done);
+                }
+            }
+            LOG.debug("Finished " + done);
+
+            statement.close();
+            connection.close();
+
+            LOG.debug("Deleting Core06 Data From Subscribers Using " + tableOfPatientIds);
+
+        } catch (Throwable t) {
+            LOG.error("", t);
+        }
+    }
+
+    /**
      * if a service was moved from one CoreXX DB to another, without maintaining the resource ID mappings,
      * then we need to use this routine to tidy up the mess left on the subscriber DBs. SQL will need
      * to be manually run on the CoreXX DB to delete theresources, but only AFTER this has run.
      */
-    public static void deleteDataForOldCoreDBFromSubscribers(UUID serviceId, String previousPublisherConfigName) {
+    /*public static void deleteDataForOldCoreDBFromSubscribers(UUID serviceId, String previousPublisherConfigName) {
         LOG.debug("Deleting data from old Core DB server for " + serviceId);
         try {
             ServiceDalI serviceDal = DalProvider.factoryServiceDal();
@@ -2592,7 +2734,7 @@ public abstract class SpecialRoutines {
         } catch (Throwable t) {
             LOG.error("", t);
         }
-    }
+    }*/
 
     public static void populateMissingOrgsInCompassV1(String subscriberConfigName, boolean testMode) {
         LOG.debug("Populating Missing Orgs In CompassV1 " + subscriberConfigName + " testMode = " + testMode);

@@ -86,6 +86,22 @@ public class Main {
 		ConfigManager.initialize("queuereader", configId);
 
 		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("deleteCore06DataFromSubscribers")) {
+
+			boolean testMode = Boolean.parseBoolean(args[1]);
+			String sourceSubscriberConfigName = args[2];
+			String tableOfPatientIds = args[3];
+			String tableForAudit = args[4];
+			List<String> subscriberNames = new ArrayList<>();
+			for (int i=5; i<args.length; i++) {
+				subscriberNames.add(args[i]);
+			}
+
+			SpecialRoutines.deleteCore06DataFromSubscribers(testMode, sourceSubscriberConfigName, tableOfPatientIds, tableForAudit, subscriberNames);
+			System.exit(0);
+		}
+
+		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("BulkSubscriberTransformAdmin")) {
 			String reason = args[1];
 			String odsCodes = null;
@@ -169,14 +185,14 @@ public class Main {
 			System.exit(0);
 		}
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("DeleteDataFromOldCoreDB")) {
 
 			UUID serviceId = UUID.fromString(args[1]);
 			String previousPublisherConfig = args[2];
 			SpecialRoutines.deleteDataForOldCoreDBFromSubscribers(serviceId, previousPublisherConfig);
 			System.exit(0);
-		}
+		}*/
 
 		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("DeleteTppEpisodesElsewhere")) {
