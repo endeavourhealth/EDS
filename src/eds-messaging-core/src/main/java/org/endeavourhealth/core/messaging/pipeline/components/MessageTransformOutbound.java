@@ -70,7 +70,7 @@ public class MessageTransformOutbound extends PipelineComponent {
         UUID batchId = getBatchId(transformBatches);
         UUID patientId = findPatientId(exchangeId, batchId);
         UUID serviceId = exchange.getServiceId();
-        ResourceCache resourceCache = new ResourceCache(serviceId, exchangeId, batchId, patientId);
+        ResourceCache resourceCache = new ResourceCache(serviceId, exchangeId, batchId, patientId, transformBatches);
 
         //the object of the below is to populate this list of subscriber batches
         List<SubscriberBatch> subscriberBatches = new ArrayList<>();
@@ -365,15 +365,17 @@ public class MessageTransformOutbound extends PipelineComponent {
         private UUID exchangeId;
         private UUID batchId;
         private UUID patientId;
+        private List<TransformBatch> transformBatches = null;
 
         private List<ResourceWrapper> deltaResourcesCache = null;
         private List<ResourceWrapper> allResourcesCache = null;
 
-        public ResourceCache(UUID serviceId, UUID exchangeId, UUID batchId, UUID patientId) {
+        public ResourceCache(UUID serviceId, UUID exchangeId, UUID batchId, UUID patientId, List<TransformBatch> transformBatches) {
             this.serviceId = serviceId;
             this.exchangeId = exchangeId;
             this.batchId = batchId;
             this.patientId = patientId;
+            this.transformBatches = transformBatches;
         }
 
         public List<ResourceWrapper> getResources(TransformBatch.TransformAction action, String subscriberConfigName) throws PipelineException {
@@ -395,7 +397,10 @@ public class MessageTransformOutbound extends PipelineComponent {
                 //for full load of admin data we can't use a cache because the resources returned is dependent on the
                 //subscriber config, so if there are different config names, the list of resources may differ
                 if (patientId == null) {
-                    ret = retrieveAllAdminResources(subscriberConfigName);
+                    if (allResourcesCache == null) {
+                        allResourcesCache = retrieveAllAdminResources();
+                    }
+                    ret = new ArrayList<>(allResourcesCache); //copy the list so nothing done by the transform can change our cache
                     LOG.debug("" + action + " all " + ret.size() + " admin resources for subscriber " + subscriberConfigName);
 
                 } else {
@@ -443,15 +448,23 @@ public class MessageTransformOutbound extends PipelineComponent {
          * since most services have millions of admin resources, this can't just retrieve all of the resources
          * and just send them through
          */
-        private List<ResourceWrapper> retrieveAllAdminResources(String subscriberConfigName) throws Exception {
+        private List<ResourceWrapper> retrieveAllAdminResources() throws Exception {
 
+            LOG.debug("Retrieving all admin resources for " + serviceId + " to send to " + transformBatches.size() + " subscribers");
             List<ResourceWrapper> ret = new ArrayList<>();
 
             ResourceDalI resourceDal = DalProvider.factoryResourceDal();
             AdminResourceRetrieverI adminHelper = resourceDal.startRetrievingAdminResources(serviceId, 1000);
 
-            SubscriberConfig subscriberConfig = SubscriberConfig.readFromConfig(subscriberConfigName);
-            int batchSize = subscriberConfig.getBatchSize();
+            List<SubscriberConfig> subscriberConfigs = new ArrayList<>();
+            for (TransformBatch transformBatch: this.transformBatches) {
+                String subscriberConfigName = transformBatch.getSubscriberConfigName();
+                SubscriberConfig subscriberConfig = SubscriberConfig.readFromConfig(subscriberConfigName);
+                subscriberConfigs.add(subscriberConfig);
+            }
+
+            int totalChecked = 0;
+            int batchCount = 0;
 
             while (true) {
                 List<ResourceWrapper> wrappers = adminHelper.getNextBatch();
@@ -461,25 +474,57 @@ public class MessageTransformOutbound extends PipelineComponent {
                     break;
                 }
 
+                totalChecked += wrappers.size();
+                batchCount ++;
+
+                if (batchCount % 10 == 0) {
+                    LOG.debug("Checked " + totalChecked + " admin resources and keeping " + ret.size());
+                }
+
                 //for each admin resource, we should work out if it has an ID in our subscriber transform DB
                 //and only send for transforming if so. Admin resources are transformed only when needed by clinical data
                 //so we only need to send ones that have previously been transformed (or have IDs anyway)
+                for (SubscriberConfig subscriberConfig: subscriberConfigs) {
 
-                if (subscriberConfig.getSubscriberType() == SubscriberConfig.SubscriberType.CompassV1) {
-                    findCompassV1ResourceIds(ret, wrappers, subscriberConfigName, batchSize);
+                    //we need to test if the resources are interesting to any of our subscribers
+                    String subscriberConfigName = subscriberConfig.getSubscriberConfigName();
+                    int batchSize = subscriberConfig.getBatchSize();
 
-                } else if (subscriberConfig.getSubscriberType() == SubscriberConfig.SubscriberType.CompassV2) {
-                    findCompassV2ResourceIds(ret, wrappers, subscriberConfigName, batchSize);
+                    List<ResourceWrapper> toKeep = null;
+                    if (subscriberConfig.getSubscriberType() == SubscriberConfig.SubscriberType.CompassV1) {
+                        toKeep = findCompassV1ResourceIds(wrappers, subscriberConfigName, batchSize);
 
-                } else {
-                    throw new Exception("Unexpected subscriber type " + subscriberConfig.getSubscriberType() + " for " + subscriberConfigName);
+                    } else if (subscriberConfig.getSubscriberType() == SubscriberConfig.SubscriberType.CompassV2) {
+                        toKeep = findCompassV2ResourceIds(wrappers, subscriberConfigName, batchSize);
+
+                    } else {
+                        throw new Exception("Unexpected subscriber type " + subscriberConfig.getSubscriberType() + " for " + subscriberConfigName);
+                    }
+
+                    ret.addAll(toKeep);
+
+                    //remove wrappers we know we already want to do
+                    Set<ResourceWrapper> hsToKeep = new HashSet<>(toKeep);
+                    for (int i=wrappers.size()-1; i>=0; i--) {
+                        ResourceWrapper wrapper = wrappers.get(i);
+                        if (hsToKeep.contains(wrapper)) {
+                            wrappers.remove(i);
+                        }
+                    }
+
+                    if (wrappers.isEmpty()) {
+                        break;
+                    }
                 }
             }
 
+            LOG.debug("Finished checking all " + totalChecked + " admin resources for " + serviceId + " and found " + ret.size());
             return ret;
         }
 
-        private void findCompassV2ResourceIds(List<ResourceWrapper> toKeep, List<ResourceWrapper> wrappers, String subscriberConfigName, int batchSize) throws Exception {
+        private List<ResourceWrapper> findCompassV2ResourceIds(List<ResourceWrapper> wrappers, String subscriberConfigName, int batchSize) throws Exception {
+
+            List<ResourceWrapper> toKeep = new ArrayList<>();
 
             SubscriberResourceMappingDalI subscriberDal = DalProvider.factorySubscriberResourceMappingDal(subscriberConfigName);
             //for compass v2, we need to hash the wrappers by resource type
@@ -546,9 +591,12 @@ public class MessageTransformOutbound extends PipelineComponent {
                 }
             }
 
+            return toKeep;
         }
 
-        private void findCompassV1ResourceIds(List<ResourceWrapper> toKeep, List<ResourceWrapper> wrappers, String subscriberConfigName, int batchSize) throws Exception {
+        private List<ResourceWrapper> findCompassV1ResourceIds(List<ResourceWrapper> wrappers, String subscriberConfigName, int batchSize) throws Exception {
+
+            List<ResourceWrapper> toKeep = new ArrayList<>();
 
             SubscriberResourceMappingDalI subscriberDal = DalProvider.factorySubscriberResourceMappingDal(subscriberConfigName);
 
@@ -592,6 +640,8 @@ public class MessageTransformOutbound extends PipelineComponent {
                     }
                 }
             }
+
+            return toKeep;
         }
 
         private List<ResourceWrapper> retrieveAllPatientResources() throws Exception {
