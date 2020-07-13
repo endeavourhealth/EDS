@@ -3,6 +3,10 @@ DROP TRIGGER IF EXISTS after_patient_update;
 DROP TRIGGER IF EXISTS after_patient_delete;
 DROP PROCEDURE IF EXISTS update_person_record;
 DROP PROCEDURE IF EXISTS update_person_record_2;
+
+IF OBJECT_ID('dbo.patient_pseudo_id', 'U') IS NOT NULL DROP TABLE dbo.patient_pseudo_id
+GO
+
 DROP TABLE IF EXISTS link_distributor;
 DROP TABLE IF EXISTS patient_address;
 DROP TABLE IF EXISTS patient_contact;
@@ -1146,6 +1150,26 @@ CREATE TABLE registration_status_history (
     CONSTRAINT [ux_registration_status_history_id] UNIQUE  ([id])
 ) ;
 go
+
+CREATE TABLE patient_pseudo_id
+(
+  id bigint NOT NULL,
+  organization_id bigint NOT NULL,
+  patient_id bigint NOT NULL,
+  person_id bigint NOT NULL,
+  salt_name varchar(50) NOT NULL,
+  skid varchar(255) NOT NULL,
+  is_nhs_number_valid bit NOT NULL,
+  is_nhs_number_verified_by_publisher bit NOT NULL,
+  CONSTRAINT pk_patient_pseudo_id PRIMARY KEY (organization_id, person_id, id)
+);
+
+CREATE UNIQUE INDEX ux_patient_pseudo_id ON patient_pseudo_id (id);
+
+CREATE INDEX patient_pseudo_id_patient ON patient_pseudo_id (patient_id);
+
+GO
+
 
 CREATE PROCEDURE update_person_record_2(
 @_new_person_id bigint

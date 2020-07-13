@@ -86,6 +86,19 @@ public class Main {
 		ConfigManager.initialize("queuereader", configId);
 
 		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("populateCompassPatientPseudoIdTable")) {
+
+			String sourceSubscriberConfigName = args[1];
+			String orgOdsCodeRegex = null;
+			if (args.length > 2) {
+				orgOdsCodeRegex = args[2];
+			}
+
+			SpecialRoutines.populateCompassPatientPseudoIdTable(sourceSubscriberConfigName, orgOdsCodeRegex);
+			System.exit(0);
+		}
+
+		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("deleteCore06DataFromSubscribers")) {
 
 			boolean testMode = Boolean.parseBoolean(args[1]);

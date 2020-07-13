@@ -72,6 +72,10 @@ drop trigger if exists after_patient_address_delete;
 drop trigger if exists after_diagnostic_order_insert;
 drop trigger if exists after_diagnostic_order_update;
 drop trigger if exists after_diagnostic_order_delete;
+drop trigger if exists after_patient_pseudo_id_insert;
+drop trigger if exists after_patient_pseudo_id_update;
+drop trigger if exists after_patient_pseudo_id_delete;
+DROP TABLE IF EXISTS patient_pseudo_id;
 DROP TABLE IF EXISTS allergy_intolerance;
 DROP TABLE IF EXISTS diagnostic_order;
 DROP TABLE IF EXISTS medication_order;
@@ -981,6 +985,25 @@ CREATE TABLE event_log (
 );
 -- note: purposefully no primary key or any other constraint
 
+
+CREATE TABLE patient_pseudo_id
+(
+  id bigint NOT NULL,
+  organization_id bigint NOT NULL,
+  patient_id bigint NOT NULL,
+  person_id bigint NOT NULL,
+  salt_name varchar(50) NOT NULL,
+  skid varchar(255) NOT NULL,
+  is_nhs_number_valid boolean NOT NULL,
+  is_nhs_number_verified_by_publisher boolean NOT NULL,
+  CONSTRAINT pk_patient_pseudo_id PRIMARY KEY (`organization_id`,`person_id`,`id`),
+  CONSTRAINT fk_patient_pseudo_id FOREIGN KEY (patient_id, organization_id)
+      REFERENCES patient (id, organization_id)
+);
+
+CREATE UNIQUE INDEX ux_patient_pseudo_id ON patient_pseudo_id (id);
+
+CREATE INDEX patient_pseudo_id_patient ON patient_pseudo_id (patient_id);
 
 
 
@@ -2495,6 +2518,68 @@ CREATE TRIGGER after_diagnostic_order_delete
 		now(3), -- current time inc ms
         2, -- delete
         21, -- diagnostic_order
+        OLD.id
+    );
+  END$$
+DELIMITER ;
+
+
+
+
+DELIMITER $$
+CREATE TRIGGER after_patient_pseudo_id_insert
+  AFTER INSERT ON patient_pseudo_id
+  FOR EACH ROW
+  BEGIN
+    INSERT INTO event_log (
+		dt_change,
+        change_type,
+        table_id,
+        record_id
+    ) VALUES (
+		now(3), -- current time inc ms
+        0, -- insert
+        27, -- patient_pseudo_id
+        NEW.id
+    );
+  END$$
+DELIMITER ;
+
+
+DELIMITER $$
+CREATE TRIGGER after_patient_pseudo_id_update
+  AFTER UPDATE ON patient_pseudo_id
+  FOR EACH ROW
+  BEGIN
+    INSERT INTO event_log (
+		dt_change,
+        change_type,
+        table_id,
+        record_id
+    ) VALUES (
+		now(3), -- current time inc ms
+        1, -- update
+        27, -- patient_pseudo_id
+        NEW.id
+    );
+  END$$
+DELIMITER ;
+
+
+DELIMITER $$
+CREATE TRIGGER after_patient_pseudo_id_delete
+  AFTER DELETE ON patient_pseudo_id
+  FOR EACH ROW
+  BEGIN
+    INSERT INTO event_log (
+		dt_change,
+        change_type,
+        table_id,
+        record_id
+    ) VALUES (
+		now(3), -- current time inc ms
+        2, -- delete
+        27, -- patient_pseudo_id
         OLD.id
     );
   END$$

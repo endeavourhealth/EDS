@@ -19,6 +19,13 @@ GO
 
 
 -- drop TABLES
+IF OBJECT_ID('dbo.patient_pseudo_id', 'U') IS NOT NULL DROP TABLE dbo.patient_pseudo_id
+GO
+
+IF OBJECT_ID('dbo.pseudo_id', 'U') IS NOT NULL DROP TABLE dbo.pseudo_id
+GO
+
+
 IF OBJECT_ID('dbo.patient_uprn', 'U') IS NOT NULL DROP TABLE dbo.patient_uprn
 GO
 
@@ -1136,6 +1143,7 @@ CREATE UNIQUE INDEX [ux_registration_status_history_id] ON [registration_status_
 
 
 -- Table: pseudo_id
+/*
 
 CREATE TABLE [pseudo_id]
 (
@@ -1149,9 +1157,26 @@ CREATE TABLE [pseudo_id]
 );
 
 CREATE UNIQUE INDEX [ux_pseudo_id_id] ON [pseudo_id] ([id]);
+*/
 
 
-
+CREATE TABLE patient_pseudo_id
+(
+  id bigint NOT NULL,
+  organization_id bigint NOT NULL,
+  patient_id bigint NOT NULL,
+  person_id bigint NOT NULL,
+  salt_name varchar(50) NOT NULL,
+  skid varchar(255) NOT NULL,
+  is_nhs_number_valid bit NOT NULL,
+  is_nhs_number_verified_by_publisher bit NOT NULL,
+  CONSTRAINT pk_patient_pseudo_id PRIMARY KEY (organization_id, person_id, id)
+);
+GO
+CREATE UNIQUE INDEX ux_patient_pseudo_id ON patient_pseudo_id (id);
+GO
+CREATE INDEX patient_pseudo_id_patient ON patient_pseudo_id (patient_id);
+GO
 
 
 CREATE PROCEDURE update_person_record_2(@_new_person_id bigint)

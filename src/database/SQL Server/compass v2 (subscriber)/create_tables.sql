@@ -1,12 +1,15 @@
 
--- USE subscriber_pi
-GO
-
 -- drop SP
 IF OBJECT_ID('dbo.update_person_record') IS NOT NULL DROP PROCEDURE update_person_record;
 GO
 
 -- drop tables
+IF OBJECT_ID('dbo.registration_status_history', 'U') IS NOT NULL DROP TABLE dbo.registration_status_history
+GO
+IF OBJECT_ID('dbo.patient_pseudo_id', 'U') IS NOT NULL DROP TABLE dbo.patient_pseudo_id
+GO
+IF OBJECT_ID('dbo.pseudo_id', 'U') IS NOT NULL DROP TABLE dbo.pseudo_id
+GO
 IF OBJECT_ID('dbo.allergy_intolerance', 'U') IS NOT NULL DROP TABLE dbo.allergy_intolerance
 GO
 IF OBJECT_ID('dbo.diagnostic_order', 'U') IS NOT NULL DROP TABLE dbo.diagnostic_order
@@ -22,8 +25,6 @@ GO
 IF OBJECT_ID('dbo.procedure_request', 'U') IS NOT NULL DROP TABLE dbo.procedure_request
 GO
 IF OBJECT_ID('dbo.referral_request', 'U') IS NOT NULL DROP TABLE dbo.referral_request
-GO
-IF OBJECT_ID('dbo.pseudo_id', 'U') IS NOT NULL DROP TABLE dbo.pseudo_id
 GO
 IF OBJECT_ID('dbo.patient_contact', 'U') IS NOT NULL DROP TABLE dbo.patient_contact
 GO
@@ -665,6 +666,11 @@ CREATE TABLE [referral_request] (
 [date_recorded] datetime NULL DEFAULT NULL,
 PRIMARY KEY ([organization_id], [person_id], [id])
 )
+
+
+
+
+
 GO
 CREATE UNIQUE INDEX [referral_request_id] ON [referral_request] ([id])
 GO
@@ -696,6 +702,42 @@ PRIMARY KEY ([organization_id], [id])
 )
 GO
 CREATE UNIQUE INDEX [schedule_id] ON [schedule] ([id])
+GO
+
+
+CREATE TABLE patient_pseudo_id
+(
+  id bigint NOT NULL,
+  organization_id bigint NOT NULL,
+  patient_id bigint NOT NULL,
+  person_id bigint NOT NULL,
+  salt_name varchar(50) NOT NULL,
+  skid varchar(255) NOT NULL,
+  is_nhs_number_valid bit NOT NULL,
+  is_nhs_number_verified_by_publisher bit NOT NULL,
+  CONSTRAINT pk_patient_pseudo_id PRIMARY KEY (organization_id, person_id, id)
+);
+GO
+CREATE UNIQUE INDEX ux_patient_pseudo_id ON patient_pseudo_id (id);
+GO
+CREATE INDEX patient_pseudo_id_patient ON patient_pseudo_id (patient_id);
+GO
+
+CREATE TABLE registration_status_history (
+   id bigint NOT NULL,
+   organization_id bigint NOT NULL,
+   patient_id bigint NOT NULL,
+   person_id bigint NOT NULL,
+   episode_of_care_id bigint DEFAULT NULL,
+   registration_status_concept_id int DEFAULT NULL,
+   start_date datetime DEFAULT NULL,
+   end_date datetime DEFAULT NULL,
+   PRIMARY KEY (organization_id, id, patient_id, person_id)
+);
+GO
+CREATE UNIQUE INDEX ux_registration_status_history_id ON registration_status_history (id);
+GO
+CREATE INDEX ix_registration_status_history_patient ON registration_status_history (patient_id);
 GO
 
 
@@ -2176,5 +2218,132 @@ BEGIN
   END
 GO
 ALTER TABLE [diagnostic_order] ENABLE TRIGGER [after_diagnostic_order_delete]
+GO
+
+
+
+
+CREATE TRIGGER [after_patient_pseudo_id_insert]
+ON [patient_pseudo_id]
+WITH EXECUTE AS CALLER
+After INSERT
+AS
+BEGIN
+    INSERT INTO event_log (
+		dt_change,
+        change_type,
+        table_id,
+        record_id
+	) select
+		GETDATE(), -- current time inc ms
+        0, -- insert
+        27, -- patient_pseudo_id
+        id from inserted
+  END
+GO
+ALTER TABLE [patient_pseudo_id] ENABLE TRIGGER [after_patient_pseudo_id_insert]
+GO
+CREATE TRIGGER [after_patient_pseudo_id_update]
+ON [patient_pseudo_id]
+WITH EXECUTE AS CALLER
+After UPDATE
+AS
+BEGIN
+    INSERT INTO event_log (
+		dt_change,
+        change_type,
+        table_id,
+        record_id
+	) select
+		GETDATE(), -- current time inc ms
+        1, -- update
+        27, -- patient_pseudo_id
+        id from deleted
+  END
+GO
+ALTER TABLE [patient_pseudo_id] ENABLE TRIGGER [after_patient_pseudo_id_update]
+GO
+CREATE TRIGGER [after_patient_pseudo_id_delete]
+ON [patient_pseudo_id]
+WITH EXECUTE AS CALLER
+After DELETE
+AS
+BEGIN
+    INSERT INTO event_log (
+		dt_change,
+        change_type,
+        table_id,
+        record_id
+	) select
+		GETDATE(), -- current time inc ms
+        2, -- delete
+        27, -- patient_pseudo_id
+        id from deleted
+  END
+GO
+ALTER TABLE [patient_pseudo_id] ENABLE TRIGGER [after_patient_pseudo_id_delete]
+GO
+
+
+
+CREATE TRIGGER [after_registration_status_history_insert]
+ON [registration_status_history]
+WITH EXECUTE AS CALLER
+After INSERT
+AS
+BEGIN
+    INSERT INTO event_log (
+		dt_change,
+        change_type,
+        table_id,
+        record_id
+	) select
+		GETDATE(), -- current time inc ms
+        0, -- insert
+        23, -- registration_status_history
+        id from inserted
+  END
+GO
+ALTER TABLE [registration_status_history] ENABLE TRIGGER [after_registration_status_history_insert]
+GO
+CREATE TRIGGER [after_registration_status_history_update]
+ON [registration_status_history]
+WITH EXECUTE AS CALLER
+After UPDATE
+AS
+BEGIN
+    INSERT INTO event_log (
+		dt_change,
+        change_type,
+        table_id,
+        record_id
+	) select
+		GETDATE(), -- current time inc ms
+        1, -- update
+        23, -- registration_status_history
+        id from deleted
+  END
+GO
+ALTER TABLE [registration_status_history] ENABLE TRIGGER [after_registration_status_history_update]
+GO
+CREATE TRIGGER [after_registration_status_history_delete]
+ON [registration_status_history]
+WITH EXECUTE AS CALLER
+After DELETE
+AS
+BEGIN
+    INSERT INTO event_log (
+		dt_change,
+        change_type,
+        table_id,
+        record_id
+	) select
+		GETDATE(), -- current time inc ms
+        2, -- delete
+        23, -- registration_status_history
+        id from deleted
+  END
+GO
+ALTER TABLE [registration_status_history] ENABLE TRIGGER [after_registration_status_history_delete]
 GO
 

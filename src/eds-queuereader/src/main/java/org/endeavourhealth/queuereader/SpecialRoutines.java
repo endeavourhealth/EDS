@@ -29,8 +29,10 @@ import org.endeavourhealth.core.database.dal.audit.models.*;
 import org.endeavourhealth.core.database.dal.eds.PatientSearchDalI;
 import org.endeavourhealth.core.database.dal.ehr.ResourceDalI;
 import org.endeavourhealth.core.database.dal.ehr.models.ResourceWrapper;
+import org.endeavourhealth.core.database.dal.subscriberTransform.SubscriberCohortDalI;
 import org.endeavourhealth.core.database.dal.subscriberTransform.SubscriberInstanceMappingDalI;
 import org.endeavourhealth.core.database.dal.subscriberTransform.SubscriberResourceMappingDalI;
+import org.endeavourhealth.core.database.dal.subscriberTransform.models.SubscriberCohortRecord;
 import org.endeavourhealth.core.database.dal.subscriberTransform.models.SubscriberId;
 import org.endeavourhealth.core.database.dal.usermanager.caching.DataSharingAgreementCache;
 import org.endeavourhealth.core.database.dal.usermanager.caching.OrganisationCache;
@@ -58,13 +60,18 @@ import org.endeavourhealth.subscriber.filer.SubscriberFiler;
 import org.endeavourhealth.transform.common.*;
 import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
 import org.endeavourhealth.transform.enterprise.EnterpriseTransformHelper;
+import org.endeavourhealth.transform.enterprise.FhirToEnterpriseCsvTransformer;
 import org.endeavourhealth.transform.enterprise.ObservationCodeHelper;
+import org.endeavourhealth.transform.enterprise.outputModels.AbstractEnterpriseCsvWriter;
 import org.endeavourhealth.transform.enterprise.transforms.OrganisationEnterpriseTransformer;
+import org.endeavourhealth.transform.enterprise.transforms.PatientEnterpriseTransformer;
 import org.endeavourhealth.transform.fhirhl7v2.FhirHl7v2Filer;
 import org.endeavourhealth.transform.fhirhl7v2.transforms.EncounterTransformer;
 import org.endeavourhealth.transform.subscriber.*;
 import org.endeavourhealth.transform.subscriber.targetTables.OutputContainer;
+import org.endeavourhealth.transform.subscriber.targetTables.SubscriberTableId;
 import org.endeavourhealth.transform.subscriber.transforms.OrganisationTransformer;
+import org.endeavourhealth.transform.subscriber.transforms.PatientTransformer;
 import org.hl7.fhir.instance.model.*;
 import org.hl7.fhir.instance.model.Resource;
 import org.slf4j.Logger;
@@ -4378,6 +4385,121 @@ public abstract class SpecialRoutines {
             }
 
             LOG.debug("Finished Doing Bulk Subscriber Transform for Admin Data foe " + odsCodes);
+        } catch (Throwable t) {
+            LOG.error("", t);
+        }
+    }
+
+    public static void populateCompassPatientPseudoIdTable(String subscriberConfigName, String orgOdsCodeRegex) {
+        LOG.debug("Populating Compass Patient Pseudo ID Table for " + subscriberConfigName + " regex " + orgOdsCodeRegex);
+        try {
+
+            ServiceDalI serviceDal = DalProvider.factoryServiceDal();
+            List<Service> services = serviceDal.getAll();
+
+            PatientSearchDalI patientSearchDal = DalProvider.factoryPatientSearchDal();
+            SubscriberCohortDalI subscriberCohortDalI = DalProvider.factorySubscriberCohortDal();
+            ResourceDalI resourceDal = DalProvider.factoryResourceDal();
+
+            SubscriberConfig subscriberConfig = SubscriberConfig.readFromConfig(subscriberConfigName);
+
+            for (Service service: services) {
+
+                if (shouldSkipService(service, orgOdsCodeRegex)) {
+                    continue;
+                }
+
+                LOG.debug("Doing " + service);
+
+                UUID serviceId = service.getId();
+
+                List<UUID> patientIds = patientSearchDal.getPatientIds(serviceId, false);
+                LOG.debug("Found " + patientIds.size() + " patients");
+
+                org.endeavourhealth.transform.enterprise.outputModels.OutputContainer compassV1Container = null;
+                OutputContainer compassV2Container = null;
+                if (subscriberConfig.getSubscriberType() == SubscriberConfig.SubscriberType.CompassV1) {
+                    compassV1Container = new org.endeavourhealth.transform.enterprise.outputModels.OutputContainer(subscriberConfig.isPseudonymised());
+
+                } else if (subscriberConfig.getSubscriberType() == SubscriberConfig.SubscriberType.CompassV2) {
+                    compassV2Container = new OutputContainer();
+
+                } else {
+                    throw new Exception("Unexpected subscriber type [" + subscriberConfig.getSubscriberType() + "]");
+                }
+
+
+                for (UUID patientId: patientIds) {
+
+                    //check if in cohort
+                    SubscriberCohortRecord cohortRecord = subscriberCohortDalI.getLatestCohortRecord(subscriberConfigName, patientId, UUID.randomUUID());
+                    if (cohortRecord == null
+                            || !cohortRecord.isInCohort()) {
+                        continue;
+                    }
+
+                    //retrieve FHIR patient
+                    ResourceWrapper patientWrapper = resourceDal.getCurrentVersion(serviceId, ResourceType.Patient.toString(), patientId);
+                    if (patientWrapper == null
+                            || patientWrapper.isDeleted()) {
+                        throw new Exception("Null patient resource for patient ID " + patientId);
+                    }
+                    List<ResourceWrapper> wrappers = new ArrayList<>();
+                    wrappers.add(patientWrapper);
+
+                    //transform patient
+                    if (subscriberConfig.getSubscriberType() == SubscriberConfig.SubscriberType.CompassV1) {
+                        EnterpriseTransformHelper params = new EnterpriseTransformHelper(serviceId, null, null, null, subscriberConfig, wrappers, false, compassV1Container);
+                        Long orgId = FhirToEnterpriseCsvTransformer.findEnterpriseOrgId(serviceId, params);
+                        params.setEnterpriseOrganisationId(orgId);
+                        AbstractEnterpriseCsvWriter writer = compassV1Container.getPatients();
+                        PatientEnterpriseTransformer t = new PatientEnterpriseTransformer();
+                        t.transformResources(wrappers, writer, params);
+
+                    } else if (subscriberConfig.getSubscriberType() == SubscriberConfig.SubscriberType.CompassV2) {
+                        SubscriberTransformHelper params = new SubscriberTransformHelper(serviceId, null, null, null, subscriberConfig, wrappers, false, compassV2Container);
+                        Long orgId = FhirToSubscriberCsvTransformer.findEnterpriseOrgId(serviceId, params, new ArrayList<>());
+                        params.setSubscriberOrganisationId(orgId);
+                        PatientTransformer t = new PatientTransformer();
+                        t.transformResources(wrappers, params);
+
+                    } else {
+                        throw new Exception("Unexpected subscriber type [" + subscriberConfig.getSubscriberType() + "]");
+                    }
+                }
+
+                if (subscriberConfig.getSubscriberType() == SubscriberConfig.SubscriberType.CompassV1) {
+
+                    List<String> toKeep = new ArrayList<>();
+                    toKeep.add("patient_pseudo_id");
+                    compassV1Container.clearDownOutputContainer(toKeep);
+
+                    byte[] bytes = compassV1Container.writeToZip();
+                    if (bytes != null) {
+                        String base64 = Base64.getEncoder().encodeToString(bytes);
+                        UUID batchId = UUID.randomUUID();
+                        EnterpriseFiler.file(batchId, UUID.randomUUID(), base64, subscriberConfigName);
+                    }
+
+                } else if (subscriberConfig.getSubscriberType() == SubscriberConfig.SubscriberType.CompassV2) {
+
+                    List<SubscriberTableId> toKeep = new ArrayList<>();
+                    toKeep.add(SubscriberTableId.PATIENT_PSEUDO_ID);
+                    compassV2Container.clearDownOutputContainer(toKeep);
+
+                    byte[] bytes = compassV2Container.writeToZip();
+                    if (bytes != null) {
+                        String base64 = Base64.getEncoder().encodeToString(bytes);
+                        UUID batchId = UUID.randomUUID();
+                        SubscriberFiler.file(batchId, UUID.randomUUID(), base64, subscriberConfigName);
+                    }
+
+                } else {
+                    throw new Exception("Unexpected subscriber type [" + subscriberConfig.getSubscriberType() + "]");
+                }
+            }
+
+            LOG.debug("Finished Populating Compass Patient Pseudo ID Table for " + subscriberConfigName + " regex " + orgOdsCodeRegex);
         } catch (Throwable t) {
             LOG.error("", t);
         }
