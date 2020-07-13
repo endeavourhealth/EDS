@@ -4409,6 +4409,12 @@ public abstract class SpecialRoutines {
                     continue;
                 }
 
+                List<String> subscriberConfigNames = RunDataDistributionProtocols.getSubscriberConfigNamesFromOldProtocols(service.getId());
+                if (!subscriberConfigNames.contains(subscriberConfigName)) {
+                    LOG.debug("Skipping " + service + " as not a publisher");
+                    continue;
+                }
+
                 LOG.debug("Doing " + service);
 
                 UUID serviceId = service.getId();
