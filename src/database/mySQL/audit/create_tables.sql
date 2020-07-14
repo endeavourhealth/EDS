@@ -29,6 +29,7 @@ DROP TABLE IF EXISTS last_data_processed;
 DROP TABLE IF EXISTS exchange_subscriber_send_audit;
 DROP TABLE IF EXISTS application_heartbeat;
 DROP TABLE IF EXISTS last_data_to_subscriber;
+DROP TABLE IF EXISTS bulk_operation_audit;
 
 CREATE TABLE `exchange`
 (
@@ -345,6 +346,14 @@ create table last_data_to_subscriber (
 
 create index ix_service_id on last_data_to_subscriber (service_id, system_id);
 
+
+create table bulk_operation_audit (
+  service_id char(36),
+  operation_name varchar(255),
+  `status` int,
+  started datetime(3),
+  finished datetime(3)
+) COMMENT 'table to audit one-off bulk routines';
 
 
 

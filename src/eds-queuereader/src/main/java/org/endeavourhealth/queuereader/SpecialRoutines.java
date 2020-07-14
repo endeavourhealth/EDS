@@ -26,11 +26,14 @@ import org.endeavourhealth.core.database.dal.admin.models.Service;
 import org.endeavourhealth.core.database.dal.audit.ExchangeBatchDalI;
 import org.endeavourhealth.core.database.dal.audit.ExchangeDalI;
 import org.endeavourhealth.core.database.dal.audit.models.*;
+import org.endeavourhealth.core.database.dal.eds.PatientLinkDalI;
 import org.endeavourhealth.core.database.dal.eds.PatientSearchDalI;
+import org.endeavourhealth.core.database.dal.eds.models.PatientLinkPair;
 import org.endeavourhealth.core.database.dal.ehr.ResourceDalI;
 import org.endeavourhealth.core.database.dal.ehr.models.ResourceWrapper;
 import org.endeavourhealth.core.database.dal.subscriberTransform.SubscriberCohortDalI;
 import org.endeavourhealth.core.database.dal.subscriberTransform.SubscriberInstanceMappingDalI;
+import org.endeavourhealth.core.database.dal.subscriberTransform.SubscriberPersonMappingDalI;
 import org.endeavourhealth.core.database.dal.subscriberTransform.SubscriberResourceMappingDalI;
 import org.endeavourhealth.core.database.dal.subscriberTransform.models.SubscriberCohortRecord;
 import org.endeavourhealth.core.database.dal.subscriberTransform.models.SubscriberId;
@@ -62,7 +65,6 @@ import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
 import org.endeavourhealth.transform.enterprise.EnterpriseTransformHelper;
 import org.endeavourhealth.transform.enterprise.FhirToEnterpriseCsvTransformer;
 import org.endeavourhealth.transform.enterprise.ObservationCodeHelper;
-import org.endeavourhealth.transform.enterprise.outputModels.AbstractEnterpriseCsvWriter;
 import org.endeavourhealth.transform.enterprise.transforms.OrganisationEnterpriseTransformer;
 import org.endeavourhealth.transform.enterprise.transforms.PatientEnterpriseTransformer;
 import org.endeavourhealth.transform.fhirhl7v2.FhirHl7v2Filer;
@@ -4400,8 +4402,13 @@ public abstract class SpecialRoutines {
             PatientSearchDalI patientSearchDal = DalProvider.factoryPatientSearchDal();
             SubscriberCohortDalI subscriberCohortDalI = DalProvider.factorySubscriberCohortDal();
             ResourceDalI resourceDal = DalProvider.factoryResourceDal();
+            PatientLinkDalI patientLinkDal = DalProvider.factoryPatientLinkDal();
+            SubscriberPersonMappingDalI personIdDal = DalProvider.factorySubscriberPersonMappingDal(subscriberConfigName);
+            SubscriberResourceMappingDalI patientIdDal = DalProvider.factorySubscriberResourceMappingDal(subscriberConfigName);
 
             SubscriberConfig subscriberConfig = SubscriberConfig.readFromConfig(subscriberConfigName);
+
+            String bulkOperationName = "bulk load of patient_pseudo_id for " + subscriberConfigName;
 
             for (Service service: services) {
 
@@ -4415,27 +4422,23 @@ public abstract class SpecialRoutines {
                     continue;
                 }
 
-                LOG.debug("Doing " + service);
+                //check if already done
+                if (isServiceDoneBulkOperation(service, bulkOperationName)) {
+                    LOG.debug("Skipping " + service + " as already done");
+                    continue;
+                }
 
+                LOG.debug("Doing " + service);
                 UUID serviceId = service.getId();
 
                 List<UUID> patientIds = patientSearchDal.getPatientIds(serviceId, false);
                 LOG.debug("Found " + patientIds.size() + " patients");
 
+                int batchSize = 0;
                 org.endeavourhealth.transform.enterprise.outputModels.OutputContainer compassV1Container = null;
                 OutputContainer compassV2Container = null;
-                if (subscriberConfig.getSubscriberType() == SubscriberConfig.SubscriberType.CompassV1) {
-                    compassV1Container = new org.endeavourhealth.transform.enterprise.outputModels.OutputContainer(subscriberConfig.isPseudonymised());
 
-                } else if (subscriberConfig.getSubscriberType() == SubscriberConfig.SubscriberType.CompassV2) {
-                    compassV2Container = new OutputContainer();
-
-                } else {
-                    throw new Exception("Unexpected subscriber type [" + subscriberConfig.getSubscriberType() + "]");
-                }
-
-
-                for (UUID patientId: patientIds) {
+                for (UUID patientId : patientIds) {
 
                     //check if in cohort
                     SubscriberCohortRecord cohortRecord = subscriberCohortDalI.getLatestCohortRecord(subscriberConfigName, patientId, UUID.randomUUID());
@@ -4453,61 +4456,215 @@ public abstract class SpecialRoutines {
                     List<ResourceWrapper> wrappers = new ArrayList<>();
                     wrappers.add(patientWrapper);
 
+                    Patient fhirPatient = (Patient)patientWrapper.getResource();
+
+                    String discoveryPersonId = patientLinkDal.getPersonId(fhirPatient.getId());
+                    if (Strings.isNullOrEmpty(discoveryPersonId)) {
+                        PatientLinkPair pair = patientLinkDal.updatePersonId(serviceId, fhirPatient);
+                        discoveryPersonId = pair.getNewPersonId();
+                    }
+                    Long enterprisePersonId = personIdDal.findOrCreateEnterprisePersonId(discoveryPersonId);
+
                     //transform patient
                     if (subscriberConfig.getSubscriberType() == SubscriberConfig.SubscriberType.CompassV1) {
+
+                        if (compassV1Container == null) {
+                            compassV1Container = new org.endeavourhealth.transform.enterprise.outputModels.OutputContainer(subscriberConfig.isPseudonymised());
+                        }
+
+                        Long enterprisePatientId = patientIdDal.findEnterpriseIdOldWay(patientWrapper.getResourceType(), patientWrapper.getResourceId().toString());
+                        if (enterprisePatientId == null) {
+                            throw new Exception("Failed to find enterprisePatientId for patient " + patientWrapper.getResourceId());
+                        }
+
                         EnterpriseTransformHelper params = new EnterpriseTransformHelper(serviceId, null, null, null, subscriberConfig, wrappers, false, compassV1Container);
                         Long orgId = FhirToEnterpriseCsvTransformer.findEnterpriseOrgId(serviceId, params);
                         params.setEnterpriseOrganisationId(orgId);
-                        AbstractEnterpriseCsvWriter writer = compassV1Container.getPatients();
                         PatientEnterpriseTransformer t = new PatientEnterpriseTransformer();
-                        t.transformResources(wrappers, writer, params);
+                        t.transformPseudoIds(orgId.longValue(), enterprisePatientId.longValue(), enterprisePersonId.longValue(), fhirPatient, patientWrapper, params);
+                        //t.transformResources(wrappers, writer, params);
+
+                        //if batch is full then save what we've done
+                        batchSize++;
+                        if (batchSize >= 100) {
+                            saveCompassV1PseudoIdData(subscriberConfigName, compassV1Container);
+                            compassV1Container = null;
+                            batchSize = 0;
+                        }
 
                     } else if (subscriberConfig.getSubscriberType() == SubscriberConfig.SubscriberType.CompassV2) {
+
+                        if (compassV2Container == null) {
+                            compassV2Container = new OutputContainer();
+                        }
+
+                        String ref = patientWrapper.getReferenceString();
+                        SubscriberId subscriberPatientId = patientIdDal.findSubscriberId(SubscriberTableId.PATIENT.getId(), ref);
+                        if (subscriberPatientId == null) {
+                            throw new Exception("Failed to find subscriberPatientId for " + ref);
+                        }
+
                         SubscriberTransformHelper params = new SubscriberTransformHelper(serviceId, null, null, null, subscriberConfig, wrappers, false, compassV2Container);
                         Long orgId = FhirToSubscriberCsvTransformer.findEnterpriseOrgId(serviceId, params, new ArrayList<>());
                         params.setSubscriberOrganisationId(orgId);
                         PatientTransformer t = new PatientTransformer();
-                        t.transformResources(wrappers, params);
+                        t.transformPseudoIdsNewWay(orgId.longValue(), subscriberPatientId.getSubscriberId(), enterprisePersonId.longValue(), fhirPatient, patientWrapper, params);
+
+                        //if batch is full then save what we've done
+                        batchSize++;
+                        if (batchSize >= 100) {
+                            saveCompassV2PseudoIdData(subscriberConfigName, compassV2Container);
+                            compassV2Container = null;
+                            batchSize = 0;
+                        }
 
                     } else {
                         throw new Exception("Unexpected subscriber type [" + subscriberConfig.getSubscriberType() + "]");
                     }
                 }
 
-                if (subscriberConfig.getSubscriberType() == SubscriberConfig.SubscriberType.CompassV1) {
+                //save any part-completed batch
+                if (batchSize >= 0) {
 
-                    List<String> toKeep = new ArrayList<>();
-                    toKeep.add("patient_pseudo_id");
-                    compassV1Container.clearDownOutputContainer(toKeep);
+                    if (subscriberConfig.getSubscriberType() == SubscriberConfig.SubscriberType.CompassV1) {
+                        saveCompassV1PseudoIdData(subscriberConfigName, compassV1Container);
 
-                    byte[] bytes = compassV1Container.writeToZip();
-                    if (bytes != null) {
-                        String base64 = Base64.getEncoder().encodeToString(bytes);
-                        UUID batchId = UUID.randomUUID();
-                        EnterpriseFiler.file(batchId, UUID.randomUUID(), base64, subscriberConfigName);
+                    } else if (subscriberConfig.getSubscriberType() == SubscriberConfig.SubscriberType.CompassV2) {
+                        saveCompassV2PseudoIdData(subscriberConfigName, compassV2Container);
+
+                    } else {
+                        throw new Exception("Unexpected subscriber type [" + subscriberConfig.getSubscriberType() + "]");
                     }
-
-                } else if (subscriberConfig.getSubscriberType() == SubscriberConfig.SubscriberType.CompassV2) {
-
-                    List<SubscriberTableId> toKeep = new ArrayList<>();
-                    toKeep.add(SubscriberTableId.PATIENT_PSEUDO_ID);
-                    compassV2Container.clearDownOutputContainer(toKeep);
-
-                    byte[] bytes = compassV2Container.writeToZip();
-                    if (bytes != null) {
-                        String base64 = Base64.getEncoder().encodeToString(bytes);
-                        UUID batchId = UUID.randomUUID();
-                        SubscriberFiler.file(batchId, UUID.randomUUID(), base64, subscriberConfigName);
-                    }
-
-                } else {
-                    throw new Exception("Unexpected subscriber type [" + subscriberConfig.getSubscriberType() + "]");
                 }
+
+                //audit that we've done
+                setServiceDoneBulkOperation(service, bulkOperationName);
             }
 
             LOG.debug("Finished Populating Compass Patient Pseudo ID Table for " + subscriberConfigName + " regex " + orgOdsCodeRegex);
         } catch (Throwable t) {
             LOG.error("", t);
+        }
+    }
+
+
+    /**
+     * checks if the given service has already done the given bulk operation and audits the start if not
+     */
+    private static boolean isServiceDoneBulkOperation(Service service, String bulkOperationName) throws Exception {
+
+        Connection connection = ConnectionManager.getAuditConnection();
+        PreparedStatement ps = null;
+        try {
+            String sql = "SELECT 1 "
+                    + "FROM bulk_operation_audit "
+                    + "WHERE service_id = ? "
+                    + "AND operation_name = ? "
+                    + "AND status = ? ";
+            ps = connection.prepareStatement(sql);
+            int col = 1;
+            ps.setString(col++, service.getId().toString());
+            ps.setString(col++, bulkOperationName);
+            ps.setInt(col++, 1); //1 = done
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return true;
+            }
+
+        } finally {
+            if (ps != null) {
+                ps.close();
+            }
+            connection.close();
+        }
+
+        //if not done, audit that we're doing it
+        connection = ConnectionManager.getAuditConnection();
+        ps = null;
+        try {
+            String sql = "INSERT INTO bulk_operation_audit (service_id, operation_name, status, started) "
+                    + " VALUES (?, ?, ?, ?)";
+            ps = connection.prepareStatement(sql);
+            int col = 1;
+            ps.setString(col++, service.getId().toString());
+            ps.setString(col++, bulkOperationName);
+            ps.setInt(col++, 0); //0 = started
+            ps.setTimestamp(col++, new java.sql.Timestamp(new Date().getTime()));
+            ps.executeUpdate();
+            connection.commit();
+
+            return false;
+
+        } catch (Exception ex) {
+            connection.rollback();
+            throw ex;
+
+        } finally {
+            if (ps != null) {
+                ps.close();
+            }
+            connection.close();
+        }
+    }
+
+    /**
+     * updates the bulk operation audit table to say the given bulk is done
+     */
+    private static void setServiceDoneBulkOperation(Service service, String bulkOperationName) throws Exception {
+
+        Connection connection = ConnectionManager.getAuditConnection();
+        PreparedStatement ps = null;
+        try {
+            String sql = "UPDATE bulk_operation_audit "
+                    + " SET status = ?, finished = ? "
+                    + "WHERE service_id = ? "
+                    + "AND operation_name = ? "
+                    + "AND status = ?";
+            ps = connection.prepareStatement(sql);
+            int col = 1;
+            ps.setInt(col++, 1); //1 = done
+            ps.setTimestamp(col++, new java.sql.Timestamp(new Date().getTime()));
+            ps.setString(col++, service.getId().toString());
+            ps.setString(col++, bulkOperationName);
+            ps.setInt(col++, 0); //0 = started
+            ps.executeUpdate();
+            connection.commit();
+
+        } catch (Exception ex) {
+            connection.rollback();
+            throw ex;
+
+        } finally {
+            if (ps != null) {
+                ps.close();
+            }
+            connection.close();
+        }
+    }
+
+    private static void saveCompassV2PseudoIdData(String subscriberConfigName, OutputContainer compassV2Container) throws Exception {
+        List<SubscriberTableId> toKeep = new ArrayList<>();
+        toKeep.add(SubscriberTableId.PATIENT_PSEUDO_ID);
+        compassV2Container.clearDownOutputContainer(toKeep);
+
+        byte[] bytes = compassV2Container.writeToZip();
+        if (bytes != null) {
+            String base64 = Base64.getEncoder().encodeToString(bytes);
+            UUID batchId = UUID.randomUUID();
+            SubscriberFiler.file(batchId, UUID.randomUUID(), base64, subscriberConfigName);
+        }
+    }
+
+    private static void saveCompassV1PseudoIdData(String subscriberConfigName, org.endeavourhealth.transform.enterprise.outputModels.OutputContainer compassV1Container) throws Exception {
+        List<String> toKeep = new ArrayList<>();
+        toKeep.add("patient_pseudo_id");
+        compassV1Container.clearDownOutputContainer(toKeep);
+
+        byte[] bytes = compassV1Container.writeToZip();
+        if (bytes != null) {
+            String base64 = Base64.getEncoder().encodeToString(bytes);
+            UUID batchId = UUID.randomUUID();
+            EnterpriseFiler.file(batchId, UUID.randomUUID(), base64, subscriberConfigName);
         }
     }
 }
