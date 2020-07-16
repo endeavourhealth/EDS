@@ -541,7 +541,7 @@ public class QueueHelper {
 
                 //LOG.info("Creating exchange batches for " + patientUuids.size() + " patients");
                 LOG.debug("Creating exchange baches for new exchange " + exchange.getId() + " and " + patientUuids.size() + " patients");
-                createExchangeBatches(exchange, patientUuids);
+                createExchangeBatches(exchange, patientUuids, doAdminResources);
 
                 //post to InboundQueue
                 LOG.debug("Posting to protocol queue");
@@ -609,15 +609,16 @@ public class QueueHelper {
         return null;
     }
 
-    private static void createExchangeBatches(Exchange exchange, List<UUID> patientUuids) throws Exception {
+    private static void createExchangeBatches(Exchange exchange, List<UUID> patientUuids, boolean createAdminBatch) throws Exception {
 
         ExchangeBatchDalI exchangeBatchDal = DalProvider.factoryExchangeBatchDal();
         List<ExchangeBatch> batches = new ArrayList<>();
         int done = 0;
 
-        //create an admin batch
-        batches.add(createBatch(exchange, null));
-        done ++;
+        if (createAdminBatch) {
+            batches.add(createBatch(exchange, null));
+            done ++;
+        }
 
         for (UUID patientId: patientUuids) {
             batches.add(createBatch(exchange, patientId));

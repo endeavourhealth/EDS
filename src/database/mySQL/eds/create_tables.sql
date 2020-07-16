@@ -121,8 +121,8 @@ CREATE UNIQUE INDEX uix_patient_search_episode_id
 CREATE TABLE patient_search_local_identifier
 (
 	service_id char(36) NOT NULL,
-	local_id varchar(1000),
-	local_id_system varchar(1000),
+	local_id varchar(255),
+	local_id_system varchar(255),
 	patient_id char(36) NOT NULL,
 	last_updated timestamp NOT NULL,
 	dt_deleted datetime,

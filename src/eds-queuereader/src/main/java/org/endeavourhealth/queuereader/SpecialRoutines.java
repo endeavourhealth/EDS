@@ -3838,7 +3838,7 @@ public abstract class SpecialRoutines {
                 }
             }
 
-            LOG.debug("Finished Finding Emis Services that Need Re-processing");
+            LOG.debug("Finished Finding TPP Services that Need Re-processing");
         } catch (Throwable t) {
             LOG.error("", t);
         }
