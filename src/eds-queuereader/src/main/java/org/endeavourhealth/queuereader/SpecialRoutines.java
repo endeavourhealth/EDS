@@ -4676,6 +4676,7 @@ public abstract class SpecialRoutines {
 
             ServiceDalI serviceDal = DalProvider.factoryServiceDal();
             PatientSearchDalI patientSearchDal = DalProvider.factoryPatientSearchDal();
+            ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
 
             List<Service> services = serviceDal.getAll();
 
@@ -4691,15 +4692,54 @@ public abstract class SpecialRoutines {
                     continue;
                 }
 
-                UUID serviceId = service.getId();
-                List<UUID> patientIds = patientSearchDal.getPatientIds(serviceId, false);
-                LOG.debug("Found " + patientIds.size() + " patient IDs");
+                LOG.debug("Doing " + service);
 
-                for (UUID patientId: patientIds) {
+                UUID serviceId = service.getId();
+                List<UUID> systemIds = SystemHelper.getSystemIdsForService(service);
+                if (systemIds.size() != 1) {
+                    throw new Exception("" + systemIds.size() + " system IDs found");
+                }
+                UUID systemId = systemIds.get(0);
+
+                Set<Long> hsImmunisationDone = new HashSet<>();
+
+                List<Exchange> exchanges = exchangeDal.getExchangesByService(serviceId, systemId, Integer.MAX_VALUE);
+
+                for (int i=0; i<exchanges.size(); i++) {
+                    Exchange exchange = exchanges.get(i);
+
+                    String exchangeBody = exchange.getBody();
+                    List<ExchangePayloadFile> files = ExchangeHelper.parseExchangeBody(exchangeBody);
+
+                    for (ExchangePayloadFile file: files) {
+                        if (file.getType().equals("Immunisation")) {
+
+                            String path = file.getPath();
+                            InputStreamReader isr = FileHelper.readFileReaderFromSharedStorage(path);
+                            CSVParser parser = new CSVParser(isr, CSVFormat.DEFAULT.withHeader());
+                            Iterator<CSVRecord> iterator = parser.iterator();
+
+                            while (iterator.hasNext()) {
+                                CSVRecord record = iterator.next();
+                                Long recordId = Long.valueOf(record.get("RowIdentifier"));
+                                if (!hsImmunisationDone.contains(recordId)) {
+
+                                    String doneBy = record.get("IDDoneBy");
+                                    String doneAt = record.get("IDOrganisationDoneAt");
+
+                                    if (!Strings.isNullOrEmpty(doneAt)
+                                            && (Strings.isNullOrEmpty(doneBy) || Long.parseLong(doneBy) <= 0)) {
+
+
+                                    }
+
+                                    hsImmunisationDone.add(recordId);
+                                }
+                            }
+                        }
+                    }
 
                 }
-
-                LOG.debug("Doing " + service);
             }
 
             LOG.debug("Finished fixing missing TPP practitioner at " + orgOdsCodeRegex);
@@ -4732,13 +4772,15 @@ public abstract class SpecialRoutines {
 
                 Map<String, String> tags = service.getTags();
                 if (tags == null
-                        || !tags.containsKey("Emis")) {
+                        || !tags.containsKey("EMIS")) {
                     continue;
                 }
 
                 if (shouldSkipService(service, orgOdsCodeRegex)) {
                     continue;
                 }
+
+                LOG.debug("Doing " + service);
 
                 UUID serviceId = service.getId();
                 List<UUID> systemIds = SystemHelper.getSystemIdsForService(service);
@@ -4814,7 +4856,7 @@ public abstract class SpecialRoutines {
 
             printer.close();
 
-            LOG.debug("Find Emis episodes changing date at " + orgOdsCodeRegex);
+            LOG.debug("Finished Find Emis episodes changing date at " + orgOdsCodeRegex);
         } catch (Throwable t) {
             LOG.error("", t);
         }
