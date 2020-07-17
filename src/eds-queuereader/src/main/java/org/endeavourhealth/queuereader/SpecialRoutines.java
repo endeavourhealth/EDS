@@ -4451,7 +4451,9 @@ public abstract class SpecialRoutines {
                     ResourceWrapper patientWrapper = resourceDal.getCurrentVersion(serviceId, ResourceType.Patient.toString(), patientId);
                     if (patientWrapper == null
                             || patientWrapper.isDeleted()) {
-                        throw new Exception("Null patient resource for patient ID " + patientId);
+                        LOG.warn("Null patient resource for patient ID " + patientId);
+                        continue;
+                        //throw new Exception("Null patient resource for patient ID " + patientId);
                     }
                     List<ResourceWrapper> wrappers = new ArrayList<>();
                     wrappers.add(patientWrapper);
