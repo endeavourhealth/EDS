@@ -4669,4 +4669,154 @@ public abstract class SpecialRoutines {
             EnterpriseFiler.file(batchId, UUID.randomUUID(), base64, subscriberConfigName);
         }
     }
+
+    public static void fixTppMissingPractitioners(String orgOdsCodeRegex) {
+        LOG.debug("Fixing missing TPP practitioner at " + orgOdsCodeRegex);
+        try {
+
+            ServiceDalI serviceDal = DalProvider.factoryServiceDal();
+            PatientSearchDalI patientSearchDal = DalProvider.factoryPatientSearchDal();
+
+            List<Service> services = serviceDal.getAll();
+
+            for (Service service: services) {
+
+                Map<String, String> tags = service.getTags();
+                if (tags == null
+                        || !tags.containsKey("TPP")) {
+                    continue;
+                }
+
+                if (shouldSkipService(service, orgOdsCodeRegex)) {
+                    continue;
+                }
+
+                UUID serviceId = service.getId();
+                List<UUID> patientIds = patientSearchDal.getPatientIds(serviceId, false);
+                LOG.debug("Found " + patientIds.size() + " patient IDs");
+
+                for (UUID patientId: patientIds) {
+
+                }
+
+                LOG.debug("Doing " + service);
+            }
+
+            LOG.debug("Finished fixing missing TPP practitioner at " + orgOdsCodeRegex);
+        } catch (Throwable t) {
+            LOG.error("", t);
+        }
+    }
+
+    public static void findEmisEpisodesChangingDate(String orgOdsCodeRegex) {
+        LOG.debug("Find Emis episodes changing date at " + orgOdsCodeRegex);
+        try {
+
+            ServiceDalI serviceDal = DalProvider.factoryServiceDal();
+            PatientSearchDalI patientSearchDal = DalProvider.factoryPatientSearchDal();
+            ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
+
+            File dstFile = new File("EmisEpisodesChangingDate.csv");
+            FileOutputStream fos = new FileOutputStream(dstFile);
+            OutputStreamWriter osw = new OutputStreamWriter(fos);
+            BufferedWriter bufferedWriter = new BufferedWriter(osw);
+
+            CSVFormat format = EmisCsvToFhirTransformer.CSV_FORMAT
+                    .withHeader("Name", "ODS Code", "PatientGuid", "PreviousStart", "ChangedStart", "PreviousFile", "ChangedFile"
+                    );
+            CSVPrinter printer = new CSVPrinter(bufferedWriter, format);
+
+            List<Service> services = serviceDal.getAll();
+
+            for (Service service: services) {
+
+                Map<String, String> tags = service.getTags();
+                if (tags == null
+                        || !tags.containsKey("Emis")) {
+                    continue;
+                }
+
+                if (shouldSkipService(service, orgOdsCodeRegex)) {
+                    continue;
+                }
+
+                UUID serviceId = service.getId();
+                List<UUID> systemIds = SystemHelper.getSystemIdsForService(service);
+                if (systemIds.size() != 1) {
+                    throw new Exception("" + systemIds.size() + " system IDs found");
+                }
+                UUID systemId = systemIds.get(0);
+
+                Map<String, String> hmPatientStartDates = new HashMap<>();
+                Map<String, String> hmPatientStartDatePaths = new HashMap<>();
+
+                List<Exchange> exchanges = exchangeDal.getExchangesByService(serviceId, systemId, Integer.MAX_VALUE);
+
+                for (int i=exchanges.size()-1; i>=0; i--) {
+                    Exchange exchange = exchanges.get(i);
+
+                    String exchangeBody = exchange.getBody();
+                    List<ExchangePayloadFile> files = ExchangeHelper.parseExchangeBody(exchangeBody);
+                    if (files.isEmpty() || files.size() == 1) {
+                        continue;
+                    }
+
+                    ExchangePayloadFile patientFile = null;
+                    for (ExchangePayloadFile file: files) {
+                        if (file.getType().equals("Admin_Patient")) {
+                            patientFile = file;
+                            break;
+                        }
+                    }
+
+                    if (patientFile == null) {
+                        LOG.warn("No patient file for exchange " + exchange.getId());
+                        continue;
+                    }
+
+                    String path = patientFile.getPath();
+                    InputStreamReader isr = FileHelper.readFileReaderFromSharedStorage(path);
+
+                    CSVParser parser = new CSVParser(isr, CSVFormat.DEFAULT.withHeader());
+                    Iterator<CSVRecord> iterator = parser.iterator();
+
+                    while (iterator.hasNext()) {
+                        CSVRecord record = iterator.next();
+
+                        String patientGuid = record.get("PatientGuid");
+                        String regDate = record.get("DateOfRegistration");
+                        String dedDate = record.get("DateOfDeactivation");
+
+                        if (!Strings.isNullOrEmpty(dedDate)) {
+                            hmPatientStartDates.remove(patientGuid);
+
+                        } else {
+
+                            String previousDate = hmPatientStartDates.get(patientGuid);
+                            String previousPath = hmPatientStartDatePaths.get(patientGuid);
+                            if (previousDate != null
+                                && !previousDate.equals(regDate)) {
+
+                                //reg date has changed
+                                LOG.debug("Patient " + patientGuid + " start date changed from " + previousDate + " to " + regDate);
+
+                                printer.printRecord(service.getName(), service.getLocalId(), patientGuid, previousDate, regDate, previousPath, path);
+                            }
+
+                            hmPatientStartDates.put(patientGuid, regDate);
+                            hmPatientStartDatePaths.put(patientGuid, path);
+                        }
+                    }
+
+                    parser.close();
+                }
+            }
+
+            printer.close();
+
+            LOG.debug("Find Emis episodes changing date at " + orgOdsCodeRegex);
+        } catch (Throwable t) {
+            LOG.error("", t);
+        }
+    }
 }

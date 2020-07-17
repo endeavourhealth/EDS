@@ -85,6 +85,30 @@ public class Main {
 		ConfigManager.initialize("queuereader", configId);
 
 		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("findEmisEpisodesChangingDate")) {
+
+			String orgOdsCodeRegex = null;
+			if (args.length > 2) {
+				orgOdsCodeRegex = args[2];
+			}
+
+			SpecialRoutines.findEmisEpisodesChangingDate(orgOdsCodeRegex);
+			System.exit(0);
+		}
+
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("fixTppMissingPractitioners")) {
+
+			String orgOdsCodeRegex = null;
+			if (args.length > 2) {
+				orgOdsCodeRegex = args[2];
+			}
+
+			SpecialRoutines.fixTppMissingPractitioners(orgOdsCodeRegex);
+			System.exit(0);
+		}
+
+		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("populateCompassPatientPseudoIdTable")) {
 
 			String sourceSubscriberConfigName = args[1];
