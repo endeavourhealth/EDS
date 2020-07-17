@@ -61,6 +61,7 @@ import org.endeavourhealth.im.client.IMClient;
 import org.endeavourhealth.subscriber.filer.EnterpriseFiler;
 import org.endeavourhealth.subscriber.filer.SubscriberFiler;
 import org.endeavourhealth.transform.common.*;
+import org.endeavourhealth.transform.common.resourceBuilders.ImmunizationBuilder;
 import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
 import org.endeavourhealth.transform.enterprise.EnterpriseTransformHelper;
 import org.endeavourhealth.transform.enterprise.FhirToEnterpriseCsvTransformer;
@@ -74,6 +75,7 @@ import org.endeavourhealth.transform.subscriber.targetTables.OutputContainer;
 import org.endeavourhealth.transform.subscriber.targetTables.SubscriberTableId;
 import org.endeavourhealth.transform.subscriber.transforms.OrganisationTransformer;
 import org.endeavourhealth.transform.subscriber.transforms.PatientTransformer;
+import org.endeavourhealth.transform.tpp.csv.helpers.TppCsvHelper;
 import org.hl7.fhir.instance.model.*;
 import org.hl7.fhir.instance.model.Resource;
 import org.slf4j.Logger;
@@ -4677,6 +4679,7 @@ public abstract class SpecialRoutines {
             ServiceDalI serviceDal = DalProvider.factoryServiceDal();
             PatientSearchDalI patientSearchDal = DalProvider.factoryPatientSearchDal();
             ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
+            ResourceDalI resourceDal = DalProvider.factoryResourceDal();
 
             List<Service> services = serviceDal.getAll();
 
@@ -4705,6 +4708,11 @@ public abstract class SpecialRoutines {
 
                 List<Exchange> exchanges = exchangeDal.getExchangesByService(serviceId, systemId, Integer.MAX_VALUE);
 
+                Exchange newExchange = null;
+                FhirResourceFiler fhirResourceFiler = null;
+                TppCsvHelper tppCsvHelper = null;
+
+
                 for (int i=0; i<exchanges.size(); i++) {
                     Exchange exchange = exchanges.get(i);
 
@@ -4721,7 +4729,9 @@ public abstract class SpecialRoutines {
 
                             while (iterator.hasNext()) {
                                 CSVRecord record = iterator.next();
-                                Long recordId = Long.valueOf(record.get("RowIdentifier"));
+
+                                String recordIdStr = record.get("RowIdentifier");
+                                Long recordId = Long.valueOf(recordIdStr);
                                 if (!hsImmunisationDone.contains(recordId)) {
 
                                     String doneBy = record.get("IDDoneBy");
@@ -4730,7 +4740,27 @@ public abstract class SpecialRoutines {
                                     if (!Strings.isNullOrEmpty(doneAt)
                                             && (Strings.isNullOrEmpty(doneBy) || Long.parseLong(doneBy) <= 0)) {
 
+                                        UUID uuid = IdHelper.getEdsResourceId(serviceId, ResourceType.Immunization, "" + recordIdStr);
+                                        if (uuid == null) {
+                                            throw new Exception("Failed to find resource UUID for " + ResourceType.Immunization + " " + recordIdStr);
+                                        }
 
+                                        tppCsvHelper.getStaffMemberCache().addRequiredStaffId(CsvCell.factoryDummyWrapper(doneBy), CsvCell.factoryDummyWrapper(doneAt));
+
+                                        Object obj = tppCsvHelper.getStaffMemberCache().findProfileIdForStaffMemberAndOrg(CsvCell.factoryDummyWrapper(doneBy), CsvCell.factoryDummyWrapper(doneAt));
+                                        if (!(obj instanceof String)) {
+                                            throw new Exception("Got " + obj.getClass() + " " + obj + " for doneBy " + doneBy + " and doneAt " + doneAt);
+                                        }
+                                        Reference reference = ReferenceHelper.createReference(ResourceType.Practitioner, (String)obj);
+                                        reference = IdHelper.convertLocallyUniqueReferenceToEdsReference(reference, fhirResourceFiler);
+
+                                        ResourceWrapper wrapper = resourceDal.getCurrentVersion(serviceId, ResourceType.Immunization.toString(), uuid);
+                                        Immunization resource = (Immunization)wrapper.getResource();
+                                        ImmunizationBuilder builder = new ImmunizationBuilder(resource);
+
+                                        builder.setPerformer(reference);
+
+                                        fhirResourceFiler.savePatientResource(null, false, builder);
                                     }
 
                                     hsImmunisationDone.add(recordId);
@@ -4740,6 +4770,14 @@ public abstract class SpecialRoutines {
                     }
 
                 }
+
+                //save the practitioners
+                tppCsvHelper.getStaffMemberCache().processChangedStaffMembers(tppCsvHelper, fhirResourceFiler);
+                fhirResourceFiler.waitUntilEverythingIsSaved();
+
+                //save exchange
+
+                //post into Protocol queue
             }
 
             LOG.debug("Finished fixing missing TPP practitioner at " + orgOdsCodeRegex);
@@ -4828,6 +4866,10 @@ public abstract class SpecialRoutines {
                         String patientGuid = record.get("PatientGuid");
                         String regDate = record.get("DateOfRegistration");
                         String dedDate = record.get("DateOfDeactivation");
+                        String deleted = record.get("Deleted");
+                        if (deleted.equals("true")) {
+                            continue;
+                        }
 
                         if (!Strings.isNullOrEmpty(dedDate)) {
                             hmPatientStartDates.remove(patientGuid);
