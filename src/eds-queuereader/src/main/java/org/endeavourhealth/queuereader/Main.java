@@ -320,6 +320,12 @@ public class Main {
 		}
 
 		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("TestInformationModelMapping")) {
+			SpecialRoutines.testInformationModelMapping();
+			System.exit(0);
+		}
+
+		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("BreakUpAdminBatches")) {
 			String odsCodeRegex = null;
 			if (args.length > 1) {

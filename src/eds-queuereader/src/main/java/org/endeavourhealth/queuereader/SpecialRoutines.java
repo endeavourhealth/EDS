@@ -58,6 +58,9 @@ import org.endeavourhealth.core.xml.QueryDocument.*;
 import org.endeavourhealth.core.xml.TransformErrorSerializer;
 import org.endeavourhealth.core.xml.transformError.TransformError;
 import org.endeavourhealth.im.client.IMClient;
+import org.endeavourhealth.im.models.mapping.MapColumnRequest;
+import org.endeavourhealth.im.models.mapping.MapColumnValueRequest;
+import org.endeavourhealth.im.models.mapping.MapResponse;
 import org.endeavourhealth.subscriber.filer.EnterpriseFiler;
 import org.endeavourhealth.subscriber.filer.SubscriberFiler;
 import org.endeavourhealth.transform.common.*;
@@ -78,8 +81,8 @@ import org.endeavourhealth.transform.subscriber.transforms.EpisodeOfCareTransfor
 import org.endeavourhealth.transform.subscriber.transforms.OrganisationTransformer;
 import org.endeavourhealth.transform.subscriber.transforms.PatientTransformer;
 import org.endeavourhealth.transform.tpp.csv.helpers.TppCsvHelper;
-import org.hl7.fhir.instance.model.*;
 import org.hl7.fhir.instance.model.Resource;
+import org.hl7.fhir.instance.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -99,8 +102,6 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
-
-import static org.endeavourhealth.core.xml.QueryDocument.ServiceContractType.PUBLISHER;
 
 public abstract class SpecialRoutines {
     private static final Logger LOG = LoggerFactory.getLogger(SpecialRoutines.class);
@@ -631,6 +632,28 @@ public abstract class SpecialRoutines {
         } catch (Throwable t) {
             LOG.error("", t);
         }
+    }
+
+    public static void testInformationModelMapping() throws Exception{
+        LOG.debug("Testing Information Model Mapping");
+
+        MapColumnRequest propertyRequest = new MapColumnRequest(
+                "CM_Org_Barts", "CM_Sys_Cerner", "CDS", "emergency",
+                "attendance_category"
+        );
+        MapResponse propertyResponse = IMClient.getMapProperty(propertyRequest);
+
+        String propertyConceptIri = propertyResponse.getConcept().getIri();
+        LOG.debug("For CM_Org_Barts, CM_Sys_Cerner, CDS, emergency, attendance_category, got propertyConceptIri: " + propertyConceptIri);
+
+        MapColumnValueRequest valueRequest = new MapColumnValueRequest(
+                "CM_Org_Barts", "CM_Sys_Cerner", "CDS", "emergency",
+                "attendance_category", "01", "CM_NHS_DD"
+        );
+        MapResponse valueResponse = IMClient.getMapPropertyValue(valueRequest);
+
+        String valueConceptIri = valueResponse.getConcept().getIri();
+        LOG.debug("Then for values, 01 and CM_NHS_DD, got valueConceptIri: " + valueConceptIri);
     }
 
     public static void testInformationModel() {
