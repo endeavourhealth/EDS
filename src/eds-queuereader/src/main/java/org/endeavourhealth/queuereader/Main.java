@@ -596,11 +596,10 @@ public class Main {
 
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("TransformAndFilePatientsAndEpisodesForProtocolServices")) {
-			String protocolName = args[1];
-			String subscriberConfigName = args[2];
-			String compassVersion = args[3];
+			String subscriberConfigName = args[1];
+			String orgOdsCodeRegex = args[2];
 
-			SpecialRoutines.transformAndFilePatientsAndEpisodesForProtocolServices(compassVersion, protocolName, subscriberConfigName);
+			SpecialRoutines.transformAndFilePatientsAndEpisodesForProtocolServices(subscriberConfigName, orgOdsCodeRegex);
 			System.exit(0);
 		}
 

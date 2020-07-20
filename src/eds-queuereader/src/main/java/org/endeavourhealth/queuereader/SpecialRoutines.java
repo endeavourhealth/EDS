@@ -66,6 +66,7 @@ import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
 import org.endeavourhealth.transform.enterprise.EnterpriseTransformHelper;
 import org.endeavourhealth.transform.enterprise.FhirToEnterpriseCsvTransformer;
 import org.endeavourhealth.transform.enterprise.ObservationCodeHelper;
+import org.endeavourhealth.transform.enterprise.transforms.EpisodeOfCareEnterpriseTransformer;
 import org.endeavourhealth.transform.enterprise.transforms.OrganisationEnterpriseTransformer;
 import org.endeavourhealth.transform.enterprise.transforms.PatientEnterpriseTransformer;
 import org.endeavourhealth.transform.fhirhl7v2.FhirHl7v2Filer;
@@ -73,6 +74,7 @@ import org.endeavourhealth.transform.fhirhl7v2.transforms.EncounterTransformer;
 import org.endeavourhealth.transform.subscriber.*;
 import org.endeavourhealth.transform.subscriber.targetTables.OutputContainer;
 import org.endeavourhealth.transform.subscriber.targetTables.SubscriberTableId;
+import org.endeavourhealth.transform.subscriber.transforms.EpisodeOfCareTransformer;
 import org.endeavourhealth.transform.subscriber.transforms.OrganisationTransformer;
 import org.endeavourhealth.transform.subscriber.transforms.PatientTransformer;
 import org.endeavourhealth.transform.tpp.csv.helpers.TppCsvHelper;
@@ -2065,96 +2067,171 @@ public abstract class SpecialRoutines {
 
     }
 
-    // For the protocol name provided, get the list of services which are publishers and send
-    // their transformed Patient and EpisodeOfCare FHIR resources to the Enterprise Filer
-    public static void transformAndFilePatientsAndEpisodesForProtocolServices (String compassVersion, String protocolName, String subscriberConfigName) throws Exception {
+	// For the config name provided, get the list of services which are publishers and send
+    // their transformed Patient and EpisodeOfCare FHIR resources to the Filer
+    public static void transformAndFilePatientsAndEpisodesForProtocolServices(String subscriberConfigName, String orgOdsCodeRegex) {
+        LOG.debug("Populating Compass Patient and Registration Status History Table for " + subscriberConfigName + " regex " + orgOdsCodeRegex);
+        try {
 
-        //find the protocol using the name parameter
-        LibraryItem matchedLibraryItem = BulkHelper.findProtocolLibraryItem(protocolName);
-        if (matchedLibraryItem == null) {
-            LOG.debug("Protocol not found : " + protocolName);
-            return;
-        }
-        UUID protocolUuid = UUID.fromString(matchedLibraryItem.getUuid());
-        ResourceDalI dal = DalProvider.factoryResourceDal();
-        PatientSearchDalI patientSearchDal = DalProvider.factoryPatientSearchDal();
+            ServiceDalI serviceDal = DalProvider.factoryServiceDal();
+            List<Service> services = serviceDal.getAll();
 
-        //get all the active publishing services for this protocol
-        List<ServiceContract> serviceContracts = matchedLibraryItem.getProtocol().getServiceContract();
-        for (ServiceContract serviceContract : serviceContracts) {
-            if (serviceContract.getType().equals(PUBLISHER)
-                    && serviceContract.getActive() == ServiceContractActive.TRUE) {
+            SubscriberCohortDalI subscriberCohortDalI = DalProvider.factorySubscriberCohortDal();
+            PatientSearchDalI patientSearchDal = DalProvider.factoryPatientSearchDal();
+            ResourceDalI resourceDal = DalProvider.factoryResourceDal();
+            PatientLinkDalI patientLinkDal = DalProvider.factoryPatientLinkDal();
+            SubscriberResourceMappingDalI patientIdDal = DalProvider.factorySubscriberResourceMappingDal(subscriberConfigName);
 
-                UUID serviceUuid = UUID.fromString(serviceContract.getService().getUuid());
+            SubscriberConfig subscriberConfig = SubscriberConfig.readFromConfig(subscriberConfigName);
 
-                List<UUID> patientIds = patientSearchDal.getPatientIds(serviceUuid, true);
+            String bulkOperationName = "bulk load of registration_status_history for " + subscriberConfigName;
+
+            for (Service service: services) {
+
+                if (shouldSkipService(service, orgOdsCodeRegex)) {
+                    continue;
+                }
+
+                List<String> subscriberConfigNames = RunDataDistributionProtocols.getSubscriberConfigNamesFromOldProtocols(service.getId());
+                if (!subscriberConfigNames.contains(subscriberConfigName)) {
+                    LOG.debug("Skipping " + service + " as not a publisher");
+                    continue;
+                }
+
+                //check if already done
+                if (isServiceDoneBulkOperation(service, bulkOperationName)) {
+                    LOG.debug("Skipping " + service + " as already done");
+                    continue;
+                }
+
+                LOG.debug("Doing " + service);
+                UUID serviceId = service.getId();
+
+                List<UUID> patientIds = patientSearchDal.getPatientIds(serviceId, false);
+                LOG.debug("Found " + patientIds.size() + " patients");
+
+                int batchSize = 0;
+                org.endeavourhealth.transform.enterprise.outputModels.OutputContainer compassV1Container = null;
+                OutputContainer compassV2Container = null;
+
                 for (UUID patientId : patientIds) {
 
-                    List<ResourceWrapper> patientResources = new ArrayList<>();
-                    UUID batchUuid = UUID.randomUUID();
-
-                    //need the Patient and the EpisodeOfCare resources for each service patient
-                    ResourceWrapper patientWrapper
-                            = dal.getCurrentVersion(serviceUuid, ResourceType.Patient.toString(), patientId);
-                    if (patientWrapper == null) {
-                        LOG.warn("Null patient resource for Patient " + patientId);
+                    //check if in cohort
+                    SubscriberCohortRecord cohortRecord = subscriberCohortDalI.getLatestCohortRecord(subscriberConfigName, patientId, UUID.randomUUID());
+                    if (cohortRecord == null
+                            || !cohortRecord.isInCohort()) {
                         continue;
                     }
-                    patientResources.add(patientWrapper);
 
-                    if (compassVersion.equalsIgnoreCase(COMPASS_V1)) {
-                        String patientContainerString
-                                = BulkHelper.getEnterpriseContainerForPatientData(patientResources, serviceUuid, batchUuid, protocolUuid, subscriberConfigName, patientId);
-
-                        //  Use  a random UUID for a queued message ID
-                        if (patientContainerString != null) {
-                            EnterpriseFiler.file(batchUuid, UUID.randomUUID(), patientContainerString, subscriberConfigName);
-                        }
-                    } else if (compassVersion.equalsIgnoreCase(COMPASS_V2)) {
-                        String patientContainerString
-                                = BulkHelper.getSubscriberContainerForPatientData(patientResources, serviceUuid, batchUuid, protocolUuid, subscriberConfigName, patientId);
-
-                        //  Use  a random UUID for a queued message ID
-                        if (patientContainerString != null) {
-                            SubscriberFiler.file(batchUuid, UUID.randomUUID(), patientContainerString, subscriberConfigName);
-                        }
-                    }
-
-                    List<ResourceWrapper> episodeResources = new ArrayList<>();
-
-                    //patient may have multiple episodes of care at the service, so pass them in
-                    List<ResourceWrapper> episodeWrappers
-                            = dal.getResourcesByPatient(serviceUuid, patientId, ResourceType.EpisodeOfCare.toString());
-
-                    if (episodeWrappers.isEmpty()) {
-                        LOG.warn("No episode resources for Patient " + patientId);
+                    //retrieve FHIR patient
+                    ResourceWrapper patientWrapper = resourceDal.getCurrentVersion(serviceId, ResourceType.Patient.toString(), patientId);
+                    if (patientWrapper == null
+                            || patientWrapper.isDeleted()) {
+                        LOG.warn("Null patient resource for patient ID " + patientId);
                         continue;
+                        //throw new Exception("Null patient resource for patient ID " + patientId);
                     }
-                    for (ResourceWrapper episodeWrapper: episodeWrappers  ) {
-                        episodeResources.add(episodeWrapper);
+                    List<ResourceWrapper> wrappers = new ArrayList<>();
+                    wrappers.add(patientWrapper);
+
+                    Patient fhirPatient = (Patient)patientWrapper.getResource();
+
+                    String discoveryPersonId = patientLinkDal.getPersonId(fhirPatient.getId());
+                    if (Strings.isNullOrEmpty(discoveryPersonId)) {
+                        PatientLinkPair pair = patientLinkDal.updatePersonId(serviceId, fhirPatient);
                     }
 
-                    if (compassVersion.equalsIgnoreCase(COMPASS_V1)) {
-                        String episodeContainerString
-                                = BulkHelper.getEnterpriseContainerForEpisodeData(episodeResources, serviceUuid, batchUuid, protocolUuid, subscriberConfigName, patientId);
+                    //transform patient
+                    if (subscriberConfig.getSubscriberType() == SubscriberConfig.SubscriberType.CompassV1) {
 
-                        //  Use  a random UUID for a queued message ID
-                        if (episodeContainerString != null) {
-                            EnterpriseFiler.file(batchUuid, UUID.randomUUID(), episodeContainerString, subscriberConfigName);
+                        if (compassV1Container == null) {
+                            compassV1Container = new org.endeavourhealth.transform.enterprise.outputModels.OutputContainer(subscriberConfig.isPseudonymised());
                         }
-                    } else if (compassVersion.equalsIgnoreCase(COMPASS_V2)) {
-                        String episodeContainerString
-                                = BulkHelper.getSubscriberContainerForEpisodeData(episodeResources, serviceUuid, batchUuid, protocolUuid, subscriberConfigName, patientId);
 
-                        //  Use  a random UUID for a queued message ID
-                        if (episodeContainerString != null) {
-                            SubscriberFiler.file(batchUuid, UUID.randomUUID(), episodeContainerString, subscriberConfigName);
+                        Long enterprisePatientId = patientIdDal.findEnterpriseIdOldWay(patientWrapper.getResourceType(), patientWrapper.getResourceId().toString());
+                        if (enterprisePatientId == null) {
+                            throw new Exception("Failed to find enterprisePatientId for patient " + patientWrapper.getResourceId());
                         }
+
+                        EnterpriseTransformHelper params = new EnterpriseTransformHelper(serviceId, null, null, null, subscriberConfig, wrappers, false, compassV1Container);
+                        Long orgId = FhirToEnterpriseCsvTransformer.findEnterpriseOrgId(serviceId, params);
+                        params.setEnterpriseOrganisationId(orgId);
+
+                        PatientEnterpriseTransformer t = new PatientEnterpriseTransformer();
+                        org.endeavourhealth.transform.enterprise.outputModels.Patient writer = params.getOutputContainer().getPatients();
+                        t.transformResources(wrappers, writer, params);
+
+                        List<ResourceWrapper> episodeWrappers = resourceDal.getResourcesByPatient(serviceId, patientId, ResourceType.EpisodeOfCare.toString());
+                        org.endeavourhealth.transform.enterprise.outputModels.EpisodeOfCare epidoseWriter = params.getOutputContainer().getEpisodesOfCare();
+                        params.populatePatientAndPersonIds();
+                        EpisodeOfCareEnterpriseTransformer eoc = new EpisodeOfCareEnterpriseTransformer();
+                        eoc.transformResources(episodeWrappers, epidoseWriter, params);
+
+                        //if batch is full then save what we've done
+                        batchSize++;
+                        if (batchSize >= 100) {
+                            saveCompassV1PatientData(subscriberConfigName, compassV1Container);
+                            compassV1Container = null;
+                            batchSize = 0;
+                        }
+
+                    } else if (subscriberConfig.getSubscriberType() == SubscriberConfig.SubscriberType.CompassV2) {
+
+                        if (compassV2Container == null) {
+                            compassV2Container = new OutputContainer();
+                        }
+
+                        String ref = patientWrapper.getReferenceString();
+                        SubscriberId subscriberPatientId = patientIdDal.findSubscriberId(SubscriberTableId.PATIENT.getId(), ref);
+                        if (subscriberPatientId == null) {
+                            throw new Exception("Failed to find subscriberPatientId for " + ref);
+                        }
+
+                        SubscriberTransformHelper params = new SubscriberTransformHelper(serviceId, null, null, null, subscriberConfig, wrappers, false, compassV2Container);
+                        Long orgId = FhirToSubscriberCsvTransformer.findEnterpriseOrgId(serviceId, params, new ArrayList<>());
+                        params.setSubscriberOrganisationId(orgId);
+                        PatientTransformer t = new PatientTransformer();
+                        t.transformResources(wrappers, params);
+
+                        List<ResourceWrapper> episodeWrappers = resourceDal.getResourcesByPatient(serviceId, patientId, ResourceType.EpisodeOfCare.toString());
+                        params.populatePatientAndPersonIds();
+                        EpisodeOfCareTransformer eoc = new EpisodeOfCareTransformer();
+                        eoc.transformResources(episodeWrappers, params);
+
+                        //if batch is full then save what we've done
+                        batchSize++;
+                        if (batchSize >= 100) {
+                            saveCompassV2PatientData(subscriberConfigName, compassV2Container);
+                            compassV2Container = null;
+                            batchSize = 0;
+                        }
+
+                    } else {
+                        throw new Exception("Unexpected subscriber type [" + subscriberConfig.getSubscriberType() + "]");
                     }
-
-
                 }
+
+                //save any part-completed batch
+                if (batchSize > 0) {
+
+                    if (subscriberConfig.getSubscriberType() == SubscriberConfig.SubscriberType.CompassV1) {
+                        saveCompassV1PatientData(subscriberConfigName, compassV1Container);
+
+                    } else if (subscriberConfig.getSubscriberType() == SubscriberConfig.SubscriberType.CompassV2) {
+                        saveCompassV2PatientData(subscriberConfigName, compassV2Container);
+
+                    } else {
+                        throw new Exception("Unexpected subscriber type [" + subscriberConfig.getSubscriberType() + "]");
+                    }
+                }
+
+                //audit that we've done
+                setServiceDoneBulkOperation(service, bulkOperationName);
             }
+
+            LOG.debug("Finished Populating Compass Patient Pseudo ID Table for " + subscriberConfigName + " regex " + orgOdsCodeRegex);
+        } catch (Throwable t) {
+            LOG.error("", t);
         }
     }
 
@@ -4901,6 +4978,38 @@ public abstract class SpecialRoutines {
             LOG.debug("Finished Find Emis episodes changing date at " + orgOdsCodeRegex);
         } catch (Throwable t) {
             LOG.error("", t);
+        }
+    }
+
+    private static void saveCompassV2PatientData(String subscriberConfigName, OutputContainer compassV2Container) throws Exception {
+        List<SubscriberTableId> toKeep = new ArrayList<>();
+        toKeep.add(SubscriberTableId.PATIENT);
+        toKeep.add(SubscriberTableId.PATIENT_ADDRESS);
+        toKeep.add(SubscriberTableId.PATIENT_CONTACT);
+        toKeep.add(SubscriberTableId.REGISTRATION_STATUS_HISTORY);
+        compassV2Container.clearDownOutputContainer(toKeep);
+
+        byte[] bytes = compassV2Container.writeToZip();
+        if (bytes != null) {
+            String base64 = Base64.getEncoder().encodeToString(bytes);
+            UUID batchId = UUID.randomUUID();
+            SubscriberFiler.file(batchId, UUID.randomUUID(), base64, subscriberConfigName);
+        }
+    }
+
+    private static void saveCompassV1PatientData(String subscriberConfigName, org.endeavourhealth.transform.enterprise.outputModels.OutputContainer compassV1Container) throws Exception {
+        List<String> toKeep = new ArrayList<>();
+        toKeep.add("patient");
+        toKeep.add("patient_address");
+        toKeep.add("patient_contact");
+        toKeep.add("registration_status_history");
+        compassV1Container.clearDownOutputContainer(toKeep);
+
+        byte[] bytes = compassV1Container.writeToZip();
+        if (bytes != null) {
+            String base64 = Base64.getEncoder().encodeToString(bytes);
+            UUID batchId = UUID.randomUUID();
+            EnterpriseFiler.file(batchId, UUID.randomUUID(), base64, subscriberConfigName);
         }
     }
 }
