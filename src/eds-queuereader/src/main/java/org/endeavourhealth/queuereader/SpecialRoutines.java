@@ -4528,7 +4528,7 @@ public abstract class SpecialRoutines {
                 }
 
                 //save any part-completed batch
-                if (batchSize >= 0) {
+                if (batchSize > 0) {
 
                     if (subscriberConfig.getSubscriberType() == SubscriberConfig.SubscriberType.CompassV1) {
                         saveCompassV1PseudoIdData(subscriberConfigName, compassV1Container);
