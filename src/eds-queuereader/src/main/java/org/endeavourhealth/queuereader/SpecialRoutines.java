@@ -2107,7 +2107,7 @@ public abstract class SpecialRoutines {
 
             SubscriberConfig subscriberConfig = SubscriberConfig.readFromConfig(subscriberConfigName);
 
-            String bulkOperationName = "bulk load of registration_status_history for " + subscriberConfigName;
+            String bulkOperationName = "bulk load of patient data and registration_status_history for " + subscriberConfigName;
 
             for (Service service: services) {
 
@@ -2185,10 +2185,10 @@ public abstract class SpecialRoutines {
                         t.transformResources(wrappers, writer, params);
 
                         List<ResourceWrapper> episodeWrappers = resourceDal.getResourcesByPatient(serviceId, patientId, ResourceType.EpisodeOfCare.toString());
-                        org.endeavourhealth.transform.enterprise.outputModels.EpisodeOfCare epidoseWriter = params.getOutputContainer().getEpisodesOfCare();
+                        org.endeavourhealth.transform.enterprise.outputModels.EpisodeOfCare episodeWriter = params.getOutputContainer().getEpisodesOfCare();
                         params.populatePatientAndPersonIds();
                         EpisodeOfCareEnterpriseTransformer eoc = new EpisodeOfCareEnterpriseTransformer();
-                        eoc.transformResources(episodeWrappers, epidoseWriter, params);
+                        eoc.transformResources(episodeWrappers, episodeWriter, params);
 
                         //if batch is full then save what we've done
                         batchSize++;
