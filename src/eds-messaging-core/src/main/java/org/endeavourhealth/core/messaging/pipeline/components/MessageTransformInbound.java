@@ -609,11 +609,15 @@ public class MessageTransformInbound extends PipelineComponent {
 		BhrutCsvToFhirTransformer.transform(exchangeBody, fhirResourceFiler, messageVersion);
 	}
 
+	/**
+	 *
+	 * @param exchange
+	 * @param fhirResourceFiler
+	 * @param version
+	 * @throws Exception
+	 */
 	private void processImperialHL7Transform(Exchange exchange, FhirResourceFiler fhirResourceFiler, String version) throws Exception {
-		UUID exchangeId = exchange.getId();
-		String exchangeBody = exchange.getBody();
-
-		FhirTransformer.transform(exchangeBody, fhirResourceFiler, version);
+		FhirTransformer.transform(exchange, fhirResourceFiler, version);
 	}
 
 }
