@@ -24,6 +24,7 @@ DROP TABLE IF EXISTS emis_user_in_role;
 DROP TABLE IF EXISTS emis_organisation_location;
 DROP TABLE IF EXISTS emis_drug_code;
 DROP TABLE IF EXISTS emis_clinical_code;
+DROP TABLE IF EXISTS vision_read2_lookup;
 
 /*CREATE TABLE emis_csv_code_map (
 	medication boolean,
@@ -423,3 +424,17 @@ CREATE TABLE tpp_multilex_action_group_lookup (
 )
 ROW_FORMAT=COMPRESSED
 KEY_BLOCK_SIZE=8;
+
+
+CREATE TABLE vision_read2_lookup (
+	read_code varchar(5) binary COMMENT 'read2 code itself',
+	read_term varchar(255) null COMMENT 'term for read2 code',
+	snomed_concept_id bigint COMMENT 'mapped snomed concept ID',
+	is_vision_code boolean NOT NULL COMMENT 'whether true Read2 or locally added',
+	dt_last_updated datetime NOT NULL,
+	CONSTRAINT pk_vision_read2_lookup PRIMARY KEY (read_code)
+)
+	ROW_FORMAT=COMPRESSED
+	KEY_BLOCK_SIZE=8;
+
+CREATE INDEX ix_code_updated ON vision_read2_lookup (read_code, dt_last_updated);
