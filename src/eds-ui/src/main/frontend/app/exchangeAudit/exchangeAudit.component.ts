@@ -151,22 +151,37 @@ export class ExchangeAuditComponent {
 		var vm = this;
 		var serviceId = vm.service.uuid;
 
-		this.exchangeAuditService.getSubscriberConfigNameList(serviceId).subscribe(
-			(result) => {
-				vm.subscriberConfigNames = [];
-				for (var i=0; i<result.length; i++) {
-					var s = result[i];
-					var option = new MultiSelecterOption;
-					option.id = s;
-					option.itemName = s;
-					vm.subscriberConfigNames.push(option);
-				}
-				//vm.subscriberConfigNames = result;
-			},
-			(error) => vm.log.error('Failed to retrieve subscriber confignames', error, 'Get Subscriber Config Names')
-		);
+		if (vm.exchangeAuditService.postShowAllSubscriberConfigNames) {
 
+			vm.exchangeAuditService.getAllSubscriberConfigNameList().subscribe(
+				(result) => {
+					vm.populateSubscriberNameList(result);
+				},
+				(error) => vm.log.error('Failed to retrieve subscriber config names', error, 'Get Subscriber Config Names')
+			);
 
+		} else {
+
+			vm.exchangeAuditService.getSubscriberConfigNameList(serviceId).subscribe(
+				(result) => {
+					vm.populateSubscriberNameList(result);
+				},
+				(error) => vm.log.error('Failed to retrieve subscriber config names', error, 'Get Subscriber Config Names')
+			);
+		}
+	}
+
+	private populateSubscriberNameList(result: string[]) {
+		var vm = this;
+		vm.subscriberConfigNames = [];
+		for (var i=0; i<result.length; i++) {
+			var s = result[i];
+			var option = new MultiSelecterOption;
+			option.id = s;
+			option.itemName = s;
+			vm.subscriberConfigNames.push(option);
+		}
+		//vm.subscriberConfigNames = result;
 	}
 
 	/*refreshProtocols() {

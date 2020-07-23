@@ -915,7 +915,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
     @Consumes(MediaType.APPLICATION_JSON)
     @Timed(absolute = true, name="ExchangeAuditEndpoint.getSubscriberConfigNamesForService")
     @Path("/getSubscriberConfigNamesForService")
-    public Response getProtocolsForService(@Context SecurityContext sc,
+    public Response getSubscriberConfigNamesForService(@Context SecurityContext sc,
                                            @QueryParam("serviceId") String serviceIdStr) throws Exception {
         super.setLogbackMarkers(sc);
 
@@ -924,7 +924,6 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
                 "Service Id", serviceIdStr);
 
         UUID serviceId = UUID.fromString(serviceIdStr);
-
         List<String> ret = RunDataDistributionProtocols.getSubscriberConfigNamesFromOldProtocols(serviceId);
 
         clearLogbackMarkers();
@@ -935,68 +934,18 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
                 .build();
     }
 
-    /*@GET
+    @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    @Timed(absolute = true, name="ExchangeAuditEndpoint.GetProtocolsForService")
-    @Path("/getProtocolsForService")
-    public Response getProtocolsForService(@Context SecurityContext sc,
-                                           @QueryParam("serviceId") String serviceIdStr,
-                                           @QueryParam("onlySubscriberProtocols") String onlySubscriberProtocolsStr) throws Exception {
+    @Timed(absolute = true, name="ExchangeAuditEndpoint.getAllSubscriberConfigNames")
+    @Path("/getAllSubscriberConfigNames")
+    public Response getAllSubscriberConfigNames(@Context SecurityContext sc) throws Exception {
         super.setLogbackMarkers(sc);
 
         userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
-                "Get Protocols For Service",
-                "Service Id", serviceIdStr,
-                "OnlySubscriberProtocols", onlySubscriberProtocolsStr);
+                "Get Subscriber Config Names For Service");
 
-        boolean onlySubscriberProtocols = Boolean.parseBoolean(onlySubscriberProtocolsStr);
-
-        List<JsonProtocol> ret = new ArrayList<>();
-
-        List<LibraryItem> libraryItems = LibraryRepositoryHelper.getProtocolsByServiceId(serviceIdStr, null);
-        for (LibraryItem libraryItem: libraryItems) {
-            Protocol protocol = libraryItem.getProtocol();
-
-            //only return active protocols
-            if (protocol.getEnabled() != ProtocolEnabled.TRUE) {
-                continue;
-            }
-
-            //filter on protocols with subscribers
-            if (onlySubscriberProtocols) {
-                boolean hasSubscriber = false;
-                for (ServiceContract serviceContract : protocol.getServiceContract()) {
-                    if (serviceContract.getType() == ServiceContractType.SUBSCRIBER) {
-                        hasSubscriber = true;
-                        break;
-                    }
-                }
-                if (!hasSubscriber) {
-                    continue;
-                }
-            }
-
-            //only return protocols with an active service contract for our service
-            boolean hasActiveContract = false;
-            for (ServiceContract serviceContract : protocol.getServiceContract()) {
-                if (serviceContract.getService().getUuid().equals(serviceIdStr)
-                    && serviceContract.getActive() == ServiceContractActive.TRUE) {
-
-                    hasActiveContract = true;
-                    break;
-                }
-            }
-            if (!hasActiveContract) {
-                continue;
-            }
-
-            JsonProtocol json = new JsonProtocol();
-            json.setId(UUID.fromString(libraryItem.getUuid()));
-            json.setName(libraryItem.getName());
-            ret.add(json);
-
-        }
+        List<String> ret = RunDataDistributionProtocols.getAllSubscriberConfigNamesFromOldProtocols();
 
         clearLogbackMarkers();
 
@@ -1004,7 +953,9 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
                 .ok()
                 .entity(ret)
                 .build();
-    }*/
+    }
+
+
 
     @POST
     @Produces(MediaType.APPLICATION_JSON)

@@ -24,7 +24,7 @@ export class ExchangeAuditService extends BaseHttp2Service {
     postExchange: string;
     postFilterFileTypes: boolean;
     postDeleteErrorState: boolean;
-
+    postShowAllSubscriberConfigNames: boolean;
 
     constructor(http:Http) {
         super(http);
@@ -33,6 +33,7 @@ export class ExchangeAuditService extends BaseHttp2Service {
         vm.exchangesToShow = 100;
         vm.searchMode = 'Recent';
         vm.postMode = 'Onwards';
+        vm.postShowAllSubscriberConfigNames = false;
     }
 
 
@@ -165,6 +166,12 @@ export class ExchangeAuditService extends BaseHttp2Service {
         params.append('serviceId', serviceId);
 
         return this.httpGet('api/exchangeAudit/getSubscriberConfigNamesForService', { search : params});
+    }
+
+    getAllSubscriberConfigNameList() : Observable<string[]> {
+
+        var params = new URLSearchParams();
+        return this.httpGet('api/exchangeAudit/getAllSubscriberConfigNames', { search : params});
     }
 
     rerunAllExchangesInError(serviceId: string, systemId: string) : Observable<any> {

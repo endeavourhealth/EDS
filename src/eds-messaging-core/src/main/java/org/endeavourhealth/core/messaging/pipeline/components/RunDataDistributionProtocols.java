@@ -9,10 +9,15 @@ import org.endeavourhealth.common.fhir.schema.RegistrationType;
 import org.endeavourhealth.common.ods.OdsOrganisation;
 import org.endeavourhealth.common.ods.OdsWebService;
 import org.endeavourhealth.common.utility.ExpiringCache;
+import org.endeavourhealth.common.utility.XmlSerializer;
 import org.endeavourhealth.core.configuration.RunDataDistributionProtocolsConfig;
 import org.endeavourhealth.core.database.dal.DalProvider;
+import org.endeavourhealth.core.database.dal.admin.LibraryDalI;
 import org.endeavourhealth.core.database.dal.admin.LibraryRepositoryHelper;
 import org.endeavourhealth.core.database.dal.admin.ServiceDalI;
+import org.endeavourhealth.core.database.dal.admin.models.ActiveItem;
+import org.endeavourhealth.core.database.dal.admin.models.DefinitionItemType;
+import org.endeavourhealth.core.database.dal.admin.models.Item;
 import org.endeavourhealth.core.database.dal.audit.ExchangeBatchDalI;
 import org.endeavourhealth.core.database.dal.audit.models.Exchange;
 import org.endeavourhealth.core.database.dal.audit.models.ExchangeBatch;
@@ -300,6 +305,58 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 					.stream()
 					.filter(sc -> sc.getType().equals(ServiceContractType.SUBSCRIBER))
 					.filter(sc -> sc.getActive() == ServiceContractActive.TRUE) //skip disabled service contracts
+					.collect(Collectors.toList());
+
+			for (ServiceContract serviceContract: subscribers) {
+				String subscriberConfigName = getSubscriberEndpoint(serviceContract);
+				if (!Strings.isNullOrEmpty(subscriberConfigName)) {
+					ret.add(subscriberConfigName);
+				}
+			}
+		}
+
+		List<String> list = new ArrayList<>(ret);
+		list.sort(((o1, o2) -> o1.compareToIgnoreCase(o2))); //for consistency
+		return list;
+	}
+
+	/**
+	 * returns all known the subscriber config names
+	 */
+	public static List<String> getAllSubscriberConfigNamesFromOldProtocols() throws Exception {
+
+		//populate a set, so we can't end up with duplicates
+		Set<String> ret = new HashSet<>();
+
+		LibraryDalI repository = DalProvider.factoryLibraryDal();
+		Iterable<ActiveItem> activeItems = repository.getActiveItemByTypeId(DefinitionItemType.Protocol.getValue(), false);
+
+		List<Item> items = new ArrayList();
+
+		for (ActiveItem activeItem: activeItems) {
+			Item item = repository.getItemByKey(activeItem.getItemId(), activeItem.getAuditId());
+			if (!item.isDeleted()) {
+				items.add(item);
+			}
+		}
+
+		for (int i = 0; i < items.size(); i++) {
+			Item item = items.get(i);
+
+			String xml = item.getXmlContent();
+			LibraryItem libraryItem = XmlSerializer.deserializeFromString(LibraryItem.class, xml, null);
+			Protocol protocol = libraryItem.getProtocol();
+
+			//skip disabled protocols
+			/*if (protocol.getEnabled() != ProtocolEnabled.TRUE) {
+				continue;
+			}*/
+
+			List<ServiceContract> subscribers = protocol
+					.getServiceContract()
+					.stream()
+					.filter(sc -> sc.getType().equals(ServiceContractType.SUBSCRIBER))
+					//.filter(sc -> sc.getActive() == ServiceContractActive.TRUE) //skip disabled service contracts
 					.collect(Collectors.toList());
 
 			for (ServiceContract serviceContract: subscribers) {

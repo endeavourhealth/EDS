@@ -214,7 +214,7 @@
                                 </div>
 
                                 <div class="row" *ngIf="exchangeAuditService.postExchange=='edsProtocol'">
-                                    <div class="form-group col-md-12">
+                                    <div class="form-group col-md-10">
 
                                         Protocol(s) to apply (leave unchecked to do all):
                                         <angular2-multiselect [data]="subscriberConfigNames"
@@ -235,6 +235,11 @@
                                             <option *ngFor="let subscriberConfigName of subscriberConfigNames" value="{{subscriberConfigName}}">{{subscriberConfigName}}</option>
                                         </select>-->
 
+                                    </div>
+
+                                    <div class="form-group col-md-2">
+                                        Include all subscribers:
+                                        <input type="checkbox" id="postShowAllSubscriberConfigNames" [(ngModel)]="exchangeAuditService.postShowAllSubscriberConfigNames" name="postShowAllSubscriberConfigNames" (ngModelChange)="refreshSubscriberConfigNames()">
                                     </div>
                                 </div>
 
