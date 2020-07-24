@@ -118,6 +118,10 @@ CREATE TABLE patient_search_episode
 CREATE UNIQUE INDEX uix_patient_search_episode_id
   ON patient_search_episode (episode_id);
 
+CREATE INDEX ix_patient_id
+  ON eds.patient_search_episode (patient_id);
+
+
 CREATE TABLE patient_search_local_identifier
 (
 	service_id char(36) NOT NULL,

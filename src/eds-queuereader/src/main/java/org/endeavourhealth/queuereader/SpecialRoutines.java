@@ -81,8 +81,8 @@ import org.endeavourhealth.transform.subscriber.transforms.EpisodeOfCareTransfor
 import org.endeavourhealth.transform.subscriber.transforms.OrganisationTransformer;
 import org.endeavourhealth.transform.subscriber.transforms.PatientTransformer;
 import org.endeavourhealth.transform.tpp.csv.helpers.TppCsvHelper;
-import org.hl7.fhir.instance.model.Resource;
 import org.hl7.fhir.instance.model.*;
+import org.hl7.fhir.instance.model.Resource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -5034,5 +5034,45 @@ public abstract class SpecialRoutines {
             UUID batchId = UUID.randomUUID();
             EnterpriseFiler.file(batchId, UUID.randomUUID(), base64, subscriberConfigName);
         }
+    }
+
+    public static void quickRefreshForAllTpp(String orgOdsCodeRegex) {
+        LOG.info("Doing quick refresh for all TPP at " + orgOdsCodeRegex);
+        try {
+
+            ServiceDalI serviceDal = DalProvider.factoryServiceDal();
+            List<Service> services = serviceDal.getAll();
+
+            String bulkOperationName = "quick refresh all subscribers for TPP missing patients";
+
+            for (Service service: services) {
+
+                Map<String, String> tags = service.getTags();
+                if (tags == null
+                        || !tags.containsKey("TPP")) {
+                    continue;
+                }
+
+                if (shouldSkipService(service, orgOdsCodeRegex)) {
+                    continue;
+                }
+
+                if (isServiceDoneBulkOperation(service, bulkOperationName)) {
+                    LOG.debug("Skipping " + service + " as already done");
+                    continue;
+                }
+
+                LOG.debug("Doing " + service);
+                QueueHelper.queueUpFullServiceForPopulatingSubscriber(service.getId(), false, false, false, null, "quick_refresh_for_any_missing_patients");
+
+                //record we've done this
+                setServiceDoneBulkOperation(service, bulkOperationName);
+            }
+
+            LOG.info("Done quick refresh for all TPP at " + orgOdsCodeRegex);
+        } catch (Throwable t) {
+            LOG.error("", t);
+        }
+
     }
 }
