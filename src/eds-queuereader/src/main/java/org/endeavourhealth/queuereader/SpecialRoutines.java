@@ -5075,4 +5075,44 @@ public abstract class SpecialRoutines {
         }
 
     }
+
+    public static void quickRefreshForAllEmis(String orgOdsCodeRegex) {
+        LOG.info("Doing quick refresh for all EMIS at " + orgOdsCodeRegex);
+        try {
+
+            ServiceDalI serviceDal = DalProvider.factoryServiceDal();
+            List<Service> services = serviceDal.getAll();
+
+            String bulkOperationName = "quick refresh all subscribers for EMIS missing patients";
+
+            for (Service service: services) {
+
+                Map<String, String> tags = service.getTags();
+                if (tags == null
+                        || !tags.containsKey("EMIS")) {
+                    continue;
+                }
+
+                if (shouldSkipService(service, orgOdsCodeRegex)) {
+                    continue;
+                }
+
+                if (isServiceDoneBulkOperation(service, bulkOperationName)) {
+                    LOG.debug("Skipping " + service + " as already done");
+                    continue;
+                }
+
+                LOG.debug("Doing " + service);
+                QueueHelper.queueUpFullServiceForPopulatingSubscriber(service.getId(), false, false, false, null, "quick_refresh_for_any_missing_patients");
+
+                //record we've done this
+                setServiceDoneBulkOperation(service, bulkOperationName);
+            }
+
+            LOG.info("Done quick refresh for all EMIS at " + orgOdsCodeRegex);
+        } catch (Throwable t) {
+            LOG.error("", t);
+        }
+
+    }
 }

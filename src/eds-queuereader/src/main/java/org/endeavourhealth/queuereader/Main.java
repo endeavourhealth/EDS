@@ -98,6 +98,20 @@ public class Main {
 		}
 
 		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("quickRefreshForAllEmis")) {
+
+			String orgOdsCodeRegex = null;
+			if (args.length > 2) {
+				orgOdsCodeRegex = args[2];
+			}
+
+			SpecialRoutines.quickRefreshForAllEmis(orgOdsCodeRegex);
+			System.exit(0);
+		}
+
+
+
+		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("findEmisEpisodesChangingDate")) {
 
 			String orgOdsCodeRegex = null;
