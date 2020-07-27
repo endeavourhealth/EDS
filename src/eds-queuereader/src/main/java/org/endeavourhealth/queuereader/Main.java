@@ -109,7 +109,17 @@ public class Main {
 			System.exit(0);
 		}
 
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("fixEmisEpisodesChangingDate")) {
 
+			String orgOdsCodeRegex = null;
+			if (args.length > 1) {
+				orgOdsCodeRegex = args[1];
+			}
+
+			SpecialRoutines.fixEmisEpisodesChangingDate(orgOdsCodeRegex);
+			System.exit(0);
+		}
 
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("findEmisEpisodesChangingDate")) {

@@ -489,7 +489,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
                 QueueHelper.queueUpFullServiceForPopulatingSubscriber(serviceId, false, true, true, specificSubscriberConfigNames, reason);
 
             } else if (postMode.equalsIgnoreCase("QuickRefresh")) {
-                QueueHelper.queueUpFullServiceForPopulatingSubscriber(serviceId, false, false, true, specificSubscriberConfigNames, reason);
+                QueueHelper.queueUpFullServiceForPopulatingSubscriber(serviceId, false, false, false, specificSubscriberConfigNames, reason);
 
             } else if (postMode.equalsIgnoreCase("FullRefreshAdminOnly")) {
                 QueueHelper.queueUpFullServiceForPopulatingSubscriber(serviceId, false, true, true, specificSubscriberConfigNames, new ArrayList<>(), reason);

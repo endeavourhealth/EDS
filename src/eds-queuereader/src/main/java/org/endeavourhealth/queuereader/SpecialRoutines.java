@@ -474,6 +474,12 @@ public abstract class SpecialRoutines {
                 List<UUID> systemIds = SystemHelper.getSystemIdsForService(service);
                 for (UUID systemId: systemIds) {
 
+                    //skip ADT
+                    if (systemId.equals(UUID.fromString("d874c58c-91fd-41bb-993e-b1b8b22038b2"))) {
+                        LOG.warn("Skipping ADT feed with system ID " + systemId);
+                        continue;
+                    }
+
                     ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
                     ExchangeBatchDalI exchangeBatchDal = DalProvider.factoryExchangeBatchDal();
 
@@ -5144,5 +5150,33 @@ public abstract class SpecialRoutines {
             LOG.error("", t);
         }
 
+    }
+
+    public static void fixEmisEpisodesChangingDate(String orgOdsCodeRegex) {
+        LOG.info("Fixing Emis episode of cares changing date at " + orgOdsCodeRegex);
+        try {
+
+            ServiceDalI serviceDal = DalProvider.factoryServiceDal();
+            List<Service> services = serviceDal.getAll();
+
+            for (Service service: services) {
+
+                Map<String, String> tags = service.getTags();
+                if (tags == null
+                        || !tags.containsKey("EMIS")) {
+                    continue;
+                }
+
+                if (shouldSkipService(service, orgOdsCodeRegex)) {
+                    continue;
+                }
+
+                //TODO -
+            }
+
+            LOG.info("Finished fixing Emis episode of cares changing date at " + orgOdsCodeRegex);
+        } catch (Throwable t) {
+            LOG.error("", t);
+        }
     }
 }
