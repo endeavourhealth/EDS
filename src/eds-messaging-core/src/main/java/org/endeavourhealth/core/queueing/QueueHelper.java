@@ -449,6 +449,13 @@ public class QueueHelper {
         PatientSearchDalI patientSearchDal = DalProvider.factoryPatientSearchDal();
         List<UUID> patientUuids = patientSearchDal.getPatientIds(serviceId, true); //INCLUDE deleted patients too
 
+        //if we're not doing admin resources and there's no patients, there's nothing for us to do
+        if (patientUuids.isEmpty()
+                && !doAdminResources) {
+            LOG.warn("Skipping queuing for " + serviceId + " has no patients found and not doing admin resources");
+            return;
+        }
+
         queueUpFullServiceForPopulatingSubscriber(serviceId, isBulkDelete, isBulkRefresh, doAdminResources, subscriberConfigNames, patientUuids, reason);
     }
 
