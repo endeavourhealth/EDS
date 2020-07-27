@@ -4967,29 +4967,34 @@ public abstract class SpecialRoutines {
                         String regDate = record.get("DateOfRegistration");
                         String dedDate = record.get("DateOfDeactivation");
                         String deleted = record.get("Deleted");
+
                         if (deleted.equals("true")) {
+                            hmPatientStartDates.remove(patientGuid);
+                            hmPatientStartDatePaths.remove(patientGuid);
                             continue;
                         }
 
                         if (!Strings.isNullOrEmpty(dedDate)) {
                             hmPatientStartDates.remove(patientGuid);
-
-                        } else {
-
-                            String previousDate = hmPatientStartDates.get(patientGuid);
-                            String previousPath = hmPatientStartDatePaths.get(patientGuid);
-                            if (previousDate != null
-                                && !previousDate.equals(regDate)) {
-
-                                //reg date has changed
-                                LOG.debug("Patient " + patientGuid + " start date changed from " + previousDate + " to " + regDate);
-
-                                printer.printRecord(service.getName(), service.getLocalId(), patientGuid, previousDate, regDate, previousPath, path);
-                            }
-
-                            hmPatientStartDates.put(patientGuid, regDate);
-                            hmPatientStartDatePaths.put(patientGuid, path);
+                            hmPatientStartDatePaths.remove(patientGuid);
+                            continue;
                         }
+
+                        String previousDate = hmPatientStartDates.get(patientGuid);
+                        String previousPath = hmPatientStartDatePaths.get(patientGuid);
+                        if (previousDate != null
+                            && !previousDate.equals(regDate)) {
+
+                            //reg date has changed
+                            LOG.debug("Patient " + patientGuid + " start date changed from " + previousDate + " to " + regDate);
+                            LOG.debug("Previous file = " + previousPath);
+                            LOG.debug("This file = " + path);
+
+                            printer.printRecord(service.getName(), service.getLocalId(), patientGuid, previousDate, regDate, previousPath, path);
+                        }
+
+                        hmPatientStartDates.put(patientGuid, regDate);
+                        hmPatientStartDatePaths.put(patientGuid, path);
                     }
 
                     parser.close();
