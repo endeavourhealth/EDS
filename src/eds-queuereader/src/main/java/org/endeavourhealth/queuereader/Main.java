@@ -89,8 +89,8 @@ public class Main {
 				&& args[0].equalsIgnoreCase("quickRefreshForAllTpp")) {
 
 			String orgOdsCodeRegex = null;
-			if (args.length > 2) {
-				orgOdsCodeRegex = args[2];
+			if (args.length > 1) {
+				orgOdsCodeRegex = args[1];
 			}
 
 			SpecialRoutines.quickRefreshForAllTpp(orgOdsCodeRegex);
@@ -101,8 +101,8 @@ public class Main {
 				&& args[0].equalsIgnoreCase("quickRefreshForAllEmis")) {
 
 			String orgOdsCodeRegex = null;
-			if (args.length > 2) {
-				orgOdsCodeRegex = args[2];
+			if (args.length > 1) {
+				orgOdsCodeRegex = args[1];
 			}
 
 			SpecialRoutines.quickRefreshForAllEmis(orgOdsCodeRegex);
@@ -115,8 +115,8 @@ public class Main {
 				&& args[0].equalsIgnoreCase("findEmisEpisodesChangingDate")) {
 
 			String orgOdsCodeRegex = null;
-			if (args.length > 2) {
-				orgOdsCodeRegex = args[2];
+			if (args.length > 1) {
+				orgOdsCodeRegex = args[1];
 			}
 
 			SpecialRoutines.findEmisEpisodesChangingDate(orgOdsCodeRegex);
@@ -127,8 +127,8 @@ public class Main {
 				&& args[0].equalsIgnoreCase("fixTppMissingPractitioners")) {
 
 			String orgOdsCodeRegex = null;
-			if (args.length > 2) {
-				orgOdsCodeRegex = args[2];
+			if (args.length > 1) {
+				orgOdsCodeRegex = args[1];
 			}
 
 			SpecialRoutines.fixTppMissingPractitioners(orgOdsCodeRegex);

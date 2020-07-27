@@ -4900,9 +4900,11 @@ public abstract class SpecialRoutines {
             BufferedWriter bufferedWriter = new BufferedWriter(osw);
 
             CSVFormat format = EmisCsvToFhirTransformer.CSV_FORMAT
-                    .withHeader("Name", "ODS Code", "PatientGuid", "PreviousStart", "ChangedStart", "PreviousFile", "ChangedFile"
+                    .withHeader("Name", "ODS Code", "PatientGuid", "PreviousStart", "ChangedStart", "Direction", "PreviousRegType", "ChangedRegType", "RegTypeChanged", "PreviousFile", "ChangedFile"
                     );
             CSVPrinter printer = new CSVPrinter(bufferedWriter, format);
+
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
 
             List<Service> services = serviceDal.getAll();
 
@@ -4929,6 +4931,7 @@ public abstract class SpecialRoutines {
 
                 Map<String, String> hmPatientStartDates = new HashMap<>();
                 Map<String, String> hmPatientStartDatePaths = new HashMap<>();
+                Map<String, String> hmPatientRegTypes = new HashMap<>();
 
                 List<Exchange> exchanges = exchangeDal.getExchangesByService(serviceId, systemId, Integer.MAX_VALUE);
 
@@ -4967,21 +4970,25 @@ public abstract class SpecialRoutines {
                         String regDate = record.get("DateOfRegistration");
                         String dedDate = record.get("DateOfDeactivation");
                         String deleted = record.get("Deleted");
+                        String regType = record.get("PatientTypeDescription");
 
                         if (deleted.equals("true")) {
                             hmPatientStartDates.remove(patientGuid);
                             hmPatientStartDatePaths.remove(patientGuid);
+                            hmPatientRegTypes.remove(patientGuid);
                             continue;
                         }
 
                         if (!Strings.isNullOrEmpty(dedDate)) {
                             hmPatientStartDates.remove(patientGuid);
                             hmPatientStartDatePaths.remove(patientGuid);
+                            hmPatientRegTypes.remove(patientGuid);
                             continue;
                         }
 
                         String previousDate = hmPatientStartDates.get(patientGuid);
                         String previousPath = hmPatientStartDatePaths.get(patientGuid);
+                        String previousRegType = hmPatientRegTypes.get(patientGuid);
                         if (previousDate != null
                             && !previousDate.equals(regDate)) {
 
@@ -4990,11 +4997,29 @@ public abstract class SpecialRoutines {
                             LOG.debug("Previous file = " + previousPath);
                             LOG.debug("This file = " + path);
 
-                            printer.printRecord(service.getName(), service.getLocalId(), patientGuid, previousDate, regDate, previousPath, path);
+                            Date dPrevious = sdf.parse(previousDate);
+                            Date dNow = sdf.parse(regDate);
+
+                            String direction = null;
+                            if (dPrevious.before(dNow)) {
+                                direction = "Forwards";
+                            } else {
+                                direction = "Backwards";
+                            }
+
+                            String regTypeChanged = null;
+                            if (regType.equals(previousRegType)) {
+                                regTypeChanged = "false";
+                            } else {
+                                regTypeChanged = "true";
+                            }
+
+                            printer.printRecord(service.getName(), service.getLocalId(), patientGuid, previousDate, regDate, direction, previousRegType, regType, regTypeChanged, previousPath, path);
                         }
 
                         hmPatientStartDates.put(patientGuid, regDate);
                         hmPatientStartDatePaths.put(patientGuid, path);
+                        hmPatientRegTypes.put(patientGuid, regType);
                     }
 
                     parser.close();
