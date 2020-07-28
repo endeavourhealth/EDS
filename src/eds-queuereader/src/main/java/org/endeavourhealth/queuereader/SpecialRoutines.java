@@ -5269,7 +5269,7 @@ public abstract class SpecialRoutines {
                         AbstractEnterpriseCsvWriter writer = compassV1Container.getAppointments();
 
                         AppointmentEnterpriseTransformer t = new AppointmentEnterpriseTransformer();
-                        t.transformResources(appointmentWrappers, writer, params);
+                        t.transformResources(new ArrayList(appointmentWrappers), writer, params);
 
                         //if batch is full then save what we've done
                         batchSize++;
@@ -5297,7 +5297,7 @@ public abstract class SpecialRoutines {
                         Long orgId = FhirToSubscriberCsvTransformer.findEnterpriseOrgId(serviceId, params, new ArrayList<>());
                         params.setSubscriberOrganisationId(orgId);
                         AppointmentTransformer t = new AppointmentTransformer();
-                        t.transformResources(appointmentWrappers, params);
+                        t.transformResources(new ArrayList(appointmentWrappers), params);
 
                         //if batch is full then save what we've done
                         batchSize++;
