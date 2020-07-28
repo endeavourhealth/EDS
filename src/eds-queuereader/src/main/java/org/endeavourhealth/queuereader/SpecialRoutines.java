@@ -69,6 +69,8 @@ import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
 import org.endeavourhealth.transform.enterprise.EnterpriseTransformHelper;
 import org.endeavourhealth.transform.enterprise.FhirToEnterpriseCsvTransformer;
 import org.endeavourhealth.transform.enterprise.ObservationCodeHelper;
+import org.endeavourhealth.transform.enterprise.outputModels.AbstractEnterpriseCsvWriter;
+import org.endeavourhealth.transform.enterprise.transforms.AppointmentEnterpriseTransformer;
 import org.endeavourhealth.transform.enterprise.transforms.EpisodeOfCareEnterpriseTransformer;
 import org.endeavourhealth.transform.enterprise.transforms.OrganisationEnterpriseTransformer;
 import org.endeavourhealth.transform.enterprise.transforms.PatientEnterpriseTransformer;
@@ -77,6 +79,7 @@ import org.endeavourhealth.transform.fhirhl7v2.transforms.EncounterTransformer;
 import org.endeavourhealth.transform.subscriber.*;
 import org.endeavourhealth.transform.subscriber.targetTables.OutputContainer;
 import org.endeavourhealth.transform.subscriber.targetTables.SubscriberTableId;
+import org.endeavourhealth.transform.subscriber.transforms.AppointmentTransformer;
 import org.endeavourhealth.transform.subscriber.transforms.EpisodeOfCareTransformer;
 import org.endeavourhealth.transform.subscriber.transforms.OrganisationTransformer;
 import org.endeavourhealth.transform.subscriber.transforms.PatientTransformer;
@@ -5177,6 +5180,186 @@ public abstract class SpecialRoutines {
             LOG.info("Finished fixing Emis episode of cares changing date at " + orgOdsCodeRegex);
         } catch (Throwable t) {
             LOG.error("", t);
+        }
+    }
+
+    public static void fixAppointmentTimes(String subscriberConfigName, String orgOdsCodeRegex) {
+        LOG.info("Fixing Compass Appointment Times for " + orgOdsCodeRegex);
+        try {
+            ServiceDalI serviceDal = DalProvider.factoryServiceDal();
+            List<Service> services = serviceDal.getAll();
+
+            PatientSearchDalI patientSearchDal = DalProvider.factoryPatientSearchDal();
+            SubscriberCohortDalI subscriberCohortDalI = DalProvider.factorySubscriberCohortDal();
+            ResourceDalI resourceDal = DalProvider.factoryResourceDal();
+            PatientLinkDalI patientLinkDal = DalProvider.factoryPatientLinkDal();
+            SubscriberPersonMappingDalI personIdDal = DalProvider.factorySubscriberPersonMappingDal(subscriberConfigName);
+            SubscriberResourceMappingDalI patientIdDal = DalProvider.factorySubscriberResourceMappingDal(subscriberConfigName);
+
+            SubscriberConfig subscriberConfig = SubscriberConfig.readFromConfig(subscriberConfigName);
+
+            Date dtFixed = new SimpleDateFormat("yyyy-MM-dd").parse("2020-04-01");
+
+            String bulkOperationName = "fix missing appointment times in " + subscriberConfigName;
+
+            for (Service service: services) {
+
+                if (shouldSkipService(service, orgOdsCodeRegex)) {
+                    continue;
+                }
+
+                List<String> subscriberConfigNames = RunDataDistributionProtocols.getSubscriberConfigNamesFromOldProtocols(service.getId());
+                if (!subscriberConfigNames.contains(subscriberConfigName)) {
+                    LOG.debug("Skipping " + service + " as not a publisher");
+                    continue;
+                }
+
+                //check if already done
+                if (isServiceDoneBulkOperation(service, bulkOperationName)) {
+                    LOG.debug("Skipping " + service + " as already done");
+                    continue;
+                }
+
+                LOG.debug("Doing " + service);
+                UUID serviceId = service.getId();
+
+                List<UUID> patientIds = patientSearchDal.getPatientIds(serviceId, false);
+                LOG.debug("Found " + patientIds.size() + " patients");
+
+                int batchSize = 0;
+                org.endeavourhealth.transform.enterprise.outputModels.OutputContainer compassV1Container = null;
+                OutputContainer compassV2Container = null;
+
+                for (UUID patientId : patientIds) {
+
+                    //check if in cohort
+                    SubscriberCohortRecord cohortRecord = subscriberCohortDalI.getLatestCohortRecord(subscriberConfigName, patientId, UUID.randomUUID());
+                    if (cohortRecord == null
+                            || !cohortRecord.isInCohort()) {
+                        continue;
+                    }
+
+                    //retrieve FHIR appointments
+                    List<ResourceWrapper> appointmentWrappers = resourceDal.getResourcesByPatient(serviceId, patientId, ResourceType.Appointment.toString());
+
+                    //remove any wrappers updated since the bug was fixed
+                    for (int i=appointmentWrappers.size()-1; i>=0; i--) {
+                        ResourceWrapper w = appointmentWrappers.get(i);
+                        if (w.getCreatedAt().after(dtFixed)) {
+                            appointmentWrappers.remove(i);
+                        }
+                    }
+
+                    if (appointmentWrappers.isEmpty()) {
+                        continue;
+                    }
+
+                    //transform patient
+                    if (subscriberConfig.getSubscriberType() == SubscriberConfig.SubscriberType.CompassV1) {
+
+                        if (compassV1Container == null) {
+                            compassV1Container = new org.endeavourhealth.transform.enterprise.outputModels.OutputContainer(subscriberConfig.isPseudonymised());
+                        }
+
+                        EnterpriseTransformHelper params = new EnterpriseTransformHelper(serviceId, null, null, null, subscriberConfig, appointmentWrappers, false, compassV1Container);
+                        Long orgId = FhirToEnterpriseCsvTransformer.findEnterpriseOrgId(serviceId, params);
+                        params.setEnterpriseOrganisationId(orgId);
+                        params.populatePatientAndPersonIds();
+
+                        AbstractEnterpriseCsvWriter writer = compassV1Container.getAppointments();
+
+                        AppointmentEnterpriseTransformer t = new AppointmentEnterpriseTransformer();
+                        t.transformResources(appointmentWrappers, writer, params);
+
+                        //if batch is full then save what we've done
+                        batchSize++;
+                        if (batchSize >= 100) {
+                            saveCompassV1AppointmentData(subscriberConfigName, compassV1Container);
+                            compassV1Container = null;
+                            batchSize = 0;
+                        }
+
+                    } else if (subscriberConfig.getSubscriberType() == SubscriberConfig.SubscriberType.CompassV2) {
+
+                        if (compassV2Container == null) {
+                            compassV2Container = new OutputContainer();
+                        }
+
+                        String ref = ReferenceHelper.createResourceReference(ResourceType.Patient, patientId.toString());
+                        SubscriberId subscriberPatientId = patientIdDal.findSubscriberId(SubscriberTableId.PATIENT.getId(), ref);
+                        if (subscriberPatientId == null) {
+                            throw new Exception("Failed to find subscriberPatientId for " + ref);
+                        }
+
+                        SubscriberTransformHelper params = new SubscriberTransformHelper(serviceId, null, null, null, subscriberConfig, appointmentWrappers, false, compassV2Container);
+                        params.populatePatientAndPersonIds();
+
+                        Long orgId = FhirToSubscriberCsvTransformer.findEnterpriseOrgId(serviceId, params, new ArrayList<>());
+                        params.setSubscriberOrganisationId(orgId);
+                        AppointmentTransformer t = new AppointmentTransformer();
+                        t.transformResources(appointmentWrappers, params);
+
+                        //if batch is full then save what we've done
+                        batchSize++;
+                        if (batchSize >= 100) {
+                            saveCompassV2AppointmentData(subscriberConfigName, compassV2Container);
+                            compassV2Container = null;
+                            batchSize = 0;
+                        }
+
+                    } else {
+                        throw new Exception("Unexpected subscriber type [" + subscriberConfig.getSubscriberType() + "]");
+                    }
+                }
+
+                //save any part-completed batch
+                if (batchSize > 0) {
+
+                    if (subscriberConfig.getSubscriberType() == SubscriberConfig.SubscriberType.CompassV1) {
+                        saveCompassV1AppointmentData(subscriberConfigName, compassV1Container);
+
+                    } else if (subscriberConfig.getSubscriberType() == SubscriberConfig.SubscriberType.CompassV2) {
+                        saveCompassV2AppointmentData(subscriberConfigName, compassV2Container);
+
+                    } else {
+                        throw new Exception("Unexpected subscriber type [" + subscriberConfig.getSubscriberType() + "]");
+                    }
+                }
+
+                //audit that we've done
+                setServiceDoneBulkOperation(service, bulkOperationName);
+            }
+
+            LOG.info("Finished Fixing Compass Appointment Times for " + orgOdsCodeRegex);
+        } catch (Throwable t) {
+            LOG.error("", t);
+        }
+    }
+
+
+    private static void saveCompassV2AppointmentData(String subscriberConfigName, OutputContainer compassV2Container) throws Exception {
+        List<SubscriberTableId> toKeep = new ArrayList<>();
+        toKeep.add(SubscriberTableId.APPOINTMENT);
+        compassV2Container.clearDownOutputContainer(toKeep);
+
+        byte[] bytes = compassV2Container.writeToZip();
+        if (bytes != null) {
+            String base64 = Base64.getEncoder().encodeToString(bytes);
+            UUID batchId = UUID.randomUUID();
+            SubscriberFiler.file(batchId, UUID.randomUUID(), base64, subscriberConfigName);
+        }
+    }
+
+    private static void saveCompassV1AppointmentData(String subscriberConfigName, org.endeavourhealth.transform.enterprise.outputModels.OutputContainer compassV1Container) throws Exception {
+        List<String> toKeep = new ArrayList<>();
+        toKeep.add("appointment");
+        compassV1Container.clearDownOutputContainer(toKeep);
+
+        byte[] bytes = compassV1Container.writeToZip();
+        if (bytes != null) {
+            String base64 = Base64.getEncoder().encodeToString(bytes);
+            UUID batchId = UUID.randomUUID();
+            EnterpriseFiler.file(batchId, UUID.randomUUID(), base64, subscriberConfigName);
         }
     }
 }
