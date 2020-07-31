@@ -438,3 +438,14 @@ CREATE TABLE vision_read2_lookup (
 	KEY_BLOCK_SIZE=8;
 
 CREATE INDEX ix_code_updated ON vision_read2_lookup (read_code, dt_last_updated);
+
+CREATE TABLE  tpp_ctv3_to_snomed (
+  ctv3_code varchar(5) NOT NULL,
+  snomed_concept_id bigint(20) NOT NULL,
+  dt_last_updated datetime NOT NULL,
+  CONSTRAINT tpp_ctv3_to_snomed_ctv3_code_pk PRIMARY KEY (ctv3_code )
+)
+	ROW_FORMAT=COMPRESSED
+	KEY_BLOCK_SIZE=8;
+
+CREATE INDEX ix_code_updated ON tpp_ctv3_to_snomed (ctv3_code, dt_last_updated);
