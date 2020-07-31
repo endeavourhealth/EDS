@@ -25,6 +25,7 @@ DROP TABLE IF EXISTS emis_organisation_location;
 DROP TABLE IF EXISTS emis_drug_code;
 DROP TABLE IF EXISTS emis_clinical_code;
 DROP TABLE IF EXISTS vision_read2_lookup;
+DROP TABLE IF EXISTS tpp_ctv3_to_snomed;
 
 /*CREATE TABLE emis_csv_code_map (
 	medication boolean,
