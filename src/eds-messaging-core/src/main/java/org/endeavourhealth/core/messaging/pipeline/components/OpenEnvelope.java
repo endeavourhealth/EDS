@@ -314,11 +314,25 @@ public class OpenEnvelope extends PipelineComponent {
 			String postcode = odsOrg.getPostcode();
 			s.setPostcode(postcode);
 
-			OrganisationType type = odsOrg.getOrganisationType();
-			s.setOrganisationType(type);
+			Set<OrganisationType> types = new HashSet<>(odsOrg.getOrganisationTypes());
+			types.remove(OrganisationType.PRESCRIBING_COST_CENTRE); //always remove so we match to the "better" type
+			if (types.size() == 1) {
+				OrganisationType type = types.iterator().next();
+				s.setOrganisationType(type);
 
-			String parentCode = OdsOrganisation.getBestParentCode(odsOrg);
-			s.setCcgCode(parentCode);
+			} else {
+				LOG.warn("Could not select type for org " + odsOrg);
+			}
+
+			Map<String, OdsOrganisation> parents = odsOrg.getParents();
+			for (String parentOds: parents.keySet()) {
+				OdsOrganisation parent = parents.get(parentOds);
+				//only select parent if it's NOT a PCN
+				if (!parent.getOrganisationTypes().contains(OrganisationType.PRIMARY_CARE_NETWORK)) {
+					s.setCcgCode(parentOds);
+					break;
+				}
+			}
 
 			//tell us because we need to manually do a couple of steps
 			String msg = "Auto-created Service for ODS code " + organisationOds + " in Messaging API\r\n"
