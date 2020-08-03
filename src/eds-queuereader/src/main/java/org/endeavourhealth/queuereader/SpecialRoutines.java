@@ -61,6 +61,7 @@ import org.endeavourhealth.im.models.mapping.MapResponse;
 import org.endeavourhealth.subscriber.filer.EnterpriseFiler;
 import org.endeavourhealth.subscriber.filer.SubscriberFiler;
 import org.endeavourhealth.transform.common.*;
+import org.endeavourhealth.transform.common.resourceBuilders.EpisodeOfCareBuilder;
 import org.endeavourhealth.transform.common.resourceBuilders.ImmunizationBuilder;
 import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
 import org.endeavourhealth.transform.enterprise.EnterpriseTransformHelper;
@@ -5178,6 +5179,27 @@ public abstract class SpecialRoutines {
         public void setRegType(String regType) {
             this.regType = regType;
         }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            RegRecord regRecord = (RegRecord) o;
+
+            if (start != null ? !start.equals(regRecord.start) : regRecord.start != null) return false;
+            if (end != null ? !end.equals(regRecord.end) : regRecord.end != null) return false;
+            return regType != null ? regType.equals(regRecord.regType) : regRecord.regType == null;
+
+        }
+
+        @Override
+        public int hashCode() {
+            int result = start != null ? start.hashCode() : 0;
+            result = 31 * result + (end != null ? end.hashCode() : 0);
+            result = 31 * result + (regType != null ? regType.hashCode() : 0);
+            return result;
+        }
     }
 
     public static void fixEmisEpisodesChangingDate(boolean testMode, String orgOdsCodeRegex) {
@@ -5186,6 +5208,7 @@ public abstract class SpecialRoutines {
 
             ServiceDalI serviceDal = DalProvider.factoryServiceDal();
             ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
+            ResourceDalI resourceDal = DalProvider.factoryResourceDal();
 
             List<Service> services = serviceDal.getAll();
 
@@ -5294,9 +5317,58 @@ public abstract class SpecialRoutines {
                 }
 
 
-                //go through latest reg status file
+                //TODO - go through latest reg status file
+
+
                 //for each patient, tidy up episodes to match
+                int done = 0;
+                LOG.debug("Found " + hmRegRecords.size() + " patients");
+                for (String patientGuid: hmRegRecords.keySet()) {
+
+                    List<RegRecord> regRecords = hmRegRecords.get(patientGuid);
+
+                    UUID patientUuid = IdHelper.getEdsResourceId(serviceId, ResourceType.Patient, patientGuid);
+                    if (patientUuid == null) {
+                        throw new Exception("Failed to find patient UUID for GUID " + patientGuid);
+                    }
+
+                    List<ResourceWrapper> episodeWrappers = resourceDal.getResourcesByPatient(serviceId, patientUuid, ResourceType.EpisodeOfCare.toString());
+
+                    List<EpisodeOfCareBuilder> episodeBuilders = new ArrayList<>();
+
+                    RegRecord lastRegRecord = null;
+
+                    for (RegRecord regRecord: regRecords) {
+
+                        //if nothing has changed since the last reg record, skip this
+                        if (lastRegRecord != null
+                                && lastRegRecord.equals(regRecord)) {
+                            continue;
+                        }
+
+
+                        //find an episode with the start date
+
+
+
+
+                        lastRegRecord = regRecord;
+                    }
+
+                    //delete any episodes NOT found
+                    //save any episodes updated
+
+                    done ++;
+                    if (done % 1000 == 0) {
+                        LOG.debug("Done " + done);
+                    }
+                }
+                LOG.debug("Done " + done);
+
+
                 //update Emis->DDS mappings for new data
+                //end duplicate ones
+                //delete unnecessary ones
 
 
                 if (!testMode) {
