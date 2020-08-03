@@ -5155,12 +5155,14 @@ public abstract class SpecialRoutines {
 
     }
 
-    public static void fixEmisEpisodesChangingDate(String orgOdsCodeRegex) {
+    public static void fixEmisEpisodesChangingDate(boolean testMode, String orgOdsCodeRegex) {
         LOG.info("Fixing Emis episode of cares changing date at " + orgOdsCodeRegex);
         try {
 
             ServiceDalI serviceDal = DalProvider.factoryServiceDal();
             List<Service> services = serviceDal.getAll();
+
+            String bulkOperationName = "Fix Emis duplicate episodes SD-99";
 
             for (Service service: services) {
 
@@ -5174,7 +5176,26 @@ public abstract class SpecialRoutines {
                     continue;
                 }
 
-                //TODO -
+                //check if already done
+                if (!testMode) {
+                    if (isServiceDoneBulkOperation(service, bulkOperationName)) {
+                        LOG.debug("Skipping " + service + " as already done");
+                        continue;
+                    }
+                }
+
+
+
+                //go through files to find state from files
+                //go through latest reg status file
+                //for each patient, tidy up episodes to match
+                //update Emis->DDS mappings for new data
+
+
+                if (!testMode) {
+                    //audit that we've done
+                    setServiceDoneBulkOperation(service, bulkOperationName);
+                }
             }
 
             LOG.info("Finished fixing Emis episode of cares changing date at " + orgOdsCodeRegex);
