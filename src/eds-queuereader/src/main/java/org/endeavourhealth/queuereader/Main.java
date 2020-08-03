@@ -123,12 +123,13 @@ public class Main {
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("fixEmisEpisodesChangingDate")) {
 
+			boolean testMode = Boolean.parseBoolean(args[1]);
 			String orgOdsCodeRegex = null;
-			if (args.length > 1) {
-				orgOdsCodeRegex = args[1];
+			if (args.length > 2) {
+				orgOdsCodeRegex = args[2];
 			}
 
-			SpecialRoutines.fixEmisEpisodesChangingDate(orgOdsCodeRegex);
+			SpecialRoutines.fixEmisEpisodesChangingDate(testMode, orgOdsCodeRegex);
 			System.exit(0);
 		}
 
@@ -196,7 +197,7 @@ public class Main {
 			System.exit(0);
 		}
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("CountVaccinationCodes")) {
 			String sinceDateStr = args[1];
 			String ccgOdsCodes = null;
@@ -205,7 +206,7 @@ public class Main {
 			}
 			SpecialRoutines.countVaccinationCodes(sinceDateStr, ccgOdsCodes);
 			System.exit(0);
-		}
+		}*/
 
 		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("ValidateProtocolCohorts")) {

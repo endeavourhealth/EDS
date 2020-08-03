@@ -51,9 +51,6 @@ import org.endeavourhealth.core.messaging.pipeline.PipelineException;
 import org.endeavourhealth.core.messaging.pipeline.components.PostMessageToExchange;
 import org.endeavourhealth.core.messaging.pipeline.components.RunDataDistributionProtocols;
 import org.endeavourhealth.core.queueing.QueueHelper;
-import org.endeavourhealth.core.terminology.Read2Code;
-import org.endeavourhealth.core.terminology.SnomedCode;
-import org.endeavourhealth.core.terminology.TerminologyService;
 import org.endeavourhealth.core.xml.QueryDocument.*;
 import org.endeavourhealth.core.xml.TransformErrorSerializer;
 import org.endeavourhealth.core.xml.transformError.TransformError;
@@ -68,7 +65,6 @@ import org.endeavourhealth.transform.common.resourceBuilders.ImmunizationBuilder
 import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
 import org.endeavourhealth.transform.enterprise.EnterpriseTransformHelper;
 import org.endeavourhealth.transform.enterprise.FhirToEnterpriseCsvTransformer;
-import org.endeavourhealth.transform.enterprise.ObservationCodeHelper;
 import org.endeavourhealth.transform.enterprise.outputModels.AbstractEnterpriseCsvWriter;
 import org.endeavourhealth.transform.enterprise.transforms.AppointmentEnterpriseTransformer;
 import org.endeavourhealth.transform.enterprise.transforms.EpisodeOfCareEnterpriseTransformer;
@@ -103,7 +99,6 @@ import java.sql.ResultSet;
 import java.sql.Statement;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
 public abstract class SpecialRoutines {
@@ -4097,7 +4092,7 @@ public abstract class SpecialRoutines {
         }
     }*/
 
-    public static void countVaccinationCodes(String sinceDateStr, String ccgOdsCodes) {
+    /*public static void countVaccinationCodes(String sinceDateStr, String ccgOdsCodes) {
         LOG.debug("Counting VaccinationCodes at " + ccgOdsCodes);
         try {
 
@@ -4203,7 +4198,7 @@ public abstract class SpecialRoutines {
                                 snomedConceptIdStr = "NULL";
                             }
 
-                            String cacheKey = originalCode + "¬" + originalTerm + "¬" + snomedConceptIdStr;
+                            String cacheKey = originalCode + "|" + originalTerm + "|" + snomedConceptIdStr;
                             AtomicInteger count = hmResults.get(cacheKey);
                             if (count == null) {
                                 count = new AtomicInteger(0);
@@ -4280,7 +4275,7 @@ public abstract class SpecialRoutines {
                     }
 
                     for (String key: l) {
-                        String[] toks = key.split("¬");
+                        String[] toks = key.split("|");
                         String originalCode = toks[0];
 
                         String originalTerm = "NULL";
@@ -4331,7 +4326,7 @@ public abstract class SpecialRoutines {
         } catch (Throwable t) {
             LOG.error("", t);
         }
-    }
+    }*/
 
     public static void compareDsmSubscribers() {
         LOG.debug("Comparing DSM for Subscribers");
@@ -5155,14 +5150,48 @@ public abstract class SpecialRoutines {
 
     }
 
+    static class RegRecord {
+        private Date start;
+        private Date end;
+        private String regType;
+
+        public Date getStart() {
+            return start;
+        }
+
+        public void setStart(Date start) {
+            this.start = start;
+        }
+
+        public Date getEnd() {
+            return end;
+        }
+
+        public void setEnd(Date end) {
+            this.end = end;
+        }
+
+        public String getRegType() {
+            return regType;
+        }
+
+        public void setRegType(String regType) {
+            this.regType = regType;
+        }
+    }
+
     public static void fixEmisEpisodesChangingDate(boolean testMode, String orgOdsCodeRegex) {
         LOG.info("Fixing Emis episode of cares changing date at " + orgOdsCodeRegex);
         try {
 
             ServiceDalI serviceDal = DalProvider.factoryServiceDal();
+            ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
+
             List<Service> services = serviceDal.getAll();
 
             String bulkOperationName = "Fix Emis duplicate episodes SD-99";
+
+            SimpleDateFormat csvDateFormat = new SimpleDateFormat("yyyy-MM-dd");
 
             for (Service service: services) {
 
@@ -5184,9 +5213,87 @@ public abstract class SpecialRoutines {
                     }
                 }
 
+                LOG.debug("Doing " + service);
 
+                Map<String, List<RegRecord>> hmRegRecords = new HashMap<>();
+
+                UUID serviceId = service.getId();
+                List<UUID> systemIds = SystemHelper.getSystemIdsForService(service);
+                if (systemIds.size() != 1) {
+                    throw new Exception("" + systemIds.size() + " system IDs found");
+                }
+                UUID systemId = systemIds.get(0);
 
                 //go through files to find state from files
+                List<Exchange> exchanges = exchangeDal.getExchangesByService(serviceId, systemId, Integer.MAX_VALUE);
+                for (int i=exchanges.size()-1; i>=0; i--) {
+                    Exchange exchange = exchanges.get(i);
+
+                    String exchangeBody = exchange.getBody();
+                    List<ExchangePayloadFile> files = ExchangeHelper.parseExchangeBody(exchangeBody);
+                    if (files.isEmpty() || files.size() == 1) {
+                        continue;
+                    }
+
+                    ExchangePayloadFile patientFile = null;
+                    for (ExchangePayloadFile file: files) {
+                        if (file.getType().equals("Admin_Patient")) {
+                            patientFile = file;
+                            break;
+                        }
+                    }
+
+                    if (patientFile == null) {
+                        LOG.warn("No patient file for exchange " + exchange.getId());
+                        continue;
+                    }
+
+                    String path = patientFile.getPath();
+                    InputStreamReader isr = FileHelper.readFileReaderFromSharedStorage(path);
+
+                    CSVParser parser = new CSVParser(isr, CSVFormat.DEFAULT.withHeader());
+                    Iterator<CSVRecord> iterator = parser.iterator();
+
+                    while (iterator.hasNext()) {
+                        CSVRecord record = iterator.next();
+
+                        String patientGuid = record.get("PatientGuid");
+                        String regDate = record.get("DateOfRegistration");
+                        String dedDate = record.get("DateOfDeactivation");
+                        String deleted = record.get("Deleted");
+                        String regType = record.get("PatientTypeDescription");
+
+                        if (deleted.equals("true")) {
+                            hmRegRecords.remove(patientGuid);
+                            continue;
+                        }
+
+                        RegRecord rr = new RegRecord();
+
+                        if (!Strings.isNullOrEmpty(regDate)) {
+                            Date d = csvDateFormat.parse(regDate);
+                            rr.setStart(d);
+                        }
+                        if (!Strings.isNullOrEmpty(dedDate)) {
+                            Date d = csvDateFormat.parse(dedDate);
+                            rr.setStart(d);
+                        }
+                        if (!Strings.isNullOrEmpty(regType)) {
+                            rr.setRegType(regType.trim());
+                        }
+
+                        List<RegRecord> l = hmRegRecords.get(patientGuid);
+                        if (l == null) {
+                            l = new ArrayList<>();
+                            hmRegRecords.put(patientGuid, l);
+                        }
+                        l.add(rr);
+                    }
+
+                    parser.close();
+                }
+
+
                 //go through latest reg status file
                 //for each patient, tidy up episodes to match
                 //update Emis->DDS mappings for new data
