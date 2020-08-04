@@ -215,11 +215,11 @@ public class Main {
 			System.exit(0);
 		}*/
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("TestSubscriberConfigs")) {
 			SpecialRoutines.testSubscriberConfigs();
 			System.exit(0);
-		}
+		}*/
 
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("FindTppServicesNeedReprocessing")) {
@@ -243,7 +243,7 @@ public class Main {
 			System.exit(0);
 		}*/
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("TestHashedFileFilteringForSRCode")) {
 
 			String filePath = args[1];
@@ -251,25 +251,25 @@ public class Main {
 			String dataDateStr = args[3];
 			SpecialRoutines.testHashedFileFilteringForSRCode(filePath, uniqueKey, dataDateStr);
 			System.exit(0);
-		}
+		}*/
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("PopulateMissingOrgsInCompassV1")) {
 
 			String subscriberConfigName = args[1];
 			boolean testMode = Boolean.parseBoolean(args[2]);
 			SpecialRoutines.populateMissingOrgsInCompassV1(subscriberConfigName, testMode);
 			System.exit(0);
-		}
+		}*/
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("PopulateMissingOrgsInCompassV2")) {
 
 			String subscriberConfigName = args[1];
 			boolean testMode = Boolean.parseBoolean(args[2]);
 			SpecialRoutines.populateMissingOrgsInCompassV2(subscriberConfigName, testMode);
 			System.exit(0);
-		}
+		}*/
 
 		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("DeleteDataFromOldCoreDB")) {
@@ -302,22 +302,22 @@ public class Main {
 			System.exit(0);
 		}
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("TransformBartsEncounters")) {
 
 			String odsCode = args[1];
 			String tableName = args[2];
 			SpecialRoutines.transformAdtEncounters(odsCode, tableName);
 			System.exit(0);
-		}
+		}*/
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("CatptureBartsEncounters")) {
 			Integer count = Integer.parseInt(args[1]);
 			String toFile = args[2];
 			SpecialRoutines.catptureBartsEncounters(count, toFile);
 			System.exit(0);
-		}
+		}*/
 
 		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("LoadTppStagingData")) {
@@ -355,13 +355,13 @@ public class Main {
 			System.exit(0);
 		}*/
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("TestBulkLoad")) {
 			String s3Path = args[1];
 			String tableName = args[2];
 			SpecialRoutines.testBulkLoad(s3Path, tableName);
 			System.exit(0);
-		}
+		}*/
 
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("TestInformationModel")) {
@@ -375,7 +375,7 @@ public class Main {
 			System.exit(0);
 		}
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("BreakUpAdminBatches")) {
 			String odsCodeRegex = null;
 			if (args.length > 1) {
@@ -383,13 +383,13 @@ public class Main {
 			}
 			SpecialRoutines.breakUpAdminBatches(odsCodeRegex);
 			System.exit(0);
-		}
+		}*/
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("GetJarDetails")) {
 			SpecialRoutines.getJarDetails();
 			System.exit(0);
-		}
+		}*/
 
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("ValidateNhsNumbers")) {

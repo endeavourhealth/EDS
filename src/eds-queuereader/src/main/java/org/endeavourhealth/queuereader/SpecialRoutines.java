@@ -1,40 +1,33 @@
 package org.endeavourhealth.queuereader;
 
 import com.google.common.base.Strings;
-import com.google.common.hash.HashCode;
-import com.google.common.hash.HashFunction;
-import com.google.common.hash.Hasher;
-import com.google.common.hash.Hashing;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.FilenameUtils;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
-import org.endeavourhealth.common.config.ConfigManager;
-import org.endeavourhealth.common.fhir.*;
+import org.endeavourhealth.common.fhir.IdentifierHelper;
+import org.endeavourhealth.common.fhir.ReferenceHelper;
 import org.endeavourhealth.common.fhir.schema.RegistrationType;
 import org.endeavourhealth.common.utility.FileHelper;
 import org.endeavourhealth.common.utility.JsonSerializer;
-import org.endeavourhealth.core.application.ApplicationHeartbeatHelper;
-import org.endeavourhealth.core.configuration.PostMessageToExchangeConfig;
-import org.endeavourhealth.core.csv.CsvHelper;
 import org.endeavourhealth.core.database.dal.DalProvider;
 import org.endeavourhealth.core.database.dal.admin.LibraryRepositoryHelper;
 import org.endeavourhealth.core.database.dal.admin.ServiceDalI;
 import org.endeavourhealth.core.database.dal.admin.SystemHelper;
 import org.endeavourhealth.core.database.dal.admin.models.Service;
-import org.endeavourhealth.core.database.dal.audit.ExchangeBatchDalI;
 import org.endeavourhealth.core.database.dal.audit.ExchangeDalI;
-import org.endeavourhealth.core.database.dal.audit.models.*;
+import org.endeavourhealth.core.database.dal.audit.models.Exchange;
+import org.endeavourhealth.core.database.dal.audit.models.ExchangeEvent;
+import org.endeavourhealth.core.database.dal.audit.models.ExchangeTransformAudit;
+import org.endeavourhealth.core.database.dal.audit.models.HeaderKeys;
 import org.endeavourhealth.core.database.dal.eds.PatientLinkDalI;
 import org.endeavourhealth.core.database.dal.eds.PatientSearchDalI;
 import org.endeavourhealth.core.database.dal.eds.models.PatientLinkPair;
 import org.endeavourhealth.core.database.dal.ehr.ResourceDalI;
 import org.endeavourhealth.core.database.dal.ehr.models.ResourceWrapper;
 import org.endeavourhealth.core.database.dal.subscriberTransform.SubscriberCohortDalI;
-import org.endeavourhealth.core.database.dal.subscriberTransform.SubscriberInstanceMappingDalI;
 import org.endeavourhealth.core.database.dal.subscriberTransform.SubscriberPersonMappingDalI;
 import org.endeavourhealth.core.database.dal.subscriberTransform.SubscriberResourceMappingDalI;
 import org.endeavourhealth.core.database.dal.subscriberTransform.models.SubscriberCohortRecord;
@@ -45,17 +38,12 @@ import org.endeavourhealth.core.database.dal.usermanager.caching.ProjectCache;
 import org.endeavourhealth.core.database.rdbms.ConnectionManager;
 import org.endeavourhealth.core.database.rdbms.datasharingmanager.models.DataSharingAgreementEntity;
 import org.endeavourhealth.core.database.rdbms.datasharingmanager.models.ProjectEntity;
-import org.endeavourhealth.core.exceptions.TransformException;
-import org.endeavourhealth.core.fhirStorage.FhirResourceHelper;
-import org.endeavourhealth.core.fhirStorage.FhirSerializationHelper;
 import org.endeavourhealth.core.fhirStorage.ServiceInterfaceEndpoint;
 import org.endeavourhealth.core.messaging.pipeline.PipelineException;
-import org.endeavourhealth.core.messaging.pipeline.components.PostMessageToExchange;
 import org.endeavourhealth.core.messaging.pipeline.components.RunDataDistributionProtocols;
 import org.endeavourhealth.core.queueing.MessageFormat;
 import org.endeavourhealth.core.queueing.QueueHelper;
 import org.endeavourhealth.core.xml.QueryDocument.*;
-import org.endeavourhealth.core.xml.TransformErrorSerializer;
 import org.endeavourhealth.core.xml.transformError.TransformError;
 import org.endeavourhealth.im.client.IMClient;
 import org.endeavourhealth.im.models.mapping.MapColumnRequest;
@@ -73,31 +61,19 @@ import org.endeavourhealth.transform.enterprise.FhirToEnterpriseCsvTransformer;
 import org.endeavourhealth.transform.enterprise.outputModels.AbstractEnterpriseCsvWriter;
 import org.endeavourhealth.transform.enterprise.transforms.AppointmentEnterpriseTransformer;
 import org.endeavourhealth.transform.enterprise.transforms.EpisodeOfCareEnterpriseTransformer;
-import org.endeavourhealth.transform.enterprise.transforms.OrganisationEnterpriseTransformer;
 import org.endeavourhealth.transform.enterprise.transforms.PatientEnterpriseTransformer;
-import org.endeavourhealth.transform.fhirhl7v2.FhirHl7v2Filer;
-import org.endeavourhealth.transform.fhirhl7v2.transforms.EncounterTransformer;
 import org.endeavourhealth.transform.subscriber.*;
 import org.endeavourhealth.transform.subscriber.targetTables.OutputContainer;
 import org.endeavourhealth.transform.subscriber.targetTables.SubscriberTableId;
 import org.endeavourhealth.transform.subscriber.transforms.AppointmentTransformer;
 import org.endeavourhealth.transform.subscriber.transforms.EpisodeOfCareTransformer;
-import org.endeavourhealth.transform.subscriber.transforms.OrganisationTransformer;
 import org.endeavourhealth.transform.subscriber.transforms.PatientTransformer;
 import org.endeavourhealth.transform.tpp.csv.helpers.TppCsvHelper;
 import org.hl7.fhir.instance.model.*;
-import org.hl7.fhir.instance.model.Resource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
-import java.net.URI;
-import java.net.URL;
-import java.nio.charset.Charset;
-import java.nio.file.Files;
-import java.nio.file.StandardCopyOption;
-import java.security.CodeSource;
-import java.security.ProtectionDomain;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -404,7 +380,7 @@ public abstract class SpecialRoutines {
     }
 
 
-    public static void getJarDetails() {
+    /*public static void getJarDetails() {
         LOG.debug("Get Jar Details OLD");
         try {
             Class cls = SpecialRoutines.class;
@@ -448,9 +424,9 @@ public abstract class SpecialRoutines {
         } catch (Throwable t) {
             LOG.error("", t);
         }
-    }
+    }*/
 
-    public static void breakUpAdminBatches(String odsCodeRegex) {
+    /*public static void breakUpAdminBatches(String odsCodeRegex) {
         try {
             LOG.debug("Breaking up admin batches for " + odsCodeRegex);
 
@@ -641,7 +617,7 @@ public abstract class SpecialRoutines {
         } catch (Throwable t) {
             LOG.error("", t);
         }
-    }
+    }*/
 
     public static void testInformationModelMapping() throws Exception{
         LOG.debug("Testing Information Model Mapping");
@@ -1200,7 +1176,7 @@ public abstract class SpecialRoutines {
     }
 
 
-    public static void testBulkLoad(String s3Path, String tableName) {
+    /*public static void testBulkLoad(String s3Path, String tableName) {
         LOG.debug("Testing Bulk Load from " + s3Path + " to " + tableName);
         try {
 
@@ -1243,7 +1219,7 @@ public abstract class SpecialRoutines {
         } catch (Throwable t) {
             LOG.error("", t);
         }
-    }
+    }*/
 
     /*public static void testCallToDdsUi() {
 
@@ -1640,7 +1616,7 @@ public abstract class SpecialRoutines {
         }
     }
 
-    public static void catptureBartsEncounters(int count, String toFile) {
+    /*public static void catptureBartsEncounters(int count, String toFile) {
         LOG.debug("Capturing " + count + " Barts Encounters to " + toFile);
         try {
             UUID serviceId = UUID.fromString("b5a08769-cbbe-4093-93d6-b696cd1da483");
@@ -1816,9 +1792,9 @@ public abstract class SpecialRoutines {
             LOG.error("", t);
         }
 
-    }
+    }*/
 
-    public static void transformAdtEncounters(String odsCode, String tableName) {
+    /*public static void transformAdtEncounters(String odsCode, String tableName) {
         LOG.debug("Transforming " + odsCode + " Encounters from " + tableName);
         try {
 
@@ -1826,9 +1802,9 @@ public abstract class SpecialRoutines {
             Service service = serviceDal.getByLocalIdentifier(odsCode);
             LOG.debug("Running for " + service);
 
-            /*SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
+            *//*SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
             Date from = sdf.parse(dFrom);
-            Date to = sdf.parse(dTo);*/
+            Date to = sdf.parse(dTo);*//*
 
             UUID serviceId = service.getId();
             UUID systemId = UUID.fromString("d874c58c-91fd-41bb-993e-b1b8b22038b2");
@@ -1944,7 +1920,7 @@ public abstract class SpecialRoutines {
         } catch (Throwable t) {
             LOG.error("", t);
         }
-    }
+    }*/
 
     public static void findEmisServicesNeedReprocessing(String odsCodeRegex) {
         LOG.debug("Finding Emis Services that Need Re-processing for " + odsCodeRegex);
@@ -2856,7 +2832,7 @@ public abstract class SpecialRoutines {
         }
     }*/
 
-    public static void populateMissingOrgsInCompassV1(String subscriberConfigName, boolean testMode) {
+    /*public static void populateMissingOrgsInCompassV1(String subscriberConfigName, boolean testMode) {
         LOG.debug("Populating Missing Orgs In CompassV1 " + subscriberConfigName + " testMode = " + testMode);
         try {
 
@@ -2884,8 +2860,8 @@ public abstract class SpecialRoutines {
                 Long enterpriseId = hmOrgs.get(serviceId);
                 LOG.debug("Doing service " + serviceId + ", enterprise ID " + enterpriseId);
 
-                /*ServiceDalI serviceDal = DalProvider.factoryServiceDal();
-                Service service = serviceDal.getById(serviceId);*/
+                *//*ServiceDalI serviceDal = DalProvider.factoryServiceDal();
+                Service service = serviceDal.getById(serviceId);*//*
 
                 //find the FHIR Organization this is from
                 sql = "SELECT resource_id FROM enterprise_id_map WHERE enterprise_id = " + enterpriseId;
@@ -2973,9 +2949,9 @@ public abstract class SpecialRoutines {
             LOG.error("", t);
         }
 
-    }
+    }*/
 
-    public static void populateMissingOrgsInCompassV2(String subscriberConfigName, boolean testMode) {
+    /*public static void populateMissingOrgsInCompassV2(String subscriberConfigName, boolean testMode) {
         LOG.debug("Populating Missing Orgs In CompassV2 " + subscriberConfigName + " testMode = " + testMode);
         try {
 
@@ -3003,8 +2979,8 @@ public abstract class SpecialRoutines {
                 Long subscriberId = hmOrgs.get(serviceId);
                 LOG.debug("Doing service " + serviceId + ", subscriber ID " + subscriberId);
 
-                /*ServiceDalI serviceDal = DalProvider.factoryServiceDal();
-                Service service = serviceDal.getById(serviceId);*/
+                *//*ServiceDalI serviceDal = DalProvider.factoryServiceDal();
+                Service service = serviceDal.getById(serviceId);*//*
 
                 //find the FHIR Organization this is from
                 sql = "SELECT source_id FROM subscriber_id_map WHERE subscriber_id = " + subscriberId;
@@ -3091,10 +3067,10 @@ public abstract class SpecialRoutines {
             LOG.error("", t);
         }
 
-    }
+    }*/
 
 
-    private static Reference findNewOrgRefOnCoreDb(String subscriberConfigName, Reference oldOrgRef, UUID serviceId, boolean testMode) throws Exception {
+    /*private static Reference findNewOrgRefOnCoreDb(String subscriberConfigName, Reference oldOrgRef, UUID serviceId, boolean testMode) throws Exception {
 
         try {
             String oldOrgId = ReferenceHelper.getReferenceId(oldOrgRef);
@@ -3158,7 +3134,7 @@ public abstract class SpecialRoutines {
             LOG.error("Exception finding org ref for service " + serviceId, e);
             return null;
         }
-    }
+    }*/
 
     /*public static void testHashedFileFilteringForSRCode(String filePath, String uniqueKey) {
         LOG.info("Testing Hashed File Filtering for SRCode using " + filePath);
@@ -3424,7 +3400,7 @@ public abstract class SpecialRoutines {
         }
     }*/
 
-    public static void testHashedFileFilteringForSRCode(String filePath, String uniqueKey, String dataDateStr) {
+    /*public static void testHashedFileFilteringForSRCode(String filePath, String uniqueKey, String dataDateStr) {
         LOG.info("Testing Hashed File Filtering for SRCode using " + filePath);
         try {
 
@@ -3652,7 +3628,7 @@ public abstract class SpecialRoutines {
             LOG.error("", t);
         }
 
-    }
+    }*/
 
     /*public static void deleteResourcesForDeletedPatients(boolean testMode, String odsCodeRegex) {
         LOG.debug("Deleting Resources for Deleted Patients using " + odsCodeRegex);
@@ -3956,7 +3932,7 @@ public abstract class SpecialRoutines {
 
     }
 
-    public static void testSubscriberConfigs() {
+    /*public static void testSubscriberConfigs() {
         LOG.debug("Testing Subscriber Configs");
         try {
 
@@ -3984,7 +3960,7 @@ public abstract class SpecialRoutines {
             LOG.error("", t);
         }
 
-    }
+    }*/
 
     /*public static void validateProtocolCohorts() {
         LOG.debug("Validating Protocol Cohorts");
@@ -5318,9 +5294,11 @@ public abstract class SpecialRoutines {
                     List<ExchangePayloadFile> files = ExchangeHelper.parseExchangeBody(exchangeBody);
                     if (files.isEmpty() || files.size() == 1) {
 
-                        ExchangePayloadFile file = files.get(0);
-                        if (file.getType().equals("RegistrationStatus")) {
-                            latestRegStatusExchange = exchange.getId();
+                        if (files.size() == 1) {
+                            ExchangePayloadFile file = files.get(0);
+                            if (file.getType().equals("RegistrationStatus")) {
+                                latestRegStatusExchange = exchange.getId();
+                            }
                         }
 
                         continue;
