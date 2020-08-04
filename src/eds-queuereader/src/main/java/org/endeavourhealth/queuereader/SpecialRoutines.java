@@ -5287,6 +5287,7 @@ public abstract class SpecialRoutines {
 
                 //go through files to find state from files
                 List<Exchange> exchanges = exchangeDal.getExchangesByService(serviceId, systemId, Integer.MAX_VALUE);
+                LOG.trace("Going to check " + exchanges.size() + " exchanges");
                 for (int i=exchanges.size()-1; i>=0; i--) {
                     Exchange exchange = exchanges.get(i);
 
@@ -5657,14 +5658,17 @@ public abstract class SpecialRoutines {
                             ResourceWrapper wrapper = hmEpisodeWrappersByUuid.get(episodeUuid);
 
                             //find all mappings to that ID
+                            LOG.trace("Episode UUID = " + episodeUuid);
                             List<String> sourceIds = new ArrayList<>();
                             for (String sourceId: hmEpisodeMappingsBySourceId.keySet()) {
                                 UUID mappedUuid = hmEpisodeMappingsBySourceId.get(sourceId);
+                                LOG.trace("Compare against [" + sourceId + "] -> " + mappedUuid + " = " + (mappedUuid.equals(episodeUuid)));
                                 if (mappedUuid.equals(episodeUuid)) {
                                     sourceIds.add(sourceId);
+                                    LOG.trace("Matches");
                                 }
                             }
-
+                            LOG.trace("Source IDs " + sourceIds.size() + " -> " + sourceIds + " -> [" + String.join("], [" + sourceIds) + "]");
                             LOG.debug("    Episode " + wrapper.getResourceId() + ", mapped from [" + String.join("], [" + sourceIds) + "]");
                         }
 
