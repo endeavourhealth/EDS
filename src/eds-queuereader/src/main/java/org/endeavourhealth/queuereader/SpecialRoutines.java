@@ -5646,6 +5646,12 @@ public abstract class SpecialRoutines {
 
                     if (testMode) {
 
+                        LOG.trace("Dumping source map size " + hmEpisodeMappingsBySourceId.size());
+                        for (String sourceId: hmEpisodeMappingsBySourceId.keySet()) {
+                            UUID mappedUuid = hmEpisodeMappingsBySourceId.get(sourceId);
+                            LOG.trace("    SourceID [" + sourceId + "] -> " + mappedUuid);
+                        }
+
                         LOG.debug("Got " + hmEpisodeWrappersByUuid.size() + " episodes");
                         for (UUID episodeUuid: hmEpisodeWrappersByUuid.keySet()) {
                             ResourceWrapper wrapper = hmEpisodeWrappersByUuid.get(episodeUuid);
