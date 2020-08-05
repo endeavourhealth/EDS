@@ -5647,29 +5647,29 @@ public abstract class SpecialRoutines {
 
                     if (testMode) {
 
-                        LOG.trace("Dumping source map size " + hmEpisodeMappingsBySourceId.size());
+                        /*LOG.trace("Dumping source map size " + hmEpisodeMappingsBySourceId.size());
                         for (String sourceId: hmEpisodeMappingsBySourceId.keySet()) {
                             UUID mappedUuid = hmEpisodeMappingsBySourceId.get(sourceId);
                             LOG.trace("    SourceID [" + sourceId + "] -> " + mappedUuid);
-                        }
+                        }*/
 
                         LOG.debug("Got " + hmEpisodeWrappersByUuid.size() + " episodes");
                         for (UUID episodeUuid: hmEpisodeWrappersByUuid.keySet()) {
                             ResourceWrapper wrapper = hmEpisodeWrappersByUuid.get(episodeUuid);
 
                             //find all mappings to that ID
-                            LOG.trace("Episode UUID = " + episodeUuid);
+                            //LOG.trace("Episode UUID = " + episodeUuid);
                             List<String> sourceIds = new ArrayList<>();
                             for (String sourceId: hmEpisodeMappingsBySourceId.keySet()) {
                                 UUID mappedUuid = hmEpisodeMappingsBySourceId.get(sourceId);
-                                LOG.trace("Compare against [" + sourceId + "] -> " + mappedUuid + " = " + (mappedUuid.equals(episodeUuid)));
+                                //LOG.trace("Compare against [" + sourceId + "] -> " + mappedUuid + " = " + (mappedUuid.equals(episodeUuid)));
                                 if (mappedUuid.equals(episodeUuid)) {
                                     sourceIds.add(sourceId);
-                                    LOG.trace("Matches");
+                                    //LOG.trace("Matches");
                                 }
                             }
-                            LOG.trace("Source IDs " + sourceIds.size() + " -> " + sourceIds + " -> [" + String.join("], [" + sourceIds) + "]");
-                            LOG.debug("    Episode " + wrapper.getResourceId() + ", mapped from [" + String.join("], [" + sourceIds) + "]");
+                            //LOG.trace("Source IDs " + sourceIds.size() + " -> " + sourceIds + " -> [" + String.join("], [", sourceIds) + "]");
+                            LOG.debug("    Episode " + wrapper.getResourceId() + ", mapped from [" + String.join("], [", sourceIds) + "]");
                         }
 
                         LOG.debug("Got " + regRecords.size() + " proper extract records");
