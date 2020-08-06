@@ -5332,7 +5332,9 @@ public abstract class SpecialRoutines {
                             UUID slotUuid = IdHelper.getEdsResourceId(serviceId, ResourceType.Slot, sourceId);
 
                             if (appointmentUuid == null) {
-                                throw new Exception("Failed to find UUID for appointment " + sourceId);
+                                //we received data for appts where we didn't have the patient, so skipped them
+                                //throw new Exception("Failed to find UUID for appointment " + sourceId);
+                                continue;
                             }
                             if (slotUuid == null) {
                                 throw new Exception("Failed to find UUID for slot " + sourceId);
