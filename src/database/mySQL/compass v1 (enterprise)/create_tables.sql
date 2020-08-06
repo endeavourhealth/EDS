@@ -1,4 +1,5 @@
-
+-- schema for Compass v1 database - used for BOTH PI and de-identified databases
+-- this file adds foreign keys to tables, so DO NOT use in production environment
 DROP TRIGGER IF EXISTS after_patient_insert;
 DROP TRIGGER IF EXISTS after_patient_update;
 DROP TRIGGER IF EXISTS after_patient_delete;
@@ -362,6 +363,7 @@ INSERT INTO registration_type (id, code, description) VALUES (15, 'SH', 'Sexual 
 INSERT INTO registration_type (id, code, description) VALUES (16, 'V', 'Vasectomy');
 INSERT INTO registration_type (id, code, description) VALUES (17, 'OH', 'Out of Hours');
 
+
 -- Table: organization
 
 CREATE TABLE organization
@@ -458,18 +460,21 @@ CREATE UNIQUE INDEX schedule_id
 
 -- Table: person
 
--- DROP TABLE person
+-- DROP TABLE person;
 
 CREATE TABLE person
 (
   id bigint NOT NULL,
   patient_gender_id smallint NOT NULL,
-  pseudo_id character varying(255),
-  age_years integer,
-  age_months integer,
-  age_weeks integer,
+  nhs_number character varying(255), -- null if de-identified
+  date_of_birth date, -- null if de-identified
+  pseudo_id character varying(255), -- null if PI
+  age_years integer, -- null if PI
+  age_months integer, -- null if PI
+  age_weeks integer, -- null if PI
   date_of_death date,
-  postcode_prefix character varying(20),
+  postcode character varying(20), -- null if de-identified
+  postcode_prefix character varying(20), -- null if PI
   lsoa_code character varying(50),
   msoa_code character varying(50),
   ethnic_code character(1),
@@ -501,14 +506,15 @@ CREATE TABLE patient
   organization_id bigint NOT NULL,
   person_id bigint NOT NULL,
   patient_gender_id smallint NOT NULL,
-            nhs_number character varying(255),
-            date_of_birth date,
-  pseudo_id character varying(255),
-  age_years integer,
-  age_months integer,
-  age_weeks integer,
+  nhs_number character varying(255), -- null if de-identified
+  date_of_birth date, -- null if de-identified
+  pseudo_id character varying(255), -- null if PI
+  age_years integer, -- null if PI
+  age_months integer, -- null if PI
+  age_weeks integer, -- null if PI
   date_of_death date,
-  postcode_prefix character varying(20),
+  postcode character varying(20), -- null if de-identified
+  postcode_prefix character varying(20), -- null if PI
   lsoa_code character varying(50),
   msoa_code character varying(50),
   ethnic_code character(1),
@@ -518,7 +524,7 @@ CREATE TABLE patient
   title character varying(50),
   first_names character varying(255),
   last_names character varying(255),
-  current_address_id bigint,  
+  current_address_id bigint,
   CONSTRAINT pk_patient_id_organization_id PRIMARY KEY (`organization_id`,`person_id`,`id`),
   CONSTRAINT fk_patient_organization_id FOREIGN KEY (organization_id)
       REFERENCES organization (id) MATCH SIMPLE
@@ -750,7 +756,6 @@ CREATE TABLE encounter_additional (
   CONSTRAINT pk_encounter_additional_id PRIMARY KEY (id, property_id, value_id)
 );
 CREATE INDEX ix_encounter_additional_id ON encounter_additional (id);
-
 
 -- Table: encounter_detail
 
@@ -1027,7 +1032,6 @@ CREATE INDEX medication_order_dmd_id
   ON medication_order
   (dmd_id);
 
-
 -- Table: flag
 
 CREATE TABLE flag
@@ -1081,7 +1085,7 @@ CREATE TABLE observation
   is_review boolean NOT NULL,
   problem_end_date date,
   parent_observation_id bigint,
-  date_recorded datetime,  
+  date_recorded datetime,
   CONSTRAINT pk_observation_id PRIMARY KEY (`organization_id`,`person_id`,`id`),
   CONSTRAINT fk_observation_encounter_id FOREIGN KEY (encounter_id)
       REFERENCES encounter (id) MATCH SIMPLE
@@ -1283,6 +1287,7 @@ CREATE UNIQUE INDEX pseudo_id_id
 
 
 
+-- Table: patient_uprn
 
 create table patient_uprn (
 	patient_id bigint,
@@ -1432,6 +1437,7 @@ CREATE UNIQUE INDEX ux_patient_pseudo_id ON patient_pseudo_id (id);
 CREATE INDEX patient_pseudo_id_patient ON patient_pseudo_id (patient_id);
 
 
+
 DELIMITER //
 CREATE PROCEDURE update_person_record_2(
 	IN _new_person_id bigint
@@ -1468,15 +1474,13 @@ BEGIN
 		LIMIT 1) AS `tmp`
 	);
 
-	REPLACE INTO person (id, patient_gender_id, pseudo_id, age_years, age_months, age_weeks, date_of_death, postcode_prefix, lsoa_code, msoa_code, ethnic_code, ward_code, local_authority_code, registered_practice_organization_id, title, first_names, last_names)
-	SELECT person_id, patient_gender_id, pseudo_id, age_years, age_months, age_weeks, date_of_death, postcode_prefix, lsoa_code, msoa_code, ethnic_code, ward_code, local_authority_code, registered_practice_organization_id, title, first_names, last_names
+	REPLACE INTO person (id, patient_gender_id, nhs_number, date_of_birth, pseudo_id, age_years, age_months, age_weeks, date_of_death, postcode, postcode_prefix, lsoa_code, msoa_code, ethnic_code, ward_code, local_authority_code, registered_practice_organization_id, title, first_names, last_names)
+	SELECT person_id, patient_gender_id, nhs_number, date_of_birth, pseudo_id, age_years, age_months, age_weeks, date_of_death, postcode, postcode_prefix, lsoa_code, msoa_code, ethnic_code, ward_code, local_authority_code, registered_practice_organization_id, title, first_names, last_names
 	FROM patient
 	WHERE id = _best_patient_id;
 
 END //
 DELIMITER ;
-
-
 
 
 DELIMITER //
@@ -1510,6 +1514,7 @@ BEGIN
 END //
 DELIMITER ;
 
+
 DELIMITER $$
 CREATE TRIGGER after_patient_insert
   AFTER INSERT ON patient
@@ -1536,4 +1541,3 @@ CREATE TRIGGER after_patient_delete
 	CALL update_person_record(null, OLD.person_id);
   END$$
 DELIMITER ;
-
