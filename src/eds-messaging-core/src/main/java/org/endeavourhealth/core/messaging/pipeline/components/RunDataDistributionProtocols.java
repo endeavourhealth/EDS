@@ -9,15 +9,10 @@ import org.endeavourhealth.common.fhir.schema.RegistrationType;
 import org.endeavourhealth.common.ods.OdsOrganisation;
 import org.endeavourhealth.common.ods.OdsWebService;
 import org.endeavourhealth.common.utility.ExpiringCache;
-import org.endeavourhealth.common.utility.XmlSerializer;
 import org.endeavourhealth.core.configuration.RunDataDistributionProtocolsConfig;
 import org.endeavourhealth.core.database.dal.DalProvider;
-import org.endeavourhealth.core.database.dal.admin.LibraryDalI;
 import org.endeavourhealth.core.database.dal.admin.LibraryRepositoryHelper;
 import org.endeavourhealth.core.database.dal.admin.ServiceDalI;
-import org.endeavourhealth.core.database.dal.admin.models.ActiveItem;
-import org.endeavourhealth.core.database.dal.admin.models.DefinitionItemType;
-import org.endeavourhealth.core.database.dal.admin.models.Item;
 import org.endeavourhealth.core.database.dal.audit.ExchangeBatchDalI;
 import org.endeavourhealth.core.database.dal.audit.models.Exchange;
 import org.endeavourhealth.core.database.dal.audit.models.ExchangeBatch;
@@ -323,7 +318,7 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 	/**
 	 * returns all known the subscriber config names
 	 */
-	public static List<String> getAllSubscriberConfigNamesFromOldProtocols() throws Exception {
+	/*public static List<String> getAllSubscriberConfigNamesFromOldProtocols() throws Exception {
 
 		//populate a set, so we can't end up with duplicates
 		Set<String> ret = new HashSet<>();
@@ -347,11 +342,6 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 			LibraryItem libraryItem = XmlSerializer.deserializeFromString(LibraryItem.class, xml, null);
 			Protocol protocol = libraryItem.getProtocol();
 
-			//skip disabled protocols
-			/*if (protocol.getEnabled() != ProtocolEnabled.TRUE) {
-				continue;
-			}*/
-
 			List<ServiceContract> subscribers = protocol
 					.getServiceContract()
 					.stream()
@@ -370,7 +360,7 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 		List<String> list = new ArrayList<>(ret);
 		list.sort(((o1, o2) -> o1.compareToIgnoreCase(o2))); //for consistency
 		return list;
-	}
+	}*/
 
 	public static List<LibraryItem> getProtocolsForPublisherServiceOldWay(UUID serviceUuid) throws PipelineException {
 

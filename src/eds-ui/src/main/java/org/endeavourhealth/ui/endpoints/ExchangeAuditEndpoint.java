@@ -3,6 +3,7 @@ package org.endeavourhealth.ui.endpoints;
 import com.codahale.metrics.annotation.Timed;
 import com.google.common.base.Strings;
 import org.apache.commons.io.FileUtils;
+import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.common.security.SecurityUtils;
 import org.endeavourhealth.common.security.annotations.RequiresAdmin;
 import org.endeavourhealth.core.configuration.PostMessageToExchangeConfig;
@@ -945,7 +946,13 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
         userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
                 "Get Subscriber Config Names For Service");
 
-        List<String> ret = RunDataDistributionProtocols.getAllSubscriberConfigNamesFromOldProtocols();
+        List<String> ret = new ArrayList<>();
+        Map<String, String> configs = ConfigManager.getConfigurations("db_subscriber");
+        for (String configName: configs.keySet()) {
+            ret.add(configName);
+        }
+        ret.sort(((o1, o2) -> o1.toLowerCase().compareToIgnoreCase(o2.toLowerCase())));
+        //List<String> ret = RunDataDistributionProtocols.getAllSubscriberConfigNamesFromOldProtocols();
 
         clearLogbackMarkers();
 

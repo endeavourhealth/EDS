@@ -491,4 +491,71 @@ export class ServiceListComponent implements OnInit, OnDestroy{
 		}
 		return vm.cachedTagStrs[service.uuid]
 	}
+
+	/**
+	 * saves current list to CSV
+	 */
+	saveToCsv() {
+
+		var vm = this;
+
+		//create CSV content in a String
+		var lines = [];
+		var line;
+
+		//line = 'Name,ID,Parent,Publisher Config,Last Data,Status,Tags';
+		line = '\"Name\",\"ID\",\"Parent\",\"Last Data\",\"Status\",\"Tags\"';
+		lines.push(line);
+
+		for (var i=0; i<vm.filteredServices.length; i++) {
+			var service = vm.filteredServices[i];
+
+			var cols = [];
+
+			cols.push(service.name);
+			cols.push(service.localIdentifier);
+			cols.push(service.ccgCode);
+			//cols.push(service.publisherConfigName);
+			cols.push(''); //populated below
+			cols.push(''); //populated below
+			cols.push(vm.getTagStr(service));
+
+			if (service.systemStatuses) {
+
+				for (var j=0; j<service.systemStatuses.length; j++) {
+					var status = service.systemStatuses[j];
+
+					var lastDataStr = vm.formatLastData(service, status);
+					var statusStr = vm.formatProcessingStatus(service, status);
+
+					cols[3] = lastDataStr;
+					cols[4] = statusStr;
+
+					line = '\"' + cols.join('\",\"') + '\"';
+					lines.push(line);
+				}
+
+			} else {
+
+				line = '\"' + cols.join('\",\"') + '\"';
+				lines.push(line);
+			}
+		}
+
+		var csvStr = lines.join('\r\n');
+
+		const filename = 'Services.csv';
+		const blob = new Blob([csvStr], { type: 'text/plain' });
+
+		let url = window.URL.createObjectURL(blob);
+		let a = document.createElement('a');
+		document.body.appendChild(a);
+		a.setAttribute('style', 'display: none');
+		a.href = url;
+		a.download = filename;
+		a.click();
+		window.URL.revokeObjectURL(url);
+		a.remove();
+	}
+
 }

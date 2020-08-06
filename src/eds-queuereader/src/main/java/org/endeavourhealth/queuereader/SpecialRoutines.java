@@ -5131,6 +5131,62 @@ public abstract class SpecialRoutines {
 
     }
 
+    /**
+     * the Emis CSV time format was wrong (https://endeavourhealth.atlassian.net/browse/SD-108)
+     * which meant any appt or schedule with a time of "12xxxx" was saved as "00xxxx"
+     */
+    public static void fixEmisAppointmentsAt12(String orgOdsCodeRegex) {
+        LOG.info("Fixing Emis Appointment Times for " + orgOdsCodeRegex);
+        try {
+            ServiceDalI serviceDal = DalProvider.factoryServiceDal();
+            List<Service> services = serviceDal.getAll();
+
+            PatientSearchDalI patientSearchDal = DalProvider.factoryPatientSearchDal();
+            SubscriberCohortDalI subscriberCohortDalI = DalProvider.factorySubscriberCohortDal();
+            ResourceDalI resourceDal = DalProvider.factoryResourceDal();
+
+
+            String bulkOperationName = "fix Emis appointment times";
+
+            for (Service service: services) {
+
+                if (shouldSkipService(service, orgOdsCodeRegex)) {
+                    continue;
+                }
+
+                Map<String, String> tags = service.getTags();
+                if (tags == null
+                        || !tags.containsKey("EMIS")) {
+                    continue;
+                }
+
+                //check if already done
+                if (isServiceDoneBulkOperation(service, bulkOperationName)) {
+                    LOG.debug("Skipping " + service + " as already done");
+                    continue;
+                }
+
+                LOG.debug("Doing " + service);
+                UUID serviceId = service.getId();
+
+                Set<String> appointmentsIdsDone = new HashSet<>();
+                Set<String> scheduleIdDone = new HashSet<>();
+
+                //TODO - go through appt and schedule files
+                //TODO - fix resources
+                //TODO - send into protocol queue
+
+                //audit that we've done
+                setServiceDoneBulkOperation(service, bulkOperationName);
+            }
+
+            LOG.info("Finished Fixing Emis Appointment Times for " + orgOdsCodeRegex);
+        } catch (Throwable t) {
+            LOG.error("", t);
+        }
+
+    }
+
     static class RegRecord {
 
 
@@ -5830,7 +5886,10 @@ public abstract class SpecialRoutines {
         }
     }
 
-    public static void fixAppointmentTimes(String subscriberConfigName, String orgOdsCodeRegex) {
+    /**
+     * re-sends Appointment data to subscriber DBs to correct for a bug that meant the time component was dropped (https://endeavourhealth.atlassian.net/browse/SD-106)
+     */
+    public static void fixAppointmentTimesInCompass(String subscriberConfigName, String orgOdsCodeRegex) {
         LOG.info("Fixing Compass Appointment Times for " + orgOdsCodeRegex);
         try {
             ServiceDalI serviceDal = DalProvider.factoryServiceDal();

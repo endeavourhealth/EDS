@@ -86,6 +86,18 @@ public class Main {
 		ConfigManager.initialize("queuereader", configId);
 
 		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("fixEmisAppointmentsAt12")) {
+
+			String subscriberConfigName = args[1];
+			String orgOdsCodeRegex = null;
+			if (args.length > 2) {
+				orgOdsCodeRegex = args[2];
+			}
+			SpecialRoutines.fixEmisAppointmentsAt12(orgOdsCodeRegex);
+			System.exit(0);
+		}
+
+		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("fixAppointmentTimes")) {
 
 			String subscriberConfigName = args[1];
@@ -93,7 +105,7 @@ public class Main {
 			if (args.length > 2) {
 				orgOdsCodeRegex = args[2];
 			}
-			SpecialRoutines.fixAppointmentTimes(subscriberConfigName, orgOdsCodeRegex);
+			SpecialRoutines.fixAppointmentTimesInCompass(subscriberConfigName, orgOdsCodeRegex);
 			System.exit(0);
 		}
 
