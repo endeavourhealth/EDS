@@ -623,8 +623,8 @@ public abstract class SpecialRoutines {
     public static void testInformationModelMapping() throws Exception{
         LOG.debug("Testing Information Model Mapping");
 
-        Map<MapColumnRequest, MapResponse> mappedColumnRequestResponseCache = new ConcurrentHashMap<>();
-        Map<MapColumnValueRequest, MapResponse> mappedColumnValueRequestResponseCache = new ConcurrentHashMap<>();
+        Map<String, MapResponse> mappedColumnRequestResponseCache = new ConcurrentHashMap<>();
+        Map<String, MapResponse> mappedColumnValueRequestResponseCache = new ConcurrentHashMap<>();
 
         //////// 1st instance definition
         MapColumnRequest propertyRequest1 = new MapColumnRequest(
@@ -632,40 +632,65 @@ public abstract class SpecialRoutines {
                 "attendance_category"
         );
         MapResponse propertyResponse1 = IMClient.getMapProperty(propertyRequest1);
-        mappedColumnRequestResponseCache.put(propertyRequest1, propertyResponse1);
-        LOG.debug("First property response instance queried and added to cache");
+        String propertyRequest1Key = propertyRequest1.getProvider()+":"
+                                        +propertyRequest1.getSystem()+":"
+                                        +propertyRequest1.getSchema()+":"
+                                        +propertyRequest1.getTable()+":"
+                                        +propertyRequest1.getColumn();
+        mappedColumnRequestResponseCache.put(propertyRequest1Key, propertyResponse1);
+        LOG.debug("First property response instance queried and added to cache using key: "+propertyRequest1Key);
 
         MapColumnValueRequest valueRequest1 = new MapColumnValueRequest(
                 "CM_Org_Barts", "CM_Sys_Cerner", "CDS", "emergency",
                 "attendance_category", "01", "CM_NHS_DD"
         );
         MapResponse valueResponse1 = IMClient.getMapPropertyValue(valueRequest1);
-        mappedColumnValueRequestResponseCache.put(valueRequest1, valueResponse1);
-        LOG.debug("First property value response instance queried and added to cache");
+        String propertyValueRequest1Key = valueRequest1.getProvider()+":"
+                                        +valueRequest1.getSystem()+":"
+                                        +valueRequest1.getSchema()+":"
+                                        +valueRequest1.getTable()+":"
+                                        +valueRequest1.getColumn()+":"
+                                        +valueRequest1.getValue().getCode()+":"
+                                        +valueRequest1.getValue().getScheme();
+        mappedColumnValueRequestResponseCache.put(propertyValueRequest1Key, valueResponse1);
+        LOG.debug("First property value response instance queried and added to cache using key: "+propertyValueRequest1Key);
 
         ///////// 2nd instance (same definition as first)
         MapColumnRequest propertyRequest2 = new MapColumnRequest(
                 "CM_Org_Barts", "CM_Sys_Cerner", "CDS", "emergency",
                 "attendance_category"
         );
-        //is it in the cache?
-        MapResponse propertyResponse2 = mappedColumnRequestResponseCache.get(propertyRequest2);
+        String propertyRequest2Key = propertyRequest2.getProvider()+":"
+                +propertyRequest2.getSystem()+":"
+                +propertyRequest2.getSchema()+":"
+                +propertyRequest2.getTable()+":"
+                +propertyRequest2.getColumn();
+
+        //is it in the cache using the same key construct as 1?
+        MapResponse propertyResponse2 = mappedColumnRequestResponseCache.get(propertyRequest2Key);
         if (propertyResponse2 != null) {
-            LOG.debug("Property response from 1st definition FOUND in cache");
+            LOG.debug("Property response from 1st definition FOUND in cache using key: "+propertyRequest2Key);
         } else {
-            LOG.debug("Property response from 1st definition NOT found in cache");
+            LOG.debug("Property response from 1st definition NOT found in cache using key: "+propertyRequest2Key);
         }
 
         MapColumnValueRequest valueRequest2 = new MapColumnValueRequest(
                 "CM_Org_Barts", "CM_Sys_Cerner", "CDS", "emergency",
                 "attendance_category", "01", "CM_NHS_DD"
         );
+        String propertyValueRequest2Key = valueRequest2.getProvider()+":"
+                +valueRequest2.getSystem()+":"
+                +valueRequest2.getSchema()+":"
+                +valueRequest2.getTable()+":"
+                +valueRequest2.getColumn()+":"
+                +valueRequest2.getValue().getCode()+":"
+                +valueRequest2.getValue().getScheme();
         //is it in the cache?
-        MapResponse valueResponse2 = mappedColumnValueRequestResponseCache.get(valueRequest2);
+        MapResponse valueResponse2 = mappedColumnValueRequestResponseCache.get(propertyValueRequest2Key);
         if (valueResponse2 != null) {
-            LOG.debug("Property value response from 1st definition FOUND in cache");
+            LOG.debug("Property value response from 1st definition FOUND in cache using key: "+propertyValueRequest2Key);
         } else {
-            LOG.debug("Property value response from 1st definition NOT found in cache");
+            LOG.debug("Property value response from 1st definition NOT found in cache using key: "+propertyValueRequest2Key);
         }
     }
 
