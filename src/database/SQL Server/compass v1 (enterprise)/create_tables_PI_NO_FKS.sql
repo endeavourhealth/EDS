@@ -1026,6 +1026,8 @@ CREATE INDEX referral_request_snomed_concept_id
   ON referral_request
   (snomed_concept_id);
 
+/*
+
 -- Table: link_distributor
 
 CREATE TABLE link_distributor
@@ -1039,6 +1041,7 @@ CREATE TABLE link_distributor
 CREATE INDEX link_distributor_target_skid
     ON link_distributor
         (target_skid);
+*/
 
 create table patient_uprn (
                 patient_id bigint,

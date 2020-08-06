@@ -84,7 +84,7 @@ DROP TABLE IF EXISTS flag;
 DROP TABLE IF EXISTS observation;
 DROP TABLE IF EXISTS procedure_request;
 DROP TABLE IF EXISTS referral_request;
-DROP TABLE IF EXISTS pseudo_id;
+DROP TABLE IF EXISTS pseudo_id; -- deleted table
 DROP TABLE IF EXISTS patient_contact;
 DROP TABLE IF EXISTS patient_address;
 DROP TABLE IF EXISTS patient_uprn;
@@ -881,6 +881,7 @@ CREATE INDEX referral_request_core_concept_id
   (core_concept_id);
 
 
+/*
 -- Table: pseudo_id
 
 CREATE TABLE pseudo_id
@@ -900,6 +901,7 @@ CREATE UNIQUE INDEX pseudo_id_id
 CREATE INDEX pseudo_id_pseudo_id
   ON pseudo_id
   (pseudo_id);
+*/
 
 -- Table: patient_uprn
 
@@ -2085,6 +2087,7 @@ DELIMITER ;
 
 
 
+/*
 
 DELIMITER $$
 CREATE TRIGGER after_pseudo_id_insert
@@ -2146,6 +2149,7 @@ CREATE TRIGGER after_pseudo_id_delete
   END$$
 DELIMITER ;
 
+*/
 
 
 

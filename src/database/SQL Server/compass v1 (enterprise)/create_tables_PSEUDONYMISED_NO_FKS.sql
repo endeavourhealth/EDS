@@ -1043,7 +1043,7 @@ GO
 
 CREATE INDEX referral_request_snomed_concept_id ON referral_request(snomed_concept_id)
 GO
-
+/*
 CREATE TABLE link_distributor
 (
   source_skid character varying(255) NOT NULL,
@@ -1054,7 +1054,7 @@ CREATE TABLE link_distributor
 GO
 
 CREATE INDEX link_distributor_target_skid ON link_distributor(target_skid)
-GO
+GO*/
 
 create table patient_uprn (
 	patient_id bigint,

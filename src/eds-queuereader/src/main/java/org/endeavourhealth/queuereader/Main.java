@@ -86,12 +86,22 @@ public class Main {
 		ConfigManager.initialize("queuereader", configId);
 
 		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("findPatientsWithConfidentialData")) {
+
+			String orgOdsCodeRegex = null;
+			if (args.length > 1) {
+				orgOdsCodeRegex = args[1];
+			}
+			SpecialRoutines.findPatientsWithConfidentialData(orgOdsCodeRegex);
+			System.exit(0);
+		}
+
+		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("fixEmisAppointmentsAt12")) {
 
-			String subscriberConfigName = args[1];
 			String orgOdsCodeRegex = null;
-			if (args.length > 2) {
-				orgOdsCodeRegex = args[2];
+			if (args.length > 1) {
+				orgOdsCodeRegex = args[1];
 			}
 			SpecialRoutines.fixEmisAppointmentsAt12(orgOdsCodeRegex);
 			System.exit(0);

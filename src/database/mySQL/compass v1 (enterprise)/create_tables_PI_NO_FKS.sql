@@ -6,7 +6,7 @@ DROP PROCEDURE IF EXISTS update_person_record;
 DROP PROCEDURE IF EXISTS update_person_record_2;
 DROP TABLE IF EXISTS patient_pseudo_id;
 DROP TABLE IF EXISTS pseudo_id; -- old table, not used now
-DROP TABLE IF EXISTS link_distributor;
+DROP TABLE IF EXISTS link_distributor; -- deleted table
 DROP TABLE IF EXISTS patient_address;
 DROP TABLE IF EXISTS patient_contact;
 DROP TABLE IF EXISTS patient_address_match;
@@ -1030,6 +1030,7 @@ CREATE INDEX referral_request_snomed_concept_id
   ON referral_request
   (snomed_concept_id);
 
+/*
 -- Table: link_distributor
 
 CREATE TABLE link_distributor
@@ -1043,6 +1044,7 @@ CREATE TABLE link_distributor
 CREATE INDEX link_distributor_target_skid
     ON link_distributor
         (target_skid);
+*/
 
 
 /*

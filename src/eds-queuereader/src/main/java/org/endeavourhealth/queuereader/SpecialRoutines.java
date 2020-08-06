@@ -7,6 +7,7 @@ import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.io.FileUtils;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
+import org.endeavourhealth.common.fhir.FhirExtensionUri;
 import org.endeavourhealth.common.fhir.IdentifierHelper;
 import org.endeavourhealth.common.fhir.ReferenceHelper;
 import org.endeavourhealth.common.fhir.schema.RegistrationType;
@@ -52,9 +53,7 @@ import org.endeavourhealth.im.models.mapping.MapResponse;
 import org.endeavourhealth.subscriber.filer.EnterpriseFiler;
 import org.endeavourhealth.subscriber.filer.SubscriberFiler;
 import org.endeavourhealth.transform.common.*;
-import org.endeavourhealth.transform.common.resourceBuilders.EncounterBuilder;
-import org.endeavourhealth.transform.common.resourceBuilders.EpisodeOfCareBuilder;
-import org.endeavourhealth.transform.common.resourceBuilders.ImmunizationBuilder;
+import org.endeavourhealth.transform.common.resourceBuilders.*;
 import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
 import org.endeavourhealth.transform.enterprise.EnterpriseTransformHelper;
 import org.endeavourhealth.transform.enterprise.FhirToEnterpriseCsvTransformer;
@@ -5197,7 +5196,7 @@ public abstract class SpecialRoutines {
             PatientSearchDalI patientSearchDal = DalProvider.factoryPatientSearchDal();
             SubscriberCohortDalI subscriberCohortDalI = DalProvider.factorySubscriberCohortDal();
             ResourceDalI resourceDal = DalProvider.factoryResourceDal();
-
+            ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
 
             String bulkOperationName = "fix Emis appointment times";
 
@@ -5222,12 +5221,261 @@ public abstract class SpecialRoutines {
                 LOG.debug("Doing " + service);
                 UUID serviceId = service.getId();
 
+                List<UUID> systemIds = SystemHelper.getSystemIdsForService(service);
+                if (systemIds.size() != 1) {
+                    throw new Exception("" + systemIds.size() + " system IDs found");
+                }
+                UUID systemId = systemIds.get(0);
+
+                List<UUID> batchIdsCreated = new ArrayList<>();
+
+                FhirResourceFiler filer = null;
+                Exchange newExchange = null;
+
+                UUID exchangeId = UUID.randomUUID();
+                String bodyJson = JsonSerializer.serialize(new ArrayList<ExchangePayloadFile>());
+                String odsCode = service.getLocalId();
+
+                filer = new FhirResourceFiler(exchangeId, service.getId(), systemId, new TransformError(), batchIdsCreated);
+
+                newExchange = new Exchange();
+                newExchange.setId(exchangeId);
+                newExchange.setBody(bodyJson);
+                newExchange.setTimestamp(new Date());
+                newExchange.setHeaders(new HashMap<>());
+                newExchange.setHeaderAsUuid(HeaderKeys.SenderServiceUuid, service.getId());
+                newExchange.setHeader(HeaderKeys.ProtocolIds, ""); //just set to non-null value, so postToExchange(..) can safely recalculate
+                newExchange.setHeader(HeaderKeys.SenderLocalIdentifier, odsCode);
+                newExchange.setHeaderAsUuid(HeaderKeys.SenderSystemUuid, systemId);
+                newExchange.setHeader(HeaderKeys.SourceSystem, MessageFormat.EMIS_CSV);
+                newExchange.setServiceId(service.getId());
+                newExchange.setSystemId(systemId);
+
+                AuditWriter.writeExchange(newExchange);
+                AuditWriter.writeExchangeEvent(newExchange, "Manually created to correct Emis appointment start times (SD-108)");
+
                 Set<String> appointmentsIdsDone = new HashSet<>();
                 Set<String> scheduleIdDone = new HashSet<>();
 
-                //TODO - go through appt and schedule files
-                //TODO - fix resources
-                //TODO - send into protocol queue
+                SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+                SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm:ss");
+
+                int done = 0;
+                
+                List<Exchange> exchanges = exchangeDal.getExchangesByService(serviceId, systemId, Integer.MAX_VALUE);
+                LOG.debug("Found " + exchanges.size() + " exchanges");
+                for (Exchange x: exchanges) {
+
+                    String exchangeBody = x.getBody();
+                    List<ExchangePayloadFile> files = ExchangeHelper.parseExchangeBody(exchangeBody);
+
+                    ExchangePayloadFile slotFile = null;
+                    ExchangePayloadFile scheduleFile = null;
+                    for (ExchangePayloadFile file: files) {
+                        if (file.getType().equals("Appointment_Slot")) {
+                            slotFile = file;
+                        } else if (file.getType().equals("Appointment_Session")) {
+                            scheduleFile = file;
+                        }
+                    }
+
+                    if (slotFile != null) {
+
+                        String path = slotFile.getPath();
+                        InputStreamReader isr = FileHelper.readFileReaderFromSharedStorage(path);
+
+                        CSVParser parser = new CSVParser(isr, CSVFormat.DEFAULT.withHeader());
+                        Iterator<CSVRecord> iterator = parser.iterator();
+
+                        while (iterator.hasNext()) {
+                            CSVRecord record = iterator.next();
+
+                            String slotGuid = record.get("SlotGuid");
+                            String appointmentDateStr = record.get("AppointmentDate");
+                            String appointmentStartTimeStr = record.get("AppointmentStartTime");
+                            String plannedDurationInMinutesStr = record.get("PlannedDurationInMinutes");
+                            String patientGuid = record.get("PatientGuid");
+                            String sendInTimeStr = record.get("SendInTime");
+                            String leftTimeStr = record.get("LeftTime");
+                            //String didNotAttend = record.get("DidNotAttend");
+                            //String patientWaitInMin = record.get("PatientWaitInMin");
+                            //String appointmentDelayInMin = record.get("AppointmentDelayInMin");
+                            //String actualDurationInMinutes = record.get("ActualDurationInMinutes");
+                            //String organisationGuid = record.get("OrganisationGuid");
+                            //String sessionGuid = record.get("SessionGuid");
+                            //String dnaReasonCodeId = record.get("DnaReasonCodeId");
+                            String deleted = record.get("Deleted");
+                            //String processingId = record.get("ProcessingId");
+
+                            if (Strings.isNullOrEmpty(patientGuid)) {
+                                continue;
+                            }
+
+                            String sourceId = patientGuid + ":" + slotGuid;
+                            if (appointmentsIdsDone.contains(sourceId)) {
+                                continue;
+                            }
+                            appointmentsIdsDone.add(sourceId);
+
+                            if (deleted.equals("true")) {
+                                continue;
+                            }
+
+                            //if nothing will have been affected by the bug, skip it
+                            if (!appointmentStartTimeStr.startsWith("12")
+                                    && !sendInTimeStr.startsWith("12")
+                                    && !leftTimeStr.startsWith("12")) {
+                                continue;
+                            }
+
+                            UUID appointmentUuid = IdHelper.getEdsResourceId(serviceId, ResourceType.Appointment, sourceId);
+                            UUID slotUuid = IdHelper.getEdsResourceId(serviceId, ResourceType.Slot, sourceId);
+
+                            if (appointmentUuid == null) {
+                                throw new Exception("Failed to find UUID for appointment " + sourceId);
+                            }
+                            if (slotUuid == null) {
+                                throw new Exception("Failed to find UUID for slot " + sourceId);
+                            }
+
+                            Appointment appointment = (Appointment)resourceDal.getCurrentVersionAsResource(serviceId, ResourceType.Appointment, appointmentUuid.toString());
+                            Slot slot = (Slot)resourceDal.getCurrentVersionAsResource(serviceId, ResourceType.Slot, slotUuid.toString());
+
+                            if (appointment == null) {
+                                throw new Exception("Failed to find appointment " + appointmentUuid);
+                            }
+                            if (slot == null) {
+                                throw new Exception("Failed to find slot " + slotUuid);
+                            }
+
+                            Date d = dateFormat.parse(appointmentDateStr);
+                            Date startTime = timeFormat.parse(appointmentStartTimeStr);
+                            Date startDateTime = new Date(d.getTime() + startTime.getTime());
+
+                            AppointmentBuilder appointmentBuilder = new AppointmentBuilder(appointment);
+                            SlotBuilder slotBuilder = new SlotBuilder(slot);
+
+                            appointmentBuilder.setStartDateTime(startDateTime);
+                            slotBuilder.setStartDateTime(startDateTime);
+
+                            int plannedDurationMins = Integer.parseInt(plannedDurationInMinutesStr);
+                            long endMillis = startDateTime.getTime() + (plannedDurationMins * 60 * 1000);
+
+                            slotBuilder.setEndDateTime(new Date(endMillis));
+                            appointmentBuilder.setEndDateTime(new Date(endMillis));
+
+                            if (!Strings.isNullOrEmpty(sendInTimeStr)) {
+                                Date sendInTime = timeFormat.parse(sendInTimeStr);
+                                Date sendInDateTime = new Date(d.getTime() + sendInTime.getTime());
+                                appointmentBuilder.setSentInDateTime(sendInDateTime);
+                            }
+
+                            if (!Strings.isNullOrEmpty(leftTimeStr)) {
+                                Date leftTime = timeFormat.parse(leftTimeStr);
+                                Date leftDateTime = new Date(d.getTime() + leftTime.getTime());
+                                appointmentBuilder.setLeftDateTime(leftDateTime);
+                            }
+
+                            filer.savePatientResource(null, false, appointmentBuilder, slotBuilder);
+                        }
+
+                        parser.close();
+                    }
+
+
+                    if (scheduleFile != null) {
+                        String path = scheduleFile.getPath();
+                        InputStreamReader isr = FileHelper.readFileReaderFromSharedStorage(path);
+
+                        CSVParser parser = new CSVParser(isr, CSVFormat.DEFAULT.withHeader());
+                        Iterator<CSVRecord> iterator = parser.iterator();
+
+                        while (iterator.hasNext()) {
+                            CSVRecord record = iterator.next();
+                            
+                            String appointmentSessionGuid = record.get("AppointmentSessionGuid");
+                            //String description = record.get("Description");
+                            //String locationGuid = record.get("LocationGuid");
+                            //String sessionTypeDescription = record.get("SessionTypeDescription");
+                            //String sessionCategoryDisplayName = record.get("SessionCategoryDisplayName");
+                            String startDateStr = record.get("StartDate");
+                            String startTimeStr = record.get("StartTime");
+                            String endDateStr = record.get("EndDate");
+                            String endTimeStr = record.get("EndTime");
+                            //String private = record.get("Private");
+                            //String organisationGuid = record.get("OrganisationGuid");
+                            String deleted = record.get("Deleted");
+                            //String processingId = record.get("ProcessingId");
+
+                            String sourceId = appointmentSessionGuid;
+                            if (scheduleIdDone.contains(sourceId)) {
+                                continue;
+                            }
+                            scheduleIdDone.add(sourceId);
+
+                            if (deleted.equals("true")) {
+                                continue;
+                            }
+
+                            //if nothing will have been affected by the bug, skip it
+                            if (!startTimeStr.startsWith("12")
+                                    && !endTimeStr.startsWith("12")) {
+                                continue;
+                            }
+
+                            UUID scheduleUuid = IdHelper.getEdsResourceId(serviceId, ResourceType.Schedule, sourceId);
+                            
+                            if (scheduleUuid == null) {
+                                throw new Exception("Failed to find UUID for schedule " + sourceId);
+                            }
+
+                            Schedule schedule = (Schedule)resourceDal.getCurrentVersionAsResource(serviceId, ResourceType.Schedule, scheduleUuid.toString());
+
+                            if (schedule == null) {
+                                throw new Exception("Failed to find schedule " + scheduleUuid);
+                            }
+
+                            ScheduleBuilder scheduleBuilder = new ScheduleBuilder(schedule);
+
+                            Date startDate = dateFormat.parse(startDateStr);
+                            Date startTime = timeFormat.parse(startTimeStr);
+                            Date startDateTime = new Date(startDate.getTime() + startTime.getTime());
+                            scheduleBuilder.setPlanningHorizonStart(startDateTime);
+
+                            Date endDate = dateFormat.parse(endDateStr);
+                            Date endTime = timeFormat.parse(endTimeStr);
+                            Date endDateTime = new Date(endDate.getTime() + endTime.getTime());
+                            scheduleBuilder.setPlanningHorizonEnd(endDateTime);
+  
+                            filer.saveAdminResource(null, false, scheduleBuilder);
+                        }
+
+                        parser.close();
+                    }
+                    
+                    done ++;
+                    if (done % 100 == 0) {
+                        LOG.debug("Done " + done + " exchanges");
+                    }
+                }
+                LOG.debug("Finished " + done + " exchanges");
+
+
+                //close down filer
+                filer.waitToFinish();
+
+                //set multicast header
+                String batchIdString = ObjectMapperPool.getInstance().writeValueAsString(batchIdsCreated.toArray());
+                newExchange.setHeader(HeaderKeys.BatchIdsJson, batchIdString);
+
+                //post to Rabbit protocol queue
+                List<UUID> exchangeIds = new ArrayList<>();
+                exchangeIds.add(newExchange.getId());
+                QueueHelper.postToExchange(exchangeIds, QueueHelper.ExchangeName.PROTOCOL, null, null);
+
+                //set this after posting to rabbit so we can't re-queue it later
+                newExchange.setHeaderAsBoolean(HeaderKeys.AllowQueueing, new Boolean(false)); //don't allow this to be re-queued
+                AuditWriter.writeExchange(newExchange);
 
                 //audit that we've done
                 setServiceDoneBulkOperation(service, bulkOperationName);
@@ -5238,6 +5486,103 @@ public abstract class SpecialRoutines {
             LOG.error("", t);
         }
 
+    }
+
+    /**
+     * when the Compass DBs were changed to NOT exclude data items flagged as confidential, it looks like
+     * some data items didn't get refreshed and sent to the DB. This routine simply goes through each patient record
+     * to find out if there is a confidential data item and stores the patient UUID in a table. These can then
+     * be refreshed to all subscribers using the existing routine
+     * https://endeavourhealth.atlassian.net/browse/SD-111
+     */
+    public static void findPatientsWithConfidentialData(String orgOdsCodeRegex) {
+        LOG.info("Finding Patients With Confidential Data at " + orgOdsCodeRegex);
+        try {
+
+            ServiceDalI serviceDal = DalProvider.factoryServiceDal();
+            PatientSearchDalI patientSearchDal = DalProvider.factoryPatientSearchDal();
+            //ResourceDalI resourceDal = DalProvider.factoryResourceDal();
+
+            List<Service> services = serviceDal.getAll();
+
+            String bulkOperationName = "finding patients with confidential data (SD-111)";
+
+            for (Service service: services) {
+
+                //only Barts DW and Emis have confidential items, so skip if not them
+                Map<String, String> tags = service.getTags();
+                if (tags == null
+                        || (!tags.containsKey("EMIS")
+                        && !tags.containsKey("Barts DW"))) {
+                    continue;
+                }
+
+                if (shouldSkipService(service, orgOdsCodeRegex)) {
+                    continue;
+                }
+
+                if (isServiceDoneBulkOperation(service, bulkOperationName)) {
+                    LOG.debug("Skipping " + service + " as already done");
+                    continue;
+                }
+
+                UUID serviceId = service.getId();
+                List<UUID> patientIds = patientSearchDal.getPatientIds(serviceId, false);
+                LOG.debug("Found " + patientIds.size() + " patients");
+
+                int done = 0;
+                int countFound = 0;
+                for (UUID patientId: patientIds) {
+
+                    //way too slow to retrieve all resources and check in code
+                    //List<ResourceWrapper> wrappers = resourceDal.getResourcesByPatient(serviceId, patientId);
+                    String sql = "SELECT 1 FROM resource_current WHERE service_id = ? AND patient_id = ? AND resource_data LIKE ?";
+
+                    Connection conn = ConnectionManager.getEhrConnection(serviceId);
+                    PreparedStatement ps = conn.prepareStatement(sql);
+
+                    ps.setString(1, serviceId.toString());
+                    ps.setString(2, patientId.toString());
+                    ps.setString(3, "%" + FhirExtensionUri.IS_CONFIDENTIAL + "%");
+
+                    ResultSet rs = ps.executeQuery();
+                    boolean found = rs.next();
+
+                    ps.close();
+                    conn.close();
+
+                    if (found) {
+                        countFound ++;
+                        conn = ConnectionManager.getAuditConnection();
+
+                        sql = "INSERT INTO confidential_patients (service_id, patient_id) VALUES (?, ?)";
+                        ps = conn.prepareStatement(sql);
+
+                        ps.setString(1, serviceId.toString());
+                        ps.setString(2, patientId.toString());
+
+                        ps.executeUpdate();
+                        conn.commit();
+
+                        ps.close();
+                        conn.close();
+                    }
+
+                    done ++;
+                    if (done % 1000 == 0) {
+                        LOG.debug("Done " + done + " found " + countFound);
+                    }
+                }
+                LOG.debug("Finished " + done + " found " + countFound);
+
+                //record we've done this
+                setServiceDoneBulkOperation(service, bulkOperationName);
+            }
+
+            LOG.info("Finished Finding Patients With Confidential Data at " + orgOdsCodeRegex);
+        } catch (Throwable t) {
+            LOG.error("", t);
+        }
     }
 
     static class RegRecord {

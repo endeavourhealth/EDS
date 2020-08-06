@@ -629,6 +629,7 @@ GO
 CREATE INDEX [procedure_request_patient_id] ON [procedure_request] ([patient_id])
 GO
 
+/*
 
 CREATE TABLE [pseudo_id] (
 [id] bigint,
@@ -642,6 +643,7 @@ CREATE UNIQUE INDEX [pseudo_id_id] ON [pseudo_id] ([id])
 GO
 CREATE INDEX [pseudo_id_pseudo_id] ON [pseudo_id] ([pseudo_id])
 GO
+*/
 
 
 CREATE TABLE [referral_request] (
@@ -1976,7 +1978,7 @@ GO
 ALTER TABLE [procedure_request] ENABLE TRIGGER [after_procedure_request_delete]
 GO
 
-CREATE TRIGGER [after_pseudo_id_insert]
+/*CREATE TRIGGER [after_pseudo_id_insert]
 ON [pseudo_id]
 WITH EXECUTE AS CALLER
 After INSERT
@@ -2035,7 +2037,7 @@ BEGIN
   END
 GO
 ALTER TABLE [pseudo_id] ENABLE TRIGGER [after_pseudo_id_delete]
-GO
+GO*/
 
 CREATE TRIGGER [after_referral_request_insert]
 ON [referral_request]
