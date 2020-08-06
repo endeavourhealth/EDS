@@ -5342,7 +5342,9 @@ public abstract class SpecialRoutines {
                             Slot slot = (Slot)resourceDal.getCurrentVersionAsResource(serviceId, ResourceType.Slot, slotUuid.toString());
 
                             if (appointment == null) {
-                                throw new Exception("Failed to find appointment " + appointmentUuid);
+                                //appt may be null if the patient record has been deleted, in which case just skip it
+                                continue;
+                                //throw new Exception("Failed to find appointment " + appointmentUuid);
                             }
                             if (slot == null) {
                                 throw new Exception("Failed to find slot " + slotUuid);
