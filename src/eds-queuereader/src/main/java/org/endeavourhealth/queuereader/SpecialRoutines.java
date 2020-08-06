@@ -80,6 +80,7 @@ import java.sql.ResultSet;
 import java.sql.Statement;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 
 public abstract class SpecialRoutines {
@@ -622,23 +623,50 @@ public abstract class SpecialRoutines {
     public static void testInformationModelMapping() throws Exception{
         LOG.debug("Testing Information Model Mapping");
 
-        MapColumnRequest propertyRequest = new MapColumnRequest(
+        Map<MapColumnRequest, MapResponse> mappedColumnRequestResponseCache = new ConcurrentHashMap<>();
+        Map<MapColumnValueRequest, MapResponse> mappedColumnValueRequestResponseCache = new ConcurrentHashMap<>();
+
+        //////// 1st instance definition
+        MapColumnRequest propertyRequest1 = new MapColumnRequest(
                 "CM_Org_Barts", "CM_Sys_Cerner", "CDS", "emergency",
                 "attendance_category"
         );
-        MapResponse propertyResponse = IMClient.getMapProperty(propertyRequest);
+        MapResponse propertyResponse1 = IMClient.getMapProperty(propertyRequest1);
+        mappedColumnRequestResponseCache.put(propertyRequest1, propertyResponse1);
+        LOG.debug("First property response instance queried and added to cache");
 
-        String propertyConceptIri = propertyResponse.getConcept().getIri();
-        LOG.debug("For CM_Org_Barts, CM_Sys_Cerner, CDS, emergency, attendance_category, got propertyConceptIri: " + propertyConceptIri);
-
-        MapColumnValueRequest valueRequest = new MapColumnValueRequest(
+        MapColumnValueRequest valueRequest1 = new MapColumnValueRequest(
                 "CM_Org_Barts", "CM_Sys_Cerner", "CDS", "emergency",
                 "attendance_category", "01", "CM_NHS_DD"
         );
-        MapResponse valueResponse = IMClient.getMapPropertyValue(valueRequest);
+        MapResponse valueResponse1 = IMClient.getMapPropertyValue(valueRequest1);
+        mappedColumnValueRequestResponseCache.put(valueRequest1, valueResponse1);
+        LOG.debug("First property value response instance queried and added to cache");
 
-        String valueConceptIri = valueResponse.getConcept().getIri();
-        LOG.debug("Then for values, 01 and CM_NHS_DD, got valueConceptIri: " + valueConceptIri);
+        ///////// 2nd instance (same definition as first)
+        MapColumnRequest propertyRequest2 = new MapColumnRequest(
+                "CM_Org_Barts", "CM_Sys_Cerner", "CDS", "emergency",
+                "attendance_category"
+        );
+        //is it in the cache?
+        MapResponse propertyResponse2 = mappedColumnRequestResponseCache.get(propertyRequest2);
+        if (propertyResponse2 != null) {
+            LOG.debug("Property response from 1st definition FOUND in cache");
+        } else {
+            LOG.debug("Property response from 1st definition NOT found in cache");
+        }
+
+        MapColumnValueRequest valueRequest2 = new MapColumnValueRequest(
+                "CM_Org_Barts", "CM_Sys_Cerner", "CDS", "emergency",
+                "attendance_category", "01", "CM_NHS_DD"
+        );
+        //is it in the cache?
+        MapResponse valueResponse2 = mappedColumnValueRequestResponseCache.get(valueRequest2);
+        if (valueResponse2 != null) {
+            LOG.debug("Property value response from 1st definition FOUND in cache");
+        } else {
+            LOG.debug("Property value response from 1st definition NOT found in cache");
+        }
     }
 
     public static void testInformationModel() {
