@@ -5479,6 +5479,7 @@ public abstract class SpecialRoutines {
 
                 //set this after posting to rabbit so we can't re-queue it later
                 newExchange.setHeaderAsBoolean(HeaderKeys.AllowQueueing, new Boolean(false)); //don't allow this to be re-queued
+                newExchange.getHeaders().remove(HeaderKeys.BatchIdsJson);
                 AuditWriter.writeExchange(newExchange);
 
                 //audit that we've done
