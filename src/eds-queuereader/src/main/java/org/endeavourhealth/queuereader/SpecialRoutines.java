@@ -5329,26 +5329,26 @@ public abstract class SpecialRoutines {
                             }
 
                             UUID appointmentUuid = IdHelper.getEdsResourceId(serviceId, ResourceType.Appointment, sourceId);
-                            UUID slotUuid = IdHelper.getEdsResourceId(serviceId, ResourceType.Slot, sourceId);
-
                             if (appointmentUuid == null) {
                                 //we received data for appts where we didn't have the patient, so skipped them
                                 //throw new Exception("Failed to find UUID for appointment " + sourceId);
                                 continue;
                             }
-                            if (slotUuid == null) {
-                                throw new Exception("Failed to find UUID for slot " + sourceId);
-                            }
-
                             Appointment appointment = (Appointment)resourceDal.getCurrentVersionAsResource(serviceId, ResourceType.Appointment, appointmentUuid.toString());
-                            Slot slot = (Slot)resourceDal.getCurrentVersionAsResource(serviceId, ResourceType.Slot, slotUuid.toString());
-
                             if (appointment == null) {
                                 //appt may be null if the patient record has been deleted, in which case just skip it
                                 continue;
                                 //throw new Exception("Failed to find appointment " + appointmentUuid);
                             }
+
+                            UUID slotUuid = IdHelper.getEdsResourceId(serviceId, ResourceType.Slot, sourceId);
+                            if (slotUuid == null) {
+                                //if we've passed the above checks and got a non-deleted Appointment, then something is wrong if this is null
+                                throw new Exception("Failed to find UUID for slot " + sourceId);
+                            }
+                            Slot slot = (Slot)resourceDal.getCurrentVersionAsResource(serviceId, ResourceType.Slot, slotUuid.toString());
                             if (slot == null) {
+                                //if we've passed the above checks and got a non-deleted Appointment, then something is wrong if this is null
                                 throw new Exception("Failed to find slot " + slotUuid);
                             }
 
