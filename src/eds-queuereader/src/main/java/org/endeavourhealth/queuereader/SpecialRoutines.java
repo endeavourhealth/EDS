@@ -5626,7 +5626,7 @@ public abstract class SpecialRoutines {
                 int index = request.indexOf("subject=");
                 String nhsNumber = request.substring(index + 8);
 
-                boolean frail = response.contains("289999999105");
+                boolean frail = response.contains("Potentially frail");
 
                 hmResults.put(nhsNumber, Boolean.valueOf(frail));
             }
@@ -5714,7 +5714,7 @@ public abstract class SpecialRoutines {
 
                 } else if (results.contains("0_NONE")) {
                     nowFrail = Boolean.FALSE;
-                    logging.add("Results don't contain a frailty result, so TRUE");
+                    logging.add("Results don't contain a frailty result, so FALSE");
 
                 } else {
                     //didn't find in PAITNET SEARCH???
