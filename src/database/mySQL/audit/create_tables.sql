@@ -30,6 +30,8 @@ DROP TABLE IF EXISTS exchange_subscriber_send_audit;
 DROP TABLE IF EXISTS application_heartbeat;
 DROP TABLE IF EXISTS last_data_to_subscriber;
 DROP TABLE IF EXISTS bulk_operation_audit;
+DROP TABLE IF EXISTS service_subscriber_audit;
+DROP TABLE IF EXISTS service_publisher_audit;
 
 CREATE TABLE `exchange`
 (
@@ -354,6 +356,28 @@ create table bulk_operation_audit (
   started datetime(3),
   finished datetime(3)
 ) COMMENT 'table to audit one-off bulk routines';
+
+
+CREATE TABLE service_subscriber_audit (
+  service_id char(36) NOT NULL COMMENT 'the service affected',
+  dt_changed datetime(3) NOT NULL COMMENT 'when the change was detected',
+  subscriber_config_names varchar(4096) NOT NULL COMMENT 'list of subscriber config names, pipe delimited',
+  CONSTRAINT pk_service_subscriber_audit PRIMARY KEY (service_id, dt_changed)
+)
+ROW_FORMAT=COMPRESSED
+KEY_BLOCK_SIZE=8
+COMMENT 'records a history of the subscribers of a service and when it changed';
+
+
+CREATE TABLE service_publisher_audit (
+  service_id char(36) NOT NULL COMMENT 'the service affected',
+  dt_changed datetime(3) NOT NULL COMMENT 'when the change was detected',
+  has_dpa boolean NOT NULL COMMENT 'whether DDS has a DPA for this service',
+  CONSTRAINT pk_service_publisher_audit PRIMARY KEY (service_id, dt_changed)
+)
+ROW_FORMAT=COMPRESSED
+KEY_BLOCK_SIZE=8
+COMMENT 'records a history of the DPA state changing and when it changed';
 
 
 

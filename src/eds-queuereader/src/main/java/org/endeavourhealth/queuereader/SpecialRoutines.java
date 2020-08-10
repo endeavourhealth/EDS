@@ -41,9 +41,10 @@ import org.endeavourhealth.core.database.rdbms.datasharingmanager.models.DataSha
 import org.endeavourhealth.core.database.rdbms.datasharingmanager.models.ProjectEntity;
 import org.endeavourhealth.core.fhirStorage.ServiceInterfaceEndpoint;
 import org.endeavourhealth.core.messaging.pipeline.PipelineException;
-import org.endeavourhealth.core.messaging.pipeline.components.RunDataDistributionProtocols;
 import org.endeavourhealth.core.queueing.MessageFormat;
 import org.endeavourhealth.core.queueing.QueueHelper;
+import org.endeavourhealth.core.subscribers.PublisherHelper;
+import org.endeavourhealth.core.subscribers.SubscriberHelper;
 import org.endeavourhealth.core.xml.QueryDocument.*;
 import org.endeavourhealth.core.xml.transformError.TransformError;
 import org.endeavourhealth.im.client.IMClient;
@@ -1137,14 +1138,8 @@ public abstract class SpecialRoutines {
                 logging.add("Doing " + service + "--------------------------------------------------------------------");
 
                 //check DPAs
-
-                //check if publisher to DDS protocol
-                List<LibraryItem> protocolsOldWay = RunDataDistributionProtocols.getProtocolsForPublisherServiceOldWay(serviceId);
-                boolean hasDpaOldWay = !protocolsOldWay.isEmpty(); //in the old way, we count as having a DPA if they're in any protocol
-
-                //check if DSM DPA
-                boolean hasDpaNewWay = OrganisationCache.doesOrganisationHaveDPA(odsCode);
-
+                boolean hasDpaOldWay = PublisherHelper.hasDpaUsingOldProtocols(serviceId, odsCode);
+                boolean hasDpaNewWay = PublisherHelper.hasDpaUsingDsm(serviceId, odsCode);
                 boolean dpaMatches = hasDpaNewWay == hasDpaOldWay;
 
                 if (!dpaMatches) {
@@ -1157,33 +1152,9 @@ public abstract class SpecialRoutines {
                 }
 
                 //check DSAs
-
-                //want to find target subscriber config names OLD way
-                List<String> subscriberConfigNamesOldWay = RunDataDistributionProtocols.getSubscriberConfigNamesFromOldProtocols(serviceId);
-
-
-                //find target subscriber config names NEW way
-                List<String> subscriberConfigNamesNewWay = new ArrayList<>();
-
-                List<ProjectEntity> distributionProjects = ProjectCache.getValidDistributionProjectsForPublisher(odsCode);
-                if (distributionProjects == null) {
-                    logging.add("Got NULL distribution projects for " + odsCode);
-
-                } else {
-                    for (ProjectEntity distributionProject: distributionProjects) {
-                        String configName = distributionProject.getConfigName();
-                        if (!Strings.isNullOrEmpty(configName)) {
-                            subscriberConfigNamesNewWay.add(configName);
-                        }
-                    }
-                }
-
-                //compare the two
-                subscriberConfigNamesOldWay.sort(((o1, o2) -> o1.compareToIgnoreCase(o2)));
-                subscriberConfigNamesNewWay.sort(((o1, o2) -> o1.compareToIgnoreCase(o2)));
-
+                List<String> subscriberConfigNamesOldWay = SubscriberHelper.getSubscriberConfigNamesFromOldProtocols(serviceId, odsCode);
+                List<String> subscriberConfigNamesNewWay = SubscriberHelper.getSubscriberConfigNamesFromDsm(serviceId, odsCode);
                 boolean dsaMatches = subscriberConfigNamesOldWay.equals(subscriberConfigNamesNewWay);
-
 
                 //flatten the tags to a String
                 String notesStr = "";
@@ -2152,7 +2123,7 @@ public abstract class SpecialRoutines {
                     continue;
                 }
 
-                List<String> subscriberConfigNames = RunDataDistributionProtocols.getSubscriberConfigNamesFromOldProtocols(service.getId());
+                List<String> subscriberConfigNames = SubscriberHelper.getSubscriberConfigNamesForPublisher(null, service.getId(), service.getLocalId());
                 if (!subscriberConfigNames.contains(subscriberConfigName)) {
                     LOG.debug("Skipping " + service + " as not a publisher");
                     continue;
@@ -4555,7 +4526,7 @@ public abstract class SpecialRoutines {
                     continue;
                 }
 
-                List<String> subscriberConfigNames = RunDataDistributionProtocols.getSubscriberConfigNamesFromOldProtocols(service.getId());
+                List<String> subscriberConfigNames = SubscriberHelper.getSubscriberConfigNamesForPublisher(null, service.getId(), service.getLocalId());
                 if (!subscriberConfigNames.contains(subscriberConfigName)) {
                     LOG.debug("Skipping " + service + " as not a publisher");
                     continue;
@@ -6317,7 +6288,7 @@ public abstract class SpecialRoutines {
                     continue;
                 }
 
-                List<String> subscriberConfigNames = RunDataDistributionProtocols.getSubscriberConfigNamesFromOldProtocols(service.getId());
+                List<String> subscriberConfigNames = SubscriberHelper.getSubscriberConfigNamesForPublisher(null, service.getId(), service.getLocalId());
                 if (!subscriberConfigNames.contains(subscriberConfigName)) {
                     LOG.debug("Skipping " + service + " as not a publisher");
                     continue;

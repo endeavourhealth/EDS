@@ -294,7 +294,7 @@ public class OpenEnvelope extends PipelineComponent {
 				return s;
 			}
 
-			//if no service already exists, then see if we can create one, but only if we have a DPA
+			//if no service already exists, then see if we can create one, but only if we have a DPA in the DSM
 			Boolean hasDpa = OrganisationCache.doesOrganisationHaveDPA(organisationOds);
 			if (!hasDpa.booleanValue()) {
 				throw new PipelineException("Data received for ODS code " + organisationOds + " but will not auto-create bacause no DPA exists");
@@ -389,6 +389,10 @@ public class OpenEnvelope extends PipelineComponent {
 	private void createDraftEndpoint(Service service, String software, String messageVersion) throws Exception {
 
 		System system = SystemHelper.findSystemForSoftwareAndVersion(software, messageVersion);
+		if (system == null) {
+			throw new Exception("No system configured for software [" + software + "] and version [" + messageVersion + "]");
+		}
+
 		TechnicalInterface technicalInterface = SystemHelper.getTechnicalInterface(system);
 		String technicalInterfaceId = technicalInterface.getUuid();
 

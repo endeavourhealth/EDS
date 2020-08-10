@@ -4,27 +4,26 @@ import com.codahale.metrics.annotation.ResponseMetered;
 import com.codahale.metrics.annotation.Timed;
 import com.google.common.base.Strings;
 import io.swagger.annotations.ApiParam;
-import org.apache.http.HttpStatus;
+import org.endeavourhealth.common.config.ConfigManager;
+import org.endeavourhealth.common.fhir.ReferenceHelper;
 import org.endeavourhealth.common.security.SecurityUtils;
 import org.endeavourhealth.common.utility.ExpiringCache;
 import org.endeavourhealth.common.utility.MetricsHelper;
-import org.endeavourhealth.common.utility.SlackHelper;
 import org.endeavourhealth.core.database.dal.DalProvider;
-import org.endeavourhealth.core.database.dal.admin.LibraryRepositoryHelper;
 import org.endeavourhealth.core.database.dal.admin.ServiceDalI;
 import org.endeavourhealth.core.database.dal.admin.SystemHelper;
 import org.endeavourhealth.core.database.dal.audit.models.SubscriberApiAudit;
 import org.endeavourhealth.core.database.dal.audit.models.SubscriberApiAuditHelper;
 import org.endeavourhealth.core.database.dal.eds.PatientLinkDalI;
 import org.endeavourhealth.core.database.dal.eds.PatientSearchDalI;
-import org.endeavourhealth.core.database.dal.subscriberTransform.PseudoIdDalI;
-import org.endeavourhealth.core.database.dal.usermanager.caching.ProjectCache;
+import org.endeavourhealth.core.database.dal.subscriberTransform.SubscriberResourceMappingDalI;
+import org.endeavourhealth.core.database.dal.subscriberTransform.models.SubscriberId;
+import org.endeavourhealth.core.database.rdbms.ConnectionManager;
 import org.endeavourhealth.core.fhirStorage.FhirSerializationHelper;
 import org.endeavourhealth.core.fhirStorage.ServiceInterfaceEndpoint;
-import org.endeavourhealth.core.messaging.pipeline.PipelineException;
-import org.endeavourhealth.core.xml.QueryDocument.*;
+import org.endeavourhealth.core.subscribers.SubscriberHelper;
 import org.endeavourhealth.transform.subscriber.SubscriberConfig;
-import org.endeavourhealth.transform.subscriber.json.LinkDistributorConfig;
+import org.endeavourhealth.transform.subscriber.targetTables.SubscriberTableId;
 import org.hl7.fhir.instance.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,10 +31,10 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.security.RolesAllowed;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.*;
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
-import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.util.*;
 
 @Path("/subscriber")
@@ -56,6 +55,7 @@ public class SubscriberApiEndpoint {
     //private static final Map<String, String> mainSaltKeyCache = new ExpiringCache<>(1000 * 60 * 5); //cache for five mins
     private static final Map<String, UUID> odsCodeToServiceIdCache = new ExpiringCache<>(1000 * 60 * 5); //cache for five mins
     private static String lastDsmSlackMessage = null;
+
 
     @GET
     @Path("/{resourceType}")
@@ -109,7 +109,7 @@ public class SubscriberApiEndpoint {
             //project ID is used in the DSM to get us to the protocol
             if (Strings.isNullOrEmpty(headerProjectId)) {
                 //the need for the project ID was added AFTER the original implementation by the third party, so we've agreed
-                //to hardcode it for now, to avoid them having to make and deploy chanages
+                //to hardcode it for now, to avoid them having to make and deploy changes
                 headerProjectId = FRAILTY_PROJECT_ID;
                 //return createErrorResponse(OperationOutcome.IssueType.REQUIRED, "Missing ProjectID from request headers", audit);
             }
@@ -136,14 +136,16 @@ public class SubscriberApiEndpoint {
             if (requestingService == null) {
                 return createErrorResponse(OperationOutcome.IssueType.VALUE, "Unknown requesting ODS code '" + headerOdsCode + "'", audit);
             }
-            UUID serviceId = requestingService.getId();
+            UUID requestingServiceId = requestingService.getId();
 
             //validate that the keycloak user (from the token) is permitted to make requests on behalf of the ODS code being requested for
             LOG.debug("Getting service IDs for security context");
             Set<String> serviceIds = SecurityUtils.getUserAllowedOrganisationIdsFromSecurityContext(sc);
             LOG.debug("Got service IDs for security context");
 
-            if (!serviceIds.contains(serviceId.toString())) {
+            //note that keyCloak may be configured with Service UUIDs or ODS codes
+            if (!serviceIds.contains(requestingServiceId.toString())
+                    && !serviceIds.contains(headerOdsCode)) {
                 return createErrorResponse(OperationOutcome.IssueType.BUSINESSRULE, "You are not permitted to request for ODS code " + headerOdsCode, audit);
             }
 
@@ -155,9 +157,9 @@ public class SubscriberApiEndpoint {
 
             //ensure the service is a valid subscriber to at least one protocol
             LOG.debug("Checking protocols");
-            Set<String> publisherServiceIds = null;
+            Set<UUID> publisherServiceIds = null;
             try {
-                publisherServiceIds = findPublisherServiceIdsForSubscriber(headerOdsCode, headerProjectId, serviceId, requesterSystemId);
+                publisherServiceIds = SubscriberHelper.findPublisherServiceIdsForSubscriber(headerOdsCode, headerProjectId, requestingServiceId, requesterSystemId);
 
             } catch (Exception ex) {
                 //any exception from checking protocols the flag should be returned as a processing error
@@ -165,11 +167,11 @@ public class SubscriberApiEndpoint {
                 return createErrorResponse(OperationOutcome.IssueType.PROCESSING, err, audit);
             }
 
-            //find patient (gets map of patient UUID and service UUID)
-            LOG.debug("Searching on NHS number");
+            //find patient records, filtering by the service IDs (gets map of patient UUID and service UUID)
+            LOG.trace("Searching on NHS number");
             PatientSearchDalI patientSearchDal = DalProvider.factoryPatientSearchDal();
             Map<UUID, UUID> patientSearchResults = patientSearchDal.findPatientIdsForNhsNumber(publisherServiceIds, subjectNhsNumber);
-            LOG.debug("Done searching on NHS number");
+            LOG.trace("Done searching on NHS number");
 
             if (patientSearchResults.isEmpty()) {
                 return createErrorResponse(OperationOutcome.IssueType.NOTFOUND, "No patient record could be found for NHS number " + subjectNhsNumber, audit);
@@ -206,125 +208,6 @@ public class SubscriberApiEndpoint {
                 LOG.error("Error saving audit", ex);
             }
         }
-    }
-
-    private Set<String> findPublisherServiceIdsForSubscriber(String headerOdsCode, String headerProjectId, UUID serviceId, UUID systemId) throws Exception {
-
-        //get the publisher services both the OLD and NEW ways
-        Set<String> serviceIdsOldWay = findPublisherServiceIdsForSubscriberOldWay(headerOdsCode, serviceId, systemId);
-        Set<String> serviceIdsNewWay = findPublisherServiceIdsForSubscriberNewWay(headerOdsCode, headerProjectId);
-
-        //verify that the new way is generating the same results as the old way
-        Set<String> oldNotNew = new HashSet<>();
-        Set<String> newNotOld = new HashSet<>();
-
-        Set<String> allServiceIds = new HashSet<>();
-        allServiceIds.addAll(serviceIdsOldWay);
-        allServiceIds.addAll(serviceIdsNewWay);
-        for (String publisherServiceId: allServiceIds) {
-
-            if (!serviceIdsOldWay.contains(publisherServiceId)) {
-                newNotOld.add(publisherServiceId);
-
-            } else if (!serviceIdsNewWay.contains(publisherServiceId)) {
-                oldNotNew.add(publisherServiceId);
-
-            } else {
-                //if in both, this is ideal
-            }
-        }
-
-        if (!oldNotNew.isEmpty()
-                || !newNotOld.isEmpty()) {
-
-            StringBuilder sb = new StringBuilder();
-            sb.append("Mis-match between DDS-UI and DSM for Frailty API check\r\n");
-
-            if (oldNotNew.isEmpty()) {
-                sb.append("Services found in DDS-UI protocol but not DSM:\r\n");
-                for (String publisherServiceId: oldNotNew) {
-                    org.endeavourhealth.core.database.dal.admin.models.Service publisherService = serviceDal.getById(UUID.fromString(publisherServiceId));
-                    sb.append("    " + publisherService + "\r\n");
-                }
-            }
-
-            if (newNotOld.isEmpty()) {
-                sb.append("Services found in DSM but not DDS-UI protocol:\r\n");
-                for (String publisherServiceId: newNotOld) {
-                    org.endeavourhealth.core.database.dal.admin.models.Service publisherService = serviceDal.getById(UUID.fromString(publisherServiceId));
-                    sb.append("    " + publisherService + "\r\n");
-                }
-            }
-
-            String msg = sb.toString();
-
-            //only send the message if the first time or different to last time
-            if (lastDsmSlackMessage == null
-                || !lastDsmSlackMessage.equals(msg)) {
-
-                SlackHelper.sendSlackMessage(SlackHelper.Channel.QueueReaderAlerts, msg);
-                lastDsmSlackMessage = msg;
-            }
-        }
-
-        //for now, return results in OLD WAY
-        return serviceIdsOldWay;
-    }
-
-    private Set<String> findPublisherServiceIdsForSubscriberNewWay(String headerOdsCode, String headerProjectId) throws Exception {
-
-        List<String> publisherOdsCodes = ProjectCache.getAllPublishersForProjectWithSubscriberCheck(headerProjectId, headerOdsCode);
-
-        Set<String> ret = new HashSet<>();
-
-        for (String publisherOdsCode: publisherOdsCodes) {
-
-            UUID publisherServiceId = odsCodeToServiceIdCache.get(publisherOdsCode);
-            if (publisherServiceId == null) {
-                org.endeavourhealth.core.database.dal.admin.models.Service publisherService = serviceDal.getByLocalIdentifier(publisherOdsCode);
-                if (publisherService == null) {
-                    //if the DSM is aware of a publisher that DDS isn't, then this is odd but possible
-                    LOG.warn("Failed to find publisher service for publisher ODS code " + publisherOdsCode);
-                    continue;
-                }
-
-                publisherServiceId = publisherService.getId();
-                odsCodeToServiceIdCache.put(publisherOdsCode, publisherServiceId);
-            }
-            ret.add(publisherServiceId.toString());
-        }
-
-        return ret;
-    }
-
-    private Set<String> findPublisherServiceIdsForSubscriberOldWay(String headerOdsCode, UUID serviceId, UUID systemId) throws Exception {
-
-        //find protocol
-        List<Protocol> protocols = getProtocolsForSubscriberService(serviceId.toString(), systemId.toString());
-        if (protocols.isEmpty()) {
-            throw new Exception("No valid subscriber agreement found for requesting ODS code '" + headerOdsCode + "' and system " + SUBSCRIBER_SYSTEM_NAME);
-        }
-
-        //the below only works properly if there's a single protocol. To support multiple protocols,
-        //it'll need to calculate the frailty against EACH subscriber DB and then return the one with the highest risk
-        if (protocols.size() > 1) {
-            throw new Exception("No support for multiple subscriber protocols in frailty calculation");
-        }
-
-        Protocol protocol = protocols.get(0);
-
-        Set<String> ret = new HashSet<>();
-
-        for (ServiceContract serviceContract : protocol.getServiceContract()) {
-            if (serviceContract.getType().equals(ServiceContractType.PUBLISHER)
-                    && serviceContract.getActive() == ServiceContractActive.TRUE) {
-
-                Service service = serviceContract.getService();
-                ret.add(service.getUuid());
-            }
-        }
-
-        return ret;
     }
 
 
@@ -406,8 +289,109 @@ public class SubscriberApiEndpoint {
         return response;
     }
 
+    private Response calculateFrailtyFlagLive(String subscriberConfigName, Map<UUID, UUID> patientAndServiceUuids,
+                                              UriInfo uriInfo, MultivaluedMap<String, String> requestParams,
+                                              String headerAuthToken, SubscriberApiAudit audit) throws Exception {
 
-    private Response calculateFrailtyFlagLive(String enterpriseEndpoint, Map<UUID, UUID> results, UriInfo uriInfo, MultivaluedMap<String, String> requestParams, String headerAuthToken, SubscriberApiAudit audit) throws Exception {
+
+        SubscriberConfig subscriberConfig = SubscriberConfig.readFromConfig(subscriberConfigName);
+        SubscriberResourceMappingDalI patientIdDal = DalProvider.factorySubscriberResourceMappingDal(subscriberConfigName);
+
+        Set<String> results = new HashSet<>();
+
+        for (UUID patientUuid: patientAndServiceUuids.keySet()) {
+
+            if (subscriberConfig.getSubscriberType() == SubscriberConfig.SubscriberType.CompassV1) {
+
+                Long enterpriseId = patientIdDal.findEnterpriseIdOldWay(ResourceType.Patient.toString(), patientUuid.toString());
+                if (enterpriseId != null) {
+                    String result = runCompassFrailtyQuery(subscriberConfig, enterpriseId);
+                    results.add(result);
+                }
+
+            } else if (subscriberConfig.getSubscriberType() == SubscriberConfig.SubscriberType.CompassV2) {
+
+                String ref = ReferenceHelper.createResourceReference(ResourceType.Patient, patientUuid.toString());
+                SubscriberId subscriberId = patientIdDal.findSubscriberId(SubscriberTableId.PATIENT.getId(), ref);
+                if (subscriberId != null) {
+                    String result = runCompassFrailtyQuery(subscriberConfig, subscriberId.getSubscriberId());
+                    results.add(result);
+                }
+
+            } else {
+                throw new Exception("Unexpected subscriber database type " + subscriberConfig.getSubscriberType());
+            }
+        }
+
+        if (results.contains("1_MILD")
+                || results.contains("2_MODERATE")
+                || results.contains("3_SEVERE")) {
+
+            //if we got any of these back, then this is something we want to use as our result for the Flag
+            CodeableConcept codeableConcept = new CodeableConcept();
+            Coding coding = codeableConcept.addCoding();
+            coding.setCode(FRAILTY_CODE);
+            coding.setDisplay(FRAILTY_TERM);
+            codeableConcept.setText(FRAILTY_TERM);
+
+            Flag flag = new Flag();
+            flag.setStatus(Flag.FlagStatus.ACTIVE);
+            flag.setCode(codeableConcept);
+
+            return createSuccessResponse(flag, requestParams, audit);
+
+        } else if (results.contains("0_NONE")) {
+            //if we get here, we only got "none" back for all our results, so return a positive response without a flag
+            return createSuccessResponse(null, requestParams, audit);
+
+        } else {
+            throw new Exception("Unexpected frailty result str [" + results + "]");
+        }
+    }
+
+    private String runCompassFrailtyQuery(SubscriberConfig subscriberConfig, long patientId) throws Exception {
+
+        String queryConfigName = null;
+        if (subscriberConfig.getSubscriberType() == SubscriberConfig.SubscriberType.CompassV1) {
+            queryConfigName = "frailtyQueryCompassv1";
+
+        } else if (subscriberConfig.getSubscriberType() == SubscriberConfig.SubscriberType.CompassV2) {
+            queryConfigName = "frailtyQueryCompassv2";
+
+        } else {
+            throw new Exception("Unexpected subscriber database type " + subscriberConfig.getSubscriberType());
+        }
+
+        String sql = ConfigManager.getConfiguration(queryConfigName);
+        if (Strings.isNullOrEmpty(sql)) {
+            throw new Exception("Failed to find query for config name [" + queryConfigName + "]");
+        }
+
+        Connection connection = ConnectionManager.getSubscriberConnection(subscriberConfig.getSubscriberConfigName());
+        PreparedStatement ps = null;
+        try {
+            ps = connection.prepareStatement(sql);
+            ps.setLong(1, patientId);
+
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                String result = rs.getString(1);
+                return result;
+
+            } else {
+                return "0_NONE";
+            }
+
+        } finally {
+            if (ps != null) {
+                ps.close();
+            }
+            connection.close();
+        }
+    }
+
+
+    /*private Response calculateFrailtyFlagLive(String enterpriseEndpoint, Map<UUID, UUID> results, UriInfo uriInfo, MultivaluedMap<String, String> requestParams, String headerAuthToken, SubscriberApiAudit audit) throws Exception {
 
         //there are cases where we've had different dates of birth for the same patient, resulting
         //in multiple pseudo IDs, so we need to perform the test for EACH pseudo ID and return the "best" result (i.e. worst)
@@ -529,7 +513,7 @@ public class SubscriberApiEndpoint {
 
         LinkDistributorConfig first = pseudoIds.get(0);
         return first.getSaltKeyName();
-    }
+    }*/
 
     /**
      * function to calculate the frailty flag of a person in Discovery, using only data held
@@ -591,39 +575,5 @@ public class SubscriberApiEndpoint {
             return createSuccessResponse(flag, requestParams, audit);
         }
     }
-
-    private static List<Protocol> getProtocolsForSubscriberService(String serviceUuid, String systemUuid) throws PipelineException {
-
-        try {
-            List<Protocol> ret = new ArrayList<>();
-
-            List<LibraryItem> libraryItems = LibraryRepositoryHelper.getProtocolsByServiceId(serviceUuid, systemUuid);
-
-            //the above fn will return is all protocols where the service and system are present, but we want to filter
-            //that down to only ones where our service and system are an active publisher
-            for (LibraryItem libraryItem: libraryItems) {
-                Protocol protocol = libraryItem.getProtocol();
-                if (protocol.getEnabled() == ProtocolEnabled.TRUE) { //added missing check
-
-                    for (ServiceContract serviceContract : protocol.getServiceContract()) {
-                        if (serviceContract.getType().equals(ServiceContractType.SUBSCRIBER)
-                                && serviceContract.getService().getUuid().equals(serviceUuid)
-                                && serviceContract.getSystem().getUuid().equals(systemUuid)
-                                && serviceContract.getActive() == ServiceContractActive.TRUE) { //added missing check
-
-                            ret.add(protocol);
-                            break;
-                        }
-                    }
-                }
-            }
-
-            return ret;
-
-        } catch (Exception ex) {
-            throw new PipelineException("Error getting protocols for service " + serviceUuid, ex);
-        }
-    }
-
 
 }

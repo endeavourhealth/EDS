@@ -17,8 +17,8 @@ import org.endeavourhealth.core.database.dal.audit.ExchangeDalI;
 import org.endeavourhealth.core.database.dal.audit.UserAuditDalI;
 import org.endeavourhealth.core.database.dal.audit.models.*;
 import org.endeavourhealth.core.messaging.pipeline.components.PostMessageToExchange;
-import org.endeavourhealth.core.messaging.pipeline.components.RunDataDistributionProtocols;
 import org.endeavourhealth.core.queueing.QueueHelper;
+import org.endeavourhealth.core.subscribers.SubscriberHelper;
 import org.endeavourhealth.core.xml.TransformErrorSerializer;
 import org.endeavourhealth.core.xml.transformError.Arg;
 import org.endeavourhealth.core.xml.transformError.Error;
@@ -925,7 +925,10 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
                 "Service Id", serviceIdStr);
 
         UUID serviceId = UUID.fromString(serviceIdStr);
-        List<String> ret = RunDataDistributionProtocols.getSubscriberConfigNamesFromOldProtocols(serviceId);
+        ServiceDalI serviceDal = DalProvider.factoryServiceDal();
+        Service service = serviceDal.getById(serviceId);
+        String odsCode = service.getLocalId();
+        List<String> ret = SubscriberHelper.getSubscriberConfigNamesForPublisher(null, serviceId, odsCode);
 
         clearLogbackMarkers();
 

@@ -12,7 +12,6 @@ import org.endeavourhealth.common.utility.ExpiringCache;
 import org.endeavourhealth.core.configuration.RunDataDistributionProtocolsConfig;
 import org.endeavourhealth.core.database.dal.DalProvider;
 import org.endeavourhealth.core.database.dal.admin.LibraryRepositoryHelper;
-import org.endeavourhealth.core.database.dal.admin.ServiceDalI;
 import org.endeavourhealth.core.database.dal.audit.ExchangeBatchDalI;
 import org.endeavourhealth.core.database.dal.audit.models.Exchange;
 import org.endeavourhealth.core.database.dal.audit.models.ExchangeBatch;
@@ -24,21 +23,19 @@ import org.endeavourhealth.core.database.dal.ehr.models.ResourceWrapper;
 import org.endeavourhealth.core.database.dal.subscriberTransform.SubscriberCohortDalI;
 import org.endeavourhealth.core.database.dal.subscriberTransform.models.SubscriberCohortRecord;
 import org.endeavourhealth.core.fhirStorage.FhirSerializationHelper;
-import org.endeavourhealth.core.fhirStorage.ServiceInterfaceEndpoint;
 import org.endeavourhealth.core.messaging.pipeline.PipelineComponent;
 import org.endeavourhealth.core.messaging.pipeline.PipelineException;
 import org.endeavourhealth.core.messaging.pipeline.TransformBatch;
 import org.endeavourhealth.core.queueing.QueueHelper;
-import org.endeavourhealth.core.xml.QueryDocument.*;
+import org.endeavourhealth.core.subscribers.SubscriberHelper;
+import org.endeavourhealth.core.xml.QueryDocument.LibraryItem;
 import org.endeavourhealth.transform.subscriber.SubscriberConfig;
 import org.hl7.fhir.instance.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 public class RunDataDistributionProtocols extends PipelineComponent {
 	private static final Logger LOG = LoggerFactory.getLogger(RunDataDistributionProtocols.class);
@@ -48,8 +45,6 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 
 	private static final ParserPool parser = new ParserPool();
 	private static ExpiringCache<String, Set<String>> hmOrgParents = new ExpiringCache<>(1000 * 60 * 60 * 1); //cache for an hour
-	private static Map<String, String> cachedEndpoints = new ConcurrentHashMap<>();
-
 
 
 	public RunDataDistributionProtocols(RunDataDistributionProtocolsConfig config) {
@@ -262,7 +257,10 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 
 			} else {
 				//if the exchange has no specific configs to run, then work it out
-				return getSubscriberConfigNamesForPublisher(exchange.getServiceId());
+				UUID exchangeId = exchange.getId();
+				UUID serviceId = exchange.getServiceId();
+				String odsCode = exchange.getHeader(HeaderKeys.SenderLocalIdentifier);
+				return SubscriberHelper.getSubscriberConfigNamesForPublisher(exchangeId, serviceId, odsCode);
 			}
 
 		} catch (Exception ex) {
@@ -270,165 +268,6 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 		}
 	}
 
-	public static List<String> getSubscriberConfigNamesForPublisher(UUID serviceId) throws Exception {
-
-		//TODO - change this to use DSM when in sync with protocols
-		return getSubscriberConfigNamesFromOldProtocols(serviceId);
-	}
-
-	/**
-	 * returns the subscriber config names from the old-style DDS-UI protocols
-     */
-	public static List<String> getSubscriberConfigNamesFromOldProtocols(UUID serviceId) throws Exception {
-
-		List<LibraryItem> protocols = getProtocolsForPublisherServiceOldWay(serviceId);
-
-		//populate a set, so we can't end up with duplicates
-		Set<String> ret = new HashSet<>();
-
-		for (LibraryItem libraryItem: protocols) {
-			Protocol protocol = libraryItem.getProtocol();
-
-			//skip disabled protocols
-			if (protocol.getEnabled() != ProtocolEnabled.TRUE) {
-				continue;
-			}
-
-			//get only active subscriber service contracts
-			List<ServiceContract> subscribers = protocol
-					.getServiceContract()
-					.stream()
-					.filter(sc -> sc.getType().equals(ServiceContractType.SUBSCRIBER))
-					.filter(sc -> sc.getActive() == ServiceContractActive.TRUE) //skip disabled service contracts
-					.collect(Collectors.toList());
-
-			for (ServiceContract serviceContract: subscribers) {
-				String subscriberConfigName = getSubscriberEndpoint(serviceContract);
-				if (!Strings.isNullOrEmpty(subscriberConfigName)) {
-					ret.add(subscriberConfigName);
-				}
-			}
-		}
-
-		List<String> list = new ArrayList<>(ret);
-		list.sort(((o1, o2) -> o1.compareToIgnoreCase(o2))); //for consistency
-		return list;
-	}
-
-	/**
-	 * returns all known the subscriber config names
-	 */
-	/*public static List<String> getAllSubscriberConfigNamesFromOldProtocols() throws Exception {
-
-		//populate a set, so we can't end up with duplicates
-		Set<String> ret = new HashSet<>();
-
-		LibraryDalI repository = DalProvider.factoryLibraryDal();
-		Iterable<ActiveItem> activeItems = repository.getActiveItemByTypeId(DefinitionItemType.Protocol.getValue(), false);
-
-		List<Item> items = new ArrayList();
-
-		for (ActiveItem activeItem: activeItems) {
-			Item item = repository.getItemByKey(activeItem.getItemId(), activeItem.getAuditId());
-			if (!item.isDeleted()) {
-				items.add(item);
-			}
-		}
-
-		for (int i = 0; i < items.size(); i++) {
-			Item item = items.get(i);
-
-			String xml = item.getXmlContent();
-			LibraryItem libraryItem = XmlSerializer.deserializeFromString(LibraryItem.class, xml, null);
-			Protocol protocol = libraryItem.getProtocol();
-
-			List<ServiceContract> subscribers = protocol
-					.getServiceContract()
-					.stream()
-					.filter(sc -> sc.getType().equals(ServiceContractType.SUBSCRIBER))
-					//.filter(sc -> sc.getActive() == ServiceContractActive.TRUE) //skip disabled service contracts
-					.collect(Collectors.toList());
-
-			for (ServiceContract serviceContract: subscribers) {
-				String subscriberConfigName = getSubscriberEndpoint(serviceContract);
-				if (!Strings.isNullOrEmpty(subscriberConfigName)) {
-					ret.add(subscriberConfigName);
-				}
-			}
-		}
-
-		List<String> list = new ArrayList<>(ret);
-		list.sort(((o1, o2) -> o1.compareToIgnoreCase(o2))); //for consistency
-		return list;
-	}*/
-
-	public static List<LibraryItem> getProtocolsForPublisherServiceOldWay(UUID serviceUuid) throws PipelineException {
-
-		try {
-			List<LibraryItem> ret = new ArrayList<>();
-
-			String serviceIdStr = serviceUuid.toString();
-
-			//the above fn will return is all protocols where the service is present, but we want to filter
-			//that down to only ones where our service is an active publisher
-			List<LibraryItem> libraryItems = LibraryRepositoryHelper.getProtocolsByServiceId(serviceUuid.toString(), null); //passing null means don't filter on system ID
-
-			for (LibraryItem libraryItem: libraryItems) {
-				Protocol protocol = libraryItem.getProtocol();
-				if (protocol.getEnabled() == ProtocolEnabled.TRUE) { //added missing check
-
-					for (ServiceContract serviceContract : protocol.getServiceContract()) {
-						if (serviceContract.getType().equals(ServiceContractType.PUBLISHER)
-								&& serviceContract.getService().getUuid().equals(serviceIdStr)
-								&& serviceContract.getActive() == ServiceContractActive.TRUE) { //added missing check
-
-							ret.add(libraryItem);
-							break;
-						}
-					}
-				}
-			}
-
-			return ret;
-
-		} catch (Exception ex) {
-			throw new PipelineException("Error getting protocols for service " + serviceUuid, ex);
-		}
-	}
-
-	private static String getSubscriberEndpoint(ServiceContract contract) throws PipelineException {
-
-		try {
-			UUID serviceId = UUID.fromString(contract.getService().getUuid());
-			UUID technicalInterfaceId = UUID.fromString(contract.getTechnicalInterface().getUuid());
-
-			String cacheKey = serviceId.toString() + ":" + technicalInterfaceId.toString();
-			String endpoint = cachedEndpoints.get(cacheKey);
-			if (endpoint == null) {
-
-				ServiceDalI serviceRepository = DalProvider.factoryServiceDal();
-
-				org.endeavourhealth.core.database.dal.admin.models.Service service = serviceRepository.getById(serviceId);
-				List<ServiceInterfaceEndpoint> serviceEndpoints = service.getEndpointsList();
-				for (ServiceInterfaceEndpoint serviceEndpoint : serviceEndpoints) {
-					if (serviceEndpoint.getTechnicalInterfaceUuid().equals(technicalInterfaceId)) {
-						endpoint = serviceEndpoint.getEndpoint();
-
-						//concurrent map can't store null values, so only add to the cache if non-null
-						if (endpoint != null) {
-							cachedEndpoints.put(cacheKey, endpoint);
-						}
-						break;
-					}
-				}
-			}
-
-			return endpoint;
-
-		} catch (Exception ex) {
-			throw new PipelineException("Failed to get endpoint for contract", ex);
-		}
-	}
 
 
 	private void checkCohortNow(SubscriberCohortRecord newResult, TmpCache tmpCache, String odsCode) throws Exception {
