@@ -7,7 +7,6 @@ import io.swagger.annotations.ApiParam;
 import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.common.fhir.ReferenceHelper;
 import org.endeavourhealth.common.security.SecurityUtils;
-import org.endeavourhealth.common.utility.ExpiringCache;
 import org.endeavourhealth.common.utility.MetricsHelper;
 import org.endeavourhealth.core.database.dal.DalProvider;
 import org.endeavourhealth.core.database.dal.admin.ServiceDalI;
@@ -53,8 +52,8 @@ public class SubscriberApiEndpoint {
 
     private static final ServiceDalI serviceDal = DalProvider.factoryServiceDal();
     //private static final Map<String, String> mainSaltKeyCache = new ExpiringCache<>(1000 * 60 * 5); //cache for five mins
-    private static final Map<String, UUID> odsCodeToServiceIdCache = new ExpiringCache<>(1000 * 60 * 5); //cache for five mins
-    private static String lastDsmSlackMessage = null;
+    //private static final Map<String, UUID> odsCodeToServiceIdCache = new ExpiringCache<>(1000 * 60 * 5); //cache for five mins
+    //private static String lastDsmSlackMessage = null;
 
 
     @GET
@@ -349,7 +348,7 @@ public class SubscriberApiEndpoint {
         }
     }
 
-    private String runCompassFrailtyQuery(SubscriberConfig subscriberConfig, long patientId) throws Exception {
+    private static String runCompassFrailtyQuery(SubscriberConfig subscriberConfig, long patientId) throws Exception {
 
         String queryConfigName = null;
         if (subscriberConfig.getSubscriberType() == SubscriberConfig.SubscriberType.CompassV1) {

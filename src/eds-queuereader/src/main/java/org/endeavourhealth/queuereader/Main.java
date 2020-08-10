@@ -85,11 +85,18 @@ public class Main {
 		LOG.info("Initialising config manager");
 		ConfigManager.initialize("queuereader", configId);
 
+
 		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("testNewFrailtySql")) {
+			SpecialRoutines.testNewFrailtySql();
+			System.exit(0);
+		}
+
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("populateSubscriberAuditTables")) {
 			SpecialRoutines.populateSubscriberAuditTables();
 			System.exit(0);
-		}
+		}*/
 
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("findPatientsWithConfidentialData")) {

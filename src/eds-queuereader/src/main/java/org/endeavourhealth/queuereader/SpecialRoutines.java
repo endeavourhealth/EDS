@@ -7,6 +7,7 @@ import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.io.FileUtils;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
+import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.common.fhir.FhirExtensionUri;
 import org.endeavourhealth.common.fhir.IdentifierHelper;
 import org.endeavourhealth.common.fhir.ReferenceHelper;
@@ -19,8 +20,6 @@ import org.endeavourhealth.core.database.dal.admin.ServiceDalI;
 import org.endeavourhealth.core.database.dal.admin.SystemHelper;
 import org.endeavourhealth.core.database.dal.admin.models.Service;
 import org.endeavourhealth.core.database.dal.audit.ExchangeDalI;
-import org.endeavourhealth.core.database.dal.audit.ServicePublisherAuditDalI;
-import org.endeavourhealth.core.database.dal.audit.ServiceSubscriberAuditDalI;
 import org.endeavourhealth.core.database.dal.audit.models.Exchange;
 import org.endeavourhealth.core.database.dal.audit.models.ExchangeEvent;
 import org.endeavourhealth.core.database.dal.audit.models.ExchangeTransformAudit;
@@ -5566,7 +5565,7 @@ public abstract class SpecialRoutines {
     /**
      * populates the new audit tables for DPA and DSAs
      */
-    public static void populateSubscriberAuditTables() {
+    /*public static void populateSubscriberAuditTables() {
         LOG.info("Populating Subscriber Audit Tables");
         try {
 
@@ -5599,6 +5598,132 @@ public abstract class SpecialRoutines {
             LOG.error("", t);
         }
 
+    }*/
+
+    /**
+     * the SQL used to determine the Frailty flag, used by the Frailty API has been refactored, so this tests
+     * all patients that have had results to ensure the same result is found now
+     */
+    public static void testNewFrailtySql() {
+        LOG.info("Testing New Frailty SQL");
+        try {
+
+            //get results from Frailty audit table
+            Map<String, Boolean> hmResults = new HashMap<>();
+
+            String sql = "select request_path, response_body"
+                    + " from audit.subscriber_api_audit"
+                    + " where timestmp > '2020-08-01'"
+                    + " and response_body NOT LIKE '%No patient record could be found for NHS number%'";
+            Connection connection = ConnectionManager.getAuditConnection();
+            PreparedStatement ps = connection.prepareStatement(sql);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+
+                String request = rs.getString(1);
+                String response = rs.getString(2);
+
+                int index = request.indexOf("subject=");
+                String nhsNumber = request.substring(index + 8);
+
+                boolean frail = response.contains("289999999105");
+
+                hmResults.put(nhsNumber, Boolean.valueOf(frail));
+            }
+            ps.close();
+            connection.close();
+            LOG.debug("Found " + hmResults.size() + " messages to test");
+
+            SubscriberConfig subscriberConfig = SubscriberConfig.readFromConfig("ceg_enterprise");
+            String queryConfigName = "frailtyQueryCompassv1";
+            String requestingOdsCode = "RRU";
+
+            ServiceDalI serviceDal = DalProvider.factoryServiceDal();
+            org.endeavourhealth.core.database.dal.admin.models.Service requestingService = serviceDal.getByLocalIdentifier(requestingOdsCode);
+            UUID requestingServiceId = requestingService.getId();
+
+            ServiceInterfaceEndpoint endpoint = SystemHelper.findEndpointForSoftware(requestingService, "JSON_API");
+            UUID requesterSystemId = endpoint.getSystemUuid();
+
+            Set<UUID> publisherServiceIds = SubscriberHelper.findPublisherServiceIdsForSubscriber(requestingOdsCode, "320baf45-37e2-4c8b-b7ee-27a9f877b95c", requestingServiceId, requesterSystemId);
+            LOG.debug("Found " + publisherServiceIds.size() + " publishers");
+            LOG.debug("" + String.join(", " + publisherServiceIds));
+
+            SubscriberResourceMappingDalI patientIdDal = DalProvider.factorySubscriberResourceMappingDal(subscriberConfig.getSubscriberConfigName());
+            PatientSearchDalI patientSearchDal = DalProvider.factoryPatientSearchDal();
+
+            //loop, testing each one
+            for (String nhsNumber: hmResults.keySet()) {
+
+                Boolean frail = hmResults.get(nhsNumber);
+
+                //find patient IDs
+                Map<UUID, UUID> patientAndServiceUuids = patientSearchDal.findPatientIdsForNhsNumber(publisherServiceIds, nhsNumber);
+
+                Set<String> results = new HashSet<>();
+
+                for (UUID patientUuid: patientAndServiceUuids.keySet()) {
+
+                    Long enterpriseId = patientIdDal.findEnterpriseIdOldWay(ResourceType.Patient.toString(), patientUuid.toString());
+                    if (enterpriseId == null) {
+                        continue;
+                    }
+
+                    sql = ConfigManager.getConfiguration(queryConfigName);
+                    if (Strings.isNullOrEmpty(sql)) {
+                        throw new Exception("Failed to find query for config name [" + queryConfigName + "]");
+                    }
+
+                    connection = ConnectionManager.getSubscriberConnection(subscriberConfig.getSubscriberConfigName());
+                    ps = null;
+                    try {
+                        ps = connection.prepareStatement(sql);
+                        ps.setLong(1, enterpriseId.longValue());
+
+                        rs = ps.executeQuery();
+                        if (rs.next()) {
+                            String result = rs.getString(1);
+                            results.add(result);
+
+                        } else {
+                            results.add("0_NONE");
+                        }
+
+                    } finally {
+                        if (ps != null) {
+                            ps.close();
+                        }
+                        connection.close();
+                    }
+                }
+
+                Boolean nowFrail = null;
+
+                if (results.contains("1_MILD")
+                        || results.contains("2_MODERATE")
+                        || results.contains("3_SEVERE")) {
+                    nowFrail = Boolean.TRUE;
+
+                } else if (results.contains("0_NONE")) {
+                    nowFrail = Boolean.FALSE;
+
+                } else {
+                    //didn't find in PAITNET SEARCH???
+                    LOG.error("" + nhsNumber + " no results found");
+                    continue;
+                }
+
+                if (!nowFrail.equals(frail)) {
+                    LOG.error("" + nhsNumber + " was frail = " + frail + " now frail " + nowFrail);
+                } else {
+                    LOG.info("" + nhsNumber + " was frail = " + frail + " OK");
+                }
+            }
+
+            LOG.info("Finished Testing New Frailty SQL");
+        } catch (Throwable t) {
+            LOG.error("", t);
+        }
     }
 
     static class RegRecord {
