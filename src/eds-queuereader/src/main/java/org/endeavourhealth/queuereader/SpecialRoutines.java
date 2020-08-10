@@ -19,6 +19,8 @@ import org.endeavourhealth.core.database.dal.admin.ServiceDalI;
 import org.endeavourhealth.core.database.dal.admin.SystemHelper;
 import org.endeavourhealth.core.database.dal.admin.models.Service;
 import org.endeavourhealth.core.database.dal.audit.ExchangeDalI;
+import org.endeavourhealth.core.database.dal.audit.ServicePublisherAuditDalI;
+import org.endeavourhealth.core.database.dal.audit.ServiceSubscriberAuditDalI;
 import org.endeavourhealth.core.database.dal.audit.models.Exchange;
 import org.endeavourhealth.core.database.dal.audit.models.ExchangeEvent;
 import org.endeavourhealth.core.database.dal.audit.models.ExchangeTransformAudit;
@@ -5559,6 +5561,44 @@ public abstract class SpecialRoutines {
         } catch (Throwable t) {
             LOG.error("", t);
         }
+    }
+
+    /**
+     * populates the new audit tables for DPA and DSAs
+     */
+    public static void populateSubscriberAuditTables() {
+        LOG.info("Populating Subscriber Audit Tables");
+        try {
+
+            ServiceDalI serviceDal = DalProvider.factoryServiceDal();
+            PatientSearchDalI patientSearchDal = DalProvider.factoryPatientSearchDal();
+            //ResourceDalI resourceDal = DalProvider.factoryResourceDal();
+
+            List<Service> services = serviceDal.getAll();
+            for (Service service: services) {
+
+                if (Strings.isNullOrEmpty(service.getPublisherConfigName())) {
+                    LOG.debug("Skipping " + service + " as not a publisher");
+                    continue;
+                }
+
+                LOG.debug("Doing " + service);
+
+
+                boolean hasDpa = PublisherHelper.hasDpa(null, service.getId(), service.getLocalId());
+                ServicePublisherAuditDalI dal = DalProvider.factoryServicePublisherAuditDal();
+                dal.saveDpaState(service.getId(), true);
+
+                List<String> configNames = SubscriberHelper.getSubscriberConfigNamesForPublisher(null, service.getId(), service.getLocalId());
+                ServiceSubscriberAuditDalI dal2 = DalProvider.factoryServiceSubscriberAuditDal();
+                dal2.saveSubscribers(service.getId(), configNames);
+            }
+
+            LOG.info("Finished Populating Subscriber Audit Tables");
+        } catch (Throwable t) {
+            LOG.error("", t);
+        }
+
     }
 
     static class RegRecord {

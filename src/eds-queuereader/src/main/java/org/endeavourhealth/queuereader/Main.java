@@ -86,6 +86,12 @@ public class Main {
 		ConfigManager.initialize("queuereader", configId);
 
 		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("populateSubscriberAuditTables")) {
+			SpecialRoutines.populateSubscriberAuditTables();
+			System.exit(0);
+		}
+
+		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("findPatientsWithConfidentialData")) {
 
 			String orgOdsCodeRegex = null;
