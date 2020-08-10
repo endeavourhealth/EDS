@@ -28,8 +28,10 @@ public class PublisherHelper {
 
         boolean hasDpa = hasDpaImpl(serviceId, odsCode);
 
-        //audit if this state has changed
-        auditDpaStateChange(exchangeId, serviceId, hasDpa);
+        //audit if this state has changed (only if we have an exchange ID, meaning we're being called from proper pipeline)
+        if (exchangeId != null) {
+            auditDpaStateChange(exchangeId, serviceId, hasDpa);
+        }
 
         return hasDpa;
     }
@@ -47,7 +49,7 @@ public class PublisherHelper {
 
         if (latest == null
                 || (latest.booleanValue() != hasDpa)) {
-            dal.saveDpaState(UUID.randomUUID(), hasDpa);
+            dal.saveDpaState(serviceId, hasDpa);
 
             //send Slack message so we know something has changed
             ServiceDalI serviceDalI = DalProvider.factoryServiceDal();

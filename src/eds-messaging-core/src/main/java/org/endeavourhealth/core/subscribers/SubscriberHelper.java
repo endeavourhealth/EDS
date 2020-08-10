@@ -37,8 +37,10 @@ public class SubscriberHelper {
 
         List<String> ret = getSubscriberConfiNamesImpl(serviceId, odsCode);
 
-        //audit if this state has changed
-        auditSubscriberStateChange(exchangeId, serviceId, ret);
+        //audit if this state has changed (only if we have an exchange ID, meaning we're being called from proper pipeline)
+        if (exchangeId != null) {
+            auditSubscriberStateChange(exchangeId, serviceId, ret);
+        }
 
         return ret;
     }
@@ -54,8 +56,12 @@ public class SubscriberHelper {
             latest = dal.getLatestSubscribers(serviceId);
         }
 
+        if (latest == null) {
+            latest = new ArrayList<>();
+        }
+
         if (!latest.equals(subscribers)) {
-            dal.saveSubscribers(UUID.randomUUID(), subscribers);
+            dal.saveSubscribers(serviceId, subscribers);
 
             //send Slack message so we know something has changed
             ServiceDalI serviceDalI = DalProvider.factoryServiceDal();
