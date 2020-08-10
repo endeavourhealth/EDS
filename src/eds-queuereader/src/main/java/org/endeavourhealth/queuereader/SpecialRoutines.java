@@ -5669,7 +5669,7 @@ public abstract class SpecialRoutines {
                         continue;
                     }
 
-                    sql = ConfigManager.getConfiguration(queryConfigName);
+                    sql = ConfigManager.getConfiguration(queryConfigName, "messaging-api");
                     if (Strings.isNullOrEmpty(sql)) {
                         throw new Exception("Failed to find query for config name [" + queryConfigName + "]");
                     }
