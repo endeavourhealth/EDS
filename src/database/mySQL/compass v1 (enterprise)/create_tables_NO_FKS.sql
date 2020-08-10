@@ -395,10 +395,7 @@ CREATE TABLE location (
   type_desc character varying(255),
   postcode character varying(10),
   managing_organization_id bigint,
-  CONSTRAINT pk_location_id PRIMARY KEY (id),
-  CONSTRAINT fk_location_organisation_id FOREIGN KEY (managing_organization_id)
-      REFERENCES organization (id) MATCH SIMPLE
-      ON UPDATE NO ACTION ON DELETE NO ACTION
+  CONSTRAINT pk_location_id PRIMARY KEY (id)
 );
 
 CREATE UNIQUE INDEX location_id
@@ -422,10 +419,7 @@ CREATE TABLE practitioner
   role_code character varying(50),
   role_desc character varying(255),
   gmc_code character varying(50),
-  CONSTRAINT pk_practitioner_id PRIMARY KEY (id),
-  CONSTRAINT fk_practitioner_organisation_id FOREIGN KEY (organization_id)
-      REFERENCES organization (id) MATCH SIMPLE
-      ON UPDATE NO ACTION ON DELETE NO ACTION
+  CONSTRAINT pk_practitioner_id PRIMARY KEY (id)
 );
 
 CREATE UNIQUE INDEX practitioner_id
@@ -442,10 +436,7 @@ CREATE TABLE schedule
   start_date date,
   type character varying(255),
   location character varying(255),
-  CONSTRAINT pk_schedule_id PRIMARY KEY (organization_id, id),
-  CONSTRAINT fk_schedule_organization_id FOREIGN KEY (organization_id)
-      REFERENCES organization (id) MATCH SIMPLE
-      ON UPDATE NO ACTION ON DELETE NO ACTION
+  CONSTRAINT pk_schedule_id PRIMARY KEY (organization_id, id)
 );
 
 -- Index: schedule_id
@@ -483,10 +474,7 @@ CREATE TABLE person
   title character varying(50),
   first_names character varying(255),
   last_names character varying(255),
-  CONSTRAINT pk_person_id PRIMARY KEY (id),
-  CONSTRAINT fk_person_patient_gender_id FOREIGN KEY (patient_gender_id)
-      REFERENCES patient_gender (id) MATCH SIMPLE
-      ON UPDATE NO ACTION ON DELETE NO ACTION
+  CONSTRAINT pk_person_id PRIMARY KEY (id)
 );
 
 CREATE UNIQUE INDEX person_id
@@ -524,13 +512,7 @@ CREATE TABLE patient
   first_names character varying(255),
   last_names character varying(255),
   current_address_id bigint,
-  CONSTRAINT pk_patient_id_organization_id PRIMARY KEY (`organization_id`,`person_id`,`id`),
-  CONSTRAINT fk_patient_organization_id FOREIGN KEY (organization_id)
-      REFERENCES organization (id) MATCH SIMPLE
-      ON UPDATE NO ACTION ON DELETE NO ACTION,
-  CONSTRAINT fk_patient_patient_gender_id FOREIGN KEY (patient_gender_id)
-      REFERENCES patient_gender (id) MATCH SIMPLE
-      ON UPDATE NO ACTION ON DELETE NO ACTION
+  CONSTRAINT pk_patient_id_organization_id PRIMARY KEY (`organization_id`,`person_id`,`id`)
 );
 
 CREATE UNIQUE INDEX patient_id
@@ -557,19 +539,7 @@ CREATE TABLE episode_of_care
   date_registered date,
   date_registered_end date,
   usual_gp_practitioner_id bigint,
-  CONSTRAINT pk_episode_of_care_id PRIMARY KEY (`organization_id`,`person_id`,`id`),
-  CONSTRAINT fk_episode_of_care_patient_id_organisation_id FOREIGN KEY (patient_id, organization_id)
-      REFERENCES patient (id, organization_id) MATCH SIMPLE
-      ON UPDATE NO ACTION ON DELETE NO ACTION,
-  CONSTRAINT fk_episode_of_care_practitioner_id FOREIGN KEY (usual_gp_practitioner_id)
-      REFERENCES practitioner (id) MATCH SIMPLE
-      ON UPDATE NO ACTION ON DELETE NO ACTION,
-  CONSTRAINT fk_episode_of_care_registration_type_id FOREIGN KEY (registration_type_id)
-      REFERENCES registration_type (id) MATCH SIMPLE
-      ON UPDATE NO ACTION ON DELETE NO ACTION,
-  CONSTRAINT fk_episode_of_care_registration_status_id FOREIGN KEY (registration_status_id)
-      REFERENCES registration_status (id) MATCH SIMPLE
-      ON UPDATE NO ACTION ON DELETE NO ACTION
+  CONSTRAINT pk_episode_of_care_id PRIMARY KEY (`organization_id`,`person_id`,`id`)
 );
 
 CREATE UNIQUE INDEX episode_of_care_id
@@ -619,16 +589,7 @@ CREATE TABLE appointment
   sent_in datetime,
   `left` datetime,
   -- booked_date datetime,
-  CONSTRAINT pk_appointment_id PRIMARY KEY (organization_id,person_id,id),
-  CONSTRAINT fk_appointment_appointment_status_id FOREIGN KEY (appointment_status_id)
-      REFERENCES appointment_status (id) MATCH SIMPLE
-      ON UPDATE NO ACTION ON DELETE NO ACTION,
-  CONSTRAINT fk_appointment_organization_id FOREIGN KEY (organization_id)
-      REFERENCES organization (id) MATCH SIMPLE
-      ON UPDATE NO ACTION ON DELETE NO ACTION,
-  CONSTRAINT fk_appointment_practitioner_id FOREIGN KEY (practitioner_id)
-      REFERENCES practitioner (id) MATCH SIMPLE
-      ON UPDATE NO ACTION ON DELETE NO ACTION
+  CONSTRAINT pk_appointment_id PRIMARY KEY (organization_id,person_id,id)
 );
 
 CREATE UNIQUE INDEX appointment_id
@@ -657,26 +618,7 @@ CREATE TABLE encounter
   episode_of_care_id bigint,
   service_provider_organization_id bigint,
   date_recorded datetime,
-  CONSTRAINT pk_encounter_id PRIMARY KEY (organization_id,person_id,id),
-  /*got Emis consultations referring to missing appts, so this can't be enforced
-  CONSTRAINT fk_encounter_appointment_id FOREIGN KEY (appointment_id)
-      REFERENCES appointment (id) MATCH SIMPLE
-      ON UPDATE NO ACTION ON DELETE NO ACTION,*/
-  CONSTRAINT fk_encounter_patient_id_organization_id FOREIGN KEY (patient_id, organization_id)
-      REFERENCES patient (id, organization_id) MATCH SIMPLE
-      ON UPDATE NO ACTION ON DELETE NO ACTION,
-  CONSTRAINT fk_encounter_practitioner_id FOREIGN KEY (practitioner_id)
-      REFERENCES practitioner (id) MATCH SIMPLE
-      ON UPDATE NO ACTION ON DELETE NO ACTION,
-  CONSTRAINT fk_encounter_date_precision FOREIGN KEY (date_precision_id)
-      REFERENCES date_precision (id) MATCH SIMPLE
-      ON UPDATE NO ACTION ON DELETE NO ACTION,
-  CONSTRAINT fk_encounter_episode_of_care_id FOREIGN KEY (episode_of_care_id)
-      REFERENCES episode_of_care (id) MATCH SIMPLE
-      ON UPDATE NO ACTION ON DELETE NO ACTION,
-  CONSTRAINT fk_encounter_service_provider_organization_id FOREIGN KEY (service_provider_organization_id)
-      REFERENCES organization (id) MATCH SIMPLE
-      ON UPDATE NO ACTION ON DELETE NO ACTION
+  CONSTRAINT pk_encounter_id PRIMARY KEY (organization_id,person_id,id)
 );
 
 CREATE UNIQUE INDEX encounter_id
@@ -723,22 +665,7 @@ CREATE TABLE encounter_event
   date_recorded datetime,
   location_id bigint,
   finished boolean,
-  CONSTRAINT pk_encounter_event_id PRIMARY KEY (organization_id, person_id, id),
-  CONSTRAINT fk_encounter_event_patient_id_organization_id FOREIGN KEY (patient_id, organization_id)
-      REFERENCES patient (id, organization_id) MATCH SIMPLE
-      ON UPDATE NO ACTION ON DELETE NO ACTION,
-  CONSTRAINT fk_encounter_event_practitioner_id FOREIGN KEY (practitioner_id)
-      REFERENCES practitioner (id) MATCH SIMPLE
-      ON UPDATE NO ACTION ON DELETE NO ACTION,
-  CONSTRAINT fk_encounter_event_date_precision FOREIGN KEY (date_precision_id)
-      REFERENCES date_precision (id) MATCH SIMPLE
-      ON UPDATE NO ACTION ON DELETE NO ACTION,
-  CONSTRAINT fk_encounter_event_episode_of_care_id FOREIGN KEY (episode_of_care_id)
-      REFERENCES episode_of_care (id) MATCH SIMPLE
-      ON UPDATE NO ACTION ON DELETE NO ACTION,
-  CONSTRAINT fk_encounter_event_service_provider_organization_id FOREIGN KEY (service_provider_organization_id)
-      REFERENCES organization (id) MATCH SIMPLE
-      ON UPDATE NO ACTION ON DELETE NO ACTION
+  CONSTRAINT pk_encounter_event_id PRIMARY KEY (organization_id, person_id, id)
 );
 
 -- required for upserts to work
@@ -782,26 +709,7 @@ CREATE TABLE encounter_detail (
   disposition_concept_id bigint,
   site_of_care_type_concept_id bigint,
   patient_status_concept_id bigint,
-  CONSTRAINT pk_encounter_detail_id PRIMARY KEY (organization_id, person_id, id),
-  /*got Emis consultations referring to missing appts, so this can't be enforced
-  CONSTRAINT fk_encounter_detail_appointment_id FOREIGN KEY (appointment_id)
-      REFERENCES appointment (id) MATCH SIMPLE
-      ON UPDATE NO ACTION ON DELETE NO ACTION,*/
-  CONSTRAINT fk_encounter_detail_patient_id_organization_id FOREIGN KEY (patient_id, organization_id)
-      REFERENCES patient (id, organization_id) MATCH SIMPLE
-      ON UPDATE NO ACTION ON DELETE NO ACTION,
-  CONSTRAINT fk_encounter_detail_practitioner_id FOREIGN KEY (practitioner_id)
-      REFERENCES practitioner (id) MATCH SIMPLE
-      ON UPDATE NO ACTION ON DELETE NO ACTION,
-  CONSTRAINT fk_encounter_detail_date_precision FOREIGN KEY (date_precision_id)
-      REFERENCES date_precision (id) MATCH SIMPLE
-      ON UPDATE NO ACTION ON DELETE NO ACTION,
-  CONSTRAINT fk_encounter_detail_episode_of_care_id FOREIGN KEY (episode_of_care_id)
-      REFERENCES episode_of_care (id) MATCH SIMPLE
-      ON UPDATE NO ACTION ON DELETE NO ACTION,
-  CONSTRAINT fk_encounter_detail_service_provider_organization_id FOREIGN KEY (service_provider_organization_id)
-      REFERENCES organization (id) MATCH SIMPLE
-      ON UPDATE NO ACTION ON DELETE NO ACTION
+  CONSTRAINT pk_encounter_detail_id PRIMARY KEY (organization_id, person_id, id)
 );
 
 CREATE UNIQUE INDEX ix_encounter_detail_id
@@ -848,26 +756,7 @@ CREATE TABLE encounter_raw (
   fhir_snomed_concept_id bigint,
   fhir_original_code character varying(100) binary,
   fhir_original_term character varying(1000),
-  CONSTRAINT pk_encounter_raw_id PRIMARY KEY (organization_id, person_id, id),
-  /*got Emis consultations referring to missing appts, so this can't be enforced
-  CONSTRAINT fk_encounter_raw_appointment_id FOREIGN KEY (appointment_id)
-      REFERENCES appointment (id) MATCH SIMPLE
-      ON UPDATE NO ACTION ON DELETE NO ACTION,*/
-  CONSTRAINT fk_encounter_raw_patient_id_organization_id FOREIGN KEY (patient_id, organization_id)
-      REFERENCES patient (id, organization_id) MATCH SIMPLE
-      ON UPDATE NO ACTION ON DELETE NO ACTION,
-  CONSTRAINT fk_encounter_raw_practitioner_id FOREIGN KEY (practitioner_id)
-      REFERENCES practitioner (id) MATCH SIMPLE
-      ON UPDATE NO ACTION ON DELETE NO ACTION,
-  CONSTRAINT fk_encounter_raw_date_precision FOREIGN KEY (date_precision_id)
-      REFERENCES date_precision (id) MATCH SIMPLE
-      ON UPDATE NO ACTION ON DELETE NO ACTION,
-  CONSTRAINT fk_encounter_raw_episode_of_care_id FOREIGN KEY (episode_of_care_id)
-      REFERENCES episode_of_care (id) MATCH SIMPLE
-      ON UPDATE NO ACTION ON DELETE NO ACTION,
-  CONSTRAINT fk_encounter_raw_service_provider_organization_id FOREIGN KEY (service_provider_organization_id)
-      REFERENCES organization (id) MATCH SIMPLE
-      ON UPDATE NO ACTION ON DELETE NO ACTION
+  CONSTRAINT pk_encounter_raw_id PRIMARY KEY (organization_id, person_id, id)
 ) COMMENT 'table of raw encounter data to allow working out mappings for encounter_detail concepts';
 
 CREATE UNIQUE INDEX ix_raw_detail_id
@@ -904,19 +793,7 @@ CREATE TABLE allergy_intolerance
   original_term character varying(1000),
   is_review boolean NOT NULL,
   date_recorded datetime,
-  CONSTRAINT pk_allergy_intolerance_id PRIMARY KEY (`organization_id`,`person_id`,`id`),
-  CONSTRAINT fk_allergy_intolerance_encounter_id FOREIGN KEY (encounter_id)
-      REFERENCES encounter (id) MATCH SIMPLE
-      ON UPDATE NO ACTION ON DELETE NO ACTION,
-  CONSTRAINT fk_allergy_intolerance_patient_id_organization_id FOREIGN KEY (patient_id, organization_id)
-      REFERENCES patient (id, organization_id) MATCH SIMPLE
-      ON UPDATE NO ACTION ON DELETE NO ACTION,
-  CONSTRAINT fk_allergy_intolerance_practitioner_id FOREIGN KEY (practitioner_id)
-      REFERENCES practitioner (id) MATCH SIMPLE
-      ON UPDATE NO ACTION ON DELETE NO ACTION,
-  CONSTRAINT fk_allergy_intolerance_date_precision FOREIGN KEY (date_precision_id)
-      REFERENCES date_precision (id) MATCH SIMPLE
-      ON UPDATE NO ACTION ON DELETE NO ACTION
+  CONSTRAINT pk_allergy_intolerance_id PRIMARY KEY (`organization_id`,`person_id`,`id`)
 );
 
 CREATE UNIQUE INDEX allergy_intolerance_id
@@ -951,22 +828,7 @@ CREATE TABLE medication_statement
   quantity_unit character varying(255),
   medication_statement_authorisation_type_id smallint NOT NULL,
   original_term character varying(1000),
-  CONSTRAINT pk_medication_statement_id PRIMARY KEY (`organization_id`,`person_id`,`id`),
-  CONSTRAINT fk_medication_statement_date_precision FOREIGN KEY (date_precision_id)
-      REFERENCES date_precision (id) MATCH SIMPLE
-      ON UPDATE NO ACTION ON DELETE NO ACTION,
-  CONSTRAINT fk_medication_statement_encounter_id FOREIGN KEY (encounter_id)
-      REFERENCES encounter (id) MATCH SIMPLE
-      ON UPDATE NO ACTION ON DELETE NO ACTION,
-  CONSTRAINT fk_medication_statement_medication_statement_authorisation_type FOREIGN KEY (medication_statement_authorisation_type_id)
-      REFERENCES medication_statement_authorisation_type (id) MATCH SIMPLE
-      ON UPDATE NO ACTION ON DELETE NO ACTION,
-  CONSTRAINT fk_medication_statement_patient_id_organization_id FOREIGN KEY (patient_id, organization_id)
-      REFERENCES patient (id, organization_id) MATCH SIMPLE
-      ON UPDATE NO ACTION ON DELETE NO ACTION,
-  CONSTRAINT fk_medication_statement_practitioner_id FOREIGN KEY (practitioner_id)
-      REFERENCES practitioner (id) MATCH SIMPLE
-      ON UPDATE NO ACTION ON DELETE NO ACTION
+  CONSTRAINT pk_medication_statement_id PRIMARY KEY (`organization_id`,`person_id`,`id`)
 );
 
 CREATE UNIQUE INDEX medication_statement_id
@@ -1001,22 +863,7 @@ CREATE TABLE medication_order
   estimated_cost real,
   medication_statement_id bigint,
   original_term character varying(1000),
-  CONSTRAINT pk_medication_order_id PRIMARY KEY (`organization_id`,`person_id`,`id`),
-  CONSTRAINT fk_medication_order_encounter_id FOREIGN KEY (encounter_id)
-      REFERENCES encounter (id) MATCH SIMPLE
-      ON UPDATE NO ACTION ON DELETE NO ACTION,
-  CONSTRAINT fk_medication_order_medication_statement_id FOREIGN KEY (medication_statement_id)
-      REFERENCES medication_statement (id) MATCH SIMPLE
-      ON UPDATE NO ACTION ON DELETE NO ACTION,
-  CONSTRAINT fk_medication_order_patient_id_organization_id FOREIGN KEY (patient_id, organization_id)
-      REFERENCES patient (id, organization_id) MATCH SIMPLE
-      ON UPDATE NO ACTION ON DELETE NO ACTION,
-  CONSTRAINT fk_medication_order_practitioner_id FOREIGN KEY (practitioner_id)
-      REFERENCES practitioner (id) MATCH SIMPLE
-      ON UPDATE NO ACTION ON DELETE NO ACTION,
-  CONSTRAINT fk_medication_order_date_precision FOREIGN KEY (date_precision_id)
-      REFERENCES date_precision (id) MATCH SIMPLE
-      ON UPDATE NO ACTION ON DELETE NO ACTION
+  CONSTRAINT pk_medication_order_id PRIMARY KEY (`organization_id`,`person_id`,`id`)
 );
 
 CREATE UNIQUE INDEX medication_order_id
@@ -1043,13 +890,7 @@ CREATE TABLE flag
   date_precision_id smallint,
   is_active boolean NOT NULL,
   flag_text text,
-  CONSTRAINT pk_flag_id PRIMARY KEY (`organization_id`,`person_id`,`id`),
-  CONSTRAINT fk_flag_patient_id_organization_id FOREIGN KEY (patient_id, organization_id)
-  REFERENCES patient (id, organization_id) MATCH SIMPLE
-    ON UPDATE NO ACTION ON DELETE NO ACTION,
-  CONSTRAINT fk_flag_date_precision FOREIGN KEY (date_precision_id)
-  REFERENCES date_precision (id) MATCH SIMPLE
-    ON UPDATE NO ACTION ON DELETE NO ACTION
+  CONSTRAINT pk_flag_id PRIMARY KEY (`organization_id`,`person_id`,`id`)
 );
 
 CREATE UNIQUE INDEX flag_id
@@ -1085,19 +926,7 @@ CREATE TABLE observation
   problem_end_date date,
   parent_observation_id bigint,
   date_recorded datetime,
-  CONSTRAINT pk_observation_id PRIMARY KEY (`organization_id`,`person_id`,`id`),
-  CONSTRAINT fk_observation_encounter_id FOREIGN KEY (encounter_id)
-      REFERENCES encounter (id) MATCH SIMPLE
-      ON UPDATE NO ACTION ON DELETE NO ACTION,
-  CONSTRAINT fk_observation_patient_id_organization_id FOREIGN KEY (patient_id, organization_id)
-      REFERENCES patient (id, organization_id) MATCH SIMPLE
-      ON UPDATE NO ACTION ON DELETE NO ACTION,
-  CONSTRAINT fk_observation_practitioner_id FOREIGN KEY (practitioner_id)
-      REFERENCES practitioner (id) MATCH SIMPLE
-      ON UPDATE NO ACTION ON DELETE NO ACTION,
-  CONSTRAINT fk_observation_date_precision FOREIGN KEY (date_precision_id)
-      REFERENCES date_precision (id) MATCH SIMPLE
-      ON UPDATE NO ACTION ON DELETE NO ACTION
+  CONSTRAINT pk_observation_id PRIMARY KEY (`organization_id`,`person_id`,`id`)
 );
 
 CREATE UNIQUE INDEX observation_id
@@ -1154,23 +983,7 @@ CREATE TABLE procedure_request
   original_code character varying(100) binary,
   original_term character varying(1000),
   date_recorded datetime,
-  CONSTRAINT pk_procedure_request_id PRIMARY KEY (`organization_id`,`person_id`,`id`),
-  /*got records referring to confidential encounters, so can't enforce this
-  CONSTRAINT fk_procedure_request_encounter_id FOREIGN KEY (encounter_id)
-      REFERENCES encounter (id) MATCH SIMPLE
-      ON UPDATE NO ACTION ON DELETE NO ACTION,*/
-  CONSTRAINT fk_procedure_request_patient_id_organization_id FOREIGN KEY (patient_id, organization_id)
-      REFERENCES patient (id, organization_id) MATCH SIMPLE
-      ON UPDATE NO ACTION ON DELETE NO ACTION,
-  CONSTRAINT fk_procedure_request_practitioner_id FOREIGN KEY (practitioner_id)
-      REFERENCES practitioner (id) MATCH SIMPLE
-      ON UPDATE NO ACTION ON DELETE NO ACTION,
-  CONSTRAINT fk_procedure_request_date_precision FOREIGN KEY (date_precision_id)
-      REFERENCES date_precision (id) MATCH SIMPLE
-      ON UPDATE NO ACTION ON DELETE NO ACTION,
-  CONSTRAINT fk_procedure_request_procedure_request_status_id FOREIGN KEY (procedure_request_status_id)
-      REFERENCES procedure_request_status (id) MATCH SIMPLE
-      ON UPDATE NO ACTION ON DELETE NO ACTION
+  CONSTRAINT pk_procedure_request_id PRIMARY KEY (`organization_id`,`person_id`,`id`)
 );
 
 CREATE UNIQUE INDEX procedure_request_id
@@ -1209,31 +1022,7 @@ CREATE TABLE referral_request
   specialty varchar(50),
   ubrn varchar(50),
   date_recorded datetime,
-  CONSTRAINT pk_referral_request_id PRIMARY KEY (`organization_id`,`person_id`,`id`),
-  CONSTRAINT fk_referral_request_date_precision FOREIGN KEY (date_precision_id)
-      REFERENCES date_precision (id) MATCH SIMPLE
-      ON UPDATE NO ACTION ON DELETE NO ACTION,
-  CONSTRAINT fk_referral_request_encounter_id FOREIGN KEY (encounter_id)
-      REFERENCES encounter (id) MATCH SIMPLE
-      ON UPDATE NO ACTION ON DELETE NO ACTION,
-  CONSTRAINT fk_referral_request_patient_id_organization_id FOREIGN KEY (patient_id, organization_id)
-      REFERENCES patient (id, organization_id) MATCH SIMPLE
-      ON UPDATE NO ACTION ON DELETE NO ACTION,
-  CONSTRAINT fk_referral_request_practitioner_id FOREIGN KEY (practitioner_id)
-      REFERENCES practitioner (id) MATCH SIMPLE
-      ON UPDATE NO ACTION ON DELETE NO ACTION,
-  CONSTRAINT fk_referral_request_recipient_organization_id FOREIGN KEY (recipient_organization_id)
-      REFERENCES organization (id) MATCH SIMPLE
-      ON UPDATE NO ACTION ON DELETE NO ACTION,
-  CONSTRAINT fk_referral_request_requester_organization_id FOREIGN KEY (requester_organization_id)
-      REFERENCES organization (id) MATCH SIMPLE
-      ON UPDATE NO ACTION ON DELETE NO ACTION,
-  CONSTRAINT fk_referral_request_type_id FOREIGN KEY (type_id)
-      REFERENCES referral_request_type (id) MATCH SIMPLE
-      ON UPDATE NO ACTION ON DELETE NO ACTION,
-  CONSTRAINT fk_referral_request_priority_id FOREIGN KEY (priority_id)
-      REFERENCES referral_request_priority (id) MATCH SIMPLE
-      ON UPDATE NO ACTION ON DELETE NO ACTION
+  CONSTRAINT pk_referral_request_id PRIMARY KEY (`organization_id`,`person_id`,`id`)
 );
 
 CREATE UNIQUE INDEX referral_request_id
@@ -1301,10 +1090,7 @@ create table patient_uprn (
     missing_postcode boolean,
     invalid_postcode boolean,
 	property_class varchar(10),
-    CONSTRAINT pk_patient_id_organization_id PRIMARY KEY (`organization_id`,`person_id`,`patient_id`),
-    CONSTRAINT fk_patient_uprn_patient_id_organisation_id FOREIGN KEY (patient_id, organization_id)
-      REFERENCES patient (id, organization_id) MATCH SIMPLE
-      ON UPDATE NO ACTION ON DELETE NO ACTION
+    CONSTRAINT pk_patient_id_organization_id PRIMARY KEY (`organization_id`,`person_id`,`patient_id`)
 );
 
 CREATE UNIQUE INDEX patient_uprn_id
@@ -1335,10 +1121,7 @@ create table patient_address (
 	msoa_2011_code varchar(9),
 	ward_code varchar(9),
 	local_authority_code varchar(9),
-	CONSTRAINT pk_organization_id_id_patient_id_person_id PRIMARY KEY (`organization_id`,`id`,`patient_id`,`person_id`),
-	CONSTRAINT fk_patient_address_patient_id_organization_id FOREIGN KEY (patient_id, organization_id)
-	    REFERENCES patient (id, organization_id) MATCH SIMPLE
-        ON UPDATE NO ACTION ON DELETE NO ACTION
+	CONSTRAINT pk_organization_id_id_patient_id_person_id PRIMARY KEY (`organization_id`,`id`,`patient_id`,`person_id`)
 ) COMMENT 'stores address details for patients';
 
 CREATE UNIQUE INDEX ux_patient_address_id on patient_address (id);
@@ -1356,10 +1139,7 @@ CREATE TABLE patient_contact
 	start_date date,
 	end_date date,
 	value varchar(255) COMMENT 'the actual phone number or email address',
-	CONSTRAINT pk_organization_id_id_patient_id_person_id PRIMARY KEY (`organization_id`,`id`,`patient_id`,`person_id`),
-	CONSTRAINT fk_patient_contact_patient_id_organisation_id FOREIGN KEY (patient_id, organization_id)
-	    REFERENCES patient (id, organization_id) MATCH SIMPLE
-        ON UPDATE NO ACTION ON DELETE NO ACTION
+	CONSTRAINT pk_organization_id_id_patient_id_person_id PRIMARY KEY (`organization_id`,`id`,`patient_id`,`person_id`)
 ) COMMENT 'stores contact details (e.g. phone) for patients';
 
 CREATE UNIQUE INDEX ux_patient_contact_id on patient_contact (id);
@@ -1406,10 +1186,7 @@ CREATE TABLE registration_status_history (
     start_date datetime DEFAULT NULL,
     end_date datetime DEFAULT NULL,
     PRIMARY KEY (`organization_id`,`id`,`patient_id`,`person_id`),
-    UNIQUE KEY ux_registration_status_history_id (`id`),
-    CONSTRAINT fk_registration_status_history_patient_id_organisation_id FOREIGN KEY (patient_id, organization_id)
-        REFERENCES patient (id, organization_id) MATCH SIMPLE
-        ON UPDATE NO ACTION ON DELETE NO ACTION
+    UNIQUE KEY ux_registration_status_history_id (`id`)
 ) COMMENT='stores registration status history for GP registrations';
 
 
@@ -1424,10 +1201,7 @@ CREATE TABLE patient_pseudo_id
   skid varchar(255) NOT NULL,
   is_nhs_number_valid boolean NOT NULL,
   is_nhs_number_verified_by_publisher boolean NOT NULL,
-  CONSTRAINT pk_patient_pseudo_id PRIMARY KEY (`organization_id`,`person_id`,`id`),
-    CONSTRAINT fk_patient_pseudo_id FOREIGN KEY (patient_id, organization_id)
-        REFERENCES patient (id, organization_id) MATCH SIMPLE
-        ON UPDATE NO ACTION ON DELETE NO ACTION
+  CONSTRAINT pk_patient_pseudo_id PRIMARY KEY (`organization_id`,`person_id`,`id`)
 );
 
 CREATE UNIQUE INDEX ux_patient_pseudo_id ON patient_pseudo_id (id);

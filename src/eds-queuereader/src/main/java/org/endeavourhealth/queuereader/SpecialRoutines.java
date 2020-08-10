@@ -5657,8 +5657,11 @@ public abstract class SpecialRoutines {
 
                 Boolean frail = hmResults.get(nhsNumber);
 
+                List<String> logging = new ArrayList<>();
+
                 //find patient IDs
                 Map<UUID, UUID> patientAndServiceUuids = patientSearchDal.findPatientIdsForNhsNumber(publisherServiceIds, nhsNumber);
+                logging.add("Found " + patientAndServiceUuids.size() + " patient UUIDs");
 
                 Set<String> results = new HashSet<>();
 
@@ -5666,8 +5669,10 @@ public abstract class SpecialRoutines {
 
                     Long enterpriseId = patientIdDal.findEnterpriseIdOldWay(ResourceType.Patient.toString(), patientUuid.toString());
                     if (enterpriseId == null) {
+                        logging.add("" + patientUuid + " has no enterprise ID");
                         continue;
                     }
+                    logging.add("" + patientUuid + " has enterprise ID -> " + enterpriseId);
 
                     sql = ConfigManager.getConfiguration(queryConfigName, "messaging-api");
                     if (Strings.isNullOrEmpty(sql)) {
@@ -5684,9 +5689,11 @@ public abstract class SpecialRoutines {
                         if (rs.next()) {
                             String result = rs.getString(1);
                             results.add(result);
+                            logging.add("For enterprise ID " + enterpriseId + " got SQL result " + result);
 
                         } else {
                             results.add("0_NONE");
+                            logging.add("For enterprise ID " + enterpriseId + " got NO SQL result");
                         }
 
                     } finally {
@@ -5703,9 +5710,11 @@ public abstract class SpecialRoutines {
                         || results.contains("2_MODERATE")
                         || results.contains("3_SEVERE")) {
                     nowFrail = Boolean.TRUE;
+                    logging.add("Results contains a frailty result, so TRUE");
 
                 } else if (results.contains("0_NONE")) {
                     nowFrail = Boolean.FALSE;
+                    logging.add("Results don't contain a frailty result, so TRUE");
 
                 } else {
                     //didn't find in PAITNET SEARCH???
@@ -5715,6 +5724,10 @@ public abstract class SpecialRoutines {
 
                 if (!nowFrail.equals(frail)) {
                     LOG.error("" + nhsNumber + " was frail = " + frail + " now frail " + nowFrail);
+                    for (String line: logging) {
+                        LOG.error("    " + line);
+                    }
+
                 } else {
                     LOG.info("" + nhsNumber + " was frail = " + frail + " OK");
                 }
