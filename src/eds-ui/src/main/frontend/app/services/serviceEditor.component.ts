@@ -675,7 +675,18 @@ export class ServiceEditComponent {
 	}
 
 	joinArr(arr: string[]): string {
-		return 'test';
-//		return arr.join(', ');
+		if (arr) {
+			return arr.join(', ');
+		} else {
+			return '' + arr;
+		}
+		/*var s = '';
+		for (var i=0; i<arr.length; i++) {
+			if (i > 0) {
+				s += ', ';
+			}
+			s += arr[i];
+		}
+		return s;*/
 	}
 }
