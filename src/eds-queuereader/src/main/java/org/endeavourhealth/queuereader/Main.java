@@ -506,7 +506,7 @@ public class Main {
 				odsCode = args[2];
 			}
 			SpecialRoutines.compareDsmPublishers(logDifferencesOnly, odsCode);
-			SpecialRoutines.compareDsmSubscribers();
+			//SpecialRoutines.compareDsmSubscribers();
 			System.exit(0);
 		}
 

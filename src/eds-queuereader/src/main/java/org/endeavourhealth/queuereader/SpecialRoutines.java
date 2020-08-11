@@ -4333,7 +4333,7 @@ public abstract class SpecialRoutines {
         }
     }*/
 
-    public static void compareDsmSubscribers() {
+    /*public static void compareDsmSubscribers() {
         LOG.debug("Comparing DSM for Subscribers");
         try {
 
@@ -4389,7 +4389,7 @@ public abstract class SpecialRoutines {
         } catch (Throwable t) {
             LOG.error("", t);
         }
-    }
+    }*/
 
 
     private static Set<String> findPublisherServiceIdsForSubscriberNewWay(String headerOdsCode, String headerProjectId) throws Exception {

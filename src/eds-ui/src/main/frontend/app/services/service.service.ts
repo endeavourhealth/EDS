@@ -105,11 +105,11 @@ export class ServiceService extends BaseHttp2Service {
 		return this.httpGet('api/service/dsmDetails', { search : params });
 	}
 
-	getServiceProtocols(serviceId: string) : Observable<EdsLibraryItem[]> {
+	/*getServiceProtocols(serviceId: string) : Observable<EdsLibraryItem[]> {
 		let params = new URLSearchParams();
 		params.set('serviceId', serviceId);
 		return this.httpGet('api/service/protocolsForService', { search : params });
-	}
+	}*/
 
 	getOrganisationTypeList() : Observable<OrganisationType[]> {
 		return this.httpGet('api/service/organisationTypeList', {});

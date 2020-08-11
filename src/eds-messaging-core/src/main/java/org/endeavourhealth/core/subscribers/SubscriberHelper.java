@@ -242,12 +242,21 @@ public class SubscriberHelper {
 
     public static Set<UUID> findPublisherServiceIdsForSubscriber(String subscriberOdsCode, String headerProjectId, UUID serviceId, UUID systemId) throws Exception {
 
+        Set<UUID> ret = null;
         if (useDsmForDSAs()) {
-            return findPublisherServiceIdsForSubscriberNewWay(subscriberOdsCode, headerProjectId);
+            ret = findPublisherServiceIdsForSubscriberNewWay(subscriberOdsCode, headerProjectId);
 
         } else {
-            return findPublisherServiceIdsForSubscriberOldWay(serviceId, systemId);
+            ret = findPublisherServiceIdsForSubscriberOldWay(serviceId, systemId);
         }
+
+        if (LOG.isTraceEnabled()) {
+            List<String> l = ret.stream().map(r -> r.toString()).collect(Collectors.toList());
+            l.sort(((o1, o2) -> o1.compareTo(o2)));
+            LOG.trace("[" + String.join(", ", l) + "]");
+        }
+
+        return ret;
     }
 
     private static Set<UUID> findPublisherServiceIdsForSubscriberNewWay(String headerOdsCode, String headerProjectId) throws Exception {

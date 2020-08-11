@@ -11,7 +11,6 @@ import org.endeavourhealth.common.ods.OdsWebService;
 import org.endeavourhealth.common.security.SecurityUtils;
 import org.endeavourhealth.common.security.annotations.RequiresAdmin;
 import org.endeavourhealth.common.utility.ExpiringObject;
-import org.endeavourhealth.common.utility.XmlSerializer;
 import org.endeavourhealth.core.database.dal.DalProvider;
 import org.endeavourhealth.core.database.dal.admin.LibraryDalI;
 import org.endeavourhealth.core.database.dal.admin.LibraryRepositoryHelper;
@@ -32,7 +31,7 @@ import org.endeavourhealth.core.database.rdbms.datasharingmanager.models.Project
 import org.endeavourhealth.core.fhirStorage.ServiceInterfaceEndpoint;
 import org.endeavourhealth.core.queueing.MessageFormat;
 import org.endeavourhealth.core.queueing.QueueHelper;
-import org.endeavourhealth.core.xml.QueryDocument.*;
+import org.endeavourhealth.core.xml.QueryDocument.LibraryItem;
 import org.endeavourhealth.core.xml.QueryDocument.System;
 import org.endeavourhealth.core.xml.QueryDocumentSerializer;
 import org.endeavourhealth.coreui.endpoints.AbstractEndpoint;
@@ -938,7 +937,7 @@ public final class ServiceEndpoint extends AbstractEndpoint {
         }
     }
 
-    @GET
+    /*@GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     @Timed(absolute = true, name = "ServiceEndpoint.protocolsForService")
@@ -963,8 +962,8 @@ public final class ServiceEndpoint extends AbstractEndpoint {
             String xml = QueryDocumentSerializer.writeToXml(doc);
 
             LibraryItem libraryItem = (LibraryItem)XmlSerializer.deserializeFromString(LibraryItem.class, xml, (String)null);
-            /*doc = QueryDocumentSerializer.readQueryDocumentFromXml(xml);
-            LibraryItem libraryItem = (LibraryItem) XmlSerializer.deserializeFromString(LibraryItem.class, xml, (String)null);*/
+            *//*doc = QueryDocumentSerializer.readQueryDocumentFromXml(xml);
+            LibraryItem libraryItem = (LibraryItem) XmlSerializer.deserializeFromString(LibraryItem.class, xml, (String)null);*//*
 
             Protocol protocol = libraryItem.getProtocol();
             List<ServiceContract> serviceContracts = protocol.getServiceContract();
@@ -985,7 +984,7 @@ public final class ServiceEndpoint extends AbstractEndpoint {
                 .ok()
                 .entity(ret)
                 .build();
-    }
+    }*/
 
 
     @GET

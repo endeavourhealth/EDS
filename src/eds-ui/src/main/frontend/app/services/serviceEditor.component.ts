@@ -22,7 +22,7 @@ export class ServiceEditComponent {
 	service : Service = <Service>{};
 	systems : System[];
 	technicalInterfaces : TechnicalInterface[];
-	protocols: EdsLibraryItem[];
+	//protocols: EdsLibraryItem[];
 	selectedEndpoint : Endpoint;
 	tags: Tag[];
 	dsmDetailsJson: string;
@@ -77,7 +77,7 @@ export class ServiceEditComponent {
 			.subscribe(
 				(result) => {
 					vm.service = result;
-					vm.getServiceProtocols();
+					//vm.getServiceProtocols();
 					vm.populateTags();
 					vm.populateDsmDetails();
 				},
@@ -298,7 +298,7 @@ export class ServiceEditComponent {
 			);
 	}
 
-	private getServiceProtocols() {
+	/*private getServiceProtocols() {
 		var vm = this;
 		vm.serviceService.getServiceProtocols(vm.service.uuid)
 			.subscribe(
@@ -308,7 +308,7 @@ export class ServiceEditComponent {
 				},
 				(error) => vm.log.error('Failed to load service protocols', error, 'Load service protocols')
 			);
-	}
+	}*/
 
 	odsSearch() {
 		var vm = this;
