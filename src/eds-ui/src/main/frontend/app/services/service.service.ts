@@ -7,7 +7,8 @@ import {Http, URLSearchParams} from "@angular/http";
 import {EdsLibraryItem} from "../edsLibrary/models/EdsLibraryItem";
 import {OrganisationType} from "./models/OrganisationType";
 import {linq} from "eds-common-js/dist/index";
-import {DsmServiceData} from "./models/DsmServiceData";
+import {DpaHistory} from "./models/DpaHistory";
+import {SubscriberHistory} from "./models/SubscriberHistory";
 
 @Injectable()
 export class ServiceService extends BaseHttp2Service {
@@ -100,7 +101,7 @@ export class ServiceService extends BaseHttp2Service {
 		return this.httpGet('api/service/openOdsRecord', { search : params });
 	}
 
-	getDsmDetails(odsCode : string) : Observable<DsmServiceData> {
+	getDsmDetails(odsCode : string) : Observable<{}> {
 		let params = new URLSearchParams();
 		params.set('odsCode', odsCode);
 		return this.httpGet('api/service/dsmDetails', { search : params });
@@ -912,6 +913,19 @@ export class ServiceService extends BaseHttp2Service {
 		vm.serviceCcgCodeFilterRegex = null;
 		vm.serviceLastDataFilter = null;
 		vm.servicePublisherModeFilter = null;
+	}
+
+
+	getDpaHistory(serviceId : string) : Observable<DpaHistory[]> {
+		let params = new URLSearchParams();
+		params.set('uuid', serviceId);
+		return this.httpGet('api/service/dpaHistory', { search : params });
+	}
+
+	getSubscriberHistory(serviceId : string) : Observable<SubscriberHistory[]> {
+		let params = new URLSearchParams();
+		params.set('uuid', serviceId);
+		return this.httpGet('api/service/subscriberHistory', { search : params });
 	}
 }
 

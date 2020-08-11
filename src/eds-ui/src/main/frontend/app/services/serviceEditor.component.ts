@@ -13,7 +13,8 @@ import {OdsSearchDialog} from "./odsSearch.dialog";
 import {OrganisationType} from "./models/OrganisationType";
 import {linq} from "eds-common-js/dist/index";
 import {Tag} from "./models/Tag";
-import {DsmServiceData} from "./models/DsmServiceData";
+import {SubscriberHistory} from "./models/SubscriberHistory";
+import {DpaHistory} from "./models/DpaHistory";
 
 @Component({
 	template : require('./serviceEditor.html')
@@ -26,8 +27,11 @@ export class ServiceEditComponent {
 	//protocols: EdsLibraryItem[];
 	selectedEndpoint : Endpoint;
 	tags: Tag[];
-	//dsmDetailsJson: string;
-	dsmData: DsmServiceData;
+	dsmDetailsJson: string;
+	currentHasDpa: boolean;
+	currentSubscribers: string[];
+	historyHasDpa: DpaHistory[];
+	historySubscribers: SubscriberHistory[];
 
 	//for populating the org type combo
 	organisationTypes: OrganisationType[];
@@ -82,6 +86,8 @@ export class ServiceEditComponent {
 					//vm.getServiceProtocols();
 					vm.populateTags();
 					vm.populateDsmDetails();
+					vm.populateDpaHistory();
+					vm.populateSubscribersHistory();
 				},
 				(error) => vm.log.error('Error loading', error, 'Error')
 			);
@@ -612,16 +618,64 @@ export class ServiceEditComponent {
 		vm.serviceService.getDsmDetails(odsCode).subscribe(
 			(result) => {
 
-				vm.dsmData = result;
-				/*if (result) {
+				if (result) {
 					vm.dsmDetailsJson = JSON.stringify(result, null, 2);
+
+					//pull out the interesting stuff
+					vm.currentHasDpa = result['hasDPA'];
+
+					vm.currentSubscribers = [];
+
+					var projectsArr = result['distributionProjects'];
+					if (projectsArr) {
+						for (var i = 0; i < projectsArr.length; i++) {
+							var project = projectsArr[i];
+							var configName = project['configName'];
+							if (configName) {
+								vm.currentSubscribers.push(configName);
+							}
+						}
+
+						vm.currentSubscribers.sort();
+					}
+
 				} else {
 					vm.dsmDetailsJson = 'no DSM details found';
-				}*/
+				}
 			},
 			(error) => {
-				vm.log.error('Error searching');
+				vm.log.error('Error getting DSM data');
 			}
 		);
+	}
+
+	populateDpaHistory() {
+		var vm = this;
+		vm.serviceService.getDpaHistory(vm.service.uuid).subscribe(
+			(result) => {
+				vm.historyHasDpa = result;
+			},
+			(error) => {
+				vm.log.error('Error getting DPA history');
+			}
+		);
+	}
+
+	populateSubscribersHistory() {
+		var vm = this;
+		vm.serviceService.getSubscriberHistory(vm.service.uuid).subscribe(
+			(result) => {
+				vm.historySubscribers = result;
+			},
+			(error) => {
+				vm.log.error('Error getting subscriber history');
+			}
+		);
+
+	}
+
+	joinArr(arr: string[]): string {
+		return 'test';
+//		return arr.join(', ');
 	}
 }

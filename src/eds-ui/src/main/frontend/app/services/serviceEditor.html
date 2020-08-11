@@ -239,48 +239,55 @@
 					</div>
 				</div>-->
 
-				<div class="row" *ngIf="dsmData">
+				<div class="row">
 
 					<div class="form-group col-md-4">
-						<label class="control-label">Data Processing Agreements</label>
-						<em>Has DPA = {{dsmData.hasDPA}}</em>
+						<label class="control-label">DPA Status</label>
 
 						<div class="table">
 							<table class="table table-striped table-condensed">
 								<thead>
-									<th class="col-md-12">Name</th>
-									<!--<th class="col-md-8">Description</th>-->
+									<th class="col-md-6">When</th>
+									<th class="col-md-6">Has DPA</th>
 								</thead>
 								<tbody>
-									<tr *ngFor="let publisherDsa of dsmData.publisherDSAs">
-										<td>{{publisherDsa.name}}</td>
-										<!--<td>{{publisherDsa.description}}</td>-->
+									<tr>
+										<td>Current</td>
+										<td>{{currentHasDpa}}</td>
+									</tr>
+									<tr *ngFor="let h of historyHasDpa">
+										<td>{{h.date | date:'yyyy-MM-dd HH:mm'}}*</td>
+										<td>{{h.hasDpa}}</td>
 									</tr>
 								</tbody>
 							</table>
 						</div>
 					</div>
 
-					<div class="form-group col-md-12">
-						<label class="control-label">Data Sharing Agreements</label>
+					<div class="form-group col-md-8">
+						<label class="control-label">Subscriber Status</label>
 
 						<div class="table">
 							<table class="table table-striped table-condensed">
 								<thead>
-									<th class="col-md-3">Name</th>
-									<th class="col-md-5">Summary</th>
-									<th class="col-md-4">Config Name</th>
+								<th class="col-md-6">When</th>
+								<th class="col-md-6">Subscriber Configs</th>
 								</thead>
 								<tbody>
-									<tr *ngFor="let project of dsmData.distributionProjects">
-										<td>{{project.name}}</td>
-										<td>{{project.summary}}</td>
-										<td>{{project.configName}}</td>
-									</tr>
+								<tr>
+									<td>Current</td>
+									<td>{{joinArr(currentSubscribers)}}</td>
+								</tr>
+								<tr *ngFor="let h of historySubscribers">
+									<td>{{h.date | date:'yyyy-MM-dd HH:mm'}}*</td>
+									<td>{{joinArr(h.subscribers)}}</td>
+								</tr>
 								</tbody>
 							</table>
 						</div>
 					</div>
+
+					* history is based on change detection by Messaging API and Protocol Queue Readers, not audit trails from DSM
 				</div>
 
 				<!--<div class="row">

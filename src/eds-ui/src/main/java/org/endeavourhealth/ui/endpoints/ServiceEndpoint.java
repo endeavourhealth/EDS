@@ -19,9 +19,7 @@ import org.endeavourhealth.core.database.dal.admin.SystemHelper;
 import org.endeavourhealth.core.database.dal.admin.models.ActiveItem;
 import org.endeavourhealth.core.database.dal.admin.models.Item;
 import org.endeavourhealth.core.database.dal.admin.models.Service;
-import org.endeavourhealth.core.database.dal.audit.ExchangeBatchDalI;
-import org.endeavourhealth.core.database.dal.audit.ExchangeDalI;
-import org.endeavourhealth.core.database.dal.audit.UserAuditDalI;
+import org.endeavourhealth.core.database.dal.audit.*;
 import org.endeavourhealth.core.database.dal.audit.models.*;
 import org.endeavourhealth.core.database.dal.usermanager.caching.DataSharingAgreementCache;
 import org.endeavourhealth.core.database.dal.usermanager.caching.OrganisationCache;
@@ -1299,4 +1297,79 @@ public final class ServiceEndpoint extends AbstractEndpoint {
                 .build();
     }
 
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name = "ServiceEndpoint.dpaHistory")
+    @Path("/dpaHistory")
+    public Response getDpaHistory(@Context SecurityContext sc, @QueryParam("uuid") String uuidStr) throws Exception {
+        super.setLogbackMarkers(sc);
+
+        ObjectMapper mapper = new ObjectMapper();
+        ArrayNode root = new ArrayNode(mapper.getNodeFactory());
+
+        UUID serviceId = UUID.fromString(uuidStr);
+        ServicePublisherAuditDalI dal = DalProvider.factoryServicePublisherAuditDal();
+
+        Map<Date, Boolean> map = dal.getDpaHistory(serviceId);
+        List<Date> keys = new ArrayList<>(map.keySet());
+        keys.sort(Date::compareTo);
+
+        for (Date d: keys) {
+            Boolean hasDpa = map.get(d);
+
+            ObjectNode obj = root.addObject();
+            obj.put("date", d.getTime());
+            obj.put("hasDpa", hasDpa);
+        }
+
+        String retJson = mapper.writeValueAsString(root);
+
+        clearLogbackMarkers();
+
+        return Response
+                .ok()
+                .entity(retJson)
+                .build();
+    }
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name = "ServiceEndpoint.subscriberHistory")
+    @Path("/subscriberHistory")
+    public Response getSubscriberHistory(@Context SecurityContext sc, @QueryParam("uuid") String uuidStr) throws Exception {
+        super.setLogbackMarkers(sc);
+
+        ObjectMapper mapper = new ObjectMapper();
+        ArrayNode root = new ArrayNode(mapper.getNodeFactory());
+
+        UUID serviceId = UUID.fromString(uuidStr);
+        ServiceSubscriberAuditDalI dal = DalProvider.factoryServiceSubscriberAuditDal();
+
+        Map<Date, List<String>> map = dal.getSubscriberHistory(serviceId);
+        List<Date> keys = new ArrayList<>(map.keySet());
+        keys.sort(Date::compareTo);
+
+        for (Date d: keys) {
+            List<String> subscribers = map.get(d);
+
+            ObjectNode obj = root.addObject();
+            obj.put("date", d.getTime());
+            ArrayNode arr = obj.putArray("subscribers");
+            for (String subscriber: subscribers) {
+                arr.add(subscriber);
+            }
+        }
+
+        String retJson = mapper.writeValueAsString(root);
+
+        clearLogbackMarkers();
+
+        return Response
+                .ok()
+                .entity(retJson)
+                .build();
+    }
 }
