@@ -39,6 +39,8 @@ public class DetermineRelevantProtocolIds extends PipelineComponent {
 				throw new PipelineException("No DPA found for service " + serviceUuid);
 			}
 
+			//if we've passed the above check, then remove the header to prevent queuing and save
+			exchange.setHeaderAsBoolean(HeaderKeys.AllowQueueing, null);
 			AuditWriter.writeExchange(exchange);
 
 		} catch (PipelineException pe) {

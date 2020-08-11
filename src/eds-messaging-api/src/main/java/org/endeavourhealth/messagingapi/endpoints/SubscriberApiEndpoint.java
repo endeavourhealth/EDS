@@ -167,7 +167,7 @@ public class SubscriberApiEndpoint {
             }
 
             //find patient records, filtering by the service IDs (gets map of patient UUID and service UUID)
-            LOG.trace("Searching on NHS number");
+            LOG.trace("Searching on NHS number against " + publisherServiceIds.size() + " service IDs");
             PatientSearchDalI patientSearchDal = DalProvider.factoryPatientSearchDal();
             Map<UUID, UUID> patientSearchResults = patientSearchDal.findPatientIdsForNhsNumber(publisherServiceIds, subjectNhsNumber);
             LOG.trace("Done searching on NHS number, finding " + patientSearchResults.size() + " patient IDs");
