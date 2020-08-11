@@ -334,6 +334,10 @@ public class OpenEnvelope extends PipelineComponent {
 				}
 			}
 
+			//set to empty list so the parser can read it without error
+			s.setEndpointsList(new ArrayList<>());
+			s.setTags(new HashMap<>());
+
 			//tell us because we need to manually do a couple of steps
 			String msg = "Auto-created Service for ODS code " + organisationOds + " in Messaging API\r\n"
 					+ s.toString()
@@ -365,12 +369,12 @@ public class OpenEnvelope extends PipelineComponent {
 			if (endpoint == null) {
 				//create new draft service
 				createDraftEndpoint(service, software, messageVersion);
-				throw new PipelineException("Endpoint for " + software + " has been automatically added to service " + service.getLocalId() + " but in draft mode - manually change when data ready to process");
+				throw new PipelineException("Endpoint for " + service.getLocalId() + " " + software + " has been automatically added to service " + service.getLocalId() + " but in draft mode - manually change when data ready to process");
 
 			} else if (endpoint.getEndpoint() != null
 					&& endpoint.getEndpoint().equals(ServiceInterfaceEndpoint.STATUS_DRAFT)) {
 				//endpoint exists but is in DRAFT mode
-				throw new PipelineException("Endpoint for " + software + " already exists in draft mode - manually change to process data");
+				throw new PipelineException("Endpoint for " + service.getLocalId() + " " + software + " already exists in draft mode - manually change to process data");
 
 			} else {
 				//endpoint exists and is OK
@@ -382,7 +386,7 @@ public class OpenEnvelope extends PipelineComponent {
 			throw pe;
 
 		} catch (Exception e) {
-			throw new PipelineException("Failed to find or create system for service " + service.getId() + " software " + software + " version " + messageVersion);
+			throw new PipelineException("Failed to find or create system for service " + service.getLocalId() + " " + software + " version " + messageVersion, e);
 		}
 	}
 

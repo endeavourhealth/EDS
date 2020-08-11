@@ -13,6 +13,7 @@ import {OdsSearchDialog} from "./odsSearch.dialog";
 import {OrganisationType} from "./models/OrganisationType";
 import {linq} from "eds-common-js/dist/index";
 import {Tag} from "./models/Tag";
+import {DsmServiceData} from "./models/DsmServiceData";
 
 @Component({
 	template : require('./serviceEditor.html')
@@ -25,7 +26,8 @@ export class ServiceEditComponent {
 	//protocols: EdsLibraryItem[];
 	selectedEndpoint : Endpoint;
 	tags: Tag[];
-	dsmDetailsJson: string;
+	//dsmDetailsJson: string;
+	dsmData: DsmServiceData;
 
 	//for populating the org type combo
 	organisationTypes: OrganisationType[];
@@ -610,11 +612,12 @@ export class ServiceEditComponent {
 		vm.serviceService.getDsmDetails(odsCode).subscribe(
 			(result) => {
 
-				if (result) {
+				vm.dsmData = result;
+				/*if (result) {
 					vm.dsmDetailsJson = JSON.stringify(result, null, 2);
 				} else {
 					vm.dsmDetailsJson = 'no DSM details found';
-				}
+				}*/
 			},
 			(error) => {
 				vm.log.error('Error searching');

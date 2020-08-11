@@ -7,6 +7,7 @@ import {Http, URLSearchParams} from "@angular/http";
 import {EdsLibraryItem} from "../edsLibrary/models/EdsLibraryItem";
 import {OrganisationType} from "./models/OrganisationType";
 import {linq} from "eds-common-js/dist/index";
+import {DsmServiceData} from "./models/DsmServiceData";
 
 @Injectable()
 export class ServiceService extends BaseHttp2Service {
@@ -99,7 +100,7 @@ export class ServiceService extends BaseHttp2Service {
 		return this.httpGet('api/service/openOdsRecord', { search : params });
 	}
 
-	getDsmDetails(odsCode : string) : Observable<{}> {
+	getDsmDetails(odsCode : string) : Observable<DsmServiceData> {
 		let params = new URLSearchParams();
 		params.set('odsCode', odsCode);
 		return this.httpGet('api/service/dsmDetails', { search : params });
