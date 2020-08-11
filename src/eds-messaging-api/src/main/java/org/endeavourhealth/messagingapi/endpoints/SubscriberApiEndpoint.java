@@ -179,10 +179,24 @@ public class SubscriberApiEndpoint {
             //calculate the flag (note that returning a NULL flag is a valid result if the patient isn't frail)
             try {
 
-                String enterpriseEndpoint = getEnterpriseEndpoint(requestingService, requesterSystemId);
-                if (!Strings.isNullOrEmpty(enterpriseEndpoint)) {
-                    LOG.debug("Calculating frailty using " + enterpriseEndpoint);
-                    return calculateFrailtyFlagLive(enterpriseEndpoint, patientSearchResults, uriInfo, params, headerAuthToken, audit);
+                Set<String> enterpriseEndpoints = getEnterpriseEndpoints(requestingService, requesterSystemId);
+                if (!enterpriseEndpoints.isEmpty()) {
+                    LOG.debug("Calculating frailty using " + enterpriseEndpoints);
+                    Response response = null;
+
+                    //test each endpoint until we get a result
+                    for (String enterpriseEndpoint: enterpriseEndpoints) {
+                        response = calculateFrailtyFlagLive(enterpriseEndpoint, patientSearchResults, params, subjectNhsNumber, audit);
+                        if (response != null) {
+                            break;
+                        }
+                    }
+
+                    //if no result, then return a positive response without a flag
+                    if (response == null) {
+                        response = createSuccessResponse(null, params, audit);
+                    }
+                    return response;
 
                 } else {
                     LOG.debug("Using DUMMY mechanism to calculate Frailty");
@@ -210,16 +224,19 @@ public class SubscriberApiEndpoint {
     }
 
 
-    private String getEnterpriseEndpoint(org.endeavourhealth.core.database.dal.admin.models.Service service, UUID systemId) throws Exception {
+    private Set<String> getEnterpriseEndpoints(org.endeavourhealth.core.database.dal.admin.models.Service service, UUID systemId) throws Exception {
+
+        Set<String> ret = new HashSet<>();
 
         List<ServiceInterfaceEndpoint> serviceEndpoints = service.getEndpointsList();
         for (ServiceInterfaceEndpoint serviceEndpoint: serviceEndpoints) {
             if (serviceEndpoint.getSystemUuid().equals(systemId)) {
-                return serviceEndpoint.getEndpoint();
+                String endpoint = serviceEndpoint.getEndpoint();
+                ret.add(endpoint);
             }
         }
 
-        return null;
+        return ret;
     }
 
     private Response createSuccessResponse(Flag frailtyFlag, MultivaluedMap<String, String> requestParams, SubscriberApiAudit audit) throws Exception {
@@ -289,8 +306,8 @@ public class SubscriberApiEndpoint {
     }
 
     private Response calculateFrailtyFlagLive(String subscriberConfigName, Map<UUID, UUID> patientAndServiceUuids,
-                                              UriInfo uriInfo, MultivaluedMap<String, String> requestParams,
-                                              String headerAuthToken, SubscriberApiAudit audit) throws Exception {
+                                              MultivaluedMap<String, String> requestParams, String subjectNhsNumber,
+                                              SubscriberApiAudit audit) throws Exception {
 
 
         SubscriberConfig subscriberConfig = SubscriberConfig.readFromConfig(subscriberConfigName);
@@ -308,8 +325,10 @@ public class SubscriberApiEndpoint {
                 LOG.trace("Found compass v1 enterprise ID " + enterpriseId);
                 if (enterpriseId != null) {
                     String result = runCompassFrailtyQuery(subscriberConfig, enterpriseId);
-                    results.add(result);
                     LOG.trace("Got result " + result);
+                    if (!Strings.isNullOrEmpty(result)) {
+                        results.add(result);
+                    }
                 }
 
             } else if (subscriberConfig.getSubscriberType() == SubscriberConfig.SubscriberType.CompassV2) {
@@ -319,8 +338,10 @@ public class SubscriberApiEndpoint {
                 LOG.trace("Found compass v2 enterprise ID " + subscriberId);
                 if (subscriberId != null) {
                     String result = runCompassFrailtyQuery(subscriberConfig, subscriberId.getSubscriberId());
-                    results.add(result);
                     LOG.trace("Got result " + result);
+                    if (!Strings.isNullOrEmpty(result)) {
+                        results.add(result);
+                    }
                 }
 
             } else {
@@ -345,12 +366,8 @@ public class SubscriberApiEndpoint {
 
             return createSuccessResponse(flag, requestParams, audit);
 
-        } else if (results.contains("0_NONE")) {
-            //if we get here, we only got "none" back for all our results, so return a positive response without a flag
-            return createSuccessResponse(null, requestParams, audit);
-
         } else {
-            throw new Exception("Unexpected frailty result str " + results);
+            return null;
         }
     }
 
@@ -384,7 +401,7 @@ public class SubscriberApiEndpoint {
                 return result;
 
             } else {
-                return "0_NONE";
+                return null;
             }
 
         } finally {

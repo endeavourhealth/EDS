@@ -5716,14 +5716,9 @@ public abstract class SpecialRoutines {
                     nowFrail = Boolean.TRUE;
                     logging.add("Results contains a frailty result, so TRUE");
 
-                } else if (results.contains("0_NONE")) {
+                } else {
                     nowFrail = Boolean.FALSE;
                     logging.add("Results don't contain a frailty result, so FALSE");
-
-                } else {
-                    //didn't find in PAITNET SEARCH???
-                    LOG.error("" + nhsNumber + " no results found");
-                    continue;
                 }
 
                 if (!nowFrail.equals(frail)) {
