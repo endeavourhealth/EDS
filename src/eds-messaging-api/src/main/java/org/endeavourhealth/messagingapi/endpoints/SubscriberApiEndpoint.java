@@ -170,7 +170,7 @@ public class SubscriberApiEndpoint {
             LOG.trace("Searching on NHS number");
             PatientSearchDalI patientSearchDal = DalProvider.factoryPatientSearchDal();
             Map<UUID, UUID> patientSearchResults = patientSearchDal.findPatientIdsForNhsNumber(publisherServiceIds, subjectNhsNumber);
-            LOG.trace("Done searching on NHS number");
+            LOG.trace("Done searching on NHS number, finding " + patientSearchResults.size() + " patient IDs");
 
             if (patientSearchResults.isEmpty()) {
                 return createErrorResponse(OperationOutcome.IssueType.NOTFOUND, "No patient record could be found for NHS number " + subjectNhsNumber, audit);
@@ -299,22 +299,28 @@ public class SubscriberApiEndpoint {
         Set<String> results = new HashSet<>();
 
         for (UUID patientUuid: patientAndServiceUuids.keySet()) {
+            UUID serviceUuid = patientAndServiceUuids.get(patientUuid);
+            LOG.trace("Testing patient " + patientUuid + " at " + serviceUuid);
 
             if (subscriberConfig.getSubscriberType() == SubscriberConfig.SubscriberType.CompassV1) {
 
                 Long enterpriseId = patientIdDal.findEnterpriseIdOldWay(ResourceType.Patient.toString(), patientUuid.toString());
+                LOG.trace("Found compass v1 enterprise ID " + enterpriseId);
                 if (enterpriseId != null) {
                     String result = runCompassFrailtyQuery(subscriberConfig, enterpriseId);
                     results.add(result);
+                    LOG.trace("Got result " + result);
                 }
 
             } else if (subscriberConfig.getSubscriberType() == SubscriberConfig.SubscriberType.CompassV2) {
 
                 String ref = ReferenceHelper.createResourceReference(ResourceType.Patient, patientUuid.toString());
                 SubscriberId subscriberId = patientIdDal.findSubscriberId(SubscriberTableId.PATIENT.getId(), ref);
+                LOG.trace("Found compass v2 enterprise ID " + subscriberId);
                 if (subscriberId != null) {
                     String result = runCompassFrailtyQuery(subscriberConfig, subscriberId.getSubscriberId());
                     results.add(result);
+                    LOG.trace("Got result " + result);
                 }
 
             } else {
@@ -344,7 +350,7 @@ public class SubscriberApiEndpoint {
             return createSuccessResponse(null, requestParams, audit);
 
         } else {
-            throw new Exception("Unexpected frailty result str [" + results + "]");
+            throw new Exception("Unexpected frailty result str " + results);
         }
     }
 
