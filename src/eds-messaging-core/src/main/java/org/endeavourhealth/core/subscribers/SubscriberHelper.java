@@ -257,6 +257,9 @@ public class SubscriberHelper {
         ServiceDalI serviceDal = DalProvider.factoryServiceDal();
 
         List<String> publisherOdsCodes = ProjectCache.getAllPublishersForProjectWithSubscriberCheck(headerProjectId, headerOdsCode);
+        LOG.trace("For ODS code [" + headerOdsCode + "] and project ID [" + headerProjectId + "] got " + publisherOdsCodes.size() + " publisher ODS codes");
+        LOG.trace("" + publisherOdsCodes);
+
         for (String publisherOdsCode: publisherOdsCodes) {
 
             UUID publisherServiceId = odsCodeToServiceIdCache.get(publisherOdsCode);
