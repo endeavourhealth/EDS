@@ -11,6 +11,7 @@ import org.endeavourhealth.common.security.SecurityUtils;
 import org.endeavourhealth.common.utility.MetricsHelper;
 import org.endeavourhealth.core.database.dal.DalProvider;
 import org.endeavourhealth.core.database.dal.admin.ServiceDalI;
+import org.endeavourhealth.core.database.dal.admin.models.Service;
 import org.endeavourhealth.core.database.dal.audit.models.SubscriberApiAudit;
 import org.endeavourhealth.core.database.dal.audit.models.SubscriberApiAuditHelper;
 import org.endeavourhealth.core.database.dal.eds.PatientLinkDalI;
@@ -130,21 +131,22 @@ public class SubscriberApiEndpoint {
             }
 
             //validate that the keycloak user (from the token) is permitted to make requests on behalf of the ODS code being requested for
-            LOG.debug("Getting service IDs for security context");
+            LOG.trace("Getting service IDs for security context");
             Set<String> permittedOdsCodes = SecurityUtils.getUserAllowedOrganisationIdsFromSecurityContext(sc);
-            LOG.debug("Got service IDs for security context");
+            permittedOdsCodes = convertPermittedOdsCodes(permittedOdsCodes);
+            LOG.trace("Got service IDs for security context " + permittedOdsCodes);
 
             //note that keyCloak may be configured with Service UUIDs or ODS codes
             if (!permittedOdsCodes.contains(headerOdsCode)) {
+                LOG.error("Requesting ODS code " + headerOdsCode + " not in set of permitted ones");
                 return createErrorResponse(OperationOutcome.IssueType.BUSINESSRULE, "You are not permitted to request for ODS code " + headerOdsCode, audit);
             }
 
             //ensure the service is a valid subscriber to at least one protocol
-            LOG.debug("Checking protocols");
+            LOG.trace("Getting publishing service IDs for requester " + headerOdsCode + " and project " + headerProjectId);
             Set<UUID> publisherServiceIds = null;
             try {
                 publisherServiceIds = SubscriberHelper.findPublisherServiceIdsForSubscriber(headerOdsCode, headerProjectId);
-
             } catch (Exception ex) {
                 //any exception from checking protocols the flag should be returned as a processing error
                 String err = ex.getMessage();
@@ -158,6 +160,7 @@ public class SubscriberApiEndpoint {
             LOG.trace("Done searching on NHS number, finding " + patientSearchResults.size() + " patient IDs");
 
             if (patientSearchResults.isEmpty()) {
+                LOG.trace("Patient not found at services");
                 return createErrorResponse(OperationOutcome.IssueType.NOTFOUND, "No patient record could be found for NHS number " + subjectNhsNumber, audit);
             }
 
@@ -166,7 +169,7 @@ public class SubscriberApiEndpoint {
 
                 Set<String> enterpriseEndpoints = getEnterpriseEndpoints(patientSearchResults);
                 if (!enterpriseEndpoints.isEmpty()) {
-                    LOG.debug("Calculating frailty using " + enterpriseEndpoints);
+                    LOG.info("Calculating frailty using " + enterpriseEndpoints);
                     Response response = null;
 
                     //test each endpoint until we get a result
@@ -184,7 +187,7 @@ public class SubscriberApiEndpoint {
                     return response;
 
                 } else {
-                    LOG.debug("Using DUMMY mechanism to calculate Frailty");
+                    LOG.info("Using DUMMY mechanism to calculate Frailty");
                     return calculateFrailtyFlagDummy(patientSearchResults, params, audit);
                 }
 
@@ -209,10 +212,38 @@ public class SubscriberApiEndpoint {
     }
 
     /**
+     * Keycloak is configured to have service UUIDs rather than ODS codes, so we need to convert if any UUID is found
+     */
+    private static Set<String> convertPermittedOdsCodes(Set<String> set) throws Exception {
+
+        Set<String> ret = new HashSet<>();
+
+        for (String s: set) {
+            try {
+                UUID serviceId = UUID.fromString(s);
+                ServiceDalI serviceDal = DalProvider.factoryServiceDal();
+                Service service = serviceDal.getById(serviceId);
+                if (service == null) {
+                    throw new Exception("Failed to look up ODS code for service UUID " + serviceId);
+                }
+                String odsCode = service.getLocalId();
+                ret.add(odsCode);
+                LOG.debug("Converted service ID " + serviceId + " to ODS code " + odsCode);
+
+            } catch (IllegalArgumentException iae) {
+                //if not a UUID then it's an ODS code already, so is OK
+                ret.add(s);
+            }
+        }
+
+        return ret;
+    }
+
+    /**
      * finds enterprise endpoint(s) that point to local (i.e. not remote) subscriber DBs that can be used
      * to search for the given patient
      */
-    private Set<String> getEnterpriseEndpoints(Map<UUID, UUID> patientSearchResults) throws Exception {
+    private static Set<String> getEnterpriseEndpoints(Map<UUID, UUID> patientSearchResults) throws Exception {
 
         Set<String> ret = new HashSet<>();
 
@@ -615,7 +646,7 @@ public class SubscriberApiEndpoint {
         }
     }
 
-    public Set<String> getPermittedSubscribers() throws Exception {
+    private static Set<String> getPermittedSubscribers() throws Exception {
 
         Set<String> ret = new HashSet<>();
 

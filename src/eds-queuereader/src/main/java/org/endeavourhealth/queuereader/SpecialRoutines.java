@@ -1,5 +1,6 @@
 package org.endeavourhealth.queuereader;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.base.Strings;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
@@ -5617,8 +5618,7 @@ public abstract class SpecialRoutines {
 
             String sql = "select request_path, response_body"
                     + " from audit.subscriber_api_audit"
-                    + " where timestmp > '2020-08-01'"
-                    + " and response_body NOT LIKE '%No patient record could be found for NHS number%'";
+                    + " where timestmp > '2020-08-01'";
             Connection connection = ConnectionManager.getAuditConnection();
             PreparedStatement ps = connection.prepareStatement(sql);
             ResultSet rs = ps.executeQuery();
@@ -5630,105 +5630,124 @@ public abstract class SpecialRoutines {
                 int index = request.indexOf("subject=");
                 String nhsNumber = request.substring(index + 8);
 
-                boolean frail = response.contains("Potentially frail");
+                Boolean frail = null;
+                if (response.contains("No patient record could be found for NHS number")) {
+                    frail = null;
 
-                hmResults.put(nhsNumber, Boolean.valueOf(frail));
+                } else {
+                    frail = new Boolean(response.contains("Potentially frail"));
+                }
+                hmResults.put(nhsNumber, frail);
             }
             ps.close();
             connection.close();
             LOG.debug("Found " + hmResults.size() + " messages to test");
 
-            SubscriberConfig subscriberConfig = SubscriberConfig.readFromConfig("ceg_enterprise");
             String queryConfigName = "frailtyQueryCompassv1";
             String requestingOdsCode = "RRU";
-
-            ServiceDalI serviceDal = DalProvider.factoryServiceDal();
-            org.endeavourhealth.core.database.dal.admin.models.Service requestingService = serviceDal.getByLocalIdentifier(requestingOdsCode);
-            UUID requestingServiceId = requestingService.getId();
-
-            ServiceInterfaceEndpoint endpoint = SystemHelper.findEndpointForSoftware(requestingService, "JSON_API");
-            UUID requesterSystemId = endpoint.getSystemUuid();
 
             Set<UUID> publisherServiceIds = SubscriberHelper.findPublisherServiceIdsForSubscriber(requestingOdsCode, "320baf45-37e2-4c8b-b7ee-27a9f877b95c");
             LOG.debug("Found " + publisherServiceIds.size() + " publishers");
             LOG.debug("" + String.join(", " + publisherServiceIds));
 
-            SubscriberResourceMappingDalI patientIdDal = DalProvider.factorySubscriberResourceMappingDal(subscriberConfig.getSubscriberConfigName());
             PatientSearchDalI patientSearchDal = DalProvider.factoryPatientSearchDal();
 
             //loop, testing each one
             for (String nhsNumber: hmResults.keySet()) {
 
-                Boolean frail = hmResults.get(nhsNumber);
-
+                Boolean wasFrail = hmResults.get(nhsNumber);
+                Boolean nowFrail = null;
                 List<String> logging = new ArrayList<>();
 
                 //find patient IDs
                 Map<UUID, UUID> patientAndServiceUuids = patientSearchDal.findPatientIdsForNhsNumber(publisherServiceIds, nhsNumber);
                 logging.add("Found " + patientAndServiceUuids.size() + " patient UUIDs");
 
-                Set<String> results = new HashSet<>();
+                if (patientAndServiceUuids.isEmpty()) {
+                    nowFrail = null;
+                    logging.add("No search result found");
 
-                for (UUID patientUuid: patientAndServiceUuids.keySet()) {
+                } else {
 
-                    Long enterpriseId = patientIdDal.findEnterpriseIdOldWay(ResourceType.Patient.toString(), patientUuid.toString());
-                    if (enterpriseId == null) {
-                        logging.add("" + patientUuid + " has no enterprise ID");
-                        continue;
-                    }
-                    logging.add("" + patientUuid + " has enterprise ID -> " + enterpriseId);
+                    Set<String> results = new HashSet<>();
 
-                    sql = ConfigManager.getConfiguration(queryConfigName, "messaging-api");
-                    if (Strings.isNullOrEmpty(sql)) {
-                        throw new Exception("Failed to find query for config name [" + queryConfigName + "]");
-                    }
+                    Set<String> endpoints = getEnterpriseEndpoints(patientAndServiceUuids);
+                    for (String endpoint : endpoints) {
 
-                    connection = ConnectionManager.getSubscriberConnection(subscriberConfig.getSubscriberConfigName());
-                    ps = null;
-                    try {
-                        ps = connection.prepareStatement(sql);
-                        ps.setLong(1, enterpriseId.longValue());
+                        SubscriberConfig subscriberConfig = SubscriberConfig.readFromConfig(endpoint);
+                        SubscriberResourceMappingDalI patientIdDal = DalProvider.factorySubscriberResourceMappingDal(subscriberConfig.getSubscriberConfigName());
 
-                        rs = ps.executeQuery();
-                        if (rs.next()) {
-                            String result = rs.getString(1);
-                            results.add(result);
-                            logging.add("For enterprise ID " + enterpriseId + " got SQL result " + result);
+                        for (UUID patientUuid : patientAndServiceUuids.keySet()) {
 
-                        } else {
-                            results.add("0_NONE");
-                            logging.add("For enterprise ID " + enterpriseId + " got NO SQL result");
+                            Long enterpriseId = patientIdDal.findEnterpriseIdOldWay(ResourceType.Patient.toString(), patientUuid.toString());
+                            if (enterpriseId == null) {
+                                logging.add("" + patientUuid + " has no enterprise ID");
+                                continue;
+                            }
+                            logging.add("" + patientUuid + " has enterprise ID -> " + enterpriseId);
+
+                            sql = ConfigManager.getConfiguration(queryConfigName, "messaging-api");
+                            if (Strings.isNullOrEmpty(sql)) {
+                                throw new Exception("Failed to find query for config name [" + queryConfigName + "]");
+                            }
+
+                            connection = ConnectionManager.getSubscriberConnection(subscriberConfig.getSubscriberConfigName());
+                            ps = null;
+                            try {
+                                ps = connection.prepareStatement(sql);
+                                ps.setLong(1, enterpriseId.longValue());
+
+                                rs = ps.executeQuery();
+                                if (rs.next()) {
+                                    String result = rs.getString(1);
+                                    results.add(result);
+                                    logging.add("For enterprise ID " + enterpriseId + " got SQL result " + result);
+                                }
+
+                            } finally {
+                                if (ps != null) {
+                                    ps.close();
+                                }
+                                connection.close();
+                            }
                         }
+                    }
 
-                    } finally {
-                        if (ps != null) {
-                            ps.close();
-                        }
-                        connection.close();
+                    if (results.contains("1_MILD")
+                            || results.contains("2_MODERATE")
+                            || results.contains("3_SEVERE")) {
+                        nowFrail = Boolean.TRUE;
+                        logging.add("Results contains a frailty result, so TRUE");
+
+                    } else {
+                        nowFrail = Boolean.FALSE;
+                        logging.add("Results don't contain a frailty result, so FALSE");
                     }
                 }
 
-                Boolean nowFrail = null;
+                if (wasFrail == null) {
 
-                if (results.contains("1_MILD")
-                        || results.contains("2_MODERATE")
-                        || results.contains("3_SEVERE")) {
-                    nowFrail = Boolean.TRUE;
-                    logging.add("Results contains a frailty result, so TRUE");
-
-                } else {
-                    nowFrail = Boolean.FALSE;
-                    logging.add("Results don't contain a frailty result, so FALSE");
-                }
-
-                if (!nowFrail.equals(frail)) {
-                    LOG.error("" + nhsNumber + " was frail = " + frail + " now frail " + nowFrail);
-                    for (String line: logging) {
-                        LOG.error("    " + line);
+                    if (nowFrail == null) {
+                        LOG.info("" + nhsNumber + " no search result found OK");
+                    } else {
+                        LOG.error("" + nhsNumber + " no search result before but now frail = " + nowFrail);
+                        for (String line: logging) {
+                            LOG.error("    " + line);
+                        }
                     }
 
                 } else {
-                    LOG.info("" + nhsNumber + " was frail = " + frail + " OK");
+
+                    if (nowFrail != null
+                            && nowFrail.equals(wasFrail)) {
+                        LOG.info("" + nhsNumber + " was frail = " + wasFrail + " OK");
+
+                    } else {
+                        LOG.error("" + nhsNumber + " was frail = " + wasFrail + " now frail " + nowFrail);
+                        for (String line: logging) {
+                            LOG.error("    " + line);
+                        }
+                    }
                 }
             }
 
@@ -5736,6 +5755,48 @@ public abstract class SpecialRoutines {
         } catch (Throwable t) {
             LOG.error("", t);
         }
+    }
+
+    private static Set<String> getEnterpriseEndpoints(Map<UUID, UUID> patientSearchResults) throws Exception {
+
+        Set<String> ret = new HashSet<>();
+
+        ServiceDalI serviceDal = DalProvider.factoryServiceDal();
+
+        //we have a config record telling us what subscribers we're allowed to use
+        Set<String> permittedSubscribers = getPermittedSubscribers();
+
+        //find all subscriber configs for each of the services that has a record for the person
+        List<UUID> patientServiceIds = new ArrayList<>(patientSearchResults.values());
+        for (UUID patientServiceId : patientServiceIds) {
+
+            org.endeavourhealth.core.database.dal.admin.models.Service service = serviceDal.getById(patientServiceId);
+            String odsCode = service.getLocalId();
+            List<String> subscriberConfigNames = SubscriberHelper.getSubscriberConfigNamesForPublisher(null, patientServiceId, odsCode);
+
+            for (String subscriberConfigName : subscriberConfigNames) {
+                if (!permittedSubscribers.contains(subscriberConfigName)) {
+                    continue;
+                }
+
+                ret.add(subscriberConfigName);
+            }
+        }
+
+        return ret;
+    }
+
+    private static Set<String> getPermittedSubscribers() throws Exception {
+
+        Set<String> ret = new HashSet<>();
+
+        JsonNode json = ConfigManager.getConfigurationAsJson("frailtyCompassDatabases");
+        for (int i=0; i<json.size(); i++) {
+            String subscriber = json.get(i).asText();
+            ret.add(subscriber);
+        }
+
+        return ret;
     }
 
     static class RegRecord {
