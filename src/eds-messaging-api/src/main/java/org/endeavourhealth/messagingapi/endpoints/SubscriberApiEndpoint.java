@@ -216,8 +216,9 @@ public class SubscriberApiEndpoint {
      */
     private static Set<String> convertPermittedOdsCodes(Set<String> set) throws Exception {
 
-        Set<String> ret = new HashSet<>();
+        LOG.trace("Received service IDs/ODS codes from Keycloak " + set);
 
+        Set<String> ret = new HashSet<>();
         for (String s: set) {
             try {
                 UUID serviceId = UUID.fromString(s);
