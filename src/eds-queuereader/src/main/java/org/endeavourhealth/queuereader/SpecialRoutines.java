@@ -5790,7 +5790,7 @@ public abstract class SpecialRoutines {
 
         Set<String> ret = new HashSet<>();
 
-        JsonNode json = ConfigManager.getConfigurationAsJson("frailtyCompassDatabases");
+        JsonNode json = ConfigManager.getConfigurationAsJson("frailtyCompassDatabases", "messaging-api");
         for (int i=0; i<json.size(); i++) {
             String subscriber = json.get(i).asText();
             ret.add(subscriber);
