@@ -220,6 +220,10 @@ public class SubscriberApiEndpoint {
 
         Set<String> ret = new HashSet<>();
         for (String s: set) {
+            if (s.equals("00000000-0000-0000-0000-000000000000")) {
+                continue;
+            }
+
             try {
                 UUID serviceId = UUID.fromString(s);
                 ServiceDalI serviceDal = DalProvider.factoryServiceDal();
