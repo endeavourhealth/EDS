@@ -2,6 +2,7 @@ package org.endeavourhealth.messagingapi.endpoints;
 
 import com.codahale.metrics.annotation.ResponseMetered;
 import com.codahale.metrics.annotation.Timed;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.base.Strings;
 import io.swagger.annotations.ApiParam;
 import org.endeavourhealth.common.config.ConfigManager;
@@ -10,7 +11,6 @@ import org.endeavourhealth.common.security.SecurityUtils;
 import org.endeavourhealth.common.utility.MetricsHelper;
 import org.endeavourhealth.core.database.dal.DalProvider;
 import org.endeavourhealth.core.database.dal.admin.ServiceDalI;
-import org.endeavourhealth.core.database.dal.admin.SystemHelper;
 import org.endeavourhealth.core.database.dal.audit.models.SubscriberApiAudit;
 import org.endeavourhealth.core.database.dal.audit.models.SubscriberApiAuditHelper;
 import org.endeavourhealth.core.database.dal.eds.PatientLinkDalI;
@@ -19,7 +19,6 @@ import org.endeavourhealth.core.database.dal.subscriberTransform.SubscriberResou
 import org.endeavourhealth.core.database.dal.subscriberTransform.models.SubscriberId;
 import org.endeavourhealth.core.database.rdbms.ConnectionManager;
 import org.endeavourhealth.core.fhirStorage.FhirSerializationHelper;
-import org.endeavourhealth.core.fhirStorage.ServiceInterfaceEndpoint;
 import org.endeavourhealth.core.subscribers.SubscriberHelper;
 import org.endeavourhealth.transform.subscriber.SubscriberConfig;
 import org.endeavourhealth.transform.subscriber.targetTables.SubscriberTableId;
@@ -130,35 +129,21 @@ public class SubscriberApiEndpoint {
                 return createErrorResponse(OperationOutcome.IssueType.NOTSUPPORTED, "Only code " + FRAILTY_CODE + " can be requested", audit);
             }
 
-            //find the service the request is being made for
-            org.endeavourhealth.core.database.dal.admin.models.Service requestingService = serviceDal.getByLocalIdentifier(headerOdsCode);
-            if (requestingService == null) {
-                return createErrorResponse(OperationOutcome.IssueType.VALUE, "Unknown requesting ODS code '" + headerOdsCode + "'", audit);
-            }
-            UUID requestingServiceId = requestingService.getId();
-
             //validate that the keycloak user (from the token) is permitted to make requests on behalf of the ODS code being requested for
             LOG.debug("Getting service IDs for security context");
-            Set<String> serviceIds = SecurityUtils.getUserAllowedOrganisationIdsFromSecurityContext(sc);
+            Set<String> permittedOdsCodes = SecurityUtils.getUserAllowedOrganisationIdsFromSecurityContext(sc);
             LOG.debug("Got service IDs for security context");
 
             //note that keyCloak may be configured with Service UUIDs or ODS codes
-            if (!serviceIds.contains(requestingServiceId.toString())
-                    && !serviceIds.contains(headerOdsCode)) {
+            if (!permittedOdsCodes.contains(headerOdsCode)) {
                 return createErrorResponse(OperationOutcome.IssueType.BUSINESSRULE, "You are not permitted to request for ODS code " + headerOdsCode, audit);
             }
-
-            ServiceInterfaceEndpoint endpoint = SystemHelper.findEndpointForSoftware(requestingService, SUBSCRIBER_SYSTEM_NAME);
-            if (endpoint == null) {
-                return createErrorResponse(OperationOutcome.IssueType.VALUE, "Requesting organisation not configured for " + SUBSCRIBER_SYSTEM_NAME, audit);
-            }
-            UUID requesterSystemId = endpoint.getSystemUuid();
 
             //ensure the service is a valid subscriber to at least one protocol
             LOG.debug("Checking protocols");
             Set<UUID> publisherServiceIds = null;
             try {
-                publisherServiceIds = SubscriberHelper.findPublisherServiceIdsForSubscriber(headerOdsCode, headerProjectId, requestingServiceId, requesterSystemId);
+                publisherServiceIds = SubscriberHelper.findPublisherServiceIdsForSubscriber(headerOdsCode, headerProjectId);
 
             } catch (Exception ex) {
                 //any exception from checking protocols the flag should be returned as a processing error
@@ -179,7 +164,7 @@ public class SubscriberApiEndpoint {
             //calculate the flag (note that returning a NULL flag is a valid result if the patient isn't frail)
             try {
 
-                Set<String> enterpriseEndpoints = getEnterpriseEndpoints(requestingService, requesterSystemId);
+                Set<String> enterpriseEndpoints = getEnterpriseEndpoints(patientSearchResults);
                 if (!enterpriseEndpoints.isEmpty()) {
                     LOG.debug("Calculating frailty using " + enterpriseEndpoints);
                     Response response = null;
@@ -223,8 +208,40 @@ public class SubscriberApiEndpoint {
         }
     }
 
+    /**
+     * finds enterprise endpoint(s) that point to local (i.e. not remote) subscriber DBs that can be used
+     * to search for the given patient
+     */
+    private Set<String> getEnterpriseEndpoints(Map<UUID, UUID> patientSearchResults) throws Exception {
 
-    private Set<String> getEnterpriseEndpoints(org.endeavourhealth.core.database.dal.admin.models.Service service, UUID systemId) throws Exception {
+        Set<String> ret = new HashSet<>();
+
+        ServiceDalI serviceDal = DalProvider.factoryServiceDal();
+
+        //we have a config record telling us what subscribers we're allowed to use
+        Set<String> permittedSubscribers = getPermittedSubscribers();
+
+        //find all subscriber configs for each of the services that has a record for the person
+        List<UUID> patientServiceIds = new ArrayList<>(patientSearchResults.values());
+        for (UUID patientServiceId : patientServiceIds) {
+
+            org.endeavourhealth.core.database.dal.admin.models.Service service = serviceDal.getById(patientServiceId);
+            String odsCode = service.getLocalId();
+            List<String> subscriberConfigNames = SubscriberHelper.getSubscriberConfigNamesForPublisher(null, patientServiceId, odsCode);
+
+            for (String subscriberConfigName : subscriberConfigNames) {
+                if (!permittedSubscribers.contains(subscriberConfigName)) {
+                    continue;
+                }
+
+                ret.add(subscriberConfigName);
+            }
+        }
+
+        return ret;
+    }
+
+    /*private Set<String> getEnterpriseEndpoints(org.endeavourhealth.core.database.dal.admin.models.Service service, UUID systemId) throws Exception {
 
         Set<String> ret = new HashSet<>();
 
@@ -237,7 +254,7 @@ public class SubscriberApiEndpoint {
         }
 
         return ret;
-    }
+    }*/
 
     private Response createSuccessResponse(Flag frailtyFlag, MultivaluedMap<String, String> requestParams, SubscriberApiAudit audit) throws Exception {
 
@@ -598,4 +615,16 @@ public class SubscriberApiEndpoint {
         }
     }
 
+    public Set<String> getPermittedSubscribers() throws Exception {
+
+        Set<String> ret = new HashSet<>();
+
+        JsonNode json = ConfigManager.getConfigurationAsJson("frailtyCompassDatabases");
+        for (int i=0; i<json.size(); i++) {
+            String subscriber = json.get(i).asText();
+            ret.add(subscriber);
+        }
+
+        return ret;
+    }
 }

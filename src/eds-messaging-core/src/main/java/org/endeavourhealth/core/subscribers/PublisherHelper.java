@@ -1,8 +1,5 @@
 package org.endeavourhealth.core.subscribers;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import org.endeavourhealth.common.config.ConfigManager;
-import org.endeavourhealth.common.utility.ExpiringObject;
 import org.endeavourhealth.common.utility.SlackHelper;
 import org.endeavourhealth.core.database.dal.DalProvider;
 import org.endeavourhealth.core.database.dal.admin.ServiceDalI;
@@ -22,7 +19,6 @@ public class PublisherHelper {
     private static final Logger LOG = LoggerFactory.getLogger(PublisherHelper.class);
 
     private static Map<UUID, Boolean> cachedLatestDpaState = new HashMap<>();
-    private static ExpiringObject<Boolean> cachedUseDsm = new ExpiringObject<>(60 * 1000);
 
     public static boolean hasDpa(UUID exchangeId, UUID serviceId, String odsCode) throws Exception {
 
@@ -63,16 +59,10 @@ public class PublisherHelper {
     }
 
     private static boolean hasDpaImpl(UUID serviceId, String odsCode) throws Exception {
-
-        if (useDsmForDPAs()) {
-            return hasDpaUsingDsm(serviceId, odsCode);
-
-        } else {
-            return hasDpaUsingOldProtocols(serviceId, odsCode);
-        }
+        return hasDpaUsingDsm(odsCode);
     }
 
-    public static boolean hasDpaUsingDsm(UUID serviceId, String odsCode) throws Exception {
+    public static boolean hasDpaUsingDsm(String odsCode) throws Exception {
         return OrganisationCache.doesOrganisationHaveDPA(odsCode);
     }
 
@@ -80,25 +70,5 @@ public class PublisherHelper {
 
         List<LibraryItem> protocolsOldWay = SubscriberHelper.getProtocolsForPublisherServiceOldWay(serviceId);
         return !protocolsOldWay.isEmpty(); //in the old way, we count as having a DPA if they're in any protocol
-    }
-
-    private static boolean useDsmForDPAs() throws Exception {
-        Boolean b = cachedUseDsm.get();
-        if (b == null) {
-
-            JsonNode json = ConfigManager.getConfigurationAsJson("dsm");
-            if (json == null
-                    || !json.has("useDsmForDPAs")) {
-                b = Boolean.FALSE;
-
-            } else {
-                boolean useDsm = json.get("useDsmForDPAs").asBoolean();
-                b = Boolean.valueOf(useDsm);
-            }
-            LOG.debug("Refreshed cache to use DSM for DPAs = " + b);
-            cachedUseDsm.set(b);
-        }
-
-        return b.booleanValue();
     }
 }

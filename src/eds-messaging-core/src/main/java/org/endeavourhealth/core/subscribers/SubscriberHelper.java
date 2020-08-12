@@ -1,10 +1,7 @@
 package org.endeavourhealth.core.subscribers;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.base.Strings;
-import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.common.utility.ExpiringCache;
-import org.endeavourhealth.common.utility.ExpiringObject;
 import org.endeavourhealth.common.utility.SlackHelper;
 import org.endeavourhealth.core.database.dal.DalProvider;
 import org.endeavourhealth.core.database.dal.admin.LibraryRepositoryHelper;
@@ -29,13 +26,12 @@ public class SubscriberHelper {
     private static Map<String, String> cachedEndpoints = new ConcurrentHashMap<>();
 
     private static Map<UUID, List<String>> cachedLatestSubscriberState = new HashMap<>();
-    private static ExpiringObject<Boolean> cachedUseDsm = new ExpiringObject<>(60 * 1000);
 
     private static Map<String, UUID> odsCodeToServiceIdCache = new ExpiringCache<>(1000 * 60 * 5);
 
     public static List<String> getSubscriberConfigNamesForPublisher(UUID exchangeId, UUID serviceId, String odsCode) throws Exception {
 
-        List<String> ret = getSubscriberConfiNamesImpl(serviceId, odsCode);
+        List<String> ret = getSubscriberConfigNamesImpl(serviceId, odsCode);
 
         //audit if this state has changed (only if we have an exchange ID, meaning we're being called from proper pipeline)
         if (exchangeId != null) {
@@ -74,14 +70,8 @@ public class SubscriberHelper {
         cachedLatestSubscriberState.put(serviceId, new ArrayList<>(subscribers));
     }
 
-    private static List<String> getSubscriberConfiNamesImpl(UUID serviceId, String odsCode) throws Exception {
-
-        if (useDsmForDSAs()) {
-            return getSubscriberConfigNamesFromDsm(serviceId, odsCode);
-
-        } else {
-            return getSubscriberConfigNamesFromOldProtocols(serviceId, odsCode);
-        }
+    private static List<String> getSubscriberConfigNamesImpl(UUID serviceId, String odsCode) throws Exception {
+        return getSubscriberConfigNamesFromDsm(serviceId, odsCode);
     }
 
     /**
@@ -219,36 +209,10 @@ public class SubscriberHelper {
         }
     }
 
-    private static boolean useDsmForDSAs() throws Exception {
-        Boolean b = cachedUseDsm.get();
-        if (b == null) {
 
-            JsonNode json = ConfigManager.getConfigurationAsJson("dsm");
-            if (json == null
-                    || !json.has("useDsmForDSAs")) {
-                b = Boolean.FALSE;
+    public static Set<UUID> findPublisherServiceIdsForSubscriber(String subscriberOdsCode, String headerProjectId) throws Exception {
 
-            } else {
-                boolean useDsm = json.get("useDsmForDSAs").asBoolean();
-                b = Boolean.valueOf(useDsm);
-            }
-            LOG.debug("Refreshed cache to use DSM for DSAs = " + b);
-            cachedUseDsm.set(b);
-        }
-
-        return b.booleanValue();
-    }
-
-
-    public static Set<UUID> findPublisherServiceIdsForSubscriber(String subscriberOdsCode, String headerProjectId, UUID serviceId, UUID systemId) throws Exception {
-
-        Set<UUID> ret = null;
-        if (useDsmForDSAs()) {
-            ret = findPublisherServiceIdsForSubscriberNewWay(subscriberOdsCode, headerProjectId);
-
-        } else {
-            ret = findPublisherServiceIdsForSubscriberOldWay(serviceId, systemId);
-        }
+        Set<UUID> ret = findPublisherServiceIdsForSubscriberNewWay(subscriberOdsCode, headerProjectId);
 
         if (LOG.isTraceEnabled()) {
             List<String> l = ret.stream().map(r -> r.toString()).collect(Collectors.toList());
@@ -289,7 +253,7 @@ public class SubscriberHelper {
         return ret;
     }
 
-    private static Set<UUID> findPublisherServiceIdsForSubscriberOldWay(UUID serviceId, UUID systemId) throws Exception {
+    /*private static Set<UUID> findPublisherServiceIdsForSubscriberOldWay(UUID serviceId, UUID systemId) throws Exception {
 
         //find protocol
         List<Protocol> protocols = getProtocolsForSubscriberService(serviceId.toString(), systemId.toString());
@@ -317,7 +281,7 @@ public class SubscriberHelper {
         }
 
         return ret;
-    }
+    }*/
 
 
     private static List<Protocol> getProtocolsForSubscriberService(String serviceUuid, String systemUuid) throws PipelineException {

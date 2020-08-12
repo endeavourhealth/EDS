@@ -1140,7 +1140,7 @@ public abstract class SpecialRoutines {
 
                 //check DPAs
                 boolean hasDpaOldWay = PublisherHelper.hasDpaUsingOldProtocols(serviceId, odsCode);
-                boolean hasDpaNewWay = PublisherHelper.hasDpaUsingDsm(serviceId, odsCode);
+                boolean hasDpaNewWay = PublisherHelper.hasDpaUsingDsm(odsCode);
                 boolean dpaMatches = hasDpaNewWay == hasDpaOldWay;
 
                 if (!dpaMatches) {
@@ -4389,7 +4389,7 @@ public abstract class SpecialRoutines {
         } catch (Throwable t) {
             LOG.error("", t);
         }
-    }*/
+    }
 
 
     private static Set<String> findPublisherServiceIdsForSubscriberNewWay(String headerOdsCode, String headerProjectId) throws Exception {
@@ -4443,7 +4443,7 @@ public abstract class SpecialRoutines {
         }
 
         return ret;
-    }
+    }*/
 
     private static List<Protocol> getProtocolsForSubscriberService(String serviceUuid, String systemUuid) throws PipelineException {
 
@@ -5649,7 +5649,7 @@ public abstract class SpecialRoutines {
             ServiceInterfaceEndpoint endpoint = SystemHelper.findEndpointForSoftware(requestingService, "JSON_API");
             UUID requesterSystemId = endpoint.getSystemUuid();
 
-            Set<UUID> publisherServiceIds = SubscriberHelper.findPublisherServiceIdsForSubscriber(requestingOdsCode, "320baf45-37e2-4c8b-b7ee-27a9f877b95c", requestingServiceId, requesterSystemId);
+            Set<UUID> publisherServiceIds = SubscriberHelper.findPublisherServiceIdsForSubscriber(requestingOdsCode, "320baf45-37e2-4c8b-b7ee-27a9f877b95c");
             LOG.debug("Found " + publisherServiceIds.size() + " publishers");
             LOG.debug("" + String.join(", " + publisherServiceIds));
 
