@@ -498,7 +498,7 @@ public class Main {
 			System.exit(0);
 		}
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("CompareDSM")) {
 			boolean logDifferencesOnly = Boolean.parseBoolean(args[1]);
 			String odsCode = null;
@@ -508,7 +508,7 @@ public class Main {
 			SpecialRoutines.compareDsmPublishers(logDifferencesOnly, odsCode);
 			//SpecialRoutines.compareDsmSubscribers();
 			System.exit(0);
-		}
+		}*/
 
 
 		if (args.length >= 1
