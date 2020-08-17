@@ -24,12 +24,12 @@ export class LibraryComponent {
 		protected $modal : NgbModal,
 		protected $state : StateService) {
 		this.actionMenuItems = [
-			{ type: ItemType.System, text: 'Add system' },
-			{ type: ItemType.Protocol, text: 'Add data protocol' },
+			{ type: ItemType.System, text: 'Add system' }
+			/*{ type: ItemType.Protocol, text: 'Add data protocol' },
 			{ type: ItemType.Query, text: 'Add cohort' },
 			{ type: ItemType.DataSet, text: 'Add data set' },
 			{ type: ItemType.CodeSet, text: 'Add code set' },
-			{ type: ItemType.CountReport, text: 'Add validation report' }
+			{ type: ItemType.CountReport, text: 'Add validation report' }*/
 		];
 	}
 
@@ -66,9 +66,9 @@ export class LibraryComponent {
 			case ItemType.System:
 				this.$state.go('app.systemEdit', {itemUuid: $event.uuid, itemAction: $event.action});
 				break;
-			case ItemType.Protocol:
+			/*case ItemType.Protocol:
 				this.$state.go('app.protocolEdit', {itemUuid: $event.uuid, itemAction: $event.action});
-				break;
+				break;*/
 			case ItemType.Query:
 				this.$state.go('app.queryEdit', {itemUuid: $event.uuid, itemAction: $event.action});
 				break;

@@ -77,7 +77,7 @@ public class SubscriberHelper {
     /**
      * returns a sorted list of subscriber config names for a given publisher UUID using DSM as the source of information
      */
-    public static List<String> getSubscriberConfigNamesFromDsm(UUID serviceId, String odsCode) throws Exception {
+    private static List<String> getSubscriberConfigNamesFromDsm(UUID serviceId, String odsCode) throws Exception {
 
         //populate a set, so we can't end up with duplicates
         Set<String> ret = new HashSet<>();
@@ -101,7 +101,7 @@ public class SubscriberHelper {
     /**
      * returns a sorted list of subscriber config names for a given publisher UUID using DDS-UI protocols
      */
-    public static List<String> getSubscriberConfigNamesFromOldProtocols(UUID serviceId, String odsCode) throws Exception {
+    /*public static List<String> getSubscriberConfigNamesFromOldProtocols(UUID serviceId, String odsCode) throws Exception {
 
         List<LibraryItem> protocols = getProtocolsForPublisherServiceOldWay(serviceId);
 
@@ -135,7 +135,7 @@ public class SubscriberHelper {
         List<String> list = new ArrayList<>(ret);
         list.sort(((o1, o2) -> o1.compareToIgnoreCase(o2))); //for consistency
         return list;
-    }
+    }*/
 
 
     private static String getSubscriberEndpoint(ServiceContract contract) throws PipelineException {
@@ -175,7 +175,7 @@ public class SubscriberHelper {
     /**
      * finds all old-style protocols that the given service is a publisher to
      */
-    public static List<LibraryItem> getProtocolsForPublisherServiceOldWay(UUID serviceUuid) throws PipelineException {
+    /*public static List<LibraryItem> getProtocolsForPublisherServiceOldWay(UUID serviceUuid) throws PipelineException {
 
         try {
             List<LibraryItem> ret = new ArrayList<>();
@@ -207,7 +207,7 @@ public class SubscriberHelper {
         } catch (Exception ex) {
             throw new PipelineException("Error getting protocols for service " + serviceUuid, ex);
         }
-    }
+    }*/
 
 
     public static Set<UUID> findPublisherServiceIdsForSubscriber(String subscriberOdsCode, String headerProjectId) throws Exception {

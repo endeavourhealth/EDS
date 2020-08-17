@@ -1,0 +1,44 @@
+<div class="module">
+    <div class="container-fluid">
+        <div class="module-heading">
+            Systems
+
+            <div class="pull-right">
+                <button class="btn btn-sm btn-default" (click)="refresh()">Refresh</button>
+                <button class="btn btn-sm btn-success" (click)="addSystem()">Add New</button>
+            </div>
+        </div>
+        <div class="module-body">
+
+            <form>
+                <div class="form-group">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="table">
+                                <table class="table table-striped table-condensed">
+                                    <thead>
+                                        <tr>
+                                            <th class="col-md-6">Title</th>
+                                            <th class="col-md-6">Last Modified</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr class="hover-box show-child-on-hover" *ngFor="let item of systems">
+                                            <td>
+                                                <a (click)="editSystem(item)">{{item.name}}</a>
+
+                                                <!-- no idea why this isn't working - causes errors - so just remove -->
+                                                <!--<span class="fa fa-info-circle fa-right-pad text-muted" ngbTooltip="{{item.description}}" *ngIf="item.description"></span>-->
+                                            </td>
+                                            <td>{{item.lastModified | date:'yyyy-MM-dd HH:mm:ss'}}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

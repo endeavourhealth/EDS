@@ -6,12 +6,10 @@ import org.endeavourhealth.core.database.dal.admin.ServiceDalI;
 import org.endeavourhealth.core.database.dal.admin.models.Service;
 import org.endeavourhealth.core.database.dal.audit.ServicePublisherAuditDalI;
 import org.endeavourhealth.core.database.dal.usermanager.caching.OrganisationCache;
-import org.endeavourhealth.core.xml.QueryDocument.LibraryItem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -62,13 +60,13 @@ public class PublisherHelper {
         return hasDpaUsingDsm(odsCode);
     }
 
-    public static boolean hasDpaUsingDsm(String odsCode) throws Exception {
+    private static boolean hasDpaUsingDsm(String odsCode) throws Exception {
         return OrganisationCache.doesOrganisationHaveDPA(odsCode);
     }
 
-    public static boolean hasDpaUsingOldProtocols(UUID serviceId, String odsCode) throws Exception {
+    /*public static boolean hasDpaUsingOldProtocols(UUID serviceId, String odsCode) throws Exception {
 
         List<LibraryItem> protocolsOldWay = SubscriberHelper.getProtocolsForPublisherServiceOldWay(serviceId);
         return !protocolsOldWay.isEmpty(); //in the old way, we count as having a DPA if they're in any protocol
-    }
+    }*/
 }

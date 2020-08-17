@@ -140,13 +140,9 @@ export class ServiceEditComponent {
 		vm.$state.go(vm.transition.from());
 	}
 
-	private addEndpoint(publisher: boolean) {
+	private addEndpoint() {
 		var newEndpoint = {} as Endpoint;
-		if (publisher) {
-			newEndpoint.endpoint = 'Publisher_Bulk';
-		} else {
-			newEndpoint.endpoint = '';
-		}
+		newEndpoint.endpoint = 'Publisher_Bulk';
 		this.service.endpoints.push(newEndpoint);
 		this.selectedEndpoint = newEndpoint;
 	}
@@ -171,7 +167,7 @@ export class ServiceEditComponent {
 			return null;
 	}
 
-	private getTechnicalInterface(technicalInterfaceUuid : string) : TechnicalInterface {
+	/*private getTechnicalInterface(technicalInterfaceUuid : string) : TechnicalInterface {
 		if (!technicalInterfaceUuid || !this.technicalInterfaces)
 			return null;
 
@@ -181,9 +177,9 @@ export class ServiceEditComponent {
 			return ti[0];
 		else
 			return null;
-	}
+	}*/
 
-	private getInterfaceTypeLetter(o: Endpoint): string {
+	/*private getInterfaceTypeLetter(o: Endpoint): string {
 		var vm = this;
 
 		if (!o) {
@@ -197,7 +193,7 @@ export class ServiceEditComponent {
 
 	private isPublisher(o: Endpoint): boolean {
 		return o.endpoint.startsWith('Publisher_');
-	}
+	}*/
 
 	private loadOrganisationTypes() {
 		var vm = this;
@@ -653,7 +649,7 @@ export class ServiceEditComponent {
 		var vm = this;
 		vm.serviceService.getDpaHistory(vm.service.uuid).subscribe(
 			(result) => {
-				vm.historyHasDpa = result;
+				vm.historyHasDpa = result.reverse();
 			},
 			(error) => {
 				vm.log.error('Error getting DPA history');
@@ -665,7 +661,7 @@ export class ServiceEditComponent {
 		var vm = this;
 		vm.serviceService.getSubscriberHistory(vm.service.uuid).subscribe(
 			(result) => {
-				vm.historySubscribers = result;
+				vm.historySubscribers = result.reverse();
 			},
 			(error) => {
 				vm.log.error('Error getting subscriber history');
@@ -688,5 +684,25 @@ export class ServiceEditComponent {
 			s += arr[i];
 		}
 		return s;*/
+	}
+
+	/**
+	 * when a system is selected from the combo, automatically set the technical interface UUID too
+	 * we only have one technical interface per system, so this can be done automatically
+	 */
+	systemSelected() {
+		var vm = this;
+
+		var systemUuid = vm.selectedEndpoint.systemUuid;
+		if (systemUuid) {
+			var system = vm.getSystem(systemUuid);
+			var technicalInterfaces = system.technicalInterface;
+			var technicalInterface = technicalInterfaces[0];
+			vm.selectedEndpoint.technicalInterfaceUuid = technicalInterface.uuid;
+
+		} else {
+			vm.selectedEndpoint.technicalInterfaceUuid = null;
+
+		}
 	}
 }

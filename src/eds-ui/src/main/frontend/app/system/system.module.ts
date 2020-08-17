@@ -4,6 +4,7 @@ import {FormsModule} from "@angular/forms";
 import {SystemEditComponent} from "./systemEditor.component";
 import {SystemService} from "./system.service";
 import {SystemPickerDialog} from "./systemPicker.dialog";
+import {SystemListComponent} from "./systemList.component";
 
 @NgModule({
 	imports : [
@@ -12,6 +13,7 @@ import {SystemPickerDialog} from "./systemPicker.dialog";
 	],
 	declarations : [
 		SystemEditComponent,
+		SystemListComponent,
 		SystemPickerDialog,
 	],
 	entryComponents : [

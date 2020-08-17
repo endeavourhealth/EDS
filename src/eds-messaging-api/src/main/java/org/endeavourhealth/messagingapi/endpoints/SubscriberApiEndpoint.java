@@ -11,7 +11,6 @@ import org.endeavourhealth.common.security.SecurityUtils;
 import org.endeavourhealth.common.utility.MetricsHelper;
 import org.endeavourhealth.core.database.dal.DalProvider;
 import org.endeavourhealth.core.database.dal.admin.ServiceDalI;
-import org.endeavourhealth.core.database.dal.admin.models.Service;
 import org.endeavourhealth.core.database.dal.audit.models.SubscriberApiAudit;
 import org.endeavourhealth.core.database.dal.audit.models.SubscriberApiAuditHelper;
 import org.endeavourhealth.core.database.dal.eds.PatientLinkDalI;
@@ -133,7 +132,7 @@ public class SubscriberApiEndpoint {
             //validate that the keycloak user (from the token) is permitted to make requests on behalf of the ODS code being requested for
             LOG.trace("Getting service IDs for security context");
             Set<String> permittedOdsCodes = SecurityUtils.getUserAllowedOrganisationIdsFromSecurityContext(sc);
-            permittedOdsCodes = convertPermittedOdsCodes(permittedOdsCodes);
+            //permittedOdsCodes = convertPermittedOdsCodes(permittedOdsCodes);
             LOG.trace("Got service IDs for security context " + permittedOdsCodes);
 
             //note that keyCloak may be configured with Service UUIDs or ODS codes
@@ -213,8 +212,9 @@ public class SubscriberApiEndpoint {
 
     /**
      * Keycloak is configured to have service UUIDs rather than ODS codes, so we need to convert if any UUID is found
+     * Keycloak now updated to have ODS codes
      */
-    private static Set<String> convertPermittedOdsCodes(Set<String> set) throws Exception {
+    /*private static Set<String> convertPermittedOdsCodes(Set<String> set) throws Exception {
 
         LOG.trace("Received service IDs/ODS codes from Keycloak " + set);
 
@@ -242,7 +242,7 @@ public class SubscriberApiEndpoint {
         }
 
         return ret;
-    }
+    }*/
 
     /**
      * finds enterprise endpoint(s) that point to local (i.e. not remote) subscriber DBs that can be used

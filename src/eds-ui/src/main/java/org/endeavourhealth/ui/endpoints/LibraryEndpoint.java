@@ -1,15 +1,19 @@
 package org.endeavourhealth.ui.endpoints;
 
 import com.codahale.metrics.annotation.Timed;
+import com.google.common.base.Strings;
 import org.endeavourhealth.common.security.SecurityUtils;
 import org.endeavourhealth.common.security.annotations.RequiresAdmin;
 import org.endeavourhealth.core.database.dal.DalProvider;
 import org.endeavourhealth.core.database.dal.admin.LibraryDalI;
 import org.endeavourhealth.core.database.dal.admin.LibraryRepositoryHelper;
+import org.endeavourhealth.core.database.dal.admin.ServiceDalI;
 import org.endeavourhealth.core.database.dal.admin.models.*;
+import org.endeavourhealth.core.database.dal.admin.models.Service;
 import org.endeavourhealth.core.database.dal.audit.UserAuditDalI;
 import org.endeavourhealth.core.database.dal.audit.models.AuditAction;
 import org.endeavourhealth.core.database.dal.audit.models.AuditModule;
+import org.endeavourhealth.core.fhirStorage.ServiceInterfaceEndpoint;
 import org.endeavourhealth.core.xml.QueryDocument.*;
 import org.endeavourhealth.core.xml.QueryDocument.System;
 import org.endeavourhealth.core.xml.QueryDocumentSerializer;
@@ -616,6 +620,100 @@ public final class LibraryEndpoint extends AbstractItemEndpoint {
                 .entity(ret)
                 .build();
     }
+
+
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="LibraryEndpoint.GetSystemList")
+    @Path("/getSystemList")
+    public Response getSystemList(@Context SecurityContext sc) throws Exception {
+        super.setLogbackMarkers(sc);
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load, "GetSystemList");
+
+        List<JsonFolderContent> ret = new ArrayList<>();
+
+        UUID orgUuid = getOrganisationUuidFromToken(sc);
+
+        LibraryDalI repository = DalProvider.factoryLibraryDal();
+
+        DefinitionItemType itemType = DefinitionItemType.System;
+        List<Item> items = new ArrayList();
+        Iterable<ActiveItem> activeItems = repository.getActiveItemByOrgAndTypeId(orgUuid, itemType.getValue(), false);
+
+
+        for (ActiveItem activeItem: activeItems) {
+            Item item = repository.getItemByKey(activeItem.getItemId(), activeItem.getAuditId());
+            Audit audit = repository.getAuditByKey(activeItem.getAuditId());
+            if (item.isDeleted()) {
+                continue;
+            }
+
+            JsonFolderContent c = new JsonFolderContent(activeItem, item, audit);
+            ret.add(c);
+        }
+
+        clearLogbackMarkers();
+
+        return Response
+                .ok()
+                .entity(ret)
+                .build();
+    }
+
+    /**
+     * specific fn for deleting a System
+     */
+    @DELETE
+    @Produces(MediaType.TEXT_PLAIN)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="LibraryEndpoint.DeleteSystem")
+    @Path("/deleteSystem")
+    @RequiresAdmin
+    public Response deleteSystem(@Context SecurityContext sc, @QueryParam("uuid") String uuidStr) throws Exception {
+        super.setLogbackMarkers(sc);
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Delete,
+                "System",
+                "Item", uuidStr);
+
+        UUID systemUuid = UUID.fromString(uuidStr);
+        UUID orgUuid = getOrganisationUuidFromToken(sc);
+        UUID userUuid = SecurityUtils.getCurrentUserId(sc);
+
+        //validate that no service uses the system
+        String err = null;
+
+        ServiceDalI serviceDal = DalProvider.factoryServiceDal();
+        List<Service> services = serviceDal.getAll();
+        for (Service service: services) {
+            List<ServiceInterfaceEndpoint> endpoints = service.getEndpointsList();
+            for (ServiceInterfaceEndpoint endpoint: endpoints) {
+                if (endpoint.getSystemUuid().equals(systemUuid)) {
+                    err = "System used by " + service.getLocalId();
+                    break;
+                }
+            }
+        }
+
+        if (Strings.isNullOrEmpty(err)) {
+            //if no error, let the system be deleted
+            deleteItem(systemUuid, orgUuid, userUuid);
+
+            clearLogbackMarkers();
+            return Response
+                    .ok()
+                    .build();
+
+        } else {
+
+            clearLogbackMarkers();
+            return Response
+                    .ok(err)
+                    .build();
+        }
+    }
+
 
 }
 

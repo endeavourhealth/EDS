@@ -8,6 +8,7 @@ import {NgbModal} from "@ng-bootstrap/ng-bootstrap";
 import {Component} from "@angular/core";
 import {EdsLibraryItem} from "../edsLibrary/models/EdsLibraryItem";
 import {SystemService} from "./system.service";
+import {MessageBoxDialog} from "eds-common-js/dist/index";
 
 @Component({
 	template : require('./system.html')
@@ -186,5 +187,36 @@ export class SystemEditComponent extends LibraryItemComponent {
 		vm.getInterface().messageFormat = newFormat;
 		//this.selectedInterface.messageFormat = newFormat;
 	}
+
+	deleteSystem() {
+		var vm = this;
+		MessageBoxDialog.open(vm.$modal, 'Delete System', 'Are you sure you want to delete the System?', 'Yes', 'No')
+			.result.then(
+			() => vm.doDeleteService(),
+			() => vm.log.info('Delete cancelled')
+		);
+	}
+
+	doDeleteService() {
+		var vm = this;
+		var uuid = vm.libraryItem.uuid;
+		vm.systemService.deleteSystem(uuid)
+			.subscribe(
+				(result) => {
+					if (result) {
+						//if the delete fn returns a string, then it's a validation error
+						vm.log.error(result);
+
+					} else {
+						vm.log.success('System deleted', 'Delete System');
+						vm.close();
+					}
+				},
+				(error) => {
+					vm.log.error('Failed to delete System', error, 'Delete System');
+				}
+			);
+	}
+
 
 }

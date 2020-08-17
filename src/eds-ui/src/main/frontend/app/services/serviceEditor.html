@@ -120,24 +120,20 @@
 
 				<div class="row">
 					<div class="form-group col-md-8">
-						<label class="control-label">Endpoints</label>
-						<button type="button" class="btn btn-xs btn-success" (click)="addEndpoint(true)">Add Publisher</button>
-						<button type="button" class="btn btn-xs btn-success" (click)="addEndpoint(false)">Add Subscriber</button>
+						<label class="control-label">Publisher Systems</label>
+						<button type="button" class="btn btn-xs btn-success" (click)="addEndpoint()">Add Publisher</button>
 
 						<div class="table scroll-box-200">
 							<table class="table table-striped table-condensed">
 								<thead>
-									<th class="col-md-1">Type</th>
-									<th class="col-md-3">System</th>
-									<th class="col-md-3">Interface</th>
-									<th class="col-md-5">Publisher Status / Subscriber Config Name</th>
+									<th class="col-md-6">System</th>
+									<th class="col-md-5">Publisher Status</th>
 									<th class="col-md-1"></th>
 								</thead>
 								<tbody>
 									<tr class="hover-box show-child-on-hover" *ngFor="let item of service?.endpoints; let i = index;" (click)="selectedEndpoint = item;" [ngClass]="{'selection': item == selectedEndpoint}">
-										<td>{{ getInterfaceTypeLetter(item)}}</td>
+										<!--<td>{{ getInterfaceTypeLetter(item)}}</td>-->
 										<td>{{ getSystem(item?.systemUuid)?.name}}</td>
-										<td>{{ getTechnicalInterface(item?.technicalInterfaceUuid)?.name}}</td>
 										<td>{{ item?.endpoint }}</td>
 										<td>
 											<div class="child-to-show">
@@ -158,13 +154,13 @@
 								<label>System</label>
 								<div class="input-group">
 									<span class="input-group-addon"><i class="fa fa-laptop fa-lg fa-fw"></i></span>
-									<select id="system" class="form-control" [(ngModel)]="selectedEndpoint.systemUuid" name="systemUuid">
+									<select id="system" class="form-control" [(ngModel)]="selectedEndpoint.systemUuid" name="systemUuid" (ngModelChange)="systemSelected()">
 										<option *ngFor="let item of systems" value="{{item?.uuid}}">{{item?.name}}</option>
 									</select>
 								</div>
 							</div>
 						</div>
-						<div class="row">
+						<!--<div class="row">
 							<div class="form-group col-md-12">
 								<label>Technical Interface</label>
 								<div class="input-group">
@@ -174,17 +170,8 @@
 									</select>
 								</div>
 							</div>
-						</div>
-						<div class="row" *ngIf="!isPublisher(selectedEndpoint)">
-							<div class="form-group col-md-12">
-								<label>Subscriber Config Name</label>
-								<div class="input-group">
-									<span class="input-group-addon"><i class="fa fa-globe fa-lg fa-fw"></i></span>
-									<input id="endpoint" type="url" class="form-control" [(ngModel)]="selectedEndpoint.endpoint" name="endpoint"/>
-								</div>
-							</div>
-						</div>
-						<div class="row" *ngIf="isPublisher(selectedEndpoint)">
+						</div>-->
+						<div class="row">
 							<div class="form-group col-md-12">
 								<label>Publisher Status
 									<span class="fa fa-info-circle fa-right-pad text-muted" ngbTooltip="Draft = Messaging API will reject; Auto-fail = Inbound QR will fail transforms; Bulk = Exchanges routed to bulk queues"></span>

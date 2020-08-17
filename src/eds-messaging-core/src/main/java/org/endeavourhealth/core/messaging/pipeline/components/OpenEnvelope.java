@@ -336,7 +336,10 @@ public class OpenEnvelope extends PipelineComponent {
 
 			//set to empty list so the parser can read it without error
 			s.setEndpointsList(new ArrayList<>());
-			s.setTags(new HashMap<>());
+
+			Map<String, String> hmTags = new HashMap<>();
+			hmTags.put("Notes", "Auto-created by Messaging API");
+			s.setTags(hmTags);
 
 			//tell us because we need to manually do a couple of steps
 			String msg = "Auto-created Service for ODS code " + organisationOds + " in Messaging API\r\n"

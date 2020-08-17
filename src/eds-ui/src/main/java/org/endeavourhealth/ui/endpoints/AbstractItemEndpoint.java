@@ -103,11 +103,12 @@ public abstract class AbstractItemEndpoint extends AbstractEndpoint {
     private static void validateItemTypeMatchesContainingFolder(boolean insert, DefinitionItemType itemType, UUID containingFolderUuid) throws Exception {
 
         //if saving a new library item, it must have a containing folder item
-        if (insert
+        //DDS-UI library only used for Systems now, so don't bother with folders
+        /*if (insert
                 && containingFolderUuid == null
                 && itemType != DefinitionItemType.LibraryFolder) {
             throw new BadRequestException("LibraryItems must have a containing folder UUID");
-        }
+        }*/
 
         //if saving a folder or we're AMENDING a library item, then there's notning more to validate
         if (containingFolderUuid == null) {
@@ -152,10 +153,11 @@ public abstract class AbstractItemEndpoint extends AbstractEndpoint {
                 //we can live without a description, but need a non-null value
                 description = "";
             }
-            if (containingFolderUuid == null
+            //let them exist without folders now that only Systems use Library Items
+            /*if (containingFolderUuid == null
                     && itemType != DefinitionItemType.LibraryFolder ) {
                 throw new BadRequestException("Must specify a containing folder for new items");
-            }
+            }*/
 
             activeItem = new ActiveItem();
             activeItem.setOrganisationId(orgUuid);
@@ -210,7 +212,9 @@ public abstract class AbstractItemEndpoint extends AbstractEndpoint {
         }
 
         //work out the child/contains dependency
-        ItemDependency itemDependency = createFolderDependency(insert, itemType, item, previousAuditUuid, containingFolderUuid, toSave);
+        if (containingFolderUuid != null) {
+            createFolderDependency(insert, itemType, item, previousAuditUuid, containingFolderUuid, toSave);
+        }
 
         // write to Cassandra
         repository.save(toSave);

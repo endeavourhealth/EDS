@@ -14,11 +14,11 @@ export class DataServiceManagerMenuService implements  MenuService {
 
 	getMenuOptions():MenuOption[] {
 		return [
-			{caption: 'Dashboard', state: 'app.dashboard', icon: 'fa fa-tachometer', role: 'eds-ui:dashboard'},
-			{caption: 'Protocols', state: 'app.library', icon: 'fa fa-share-alt', role: 'eds-ui:protocols'},
+			/*{caption: 'Dashboard', state: 'app.dashboard', icon: 'fa fa-tachometer', role: 'eds-ui:dashboard'},*/
+			/*{caption: 'Protocols', state: 'app.library', icon: 'fa fa-share-alt', role: 'eds-ui:protocols'},*/
 			{caption: 'Services', state: 'app.serviceList', icon: 'fa fa-building-o', role: 'eds-ui:services'},
+			{caption: 'Systems', state: 'app.systemList', icon: 'fa fa-building-o', role: 'eds-ui:services'},
 			{caption: 'Queueing', state: 'app.queueing', icon: 'fa fa-map-signs', role: 'eds-ui:queueing'},
-			//
 			{caption: 'Queue Readers', state: 'app.queueReaderStatus', icon: 'fa fa-tachometer', role: 'eds-ui:monitoring'},
 			{caption: 'Frailty API', state: 'app.frailtyApi', icon: 'fa fa-flask', role: 'eds-ui:monitoring'},
 			{caption: 'HL7 Receiver', state: 'app.hl7Receiver', icon: 'fa fa-fire', role: 'eds-ui:monitoring'},

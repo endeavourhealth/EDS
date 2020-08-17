@@ -12,14 +12,13 @@ module.exports = {
 		'countReport' : './app/countReport/countReport.module.ts',
 		'dataSet' : './app/dataSet/dataSet.module.ts',
 		'expressions' : './app/expressions/expressions.module.ts',
-		'protocol' : './app/protocol/protocol.module.ts',
+		/*'protocol' : './app/protocol/protocol.module.ts',*/
 		'query' : './app/query/query.module.ts',
 		'system' : './app/system/system.module.ts',
 		'tests' : './app/tests/tests.module.ts',
 
 		// Modules
 		'audit' : './app/audit/audit.module.ts',
-		'dashboard' : './app/dashboard/dashboard.module.ts',
 		'exchangeAudit' : './app/exchangeAudit/exchangeAudit.module.ts',
 		'logging' : './app/logging/logging.module.ts',
 		'queueing' : './app/queueing/queueing.module.ts',
@@ -62,7 +61,7 @@ module.exports = {
 				'app', 'layout',
 
 				// Modules
-				'users', 'transformErrors', 'stats', 'services', 'queueing', 'organisations', 'logging', 'library', 'exchangeAudit', 'dashboard', 'audit',
+				'users', 'transformErrors', 'stats', 'services', 'queueing', 'organisations', 'logging', 'library', 'exchangeAudit', 'audit',
 
 				// Dialogs
 				'tests', 'system', 'query', 'protocol', 'expressions', 'dataSet', 'countReport', 'codeSet', 'coding', 'dialogs',

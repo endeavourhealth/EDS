@@ -45,7 +45,6 @@ import org.endeavourhealth.core.fhirStorage.ServiceInterfaceEndpoint;
 import org.endeavourhealth.core.messaging.pipeline.PipelineException;
 import org.endeavourhealth.core.queueing.MessageFormat;
 import org.endeavourhealth.core.queueing.QueueHelper;
-import org.endeavourhealth.core.subscribers.PublisherHelper;
 import org.endeavourhealth.core.subscribers.SubscriberHelper;
 import org.endeavourhealth.core.xml.QueryDocument.*;
 import org.endeavourhealth.core.xml.transformError.TransformError;
@@ -1101,7 +1100,7 @@ public abstract class SpecialRoutines {
         }
     }
 
-    public static void compareDsmPublishers(boolean logDifferencesOnly, String odsCodeRegex) {
+    /*public static void compareDsmPublishers(boolean logDifferencesOnly, String odsCodeRegex) {
         LOG.debug("Comparing DSM to DDS-UI for " + odsCodeRegex);
         LOG.debug("logDifferencesOnly = " + logDifferencesOnly);
         try {
@@ -1198,7 +1197,7 @@ public abstract class SpecialRoutines {
         } catch (Throwable t) {
             LOG.error("", t);
         }
-    }
+    }*/
 
 
     /*public static void testBulkLoad(String s3Path, String tableName) {
