@@ -24,12 +24,12 @@
                             <div class="pull-right">
                                 <label for="serviceNameSearchIncludeTags" class="control-label">Match tags</label>
                                 <input type="checkbox" id="serviceNameSearchIncludeTags" [(ngModel)]="serviceService.serviceNameSearchIncludeTags" name="serviceNameSearchIncludeTags" (ngModelChange)="applyFiltering()">
-                                <span *ngIf="serviceService.serviceNameSearchIncludeTags">
-                                    <select id="serviceNameSearchSpecificTag" [(ngModel)]="serviceService.serviceNameSearchSpecificTag" name="serviceNameSearchSpecificTag" (ngModelChange)="applyFiltering()">
-                                        <option value="">All Tags</option>
-                                        <option *ngFor="let tagName of serviceService.getTagNamesFromCache()" value="{{tagName}}">{{tagName}}</option>
-                                    </select>
-                                </span>
+									<span *ngIf="serviceService.serviceNameSearchIncludeTags">
+										<select id="serviceNameSearchSpecificTag" [(ngModel)]="serviceService.serviceNameSearchSpecificTag" name="serviceNameSearchSpecificTag" (ngModelChange)="applyFiltering()">
+                                            <option value="">All Tags</option>
+                                            <option *ngFor="let tagName of serviceService.getTagNamesFromCache()" value="{{tagName}}">{{tagName}}</option>
+                                        </select>
+									</span>
                             </div>
 
                             <input type="text" class="form-control" id="inputType" placeholder="Regex" [(ngModel)]="serviceService.serviceNameFilter" name="serviceNameFilter" (ngModelChange)="applyFiltering()">
@@ -53,7 +53,6 @@
 
                             <!-- if searching regex just show a text box -->
                             <input *ngIf="serviceService.serviceCcgCodeFilterIsRegex" type="text" class="form-control" id="inputType2" placeholder="Regex" [(ngModel)]="serviceService.serviceCcgCodeFilterRegex" name="serviceCcgCodeFilter" (ngModelChange)="applyFiltering()">
-
                         </div>
 
                         <!-- publisher config filtering -->
@@ -63,6 +62,38 @@
                                 <option value=""></option>
                                 <option *ngFor="let publisherConfigName of serviceService.getPublisherConfigNamesFromCache()" value="{{publisherConfigName}}">{{publisherConfigName}}</option>
                                 <option value="NoPublisher">No publisher set</option>
+                            </select>
+                        </div>
+
+                        <!-- last data date filtering -->
+                        <div class="col-sm-1">
+                            <label for="inputType4" class="control-label">Last Data</label>
+                            <select id="inputType4" class="form-control" [(ngModel)]="serviceService.serviceLastDataFilter" name="lastDataFilter" (ngModelChange)="applyFiltering()">
+                                <option value=""></option>
+                                <option value="Today">Today</option>
+                                <option value="Yesterday">Yesterday</option>
+                                <option value="ThisWeek">This Week</option>
+                                <option value="LastWeek">Last Week</option>
+                                <option value="Older">Older</option>
+                            </select>
+                        </div>
+
+                        <div class="col-sm-1">
+                            <label for="servicePublisherModeFilter" class="control-label">Publisher Mode</label>
+                            <select id="servicePublisherModeFilter" class="form-control" [(ngModel)]="serviceService.servicePublisherModeFilter" name="servicePublisherModeFilter" (ngModelChange)="applyFiltering()">
+                                <option value=""></option>
+                                <option value="Publisher_Draft">Draft</option>
+                                <option value="Publisher_Normal">Normal</option>
+                                <option value="Publisher_Auto_Fail">Auto-fail</option>
+                                <option value="Publisher_Bulk">Bulk</option>
+                            </select>
+                        </div>
+
+                        <!-- this combo is here for consistentcy with the main Services list, but is disabled and only shows Error since this page is just for errors -->
+                        <div class="col-sm-1">
+                            <label for="inputType3" class="control-label">Status</label>
+                            <select id="inputType3" class="form-control" name="serviceStatusFilter" elected="Error" disabled>
+                                <option value="Error">Error</option>
                             </select>
                         </div>
 

@@ -294,8 +294,8 @@ export class ServiceService extends BaseHttp2Service {
 					}
 				}
 
-				if (vm.servicePublisherModeFilter
-					&& !transformErrorsView) { //only applies to main services view
+				if (vm.servicePublisherModeFilter) {
+					//&& !transformErrorsView) { //only applies to main services view
 					var include = false;
 
 					if (service.systemStatuses) {
@@ -314,8 +314,8 @@ export class ServiceService extends BaseHttp2Service {
 				}
 
 
-				if ((minLastData || maxLastData)
-					&& !transformErrorsView) { //only applies to main services view
+				if ((minLastData || maxLastData)) {
+					//&& !transformErrorsView { //only applies to main services view
 					var include = false;
 
 					if (service.systemStatuses) {
