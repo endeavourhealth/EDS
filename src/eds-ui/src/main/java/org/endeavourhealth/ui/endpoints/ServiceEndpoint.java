@@ -27,6 +27,7 @@ import org.endeavourhealth.core.database.dal.usermanager.caching.ProjectCache;
 import org.endeavourhealth.core.database.rdbms.datasharingmanager.models.DataSharingAgreementEntity;
 import org.endeavourhealth.core.database.rdbms.datasharingmanager.models.ProjectEntity;
 import org.endeavourhealth.core.fhirStorage.ServiceInterfaceEndpoint;
+import org.endeavourhealth.core.messaging.pipeline.components.OpenEnvelope;
 import org.endeavourhealth.core.queueing.MessageFormat;
 import org.endeavourhealth.core.queueing.QueueHelper;
 import org.endeavourhealth.core.xml.QueryDocument.LibraryItem;
@@ -244,7 +245,7 @@ public final class ServiceEndpoint extends AbstractEndpoint {
                     //if the publisher mode has changed, then validate that there's nothing in the queue
                     if (!endpointStr.equals(existingEndpointStr)) {
 
-                        boolean inQueue = isAnythingInInboundQueue(existingServiceId, systemUuid);
+                        boolean inQueue = OpenEnvelope.isAnythingInInboundQueue(existingServiceId, systemUuid);
                         if (inQueue) {
                             error = "Cannot change publisher mode while inbound messages are queued";
                             break;
@@ -290,72 +291,6 @@ public final class ServiceEndpoint extends AbstractEndpoint {
         }
     }
 
-    /**
-     * works out if there's anything in the inbound queue for the given service
-     * Note that this doesn't actually test RabbitMQ but looks at the transform audit of the most
-     * recent exchange to infer whether it is still in the queue or not
-     */
-    public static boolean isAnythingInInboundQueue(UUID serviceId, UUID systemId) throws Exception {
-        ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
-        List<Exchange> mostRecentExchanges = exchangeDal.getExchangesByService(serviceId, systemId, 1);
-        if (mostRecentExchanges.isEmpty()) {
-            return false;
-        }
-
-        Exchange mostRecentExchange = mostRecentExchanges.get(0);
-
-        //if the most recent exchange is flagged for not queueing, then we need to go back to the last one not flagged like that
-        Boolean allowQueueing = mostRecentExchange.getHeaderAsBoolean(HeaderKeys.AllowQueueing);
-        if (allowQueueing != null
-                && !allowQueueing.booleanValue()) {
-
-            mostRecentExchange = null;
-
-            mostRecentExchanges = exchangeDal.getExchangesByService(serviceId, systemId, 100);
-            for (Exchange exchange: mostRecentExchanges) {
-
-                allowQueueing = exchange.getHeaderAsBoolean(HeaderKeys.AllowQueueing);
-                if (allowQueueing == null
-                        || allowQueueing.booleanValue()) {
-                    mostRecentExchange = exchange;
-                    break;
-                }
-            }
-
-            //if we still didn't find one, after checking the last 100, then just assume we're OK
-            if (mostRecentExchange == null) {
-                return false;
-            }
-        }
-
-        ExchangeTransformAudit latestTransform = exchangeDal.getLatestExchangeTransformAudit(serviceId, systemId, mostRecentExchange.getId());
-
-        //if the exchange has never been transformed or the transform hasn't ended, we
-        //can infer that it's in the queue
-        if (latestTransform == null
-                || latestTransform.getEnded() == null) {
-            LOG.debug("Exchange " + mostRecentExchange.getId() + " has never been transformed or hasn't finished yet");
-            return true;
-
-        } else {
-            Date transformFinished = latestTransform.getEnded();
-            List<ExchangeEvent> events = exchangeDal.getExchangeEvents(mostRecentExchange.getId());
-            if (!events.isEmpty()) {
-                ExchangeEvent mostRecentEvent = events.get(events.size() - 1);
-                String eventDesc = mostRecentEvent.getEventDesc();
-                Date eventDate = mostRecentEvent.getTimestamp();
-
-                if (eventDesc.startsWith("Manually pushed into EdsInbound")
-                        && eventDate.after(transformFinished)) {
-
-                    LOG.debug("Exchange " + mostRecentExchange.getId() + " latest event is being inserted into queue");
-                    return true;
-                }
-            }
-        }
-
-        return false;
-    }
 
     @DELETE
     @Produces(MediaType.TEXT_PLAIN)

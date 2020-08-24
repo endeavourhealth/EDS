@@ -197,4 +197,11 @@ export class ExchangeAuditService extends BaseHttp2Service {
         return this.httpPost('api/exchangeAudit/requeueServicesInError', request);
     }
 
+    addExchangeEvent(exchangeId: string, text: string) : Observable<any> {
+        var request = {
+            'exchangeId': exchangeId,
+            'text': text
+        };
+        return this.httpPost('api/exchangeAudit/addExchangeEvent', request);
+    }
 }

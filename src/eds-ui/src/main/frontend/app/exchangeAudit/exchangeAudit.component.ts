@@ -734,4 +734,25 @@ export class ExchangeAuditComponent {
 
 		vm.refreshExchanges(false);
 	}
+
+	/**
+	 * allows adding a free-text event against the selected exchange
+	 */
+	addNote() {
+		var vm = this;
+
+		var text = prompt('Enter note');
+		if (text == null) {
+			return;
+		}
+
+		var exchangeId = vm.selectedExchange.exchangeId;
+
+		vm.exchangeAuditService.addExchangeEvent(exchangeId, text).subscribe(
+			(result) => {
+				vm.loadTransformAudits(vm.selectedExchange);
+			},
+			(error) => vm.log.error('Failed to add note', error)
+		)
+	}
 }

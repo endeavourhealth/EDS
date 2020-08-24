@@ -16,6 +16,7 @@ import org.endeavourhealth.core.database.dal.admin.models.Service;
 import org.endeavourhealth.core.database.dal.audit.ExchangeDalI;
 import org.endeavourhealth.core.database.dal.audit.UserAuditDalI;
 import org.endeavourhealth.core.database.dal.audit.models.*;
+import org.endeavourhealth.core.messaging.pipeline.components.OpenEnvelope;
 import org.endeavourhealth.core.messaging.pipeline.components.PostMessageToExchange;
 import org.endeavourhealth.core.queueing.QueueHelper;
 import org.endeavourhealth.core.subscribers.SubscriberHelper;
@@ -25,6 +26,7 @@ import org.endeavourhealth.core.xml.transformError.Error;
 import org.endeavourhealth.core.xml.transformError.ExceptionLine;
 import org.endeavourhealth.core.xml.transformError.TransformError;
 import org.endeavourhealth.coreui.endpoints.AbstractEndpoint;
+import org.endeavourhealth.transform.common.AuditWriter;
 import org.endeavourhealth.transform.common.ExchangeHelper;
 import org.endeavourhealth.transform.common.ExchangePayloadFile;
 import org.endeavourhealth.ui.json.*;
@@ -475,7 +477,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
             }
 
             //make sure there's nothing in the inbound queue otherwise data could be missed (see https://endeavourhealth.atlassian.net/browse/SD-40)
-            boolean inQueue = ServiceEndpoint.isAnythingInInboundQueue(serviceId, systemId);
+            boolean inQueue = OpenEnvelope.isAnythingInInboundQueue(serviceId, systemId);
             if (inQueue) {
                 return Response
                         .ok()
@@ -991,5 +993,30 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
                 .ok()
                 .build();
     }
+
+
+    @POST
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="ExchangeAuditEndpoint.AddExchangeEvent")
+    @Path("/addExchangeEvent")
+    @RequiresAdmin
+    public Response addExchangeEvent(@Context SecurityContext sc, JsonAddExchangeEventRequest request) throws Exception {
+        super.setLogbackMarkers(sc);
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Save,
+                "Add exchange event",
+                "Request", request);
+
+        UUID exchangeId = request.getExchangeId();
+        String text = request.getText();
+        AuditWriter.writeExchangeEvent(exchangeId, text);
+
+        clearLogbackMarkers();
+
+        return Response
+                .ok()
+                .build();
+    }
+
 }
 

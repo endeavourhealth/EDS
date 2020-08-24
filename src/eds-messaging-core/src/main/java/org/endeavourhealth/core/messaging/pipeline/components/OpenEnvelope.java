@@ -1,10 +1,14 @@
 package org.endeavourhealth.core.messaging.pipeline.components;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.base.Strings;
+import org.apache.commons.io.FileUtils;
 import org.endeavourhealth.common.cache.ParserPool;
+import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.common.fhir.schema.OrganisationType;
 import org.endeavourhealth.common.ods.OdsOrganisation;
 import org.endeavourhealth.common.ods.OdsWebService;
+import org.endeavourhealth.common.utility.ExpiringCache;
 import org.endeavourhealth.common.utility.SlackHelper;
 import org.endeavourhealth.core.configuration.OpenEnvelopeConfig;
 import org.endeavourhealth.core.database.dal.DalProvider;
@@ -12,9 +16,7 @@ import org.endeavourhealth.core.database.dal.admin.ServiceDalI;
 import org.endeavourhealth.core.database.dal.admin.SystemHelper;
 import org.endeavourhealth.core.database.dal.admin.models.Service;
 import org.endeavourhealth.core.database.dal.audit.ExchangeDalI;
-import org.endeavourhealth.core.database.dal.audit.models.Exchange;
-import org.endeavourhealth.core.database.dal.audit.models.HeaderKeys;
-import org.endeavourhealth.core.database.dal.audit.models.LastDataReceived;
+import org.endeavourhealth.core.database.dal.audit.models.*;
 import org.endeavourhealth.core.database.dal.usermanager.caching.OrganisationCache;
 import org.endeavourhealth.core.fhirStorage.ServiceInterfaceEndpoint;
 import org.endeavourhealth.core.messaging.pipeline.PipelineComponent;
@@ -42,6 +44,7 @@ public class OpenEnvelope extends PipelineComponent {
 	private OpenEnvelopeConfig config;
 
 	private static ServiceDalI serviceDal = DalProvider.factoryServiceDal();
+	private static ExpiringCache<String, Long> hmExchangeSizeBeforeBulk = new ExpiringCache<>(ExpiringCache.Duration.FiveMinutes);
 
 	public OpenEnvelope(OpenEnvelopeConfig config) {
 		this.config = config;
@@ -75,10 +78,11 @@ public class OpenEnvelope extends PipelineComponent {
 				throw new PipelineException("Invalid bundle.  Must contain both a MessageHeader and a Binary resource");
 			}
 
-			processHeader(exchange, messageHeader);
+			Service service = processHeader(exchange, messageHeader);
 			processBody(exchange, binary);
 			calculateLastDataDate(exchange); //work out when the data was from
-			populateBulkTag(exchange);
+			populateBulkTag(exchange, service);
+			rerouteLargeExchanges(exchange, service);
 
 			//commit what we've just received to the DB
 			AuditWriter.writeExchange(exchange);
@@ -91,9 +95,91 @@ public class OpenEnvelope extends PipelineComponent {
 	}
 
 	/**
+	 * if the total exchange file size is larger than a pre-configured limit, then it will attempt to route
+	 * the data into one of the BULK processing queues. If data is already queued up, then it will change
+	 * the publisher to AUTO-FAIL mode instead, since it will need some manual intervention
+     */
+	private void rerouteLargeExchanges(Exchange exchange, Service service) throws Exception {
+
+		//find the configured endpoint on the service
+		UUID systemId = exchange.getSystemId();
+		ServiceInterfaceEndpoint matchingEndpoint = null;
+		List<ServiceInterfaceEndpoint> endpoints = service.getEndpointsList();
+		for (ServiceInterfaceEndpoint endpoint: endpoints) {
+			if (endpoint.getSystemUuid().equals(systemId)) {
+				matchingEndpoint = endpoint;
+				break;
+			}
+		}
+
+		//if we failed to find an endpoint (for whatever reason) or the endpoint isn't set in NORMAL mode then return
+		if (matchingEndpoint == null
+			|| !matchingEndpoint.getEndpoint().equals(ServiceInterfaceEndpoint.STATUS_NORMAL)) {
+			return;
+		}
+
+		//work out the size of the exchange itself
+		Long exchangeSize = exchange.getHeaderAsLong(HeaderKeys.TotalFileSize);
+		if (exchangeSize == null) {
+			return;
+		}
+
+		//work out the max size permitted
+		String sourceSoftware = exchange.getHeader(HeaderKeys.SourceSystem);
+		long maxSize = getMaxFileSizeForSystem(sourceSoftware);
+
+		//if below the max size, then do nothing
+		if (exchangeSize.longValue() <= maxSize) {
+			return;
+		}
+
+		//if above the max size, then we need to work out if it's safe to re-route to the bulk queue or we should auto-fail
+		UUID serviceId = exchange.getServiceId();
+		boolean inQueue = isAnythingInInboundQueue(serviceId, systemId);
+		if (inQueue) {
+			//if we currently have messages in the inbound queue it's not safe to route this new exchange
+			//to a bulk queue, so it's safter to just get everything to fail and let it be sorted manually
+			matchingEndpoint.setEndpoint(ServiceInterfaceEndpoint.STATUS_AUTO_FAIL);
+
+		} else {
+			//if nothing is currently being processed in the inbound queue, then route this exchange to the
+			//bulk queue
+			matchingEndpoint.setEndpoint(ServiceInterfaceEndpoint.STATUS_BULK_PROCESSING);
+		}
+
+		String msg = "" + service.getLocalId() + " " + service.getName() + " has sent exchange " + exchange.getId()
+				+ " sized " + FileUtils.byteCountToDisplaySize(exchangeSize.longValue()) + " which is larger than the "
+				+ sourceSoftware + " limit of " + FileUtils.byteCountToDisplaySize(maxSize)
+				+ "\r\n"
+				+ "The publisher has been set into " + matchingEndpoint.getEndpoint() + " mode to avoid blocking the regular queues";
+		SlackHelper.sendSlackMessage(SlackHelper.Channel.MessagingApi, msg);
+
+		service.setEndpointsList(endpoints);
+		serviceDal.save(service);
+	}
+
+	private static long getMaxFileSizeForSystem(String software) throws Exception {
+		Long maxSize = hmExchangeSizeBeforeBulk.get(software);
+		if (maxSize == null) {
+			JsonNode json = ConfigManager.getConfigurationAsJson("largeExchangeLimits");
+			if (json != null
+					&& json.has(software)) {
+
+				long val = json.get(software).asLong();
+				maxSize = new Long(val);
+			}
+			if (maxSize == null) {
+				maxSize = new Long(Long.MAX_VALUE);
+			}
+			hmExchangeSizeBeforeBulk.put(software, maxSize);
+		}
+		return maxSize.longValue();
+	}
+
+	/**
 	 * if the exchange is flagged as a bulk, then populate the tag on the service
      */
-	private void populateBulkTag(Exchange exchange) throws Exception {
+	private void populateBulkTag(Exchange exchange, Service service) throws Exception {
 		Boolean isBulk = exchange.getHeaderAsBoolean(HeaderKeys.IsBulk);
 		if (isBulk == null
 				|| !isBulk.booleanValue()) {
@@ -101,7 +187,6 @@ public class OpenEnvelope extends PipelineComponent {
 		}
 
 		UUID serviceId = exchange.getServiceId();
-		Service service = serviceDal.getById(serviceId);
 
 		Map<String, String> tags = service.getTags();
 		if (tags == null) {
@@ -250,7 +335,7 @@ public class OpenEnvelope extends PipelineComponent {
 		return elementValue;
 	}
 
-	private void processHeader(Exchange exchange, MessageHeader messageHeader) throws PipelineException {
+	private Service processHeader(Exchange exchange, MessageHeader messageHeader) throws PipelineException {
 
 		//just carry over fields from the request to the exchange
 		exchange.setHeader(HeaderKeys.MessageId, messageHeader.getId());
@@ -261,13 +346,15 @@ public class OpenEnvelope extends PipelineComponent {
 		exchange.setHeader(HeaderKeys.MessageEvent, messageHeader.getEvent().getCode());
 
 		//validate that the sender is one we know off
-		processSender(exchange);
+		Service service = processSender(exchange);
 
 		//carry over any explicit destinations
 		processDestinations(exchange, messageHeader);
+
+		return service;
 	}
 
-	private void processSender(Exchange exchange) throws PipelineException {
+	private Service processSender(Exchange exchange) throws PipelineException {
 
 		String organisationOds = exchange.getHeader(HeaderKeys.SenderLocalIdentifier);
 		String software = exchange.getHeader(HeaderKeys.SourceSystem);
@@ -284,6 +371,8 @@ public class OpenEnvelope extends PipelineComponent {
 
 		exchange.setServiceId(service.getId());
 		exchange.setSystemId(systemUuid);
+
+		return service;
 	}
 
 	private Service findOrCreateService(String organisationOds) throws PipelineException {
@@ -436,5 +525,73 @@ public class OpenEnvelope extends PipelineComponent {
 		if (!destinationUriList.isEmpty()) {
 			exchange.setHeader(HeaderKeys.DestinationAddress, String.join(",", destinationUriList));
 		}
+	}
+
+
+	/**
+	 * works out if there's anything in the inbound queue for the given service
+	 * Note that this doesn't actually test RabbitMQ but looks at the transform audit of the most
+	 * recent exchange to infer whether it is still in the queue or not
+	 */
+	public static boolean isAnythingInInboundQueue(UUID serviceId, UUID systemId) throws Exception {
+		ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
+		List<Exchange> mostRecentExchanges = exchangeDal.getExchangesByService(serviceId, systemId, 1);
+		if (mostRecentExchanges.isEmpty()) {
+			return false;
+		}
+
+		Exchange mostRecentExchange = mostRecentExchanges.get(0);
+
+		//if the most recent exchange is flagged for not queueing, then we need to go back to the last one not flagged like that
+		Boolean allowQueueing = mostRecentExchange.getHeaderAsBoolean(HeaderKeys.AllowQueueing);
+		if (allowQueueing != null
+				&& !allowQueueing.booleanValue()) {
+
+			mostRecentExchange = null;
+
+			mostRecentExchanges = exchangeDal.getExchangesByService(serviceId, systemId, 100);
+			for (Exchange exchange: mostRecentExchanges) {
+
+				allowQueueing = exchange.getHeaderAsBoolean(HeaderKeys.AllowQueueing);
+				if (allowQueueing == null
+						|| allowQueueing.booleanValue()) {
+					mostRecentExchange = exchange;
+					break;
+				}
+			}
+
+			//if we still didn't find one, after checking the last 100, then just assume we're OK
+			if (mostRecentExchange == null) {
+				return false;
+			}
+		}
+
+		ExchangeTransformAudit latestTransform = exchangeDal.getLatestExchangeTransformAudit(serviceId, systemId, mostRecentExchange.getId());
+
+		//if the exchange has never been transformed or the transform hasn't ended, we
+		//can infer that it's in the queue
+		if (latestTransform == null
+				|| latestTransform.getEnded() == null) {
+			LOG.debug("Exchange " + mostRecentExchange.getId() + " has never been transformed or hasn't finished yet");
+			return true;
+
+		} else {
+			Date transformFinished = latestTransform.getEnded();
+			List<ExchangeEvent> events = exchangeDal.getExchangeEvents(mostRecentExchange.getId());
+			if (!events.isEmpty()) {
+				ExchangeEvent mostRecentEvent = events.get(events.size() - 1);
+				String eventDesc = mostRecentEvent.getEventDesc();
+				Date eventDate = mostRecentEvent.getTimestamp();
+
+				if (eventDesc.startsWith("Manually pushed into EdsInbound")
+						&& eventDate.after(transformFinished)) {
+
+					LOG.debug("Exchange " + mostRecentExchange.getId() + " latest event is being inserted into queue");
+					return true;
+				}
+			}
+		}
+
+		return false;
 	}
 }
