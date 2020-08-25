@@ -84,12 +84,17 @@ public class Main {
 		LOG.info("Initialising config manager");
 		ConfigManager.initialize("queuereader", configId);
 
-
 		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("testUprnToken")) {
+			SpecialRoutines.testUprnToken();
+			System.exit(0);
+		}
+
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("testNewFrailtySql")) {
 			SpecialRoutines.testNewFrailtySql();
 			System.exit(0);
-		}
+		}*/
 
 		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("populateSubscriberAuditTables")) {
@@ -97,7 +102,7 @@ public class Main {
 			System.exit(0);
 		}*/
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("findPatientsWithConfidentialData")) {
 
 			String orgOdsCodeRegex = null;
@@ -106,9 +111,9 @@ public class Main {
 			}
 			SpecialRoutines.findPatientsWithConfidentialData(orgOdsCodeRegex);
 			System.exit(0);
-		}
+		}*/
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("fixEmisAppointmentsAt12")) {
 
 			String orgOdsCodeRegex = null;
@@ -117,7 +122,7 @@ public class Main {
 			}
 			SpecialRoutines.fixEmisAppointmentsAt12(orgOdsCodeRegex);
 			System.exit(0);
-		}
+		}*/
 
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("fixAppointmentTimes")) {

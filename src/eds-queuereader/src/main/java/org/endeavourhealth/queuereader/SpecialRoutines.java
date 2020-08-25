@@ -9,10 +9,10 @@ import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.io.FileUtils;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.common.config.ConfigManager;
-import org.endeavourhealth.common.fhir.FhirExtensionUri;
 import org.endeavourhealth.common.fhir.IdentifierHelper;
 import org.endeavourhealth.common.fhir.ReferenceHelper;
 import org.endeavourhealth.common.fhir.schema.RegistrationType;
+import org.endeavourhealth.common.security.keycloak.client.KeycloakClient;
 import org.endeavourhealth.common.utility.FileHelper;
 import org.endeavourhealth.common.utility.JsonSerializer;
 import org.endeavourhealth.core.database.dal.DalProvider;
@@ -55,7 +55,9 @@ import org.endeavourhealth.im.models.mapping.MapResponse;
 import org.endeavourhealth.subscriber.filer.EnterpriseFiler;
 import org.endeavourhealth.subscriber.filer.SubscriberFiler;
 import org.endeavourhealth.transform.common.*;
-import org.endeavourhealth.transform.common.resourceBuilders.*;
+import org.endeavourhealth.transform.common.resourceBuilders.EncounterBuilder;
+import org.endeavourhealth.transform.common.resourceBuilders.EpisodeOfCareBuilder;
+import org.endeavourhealth.transform.common.resourceBuilders.ImmunizationBuilder;
 import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
 import org.endeavourhealth.transform.enterprise.EnterpriseTransformHelper;
 import org.endeavourhealth.transform.enterprise.FhirToEnterpriseCsvTransformer;
@@ -5155,11 +5157,66 @@ public abstract class SpecialRoutines {
 
     }
 
+    public static void testUprnToken() {
+        LOG.info("Testing UPRN Token");
+        try {
+
+            String adrec = "60 Locksons Close, London, E146BH";
+            String ids = "2196436781`60944`ceg_enterprise";
+
+            JsonNode config = ConfigManager.getConfigurationAsJson("UPRN", "db_enterprise");
+            JsonNode token_endpoint = config.get("token_endpoint");
+            JsonNode clientid = config.get("clientid");
+            JsonNode password = config.get("password");
+            JsonNode username = config.get("username");
+            JsonNode uprn_endpoint = config.get("uprn_endpoint");
+
+            //test old way
+            LOG.debug("Doing OLD Way>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
+            for (int i=0; i<36; i++) {
+                try {
+                    String uprnToken = UPRN.getUPRNToken(password.asText(), username.asText(), clientid.asText(), LOG, token_endpoint.asText());
+                    LOG.debug("Got token " + uprnToken);
+                    String csv = UPRN.getAdrec(adrec, uprnToken, uprn_endpoint.asText(), ids);
+                    LOG.debug("Got response " + csv);
+
+                } catch (Exception ex) {
+                    LOG.error("", ex);
+                    break;
+                }
+                LOG.debug("");
+                Thread.sleep(5);
+            }
+
+            //test new way
+            LOG.debug("Doing NEW Way>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
+            KeycloakClient kc = new KeycloakClient("https://www.discoverydataservice.net/auth", "endeavour-machine", username.asText(), password.asText(), clientid.asText());
+            for (int i=0; i<36; i++) {
+                try {
+                    String uprnToken = kc.getToken().getToken();
+                    LOG.debug("Got token " + uprnToken);
+                    String csv = UPRN.getAdrec(adrec, uprnToken, uprn_endpoint.asText(), ids);
+                    LOG.debug("Got response " + csv);
+
+                } catch (Exception ex) {
+                    LOG.error("", ex);
+                    break;
+                }
+                LOG.debug("");
+                Thread.sleep(5);
+            }
+
+            LOG.info("Finished Testing UPRN Token");
+        } catch(Throwable t) {
+            LOG.error("", t);
+        }
+    }
+
     /**
      * the Emis CSV time format was wrong (https://endeavourhealth.atlassian.net/browse/SD-108)
      * which meant any appt or schedule with a time of "12xxxx" was saved as "00xxxx"
      */
-    public static void fixEmisAppointmentsAt12(String orgOdsCodeRegex) {
+    /*public static void fixEmisAppointmentsAt12(String orgOdsCodeRegex) {
         LOG.info("Fixing Emis Appointment Times for " + orgOdsCodeRegex);
         try {
             ServiceDalI serviceDal = DalProvider.factoryServiceDal();
@@ -5467,7 +5524,7 @@ public abstract class SpecialRoutines {
             LOG.error("", t);
         }
 
-    }
+    }*/
 
     /**
      * when the Compass DBs were changed to NOT exclude data items flagged as confidential, it looks like
@@ -5476,7 +5533,7 @@ public abstract class SpecialRoutines {
      * be refreshed to all subscribers using the existing routine
      * https://endeavourhealth.atlassian.net/browse/SD-111
      */
-    public static void findPatientsWithConfidentialData(String orgOdsCodeRegex) {
+    /*public static void findPatientsWithConfidentialData(String orgOdsCodeRegex) {
         LOG.info("Finding Patients With Confidential Data at " + orgOdsCodeRegex);
         try {
 
@@ -5564,7 +5621,7 @@ public abstract class SpecialRoutines {
         } catch (Throwable t) {
             LOG.error("", t);
         }
-    }
+    }*/
 
     /**
      * populates the new audit tables for DPA and DSAs
@@ -5608,7 +5665,7 @@ public abstract class SpecialRoutines {
      * the SQL used to determine the Frailty flag, used by the Frailty API has been refactored, so this tests
      * all patients that have had results to ensure the same result is found now
      */
-    public static void testNewFrailtySql() {
+    /*public static void testNewFrailtySql() {
         LOG.info("Testing New Frailty SQL");
         try {
 
@@ -5796,7 +5853,7 @@ public abstract class SpecialRoutines {
         }
 
         return ret;
-    }
+    }*/
 
     static class RegRecord {
 
