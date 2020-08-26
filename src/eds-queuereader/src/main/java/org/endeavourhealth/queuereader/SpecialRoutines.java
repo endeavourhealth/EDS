@@ -5194,7 +5194,7 @@ public abstract class SpecialRoutines {
             //test new way
             LOG.debug("Doing NEW Way>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
             KeycloakClient kc = new KeycloakClient("https://www.discoverydataservice.net/auth", "endeavour-machine", username.asText(), password.asText(), clientid.asText());
-            for (int i=0; i<36; i++) {
+            for (int i=0; i<2; i++) {
                 try {
                     String uprnToken = kc.getToken().getToken();
                     LOG.debug("Got token " + uprnToken);
