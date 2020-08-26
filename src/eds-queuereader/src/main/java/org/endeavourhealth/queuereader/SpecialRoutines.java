@@ -5174,7 +5174,7 @@ public abstract class SpecialRoutines {
 
     }
 
-    public static void testUprnToken() {
+    public static void testUprnToken(String protocol) {
         LOG.info("Testing UPRN Token");
         try {
 
@@ -5186,13 +5186,14 @@ public abstract class SpecialRoutines {
             LOG.debug("Doing IM NEW Way>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
             /*KeycloakClient imkc = new KeycloakClient("https://www.discoverydataservice.net/auth", "endeavour-machine", imUsername.asText(), imPassword.asText(), "information-model");
             String imToken = imkc.getToken().getToken();*/
-            String imToken = getTokenInternal("https://www.discoverydataservice.net/auth", "endeavour-machine", imUsername.asText(), imPassword.asText(), "information-model").getToken();
+            String imToken = getTokenInternal(protocol + "://www.discoverydataservice.net/auth", "endeavour-machine", imUsername.asText(), imPassword.asText(), "information-model").getToken();
             LOG.debug("Got IM token " + imToken);
+            Thread.sleep(5 * 1000);
 
             LOG.debug("Doing IM OLD Way>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
-            imToken = getUprnToken(imPassword.asText(), imUsername.asText(), "information-model", "https://www.discoverydataservice.net/auth/realms/endeavour-machine/protocol/openid-connect/token");
+            imToken = getUprnToken(imPassword.asText(), imUsername.asText(), "information-model", protocol + "://www.discoverydataservice.net/auth/realms/endeavour-machine/protocol/openid-connect/token");
             LOG.debug("Got IM token " + imToken);
-
+            Thread.sleep(5 * 1000);
 
 
             String adrec = "60 Locksons Close, London, E146BH";
@@ -5209,7 +5210,7 @@ public abstract class SpecialRoutines {
             LOG.debug("Doing UORN OLD Way>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
             for (int i=0; i<1; i++) {
                 try {
-                    String uprnToken = getUprnToken(password.asText(), username.asText(), clientid.asText(), "https://www.discoverydataservice.net/auth/realms/endeavour-machine/protocol/openid-connect/token");
+                    String uprnToken = getUprnToken(password.asText(), username.asText(), clientid.asText(), protocol + "://www.discoverydataservice.net/auth/realms/endeavour-machine/protocol/openid-connect/token");
                     LOG.debug("Got token " + uprnToken);
                     String csv = UPRN.getAdrec(adrec, uprnToken, uprn_endpoint.asText(), ids);
                     LOG.debug("Got response " + csv);
@@ -5228,7 +5229,7 @@ public abstract class SpecialRoutines {
             for (int i=0; i<1; i++) {
                 try {
                     //String uprnToken = kc.getToken().getToken();
-                    String uprnToken = getTokenInternal("https://www.discoverydataservice.net/auth", "endeavour-machine", username.asText(), password.asText(), clientid.asText()).getToken();
+                    String uprnToken = getTokenInternal(protocol + "://www.discoverydataservice.net/auth", "endeavour-machine", username.asText(), password.asText(), clientid.asText()).getToken();
                     LOG.debug("Got token " + uprnToken);
                     String csv = UPRN.getAdrec(adrec, uprnToken, uprn_endpoint.asText(), ids);
                     LOG.debug("Got response " + csv);

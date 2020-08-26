@@ -86,7 +86,7 @@ public class Main {
 
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("testUprnToken")) {
-			SpecialRoutines.testUprnToken();
+			SpecialRoutines.testUprnToken(args[1]);
 			System.exit(0);
 		}
 
