@@ -5209,6 +5209,14 @@ public abstract class SpecialRoutines {
                 Thread.sleep(5 * 1000);
             }
 
+            JsonNode imConfig = ConfigManager.getConfigurationAsJson("api-internal", "information-model");
+            JsonNode imPassword = imConfig.get("password");
+            JsonNode imUsername = imConfig.get("username");
+
+            KeycloakClient imkc = new KeycloakClient("https://www.discoverydataservice.net/auth", "endeavour-machine", imUsername.asText(), imPassword.asText(), "information-model");
+            String imToken = imkc.getToken().getToken();
+            LOG.debug("Got IM token " + imToken);
+
             LOG.info("Finished Testing UPRN Token");
         } catch(Throwable t) {
             LOG.error("", t);
