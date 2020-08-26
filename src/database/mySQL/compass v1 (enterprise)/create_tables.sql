@@ -11,6 +11,7 @@ DROP TABLE IF EXISTS link_distributor; -- deleted table
 DROP TABLE IF EXISTS patient_address;
 DROP TABLE IF EXISTS patient_contact;
 DROP TABLE IF EXISTS patient_address_match;
+DROP TABLE IF EXISTS patient_additional;
 DROP TABLE IF EXISTS registration_status_history;
 DROP TABLE IF EXISTS patient_uprn;
 DROP TABLE IF EXISTS medication_order;
@@ -542,6 +543,15 @@ CREATE INDEX patient_person_id
   ON patient
   (person_id);
 
+-- Table: patient_additional
+
+CREATE TABLE patient_additional (
+  id bigint NOT NULL COMMENT 'same as the id column on the patient table ',
+  property_id character varying(255)  NOT NULL COMMENT 'IM reference (e.g. Cause of death)',
+  value_id character varying(255) NOT NULL COMMENT 'IM reference (e.g. COVID)',
+  CONSTRAINT pk_encounter_additional_id PRIMARY KEY (id, property_id, value_id)
+);
+CREATE INDEX ix_patient_additional_id ON patient_additional (id);
 
 -- Table: episode_of_care
 
