@@ -5164,6 +5164,15 @@ public abstract class SpecialRoutines {
         LOG.info("Testing UPRN Token");
         try {
 
+
+            JsonNode imConfig = ConfigManager.getConfigurationAsJson("api-internal", "information-model");
+            JsonNode imPassword = imConfig.get("password");
+            JsonNode imUsername = imConfig.get("username");
+
+            KeycloakClient imkc = new KeycloakClient("https://www.discoverydataservice.net/auth", "endeavour-machine", imUsername.asText(), imPassword.asText(), "information-model");
+            String imToken = imkc.getToken().getToken();
+            LOG.debug("Got IM token " + imToken);
+
             String adrec = "60 Locksons Close, London, E146BH";
             String ids = "2196436781`60944`ceg_enterprise";
 
@@ -5209,13 +5218,6 @@ public abstract class SpecialRoutines {
                 Thread.sleep(5 * 1000);
             }
 
-            JsonNode imConfig = ConfigManager.getConfigurationAsJson("api-internal", "information-model");
-            JsonNode imPassword = imConfig.get("password");
-            JsonNode imUsername = imConfig.get("username");
-
-            KeycloakClient imkc = new KeycloakClient("https://www.discoverydataservice.net/auth", "endeavour-machine", imUsername.asText(), imPassword.asText(), "information-model");
-            String imToken = imkc.getToken().getToken();
-            LOG.debug("Got IM token " + imToken);
 
             LOG.info("Finished Testing UPRN Token");
         } catch(Throwable t) {
