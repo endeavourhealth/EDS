@@ -15,6 +15,7 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.message.BasicNameValuePair;
+import org.bouncycastle.util.io.Streams;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.common.fhir.IdentifierHelper;
@@ -92,6 +93,7 @@ import org.slf4j.LoggerFactory;
 import javax.net.ssl.HttpsURLConnection;
 import java.io.*;
 import java.net.URL;
+import java.nio.charset.Charset;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -5181,10 +5183,17 @@ public abstract class SpecialRoutines {
             JsonNode imPassword = imConfig.get("password");
             JsonNode imUsername = imConfig.get("username");
 
+            LOG.debug("Doing IM NEW Way>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
             /*KeycloakClient imkc = new KeycloakClient("https://www.discoverydataservice.net/auth", "endeavour-machine", imUsername.asText(), imPassword.asText(), "information-model");
             String imToken = imkc.getToken().getToken();*/
             String imToken = getTokenInternal("https://www.discoverydataservice.net/auth", "endeavour-machine", imUsername.asText(), imPassword.asText(), "information-model").getToken();
             LOG.debug("Got IM token " + imToken);
+
+            LOG.debug("Doing IM OLD Way>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
+            imToken = getUprnToken(imPassword.asText(), imUsername.asText(), "information-model", "https://www.discoverydataservice.net/auth");
+            LOG.debug("Got IM token " + imToken);
+
+
 
             String adrec = "60 Locksons Close, London, E146BH";
             String ids = "2196436781`60944`ceg_enterprise";
@@ -5197,7 +5206,7 @@ public abstract class SpecialRoutines {
             JsonNode uprn_endpoint = config.get("uprn_endpoint");
 
             //test old way
-            LOG.debug("Doing OLD Way>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
+            LOG.debug("Doing UORN OLD Way>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
             for (int i=0; i<1; i++) {
                 try {
                     String uprnToken = getUprnToken(password.asText(), username.asText(), clientid.asText(), token_endpoint.asText());
@@ -5214,7 +5223,7 @@ public abstract class SpecialRoutines {
             }
 
             //test new way
-            LOG.debug("Doing NEW Way>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
+            LOG.debug("Doing UPRN NEW Way>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
             //KeycloakClient kc = new KeycloakClient("https://www.discoverydataservice.net/auth", "endeavour-machine", username.asText(), password.asText(), clientid.asText());
             for (int i=0; i<1; i++) {
                 try {
@@ -5255,6 +5264,15 @@ public abstract class SpecialRoutines {
             formparams.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ID, clientId));
             UrlEncodedFormEntity form = new UrlEncodedFormEntity(formparams, "UTF-8");
             post.setEntity(form);
+
+            InputStream is = form.getContent();
+            byte[] arr = Streams.readAll(is);
+            is.close();
+            String s = new String(arr);
+            LOG.debug("Form content [" + s + "]");
+
+            s = new String(arr, Charset.forName("UTF-8"));
+            LOG.debug("Form content UTF-8 [" + s + "]");
 
             LOG.debug("POST URL reporting : ["+post.getURI().toString()+"]");
 
