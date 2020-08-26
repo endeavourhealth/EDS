@@ -5342,9 +5342,30 @@ public abstract class SpecialRoutines {
             int responseCode = con.getResponseCode();
             LOG.debug("Got response code " + responseCode);
             String response = "";
-            InputStream inputStream;
+
             int json;
-            if(responseCode >= 200 && responseCode <= 202) {
+
+            InputStream inputStream = con.getInputStream();
+            if (inputStream == null) {
+                LOG.debug("Null input stream");
+            } else {
+                byte[] arr = Streams.readAll(inputStream);
+                String s = new String(arr);
+                response = s;
+                LOG.debug("Response " + s);
+            }
+
+            inputStream = con.getErrorStream();
+            if (inputStream == null) {
+                LOG.debug("Null error stream");
+            } else {
+                byte[] arr = Streams.readAll(inputStream);
+                String s = new String(arr);
+                LOG.debug("Error response " + s);
+            }
+
+
+            /*if(responseCode >= 200 && responseCode <= 202) {
                 for(inputStream = con.getInputStream(); (json = inputStream.read()) > 0; response = response + (char)json) {
                     ;
                 }
@@ -5359,7 +5380,7 @@ public abstract class SpecialRoutines {
                     String s = new String(arr);
                     LOG.debug("Error response " + s);
                 }
-            }
+            }*/
 
 
             con.disconnect();
