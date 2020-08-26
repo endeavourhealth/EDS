@@ -73,10 +73,13 @@ import org.endeavourhealth.transform.subscriber.transforms.EpisodeOfCareTransfor
 import org.endeavourhealth.transform.subscriber.transforms.PatientTransformer;
 import org.endeavourhealth.transform.tpp.csv.helpers.TppCsvHelper;
 import org.hl7.fhir.instance.model.*;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.net.ssl.HttpsURLConnection;
 import java.io.*;
+import java.net.URL;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -5173,9 +5176,9 @@ public abstract class SpecialRoutines {
 
             //test old way
             LOG.debug("Doing OLD Way>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
-            for (int i=0; i<36; i++) {
+            for (int i=0; i<2; i++) {
                 try {
-                    String uprnToken = UPRN.getUPRNToken(password.asText(), username.asText(), clientid.asText(), LOG, token_endpoint.asText());
+                    String uprnToken = getUprnToken(password.asText(), username.asText(), clientid.asText(), token_endpoint.asText());
                     LOG.debug("Got token " + uprnToken);
                     String csv = UPRN.getAdrec(adrec, uprnToken, uprn_endpoint.asText(), ids);
                     LOG.debug("Got response " + csv);
@@ -5185,7 +5188,7 @@ public abstract class SpecialRoutines {
                     break;
                 }
                 LOG.debug("");
-                Thread.sleep(5);
+                Thread.sleep(5 * 1000);
             }
 
             //test new way
@@ -5203,13 +5206,58 @@ public abstract class SpecialRoutines {
                     break;
                 }
                 LOG.debug("");
-                Thread.sleep(5);
+                Thread.sleep(5 * 1000);
             }
 
             LOG.info("Finished Testing UPRN Token");
         } catch(Throwable t) {
             LOG.error("", t);
         }
+    }
+
+    private static String getUprnToken(String password, String username, String clientid, String token_endpoint) {
+        String token = "";
+
+        try {
+            String e = "password=" + password + "&username=" + username + "&client_id=" + clientid + "&grant_type=password";
+            LOG.debug("URL = " + token_endpoint);
+            LOG.debug("Params = " + e);
+
+            URL obj = new URL(token_endpoint);
+            HttpsURLConnection con = (HttpsURLConnection)obj.openConnection();
+            con.setRequestMethod("POST");
+            con.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+            con.setDoOutput(true);
+            BufferedOutputStream bos = new BufferedOutputStream(con.getOutputStream());
+            BufferedInputStream bis = new BufferedInputStream(new StringBufferInputStream(e));
+
+            int i;
+            while((i = bis.read()) > 0) {
+                bos.write(i);
+            }
+
+            bis.close();
+            bos.close();
+            int responseCode = con.getResponseCode();
+            String response = "";
+            InputStream inputStream;
+            int json;
+            if(responseCode >= 200 && responseCode <= 202) {
+                for(inputStream = con.getInputStream(); (json = inputStream.read()) > 0; response = response + (char)json) {
+                    ;
+                }
+            } else {
+                inputStream = con.getErrorStream();
+            }
+
+            con.disconnect();
+            JSONObject json1 = new JSONObject(response.toString());
+            token = json1.getString("access_token");
+        } catch (Exception var15) {
+            LOG.error("Error getting Keycloak token for UPRN call", var15);
+        }
+
+        return token;
     }
 
     /**

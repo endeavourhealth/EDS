@@ -65,6 +65,11 @@ public class SubscriberHelper {
             String msg = "Subscriber state for " + service.getName() + " " + service.getLocalId() + " has changed on exchange " + exchangeId + ":\r\n"
                     + "[" + String.join(", ", latest) + "] -> [" + String.join(", ", subscribers) + "]";
             SlackHelper.sendSlackMessage(SlackHelper.Channel.QueueReaderAlerts, msg);
+
+            //keep getting messages saying it's changed but "[] -> []", so log out what's going on
+            LOG.debug(msg);
+            LOG.debug("State was: " + latest);
+            LOG.debug("State new: " + subscribers);
         }
 
         cachedLatestSubscriberState.put(serviceId, new ArrayList<>(subscribers));
