@@ -7,12 +7,19 @@ import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.io.FileUtils;
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.message.BasicNameValuePair;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.common.fhir.IdentifierHelper;
 import org.endeavourhealth.common.fhir.ReferenceHelper;
 import org.endeavourhealth.common.fhir.schema.RegistrationType;
-import org.endeavourhealth.common.security.keycloak.client.KeycloakClient;
 import org.endeavourhealth.common.utility.FileHelper;
 import org.endeavourhealth.common.utility.JsonSerializer;
 import org.endeavourhealth.core.database.dal.DalProvider;
@@ -74,6 +81,11 @@ import org.endeavourhealth.transform.subscriber.transforms.PatientTransformer;
 import org.endeavourhealth.transform.tpp.csv.helpers.TppCsvHelper;
 import org.hl7.fhir.instance.model.*;
 import org.json.JSONObject;
+import org.keycloak.OAuth2Constants;
+import org.keycloak.common.util.KeycloakUriBuilder;
+import org.keycloak.constants.ServiceUrlConstants;
+import org.keycloak.representations.AccessTokenResponse;
+import org.keycloak.util.JsonSerialization;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -5169,8 +5181,9 @@ public abstract class SpecialRoutines {
             JsonNode imPassword = imConfig.get("password");
             JsonNode imUsername = imConfig.get("username");
 
-            KeycloakClient imkc = new KeycloakClient("https://www.discoverydataservice.net/auth", "endeavour-machine", imUsername.asText(), imPassword.asText(), "information-model");
-            String imToken = imkc.getToken().getToken();
+            /*KeycloakClient imkc = new KeycloakClient("https://www.discoverydataservice.net/auth", "endeavour-machine", imUsername.asText(), imPassword.asText(), "information-model");
+            String imToken = imkc.getToken().getToken();*/
+            String imToken = getTokenInternal("https://www.discoverydataservice.net/auth", "endeavour-machine", imUsername.asText(), imPassword.asText(), "information-model").getToken();
             LOG.debug("Got IM token " + imToken);
 
             String adrec = "60 Locksons Close, London, E146BH";
@@ -5185,7 +5198,7 @@ public abstract class SpecialRoutines {
 
             //test old way
             LOG.debug("Doing OLD Way>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
-            for (int i=0; i<2; i++) {
+            for (int i=0; i<1; i++) {
                 try {
                     String uprnToken = getUprnToken(password.asText(), username.asText(), clientid.asText(), token_endpoint.asText());
                     LOG.debug("Got token " + uprnToken);
@@ -5202,10 +5215,11 @@ public abstract class SpecialRoutines {
 
             //test new way
             LOG.debug("Doing NEW Way>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
-            KeycloakClient kc = new KeycloakClient("https://www.discoverydataservice.net/auth", "endeavour-machine", username.asText(), password.asText(), clientid.asText());
-            for (int i=0; i<2; i++) {
+            //KeycloakClient kc = new KeycloakClient("https://www.discoverydataservice.net/auth", "endeavour-machine", username.asText(), password.asText(), clientid.asText());
+            for (int i=0; i<1; i++) {
                 try {
-                    String uprnToken = kc.getToken().getToken();
+                    //String uprnToken = kc.getToken().getToken();
+                    String uprnToken = getTokenInternal("https://www.discoverydataservice.net/auth", "endeavour-machine", username.asText(), password.asText(), clientid.asText()).getToken();
                     LOG.debug("Got token " + uprnToken);
                     String csv = UPRN.getAdrec(adrec, uprnToken, uprn_endpoint.asText(), ids);
                     LOG.debug("Got response " + csv);
@@ -5222,6 +5236,65 @@ public abstract class SpecialRoutines {
             LOG.info("Finished Testing UPRN Token");
         } catch(Throwable t) {
             LOG.error("", t);
+        }
+    }
+
+    private static AccessTokenResponse getTokenInternal(String baseUrl, String realm, String username, String password, String clientId) throws IOException {
+
+        CloseableHttpClient client = HttpClientBuilder.create().build();
+
+        try {
+            LOG.debug("Building keycloak connection from base : ["+baseUrl+"], path : ["+ ServiceUrlConstants.TOKEN_PATH+"], realm : ["+realm+"]");
+            String url = KeycloakUriBuilder.fromUri(baseUrl).path(ServiceUrlConstants.TOKEN_PATH).build(realm).toString();
+            LOG.debug("Built url : ["+url+"]");
+            HttpPost post = new HttpPost(url);
+            List<NameValuePair> formparams = new ArrayList<>();
+            formparams.add(new BasicNameValuePair("username", username));
+            formparams.add(new BasicNameValuePair("password", password));
+            formparams.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, "password"));
+            formparams.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ID, clientId));
+            UrlEncodedFormEntity form = new UrlEncodedFormEntity(formparams, "UTF-8");
+            post.setEntity(form);
+
+            LOG.debug("POST URL reporting : ["+post.getURI().toString()+"]");
+
+            HttpResponse response = client.execute(post);
+            int status = response.getStatusLine().getStatusCode();
+            HttpEntity entity = response.getEntity();
+            if (status != 200) {
+                String json = getContent(entity);
+                LOG.trace("Failed to log in: '{}'", json);
+                throw new IOException("Bad status: " + status + " response: " + json);
+            }
+            if (entity == null) {
+                LOG.trace("Failed to log in, no entity");
+                throw new IOException("No Entity");
+            }
+            String json = getContent(entity);
+            return JsonSerialization.readValue(json, AccessTokenResponse.class);
+        } finally {
+            client.close();
+        }
+    }
+
+    private static String getContent(HttpEntity entity) throws IOException {
+        if (entity == null) return null;
+        InputStream is = entity.getContent();
+        try {
+            ByteArrayOutputStream os = new ByteArrayOutputStream();
+            int c;
+            while ((c = is.read()) != -1) {
+                os.write(c);
+            }
+            byte[] bytes = os.toByteArray();
+            String data = new String(bytes);
+            return data;
+        } finally {
+            try {
+                is.close();
+            } catch (IOException ignored) {
+
+            }
         }
     }
 
