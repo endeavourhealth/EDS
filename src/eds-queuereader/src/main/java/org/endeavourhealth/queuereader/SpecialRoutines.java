@@ -5340,6 +5340,7 @@ public abstract class SpecialRoutines {
             bis.close();
             bos.close();
             int responseCode = con.getResponseCode();
+            LOG.debug("Got response code " + responseCode);
             String response = "";
             InputStream inputStream;
             int json;
@@ -5347,9 +5348,19 @@ public abstract class SpecialRoutines {
                 for(inputStream = con.getInputStream(); (json = inputStream.read()) > 0; response = response + (char)json) {
                     ;
                 }
+                LOG.debug("Read response " + response);
             } else {
                 inputStream = con.getErrorStream();
+
+                if (inputStream != null) {
+                    LOG.debug("NUll error stream");
+                } else {
+                    byte[] arr = Streams.readAll(inputStream);
+                    String s = new String(arr);
+                    LOG.debug("Error response " + s);
+                }
             }
+
 
             con.disconnect();
             JSONObject json1 = new JSONObject(response.toString());
