@@ -5190,7 +5190,7 @@ public abstract class SpecialRoutines {
             LOG.debug("Got IM token " + imToken);
 
             LOG.debug("Doing IM OLD Way>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
-            imToken = getUprnToken(imPassword.asText(), imUsername.asText(), "information-model", "https://www.discoverydataservice.net/auth");
+            imToken = getUprnToken(imPassword.asText(), imUsername.asText(), "information-model", "https://www.discoverydataservice.net/auth/realms/endeavour-machine/protocol/openid-connect/token");
             LOG.debug("Got IM token " + imToken);
 
 
@@ -5209,7 +5209,7 @@ public abstract class SpecialRoutines {
             LOG.debug("Doing UORN OLD Way>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
             for (int i=0; i<1; i++) {
                 try {
-                    String uprnToken = getUprnToken(password.asText(), username.asText(), clientid.asText(), token_endpoint.asText());
+                    String uprnToken = getUprnToken(password.asText(), username.asText(), clientid.asText(), "https://www.discoverydataservice.net/auth/realms/endeavour-machine/protocol/openid-connect/token");
                     LOG.debug("Got token " + uprnToken);
                     String csv = UPRN.getAdrec(adrec, uprnToken, uprn_endpoint.asText(), ids);
                     LOG.debug("Got response " + csv);
