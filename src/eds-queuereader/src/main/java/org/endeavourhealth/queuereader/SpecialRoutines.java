@@ -1,23 +1,12 @@
 package org.endeavourhealth.queuereader;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.base.Strings;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.io.FileUtils;
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.message.BasicNameValuePair;
-import org.bouncycastle.util.io.Streams;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
-import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.common.fhir.IdentifierHelper;
 import org.endeavourhealth.common.fhir.ReferenceHelper;
 import org.endeavourhealth.common.fhir.schema.RegistrationType;
@@ -81,19 +70,10 @@ import org.endeavourhealth.transform.subscriber.transforms.EpisodeOfCareTransfor
 import org.endeavourhealth.transform.subscriber.transforms.PatientTransformer;
 import org.endeavourhealth.transform.tpp.csv.helpers.TppCsvHelper;
 import org.hl7.fhir.instance.model.*;
-import org.json.JSONObject;
-import org.keycloak.OAuth2Constants;
-import org.keycloak.common.util.KeycloakUriBuilder;
-import org.keycloak.constants.ServiceUrlConstants;
-import org.keycloak.representations.AccessTokenResponse;
-import org.keycloak.util.JsonSerialization;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.net.ssl.HttpsURLConnection;
 import java.io.*;
-import java.net.URL;
-import java.nio.charset.Charset;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -5178,41 +5158,14 @@ public abstract class SpecialRoutines {
         LOG.info("Testing UPRN Token");
         try {
 
-
-            JsonNode imConfig = ConfigManager.getConfigurationAsJson("api-internal", "information-model");
-            JsonNode imPassword = imConfig.get("password");
-            JsonNode imUsername = imConfig.get("username");
-
-            LOG.debug("Doing IM NEW Way>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
-            /*KeycloakClient imkc = new KeycloakClient("https://www.discoverydataservice.net/auth", "endeavour-machine", imUsername.asText(), imPassword.asText(), "information-model");
-            String imToken = imkc.getToken().getToken();*/
-            String imToken = getTokenInternal(protocol + "://www.discoverydataservice.net/auth", "endeavour-machine", imUsername.asText(), imPassword.asText(), "information-model").getToken();
-            LOG.debug("Got IM token " + imToken);
-            Thread.sleep(5 * 1000);
-
-            LOG.debug("Doing IM OLD Way>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
-            imToken = getUprnToken(imPassword.asText(), imUsername.asText(), "information-model", protocol + "://www.discoverydataservice.net/auth/realms/endeavour-machine/protocol/openid-connect/token");
-            LOG.debug("Got IM token " + imToken);
-            Thread.sleep(5 * 1000);
-
-
             String adrec = "60 Locksons Close, London, E146BH";
             String ids = "2196436781`60944`ceg_enterprise";
 
-            JsonNode config = ConfigManager.getConfigurationAsJson("UPRN", "db_enterprise");
-            JsonNode token_endpoint = config.get("token_endpoint");
-            JsonNode clientid = config.get("clientid");
-            JsonNode password = config.get("password");
-            JsonNode username = config.get("username");
-            JsonNode uprn_endpoint = config.get("uprn_endpoint");
-
             //test old way
-            LOG.debug("Doing UORN OLD Way>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
+            LOG.debug("Doing UORN >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
             for (int i=0; i<1; i++) {
                 try {
-                    String uprnToken = getUprnToken(password.asText(), username.asText(), clientid.asText(), protocol + "://www.discoverydataservice.net/auth/realms/endeavour-machine/protocol/openid-connect/token");
-                    LOG.debug("Got token " + uprnToken);
-                    String csv = UPRN.getAdrec(adrec, uprnToken, uprn_endpoint.asText(), ids);
+                    String csv = UPRN.getAdrec(adrec, ids);
                     LOG.debug("Got response " + csv);
 
                 } catch (Exception ex) {
@@ -5222,176 +5175,11 @@ public abstract class SpecialRoutines {
                 LOG.debug("");
                 Thread.sleep(5 * 1000);
             }
-
-            //test new way
-            LOG.debug("Doing UPRN NEW Way>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
-            //KeycloakClient kc = new KeycloakClient("https://www.discoverydataservice.net/auth", "endeavour-machine", username.asText(), password.asText(), clientid.asText());
-            for (int i=0; i<1; i++) {
-                try {
-                    //String uprnToken = kc.getToken().getToken();
-                    String uprnToken = getTokenInternal(protocol + "://www.discoverydataservice.net/auth", "endeavour-machine", username.asText(), password.asText(), clientid.asText()).getToken();
-                    LOG.debug("Got token " + uprnToken);
-                    String csv = UPRN.getAdrec(adrec, uprnToken, uprn_endpoint.asText(), ids);
-                    LOG.debug("Got response " + csv);
-
-                } catch (Exception ex) {
-                    LOG.error("", ex);
-                    break;
-                }
-                LOG.debug("");
-                Thread.sleep(5 * 1000);
-            }
-
 
             LOG.info("Finished Testing UPRN Token");
         } catch(Throwable t) {
             LOG.error("", t);
         }
-    }
-
-    private static AccessTokenResponse getTokenInternal(String baseUrl, String realm, String username, String password, String clientId) throws IOException {
-
-        CloseableHttpClient client = HttpClientBuilder.create().build();
-
-        try {
-            LOG.debug("Building keycloak connection from base : ["+baseUrl+"], path : ["+ ServiceUrlConstants.TOKEN_PATH+"], realm : ["+realm+"]");
-            String url = KeycloakUriBuilder.fromUri(baseUrl).path(ServiceUrlConstants.TOKEN_PATH).build(realm).toString();
-            LOG.debug("Built url : ["+url+"]");
-            HttpPost post = new HttpPost(url);
-            List<NameValuePair> formparams = new ArrayList<>();
-            formparams.add(new BasicNameValuePair("username", username));
-            formparams.add(new BasicNameValuePair("password", password));
-            formparams.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, "password"));
-            formparams.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ID, clientId));
-            UrlEncodedFormEntity form = new UrlEncodedFormEntity(formparams, "UTF-8");
-            post.setEntity(form);
-
-            InputStream is = form.getContent();
-            byte[] arr = Streams.readAll(is);
-            is.close();
-            String s = new String(arr);
-            LOG.debug("Form content [" + s + "]");
-
-            s = new String(arr, Charset.forName("UTF-8"));
-            LOG.debug("Form content UTF-8 [" + s + "]");
-
-            LOG.debug("POST URL reporting : ["+post.getURI().toString()+"]");
-
-            HttpResponse response = client.execute(post);
-            int status = response.getStatusLine().getStatusCode();
-            HttpEntity entity = response.getEntity();
-            if (status != 200) {
-                String json = getContent(entity);
-                LOG.trace("Failed to log in: '{}'", json);
-                throw new IOException("Bad status: " + status + " response: " + json);
-            }
-            if (entity == null) {
-                LOG.trace("Failed to log in, no entity");
-                throw new IOException("No Entity");
-            }
-            String json = getContent(entity);
-            return JsonSerialization.readValue(json, AccessTokenResponse.class);
-        } finally {
-            client.close();
-        }
-    }
-
-    private static String getContent(HttpEntity entity) throws IOException {
-        if (entity == null) return null;
-        InputStream is = entity.getContent();
-        try {
-            ByteArrayOutputStream os = new ByteArrayOutputStream();
-            int c;
-            while ((c = is.read()) != -1) {
-                os.write(c);
-            }
-            byte[] bytes = os.toByteArray();
-            String data = new String(bytes);
-            return data;
-        } finally {
-            try {
-                is.close();
-            } catch (IOException ignored) {
-
-            }
-        }
-    }
-
-    private static String getUprnToken(String password, String username, String clientid, String token_endpoint) {
-        String token = "";
-
-        try {
-            String e = "password=" + password + "&username=" + username + "&client_id=" + clientid + "&grant_type=password";
-            LOG.debug("URL = " + token_endpoint);
-            LOG.debug("Params = " + e);
-
-            URL obj = new URL(token_endpoint);
-            HttpsURLConnection con = (HttpsURLConnection)obj.openConnection();
-            con.setRequestMethod("POST");
-            con.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
-            con.setDoOutput(true);
-            BufferedOutputStream bos = new BufferedOutputStream(con.getOutputStream());
-            BufferedInputStream bis = new BufferedInputStream(new StringBufferInputStream(e));
-
-            int i;
-            while((i = bis.read()) > 0) {
-                bos.write(i);
-            }
-
-            bis.close();
-            bos.close();
-            int responseCode = con.getResponseCode();
-            LOG.debug("Got response code " + responseCode);
-            String response = "";
-
-            int json;
-
-            InputStream inputStream = con.getInputStream();
-            if (inputStream == null) {
-                LOG.debug("Null input stream");
-            } else {
-                byte[] arr = Streams.readAll(inputStream);
-                String s = new String(arr);
-                response = s;
-                LOG.debug("Response " + s);
-            }
-
-            inputStream = con.getErrorStream();
-            if (inputStream == null) {
-                LOG.debug("Null error stream");
-            } else {
-                byte[] arr = Streams.readAll(inputStream);
-                String s = new String(arr);
-                LOG.debug("Error response " + s);
-            }
-
-
-            /*if(responseCode >= 200 && responseCode <= 202) {
-                for(inputStream = con.getInputStream(); (json = inputStream.read()) > 0; response = response + (char)json) {
-                    ;
-                }
-                LOG.debug("Read response " + response);
-            } else {
-                inputStream = con.getErrorStream();
-
-                if (inputStream != null) {
-                    LOG.debug("NUll error stream");
-                } else {
-                    byte[] arr = Streams.readAll(inputStream);
-                    String s = new String(arr);
-                    LOG.debug("Error response " + s);
-                }
-            }*/
-
-
-            con.disconnect();
-            JSONObject json1 = new JSONObject(response.toString());
-            token = json1.getString("access_token");
-        } catch (Exception var15) {
-            LOG.error("Error getting Keycloak token for UPRN call", var15);
-        }
-
-        return token;
     }
 
     /**
