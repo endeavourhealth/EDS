@@ -5163,7 +5163,7 @@ public abstract class SpecialRoutines {
 
             //test old way
             LOG.debug("Doing UORN >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
-            for (int i=0; i<1; i++) {
+            for (int i=0; i<80; i++) {
                 try {
                     String csv = UPRN.getAdrec(adrec, ids);
                     LOG.debug("Got response " + csv);
@@ -5173,7 +5173,7 @@ public abstract class SpecialRoutines {
                     break;
                 }
                 LOG.debug("");
-                Thread.sleep(5 * 1000);
+                Thread.sleep(10 * 1000);
             }
 
             LOG.info("Finished Testing UPRN Token");
