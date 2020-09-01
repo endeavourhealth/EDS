@@ -36,10 +36,11 @@
     </div>
     <div class="module-body">
 
-
         <div class="panel panel-primary">
             <div class="panel-body">
-                <form class="form-horizontal" role="form">
+                <div class="row">
+
+<!--                <form class="form-horizontal" role="form">-->
                     <div class="form-group">
 
 
@@ -57,7 +58,8 @@
                         </div>
 
                     </div>
-                </form>
+<!--                </form>-->
+                </div>
             </div>
         </div>
 
@@ -68,8 +70,8 @@
                         <thead>
                         <tr>
                             <th class="col-md-2">Configuration</th>
-                            <th class="col-md-3">Third Party->SFTP Reader</th>
-                            <th class="col-md-6">SFTP Reader->Messaging API</th>
+                            <th class="col-md-4">Third Party->SFTP Reader</th>
+                            <th class="col-md-5">SFTP Reader->Messaging API</th>
                             <th class="col-md-1">Actions</th>
                             <!--<th class="col-md-6">Actions</th>-->
                         </tr>
@@ -78,7 +80,11 @@
                         <tr class="hover-box show-child-on-hover" *ngFor="let configuration of getConfigurationsToDisplay()">
                             <td>
                                 <div>{{configuration.configurationId}}</div>
-                                <div><em>{{configuration.friendlyName}}</em></div>
+                                <div class="text-muted">
+                                    {{configuration.friendlyName}}
+                                </div>
+                                <!--<span *ngIf="queueReaderStatusService.showPublisherConfig" class="text-muted"> {{status.isBusyPublisherConfigName}}</span>
+                                <div><em>{{configuration.friendlyName}}</em></div>-->
                             </td>
 
                             <td>
@@ -106,7 +112,7 @@
                                         <div *ngIf="status.latestPollingException">
                                             <span class="label label-danger">Warning</span>
                                             &nbsp;Error on last polling attempt:
-                                            <pre width="70">{{status.latestPollingException}}</pre>
+                                            <pre style="max-width:450px;" width="70">{{status.latestPollingException}}</pre>
                                         </div>
 
                                         <div *ngIf="status.latestBatchId">

@@ -54,7 +54,7 @@ export class SftpReaderComponent {
 
         vm.sftpReaderService.getSftpReaderInstances().subscribe(
             (result) => {
-                vm.configurations = result;
+                vm.configurations = linq(result).OrderBy(s => s.configurationId).ToArray();
                 vm.refreshStatuses();
             },
             (error) => {
@@ -86,6 +86,19 @@ export class SftpReaderComponent {
                 vm.refreshingStatusMap[configurationId] = false;
                 vm.calculateIfWarning(result);
                 vm.statusMap[configurationId] = result;
+
+                /*result.latestPollingException = 'org.endeavourhealth.sftpreader.model.exceptions.SftpReaderException: Exception occurred while downloading files - cannot continue or may process batches out of order\r\n' +
+                '    at org.endeavourhealth.sftpreader.SftpReaderTask.downloadNewFiles(SftpReaderTask.java:415)\r\n' +
+                '    at org.endeavourhealth.sftpreader.SftpReaderTask.run(SftpReaderTask.java:74)\r\n' +
+                '    at java.lang.Thread.run(Thread.java:748)\r\n' +
+                'Caused by: 2: No such file\r\n' +
+                '    at com.jcraft.jsch.ChannelSftp.throwStatusError(ChannelSftp.java:2873)\r\n' +
+                '    at com.jcraft.jsch.ChannelSftp._realpath(ChannelSftp.java:2367)\r\n' +
+                '    at com.jcraft.jsch.ChannelSftp.cd(ChannelSftp.java:342)\r\n' +
+                '    at org.endeavourhealth.sftpreader.sources.SftpConnection.getFileList(SftpConnection.java:127)\r\n' +
+                '    at org.endeavourhealth.sftpreader.SftpReaderTask.getFileList(SftpReaderTask.java:452)\r\n' +
+                '    at org.endeavourhealth.sftpreader.SftpReaderTask.downloadNewFiles(SftpReaderTask.java:368)\r\n' +
+                '... 2 more';*/
             },
             (error) => {
 
