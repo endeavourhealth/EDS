@@ -21,14 +21,15 @@ export class SftpReaderComponent {
     configurations: SftpReaderConfiguration[];
     refreshingStatusMap: {};
     statusMap: {};
-
-    filterInstanceName: string;
-    statuses: SftpReaderChannelStatus[];
     statusesLastRefreshed: Date;
-    resultStr: string;
-    showRawJson: boolean;
-    refreshingStatus: boolean;
     showWarningsOnly: boolean;
+    filterInstanceName: string;
+
+    //statuses: SftpReaderChannelStatus[];
+
+    //resultStr: string;
+    //showRawJson: boolean;
+    //refreshingStatus: boolean;
 
     constructor(private $modal: NgbModal,
                 protected sftpReaderService: SftpReaderService,
@@ -40,13 +41,14 @@ export class SftpReaderComponent {
 
     ngOnInit() {
         var vm = this;
-        vm.filterInstanceName = 'active';
+        vm.filterInstanceName = '';
         vm.showWarningsOnly = true;
         vm.refreshInstances();
     }
 
     refreshInstances() {
         var vm = this;
+        vm.configurations = null;
         vm.refreshingStatusMap = {};
         vm.statusMap = {};
 
@@ -133,32 +135,43 @@ export class SftpReaderComponent {
         return ret;
     }
 
-    /*getStatusesToDisplay() {
+    getConfigurationsToDisplay(): SftpReaderConfiguration[] {
         var vm = this;
-        if (!vm.showWarningsOnly) {
-            return vm.statuses;
+        if (!vm.showWarningsOnly
+            || !vm.configurations) { //if not retrieved yet
+            return vm.configurations;
 
         } else {
             var ret = [];
             var i;
-            for (i=0; i<vm.statuses.length; i++) {
-                var status = vm.statuses[i];
+            for (i=0; i<vm.configurations.length; i++) {
+                var configuration = vm.configurations[i];
+                //console.log('checking configuration at ' + i);
+                //console.log(configuration);
 
-                //any of these count as a warning
-                if (vm.isLastPollAttemptTooOld(status)
-                    || !status.latestPollingStart
-                    || status.latestPollingException
-                    || vm.isLastExtractTooOld(status)
-                    || !status.latestBatchId
-                    || vm.filterOrgs(status.completeBatchContents, false).length > 0) {
-
-                    ret.push(status);
+                if (vm.filterInstanceName) {
+                    var configInstanceName = configuration.instanceName;
+                    if (vm.filterInstanceName != configInstanceName) {
+                        continue;
+                    }
                 }
+
+                //always include configurations until we've got data back for them
+                if (!vm.isRefreshing(configuration)) {
+
+                    var configurationId = configuration.configurationId;
+                    var status = vm.statusMap[configurationId];
+                    if (!status.warning) { //if the warning boolean is false, skip it
+                        continue;
+                    }
+                }
+
+                ret.push(configuration);
             }
             return ret;
         }
 
-    }*/
+    }
 
     filterOrgs(arr: SftpReaderBatchContents[], wantOk: boolean): SftpReaderBatchContents[] {
         var ret = [];
@@ -350,5 +363,25 @@ export class SftpReaderComponent {
         var configurationId = status.id;
         var batchId = status.completeBatchId;
         SftpReaderOrgsDialog.open(vm.$modal, configurationId, batchId, orgs);
+    }
+
+    getInstanceNames(): string[] {
+        var vm = this;
+
+        var ret = [];
+
+        if (vm.configurations) {
+            for (var i=0; i<vm.configurations.length; i++) {
+                var configuration = vm.configurations[i];
+                var instanceName = configuration.instanceName;
+                if (ret.indexOf(instanceName) == -1) {
+                    ret.push(instanceName);
+                }
+            }
+        }
+
+        ret.sort();
+
+        return ret;
     }
 }

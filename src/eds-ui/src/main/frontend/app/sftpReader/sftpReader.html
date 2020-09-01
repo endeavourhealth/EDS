@@ -36,6 +36,31 @@
     </div>
     <div class="module-body">
 
+
+        <div class="panel panel-primary">
+            <div class="panel-body">
+                <form class="form-horizontal" role="form">
+                    <div class="form-group">
+
+
+                        <div class="col-sm-2">
+                            <label for="showWarningsOnly" class="control-label">Show Warnings Only</label>
+                            <input type="checkbox" id="showWarningsOnly" [(ngModel)]="showWarningsOnly" name="showWarningsOnly">
+                        </div>
+
+                        <div class="col-sm-4">
+                            <label for="filterInstanceName" class="control-label">Instance</label>
+                            <select id="filterInstanceName" name="filterInstanceName" class="form-control" [(ngModel)]="filterInstanceName">
+                                <option value="">All</option>
+                                <option *ngFor="let instanceName of getInstanceNames()" value="{{instanceName}}">{{instanceName}}</option>
+                            </select>
+                        </div>
+
+                    </div>
+                </form>
+            </div>
+        </div>
+
         <div class="row">
             <div class="col-md-12">
                 <div class="table">
@@ -50,7 +75,7 @@
                         </tr>
                         </thead>
                         <tbody>
-                        <tr class="hover-box show-child-on-hover" *ngFor="let configuration of configurations">
+                        <tr class="hover-box show-child-on-hover" *ngFor="let configuration of getConfigurationsToDisplay()">
                             <td>
                                 <div>{{configuration.configurationId}}</div>
                                 <div><em>{{configuration.friendlyName}}</em></div>
@@ -81,7 +106,7 @@
                                         <div *ngIf="status.latestPollingException">
                                             <span class="label label-danger">Warning</span>
                                             &nbsp;Error on last polling attempt:
-                                            <pre>{{status.latestPollingException}}</pre>
+                                            <pre width="70">{{status.latestPollingException}}</pre>
                                         </div>
 
                                         <div *ngIf="status.latestBatchId">

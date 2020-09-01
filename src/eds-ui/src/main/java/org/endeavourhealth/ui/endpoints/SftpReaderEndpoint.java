@@ -260,14 +260,14 @@ public class SftpReaderEndpoint extends AbstractEndpoint {
             if (ConnectionManager.isPostgreSQL(connection)) {
                 sql = "SELECT c.configuration_id, c.configuration_friendly_name, i.instance_name, p.dt_paused "
                     + "FROM configuration.configuration c "
-                    + "LEFT OUTER JOIN configuration.instance_configuration i "
+                    + "INNER JOIN configuration.instance_configuration i "
                     + "ON i.configuration_id = c.configuration_id "
                     + "LEFT OUTER JOIN configuration.configuration_paused_notifying p "
                     + "ON p.configuration_id = c.configuration_id";
             } else {
                 sql = "SELECT c.configuration_id, c.configuration_friendly_name, i.instance_name, p.dt_paused "
                     + "FROM configuration c "
-                    + "LEFT OUTER JOIN instance_configuration i "
+                    + "INNER JOIN instance_configuration i "
                     + "ON i.configuration_id = c.configuration_id "
                     + "LEFT OUTER JOIN configuration_paused_notifying p "
                     + "ON p.configuration_id = c.configuration_id";
@@ -289,6 +289,7 @@ public class SftpReaderEndpoint extends AbstractEndpoint {
                 }
 
                 ObjectNode obj = root.addObject();
+                obj.put("instanceName", instanceName);
                 obj.put("configurationId", configurationId);
                 obj.put("friendlyName", friendlyName);
                 if (tsPaused != null) {
