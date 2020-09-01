@@ -248,7 +248,7 @@ public class FrailtyApiEndpoint extends AbstractEndpoint {
                     }
 
                 } else {
-                    if (responseBody.contains("No patient record could be found")) {
+                    if (responseBody != null && responseBody.contains("No patient record could be found")) {
                         stat.incrementErrorNotMatched();
                     } else {
                         stat.incrementErrorOther();

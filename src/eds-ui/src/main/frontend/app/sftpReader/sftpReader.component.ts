@@ -5,11 +5,12 @@ import {Component} from "@angular/core";
 import {Subscription} from "rxjs/Subscription";
 import {ServiceService} from "../services/service.service";
 import {SftpReaderService} from "./sftpReader.service";
-import {SftpReaderChannelStatus} from "./SftpReaderChannelStatus";
-import {SftpReaderBatchContents} from "./SftpReaderBatchContents";
+import {SftpReaderChannelStatus} from "./models/SftpReaderChannelStatus";
+import {SftpReaderBatchContents} from "./models/SftpReaderBatchContents";
 import {OdsSearchDialog} from "../services/odsSearch.dialog";
-import {SftpReaderInstance} from "./SftpReaderInstance";
 import {SftpReaderHistoryDialog} from "./sftpReaderHistory.dialog";
+import {SftpReaderConfiguration} from "./models/SftpReaderConfiguration";
+import {SftpReaderOrgsDialog} from "./sftpReaderOrgs.dialog";
 
 @Component({
     template : require('./sftpReader.html')
@@ -17,7 +18,10 @@ import {SftpReaderHistoryDialog} from "./sftpReaderHistory.dialog";
 export class SftpReaderComponent {
 
     //resultStr: string;
-    instanceNames: SftpReaderInstance[];
+    configurations: SftpReaderConfiguration[];
+    refreshingStatusMap: {};
+    statusMap: {};
+
     filterInstanceName: string;
     statuses: SftpReaderChannelStatus[];
     statusesLastRefreshed: Date;
@@ -39,14 +43,17 @@ export class SftpReaderComponent {
         vm.filterInstanceName = 'active';
         vm.showWarningsOnly = true;
         vm.refreshInstances();
-        vm.refreshStatus();
     }
 
     refreshInstances() {
         var vm = this;
+        vm.refreshingStatusMap = {};
+        vm.statusMap = {};
+
         vm.sftpReaderService.getSftpReaderInstances().subscribe(
             (result) => {
-                vm.instanceNames = result;
+                vm.configurations = result;
+                vm.refreshStatuses();
             },
             (error) => {
                 vm.logger.error('Failed get SFTP Reader instances', error, 'SFTP Reader');
@@ -54,35 +61,79 @@ export class SftpReaderComponent {
         )
     }
 
-    refreshStatus() {
+    refreshStatuses() {
         var vm = this;
-        vm.refreshingStatus = true;
-        //console.log('vm.refreshingStatus = ' + vm.refreshingStatus);
+        vm.statusesLastRefreshed = new Date();
 
-        vm.sftpReaderService.getSftpReaderStatus(vm.filterInstanceName).subscribe(
+        for (var i = 0; i < vm.configurations.length; i++) {
+            var configuration = vm.configurations[i];
+            vm.refreshStatus(configuration);
+        }
+    }
+
+    refreshStatus(configuration: SftpReaderConfiguration) {
+        var vm = this;
+
+        var configurationId = configuration.configurationId;
+
+        vm.refreshingStatusMap[configurationId] = true;
+
+        vm.sftpReaderService.getSftpReaderStatus(configurationId).subscribe(
             (result) => {
-                vm.refreshingStatus = false;
-                //console.log('vm.refreshingStatus = ' + vm.refreshingStatus);
 
-                vm.logger.success('Successfully got SFTP Reader status', 'SFTP Reader Status');
-                vm.statuses = result;
-                vm.statusesLastRefreshed = new Date();
-
-                vm.resultStr = JSON.stringify(result, null, 2);
-
-                //console.log('received SFTP Reader status');
-                //console.log(result);
+                vm.refreshingStatusMap[configurationId] = false;
+                vm.calculateIfWarning(result);
+                vm.statusMap[configurationId] = result;
             },
             (error) => {
-                vm.refreshingStatus = false;
-                //console.log('vm.refreshingStatus = ' + vm.refreshingStatus);
 
-                vm.logger.error('Failed get SFTP Reader status', error, 'SFTP Reader Status');
+                vm.refreshingStatusMap[configurationId] = false;
+                vm.logger.error('Failed to get status for ' + configurationId, error);
             }
         )
     }
 
-    getStatusesToDisplay() {
+    calculateIfWarning(status: SftpReaderChannelStatus) {
+        var vm = this;
+
+        //any of these count as a warning
+        if (vm.isLastPollAttemptTooOld(status)
+            || !status.latestPollingStart
+            || status.latestPollingException
+            || vm.isLastExtractTooOld(status)
+            || !status.latestBatchId
+            || vm.filterOrgs(status.completeBatchContents, false).length > 0) {
+
+            status.warning = true;
+        }
+    }
+
+    isRefreshing(configuration: SftpReaderConfiguration): boolean {
+        var vm = this;
+
+        var configurationId = configuration.configurationId;
+        return vm.refreshingStatusMap[configurationId];
+    }
+
+    /**
+     * returns the status for a configuration. Note this uses an array so that we can use the angular
+     * for loop, and avoid having to call this function dozens of times.
+     */
+    getStatusToDisplay(configuration: SftpReaderConfiguration): SftpReaderChannelStatus[] {
+        var vm = this;
+
+        var ret = [];
+
+        var configurationId = configuration.configurationId;
+        var status = vm.statusMap[configurationId];
+        if (status) {
+            ret.push(status);
+        }
+
+        return ret;
+    }
+
+    /*getStatusesToDisplay() {
         var vm = this;
         if (!vm.showWarningsOnly) {
             return vm.statuses;
@@ -107,7 +158,7 @@ export class SftpReaderComponent {
             return ret;
         }
 
-    }
+    }*/
 
     filterOrgs(arr: SftpReaderBatchContents[], wantOk: boolean): SftpReaderBatchContents[] {
         var ret = [];
@@ -122,13 +173,13 @@ export class SftpReaderComponent {
         return ret;
     }
 
-    getPanelClass(status: SftpReaderChannelStatus): string {
+    /*getPanelClass(status: SftpReaderChannelStatus): string {
         if (status.instanceName) {
             return "panel panel-primary";
         } else {
             return "panel panel-info";
         }
-    }
+    }*/
 
     odsSearch() {
         var vm = this;
@@ -173,9 +224,9 @@ export class SftpReaderComponent {
         return lastExtractDiffMs > dataFrequencyMs;
     }
 
-    viewHistory(status: SftpReaderChannelStatus) {
+    viewHistory(configuration: SftpReaderConfiguration) {
         var vm = this;
-        SftpReaderHistoryDialog.open(vm.$modal, status);
+        SftpReaderHistoryDialog.open(vm.$modal, configuration);
     }
 
 
@@ -199,7 +250,7 @@ export class SftpReaderComponent {
         )
     }*/
 
-    selectAllBatchSpitErrors(status: SftpReaderChannelStatus) {
+    /*selectAllBatchSpitErrors(status: SftpReaderChannelStatus) {
         var vm = this;
 
         for (var i=0; i<status.completeBatchContents.length; i++) {
@@ -250,5 +301,54 @@ export class SftpReaderComponent {
                 vm.logger.error('Failed to ignore batch split', error, 'SFTP Reader Error');
             }
         )
+    }*/
+
+    togglePauseAll() {
+        var vm = this;
+        vm.sftpReaderService.togglePauseAll().subscribe(
+            (result) => {
+                vm.refreshInstances();
+            },
+            (error) => {
+                vm.logger.error('Failed to toggle pause', error);
+            }
+        );
+    }
+
+    togglePause(configuration: SftpReaderConfiguration) {
+        var vm = this;
+        var configurationId = configuration.configurationId;
+        vm.sftpReaderService.togglePause(configurationId).subscribe(
+            (result) => {
+                vm.refreshInstances();
+            },
+            (error) => {
+                vm.logger.error('Failed to toggle pause', error);
+            }
+        );
+    }
+
+    viewOrgs(status: SftpReaderChannelStatus) {
+        var vm = this;
+        vm.viewOrgsImpl(status, status.completeBatchContents);
+    }
+
+    viewOrgsOk(status: SftpReaderChannelStatus) {
+        var vm = this;
+        var orgsOk = vm.filterOrgs(status.completeBatchContents, true);
+        vm.viewOrgsImpl(status, orgsOk);
+    }
+
+    viewOrgsError(status: SftpReaderChannelStatus) {
+        var vm = this;
+        var orgsError = vm.filterOrgs(status.completeBatchContents, false);
+        vm.viewOrgsImpl(status, orgsError);
+    }
+
+    private viewOrgsImpl(status: SftpReaderChannelStatus, orgs: SftpReaderBatchContents[]) {
+        var vm = this;
+        var configurationId = status.id;
+        var batchId = status.completeBatchId;
+        SftpReaderOrgsDialog.open(vm.$modal, configurationId, batchId, orgs);
     }
 }

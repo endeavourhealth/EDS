@@ -28,10 +28,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Timestamp;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 @Path("/sftpReader")
 public class SftpReaderEndpoint extends AbstractEndpoint {
@@ -64,12 +61,12 @@ public class SftpReaderEndpoint extends AbstractEndpoint {
     @Consumes(MediaType.APPLICATION_JSON)
     @Timed(absolute = true, name="SftpReaderEndpoint.status")
     @Path("/status")
-    public Response getChannelStatus(@Context SecurityContext sc, @QueryParam("instance") String instanceName) throws Exception {
+    public Response getChannelStatus(@Context SecurityContext sc, @QueryParam("configurationId") String configurationId) throws Exception {
         super.setLogbackMarkers(sc);
 
-        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load, "Get SFTP Reader Instance Status");
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load, "Get SFTP Reader Instance Status", "ConfigurationId", configurationId);
 
-        String ret = getSftpReaderStatus(instanceName);
+        String ret = getSftpReaderStatus(configurationId);
 
         clearLogbackMarkers();
 
@@ -261,25 +258,42 @@ public class SftpReaderEndpoint extends AbstractEndpoint {
 
             String sql = null;
             if (ConnectionManager.isPostgreSQL(connection)) {
-                sql = "SELECT instance_name FROM configuration.instance ORDER BY instance_name";
+                sql = "SELECT c.configuration_id, c.configuration_friendly_name, i.instance_name, p.dt_paused "
+                    + "FROM configuration.configuration c "
+                    + "LEFT OUTER JOIN configuration.instance_configuration i "
+                    + "ON i.configuration_id = c.configuration_id "
+                    + "LEFT OUTER JOIN configuration.configuration_paused_notifying p "
+                    + "ON p.configuration_id = c.configuration_id";
             } else {
-                sql = "SELECT instance_name FROM instance ORDER BY instance_name";
+                sql = "SELECT c.configuration_id, c.configuration_friendly_name, i.instance_name, p.dt_paused "
+                    + "FROM configuration c "
+                    + "LEFT OUTER JOIN instance_configuration i "
+                    + "ON i.configuration_id = c.configuration_id "
+                    + "LEFT OUTER JOIN configuration_paused_notifying p "
+                    + "ON p.configuration_id = c.configuration_id";
             }
-
             ps = connection.prepareStatement(sql);
 
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
                 int col = 1;
+                String configurationId = rs.getString(col++);
+                String friendlyName = rs.getString(col++);
                 String instanceName = rs.getString(col++);
+                Timestamp tsPaused = rs.getTimestamp(col++);
 
                 //configurations that are no longer in use are assigned to a special instance name
-                if (instanceName.equals("NOT_USED")) {
+                if (instanceName == null
+                    || instanceName.equals("NOT_USED")) {
                     continue;
                 }
 
                 ObjectNode obj = root.addObject();
-                obj.put("name", instanceName);
+                obj.put("configurationId", configurationId);
+                obj.put("friendlyName", friendlyName);
+                if (tsPaused != null) {
+                    obj.put("dtPaused", tsPaused.getTime());
+                }
             }
             ps.close();
 
@@ -297,10 +311,10 @@ public class SftpReaderEndpoint extends AbstractEndpoint {
     /**
      * all the below should be moved to core or similar if anything like it is needed elsewhere
      */
-    private String getSftpReaderStatus(String filterInstanceName) throws Exception {
+    private String getSftpReaderStatus(String configurationId) throws Exception {
 
         ObjectMapper mapper = new ObjectMapper();
-        ArrayNode root = new ArrayNode(mapper.getNodeFactory());
+        ObjectNode root = new ObjectNode(mapper.getNodeFactory());
 
         EntityManager entityManager = ConnectionManager.getSftpReaderEntityManager();
         PreparedStatement ps = null;
@@ -310,325 +324,286 @@ public class SftpReaderEndpoint extends AbstractEndpoint {
 
             String sql = null;
             if (ConnectionManager.isPostgreSQL(connection)) {
-                sql = "SELECT c.configuration_id, c.poll_frequency_seconds, c.configuration_friendly_name, i.instance_name, t.data_frequency_days"
+                sql = "SELECT c.poll_frequency_seconds, t.data_frequency_days"
                     + " FROM configuration.configuration c"
-                    + " LEFT OUTER JOIN configuration.instance_configuration i"
-                    + " ON c.configuration_id = i.configuration_id"
                     + " LEFT OUTER JOIN configuration.interface_type t"
                     + " ON c.interface_type_id = t.interface_type_id"
-                    + " ORDER BY c.configuration_friendly_name";
+                    + " WHERE c.configuration_id = ?";
             } else {
-                sql = "SELECT c.configuration_id, c.poll_frequency_seconds, c.configuration_friendly_name, i.instance_name, t.data_frequency_days"
+                sql = "SELECT c.poll_frequency_seconds, t.data_frequency_days"
                         + " FROM configuration c"
-                        + " LEFT OUTER JOIN instance_configuration i"
-                        + " ON c.configuration_id = i.configuration_id"
                         + " LEFT OUTER JOIN interface_type t"
                         + " ON c.interface_type_id = t.interface_type_id"
-                        + " ORDER BY c.configuration_friendly_name";
+                        + " WHERE c.configuration_id = ?";
             }
 
             ps = connection.prepareStatement(sql);
+            ps.setString(1, configurationId);
 
             ResultSet rs = ps.executeQuery();
-            while (rs.next()) {
-                int col = 1;
-                String id = rs.getString(col++);
-                int freq = rs.getInt(col++);
-                String name = rs.getString(col++);
-                String instanceName = rs.getString(col++);
-                int dataFrequencyDays = rs.getInt(col++);
+            rs.next();
 
-                if (filterInstanceName.equalsIgnoreCase("all")) {
-                    //include all
+            int col = 1;
+            int freq = rs.getInt(col++);
+            int dataFrequencyDays = rs.getInt(col++);
 
-                } else if (filterInstanceName.equals("active")) {
-                    if (Strings.isNullOrEmpty(instanceName)
-                            || instanceName.equals("NOT_USED")) {
-                        continue;
-                    }
+            root.put("id", configurationId);
+            root.put("pollFrequencySeconds", freq);
+            root.put("dataFrequencyDays", dataFrequencyDays);
 
-                } else if (filterInstanceName.equals("inactive")) {
-                    if (!Strings.isNullOrEmpty(instanceName)
-                            && !instanceName.equals("NOT_USED")) {
-                        continue;
-                    }
-
-                } else {
-                    if (instanceName == null
-                            || !instanceName.equalsIgnoreCase(filterInstanceName)) {
-                        continue;
-                    }
-                }
-
-                ObjectNode child = root.addObject();
-                child.put("id", id);
-                child.put("name", name);
-                child.put("pollFrequencySeconds", freq);
-                child.put("dataFrequencyDays", dataFrequencyDays);
-                child.put("instanceName", instanceName);
-            }
             ps.close();
 
-            //for each channel found, get more info
-            for (int i=0; i<root.size(); i++) {
-                ObjectNode channelNode = (ObjectNode)root.get(i);
-                String id = channelNode.get("id").asText();
 
-                //get the latest polling attempt
+            //get the latest polling attempt
+            if (ConnectionManager.isPostgreSQL(connection)) {
+                sql = "SELECT attempt_started, attempt_finished, exception_text, files_downloaded,"
+                        + " batches_completed, batch_splits_notified_ok, batch_splits_notified_failure"
+                        + " FROM log.configuration_polling_attempt"
+                        + " WHERE configuration_id = ?"
+                        + " ORDER BY attempt_started DESC"
+                        + " LIMIT 1";
+            } else {
+                sql = "SELECT attempt_started, attempt_finished, exception_text, files_downloaded,"
+                        + " batches_completed, batch_splits_notified_ok, batch_splits_notified_failure"
+                        + " FROM configuration_polling_attempt"
+                        + " WHERE configuration_id = ?"
+                        + " ORDER BY attempt_started DESC"
+                        + " LIMIT 1";
+            }
+            ps = connection.prepareStatement(sql);
+            ps.setString(1, configurationId);
+
+            rs = ps.executeQuery();
+            if (rs.next()) {
+                col = 1;
+                Date attemptStartDate = new Date(rs.getTimestamp(col++).getTime());
+                Date attemptEndDate = new Date(rs.getTimestamp(col++).getTime());
+                String exceptionText = rs.getString(col++);
+                int filesDownloaded = rs.getInt(col++);
+                int batchesCompleted = rs.getInt(col++);
+                int batchSplitsNotifiedOk = rs.getInt(col++);
+                int batchSplitsNotifiedFailure = rs.getInt(col++);
+
+                root.put("latestPollingStart", attemptStartDate.getTime());
+                root.put("latestPollingEnd", attemptEndDate.getTime());
+                root.put("latestPollingException", exceptionText);
+                root.put("latestPollingFilesDownloaded", filesDownloaded);
+                root.put("latestPollingBatchesCompleted", batchesCompleted);
+                root.put("latestPollingBatchSplitsNotifiedOk", batchSplitsNotifiedOk);
+                root.put("latestPollingBatchSplitsNotifiedFailure", batchSplitsNotifiedFailure);
+            }
+
+            ps.close();
+
+
+            //get the latest batch received
+            if (ConnectionManager.isPostgreSQL(connection)) {
+                sql = "select b.batch_id, b.batch_identifier, b.insert_date, b.sequence_number, b.is_complete, count(1), sum(f.remote_size_bytes)"
+                        + " from log.batch b"
+                        + " left outer join log.batch_file f"
+                        + " on f.batch_id = b.batch_id"
+                        + " where b.configuration_id = ?"
+                        + " group by b.batch_id, b.batch_identifier, b.insert_date, b.sequence_number, b.is_complete"
+                        + " order by b.insert_date desc"
+                        + " limit 1";
+            } else {
+                sql = "select b.batch_id, b.batch_identifier, b.insert_date, b.sequence_number, b.is_complete, count(1), sum(f.remote_size_bytes)"
+                        + " from batch b"
+                        + " left outer join batch_file f"
+                        + " on f.batch_id = b.batch_id"
+                        + " where b.configuration_id = ?"
+                        + " group by b.batch_id, b.batch_identifier, b.insert_date, b.sequence_number, b.is_complete"
+                        + " order by b.insert_date desc"
+                        + " limit 1";
+            }
+            ps = connection.prepareStatement(sql);
+            ps.setString(1, configurationId);
+
+            rs = ps.executeQuery();
+            if (rs.next()) {
+                col = 1;
+                int batchId = rs.getInt(col++);
+                String batchIdentifier = rs.getString(col++);
+                Date insertDate = new Date(rs.getTimestamp(col++).getTime());
+                int sequenceNumber = rs.getInt(col++);
+                boolean isComplete = rs.getBoolean(col++);
+                int fileCount = rs.getInt(col++);
+                long extractSize = rs.getLong(col++);
+
+                String totalSizeReadable = FileUtils.byteCountToDisplaySize(extractSize);
+
+                root.put("latestBatchId", batchId);
+                root.put("latestBatchIdentifier", batchIdentifier);
+                root.put("latestBatchReceived", insertDate.getTime());
+                root.put("latestBatchSequenceNumber", sequenceNumber);
+                root.put("latestBatchComplete", isComplete);
+                root.put("latestBatchFileCount", fileCount);
+                root.put("latestBatchSizeBytes", totalSizeReadable);
+            }
+
+            ps.close();
+
+            //find the latest complete batch
+            if (ConnectionManager.isPostgreSQL(connection)) {
+                sql = "SELECT batch_id, batch_identifier, insert_date, sequence_number"
+                        + " FROM log.batch"
+                        + " WHERE configuration_id = ? AND is_complete = true"
+                        + " ORDER BY sequence_number desc"
+                        + " LIMIT 1";
+            } else {
+                sql = "SELECT batch_id, batch_identifier, insert_date, sequence_number"
+                        + " FROM batch"
+                        + " WHERE configuration_id = ? AND is_complete = true"
+                        + " ORDER BY sequence_number desc"
+                        + " LIMIT 1";
+            }
+            ps = connection.prepareStatement(sql);
+            ps.setString(1, configurationId);
+
+            Integer latestCompleteBatchId = null;
+
+            rs = ps.executeQuery();
+            if (rs.next()) {
+                col = 1;
+                latestCompleteBatchId = rs.getInt(col++);
+                String batchIdentifier = rs.getString(col++);
+                Date insertDate = new Date(rs.getTimestamp(col++).getTime());
+                int sequenceNumber = rs.getInt(col++);
+
+                root.put("completeBatchId", latestCompleteBatchId);
+                root.put("completeBatchIdentifier", batchIdentifier);
+                root.put("completeBatchReceived", insertDate.getTime());
+                root.put("completeBatchSequenceNumber", sequenceNumber);
+            }
+
+            ps.close();
+
+            if (latestCompleteBatchId != null) {
+
+                //get any errors for orgs in this configuration - since errors posting to the Messaging API
+                //will most likely be on past exchanges and be blocking the latest exchange
+                Map<String, String> hmErrorsPerOrg = new HashMap<>();
+
                 if (ConnectionManager.isPostgreSQL(connection)) {
-                    sql = "SELECT attempt_started, attempt_finished, exception_text, files_downloaded,"
-                            + " batches_completed, batch_splits_notified_ok, batch_splits_notified_failure"
-                            + " FROM log.configuration_polling_attempt"
-                            + " WHERE configuration_id = ?"
-                            + " ORDER BY attempt_started DESC"
-                            + " LIMIT 1";
+                    sql = "SELECT organisation_id, error_text"
+                            + " FROM log.batch_split bs"
+                            + " INNER JOIN log.batch b"
+                            + " ON b.batch_id = bs.batch_id"
+                            + " INNER JOIN log.notification_message m"
+                            + " on m.batch_id = bs.batch_id"
+                            + " and m.batch_split_id = bs.batch_split_id"
+                            + " and not exists ("
+                            + " select 1"
+                            + " from log.notification_message m2"
+                            + " where m2.batch_id = m.batch_id"
+                            + " and m2.batch_split_id = m.batch_split_id"
+                            + " and m2.timestamp < m.timestamp"
+                            + " )"
+                            + " WHERE b.configuration_id = ?"
+                            + " AND b.is_complete = true"
+                            + " AND bs.have_notified = false"
+                            + " and m.error_text is not null";
                 } else {
-                    sql = "SELECT attempt_started, attempt_finished, exception_text, files_downloaded,"
-                            + " batches_completed, batch_splits_notified_ok, batch_splits_notified_failure"
-                            + " FROM configuration_polling_attempt"
-                            + " WHERE configuration_id = ?"
-                            + " ORDER BY attempt_started DESC"
-                            + " LIMIT 1";
+                    sql = "SELECT organisation_id, error_text"
+                            + " FROM batch_split bs"
+                            + " INNER JOIN batch b"
+                            + " ON b.batch_id = bs.batch_id"
+                            + " INNER JOIN notification_message m"
+                            + " on m.batch_id = bs.batch_id"
+                            + " and m.batch_split_id = bs.batch_split_id"
+                            + " and not exists ("
+                            + " select 1"
+                            + " from notification_message m2"
+                            + " where m2.batch_id = m.batch_id"
+                            + " and m2.batch_split_id = m.batch_split_id"
+                            + " and m2.timestamp < m.timestamp"
+                            + " )"
+                            + " WHERE b.configuration_id = ?"
+                            + " AND b.is_complete = true"
+                            + " AND bs.have_notified = false"
+                            + " and m.error_text is not null";
                 }
                 ps = connection.prepareStatement(sql);
-
-                ps.setString(1, id);
+                ps.setString(1, configurationId);
 
                 rs = ps.executeQuery();
-                if (rs.next()) {
-                    int col = 1;
-                    Date attemptStartDate = new Date(rs.getTimestamp(col++).getTime());
-                    Date attemptEndDate = new Date(rs.getTimestamp(col++).getTime());
-                    String exceptionText = rs.getString(col++);
-                    int filesDownloaded = rs.getInt(col++);
-                    int batchesCompleted = rs.getInt(col++);
-                    int batchSplitsNotifiedOk = rs.getInt(col++);
-                    int batchSplitsNotifiedFailure = rs.getInt(col++);
 
-                    channelNode.put("latestPollingStart", attemptStartDate.getTime());
-                    channelNode.put("latestPollingEnd", attemptEndDate.getTime());
-                    channelNode.put("latestPollingException", exceptionText);
-                    channelNode.put("latestPollingFilesDownloaded", filesDownloaded);
-                    channelNode.put("latestPollingBatchesCompleted", batchesCompleted);
-                    channelNode.put("latestPollingBatchSplitsNotifiedOk", batchSplitsNotifiedOk);
-                    channelNode.put("latestPollingBatchSplitsNotifiedFailure", batchSplitsNotifiedFailure);
+                while (rs.next()) {
+
+                    col = 1;
+                    String orgId = rs.getString(col++);
+                    String notificationError = rs.getString(col++);
+
+                    hmErrorsPerOrg.put(orgId, notificationError);
                 }
 
                 ps.close();
 
-
-                //get the latest batch received
+                //get the batch splits for the complete batch
                 if (ConnectionManager.isPostgreSQL(connection)) {
-                    sql = "select b.batch_id, b.batch_identifier, b.insert_date, b.sequence_number, b.is_complete, count(1), sum(f.remote_size_bytes)"
-                            + " from log.batch b"
-                            + " left outer join log.batch_file f"
-                            + " on f.batch_id = b.batch_id"
-                            + " where b.configuration_id = ?"
-                            + " group by b.batch_id, b.batch_identifier, b.insert_date, b.sequence_number, b.is_complete"
-                            + " order by b.insert_date desc"
-                            + " limit 1";
+                    sql = "select s.batch_split_id, s.organisation_id, s.have_notified, s.is_bulk, m.inbound, m.error_text"
+                            + " from log.batch_split s"
+                            + " left outer join log.notification_message m"
+                            + " on m.batch_id = s.batch_id"
+                            + " and m.batch_split_id = s.batch_split_id"
+                            + " and not exists ("
+                            + " select 1"
+                            + " from log.notification_message m2"
+                            + " where m2.batch_id = m.batch_id"
+                            + " and m2.batch_split_id = m.batch_split_id"
+                            + " and m2.timestamp > m.timestamp"
+                            + " )"
+                            + " where s.batch_id = ?";
                 } else {
-                    sql = "select b.batch_id, b.batch_identifier, b.insert_date, b.sequence_number, b.is_complete, count(1), sum(f.remote_size_bytes)"
-                            + " from batch b"
-                            + " left outer join batch_file f"
-                            + " on f.batch_id = b.batch_id"
-                            + " where b.configuration_id = ?"
-                            + " group by b.batch_id, b.batch_identifier, b.insert_date, b.sequence_number, b.is_complete"
-                            + " order by b.insert_date desc"
-                            + " limit 1";
+                    sql = "select s.batch_split_id, s.organisation_id, s.have_notified, s.is_bulk, m.inbound, m.error_text"
+                            + " from batch_split s"
+                            + " left outer join notification_message m"
+                            + " on m.batch_id = s.batch_id"
+                            + " and m.batch_split_id = s.batch_split_id"
+                            + " and not exists ("
+                            + " select 1"
+                            + " from notification_message m2"
+                            + " where m2.batch_id = m.batch_id"
+                            + " and m2.batch_split_id = m.batch_split_id"
+                            + " and m2.timestamp > m.timestamp"
+                            + " )"
+                            + " where s.batch_id = ?";
                 }
                 ps = connection.prepareStatement(sql);
 
-                ps.setString(1, id);
+                ps.setInt(1, latestCompleteBatchId);
 
                 rs = ps.executeQuery();
-                if (rs.next()) {
-                    int col = 1;
-                    int batchId = rs.getInt(col++);
-                    String batchIdentifier = rs.getString(col++);
-                    Date insertDate = new Date(rs.getTimestamp(col++).getTime());
-                    int sequenceNumber = rs.getInt(col++);
-                    boolean isComplete = rs.getBoolean(col++);
-                    int fileCount = rs.getInt(col++);
-                    long extractSize = rs.getLong(col++);
 
-                    String totalSizeReadable = FileUtils.byteCountToDisplaySize(extractSize);
+                ArrayNode arr = root.putArray("completeBatchContents");
 
-                    channelNode.put("latestBatchId", batchId);
-                    channelNode.put("latestBatchIdentifier", batchIdentifier);
-                    channelNode.put("latestBatchReceived", insertDate.getTime());
-                    channelNode.put("latestBatchSequenceNumber", sequenceNumber);
-                    channelNode.put("latestBatchComplete", isComplete);
-                    channelNode.put("latestBatchFileCount", fileCount);
-                    channelNode.put("latestBatchSizeBytes", totalSizeReadable);
+                while (rs.next()) {
+
+                    col = 1;
+                    int batchSplitId = rs.getInt(col++);
+                    String orgId = rs.getString(col++);
+                    boolean haveNotified = rs.getBoolean(col++);
+                    boolean isBulk = rs.getBoolean(col++);
+                    String notificationResult = rs.getString(col++);
+                    String notificationError = rs.getString(col++);
+
+                    //if no error message for this record, then look in the map because there should be one
+                    //for this org, but for an earlier batch, that's blocking this one for the org
+                    if (!haveNotified
+                            && Strings.isNullOrEmpty(notificationError)) {
+                        notificationError = hmErrorsPerOrg.get(orgId);
+                    }
+
+                    ObjectNode orgNode = arr.addObject();
+                    orgNode.put("batchSplitId", batchSplitId);
+                    orgNode.put("orgId", orgId);
+                    orgNode.put("notified", haveNotified);
+                    orgNode.put("isBulk", isBulk);
+                    orgNode.put("result", notificationResult);
+                    orgNode.put("error", notificationError);
                 }
 
                 ps.close();
-
-                //find the latest complete batch
-                if (ConnectionManager.isPostgreSQL(connection)) {
-                    sql = "SELECT batch_id, batch_identifier, insert_date, sequence_number"
-                            + " FROM log.batch"
-                            + " WHERE configuration_id = ? AND is_complete = true"
-                            + " ORDER BY sequence_number desc"
-                            + " LIMIT 1";
-                } else {
-                    sql = "SELECT batch_id, batch_identifier, insert_date, sequence_number"
-                            + " FROM batch"
-                            + " WHERE configuration_id = ? AND is_complete = true"
-                            + " ORDER BY sequence_number desc"
-                            + " LIMIT 1";
-                }
-                ps = connection.prepareStatement(sql);
-
-                ps.setString(1, id);
-
-                Integer latestCompleteBatchId = null;
-
-                rs = ps.executeQuery();
-                if (rs.next()) {
-                    int col = 1;
-                    latestCompleteBatchId = rs.getInt(col++);
-                    String batchIdentifier = rs.getString(col++);
-                    Date insertDate = new Date(rs.getTimestamp(col++).getTime());
-                    int sequenceNumber = rs.getInt(col++);
-
-                    channelNode.put("completeBatchId", latestCompleteBatchId);
-                    channelNode.put("completeBatchIdentifier", batchIdentifier);
-                    channelNode.put("completeBatchReceived", insertDate.getTime());
-                    channelNode.put("completeBatchSequenceNumber", sequenceNumber);
-                }
-
-                ps.close();
-
-                if (latestCompleteBatchId != null) {
-
-                    //get any errors for orgs in this configuration - since errors posting to the Messaging API
-                    //will most likely be on past exchanges and be blocking the latest exchange
-                    Map<String, String> hmErrorsPerOrg = new HashMap<>();
-
-                    if (ConnectionManager.isPostgreSQL(connection)) {
-                        sql = "SELECT organisation_id, error_text"
-                                + " FROM log.batch_split bs"
-                                + " INNER JOIN log.batch b"
-                                + " ON b.batch_id = bs.batch_id"
-                                + " INNER JOIN log.notification_message m"
-                                + " on m.batch_id = bs.batch_id"
-                                + " and m.batch_split_id = bs.batch_split_id"
-                                + " and not exists ("
-                                + " select 1"
-                                + " from log.notification_message m2"
-                                + " where m2.batch_id = m.batch_id"
-                                + " and m2.batch_split_id = m.batch_split_id"
-                                + " and m2.timestamp < m.timestamp"
-                                + " )"
-                                + " WHERE b.configuration_id = ?"
-                                + " AND b.is_complete = true"
-                                + " AND bs.have_notified = false"
-                                + " and m.error_text is not null";
-                    } else {
-                        sql = "SELECT organisation_id, error_text"
-                                + " FROM batch_split bs"
-                                + " INNER JOIN batch b"
-                                + " ON b.batch_id = bs.batch_id"
-                                + " INNER JOIN notification_message m"
-                                + " on m.batch_id = bs.batch_id"
-                                + " and m.batch_split_id = bs.batch_split_id"
-                                + " and not exists ("
-                                + " select 1"
-                                + " from notification_message m2"
-                                + " where m2.batch_id = m.batch_id"
-                                + " and m2.batch_split_id = m.batch_split_id"
-                                + " and m2.timestamp < m.timestamp"
-                                + " )"
-                                + " WHERE b.configuration_id = ?"
-                                + " AND b.is_complete = true"
-                                + " AND bs.have_notified = false"
-                                + " and m.error_text is not null";
-                    }
-                    ps = connection.prepareStatement(sql);
-
-                    ps.setString(1, id);
-
-                    rs = ps.executeQuery();
-
-                    while (rs.next()) {
-
-                        int col = 1;
-                        String orgId = rs.getString(col++);
-                        String notificationError = rs.getString(col++);
-
-                        hmErrorsPerOrg.put(orgId, notificationError);
-                    }
-
-                    ps.close();
-
-                    //get the batch splits for the complete batch
-                    if (ConnectionManager.isPostgreSQL(connection)) {
-                        sql = "select s.batch_split_id, s.organisation_id, s.have_notified, s.is_bulk, m.inbound, m.error_text"
-                                + " from log.batch_split s"
-                                + " left outer join log.notification_message m"
-                                + " on m.batch_id = s.batch_id"
-                                + " and m.batch_split_id = s.batch_split_id"
-                                + " and not exists ("
-                                + " select 1"
-                                + " from log.notification_message m2"
-                                + " where m2.batch_id = m.batch_id"
-                                + " and m2.batch_split_id = m.batch_split_id"
-                                + " and m2.timestamp > m.timestamp"
-                                + " )"
-                                + " where s.batch_id = ?";
-                    } else {
-                        sql = "select s.batch_split_id, s.organisation_id, s.have_notified, s.is_bulk, m.inbound, m.error_text"
-                                + " from batch_split s"
-                                + " left outer join notification_message m"
-                                + " on m.batch_id = s.batch_id"
-                                + " and m.batch_split_id = s.batch_split_id"
-                                + " and not exists ("
-                                + " select 1"
-                                + " from notification_message m2"
-                                + " where m2.batch_id = m.batch_id"
-                                + " and m2.batch_split_id = m.batch_split_id"
-                                + " and m2.timestamp > m.timestamp"
-                                + " )"
-                                + " where s.batch_id = ?";
-                    }
-                    ps = connection.prepareStatement(sql);
-
-                    ps.setInt(1, latestCompleteBatchId);
-
-                    rs = ps.executeQuery();
-
-                    ArrayNode arr = channelNode.putArray("completeBatchContents");
-
-                    while (rs.next()) {
-
-                        int col = 1;
-                        int batchSplitId = rs.getInt(col++);
-                        String orgId = rs.getString(col++);
-                        boolean haveNotified = rs.getBoolean(col++);
-                        boolean isBulk = rs.getBoolean(col++);
-                        String notificationResult = rs.getString(col++);
-                        String notificationError = rs.getString(col++);
-
-                        //if no error message for this record, then look in the map because there should be one
-                        //for this org, but for an earlier batch, that's blocking this one for the org
-                        if (!haveNotified
-                                && Strings.isNullOrEmpty(notificationError)) {
-                            notificationError = hmErrorsPerOrg.get(orgId);
-                        }
-
-                        ObjectNode orgNode = arr.addObject();
-                        orgNode.put("batchSplitId", batchSplitId);
-                        orgNode.put("orgId", orgId);
-                        orgNode.put("notified", haveNotified);
-                        orgNode.put("isBulk", isBulk);
-                        orgNode.put("result", notificationResult);
-                        orgNode.put("error", notificationError);
-                    }
-
-                    ps.close();
-                }
             }
 
         } finally {
@@ -716,6 +691,172 @@ public class SftpReaderEndpoint extends AbstractEndpoint {
             }
             if (psUpdate != null) {
                 psUpdate.close();
+            }
+            connection.close();
+        }
+    }
+
+    @POST
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Path("/togglePause")
+    public Response togglePause(@Context SecurityContext sc,
+                                     JsonSftpReaderIgnoreBatchSplitParameters parameters) throws Exception { //just re-using this object since it's already got the field we need
+        super.setLogbackMarkers(sc);
+
+        String configurationId = parameters.getConfigurationId();
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Save, "TogglePause", "Configuration ID", configurationId);
+
+        Map<String, Date> pausedState = getPausedState();
+        boolean isPaused = pausedState.get(configurationId) != null;
+
+        Connection connection = ConnectionManager.getSftpReaderConnection();
+        PreparedStatement ps = null;
+        try {
+            String sql = null;
+            if (isPaused) {
+                if (ConnectionManager.isPostgreSQL(connection)) {
+                    sql = "DELETE FROM configuration.configuration_paused_notifying WHERE configuration_id = ?";
+                } else {
+                    sql = "DELETE FROM configuration_paused_notifying WHERE configuration_id = ?";
+                }
+            } else {
+                if (ConnectionManager.isPostgreSQL(connection)) {
+                    sql = "INSERT INTO configuration.configuration_paused_notifying (configuration_id) VALUES (?)";
+                } else {
+                    sql = "INSERT INTO configuration_paused_notifying (configuration_id) VALUES (?)";
+                }
+            }
+            ps = connection.prepareStatement(sql);
+            ps.setString(1, configurationId);
+            ps.executeUpdate();
+            connection.commit();
+
+        } catch (Exception ex) {
+            connection.rollback();
+            throw ex;
+
+        } finally {
+            if (ps != null) {
+                ps.close();
+            }
+            connection.close();
+        }
+
+        clearLogbackMarkers();
+
+        return Response
+                .ok()
+                .build();
+    }
+
+    @POST
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Path("/togglePauseAll")
+    public Response togglePauseAll(@Context SecurityContext sc) throws Exception {
+        super.setLogbackMarkers(sc);
+
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Save, "TogglePauseAll");
+
+        //work out whether to pause or not based on which is most
+        List<String> paused = new ArrayList<>();
+        List<String> notPaused = new ArrayList<>();
+
+        Map<String, Date> pausedState = getPausedState();
+        for (String s: pausedState.keySet()) {
+            boolean isPaused = pausedState.get(s) != null;
+            if (isPaused) {
+                paused.add(s);
+            } else {
+                notPaused.add(s);
+            }
+        }
+
+        Connection connection = ConnectionManager.getSftpReaderConnection();
+        PreparedStatement ps = null;
+        try {
+            String sql = null;
+            List<String> configs = null;
+
+            if (paused.size() > notPaused.size()) {
+                configs = paused;
+
+                if (ConnectionManager.isPostgreSQL(connection)) {
+                    sql = "DELETE FROM configuration.configuration_paused_notifying WHERE configuration_id = ?";
+                } else {
+                    sql = "DELETE FROM configuration_paused_notifying WHERE configuration_id = ?";
+                }
+            } else {
+                configs = notPaused;
+
+                if (ConnectionManager.isPostgreSQL(connection)) {
+                    sql = "INSERT INTO configuration.configuration_paused_notifying (configuration_id) VALUES (?)";
+                } else {
+                    sql = "INSERT INTO configuration_paused_notifying (configuration_id) VALUES (?)";
+                }
+            }
+            ps = connection.prepareStatement(sql);
+
+            for (String configurationId: configs) {
+                ps.setString(1, configurationId);
+                ps.addBatch();
+            }
+            ps.executeBatch();
+
+            connection.commit();
+
+        } catch (Exception ex) {
+            connection.rollback();
+            throw ex;
+
+        } finally {
+            if (ps != null) {
+                ps.close();
+            }
+            connection.close();
+        }
+
+        clearLogbackMarkers();
+
+        return Response
+                .ok()
+                .build();
+    }
+
+    private Map<String, Date> getPausedState() throws Exception {
+
+        Connection connection = ConnectionManager.getSftpReaderConnection();
+        PreparedStatement ps = null;
+        try {
+            String sql = null;
+            if (ConnectionManager.isPostgreSQL(connection)) {
+                sql = "SELECT c.configuration_id, p.dt_paused FROM configuration.configuration c LEFT OUTER JOIN configuration.configuration_paused_notifying p ON p.configuration_id = c.configuration_id;";
+            } else {
+                sql = "SELECT c.configuration_id, p.dt_paused FROM configuration c LEFT OUTER JOIN configuration_paused_notifying p ON p.configuration_id = c.configuration_id;";
+            }
+            ps = connection.prepareStatement(sql);
+
+            Map<String, Date> ret = new HashMap<>();
+
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                String configurationId = rs.getString(1);
+                Date dtPaused = null;
+
+                Timestamp ts = rs.getTimestamp(2);
+                if (ts != null) {
+                    dtPaused = new java.util.Date(ts.getTime());
+                }
+
+                ret.put(configurationId, dtPaused);
+            }
+
+            return ret;
+
+        } finally {
+            if (ps != null) {
+                ps.close();
             }
             connection.close();
         }

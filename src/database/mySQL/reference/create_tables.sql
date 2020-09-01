@@ -18,9 +18,9 @@ DROP TABLE IF EXISTS icd10_lookup;
 DROP TABLE IF EXISTS cerner_clinical_event_map;
 DROP TABLE IF EXISTS ctv3_to_snomed_map;
 DROP TABLE IF EXISTS read2_to_snomed_map;
-DROP TABLE IF EXISTS ctv3_to_read2_map;
+DROP TABLE IF EXISTS ctv3_to_read2_map; -- just delete, no create script
 DROP TABLE IF EXISTS uprn_property_class;
-DROP TABLE IF EXISTS read2;
+DROP TABLE IF EXISTS read2; -- just delete now, no create script
 
 CREATE TABLE postcode_lookup
 (
@@ -239,7 +239,8 @@ CREATE TABLE cerner_clinical_event_map (
     CONSTRAINT pk_internal_id_map PRIMARY KEY (cerner_cvref_code)
 );
 
-CREATE TABLE ctv3_to_read2_map
+-- table removed as never populated with any content in DDS live
+/*CREATE TABLE ctv3_to_read2_map
 (
   map_id varchar(38) NOT NULL PRIMARY KEY,
   ctv3_concept_id varchar (12) NOT NULL COLLATE utf8_bin,
@@ -255,6 +256,7 @@ CREATE TABLE ctv3_to_read2_map
 
 CREATE INDEX ix_ctv3_to_read2_map_ctv3_concept_id_read2_concept_id
   ON ctv3_to_read2_map (ctv3_concept_id, read2_concept_id);
+*/
 
 CREATE TABLE uprn_property_class (
   uprn bigint not null,
@@ -262,8 +264,9 @@ CREATE TABLE uprn_property_class (
   CONSTRAINT pk_uprn_property_class PRIMARY KEY (uprn)
 );
 
-create table read2 (
+-- table removed as read2_lookup exists and is populated, but this never was
+/*create table read2 (
 	read_code varchar(5) binary,
   preferred_term varchar(255),
   CONSTRAINT pk_read2 PRIMARY KEY (read_code)
-);
+);*/

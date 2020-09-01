@@ -2,9 +2,9 @@ import {BaseHttp2Service} from "eds-common-js";
 import {Http, URLSearchParams} from "@angular/http";
 import {Observable} from "rxjs";
 import {Injectable} from "@angular/core";
-import {SftpReaderChannelStatus} from "./SftpReaderChannelStatus";
-import {SftpReaderInstance} from "./SftpReaderInstance";
-import {SftpReaderChannelBatch} from "./SftpReaderChannelBatch";
+import {SftpReaderChannelStatus} from "./models/SftpReaderChannelStatus";
+import {SftpReaderChannelBatch} from "./models/SftpReaderChannelBatch";
+import {SftpReaderConfiguration} from "./models/SftpReaderConfiguration";
 
 @Injectable()
 export class SftpReaderService extends BaseHttp2Service {
@@ -13,14 +13,14 @@ export class SftpReaderService extends BaseHttp2Service {
         super (http);
     }
 
-    getSftpReaderStatus(filterInstanceName: string) : Observable<SftpReaderChannelStatus[]> {
+    getSftpReaderStatus(configurationId: string) : Observable<SftpReaderChannelStatus> {
         var params = new URLSearchParams();
-        params.append('instance', '' + filterInstanceName);
+        params.append('configurationId', '' + configurationId);
 
         return this.httpGet('api/sftpReader/status', { search : params});
     }
 
-    getSftpReaderInstances() : Observable<SftpReaderInstance[]> {
+    getSftpReaderInstances() : Observable<SftpReaderConfiguration[]> {
         return this.httpGet('api/sftpReader/instances', { });
     }
 
@@ -41,5 +41,18 @@ export class SftpReaderService extends BaseHttp2Service {
             'reason': reason
         };
         return this.httpPost('api/sftpReader/ignore', request);
+    }
+
+    togglePause(configurationId: string) : Observable<any> {
+        var request = {
+            'configurationId': configurationId
+        };
+        return this.httpPost('api/sftpReader/togglePause', request);
+    }
+
+    togglePauseAll() : Observable<any> {
+        var request = {
+        };
+        return this.httpPost('api/sftpReader/togglePauseAll', request);
     }
 }

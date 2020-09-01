@@ -1,0 +1,60 @@
+<div class="modal-header">
+    <button type="button" class="close" (click)="close()" aria-hidden="true">&times;</button>
+    <h4 class="modal-title">Organisation List</h4>
+</div>
+
+<div class="modal-body">
+
+    <div class="row">
+        <div class="col-md-12">
+
+            <div class="table scroll-box-500">
+
+                <table class="table table-striped table-condensed">
+                    <thead>
+                    <tr>
+                        <th class="col-md-1"></th> <!--checkbox col &ndash-->
+                        <th class="col-md-1">ODS</th>
+                        <th class="col-md-1">Bulk</th>
+                        <th class="col-md-1">Status</th>
+                        <th class="col-md-8">Message</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr class="hover-box" *ngFor="let content of contents">
+                        <td>
+                            <div *ngIf="!content.notified">
+                                <input type="checkbox" [(ngModel)]="content.selected" name="contentSelected">
+                            </div>
+                        </td>
+                        <td>{{content.orgId}}</td>
+
+                        <!--bulk &ndash-->
+                        <td *ngIf="content.isBulk">Y</td>
+                        <td *ngIf="!content.isBulk"></td>
+
+                        <!--status &ndash-->
+                        <td *ngIf="content.notified">OK</td>
+                        <td *ngIf="!content.notified">Error</td>
+
+                        <!--message &ndash-->
+                        <td *ngIf="content.notified">{{content.result}}</td>
+                        <td *ngIf="!content.notified">{{content.error}}</td>
+
+                    </tr>
+                    </tbody>
+                </table>
+
+            </div>
+
+        </div>
+    </div>
+
+
+</div>
+
+<div class="modal-footer">
+    <button type="button" class="btn" (click)="selectAllErrors()">Select All Errors</button>
+    <button type="button" class="btn" (click)="ignoreSelectedErrors()">Ignored Selected Errors</button>
+    <button type="button" class="btn" (click)="close()">Close</button>
+</div>

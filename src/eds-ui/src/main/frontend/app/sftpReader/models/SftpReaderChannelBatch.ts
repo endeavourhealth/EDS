@@ -2,7 +2,7 @@ import {SftpReaderBatchContents} from "./SftpReaderBatchContents";
 
 export class SftpReaderChannelBatch {
 
-    id: string;
+    id: number;
     received: number;
     identifier: string;
     sequenceNumber: number;

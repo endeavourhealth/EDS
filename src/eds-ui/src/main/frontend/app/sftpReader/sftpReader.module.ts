@@ -5,6 +5,7 @@ import {NgbModule} from "@ng-bootstrap/ng-bootstrap";
 import {SftpReaderComponent} from "./sftpReader.component";
 import {SftpReaderService} from "./sftpReader.service";
 import {SftpReaderHistoryDialog} from "./sftpReaderHistory.dialog";
+import {SftpReaderOrgsDialog} from "./sftpReaderOrgs.dialog";
 
 @NgModule({
     imports : [
@@ -14,10 +15,12 @@ import {SftpReaderHistoryDialog} from "./sftpReaderHistory.dialog";
     ],
     declarations : [
         SftpReaderComponent,
-        SftpReaderHistoryDialog
+        SftpReaderHistoryDialog,
+        SftpReaderOrgsDialog
     ],
     entryComponents : [
-        SftpReaderHistoryDialog
+        SftpReaderHistoryDialog,
+        SftpReaderOrgsDialog
     ],
     providers : [
         SftpReaderService

@@ -646,7 +646,7 @@ public class MessageTransformOutbound extends PipelineComponent {
 
         private List<ResourceWrapper> retrieveAllPatientResources() throws Exception {
             ResourceDalI resourceDal = DalProvider.factoryResourceDal();
-            return resourceDal.getResourcesByPatient(serviceId, patientId); //passing in a null patient ID will get us the admin resources
+            return resourceDal.getResourcesByPatient(serviceId, patientId);
         }
 
 

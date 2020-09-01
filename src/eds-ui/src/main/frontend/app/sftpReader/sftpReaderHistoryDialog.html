@@ -1,6 +1,6 @@
 <div class="modal-header">
     <button type="button" class="close" (click)="close()" aria-hidden="true">&times;</button>
-    <h4 class="modal-title">{{status.name}}</h4>
+    <h4 class="modal-title">{{configuration.friendlyName}}</h4>
 </div>
 
 <div class="modal-body">
@@ -44,10 +44,10 @@
                         <th class="col-md-2">Received</th>
                         <th class="col-md-3">Data Date</th>
                         <th class="col-md-1">Sequence#</th>
-                        <th class="col-md-1">Complete</th>
+                        <!--<th class="col-md-1">Complete</th>-->
                         <th class="col-md-1">Files</th>
                         <th class="col-md-1">Size</th>
-                        <th class="col-md-3">Organisations</th>
+                        <th class="col-md-4">Organisations</th>
 
                     </tr>
                     </thead>
@@ -58,11 +58,19 @@
                         <td>{{result.received | date:'dd-MMM-yyyy'}}</td>
                         <td>{{result.identifier}}</td>
                         <td>{{result.sequenceNumber}}</td>
-                        <td>{{result.complete}}</td>
+                        <!--<td>{{result.complete}}</td>-->
                         <td>{{result.fileCount}}</td>
                         <td>{{result.sizeDesc}}</td>
                         <td>
-                            <ngb-accordion #acc="ngbAccordion">
+
+                            <a (click)="viewOrgs(result)">{{result.batchContents.length}} Orgs in extract</a>
+                            &nbsp;&nbsp;&nbsp;
+                            <a (click)="viewOrgsOk(result)">{{filterOrgs(result.batchContents, true).length}} Orgs OK</a>
+                            &nbsp;&nbsp;&nbsp;
+                            <a (click)="viewOrgsError(result)">{{filterOrgs(result.batchContents, false).length}} Orgs in
+                                Error</a>
+
+                            <!--<ngb-accordion #acc="ngbAccordion">
                                 <ngb-panel title="{{result.batchContents.length}} Organisations">
                                     <template ngbPanelContent>
 
@@ -84,7 +92,7 @@
 
                                     </template>
                                 </ngb-panel>
-                            </ngb-accordion>
+                            </ngb-accordion>-->
                         </td>
 
 

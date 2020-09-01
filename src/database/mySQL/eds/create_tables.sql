@@ -140,7 +140,7 @@ CREATE INDEX ix_patient_search_local_identifier_id_service_patient
 create table patient_address_uprn (
 	service_id char(36) not null,
     patient_id char(36) not null,
-    uprn bigint,
+    uprn bigint default null,
     qualifier varchar(50),
     abp_address varchar(1024),
     `algorithm` varchar(255),
@@ -151,6 +151,10 @@ create table patient_address_uprn (
     invalid_postcode boolean,
     CONSTRAINT pk_patient_search PRIMARY KEY (service_id, patient_id)
 );
+
+create index ix on patient_address_uprn (uprn);
+create index ix2 on patient_address_uprn (patient_id);
+
 
 /*
 -- not sure about this table yet
