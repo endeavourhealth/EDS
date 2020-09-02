@@ -6,28 +6,8 @@
 
             <form class="form-inline">
 
-                <button class="btn btn-sm btn-default" (click)="togglePauseAll()" title="Toggle Pause All">Toggle Pause
-                    All
-                </button>
+                <button class="btn btn-sm btn-default" (click)="togglePauseAll()" title="Toggle Pause All">Toggle Pause All</button>
                 <button class="btn btn-sm btn-default" (click)="odsSearch()" title="Ods Search">ODS Search</button>
-
-                <!--<div class="form-group">
-                    Warnings Only
-                    <input type="checkbox" id="showWarningsOnly" [(ngModel)]="showWarningsOnly" name="showWarningsOnly">
-                </div>
-
-
-                <div class="form-group">
-
-                    <select id="filterInstanceName" name="filterInstanceName" class="form-control" [(ngModel)]="filterInstanceName" (ngModelChange)="refreshStatus()" >
-                        <option value="active">Active</option>
-                        <option value="inactive">Inactive</option>
-                        <option *ngFor="let instanceName of instanceNames" value="{{instanceName.name}}">{{instanceName.name}}</option>
-                        <option value="all">All</option>
-                    </select>
-
-                </div>-->
-
                 <button class="btn btn-sm btn-success" (click)="refreshInstances()">Refresh</button>
 
             </form>
@@ -36,11 +16,33 @@
     </div>
     <div class="module-body">
 
-        <div class="panel panel-primary">
+        <div class="row">
+            <div class="col-md-12">
+
+                <div class="form-group">
+
+                    <label for="showWarningsOnly" class="control-label">Show Warnings Only</label>
+                    <input type="checkbox" id="showWarningsOnly" [(ngModel)]="showWarningsOnly" name="showWarningsOnly">
+                    &nbsp;&nbsp;&nbsp;
+
+                    <label for="filterInstanceName" class="control-label">Instance</label>
+                    <select id="filterInstanceName" name="filterInstanceName" [(ngModel)]="filterInstanceName">
+                        <option value="">All</option>
+                        <option *ngFor="let instanceName of getInstanceNames()" value="{{instanceName}}">{{instanceName}}</option>
+                    </select>
+
+                </div>
+
+
+            </div>
+        </div>
+
+<!--
+                <div class="panel panel-primary">
             <div class="panel-body">
                 <div class="row">
 
-<!--                <form class="form-horizontal" role="form">-->
+&lt;!&ndash;                <form class="form-horizontal" role="form">&ndash;&gt;
                     <div class="form-group">
 
 
@@ -58,10 +60,10 @@
                         </div>
 
                     </div>
-<!--                </form>-->
+&lt;!&ndash;                </form>&ndash;&gt;
                 </div>
             </div>
-        </div>
+        </div>-->
 
         <div class="row">
             <div class="col-md-12">
@@ -323,8 +325,8 @@
                             </td>
 
                             <td>
-                                <button class="btn btn-xs btn-default" (click)="viewHistory(configuration)">View History</button>
-                                <button class="btn btn-xs btn-default" (click)="togglePause(configuration)">Toggle Pause</button>
+                                <button class="btn btn-xs btn-default child-to-show" (click)="viewHistory(configuration)">View History</button>
+                                <button class="btn btn-xs btn-default child-to-show" (click)="togglePause(configuration)">Toggle Pause</button>
 
                             </td>
 
