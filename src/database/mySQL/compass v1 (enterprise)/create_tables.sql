@@ -549,9 +549,11 @@ CREATE TABLE patient_additional (
   id bigint NOT NULL COMMENT 'same as the id column on the patient table ',
   property_id character varying(255)  NOT NULL COMMENT 'IM reference (e.g. Cause of death)',
   value_id character varying(255) NOT NULL COMMENT 'IM reference (e.g. COVID)',
-  CONSTRAINT pk_encounter_additional_id PRIMARY KEY (id, property_id, value_id)
+  CONSTRAINT pk_patient_additional_id PRIMARY KEY (id, property_id)
 );
-CREATE INDEX ix_patient_additional_id ON patient_additional (id);
+CREATE INDEX ix_patient_additional_id
+    ON patient_additional
+    (value_id);
 
 -- Table: episode_of_care
 
