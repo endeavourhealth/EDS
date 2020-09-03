@@ -486,6 +486,9 @@ CREATE TABLE encounter_additional (
   value_id int NOT NULL COMMENT 'IM concept id reference (i.e. Emergency admission)',
   CONSTRAINT pk_encounter_additional_id PRIMARY KEY (id, property_id)
 );
+CREATE INDEX encounter_additional_value_id
+    ON encounter_additional
+        (value_id);
 
 
 -- Table: allergy_intolerance

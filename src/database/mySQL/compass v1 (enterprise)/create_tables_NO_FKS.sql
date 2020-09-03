@@ -681,6 +681,9 @@ CREATE TABLE encounter_additional (
   value_id character varying(255) NOT NULL COMMENT 'IM reference (i.e. Emergency admission)',
   CONSTRAINT pk_encounter_additional_id PRIMARY KEY (id, property_id)
 );
+CREATE INDEX encounter_additional_value_id
+    ON encounter_additional
+        (value_id);
 
 -- Table: encounter_detail
 

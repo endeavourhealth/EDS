@@ -766,6 +766,10 @@ CREATE TABLE encounter_additional (
   CONSTRAINT pk_encounter_additional_id PRIMARY KEY (id, property_id)
 );
 
+CREATE INDEX encounter_additional_value_id
+    ON encounter_additional
+        (value_id);
+
 -- Table: encounter_detail
 
 CREATE TABLE encounter_detail (
