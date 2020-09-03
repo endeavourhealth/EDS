@@ -745,8 +745,9 @@ public class Main {
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("SubscriberTransformPatients")) {
 			String sourceFile = args[1];
-			String reason = args[2];
-			subscriberTransformPatients(sourceFile, reason);
+			boolean bulkDelete = Boolean.parseBoolean(args[2]);
+			String reason = args[3];
+			subscriberTransformPatients(sourceFile, bulkDelete, reason);
 			System.exit(0);
 		}
 
@@ -5669,7 +5670,7 @@ public class Main {
 		}
 	}*/
 
-	private static void subscriberTransformPatients(String sourceFile, String reason) {
+	private static void subscriberTransformPatients(String sourceFile, boolean bulkDelete, String reason) {
 		LOG.info("Subscriber transforming patients from " + sourceFile);
 		try {
 			List<UUID> patientIds = new ArrayList<>();
@@ -5696,7 +5697,9 @@ public class Main {
 			}
 			LOG.info("Found " + patientIds.size() + " patient IDs");
 
-			QueueHelper.queueUpPatientsForSubscriberTransform(patientIds, false, true, false, reason);
+			boolean bulkRefresh = !bulkDelete;
+
+			QueueHelper.queueUpPatientsForSubscriberTransform(patientIds, bulkDelete, bulkRefresh, false, reason);
 
 			LOG.info("Finished transforming patients from " + sourceFile);
 		} catch (Throwable t) {

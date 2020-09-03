@@ -229,7 +229,7 @@ public class SubscriberFiler {
      * added to a list as all deletes are done after all upserts are out of the way.
      */
     private static void processCsvEntry(String entryFileName, byte[] csvBytes, JsonNode columnClassJson, Connection connection,
-                                        String keywordEscapeChar, int batchSize, List<DeleteWrapper> deletes) throws Exception {
+                                        String keywordEscapeChar, int batchSize, List<DeleteWrapper> allDeletes) throws Exception {
 
         String tableName = Files.getNameWithoutExtension(entryFileName);
         ArrayList<String> actualColumns = getTableColumns(connection, tableName);
@@ -265,7 +265,7 @@ public class SubscriberFiler {
 
         //since we're dealing with small volumes, we can just read keep all the records in memory
         List<CSVRecord> upserts = new ArrayList<>();
-        //List<CSVRecord> deletes = new ArrayList<>();
+        List<DeleteWrapper> deletes = new ArrayList<>();
 
         int row = 0;
 
@@ -290,6 +290,9 @@ public class SubscriberFiler {
         }
 
         LOG.trace("Got " + upserts.size() + " upserts and " + deletes.size() + " deletes for " + tableName);
+
+        //add the deletes to this list to apply later
+        allDeletes.addAll(deletes);
 
         if (!upserts.isEmpty()) {
 

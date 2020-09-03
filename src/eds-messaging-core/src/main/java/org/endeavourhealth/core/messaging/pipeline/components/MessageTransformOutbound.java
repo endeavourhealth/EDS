@@ -646,7 +646,11 @@ public class MessageTransformOutbound extends PipelineComponent {
 
         private List<ResourceWrapper> retrieveAllPatientResources() throws Exception {
             ResourceDalI resourceDal = DalProvider.factoryResourceDal();
-            return resourceDal.getResourcesByPatient(serviceId, patientId);
+
+            //retrieve deleted resources too
+            //https://endeavourhealth.atlassian.net/browse/SD-125
+            return resourceDal.getResourcesByPatientIncludingDeleted(serviceId, patientId);
+            //return resourceDal.getResourcesByPatient(serviceId, patientId);
         }
 
 

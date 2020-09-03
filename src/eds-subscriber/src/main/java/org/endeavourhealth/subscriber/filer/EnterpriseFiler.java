@@ -220,7 +220,7 @@ public class EnterpriseFiler {
         return columns;
     }
 
-    private static void processCsvData(String entryFileName, byte[] csvBytes, JsonNode allColumnClassMappings, Connection connection, String keywordEscapeChar, int batchSize, List<DeleteWrapper> deletes) throws Exception {
+    private static void processCsvData(String entryFileName, byte[] csvBytes, JsonNode allColumnClassMappings, Connection connection, String keywordEscapeChar, int batchSize, List<DeleteWrapper> allDeletes) throws Exception {
 
         String tableName = Files.getNameWithoutExtension(entryFileName);
         ArrayList<String> actualColumns = getTableColumns(connection, tableName);
@@ -250,7 +250,7 @@ public class EnterpriseFiler {
 
         //since we're dealing with small volumes, we can just read keep all the records in memory
         List<CSVRecord> upserts = new ArrayList<>();
-        //List<CSVRecord> deletes = new ArrayList<>();
+        List<DeleteWrapper> deletes = new ArrayList<>();
 
         Iterator<CSVRecord> csvIterator = csvParser.iterator();
         while (csvIterator.hasNext()) {
@@ -269,6 +269,9 @@ public class EnterpriseFiler {
             }
         }
         LOG.trace("Got " + upserts.size() + " upserts and " + deletes.size() + " deletes for " + tableName);
+
+        //add the deletes to this list to apply after all upserts are done
+        allDeletes.addAll(deletes);
 
         //when doing a bulk, we can have 300,000+ practitioners, so do them in batches, so we're
         //not keeping huge DB transactions open

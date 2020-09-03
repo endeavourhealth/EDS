@@ -161,7 +161,7 @@ public class OpenEnvelope extends PipelineComponent {
 	private static long getMaxFileSizeForSystem(String software) throws Exception {
 		Long maxSize = hmExchangeSizeBeforeBulk.get(software);
 		if (maxSize == null) {
-			JsonNode json = ConfigManager.getConfigurationAsJson("largeExchangeLimits");
+			JsonNode json = ConfigManager.getConfigurationAsJson("large_exchange_limits");
 			if (json != null
 					&& json.has(software)) {
 

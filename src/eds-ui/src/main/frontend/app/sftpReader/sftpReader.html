@@ -103,8 +103,7 @@
                                             <span class="label label-danger" *ngIf="isLastPollAttemptTooOld(status)">Warning</span>
                                             &nbsp;
                                         </span>
-                                            Last Checked for Data: {{status.latestPollingStart | date:'yyyy-MM-dd
-                                            HH:mm:ss'}}
+                                            Last Checked for Data: {{status.latestPollingStart | date:'yyyy-MM-dd HH:mm'}}
                                         </div>
                                         <div *ngIf="!status.latestPollingStart">
                                             <span class="label label-danger">Warning</span>&nbsp;Last Checked for Data:
