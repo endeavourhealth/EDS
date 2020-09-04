@@ -7,8 +7,11 @@ import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.io.FileUtils;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
+import org.endeavourhealth.common.fhir.ExtensionConverter;
+import org.endeavourhealth.common.fhir.FhirExtensionUri;
 import org.endeavourhealth.common.fhir.IdentifierHelper;
 import org.endeavourhealth.common.fhir.ReferenceHelper;
+import org.endeavourhealth.common.fhir.schema.NhsNumberVerificationStatus;
 import org.endeavourhealth.common.fhir.schema.RegistrationType;
 import org.endeavourhealth.common.utility.FileHelper;
 import org.endeavourhealth.common.utility.JsonSerializer;
@@ -74,12 +77,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.Statement;
+import java.sql.*;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.Date;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 
@@ -5154,7 +5155,119 @@ public abstract class SpecialRoutines {
 
     }
 
-    public static void testUprnToken(String protocol) {
+    /**
+     * populates new fields added to eds.patient_search table
+     */
+    public static void populatePatientSearchFields() {
+        LOG.info("Populating Patient Search Fields");
+        try {
+
+            Connection edsConnection = ConnectionManager.getEdsNonPooledConnection();
+
+            int done = 0;
+            int errors = 0;
+            while (true) {
+
+                int batchSize = 50;
+                String sql = "SELECT service_id, patient_id FROM patient_search WHERE dt_created IS NULL LIMIT " + batchSize;
+                PreparedStatement ps = edsConnection.prepareStatement(sql);
+
+                Map<UUID, UUID> hmPatientsAndServices = new HashMap<>();
+
+                ResultSet rs = ps.executeQuery();
+                while (rs.next()) {
+                    String serviceId = rs.getString(1);
+                    String patientId = rs.getString(2);
+                    hmPatientsAndServices.put(UUID.fromString(patientId), UUID.fromString(serviceId));
+                }
+                ps.close();
+
+                sql = "UPDATE patient_search"
+                        + " SET nhs_number_verification_status = ?, dt_created = ?, test_patient = ?"
+                        + " WHERE patient_id = ?"
+                        + " AND service_id = ?";
+                ps = edsConnection.prepareStatement(sql);
+
+                for (UUID patientId: hmPatientsAndServices.keySet()) {
+                    UUID serviceId = hmPatientsAndServices.get(patientId);
+
+                    //get latest version of patient
+                    ResourceDalI resourceDal = DalProvider.factoryResourceDal();
+                    List<ResourceWrapper> history = resourceDal.getResourceHistory(serviceId, ResourceType.Patient.toString(), patientId);
+                    if (history.isEmpty()) {
+                        LOG.error("Empty history list for patient " + patientId + " at service " + serviceId);
+                        errors ++;
+                        continue;
+                    }
+
+                    //find most recent non-deleted version
+                    ResourceWrapper lastWrapper = null;
+                    for (ResourceWrapper w: history) {
+                        if (!w.isDeleted()) {
+                            lastWrapper = w;
+                            break;
+                        }
+                    }
+
+                    if (lastWrapper == null) {
+                        LOG.error("Failed to find non-deleted patient " + patientId + " at service " + serviceId);
+                        errors ++;
+                        continue;
+                    }
+
+                    //update specific fields on patient search
+                    Patient resource = (Patient)lastWrapper.getResource();
+
+                    NhsNumberVerificationStatus verificationStatus = IdentifierHelper.findNhsNumberVerificationStatus(resource);
+
+                    BooleanType testPatientVal = (BooleanType) ExtensionConverter.findExtensionValue(resource, FhirExtensionUri.PATIENT_IS_TEST_PATIENT);
+                    boolean testPatient = testPatientVal != null
+                            && testPatientVal.hasValue()
+                            && testPatientVal.getValue().booleanValue();
+
+                    ResourceWrapper firstWrapper = history.get(history.size()-1);
+                    Date dtCreated = firstWrapper.getCreatedAt();
+
+                    int col = 1;
+                    if (verificationStatus == null) {
+                        ps.setNull(col++, Types.VARCHAR);
+                    } else {
+                        ps.setString(col++, verificationStatus.getCode());
+                    }
+                    ps.setTimestamp(col++, new java.sql.Timestamp(dtCreated.getTime()));
+                    ps.setBoolean(col++, testPatient);
+                    ps.setString(col++, patientId.toString());
+                    ps.setString(col++, serviceId.toString());
+
+                    ps.addBatch();
+
+                    done ++;
+                    if (done % 10000 == 0) {
+                        LOG.debug("Done " + done + " with " + errors + " errors");
+                    }
+                }
+                LOG.debug("Done " + done + " with " + errors + " errors");
+
+                ps.executeBatch();
+                edsConnection.commit();
+
+                if (hmPatientsAndServices.size() < batchSize) {
+                    break;
+                }
+            }
+
+
+            edsConnection.close();
+
+            LOG.debug("Done " + done);
+            LOG.info("Finished Populating Patient Search Fields");
+        } catch (Throwable t) {
+            LOG.error("", t);
+        }
+
+    }
+
+    /*public static void testUprnToken(String protocol) {
         LOG.info("Testing UPRN Token");
         try {
 
@@ -5180,7 +5293,7 @@ public abstract class SpecialRoutines {
         } catch(Throwable t) {
             LOG.error("", t);
         }
-    }
+    }*/
 
 
 

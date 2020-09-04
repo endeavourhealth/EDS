@@ -88,10 +88,16 @@ public class Main {
 		ConfigManager.initialize("queuereader", configId);
 
 		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("populatePatientSearchFields")) {
+			SpecialRoutines.populatePatientSearchFields();
+			System.exit(0);
+		}
+
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("testUprnToken")) {
 			SpecialRoutines.testUprnToken(args[1]);
 			System.exit(0);
-		}
+		}*/
 
 		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("testNewFrailtySql")) {
