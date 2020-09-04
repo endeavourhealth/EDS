@@ -25,6 +25,8 @@ import org.endeavourhealth.core.database.dal.audit.models.*;
 import org.endeavourhealth.core.database.dal.datagenerator.SubscriberZipFileUUIDsDalI;
 import org.endeavourhealth.core.database.dal.eds.PatientLinkDalI;
 import org.endeavourhealth.core.database.dal.eds.PatientSearchDalI;
+import org.endeavourhealth.core.database.dal.eds.models.PatientLinkPair;
+import org.endeavourhealth.core.database.dal.eds.models.PatientSearch;
 import org.endeavourhealth.core.database.dal.ehr.ResourceDalI;
 import org.endeavourhealth.core.database.dal.ehr.models.ResourceWrapper;
 import org.endeavourhealth.core.database.dal.publisherTransform.models.ResourceFieldMappingAudit;
@@ -55,6 +57,7 @@ import org.endeavourhealth.transform.subscriber.BulkHelper;
 import org.endeavourhealth.transform.subscriber.targetTables.OutputContainer;
 import org.endeavourhealth.transform.subscriber.targetTables.SubscriberTableId;
 import org.hibernate.internal.SessionImpl;
+import org.hl7.fhir.instance.model.Patient;
 import org.hl7.fhir.instance.model.ResourceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -654,12 +657,12 @@ public class Main {
 			System.exit(0);
 		}*/
 
-		/*if (args.length >= 1
-				&& args[0].equalsIgnoreCase("UpdatePatientSearch")) {
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("updatePatientSearch")) {
 			String filePath = args[1];
 			updatePatientSearch(filePath);
 			System.exit(0);
-		}*/
+		}
 
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("SubscriberFullLoad")) {
@@ -743,7 +746,7 @@ public class Main {
 		}*/
 
 		if (args.length >= 1
-				&& args[0].equalsIgnoreCase("SubscriberTransformPatients")) {
+				&& args[0].equalsIgnoreCase("subscriberTransformPatients")) {
 			String sourceFile = args[1];
 			boolean bulkDelete = Boolean.parseBoolean(args[2]);
 			String reason = args[3];
@@ -5134,7 +5137,7 @@ public class Main {
 	/**
 	 * updates patient_search and patient_link tables for explicit list of patient UUIDs
 	 */
-	/*private static void updatePatientSearch(String filePath) throws Exception {
+	private static void updatePatientSearch(String filePath) throws Exception {
 		LOG.info("Updating patient search from " + filePath);
 		try {
 			File f = new File(filePath);
@@ -5160,14 +5163,18 @@ public class Main {
 			Map<String, UUID> hmPublishers = new HashMap<>();
 
 			List<String> publishers = new ArrayList<>();
-			publishers.add("publisher_01");
-			publishers.add("publisher_02");
-			publishers.add("publisher_03");
-			publishers.add("publisher_04");
-			publishers.add("publisher_04b");
-			publishers.add("publisher_05");
-			publishers.add("publisher_05_nwl_tmp");
-			publishers.add("publisher_05_sel_tmp");
+
+			Connection adminConn = ConnectionManager.getAdminConnection();
+			String sql = "SELECT DISTINCT publisher_config_name FROM service";
+			PreparedStatement preparedStatement = adminConn.prepareStatement(sql);
+			ResultSet rs = preparedStatement.executeQuery();
+			while (rs.next()) {
+				String publisherName = rs.getString(1);
+				publishers.add(publisherName);
+			}
+			preparedStatement.close();
+			adminConn.close();
+			LOG.debug("Found publisher names " + publishers);
 
 			File changedFile = new File(filePath + "changed");
 
@@ -5285,7 +5292,7 @@ public class Main {
 		} catch (Throwable t) {
 			LOG.error("", t);
 		}
-	}*/
+	}
 
 
 	/*private static void runPersonUpdater(String enterpriseConfigName) throws Exception {
