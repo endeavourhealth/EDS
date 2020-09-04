@@ -150,40 +150,37 @@ export class SftpReaderComponent {
 
     getConfigurationsToDisplay(): SftpReaderConfiguration[] {
         var vm = this;
-        if (!vm.showWarningsOnly
-            || !vm.configurations) { //if not retrieved yet
+        if (!vm.configurations) { //if not retrieved yet
             return vm.configurations;
-
-        } else {
-            var ret = [];
-            var i;
-            for (i=0; i<vm.configurations.length; i++) {
-                var configuration = vm.configurations[i];
-                //console.log('checking configuration at ' + i);
-                //console.log(configuration);
-
-                if (vm.filterInstanceName) {
-                    var configInstanceName = configuration.instanceName;
-                    if (vm.filterInstanceName != configInstanceName) {
-                        continue;
-                    }
-                }
-
-                //always include configurations until we've got data back for them
-                if (!vm.isRefreshing(configuration)) {
-
-                    var configurationId = configuration.configurationId;
-                    var status = vm.statusMap[configurationId];
-                    if (!status.warning) { //if the warning boolean is false, skip it
-                        continue;
-                    }
-                }
-
-                ret.push(configuration);
-            }
-            return ret;
         }
 
+        var ret = [];
+        var i;
+        for (i=0; i<vm.configurations.length; i++) {
+            var configuration = vm.configurations[i];
+            //console.log('checking configuration at ' + i);
+            //console.log(configuration);
+
+            if (vm.filterInstanceName) {
+                var configInstanceName = configuration.instanceName;
+                if (vm.filterInstanceName != configInstanceName) {
+                    continue;
+                }
+            }
+
+            //always include configurations until we've got data back for them
+            if (!vm.isRefreshing(configuration)) {
+
+                var configurationId = configuration.configurationId;
+                var status = vm.statusMap[configurationId];
+                if (!status.warning) { //if the warning boolean is false, skip it
+                    continue;
+                }
+            }
+
+            ret.push(configuration);
+        }
+        return ret;
     }
 
     filterOrgs(arr: SftpReaderBatchContents[], wantOk: boolean): SftpReaderBatchContents[] {

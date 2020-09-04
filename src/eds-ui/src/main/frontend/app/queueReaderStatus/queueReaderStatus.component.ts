@@ -223,7 +223,7 @@ export class QueueReaderStatusComponent {
             }
             vm.queueReaderStatusList.push(result);
 
-            console.log(result);
+            //console.log(result);
         }
 
         //sort results by instance name (and then number)

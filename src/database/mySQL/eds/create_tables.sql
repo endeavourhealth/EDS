@@ -71,8 +71,12 @@ CREATE TABLE patient_search
 	ods_code varchar(50),
 	organisation_name VARCHAR(255),
 	organisation_type_code varchar(10),
+	nhs_number_verification_status char(2),
+  dt_created datetime,
 	CONSTRAINT pk_patient_search PRIMARY KEY (service_id, patient_id)
 );
+
+
 
 CREATE INDEX ix_patient
   ON patient_search (patient_id);
