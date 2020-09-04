@@ -43,25 +43,31 @@ export class SftpReaderComponent {
         var vm = this;
         vm.filterInstanceName = '';
         vm.showWarningsOnly = true;
-        vm.refreshInstances();
+        vm.refreshInstances(true);
     }
 
-    refreshInstances() {
+    refreshInstances(fullRefresh: boolean) {
         var vm = this;
-        vm.configurations = null;
-        vm.refreshingStatusMap = {};
-        vm.statusMap = {};
+        if (fullRefresh) {
+            vm.configurations = null;
+            vm.refreshingStatusMap = {};
+            vm.statusMap = {};
+        }
 
         vm.sftpReaderService.getSftpReaderInstances().subscribe(
             (result) => {
                 vm.configurations = linq(result).OrderBy(s => s.configurationId).ToArray();
-                vm.refreshStatuses();
+                if (fullRefresh) {
+                    vm.refreshStatuses();
+                }
             },
             (error) => {
                 vm.logger.error('Failed get SFTP Reader instances', error, 'SFTP Reader');
             }
         )
     }
+
+
 
     refreshStatuses() {
         var vm = this;
@@ -330,7 +336,7 @@ export class SftpReaderComponent {
         var vm = this;
         vm.sftpReaderService.togglePauseAll().subscribe(
             (result) => {
-                vm.refreshInstances();
+                vm.refreshInstances(false);
             },
             (error) => {
                 vm.logger.error('Failed to toggle pause', error);
@@ -343,7 +349,7 @@ export class SftpReaderComponent {
         var configurationId = configuration.configurationId;
         vm.sftpReaderService.togglePause(configurationId).subscribe(
             (result) => {
-                vm.refreshInstances();
+                vm.refreshInstances(false);
             },
             (error) => {
                 vm.logger.error('Failed to toggle pause', error);
