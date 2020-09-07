@@ -70,6 +70,10 @@ public class SubscriberHelper {
             LOG.debug(msg);
             LOG.debug("State was: " + latest);
             LOG.debug("State new: " + subscribers);
+
+            LOG.debug("Latest empty: " + latest.isEmpty() + " cls " + latest.getClass());
+            LOG.debug("Latest new: " + subscribers.isEmpty() + " cls " + subscribers.getClass());
+            LOG.debug("Same = " + latest.equals(subscribers));
         }
 
         cachedLatestSubscriberState.put(serviceId, new ArrayList<>(subscribers));

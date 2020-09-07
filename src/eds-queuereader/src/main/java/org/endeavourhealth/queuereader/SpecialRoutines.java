@@ -5168,7 +5168,7 @@ public abstract class SpecialRoutines {
             int errors = 0;
             while (true) {
 
-                int batchSize = 50;
+                int batchSize = 100;
                 String sql = "SELECT service_id, patient_id FROM patient_search WHERE dt_created IS NULL LIMIT " + batchSize;
                 PreparedStatement ps = edsConnection.prepareStatement(sql);
 
@@ -5191,42 +5191,50 @@ public abstract class SpecialRoutines {
                 for (UUID patientId: hmPatientsAndServices.keySet()) {
                     UUID serviceId = hmPatientsAndServices.get(patientId);
 
+                    boolean testPatient = false;
+                    Date dtCreated = null;
+                    NhsNumberVerificationStatus verificationStatus = null;
+
                     //get latest version of patient
                     ResourceDalI resourceDal = DalProvider.factoryResourceDal();
                     List<ResourceWrapper> history = resourceDal.getResourceHistory(serviceId, ResourceType.Patient.toString(), patientId);
                     if (history.isEmpty()) {
                         LOG.error("Empty history list for patient " + patientId + " at service " + serviceId);
+                        dtCreated = new SimpleDateFormat("yyyy-MM-dd").parse("1900-01-01");
                         errors ++;
-                        continue;
-                    }
 
-                    //find most recent non-deleted version
-                    ResourceWrapper lastWrapper = null;
-                    for (ResourceWrapper w: history) {
-                        if (!w.isDeleted()) {
-                            lastWrapper = w;
-                            break;
+                    } else {
+
+                        //find most recent non-deleted version
+                        ResourceWrapper lastWrapper = null;
+                        for (ResourceWrapper w : history) {
+                            if (!w.isDeleted()) {
+                                lastWrapper = w;
+                                break;
+                            }
+                        }
+
+                        if (lastWrapper == null) {
+                            LOG.error("Failed to find non-deleted patient " + patientId + " at service " + serviceId);
+                            dtCreated = new SimpleDateFormat("yyyy-MM-dd").parse("1900-01-02");
+                            errors++;
+
+                        } else {
+
+                            //update specific fields on patient search
+                            Patient resource = (Patient) lastWrapper.getResource();
+
+                            verificationStatus = IdentifierHelper.findNhsNumberVerificationStatus(resource);
+
+                            BooleanType testPatientVal = (BooleanType) ExtensionConverter.findExtensionValue(resource, FhirExtensionUri.PATIENT_IS_TEST_PATIENT);
+                            testPatient = testPatientVal != null
+                                    && testPatientVal.hasValue()
+                                    && testPatientVal.getValue().booleanValue();
+
+                            ResourceWrapper firstWrapper = history.get(history.size() - 1);
+                            dtCreated = firstWrapper.getCreatedAt();
                         }
                     }
-
-                    if (lastWrapper == null) {
-                        LOG.error("Failed to find non-deleted patient " + patientId + " at service " + serviceId);
-                        errors ++;
-                        continue;
-                    }
-
-                    //update specific fields on patient search
-                    Patient resource = (Patient)lastWrapper.getResource();
-
-                    NhsNumberVerificationStatus verificationStatus = IdentifierHelper.findNhsNumberVerificationStatus(resource);
-
-                    BooleanType testPatientVal = (BooleanType) ExtensionConverter.findExtensionValue(resource, FhirExtensionUri.PATIENT_IS_TEST_PATIENT);
-                    boolean testPatient = testPatientVal != null
-                            && testPatientVal.hasValue()
-                            && testPatientVal.getValue().booleanValue();
-
-                    ResourceWrapper firstWrapper = history.get(history.size()-1);
-                    Date dtCreated = firstWrapper.getCreatedAt();
 
                     int col = 1;
                     if (verificationStatus == null) {
@@ -5246,7 +5254,6 @@ public abstract class SpecialRoutines {
                         LOG.debug("Done " + done + " with " + errors + " errors");
                     }
                 }
-                LOG.debug("Done " + done + " with " + errors + " errors");
 
                 ps.executeBatch();
                 edsConnection.commit();
@@ -5256,10 +5263,9 @@ public abstract class SpecialRoutines {
                 }
             }
 
-
             edsConnection.close();
 
-            LOG.debug("Done " + done);
+            LOG.debug("Done " + done + " with " + errors + " errors");
             LOG.info("Finished Populating Patient Search Fields");
         } catch (Throwable t) {
             LOG.error("", t);
