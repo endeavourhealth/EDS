@@ -174,13 +174,16 @@ export class SftpReaderComponent {
                 }
             }
 
-            //always include configurations until we've got data back for them
-            if (!vm.isRefreshing(configuration)) {
+            if (vm.showWarningsOnly) {
 
-                var configurationId = configuration.configurationId;
-                var status = vm.statusMap[configurationId];
-                if (!status.warning) { //if the warning boolean is false, skip it
-                    continue;
+                //always include configurations until we've got data back for them
+                if (!vm.isRefreshing(configuration)) {
+
+                    var configurationId = configuration.configurationId;
+                    var status = vm.statusMap[configurationId];
+                    if (!status.warning) { //if the warning boolean is false, skip it
+                        continue;
+                    }
                 }
             }
 
