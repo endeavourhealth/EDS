@@ -429,7 +429,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
     @Path("/TestPostToExchangeApi")
     @RolesAllowed({"dds_requeue_message"})
     public Response testPostToExchangeApi(@Context SecurityContext sc) throws Exception {
-        testPostToExchangeImpl(sc);
+        return testPostToExchangeImpl(sc);
     }
 
     @POST
@@ -439,7 +439,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
     @Path("/TestPostToExchange")
     @RequiresAdmin
     public Response testPostToExchange(@Context SecurityContext sc) throws Exception {
-        testPostToExchangeImpl(sc);
+        return testPostToExchangeImpl(sc);
     }
 
     private Response testPostToExchangeImpl(SecurityContext sc) throws Exception {
