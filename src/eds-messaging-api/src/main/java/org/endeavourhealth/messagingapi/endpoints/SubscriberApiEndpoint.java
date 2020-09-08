@@ -1,6 +1,5 @@
 package org.endeavourhealth.messagingapi.endpoints;
 
-import com.codahale.metrics.annotation.ResponseMetered;
 import com.codahale.metrics.annotation.Timed;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.base.Strings;
@@ -59,7 +58,6 @@ public class SubscriberApiEndpoint {
     @Path("/{resourceType}")
     @Produces(MediaType.APPLICATION_JSON)
     @Timed(absolute = true, name="SubscriberApiEndpoint.GET")
-    @ResponseMetered(absolute = true, name="SubscriberApiEndpoint.GET")
     @RolesAllowed({"dds_api_read_only"})
     public Response getResources(@Context HttpServletRequest request,
                                  @Context SecurityContext sc,

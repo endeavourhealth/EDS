@@ -1,6 +1,8 @@
 package org.endeavourhealth.ui.endpoints;
 
 import com.codahale.metrics.annotation.Timed;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.base.Strings;
 import org.apache.commons.io.FileUtils;
 import org.endeavourhealth.common.config.ConfigManager;
@@ -33,6 +35,7 @@ import org.endeavourhealth.ui.json.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.security.RolesAllowed;
 import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
@@ -416,12 +419,43 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
                 .build();
     }*/
 
+    /**
+     * endpoint just for testing that users with two different roles can make a specific call
+     */
+    @POST
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="TestEndpoint.TestPostToExchange")
+    @Path("/TestPostToExchange")
+    @RolesAllowed({"eds_admin", "dds_requeue_message"})
+    public Response testPostToExchange(@Context SecurityContext sc) throws Exception{
+        super.setLogbackMarkers(sc);
+
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load, "TestPostToExchange");
+
+        LOG.info("TestPostToExchange");
+
+        ObjectMapper mapper = new ObjectMapper();
+        ObjectNode root = new ObjectNode(mapper.getNodeFactory());
+        root.put("Ok", "Yes");
+
+        String json = mapper.writeValueAsString(root);
+        LOG.info(json);
+
+        clearLogbackMarkers();
+
+        return Response
+                .ok()
+                .entity(json)
+                .build();
+    }
+
     @POST
     @Produces(MediaType.TEXT_PLAIN)
     @Consumes(MediaType.APPLICATION_JSON)
     @Timed(absolute = true, name="ExchangeAuditEndpoint.PostToExchange")
     @Path("/postToExchange")
-    @RequiresAdmin
+    @RolesAllowed({"eds_admin", "dds_requeue_message"}) //first to allow use by DDS-UI and second to allow use from Emis transform code
     public Response postToExchange(@Context SecurityContext sc, JsonPostToExchangeRequest request) throws Exception {
         super.setLogbackMarkers(sc);
 

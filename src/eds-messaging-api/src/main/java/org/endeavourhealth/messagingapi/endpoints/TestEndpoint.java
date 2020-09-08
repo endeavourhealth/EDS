@@ -1,6 +1,5 @@
 package org.endeavourhealth.messagingapi.endpoints;
 
-import com.codahale.metrics.annotation.ResponseMetered;
 import com.codahale.metrics.annotation.Timed;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -40,7 +39,6 @@ public class TestEndpoint extends AbstractEndpoint {
     @Path("/HasDPA")
     @Produces(MediaType.APPLICATION_JSON)
     @Timed(absolute = true, name="TestEndpoint.HasDPA")
-    @ResponseMetered(absolute = true, name="TestEndpoint.HasDPA")
     @RolesAllowed({"dds_api_read_only"})
     public Response hasDpa(@Context SecurityContext sc, @QueryParam("odsCode") String odsCode) throws Exception{
         super.setLogbackMarkers(sc);
@@ -81,7 +79,6 @@ public class TestEndpoint extends AbstractEndpoint {
     @Path("/GetSubscriberConfigNames")
     @Produces(MediaType.APPLICATION_JSON)
     @Timed(absolute = true, name="TestEndpoint.GetSubscriberConfigNames")
-    @ResponseMetered(absolute = true, name="TestEndpoint.GetSubscriberConfigNames")
     @RolesAllowed({"dds_api_read_only"})
     public Response getSubscriberConfigNames(@Context SecurityContext sc, @QueryParam("odsCode") String odsCode) throws Exception{
         super.setLogbackMarkers(sc);
