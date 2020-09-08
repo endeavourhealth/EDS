@@ -425,10 +425,24 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="TestEndpoint.TestPostToExchangeApi")
+    @Path("/TestPostToExchangeApi")
+    @RolesAllowed({"dds_requeue_message"})
+    public Response testPostToExchangeApi(@Context SecurityContext sc) throws Exception {
+        testPostToExchangeImpl(sc);
+    }
+
+    @POST
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
     @Timed(absolute = true, name="TestEndpoint.TestPostToExchange")
     @Path("/TestPostToExchange")
-    @RolesAllowed({"eds_admin", "dds_requeue_message"})
-    public Response testPostToExchange(@Context SecurityContext sc) throws Exception{
+    @RequiresAdmin
+    public Response testPostToExchange(@Context SecurityContext sc) throws Exception {
+        testPostToExchangeImpl(sc);
+    }
+
+    private Response testPostToExchangeImpl(SecurityContext sc) throws Exception {
         super.setLogbackMarkers(sc);
 
         userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load, "TestPostToExchange");
@@ -450,13 +464,35 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
                 .build();
     }
 
+    /**
+     * version of the function called by the Inbound Queue Reader to post into RabbitMQ,
+     * requires the dds_requeue_message user role from the machine realm
+     */
+    @POST
+    @Produces(MediaType.TEXT_PLAIN)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="ExchangeAuditEndpoint.PostToExchangeApi")
+    @Path("/PostToExchangeApi")
+    @RolesAllowed({"dds_requeue_message"}) //first to allow use by DDS-UI and second to allow use from Emis transform code
+    public Response postToExchangeApi(@Context SecurityContext sc, JsonPostToExchangeRequest request) throws Exception {
+        return postToExchangeImpl(sc, request);
+    }
+
+    /**
+     * version of the function called by DDS-UI front-end to post into RabbitMQ,
+     * requires the eds_admin user role from the realm used by regular users
+     */
     @POST
     @Produces(MediaType.TEXT_PLAIN)
     @Consumes(MediaType.APPLICATION_JSON)
     @Timed(absolute = true, name="ExchangeAuditEndpoint.PostToExchange")
-    @Path("/postToExchange")
-    @RolesAllowed({"eds_admin", "dds_requeue_message"}) //first to allow use by DDS-UI and second to allow use from Emis transform code
+    @Path("/PostToExchange")
+    @RequiresAdmin
     public Response postToExchange(@Context SecurityContext sc, JsonPostToExchangeRequest request) throws Exception {
+        return postToExchangeImpl(sc, request);
+    }
+
+    private Response postToExchangeImpl(SecurityContext sc, JsonPostToExchangeRequest request) throws Exception {
         super.setLogbackMarkers(sc);
 
         userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Save, "Post to exchange",
