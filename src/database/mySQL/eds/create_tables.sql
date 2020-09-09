@@ -1,5 +1,6 @@
 USE eds;
 
+DROP PROCEDURE IF EXISTS get_dds_patient_counts;
 DROP TABLE IF EXISTS patient_link;
 DROP TABLE IF EXISTS patient_link_history;
 DROP TABLE IF EXISTS patient_link_person;
@@ -182,3 +183,141 @@ create table patient_search_address (
 	CONSTRAINT pk_patient_search_episode PRIMARY KEY (service_id, patient_id, ordinal)
 );
 */
+
+
+-- procedure to get basic stats out of DDS from a given baseline date
+DELIMITER //
+CREATE PROCEDURE get_dds_patient_counts(
+	    IN date_cutoff date
+)
+BEGIN
+
+	drop table if exists tmp.acute_services;
+	drop table if exists tmp.region;
+	drop table if exists tmp.patient_search_baseline;
+	drop table if exists tmp.person_count_1;
+	drop table if exists tmp.person_count_2;
+	drop table if exists tmp.patient_count_gp;
+	drop table if exists tmp.patient_count_acute;
+
+
+	-- create table of acute ODS codes
+	create table tmp.acute_services (
+		ods_code varchar(25)
+	);
+
+	insert into tmp.acute_services values ('RQX');
+	insert into tmp.acute_services values ('R1H');
+
+	create index ix on tmp.acute_services (ods_code);
+
+	-- create table of regions
+	create table tmp.region (
+		region_name varchar(25),
+		ccg_code varchar(25)
+	);
+
+	insert into tmp.region values ('NEL', '07L');
+	insert into tmp.region values ('NEL', '08F');
+	insert into tmp.region values ('NEL', '08N');
+	insert into tmp.region values ('NEL', '08M');
+	insert into tmp.region values ('NEL', '08V');
+	insert into tmp.region values ('NEL', '07T');
+	insert into tmp.region values ('NEL', '08W');
+
+	insert into tmp.region values ('NWL', '08G');
+	insert into tmp.region values ('NWL', '08C');
+	insert into tmp.region values ('NWL', '08E');
+	insert into tmp.region values ('NWL', '08Y');
+	insert into tmp.region values ('NWL', '07P');
+	insert into tmp.region values ('NWL', '07Y');
+	insert into tmp.region values ('NWL', '07W');
+	insert into tmp.region values ('NWL', '09A');
+
+	insert into tmp.region values ('SEL', '07N');
+	insert into tmp.region values ('SEL', '07Q');
+	insert into tmp.region values ('SEL', '08A');
+	insert into tmp.region values ('SEL', '08K');
+	insert into tmp.region values ('SEL', '08L');
+	insert into tmp.region values ('SEL', '08Q');
+
+	create index ix on tmp.region (region_name, ccg_code);
+	create index ix2 on tmp.region (ccg_code, region_name);
+
+	-- create table, baseline to required date
+	create table tmp.patient_search_baseline as
+	select service_id, patient_id, nhs_number, organisation_type_code
+	from patient_search
+	where dt_created < date_cutoff;
+
+	create index ix on tmp.patient_search_baseline (nhs_number);
+	create index ix2 on tmp.patient_search_baseline (service_id);
+
+	create table tmp.person_count_1 as
+	select count(distinct nhs_number) as `cnt`
+	from tmp.patient_search_baseline
+	where nhs_number is not null;
+
+	create table tmp.person_count_2 as
+	select count(1) as `cnt`
+	from tmp.patient_search_baseline
+	where nhs_number is null;
+
+	create table tmp.patient_count_gp as
+	select s.local_id, s.ccg_code, count(1) as `cnt`
+	from tmp.patient_search_baseline b
+	inner join tmp.services s
+	on s.id = b.service_id
+	where s.organisation_type = 'PR'
+	group by s.local_id, s.ccg_code;
+
+	create table tmp.patient_count_acute as
+	select s.local_id, s.ccg_code, count(1) as `cnt`
+	from tmp.patient_search_baseline b
+	inner join tmp.services s
+	on s.id = b.service_id
+	inner join tmp.acute_services a
+	on a.ods_code = s.local_id
+	where s.organisation_type != 'PR'
+	group by s.local_id, s.ccg_code;
+
+	-- number of person records
+
+	select
+		(select cnt from tmp.person_count_1) + (select cnt from tmp.person_count_2) as `person_count`;
+
+	-- number of GP patient records
+
+
+	select sum(cnt) as `gp_patient_count`
+	from tmp.patient_count_gp g;
+
+	select region_name, sum(cnt) as `gp_patient_count_per_region`
+	from tmp.region r
+	inner join tmp.patient_count_gp g
+	on g.ccg_code = r.ccg_code
+	group by region_name;
+
+
+	-- number of contributing GP services
+
+	select count(distinct local_id) as `gp_practice_count`
+	from tmp.patient_count_gp g;
+
+	select region_name, count(distinct local_id) as `gp_practice_count_per_region`
+	from tmp.region r
+	inner join tmp.patient_count_gp g
+	on g.ccg_code = r.ccg_code
+	group by region_name;
+
+
+	-- number of acute patient records
+
+	select sum(cnt) as `number_acute_patients`
+	from tmp.patient_count_acute;
+
+	select count(distinct local_id) as `number_acute_services`
+	from tmp.patient_count_acute;
+
+END //
+DELIMITER ;
