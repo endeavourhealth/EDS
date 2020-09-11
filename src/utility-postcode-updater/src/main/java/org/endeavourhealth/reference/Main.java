@@ -3,6 +3,7 @@ package org.endeavourhealth.reference;
 import org.apache.commons.io.FilenameUtils;
 import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.core.database.dal.DalProvider;
+import org.endeavourhealth.core.database.dal.audit.ScheduledTaskAuditDalI;
 import org.endeavourhealth.core.database.dal.reference.ReferenceCopierDalI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,10 +29,9 @@ public class Main {
         }
 
         ConfigManager.Initialize("ReferenceUpdater");
+        String type = args[0];
 
         try {
-
-            String type = args[0];
             if (type.equalsIgnoreCase("deprivation")) {
                 DeprivationUpdater.updateDeprivationScores(args);
 
@@ -68,11 +68,23 @@ public class Main {
                 LOG.error("Unknown first argument " + type);
             }
 
-        } catch (Exception ex) {
-            LOG.error("", ex);
-        }
+            auditSuccess(type);
 
-        System.exit(0);
+        } catch (Throwable ex) {
+            LOG.error("", ex);
+            auditFailure(type, ex);
+        }
+    }
+
+
+    private static void auditSuccess(String queryName) throws Exception {
+        ScheduledTaskAuditDalI dal = DalProvider.factoryScheduledTaskAuditDal();
+        dal.auditTaskSuccess(queryName);
+    }
+
+    private static void auditFailure(String queryName, Throwable t) throws Exception {
+        ScheduledTaskAuditDalI dal = DalProvider.factoryScheduledTaskAuditDal();
+        dal.auditTaskFailure(queryName, t);
     }
 
     public static File findFile(String fileExt, String fileNameRegex, String root, String... path) {
