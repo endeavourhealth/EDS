@@ -32,6 +32,8 @@ DROP TABLE IF EXISTS last_data_to_subscriber;
 DROP TABLE IF EXISTS bulk_operation_audit;
 DROP TABLE IF EXISTS service_subscriber_audit;
 DROP TABLE IF EXISTS service_publisher_audit;
+DROP TABLE IF EXISTS scheduled_task_audit_latest;
+DROP TABLE IF EXISTS scheduled_task_audit_history;
 
 CREATE TABLE `exchange`
 (
@@ -378,6 +380,33 @@ CREATE TABLE service_publisher_audit (
 ROW_FORMAT=COMPRESSED
 KEY_BLOCK_SIZE=8
 COMMENT 'records a history of the DPA state changing and when it changed';
+
+
+
+create table scheduled_task_audit_latest (
+  application_name varchar(255) NOT NULL COMMENT 'top-level name of the app e.g. QueryTool',
+  task_name varchar(255) NOT NULL COMMENT 'identifies the instance of the app e.g. EmisMissingCodesReport',
+  timestmp datetime NOT NULL COMMENT 'timestamp of last audit',
+  host_name varchar(255) NOT NULL COMMENT 'server name last run on',
+  success boolean NOT NULL COMMENT 'whether it ran OK or not',
+  error_message text COMMENT 'if not successful, used to store error details',
+  CONSTRAINT pk_scheduled_task_audit PRIMARY KEY (application_name, task_name)
+)
+  ROW_FORMAT=COMPRESSED
+  KEY_BLOCK_SIZE=8;
+
+
+create table scheduled_task_audit_history (
+  application_name varchar(255) NOT NULL COMMENT 'top-level name of the app e.g. QueryTool',
+  task_name varchar(255) NOT NULL COMMENT 'identifies the instance of the app e.g. EmisMissingCodesReport',
+  timestmp datetime NOT NULL COMMENT 'timestamp of last audit',
+  host_name varchar(255) NOT NULL COMMENT 'server name last run on',
+  success boolean NOT NULL COMMENT 'whether it ran OK or not',
+  error_message text COMMENT 'if not successful, used to store error details',
+  CONSTRAINT pk_scheduled_task_audit PRIMARY KEY (application_name, task_name, timestmp)
+)
+  ROW_FORMAT=COMPRESSED
+  KEY_BLOCK_SIZE=8;
 
 
 

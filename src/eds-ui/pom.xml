@@ -85,17 +85,6 @@
     </dependency>
     <!-- End Java servlet -->
 
-    <!-- JavaMail -->
-    <dependency>
-      <groupId>javax.mail</groupId>
-      <artifactId>javax.mail-api</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>com.sun.mail</groupId>
-      <artifactId>javax.mail</artifactId>
-    </dependency>
-    <!-- End JavaMail -->
-
     <!-- Logback -->
     <dependency>
       <groupId>ch.qos.logback</groupId>

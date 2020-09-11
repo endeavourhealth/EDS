@@ -1,5 +1,6 @@
 USE eds;
 
+DROP PROCEDURE IF EXISTS get_dds_patient_counts_now;
 DROP PROCEDURE IF EXISTS get_dds_patient_counts;
 DROP TABLE IF EXISTS patient_link;
 DROP TABLE IF EXISTS patient_link_history;
@@ -186,6 +187,17 @@ create table patient_search_address (
 
 
 -- procedure to get basic stats out of DDS from a given baseline date
+
+DELIMITER //
+CREATE PROCEDURE get_dds_patient_counts_now()
+BEGIN
+
+	CALL get_dds_patient_counts(DATE(NOW()));
+
+END //
+DELIMITER ;
+
+
 DELIMITER //
 CREATE PROCEDURE get_dds_patient_counts(
 	    IN date_cutoff date
@@ -266,7 +278,7 @@ BEGIN
 	create table tmp.patient_count_gp as
 	select s.local_id, s.ccg_code, count(1) as `cnt`
 	from tmp.patient_search_baseline b
-	inner join tmp.services s
+	inner join admin.service s
 	on s.id = b.service_id
 	where s.organisation_type = 'PR'
 	group by s.local_id, s.ccg_code;
@@ -274,7 +286,7 @@ BEGIN
 	create table tmp.patient_count_acute as
 	select s.local_id, s.ccg_code, count(1) as `cnt`
 	from tmp.patient_search_baseline b
-	inner join tmp.services s
+	inner join admin.service s
 	on s.id = b.service_id
 	inner join tmp.acute_services a
 	on a.ods_code = s.local_id
