@@ -119,6 +119,9 @@ public class Main {
         String recipientStr = String.join("; ", recipients);
 
         JsonNode json = ConfigManager.getConfigurationAsJson("email");
+        if (json == null) {
+            throw new Exception("No config record found for email");
+        }
         String fromAddress = json.get("sendFromAddress").asText();
         String smtpHost = json.get("smtpHost").asText();
         int smtpPort = json.get("smtpPort").asInt();

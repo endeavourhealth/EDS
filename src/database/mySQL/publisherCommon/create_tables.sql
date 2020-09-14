@@ -225,6 +225,8 @@ CREATE INDEX ix2 ON emis_missing_code_error (service_id, dt_fixed, code_type);
 
 CREATE INDEX ix3 ON emis_missing_code_error (service_id, dt_fixed, code_id);
 
+CREATE INDEX ix4 ON emis_missing_code_error (dt_fixed, code_type, code_id);
+
 
 create table tpp_config_list_option_2 (
 	row_id int not null comment 'The value of RowIdentifier',
