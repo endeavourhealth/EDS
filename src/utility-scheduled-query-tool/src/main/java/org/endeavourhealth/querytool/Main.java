@@ -64,7 +64,7 @@ public class Main {
         } catch (Throwable t) {
 
             LOG.error("Error with scheduled query " + queryName, t);
-            SlackHelper.sendSlackMessage(SlackHelper.Channel.QueryTool, "Error running Query Tool for " + queryName, t);
+            SlackHelper.sendSlackMessage(SlackHelper.Channel.QueryTool, "Error running Scheduled Query Tool query [" + queryName + "]", t);
             auditFailure(queryName, t);
         }
     }
@@ -103,6 +103,8 @@ public class Main {
 
 
     private static void sendEmail(QueryDefinition query, List<File> files) throws Exception {
+
+        LOG.debug("Sending email");
 
         String subject = query.getEmailSubject();
         if (Strings.isNullOrEmpty(subject)) {
@@ -180,7 +182,7 @@ public class Main {
 
         // to authenticate to the mail server.
         Transport.send(msg, fromAddress, password);
-
+        LOG.debug("Email sent");
     }
 
 
