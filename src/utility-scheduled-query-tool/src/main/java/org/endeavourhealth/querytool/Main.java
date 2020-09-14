@@ -118,7 +118,9 @@ public class Main {
         if (recipients == null || recipients.isEmpty()) {
             throw new Exception("No recipients found for email");
         }
-        String recipientStr = String.join("; ", recipients);
+        //apparently the parsing expects commas
+        //String recipientStr = String.join("; ", recipients);
+        String recipientStr = String.join(",", recipients);
 
         JsonNode json = ConfigManager.getConfigurationAsJson("email");
         if (json == null) {

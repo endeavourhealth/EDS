@@ -204,6 +204,10 @@ CREATE PROCEDURE get_dds_patient_counts(
 )
 BEGIN
 
+	-- avoid locking the table
+	SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED ;
+
+
 	drop table if exists tmp.acute_services;
 	drop table if exists tmp.region;
 	drop table if exists tmp.patient_search_baseline;
@@ -330,6 +334,10 @@ BEGIN
 
 	select count(distinct local_id) as `number_acute_services`
 	from tmp.patient_count_acute;
+
+    -- restore this back to default
+    SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ ;
+
 
 END //
 DELIMITER ;
