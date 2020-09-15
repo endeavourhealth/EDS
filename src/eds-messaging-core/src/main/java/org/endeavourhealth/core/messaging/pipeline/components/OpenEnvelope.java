@@ -266,6 +266,12 @@ public class OpenEnvelope extends PipelineComponent {
 			return sdf.parse(timestampStr);
 		}
 
+		if (software.equalsIgnoreCase(MessageFormat.IMPERIAL_HL7_V2)) {
+			String timestampStr = findFirstElement(body, "timestamp");
+			SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+			return sdf.parse(timestampStr);
+		}
+
 		//all other systems have the body containing a list of files in JSON, which contain
 		//the date in the path somewhere
 		String dateFormat = null;
