@@ -75,27 +75,27 @@ public class Main {
                 }
             }
 
-            auditSuccess(enterpriseConfigName);
+            auditSuccess(enterpriseConfigName, args);
             LOG.info("Age updates complete");
 
         } catch (Throwable ex) {
 
             LOG.error("Error updating " + enterpriseConfigName, ex);
             SlackHelper.sendSlackMessage(SlackHelper.Channel.EnterpriseAgeUpdaterAlerts, "Exception in Enterprise Age Updater (" + enterpriseConfigName + ")", ex);
-            auditFailure(enterpriseConfigName, ex);
+            auditFailure(enterpriseConfigName, args, ex);
         }
     }
 
 
 
-    private static void auditSuccess(String queryName) throws Exception {
+    private static void auditSuccess(String queryName, String[] args) throws Exception {
         ScheduledTaskAuditDalI dal = DalProvider.factoryScheduledTaskAuditDal();
-        dal.auditTaskSuccess(queryName);
+        dal.auditTaskSuccess(queryName, args);
     }
 
-    private static void auditFailure(String queryName, Throwable t) throws Exception {
+    private static void auditFailure(String queryName, String[] args, Throwable t) throws Exception {
         ScheduledTaskAuditDalI dal = DalProvider.factoryScheduledTaskAuditDal();
-        dal.auditTaskFailure(queryName, t);
+        dal.auditTaskFailure(queryName, args, t);
     }
 
     private static void updateEnterprisePatient(long enterprisePatientId, Integer[] ages, Connection connection) throws Exception {

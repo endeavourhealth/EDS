@@ -198,8 +198,8 @@ END //
 DELIMITER ;
 
 
-DELIMITER //
-CREATE PROCEDURE get_dds_patient_counts(
+DELIMITER $$
+CREATE PROCEDURE `get_dds_patient_counts`(
 	    IN date_cutoff date
 )
 BEGIN
@@ -264,7 +264,7 @@ BEGIN
 	create table tmp.patient_search_baseline as
 	select service_id, patient_id, nhs_number, organisation_type_code
 	from patient_search
-	where dt_created < date_cutoff;
+	where dt_created < date(now());
 
 	create index ix on tmp.patient_search_baseline (nhs_number);
 	create index ix2 on tmp.patient_search_baseline (service_id);
@@ -294,7 +294,6 @@ BEGIN
 	on s.id = b.service_id
 	inner join tmp.acute_services a
 	on a.ods_code = s.local_id
-	where s.organisation_type != 'PR'
 	group by s.local_id, s.ccg_code;
 
 	-- number of person records
@@ -335,9 +334,18 @@ BEGIN
 	select count(distinct local_id) as `number_acute_services`
 	from tmp.patient_count_acute;
 
+	drop table if exists tmp.acute_services;
+	drop table if exists tmp.region;
+	drop table if exists tmp.patient_search_baseline;
+	drop table if exists tmp.person_count_1;
+	drop table if exists tmp.person_count_2;
+	drop table if exists tmp.patient_count_gp;
+	drop table if exists tmp.patient_count_acute;
+
+
     -- restore this back to default
     SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ ;
 
 
-END //
+END$$
 DELIMITER ;

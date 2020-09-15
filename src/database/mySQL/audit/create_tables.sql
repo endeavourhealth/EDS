@@ -391,6 +391,7 @@ create table scheduled_task_audit_latest (
   host_name varchar(255) NOT NULL COMMENT 'server name last run on',
   success boolean NOT NULL COMMENT 'whether it ran OK or not',
   error_message text COMMENT 'if not successful, used to store error details',
+  task_parameters text COMMENT 'additional paramters used to launch the scheduled task',
   CONSTRAINT pk_scheduled_task_audit PRIMARY KEY (application_name, task_name)
 )
   ROW_FORMAT=COMPRESSED
@@ -404,6 +405,7 @@ create table scheduled_task_audit_history (
   host_name varchar(255) NOT NULL COMMENT 'server name last run on',
   success boolean NOT NULL COMMENT 'whether it ran OK or not',
   error_message text COMMENT 'if not successful, used to store error details',
+  task_parameters text COMMENT 'additional paramters used to launch the scheduled task',
   CONSTRAINT pk_scheduled_task_audit PRIMARY KEY (application_name, task_name, timestmp)
 )
   ROW_FORMAT=COMPRESSED

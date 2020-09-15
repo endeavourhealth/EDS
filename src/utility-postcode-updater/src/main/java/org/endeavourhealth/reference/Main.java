@@ -68,23 +68,23 @@ public class Main {
                 LOG.error("Unknown first argument " + type);
             }
 
-            auditSuccess(type);
+            auditSuccess(type, args);
 
         } catch (Throwable ex) {
             LOG.error("", ex);
-            auditFailure(type, ex);
+            auditFailure(type, args, ex);
         }
     }
 
 
-    private static void auditSuccess(String queryName) throws Exception {
+    private static void auditSuccess(String queryName, String[] args) throws Exception {
         ScheduledTaskAuditDalI dal = DalProvider.factoryScheduledTaskAuditDal();
-        dal.auditTaskSuccess(queryName);
+        dal.auditTaskSuccess(queryName, args);
     }
 
-    private static void auditFailure(String queryName, Throwable t) throws Exception {
+    private static void auditFailure(String queryName, String[] args, Throwable t) throws Exception {
         ScheduledTaskAuditDalI dal = DalProvider.factoryScheduledTaskAuditDal();
-        dal.auditTaskFailure(queryName, t);
+        dal.auditTaskFailure(queryName, args, t);
     }
 
     public static File findFile(String fileExt, String fileNameRegex, String root, String... path) {

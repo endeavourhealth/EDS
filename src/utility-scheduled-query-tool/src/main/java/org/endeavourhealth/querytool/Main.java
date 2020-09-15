@@ -59,25 +59,25 @@ public class Main {
 
         try {
             runQuery(queryName);
-            auditSuccess(queryName);
+            auditSuccess(queryName, args);
 
         } catch (Throwable t) {
 
             LOG.error("Error with scheduled query " + queryName, t);
             SlackHelper.sendSlackMessage(SlackHelper.Channel.QueryTool, "Error running Scheduled Query Tool query [" + queryName + "]", t);
-            auditFailure(queryName, t);
+            auditFailure(queryName, args, t);
         }
     }
 
 
-    private static void auditSuccess(String queryName) throws Exception {
+    private static void auditSuccess(String queryName, String[] args) throws Exception {
         ScheduledTaskAuditDalI dal = DalProvider.factoryScheduledTaskAuditDal();
-        dal.auditTaskSuccess(queryName);
+        dal.auditTaskSuccess(queryName, args);
     }
 
-    private static void auditFailure(String queryName, Throwable t) throws Exception {
+    private static void auditFailure(String queryName, String[] args, Throwable t) throws Exception {
         ScheduledTaskAuditDalI dal = DalProvider.factoryScheduledTaskAuditDal();
-        dal.auditTaskFailure(queryName, t);
+        dal.auditTaskFailure(queryName, args, t);
     }
 
     private static void runQuery(String queryName) throws Exception {
