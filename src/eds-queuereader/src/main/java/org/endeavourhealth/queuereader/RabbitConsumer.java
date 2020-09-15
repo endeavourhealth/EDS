@@ -44,7 +44,7 @@ public class RabbitConsumer extends DefaultConsumer
 	//variables to prevent duplicate processing in the event of Rabbit fail-overs
 	private static final List<RabbitConsumer_State> messagesBeingProcessed = new ArrayList<>();
 
-	//members
+	//members-
 	private final QueueReaderConfiguration configuration;
 	private final String configId;
 	private final RabbitHandler handler;
