@@ -36,7 +36,7 @@
     <module>src/utility-enterprise-age-updater</module>
     <module>src/utility-database-deidentifier</module>
     <module>src/utility-hl7-checker</module>
-      <module>src/emis-cron-scheduler</module>
+    <module>src/utility-scheduled-query-tool</module>
   </modules>
 
   <repositories>

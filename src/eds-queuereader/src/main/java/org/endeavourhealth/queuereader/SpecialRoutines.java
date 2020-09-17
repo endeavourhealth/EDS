@@ -7,11 +7,8 @@ import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.io.FileUtils;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
-import org.endeavourhealth.common.fhir.ExtensionConverter;
-import org.endeavourhealth.common.fhir.FhirExtensionUri;
 import org.endeavourhealth.common.fhir.IdentifierHelper;
 import org.endeavourhealth.common.fhir.ReferenceHelper;
-import org.endeavourhealth.common.fhir.schema.NhsNumberVerificationStatus;
 import org.endeavourhealth.common.fhir.schema.RegistrationType;
 import org.endeavourhealth.common.utility.FileHelper;
 import org.endeavourhealth.common.utility.JsonSerializer;
@@ -41,6 +38,7 @@ import org.endeavourhealth.core.database.dal.usermanager.caching.ProjectCache;
 import org.endeavourhealth.core.database.rdbms.ConnectionManager;
 import org.endeavourhealth.core.database.rdbms.datasharingmanager.models.DataSharingAgreementEntity;
 import org.endeavourhealth.core.database.rdbms.datasharingmanager.models.ProjectEntity;
+import org.endeavourhealth.core.fhirStorage.FhirSerializationHelper;
 import org.endeavourhealth.core.fhirStorage.ServiceInterfaceEndpoint;
 import org.endeavourhealth.core.messaging.pipeline.PipelineException;
 import org.endeavourhealth.core.queueing.MessageFormat;
@@ -61,6 +59,7 @@ import org.endeavourhealth.transform.common.resourceBuilders.ImmunizationBuilder
 import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
 import org.endeavourhealth.transform.enterprise.EnterpriseTransformHelper;
 import org.endeavourhealth.transform.enterprise.FhirToEnterpriseCsvTransformer;
+import org.endeavourhealth.transform.enterprise.ObservationCodeHelper;
 import org.endeavourhealth.transform.enterprise.outputModels.AbstractEnterpriseCsvWriter;
 import org.endeavourhealth.transform.enterprise.transforms.AppointmentEnterpriseTransformer;
 import org.endeavourhealth.transform.enterprise.transforms.EpisodeOfCareEnterpriseTransformer;
@@ -73,14 +72,17 @@ import org.endeavourhealth.transform.subscriber.transforms.EpisodeOfCareTransfor
 import org.endeavourhealth.transform.subscriber.transforms.PatientTransformer;
 import org.endeavourhealth.transform.tpp.csv.helpers.TppCsvHelper;
 import org.hl7.fhir.instance.model.*;
+import org.hl7.fhir.instance.model.Resource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.Statement;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.Date;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 
@@ -88,7 +90,6 @@ public abstract class SpecialRoutines {
     private static final Logger LOG = LoggerFactory.getLogger(SpecialRoutines.class);
     public static final String COMPASS_V1 = "compass_v1";
     public static final String COMPASS_V2 = "compass_v2";
-
 
 
     /*public static void populateExchangeFileSizes(String odsCodeRegex) {
@@ -1017,6 +1018,7 @@ public abstract class SpecialRoutines {
             tppCoreConceptId = IMHelper.getIMMappedConcept(null, null, tppScheme, tppCode);
             tppNonCoreConceptId = IMHelper.getIMConcept(null, null, tppScheme, tppCode, tppTerm);
             LOG.debug("    " + tppCode + " -> non-core " + tppNonCoreConceptId + " -> core " + tppCoreConceptId);
+
 
 
             LOG.debug("Finished Testing Information Model");
@@ -5155,10 +5157,51 @@ public abstract class SpecialRoutines {
 
     }
 
+    public static void testInformationModelFromJson(String filePath) {
+        LOG.info("Testing IM from JSON in " + filePath);
+        try {
+            File f = new File(filePath);
+            if (!f.exists()) {
+                throw new Exception("" + filePath + " does not exist");
+            }
+            String json = FileHelper.readTextFile(f.toPath());
+            Resource r = FhirSerializationHelper.deserializeResource(json);
+
+            CodeableConcept cc = null;
+            if (r instanceof Procedure) {
+                cc = ((Procedure)r).getCode();
+            } else if (r instanceof Observation) {
+                cc = ((Observation)r).getCode();
+            } else {
+                throw new Exception("Unexpected resource type " + r.getResourceType());
+            }
+
+            Coding originalCoding = ObservationCodeHelper.findOriginalCoding(cc);
+            if (originalCoding == null) {
+                throw new Exception("Failed to find original coding");
+            }
+            String originalCode = originalCoding.getCode();
+            String conceptScheme = ObservationCodeHelper.mapCodingSystemToImScheme(originalCoding);
+            String display = originalCoding.getDisplay();
+            LOG.debug("IM concept scheme = " + conceptScheme);
+
+            Integer coreConceptId = IMHelper.getIMMappedConcept(null, r, conceptScheme, originalCode);
+            LOG.debug("Found core concept ID " + coreConceptId);
+
+            Integer nonCoreConceptId = IMHelper.getIMConcept(null, r, conceptScheme, originalCode, display);
+            LOG.debug("Found non-core concept ID " + nonCoreConceptId);
+
+            LOG.info("Finished Testing IM from JSON in " + filePath);
+        } catch (Throwable t) {
+            LOG.error("", t);
+        }
+
+    }
+
     /**
      * populates new fields added to eds.patient_search table
      */
-    public static void populatePatientSearchFields() {
+    /*public static void populatePatientSearchFields() {
         LOG.info("Populating Patient Search Fields");
         try {
 
@@ -5271,7 +5314,7 @@ public abstract class SpecialRoutines {
             LOG.error("", t);
         }
 
-    }
+    }*/
 
     /*public static void testUprnToken(String protocol) {
         LOG.info("Testing UPRN Token");

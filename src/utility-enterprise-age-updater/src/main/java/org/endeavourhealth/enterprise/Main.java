@@ -3,6 +3,7 @@ package org.endeavourhealth.enterprise;
 import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.common.utility.SlackHelper;
 import org.endeavourhealth.core.database.dal.DalProvider;
+import org.endeavourhealth.core.database.dal.audit.ScheduledTaskAuditDalI;
 import org.endeavourhealth.core.database.dal.subscriberTransform.EnterpriseAgeUpdaterlDalI;
 import org.endeavourhealth.core.database.dal.subscriberTransform.models.EnterpriseAge;
 import org.endeavourhealth.core.database.rdbms.enterprise.EnterpriseConnector;
@@ -74,16 +75,28 @@ public class Main {
                 }
             }
 
+            auditSuccess(enterpriseConfigName, args);
             LOG.info("Age updates complete");
 
-        } catch (Exception ex) {
-            LOG.error("", ex);
-            SlackHelper.sendSlackMessage(SlackHelper.Channel.EnterpriseAgeUpdaterAlerts, "Exception in Enterprise Age Updater (" + enterpriseConfigName + ")", ex);
-        }
+        } catch (Throwable ex) {
 
-        System.exit(0);
+            LOG.error("Error updating " + enterpriseConfigName, ex);
+            SlackHelper.sendSlackMessage(SlackHelper.Channel.EnterpriseAgeUpdaterAlerts, "Exception in Enterprise Age Updater (" + enterpriseConfigName + ")", ex);
+            auditFailure(enterpriseConfigName, args, ex);
+        }
     }
 
+
+
+    private static void auditSuccess(String queryName, String[] args) throws Exception {
+        ScheduledTaskAuditDalI dal = DalProvider.factoryScheduledTaskAuditDal();
+        dal.auditTaskSuccess(queryName, args);
+    }
+
+    private static void auditFailure(String queryName, String[] args, Throwable t) throws Exception {
+        ScheduledTaskAuditDalI dal = DalProvider.factoryScheduledTaskAuditDal();
+        dal.auditTaskFailure(queryName, args, t);
+    }
 
     private static void updateEnterprisePatient(long enterprisePatientId, Integer[] ages, Connection connection) throws Exception {
 

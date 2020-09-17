@@ -16,16 +16,8 @@ import java.util.Map;
 public class OnsWardHelper {
     private static final Logger LOG = LoggerFactory.getLogger(OnsWardHelper.class);
 
-    //cols changed May 20202
-    private static final String COL_CODE = "\uFEFFWD20CD";
-    private static final String COL_NAME = "WD20NM";
-    //cols changed Apr 2018
-    /*private static final String COL_CODE = "\uFEFFWD19CD";
-    private static final String COL_NAME = "WD19NM";*/
-    //private static final String COL_NAME_WELSH = "WD19NMW"; //removed in Dec 2019 version
-    /*private static final String COL_CODE = "\uFEFFWD18CD";
-    private static final String COL_NAME = "WD18NM";
-    private static final String COL_NAME_WELSH = "WD18NMW";*/
+    private static final String COL_CODE = "\uFEFFWD19CD";
+    private static final String COL_NAME = "WD19NM";
 
     public static void processFile(Reader r) throws Exception {
 

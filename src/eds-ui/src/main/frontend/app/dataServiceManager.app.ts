@@ -51,6 +51,8 @@ import {QueueReaderStatusComponent} from "./queueReaderStatus/queueReaderStatus.
 import {ConfigManagerModule} from "./configManager/configManager.module";
 import {ConfigManagerComponent} from "./configManager/configManager.component";
 import {SystemListComponent} from "./system/systemList.component";
+import {ScheduledTasksModule} from "./scheduledTasks/scheduledTasks.module";
+import {ScheduledTasksComponent} from "./scheduledTasks/scheduledTasks.component";
 
 @NgModule(
 	Application.Define({
@@ -78,7 +80,8 @@ import {SystemListComponent} from "./system/systemList.component";
 			SftpReaderModule,
 			DatabaseStatsModule,
 			QueueReaderStatusModule,
-			ConfigManagerModule
+			ConfigManagerModule,
+			ScheduledTasksModule
 		],
 		states: [
 			{name: 'app.systemList', url: '/systemList', component: SystemListComponent},
@@ -104,7 +107,8 @@ import {SystemListComponent} from "./system/systemList.component";
 			{name: 'app.sftpReader', url: '/sftpReader', component: SftpReaderComponent},
 			{name: 'app.databaseStats', url: '/databaseStats', component: DatabaseStatsComponent},
 			{name: 'app.queueReaderStatus', url: '/queueReaderStatus', component: QueueReaderStatusComponent},
-			{name: 'app.configManager', url: '/configManager', component: ConfigManagerComponent}
+			{name: 'app.configManager', url: '/configManager', component: ConfigManagerComponent},
+			{name: 'app.scheduledTasks', url: '/scheduledTasks', component: ScheduledTasksComponent}
 		],
 		defaultState : { state: 'app.queueReaderStatus', params: {} },
 		menuManager : DataServiceManagerMenuService

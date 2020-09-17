@@ -45,7 +45,7 @@ public class TestEndpoint extends AbstractEndpoint {
 
         userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load, "Test HasDPA");
 
-        LOG.info("Test Endpoint - HasDPA for " + odsCode);
+        LOG.info("Test Endpoint - HasDPA for odsCode" + odsCode);
 
         ObjectMapper mapper = new ObjectMapper();
         ArrayNode root = new ArrayNode(mapper.getNodeFactory());
