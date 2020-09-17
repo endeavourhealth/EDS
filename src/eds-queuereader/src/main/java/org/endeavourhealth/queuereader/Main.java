@@ -88,11 +88,20 @@ public class Main {
 		LOG.info("Initialising config manager");
 		ConfigManager.initialize("queuereader", configId);
 
+
 		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("testInformationModelFromJson")) {
+			String filePath = args[1];
+			SpecialRoutines.testInformationModelFromJson(filePath);
+			System.exit(0);
+		}
+
+
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("populatePatientSearchFields")) {
 			SpecialRoutines.populatePatientSearchFields();
 			System.exit(0);
-		}
+		}*/
 
 		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("testUprnToken")) {
