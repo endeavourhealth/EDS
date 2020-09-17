@@ -2603,3 +2603,66 @@ CREATE TRIGGER after_patient_pseudo_id_delete
     );
   END$$
 DELIMITER ;
+
+DELIMITER $$
+CREATE TRIGGER after_patient_additional_insert
+  AFTER INSERT ON patient_additional
+  FOR EACH ROW
+  BEGIN
+    INSERT INTO event_log (
+		dt_change,
+        change_type,
+        table_id,
+        record_id
+    ) VALUES (
+		now(3), -- current time inc ms
+        0, -- insert
+        28, -- patient_additional
+        NEW.id
+    );
+  END$$
+DELIMITER ;
+
+
+
+DELIMITER $$
+CREATE TRIGGER after_patient_additional_update
+  AFTER UPDATE ON patient_additional
+  FOR EACH ROW
+  BEGIN
+    INSERT INTO event_log (
+		dt_change,
+        change_type,
+        table_id,
+        record_id
+    ) VALUES (
+		now(3), -- current time inc ms
+        1, -- update
+        28, -- patient_additional
+        NEW.id
+    );
+  END$$
+DELIMITER ;
+
+
+
+DELIMITER $$
+CREATE TRIGGER after_patient_additional_delete
+  AFTER DELETE ON patient_additional
+  FOR EACH ROW
+  BEGIN
+    INSERT INTO event_log (
+		dt_change,
+        change_type,
+        table_id,
+        record_id
+    ) VALUES (
+		now(3), -- current time inc ms
+        2, -- delete
+        28, -- patient_additional
+        OLD.id
+    );
+  END$$
+DELIMITER ;
+
+
