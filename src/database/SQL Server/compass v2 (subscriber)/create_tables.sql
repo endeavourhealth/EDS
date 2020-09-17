@@ -2360,3 +2360,64 @@ GO
 ALTER TABLE [registration_status_history] ENABLE TRIGGER [after_registration_status_history_delete]
 GO
 
+CREATE TRIGGER [after_patient_additional_insert]
+ON [patient_additional]
+WITH EXECUTE AS CALLER
+After INSERT
+AS
+BEGIN
+    INSERT INTO event_log (
+		dt_change,
+        change_type,
+        table_id,
+        record_id
+	) select
+		GETDATE(), -- current time inc ms
+        0, -- insert
+        28, -- patient_additional
+        id from inserted
+  END
+GO
+ALTER TABLE [patient_additional] ENABLE TRIGGER [after_patient_additional_insert]
+GO
+CREATE TRIGGER [after_patient_additional_update]
+ON [patient_additional]
+WITH EXECUTE AS CALLER
+After UPDATE
+AS
+BEGIN
+    INSERT INTO event_log (
+		dt_change,
+        change_type,
+        table_id,
+        record_id
+	) select
+		GETDATE(), -- current time inc ms
+        1, -- update
+        28, -- patient_additional
+        id from deleted
+  END
+GO
+ALTER TABLE [patient_additional] ENABLE TRIGGER [after_patient_additional_update]
+GO
+CREATE TRIGGER [after_patient_additional_delete]
+ON [patient_additional]
+WITH EXECUTE AS CALLER
+After DELETE
+AS
+BEGIN
+    INSERT INTO event_log (
+		dt_change,
+        change_type,
+        table_id,
+        record_id
+	) select
+		GETDATE(), -- current time inc ms
+        2, -- delete
+        28, -- patient_additional
+        id from deleted
+  END
+GO
+ALTER TABLE [patient_additional] ENABLE TRIGGER [after_patient_additional_delete]
+GO
+
