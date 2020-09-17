@@ -92,7 +92,6 @@ public abstract class SpecialRoutines {
     public static final String COMPASS_V2 = "compass_v2";
 
 
-
     /*public static void populateExchangeFileSizes(String odsCodeRegex) {
         LOG.info("Populating Exchange File Sizes for " + odsCodeRegex);
         try {
