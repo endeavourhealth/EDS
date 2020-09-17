@@ -395,6 +395,15 @@ INSERT INTO patient_gender (id, value) VALUES (2, 'Other')
 INSERT INTO patient_gender (id, value) VALUES (3, 'Unknown')
 GO
 
+CREATE TABLE patient_additional (
+  id bigint NOT NULL ,
+  property_id character varying(255)  NOT NULL,
+  value_id character varying(255) NOT NULL,
+  CONSTRAINT pk_patient_additional_id PRIMARY KEY (id, property_id)
+);
+CREATE INDEX ix_patient_additional_id
+    ON patient_additional
+    (value_id);
 CREATE TABLE registration_status
 (
   id smallint NOT NULL,

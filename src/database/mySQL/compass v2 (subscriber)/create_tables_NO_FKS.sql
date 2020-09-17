@@ -87,6 +87,7 @@ DROP TABLE IF EXISTS referral_request;
 DROP TABLE IF EXISTS pseudo_id; -- deleted table
 DROP TABLE IF EXISTS patient_contact;
 DROP TABLE IF EXISTS patient_address;
+DROP TABLE IF EXISTS patient_additional;
 DROP TABLE IF EXISTS patient_uprn;
 DROP TABLE IF EXISTS event_log;
 DROP TABLE IF EXISTS encounter_event;
@@ -840,6 +841,16 @@ CREATE TABLE patient_address
 ) COMMENT 'stores address details for patients';
 
 create unique index ux_patient_address_id on patient_address (id);
+
+CREATE TABLE patient_additional (
+  id bigint NOT NULL COMMENT 'same as the id column on the patient table ',
+  property_id character varying(255)  NOT NULL COMMENT 'IM reference (e.g. Cause of death)',
+  value_id character varying(255) NOT NULL COMMENT 'IM reference (e.g. COVID)',
+  CONSTRAINT pk_patient_additional_id PRIMARY KEY (id, property_id)
+);
+CREATE INDEX ix_patient_additional_id
+    ON patient_additional
+    (value_id);
 
 -- Table: event_log
 

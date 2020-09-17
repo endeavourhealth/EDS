@@ -32,6 +32,9 @@ IF OBJECT_ID('dbo.patient_address', 'U') IS NOT NULL DROP TABLE dbo.patient_addr
 GO
 IF OBJECT_ID('dbo.patient_uprn', 'U') IS NOT NULL DROP TABLE dbo.patient_uprn
 GO
+IF OBJECT_ID('dbo.patient_additional', 'U') IS NOT NULL DROP TABLE dbo.patient_additional
+GO
+
 IF OBJECT_ID('dbo.event_log', 'U') IS NOT NULL DROP TABLE dbo.event_log
 GO
 IF OBJECT_ID('dbo.encounter_event', 'U') IS NOT NULL DROP TABLE dbo.encounter_event
@@ -458,6 +461,15 @@ GO
 create unique index ux_patient_address_id on patient_address (id);
 GO
 
+CREATE TABLE [patient_additional] (
+  [id] bigint NOT NULL ,
+  [property_id] varchar(255)  NOT NULL,
+  [value_id] varchar(255) NOT NULL ,
+  PRIMARY KEY ([id], [property_id])
+)
+GO
+CREATE INDEX [ix_patient_additional_id]  ON [patient_additional]  (value_id)
+GO
 
 CREATE TABLE [patient_contact] (
 [id] bigint,
