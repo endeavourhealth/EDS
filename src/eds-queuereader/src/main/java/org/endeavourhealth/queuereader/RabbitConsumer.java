@@ -423,7 +423,7 @@ public class RabbitConsumer extends DefaultConsumer
 				sb.append(dataDate.toString());
 				sb.append(" ");
 			}
-			sb.append("data for ");
+			sb.append("data for ods");
 			sb.append(odsCode.toString());
 			sb.append(" since ");
 			sb.append(dtCreatedDesc);
