@@ -4,7 +4,7 @@
 
         <div class="pull-right">
 
-            <button class="btn btn-sm btn-success" (click)="refresh()">Refresh</button>
+            <button class="btn btn-sm btn-success" (click)="refreshAll()">Refresh</button>
         </div>
     </div>
 
@@ -17,32 +17,66 @@
                     <table class="table table-striped table-condensed">
                         <thead>
                         <tr>
-                            <th class="col-md-2">Configuration</th>
-                            <th class="col-md-4">Third Party->SFTP Reader</th>
-                            <th class="col-md-5">SFTP Reader->Messaging API</th>
+                            <th class="col-md-2">Application</th>
+                            <th class="col-md-2">Task</th>
+                            <th class="col-md-2">Last Run</th>
+                            <th class="col-md-5">Status</th>
                             <th class="col-md-1">Actions</th>
-                            <!--<th class="col-md-6">Actions</th>-->
                         </tr>
                         </thead>
                         <tbody>
-                        <tr class="hover-box show-child-on-hover" *ngFor="let item of summary">
+                        <tr class="hover-box show-child-on-hover" *ngFor="let item of getSummariesToDisplay()">
                             <td>
                                 <div>{{item.applicationName}}</div>
+                            </td>
 
+                            <td>
+                                <div>{{item.taskName}}</div>
+                            </td>
+
+                            <td>
+                                <div *ngIf="item.timestamp">
+                                    <span *ngIf="isItemTooOld(item)" class="label label-danger" ngbTooltip="Not run recently">Warning</span>
+                                    {{item.timestamp | date:'yyyy-MM-dd HH:mm'}}
+                                    <span class="fa fa-info-circle fa-right-pad text-muted" ngbTooltip="{{getRuleWithinDesc(item)}}" *ngIf="item.rule && item.rule.within"></span>
+                                </div>
+                                <div *ngIf="!item.timestamp">
+                                    <span class="label label-danger" ngbTooltip="Never run">Warning</span>
+                                    NEVER
+                                </div>
                             </td>
 
                             <td>
 
+                                <div *ngIf="item.taskParameters">
+                                    Parameters: {{item.taskParameters}}
+                                </div>
+                                <div *ngIf="item.hostName">
+                                    Server: {{item.hostName}}
+                                </div>
+
+                                <div *ngIf="item.success">
+                                    State: OK
+                                </div>
+                                <div *ngIf="!item.success">
+                                    <div *ngIf="item.timestamp">
+                                        <span class="label label-danger" ngbTooltip="Execution failed">Warning</span>
+                                        State: FAILED
+                                    </div>
+                                    <div *ngIf="!item.timestamp">
+                                        <span class="label label-danger" ngbTooltip="Never run">Warning</span>
+                                        State: NEVER RUN
+                                    </div>
+                                </div>
+
+                                <div *ngIf="item.errorMessage">
+                                    <pre style="max-width:450px;" width="70">{{item.errorMessage}}</pre>
+                                </div>
 
                             </td>
-                            <td>
-
-                            </td>
 
                             <td>
-                                <button class="btn btn-xs btn-default child-to-show" (click)="viewHistory(configuration)">View History</button>
-                                <button class="btn btn-xs btn-default child-to-show" (click)="togglePause(configuration)">Toggle Pause</button>
-
+                                <button class="btn btn-xs btn-default child-to-show" (click)="viewHistory(item)">View History</button>
                             </td>
 
                         </tr>

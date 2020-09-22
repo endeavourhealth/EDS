@@ -1,6 +1,7 @@
 package org.endeavourhealth.ui.endpoints;
 
 import com.codahale.metrics.annotation.Timed;
+import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.common.security.SecurityUtils;
 import org.endeavourhealth.core.database.dal.DalProvider;
 import org.endeavourhealth.core.database.dal.audit.ScheduledTaskAuditDalI;
@@ -17,6 +18,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
+import java.util.Date;
 import java.util.List;
 
 @Path("/scheduledTask")
@@ -30,7 +32,7 @@ public class ScheduledTasksEndpoint extends AbstractEndpoint {
     @Consumes(MediaType.APPLICATION_JSON)
     @Timed(absolute = true, name="ScheduledTaskEndpoint.summary")
     @Path("/summary")
-    public Response getRecentStats(@Context SecurityContext sc) throws Exception {
+    public Response getSummary(@Context SecurityContext sc) throws Exception {
         super.setLogbackMarkers(sc);
 
         userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load, "Get Scheduled Task Summary");
@@ -50,24 +52,49 @@ public class ScheduledTasksEndpoint extends AbstractEndpoint {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     @Timed(absolute = true, name="ScheduledTaskEndpoint.history")
-    @Path("/histiry")
-    public Response getRecentStats(@Context SecurityContext sc,
+    @Path("/history")
+    public Response getHistory(@Context SecurityContext sc,
                                    @QueryParam("applicationName") String applicationName,
-                                   @QueryParam("taskName") String taskName) throws Exception {
+                                   @QueryParam("taskName") String taskName,
+                                   @QueryParam("from") Long fromDateMillis,
+                                   @QueryParam("to") Long toDateMillis) throws Exception {
         super.setLogbackMarkers(sc);
 
         userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load, "Get Scheduled Task History",
                 "ApplicationName", applicationName,
                 "TaskName", taskName);
 
+        Date dFrom = new Date(fromDateMillis);
+        Date dTo = new Date(toDateMillis);
+
         ScheduledTaskAuditDalI dal = DalProvider.factoryScheduledTaskAuditDal();
-        List<ScheduledTaskAudit> ret = dal.getHistory(applicationName, taskName);
+        List<ScheduledTaskAudit> ret = dal.getHistory(applicationName, taskName, dFrom, dTo);
 
         clearLogbackMarkers();
 
         return Response
                 .ok()
                 .entity(ret)
+                .build();
+    }
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="ScheduledTaskEndpoint.rules")
+    @Path("/rules")
+    public Response getRules(@Context SecurityContext sc) throws Exception {
+        super.setLogbackMarkers(sc);
+
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load, "Get Scheduled Task Rules");
+
+        String s = ConfigManager.getConfiguration("scheduled-task-rules");
+
+        clearLogbackMarkers();
+
+        return Response
+                .ok()
+                .entity(s)
                 .build();
     }
 }

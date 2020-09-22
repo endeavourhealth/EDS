@@ -1,6 +1,6 @@
 <div class="module">
     <div class="module-heading">
-        HL7 Receiver
+        HL7 Receiver <span *ngIf="statusLastRefreshed">(as of {{statusLastRefreshed | date:'HH:mm:ss'}})</span>
         <div class="pull-right">
             <button class="btn btn-sm btn-success" [disabled]="refreshingStatus" (click)="refreshStatus()" title="Refresh">Refresh&nbsp;<span class="fa fa-sm fa-refresh fa-refresh-animate" *ngIf="refreshingStatus"></span></button>
         </div>
@@ -21,11 +21,16 @@
                                 <h4>Hospital->HL7 Receiver</h4>
 
                                 <div *ngIf="channel.lastMessageId">
-                                    <div>Last Message Received: {{channel.lastMessageReceived | date:'yyyy-MM-dd HH:mm:ss'}}</div>
+                                    <div>
+                                        <span *ngIf="isLastMessageReceivedTooOld(channel)" class="label label-danger" ngbTooltip="No recent messages received">Warning</span>
+                                        Last Message Received: {{channel.lastMessageReceived | date:'yyyy-MM-dd HH:mm:ss'}}
+                                    </div>
                                     <div>Last Message ID: {{channel.lastMessageId}}</div>
                                 </div>
                                 <div *ngIf="!channel.lastMessageId">
-                                    <div>Last Message Received: NEVER</div>
+                                    <div>
+                                        <span class="label label-danger" ngbTooltip="No messages received">Warning</span>
+                                        Last Message Received: NEVER</div>
                                     <div>Last Message ID: n/a</div>
                                 </div>
 
@@ -34,7 +39,10 @@
                                 <h4>HL7 Receiver->FHIR->Messaging API</h4>
 
                                 <div *ngIf="channel.errorMessageId">
-                                    <div>Status: ERROR ({{channel.transformQueueSize}} messages in queue)</div>
+                                    <div>
+                                        <span class="label label-danger" ngbTooltip="Message in error">Warning</span>
+                                        Status: ERROR ({{channel.transformQueueSize}} messages in queue)
+                                    </div>
                                     <br>
                                     <b>Message in Error:</b>
                                     <div>Received: {{channel.errorMessageReceived | date:'yyyy-MM-dd HH:mm:ss'}}</div>

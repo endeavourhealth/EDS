@@ -63,9 +63,11 @@
                                 <td>{{stat.matchedAndNotFrail}}</td>
                                 <td>{{stat.errorNotMatched}}</td>
                                 <td>{{stat.errorOther}}
-                                    <span *ngIf="stat.errorOther>0" class="label label-danger">Warning</span>
+                                    <span *ngIf="stat.errorOther>0" class="label label-danger" ngbTooltip="Unexpected error(s)">Warning</span>
                                 </td>
-                                <td>{{stat.total}}</td>
+                                <td>{{stat.total}}
+                                    <span *ngIf="isSustainedOutage(stat)" class="label label-danger" ngbTooltip=">=5 min with zero traffic">Warning</span>
+                                </td>
                             </tr>
                         </tbody>
                     </table>

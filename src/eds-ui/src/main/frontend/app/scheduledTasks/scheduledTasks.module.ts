@@ -4,6 +4,7 @@ import {FormsModule} from "@angular/forms";
 import {NgbModule} from "@ng-bootstrap/ng-bootstrap";
 import {ScheduledTasksComponent} from "./scheduledTasks.component";
 import {ScheduledTasksService} from "./scheduledTasks.service";
+import {ScheduledTaskHistoryDialog} from "./scheduledTaskHistory.dialog";
 
 @NgModule({
     imports : [
@@ -12,7 +13,11 @@ import {ScheduledTasksService} from "./scheduledTasks.service";
         NgbModule
     ],
     declarations : [
-        ScheduledTasksComponent
+        ScheduledTasksComponent,
+        ScheduledTaskHistoryDialog
+    ],
+    entryComponents : [
+        ScheduledTaskHistoryDialog
     ],
     providers : [
         ScheduledTasksService

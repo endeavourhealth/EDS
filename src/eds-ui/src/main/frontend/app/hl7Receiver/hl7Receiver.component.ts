@@ -12,6 +12,7 @@ import {Hl7ReceiverChannelStatus} from "./Hl7ReceiverChannelStatus";
 export class Hl7ReceiverComponent {
 
     refreshingStatus: boolean;
+    statusLastRefreshed: Date;
     channels: Hl7ReceiverChannelStatus[];
     resultStr: string;
     showRawJson: boolean;
@@ -30,6 +31,7 @@ export class Hl7ReceiverComponent {
     refreshStatus() {
         var vm = this;
         vm.refreshingStatus = true;
+        vm.statusLastRefreshed = new Date();
 
         vm.hl7ReceiverService.getHl7ReceiverStatus().subscribe(
             (result) => {
@@ -58,5 +60,14 @@ export class Hl7ReceiverComponent {
                 vm.logger.error('Failed to pause/unpause', error, 'HL7 Receiver');
             }
         )
+    }
+
+    isLastMessageReceivedTooOld(channel: Hl7ReceiverChannelStatus): boolean {
+        var vm = this;
+
+        //go back five minutes from when the status was refreshed
+        var warningTime = vm.statusLastRefreshed.getTime() - (1000 * 60 * 5);
+
+        return channel.lastMessageReceived < warningTime;
     }
 }

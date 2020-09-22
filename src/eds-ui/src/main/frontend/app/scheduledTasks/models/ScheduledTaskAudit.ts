@@ -1,3 +1,4 @@
+import {ScheduledTaskRule} from "./ScheduledTaskRule";
 export class ScheduledTaskAudit {
     applicationName: string;
     taskName: string;
@@ -6,5 +7,6 @@ export class ScheduledTaskAudit {
     hostName: string;
     success: boolean;
     errorMessage: string;
+    rule: ScheduledTaskRule;
 
 }

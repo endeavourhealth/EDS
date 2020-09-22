@@ -81,4 +81,49 @@ export class FrailtyApiComponent {
 
     }
 
+    /**
+     * if we've received no messages in a minute, that's not a big deal. But if we've a sustained outage over a period of time, then
+     * something is wrong, so highligh as an error
+     */
+    isSustainedOutage(queryStat: FrailtyStat): boolean {
+        var vm = this;
+
+        //if this stat doesn't represent an outage at all, then return false
+        if (queryStat.total > 0) {
+            return false;
+        }
+
+        var warningThreshold = 5 * 60 * 1000; //warn at five minutes of sustained zero throughput
+        var cumulativeMsOutage = 0;
+        var matchedOnStat = false;
+
+        for (var i=0; i<vm.recentStats.length; i++) {
+            var stat = vm.recentStats[i];
+
+            if (stat.total == 0) {
+
+                if (stat == queryStat) {
+                    matchedOnStat = true;
+                }
+
+                var msOutage = stat.dTo - stat.dFrom;
+                cumulativeMsOutage += msOutage;
+
+                //if we've had a continuous period of outage above our threshold
+                //AND that continuous period contains the stat we're displaying, then return true
+                if (cumulativeMsOutage >= warningThreshold
+                    && matchedOnStat) {
+                    return true;
+                }
+
+            } else {
+                //reset
+                cumulativeMsOutage = 0;
+                matchedOnStat = false;
+            }
+        }
+
+        return false;
+    }
+
 }

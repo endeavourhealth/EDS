@@ -274,7 +274,8 @@ public class RabbitConsumer extends DefaultConsumer
 
 			//send a slack message for the first failure
 			String queueName = configuration.getQueue();
-			String s = "Exchange " + processingState.getExchangeId() + " rejected in " + queueName;
+			String hostName = getHostName();
+			String s = "Exchange " + processingState.getExchangeId() + " rejected in " + queueName + " on " + hostName;
 			SlackHelper.sendSlackMessage(SlackHelper.Channel.QueueReaderAlerts, s, exception);
 		}
 
@@ -282,6 +283,15 @@ public class RabbitConsumer extends DefaultConsumer
 		if (lastExchangeAttempts >= TransformConfig.instance().getAttemptsPermmitedPerExchange()) {
 			String reason = "Failed " + lastExchangeAttempts + " times on exchange " + lastExchangeAttempted.getExchangeId() + " so halting queue reader";
 			stop(reason, 1024); //just use non-standard exit code
+		}
+	}
+
+	private static String getHostName() {
+		try {
+			return MetricsHelper.getHostName();
+		} catch (IOException ioe) {
+			LOG.error("Error getting host name", ioe);
+			return "UNKNOWN_HOST";
 		}
 	}
 
