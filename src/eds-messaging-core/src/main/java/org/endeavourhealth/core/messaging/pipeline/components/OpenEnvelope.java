@@ -153,6 +153,7 @@ public class OpenEnvelope extends PipelineComponent {
 				+ "\r\n"
 				+ "The publisher has been set into " + matchingEndpoint.getEndpoint() + " mode to avoid blocking the regular queues";
 		SlackHelper.sendSlackMessage(SlackHelper.Channel.MessagingApi, msg);
+		LOG.info(msg);
 
 		service.setEndpointsList(endpoints);
 		serviceDal.save(service);
