@@ -11,6 +11,7 @@ import {OdsSearchDialog} from "../services/odsSearch.dialog";
 import {SftpReaderHistoryDialog} from "./sftpReaderHistory.dialog";
 import {SftpReaderConfiguration} from "./models/SftpReaderConfiguration";
 import {SftpReaderOrgsDialog} from "./sftpReaderOrgs.dialog";
+import {ServiceListComponent} from "../services/serviceList.component";
 
 @Component({
     template : require('./sftpReader.html')
@@ -403,4 +404,121 @@ export class SftpReaderComponent {
 
         return ret;
     }
+
+
+    /**
+     * saves current list to CSV
+     */
+    saveToCsv() {
+
+        var vm = this;
+
+        //create CSV content in a String
+        var lines = [];
+        var line;
+
+        line = '\"Configuration ID\",' +
+            '\"Configuration Name\",' +
+            '\"Last Checked for Data\",' +
+            '\"Error Checking\",' +
+            '\"Last Extract Received\",' +
+            '\"Data From\",' +
+            '\"Filed Received\",' +
+            '\"Extract Size\",' +
+            '\"Valid and Complete\",' +
+            '\"Orgs in Extract\"';
+        lines.push(line);
+
+        var configs = vm.getConfigurationsToDisplay();
+        for (var i=0; i<configs.length; i++) {
+            var config = configs[i] as SftpReaderConfiguration;
+
+            var statusArr = vm.getStatusToDisplay(config);
+            if (statusArr.length == 0) {
+                vm.logger.error('Cannot save while loading');
+                return;
+            }
+
+            var status = statusArr[0];
+
+            var cols = [];
+
+            cols.push(config.configurationId);
+            cols.push(config.friendlyName);
+
+
+            if (status.latestPollingStart) {
+                var d = new Date();
+                d.setTime(status.latestPollingStart);
+                var s = ServiceListComponent.formatDate(d);
+                cols.push(s);
+            } else {
+                cols.push('Never');
+            }
+
+            if (status.latestPollingException) {
+                cols.push('Y');
+            } else {
+                cols.push('N');
+            }
+
+            if (status.latestBatchReceived) {
+                var d = new Date();
+                d.setTime(status.latestBatchReceived);
+                var s = ServiceListComponent.formatDate(d);
+                cols.push(s);
+            } else {
+                cols.push('Never');
+            }
+
+            if (status.latestBatchIdentifier) {
+                cols.push(status.latestBatchIdentifier);
+            } else {
+                cols.push('');
+            }
+
+            if (status.latestBatchFileCount) {
+                cols.push(status.latestBatchFileCount);
+            } else {
+                cols.push('');
+            }
+
+            if (status.latestBatchSizeBytes) {
+                cols.push(status.latestBatchSizeBytes);
+            } else {
+                cols.push('');
+            }
+
+            if (status.latestBatchComplete) {
+                cols.push('Y');
+            } else {
+                cols.push('N');
+            }
+
+            if (status.completeBatchContents) {
+                cols.push(status.completeBatchContents.length);
+            } else {
+                cols.push('Unknown');
+            }
+
+            line = '\"' + cols.join('\",\"') + '\"';
+            lines.push(line);
+        }
+
+        var csvStr = lines.join('\r\n');
+
+        const filename = 'SFTP_status.csv';
+        const blob = new Blob([csvStr], { type: 'text/plain' });
+
+        let url = window.URL.createObjectURL(blob);
+        let a = document.createElement('a');
+        document.body.appendChild(a);
+        a.setAttribute('style', 'display: none');
+        a.href = url;
+        a.download = filename;
+        a.click();
+        window.URL.revokeObjectURL(url);
+        a.remove();
+    }
+
 }

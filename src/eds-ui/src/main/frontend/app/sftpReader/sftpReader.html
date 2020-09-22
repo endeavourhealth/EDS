@@ -6,6 +6,7 @@
 
             <form class="form-inline">
 
+                <button class="btn btn-sm btn-default" (click)="saveToCsv()" title="Save to CSV">Save to CSV</button>
                 <button class="btn btn-sm btn-default" (click)="togglePauseAll()" title="Toggle Pause All">Toggle Pause All</button>
                 <button class="btn btn-sm btn-default" (click)="odsSearch()" title="Ods Search">ODS Search</button>
                 <button class="btn btn-sm btn-success" (click)="refreshInstances(true)">Refresh</button>
@@ -68,6 +69,7 @@
                                 </div>
                                 <div *ngIf="!isRefreshing(configuration)">
 
+                                    <!-- uses a FOR loop for efficiency, but there will only be one item in the array -->
                                     <div class="row" *ngFor="let status of getStatusToDisplay(configuration)">
 
                                         <div *ngIf="status.latestPollingStart">
@@ -97,8 +99,10 @@
                                                 Last Extract Received {{status.latestBatchReceived | date:'yyyy-MM-dd HH:mm'}}
                                             </div>
                                             <div>Data From: {{status.latestBatchIdentifier}}</div>
-                                            <div>Files Received: {{status.latestBatchFileCount}}, Extract Size:
-                                                {{status.latestBatchSizeBytes}}
+                                            <div>
+                                                Files Received: {{status.latestBatchFileCount}}
+                                                , Extract Size: {{status.latestBatchSizeBytes}}
+                                                , Valid &amp; Complete: {{status.latestBatchComplete}}
                                             </div>
 
                                             <!--<div>Extract Sequence No: {{status.latestBatchSequenceNumber}}</div>

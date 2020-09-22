@@ -202,7 +202,7 @@ export class ServiceListComponent implements OnInit, OnDestroy{
 			var lastDataReceived = new Date();
 			lastDataReceived.setTime(status.lastDataReceived);
 
-			return 'Last data received ' + this.formatDate(lastDataReceived) + ' for ' + this.formatDate(lastDate);
+			return 'Last data received ' + ServiceListComponent.formatDate(lastDataReceived) + ' for ' + ServiceListComponent.formatDate(lastDate);
 
 		} else {
 			return 'No data received';
@@ -350,12 +350,12 @@ export class ServiceListComponent implements OnInit, OnDestroy{
 
 			var d = new Date();
 			d.setTime(status.lastDateSuccessfullyProcessed);
-			ret += 'Last successfully processed on ' + this.formatDate(d);
+			ret += 'Last successfully processed on ' + ServiceListComponent.formatDate(d);
 
 			if (status.lastDataDateSuccessfullyProcessed) {
 				var d2 = new Date();
 				d2.setTime(status.lastDataDateSuccessfullyProcessed);
-				ret += ' for ' + this.formatDate(d2);
+				ret += ' for ' + ServiceListComponent.formatDate(d2);
 			}
 
 			//ret += ' [' + status.lastDataDateSuccessfullyProcessed + ']';
@@ -434,7 +434,7 @@ export class ServiceListComponent implements OnInit, OnDestroy{
 		return ret;
 	}
 
-	formatDate(d: Date) : string {
+	static formatDate(d: Date) : string {
 
 		var year = '' + d.getFullYear();
 		var month = '' + (d.getMonth() + 1);
@@ -457,7 +457,7 @@ export class ServiceListComponent implements OnInit, OnDestroy{
 			minute = '0' + minute;
 		}
 		if (seconds.length < 2) {
-			seconds = '0' + minute;
+			seconds = '0' + seconds;
 		}
 
 		return day + '/' + month + '/' + year + ' ' + hour + ':' + minute + ':' + seconds;

@@ -118,19 +118,39 @@ public class SftpReaderEndpoint extends AbstractEndpoint {
             //get the individual orgs within each batch and stick in a map
             String sql = null;
             if (ConnectionManager.isPostgreSQL(connection)) {
-                sql = "SELECT b.batch_id, s.organisation_id, s.have_notified, s.is_bulk"
+                sql = "SELECT b.batch_id, s.batch_split_id, s.organisation_id, s.have_notified, s.is_bulk, m.inbound, m.error_text"
                         + " FROM log.batch b"
                         + " INNER JOIN log.batch_split s"
                         + " ON s.batch_id = b.batch_id"
+                        + " LEFT OUTER JOIN log.notification_message m"
+                        + " on m.batch_id = s.batch_id"
+                        + " and m.batch_split_id = s.batch_split_id"
+                        + " and not exists ("
+                        + " select 1"
+                        + " from log.notification_message m2"
+                        + " where m2.batch_id = m.batch_id"
+                        + " and m2.batch_split_id = m.batch_split_id"
+                        + " and m2.timestamp > m.timestamp"
+                        + " )"
                         + " WHERE b.configuration_id = ?"
                         + " AND b.insert_date >= ?"
                         + " AND b.insert_date <= ?";
 
             } else {
-                sql = "SELECT b.batch_id, s.organisation_id, s.have_notified, s.is_bulk"
+                sql = "SELECT b.batch_id, s.batch_split_id, s.organisation_id, s.have_notified, s.is_bulk, m.inbound, m.error_text"
                         + " FROM batch b"
                         + " INNER JOIN batch_split s"
                         + " ON s.batch_id = b.batch_id"
+                        + " LEFT OUTER JOIN notification_message m"
+                        + " on m.batch_id = s.batch_id"
+                        + " and m.batch_split_id = s.batch_split_id"
+                        + " and not exists ("
+                        + " select 1"
+                        + " from notification_message m2"
+                        + " where m2.batch_id = m.batch_id"
+                        + " and m2.batch_split_id = m.batch_split_id"
+                        + " and m2.timestamp > m.timestamp"
+                        + " )"
                         + " WHERE b.configuration_id = ?"
                         + " AND b.insert_date >= ?"
                         + " AND b.insert_date <= ?";
@@ -143,26 +163,37 @@ public class SftpReaderEndpoint extends AbstractEndpoint {
             ps.setTimestamp(col++, new Timestamp(dFrom.getTime()));
             ps.setTimestamp(col++, new Timestamp(dTo.getTime()));
 
-            Map<Integer, Map<String, Boolean[]>> hmOrgsByBatch = new HashMap<>(); //bit nasty having a map of maps, but quick
+            Map<Integer, List<BatchSplit>> hmOrgsByBatch = new HashMap<>(); //bit nasty having a map of maps, but quick
 
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
                 col = 1;
                 int batchId = rs.getInt(col++);
+                int batchSplitId = rs.getInt(col++);
                 String orgId = rs.getString(col++);
                 boolean notified = rs.getBoolean(col++);
                 boolean isBulk = rs.getBoolean(col++);
+                String notificationResult = rs.getString(col++);
+                String errorText = rs.getString(col++);
 
-                Map<String, Boolean[]> innerMap = hmOrgsByBatch.get(new Integer(batchId));
-                if (innerMap == null) {
-                    innerMap = new HashMap<>();
-                    hmOrgsByBatch.put(new Integer(batchId), innerMap);
+                BatchSplit s = new BatchSplit();
+                s.setBatchSplitId(batchSplitId);
+                s.setOrgId(orgId);
+                s.setNotified(notified);
+                s.setBulk(isBulk);
+                s.setNotificationResult(notificationResult);
+                s.setErrorText(errorText);
+
+                List<BatchSplit> l = hmOrgsByBatch.get(new Integer(batchId));
+                if (l == null) {
+                    l = new ArrayList<>();
+                    hmOrgsByBatch.put(new Integer(batchId), l);
                 }
-
-                Boolean[] bools = new Boolean[]{notified, isBulk};
-                innerMap.put(orgId, bools);
+                l.add(s);
             }
+
             ps.close();
+            ps = null;
 
             //get the details of the batches and files
             sql = null;
@@ -218,17 +249,17 @@ public class SftpReaderEndpoint extends AbstractEndpoint {
                 obj.put("sizeDesc", sizeDesc);
                 ArrayNode orgsArr = obj.putArray("batchContents");
 
-                Map<String, Boolean[]> hmOrgs = hmOrgsByBatch.get(new Integer(batchId));
-                if (hmOrgs != null) {
-                    for (String orgId: hmOrgs.keySet()) {
-                        Boolean[] bools = hmOrgs.get(orgId);
-                        Boolean complete = bools[0];
-                        Boolean isBulk = bools[1];
+                List<BatchSplit> batchSplits = hmOrgsByBatch.get(new Integer(batchId));
+                if (batchSplits != null) {
+                    for (BatchSplit s: batchSplits) {
 
-                        ObjectNode orgObj = orgsArr.addObject();
-                        orgObj.put("orgId", orgId);
-                        orgObj.put("notified", complete.booleanValue());
-                        orgObj.put("isBulk", isBulk.booleanValue());
+                        ObjectNode orgNode = orgsArr.addObject();
+                        orgNode.put("batchSplitId", s.getBatchSplitId());
+                        orgNode.put("orgId", s.getOrgId());
+                        orgNode.put("notified", s.isNotified());
+                        orgNode.put("isBulk", s.isBulk);
+                        orgNode.put("result", s.getNotificationResult());
+                        orgNode.put("error", s.getErrorText());
                     }
                 }
             }
@@ -860,6 +891,66 @@ public class SftpReaderEndpoint extends AbstractEndpoint {
                 ps.close();
             }
             connection.close();
+        }
+    }
+
+    /**
+     * temporary helper class
+     */
+    static class BatchSplit {
+        private int batchSplitId;
+        private String orgId;
+        private boolean notified;
+        private boolean isBulk;
+        private String notificationResult;
+        private String errorText;
+
+        public int getBatchSplitId() {
+            return batchSplitId;
+        }
+
+        public void setBatchSplitId(int batchSplitId) {
+            this.batchSplitId = batchSplitId;
+        }
+
+        public String getOrgId() {
+            return orgId;
+        }
+
+        public void setOrgId(String orgId) {
+            this.orgId = orgId;
+        }
+
+        public boolean isNotified() {
+            return notified;
+        }
+
+        public void setNotified(boolean notified) {
+            this.notified = notified;
+        }
+
+        public boolean isBulk() {
+            return isBulk;
+        }
+
+        public void setBulk(boolean bulk) {
+            isBulk = bulk;
+        }
+
+        public String getNotificationResult() {
+            return notificationResult;
+        }
+
+        public void setNotificationResult(String notificationResult) {
+            this.notificationResult = notificationResult;
+        }
+
+        public String getErrorText() {
+            return errorText;
+        }
+
+        public void setErrorText(String errorText) {
+            this.errorText = errorText;
         }
     }
 }

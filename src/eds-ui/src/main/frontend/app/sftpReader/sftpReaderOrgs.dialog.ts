@@ -101,37 +101,10 @@ export class SftpReaderOrgsDialog  {
         )
     }
 
-    /*search() {
+    odsSearch() {
         var vm = this;
+        OdsSearchDialog.open(vm.$modal);
 
-        var dFrom;
-        if (vm.searchFromStr) {
-            dFrom = new Date(vm.searchFromStr);
-        } else {
-            dFrom = new Date('1900-01-01');
-        }
+    }
 
-
-        var dTo;
-        if (vm.searchToStr) {
-            dTo = new Date(vm.searchToStr);
-        } else {
-            dTo = new Date('9999-12-31');
-        }
-
-
-        vm.searching = true;
-
-        var configurationId = vm.configuration.configurationId;
-        vm.sftpReaderService.getSftpReaderHistory(configurationId, dFrom, dTo).subscribe(
-            (result) => {
-                vm.searching = false;
-                vm.results = result;
-            },
-            (error) => {
-                vm.searching = false;
-                vm.log.error('Error searching');
-            }
-        );
-    }*/
 }
