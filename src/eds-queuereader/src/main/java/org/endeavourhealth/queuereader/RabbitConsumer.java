@@ -212,7 +212,7 @@ public class RabbitConsumer extends DefaultConsumer
 		} else {
 
 			this.getChannel().basicReject(deliveryTag, true);
-			LOG.error("Have sent REJECT for exchange exchange " + exchangeId);
+			LOG.error("Have sent REJECT for exchange " + exchangeId);
 		}
 	}
 
