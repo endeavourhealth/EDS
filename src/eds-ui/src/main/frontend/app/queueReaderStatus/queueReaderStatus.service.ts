@@ -19,7 +19,7 @@ export class QueueReaderStatusService extends BaseHttp2Service {
     constructor(http : Http) {
         super (http);
 
-        this.showMissingQueueReadersOnEmptyQueues = true;
+        //this.showMissingQueueReadersOnEmptyQueues = true;
         this.showExecutionTime = true;
     }
 
