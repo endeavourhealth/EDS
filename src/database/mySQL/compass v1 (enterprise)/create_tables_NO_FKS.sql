@@ -687,7 +687,8 @@ CREATE UNIQUE INDEX encounter_event_id
 CREATE TABLE encounter_additional (
   id bigint NOT NULL COMMENT 'same as the id column on the encounter table or encounter_event id column (sub encounters)',
   property_id character varying(255)  NOT NULL COMMENT 'IM reference (i.e. Admission method)',
-  value_id character varying(255) NOT NULL COMMENT 'IM reference (i.e. Emergency admission)',
+  value_id character varying(255) NULL COMMENT 'IM reference (i.e. Emergency admission)',
+  json_value JSON NULL COMMENT 'where there is no mapped value_id, just raw JSON (i.e. birth delivery details)',
   CONSTRAINT pk_encounter_additional_id PRIMARY KEY (id, property_id)
 );
 CREATE INDEX encounter_additional_value_id
