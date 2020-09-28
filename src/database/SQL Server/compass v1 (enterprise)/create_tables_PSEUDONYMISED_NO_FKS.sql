@@ -828,6 +828,17 @@ GO
 CREATE INDEX ix_encounter_raw_patient_id_organization_id ON encounter_raw(patient_id, organization_id)
 GO
 
+CREATE TABLE encounter_additional (
+id bigint NOT NULL,
+property_id character varying(255) NOT NULL,
+value_id character varying(255) NULL,
+json_value JSON NULL,
+CONSTRAINT pk_encounter_additional_id PRIMARY KEY (id, property_id)
+)
+GO
+CREATE INDEX encounter_additional_value_id ON encounter_additional (value_id)
+GO
+
 CREATE TABLE allergy_intolerance
 (
   id bigint NOT NULL,

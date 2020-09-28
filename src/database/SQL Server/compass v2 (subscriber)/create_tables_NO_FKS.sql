@@ -34,8 +34,9 @@ IF OBJECT_ID('dbo.patient_uprn', 'U') IS NOT NULL DROP TABLE dbo.patient_uprn
 GO
 IF OBJECT_ID('dbo.patient_additional', 'U') IS NOT NULL DROP TABLE dbo.patient_additional
 GO
-
 IF OBJECT_ID('dbo.event_log', 'U') IS NOT NULL DROP TABLE dbo.event_log
+GO
+IF OBJECT_ID('dbo.encounter_additional', 'U') IS NOT NULL DROP TABLE dbo.encounter_additional
 GO
 IF OBJECT_ID('dbo.encounter_event', 'U') IS NOT NULL DROP TABLE dbo.encounter_event
 GO
@@ -219,6 +220,17 @@ GO
 CREATE INDEX [encounter_event_patient_id] ON [encounter_event] ([patient_id])
 GO
 CREATE INDEX [encounter_event_core_concept_id_clinical_effective_date] ON [encounter_event] ([core_concept_id], [clinical_effective_date])
+GO
+
+CREATE TABLE [encounter_additional] (
+    [id] bigint NOT NULL,
+    [property_id] int NOT NULL,
+    [value_id] int NULL,
+    [json_value] JSON NULL,
+     PRIMARY KEY ([id], [property_id])
+    )
+GO
+CREATE INDEX [encounter_additional_value_id] ON [encounter_additional] ([value_id])
 GO
 
 CREATE TABLE [episode_of_care] (

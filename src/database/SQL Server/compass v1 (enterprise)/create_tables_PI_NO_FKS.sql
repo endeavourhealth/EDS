@@ -31,6 +31,7 @@ DROP TABLE IF EXISTS referral_request;
 DROP TABLE IF EXISTS encounter_raw;
 DROP TABLE IF EXISTS encounter_detail;
 DROP TABLE IF EXISTS encounter_event;
+DROP TABLE IF EXISTS encounter_additional;
 DROP TABLE IF EXISTS encounter;
 DROP TABLE IF EXISTS appointment;
 DROP TABLE IF EXISTS episode_of_care;
@@ -772,6 +773,17 @@ CREATE INDEX ix_encounter_raw_patient_id_organization_id
   ON encounter_raw
   (patient_id, organization_id);
 
+
+CREATE TABLE encounter_additional (
+id bigint NOT NULL,
+property_id character varying(255)  NOT NULL,
+value_id character varying(255) NULL,
+json_value JSON NULL,
+CONSTRAINT pk_encounter_additional_id PRIMARY KEY (id, property_id)
+);
+CREATE INDEX encounter_additional_value_id
+    ON encounter_additional
+        (value_id);
 
 -- Table: allergy_intolerance
 
