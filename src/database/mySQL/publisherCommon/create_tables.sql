@@ -23,6 +23,7 @@ DROP TABLE IF EXISTS emis_organisation;
 DROP TABLE IF EXISTS emis_user_in_role;
 DROP TABLE IF EXISTS emis_organisation_location;
 DROP TABLE IF EXISTS emis_drug_code;
+DROP TABLE IF EXISTS emis_clinical_code_hiearchy;
 DROP TABLE IF EXISTS emis_clinical_code;
 DROP TABLE IF EXISTS vision_read2_lookup;
 DROP TABLE IF EXISTS tpp_ctv3_to_snomed;
@@ -408,7 +409,7 @@ create table emis_clinical_code (
 	national_code varchar(250),
 	national_code_category varchar(500),
 	national_code_description varchar(500),
-	parent_code_id bigint,
+	-- parent_code_id bigint, -- removed
 	adjusted_code varchar(50) BINARY, -- note binary keyword to make case sensitive
 	is_emis_code boolean NOT NULL,
 	dt_last_updated datetime,
@@ -418,6 +419,14 @@ create table emis_clinical_code (
 	KEY_BLOCK_SIZE=8;
 
 CREATE INDEX ix_row_date ON emis_clinical_code (code_id, dt_last_updated);
+
+
+CREATE TABLE emis_clinical_code_hiearchy (
+	code_id bigint NOT NULL,
+	parent_code_id bigint NOT NULL,
+	dt_last_updated datetime,
+	CONSTRAINT pk PRIMARY KEY (code_id, parent_code_id)
+);
 
 
 CREATE TABLE tpp_multilex_action_group_lookup (
