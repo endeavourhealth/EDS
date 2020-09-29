@@ -185,7 +185,13 @@
                                             <option *ngIf="exchangeAuditService.postExchange=='edsProtocol'" value="FullRefreshAdminOnly">Full Refresh of Admin Data</option>
                                         </select>
 
-                                        Queues [Inbound={{selectedExchange.queueRoutingKeys['EdsInbound']}}, Protocol={{selectedExchange.queueRoutingKeys['EdsProtocol']}}]
+                                        <div>
+                                            Queues:
+                                            Inbound={{selectedExchange.queueRoutingKeys['EdsInbound']}},
+                                            Protocol={{selectedExchange.queueRoutingKeys['EdsProtocol']}},
+                                            Inbound={{selectedExchange.queueRoutingKeys['EdsTransform']}},
+                                            Protocol={{selectedExchange.queueRoutingKeys['EdsSubscriber']}}
+                                        </div>
                                         <!--Queues [Inbound={{selectedExchange.queueRoutingKeys['EdsInbound']}} Protocol={{selectedExchange.selectedExchange.queueRoutingKeys['EdsProtocol']}}]-->
 
                                     </div>
