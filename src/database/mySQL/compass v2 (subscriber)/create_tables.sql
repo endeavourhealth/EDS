@@ -82,6 +82,7 @@ DROP TABLE IF EXISTS medication_order;
 DROP TABLE IF EXISTS medication_statement;
 DROP TABLE IF EXISTS flag;
 DROP TABLE IF EXISTS observation;
+DROP TABLE IF EXISTS observation_additional;
 DROP TABLE IF EXISTS procedure_request;
 DROP TABLE IF EXISTS referral_request;
 DROP TABLE IF EXISTS pseudo_id; -- deleted table
@@ -729,6 +730,15 @@ CREATE INDEX ix_observation_clinical_effective_date
 CREATE INDEX ix_observation_person_id
   ON observation
   (person_id);
+ 
+ -- Table: observation_additional 
+CREATE TABLE observation_additional (
+  id bigint NOT NULL COMMENT 'same as the id column on the observation table',
+  property_id bigint NOT NULL COMMENT 'IM reference (i.e. significance)', -- IM reference 
+  value_id bigint(50) NULL COMMENT 'IM reference (i.e. minor, significant)',
+  json_value json NULL COMMENT 'the JSON data itself ',
+  CONSTRAINT pk_observation_additional_id PRIMARY KEY (id, property_id)
+);
 
  -- Table: diagnostic_order
 
@@ -1915,6 +1925,64 @@ CREATE TRIGGER after_observation_delete
 DELIMITER ;
 
 
+DELIMITER $$
+CREATE TRIGGER after_observation_additional_insert
+  AFTER INSERT ON observation_additional
+  FOR EACH ROW
+  BEGIN
+    INSERT INTO event_log (
+		dt_change,
+        change_type,
+        table_id,
+        record_id
+    ) VALUES (
+		now(3), -- current time inc ms
+        0, -- insert
+        28, -- observation_additional
+        NEW.id
+    );
+  END$$
+DELIMITER ;
+
+
+DELIMITER $$
+CREATE TRIGGER after_observation_additional_update
+  AFTER UPDATE ON observation_additional
+  FOR EACH ROW
+  BEGIN
+    INSERT INTO event_log (
+		dt_change,
+        change_type,
+        table_id,
+        record_id
+    ) VALUES (
+		now(3), -- current time inc ms
+        1, -- update
+        28, -- observation_additional
+        NEW.id
+    );
+  END$$
+DELIMITER ;
+
+
+DELIMITER $$
+CREATE TRIGGER after_observation_additional_delete
+  AFTER DELETE ON observation_additional
+  FOR EACH ROW
+  BEGIN
+    INSERT INTO event_log (
+		dt_change,
+        change_type,
+        table_id,
+        record_id
+    ) VALUES (
+		now(3), -- current time inc ms
+        2, -- delete
+        28, -- observation_additional
+        OLD.id
+    );
+  END$$
+DELIMITER ;
 
 
 DELIMITER $$
