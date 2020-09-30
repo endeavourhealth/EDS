@@ -91,21 +91,9 @@ export class SftpReaderComponent {
             (result) => {
 
                 vm.refreshingStatusMap[configurationId] = false;
+                vm.calculateErrors(result); //must do this before the below fn
                 vm.calculateIfWarning(result);
                 vm.statusMap[configurationId] = result;
-
-                /*result.latestPollingException = 'org.endeavourhealth.sftpreader.model.exceptions.SftpReaderException: Exception occurred while downloading files - cannot continue or may process batches out of order\r\n' +
-                '    at org.endeavourhealth.sftpreader.SftpReaderTask.downloadNewFiles(SftpReaderTask.java:415)\r\n' +
-                '    at org.endeavourhealth.sftpreader.SftpReaderTask.run(SftpReaderTask.java:74)\r\n' +
-                '    at java.lang.Thread.run(Thread.java:748)\r\n' +
-                'Caused by: 2: No such file\r\n' +
-                '    at com.jcraft.jsch.ChannelSftp.throwStatusError(ChannelSftp.java:2873)\r\n' +
-                '    at com.jcraft.jsch.ChannelSftp._realpath(ChannelSftp.java:2367)\r\n' +
-                '    at com.jcraft.jsch.ChannelSftp.cd(ChannelSftp.java:342)\r\n' +
-                '    at org.endeavourhealth.sftpreader.sources.SftpConnection.getFileList(SftpConnection.java:127)\r\n' +
-                '    at org.endeavourhealth.sftpreader.SftpReaderTask.getFileList(SftpReaderTask.java:452)\r\n' +
-                '    at org.endeavourhealth.sftpreader.SftpReaderTask.downloadNewFiles(SftpReaderTask.java:368)\r\n' +
-                '... 2 more';*/
             },
             (error) => {
 
@@ -113,6 +101,36 @@ export class SftpReaderComponent {
                 vm.logger.error('Failed to get status for ' + configurationId, error);
             }
         )
+    }
+
+    /**
+     * filters the batches to work out which are OK and which are in error
+     */
+    calculateErrors(status: SftpReaderChannelStatus) {
+        var vm = this;
+
+        var ok = [];
+        var dpaError = [];
+        var error = [];
+
+        for (var i=0; i<status.completeBatchContents.length; i++) {
+            var content = status.completeBatchContents[i];
+            if (content.notified) {
+                ok.push(content);
+            } else {
+                var errorMsg = content.error;
+                if (errorMsg
+                    && errorMsg.indexOf('No DPA found') > -1) {
+                    dpaError.push(content);
+                } else {
+                    error.push(content);
+                }
+            }
+        }
+
+        status.okBatches = ok;
+        status.dpaErrorBatches = dpaError;
+        status.errorBatches = error;
     }
 
     calculateIfWarning(status: SftpReaderChannelStatus) {
@@ -124,7 +142,8 @@ export class SftpReaderComponent {
             || status.latestPollingException
             || vm.isLastExtractTooOld(status)
             || !status.latestBatchId
-            || vm.filterOrgs(status.completeBatchContents, false).length > 0) {
+            || status.errorBatches.length > 0
+            || status.dpaErrorBatches.length > 0) {
 
             status.warning = true;
         }
@@ -193,7 +212,7 @@ export class SftpReaderComponent {
         return ret;
     }
 
-    filterOrgs(arr: SftpReaderBatchContents[], wantOk: boolean): SftpReaderBatchContents[] {
+    /*filterOrgs(arr: SftpReaderBatchContents[], wantOk: boolean): SftpReaderBatchContents[] {
         var ret = [];
 
         var i;
@@ -204,7 +223,7 @@ export class SftpReaderComponent {
             }
         }
         return ret;
-    }
+    }*/
 
     /*getPanelClass(status: SftpReaderChannelStatus): string {
         if (status.instanceName) {
@@ -361,28 +380,11 @@ export class SftpReaderComponent {
         );
     }
 
-    viewOrgs(status: SftpReaderChannelStatus) {
-        var vm = this;
-        vm.viewOrgsImpl(status, status.completeBatchContents);
-    }
-
-    viewOrgsOk(status: SftpReaderChannelStatus) {
-        var vm = this;
-        var orgsOk = vm.filterOrgs(status.completeBatchContents, true);
-        vm.viewOrgsImpl(status, orgsOk);
-    }
-
-    viewOrgsError(status: SftpReaderChannelStatus) {
-        var vm = this;
-        var orgsError = vm.filterOrgs(status.completeBatchContents, false);
-        vm.viewOrgsImpl(status, orgsError);
-    }
-
-    private viewOrgsImpl(status: SftpReaderChannelStatus, orgs: SftpReaderBatchContents[]) {
+    viewOrgs(status: SftpReaderChannelStatus, contents: SftpReaderBatchContents[]) {
         var vm = this;
         var configurationId = status.id;
         var batchId = status.completeBatchId;
-        SftpReaderOrgsDialog.open(vm.$modal, configurationId, batchId, orgs);
+        SftpReaderOrgsDialog.open(vm.$modal, configurationId, batchId, contents);
     }
 
     getInstanceNames(): string[] {

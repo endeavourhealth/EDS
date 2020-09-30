@@ -89,12 +89,12 @@ public class Main {
 		ConfigManager.initialize("queuereader", configId);
 
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("testInformationModelFromJson")) {
 			String filePath = args[1];
 			SpecialRoutines.testInformationModelFromJson(filePath);
 			System.exit(0);
-		}
+		}*/
 
 
 		/*if (args.length >= 1
@@ -143,7 +143,7 @@ public class Main {
 			System.exit(0);
 		}*/
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("fixAppointmentTimes")) {
 
 			String subscriberConfigName = args[1];
@@ -153,9 +153,9 @@ public class Main {
 			}
 			SpecialRoutines.fixAppointmentTimesInCompass(subscriberConfigName, orgOdsCodeRegex);
 			System.exit(0);
-		}
+		}*/
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("quickRefreshForAllTpp")) {
 
 			String orgOdsCodeRegex = null;
@@ -165,9 +165,9 @@ public class Main {
 
 			SpecialRoutines.quickRefreshForAllTpp(orgOdsCodeRegex);
 			System.exit(0);
-		}
+		}*/
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("quickRefreshForAllEmis")) {
 
 			String orgOdsCodeRegex = null;
@@ -177,9 +177,9 @@ public class Main {
 
 			SpecialRoutines.quickRefreshForAllEmis(orgOdsCodeRegex);
 			System.exit(0);
-		}
+		}*/
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("fixEmisEpisodesChangingDate")) {
 
 			boolean testMode = Boolean.parseBoolean(args[1]);
@@ -190,7 +190,7 @@ public class Main {
 
 			SpecialRoutines.fixEmisEpisodesChangingDate(testMode, orgOdsCodeRegex);
 			System.exit(0);
-		}
+		}*/
 
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("findEmisEpisodesChangingDate")) {
@@ -229,7 +229,7 @@ public class Main {
 			System.exit(0);
 		}
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("deleteCore06DataFromSubscribers")) {
 
 			boolean testMode = Boolean.parseBoolean(args[1]);
@@ -243,9 +243,9 @@ public class Main {
 
 			SpecialRoutines.deleteCore06DataFromSubscribers(testMode, sourceSubscriberConfigName, tableOfPatientIds, tableForAudit, subscriberNames);
 			System.exit(0);
-		}
+		}*/
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("BulkSubscriberTransformAdmin")) {
 			String reason = args[1];
 			String odsCodes = null;
@@ -254,7 +254,7 @@ public class Main {
 			}
 			SpecialRoutines.bulkSubscriberTransformAdmin(reason, odsCodes);
 			System.exit(0);
-		}
+		}*/
 
 		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("CountVaccinationCodes")) {
@@ -279,7 +279,7 @@ public class Main {
 			System.exit(0);
 		}*/
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("FindTppServicesNeedReprocessing")) {
 			boolean showLogging = Boolean.valueOf(args[1]);
 			String odsCodeRegex = null;
@@ -288,7 +288,7 @@ public class Main {
 			}
 			SpecialRoutines.findTppServicesNeedReprocessing(showLogging, odsCodeRegex);
 			System.exit(0);
-		}
+		}*/
 
 		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("DeleteResourcesForDeletedPatients")) {
@@ -350,7 +350,7 @@ public class Main {
 			System.exit(0);
 		}*/
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("FindEmisServicesNeedReprocessing")) {
 			String odsCodeRegex = null;
 			if (args.length > 1) {
@@ -358,7 +358,7 @@ public class Main {
 			}
 			SpecialRoutines.findEmisServicesNeedReprocessing(odsCodeRegex);
 			System.exit(0);
-		}
+		}*/
 
 		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("TransformBartsEncounters")) {
@@ -514,12 +514,12 @@ public class Main {
 			System.exit(0);
 		}*/
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("TestDSM")) {
 			String odsCode = args[1];
 			SpecialRoutines.testDsm(odsCode);
 			System.exit(0);
-		}
+		}*/
 
 		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("CompareDSM")) {
@@ -559,23 +559,6 @@ public class Main {
 			String filePath = args[4];
 			String debug = args[5];
 			bulkProcessUPRNThreaded(configName, protocolName, outputFormat, filePath, debug, threads, QBeforeBlock);
-
-			System.exit(0);
-		}
-
-		if (args.length >=1 && args[0].contains("REFERENCERANGES")) {
-
-			Integer threads = 5; Integer QBeforeBlock = 10;
-			String[] tb = args[0].split(":",-1);
-			if (!tb[1].isEmpty()) {threads = Integer.parseInt(tb[1]);}
-			if (!tb[2].isEmpty()) { QBeforeBlock = Integer.parseInt(tb[2]);}
-
-			String configName = args[1];
-			String protocolName = args[2];
-			String outputFormat = args[3];
-			String filePath = args[4];
-			String debug = args[5];
-			bulkProcessReferenceRangesThreaded(configName, protocolName, outputFormat, filePath, debug, threads, QBeforeBlock);
 
 			System.exit(0);
 		}
@@ -2295,74 +2278,6 @@ public class Main {
 		}
 	}
 
-	static class ObservationAndConditionCallable implements Callable {
-		private UUID serviceUUID;
-		private String ResourceType;
-		private UUID patientId;
-		private String debug;
-		private ResourceDalI dal;
-		private String outputFormat;
-		private String subscriberConfigName;
-		private UUID batchUUID;
-		public ObservationAndConditionCallable(UUID serviceUUID, UUID patientId, String debug, ResourceDalI dal, String outputFormat, String subscriberConfigName, UUID batchUUID) {
-			this.serviceUUID = serviceUUID;
-			this.patientId = patientId;
-			this.debug = debug;
-			this.dal = dal;
-			this.outputFormat = outputFormat;
-			this.subscriberConfigName = subscriberConfigName;
-			this.batchUUID = batchUUID;
-			LOG.info(patientId.toString() + " passed to thread");
-		}
-		@Override
-		public Object call() throws Exception {
-
-			try {
-
-				LOG.info(patientId.toString() + " processing");
-
-				List<ResourceWrapper> observationResources = new ArrayList<>();
-				List<ResourceWrapper> conditionResources = new ArrayList<>();
-				observationResources = dal.getResourcesByPatient(serviceUUID, patientId, org.hl7.fhir.instance.model.ResourceType.Observation.toString());
-
-				conditionResources = dal.getResourcesByPatient(serviceUUID, patientId, org.hl7.fhir.instance.model.ResourceType.Condition.toString());
-
-				LOG.info(patientId.toString() + " got resources");
-				if (observationResources.isEmpty() && conditionResources.isEmpty()) {
-					LOG.warn("Null patient resource for Patient " + patientId);
-					return null;
-				}
-
-
-				if (debug.equals("1")) {
-					LOG.info("Service: " + serviceUUID.toString());
-					LOG.info("Configname: " + subscriberConfigName);
-					LOG.info("Patientid: " + patientId.toString());
-				}
-
-				String observationContainerString = BulkHelper.getSubscriberContainerForObservationAdditionalData(observationResources, serviceUUID, batchUUID, subscriberConfigName, patientId);
-
-				String conditionContainerString = BulkHelper.getSubscriberContainerForConditionAdditionalData(conditionResources, serviceUUID, batchUUID, subscriberConfigName, patientId);
-
-				if (observationContainerString != null) {
-					LOG.info("filing data");
-					org.endeavourhealth.subscriber.filer.SubscriberFiler.file(batchUUID, UUID.randomUUID(), observationContainerString, subscriberConfigName);
-				}
-
-				if (conditionContainerString != null) {
-					LOG.info("filing data");
-					org.endeavourhealth.subscriber.filer.SubscriberFiler.file(batchUUID, UUID.randomUUID(), conditionContainerString, subscriberConfigName);
-				}
-
-				return null;
-			}
-			catch(Exception e) {
-				LOG.error(e.toString());
-			}
-			return null;
-		}
-	}
-
 	/*
 	private static void handleErrors(List<ThreadPoolError> errors) throws Exception {
 		if (errors == null || errors.isEmpty()) {
@@ -2618,79 +2533,6 @@ public class Main {
 				hsServiceUuids.add(serviceUUID);
 			}
 		}
-	}
-
-	private static void bulkProcessReferenceRangesThreaded(String subscriberConfigName, String protocolName, String outputFormat, String filePath, String debug, Integer threads, Integer QBeforeBlock) throws Exception {
-
-		Set<UUID> hsPatientUuids = new HashSet<>();
-		Set<UUID> hsServiceUuids = new HashSet<>();
-		File f = new File(filePath);
-		if (f.exists()) {
-			List<String> lines = Files.readAllLines(f.toPath());
-			for (String line : lines) {
-				hsPatientUuids.add(UUID.fromString(line));
-			}
-		}
-
-		LibraryItem matchedLibraryItem = BulkHelper.findProtocolLibraryItem(protocolName);
-
-		if (matchedLibraryItem == null) {
-			System.out.println("Protocol not found : " + protocolName);
-			return;
-		}
-		List<ServiceContract> l = matchedLibraryItem.getProtocol().getServiceContract();
-		String serviceId = "";
-		ResourceDalI dal = DalProvider.factoryResourceDal();
-		PatientSearchDalI patientSearchDal = DalProvider.factoryPatientSearchDal();
-
-		SubscriberResourceMappingDalI enterpriseIdDal = DalProvider.factorySubscriberResourceMappingDal(subscriberConfigName);
-
-		ThreadPool threadPool = new ThreadPool(threads, QBeforeBlock);
-
-		Long ret;
-
-		for (ServiceContract serviceContract : l) {
-			if (serviceContract.getType().equals(PUBLISHER)
-					&& serviceContract.getActive() == ServiceContractActive.TRUE) {
-
-				UUID batchUUID = UUID.randomUUID();
-				serviceId = serviceContract.getService().getUuid();
-				UUID serviceUUID = UUID.fromString(serviceId);
-
-				if (hsServiceUuids.contains(serviceUUID)) {
-					// already processed the service
-					continue;
-				}
-
-				List<UUID> patientIds = patientSearchDal.getPatientIds(serviceUUID, true);
-
-				for (UUID patientId : patientIds) {
-
-					// check if we have processed the patient already
-					if (hsPatientUuids.contains(patientId)) {
-						continue;
-					}
-					List<String> newLines = new ArrayList<>();
-					newLines.add(patientId.toString());
-					Files.write(f.toPath(), newLines, StandardOpenOption.CREATE, StandardOpenOption.APPEND, StandardOpenOption.WRITE);
-
-					LOG.info(patientId.toString());
-					ret = enterpriseIdDal.findEnterpriseIdOldWay("Patient", patientId.toString());
-					if (ret != null) {
-						// check if the patient has previously been processed?
-						LOG.info(ret.toString());
-					}
-
-					List<ThreadPoolError> errors = threadPool.submit(new ObservationAndConditionCallable(serviceUUID, patientId, debug, dal, outputFormat, subscriberConfigName, batchUUID));
-					//handleErrors(errors);
-				}
-
-				hsServiceUuids.add(serviceUUID);
-			}
-		}
-
-		List<ThreadPoolError> errors = threadPool.waitAndStop();
-		//handleErrors(errors);
 	}
 
 	/*private static void testJmx() {

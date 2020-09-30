@@ -144,150 +144,16 @@
                                             <div>Extract Sequence No: {{status.completeBatchSequenceNumber}}</div>
 
                                             <div>
-                                                <a (click)="viewOrgs(status)">{{status.completeBatchContents.length}} Orgs in extract</a>
+                                                <a (click)="viewOrgs(status, status.completeBatchContents)">{{status.completeBatchContents.length}} Orgs in extract</a>
                                                 &nbsp;&nbsp;&nbsp;
-                                                <a (click)="viewOrgsOk(status)">{{filterOrgs(status.completeBatchContents, true).length}} Orgs OK</a>
+                                                <a (click)="viewOrgs(status, status.okBatches)">{{status.okBatches.length}} Orgs OK</a>
                                                 &nbsp;&nbsp;&nbsp;
-                                                <span *ngIf="filterOrgs(status.completeBatchContents, false).length > 0" class="label label-danger">Warning</span>
-                                                <a (click)="viewOrgsError(status)">{{filterOrgs(status.completeBatchContents, false).length}} Orgs in
-                                                    Error</a>
+                                                <span *ngIf="status.errorBatches.length > 0" class="label label-danger">Warning</span>
+                                                <a (click)="viewOrgs(status, status.errorBatches)">{{status.errorBatches.length}} Orgs in Error</a>
+                                                &nbsp;&nbsp;&nbsp;
+                                                <span *ngIf="status.dpaErrorBatches.length > 0" class="label label-danger">Warning</span>
+                                                <a (click)="viewOrgs(status, status.dpaErrorBatches)">{{status.dpaErrorBatches.length}} DPA Failures</a>
                                             </div>
-
-                                            <!-- <div *ngIf="filterOrgs(status.completeBatchContents, true).length > 0">
-
-                                             <ngb-accordion #acc="ngbAccordion">
-                                                 <ngb-panel title="Organisations in extract: {{status.completeBatchContents.length}}">
-                                                     <template ngbPanelContent>
-
-                                                         <table class="table table-striped table-condensed">
-                                                             <thead>
-                                                             <tr>
-                                                                 <th class="col-md-1"></th> &lt;!&ndash; checkbox col &ndash;&gt;
-                                                                 <th class="col-md-1">ODS</th>
-                                                                 <th class="col-md-1">Bulk</th>
-                                                                 <th class="col-md-1">Status</th>
-                                                                 <th class="col-md-8">Message</th>
-                                                             </tr>
-                                                             </thead>
-                                                             <tbody>
-                                                             <tr class="hover-box" *ngFor="let content of status.completeBatchContents">
-                                                                 <td>
-                                                                     <div *ngIf="!content.notified">
-                                                                         <input type="checkbox" [(ngModel)]="content.selected" name="contentSelected">
-                                                                     </div>
-                                                                 </td>
-                                                                 <td>{{content.orgId}}</td>
-
-                                                                 &lt;!&ndash; bulk &ndash;&gt;
-                                                                 <td *ngIf="content.isBulk">Y</td>
-                                                                 <td *ngIf="!content.isBulk"></td>
-
-                                                                 &lt;!&ndash; status &ndash;&gt;
-                                                                 <td *ngIf="content.notified">OK</td>
-                                                                 <td *ngIf="!content.notified">Error</td>
-
-                                                                 &lt;!&ndash; message &ndash;&gt;
-                                                                 <td *ngIf="content.notified">{{content.result}}</td>
-                                                                 <td *ngIf="!content.notified">{{content.error}}</td>
-
-                                                             </tr>
-                                                             </tbody>
-                                                         </table>
-
-                                                     </template>
-                                                 </ngb-panel>
-                                             </ngb-accordion>
-
-                                             <div *ngIf="filterOrgs(status.completeBatchContents, true).length > 0">
-                                                 <ngb-accordion #acc="ngbAccordion">
-                                                     <ngb-panel title="Organisations posted OK: {{filterOrgs(status.completeBatchContents, true).length}}">
-                                                         <template ngbPanelContent>
-
-                                                             <table class="table table-striped table-condensed">
-                                                                 <thead>
-                                                                 <tr>
-                                                                     <th class="col-md-1"></th> &lt;!&ndash; checkbox col &ndash;&gt;
-                                                                     <th class="col-md-1">ODS</th>
-                                                                     <th class="col-md-1">Bulk</th>
-                                                                     <th class="col-md-1">Status</th>
-                                                                     <th class="col-md-8">Message</th>
-                                                                 </tr>
-                                                                 </thead>
-                                                                 <tbody>
-                                                                 <tr class="hover-box" *ngFor="let content of filterOrgs(status.completeBatchContents, true)">
-                                                                     <td>
-                                                                         <div *ngIf="!content.notified">
-                                                                             <input type="checkbox" [(ngModel)]="content.selected" name="contentSelected">
-                                                                         </div>
-                                                                     </td>
-                                                                     <td>{{content.orgId}}</td>
-
-                                                                     &lt;!&ndash; bulk &ndash;&gt;
-                                                                     <td *ngIf="content.isBulk">Y</td>
-                                                                     <td *ngIf="!content.isBulk"></td>
-
-                                                                     &lt;!&ndash; status &ndash;&gt;
-                                                                     <td *ngIf="content.notified">OK</td>
-                                                                     <td *ngIf="!content.notified">Error</td>
-
-                                                                     &lt;!&ndash; message &ndash;&gt;
-                                                                     <td *ngIf="content.notified">{{content.result}}</td>
-                                                                     <td *ngIf="!content.notified">{{content.error}}</td>
-                                                                 </tr>
-                                                                 </tbody>
-                                                             </table>
-
-                                                         </template>
-                                                     </ngb-panel>
-                                                 </ngb-accordion>
-                                             </div>
-
-                                             <div *ngIf="filterOrgs(status.completeBatchContents, false).length > 0">
-                                                 <span class="label label-danger">Warning</span>
-
-                                                 <ngb-accordion #acc="ngbAccordion">
-                                                     <ngb-panel title="Organisations in Error: {{filterOrgs(status.completeBatchContents, false).length}}">
-                                                         <template ngbPanelContent>
-
-                                                             <table class="table table-striped table-condensed">
-                                                                 <thead>
-                                                                 <tr>
-                                                                     <th class="col-md-1"></th> &lt;!&ndash; checkbox col &ndash;&gt;
-                                                                     <th class="col-md-1">ODS</th>
-                                                                     <th class="col-md-1">Bulk</th>
-                                                                     <th class="col-md-1">Status</th>
-                                                                     <th class="col-md-8">Message</th>
-                                                                 </tr>
-                                                                 </thead>
-                                                                 <tbody>
-                                                                 <tr class="hover-box" *ngFor="let content of filterOrgs(status.completeBatchContents, false)">
-                                                                     <td>
-                                                                         <div *ngIf="!content.notified">
-                                                                             <input type="checkbox" [(ngModel)]="content.selected" name="contentSelected">
-                                                                         </div>
-                                                                     </td>
-                                                                     <td>{{content.orgId}}</td>
-
-                                                                     &lt;!&ndash; bulk &ndash;&gt;
-                                                                     <td *ngIf="content.isBulk">Y</td>
-                                                                     <td *ngIf="!content.isBulk"></td>
-
-                                                                     &lt;!&ndash; status &ndash;&gt;
-                                                                     <td *ngIf="content.notified">OK</td>
-                                                                     <td *ngIf="!content.notified">Error</td>
-
-                                                                     &lt;!&ndash; message &ndash;&gt;
-                                                                     <td *ngIf="content.notified">{{content.result}}</td>
-                                                                     <td *ngIf="!content.notified">{{content.error}}</td>
-
-                                                                 </tr>
-                                                                 </tbody>
-                                                             </table>
-
-                                                         </template>
-                                                     </ngb-panel>
-                                                 </ngb-accordion>
-                                             </div>-->
 
                                         </div>
                                         <div *ngIf="!status.completeBatchId">

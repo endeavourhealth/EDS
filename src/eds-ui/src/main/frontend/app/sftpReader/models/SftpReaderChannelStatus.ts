@@ -2,11 +2,10 @@ import {SftpReaderBatchContents} from "./SftpReaderBatchContents";
 
 export class SftpReaderChannelStatus {
 
+    //sent from server
     id: string;
-    //name: string;
     pollFrequencySeconds: number;
     dataFrequencyDays: number;
-    //instanceName: string;
     latestPollingStart: number;
     latestPollingEnd: number;
     latestPollingException: string;
@@ -26,5 +25,10 @@ export class SftpReaderChannelStatus {
     completeBatchReceived: number;
     completeBatchSequenceNumber: number;
     completeBatchContents: SftpReaderBatchContents[];
+
+    //locally set
     warning: boolean;
+    okBatches: SftpReaderBatchContents[];
+    dpaErrorBatches: SftpReaderBatchContents[];
+    errorBatches: SftpReaderBatchContents[];
 }
