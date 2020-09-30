@@ -90,10 +90,10 @@ export class SftpReaderComponent {
         vm.sftpReaderService.getSftpReaderStatus(configurationId).subscribe(
             (result) => {
 
-                vm.refreshingStatusMap[configurationId] = false;
                 vm.calculateErrors(result); //must do this before the below fn
                 vm.calculateIfWarning(result);
                 vm.statusMap[configurationId] = result;
+                vm.refreshingStatusMap[configurationId] = false;
             },
             (error) => {
 
@@ -112,6 +112,11 @@ export class SftpReaderComponent {
         var ok = [];
         var dpaError = [];
         var error = [];
+
+        //if not set, just set to an empty array
+        if (!status.completeBatchContents) {
+            status.completeBatchContents = [];
+        }
 
         for (var i=0; i<status.completeBatchContents.length; i++) {
             var content = status.completeBatchContents[i];
