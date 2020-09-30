@@ -766,7 +766,11 @@ public class Main {
 			String sourceFile = args[1];
 			boolean bulkDelete = Boolean.parseBoolean(args[2]);
 			String reason = args[3];
-			subscriberTransformPatients(sourceFile, bulkDelete, reason);
+			Set<String> subscriberConfigNames = new HashSet<>();
+			for (int i=4; i<args.length; i++) {
+				subscriberConfigNames.add(args[i]);
+			}
+			subscriberTransformPatients(sourceFile, bulkDelete, reason, subscriberConfigNames);
 			System.exit(0);
 		}
 
@@ -5693,8 +5697,17 @@ public class Main {
 		}
 	}*/
 
-	private static void subscriberTransformPatients(String sourceFile, boolean bulkDelete, String reason) {
+	private static void subscriberTransformPatients(String sourceFile, boolean bulkDelete, String reason, Set<String> subscriberConfigNames) {
 		LOG.info("Subscriber transforming patients from " + sourceFile);
+		LOG.info("BulkDelete = " + bulkDelete);
+		LOG.info("Reason = " + reason);
+		if (subscriberConfigNames == null || subscriberConfigNames.isEmpty()) {
+			LOG.info("To all current subscribers");
+
+		} else {
+			LOG.info("To explicit subscribers " + subscriberConfigNames);
+		}
+
 		try {
 			List<UUID> patientIds = new ArrayList<>();
 
@@ -5720,9 +5733,12 @@ public class Main {
 			}
 			LOG.info("Found " + patientIds.size() + " patient IDs");
 
+			LOG.info("Double-check the above before continuing");
+			continueOrQuit();
+
 			boolean bulkRefresh = !bulkDelete;
 
-			QueueHelper.queueUpPatientsForSubscriberTransform(patientIds, bulkDelete, bulkRefresh, false, reason);
+			QueueHelper.queueUpPatientsForSubscriberTransform(patientIds, bulkDelete, bulkRefresh, false, reason, subscriberConfigNames);
 
 			LOG.info("Finished transforming patients from " + sourceFile);
 		} catch (Throwable t) {

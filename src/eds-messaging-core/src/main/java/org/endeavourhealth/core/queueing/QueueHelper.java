@@ -456,7 +456,7 @@ public class QueueHelper {
             return;
         }
 
-        queueUpFullServiceForPopulatingSubscriber(serviceId, isBulkDelete, isBulkRefresh, doAdminResources, subscriberConfigNames, patientUuids, reason);
+        queueUpPatientsForSubscriberTransform(serviceId, isBulkDelete, isBulkRefresh, doAdminResources, subscriberConfigNames, patientUuids, reason);
     }
 
 
@@ -466,7 +466,7 @@ public class QueueHelper {
      *
      * NOTE: the patientUuids list may be empty if we just want to send admin data through - this is OK
      */
-    public static void queueUpFullServiceForPopulatingSubscriber(UUID serviceId, boolean isBulkDelete, boolean isBulkRefresh, boolean doAdminResources,
+    public static void queueUpPatientsForSubscriberTransform(UUID serviceId, boolean isBulkDelete, boolean isBulkRefresh, boolean doAdminResources,
                                                                  Set<String> specificSubscriberConfigNames, List<UUID> patientUuids, String reason) throws Exception {
 
         if (isBulkDelete && isBulkRefresh) {
@@ -496,7 +496,8 @@ public class QueueHelper {
         Service service = serviceDal.getById(serviceId);
 
         String specificSubscriberConfigNamesStr = null;
-        if (specificSubscriberConfigNames == null) {
+        if (specificSubscriberConfigNames == null
+                || specificSubscriberConfigNames.isEmpty()) {
             specificSubscriberConfigNamesStr = "all subscribers";
         } else {
             specificSubscriberConfigNamesStr = String.join(", ", specificSubscriberConfigNames);
@@ -754,7 +755,8 @@ public class QueueHelper {
     /**
      * takes a list of patient IDs and groups them by service and queues them up for all relevant subscriber transforms
      */
-    public static void queueUpPatientsForSubscriberTransform(List<UUID> patientIds, boolean isBulkDelete, boolean isBulkRefresh, boolean doAdminResources, String reason) throws Exception {
+    public static void queueUpPatientsForSubscriberTransform(List<UUID> patientIds, boolean isBulkDelete, boolean isBulkRefresh, boolean doAdminResources,
+                                                             String reason, Set<String> specificSubscriberConfigNames) throws Exception {
 
         //find service for each one
         Map<UUID, List<UUID>> hmPatientByService = new HashMap<>();
@@ -794,7 +796,7 @@ public class QueueHelper {
             List<UUID> patientIdsForService = hmPatientByService.get(serviceId);
             LOG.debug("Doing " + patientIdsForService.size() + " patients for service " + serviceId);
 
-            queueUpFullServiceForPopulatingSubscriber(serviceId, isBulkDelete, isBulkRefresh, doAdminResources, null, patientIdsForService, reason);
+            queueUpPatientsForSubscriberTransform(serviceId, isBulkDelete, isBulkRefresh, doAdminResources, specificSubscriberConfigNames, patientIdsForService, reason);
         }
     }
 
