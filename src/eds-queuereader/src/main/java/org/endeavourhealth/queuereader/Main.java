@@ -763,10 +763,6 @@ public class Main {
 
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("subscriberTransformPatients")) {
-			LOG.debug("args len = " + args.length);
-			for (int i=0; i<args.length; i++) {
-				LOG.debug("Arg " + i + " = [" + args[i] + "]");
-			}
 			String sourceFile = args[1];
 			boolean bulkDelete = Boolean.parseBoolean(args[2]);
 			String reason = args[3];
