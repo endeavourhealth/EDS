@@ -22,6 +22,8 @@ IF OBJECT_ID('dbo.flag', 'U') IS NOT NULL DROP TABLE dbo.flag
 GO
 IF OBJECT_ID('dbo.observation', 'U') IS NOT NULL DROP TABLE dbo.observation
 GO
+IF OBJECT_ID('dbo.observation_additional', 'U') IS NOT NULL DROP TABLE dbo.observation_additional
+GO
 IF OBJECT_ID('dbo.procedure_request', 'U') IS NOT NULL DROP TABLE dbo.procedure_request
 GO
 IF OBJECT_ID('dbo.referral_request', 'U') IS NOT NULL DROP TABLE dbo.referral_request
@@ -408,7 +410,15 @@ CREATE INDEX [ix_observation_clinical_effective_date] ON [observation] ([clinica
 GO
 CREATE INDEX [ix_observation_person_id] ON [observation] ([person_id])
 GO
-
+ 
+CREATE TABLE [observation_additional] (
+  [id] bigint NOT NULL,
+  [property_id] bigint NOT NULL, -- IM reference 
+  [value_id] bigint(50) NULL,
+  [json_value] json NULL,
+  PRIMARY KEY ([id], [property_id])
+)
+GO
 
 CREATE TABLE [organization] (
 [id] bigint,
@@ -1381,6 +1391,67 @@ BEGIN
   END
 GO
 ALTER TABLE [observation] ENABLE TRIGGER [after_observation_delete]
+GO
+
+CREATE TRIGGER [after_observation_additional_insert]
+ON [observation_additional]
+WITH EXECUTE AS CALLER
+After INSERT
+AS
+BEGIN
+    INSERT INTO event_log (
+		dt_change,
+        change_type,
+        table_id,
+        record_id
+	) select
+		GETDATE(), -- current time inc ms
+        0, -- insert
+        28, -- observation_additional
+        id from inserted
+  END
+GO
+ALTER TABLE [observation_additional] ENABLE TRIGGER [after_observation_additional_insert]
+GO
+CREATE TRIGGER [after_observation_additional_update]
+ON [observation_additional]
+WITH EXECUTE AS CALLER
+After UPDATE
+AS
+BEGIN
+    INSERT INTO event_log (
+		dt_change,
+        change_type,
+        table_id,
+        record_id
+	) select
+		GETDATE(), -- current time inc ms
+        1, -- update
+        28, -- observation_additional
+        id from deleted
+  END
+GO
+ALTER TABLE [observation_additional] ENABLE TRIGGER [after_observation_additional_update]
+GO
+CREATE TRIGGER [after_observation_additional_delete]
+ON [observation_additional]
+WITH EXECUTE AS CALLER
+After DELETE
+AS
+BEGIN
+    INSERT INTO event_log (
+		dt_change,
+        change_type,
+        table_id,
+        record_id
+	) select
+		GETDATE(), -- current time inc ms
+        2, -- delete
+        28, -- observation_additional
+        id from deleted
+  END
+GO
+ALTER TABLE [observation_additional] ENABLE TRIGGER [after_observation_additional_delete]
 GO
 
 CREATE TRIGGER [after_organization_insert]

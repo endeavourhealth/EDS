@@ -42,6 +42,9 @@ drop trigger if exists after_medication_statement_delete;
 drop trigger if exists after_observation_insert;
 drop trigger if exists after_observation_update;
 drop trigger if exists after_observation_delete;
+drop trigger if exists after_observation_additional_insert;
+drop trigger if exists after_observation_additional_update;
+drop trigger if exists after_observation_additional_delete;
 drop trigger if exists after_organization_insert;
 drop trigger if exists after_organization_update;
 drop trigger if exists after_organization_delete;
@@ -1923,7 +1926,6 @@ CREATE TRIGGER after_observation_delete
     );
   END$$
 DELIMITER ;
-
 
 DELIMITER $$
 CREATE TRIGGER after_observation_additional_insert
