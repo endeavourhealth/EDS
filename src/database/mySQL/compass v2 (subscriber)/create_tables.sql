@@ -106,7 +106,7 @@ DROP TABLE IF EXISTS location;
 DROP TABLE IF EXISTS `schedule`;
 DROP TABLE IF EXISTS practitioner;
 DROP TABLE IF EXISTS organization;
-
+DROP TABLE IF EXISTS patient_address_match;
 
 
 -- Table: organization
@@ -1036,6 +1036,37 @@ CREATE UNIQUE INDEX ux_patient_pseudo_id ON patient_pseudo_id (id);
 
 CREATE INDEX patient_pseudo_id_patient ON patient_pseudo_id (patient_id);
 
+-- Table: patient_address_match
+CREATE TABLE `patient_address_match` (
+  `id` bigint(20) NOT NULL,
+  `uprn` varchar(255) COLLATE utf8_bin NOT NULL,
+  `status` tinyint(1) DEFAULT NULL,
+  `classification` varchar(45) CHARACTER SET utf8 DEFAULT NULL,
+  `latitude` double DEFAULT NULL,
+  `longitude` double DEFAULT NULL,
+  `xcoordinate` double DEFAULT NULL,
+  `ycoordinate` double DEFAULT NULL,
+  `qualifier` varchar(50) CHARACTER SET utf8 DEFAULT NULL,
+  `algorithm` varchar(255) CHARACTER SET utf8 DEFAULT NULL,
+  `match_date` datetime DEFAULT NULL,
+  `abp_address_number` varchar(255) CHARACTER SET utf8 DEFAULT NULL,
+  `abp_address_street` varchar(255) CHARACTER SET utf8 DEFAULT NULL,
+  `abp_address_locality` varchar(255) CHARACTER SET utf8 DEFAULT NULL,
+  `abp_address_town` varchar(255) CHARACTER SET utf8 DEFAULT NULL,
+  `abp_address_postcode` varchar(10) CHARACTER SET utf8 DEFAULT NULL,
+  `abp_address_organization` varchar(255) CHARACTER SET utf8 DEFAULT NULL,
+  `match_pattern_postcode` varchar(255) CHARACTER SET utf8 DEFAULT NULL,
+  `match_pattern_street` varchar(255) CHARACTER SET utf8 DEFAULT NULL,
+  `match_pattern_number` varchar(255) CHARACTER SET utf8 DEFAULT NULL,
+  `match_pattern_building` varchar(255) CHARACTER SET utf8 DEFAULT NULL,
+  `match_pattern_flat` varchar(255) CHARACTER SET utf8 DEFAULT NULL,
+  `algorithm_version` varchar(255) CHARACTER SET utf8 DEFAULT NULL,
+  `epoc` varchar(255) COLLATE utf8_bin DEFAULT NULL,
+  PRIMARY KEY (`id`,`uprn`),
+  KEY `patient_address_uprn_index` (`uprn`),
+  KEY `patient_address_patient_address_id` (`id`,`uprn`),
+  CONSTRAINT `patient_address_uprn_patient_address_id_fk` FOREIGN KEY (`id`) REFERENCES `patient_address` (`id`)
+);
 
 
 DELIMITER //

@@ -60,7 +60,8 @@ IF OBJECT_ID('dbo.practitioner', 'U') IS NOT NULL DROP TABLE dbo.practitioner
 GO
 IF OBJECT_ID('dbo.organization', 'U') IS NOT NULL DROP TABLE dbo.organization
 GO
-
+IF OBJECT_ID('dbo.patient_address_match', 'U') IS NOT NULL DROP TABLE dbo.patient_address_match
+GO
 
 CREATE TABLE [allergy_intolerance] (
 [id] bigint,
@@ -687,8 +688,36 @@ GO
 CREATE INDEX ix_registration_status_history_patient ON registration_status_history (patient_id);
 GO
 
-
-
+CREATE TABLE patient_address_match (
+  [id] bigint NOT NULL,
+  [uprn] varchar(255) NOT NULL,
+  [status] smallint DEFAULT NULL,
+  [classification] varchar(45) DEFAULT NULL,
+  [latitude] float DEFAULT NULL,
+  [longitude] float DEFAULT NULL,
+  [xcoordinate] float DEFAULT NULL,
+  [ycoordinate] float DEFAULT NULL,
+  [qualifier] varchar(50) DEFAULT NULL,
+  [algorithm] varchar(255) DEFAULT NULL,
+  [match_date] datetime DEFAULT NULL,
+  [abp_address_number] varchar(255) DEFAULT NULL,
+  [abp_address_street] varchar(255) DEFAULT NULL,
+  [abp_address_locality] varchar(255) DEFAULT NULL,
+  [abp_address_town] varchar(255) DEFAULT NULL,
+  [abp_address_postcode] varchar(10) DEFAULT NULL,
+  [abp_address_organization] varchar(255) DEFAULT NULL,
+  [match_pattern_postcode] varchar(255) DEFAULT NULL,
+  [match_pattern_street] varchar(255) DEFAULT NULL,
+  [match_pattern_number] varchar(255) DEFAULT NULL,
+  [match_pattern_building] varchar(255) DEFAULT NULL,
+  [match_pattern_flat] varchar(255) DEFAULT NULL,
+  [algorithm_version] varchar(255) DEFAULT NULL,
+  [epoc] varchar(255) DEFAULT NULL,
+  PRIMARY KEY ([id],[uprn])
+  )   ;
+CREATE INDEX [patient_address_uprn_index] ON patient_address_match ([uprn]);
+CREATE INDEX [patient_address_patient_address_id] ON patient_address_match ([id],[uprn]);
+GO
 
 CREATE PROCEDURE update_person_record(
 	@new_person_id AS bigint,
