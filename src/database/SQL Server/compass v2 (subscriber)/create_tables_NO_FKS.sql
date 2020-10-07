@@ -2385,11 +2385,12 @@ GO
 ALTER TABLE [patient_additional] ENABLE TRIGGER [after_patient_additional_delete]
 GO
 
+
 CREATE TRIGGER [after_patient_address_ralf_insert]
 ON [patient_address_ralf]
 WITH EXECUTE AS CALLER
 AFTER INSERT
-                                         AS
+AS
 BEGIN
 INSERT INTO event_log (
     dt_change,
@@ -2405,14 +2406,15 @@ END
 GO
 
 ALTER TABLE [patient_address_ralf] ENABLE TRIGGER [after_patient_address_ralf_insert]
-    GO
+GO
+
 
 CREATE TRIGGER [after_patient_address_ralf_update]
 ON [patient_address_ralf]
 WITH EXECUTE AS CALLER
 AFTER UPDATE
-                                         AS
-                                             BEGIN
+AS
+BEGIN
 INSERT INTO event_log (
     dt_change,
     change_type,
@@ -2427,13 +2429,14 @@ END
 GO
 
 ALTER TABLE [patient_address_ralf] ENABLE TRIGGER [after_patient_address_ralf_update]
-    GO
+GO
+
 
 CREATE TRIGGER [after_patient_address_ralf_delete]
 ON [patient_address_ralf]
 WITH EXECUTE AS CALLER
 AFTER DELETE
-                                         AS
+AS
 BEGIN
 INSERT INTO event_log (
     dt_change,

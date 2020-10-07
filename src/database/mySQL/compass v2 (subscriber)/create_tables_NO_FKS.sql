@@ -924,8 +924,8 @@ CREATE TABLE `patient_address_match` (
   KEY `patient_address_patient_address_id` (`id`,`uprn`)
 );
 
-CREATE TABLE patient_address_ralf
-(
+-- Table: patient_address_ralf
+CREATE TABLE patient_address_ralf (
     id bigint NOT NULL,
     organization_id bigint NOT NULL,
     patient_id bigint NOT NULL,
@@ -944,6 +944,7 @@ CREATE INDEX patient_address_ralf_patient_id ON patient_address_ralf (patient_id
 CREATE INDEX patient_address_ralf_patient_address_id ON patient_address_ralf (patient_address_id);
 
 CREATE INDEX patient_address_ralf_patient_address_match_uprn_ralf_00 ON patient_address_ralf (patient_address_match_uprn_ralf00);
+
 
 DELIMITER //
 CREATE PROCEDURE update_person_record_2(
