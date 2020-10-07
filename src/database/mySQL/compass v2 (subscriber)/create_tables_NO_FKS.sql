@@ -924,6 +924,27 @@ CREATE TABLE `patient_address_match` (
   KEY `patient_address_patient_address_id` (`id`,`uprn`)
 );
 
+CREATE TABLE patient_address_ralf
+(
+    id bigint NOT NULL,
+    organization_id bigint NOT NULL,
+    patient_id bigint NOT NULL,
+    person_id bigint NOT NULL,
+    patient_address_id bigint NOT NULL,
+    patient_address_match_uprn_ralf00 varchar(255) NOT NULL,
+    salt_name varchar(50) NOT NULL,
+    skid varchar(255) NOT NULL,
+    CONSTRAINT pk_patient_address_ralf PRIMARY KEY (id, patient_address_id, patient_address_match_uprn_ralf00)
+);
+
+CREATE UNIQUE INDEX ux_patient_address_ralf_id ON patient_address_ralf (id);
+
+CREATE INDEX patient_address_ralf_patient_id ON patient_address_ralf (patient_id);
+
+CREATE INDEX patient_address_ralf_patient_address_id ON patient_address_ralf (patient_address_id);
+
+CREATE INDEX patient_address_ralf_patient_address_match_uprn_ralf_00 ON patient_address_ralf (patient_address_match_uprn_ralf00);
+
 DELIMITER //
 CREATE PROCEDURE update_person_record_2(
 	IN _new_person_id bigint
@@ -2624,3 +2645,61 @@ CREATE TRIGGER after_patient_additional_delete
 DELIMITER ;
 
 
+DELIMITER $$
+CREATE TRIGGER after_patient_address_ralf_insert
+    AFTER INSERT ON patient_address_ralf
+    FOR EACH ROW
+BEGIN
+    INSERT INTO event_log (
+        dt_change,
+        change_type,
+        table_id,
+        record_id
+    ) VALUES (
+                 now(3), -- current time inc ms
+                 0, -- insert
+                 30, -- patient_address_ralf
+                 NEW.id
+             );
+END$$
+DELIMITER ;
+
+
+DELIMITER $$
+CREATE TRIGGER after_patient_address_ralf_update
+    AFTER UPDATE ON patient_address_ralf
+    FOR EACH ROW
+BEGIN
+    INSERT INTO event_log (
+        dt_change,
+        change_type,
+        table_id,
+        record_id
+    ) VALUES (
+                 now(3), -- current time inc ms
+                 1, -- update
+                 30, -- patient_address_ralf
+                 NEW.id
+             );
+END$$
+DELIMITER ;
+
+
+DELIMITER $$
+CREATE TRIGGER after_patient_address_ralf_delete
+    AFTER DELETE ON patient_address_ralf
+    FOR EACH ROW
+BEGIN
+    INSERT INTO event_log (
+        dt_change,
+        change_type,
+        table_id,
+        record_id
+    ) VALUES (
+                 now(3), -- current time inc ms
+                 2, -- delete
+                 30, -- patient_address_ralf
+                 OLD.id
+             );
+END$$
+DELIMITER ;

@@ -624,10 +624,6 @@ CREATE TABLE [referral_request] (
 PRIMARY KEY ([organization_id], [person_id], [id])
 )
 
-
-
-
-
 GO
 CREATE UNIQUE INDEX [referral_request_id] ON [referral_request] ([id])
 GO
@@ -718,6 +714,33 @@ CREATE TABLE patient_address_match (
 CREATE INDEX [patient_address_uprn_index] ON patient_address_match ([uprn]);
 CREATE INDEX [patient_address_patient_address_id] ON patient_address_match ([id],[uprn]);
 GO
+
+
+CREATE TABLE [patient_address_ralf] (
+    [id] bigint NOT NULL,
+    [organization_id] bigint NOT NULL,
+    [patient_id] bigint NOT NULL,
+    [person_id] bigint NOT NULL,
+    [patient_address_id] bigint NOT NULL,
+    [patient_address_match_uprn_ralf00] varchar(255) NOT NULL,
+    [salt_name] varchar(50) NOT NULL,
+    [skid] varchar(255) NOT NULL,
+    PRIMARY KEY ([id], [patient_address_id],  [patient_address_match_uprn_ralf00])
+);
+GO
+
+CREATE UNIQUE INDEX [patient_address_ralf_id] ON [patient_address_ralf] ([id])
+GO
+
+CREATE INDEX [patient_address_ralf_patient_id] ON [patient_address_ralf] ([patient_id])
+GO
+
+CREATE INDEX [patient_address_ralf_patient_address_id] ON [patient_address_ralf] ([patient_address_id])
+GO
+
+CREATE INDEX [patient_address_ralf_patient_address_match_uprn_ralf_00] ON [patient_address_ralf] ([patient_address_match_uprn_ralf00])
+GO
+
 
 CREATE PROCEDURE update_person_record(
 	@new_person_id AS bigint,
@@ -2362,3 +2385,68 @@ GO
 ALTER TABLE [patient_additional] ENABLE TRIGGER [after_patient_additional_delete]
 GO
 
+CREATE TRIGGER [after_patient_address_ralf_insert]
+ON [patient_address_ralf]
+WITH EXECUTE AS CALLER
+AFTER INSERT
+                                         AS
+BEGIN
+INSERT INTO event_log (
+    dt_change,
+    change_type,
+    table_id,
+    record_id
+) SELECT
+      GETDATE(),
+      0, -- insert
+      30, -- patient_address_ralf
+      id FROM inserted;
+END
+GO
+
+ALTER TABLE [patient_address_ralf] ENABLE TRIGGER [after_patient_address_ralf_insert]
+    GO
+
+CREATE TRIGGER [after_patient_address_ralf_update]
+ON [patient_address_ralf]
+WITH EXECUTE AS CALLER
+AFTER UPDATE
+                                         AS
+                                             BEGIN
+INSERT INTO event_log (
+    dt_change,
+    change_type,
+    table_id,
+    record_id
+) SELECT
+      GETDATE(),
+      1, -- update
+      30, -- patient_address_ralf
+      id FROM deleted;
+END
+GO
+
+ALTER TABLE [patient_address_ralf] ENABLE TRIGGER [after_patient_address_ralf_update]
+    GO
+
+CREATE TRIGGER [after_patient_address_ralf_delete]
+ON [patient_address_ralf]
+WITH EXECUTE AS CALLER
+AFTER DELETE
+                                         AS
+BEGIN
+INSERT INTO event_log (
+    dt_change,
+    change_type,
+    table_id,
+    record_id
+) SELECT
+      GETDATE(),
+      2, -- delete
+      30, -- patient_address_ralf
+      id FROM deleted;
+END
+GO
+
+ALTER TABLE [patient_address_ralf] ENABLE TRIGGER [after_patient_address_ralf_delete]
+GO
