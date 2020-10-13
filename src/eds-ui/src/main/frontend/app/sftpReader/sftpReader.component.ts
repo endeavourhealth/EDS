@@ -125,7 +125,8 @@ export class SftpReaderComponent {
             } else {
                 var errorMsg = content.error;
                 if (errorMsg
-                    && errorMsg.indexOf('No DPA found') > -1) {
+                    && (errorMsg.indexOf('No DPA found') > -1
+                        || errorMsg.indexOf('no DPA exists') > -1)) {
                     dpaError.push(content);
                 } else {
                     error.push(content);
