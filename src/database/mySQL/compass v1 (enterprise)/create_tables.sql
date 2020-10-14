@@ -549,6 +549,7 @@ CREATE TABLE patient_additional (
   id bigint NOT NULL COMMENT 'same as the id column on the patient table ',
   property_id character varying(255)  NOT NULL COMMENT 'IM reference (e.g. Cause of death)',
   value_id character varying(255) NOT NULL COMMENT 'IM reference (e.g. COVID)',
+  json_value json,
   CONSTRAINT pk_patient_additional_id PRIMARY KEY (id, property_id)
 );
 CREATE INDEX ix_patient_additional_id
