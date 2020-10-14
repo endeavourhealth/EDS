@@ -76,10 +76,9 @@ import java.util.Date;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.endeavourhealth.core.xml.QueryDocument.ServiceContractType.PUBLISHER;
+//import static org.endeavourhealth.core.xml.QueryDocument.ServiceContractType.PUBLISHER;
 
 public class Main {
-
 	private static final Logger LOG = LoggerFactory.getLogger(Main.class);
 
 	public static void main(String[] args) throws Exception {
@@ -2338,7 +2337,7 @@ public class Main {
 		ThreadPool threadPool = new ThreadPool(threads, QBeforeBlock);
 
 		for (ServiceContract serviceContract : serviceContracts) {
-			if (serviceContract.getType().equals(PUBLISHER)
+			if (serviceContract.getType().equals(ServiceContractType.PUBLISHER)
 					&& serviceContract.getActive() == ServiceContractActive.TRUE) {
 
 				UUID batchUUID = UUID.randomUUID();
@@ -2410,7 +2409,7 @@ public class Main {
 		Long ret;
 
 		for (ServiceContract serviceContract : l) {
-			if (serviceContract.getType().equals(PUBLISHER)
+			if (serviceContract.getType().equals(ServiceContractType.PUBLISHER)
 					&& serviceContract.getActive() == ServiceContractActive.TRUE) {
 
 				UUID batchUUID = UUID.randomUUID();
@@ -2477,7 +2476,7 @@ public class Main {
 
 		//List<ResourceWrapper> resources = new ArrayList<>();
 		for (ServiceContract serviceContract : l) {
-			if (serviceContract.getType().equals(PUBLISHER)
+			if (serviceContract.getType().equals(ServiceContractType.PUBLISHER)
 					&& serviceContract.getActive() == ServiceContractActive.TRUE) {
 
 
@@ -10576,7 +10575,7 @@ public class Main {
 							//check to make sure that this service is actually a PUBLISHER to this protocol
 							boolean isProtocolPublisher = false;
 							for (ServiceContract serviceContract : protocol.getServiceContract()) {
-								if (serviceContract.getType().equals(PUBLISHER)
+								if (serviceContract.getType().equals(ServiceContractType.PUBLISHER)
 										&& serviceContract.getService().getUuid().equals(serviceId)
 										&& serviceContract.getActive() == ServiceContractActive.TRUE) {
 
