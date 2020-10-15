@@ -263,7 +263,7 @@ CREATE TABLE [encounter_additional] (
 [id] bigint NOT NULL,
 [property_id] int NOT NULL,
 [value_id] int NULL,
-[json_value] JSON NULL,
+[json_value] nvarchar(max) NULL,
 PRIMARY KEY ([id], [property_id])
 )
 GO

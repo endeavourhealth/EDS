@@ -778,7 +778,7 @@ CREATE TABLE encounter_additional (
 id bigint NOT NULL,
 property_id character varying(255)  NOT NULL,
 value_id character varying(255) NULL,
-json_value JSON NULL,
+json_value nvarchar(max) NULL,
 CONSTRAINT pk_encounter_additional_id PRIMARY KEY (id, property_id)
 );
 CREATE INDEX encounter_additional_value_id
