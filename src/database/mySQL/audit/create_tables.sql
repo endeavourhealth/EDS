@@ -35,6 +35,7 @@ DROP TABLE IF EXISTS service_subscriber_audit;
 DROP TABLE IF EXISTS service_publisher_audit;
 DROP TABLE IF EXISTS scheduled_task_audit_latest;
 DROP TABLE IF EXISTS scheduled_task_audit_history;
+DROP TABLE IF EXISTS simple_property;
 
 CREATE TABLE `exchange`
 (
@@ -412,6 +413,17 @@ create table scheduled_task_audit_history (
   KEY_BLOCK_SIZE=8;
 
 
+CREATE TABLE simple_property (
+  application_name varchar(255) not null COMMENT 'top-level name of the app e.g. QueueReader',
+  application_instance_name varchar(255) not null COMMENT 'identifies the instance of the app e.g. InboundA',
+  property_name varchar(255) not null COMMENT 'arbitrary name of the property being stored',
+  property_value text not null COMMENT 'arbitrary value being stored',
+  CONSTRAINT pk PRIMARY KEY (application_name, application_instance_name)
+)
+  ROW_FORMAT=COMPRESSED
+  KEY_BLOCK_SIZE=8;
+
+
 
 DELIMITER //
 CREATE FUNCTION isBulk ( exchange_headers TEXT )
@@ -618,3 +630,5 @@ CREATE PROCEDURE get_monthly_frailty_stats()
 
   END //
 DELIMITER ;
+
+
