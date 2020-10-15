@@ -286,7 +286,8 @@ INSERT INTO patient_gender (id, value) VALUES (3, 'Unknown');
 CREATE TABLE patient_additional (
   id bigint NOT NULL ,
   property_id character varying(255)  NOT NULL ,
-  value_id character varying(255) NOT NULL ,
+  value_id character varying(255) NULL  ,
+  json_value nvarchar(max) NULL,
   CONSTRAINT pk_patient_additional_id PRIMARY KEY (id, property_id)
 );
 CREATE INDEX ix_patient_additional_id

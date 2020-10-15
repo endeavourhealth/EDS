@@ -553,7 +553,8 @@ GO
 CREATE TABLE [patient_additional] (
   [id] bigint NOT NULL ,
   [property_id] varchar(255)  NOT NULL,
-  [value_id] varchar(255) NOT NULL ,
+  [value_id] varchar(255) NULL ,
+  [json_value] nvarchar(max) NULL,
   PRIMARY KEY ([id], [property_id])
 )
 GO
