@@ -134,7 +134,8 @@ public class SftpReaderEndpoint extends AbstractEndpoint {
                         + " )"
                         + " WHERE b.configuration_id = ?"
                         + " AND b.insert_date >= ?"
-                        + " AND b.insert_date <= ?";
+                        + " AND b.insert_date <= ?"
+                        + " ORDER BY s.organisation_id";
 
             } else {
                 sql = "SELECT b.batch_id, s.batch_split_id, s.organisation_id, s.have_notified, s.is_bulk, m.inbound, m.error_text"
@@ -153,7 +154,8 @@ public class SftpReaderEndpoint extends AbstractEndpoint {
                         + " )"
                         + " WHERE b.configuration_id = ?"
                         + " AND b.insert_date >= ?"
-                        + " AND b.insert_date <= ?";
+                        + " AND b.insert_date <= ?"
+                        + " ORDER BY s.organisation_id";
             }
 
             ps = connection.prepareStatement(sql);
@@ -585,7 +587,8 @@ public class SftpReaderEndpoint extends AbstractEndpoint {
                             + " and m2.batch_split_id = m.batch_split_id"
                             + " and m2.timestamp > m.timestamp"
                             + " )"
-                            + " where s.batch_id = ?";
+                            + " where s.batch_id = ?"
+                            + " ORDER BY s.organisation_id";
                 } else {
                     sql = "select s.batch_split_id, s.organisation_id, s.have_notified, s.is_bulk, m.inbound, m.error_text"
                             + " from batch_split s"
@@ -599,7 +602,8 @@ public class SftpReaderEndpoint extends AbstractEndpoint {
                             + " and m2.batch_split_id = m.batch_split_id"
                             + " and m2.timestamp > m.timestamp"
                             + " )"
-                            + " where s.batch_id = ?";
+                            + " where s.batch_id = ?"
+                            + " ORDER BY s.organisation_id";
                 }
                 ps = connection.prepareStatement(sql);
 
