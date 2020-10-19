@@ -87,6 +87,16 @@ public class Main {
 		ConfigManager.initialize("queuereader", configId);
 
 
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("findExchangesNotSentToSubscriber")) {
+			String orgOdsCodeRegex = null;
+			if (args.length > 1) {
+				orgOdsCodeRegex = args[1];
+			}
+			SpecialRoutines.findExchangesNotSentToSubscriber(orgOdsCodeRegex);
+			System.exit(0);
+		}
+
 		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("testInformationModelFromJson")) {
 			String filePath = args[1];
