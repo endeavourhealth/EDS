@@ -5200,6 +5200,20 @@ public abstract class SpecialRoutines {
         }
     }
 
+    /**
+     * see https://endeavourhealth.atlassian.net/browse/SD-156
+     *
+         create table tmp.SD156_batches_not_transformed (
+             service_id char(36),
+             system_id char(36),
+             batch_id char(36),
+             patient_id char(36),
+             inserted_at datetime(3),
+             subscriber_name varchar(255),
+             is_ok boolean,
+             ok_reason varchar(255)
+         );
+     */
     public static void findExchangesNotSentToSubscriber(String orgOdsCodeRegex) {
         LOG.info("Finding Exchanges Not Sent To Subscriber for " + orgOdsCodeRegex);
         try {
@@ -5295,10 +5309,12 @@ public abstract class SpecialRoutines {
                         }
 
                         done ++;
-                        if (done % 250 == 0) {
+                        if (done % 100 == 0) {
                             LOG.debug("Done " + done + " / " + exchanges.size());
                         }
                     }
+
+                    LOG.debug("Done " + done + " / " + exchanges.size());
 
                     ps.close();
                     connection.close();
@@ -5321,6 +5337,8 @@ public abstract class SpecialRoutines {
             return;
         }
 
+        LOG.debug("Batch " + lastBatchId + " didn't go to subscribers " + missingSubscribers);
+
         Connection connection = ConnectionManager.getAdminConnection();
         String sql = "INSERT INTO tmp.SD156_batches_not_transformed (service_id, system_id, batch_id, patient_id, inserted_at, subscriber_name) VALUES (?, ?, ?, ?, ?, ?)";
         PreparedStatement ps = connection.prepareStatement(sql);
@@ -5339,6 +5357,7 @@ public abstract class SpecialRoutines {
         }
 
         ps.executeBatch();
+        connection.commit();
 
         ps.close();
         connection.close();
