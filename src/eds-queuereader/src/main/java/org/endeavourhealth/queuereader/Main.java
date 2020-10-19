@@ -49,6 +49,9 @@ import org.endeavourhealth.core.xml.transformError.Arg;
 import org.endeavourhealth.core.xml.transformError.Error;
 import org.endeavourhealth.core.xml.transformError.ExceptionLine;
 import org.endeavourhealth.core.xml.transformError.TransformError;
+import org.endeavourhealth.queuereader.routines.SD156;
+import org.endeavourhealth.queuereader.routines.SD86;
+import org.endeavourhealth.queuereader.routines.SpecialRoutines;
 import org.endeavourhealth.subscriber.filer.EnterpriseFiler;
 import org.endeavourhealth.subscriber.filer.SubscriberFiler;
 import org.endeavourhealth.transform.common.*;
@@ -93,7 +96,7 @@ public class Main {
 			if (args.length > 1) {
 				orgOdsCodeRegex = args[1];
 			}
-			SpecialRoutines.findExchangesNotSentToSubscriber(orgOdsCodeRegex);
+			SD156.findExchangesNotSentToSubscriber(orgOdsCodeRegex);
 			System.exit(0);
 		}
 
@@ -220,7 +223,7 @@ public class Main {
 				orgOdsCodeRegex = args[1];
 			}
 
-			SpecialRoutines.fixTppMissingPractitioners(orgOdsCodeRegex);
+			SD86.fixTppMissingPractitioners(orgOdsCodeRegex);
 			System.exit(0);
 		}
 

@@ -1,4 +1,4 @@
-package org.endeavourhealth.queuereader;
+package org.endeavourhealth.queuereader.routines;
 
 import com.google.common.base.Strings;
 import org.apache.commons.csv.CSVFormat;
@@ -41,7 +41,7 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
-public class SpecialRoutines2 {
+public class SpecialRoutines2 extends AbstractRoutine {
     private static final Logger LOG = LoggerFactory.getLogger(SpecialRoutines2.class);
 
     /**
@@ -71,13 +71,13 @@ public class SpecialRoutines2 {
                     continue;
                 }
 
-                if (SpecialRoutines.shouldSkipService(service, orgOdsCodeRegex)) {
+                if (shouldSkipService(service, orgOdsCodeRegex)) {
                     continue;
                 }
 
                 //check if already done
                 if (!testMode) {
-                    if (SpecialRoutines.isServiceDoneBulkOperation(service, bulkOperationName)) {
+                    if (isServiceDoneBulkOperation(service, bulkOperationName)) {
                         LOG.debug("Skipping " + service + " as already done");
                         continue;
                     }
@@ -307,7 +307,7 @@ public class SpecialRoutines2 {
                     QueueHelper.postToExchange(exchangeIds, QueueHelper.ExchangeName.INBOUND, null, "Re-queue reg status after fixing Emis episodes SD-99");
 
                     //audit that we've done
-                    SpecialRoutines.setServiceDoneBulkOperation(service, bulkOperationName);
+                    setServiceDoneBulkOperation(service, bulkOperationName);
                 }
             }
 
@@ -886,5 +886,9 @@ public class SpecialRoutines2 {
             return result;
         }*/
     }
+
+
+
+
 
 }
