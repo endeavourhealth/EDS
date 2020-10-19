@@ -223,7 +223,8 @@ public class Main {
 				orgOdsCodeRegex = args[1];
 			}
 
-			SD86.fixTppMissingPractitioners(orgOdsCodeRegex);
+			SD86.testLookupTiming();
+			//SD86.fixTppMissingPractitioners(orgOdsCodeRegex);
 			System.exit(0);
 		}
 

@@ -5,6 +5,7 @@ import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
+import org.endeavourhealth.common.fhir.ReferenceHelper;
 import org.endeavourhealth.common.utility.FileHelper;
 import org.endeavourhealth.common.utility.JsonSerializer;
 import org.endeavourhealth.core.database.dal.DalProvider;
@@ -15,11 +16,13 @@ import org.endeavourhealth.core.database.dal.audit.ExchangeDalI;
 import org.endeavourhealth.core.database.dal.audit.models.Exchange;
 import org.endeavourhealth.core.database.dal.audit.models.HeaderKeys;
 import org.endeavourhealth.core.database.dal.ehr.ResourceDalI;
+import org.endeavourhealth.core.database.dal.publisherCommon.TppStaffDalI;
 import org.endeavourhealth.core.queueing.MessageFormat;
 import org.endeavourhealth.core.queueing.QueueHelper;
 import org.endeavourhealth.core.xml.transformError.TransformError;
 import org.endeavourhealth.transform.common.*;
 import org.endeavourhealth.transform.tpp.csv.helpers.TppCsvHelper;
+import org.hl7.fhir.instance.model.Reference;
 import org.hl7.fhir.instance.model.ResourceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,6 +32,59 @@ import java.util.*;
 
 public class SD86 extends AbstractRoutine {
     private static final Logger LOG = LoggerFactory.getLogger(SD86.class);
+
+    /**
+     * tests time taken to do lookups
+     */
+    public static void testLookupTiming() {
+        LOG.debug("Testing Lookup Timing");
+        try {
+            UUID serviceId = UUID.fromString("ccd1a468-12bd-4407-b9ad-33f3547f16ec");
+            Random r = new Random(System.currentTimeMillis());
+
+            long msStart = System.currentTimeMillis();
+            LOG.debug("Testing profile ID lookups");
+            for (int i=0; i<120000; i++) {
+
+                //look up ID mapping for profile ID
+                Set<Reference> refs = new HashSet<>();
+                refs.add(ReferenceHelper.createReference(ResourceType.Practitioner, "" + r.nextInt()));
+                Map<Reference, UUID> mappings = IdHelper.getEdsResourceIds(serviceId, refs);
+                if (i % 1000 == 0) {
+                    LOG.debug("DOne " + i);
+                }
+            }
+            long msEnd = System.currentTimeMillis();
+            LOG.debug("Finished profile ID lookups at " + (msEnd - msStart) + "ms");
+
+
+            msStart = System.currentTimeMillis();
+            LOG.debug("Testing profile ID lookups");
+            for (int i=0; i<120000; i++) {
+
+                //look up profile ID for staff ID
+                TppStaffDalI dal = DalProvider.factoryTppStaffMemberDal();
+                Set<Integer> staffIds = new HashSet<>();
+                staffIds.add(new Integer(r.nextInt()));
+                Map<Integer, Integer> hmStaffAndProfileIds = dal.findProfileIdsForStaffMemberIdsAtOrg("" + r.nextInt(), staffIds);
+
+                //look up ID mapping for profile ID
+                Set<Reference> refs = new HashSet<>();
+                refs.add(ReferenceHelper.createReference(ResourceType.Practitioner, "" + r.nextInt()));
+                Map<Reference, UUID> mappings = IdHelper.getEdsResourceIds(serviceId, refs);
+                if (i % 1000 == 0) {
+                    LOG.debug("DOne " + i);
+                }
+            }
+            msEnd = System.currentTimeMillis();
+            LOG.debug("Finished staff ID lookups at " + (msEnd - msStart) + "ms");
+
+
+            LOG.debug("Finished Testing Lookup Timing");
+        } catch (Throwable t) {
+            LOG.error("", t);
+        }
+    }
 
     /**
      * routine to fix SD-86
@@ -262,31 +318,37 @@ public class SD86 extends AbstractRoutine {
                 String doneBy = record.get("IDDoneBy");
                 String doneAt = record.get("IDOrganisationDoneAt");
 
-                if (!Strings.isNullOrEmpty(doneAt)
-                        && (Strings.isNullOrEmpty(doneBy) || Long.parseLong(doneBy) <= 0)) {
-
-                    UUID uuid = IdHelper.getEdsResourceId(filer.getServiceId(), ResourceType.Immunization, "" + recordIdStr);
-                    if (uuid == null) {
-                        throw new Exception("Failed to find resource UUID for " + ResourceType.Immunization + " " + recordIdStr);
-                    }
-/*
-                    tppCsvHelper.getStaffMemberCache().addRequiredStaffId(CsvCell.factoryDummyWrapper(doneBy), CsvCell.factoryDummyWrapper(doneAt));
-
-                    Object obj = tppCsvHelper.getStaffMemberCache().findProfileIdForStaffMemberAndOrg(CsvCell.factoryDummyWrapper(doneBy), CsvCell.factoryDummyWrapper(doneAt));
-                    if (!(obj instanceof String)) {
-                        throw new Exception("Got " + obj.getClass() + " " + obj + " for doneBy " + doneBy + " and doneAt " + doneAt);
-                    }
-                    Reference reference = ReferenceHelper.createReference(ResourceType.Practitioner, (String)obj);
-                    reference = IdHelper.convertLocallyUniqueReferenceToEdsReference(reference, filer);
-
-                    ResourceWrapper wrapper = resourceDal.getCurrentVersion(filer.getServiceId(), ResourceType.Immunization.toString(), uuid);
-                    AllergyIntolerance resource = (AllergyIntolerance)wrapper.getResource();
-                    AllergyIntoleranceBuilder builder = new AllergyIntoleranceBuilder(resource);
-
-                    builder.setPerformer(reference);
-
-                    filer.savePatientResource(null, false, builder);*/
+                //if the done AT is empty, we really don't have any data to use
+                if (Strings.isNullOrEmpty(doneAt)) {
+                    continue;
                 }
+
+                //if the done BY is a valid number, it will have already set the practitioner
+                if (!Strings.isNullOrEmpty(doneBy) && Long.parseLong(doneBy) > 0) {
+                    continue;
+                }
+
+                UUID uuid = IdHelper.getEdsResourceId(filer.getServiceId(), ResourceType.Immunization, "" + recordIdStr);
+                if (uuid == null) {
+                    throw new Exception("Failed to find resource UUID for " + ResourceType.Immunization + " " + recordIdStr);
+                }
+
+                csvHelper.getStaffMemberCache().addRequiredStaffId(CsvCell.factoryDummyWrapper(doneBy), CsvCell.factoryDummyWrapper(doneAt));
+/*
+                Object obj = tppCsvHelper.getStaffMemberCache().findProfileIdForStaffMemberAndOrg(CsvCell.factoryDummyWrapper(doneBy), CsvCell.factoryDummyWrapper(doneAt));
+                if (!(obj instanceof String)) {
+                    throw new Exception("Got " + obj.getClass() + " " + obj + " for doneBy " + doneBy + " and doneAt " + doneAt);
+                }
+                Reference reference = ReferenceHelper.createReference(ResourceType.Practitioner, (String)obj);
+                reference = IdHelper.convertLocallyUniqueReferenceToEdsReference(reference, filer);
+
+                ResourceWrapper wrapper = resourceDal.getCurrentVersion(filer.getServiceId(), ResourceType.Immunization.toString(), uuid);
+                AllergyIntolerance resource = (AllergyIntolerance)wrapper.getResource();
+                AllergyIntoleranceBuilder builder = new AllergyIntoleranceBuilder(resource);
+
+                builder.setPerformer(reference);
+
+                filer.savePatientResource(null, false, builder);*/
             }
         }
     }
