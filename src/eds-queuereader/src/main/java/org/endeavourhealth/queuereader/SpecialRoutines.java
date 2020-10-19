@@ -5338,7 +5338,7 @@ public abstract class SpecialRoutines {
             return;
         }
 
-        LOG.debug("Batch " + lastBatchId + " didn't go to subscribers " + missingSubscribers);
+        //LOG.debug("Batch " + lastBatchId + " didn't go to subscribers " + missingSubscribers);
 
         Connection connection = ConnectionManager.getAdminConnection();
         String sql = "INSERT INTO tmp.SD156_batches_not_transformed (service_id, system_id, batch_id, patient_id, inserted_at, subscriber_name) VALUES (?, ?, ?, ?, ?, ?)";
