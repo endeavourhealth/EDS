@@ -5237,6 +5237,7 @@ public abstract class SpecialRoutines {
                     continue;
                 }
 
+                LOG.debug("Got expected subscribers " + subscribers);
 
                 List<UUID> systemIds = SystemHelper.getSystemIdsForService(service);
                 for (UUID systemId: systemIds) {
@@ -5246,7 +5247,7 @@ public abstract class SpecialRoutines {
                     LOG.debug("Found " + exchanges.size() + " exchanges");
 
                     Connection connection = ConnectionManager.getAuditNonPooledConnection();
-                    String sql = "SELECT b.batch_id, b.eds_patient_id, b.inserted_at, a.subscriber_config_name"
+                    String sql = "SELECT DISTINCT b.batch_id, b.eds_patient_id, b.inserted_at, a.subscriber_config_name"
                             + " FROM exchange_batch b"
                             + " LEFT OUTER JOIN exchange_subscriber_transform_audit a"
                             + " ON b.exchange_id = a.exchange_id"
@@ -5330,7 +5331,7 @@ public abstract class SpecialRoutines {
 
     private static void auditMissedTransform(UUID serviceId, UUID systemId, UUID lastBatchId,
                                              String lastPatientId, Date lastInsertedAt, List<String> subscribersFound, List<String> subscribers) throws Exception {
-        Set<String> missingSubscribers = new HashSet<>();
+        Set<String> missingSubscribers = new HashSet<>(subscribers);
         missingSubscribers.removeAll(subscribersFound);
 
         if (missingSubscribers.isEmpty()) {
