@@ -11,6 +11,7 @@ DROP TABLE IF EXISTS link_distributor; -- deleted table
 DROP TABLE IF EXISTS patient_address;
 DROP TABLE IF EXISTS patient_contact;
 DROP TABLE IF EXISTS patient_address_match;
+DROP TABLE IF EXISTS patient_additional;
 DROP TABLE IF EXISTS registration_status_history;
 DROP TABLE IF EXISTS patient_uprn;
 DROP TABLE IF EXISTS medication_order;
