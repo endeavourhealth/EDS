@@ -18,6 +18,9 @@ import java.util.regex.Pattern;
 public abstract class AbstractRoutine {
     private static final Logger LOG = LoggerFactory.getLogger(AbstractRoutine.class);
 
+    private static final int BULK_STARTED = 0;
+    private static final int BULK_DONE = 1;
+
     public static boolean shouldSkipService(Service service, String odsCodeRegex) {
         if (Strings.isNullOrEmpty(odsCodeRegex)) {
             return false;
@@ -48,16 +51,16 @@ public abstract class AbstractRoutine {
         Connection connection = ConnectionManager.getAuditConnection();
         PreparedStatement ps = null;
         try {
-            String sql = "SELECT 1 "
-                    + "FROM bulk_operation_audit "
-                    + "WHERE service_id = ? "
-                    + "AND operation_name = ? "
-                    + "AND status = ? ";
+            String sql = "SELECT 1"
+                    + " FROM bulk_operation_audit"
+                    + " WHERE service_id = ?"
+                    + " AND operation_name = ?"
+                    + " AND status = ?";
             ps = connection.prepareStatement(sql);
             int col = 1;
             ps.setString(col++, service.getId().toString());
             ps.setString(col++, bulkOperationName);
-            ps.setInt(col++, 1); //1 = done
+            ps.setInt(col++, BULK_DONE);
             ResultSet rs = ps.executeQuery();
             if (rs.next()) {
                 return true;
@@ -70,9 +73,47 @@ public abstract class AbstractRoutine {
             connection.close();
         }
 
+        startBulkOperation(service, bulkOperationName);
+        return false;
+    }
+
+    public static boolean isServiceStartedOrDoneBulkOperation(Service service, String bulkOperationName) throws Exception {
+
+        Connection connection = ConnectionManager.getAuditConnection();
+        PreparedStatement ps = null;
+        try {
+            String sql = "SELECT 1"
+                    + " FROM bulk_operation_audit"
+                    + " WHERE service_id = ?"
+                    + " AND operation_name = ?"
+                    + " AND (status = ? OR status = ?)";
+            ps = connection.prepareStatement(sql);
+            int col = 1;
+            ps.setString(col++, service.getId().toString());
+            ps.setString(col++, bulkOperationName);
+            ps.setInt(col++, BULK_STARTED);
+            ps.setInt(col++, BULK_DONE);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return true;
+            }
+
+        } finally {
+            if (ps != null) {
+                ps.close();
+            }
+            connection.close();
+        }
+
+        startBulkOperation(service, bulkOperationName);
+        return false;
+    }
+
+    private static void startBulkOperation(Service service, String bulkOperationName) throws Exception {
+
         //if not done, audit that we're doing it
-        connection = ConnectionManager.getAuditConnection();
-        ps = null;
+        Connection connection = ConnectionManager.getAuditConnection();
+        PreparedStatement ps = null;
         try {
             String sql = "INSERT INTO bulk_operation_audit (service_id, operation_name, status, started) "
                     + " VALUES (?, ?, ?, ?)";
@@ -80,12 +121,10 @@ public abstract class AbstractRoutine {
             int col = 1;
             ps.setString(col++, service.getId().toString());
             ps.setString(col++, bulkOperationName);
-            ps.setInt(col++, 0); //0 = started
+            ps.setInt(col++, BULK_STARTED); //0 = started
             ps.setTimestamp(col++, new java.sql.Timestamp(new Date().getTime()));
             ps.executeUpdate();
             connection.commit();
-
-            return false;
 
         } catch (Exception ex) {
             connection.rollback();
@@ -114,11 +153,11 @@ public abstract class AbstractRoutine {
                     + "AND status = ?";
             ps = connection.prepareStatement(sql);
             int col = 1;
-            ps.setInt(col++, 1); //1 = done
+            ps.setInt(col++, BULK_DONE);
             ps.setTimestamp(col++, new java.sql.Timestamp(new Date().getTime()));
             ps.setString(col++, service.getId().toString());
             ps.setString(col++, bulkOperationName);
-            ps.setInt(col++, 0); //0 = started
+            ps.setInt(col++, BULK_STARTED);
             ps.executeUpdate();
             connection.commit();
 
@@ -137,7 +176,7 @@ public abstract class AbstractRoutine {
     /**
      * handy fn to stop a routine for manual inspection before continuing (or quitting)
      */
-    private static void continueOrQuit() throws Exception {
+    public static void continueOrQuit() throws Exception {
         LOG.info("Enter y to continue, anything else to quit");
 
         byte[] bytes = new byte[10];

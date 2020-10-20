@@ -51,7 +51,9 @@ public class SD156 extends AbstractRoutine {
                 }
 
                 //check if already done
-                if (isServiceDoneBulkOperation(service, bulkOperationName)) {
+                //check if already started, to allow us to run multiple instances of this at once
+                //if (isServiceDoneBulkOperation(service, bulkOperationName)) {
+                if (isServiceStartedOrDoneBulkOperation(service, bulkOperationName)) {
                     LOG.debug("Skipping " + service + " as already done");
                     continue;
                 }

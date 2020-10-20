@@ -5,7 +5,6 @@ import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
-import org.endeavourhealth.common.fhir.ReferenceHelper;
 import org.endeavourhealth.common.utility.FileHelper;
 import org.endeavourhealth.common.utility.JsonSerializer;
 import org.endeavourhealth.core.database.dal.DalProvider;
@@ -16,13 +15,11 @@ import org.endeavourhealth.core.database.dal.audit.ExchangeDalI;
 import org.endeavourhealth.core.database.dal.audit.models.Exchange;
 import org.endeavourhealth.core.database.dal.audit.models.HeaderKeys;
 import org.endeavourhealth.core.database.dal.ehr.ResourceDalI;
-import org.endeavourhealth.core.database.dal.publisherCommon.TppStaffDalI;
 import org.endeavourhealth.core.queueing.MessageFormat;
 import org.endeavourhealth.core.queueing.QueueHelper;
 import org.endeavourhealth.core.xml.transformError.TransformError;
 import org.endeavourhealth.transform.common.*;
 import org.endeavourhealth.transform.tpp.csv.helpers.TppCsvHelper;
-import org.hl7.fhir.instance.model.Reference;
 import org.hl7.fhir.instance.model.ResourceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,8 +32,13 @@ public class SD86 extends AbstractRoutine {
 
     /**
      * tests time taken to do lookups
+     *
+     * largest GP practice I could find had 120,000 distinct staff members and profiles in their SRCode bulk
+     * it took 2.5 mins to look up that many profile ID mappings
+     * it took 5 mins to look up that many staff IDs -> profile IDs then look for profile IDs
+     * so this would add <10 mins to the bulk for that practice, which took nearly a day to run
      */
-    public static void testLookupTiming() {
+    /*public static void testLookupTiming() {
         LOG.debug("Testing Lookup Timing");
         try {
             UUID serviceId = UUID.fromString("ccd1a468-12bd-4407-b9ad-33f3547f16ec");
@@ -84,7 +86,7 @@ public class SD86 extends AbstractRoutine {
         } catch (Throwable t) {
             LOG.error("", t);
         }
-    }
+    }*/
 
     /**
      * routine to fix SD-86
@@ -333,8 +335,10 @@ public class SD86 extends AbstractRoutine {
                     throw new Exception("Failed to find resource UUID for " + ResourceType.Immunization + " " + recordIdStr);
                 }
 
-                csvHelper.getStaffMemberCache().addRequiredStaffId(CsvCell.factoryDummyWrapper(doneBy), CsvCell.factoryDummyWrapper(doneAt));
+
 /*
+csvHelper.getStaffMemberCache().addRequiredStaffId(CsvCell.factoryDummyWrapper(doneBy), CsvCell.factoryDummyWrapper(doneAt));
+
                 Object obj = tppCsvHelper.getStaffMemberCache().findProfileIdForStaffMemberAndOrg(CsvCell.factoryDummyWrapper(doneBy), CsvCell.factoryDummyWrapper(doneAt));
                 if (!(obj instanceof String)) {
                     throw new Exception("Got " + obj.getClass() + " " + obj + " for doneBy " + doneBy + " and doneAt " + doneAt);
