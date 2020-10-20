@@ -1,4 +1,4 @@
-package org.endeavourhealth.queuereader;
+package org.endeavourhealth.queuereader.routines;
 
 import com.google.common.base.Strings;
 import org.apache.commons.csv.CSVFormat;
@@ -7,7 +7,6 @@ import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.io.FileUtils;
 import org.endeavourhealth.common.fhir.IdentifierHelper;
-import org.endeavourhealth.common.fhir.ReferenceHelper;
 import org.endeavourhealth.common.utility.FileHelper;
 import org.endeavourhealth.core.database.dal.DalProvider;
 import org.endeavourhealth.core.database.dal.admin.LibraryRepositoryHelper;
@@ -27,7 +26,6 @@ import org.endeavourhealth.core.database.dal.subscriberTransform.SubscriberPerso
 import org.endeavourhealth.core.database.dal.subscriberTransform.SubscriberResourceMappingDalI;
 import org.endeavourhealth.core.database.dal.subscriberTransform.models.SubscriberCohortRecord;
 import org.endeavourhealth.core.database.dal.subscriberTransform.models.SubscriberId;
-import org.endeavourhealth.core.database.rdbms.ConnectionManager;
 import org.endeavourhealth.core.messaging.pipeline.PipelineException;
 import org.endeavourhealth.core.queueing.QueueHelper;
 import org.endeavourhealth.core.subscribers.SubscriberHelper;
@@ -38,8 +36,8 @@ import org.endeavourhealth.im.models.mapping.MapColumnValueRequest;
 import org.endeavourhealth.im.models.mapping.MapResponse;
 import org.endeavourhealth.subscriber.filer.EnterpriseFiler;
 import org.endeavourhealth.subscriber.filer.SubscriberFiler;
-import org.endeavourhealth.transform.common.*;
-import org.endeavourhealth.transform.common.resourceBuilders.ImmunizationBuilder;
+import org.endeavourhealth.transform.common.ExchangeHelper;
+import org.endeavourhealth.transform.common.ExchangePayloadFile;
 import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
 import org.endeavourhealth.transform.enterprise.EnterpriseTransformHelper;
 import org.endeavourhealth.transform.enterprise.FhirToEnterpriseCsvTransformer;
@@ -50,24 +48,17 @@ import org.endeavourhealth.transform.subscriber.targetTables.OutputContainer;
 import org.endeavourhealth.transform.subscriber.targetTables.SubscriberTableId;
 import org.endeavourhealth.transform.subscriber.transforms.EpisodeOfCareTransformer;
 import org.endeavourhealth.transform.subscriber.transforms.PatientTransformer;
-import org.endeavourhealth.transform.tpp.csv.helpers.TppCsvHelper;
-import org.hl7.fhir.instance.model.Immunization;
 import org.hl7.fhir.instance.model.Patient;
-import org.hl7.fhir.instance.model.Reference;
 import org.hl7.fhir.instance.model.ResourceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.regex.Pattern;
 
-public abstract class SpecialRoutines {
+public abstract class SpecialRoutines extends AbstractRoutine {
     private static final Logger LOG = LoggerFactory.getLogger(SpecialRoutines.class);
     public static final String COMPASS_V1 = "compass_v1";
     public static final String COMPASS_V2 = "compass_v2";
@@ -238,28 +229,6 @@ public abstract class SpecialRoutines {
             LOG.error("", t);
         }
     }*/
-
-    public static boolean shouldSkipService(Service service, String odsCodeRegex) {
-        if (Strings.isNullOrEmpty(odsCodeRegex)) {
-            return false;
-        }
-
-        String odsCode = service.getLocalId();
-        if (!Strings.isNullOrEmpty(odsCode)
-                && Pattern.matches(odsCodeRegex, odsCode)) {
-            return false;
-        }
-
-        String ccgCode = service.getCcgCode();
-        if (!Strings.isNullOrEmpty(ccgCode)
-                && Pattern.matches(odsCodeRegex, ccgCode)) {
-            return false;
-        }
-
-        LOG.debug("Skipping " + service + " due to regex");
-        return true;
-    }
-
 
     public static void getResourceHistory(String serviceIdStr, String resourceTypeStr, String resourceIdStr) {
         LOG.debug("Getting resource history for " + resourceTypeStr + " " + resourceIdStr + " for service " + serviceIdStr);
@@ -1608,20 +1577,6 @@ public abstract class SpecialRoutines {
 
     }*/
 
-    /**
-     * handy fn to stop a routine for manual inspection before continuing (or quitting)
-     */
-    private static void continueOrQuit() throws Exception {
-        LOG.info("Enter y to continue, anything else to quit");
-
-        byte[] bytes = new byte[10];
-        java.lang.System.in.read(bytes);
-        char c = (char) bytes[0];
-        if (c != 'y' && c != 'Y') {
-            java.lang.System.out.println("Read " + c);
-            java.lang.System.exit(1);
-        }
-    }
 
     /*public static void catptureBartsEncounters(int count, String toFile) {
         LOG.debug("Capturing " + count + " Barts Encounters to " + toFile);
@@ -4770,99 +4725,6 @@ public abstract class SpecialRoutines {
     }
 
 
-    /**
-     * checks if the given service has already done the given bulk operation and audits the start if not
-     */
-    public static boolean isServiceDoneBulkOperation(Service service, String bulkOperationName) throws Exception {
-
-        Connection connection = ConnectionManager.getAuditConnection();
-        PreparedStatement ps = null;
-        try {
-            String sql = "SELECT 1 "
-                    + "FROM bulk_operation_audit "
-                    + "WHERE service_id = ? "
-                    + "AND operation_name = ? "
-                    + "AND status = ? ";
-            ps = connection.prepareStatement(sql);
-            int col = 1;
-            ps.setString(col++, service.getId().toString());
-            ps.setString(col++, bulkOperationName);
-            ps.setInt(col++, 1); //1 = done
-            ResultSet rs = ps.executeQuery();
-            if (rs.next()) {
-                return true;
-            }
-
-        } finally {
-            if (ps != null) {
-                ps.close();
-            }
-            connection.close();
-        }
-
-        //if not done, audit that we're doing it
-        connection = ConnectionManager.getAuditConnection();
-        ps = null;
-        try {
-            String sql = "INSERT INTO bulk_operation_audit (service_id, operation_name, status, started) "
-                    + " VALUES (?, ?, ?, ?)";
-            ps = connection.prepareStatement(sql);
-            int col = 1;
-            ps.setString(col++, service.getId().toString());
-            ps.setString(col++, bulkOperationName);
-            ps.setInt(col++, 0); //0 = started
-            ps.setTimestamp(col++, new java.sql.Timestamp(new Date().getTime()));
-            ps.executeUpdate();
-            connection.commit();
-
-            return false;
-
-        } catch (Exception ex) {
-            connection.rollback();
-            throw ex;
-
-        } finally {
-            if (ps != null) {
-                ps.close();
-            }
-            connection.close();
-        }
-    }
-
-    /**
-     * updates the bulk operation audit table to say the given bulk is done
-     */
-    public static void setServiceDoneBulkOperation(Service service, String bulkOperationName) throws Exception {
-
-        Connection connection = ConnectionManager.getAuditConnection();
-        PreparedStatement ps = null;
-        try {
-            String sql = "UPDATE bulk_operation_audit "
-                    + " SET status = ?, finished = ? "
-                    + "WHERE service_id = ? "
-                    + "AND operation_name = ? "
-                    + "AND status = ?";
-            ps = connection.prepareStatement(sql);
-            int col = 1;
-            ps.setInt(col++, 1); //1 = done
-            ps.setTimestamp(col++, new java.sql.Timestamp(new Date().getTime()));
-            ps.setString(col++, service.getId().toString());
-            ps.setString(col++, bulkOperationName);
-            ps.setInt(col++, 0); //0 = started
-            ps.executeUpdate();
-            connection.commit();
-
-        } catch (Exception ex) {
-            connection.rollback();
-            throw ex;
-
-        } finally {
-            if (ps != null) {
-                ps.close();
-            }
-            connection.close();
-        }
-    }
 
     private static void saveCompassV2PseudoIdData(String subscriberConfigName, OutputContainer compassV2Container) throws Exception {
         List<SubscriberTableId> toKeep = new ArrayList<>();
@@ -4890,119 +4752,6 @@ public abstract class SpecialRoutines {
         }
     }
 
-    public static void fixTppMissingPractitioners(String orgOdsCodeRegex) {
-        LOG.debug("Fixing missing TPP practitioner at " + orgOdsCodeRegex);
-        try {
-
-            ServiceDalI serviceDal = DalProvider.factoryServiceDal();
-            PatientSearchDalI patientSearchDal = DalProvider.factoryPatientSearchDal();
-            ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
-            ResourceDalI resourceDal = DalProvider.factoryResourceDal();
-
-            List<Service> services = serviceDal.getAll();
-
-            for (Service service: services) {
-
-                Map<String, String> tags = service.getTags();
-                if (tags == null
-                        || !tags.containsKey("TPP")) {
-                    continue;
-                }
-
-                if (shouldSkipService(service, orgOdsCodeRegex)) {
-                    continue;
-                }
-
-                LOG.debug("Doing " + service);
-
-                UUID serviceId = service.getId();
-                List<UUID> systemIds = SystemHelper.getSystemIdsForService(service);
-                if (systemIds.size() != 1) {
-                    throw new Exception("" + systemIds.size() + " system IDs found");
-                }
-                UUID systemId = systemIds.get(0);
-
-                Set<Long> hsImmunisationDone = new HashSet<>();
-
-                List<Exchange> exchanges = exchangeDal.getExchangesByService(serviceId, systemId, Integer.MAX_VALUE);
-
-                Exchange newExchange = null;
-                FhirResourceFiler fhirResourceFiler = null;
-                TppCsvHelper tppCsvHelper = null;
-
-
-                for (int i=0; i<exchanges.size(); i++) {
-                    Exchange exchange = exchanges.get(i);
-
-                    String exchangeBody = exchange.getBody();
-                    List<ExchangePayloadFile> files = ExchangeHelper.parseExchangeBody(exchangeBody);
-
-                    for (ExchangePayloadFile file: files) {
-                        if (file.getType().equals("Immunisation")) {
-
-                            String path = file.getPath();
-                            InputStreamReader isr = FileHelper.readFileReaderFromSharedStorage(path);
-                            CSVParser parser = new CSVParser(isr, CSVFormat.DEFAULT.withHeader());
-                            Iterator<CSVRecord> iterator = parser.iterator();
-
-                            while (iterator.hasNext()) {
-                                CSVRecord record = iterator.next();
-
-                                String recordIdStr = record.get("RowIdentifier");
-                                Long recordId = Long.valueOf(recordIdStr);
-                                if (!hsImmunisationDone.contains(recordId)) {
-
-                                    String doneBy = record.get("IDDoneBy");
-                                    String doneAt = record.get("IDOrganisationDoneAt");
-
-                                    if (!Strings.isNullOrEmpty(doneAt)
-                                            && (Strings.isNullOrEmpty(doneBy) || Long.parseLong(doneBy) <= 0)) {
-
-                                        UUID uuid = IdHelper.getEdsResourceId(serviceId, ResourceType.Immunization, "" + recordIdStr);
-                                        if (uuid == null) {
-                                            throw new Exception("Failed to find resource UUID for " + ResourceType.Immunization + " " + recordIdStr);
-                                        }
-
-                                        tppCsvHelper.getStaffMemberCache().addRequiredStaffId(CsvCell.factoryDummyWrapper(doneBy), CsvCell.factoryDummyWrapper(doneAt));
-
-                                        Object obj = tppCsvHelper.getStaffMemberCache().findProfileIdForStaffMemberAndOrg(CsvCell.factoryDummyWrapper(doneBy), CsvCell.factoryDummyWrapper(doneAt));
-                                        if (!(obj instanceof String)) {
-                                            throw new Exception("Got " + obj.getClass() + " " + obj + " for doneBy " + doneBy + " and doneAt " + doneAt);
-                                        }
-                                        Reference reference = ReferenceHelper.createReference(ResourceType.Practitioner, (String)obj);
-                                        reference = IdHelper.convertLocallyUniqueReferenceToEdsReference(reference, fhirResourceFiler);
-
-                                        ResourceWrapper wrapper = resourceDal.getCurrentVersion(serviceId, ResourceType.Immunization.toString(), uuid);
-                                        Immunization resource = (Immunization)wrapper.getResource();
-                                        ImmunizationBuilder builder = new ImmunizationBuilder(resource);
-
-                                        builder.setPerformer(reference);
-
-                                        fhirResourceFiler.savePatientResource(null, false, builder);
-                                    }
-
-                                    hsImmunisationDone.add(recordId);
-                                }
-                            }
-                        }
-                    }
-
-                }
-
-                //save the practitioners
-                tppCsvHelper.getStaffMemberCache().processChangedStaffMembers(tppCsvHelper, fhirResourceFiler);
-                fhirResourceFiler.waitUntilEverythingIsSaved();
-
-                //save exchange
-
-                //post into Protocol queue
-            }
-
-            LOG.debug("Finished fixing missing TPP practitioner at " + orgOdsCodeRegex);
-        } catch (Throwable t) {
-            LOG.error("", t);
-        }
-    }
 
     public static void findEmisEpisodesChangingDate(String orgOdsCodeRegex) {
         LOG.debug("Find Emis episodes changing date at " + orgOdsCodeRegex);
@@ -5199,6 +4948,7 @@ public abstract class SpecialRoutines {
             SubscriberFiler.file(batchId, UUID.randomUUID(), base64, subscriberConfigName);
         }
     }
+
 
     /*public static void quickRefreshForAllTpp(String orgOdsCodeRegex) {
         LOG.info("Doing quick refresh for all TPP at " + orgOdsCodeRegex);

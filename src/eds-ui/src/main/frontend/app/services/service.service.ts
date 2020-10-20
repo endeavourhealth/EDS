@@ -35,6 +35,7 @@ export class ServiceService extends BaseHttp2Service {
 	ccgCodeCache: string[];
 	refreshingCcgCodeCache: boolean;
 	ccgNameCache: {};
+	refreshingCcgNameCache: boolean;
 
 
 	constructor(http : Http) {
@@ -127,6 +128,10 @@ export class ServiceService extends BaseHttp2Service {
 
 	private getCcgCodes() : Observable<string[]> {
 		return this.httpGet('api/service/ccgCodes', {});
+	}
+
+	private getCcgNames(): Observable<{}> {
+		return this.httpGet('api/service/ccgNames', {});
 	}
 
 	toggleFiltering() {
@@ -562,6 +567,41 @@ export class ServiceService extends BaseHttp2Service {
 			return '';
 		}
 
+		//if we've already cached it, then just look up and return
+		var vm = this;
+		if (vm.ccgNameCache) {
+			var ret = vm.ccgNameCache[ccgCode];
+			if (!ret) {
+				ret = '???';
+			}
+			return ret;
+		}
+
+		//if not pre-cached it, then we
+		if (!vm.refreshingCcgNameCache) {
+			vm.refreshingCcgNameCache = true;
+
+			vm.getCcgNames()
+				.subscribe(
+					(result) => {
+						vm.ccgNameCache = result;
+						vm.refreshingCcgNameCache = false;
+					},
+					(error) => {
+						vm.refreshingCcgNameCache = false;
+					}
+				);
+		}
+
+		//return an empty string until the above has come back
+		return 'loading...';
+	}
+	/*getCcgName(ccgCode: string) : string {
+
+		if (!ccgCode || ccgCode.length == 0) {
+			return '';
+		}
+
 		var vm = this;
 		if (!vm.ccgNameCache || Object.keys(vm.ccgNameCache).length === 0) {
 
@@ -782,7 +822,7 @@ export class ServiceService extends BaseHttp2Service {
 		}
 		return ret;
 		//return 'CCG name for ' + ccgCode + ' here!';
-	}
+	}*/
 
 	public getTagNamesFromCache(): string[] {
 		var vm = this;

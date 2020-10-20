@@ -1019,6 +1019,43 @@ public final class ServiceEndpoint extends AbstractEndpoint {
                 .build();
     }
 
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name = "ServiceEndpoint.ccgNames")
+    @Path("/ccgNames")
+    public Response getCcgNames(@Context SecurityContext sc) throws Exception {
+        super.setLogbackMarkers(sc);
+
+        //check cache
+        List<String> ccgCodes = cachedCcgCodes.get();
+        if (ccgCodes == null) {
+            LOG.debug("CCG code cache is empty, so will refresh");
+            refreshServiceCaches(false);
+            ccgCodes = cachedCcgCodes.get();
+        }
+
+        Map<String, String> ret = new HashMap<>();
+
+        for (String odsCode: ccgCodes) {
+
+            OdsOrganisation odsOrganisation = OdsWebService.lookupOrganisationViaRest(odsCode);
+            if (odsOrganisation != null) {
+                ret.put(odsCode, odsOrganisation.getOrganisationName());
+            }
+        }
+
+        clearLogbackMarkers();
+
+        return Response
+                .ok()
+                .entity(ret)
+                .build();
+    }
+
+
+
+
     /**
      * builds/refreshes the caches of CCG codes, tags and publisher config names
      * synchronized to prevent multiple calls from a browser kicking this off repeatedly

@@ -460,4 +460,8 @@ CREATE TABLE  tpp_ctv3_to_snomed (
 	ROW_FORMAT=COMPRESSED
 	KEY_BLOCK_SIZE=8;
 
+-- used when updating this table
 CREATE INDEX ix_code_updated ON tpp_ctv3_to_snomed (ctv3_code, dt_last_updated);
+
+-- used for exporting code mappings
+CREATE INDEX ix_updated ON tpp_ctv3_to_snomed (dt_last_updated);
