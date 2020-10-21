@@ -21,6 +21,7 @@ DROP TABLE IF EXISTS tpp_multilex_to_ctv3_map; -- moved to publisher_common
 DROP TABLE IF EXISTS tpp_mapping_ref; -- moved to publisher_common
 DROP TABLE IF EXISTS tpp_staging_staff_member; -- moved to publisher_common
 DROP TABLE IF EXISTS tpp_staging_staff_member_profile; -- moved to publisher_common
+DROP TABLE IF EXISTS resource_field_mappings_s3; -- new table for FHIR Audit mappings to S3
 
 
 CREATE TABLE resource_id_map (
@@ -201,3 +202,14 @@ CREATE TABLE source_file_record_audit (
   published_file_id int,
   PRIMARY KEY (id)
 ) COMMENT 'table to replace the other four source_file... tables, joining the old audit data to the new audit.published_file... tables';
+
+CREATE TABLE resource_field_mappings_s3 (
+  resource_id char(36) NOT NULL,
+  service_id char(36) NOT NULL,
+  resource_type varchar(50) NOT NULL,
+  created_at datetime NOT NULL,
+  version char(36) NOT NULL,
+  mappings_json MEDIUMTEXT,
+  CONSTRAINT pk_resource_field_mapping PRIMARY KEY (service_id, created_at, resource_id, resource_type)
+);
+CREATE INDEX ix_resource_field_mappings_s3_id_type  ON resource_field_mappings (resource_id, resource_type);

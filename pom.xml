@@ -37,6 +37,7 @@
     <module>src/utility-database-deidentifier</module>
     <module>src/utility-hl7-checker</module>
       <module>src/emis-cron-scheduler</module>
+    <module>src/fhir-cron-scheduler</module>
   </modules>
 
   <repositories>
