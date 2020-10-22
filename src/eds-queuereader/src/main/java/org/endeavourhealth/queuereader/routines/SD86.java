@@ -95,13 +95,12 @@ public class SD86 extends AbstractRoutine {
     /**
      * routine to fix SD-86
      */
-    public static void fixTppMissingPractitioners(String orgOdsCodeRegex) {
+    public static void fixTppMissingPractitioners(boolean onlySkipCompletedOnes, String orgOdsCodeRegex) {
         LOG.debug("Fixing missing TPP practitioner at " + orgOdsCodeRegex);
         try {
 
             ServiceDalI serviceDal = DalProvider.factoryServiceDal();
             ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
-
 
             List<Service> services = serviceDal.getAll();
 
@@ -120,9 +119,19 @@ public class SD86 extends AbstractRoutine {
                 }
 
                 //check if already done
-                if (isServiceDoneBulkOperation(service, bulkOperationName)) {
-                    LOG.debug("Skipping " + service + " as already done");
-                    continue;
+                if (onlySkipCompletedOnes) {
+                    //check if already done, so we can make sure EVERY service is done
+                    if (isServiceDoneBulkOperation(service, bulkOperationName)) {
+                        LOG.debug("Skipping " + service + " as already done");
+                        continue;
+                    }
+
+                } else {
+                    //check if already started, to allow us to run multiple instances of this at once
+                    if (isServiceStartedOrDoneBulkOperation(service, bulkOperationName)) {
+                        LOG.debug("Skipping " + service + " as already started or done");
+                        continue;
+                    }
                 }
 
                 LOG.debug("Doing " + service);
@@ -133,8 +142,6 @@ public class SD86 extends AbstractRoutine {
                     throw new Exception("" + systemIds.size() + " system IDs found");
                 }
                 UUID systemId = systemIds.get(0);
-
-                Set<Long> hsImmunisationDone = new HashSet<>();
 
                 List<UUID> batchIdsCreated = new ArrayList<>();
 

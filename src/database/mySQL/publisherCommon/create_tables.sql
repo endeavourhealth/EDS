@@ -428,6 +428,7 @@ CREATE TABLE emis_clinical_code_hiearchy (
 	CONSTRAINT pk PRIMARY KEY (code_id, parent_code_id)
 );
 
+CREATE INDEX ix_code_date ON emis_clinical_code_hiearchy (code_id, dt_last_updated);
 
 CREATE TABLE tpp_multilex_action_group_lookup (
 	action_group_id int NOT NULL,

@@ -152,14 +152,13 @@ public class Main {
 
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("fixTppMissingPractitioners")) {
-
+			boolean onlySkipCompletedOnes = Boolean.parseBoolean(args[1]);
 			String orgOdsCodeRegex = null;
-			if (args.length > 1) {
-				orgOdsCodeRegex = args[1];
+			if (args.length > 2) {
+				orgOdsCodeRegex = args[2];
 			}
-
 			//SD86.testLookupTiming();
-			SD86.fixTppMissingPractitioners(orgOdsCodeRegex);
+			SD86.fixTppMissingPractitioners(onlySkipCompletedOnes, orgOdsCodeRegex);
 			System.exit(0);
 		}
 
