@@ -5,6 +5,8 @@ import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
+import org.endeavourhealth.common.fhir.ExtensionConverter;
+import org.endeavourhealth.common.fhir.FhirExtensionUri;
 import org.endeavourhealth.common.fhir.ReferenceHelper;
 import org.endeavourhealth.common.fhir.schema.EncounterParticipantType;
 import org.endeavourhealth.common.utility.FileHelper;
@@ -24,6 +26,7 @@ import org.endeavourhealth.core.xml.transformError.TransformError;
 import org.endeavourhealth.transform.common.*;
 import org.endeavourhealth.transform.common.resourceBuilders.*;
 import org.endeavourhealth.transform.tpp.csv.helpers.TppCsvHelper;
+import org.endeavourhealth.transform.tpp.csv.transforms.clinical.SRCodeTransformer;
 import org.hl7.fhir.instance.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -192,6 +195,8 @@ public class SD86 extends AbstractRoutine {
                     doReferralOut(exchanges, csvHelper, filer);
                     LOG.debug("Doing repeat templates");
                     doRepeatTemplate(exchanges, csvHelper, filer);
+                    LOG.debug("Doing codes");
+                    doCode(exchanges, csvHelper, filer);
 
                     //call this to actually generate any FHIR Practitioners required
                     LOG.debug("Saving newly generated staff");
@@ -229,6 +234,164 @@ public class SD86 extends AbstractRoutine {
             LOG.debug("Finished fixing missing TPP practitioner at " + orgOdsCodeRegex);
         } catch (Throwable t) {
             LOG.error("", t);
+        }
+    }
+
+    private static void doCode(List<Exchange> exchanges, TppCsvHelper csvHelper, FhirResourceFiler filer) throws Exception {
+        Set<Long> hsIdsDone = new HashSet<>();
+
+        ResourceDalI resourceDal = DalProvider.factoryResourceDal();
+
+        //the exchanges are ordered most-recent-first, so start at zero and work backwards to do the most recent ones first
+        for (int i=0; i<exchanges.size(); i++) {
+            Exchange exchange = exchanges.get(i);
+
+            String path = findFilePath(exchange, "Code");
+            if (path == null) {
+                continue;
+            }
+
+            InputStreamReader isr = FileHelper.readFileReaderFromSharedStorage(path);
+            CSVParser parser = new CSVParser(isr, CSVFormat.DEFAULT.withHeader());
+            Iterator<CSVRecord> iterator = parser.iterator();
+
+            while (iterator.hasNext()) {
+                CSVRecord record = iterator.next();
+
+                String recordIdStr = record.get("RowIdentifier");
+                Long recordId = Long.valueOf(recordIdStr);
+
+                //if already done a more recent version of this record
+                if (hsIdsDone.contains(recordId)) {
+                    continue;
+                }
+                hsIdsDone.add(recordId);
+
+                String doneBy = record.get("IDDoneBy");
+                String doneAt = record.get("IDOrganisationDoneAt");
+
+                //if the done AT is empty, we really don't have any data to use
+                if (Strings.isNullOrEmpty(doneAt)) {
+                    continue;
+                }
+
+                Object referenceObj = csvHelper.getStaffMemberCache().findProfileIdForStaffMemberAndOrg(filer.getServiceId(), CsvCell.factoryDummyWrapper(doneBy), CsvCell.factoryDummyWrapper(doneAt));
+                if (referenceObj == null || referenceObj instanceof Integer) {
+                    continue;
+                }
+
+                //SRCode records may go to multiple resource types, so work out the resource type
+                Set<ResourceType> resourceTypes = SRCodeTransformer.findOriginalTargetResourceTypes(filer, CsvCell.factoryDummyWrapper(recordIdStr));
+                
+                if (resourceTypes.contains(ResourceType.Procedure)) {
+                    UUID uuid = IdHelper.getEdsResourceId(filer.getServiceId(), ResourceType.Procedure, "" + recordIdStr);
+                    if (uuid == null) {
+                        LOG.debug("Failed to find resource UUID for " + ResourceType.Procedure + " " + recordIdStr + " in exchange " + exchange.getId() + " and file " + path);
+
+                    } else {
+                        ResourceWrapper wrapper = resourceDal.getCurrentVersion(filer.getServiceId(), ResourceType.Procedure.toString(), uuid);
+                        Procedure resource = (Procedure) wrapper.getResource();
+
+                        if (!resource.hasPerformer()) {
+                            ProcedureBuilder builder = new ProcedureBuilder(resource);
+
+                            Reference reference = ReferenceHelper.createReference(ResourceType.Practitioner, (String) referenceObj);
+                            reference = IdHelper.convertLocallyUniqueReferenceToEdsReference(reference, filer);
+                            builder.addPerformer(reference);
+
+                            filer.savePatientResource(null, false, builder);
+                        }
+                    }
+                }
+
+                if (resourceTypes.contains(ResourceType.AllergyIntolerance)) {
+                    UUID uuid = IdHelper.getEdsResourceId(filer.getServiceId(), ResourceType.AllergyIntolerance, "" + recordIdStr);
+                    if (uuid == null) {
+                        LOG.debug("Failed to find resource UUID for " + ResourceType.AllergyIntolerance + " " + recordIdStr + " in exchange " + exchange.getId() + " and file " + path);
+
+                    } else {
+                        ResourceWrapper wrapper = resourceDal.getCurrentVersion(filer.getServiceId(), ResourceType.AllergyIntolerance.toString(), uuid);
+                        AllergyIntolerance resource = (AllergyIntolerance) wrapper.getResource();
+
+                        //remember "recorder" was mis-used so actually is the clinician field
+                        if (!resource.hasRecorder()) {
+                            AllergyIntoleranceBuilder builder = new AllergyIntoleranceBuilder(resource);
+
+                            Reference reference = ReferenceHelper.createReference(ResourceType.Practitioner, (String) referenceObj);
+                            reference = IdHelper.convertLocallyUniqueReferenceToEdsReference(reference, filer);
+                            builder.setClinician(reference);
+
+                            filer.savePatientResource(null, false, builder);
+                        }
+                    }
+                }
+
+                if (resourceTypes.contains(ResourceType.FamilyMemberHistory)) {
+                    UUID uuid = IdHelper.getEdsResourceId(filer.getServiceId(), ResourceType.FamilyMemberHistory, "" + recordIdStr);
+                    if (uuid == null) {
+                        LOG.debug("Failed to find resource UUID for " + ResourceType.FamilyMemberHistory + " " + recordIdStr + " in exchange " + exchange.getId() + " and file " + path);
+
+                    } else {
+                        ResourceWrapper wrapper = resourceDal.getCurrentVersion(filer.getServiceId(), ResourceType.FamilyMemberHistory.toString(), uuid);
+                        FamilyMemberHistory resource = (FamilyMemberHistory) wrapper.getResource();
+
+                        //since Encounter supports multiple ones, just ensure we're not duplicating it
+                        if (!ExtensionConverter.hasExtension(resource, FhirExtensionUri.FAMILY_MEMBER_HISTORY_REPORTED_BY)) {
+                            FamilyMemberHistoryBuilder builder = new FamilyMemberHistoryBuilder(resource);
+
+                            Reference reference = ReferenceHelper.createReference(ResourceType.Practitioner, (String) referenceObj);
+                            reference = IdHelper.convertLocallyUniqueReferenceToEdsReference(reference, filer);
+                            builder.setClinician(reference);
+
+                            filer.savePatientResource(null, false, builder);
+                        }
+                    }
+                }
+
+                if (resourceTypes.contains(ResourceType.Condition)) {
+                    UUID uuid = IdHelper.getEdsResourceId(filer.getServiceId(), ResourceType.Condition, "" + recordIdStr);
+                    if (uuid == null) {
+                        LOG.debug("Failed to find resource UUID for " + ResourceType.Condition + " " + recordIdStr + " in exchange " + exchange.getId() + " and file " + path);
+
+                    } else {
+                        ResourceWrapper wrapper = resourceDal.getCurrentVersion(filer.getServiceId(), ResourceType.Condition.toString(), uuid);
+                        Condition resource = (Condition) wrapper.getResource();
+
+                        //since Encounter supports multiple ones, just ensure we're not duplicating it
+                        if (!resource.hasAsserter()) {
+                            ConditionBuilder builder = new ConditionBuilder(resource);
+
+                            Reference reference = ReferenceHelper.createReference(ResourceType.Practitioner, (String) referenceObj);
+                            reference = IdHelper.convertLocallyUniqueReferenceToEdsReference(reference, filer);
+                            builder.setClinician(reference);
+
+                            filer.savePatientResource(null, false, builder);
+                        }
+                    }
+                }
+
+                if (resourceTypes.contains(ResourceType.Observation)) {
+                    UUID uuid = IdHelper.getEdsResourceId(filer.getServiceId(), ResourceType.Observation, "" + recordIdStr);
+                    if (uuid == null) {
+                        LOG.debug("Failed to find resource UUID for " + ResourceType.Observation + " " + recordIdStr + " in exchange " + exchange.getId() + " and file " + path);
+
+                    } else {
+                        ResourceWrapper wrapper = resourceDal.getCurrentVersion(filer.getServiceId(), ResourceType.Observation.toString(), uuid);
+                        Observation resource = (Observation) wrapper.getResource();
+
+                        //since Encounter supports multiple ones, just ensure we're not duplicating it
+                        if (!resource.hasPerformer()) {
+                            ObservationBuilder builder = new ObservationBuilder(resource);
+
+                            Reference reference = ReferenceHelper.createReference(ResourceType.Practitioner, (String) referenceObj);
+                            reference = IdHelper.convertLocallyUniqueReferenceToEdsReference(reference, filer);
+                            builder.setClinician(reference);
+
+                            filer.savePatientResource(null, false, builder);
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -277,7 +440,7 @@ public class SD86 extends AbstractRoutine {
 
                 UUID uuid = IdHelper.getEdsResourceId(filer.getServiceId(), ResourceType.MedicationStatement, "" + recordIdStr);
                 if (uuid == null) {
-                    LOG.debug("Failed to find resource UUID for " + ResourceType.MedicationStatement + " " + recordIdStr);
+                    LOG.debug("Failed to find resource UUID for " + ResourceType.MedicationStatement + " " + recordIdStr + " in exchange " + exchange.getId() + " and file " + path);
                     return;
                 }
 
@@ -359,7 +522,7 @@ public class SD86 extends AbstractRoutine {
 
                 UUID uuid = IdHelper.getEdsResourceId(filer.getServiceId(), ResourceType.ReferralRequest, "" + recordIdStr);
                 if (uuid == null) {
-                    LOG.warn("Failed to find resource UUID for " + ResourceType.ReferralRequest + " " + recordIdStr);
+                    LOG.warn("Failed to find resource UUID for " + ResourceType.ReferralRequest + " " + recordIdStr + " in exchange " + exchange.getId() + " and file " + path);
                     return;
                 }
 
@@ -427,7 +590,7 @@ public class SD86 extends AbstractRoutine {
 
                 UUID uuid = IdHelper.getEdsResourceId(filer.getServiceId(), ResourceType.ProcedureRequest, "" + recordIdStr);
                 if (uuid == null) {
-                    LOG.warn("Failed to find resource UUID for " + ResourceType.ProcedureRequest + " " + recordIdStr);
+                    LOG.warn("Failed to find resource UUID for " + ResourceType.ProcedureRequest + " " + recordIdStr + " in exchange " + exchange.getId() + " and file " + path);
                     return;
                 }
 
@@ -580,7 +743,7 @@ public class SD86 extends AbstractRoutine {
 
                 UUID uuid = IdHelper.getEdsResourceId(filer.getServiceId(), ResourceType.Immunization, "" + recordIdStr);
                 if (uuid == null) {
-                    LOG.warn("Failed to find resource UUID for " + ResourceType.Immunization + " " + recordIdStr);
+                    LOG.warn("Failed to find resource UUID for " + ResourceType.Immunization + " " + recordIdStr + " in exchange " + exchange.getId() + " and file " + path);
                     return;
                 }
 
@@ -648,7 +811,7 @@ public class SD86 extends AbstractRoutine {
 
                 UUID uuid = IdHelper.getEdsResourceId(filer.getServiceId(), ResourceType.Encounter, "" + recordIdStr);
                 if (uuid == null) {
-                    LOG.warn("Failed to find resource UUID for " + ResourceType.Encounter + " " + recordIdStr);
+                    LOG.warn("Failed to find resource UUID for " + ResourceType.Encounter + " " + recordIdStr + " in exchange " + exchange.getId() + " and file " + path);
                     return;
                 }
 
@@ -718,7 +881,7 @@ public class SD86 extends AbstractRoutine {
 
                 UUID uuid = IdHelper.getEdsResourceId(filer.getServiceId(), ResourceType.AllergyIntolerance, "" + recordIdStr);
                 if (uuid == null) {
-                    LOG.warn("Failed to find resource UUID for " + ResourceType.AllergyIntolerance + " " + recordIdStr);
+                    LOG.warn("Failed to find resource UUID for " + ResourceType.AllergyIntolerance + " " + recordIdStr + " in exchange " + exchange.getId() + " and file " + path);
                     return;
                 }
 
