@@ -261,108 +261,63 @@ public class SD86 extends AbstractRoutine {
                 String recordIdStr = record.get("RowIdentifier");
                 Long recordId = Long.valueOf(recordIdStr);
 
-                //if already done a more recent version of this record
-                if (hsIdsDone.contains(recordId)) {
-                    continue;
-                }
-                hsIdsDone.add(recordId);
+                try {
 
-                String doneBy = record.get("IDDoneBy");
-                String doneAt = record.get("IDOrganisationDoneAt");
+                    //if already done a more recent version of this record
+                    if (hsIdsDone.contains(recordId)) {
+                        continue;
+                    }
+                    hsIdsDone.add(recordId);
 
-                //if the done AT is empty, we really don't have any data to use
-                if (Strings.isNullOrEmpty(doneAt)) {
-                    continue;
-                }
+                    String doneBy = record.get("IDDoneBy");
+                    String doneAt = record.get("IDOrganisationDoneAt");
 
-                Object referenceObj = csvHelper.getStaffMemberCache().findProfileIdForStaffMemberAndOrg(filer.getServiceId(), CsvCell.factoryDummyWrapper(doneBy), CsvCell.factoryDummyWrapper(doneAt));
-                if (referenceObj == null || referenceObj instanceof Integer) {
-                    continue;
-                }
+                    //if the done AT is empty, we really don't have any data to use
+                    if (Strings.isNullOrEmpty(doneAt)) {
+                        continue;
+                    }
 
-                //SRCode records may go to multiple resource types, so work out the resource type
-                Set<ResourceType> resourceTypes = SRCodeTransformer.findOriginalTargetResourceTypes(filer, CsvCell.factoryDummyWrapper(recordIdStr));
-                
-                if (resourceTypes.contains(ResourceType.Procedure)) {
-                    UUID uuid = IdHelper.getEdsResourceId(filer.getServiceId(), ResourceType.Procedure, "" + recordIdStr);
-                    if (uuid == null) {
-                        LOG.debug("Failed to find resource UUID for " + ResourceType.Procedure + " " + recordIdStr + " in exchange " + exchange.getId() + " and file " + path);
+                    Object referenceObj = csvHelper.getStaffMemberCache().findProfileIdForStaffMemberAndOrg(filer.getServiceId(), CsvCell.factoryDummyWrapper(doneBy), CsvCell.factoryDummyWrapper(doneAt));
+                    if (referenceObj == null || referenceObj instanceof Integer) {
+                        continue;
+                    }
 
-                    } else {
-                        ResourceWrapper wrapper = resourceDal.getCurrentVersion(filer.getServiceId(), ResourceType.Procedure.toString(), uuid);
-                        Procedure resource = (Procedure) wrapper.getResource();
+                    //SRCode records may go to multiple resource types, so work out the resource type
+                    Set<ResourceType> resourceTypes = SRCodeTransformer.findOriginalTargetResourceTypes(filer, CsvCell.factoryDummyWrapper(recordIdStr));
 
-                        if (!resource.hasPerformer()) {
-                            ProcedureBuilder builder = new ProcedureBuilder(resource);
+                    if (resourceTypes.contains(ResourceType.Procedure)) {
+                        UUID uuid = IdHelper.getEdsResourceId(filer.getServiceId(), ResourceType.Procedure, "" + recordIdStr);
+                        if (uuid == null) {
+                            LOG.debug("Failed to find resource UUID for " + ResourceType.Procedure + " " + recordIdStr + " in exchange " + exchange.getId() + " and file " + path);
 
-                            Reference reference = ReferenceHelper.createReference(ResourceType.Practitioner, (String) referenceObj);
-                            reference = IdHelper.convertLocallyUniqueReferenceToEdsReference(reference, filer);
-                            builder.addPerformer(reference);
+                        } else {
+                            ResourceWrapper wrapper = resourceDal.getCurrentVersion(filer.getServiceId(), ResourceType.Procedure.toString(), uuid);
+                            Procedure resource = (Procedure) wrapper.getResource();
 
-                            filer.savePatientResource(null, false, builder);
+                            if (!resource.hasPerformer()) {
+                                ProcedureBuilder builder = new ProcedureBuilder(resource);
+
+                                Reference reference = ReferenceHelper.createReference(ResourceType.Practitioner, (String) referenceObj);
+                                reference = IdHelper.convertLocallyUniqueReferenceToEdsReference(reference, filer);
+                                builder.addPerformer(reference);
+
+                                filer.savePatientResource(null, false, builder);
+                            }
                         }
                     }
-                }
 
-                if (resourceTypes.contains(ResourceType.AllergyIntolerance)) {
-                    UUID uuid = IdHelper.getEdsResourceId(filer.getServiceId(), ResourceType.AllergyIntolerance, "" + recordIdStr);
-                    if (uuid == null) {
-                        LOG.debug("Failed to find resource UUID for " + ResourceType.AllergyIntolerance + " " + recordIdStr + " in exchange " + exchange.getId() + " and file " + path);
+                    if (resourceTypes.contains(ResourceType.AllergyIntolerance)) {
+                        UUID uuid = IdHelper.getEdsResourceId(filer.getServiceId(), ResourceType.AllergyIntolerance, "" + recordIdStr);
+                        if (uuid == null) {
+                            LOG.debug("Failed to find resource UUID for " + ResourceType.AllergyIntolerance + " " + recordIdStr + " in exchange " + exchange.getId() + " and file " + path);
 
-                    } else {
-                        ResourceWrapper wrapper = resourceDal.getCurrentVersion(filer.getServiceId(), ResourceType.AllergyIntolerance.toString(), uuid);
-                        AllergyIntolerance resource = (AllergyIntolerance) wrapper.getResource();
+                        } else {
+                            ResourceWrapper wrapper = resourceDal.getCurrentVersion(filer.getServiceId(), ResourceType.AllergyIntolerance.toString(), uuid);
+                            AllergyIntolerance resource = (AllergyIntolerance) wrapper.getResource();
 
-                        //remember "recorder" was mis-used so actually is the clinician field
-                        if (!resource.hasRecorder()) {
-                            AllergyIntoleranceBuilder builder = new AllergyIntoleranceBuilder(resource);
-
-                            Reference reference = ReferenceHelper.createReference(ResourceType.Practitioner, (String) referenceObj);
-                            reference = IdHelper.convertLocallyUniqueReferenceToEdsReference(reference, filer);
-                            builder.setClinician(reference);
-
-                            filer.savePatientResource(null, false, builder);
-                        }
-                    }
-                }
-
-                if (resourceTypes.contains(ResourceType.FamilyMemberHistory)) {
-                    UUID uuid = IdHelper.getEdsResourceId(filer.getServiceId(), ResourceType.FamilyMemberHistory, "" + recordIdStr);
-                    if (uuid == null) {
-                        LOG.debug("Failed to find resource UUID for " + ResourceType.FamilyMemberHistory + " " + recordIdStr + " in exchange " + exchange.getId() + " and file " + path);
-
-                    } else {
-                        ResourceWrapper wrapper = resourceDal.getCurrentVersion(filer.getServiceId(), ResourceType.FamilyMemberHistory.toString(), uuid);
-                        FamilyMemberHistory resource = (FamilyMemberHistory) wrapper.getResource();
-
-                        //since Encounter supports multiple ones, just ensure we're not duplicating it
-                        if (!ExtensionConverter.hasExtension(resource, FhirExtensionUri.FAMILY_MEMBER_HISTORY_REPORTED_BY)) {
-                            FamilyMemberHistoryBuilder builder = new FamilyMemberHistoryBuilder(resource);
-
-                            Reference reference = ReferenceHelper.createReference(ResourceType.Practitioner, (String) referenceObj);
-                            reference = IdHelper.convertLocallyUniqueReferenceToEdsReference(reference, filer);
-                            builder.setClinician(reference);
-
-                            filer.savePatientResource(null, false, builder);
-                        }
-                    }
-                }
-
-                if (resourceTypes.contains(ResourceType.Condition)) {
-                    UUID uuid = IdHelper.getEdsResourceId(filer.getServiceId(), ResourceType.Condition, "" + recordIdStr);
-                    if (uuid == null) {
-                        LOG.debug("Failed to find resource UUID for " + ResourceType.Condition + " " + recordIdStr + " in exchange " + exchange.getId() + " and file " + path);
-
-                    } else {
-                        ResourceWrapper wrapper = resourceDal.getCurrentVersion(filer.getServiceId(), ResourceType.Condition.toString(), uuid);
-
-                        //if a problem was down-graded, the condition may have been deleted even if the observation or whatever wasn't, so handle this
-                        if (wrapper != null && !wrapper.isDeleted()) {
-                            Condition resource = (Condition) wrapper.getResource();
-
-                            //since Encounter supports multiple ones, just ensure we're not duplicating it
-                            if (!resource.hasAsserter()) {
-                                ConditionBuilder builder = new ConditionBuilder(resource);
+                            //remember "recorder" was mis-used so actually is the clinician field
+                            if (!resource.hasRecorder()) {
+                                AllergyIntoleranceBuilder builder = new AllergyIntoleranceBuilder(resource);
 
                                 Reference reference = ReferenceHelper.createReference(ResourceType.Practitioner, (String) referenceObj);
                                 reference = IdHelper.convertLocallyUniqueReferenceToEdsReference(reference, filer);
@@ -372,28 +327,79 @@ public class SD86 extends AbstractRoutine {
                             }
                         }
                     }
-                }
 
-                if (resourceTypes.contains(ResourceType.Observation)) {
-                    UUID uuid = IdHelper.getEdsResourceId(filer.getServiceId(), ResourceType.Observation, "" + recordIdStr);
-                    if (uuid == null) {
-                        LOG.debug("Failed to find resource UUID for " + ResourceType.Observation + " " + recordIdStr + " in exchange " + exchange.getId() + " and file " + path);
+                    if (resourceTypes.contains(ResourceType.FamilyMemberHistory)) {
+                        UUID uuid = IdHelper.getEdsResourceId(filer.getServiceId(), ResourceType.FamilyMemberHistory, "" + recordIdStr);
+                        if (uuid == null) {
+                            LOG.debug("Failed to find resource UUID for " + ResourceType.FamilyMemberHistory + " " + recordIdStr + " in exchange " + exchange.getId() + " and file " + path);
 
-                    } else {
-                        ResourceWrapper wrapper = resourceDal.getCurrentVersion(filer.getServiceId(), ResourceType.Observation.toString(), uuid);
-                        Observation resource = (Observation) wrapper.getResource();
+                        } else {
+                            ResourceWrapper wrapper = resourceDal.getCurrentVersion(filer.getServiceId(), ResourceType.FamilyMemberHistory.toString(), uuid);
+                            FamilyMemberHistory resource = (FamilyMemberHistory) wrapper.getResource();
 
-                        //since Encounter supports multiple ones, just ensure we're not duplicating it
-                        if (!resource.hasPerformer()) {
-                            ObservationBuilder builder = new ObservationBuilder(resource);
+                            //since Encounter supports multiple ones, just ensure we're not duplicating it
+                            if (!ExtensionConverter.hasExtension(resource, FhirExtensionUri.FAMILY_MEMBER_HISTORY_REPORTED_BY)) {
+                                FamilyMemberHistoryBuilder builder = new FamilyMemberHistoryBuilder(resource);
 
-                            Reference reference = ReferenceHelper.createReference(ResourceType.Practitioner, (String) referenceObj);
-                            reference = IdHelper.convertLocallyUniqueReferenceToEdsReference(reference, filer);
-                            builder.setClinician(reference);
+                                Reference reference = ReferenceHelper.createReference(ResourceType.Practitioner, (String) referenceObj);
+                                reference = IdHelper.convertLocallyUniqueReferenceToEdsReference(reference, filer);
+                                builder.setClinician(reference);
 
-                            filer.savePatientResource(null, false, builder);
+                                filer.savePatientResource(null, false, builder);
+                            }
                         }
                     }
+
+                    if (resourceTypes.contains(ResourceType.Condition)) {
+                        UUID uuid = IdHelper.getEdsResourceId(filer.getServiceId(), ResourceType.Condition, "" + recordIdStr);
+                        if (uuid == null) {
+                            LOG.debug("Failed to find resource UUID for " + ResourceType.Condition + " " + recordIdStr + " in exchange " + exchange.getId() + " and file " + path);
+
+                        } else {
+                            ResourceWrapper wrapper = resourceDal.getCurrentVersion(filer.getServiceId(), ResourceType.Condition.toString(), uuid);
+
+                            //if a problem was down-graded, the condition may have been deleted even if the observation or whatever wasn't, so handle this
+                            if (wrapper != null && !wrapper.isDeleted()) {
+                                Condition resource = (Condition) wrapper.getResource();
+
+                                //since Encounter supports multiple ones, just ensure we're not duplicating it
+                                if (!resource.hasAsserter()) {
+                                    ConditionBuilder builder = new ConditionBuilder(resource);
+
+                                    Reference reference = ReferenceHelper.createReference(ResourceType.Practitioner, (String) referenceObj);
+                                    reference = IdHelper.convertLocallyUniqueReferenceToEdsReference(reference, filer);
+                                    builder.setClinician(reference);
+
+                                    filer.savePatientResource(null, false, builder);
+                                }
+                            }
+                        }
+                    }
+
+                    if (resourceTypes.contains(ResourceType.Observation)) {
+                        UUID uuid = IdHelper.getEdsResourceId(filer.getServiceId(), ResourceType.Observation, "" + recordIdStr);
+                        if (uuid == null) {
+                            LOG.debug("Failed to find resource UUID for " + ResourceType.Observation + " " + recordIdStr + " in exchange " + exchange.getId() + " and file " + path);
+
+                        } else {
+                            ResourceWrapper wrapper = resourceDal.getCurrentVersion(filer.getServiceId(), ResourceType.Observation.toString(), uuid);
+                            Observation resource = (Observation) wrapper.getResource();
+
+                            //since Encounter supports multiple ones, just ensure we're not duplicating it
+                            if (!resource.hasPerformer()) {
+                                ObservationBuilder builder = new ObservationBuilder(resource);
+
+                                Reference reference = ReferenceHelper.createReference(ResourceType.Practitioner, (String) referenceObj);
+                                reference = IdHelper.convertLocallyUniqueReferenceToEdsReference(reference, filer);
+                                builder.setClinician(reference);
+
+                                filer.savePatientResource(null, false, builder);
+                            }
+                        }
+                    }
+                } catch (Exception ex) {
+                    String msg = "Error processing ID " + recordIdStr + " in exchange " + exchange.getId() + " and file " + path;
+                    throw new Exception(msg, ex);
                 }
             }
         }
