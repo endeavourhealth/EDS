@@ -63,7 +63,10 @@
 
                                         <br>
                                         <b>First Message in Queue:</b>
-                                        <div>Received: {{channel.transformQueueFirstMessageDate | date:'yyyy-MM-dd HH:mm:ss'}}</div>
+                                        <div>
+                                            <span *ngIf="isCurrentMessageTooOld(channel)" class="label label-danger" ngbTooltip="Message being processed from >1 day ago">Warning</span>
+                                            Received: {{channel.transformQueueFirstMessageDate | date:'yyyy-MM-dd HH:mm:ss'}}
+                                        </div>
                                         <div>Type: {{channel.transformQueueFirstMessageType}}</div>
                                         <div>ID: {{channel.transformQueueFirstMessageId}}</div>
 

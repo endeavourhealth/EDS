@@ -70,4 +70,13 @@ export class Hl7ReceiverComponent {
 
         return channel.lastMessageReceived < warningTime;
     }
+
+    isCurrentMessageTooOld(channel: Hl7ReceiverChannelStatus): boolean {
+        var vm = this;
+
+        //if processing something from >1 day ago, that's wrong
+        var warningTime = vm.statusLastRefreshed.getTime() - (1000 * 60 * 60 * 24);
+
+        return channel.transformQueueFirstMessageDate < warningTime;
+    }
 }
