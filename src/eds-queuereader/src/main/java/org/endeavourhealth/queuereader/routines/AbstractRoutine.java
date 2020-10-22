@@ -6,6 +6,10 @@ import org.endeavourhealth.core.database.rdbms.ConnectionManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.nio.file.Files;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -188,5 +192,11 @@ public abstract class AbstractRoutine {
         }
     }
 
+    public static void copyFile(File src, File dst) throws Exception {
+        FileInputStream fis = new FileInputStream(src);
+        BufferedInputStream bis = new BufferedInputStream(fis);
+        Files.copy(bis, dst.toPath());
+        bis.close();
+    }
 
 }

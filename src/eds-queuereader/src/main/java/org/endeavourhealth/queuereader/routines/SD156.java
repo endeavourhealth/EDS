@@ -34,7 +34,7 @@ public class SD156 extends AbstractRoutine {
      ok_reason varchar(255)
      );
      */
-    public static void findExchangesNotSentToSubscriber(String orgOdsCodeRegex) {
+    public static void findExchangesNotSentToSubscriber(boolean onlySkipCompletedOnes, String orgOdsCodeRegex) {
         LOG.info("Finding Exchanges Not Sent To Subscriber for " + orgOdsCodeRegex);
         try {
 
@@ -50,23 +50,29 @@ public class SD156 extends AbstractRoutine {
                     continue;
                 }
 
-                //check if already done
-                //check if already started, to allow us to run multiple instances of this at once
-                //if (isServiceDoneBulkOperation(service, bulkOperationName)) {
-                if (isServiceStartedOrDoneBulkOperation(service, bulkOperationName)) {
-                    LOG.debug("Skipping " + service + " as already done");
-                    continue;
-                }
-
-                LOG.debug("Doing " + service);
-
                 //get all subscribers
                 List<String> subscribers = SubscriberHelper.getSubscriberConfigNamesForPublisher(null, service.getId(), service.getLocalId());
                 if (subscribers.isEmpty()) {
-                    LOG.debug("No subscribers so skipping");
+                    LOG.debug("No subscribers so skipping " + service);
                     continue;
                 }
 
+                if (onlySkipCompletedOnes) {
+                    //check if already done, so we can make sure EVERY service is done
+                    if (isServiceDoneBulkOperation(service, bulkOperationName)) {
+                        LOG.debug("Skipping " + service + " as already done");
+                        continue;
+                    }
+
+                } else {
+                    //check if already started, to allow us to run multiple instances of this at once
+                    if (isServiceStartedOrDoneBulkOperation(service, bulkOperationName)) {
+                        LOG.debug("Skipping " + service + " as already started or done");
+                        continue;
+                    }
+                }
+
+                LOG.debug("Doing " + service);
                 LOG.debug("Got expected subscribers " + subscribers);
 
                 List<UUID> systemIds = SystemHelper.getSystemIdsForService(service);

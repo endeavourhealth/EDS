@@ -4,10 +4,7 @@ import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.core.configuration.ConfigDeserialiser;
 import org.endeavourhealth.core.configuration.QueueReaderConfiguration;
 import org.endeavourhealth.core.queueing.QueueHelper;
-import org.endeavourhealth.queuereader.routines.OldRoutines;
-import org.endeavourhealth.queuereader.routines.SD156;
-import org.endeavourhealth.queuereader.routines.SD86;
-import org.endeavourhealth.queuereader.routines.SpecialRoutines;
+import org.endeavourhealth.queuereader.routines.*;
 import org.endeavourhealth.transform.common.TransformConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,11 +26,12 @@ public class Main {
 
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("findExchangesNotSentToSubscriber")) {
+			boolean onlySkipCompletedOnes = Boolean.parseBoolean(args[1]);
 			String orgOdsCodeRegex = null;
-			if (args.length > 1) {
-				orgOdsCodeRegex = args[1];
+			if (args.length > 2) {
+				orgOdsCodeRegex = args[2];
 			}
-			SD156.findExchangesNotSentToSubscriber(orgOdsCodeRegex);
+			SD156.findExchangesNotSentToSubscriber(onlySkipCompletedOnes, orgOdsCodeRegex);
 			System.exit(0);
 		}
 
@@ -490,7 +488,7 @@ public class Main {
 			String outputFormat = args[3];
 			String fileName = args[4];
 			String debug = args[5];
-			OldRoutines.bulkProcessUPRN(configName, protocolName, outputFormat, fileName, debug);
+			Uprn.bulkProcessUPRN(configName, protocolName, outputFormat, fileName, debug);
 
 			System.exit(0);
 		}
@@ -512,7 +510,7 @@ public class Main {
 			String outputFormat = args[3];
 			String filePath = args[4];
 			String debug = args[5];
-			OldRoutines.bulkProcessUPRNThreaded(configName, protocolName, outputFormat, filePath, debug, threads, QBeforeBlock);
+			Uprn.bulkProcessUPRNThreaded(configName, protocolName, outputFormat, filePath, debug, threads, QBeforeBlock);
 
 			System.exit(0);
 		}
@@ -691,7 +689,7 @@ public class Main {
 			String filePath = args[4];
 			String debug = args[5];
 
-			OldRoutines.bulkProcessTransformAndFilePatientsAndEpisodesForProtocolServices(subscriberConfigName, protocolName,
+			Subscribers.bulkProcessTransformAndFilePatientsAndEpisodesForProtocolServices(subscriberConfigName, protocolName,
 					compassVersion, filePath, debug, threads, QBeforeBlock);
 
 			System.exit(0);
@@ -825,7 +823,7 @@ public class Main {
 			String sourceDirPath = args[1];
 			String destDirPath = args[2];
 			String samplePatientsFile = args[3];
-			OldRoutines.createHomertonSubset(sourceDirPath, destDirPath, samplePatientsFile);
+			Transforms.createHomertonSubset(sourceDirPath, destDirPath, samplePatientsFile);
 			System.exit(0);
 		}
 
@@ -834,7 +832,7 @@ public class Main {
 			String sourceDirPath = args[1];
 			String destDirPath = args[2];
 			String samplePatientsFile = args[3];
-			OldRoutines.createAdastraSubset(sourceDirPath, destDirPath, samplePatientsFile);
+			Transforms.createAdastraSubset(sourceDirPath, destDirPath, samplePatientsFile);
 			System.exit(0);
 		}
 
@@ -843,7 +841,7 @@ public class Main {
 			String sourceDirPath = args[1];
 			String destDirPath = args[2];
 			String samplePatientsFile = args[3];
-			OldRoutines.createVisionSubset(sourceDirPath, destDirPath, samplePatientsFile);
+			Transforms.createVisionSubset(sourceDirPath, destDirPath, samplePatientsFile);
 			System.exit(0);
 		}
 
@@ -852,7 +850,7 @@ public class Main {
 			String sourceDirPath = args[1];
 			String destDirPath = args[2];
 			String samplePatientsFile = args[3];
-			OldRoutines.createTppSubset(sourceDirPath, destDirPath, samplePatientsFile);
+			Transforms.createTppSubset(sourceDirPath, destDirPath, samplePatientsFile);
 			System.exit(0);
 		}
 
@@ -871,7 +869,7 @@ public class Main {
 			String sourceDirPath = args[1];
 			String destDirPath = args[2];
 			String samplePatientsFile = args[3];
-			OldRoutines.createEmisSubset(sourceDirPath, destDirPath, samplePatientsFile);
+			Transforms.createEmisSubset(sourceDirPath, destDirPath, samplePatientsFile);
 			System.exit(0);
 		}
 
@@ -916,7 +914,7 @@ public class Main {
 			UUID serviceId = UUID.fromString(args[1]);
 			UUID systemId = UUID.fromString(args[2]);
 			String sourceFile = args[3];
-			OldRoutines.postPatientsToProtocol(serviceId, systemId, sourceFile);
+			Queuing.postPatientsToProtocol(serviceId, systemId, sourceFile);
 			System.exit(0);
 		}
 
@@ -1054,7 +1052,7 @@ public class Main {
 				&& args[0].equalsIgnoreCase("CalculateUprnPseudoIds")) {
 			String subscriberConfigName = args[1];
 			String targetTable = args[2];
-			OldRoutines.calculateUprnPseudoIds(subscriberConfigName, targetTable);
+			Uprn.calculateUprnPseudoIds(subscriberConfigName, targetTable);
 			System.exit(0);
 		}
 
@@ -1069,7 +1067,7 @@ public class Main {
 			if (args.length > 3) {
 				patientId = args[3];
 			}
-			OldRoutines.populateSubscriberUprnTable(subscriberConfigName, overrideBatchSize, patientId);
+			Uprn.populateSubscriberUprnTable(subscriberConfigName, overrideBatchSize, patientId);
 			System.exit(0);
 		}
 
@@ -1088,7 +1086,7 @@ public class Main {
 			if (args.length > 4) {
 				throttle = Integer.parseInt(args[4]);
 			}
-			OldRoutines.postToRabbit(exchangeName, srcFile, reason, throttle);
+			Queuing.postToRabbit(exchangeName, srcFile, reason, throttle);
 			System.exit(0);
 		}
 
@@ -1096,7 +1094,7 @@ public class Main {
 				&& args[0].equalsIgnoreCase("PostExchangesToProtocol")) {
 			String srcFile = args[1];
 			String reason = args[2];
-			OldRoutines.postExchangesToProtocol(srcFile, reason);
+			Queuing.postExchangesToProtocol(srcFile, reason);
 			System.exit(0);
 		}
 
@@ -1187,13 +1185,13 @@ public class Main {
 		}*/
 
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("PopulateLastDataDate")) {
 			int threads = Integer.parseInt(args[1]);
 			int batchSize = Integer.parseInt(args[2]);
 			OldRoutines.populateLastDataDate(threads, batchSize);
 			System.exit(0);
-		}
+		}*/
 
 
 		/*if (args.length >= 1
@@ -1347,13 +1345,13 @@ public class Main {
 			if (args.length > 6) {
 				onlyThisFileType = args[6];
 			}
-			OldRoutines.loadEmisData(serviceId, systemId, dbUrl, dbUsername, dbPassword, onlyThisFileType);
+			Transforms.loadEmisData(serviceId, systemId, dbUrl, dbUsername, dbPassword, onlyThisFileType);
 			System.exit(0);
 		}
 
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("CreateEmisDataTables")) {
-			OldRoutines.createEmisDataTables();
+			Transforms.createEmisDataTables();
 			System.exit(0);
 		}
 
@@ -1369,13 +1367,13 @@ public class Main {
 			if (args.length > 7) {
 				onlyThisFileType = args[7];
 			}
-			OldRoutines.loadBartsData(serviceId, systemId, dbUrl, dbUsername, dbPassword, startDate, onlyThisFileType);
+			Transforms.loadBartsData(serviceId, systemId, dbUrl, dbUsername, dbPassword, startDate, onlyThisFileType);
 			System.exit(0);
 		}
 
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("CreateBartsDataTables")) {
-			OldRoutines.createBartsDataTables();
+			Transforms.createBartsDataTables();
 			System.exit(0);
 		}
 
