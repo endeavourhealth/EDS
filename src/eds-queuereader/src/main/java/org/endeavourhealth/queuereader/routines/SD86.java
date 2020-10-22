@@ -178,15 +178,23 @@ public class SD86 extends AbstractRoutine {
                 try {
 
                     //go through the exchanges and fix all the affected file types and resources
+                    LOG.debug("Doing drug sensitivities");
                     doDrugSensitivity(exchanges, csvHelper, filer);
+                    LOG.debug("Doing events");
                     doEvent(exchanges, csvHelper, filer);
+                    LOG.debug("Doing immunisations");
                     doImmunisation(exchanges, csvHelper, filer);
+                    LOG.debug("Doing primary care medication");
                     doPrimaryCareMedication(exchanges, csvHelper, filer);
+                    LOG.debug("Doing recall");
                     doRecall(exchanges, csvHelper, filer);
+                    LOG.debug("Doing referral out");
                     doReferralOut(exchanges, csvHelper, filer);
+                    LOG.debug("Doing repeat templates");
                     doRepeatTemplate(exchanges, csvHelper, filer);
 
                     //call this to actually generate any FHIR Practitioners required
+                    LOG.debug("Saving newly generated staff");
                     csvHelper.getStaffMemberCache().processChangedStaffMembers(csvHelper, filer);
 
                 } catch (Throwable ex) {
@@ -196,6 +204,7 @@ public class SD86 extends AbstractRoutine {
                 } finally {
 
                     //close down filer
+                    LOG.debug("Waiting to finish");
                     filer.waitToFinish();
 
                     //set multicast header
@@ -423,6 +432,11 @@ public class SD86 extends AbstractRoutine {
                 }
 
                 ResourceWrapper wrapper = resourceDal.getCurrentVersion(filer.getServiceId(), ResourceType.ProcedureRequest.toString(), uuid);
+                //will have missing ProcedureRequests due to bug that meant they weren't transformed
+                if (wrapper == null
+                        || wrapper.isDeleted()) {
+                    return;
+                }
                 ProcedureRequest resource = (ProcedureRequest)wrapper.getResource();
 
                 //since Encounter supports multiple ones, just ensure we're not duplicating it
