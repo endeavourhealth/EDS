@@ -355,17 +355,21 @@ public class SD86 extends AbstractRoutine {
 
                     } else {
                         ResourceWrapper wrapper = resourceDal.getCurrentVersion(filer.getServiceId(), ResourceType.Condition.toString(), uuid);
-                        Condition resource = (Condition) wrapper.getResource();
 
-                        //since Encounter supports multiple ones, just ensure we're not duplicating it
-                        if (!resource.hasAsserter()) {
-                            ConditionBuilder builder = new ConditionBuilder(resource);
+                        //if a problem was down-graded, the condition may have been deleted even if the observation or whatever wasn't, so handle this
+                        if (wrapper != null && !wrapper.isDeleted()) {
+                            Condition resource = (Condition) wrapper.getResource();
 
-                            Reference reference = ReferenceHelper.createReference(ResourceType.Practitioner, (String) referenceObj);
-                            reference = IdHelper.convertLocallyUniqueReferenceToEdsReference(reference, filer);
-                            builder.setClinician(reference);
+                            //since Encounter supports multiple ones, just ensure we're not duplicating it
+                            if (!resource.hasAsserter()) {
+                                ConditionBuilder builder = new ConditionBuilder(resource);
 
-                            filer.savePatientResource(null, false, builder);
+                                Reference reference = ReferenceHelper.createReference(ResourceType.Practitioner, (String) referenceObj);
+                                reference = IdHelper.convertLocallyUniqueReferenceToEdsReference(reference, filer);
+                                builder.setClinician(reference);
+
+                                filer.savePatientResource(null, false, builder);
+                            }
                         }
                     }
                 }
