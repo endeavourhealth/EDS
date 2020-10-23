@@ -1,17 +1,11 @@
 package org.endeavourhealth.queuereader.routines;
 
 import com.google.common.base.Strings;
-import org.apache.commons.csv.CSVFormat;
-import org.apache.commons.csv.CSVParser;
-import org.apache.commons.csv.CSVPrinter;
-import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.io.FileUtils;
 import org.endeavourhealth.common.fhir.IdentifierHelper;
-import org.endeavourhealth.common.utility.FileHelper;
 import org.endeavourhealth.core.database.dal.DalProvider;
 import org.endeavourhealth.core.database.dal.admin.LibraryRepositoryHelper;
 import org.endeavourhealth.core.database.dal.admin.ServiceDalI;
-import org.endeavourhealth.core.database.dal.admin.SystemHelper;
 import org.endeavourhealth.core.database.dal.admin.models.Service;
 import org.endeavourhealth.core.database.dal.audit.ExchangeDalI;
 import org.endeavourhealth.core.database.dal.audit.models.Exchange;
@@ -36,9 +30,6 @@ import org.endeavourhealth.im.models.mapping.MapColumnValueRequest;
 import org.endeavourhealth.im.models.mapping.MapResponse;
 import org.endeavourhealth.subscriber.filer.EnterpriseFiler;
 import org.endeavourhealth.subscriber.filer.SubscriberFiler;
-import org.endeavourhealth.transform.common.ExchangeHelper;
-import org.endeavourhealth.transform.common.ExchangePayloadFile;
-import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
 import org.endeavourhealth.transform.enterprise.EnterpriseTransformHelper;
 import org.endeavourhealth.transform.enterprise.FhirToEnterpriseCsvTransformer;
 import org.endeavourhealth.transform.enterprise.transforms.EpisodeOfCareEnterpriseTransformer;
@@ -53,8 +44,9 @@ import org.hl7.fhir.instance.model.ResourceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.*;
-import java.text.SimpleDateFormat;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -4752,154 +4744,6 @@ public abstract class SpecialRoutines extends AbstractRoutine {
         }
     }
 
-
-    public static void findEmisEpisodesChangingDate(String orgOdsCodeRegex) {
-        LOG.debug("Find Emis episodes changing date at " + orgOdsCodeRegex);
-        try {
-
-            ServiceDalI serviceDal = DalProvider.factoryServiceDal();
-            PatientSearchDalI patientSearchDal = DalProvider.factoryPatientSearchDal();
-            ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
-
-            File dstFile = new File("EmisEpisodesChangingDate.csv");
-            FileOutputStream fos = new FileOutputStream(dstFile);
-            OutputStreamWriter osw = new OutputStreamWriter(fos);
-            BufferedWriter bufferedWriter = new BufferedWriter(osw);
-
-            CSVFormat format = EmisCsvToFhirTransformer.CSV_FORMAT
-                    .withHeader("Name", "ODS Code", "PatientGuid", "PreviousStart", "ChangedStart", "Direction", "PreviousRegType", "ChangedRegType", "RegTypeChanged", "PreviousFile", "ChangedFile"
-                    );
-            CSVPrinter printer = new CSVPrinter(bufferedWriter, format);
-
-            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-
-            List<Service> services = serviceDal.getAll();
-
-            for (Service service: services) {
-
-                Map<String, String> tags = service.getTags();
-                if (tags == null
-                        || !tags.containsKey("EMIS")) {
-                    continue;
-                }
-
-                if (shouldSkipService(service, orgOdsCodeRegex)) {
-                    continue;
-                }
-
-                LOG.debug("Doing " + service);
-
-                UUID serviceId = service.getId();
-                List<UUID> systemIds = SystemHelper.getSystemIdsForService(service);
-                if (systemIds.size() != 1) {
-                    throw new Exception("" + systemIds.size() + " system IDs found");
-                }
-                UUID systemId = systemIds.get(0);
-
-                Map<String, String> hmPatientStartDates = new HashMap<>();
-                Map<String, String> hmPatientStartDatePaths = new HashMap<>();
-                Map<String, String> hmPatientRegTypes = new HashMap<>();
-
-                List<Exchange> exchanges = exchangeDal.getExchangesByService(serviceId, systemId, Integer.MAX_VALUE);
-
-                for (int i=exchanges.size()-1; i>=0; i--) {
-                    Exchange exchange = exchanges.get(i);
-
-                    String exchangeBody = exchange.getBody();
-                    List<ExchangePayloadFile> files = ExchangeHelper.parseExchangeBody(exchangeBody);
-                    if (files.isEmpty() || files.size() == 1) {
-                        continue;
-                    }
-
-                    ExchangePayloadFile patientFile = null;
-                    for (ExchangePayloadFile file: files) {
-                        if (file.getType().equals("Admin_Patient")) {
-                            patientFile = file;
-                            break;
-                        }
-                    }
-
-                    if (patientFile == null) {
-                        LOG.warn("No patient file for exchange " + exchange.getId());
-                        continue;
-                    }
-
-                    String path = patientFile.getPath();
-                    InputStreamReader isr = FileHelper.readFileReaderFromSharedStorage(path);
-
-                    CSVParser parser = new CSVParser(isr, CSVFormat.DEFAULT.withHeader());
-                    Iterator<CSVRecord> iterator = parser.iterator();
-
-                    while (iterator.hasNext()) {
-                        CSVRecord record = iterator.next();
-
-                        String patientGuid = record.get("PatientGuid");
-                        String regDate = record.get("DateOfRegistration");
-                        String dedDate = record.get("DateOfDeactivation");
-                        String deleted = record.get("Deleted");
-                        String regType = record.get("PatientTypeDescription");
-
-                        if (deleted.equals("true")) {
-                            hmPatientStartDates.remove(patientGuid);
-                            hmPatientStartDatePaths.remove(patientGuid);
-                            hmPatientRegTypes.remove(patientGuid);
-                            continue;
-                        }
-
-                        if (!Strings.isNullOrEmpty(dedDate)) {
-                            hmPatientStartDates.remove(patientGuid);
-                            hmPatientStartDatePaths.remove(patientGuid);
-                            hmPatientRegTypes.remove(patientGuid);
-                            continue;
-                        }
-
-                        String previousDate = hmPatientStartDates.get(patientGuid);
-                        String previousPath = hmPatientStartDatePaths.get(patientGuid);
-                        String previousRegType = hmPatientRegTypes.get(patientGuid);
-                        if (previousDate != null
-                            && !previousDate.equals(regDate)) {
-
-                            //reg date has changed
-                            LOG.debug("Patient " + patientGuid + " start date changed from " + previousDate + " to " + regDate);
-                            LOG.debug("Previous file = " + previousPath);
-                            LOG.debug("This file = " + path);
-
-                            Date dPrevious = sdf.parse(previousDate);
-                            Date dNow = sdf.parse(regDate);
-
-                            String direction = null;
-                            if (dPrevious.before(dNow)) {
-                                direction = "Forwards";
-                            } else {
-                                direction = "Backwards";
-                            }
-
-                            String regTypeChanged = null;
-                            if (regType.equals(previousRegType)) {
-                                regTypeChanged = "false";
-                            } else {
-                                regTypeChanged = "true";
-                            }
-
-                            printer.printRecord(service.getName(), service.getLocalId(), patientGuid, previousDate, regDate, direction, previousRegType, regType, regTypeChanged, previousPath, path);
-                        }
-
-                        hmPatientStartDates.put(patientGuid, regDate);
-                        hmPatientStartDatePaths.put(patientGuid, path);
-                        hmPatientRegTypes.put(patientGuid, regType);
-                    }
-
-                    parser.close();
-                }
-            }
-
-            printer.close();
-
-            LOG.debug("Finished Find Emis episodes changing date at " + orgOdsCodeRegex);
-        } catch (Throwable t) {
-            LOG.error("", t);
-        }
-    }
 
     private static void saveCompassV2PatientData(String subscriberConfigName, OutputContainer compassV2Container) throws Exception {
         List<SubscriberTableId> toKeep = new ArrayList<>();

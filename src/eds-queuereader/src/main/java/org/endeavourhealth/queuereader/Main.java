@@ -123,7 +123,7 @@ public class Main {
 			System.exit(0);
 		}*/
 
-		/*if (args.length >= 1
+		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("fixEmisEpisodesChangingDate")) {
 
 			boolean testMode = Boolean.parseBoolean(args[1]);
@@ -132,9 +132,9 @@ public class Main {
 				orgOdsCodeRegex = args[2];
 			}
 
-			SpecialRoutines.fixEmisEpisodesChangingDate(testMode, orgOdsCodeRegex);
+			SD99.fixEmisEpisodesChangingDate(testMode, orgOdsCodeRegex);
 			System.exit(0);
-		}*/
+		}
 
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("findEmisEpisodesChangingDate")) {
@@ -144,7 +144,7 @@ public class Main {
 				orgOdsCodeRegex = args[1];
 			}
 
-			SpecialRoutines.findEmisEpisodesChangingDate(orgOdsCodeRegex);
+			SD99.findEmisEpisodesChangingDate(orgOdsCodeRegex);
 			System.exit(0);
 		}
 

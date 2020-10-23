@@ -1,10 +1,7 @@
 package org.endeavourhealth.queuereader.routines;
 
 import com.google.common.base.Strings;
-import org.apache.commons.csv.CSVFormat;
-import org.apache.commons.csv.CSVParser;
-import org.apache.commons.csv.CSVRecord;
-import org.apache.commons.csv.QuoteMode;
+import org.apache.commons.csv.*;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.common.fhir.ReferenceHelper;
 import org.endeavourhealth.common.fhir.schema.RegistrationType;
@@ -17,6 +14,7 @@ import org.endeavourhealth.core.database.dal.admin.models.Service;
 import org.endeavourhealth.core.database.dal.audit.ExchangeDalI;
 import org.endeavourhealth.core.database.dal.audit.models.Exchange;
 import org.endeavourhealth.core.database.dal.audit.models.HeaderKeys;
+import org.endeavourhealth.core.database.dal.eds.PatientSearchDalI;
 import org.endeavourhealth.core.database.dal.ehr.ResourceDalI;
 import org.endeavourhealth.core.database.dal.ehr.models.ResourceWrapper;
 import org.endeavourhealth.core.database.rdbms.ConnectionManager;
@@ -26,6 +24,7 @@ import org.endeavourhealth.core.xml.transformError.TransformError;
 import org.endeavourhealth.transform.common.*;
 import org.endeavourhealth.transform.common.resourceBuilders.EncounterBuilder;
 import org.endeavourhealth.transform.common.resourceBuilders.EpisodeOfCareBuilder;
+import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
 import org.hl7.fhir.instance.model.Encounter;
 import org.hl7.fhir.instance.model.EpisodeOfCare;
 import org.hl7.fhir.instance.model.Reference;
@@ -33,7 +32,7 @@ import org.hl7.fhir.instance.model.ResourceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.InputStreamReader;
+import java.io.*;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -41,8 +40,160 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
-public class SpecialRoutines2 extends AbstractRoutine {
-    private static final Logger LOG = LoggerFactory.getLogger(SpecialRoutines2.class);
+public class SD99 extends AbstractRoutine {
+    private static final Logger LOG = LoggerFactory.getLogger(SD99.class);
+
+    /**
+     * finds cases of Emis patients changing registration state date and writes to CSV for investigation
+     */
+    public static void findEmisEpisodesChangingDate(String orgOdsCodeRegex) {
+        LOG.debug("Find Emis episodes changing date at " + orgOdsCodeRegex);
+        try {
+
+            ServiceDalI serviceDal = DalProvider.factoryServiceDal();
+            PatientSearchDalI patientSearchDal = DalProvider.factoryPatientSearchDal();
+            ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
+
+            File dstFile = new File("EmisEpisodesChangingDate.csv");
+            FileOutputStream fos = new FileOutputStream(dstFile);
+            OutputStreamWriter osw = new OutputStreamWriter(fos);
+            BufferedWriter bufferedWriter = new BufferedWriter(osw);
+
+            CSVFormat format = EmisCsvToFhirTransformer.CSV_FORMAT
+                    .withHeader("Name", "ODS Code", "PatientGuid", "PreviousStart", "ChangedStart", "Direction", "PreviousRegType", "ChangedRegType", "RegTypeChanged", "PreviousFile", "ChangedFile"
+                    );
+            CSVPrinter printer = new CSVPrinter(bufferedWriter, format);
+
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+
+            List<Service> services = serviceDal.getAll();
+
+            for (Service service : services) {
+
+                Map<String, String> tags = service.getTags();
+                if (tags == null
+                        || !tags.containsKey("EMIS")) {
+                    continue;
+                }
+
+                if (shouldSkipService(service, orgOdsCodeRegex)) {
+                    continue;
+                }
+
+                LOG.debug("Doing " + service);
+
+                UUID serviceId = service.getId();
+                List<UUID> systemIds = SystemHelper.getSystemIdsForService(service);
+                if (systemIds.size() != 1) {
+                    throw new Exception("" + systemIds.size() + " system IDs found");
+                }
+                UUID systemId = systemIds.get(0);
+
+                Map<String, String> hmPatientStartDates = new HashMap<>();
+                Map<String, String> hmPatientStartDatePaths = new HashMap<>();
+                Map<String, String> hmPatientRegTypes = new HashMap<>();
+
+                List<Exchange> exchanges = exchangeDal.getExchangesByService(serviceId, systemId, Integer.MAX_VALUE);
+
+                for (int i = exchanges.size() - 1; i >= 0; i--) {
+                    Exchange exchange = exchanges.get(i);
+
+                    String exchangeBody = exchange.getBody();
+                    List<ExchangePayloadFile> files = ExchangeHelper.parseExchangeBody(exchangeBody);
+                    if (files.isEmpty() || files.size() == 1) {
+                        continue;
+                    }
+
+                    ExchangePayloadFile patientFile = null;
+                    for (ExchangePayloadFile file : files) {
+                        if (file.getType().equals("Admin_Patient")) {
+                            patientFile = file;
+                            break;
+                        }
+                    }
+
+                    if (patientFile == null) {
+                        LOG.warn("No patient file for exchange " + exchange.getId());
+                        continue;
+                    }
+
+                    String path = patientFile.getPath();
+                    InputStreamReader isr = FileHelper.readFileReaderFromSharedStorage(path);
+
+                    CSVParser parser = new CSVParser(isr, CSVFormat.DEFAULT.withHeader());
+                    Iterator<CSVRecord> iterator = parser.iterator();
+
+                    while (iterator.hasNext()) {
+                        CSVRecord record = iterator.next();
+
+                        String patientGuid = record.get("PatientGuid");
+                        String regDate = record.get("DateOfRegistration");
+                        String dedDate = record.get("DateOfDeactivation");
+                        String deleted = record.get("Deleted");
+                        String regType = record.get("PatientTypeDescription");
+
+                        if (deleted.equals("true")) {
+                            hmPatientStartDates.remove(patientGuid);
+                            hmPatientStartDatePaths.remove(patientGuid);
+                            hmPatientRegTypes.remove(patientGuid);
+                            continue;
+                        }
+
+                        if (!Strings.isNullOrEmpty(dedDate)) {
+                            hmPatientStartDates.remove(patientGuid);
+                            hmPatientStartDatePaths.remove(patientGuid);
+                            hmPatientRegTypes.remove(patientGuid);
+                            continue;
+                        }
+
+                        String previousDate = hmPatientStartDates.get(patientGuid);
+                        String previousPath = hmPatientStartDatePaths.get(patientGuid);
+                        String previousRegType = hmPatientRegTypes.get(patientGuid);
+                        if (previousDate != null
+                                && !previousDate.equals(regDate)) {
+
+                            //reg date has changed
+                            LOG.debug("Patient " + patientGuid + " start date changed from " + previousDate + " to " + regDate);
+                            LOG.debug("Previous file = " + previousPath);
+                            LOG.debug("This file = " + path);
+
+                            Date dPrevious = sdf.parse(previousDate);
+                            Date dNow = sdf.parse(regDate);
+
+                            String direction = null;
+                            if (dPrevious.before(dNow)) {
+                                direction = "Forwards";
+                            } else {
+                                direction = "Backwards";
+                            }
+
+                            String regTypeChanged = null;
+                            if (regType.equals(previousRegType)) {
+                                regTypeChanged = "false";
+                            } else {
+                                regTypeChanged = "true";
+                            }
+
+                            printer.printRecord(service.getName(), service.getLocalId(), patientGuid, previousDate, regDate, direction, previousRegType, regType, regTypeChanged, previousPath, path);
+                        }
+
+                        hmPatientStartDates.put(patientGuid, regDate);
+                        hmPatientStartDatePaths.put(patientGuid, path);
+                        hmPatientRegTypes.put(patientGuid, regType);
+                    }
+
+                    parser.close();
+                }
+            }
+
+            printer.close();
+
+            LOG.debug("Finished Find Emis episodes changing date at " + orgOdsCodeRegex);
+        } catch (Throwable t) {
+            LOG.error("", t);
+        }
+    }
+
 
     /**
      * the inbound Emis transform ended up creating extra EpisodeOfCare resources if
@@ -63,7 +214,7 @@ public class SpecialRoutines2 extends AbstractRoutine {
 
             SimpleDateFormat csvDateFormat = new SimpleDateFormat("yyyy-MM-dd");
 
-            for (Service service: services) {
+            for (Service service : services) {
 
                 Map<String, String> tags = service.getTags();
                 if (tags == null
@@ -100,7 +251,7 @@ public class SpecialRoutines2 extends AbstractRoutine {
                 //go through files to find state from files
                 List<Exchange> exchanges = exchangeDal.getExchangesByService(serviceId, systemId, Integer.MAX_VALUE);
                 LOG.trace("Going to check " + exchanges.size() + " exchanges");
-                for (int i=exchanges.size()-1; i>=0; i--) {
+                for (int i = exchanges.size() - 1; i >= 0; i--) {
                     Exchange exchange = exchanges.get(i);
 
                     String exchangeBody = exchange.getBody();
@@ -120,9 +271,8 @@ public class SpecialRoutines2 extends AbstractRoutine {
                     }
 
 
-
                     ExchangePayloadFile patientFile = null;
-                    for (ExchangePayloadFile file: files) {
+                    for (ExchangePayloadFile file : files) {
                         if (file.getType().equals("Admin_Patient")) {
                             patientFile = file;
                             break;
@@ -192,8 +342,8 @@ public class SpecialRoutines2 extends AbstractRoutine {
 
                 CSVFormat regStatusCsvFormat = CSVFormat.TDF
                         .withHeader()
-                        .withEscape((Character)null)
-                        .withQuote((Character)null)
+                        .withEscape((Character) null)
+                        .withQuote((Character) null)
                         .withQuoteMode(QuoteMode.MINIMAL); //ideally want Quote Mdde NONE, but validation in the library means we need to use this;
 
                 InputStreamReader isr = FileHelper.readFileReaderFromSharedStorage(latestRegStatusPath);
@@ -236,78 +386,85 @@ public class SpecialRoutines2 extends AbstractRoutine {
                 FhirResourceFiler filer = null;
                 Exchange exchange = null;
 
-                if (!testMode) {
-                    UUID exchangeId = UUID.randomUUID();
-                    String bodyJson = JsonSerializer.serialize(new ArrayList<ExchangePayloadFile>());
-                    String odsCode = service.getLocalId();
+                try {
 
-                    filer = new FhirResourceFiler(exchangeId, service.getId(), systemId, new TransformError(), batchIdsCreated);
+                    if (!testMode) {
+                        UUID exchangeId = UUID.randomUUID();
+                        String bodyJson = JsonSerializer.serialize(new ArrayList<ExchangePayloadFile>());
+                        String odsCode = service.getLocalId();
 
-                    exchange = new Exchange();
-                    exchange.setId(exchangeId);
-                    exchange.setBody(bodyJson);
-                    exchange.setTimestamp(new Date());
-                    exchange.setHeaders(new HashMap<>());
-                    exchange.setHeaderAsUuid(HeaderKeys.SenderServiceUuid, service.getId());
-                    exchange.setHeader(HeaderKeys.ProtocolIds, ""); //just set to non-null value, so postToExchange(..) can safely recalculate
-                    exchange.setHeader(HeaderKeys.SenderLocalIdentifier, odsCode);
-                    exchange.setHeaderAsUuid(HeaderKeys.SenderSystemUuid, systemId);
-                    exchange.setHeader(HeaderKeys.SourceSystem, MessageFormat.EMIS_CSV);
-                    exchange.setServiceId(service.getId());
-                    exchange.setSystemId(systemId);
+                        filer = new FhirResourceFiler(exchangeId, service.getId(), systemId, new TransformError(), batchIdsCreated);
 
-                    AuditWriter.writeExchange(exchange);
-                    AuditWriter.writeExchangeEvent(exchange, "Manually created to correct Emis episodes of care (SD-99)");
-                }
+                        exchange = new Exchange();
+                        exchange.setId(exchangeId);
+                        exchange.setBody(bodyJson);
+                        exchange.setTimestamp(new Date());
+                        exchange.setHeaders(new HashMap<>());
+                        exchange.setHeaderAsUuid(HeaderKeys.SenderServiceUuid, service.getId());
+                        exchange.setHeader(HeaderKeys.ProtocolIds, ""); //just set to non-null value, so postToExchange(..) can safely recalculate
+                        exchange.setHeader(HeaderKeys.SenderLocalIdentifier, odsCode);
+                        exchange.setHeaderAsUuid(HeaderKeys.SenderSystemUuid, systemId);
+                        exchange.setHeader(HeaderKeys.SourceSystem, MessageFormat.EMIS_CSV);
+                        exchange.setServiceId(service.getId());
+                        exchange.setSystemId(systemId);
 
-
-                for (String patientGuid: hmRegRecords.keySet()) {
-
-                    List<RegRecord> regRecords = hmRegRecords.get(patientGuid);
-                    List<RegStatus> statuses = hmRegStatuses.get(patientGuid);
-                    if (statuses == null) {
-                        statuses = new ArrayList<>();
+                        AuditWriter.writeExchange(exchange);
+                        AuditWriter.writeExchangeEvent(exchange, "Manually created to correct Emis episodes of care (SD-99)");
                     }
 
-                    fixEmisEpisodesChangingDatePatient(serviceId, patientGuid, regRecords, statuses, filer, testMode);
+                    //now actually do the fixing
+                    for (String patientGuid : hmRegRecords.keySet()) {
 
-                    done ++;
-                    if (done % 1000 == 0) {
-                        LOG.debug("Done " + done + " patients");
+                        List<RegRecord> regRecords = hmRegRecords.get(patientGuid);
+                        List<RegStatus> statuses = hmRegStatuses.get(patientGuid);
+                        if (statuses == null) {
+                            statuses = new ArrayList<>();
+                        }
+
+                        fixEmisEpisodesChangingDatePatient(serviceId, patientGuid, regRecords, statuses, filer, testMode);
+
+                        done++;
+                        if (done % 1000 == 0) {
+                            LOG.debug("Done " + done + " patients");
+                        }
                     }
-                }
-                LOG.debug("Finished on " + done + " patients");
+                    LOG.debug("Finished on " + done + " patients");
 
 
+                } finally {
 
-                if (testMode) {
 
+                    if (testMode) {
+//TODO
 
-                } else {
+                    } else {
 
-                    //close down filer
-                    filer.waitToFinish();
+                        //close down filer
+                        filer.waitToFinish();
 
-                    //set multicast header
-                    String batchIdString = ObjectMapperPool.getInstance().writeValueAsString(batchIdsCreated.toArray());
-                    exchange.setHeader(HeaderKeys.BatchIdsJson, batchIdString);
+                        //set multicast header
+                        String batchIdString = ObjectMapperPool.getInstance().writeValueAsString(batchIdsCreated.toArray());
+                        exchange.setHeader(HeaderKeys.BatchIdsJson, batchIdString);
 
-                    //post to Rabbit protocol queue
-                    List<UUID> exchangeIds = new ArrayList<>();
-                    exchangeIds.add(exchange.getId());
-                    QueueHelper.postToExchange(exchangeIds, QueueHelper.ExchangeName.PROTOCOL, null, null);
+                        //post to Rabbit protocol queue
+                        List<UUID> exchangeIds = new ArrayList<>();
+                        exchangeIds.add(exchange.getId());
+                        QueueHelper.postToExchange(exchangeIds, QueueHelper.ExchangeName.PROTOCOL, null, null);
 
-                    //set this after posting to rabbit so we can't re-queue it later
-                    exchange.setHeaderAsBoolean(HeaderKeys.AllowQueueing, new Boolean(false)); //don't allow this to be re-queued
-                    AuditWriter.writeExchange(exchange);
+                        //set this after posting to rabbit so we can't re-queue it later
+                        exchange.setHeaderAsBoolean(HeaderKeys.AllowQueueing, new Boolean(false)); //don't allow this to be re-queued
+                        AuditWriter.writeExchange(exchange);
 
-                    //find and re-queue the Reg Status latest extract
-                    exchangeIds = new ArrayList<>();
-                    exchangeIds.add(latestRegStatusExchange);
-                    QueueHelper.postToExchange(exchangeIds, QueueHelper.ExchangeName.INBOUND, null, "Re-queue reg status after fixing Emis episodes SD-99");
+                        //find and re-queue the Reg Status latest extract
+/*
+                        exchangeIds = new ArrayList<>();
+                        exchangeIds.add(latestRegStatusExchange);
+                        QueueHelper.postToExchange(exchangeIds, QueueHelper.ExchangeName.INBOUND, null, "Re-queue reg status after fixing Emis episodes SD-99");
+*/
 
-                    //audit that we've done
-                    setServiceDoneBulkOperation(service, bulkOperationName);
+                        //audit that we've done
+                        setServiceDoneBulkOperation(service, bulkOperationName);
+                    }
                 }
             }
 
@@ -319,7 +476,7 @@ public class SpecialRoutines2 extends AbstractRoutine {
 
     private static void fixEmisEpisodesChangingDatePatient(UUID serviceId, String patientGuid,
                                                            List<RegRecord> regRecords, List<RegStatus> statuses,
-                                                           FhirResourceFiler filer, boolean testMode) throws Exception{
+                                                           FhirResourceFiler filer, boolean testMode) throws Exception {
 
 
         if (testMode) {
@@ -346,7 +503,7 @@ public class SpecialRoutines2 extends AbstractRoutine {
         //TODO - set latest dates on episodes
         //TODO - delete other episodes
         //TODO - re-run reg status file to create others
-
+//TODO - add closing Filer and sending to ProtocolQueue in FINALLY block
 
         UUID patientUuid = IdHelper.getEdsResourceId(serviceId, ResourceType.Patient, patientGuid);
         if (patientUuid == null) {
@@ -370,10 +527,9 @@ public class SpecialRoutines2 extends AbstractRoutine {
         });
 
 
-
         //find the source IDs that came from the proper extracts
         Set<String> properExtractSourceIds = new HashSet<>();
-        for (RegRecord regRecord: regRecords) {
+        for (RegRecord regRecord : regRecords) {
             properExtractSourceIds.add(regRecord.getSourceId());
         }
 
@@ -385,7 +541,7 @@ public class SpecialRoutines2 extends AbstractRoutine {
         Map<UUID, EpisodeOfCareBuilder> hmEpisodesToDelete = new HashMap<>();
 
         //retrieve all mappings to these existing episodes
-        for (ResourceWrapper w: episodeWrappers) {
+        for (ResourceWrapper w : episodeWrappers) {
             UUID uuid = w.getResourceId();
             hmEpisodeWrappersByUuid.put(uuid, w);
 
@@ -411,7 +567,7 @@ public class SpecialRoutines2 extends AbstractRoutine {
             //the reg status file)
             boolean cameFromProperExtract = false;
 
-            for (String sourceId: sourceIds) {
+            for (String sourceId : sourceIds) {
                 if (!properExtractSourceIds.contains(sourceId)) {
                     sourceIdsToDelete.add(sourceId);
                 } else {
@@ -422,7 +578,7 @@ public class SpecialRoutines2 extends AbstractRoutine {
             //if this episode has no mappings that came from the proper extract, then it was generated
             //from the reg status extract, so should be deleted
             if (!cameFromProperExtract) {
-                EpisodeOfCare episodeOfCare = (EpisodeOfCare)w.getResource();
+                EpisodeOfCare episodeOfCare = (EpisodeOfCare) w.getResource();
                 EpisodeOfCareBuilder builder = new EpisodeOfCareBuilder(episodeOfCare);
                 hmEpisodesToDelete.put(uuid, builder);
             }
@@ -432,14 +588,14 @@ public class SpecialRoutines2 extends AbstractRoutine {
         //of reality based on the new transform implementation
         List<RegRecord> runningState = new ArrayList<>();
 
-        for (RegRecord regRecord: regRecords) {
+        for (RegRecord regRecord : regRecords) {
 
             String end = regRecord.getEnd();
             RegistrationType registrationType = regRecord.getRegistrationType();
 
             //look at the current state to see which state our new record would map to
             RegRecord regRecordMatch = null;
-            for (int i=0; i<runningState.size(); i++) {
+            for (int i = 0; i < runningState.size(); i++) {
                 RegRecord check = runningState.get(i);
                 if (check.getEnd() == null
                         && check.getRegistrationType() == registrationType) {
@@ -454,7 +610,7 @@ public class SpecialRoutines2 extends AbstractRoutine {
             if (regRecordMatch == null
                     && end != null) {
 
-                for (int i=0; i<runningState.size(); i++) {
+                for (int i = 0; i < runningState.size(); i++) {
                     RegRecord check = runningState.get(i);
                     if (check.getEnd() != null
                             && check.getEnd().equals(end)
@@ -486,7 +642,7 @@ public class SpecialRoutines2 extends AbstractRoutine {
         Map<UUID, EpisodeOfCareBuilder> hmEpisodesToSave = new HashMap<>();
         Map<UUID, UUID> hmOldToNewEpisodeId = new HashMap<>();
 
-        for (RegRecord regRecord: runningState) {
+        for (RegRecord regRecord : runningState) {
 
             //the UUID we actually want to keep should be the oldest one in our chain
             RegRecord last = regRecord;
@@ -507,7 +663,7 @@ public class SpecialRoutines2 extends AbstractRoutine {
             if (!uuidToKeep.equals(uuidToWrite)) {
 
                 ResourceWrapper wrapper = hmEpisodeWrappersByUuid.get(uuidToWrite);
-                EpisodeOfCare episodeOfCare = (EpisodeOfCare)wrapper.getResource();
+                EpisodeOfCare episodeOfCare = (EpisodeOfCare) wrapper.getResource();
                 EpisodeOfCareBuilder builder = new EpisodeOfCareBuilder(episodeOfCare);
                 builder.setId(uuidToKeep.toString());
                 hmEpisodesToSave.put(uuidToKeep, builder);
@@ -527,7 +683,7 @@ public class SpecialRoutines2 extends AbstractRoutine {
                     //delete that episode
                     if (!hmEpisodesToDelete.containsKey(mappedUuid)) {
                         ResourceWrapper wrapper = hmEpisodeWrappersByUuid.get(mappedUuid);
-                        EpisodeOfCare episodeOfCare = (EpisodeOfCare)wrapper.getResource();
+                        EpisodeOfCare episodeOfCare = (EpisodeOfCare) wrapper.getResource();
                         EpisodeOfCareBuilder builder = new EpisodeOfCareBuilder(episodeOfCare);
                         hmEpisodesToDelete.put(mappedUuid, builder);
                     }
@@ -540,8 +696,8 @@ public class SpecialRoutines2 extends AbstractRoutine {
         //update encounters
         Map<EncounterBuilder, UUID> hmEncounterBuilderToOldEpisode = new HashMap<>();
         List<ResourceWrapper> encounterWrappers = resourceDal.getResourcesByPatient(serviceId, patientUuid, ResourceType.Encounter.toString());
-        for (ResourceWrapper w: encounterWrappers) {
-            Encounter e = (Encounter)w.getResource();
+        for (ResourceWrapper w : encounterWrappers) {
+            Encounter e = (Encounter) w.getResource();
             if (!e.hasEpisodeOfCare()) {
                 continue;
             }
@@ -597,13 +753,13 @@ public class SpecialRoutines2 extends AbstractRoutine {
                         }*/
 
             LOG.debug("Got " + hmEpisodeWrappersByUuid.size() + " episodes");
-            for (UUID episodeUuid: hmEpisodeWrappersByUuid.keySet()) {
+            for (UUID episodeUuid : hmEpisodeWrappersByUuid.keySet()) {
                 ResourceWrapper wrapper = hmEpisodeWrappersByUuid.get(episodeUuid);
 
                 //find all mappings to that ID
                 //LOG.trace("Episode UUID = " + episodeUuid);
                 List<String> sourceIds = new ArrayList<>();
-                for (String sourceId: hmEpisodeMappingsBySourceId.keySet()) {
+                for (String sourceId : hmEpisodeMappingsBySourceId.keySet()) {
                     UUID mappedUuid = hmEpisodeMappingsBySourceId.get(sourceId);
                     //LOG.trace("Compare against [" + sourceId + "] -> " + mappedUuid + " = " + (mappedUuid.equals(episodeUuid)));
                     if (mappedUuid.equals(episodeUuid)) {
@@ -616,40 +772,40 @@ public class SpecialRoutines2 extends AbstractRoutine {
             }
 
             LOG.debug("Got " + regRecords.size() + " proper extract records");
-            for (RegRecord regRecord: regRecords) {
+            for (RegRecord regRecord : regRecords) {
                 String sourceId = regRecord.getSourceId();
                 LOG.debug("    Start " + regRecord.getStart() + " End " + regRecord.getEnd() + " Type " + regRecord.getRegType() + " Source ID [" + sourceId + "]");
             }
 
             LOG.debug("Will delete " + sourceIdsToDelete.size() + " source ID mappings (from reg status extract)");
-            for (String sourceIdToDelete: sourceIdsToDelete) {
+            for (String sourceIdToDelete : sourceIdsToDelete) {
                 LOG.debug("    " + sourceIdToDelete);
             }
 
             LOG.debug("Will delete " + hmEpisodesToDelete.size() + " episodes (from reg status extract)");
-            for (UUID episodeUuid: hmEpisodesToDelete.keySet()) {
+            for (UUID episodeUuid : hmEpisodesToDelete.keySet()) {
                 EpisodeOfCareBuilder builder = hmEpisodesToDelete.get(episodeUuid);
                 LOG.debug("    " + builder.getResourceId());
             }
 
             LOG.debug("Will update " + hmMappingsToUpdate.size() + " source ID mappings");
-            for (String sourceId: hmMappingsToUpdate.keySet()) {
+            for (String sourceId : hmMappingsToUpdate.keySet()) {
                 UUID newUuid = hmMappingsToUpdate.get(sourceId);
                 UUID oldUuid = hmEpisodeMappingsBySourceId.get(sourceId);
                 LOG.debug("    " + sourceId + " -> " + newUuid + " (was " + oldUuid + ")");
             }
 
             LOG.debug("Will save " + hmEpisodesToSave.size() + " episodes");
-            for (UUID episodeUuid: hmEpisodesToSave.keySet()) {
+            for (UUID episodeUuid : hmEpisodesToSave.keySet()) {
                 EpisodeOfCareBuilder builder = hmEpisodesToDelete.get(episodeUuid);
                 LOG.debug("    " + builder.getResourceId());
                 LOG.debug("        " + builder);
             }
 
             LOG.debug("Will update " + hmEncounterBuilderToOldEpisode.size() + " encounters");
-            for (EncounterBuilder builder: hmEncounterBuilderToOldEpisode.keySet()) {
+            for (EncounterBuilder builder : hmEncounterBuilderToOldEpisode.keySet()) {
                 UUID oldEpisodeId = hmEncounterBuilderToOldEpisode.get(builder);
-                Encounter e = (Encounter)builder.getResource();
+                Encounter e = (Encounter) builder.getResource();
                 Reference ref = e.getEpisodeOfCare().get(0);
                 UUID newEpisodeUuid = UUID.fromString(ReferenceHelper.getReferenceId(ref));
                 LOG.debug("   " + builder.getResourceId() + " -> episode " + newEpisodeUuid + " (from " + oldEpisodeId + ")");
@@ -658,16 +814,16 @@ public class SpecialRoutines2 extends AbstractRoutine {
         } else {
 
             //update encounters
-            for (EncounterBuilder builder: hmEncounterBuilderToOldEpisode.keySet()) {
+            for (EncounterBuilder builder : hmEncounterBuilderToOldEpisode.keySet()) {
                 filer.savePatientResource(null, false, builder);
             }
 
-            for (UUID episodeUuid: hmEpisodesToSave.keySet()) {
+            for (UUID episodeUuid : hmEpisodesToSave.keySet()) {
                 EpisodeOfCareBuilder builder = hmEpisodesToDelete.get(episodeUuid);
                 filer.savePatientResource(null, false, builder);
             }
 
-            for (UUID episodeUuid: hmEpisodesToDelete.keySet()) {
+            for (UUID episodeUuid : hmEpisodesToDelete.keySet()) {
                 EpisodeOfCareBuilder builder = hmEpisodesToDelete.get(episodeUuid);
                 filer.deletePatientResource(null, false, builder);
             }
@@ -678,7 +834,7 @@ public class SpecialRoutines2 extends AbstractRoutine {
             String sql = "UPDATE resource_id_map SET eds_id = ? WHERE service_id = ? AND resource_type = ? AND source_id = ?";
             PreparedStatement ps = ptConnection.prepareStatement(sql);
 
-            for (String sourceId: hmMappingsToUpdate.keySet()) {
+            for (String sourceId : hmMappingsToUpdate.keySet()) {
                 UUID newUuid = hmMappingsToUpdate.get(sourceId);
 
                 ps.setString(1, newUuid.toString());
@@ -693,7 +849,7 @@ public class SpecialRoutines2 extends AbstractRoutine {
             sql = "DELETE FROM resource_id_map WHERE service_id = ? AND resource_type = ? AND source_id = ?";
             ps = ptConnection.prepareStatement(sql);
 
-            for (String sourceId: sourceIdsToDelete) {
+            for (String sourceId : sourceIdsToDelete) {
                 ps.setString(1, serviceId.toString());
                 ps.setString(2, ResourceType.EpisodeOfCare.toString());
                 ps.setString(3, sourceId);
@@ -835,7 +991,6 @@ public class SpecialRoutines2 extends AbstractRoutine {
         }
 
 
-
         public String getPatientGuid() {
             return patientGuid;
         }
@@ -886,9 +1041,6 @@ public class SpecialRoutines2 extends AbstractRoutine {
             return result;
         }*/
     }
-
-
-
-
-
 }
+
+

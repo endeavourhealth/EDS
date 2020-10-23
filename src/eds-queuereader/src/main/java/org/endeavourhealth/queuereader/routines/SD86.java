@@ -203,7 +203,7 @@ public class SD86 extends AbstractRoutine {
                     csvHelper.getStaffMemberCache().processChangedStaffMembers(csvHelper, filer);
 
                 } catch (Throwable ex) {
-                    LOG.error("Error doing service " + service);
+                    LOG.error("Error doing service " + service, ex);
                     throw ex;
 
                 } finally {
@@ -313,17 +313,22 @@ public class SD86 extends AbstractRoutine {
 
                         } else {
                             ResourceWrapper wrapper = resourceDal.getCurrentVersion(filer.getServiceId(), ResourceType.AllergyIntolerance.toString(), uuid);
-                            AllergyIntolerance resource = (AllergyIntolerance) wrapper.getResource();
 
-                            //remember "recorder" was mis-used so actually is the clinician field
-                            if (!resource.hasRecorder()) {
-                                AllergyIntoleranceBuilder builder = new AllergyIntoleranceBuilder(resource);
+                            //may get a null Allergy resource back if was previously deleted from the SRDrugSensitivity file and
+                            //happened to have the same unique ID as this SRCode record
+                            if (wrapper != null && !wrapper.isDeleted()) {
+                                AllergyIntolerance resource = (AllergyIntolerance) wrapper.getResource();
 
-                                Reference reference = ReferenceHelper.createReference(ResourceType.Practitioner, (String) referenceObj);
-                                reference = IdHelper.convertLocallyUniqueReferenceToEdsReference(reference, filer);
-                                builder.setClinician(reference);
+                                //remember "recorder" was mis-used so actually is the clinician field
+                                if (!resource.hasRecorder()) {
+                                    AllergyIntoleranceBuilder builder = new AllergyIntoleranceBuilder(resource);
 
-                                filer.savePatientResource(null, false, builder);
+                                    Reference reference = ReferenceHelper.createReference(ResourceType.Practitioner, (String) referenceObj);
+                                    reference = IdHelper.convertLocallyUniqueReferenceToEdsReference(reference, filer);
+                                    builder.setClinician(reference);
+
+                                    filer.savePatientResource(null, false, builder);
+                                }
                             }
                         }
                     }
