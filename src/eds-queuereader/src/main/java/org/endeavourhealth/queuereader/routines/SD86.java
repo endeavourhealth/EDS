@@ -449,10 +449,10 @@ public class SD86 extends AbstractRoutine {
                         continue;
                     }
 
-                    UUID uuid = IdHelper.getEdsResourceId(filer.getServiceId(), ResourceType.MedicationStatement, "" + recordIdStr);
+                    UUID uuid = IdHelper.getEdsResourceId(filer.getServiceId(), ResourceType.MedicationStatement, "RepeatTemplate:" + recordIdStr);
                     if (uuid == null) {
                         LOG.debug("Failed to find resource UUID for " + ResourceType.MedicationStatement + " " + recordIdStr + " in exchange " + exchange.getId() + " and file " + path);
-                        return;
+                        continue;
                     }
 
                     ResourceWrapper wrapper = resourceDal.getCurrentVersion(filer.getServiceId(), ResourceType.MedicationStatement.toString(), uuid);
@@ -460,7 +460,7 @@ public class SD86 extends AbstractRoutine {
 
                     //since Encounter supports multiple ones, just ensure we're not duplicating it
                     if (resource.hasInformationSource()) {
-                        return;
+                        continue;
                     }
 
                     MedicationStatementBuilder builder = new MedicationStatementBuilder(resource);
@@ -539,7 +539,7 @@ public class SD86 extends AbstractRoutine {
                     UUID uuid = IdHelper.getEdsResourceId(filer.getServiceId(), ResourceType.ReferralRequest, "" + recordIdStr);
                     if (uuid == null) {
                         LOG.warn("Failed to find resource UUID for " + ResourceType.ReferralRequest + " " + recordIdStr + " in exchange " + exchange.getId() + " and file " + path);
-                        return;
+                        continue;
                     }
 
                     ResourceWrapper wrapper = resourceDal.getCurrentVersion(filer.getServiceId(), ResourceType.ReferralRequest.toString(), uuid);
@@ -547,7 +547,7 @@ public class SD86 extends AbstractRoutine {
 
                     //since Encounter supports multiple ones, just ensure we're not duplicating it
                     if (resource.hasRequester()) {
-                        return;
+                        continue;
                     }
 
                     ReferralRequestBuilder builder = new ReferralRequestBuilder(resource);
@@ -612,20 +612,20 @@ public class SD86 extends AbstractRoutine {
                     UUID uuid = IdHelper.getEdsResourceId(filer.getServiceId(), ResourceType.ProcedureRequest, "" + recordIdStr);
                     if (uuid == null) {
                         LOG.warn("Failed to find resource UUID for " + ResourceType.ProcedureRequest + " " + recordIdStr + " in exchange " + exchange.getId() + " and file " + path);
-                        return;
+                        continue;
                     }
 
                     ResourceWrapper wrapper = resourceDal.getCurrentVersion(filer.getServiceId(), ResourceType.ProcedureRequest.toString(), uuid);
                     //will have missing ProcedureRequests due to bug that meant they weren't transformed
                     if (wrapper == null
                             || wrapper.isDeleted()) {
-                        return;
+                        continue;
                     }
                     ProcedureRequest resource = (ProcedureRequest)wrapper.getResource();
 
                     //since Encounter supports multiple ones, just ensure we're not duplicating it
                     if (resource.hasPerformer()) {
-                        return;
+                        continue;
                     }
 
                     ProcedureRequestBuilder builder = new ProcedureRequestBuilder(resource);
@@ -775,7 +775,7 @@ public class SD86 extends AbstractRoutine {
                     UUID uuid = IdHelper.getEdsResourceId(filer.getServiceId(), ResourceType.Immunization, "" + recordIdStr);
                     if (uuid == null) {
                         LOG.warn("Failed to find resource UUID for " + ResourceType.Immunization + " " + recordIdStr + " in exchange " + exchange.getId() + " and file " + path);
-                        return;
+                        continue;
                     }
 
                     ResourceWrapper wrapper = resourceDal.getCurrentVersion(filer.getServiceId(), ResourceType.Immunization.toString(), uuid);
@@ -783,7 +783,7 @@ public class SD86 extends AbstractRoutine {
 
                     //since Encounter supports multiple ones, just ensure we're not duplicating it
                     if (resource.hasPerformer()) {
-                        return;
+                        continue;
                     }
 
                     ImmunizationBuilder builder = new ImmunizationBuilder(resource);
@@ -848,7 +848,7 @@ public class SD86 extends AbstractRoutine {
                     UUID uuid = IdHelper.getEdsResourceId(filer.getServiceId(), ResourceType.Encounter, "" + recordIdStr);
                     if (uuid == null) {
                         LOG.warn("Failed to find resource UUID for " + ResourceType.Encounter + " " + recordIdStr + " in exchange " + exchange.getId() + " and file " + path);
-                        return;
+                        continue;
                     }
 
                     ResourceWrapper wrapper = resourceDal.getCurrentVersion(filer.getServiceId(), ResourceType.Encounter.toString(), uuid);
@@ -856,7 +856,7 @@ public class SD86 extends AbstractRoutine {
 
                     //since Encounter supports multiple ones, just ensure we're not duplicating it
                     if (resource.hasParticipant()) {
-                        return;
+                        continue;
                     }
 
                     EncounterBuilder builder = new EncounterBuilder(resource);
@@ -923,7 +923,7 @@ public class SD86 extends AbstractRoutine {
                     UUID uuid = IdHelper.getEdsResourceId(filer.getServiceId(), ResourceType.AllergyIntolerance, "" + recordIdStr);
                     if (uuid == null) {
                         LOG.warn("Failed to find resource UUID for " + ResourceType.AllergyIntolerance + " " + recordIdStr + " in exchange " + exchange.getId() + " and file " + path);
-                        return;
+                        continue;
                     }
 
                     ResourceWrapper wrapper = resourceDal.getCurrentVersion(filer.getServiceId(), ResourceType.AllergyIntolerance.toString(), uuid);
@@ -931,7 +931,7 @@ public class SD86 extends AbstractRoutine {
 
                     //remember "recorder" was mis-used so actually is the clinician field
                     if (resource.hasRecorder()) {
-                        return;
+                        continue;
                     }
 
                     AllergyIntoleranceBuilder builder = new AllergyIntoleranceBuilder(resource);
