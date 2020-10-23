@@ -13,8 +13,6 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 
-//import static org.endeavourhealth.core.xml.QueryDocument.ServiceContractType.PUBLISHER;
-
 public class Main {
 	private static final Logger LOG = LoggerFactory.getLogger(Main.class);
 
