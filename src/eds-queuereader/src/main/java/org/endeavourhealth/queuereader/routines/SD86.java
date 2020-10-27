@@ -388,17 +388,19 @@ public class SD86 extends AbstractRoutine {
 
                         } else {
                             ResourceWrapper wrapper = resourceDal.getCurrentVersion(filer.getServiceId(), ResourceType.Observation.toString(), uuid);
-                            Observation resource = (Observation) wrapper.getResource();
+                            if (wrapper != null && !wrapper.isDeleted()) {
+                                Observation resource = (Observation) wrapper.getResource();
 
-                            //since Encounter supports multiple ones, just ensure we're not duplicating it
-                            if (!resource.hasPerformer()) {
-                                ObservationBuilder builder = new ObservationBuilder(resource);
+                                //since Encounter supports multiple ones, just ensure we're not duplicating it
+                                if (!resource.hasPerformer()) {
+                                    ObservationBuilder builder = new ObservationBuilder(resource);
 
-                                Reference reference = ReferenceHelper.createReference(ResourceType.Practitioner, (String) referenceObj);
-                                reference = IdHelper.convertLocallyUniqueReferenceToEdsReference(reference, filer);
-                                builder.setClinician(reference);
+                                    Reference reference = ReferenceHelper.createReference(ResourceType.Practitioner, (String) referenceObj);
+                                    reference = IdHelper.convertLocallyUniqueReferenceToEdsReference(reference, filer);
+                                    builder.setClinician(reference);
 
-                                filer.savePatientResource(null, false, builder);
+                                    filer.savePatientResource(null, false, builder);
+                                }
                             }
                         }
                     }
