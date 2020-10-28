@@ -292,16 +292,18 @@ public class SD86 extends AbstractRoutine {
 
                         } else {
                             ResourceWrapper wrapper = resourceDal.getCurrentVersion(filer.getServiceId(), ResourceType.Procedure.toString(), uuid);
-                            Procedure resource = (Procedure) wrapper.getResource();
+                            if (wrapper != null && !wrapper.isDeleted()) {
+                                Procedure resource = (Procedure) wrapper.getResource();
 
-                            if (!resource.hasPerformer()) {
-                                ProcedureBuilder builder = new ProcedureBuilder(resource);
+                                if (!resource.hasPerformer()) {
+                                    ProcedureBuilder builder = new ProcedureBuilder(resource);
 
-                                Reference reference = ReferenceHelper.createReference(ResourceType.Practitioner, (String) referenceObj);
-                                reference = IdHelper.convertLocallyUniqueReferenceToEdsReference(reference, filer);
-                                builder.addPerformer(reference);
+                                    Reference reference = ReferenceHelper.createReference(ResourceType.Practitioner, (String) referenceObj);
+                                    reference = IdHelper.convertLocallyUniqueReferenceToEdsReference(reference, filer);
+                                    builder.addPerformer(reference);
 
-                                filer.savePatientResource(null, false, builder);
+                                    filer.savePatientResource(null, false, builder);
+                                }
                             }
                         }
                     }
@@ -340,17 +342,19 @@ public class SD86 extends AbstractRoutine {
 
                         } else {
                             ResourceWrapper wrapper = resourceDal.getCurrentVersion(filer.getServiceId(), ResourceType.FamilyMemberHistory.toString(), uuid);
-                            FamilyMemberHistory resource = (FamilyMemberHistory) wrapper.getResource();
+                            if (wrapper != null && !wrapper.isDeleted()) {
+                                FamilyMemberHistory resource = (FamilyMemberHistory) wrapper.getResource();
 
-                            //since Encounter supports multiple ones, just ensure we're not duplicating it
-                            if (!ExtensionConverter.hasExtension(resource, FhirExtensionUri.FAMILY_MEMBER_HISTORY_REPORTED_BY)) {
-                                FamilyMemberHistoryBuilder builder = new FamilyMemberHistoryBuilder(resource);
+                                //since Encounter supports multiple ones, just ensure we're not duplicating it
+                                if (!ExtensionConverter.hasExtension(resource, FhirExtensionUri.FAMILY_MEMBER_HISTORY_REPORTED_BY)) {
+                                    FamilyMemberHistoryBuilder builder = new FamilyMemberHistoryBuilder(resource);
 
-                                Reference reference = ReferenceHelper.createReference(ResourceType.Practitioner, (String) referenceObj);
-                                reference = IdHelper.convertLocallyUniqueReferenceToEdsReference(reference, filer);
-                                builder.setClinician(reference);
+                                    Reference reference = ReferenceHelper.createReference(ResourceType.Practitioner, (String) referenceObj);
+                                    reference = IdHelper.convertLocallyUniqueReferenceToEdsReference(reference, filer);
+                                    builder.setClinician(reference);
 
-                                filer.savePatientResource(null, false, builder);
+                                    filer.savePatientResource(null, false, builder);
+                                }
                             }
                         }
                     }
@@ -463,20 +467,22 @@ public class SD86 extends AbstractRoutine {
                     }
 
                     ResourceWrapper wrapper = resourceDal.getCurrentVersion(filer.getServiceId(), ResourceType.MedicationStatement.toString(), uuid);
-                    MedicationStatement resource = (MedicationStatement)wrapper.getResource();
+                    if (wrapper != null && !wrapper.isDeleted()) {
+                        MedicationStatement resource = (MedicationStatement) wrapper.getResource();
 
-                    //since Encounter supports multiple ones, just ensure we're not duplicating it
-                    if (resource.hasInformationSource()) {
-                        continue;
+                        //since Encounter supports multiple ones, just ensure we're not duplicating it
+                        if (resource.hasInformationSource()) {
+                            continue;
+                        }
+
+                        MedicationStatementBuilder builder = new MedicationStatementBuilder(resource);
+
+                        Reference reference = ReferenceHelper.createReference(ResourceType.Practitioner, (String) referenceObj);
+                        reference = IdHelper.convertLocallyUniqueReferenceToEdsReference(reference, filer);
+                        builder.setInformationSource(reference);
+
+                        filer.savePatientResource(null, false, builder);
                     }
-
-                    MedicationStatementBuilder builder = new MedicationStatementBuilder(resource);
-
-                    Reference reference = ReferenceHelper.createReference(ResourceType.Practitioner, (String)referenceObj);
-                    reference = IdHelper.convertLocallyUniqueReferenceToEdsReference(reference, filer);
-                    builder.setInformationSource(reference);
-
-                    filer.savePatientResource(null, false, builder);
                 } catch (Exception ex) {
                     String msg = "Error processing ID " + recordIdStr + " in exchange " + exchange.getId() + " and file " + path;
                     throw new Exception(msg, ex);
@@ -550,20 +556,22 @@ public class SD86 extends AbstractRoutine {
                     }
 
                     ResourceWrapper wrapper = resourceDal.getCurrentVersion(filer.getServiceId(), ResourceType.ReferralRequest.toString(), uuid);
-                    ReferralRequest resource = (ReferralRequest)wrapper.getResource();
+                    if (wrapper != null && !wrapper.isDeleted()) {
+                        ReferralRequest resource = (ReferralRequest) wrapper.getResource();
 
-                    //since Encounter supports multiple ones, just ensure we're not duplicating it
-                    if (resource.hasRequester()) {
-                        continue;
+                        //since Encounter supports multiple ones, just ensure we're not duplicating it
+                        if (resource.hasRequester()) {
+                            continue;
+                        }
+
+                        ReferralRequestBuilder builder = new ReferralRequestBuilder(resource);
+
+                        Reference reference = ReferenceHelper.createReference(ResourceType.Practitioner, "" + referenceObj);
+                        reference = IdHelper.convertLocallyUniqueReferenceToEdsReference(reference, filer);
+                        builder.setRequester(reference);
+
+                        filer.savePatientResource(null, false, builder);
                     }
-
-                    ReferralRequestBuilder builder = new ReferralRequestBuilder(resource);
-
-                    Reference reference = ReferenceHelper.createReference(ResourceType.Practitioner, "" + referenceObj);
-                    reference = IdHelper.convertLocallyUniqueReferenceToEdsReference(reference, filer);
-                    builder.setRequester(reference);
-
-                    filer.savePatientResource(null, false, builder);
                 } catch (Exception ex) {
                     String msg = "Error processing ID " + recordIdStr + " in exchange " + exchange.getId() + " and file " + path;
                     throw new Exception(msg, ex);
@@ -698,33 +706,37 @@ public class SD86 extends AbstractRoutine {
                     UUID uuid = IdHelper.getEdsResourceId(filer.getServiceId(), ResourceType.MedicationOrder, "" + recordIdStr);
                     if (uuid != null) {
                         ResourceWrapper wrapper = resourceDal.getCurrentVersion(filer.getServiceId(), ResourceType.MedicationOrder.toString(), uuid);
-                        MedicationOrder resource = (MedicationOrder) wrapper.getResource();
+                        if (wrapper != null && !wrapper.isDeleted()) {
+                            MedicationOrder resource = (MedicationOrder) wrapper.getResource();
 
-                        //since Encounter supports multiple ones, just ensure we're not duplicating it
-                        if (!resource.hasPrescriber()) {
-                            MedicationOrderBuilder builder = new MedicationOrderBuilder(resource);
+                            //since Encounter supports multiple ones, just ensure we're not duplicating it
+                            if (!resource.hasPrescriber()) {
+                                MedicationOrderBuilder builder = new MedicationOrderBuilder(resource);
 
-                            Reference reference = ReferenceHelper.createReference(ResourceType.Practitioner, (String) referenceObj);
-                            reference = IdHelper.convertLocallyUniqueReferenceToEdsReference(reference, filer);
-                            builder.setPrescriber(reference);
+                                Reference reference = ReferenceHelper.createReference(ResourceType.Practitioner, (String) referenceObj);
+                                reference = IdHelper.convertLocallyUniqueReferenceToEdsReference(reference, filer);
+                                builder.setPrescriber(reference);
 
-                            filer.savePatientResource(null, false, builder);
+                                filer.savePatientResource(null, false, builder);
+                            }
                         }
                     }
 
                     uuid = IdHelper.getEdsResourceId(filer.getServiceId(), ResourceType.MedicationStatement, "" + recordIdStr);
                     if (uuid != null) {
                         ResourceWrapper wrapper = resourceDal.getCurrentVersion(filer.getServiceId(), ResourceType.MedicationStatement.toString(), uuid);
-                        MedicationStatement resource = (MedicationStatement) wrapper.getResource();
+                        if (wrapper != null && !wrapper.isDeleted()) {
+                            MedicationStatement resource = (MedicationStatement) wrapper.getResource();
 
-                        if (!resource.hasInformationSource()) {
-                            MedicationStatementBuilder builder = new MedicationStatementBuilder(resource);
+                            if (!resource.hasInformationSource()) {
+                                MedicationStatementBuilder builder = new MedicationStatementBuilder(resource);
 
-                            Reference reference = ReferenceHelper.createReference(ResourceType.Practitioner, (String) referenceObj);
-                            reference = IdHelper.convertLocallyUniqueReferenceToEdsReference(reference, filer);
-                            builder.setInformationSource(reference);
+                                Reference reference = ReferenceHelper.createReference(ResourceType.Practitioner, (String) referenceObj);
+                                reference = IdHelper.convertLocallyUniqueReferenceToEdsReference(reference, filer);
+                                builder.setInformationSource(reference);
 
-                            filer.savePatientResource(null, false, builder);
+                                filer.savePatientResource(null, false, builder);
+                            }
                         }
                     }
                 } catch (Exception ex) {
@@ -786,20 +798,22 @@ public class SD86 extends AbstractRoutine {
                     }
 
                     ResourceWrapper wrapper = resourceDal.getCurrentVersion(filer.getServiceId(), ResourceType.Immunization.toString(), uuid);
-                    Immunization resource = (Immunization)wrapper.getResource();
+                    if (wrapper != null && !wrapper.isDeleted()) {
+                        Immunization resource = (Immunization) wrapper.getResource();
 
-                    //since Encounter supports multiple ones, just ensure we're not duplicating it
-                    if (resource.hasPerformer()) {
-                        continue;
+                        //since Encounter supports multiple ones, just ensure we're not duplicating it
+                        if (resource.hasPerformer()) {
+                            continue;
+                        }
+
+                        ImmunizationBuilder builder = new ImmunizationBuilder(resource);
+
+                        Reference reference = ReferenceHelper.createReference(ResourceType.Practitioner, (String) referenceObj);
+                        reference = IdHelper.convertLocallyUniqueReferenceToEdsReference(reference, filer);
+                        builder.setPerformer(reference);
+
+                        filer.savePatientResource(null, false, builder);
                     }
-
-                    ImmunizationBuilder builder = new ImmunizationBuilder(resource);
-
-                    Reference reference = ReferenceHelper.createReference(ResourceType.Practitioner, (String)referenceObj);
-                    reference = IdHelper.convertLocallyUniqueReferenceToEdsReference(reference, filer);
-                    builder.setPerformer(reference);
-
-                    filer.savePatientResource(null, false, builder);
                 } catch (Exception ex) {
                     String msg = "Error processing ID " + recordIdStr + " in exchange " + exchange.getId() + " and file " + path;
                     throw new Exception(msg, ex);
@@ -859,20 +873,22 @@ public class SD86 extends AbstractRoutine {
                     }
 
                     ResourceWrapper wrapper = resourceDal.getCurrentVersion(filer.getServiceId(), ResourceType.Encounter.toString(), uuid);
-                    Encounter resource = (Encounter)wrapper.getResource();
+                    if (wrapper != null && !wrapper.isDeleted()) {
+                        Encounter resource = (Encounter) wrapper.getResource();
 
-                    //since Encounter supports multiple ones, just ensure we're not duplicating it
-                    if (resource.hasParticipant()) {
-                        continue;
+                        //since Encounter supports multiple ones, just ensure we're not duplicating it
+                        if (resource.hasParticipant()) {
+                            continue;
+                        }
+
+                        EncounterBuilder builder = new EncounterBuilder(resource);
+
+                        Reference reference = ReferenceHelper.createReference(ResourceType.Practitioner, (String) referenceObj);
+                        reference = IdHelper.convertLocallyUniqueReferenceToEdsReference(reference, filer);
+                        builder.addParticipant(reference, EncounterParticipantType.PRIMARY_PERFORMER);
+
+                        filer.savePatientResource(null, false, builder);
                     }
-
-                    EncounterBuilder builder = new EncounterBuilder(resource);
-
-                    Reference reference = ReferenceHelper.createReference(ResourceType.Practitioner, (String)referenceObj);
-                    reference = IdHelper.convertLocallyUniqueReferenceToEdsReference(reference, filer);
-                    builder.addParticipant(reference, EncounterParticipantType.PRIMARY_PERFORMER);
-
-                    filer.savePatientResource(null, false, builder);
                 } catch (Exception ex) {
                     String msg = "Error processing ID " + recordIdStr + " in exchange " + exchange.getId() + " and file " + path;
                     throw new Exception(msg, ex);
@@ -934,20 +950,22 @@ public class SD86 extends AbstractRoutine {
                     }
 
                     ResourceWrapper wrapper = resourceDal.getCurrentVersion(filer.getServiceId(), ResourceType.AllergyIntolerance.toString(), uuid);
-                    AllergyIntolerance resource = (AllergyIntolerance)wrapper.getResource();
+                    if (wrapper != null && !wrapper.isDeleted()) {
+                        AllergyIntolerance resource = (AllergyIntolerance) wrapper.getResource();
 
-                    //remember "recorder" was mis-used so actually is the clinician field
-                    if (resource.hasRecorder()) {
-                        continue;
+                        //remember "recorder" was mis-used so actually is the clinician field
+                        if (resource.hasRecorder()) {
+                            continue;
+                        }
+
+                        AllergyIntoleranceBuilder builder = new AllergyIntoleranceBuilder(resource);
+
+                        Reference reference = ReferenceHelper.createReference(ResourceType.Practitioner, (String) referenceObj);
+                        reference = IdHelper.convertLocallyUniqueReferenceToEdsReference(reference, filer);
+                        builder.setClinician(reference); //sets the recorder field
+
+                        filer.savePatientResource(null, false, builder);
                     }
-
-                    AllergyIntoleranceBuilder builder = new AllergyIntoleranceBuilder(resource);
-
-                    Reference reference = ReferenceHelper.createReference(ResourceType.Practitioner, (String)referenceObj);
-                    reference = IdHelper.convertLocallyUniqueReferenceToEdsReference(reference, filer);
-                    builder.setClinician(reference); //sets the recorder field
-
-                    filer.savePatientResource(null, false, builder);
                 } catch (Exception ex) {
                     String msg = "Error processing ID " + recordIdStr + " in exchange " + exchange.getId() + " and file " + path;
                     throw new Exception(msg, ex);
