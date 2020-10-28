@@ -267,10 +267,8 @@ public class OpenEnvelope extends PipelineComponent {
 			return sdf.parse(timestampStr);
 		}
 
-		if (software.equalsIgnoreCase(MessageFormat.IMPERIAL_HL7_V2)) {
-			/*String timestampStr = findFirstElement(body, "datadate");*/
-			SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-			return sdf.parse(sdf.format(new Date()));
+		if (software.contains("HL7V2")) {
+			return new Date();
 		}
 
 		//all other systems have the body containing a list of files in JSON, which contain
