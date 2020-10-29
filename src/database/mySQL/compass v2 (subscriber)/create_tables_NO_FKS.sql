@@ -107,7 +107,8 @@ DROP TABLE IF EXISTS `schedule`;
 DROP TABLE IF EXISTS practitioner;
 DROP TABLE IF EXISTS organization;
 DROP TABLE IF EXISTS patient_address_match;
-
+DROP TABLE IF EXISTS concept;
+DROP TABLE IF EXISTS concept_map;
 
 -- Table: organization
 
@@ -944,6 +945,36 @@ CREATE INDEX patient_address_ralf_patient_id ON patient_address_ralf (patient_id
 CREATE INDEX patient_address_ralf_patient_address_id ON patient_address_ralf (patient_address_id);
 
 CREATE INDEX patient_address_ralf_patient_address_match_uprn_ralf_00 ON patient_address_ralf (patient_address_match_uprn_ralf00);
+
+
+
+
+CREATE TABLE concept (
+   dbid int(11) NOT NULL COMMENT 'Unique concept int DB identifier',
+   document int(11) COMMENT 'Document this concept originated from',
+   id varchar(150) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL COMMENT 'Unique human-readable concept id',
+   draft tinyint(1),
+   name varchar(255),
+   description varchar(400),
+   scheme bigint(20),
+   code varchar(40) CHARACTER SET utf8 COLLATE utf8_bin DEFAULT NULL,
+   use_count bigint(20),
+   updated datetime NOT NULL,
+   PRIMARY KEY (dbid),
+   UNIQUE KEY ix_scheme_code (scheme,code),
+   UNIQUE KEY ix_code (code)
+ );
+
+ CREATE TABLE concept_map (
+   legacy int(11) NOT NULL,
+   core int(11) NOT NULL,
+   updated datetime NOT NULL,
+   id int(11),
+   deleted tinyint(1),
+   PRIMARY KEY (id),
+   UNIQUE KEY concept_map_uq (legacy,deleted,updated)
+ );
+
 
 
 DELIMITER //
