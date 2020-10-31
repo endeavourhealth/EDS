@@ -7,7 +7,6 @@ import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.common.utility.SlackHelper;
 import org.endeavourhealth.core.configuration.MessageTransformInboundConfig;
 import org.endeavourhealth.core.database.dal.DalProvider;
-import org.endeavourhealth.core.database.dal.admin.LibraryDalI;
 import org.endeavourhealth.core.database.dal.admin.ServiceDalI;
 import org.endeavourhealth.core.database.dal.admin.models.Service;
 import org.endeavourhealth.core.database.dal.audit.ExchangeBatchDalI;
@@ -43,13 +42,9 @@ import org.slf4j.LoggerFactory;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
-//import org.endeavourhealth.transform.barts.BartsCsvToFhirTransformer;
-
 public class MessageTransformInbound extends PipelineComponent {
 	private static final Logger LOG = LoggerFactory.getLogger(MessageTransformInbound.class);
 
-	//private static final ServiceRepository serviceRepository = new ServiceRepository();
-	private static final LibraryDalI libraryRepository = DalProvider.factoryLibraryDal();
 	private static final ExchangeDalI auditRepository = DalProvider.factoryExchangeDal();
 	private static final ExchangeBatchDalI exchangeBatchRepository = DalProvider.factoryExchangeBatchDal();
 
@@ -174,7 +169,11 @@ public class MessageTransformInbound extends PipelineComponent {
 				} else if (software.equalsIgnoreCase(MessageFormat.IMPERIAL_HL7_V2)) {
 					processImperialHL7Transform(exchange, fhirResourceFiler, messageVersion);
 
-					//NOTE: If adding support for a new publisher software, remember to add to the OpenEnvelope class too
+				} else if (software.equalsIgnoreCase("BULK_TRANSFORM_TO_SUBSCRIBER")) {
+					//do nothing - we ended up with Exchanges re-queued into the inbound queue that should not have been re-queued
+					//so this just allows us to ignore them
+
+				//NOTE: If adding support for a new publisher software, remember to add to the OpenEnvelope class too
 				} else {
 					throw new SoftwareNotSupportedException(software, messageVersion);
 				}
@@ -514,11 +513,6 @@ public class MessageTransformInbound extends PipelineComponent {
 	}
 
 	private static String convertUUidsToStrings(List<UUID> uuids) throws PipelineException {
-
-		//transforms may return null lists, if they didn't insert any new data, so just handle the null
-		/*if (uuids == null) {
-			uuids = new ArrayList<>();
-		}*/
 
 		try {
 			return ObjectMapperPool.getInstance().writeValueAsString(uuids.toArray());
