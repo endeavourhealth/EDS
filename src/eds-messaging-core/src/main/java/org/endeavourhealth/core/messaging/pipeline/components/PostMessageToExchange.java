@@ -43,23 +43,15 @@ public class PostMessageToExchange extends PipelineComponent {
 
 	public boolean postToRabbit(Exchange exchange) throws PipelineException {
 
-		/**
-		Verify if EmisPatientGuids exists to requeue into rabbit, if exits, it will skip the AllowQueueing condition,
-		Bcz for the EmisMissingPatientGuids to requeue, we are not retrieving the parameter AllowQueueing from the database.
-		 */
-		String hasPatientGuidsToProcess = exchange.getHeader(HeaderKeys.EmisPatientGuids);
-
-		if(hasPatientGuidsToProcess==null){
-			try {
-				Boolean canBeQueued = exchange.getHeaderAsBoolean(HeaderKeys.AllowQueueing);
-				if (canBeQueued != null
-						&& !canBeQueued.booleanValue()) {
-					return false;
-				}
-			} catch (Exception ex) {
-				throw new PipelineException("Error checking header keys", ex);
+		//if the exchange is flagged so as to prevent re-queuing, then ignore it
+		try {
+			Boolean canBeQueued = exchange.getHeaderAsBoolean(HeaderKeys.AllowQueueing);
+			if (canBeQueued != null
+					&& !canBeQueued.booleanValue()) {
+				return false;
 			}
-
+		} catch (Exception ex) {
+			throw new PipelineException("Error checking header keys", ex);
 		}
 
 		String routingKey = getRoutingKey(exchange, config);
