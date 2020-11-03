@@ -19,6 +19,7 @@ import org.endeavourhealth.core.messaging.pipeline.PipelineException;
 import org.endeavourhealth.core.queueing.ConnectionManager;
 import org.endeavourhealth.core.queueing.RabbitConfig;
 import org.endeavourhealth.core.queueing.RoutingManager;
+import org.endeavourhealth.transform.common.ExchangeHelper;
 import org.endeavourhealth.transform.common.TransformConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,14 +45,8 @@ public class PostMessageToExchange extends PipelineComponent {
 	public boolean postToRabbit(Exchange exchange) throws PipelineException {
 
 		//if the exchange is flagged so as to prevent re-queuing, then ignore it
-		try {
-			Boolean canBeQueued = exchange.getHeaderAsBoolean(HeaderKeys.AllowQueueing);
-			if (canBeQueued != null
-					&& !canBeQueued.booleanValue()) {
-				return false;
-			}
-		} catch (Exception ex) {
-			throw new PipelineException("Error checking header keys", ex);
+		if (!ExchangeHelper.isAllowRequeueing(exchange)) {
+			return false;
 		}
 
 		String routingKey = getRoutingKey(exchange, config);

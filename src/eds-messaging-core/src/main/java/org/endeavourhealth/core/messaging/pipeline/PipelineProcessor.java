@@ -105,6 +105,9 @@ public class PipelineProcessor {
 				return new PostToRest((PostToRestConfig) processConfig);
 			case "PGPDecryptConfig":
 				return new PGPDecrypt((PGPDecryptConfig) processConfig);
+			case "AuditLastMessageConfig":
+				return new AuditLastMessage((AuditLastMessageConfig) processConfig);
+
 			default:
 				throw new PipelineException("Unknown component : " + xmlTagName);
 		}

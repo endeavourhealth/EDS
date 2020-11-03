@@ -112,34 +112,15 @@ public class QueueHelper {
             UUID exchangeId = exchangeIds.get(i);
             Exchange exchange = AuditWriter.readExchange(exchangeId);
 
+            //if flagged to prevent queueing, then skip it
+            if (!ExchangeHelper.isAllowRequeueing(exchange)) {
+                continue;
+            }
+
             String exchangeEventStr = "Manually pushed into " + exchangeName.getName() + " exchange";
             if (!Strings.isNullOrEmpty(reason)) {
                 exchangeEventStr += " (" + reason + ")";
             }
-
-            //short-term hack to skip Emis Left & Dead extracts and allow us to catch up from the missing code issue
-            //this will need removing when we're ready to start processing these exchanges
-            /*if (exchangeName.equalsIgnoreCase(EXCHANGE_INBOUND)) { //difference case used on different servers
-                String software = exchange.getHeader(HeaderKeys.SourceSystem);
-                if (software.equals(MessageFormat.EMIS_CSV)) {
-                    Boolean isLeftAndDead = exchange.getHeaderAsBoolean("possible-left-and-dead");
-                    if (isLeftAndDead != null
-                            && isLeftAndDead.booleanValue()) {
-
-                        auditSkippingExchange(exchange);
-
-                        //actually, due to patient registrations being in the Left & Dead bulks, we need to process
-                        //a bare minimum from those files
-                        Set<String> filterForBulk = new HashSet<>();
-                        filterForBulk.add("Agreements_SharingOrganisation"); //always need to do this
-                        filterForBulk.add("Admin_Patient"); //only do this
-                        exchangeEventStr += filterOnFileTypes(filterForBulk, exchange);
-
-                        //continue;
-                    }
-                }
-            }*/
-
 
             //to make sure the latest setup applies, re-calculate the protocols that apply to this exchange
             if (specificSubscriberConfigNames != null

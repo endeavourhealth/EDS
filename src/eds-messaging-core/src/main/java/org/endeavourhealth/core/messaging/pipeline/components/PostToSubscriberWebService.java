@@ -1,13 +1,11 @@
 package org.endeavourhealth.core.messaging.pipeline.components;
 
-import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.core.configuration.PostToSubscriberWebServiceConfig;
 import org.endeavourhealth.core.database.dal.DalProvider;
 import org.endeavourhealth.core.database.dal.audit.ExchangeDalI;
 import org.endeavourhealth.core.database.dal.audit.QueuedMessageDalI;
 import org.endeavourhealth.core.database.dal.audit.models.Exchange;
 import org.endeavourhealth.core.database.dal.audit.models.ExchangeSubscriberSendAudit;
-import org.endeavourhealth.core.database.dal.audit.models.HeaderKeys;
 import org.endeavourhealth.core.messaging.pipeline.PipelineComponent;
 import org.endeavourhealth.core.messaging.pipeline.PipelineException;
 import org.endeavourhealth.core.messaging.pipeline.SubscriberBatch;
@@ -20,7 +18,6 @@ import org.endeavourhealth.transform.subscriber.SubscriberConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -39,15 +36,17 @@ public class PostToSubscriberWebService extends PipelineComponent {
 	@Override
 	public void process(Exchange exchange) throws PipelineException {
 
-		List<TransformBatch> transformBatches = MessageTransformOutbound.getTransformBatches(exchange);
-		UUID batchId = MessageTransformOutbound.getBatchId(transformBatches);
-
-		SubscriberBatch subscriberBatch = getSubscriberBatch(exchange);
-		UUID exchangeId = exchange.getId();
+		SubscriberBatch subscriberBatch = SubscriberBatch.getSubscriberBatch(exchange);
 
 		UUID queuedMessageId = subscriberBatch.getQueuedMessageId();
-		//String software = subscriberBatch.getSoftware();
-		//String softwareVersion = subscriberBatch.getSoftwareVersion(); //never used, so don't bother
+		if (queuedMessageId == null) {
+			//we may not have a queued message ID if we're just passing a message through RabbitMQ to
+			//track the last message from an exchange being applied, so just return out if so
+			return;
+		}
+
+		UUID batchId = findBatchId(exchange);
+		UUID exchangeId = exchange.getId();
 		String subscriberConfigName = subscriberBatch.getEndpoint();
 
 		try {
@@ -74,6 +73,11 @@ public class PostToSubscriberWebService extends PipelineComponent {
 			auditSending(exchangeId, batchId, subscriberConfigName, queuedMessageId, ex);
 			throw new PipelineException("Failed to send to " + subscriberConfigName + " for exchange " + exchangeId + " and batch " + batchId + " and queued message " + queuedMessageId, ex);
 		}
+	}
+
+	private UUID findBatchId(Exchange exchange) throws PipelineException {
+		List<TransformBatch> transformBatches = MessageTransformOutbound.getTransformBatches(exchange);
+		return MessageTransformOutbound.getBatchId(transformBatches);
 	}
 
 
@@ -129,75 +133,6 @@ public class PostToSubscriberWebService extends PipelineComponent {
 		} else {
 			throw new PipelineException("Unsupported outbound software " + subscriberConfig.getSubscriberType() + " for exchange " + exchangeId + " and batch " + batchId);
 		}
-	}
-
-	/*private void sendToSubscriberOldWay(String payload, UUID exchangeId, UUID batchId, UUID queuedMessageId, String software, String endpoint) throws Exception {
-
-		if (software.equals(MessageFormat.ENTERPRISE_CSV)) {
-			EnterpriseFiler.file(batchId, queuedMessageId, payload, endpoint);
-
-		} else if (software.equals(MessageFormat.PCR_CSV)) {
-			PCRFiler.file(batchId, payload, endpoint);
-
-		} else if (software.equals(MessageFormat.SUBSCRIBER_CSV)) {
-			SubscriberFiler.file(batchId, queuedMessageId, payload, endpoint);
-
-		} else {
-			throw new PipelineException("Unsupported outbound software " + software + " for exchange " + exchangeId + " and batch " + batchId);
-		}
-	}*/
-
-	/*private static void sendHttpPost(String payload, String configName) throws Exception {
-
-		//String url = "http://127.0.0.1:8002/notify";
-		//String url = "http://localhost:8002";
-		//String url = "http://posttestserver.com/post.php";
-
-		JsonNode config = ConfigManager.getConfigurationAsJson(configName, "vitruCare");
-		String url = config.get("url").asText();
-
-		if (url == null || url.length() <= "http://".length()) {
-			LOG.trace("No/invalid url : [" + url + "]");
-			return;
-		}
-
-		HttpClient client = HttpClientBuilder.create().build();
-		HttpPost post = new HttpPost(url);
-
-		HttpEntity entity = new ByteArrayEntity(payload.getBytes("UTF-8"));
-		post.setEntity(entity);
-
-		LOG.trace("Sending 'POST' request to URL : " + url);
-		LOG.trace("Post parameters : " + post.getEntity());
-
-		HttpResponse response = client.execute(post);
-		LOG.trace("Response Code : " + response.getStatusLine().getStatusCode());
-
-		BufferedReader rd = new BufferedReader(new InputStreamReader(response.getEntity().getContent()));
-
-		StringBuffer result = new StringBuffer();
-		String line = "";
-		while ((line = rd.readLine()) != null) {
-			result.append(line);
-		}
-
-		LOG.trace(result.toString());
-
-		int statusCode = response.getStatusLine().getStatusCode();
-		if (statusCode != HttpStatus.SC_OK) {
-			throw new IOException("Failed to post to " + url);
-		}
-	}*/
-
-
-	private static SubscriberBatch getSubscriberBatch(Exchange exchange) throws PipelineException {
-		String subscriberBatchJson = exchange.getHeader(HeaderKeys.SubscriberBatch);
-		try {
-			return ObjectMapperPool.getInstance().readValue(subscriberBatchJson, SubscriberBatch.class);
-		} catch (IOException e) {
-			throw new PipelineException("Error deserializing subscriber batch JSON", e);
-		}
-
 	}
 
 

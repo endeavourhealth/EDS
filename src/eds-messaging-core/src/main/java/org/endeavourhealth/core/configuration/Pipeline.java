@@ -1,13 +1,8 @@
-
 package org.endeavourhealth.core.configuration;
 
+import javax.xml.bind.annotation.*;
 import java.util.ArrayList;
 import java.util.List;
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlElements;
-import javax.xml.bind.annotation.XmlType;
 
 
 /**
@@ -38,6 +33,7 @@ import javax.xml.bind.annotation.XmlType;
  *           &lt;element name="PostToSubscriberWebService" type="{}PostToSubscriberWebServiceConfig" maxOccurs="unbounded" minOccurs="0"/>
  *           &lt;element name="PostToRest" type="{}PostToRestConfig" maxOccurs="unbounded" minOccurs="0"/>
  *           &lt;element name="PGPDecrypt" type="{}PGPDecryptConfig" maxOccurs="unbounded" minOccurs="0"/>
+ *           &lt;element name="AuditLastMessage" type="{}AuditLastMessageConfig" minOccurs="0"/>
  *         &lt;/choice>
  *       &lt;/sequence>
  *     &lt;/restriction>
@@ -70,7 +66,8 @@ public class Pipeline {
         @XmlElement(name = "RunDataDistributionProtocols", type = RunDataDistributionProtocolsConfig.class),
         @XmlElement(name = "PostToSubscriberWebService", type = PostToSubscriberWebServiceConfig.class),
         @XmlElement(name = "PostToRest", type = PostToRestConfig.class),
-        @XmlElement(name = "PGPDecrypt", type = PGPDecryptConfig.class)
+        @XmlElement(name = "PGPDecrypt", type = PGPDecryptConfig.class),
+        @XmlElement(name = "AuditLastMessage", type = AuditLastMessageConfig.class)
     })
     protected List<ComponentConfig> pipelineComponents;
 
@@ -109,6 +106,7 @@ public class Pipeline {
      * {@link PostToSubscriberWebServiceConfig }
      * {@link PostToRestConfig }
      * {@link PGPDecryptConfig }
+     * {@link AuditLastMessageConfig }
      * 
      * 
      */

@@ -57,6 +57,8 @@
                     <xs:element name="Exchange" type="xs:string" minOccurs="1" maxOccurs="1"/>
                     <xs:element name="RoutingHeader" type="xs:string" minOccurs="1" maxOccurs="unbounded"/>
                     <xs:element name="MulticastHeader" type="xs:string" minOccurs="0" maxOccurs="1"/>
+                    <xs:element name="AddLastMessageFlag" type="xs:boolean" minOccurs="0" maxOccurs="1"/>
+                    <xs:element name="PersistLastMessageFlag" type="xs:boolean" minOccurs="0" maxOccurs="1"/>
                 </xs:sequence>
             </xs:extension>
         </xs:complexContent>
@@ -125,4 +127,11 @@
             <xs:extension base="ComponentConfig"/>
         </xs:complexContent>
     </xs:complexType>
+
+    <xs:complexType name="AuditLastMessageConfig">
+        <xs:complexContent>
+            <xs:extension base="ComponentConfig"/>
+        </xs:complexContent>
+    </xs:complexType>
+
 </xs:schema>

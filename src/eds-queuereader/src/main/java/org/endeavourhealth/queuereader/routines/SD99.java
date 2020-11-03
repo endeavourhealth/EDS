@@ -3,7 +3,6 @@ package org.endeavourhealth.queuereader.routines;
 import com.google.common.base.Strings;
 import org.apache.commons.csv.*;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
-import org.endeavourhealth.common.fhir.ReferenceHelper;
 import org.endeavourhealth.common.fhir.schema.RegistrationType;
 import org.endeavourhealth.common.utility.FileHelper;
 import org.endeavourhealth.common.utility.JsonSerializer;
@@ -17,25 +16,16 @@ import org.endeavourhealth.core.database.dal.audit.models.HeaderKeys;
 import org.endeavourhealth.core.database.dal.eds.PatientSearchDalI;
 import org.endeavourhealth.core.database.dal.ehr.ResourceDalI;
 import org.endeavourhealth.core.database.dal.ehr.models.ResourceWrapper;
-import org.endeavourhealth.core.database.rdbms.ConnectionManager;
 import org.endeavourhealth.core.queueing.MessageFormat;
 import org.endeavourhealth.core.queueing.QueueHelper;
 import org.endeavourhealth.core.xml.transformError.TransformError;
 import org.endeavourhealth.transform.common.*;
-import org.endeavourhealth.transform.common.resourceBuilders.EncounterBuilder;
-import org.endeavourhealth.transform.common.resourceBuilders.EpisodeOfCareBuilder;
 import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
-import org.hl7.fhir.instance.model.Encounter;
-import org.hl7.fhir.instance.model.EpisodeOfCare;
-import org.hl7.fhir.instance.model.Reference;
 import org.hl7.fhir.instance.model.ResourceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -474,7 +464,7 @@ public class SD99 extends AbstractRoutine {
         }
     }
 
-    private static void fixEmisEpisodesChangingDatePatient(UUID serviceId, String patientGuid,
+    /*private static void fixEmisEpisodesChangingDatePatient(UUID serviceId, String patientGuid,
                                                            List<RegRecord> regRecords, List<RegStatus> statuses,
                                                            FhirResourceFiler filer, boolean testMode) throws Exception {
 
@@ -510,6 +500,18 @@ public class SD99 extends AbstractRoutine {
             throw new Exception("Failed to find patient UUID for GUID " + patientGuid);
         }
 
+
+
+        statuses.sort((o1, o2) -> {
+            return o1.compareTo(o2);
+        });
+
+        //find the source IDs that came from the proper extracts
+        Set<String> properExtractSourceIds = new HashSet<>();
+        for (RegRecord regRecord : regRecords) {
+            properExtractSourceIds.add(regRecord.getSourceId());
+        }
+
         //retrieve existing episodes
         ResourceDalI resourceDal = DalProvider.factoryResourceDal();
         List<ResourceWrapper> episodeWrappers = resourceDal.getResourcesByPatient(serviceId, patientUuid, ResourceType.EpisodeOfCare.toString());
@@ -522,34 +524,25 @@ public class SD99 extends AbstractRoutine {
             return;
         }
 
-        statuses.sort((o1, o2) -> {
-            return o1.compareTo(o2);
-        });
 
-
-        //find the source IDs that came from the proper extracts
-        Set<String> properExtractSourceIds = new HashSet<>();
-        for (RegRecord regRecord : regRecords) {
-            properExtractSourceIds.add(regRecord.getSourceId());
-        }
-
-        //get the resource_id_map records for all mappings to these episodes
         Map<UUID, ResourceWrapper> hmEpisodeWrappersByUuid = new HashMap<>();
         Map<String, UUID> hmEpisodeMappingsBySourceId = new HashMap<>();
 
         Set<String> sourceIdsToDelete = new HashSet<>();
         Map<UUID, EpisodeOfCareBuilder> hmEpisodesToDelete = new HashMap<>();
 
+
         //retrieve all mappings to these existing episodes
         for (ResourceWrapper w : episodeWrappers) {
             UUID uuid = w.getResourceId();
             hmEpisodeWrappersByUuid.put(uuid, w);
 
-            String sql = "SELECT source_id FROM resource_id_map WHERE resource_type = ? AND eds_id = ?";
+            String sql = "SELECT source_id FROM resource_id_map WHERE resource_type = ? AND eds_id = ? AND service_id = ?";
             Connection ptConnection = ConnectionManager.getPublisherTransformConnection(serviceId);
             PreparedStatement ps = ptConnection.prepareStatement(sql);
             ps.setString(1, ResourceType.EpisodeOfCare.toString());
             ps.setString(2, uuid.toString());
+            ps.setString(2, serviceId.toString());
             ResultSet rs = ps.executeQuery();
 
             List<String> sourceIds = new ArrayList<>();
@@ -563,9 +556,8 @@ public class SD99 extends AbstractRoutine {
             ps.close();
             ptConnection.close();
 
-            //find any source IDs that didn't come from the proper exract files (i.e. came from
-            //the reg status file)
-            boolean cameFromProperExtract = false;
+            //find any source IDs that didn't come from the proper extract files (i.e. came from the reg status file)
+            *//*boolean cameFromProperExtract = false;
 
             for (String sourceId : sourceIds) {
                 if (!properExtractSourceIds.contains(sourceId)) {
@@ -581,7 +573,7 @@ public class SD99 extends AbstractRoutine {
                 EpisodeOfCare episodeOfCare = (EpisodeOfCare) w.getResource();
                 EpisodeOfCareBuilder builder = new EpisodeOfCareBuilder(episodeOfCare);
                 hmEpisodesToDelete.put(uuid, builder);
-            }
+            }*//*
         }
 
         //go through the reg records from the proper extracts and work out the NEW version
@@ -718,7 +710,7 @@ public class SD99 extends AbstractRoutine {
             }
         }
 
-                    /*
+                    *//*
                     Map<UUID, ResourceWrapper> hmEpisodeWrappersByUuid = new HashMap<>();
                     Map<String, UUID> hmEpisodeMappingsBySourceId = new HashMap<>();
 
@@ -727,7 +719,7 @@ public class SD99 extends AbstractRoutine {
                     Map<String, UUID> hmMappingsToUpdate = new HashMap<>();
                     Map<UUID, EpisodeOfCareBuilder> hmEpisodesToDelete = new HashMap<>();
                     Map<UUID, EpisodeOfCareBuilder> hmEpisodesToSave = new HashMap<>();
-                    */
+                    *//*
 
         //if an encounter is in both maps, then something is wrong
         Set<UUID> hsEpisodeIds = new HashSet<>(hmEpisodesToDelete.keySet());
@@ -746,11 +738,11 @@ public class SD99 extends AbstractRoutine {
 
         if (testMode) {
 
-                        /*LOG.trace("Dumping source map size " + hmEpisodeMappingsBySourceId.size());
+                        *//*LOG.trace("Dumping source map size " + hmEpisodeMappingsBySourceId.size());
                         for (String sourceId: hmEpisodeMappingsBySourceId.keySet()) {
                             UUID mappedUuid = hmEpisodeMappingsBySourceId.get(sourceId);
                             LOG.trace("    SourceID [" + sourceId + "] -> " + mappedUuid);
-                        }*/
+                        }*//*
 
             LOG.debug("Got " + hmEpisodeWrappersByUuid.size() + " episodes");
             for (UUID episodeUuid : hmEpisodeWrappersByUuid.keySet()) {
@@ -860,8 +852,61 @@ public class SD99 extends AbstractRoutine {
 
             ptConnection.commit();
         }
-    }
+    }*/
 
+
+    private static void fixEmisEpisodesChangingDatePatient(UUID serviceId, String patientGuid,
+                                                           List<RegRecord> regRecords, List<RegStatus> statuses,
+                                                           FhirResourceFiler filer, boolean testMode) throws Exception {
+
+
+        if (testMode) {
+            LOG.trace("Doing patient " + patientGuid + " with " + regRecords.size() + " reg records and " + statuses.size() + " status records");
+        }
+
+
+        //delete all mappings that are NOT from the proper files
+        //delete all Episodes that are only from reg status file
+        //correct remaining mappings to point to single episode ID
+        //correct Episode, saving most recent version over the top
+        //save everything
+        //TODO - update ENCOUNTERS to point to new EPISODES!!!
+        //DONE - get the LATEST version of each episode and save over the new UUID
+        //TODO - update resource ID map to use new mappings
+        //TODO - delete any episode NOT mapped to now
+        //TODO - re-process the reg status file
+        //TODO - what about mappings left by old reg status transform?
+        //TODO - there will be old reg-status mappings from start ID to UUID - if we get data through for one of those dates
+        //TODO - update builder accordingly
+        //TODO - factor in reg type
+        //find an episode with the start date
+        //TODO - update START DATE -> UUID mappings to be correct
+        //TODO - set latest dates on episodes
+        //TODO - delete other episodes
+        //TODO - re-run reg status file to create others
+//TODO - add closing Filer and sending to ProtocolQueue in FINALLY block
+
+        UUID patientUuid = IdHelper.getEdsResourceId(serviceId, ResourceType.Patient, patientGuid);
+        if (patientUuid == null) {
+            throw new Exception("Failed to find patient UUID for GUID " + patientGuid);
+        }
+
+
+        //retrieve existing episodes
+        ResourceDalI resourceDal = DalProvider.factoryResourceDal();
+        List<ResourceWrapper> episodeWrappers = resourceDal.getResourcesByPatient(serviceId, patientUuid, ResourceType.EpisodeOfCare.toString());
+
+        //if only one episode then nothing to fix
+        if (episodeWrappers.size() == 1) {
+            if (testMode) {
+                LOG.trace("Patient " + patientGuid + " only has one episode so skipping");
+            }
+            return;
+        }
+
+
+
+    }
 
     static class RegStatus {
         private Date date;

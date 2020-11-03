@@ -1,4 +1,3 @@
-
 package org.endeavourhealth.core.configuration;
 
 import javax.xml.bind.annotation.XmlRegistry;
@@ -27,22 +26,6 @@ public class ObjectFactory {
      * 
      */
     public ObjectFactory() {
-    }
-
-    /**
-     * Create an instance of {@link QueueReaderConfiguration }
-     * 
-     */
-    public QueueReaderConfiguration createQueueReaderConfiguration() {
-        return new QueueReaderConfiguration();
-    }
-
-    /**
-     * Create an instance of {@link Pipeline }
-     * 
-     */
-    public Pipeline createPipeline() {
-        return new Pipeline();
     }
 
     /**
@@ -134,6 +117,14 @@ public class ObjectFactory {
     }
 
     /**
+     * Create an instance of {@link Pipeline }
+     * 
+     */
+    public Pipeline createPipeline() {
+        return new Pipeline();
+    }
+
+    /**
      * Create an instance of {@link PostMessageToLogConfig }
      * 
      */
@@ -171,6 +162,14 @@ public class ObjectFactory {
      */
     public MessageTransformOutboundConfig createMessageTransformOutboundConfig() {
         return new MessageTransformOutboundConfig();
+    }
+
+    /**
+     * Create an instance of {@link AuditLastMessageConfig }
+     * 
+     */
+    public AuditLastMessageConfig createAuditLastMessageConfig() {
+        return new AuditLastMessageConfig();
     }
 
     /**

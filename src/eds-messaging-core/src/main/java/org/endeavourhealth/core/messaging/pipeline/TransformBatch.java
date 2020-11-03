@@ -8,34 +8,17 @@ import java.util.UUID;
 public class TransformBatch {
 
 	public enum TransformAction {
-		DELTA,
-		FULL_LOAD,
-		FULL_DELETE;
-
-/*		@JsonCreator
-		public static TransformAction forValue(String value) {
-			for (TransformAction a: values()) {
-				if (a.name().equals(value)) {
-					return a;
-				}
-			}
-			throw new IllegalArgumentException("Unexpected action [" + value + "]");
-		}*/
+		DELTA, //apply just the changes in the exchange_batch
+		FULL_LOAD, //load all data for the patient (or all admin data)
+		FULL_DELETE, //delete all data for the patient
+		NONE; //don't make any changes
 	}
 
-	private UUID batchId; //used for audit purposes
-
-	/*private UUID protocolId;
-	private Map<ResourceType, List<UUID>> resourceIds;
-	private List<ServiceContract> subscribers;*/
-
-	//fields to replace the above
+	private UUID batchId;
 	private String subscriberConfigName;
 	private TransformAction action;
 
 	public TransformBatch() {
-		//resourceIds = new HashMap<>(); don't set to non-null, so it won't get serialised to JSON and we can eventually remove
-		//subscribers = new ArrayList<>(); don't set to non-null, so it won't get serialised to JSON and we can eventually remove
 	}
 
 	public UUID getBatchId() {
@@ -45,30 +28,6 @@ public class TransformBatch {
 	public void setBatchId(UUID batchId) {
 		this.batchId = batchId;
 	}
-
-	/*public UUID getProtocolId() {
-		return protocolId;
-	}
-
-	public void setProtocolId(UUID protocolId) {
-		this.protocolId = protocolId;
-	}
-
-	public Map<ResourceType, List<UUID>> getResourceIds() {
-		return resourceIds;
-	}
-
-	public void setResourceIds(Map<ResourceType, List<UUID>> resourceIds) {
-		this.resourceIds = resourceIds;
-	}
-
-	public List<ServiceContract> getSubscribers() {
-		return subscribers;
-	}
-
-	public void setSubscribers(List<ServiceContract> subscribers) {
-		this.subscribers = subscribers;
-	}*/
 
 	public String getSubscriberConfigName() {
 		return subscriberConfigName;
