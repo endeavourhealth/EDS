@@ -115,13 +115,14 @@ public class SD86 extends AbstractRoutine {
                     continue;
                 }
 
+                LOG.debug("Doing service " + service);
+
                 UUID serviceId = service.getId();
                 List<UUID> systemIds = SystemHelper.getSystemIdsForService(service);
                 if (systemIds.size() != 1) {
-                    throw new Exception("" + systemIds.size() + " system IDs found");
+                    throw new Exception("" + systemIds.size() + " system IDs found for service " + serviceId);
                 }
                 UUID systemId = systemIds.get(0);
-                LOG.debug("Doing service " + service);
 
                 //only get the last 100 since this all happened in the last few weeks
                 List<Exchange> exchanges = exchangeDal.getExchangesByService(serviceId, systemId, 100);
