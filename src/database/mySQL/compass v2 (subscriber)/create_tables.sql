@@ -1109,8 +1109,8 @@ CREATE TABLE concept (
    use_count bigint(20),
    updated datetime NOT NULL,
    PRIMARY KEY (dbid),
-   UNIQUE KEY ix_scheme_code (scheme,code),
-   UNIQUE KEY ix_code (code)
+   KEY ix_scheme_code (scheme,code),
+   KEY ix_code (code)
  );
  
  CREATE TABLE concept_map (
