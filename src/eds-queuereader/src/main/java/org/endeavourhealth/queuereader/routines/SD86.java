@@ -17,6 +17,7 @@ import org.endeavourhealth.core.database.dal.admin.SystemHelper;
 import org.endeavourhealth.core.database.dal.admin.models.Service;
 import org.endeavourhealth.core.database.dal.audit.ExchangeDalI;
 import org.endeavourhealth.core.database.dal.audit.models.Exchange;
+import org.endeavourhealth.core.database.dal.audit.models.ExchangeEvent;
 import org.endeavourhealth.core.database.dal.audit.models.HeaderKeys;
 import org.endeavourhealth.core.database.dal.ehr.ResourceDalI;
 import org.endeavourhealth.core.database.dal.ehr.models.ResourceWrapper;
@@ -94,6 +95,78 @@ public class SD86 extends AbstractRoutine {
             LOG.error("", t);
         }
     }*/
+
+    /**
+     * because of OOMs and similar, we have a handful of exchanges where the process bombed out before it did posting of stuff
+     * to RabbitMQ, so we need to pick up those exchanges and get them into the protocol queue
+     */
+    public static void requeueFailedExchanges() {
+        LOG.debug("Re-queue Failed Exchanges for SD-86");
+        try {
+            ServiceDalI serviceDal = DalProvider.factoryServiceDal();
+            ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
+
+            List<Service> services = serviceDal.getAll();
+            for (Service service: services) {
+
+                Map<String, String> tags = service.getTags();
+                if (tags == null
+                        || !tags.containsKey("TPP")) {
+                    continue;
+                }
+
+                UUID serviceId = service.getId();
+                List<UUID> systemIds = SystemHelper.getSystemIdsForService(service);
+                if (systemIds.size() != 1) {
+                    throw new Exception("" + systemIds.size() + " system IDs found");
+                }
+                UUID systemId = systemIds.get(0);
+                LOG.debug("Doing service " + service);
+
+                //only get the last 100 since this all happened in the last few weeks
+                List<Exchange> exchanges = exchangeDal.getExchangesByService(serviceId, systemId, 100);
+
+                //the list is most-recent-first, so iterate backwards
+                for (int i=exchanges.size()-1; i>=0; i--) {
+                    Exchange exchange = exchanges.get(i);
+
+                    //if this flag is set to false, then it was queued OK
+                    if (!ExchangeHelper.isAllowRequeueing(exchange)) {
+                        continue;
+                    }
+
+                    //check it was actually from our conversion
+                    boolean wasFromConversion = false;
+                    UUID exchangeId = exchange.getId();
+                    List<ExchangeEvent> events = exchangeDal.getExchangeEvents(exchangeId);
+                    for (ExchangeEvent event: events) {
+                        if (event.getEventDesc().contains("SD-86")) {
+                            wasFromConversion = true;
+                        }
+                    }
+                    if (!wasFromConversion) {
+                        continue;
+                    }
+
+                    LOG.debug("Queueing exchange " + exchange.getId());
+
+                    //post to Rabbit protocol queue
+                    List<UUID> exchangeIds = new ArrayList<>();
+                    exchangeIds.add(exchangeId);
+                    QueueHelper.postToExchange(exchangeIds, QueueHelper.ExchangeName.PROTOCOL, null, null);
+
+                    //set this after posting to rabbit so we can't re-queue it later
+                    exchange.setHeaderAsBoolean(HeaderKeys.AllowQueueing, new Boolean(false));
+                    AuditWriter.writeExchange(exchange);
+                }
+
+            }
+
+            LOG.debug("Re-queue Failed Exchanges for SD-86");
+        } catch (Throwable t) {
+            LOG.error("", t);
+        }
+    }
 
     /**
      * routine to fix SD-86

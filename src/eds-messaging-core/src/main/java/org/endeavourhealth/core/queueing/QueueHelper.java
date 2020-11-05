@@ -114,6 +114,7 @@ public class QueueHelper {
 
             //if flagged to prevent queueing, then skip it
             if (!ExchangeHelper.isAllowRequeueing(exchange)) {
+                LOG.debug("Skipping exchange " + exchange.getId() + " as flagged to not be queued");
                 continue;
             }
 

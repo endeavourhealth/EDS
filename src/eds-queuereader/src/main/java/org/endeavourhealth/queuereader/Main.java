@@ -156,7 +156,8 @@ public class Main {
 				orgOdsCodeRegex = args[2];
 			}
 			//SD86.testLookupTiming();
-			SD86.fixTppMissingPractitioners(onlySkipCompletedOnes, orgOdsCodeRegex);
+			//SD86.fixTppMissingPractitioners(onlySkipCompletedOnes, orgOdsCodeRegex);
+			SD86.requeueFailedExchanges();
 			System.exit(0);
 		}
 
