@@ -9,18 +9,22 @@ import org.endeavourhealth.common.utility.ThreadPoolError;
 import org.endeavourhealth.core.database.dal.DalProvider;
 import org.endeavourhealth.core.database.dal.admin.LibraryRepositoryHelper;
 import org.endeavourhealth.core.database.dal.admin.ServiceDalI;
+import org.endeavourhealth.core.database.dal.admin.models.Service;
 import org.endeavourhealth.core.database.dal.eds.PatientLinkDalI;
 import org.endeavourhealth.core.database.dal.eds.PatientSearchDalI;
 import org.endeavourhealth.core.database.dal.ehr.ResourceDalI;
 import org.endeavourhealth.core.database.dal.ehr.models.ResourceWrapper;
 import org.endeavourhealth.core.database.dal.reference.PostcodeDalI;
 import org.endeavourhealth.core.database.dal.reference.models.PostcodeLookup;
+import org.endeavourhealth.core.database.dal.subscriberTransform.SubscriberCohortDalI;
 import org.endeavourhealth.core.database.dal.subscriberTransform.SubscriberOrgMappingDalI;
 import org.endeavourhealth.core.database.dal.subscriberTransform.SubscriberPersonMappingDalI;
 import org.endeavourhealth.core.database.dal.subscriberTransform.SubscriberResourceMappingDalI;
+import org.endeavourhealth.core.database.dal.subscriberTransform.models.SubscriberCohortRecord;
 import org.endeavourhealth.core.database.rdbms.ConnectionManager;
 import org.endeavourhealth.core.database.rdbms.enterprise.EnterpriseConnector;
 import org.endeavourhealth.core.fhirStorage.ServiceInterfaceEndpoint;
+import org.endeavourhealth.core.subscribers.SubscriberHelper;
 import org.endeavourhealth.core.xml.QueryDocument.*;
 import org.endeavourhealth.subscriber.filer.EnterpriseFiler;
 import org.endeavourhealth.transform.common.TransformConfig;
@@ -47,7 +51,7 @@ public class Uprn extends AbstractRoutine {
 
             JsonNode config = ConfigManager.getConfigurationAsJson(subscriberConfigName, "db_subscriber");
             JsonNode pseudoNode = config.get("pseudonymisation");
-            if (pseudoNode == null){
+            if (pseudoNode == null) {
                 LOG.error("No salt key found!");
                 return;
             }
@@ -158,7 +162,7 @@ public class Uprn extends AbstractRoutine {
 			}*/
 
             List<EnterpriseConnector.ConnectionWrapper> connectionWrappers = EnterpriseConnector.openSubscriberConnections(subscriberConfigName);
-            for (EnterpriseConnector.ConnectionWrapper connectionWrapper: connectionWrappers) {
+            for (EnterpriseConnector.ConnectionWrapper connectionWrapper : connectionWrappers) {
                 Connection subscriberConnection = connectionWrapper.getConnection();
 
                 //we don't have a way to update the age for subscribers that don't have direct DB connectivity
@@ -535,7 +539,7 @@ public class Uprn extends AbstractRoutine {
 
                         //  Is a random UUID ok to use as a queued message ID
                         if (containerString != null) {
-                            org.endeavourhealth.subscriber.filer.SubscriberFiler.file(batchUUID,  UUID.randomUUID(), containerString, subscriberConfigName);
+                            org.endeavourhealth.subscriber.filer.SubscriberFiler.file(batchUUID, UUID.randomUUID(), containerString, subscriberConfigName);
                         }
 
                     } else {
@@ -625,6 +629,128 @@ public class Uprn extends AbstractRoutine {
         //handleErrors(errors);
     }
 
+    public static void bulkProcessUPRNThreadedNewWay(String subscriberConfigName,
+                                                     String orgOdsCodeRegex,
+                                                     // String protocolName,
+                                                     String outputFormat,
+                                                     String filePath,
+                                                     String debug,
+                                                     Integer threads,
+                                                     Integer QBeforeBlock) throws Exception {
+
+        Set<UUID> hsPatientUuids = new HashSet<>();
+        Set<UUID> hsServiceUuids = new HashSet<>();
+        File f = new File(filePath);
+        if (f.exists()) {
+            List<String> lines = Files.readAllLines(f.toPath());
+            for (String line : lines) {
+                hsPatientUuids.add(UUID.fromString(line));
+            }
+        }
+
+        /*
+        LibraryItem matchedLibraryItem = BulkHelper.findProtocolLibraryItem(protocolName);
+
+        if (matchedLibraryItem == null) {
+            LOG.debug("Protocol not found : " + protocolName);
+            return;
+        }
+        List<ServiceContract> l = matchedLibraryItem.getProtocol().getServiceContract();
+        String serviceId = "";
+        */
+
+        ServiceDalI serviceDal = DalProvider.factoryServiceDal();
+        List<Service> services = serviceDal.getAll();
+        SubscriberCohortDalI subscriberCohortDalI = DalProvider.factorySubscriberCohortDal();
+        String bulkOperationName = "Bulk load of patient_address_match and patient_address_ralf tables for " + subscriberConfigName;
+
+        ResourceDalI dal = DalProvider.factoryResourceDal();
+        PatientSearchDalI patientSearchDal = DalProvider.factoryPatientSearchDal();
+        SubscriberResourceMappingDalI enterpriseIdDal = DalProvider.factorySubscriberResourceMappingDal(subscriberConfigName);
+        ThreadPool threadPool = new ThreadPool(threads, QBeforeBlock);
+        Long ret;
+
+        // for (ServiceContract serviceContract : l) {
+        for (Service service : services) {
+
+            /*
+            if (serviceContract.getType().equals(ServiceContractType.PUBLISHER) && serviceContract.getActive() == ServiceContractActive.TRUE) {
+
+                UUID batchUUID = UUID.randomUUID();
+                serviceId = serviceContract.getService().getUuid();
+                UUID serviceUUID = UUID.fromString(serviceId);
+
+                if (hsServiceUuids.contains(serviceUUID)) {
+                    // already processed the service
+                    continue;
+                }
+             */
+
+            // List<UUID> patientIds = patientSearchDal.getPatientIds(serviceUUID, true);
+
+            if (shouldSkipService(service, orgOdsCodeRegex)) {
+                continue;
+            }
+
+            List<String> subscriberConfigNames = SubscriberHelper.getSubscriberConfigNamesForPublisher(null, service.getId(), service.getLocalId());
+            if (!subscriberConfigNames.contains(subscriberConfigName)) {
+                LOG.debug("Skipping " + service + " as not a publisher");
+                continue;
+            }
+
+            // check if already done
+            if (isServiceDoneBulkOperation(service, bulkOperationName)) {
+                LOG.debug("Skipping " + service + " as already done");
+                continue;
+            }
+
+            UUID batchUUID = UUID.randomUUID();
+            LOG.debug("Doing " + service);
+            UUID serviceId = service.getId();
+
+            // For bulkProcessUPRNThreaded above, this was done with the boolean set to true in the arguments for the getPatientIds call,
+            // But for for bulkProcessUPRNThreadedNewWay, this is done with the boolean set to false in the arguments for that method call
+            List<UUID> patientIds = patientSearchDal.getPatientIds(serviceId, false);
+            LOG.debug("Found" + patientIds.size() + "patients");
+
+            for (UUID patientId : patientIds) {
+
+                // check if in cohort
+                SubscriberCohortRecord cohortRecord = subscriberCohortDalI.getLatestCohortRecord(subscriberConfigName, patientId, UUID.randomUUID());
+                if (cohortRecord == null
+                        || !cohortRecord.isInCohort()) {
+                    continue;
+                }
+
+                // check if we have processed the patient already
+                if (hsPatientUuids.contains(patientId)) {
+                    continue;
+                }
+
+                List<String> newLines = new ArrayList<>();
+                newLines.add(patientId.toString());
+                Files.write(f.toPath(), newLines, StandardOpenOption.CREATE, StandardOpenOption.APPEND, StandardOpenOption.WRITE);
+
+                LOG.info(patientId.toString());
+                ret = enterpriseIdDal.findEnterpriseIdOldWay("Patient", patientId.toString());
+                if (ret != null) {
+                    // check if the patient has previously been processed?
+                    LOG.info(ret.toString());
+                }
+                List<ThreadPoolError> errors = threadPool.submit(new UPRNCallable(serviceId, ResourceType.Patient.toString(), patientId, debug, dal, outputFormat, subscriberConfigName, batchUUID));
+                //handleErrors(errors);
+            }
+
+            hsServiceUuids.add(serviceId);
+
+            //audit what has been done
+            setServiceDoneBulkOperation(service, bulkOperationName);
+
+        }
+
+        List<ThreadPoolError> errors = threadPool.waitAndStop();
+        //handleErrors(errors);
+    }
 
     static class UPRNCallable implements Callable {
         private UUID serviceUUID;
@@ -635,6 +761,7 @@ public class Uprn extends AbstractRoutine {
         private String outputFormat;
         private String subscriberConfigName;
         private UUID batchUUID;
+
         public UPRNCallable(UUID serviceUUID, String ResourceType, UUID patientId, String debug, ResourceDalI dal, String outputFormat, String subscriberConfigName, UUID batchUUID) {
             this.serviceUUID = serviceUUID;
             this.ResourceType = ResourceType;
@@ -645,6 +772,7 @@ public class Uprn extends AbstractRoutine {
             this.subscriberConfigName = subscriberConfigName;
             this.batchUUID = batchUUID;
         }
+
         @Override
         public Object call() throws Exception {
 
@@ -684,11 +812,11 @@ public class Uprn extends AbstractRoutine {
                     }
                 }
                 return null;
-            }
-            catch(Exception e) {
+            } catch (Exception e) {
                 LOG.error(e.toString());
             }
             return null;
         }
     }
+
 }

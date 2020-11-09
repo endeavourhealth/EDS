@@ -53,6 +53,17 @@ public class Main {
             } else if (type.equalsIgnoreCase("ons_all")) {
                 OnsUpdater.updateOns(args);
 
+            /*
+            } else if (type.equalsIgnoreCase("emis_clinical_codes")) {
+                EmisClinicalCodesUpdater.updateEmisClinicalCodes(args);
+
+            } else if (type.equalsIgnoreCase("tpp_clinical_codes")) {
+                TppClinicalCodesUpdater.updateTppClinicalCodes(args);
+
+            } else if (type.equalsIgnoreCase("vision_clinical_codes")) {
+                VisionClinicalCodesUpdater.updateVisionClinicalCodes(args);
+             */
+
             } else if (type.equalsIgnoreCase("copy_all")) {
 
                 if (args.length != 2) {

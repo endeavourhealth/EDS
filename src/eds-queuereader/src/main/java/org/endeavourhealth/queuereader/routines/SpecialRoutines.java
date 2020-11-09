@@ -4779,8 +4779,8 @@ public abstract class SpecialRoutines extends AbstractRoutine {
 
     private static void saveCompassV2PatientAddressData(String subscriberConfigName, OutputContainer compassV2Container) throws Exception {
         List<SubscriberTableId> toKeep = new ArrayList<>();
-        toKeep.add(SubscriberTableId.PATIENT);
-        toKeep.add(SubscriberTableId.PATIENT_ADDRESS);
+        // toKeep.add(SubscriberTableId.PATIENT);
+        // toKeep.add(SubscriberTableId.PATIENT_ADDRESS);
         toKeep.add(SubscriberTableId.PATIENT_ADDRESS_MATCH);
         toKeep.add(SubscriberTableId.PATIENT_ADDRESS_RALF);
         compassV2Container.clearDownOutputContainer(toKeep);

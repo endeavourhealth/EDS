@@ -513,6 +513,28 @@ public class Main {
 			System.exit(0);
 		}
 
+		if (args.length >= 1 && args[0].contains("UPRNTHREADEDNEWWAY")) {
+
+			Integer threads = 5;
+			Integer QBeforeBlock = 10;
+			String[] tb = args[0].split(":", -1);
+			if (!tb[1].isEmpty()) {
+				threads = Integer.parseInt(tb[1]);
+			}
+			if (!tb[2].isEmpty()) {
+				QBeforeBlock = Integer.parseInt(tb[2]);
+			}
+
+			String configName = args[1];
+			String odsCodeRegex = args[2];
+			String outputFormat = args[3];
+			String filePath = args[4];
+			String debug = args[5];
+			Uprn.bulkProcessUPRNThreadedNewWay(configName, odsCodeRegex, outputFormat, filePath, debug, threads, QBeforeBlock);
+
+			System.exit(0);
+		}
+
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("FindMissedExchanges")) {
 			String tableName = args[1];
