@@ -513,7 +513,7 @@ public class Main {
 			System.exit(0);
 		}
 
-		if (args.length >= 1 && args[0].contains("UPRNTHREADEDNEWWAY")) {
+		if (args.length >= 1 && args[0].contains("UPRNANDRALFTHREADED")) {
 
 			Integer threads = 5;
 			Integer QBeforeBlock = 10;
