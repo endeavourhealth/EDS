@@ -222,8 +222,9 @@ BEGIN
 		ods_code varchar(25)
 	);
 
-	insert into tmp.acute_services values ('RQX');
-	insert into tmp.acute_services values ('R1H');
+	insert into tmp.acute_services values ('RQX'); -- Homerton
+	insert into tmp.acute_services values ('R1H'); -- Barts
+	insert into tmp.acute_services values ('RF4'); -- BHRUT
 
 	create index ix on tmp.acute_services (ods_code);
 
