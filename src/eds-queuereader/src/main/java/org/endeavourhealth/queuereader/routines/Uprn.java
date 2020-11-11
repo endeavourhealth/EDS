@@ -709,7 +709,8 @@ public class Uprn extends AbstractRoutine {
             UUID serviceId = service.getId();
 
             // For bulkProcessUPRNThreaded above, this was done with the boolean set to true in the arguments for the getPatientIds call,
-            // But for for bulkProcessUPRNThreadedNewWay, this is done with the boolean set to false in the arguments for that method call
+            // But for bulkProcessUPRNThreadedNewWay, this is done with the boolean set to false in the arguments for that method call
+            // boolean is the argument for includeDeleted
             List<UUID> patientIds = patientSearchDal.getPatientIds(serviceId, false);
             LOG.debug("Found " + patientIds.size() + " patients");
 

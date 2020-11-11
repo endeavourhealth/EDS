@@ -62,6 +62,8 @@ IF OBJECT_ID('dbo.organization', 'U') IS NOT NULL DROP TABLE dbo.organization
 GO
 IF OBJECT_ID('dbo.patient_address_match', 'U') IS NOT NULL DROP TABLE dbo.patient_address_match
 GO
+IF OBJECT_ID('dbo.patient_address_ralf', 'U') IS NOT NULL DROP TABLE dbo.patient_address_ralf
+GO
 
 CREATE TABLE [allergy_intolerance] (
 [id] bigint,
@@ -725,8 +727,8 @@ CREATE TABLE [patient_address_ralf] (
     [patient_address_id] bigint NOT NULL,
     [patient_address_match_uprn_ralf00] varchar(255) NOT NULL,
     [salt_name] varchar(50) NOT NULL,
-    [skid] varchar(255) NOT NULL,
-    PRIMARY KEY ([id], [patient_address_id],  [patient_address_match_uprn_ralf00])
+    [ralf] varchar(255) NOT NULL,
+    PRIMARY KEY ([id], [patient_address_id], [patient_address_match_uprn_ralf00])
 );
 GO
 
@@ -2385,6 +2387,77 @@ BEGIN
 GO
 ALTER TABLE [patient_additional] ENABLE TRIGGER [after_patient_additional_delete]
 GO
+
+
+
+CREATE TRIGGER [after_patient_address_match_insert]
+ON [patient_address_match]
+WITH EXECUTE AS CALLER
+AFTER INSERT
+AS
+BEGIN
+INSERT INTO event_log (
+    dt_change,
+    change_type,
+    table_id,
+    record_id
+) SELECT
+      GETDATE(),
+      0, -- insert
+      22, -- patient_address_match
+      id FROM inserted;
+END
+GO
+
+ALTER TABLE [patient_address_match] ENABLE TRIGGER [after_patient_address_match_insert]
+GO
+
+
+CREATE TRIGGER [after_patient_address_match_update]
+ON [patient_address_match]
+WITH EXECUTE AS CALLER
+AFTER UPDATE
+AS
+BEGIN
+INSERT INTO event_log (
+    dt_change,
+    change_type,
+    table_id,
+    record_id
+) SELECT
+      GETDATE(),
+      1, -- update
+      22, -- patient_address_match
+      id FROM deleted;
+END
+GO
+
+ALTER TABLE [patient_address_match] ENABLE TRIGGER [after_patient_address_match_update]
+GO
+
+
+CREATE TRIGGER [after_patient_address_match_delete]
+ON [patient_address_match]
+WITH EXECUTE AS CALLER
+AFTER DELETE
+AS
+BEGIN
+INSERT INTO event_log (
+    dt_change,
+    change_type,
+    table_id,
+    record_id
+) SELECT
+      GETDATE(),
+      2, -- delete
+      22, -- patient_address_match
+      id FROM deleted;
+END
+GO
+
+ALTER TABLE [patient_address_match] ENABLE TRIGGER [after_patient_address_match_delete]
+GO
+
 
 
 CREATE TRIGGER [after_patient_address_ralf_insert]

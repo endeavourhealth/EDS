@@ -78,6 +78,12 @@ drop trigger if exists after_diagnostic_order_delete;
 drop trigger if exists after_patient_pseudo_id_insert;
 drop trigger if exists after_patient_pseudo_id_update;
 drop trigger if exists after_patient_pseudo_id_delete;
+drop trigger if exists after_patient_address_match_insert;
+drop trigger if exists after_patient_address_match_update;
+drop trigger if exists after_patient_address_match_delete;
+drop trigger if exists after_patient_address_ralf_insert;
+drop trigger if exists after_patient_address_ralf_update;
+drop trigger if exists after_patient_address_ralf_delete;
 DROP TABLE IF EXISTS patient_pseudo_id;
 DROP TABLE IF EXISTS allergy_intolerance;
 DROP TABLE IF EXISTS diagnostic_order;
@@ -107,6 +113,7 @@ DROP TABLE IF EXISTS `schedule`;
 DROP TABLE IF EXISTS practitioner;
 DROP TABLE IF EXISTS organization;
 DROP TABLE IF EXISTS patient_address_match;
+DROP TABLE IF EXISTS patient_address_ralf;
 DROP TABLE IF EXISTS concept;
 DROP TABLE IF EXISTS concept_map;
 
@@ -266,7 +273,6 @@ CREATE TABLE patient_additional (
 CREATE INDEX ix_patient_additional_id
     ON patient_additional
     (value_id);
-
 
 -- Table: episode_of_care
 
@@ -736,7 +742,8 @@ CREATE INDEX ix_observation_person_id
   ON observation
   (person_id);
  
- -- Table: observation_additional 
+ -- Table: observation_additional
+
 CREATE TABLE observation_additional (
   id bigint NOT NULL COMMENT 'same as the id column on the observation table',
   property_id bigint NOT NULL COMMENT 'IM reference (i.e. significance)', -- IM reference 
@@ -1018,6 +1025,7 @@ CREATE TABLE event_log (
 );
 -- note: purposefully no primary key or any other constraint
 
+-- Table: patient_pseudo_id
 
 CREATE TABLE patient_pseudo_id
 (
@@ -1039,6 +1047,7 @@ CREATE UNIQUE INDEX ux_patient_pseudo_id ON patient_pseudo_id (id);
 CREATE INDEX patient_pseudo_id_patient ON patient_pseudo_id (patient_id);
 
 -- Table: patient_address_match
+
 CREATE TABLE `patient_address_match` (
   `id` bigint(20) NOT NULL,
   `uprn` varchar(255) COLLATE utf8_bin NOT NULL,
@@ -1071,6 +1080,7 @@ CREATE TABLE `patient_address_match` (
 );
 
 -- Table: patient_address_ralf
+
 CREATE TABLE patient_address_ralf (
     id bigint NOT NULL,
     organization_id bigint NOT NULL,
@@ -1079,7 +1089,7 @@ CREATE TABLE patient_address_ralf (
     patient_address_id bigint NOT NULL,
     patient_address_match_uprn_ralf00 varchar(255) NOT NULL,
     salt_name varchar(50) NOT NULL,
-    skid varchar(255) NOT NULL,
+    ralf varchar(255) NOT NULL,
     CONSTRAINT pk_patient_address_ralf PRIMARY KEY (id, patient_address_id, patient_address_match_uprn_ralf00),
     CONSTRAINT fk_patient_address_ralf_organization_id FOREIGN KEY (organization_id) REFERENCES organization (id),
     CONSTRAINT fk_patient_address_ralf_patient_id FOREIGN KEY (patient_id) REFERENCES patient (id),
@@ -1095,7 +1105,7 @@ CREATE INDEX patient_address_ralf_patient_address_id ON patient_address_ralf (pa
 
 CREATE INDEX patient_address_ralf_patient_address_match_uprn_ralf_00 ON patient_address_ralf (patient_address_match_uprn_ralf00);
 
-
+-- Table: concept
 
 CREATE TABLE concept (
    dbid int(11) NOT NULL COMMENT 'Unique concept int DB identifier',
@@ -1112,6 +1122,8 @@ CREATE TABLE concept (
    KEY ix_scheme_code (scheme,code),
    KEY ix_code (code)
  );
+
+-- Table: concept_map
  
  CREATE TABLE concept_map (
    legacy int(11) NOT NULL,
@@ -2702,7 +2714,6 @@ DELIMITER ;
 
 
 
-
 DELIMITER $$
 CREATE TRIGGER after_patient_pseudo_id_insert
   AFTER INSERT ON patient_pseudo_id
@@ -2762,6 +2773,8 @@ CREATE TRIGGER after_patient_pseudo_id_delete
   END$$
 DELIMITER ;
 
+
+
 DELIMITER $$
 CREATE TRIGGER after_patient_additional_insert
   AFTER INSERT ON patient_additional
@@ -2780,7 +2793,6 @@ CREATE TRIGGER after_patient_additional_insert
     );
   END$$
 DELIMITER ;
-
 
 
 DELIMITER $$
@@ -2803,7 +2815,6 @@ CREATE TRIGGER after_patient_additional_update
 DELIMITER ;
 
 
-
 DELIMITER $$
 CREATE TRIGGER after_patient_additional_delete
   AFTER DELETE ON patient_additional
@@ -2822,6 +2833,68 @@ CREATE TRIGGER after_patient_additional_delete
     );
   END$$
 DELIMITER ;
+
+
+
+DELIMITER $$
+CREATE TRIGGER after_patient_address_match_insert
+    AFTER INSERT ON patient_address_match
+    FOR EACH ROW
+BEGIN
+    INSERT INTO event_log (
+        dt_change,
+        change_type,
+        table_id,
+        record_id
+    ) VALUES (
+                 now(3), -- current time inc ms
+                 0, -- insert
+                 22, -- patient_address_match
+                 NEW.id
+             );
+END$$
+DELIMITER ;
+
+
+DELIMITER $$
+CREATE TRIGGER after_patient_address_match_update
+    AFTER UPDATE ON patient_address_match
+    FOR EACH ROW
+BEGIN
+    INSERT INTO event_log (
+        dt_change,
+        change_type,
+        table_id,
+        record_id
+    ) VALUES (
+                 now(3), -- current time inc ms
+                 1, -- update
+                 22, -- patient_address_match
+                 NEW.id
+             );
+END$$
+DELIMITER ;
+
+
+DELIMITER $$
+CREATE TRIGGER after_patient_address_match_delete
+    AFTER DELETE ON patient_address_match
+    FOR EACH ROW
+BEGIN
+    INSERT INTO event_log (
+        dt_change,
+        change_type,
+        table_id,
+        record_id
+    ) VALUES (
+                 now(3), -- current time inc ms
+                 2, -- delete
+                 22, -- patient_address_match
+                 OLD.id
+             );
+END$$
+DELIMITER ;
+
 
 
 DELIMITER $$
