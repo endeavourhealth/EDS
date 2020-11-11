@@ -2,7 +2,10 @@ package org.endeavourhealth.queuereader.routines;
 
 import com.google.common.base.Strings;
 import org.endeavourhealth.core.database.dal.admin.models.Service;
+import org.endeavourhealth.core.database.dal.audit.models.Exchange;
 import org.endeavourhealth.core.database.rdbms.ConnectionManager;
+import org.endeavourhealth.transform.common.ExchangeHelper;
+import org.endeavourhealth.transform.common.ExchangePayloadFile;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -14,6 +17,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.Date;
+import java.util.List;
 import java.util.regex.Pattern;
 
 /**
@@ -199,4 +203,17 @@ public abstract class AbstractRoutine {
         bis.close();
     }
 
+    public static String findFilePathInExchange(Exchange exchange, String fileType) {
+
+        String exchangeBody = exchange.getBody();
+        List<ExchangePayloadFile> files = ExchangeHelper.parseExchangeBody(exchangeBody);
+
+        for (ExchangePayloadFile file : files) {
+            if (file.getType().equals(fileType)) {
+                return file.getPath();
+            }
+        }
+
+        return null;
+    }
 }

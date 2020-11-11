@@ -21,6 +21,11 @@ public class Main {
 		LOG.info("Initialising config manager");
 		ConfigManager.initialize("queuereader", configId);
 
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("findVisionCodes")) {
+			SD186.findVisionCodes();
+			System.exit(0);
+		}
 
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("findExchangesNotSentToSubscriber")) {

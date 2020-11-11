@@ -320,7 +320,7 @@ public class SD86 extends AbstractRoutine {
         for (int i=0; i<exchanges.size(); i++) {
             Exchange exchange = exchanges.get(i);
 
-            String path = findFilePath(exchange, "Code");
+            String path = findFilePathInExchange(exchange, "Code");
             if (path == null) {
                 continue;
             }
@@ -499,7 +499,7 @@ public class SD86 extends AbstractRoutine {
         for (int i=0; i<exchanges.size(); i++) {
             Exchange exchange = exchanges.get(i);
 
-            String path = findFilePath(exchange, "RepeatTemplate");
+            String path = findFilePathInExchange(exchange, "RepeatTemplate");
             if (path == null) {
                 continue;
             }
@@ -574,7 +574,7 @@ public class SD86 extends AbstractRoutine {
         for (int i=0; i<exchanges.size(); i++) {
             Exchange exchange = exchanges.get(i);
 
-            String path = findFilePath(exchange, "ReferralOut");
+            String path = findFilePathInExchange(exchange, "ReferralOut");
             if (path == null) {
                 continue;
             }
@@ -663,7 +663,7 @@ public class SD86 extends AbstractRoutine {
         for (int i=0; i<exchanges.size(); i++) {
             Exchange exchange = exchanges.get(i);
 
-            String path = findFilePath(exchange, "Recall");
+            String path = findFilePathInExchange(exchange, "Recall");
             if (path == null) {
                 continue;
             }
@@ -741,7 +741,7 @@ public class SD86 extends AbstractRoutine {
         for (int i=0; i<exchanges.size(); i++) {
             Exchange exchange = exchanges.get(i);
 
-            String path = findFilePath(exchange, "PrimaryCareMedication");
+            String path = findFilePathInExchange(exchange, "PrimaryCareMedication");
             if (path == null) {
                 continue;
             }
@@ -830,7 +830,7 @@ public class SD86 extends AbstractRoutine {
         for (int i=0; i<exchanges.size(); i++) {
             Exchange exchange = exchanges.get(i);
 
-            String path = findFilePath(exchange, "Immunisation");
+            String path = findFilePathInExchange(exchange, "Immunisation");
             if (path == null) {
                 continue;
             }
@@ -905,7 +905,7 @@ public class SD86 extends AbstractRoutine {
         for (int i=0; i<exchanges.size(); i++) {
             Exchange exchange = exchanges.get(i);
 
-            String path = findFilePath(exchange, "Event");
+            String path = findFilePathInExchange(exchange, "Event");
             if (path == null) {
                 continue;
             }
@@ -982,7 +982,7 @@ public class SD86 extends AbstractRoutine {
         for (int i=0; i<exchanges.size(); i++) {
             Exchange exchange = exchanges.get(i);
 
-            String path = findFilePath(exchange, "DrugSensitivity");
+            String path = findFilePathInExchange(exchange, "DrugSensitivity");
             if (path == null) {
                 continue;
             }
@@ -1049,17 +1049,5 @@ public class SD86 extends AbstractRoutine {
     }
 
 
-    private static String findFilePath(Exchange exchange, String fileType) {
 
-        String exchangeBody = exchange.getBody();
-        List<ExchangePayloadFile> files = ExchangeHelper.parseExchangeBody(exchangeBody);
-
-        for (ExchangePayloadFile file : files) {
-            if (file.getType().equals(fileType)) {
-                return file.getPath();
-            }
-        }
-
-        return null;
-    }
 }
