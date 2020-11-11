@@ -11,6 +11,7 @@ import org.endeavourhealth.core.database.dal.admin.models.Service;
 import org.endeavourhealth.core.database.dal.audit.ExchangeDalI;
 import org.endeavourhealth.core.database.dal.audit.models.Exchange;
 import org.endeavourhealth.core.database.rdbms.ConnectionManager;
+import org.endeavourhealth.transform.common.ExchangeHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,6 +30,7 @@ public class SD186 extends AbstractRoutine {
             ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
 
             UUID systemId = UUID.fromString("4809b277-6b8d-4e5c-be9c-d1f1d62975c6");
+            String operationName = "Find distinct codes (SD-186)";
 
             List<Service> services = serviceDal.getAll();
             for (Service service: services) {
@@ -39,12 +41,21 @@ public class SD186 extends AbstractRoutine {
                     continue;
                 }
 
+                if (isServiceDoneBulkOperation(service, operationName)) {
+                    continue;
+                }
+
                 LOG.debug("Doing service " + service);
 
                 Map<String, AtomicInteger> hmCounts = new HashMap<>();
 
                 List<Exchange> exchanges = exchangeDal.getExchangesByService(service.getId(), systemId, Integer.MAX_VALUE);
                 for (Exchange exchange: exchanges) {
+
+                    if (!ExchangeHelper.isAllowRequeueing(exchange)) {
+                        continue;
+                    }
+
                     String path = findFilePathInExchange(exchange, "journal_data_extract");
                     if (Strings.isNullOrEmpty(path)) {
                         continue;
@@ -91,6 +102,8 @@ public class SD186 extends AbstractRoutine {
                 ps.close();
                 connection.close();
                 LOG.debug("   Updated code table");
+
+                setServiceDoneBulkOperation(service, operationName);
             }
 
         } catch (Throwable t) {
