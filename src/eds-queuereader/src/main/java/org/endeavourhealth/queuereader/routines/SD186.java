@@ -61,6 +61,7 @@ public class SD186 extends AbstractRoutine {
                         continue;
                     }
                     LOG.debug("    Doing exchange " + exchange.getId() + " -> " + path);
+                    int done = 0;
 
                     InputStreamReader isr = FileHelper.readFileReaderFromSharedStorage(path);
                     CSVFormat csvFormat = CSVFormat.DEFAULT.withHeader("PID","ID","DATE","RECORDED_DATE","CODE","SNOMED_CODE","BNF_CODE","HCP","HCP_TYPE","GMS","EPISODE","TEXT","RUBRIC","DRUG_FORM","DRUG_STRENGTH","DRUG_PACKSIZE","DMD_CODE","IMMS_STATUS","IMMS_COMPOUND","IMMS_SOURCE","IMMS_BATCH","IMMS_REASON","IMMS_METHOD","IMMS_SITE","ENTITY","VALUE1_NAME","VALUE1","VALUE1_UNITS","VALUE2_NAME","VALUE2","VALUE2_UNITS","END_DATE","TIME","CONTEXT","CERTAINTY","SEVERITY","LINKS","LINKS_EXT","SERVICE_ID","ACTION","SUBSET","DOCUMENT_ID");
@@ -70,6 +71,9 @@ public class SD186 extends AbstractRoutine {
                     while (iterator.hasNext()) {
                         CSVRecord record = iterator.next();
                         String code = record.get("CODE");
+                        if (Strings.isNullOrEmpty(code)) {
+                            continue;
+                        }
 
                         AtomicInteger count = hmCounts.get(code);
                         if (count == null) {
@@ -77,9 +81,15 @@ public class SD186 extends AbstractRoutine {
                             hmCounts.put(code, count);
                         }
                         count.incrementAndGet();
+
+                        done ++;
+                        if (done % 5000 == 0) {
+                            LOG.debug("    Done " + done + " lines");
+                        }
                     }
 
                     isr.close();
+                    LOG.debug("    Finished, reading " + done + " lines");
                 }
 
                 LOG.debug("   Done, finding " + hmCounts.size() + " codes");
