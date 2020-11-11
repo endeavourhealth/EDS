@@ -107,6 +107,7 @@ public class SD186 extends AbstractRoutine {
                     ps.setString(1, code);
                     ps.setInt(2, count.get());
                     ps.executeUpdate();
+                    connection.commit();
                 }
 
                 ps.close();
