@@ -1,5 +1,6 @@
 USE reference;
 
+DROP TABLE IF EXISTS read2_lookup;
 DROP TABLE IF EXISTS postcode_lookup;
 DROP TABLE IF EXISTS lsoa_lookup;
 DROP TABLE IF EXISTS msoa_lookup;
@@ -270,3 +271,9 @@ CREATE TABLE uprn_property_class (
   preferred_term varchar(255),
   CONSTRAINT pk_read2 PRIMARY KEY (read_code)
 );*/
+
+CREATE TABLE read2_lookup (
+   read_code varchar(5) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL,
+   preferred_term varchar(255) DEFAULT NULL,
+   PRIMARY KEY (`read_code`)
+ );

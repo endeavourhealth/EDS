@@ -24,6 +24,16 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class SD186 extends AbstractRoutine {
     private static final Logger LOG = LoggerFactory.getLogger(SD186.class);
 
+    /**
+     * Finds all distinct codes in Vision data and populates a table defined by:
+
+     create table tmp.vision_codes (
+        code varchar(255) CHARACTER SET latin1 COLLATE latin1_bin,
+        cnt int,
+        CONSTRAINT pk PRIMARY KEY (code)
+     );
+
+     */
     public static void findVisionCodes() {
         try {
             ServiceDalI serviceDal = DalProvider.factoryServiceDal();
