@@ -714,7 +714,6 @@ public class Uprn extends AbstractRoutine {
             List<UUID> patientIds = patientSearchDal.getPatientIds(serviceId, false);
             LOG.debug("Found " + patientIds.size() + " patients");
 
-
             for (UUID patientId : patientIds) {
 
                 // check if in cohort
