@@ -675,42 +675,48 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
     @Timed(absolute = true, name="ExchangeAuditEndpoint.GetTransformErrorSummaries")
     @Path("/getTransformErrorSummaries")
     public Response getTransformErrorSummaries(@Context SecurityContext sc) throws Exception {
-        super.setLogbackMarkers(sc);
+        try {
+            super.setLogbackMarkers(sc);
 
-        //get the errors
-        List<ExchangeTransformErrorState> errors = auditRepository.getAllErrorStates();
+            //get the errors
+            List<ExchangeTransformErrorState> errors = auditRepository.getAllErrorStates();
 
-        //generate the list of service details for each error
-        List<Service> services = new ArrayList<>();
-        for (ExchangeTransformErrorState error: errors) {
-            UUID serviceId = error.getServiceId();
-            Service service = serviceRepository.getById(serviceId);
-            services.add(service);
-        }
-
-        //convert service details to JSON objects and hash by UUID
-        List<JsonService> jsonServices = ServiceEndpoint.createAndPopulateJsonServices(services);
-        Map<UUID, JsonService> hmJsonServices = new HashMap<>();
-        for (JsonService jsonService: jsonServices) {
-            hmJsonServices.put(jsonService.getUuid(), jsonService);
-        }
-
-        //wrap the errors in JSON objects
-        List<JsonTransformServiceErrorSummary> ret = new ArrayList<>();
-
-        for (ExchangeTransformErrorState errorState: errors) {
-            JsonTransformServiceErrorSummary summary = convertErrorStateToJson(errorState, hmJsonServices);
-            if (summary != null) {
-                ret.add(summary);
+            //generate the list of service details for each error
+            List<Service> services = new ArrayList<>();
+            for (ExchangeTransformErrorState error : errors) {
+                UUID serviceId = error.getServiceId();
+                Service service = serviceRepository.getById(serviceId);
+                services.add(service);
             }
+
+            //convert service details to JSON objects and hash by UUID
+            List<JsonService> jsonServices = ServiceEndpoint.createAndPopulateJsonServices(services);
+            Map<UUID, JsonService> hmJsonServices = new HashMap<>();
+            for (JsonService jsonService : jsonServices) {
+                hmJsonServices.put(jsonService.getUuid(), jsonService);
+            }
+
+            //wrap the errors in JSON objects
+            List<JsonTransformServiceErrorSummary> ret = new ArrayList<>();
+
+            for (ExchangeTransformErrorState errorState : errors) {
+                JsonTransformServiceErrorSummary summary = convertErrorStateToJson(errorState, hmJsonServices);
+                if (summary != null) {
+                    ret.add(summary);
+                }
+            }
+
+            clearLogbackMarkers();
+
+            return Response
+                    .ok()
+                    .entity(ret)
+                    .build();
+        } catch (Throwable t) {
+            //added explicit try/catch as Tomcat log just shows "null pointer" without any exception
+            LOG.error("", t);
+            throw t;
         }
-
-        clearLogbackMarkers();
-
-        return Response
-                .ok()
-                .entity(ret)
-                .build();
     }
 
 
