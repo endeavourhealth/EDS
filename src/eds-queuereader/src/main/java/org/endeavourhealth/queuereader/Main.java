@@ -23,6 +23,16 @@ public class Main {
 		ConfigManager.initialize("queuereader", configId);
 
 		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("findEmisExchangesNotProcessed")) {
+			String odsCodeRegex = null;
+			if (args.length > 1) {
+				odsCodeRegex = args[1];
+			}
+			SD203.findEmisExchangesNotProcessed(odsCodeRegex);
+			System.exit(0);
+		}
+
+		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("findVisionCodes")) {
 			SD186.findVisionCodes();
 			System.exit(0);
