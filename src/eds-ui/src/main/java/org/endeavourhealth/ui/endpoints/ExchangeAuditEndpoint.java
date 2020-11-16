@@ -686,7 +686,10 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
             for (ExchangeTransformErrorState error : errors) {
                 UUID serviceId = error.getServiceId();
                 Service service = serviceRepository.getById(serviceId);
-                services.add(service);
+                //SD-205 if a service has been deleted, just skip it
+                if (service != null) {
+                    services.add(service);
+                }
             }
 
             //convert service details to JSON objects and hash by UUID
@@ -729,6 +732,11 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
         //find service for ID
         UUID serviceId = errorState.getServiceId();
         JsonService jsonService = hmJsonServices.get(serviceId);
+
+        //SD-205 if the service was deleted, we'll have a null entry for it
+        if (jsonService == null) {
+            return null;
+        }
 
         //too confusing to return only the audits that haven't been resubmitted, so just return all of them
         List<UUID> exchangeIdsInError = errorState.getExchangeIdsInError();
