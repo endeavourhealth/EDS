@@ -29,12 +29,12 @@ public class EmisClinicalCodesIMUpdater {
     private static void updateIMEmisClinicalCodes() throws Exception {
 
         EmisCodeDalI emisCodeDal = DalProvider.factoryEmisCodeDal();
+
         EmisClinicalCodesIMUpdaterDalI emisClinicalCodesIMUpdaterDal = DalProvider.factoryEmisClinicalCodesIMUpdaterDal();
 
         List<EmisClinicalCodeForIMUpdate> codeList = emisCodeDal.getClinicalCodesForIMUpdate();
 
         emisClinicalCodesIMUpdaterDal.updateIMForEmisClinicalCodes(codeList);
     }
-
 
 }
