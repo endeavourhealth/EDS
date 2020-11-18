@@ -73,7 +73,7 @@ public class SD217 extends AbstractRoutine {
                 PrintWriter fw = new PrintWriter(outputFile);
                 BufferedWriter bw = new BufferedWriter(fw);
                 CSVFormat format = EmisCsvToFhirTransformer.CSV_FORMAT
-                        .withHeader("Name", "ODS Code", "PatientGuid", "PreviousStart", "ChangedStart", "Direction", "PreviousRegType", "ChangedRegType", "RegTypeChanged", "PreviousFile", "ChangedFile"
+                        .withHeader("nhs_number", "date_of_birth", "patient_id", "journal_id", "imm_date", "imm_code", "imm_term", "imm_status", "included_in_extract"
                         );
                 CSVPrinter printer = new CSVPrinter(bw, format);
 
@@ -89,7 +89,7 @@ public class SD217 extends AbstractRoutine {
                         continue;
                     }
 
-                    String[] headers = new String[]{"nhs_number", "date_of_birth", "patient_id", "journal_id", "imm_date", "imm_code", "imm_term", "imm_status", "included_in_extract"};
+                    String[] headers = new String[]{"PID", "ID", "DATE", "RECORDED_DATE", "CODE", "SNOMED_CODE", "BNF_CODE", "HCP", "HCP_TYPE", "GMS", "EPISODE", "TEXT", "RUBRIC", "DRUG_FORM", "DRUG_STRENGTH", "DRUG_PACKSIZE", "DMD_CODE", "IMMS_STATUS", "IMMS_COMPOUND", "IMMS_SOURCE", "IMMS_BATCH", "IMMS_REASON", "IMMS_METHOD", "IMMS_SITE", "ENTITY", "VALUE1_NAME", "VALUE1", "VALUE1_UNITS", "VALUE2_NAME", "VALUE2", "VALUE2_UNITS", "END_DATE", "TIME", "CONTEXT", "CERTAINTY", "SEVERITY", "LINKS", "LINKS_EXT", "SERVICE_ID", "ACTION", "SUBSET", "DOCUMENT_ID"};
                     CSVFormat csvFormat = CSVFormat.DEFAULT.withHeader(headers);
 
                     InputStreamReader reader = FileHelper.readFileReaderFromSharedStorage(path);
