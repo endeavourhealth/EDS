@@ -12,6 +12,7 @@ import org.endeavourhealth.core.configuration.PostMessageToExchangeConfig;
 import org.endeavourhealth.core.database.dal.DalProvider;
 import org.endeavourhealth.core.database.dal.admin.LibraryDalI;
 import org.endeavourhealth.core.database.dal.admin.ServiceDalI;
+import org.endeavourhealth.core.database.dal.admin.SystemHelper;
 import org.endeavourhealth.core.database.dal.admin.models.ActiveItem;
 import org.endeavourhealth.core.database.dal.admin.models.Item;
 import org.endeavourhealth.core.database.dal.admin.models.Service;
@@ -682,14 +683,29 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
             List<ExchangeTransformErrorState> errors = auditRepository.getAllErrorStates();
 
             //generate the list of service details for each error
+            //and remove any errors that apply to obsolete/deleted services
             List<Service> services = new ArrayList<>();
-            for (ExchangeTransformErrorState error : errors) {
+            for (int i=errors.size()-1; i>=0; i--) {
+                ExchangeTransformErrorState error = errors.get(i);
                 UUID serviceId = error.getServiceId();
+                UUID systemId = error.getSystemId();
+
                 Service service = serviceRepository.getById(serviceId);
                 //SD-205 if a service has been deleted, just skip it
-                if (service != null) {
-                    services.add(service);
+                if (service == null) {
+                    errors.remove(i);
+                    continue;
                 }
+
+                //if a service no longer has the system, skip it
+                List<UUID> systemIds = SystemHelper.getSystemIdsForService(service);
+                if (!systemIds.contains(systemId)) {
+                    errors.remove(i);
+                    continue;
+                }
+
+                //if we make it here, we want to keep the error and add the service
+                services.add(service);
             }
 
             //convert service details to JSON objects and hash by UUID
@@ -725,18 +741,9 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
 
     private static JsonTransformServiceErrorSummary convertErrorStateToJson(ExchangeTransformErrorState errorState, Map<UUID, JsonService> hmJsonServices) throws Exception {
 
-        if (errorState == null) {
-            return null;
-        }
-
         //find service for ID
         UUID serviceId = errorState.getServiceId();
         JsonService jsonService = hmJsonServices.get(serviceId);
-
-        //SD-205 if the service was deleted, we'll have a null entry for it
-        if (jsonService == null) {
-            return null;
-        }
 
         //too confusing to return only the audits that haven't been resubmitted, so just return all of them
         List<UUID> exchangeIdsInError = errorState.getExchangeIdsInError();

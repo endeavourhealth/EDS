@@ -1,6 +1,8 @@
 package org.endeavourhealth.messagingapi.endpoints;
 
 import com.codahale.metrics.annotation.Timed;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.http.HttpStatus;
 import org.endeavourhealth.common.utility.MetricsHelper;
 import org.endeavourhealth.core.configuration.ConfigWrapper;
@@ -9,20 +11,15 @@ import org.endeavourhealth.core.database.dal.DalProvider;
 import org.endeavourhealth.core.database.dal.audit.ExchangeGeneralErrorDalI;
 import org.endeavourhealth.core.database.dal.audit.models.Exchange;
 import org.endeavourhealth.core.database.dal.audit.models.HeaderKeys;
+import org.endeavourhealth.core.database.dal.usermanager.caching.OrganisationCache;
 import org.endeavourhealth.core.messaging.pipeline.PipelineProcessor;
 import org.endeavourhealth.transform.common.AuditWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.security.RolesAllowed;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
+import javax.ws.rs.*;
+import javax.ws.rs.core.*;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.UUID;
@@ -137,5 +134,30 @@ public class PostMessageEndpoint {
                     .entity(exchange.getException().getMessage())
                     .build();
         }
+    }
+
+    /**
+     * SD-184
+     * Adding an API call to allow the SFTP Reader to check if a DPA exists for a publisher so we don't
+     * need to mess about with security groups and allow that server access to another DB
+     */
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name = "PostMessageEndpoint.hasDpa")
+    @Path("/hasDpa")
+    public Response hasDpa(@Context SecurityContext sc, @QueryParam("odsCode") String odsCode) throws Exception {
+
+        ObjectMapper mapper = new ObjectMapper();
+        ObjectNode obj = new ObjectNode(mapper.getNodeFactory());
+
+        boolean b = OrganisationCache.doesOrganisationHaveDPA(odsCode);
+        obj.put("hasDPA", b);
+        String retJson = mapper.writeValueAsString(obj);
+
+        return Response
+                .ok()
+                .entity(retJson)
+                .build();
     }
 }

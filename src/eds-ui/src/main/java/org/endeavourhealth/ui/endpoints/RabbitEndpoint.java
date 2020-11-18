@@ -155,7 +155,7 @@ public final class RabbitEndpoint extends AbstractEndpoint {
 		}
 		catch (Exception e) {
 			// TODO : Cleanly handle downed rabbit node
-			e.printStackTrace();
+			LOG.error("", e);
 		}
 
 		client.close();

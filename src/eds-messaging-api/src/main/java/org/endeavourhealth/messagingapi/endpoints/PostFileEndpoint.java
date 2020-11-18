@@ -21,6 +21,8 @@ import org.apache.http.entity.ContentType;
 import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.common.utility.MetricsHelper;
 import org.endeavourhealth.core.database.dal.usermanager.caching.OrganisationCache;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.security.RolesAllowed;
 import javax.servlet.ServletContext;
@@ -37,6 +39,8 @@ import java.util.List;
 
 @Path("/")
 public class PostFileEndpoint {
+	private static final Logger LOG = LoggerFactory.getLogger(PostFileEndpoint.class);
+
 	@POST
 	@Path("/PostFile")
 	@RolesAllowed({"dds_messaging_post_file"})
@@ -147,7 +151,6 @@ public class PostFileEndpoint {
 						}
 						catch (Exception ex) {
 							uploadedInputStream.close();
-							ex.printStackTrace();
 							throw ex;
 						}
 					}
@@ -173,12 +176,9 @@ public class PostFileEndpoint {
 		}
 		try {
 			return OrganisationCache.doesOrganisationHaveDPA(organisationId);
-			/*List<DataProcessingAgreementEntity> matchingDpa = DataProcessingAgreementEntity.getDataProcessingAgreementsForOrganisation(organisationId);
-			return matchingDpa.size()>0;*/
-		}
-		catch (Exception Ex) {
-			System.out.println("Exception in publisherHasDPA for organisationId ("+organisationId+") : " + Ex.getMessage());
-			Ex.printStackTrace();
+
+		} catch (Exception ex) {
+			LOG.error("Exception in publisherHasDPA for organisationId ("+organisationId+")", ex);
 			return false;
 		}
 	}
