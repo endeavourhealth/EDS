@@ -35,7 +35,10 @@ public class SD217 extends AbstractRoutine {
         try {
 
             UUID visionSystemId = UUID.fromString("4809b277-6b8d-4e5c-be9c-d1f1d62975c6");
-            Set<String> hsDataSetCodes = getDataSetCodes();
+
+            Set<String> hsLatestDataSetCodes = getLatestDataSetCodes();
+            Set<String> hsOldDataSetCodes = getOldDataSetCodes();
+            Date dobCutoff = sqlDateFormat.parse("1998-01-01");
 
             ServiceDalI serviceDal = DalProvider.factoryServiceDal();
             List<Service> services = serviceDal.getAll();
@@ -73,12 +76,12 @@ public class SD217 extends AbstractRoutine {
                 PrintWriter fw = new PrintWriter(outputFile);
                 BufferedWriter bw = new BufferedWriter(fw);
                 CSVFormat format = EmisCsvToFhirTransformer.CSV_FORMAT
-                        .withHeader("nhs_number", "date_of_birth", "patient_id", "journal_id", "imm_date", "imm_code", "imm_term", "imm_status", "included_in_extract"
+                        .withHeader("nhs_number", "date_of_birth", "patient_id", "journal_id", "imm_date", "imm_code", "imm_term", "imm_status", "included_in_current_extract", "included_in_old_extract"
                         );
                 CSVPrinter printer = new CSVPrinter(bw, format);
 
                 //the exchanges are most-recent-first so go through them in order so we're going backwards
-                for (Exchange exchange: exchanges) {
+                for (Exchange exchange : exchanges) {
 
                     if (!ExchangeHelper.isAllowRequeueing(exchange)) {
                         continue;
@@ -156,6 +159,11 @@ public class SD217 extends AbstractRoutine {
                         Date dob = hmDobs.get(patientId);
                         if (dob != null) {
                             dobStr = sqlDateFormat.format(dob);
+
+                            //skip any patients too old to be picked up in the extract
+                            if (dob.before(dobCutoff)) {
+                                continue;
+                            }
                         }
 
                         String immDateStr = "";
@@ -164,15 +172,19 @@ public class SD217 extends AbstractRoutine {
                             immDateStr = sqlDateFormat.format(d);
                         }
 
-                        boolean includedInExtract = hsDataSetCodes.contains(formattedCode);
+                        //only include records in the extract
+                        boolean includedInLatestExtract = hsLatestDataSetCodes.contains(formattedCode);
+                        boolean includedInOldExtract = hsOldDataSetCodes.contains(formattedCode);
+                        if (!includedInLatestExtract && !includedInOldExtract) {
+                            continue;
+                        }
 
-                        //"nhs_number", "date_of_birth", "patient_id", "journal_id", "imm_date", "imm_code", "imm_term", "imm_status", "included_in_extract"
-                        printer.printRecord(nhsNumber, dobStr, patientId, id, immDateStr, formattedCode, rubric, status, new Boolean(includedInExtract));
+                        printer.printRecord(nhsNumber, dobStr, patientId, id, immDateStr, formattedCode, rubric, status, new Boolean(includedInLatestExtract), new Boolean(includedInOldExtract));
                     }
 
                     parser.close();
 
-                    done ++;
+                    done++;
                     if (done % 100 == 0) {
                         LOG.debug("Done " + done);
                     }
@@ -202,8 +214,11 @@ public class SD217 extends AbstractRoutine {
      and ctv3_concept_id = 'read2';
 
      */
-    private static Set<String> getDataSetCodes() {
-        String[] codes = new String[]{
+    private static Set<String> getLatestDataSetCodes() {
+
+        Set<String> ret = new HashSet<>();
+
+        String[] newCodes = new String[]{
                 "6572.",
                 "65720",
                 "653..",
@@ -459,9 +474,7 @@ public class SD217 extends AbstractRoutine {
                 "65FM.",
                 "65D4."
         };
-
-        Set<String> ret = new HashSet<>();
-        for (String code: codes) {
+        for (String code: newCodes) {
             ret.add(code);
         }
         return ret;
@@ -569,5 +582,248 @@ public class SD217 extends AbstractRoutine {
 
             parser.close();
         }
+    }
+
+    public static Set<String> getOldDataSetCodes() {
+        Set<String> ret = new HashSet<>();
+
+        String[] codes = new String[] {
+                "65M10",
+                "653..",
+                "654..",
+                "6541.",
+                "6551.",
+                "6561.",
+                "6581.",
+                "654Z.",
+                "657A.",
+                "65a0.",
+                "65H1.",
+                "65H5.",
+                "65I1.",
+                "65I5.",
+                "65J1.",
+                "65J6.",
+                "65K1.",
+                "65K6.",
+                "65K9.",
+                "65L1.",
+                "65M7.",
+                "65MH.",
+                "657L.",
+                "65d0.",
+                "65710",
+                "65715",
+                "6542.",
+                "6552.",
+                "6562.",
+                "6582.",
+                "657B.",
+                "65a1.",
+                "65H2.",
+                "65H6.",
+                "65I2.",
+                "65I6.",
+                "65J2.",
+                "65J7.",
+                "65K2.",
+                "65K7.",
+                "65L2.",
+                "65M8.",
+                "65MI.",
+                "6571.",
+                "657E.",
+                "657I.",
+                "n4l4.",
+                "n4l5.",
+                "n4l6.",
+                "n4l8.",
+                "n4lx.",
+                "n4ly.",
+                "n4lz.",
+                "65d1.",
+                "6543.",
+                "6553.",
+                "6563.",
+                "6583.",
+                "657C.",
+                "65a2.",
+                "65H3.",
+                "65H7.",
+                "65I3.",
+                "65I7.",
+                "65J3.",
+                "65J8.",
+                "65K3.",
+                "65K8.",
+                "65L3.",
+                "65M9.",
+                "65MJ.",
+                "6572.",
+                "65720",
+                "657M.",
+                "657P.",
+                "6571A",
+                "657F.",
+                "65711",
+                "65716",
+                "657D.",
+                "657G.",
+                "65b..",
+                "65b0.",
+                "65712",
+                "65717",
+                "65A..",
+                "65A1.",
+                "65A2.",
+                "65B..",
+                "65F5.",
+                "65M1.",
+                "65M2.",
+                "65MC.",
+                "65VH.",
+                "n4k..",
+                "n4k1.",
+                "n4k2.",
+                "n4k3.",
+                "n4k4.",
+                "n4k5.",
+                "n4k6.",
+                "ZV064",
+                "657N.",
+                "6544.",
+                "6545.",
+                "6554.",
+                "6564.",
+                "6584.",
+                "65a3.",
+                "65H4.",
+                "65I4.",
+                "65I8.",
+                "65I9.",
+                "65J4.",
+                "65J5.",
+                "65J9.",
+                "65K4.",
+                "65KA.",
+                "65L4.",
+                "65MK.",
+                "65MP.",
+                "65MQ.",
+                "9N4c.",
+                "65MA.",
+                "65MB.",
+                "65FS.",
+                "65FT.",
+                "65FV.",
+                "65K5.",
+                "657S.",
+                "657S0",
+                "657J.",
+                "657J0",
+                "657J1",
+                "657J2",
+                "657J3",
+                "657J4",
+                "65F1.",
+                "65F10",
+                "65F2.",
+                "65F20",
+                "65F3.",
+                "65F30",
+                "65F6.",
+                "65F60",
+                "65ED.",
+                "65ED0",
+                "65ED1",
+                "65ED2",
+                "65ED3",
+                "9OX5.",
+                "9OX50",
+                "9OX51",
+                "9OX52",
+                "9OX53",
+                "9OX54",
+                "9OX55",
+                "9OX56",
+                "9OX57",
+                "n47D.",
+                "n47H.",
+                "65E20",
+                "65E21",
+                "65E22",
+                "65O..",
+                "65O1.",
+                "65O2.",
+                "65O3.",
+                "65O4.",
+                "65O5.",
+                "65O6.",
+                "65O7.",
+                "65O8.",
+                "65OZ.",
+                "ZV030",
+                "ZV047",
+                "ZV035",
+                "ZV063",
+                "ZV061",
+                "ZV048",
+                "ZV042",
+                "ZV04.",
+                "ZV036",
+                "ZV040",
+                "ZV043",
+                "ZV041",
+                "ZV037",
+                "ZV032",
+                "6579.",
+                "6513.",
+                "65MG.",
+                "65FD.",
+                "65F4.",
+                "6523.",
+                "651..",
+                "651Z.",
+                "65KZ.",
+                "65I..",
+                "65IZ.",
+                "65H..",
+                "65HZ.",
+                "65F7.",
+                "6575.",
+                "6511.",
+                "65MD.",
+                "65FA.",
+                "65D1.",
+                "6592.",
+                "6521.",
+                "9OX2.",
+                "65E..",
+                "655..",
+                "6573.",
+                "658..",
+                "658Z.",
+                "F034C",
+                "65D..",
+                "65DZ.",
+                "6576.",
+                "6512.",
+                "65ME.",
+                "65D2.",
+                "6522.",
+                "65GZ.",
+                "656..",
+                "656Z.",
+                "65MF.",
+                "65FC.",
+                "65D3.",
+                "6574.",
+                "652Z."
+        };
+        for (String code: codes) {
+            ret.add(code);
+        }
+        return ret;
+
     }
 }
