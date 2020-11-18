@@ -18,6 +18,7 @@ DROP TABLE IF EXISTS tpp_config_list_option_2;
 DROP TABLE IF EXISTS tpp_staff_member;
 DROP TABLE IF EXISTS tpp_staff_member_profile;
 DROP TABLE IF EXISTS tpp_multilex_action_group_lookup;
+DROP TABLE IF EXISTS tpp_ctv3_to_snomed;
 DROP TABLE IF EXISTS emis_location;
 DROP TABLE IF EXISTS emis_organisation;
 DROP TABLE IF EXISTS emis_user_in_role;
@@ -25,8 +26,10 @@ DROP TABLE IF EXISTS emis_organisation_location;
 DROP TABLE IF EXISTS emis_drug_code;
 DROP TABLE IF EXISTS emis_clinical_code_hiearchy;
 DROP TABLE IF EXISTS emis_clinical_code;
-DROP TABLE IF EXISTS vision_read2_lookup;
-DROP TABLE IF EXISTS tpp_ctv3_to_snomed;
+DROP TABLE IF EXISTS vision_read2_lookup; -- drop this old table and don't recreate
+DROP TABLE IF EXISTS vision_read2_code;
+DROP TABLE IF EXISTS vision_read2_to_snomed_map;
+
 
 /*CREATE TABLE emis_csv_code_map (
 	medication boolean,
@@ -439,7 +442,7 @@ ROW_FORMAT=COMPRESSED
 KEY_BLOCK_SIZE=8;
 
 
-CREATE TABLE vision_read2_lookup (
+/*CREATE TABLE vision_read2_lookup (
 	read_code varchar(5) binary COMMENT 'read2 code itself',
 	read_term varchar(255) null COMMENT 'term for read2 code',
 	snomed_concept_id bigint COMMENT 'mapped snomed concept ID',
@@ -450,7 +453,7 @@ CREATE TABLE vision_read2_lookup (
 	ROW_FORMAT=COMPRESSED
 	KEY_BLOCK_SIZE=8;
 
-CREATE INDEX ix_code_updated ON vision_read2_lookup (read_code, dt_last_updated);
+CREATE INDEX ix_code_updated ON vision_read2_lookup (read_code, dt_last_updated);*/
 
 CREATE TABLE  tpp_ctv3_to_snomed (
   ctv3_code varchar(5) NOT NULL,
@@ -466,3 +469,29 @@ CREATE INDEX ix_code_updated ON tpp_ctv3_to_snomed (ctv3_code, dt_last_updated);
 
 -- used for exporting code mappings
 CREATE INDEX ix_updated ON tpp_ctv3_to_snomed (dt_last_updated);
+
+
+
+CREATE TABLE vision_read2_code (
+	read_code varchar(5) binary NOT NULL COMMENT 'read2 code',
+	read_term varchar(255) NOT NULL COMMENT 'term for read2 code',
+	is_vision_code boolean NOT NULL COMMENT 'whether true Read2 or locally added',
+	approx_usage int NOT NULL COMMENT 'approximate count of usage in DDS',
+	dt_last_updated datetime NOT NULL COMMENT 'last time a record changed (not counting the usage count)',
+	CONSTRAINT pk_vision_read2_lookup PRIMARY KEY (read_code, read_term)
+)
+	ROW_FORMAT=COMPRESSED
+	KEY_BLOCK_SIZE=8
+	COMMENT 'Vision Read2 codes have multiple terms with no indicator which is preferred, so this table stores them all';
+
+CREATE TABLE vision_read2_to_snomed_map (
+	read_code varchar(5) binary NOT NULL COMMENT 'read2 code',
+	snomed_concept_id bigint(20) NOT NULL COMMENT 'mapped snomed concept ID',
+	d_last_used date NOT NULL COMMENT 'tells us the date this mapping was last used to help calculate if a mapping has changed',
+	dt_last_updated datetime NOT NULL COMMENT 'when this mapping last changed',
+	CONSTRAINT pk_vision_read2_lookup PRIMARY KEY (read_code)
+)
+	ROW_FORMAT=COMPRESSED
+	KEY_BLOCK_SIZE=8
+	COMMENT 'Stores the Vision Read2/local code to Snomed mappings';
+
