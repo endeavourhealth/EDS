@@ -254,7 +254,7 @@ export class SftpReaderComponent {
         }
         var pollingFrequencySec = status.pollFrequencySeconds;
         var pollingFrequencyMs = pollingFrequencySec * 1000;
-        pollingFrequencyMs = (pollingFrequencyMs * 1.1); //add 10% to the poling frequency so it's less touchy
+        pollingFrequencyMs = (pollingFrequencyMs * 2); //double the polling frequency to give a fair window
 
         //var now = new Date();
         var now = vm.statusesLastRefreshed; //use date of refresh rather than current date so it doesn't change if you don't refresh the page
