@@ -44,12 +44,6 @@ public class SD217 extends AbstractRoutine {
             List<Service> services = serviceDal.getAll();
             for (Service service : services) {
 
-                Map<String, String> tags = service.getTags();
-                if (tags == null
-                        || !tags.containsKey("EMIS")) {
-                    continue;
-                }
-
                 if (shouldSkipService(service, odsCodeRegex)) {
                     continue;
                 }
