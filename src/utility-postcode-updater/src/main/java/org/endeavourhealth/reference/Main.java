@@ -55,10 +55,11 @@ public class Main {
 
             } else if (type.equalsIgnoreCase("emis_clinical_codes")) {
                 EmisClinicalCodesIMUpdater.updateEmisClinicalCodes(args);
-            /*
-            } else if (type.equalsIgnoreCase("tpp_clinical_codes")) {
-                TppClinicalCodesUpdater.updateTppClinicalCodes(args);
 
+            } else if (type.equalsIgnoreCase("tpp_clinical_codes")) {
+                TppClinicalCodesIMUpdater.updateTppClinicalCodes(args);
+
+            /*
             } else if (type.equalsIgnoreCase("vision_clinical_codes")) {
                 VisionClinicalCodesUpdater.updateVisionClinicalCodes(args);
             */
@@ -85,7 +86,6 @@ public class Main {
             auditFailure(type, args, ex);
         }
     }
-
 
     private static void auditSuccess(String queryName, String[] args) throws Exception {
         ScheduledTaskAuditDalI dal = DalProvider.factoryScheduledTaskAuditDal();
