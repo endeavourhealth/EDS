@@ -10,6 +10,7 @@ import org.endeavourhealth.core.database.dal.audit.models.AuditAction;
 import org.endeavourhealth.core.database.dal.audit.models.AuditModule;
 import org.endeavourhealth.core.database.dal.datagenerator.SubscriberZipFileUUIDsDalI;
 import org.endeavourhealth.core.database.dal.datagenerator.models.RemoteFilingStatistics;
+import org.endeavourhealth.core.database.dal.datagenerator.models.RemoteFilingSubscriber;
 import org.endeavourhealth.core.database.rdbms.datagenerator.models.RdbmsSubscriberZipFileUUIDs;
 import org.endeavourhealth.coreui.endpoints.AbstractEndpoint;
 import org.slf4j.Logger;
@@ -78,6 +79,44 @@ public class RemoteFilingEndpoint extends AbstractEndpoint {
                 "Remote Filing Statistics");
 
         List<RemoteFilingStatistics> fileUUIDs = remoteRepository.getStatistics(timeframe);
+
+        return Response
+                .ok()
+                .entity(fileUUIDs)
+                .build();
+    }
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="RemoteFilingEndpoint.getAllSubscribers")
+    @Path("/getSubscribers")
+    public Response getSubscribers(@Context SecurityContext sc) throws Exception {
+
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
+                "Remote Filing Subscribers");
+
+        List<RemoteFilingSubscriber> subscribers = remoteRepository.getSubscribers();
+
+        return Response
+                .ok()
+                .entity(subscribers)
+                .build();
+    }
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="RemoteFilingEndpoint.getRemoteFilingSubscriberStats")
+    @Path("/getSubscriberStatistics")
+    public Response getRemoteFilingSubscriberStats(@Context SecurityContext sc,
+                                                    @QueryParam("subscriberId") Integer subscriberId,
+                                                    @QueryParam("timeFrame") String timeFrame) throws Exception {
+
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
+                "Remote Filing Subscriber Statistics");
+
+        List<RemoteFilingStatistics> fileUUIDs = remoteRepository.getSubscriberStatistics(subscriberId, timeFrame);
 
         return Response
                 .ok()

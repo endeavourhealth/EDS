@@ -4,6 +4,7 @@ import {Http, URLSearchParams} from "@angular/http";
 import {Observable} from "rxjs";
 import {SubscriberZipFileUUID} from "./models/SubscriberZipFileUUID";
 import {RemoteFilingStatistics} from "./models/RemoteFilingStatistics";
+import {RemoteFilingSubscribers} from "./models/RemoteFilingSubscribers";
 
 @Injectable()
 export class RemoteFilingService extends BaseHttp2Service {
@@ -26,5 +27,18 @@ export class RemoteFilingService extends BaseHttp2Service {
         params.set('timeframe',timeframe);
 
         return this.httpGet('api/remoteFiling/getStatistics', { search : params });
+    }
+
+    getSubscriberStatistics(subscriberId: number, timeFrame: string):Observable<RemoteFilingStatistics[]> {
+        let params = new URLSearchParams();
+        params.set('subscriberId', subscriberId.toString());
+        params.set('timeFrame', timeFrame);
+
+        return this.httpGet('api/remoteFiling/getSubscriberStatistics', { search : params });
+    }
+
+    getSubscribers():Observable<RemoteFilingSubscribers[]> {
+
+        return this.httpGet('api/remoteFiling/getSubscribers');
     }
 }

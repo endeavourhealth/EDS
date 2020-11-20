@@ -4,6 +4,7 @@ import {NgbModal} from "@ng-bootstrap/ng-bootstrap";
 import {RemoteFilingService} from "./remoteFiling.service";
 import {SubscriberZipFileUUID} from "./models/SubscriberZipFileUUID";
 import {RemoteFilingStatistics} from "./models/RemoteFilingStatistics";
+import {RemoteFilingSubscribers} from "./models/RemoteFilingSubscribers";
 
 @Component({
     template : require('./remoteFiling.html')
@@ -13,6 +14,8 @@ export class RemoteFilingComponent {
     dayStats : RemoteFilingStatistics[];
     monthStats : RemoteFilingStatistics[];
     yearStats : RemoteFilingStatistics[];
+    subscriberStats : RemoteFilingStatistics[];
+    subscribers : RemoteFilingSubscribers[];
     totalItems = 10;
     pageNumber = 1;
     pageSize = 50;
@@ -30,11 +33,23 @@ export class RemoteFilingComponent {
 
     refresh() {
         const vm = this;
-        vm.getPagedFiles();
-        vm.getFileCount();
-        vm.getDayStatistics();
-        vm.getMonthStatistics();
-        vm.getYearStatistics();
+
+        vm.getSubscribers();
+
+        vm.getSubscriberStatistics();
+
+
+        //vm.getPagedFiles();
+        //vm.getFileCount();
+        //vm.getDayStatistics();
+        //vm.getMonthStatistics();
+        //vm.getYearStatistics();
+    }
+
+    viewHistory(subscriberId: string) {
+        var vm = this;
+
+
     }
 
     getPagedFiles() {
@@ -58,6 +73,36 @@ export class RemoteFilingComponent {
                 },
                 (error) => console.log(error)
             );
+    }
+
+    getSubscribers() {
+        var vm = this;
+        vm.remoteFilingService.getSubscribers()
+            .subscribe(
+                (result) => {
+                    vm.subscribers = result;
+                    console.log(result);
+                },
+                (error) => vm.log.error('Failed to load subscribers', error, 'Load subscribers')
+            )
+    }
+
+    getSubscriberStatistics() {
+        var vm = this;
+
+        //for each subscriber, get stats -> set timeFrame from a drop down
+        for (var i=0; i<vm.subscribers.length; i++) {
+            var subscriber = vm.subscribers[i];
+            var id = subscriber.id;
+            vm.remoteFilingService.getSubscriberStatistics(id, 'day')
+                .subscribe(
+                    (result) => {
+                        vm.subscriberStats = result;
+                        console.log(result);
+                    },
+                    (error) => vm.log.error('Failed to load subscriber statistics for Id: '+id, error, 'Load subscriber statistics')
+                )
+        }
     }
 
     getDayStatistics() {
