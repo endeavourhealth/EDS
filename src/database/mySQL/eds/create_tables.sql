@@ -2,6 +2,7 @@ USE eds;
 
 DROP PROCEDURE IF EXISTS get_dds_patient_counts_now;
 DROP PROCEDURE IF EXISTS get_dds_patient_counts;
+DROP PROCEDURE IF EXISTS get_sel_patient_counts;
 DROP TABLE IF EXISTS patient_link;
 DROP TABLE IF EXISTS patient_link_history;
 DROP TABLE IF EXISTS patient_link_person;
@@ -257,6 +258,7 @@ BEGIN
 	insert into tmp.region values ('SEL', '08K');
 	insert into tmp.region values ('SEL', '08L');
 	insert into tmp.region values ('SEL', '08Q');
+	insert into tmp.region values ('SEL', '72Q');
 
 	create index ix on tmp.region (region_name, ccg_code);
 	create index ix2 on tmp.region (ccg_code, region_name);
@@ -347,6 +349,34 @@ BEGIN
     -- restore this back to default
     SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ ;
 
+
+END$$
+DELIMITER ;
+
+DELIMITER $$
+CREATE PROCEDURE `get_sel_patient_counts`()
+BEGIN
+
+
+	SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
+
+	drop table if exists tmp.SD200_sel_practices;
+
+	create table tmp.SD200_sel_practices as
+	select id, local_id, name, ccg_code
+	from admin.service
+	where ccg_code IN ('07N', '07Q', '08A', '08K', '08L', '08Q', '72Q');
+
+	create index ix on tmp.SD200_sel_practices (id);
+
+	select s.local_id as `ODS Code`, s.name as `Name`, s.ccg_code as `CCG Code`, count(1) as `DDS Patient Count`
+	from tmp.SD200_sel_practices s
+	inner join eds.patient_search ps
+	on ps.service_id = s.id
+	group by s.local_id, s.name, s.ccg_code
+	order by s.local_id;
+
+	drop table if exists tmp.SD200_sel_practices;
 
 END$$
 DELIMITER ;
