@@ -22,7 +22,7 @@
                             </tr>
                             </thead>
                             <tbody>
-                            <tr class="hover-box show-child-on-hover" *ngFor="let subscriber  of subscribers">
+                            <tr class="hover-box show-child-on-hover" *ngFor="let subscriber of subscribers">
                                 <td>
                                     <div>Id: {{subscriber.id}}</div>
                                     <div class="text-muted">
@@ -31,7 +31,7 @@
                                 </td>
                                 <td>
                                     <div class="panel-body">
-                                        <div class="row" *ngFor="let stat of dayStats">
+                                        <div class="row" *ngFor="let stat of subscriberStats">
                                             <div class="col-md-10">
                                                 {{stat.statisticsText}}
                                             </div>
