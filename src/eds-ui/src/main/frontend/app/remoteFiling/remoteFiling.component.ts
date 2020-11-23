@@ -6,6 +6,7 @@ import {SubscriberZipFileUUID} from "./models/SubscriberZipFileUUID";
 import {RemoteFilingStatistics} from "./models/RemoteFilingStatistics";
 import {RemoteFilingSubscribers} from "./models/RemoteFilingSubscribers";
 import {List} from "linqts/dist/linq";
+import {RabbitNode} from "../queueing/models/RabbitNode";
 
 @Component({
     template : require('./remoteFiling.html')
@@ -101,18 +102,24 @@ export class RemoteFilingComponent {
         //vm.subscriberStats = [];
 
         //for each subscriber, get stats -> set timeFrame from a drop down
-        for (var i=0; i<vm.subscribers.length; i++) {
-            var subscriber = vm.subscribers[i];
-            var id = subscriber.id;
+        for (var idx in vm.subscribers) {
+        //for (var i=0; i<vm.subscribers.length; i++) {
+            //var subscriber = vm.subscribers[i];
+            let id = vm.subscribers[idx].id;
             vm.remoteFilingService.getSubscriberStatistics(id, 'day')
                 .subscribe(
                     (result) => {
 
-                        for (let remoteFilingStatistic of subscriber.statistics = result) {};
+                        var remoteFilingSubscriber: RemoteFilingSubscribers[] = $.grep(vm.subscribers, function (i) {
+                            return i.id === result[0].subscriberId;
+                        });
+
+                        //for (let remoteFilingStatistic of subscriber.statistics = result) {};
+                        remoteFilingSubscriber[0].statistics = result;
 
                         //vm.subscriberStats = result;
                         //console.log(result + 'for subscriber.id: '+id);
-                        console.log(subscriber);
+                        console.log(remoteFilingSubscriber);
                     },
                     (error) => vm.log.error('Failed to load subscriber statistics for Id: '+id, error, 'Load subscriber statistics')
                 )
