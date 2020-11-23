@@ -108,10 +108,10 @@ export class RemoteFilingComponent {
                 .subscribe(
                     (result) => {
 
-                        subscriber.statistics = result;
+                        for (let remoteFilingStatistic of subscriber.statistics = result) {};
 
                         //vm.subscriberStats = result;
-                        console.log(result);
+                        console.log(result + 'for subscriber.id: '+id);
                     },
                     (error) => vm.log.error('Failed to load subscriber statistics for Id: '+id, error, 'Load subscriber statistics')
                 )
