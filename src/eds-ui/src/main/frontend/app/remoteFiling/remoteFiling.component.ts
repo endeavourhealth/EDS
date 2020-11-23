@@ -24,11 +24,13 @@ export class RemoteFilingComponent {
                 protected log : LoggerService,
                 protected remoteFilingService : RemoteFilingService) {
 
+        this.getSubscribers();
+        this.getSubscriberStatistics();
     }
 
 
     ngOnInit() {
-        this.refresh();
+        //this.refresh();
     }
 
     refresh() {
@@ -50,7 +52,8 @@ export class RemoteFilingComponent {
     }
 
     getSubscriberStats(subscriberId: number) {
-        return this.subscriberStats.filter((item) => item.subscriberId === subscriberId);
+        var vm = this;
+        return vm.subscriberStats.filter((item) => item.subscriberId === subscriberId);
     }
 
     // getPagedFiles() {
@@ -78,6 +81,7 @@ export class RemoteFilingComponent {
 
     getSubscribers() {
         var vm = this;
+        vm.subscribers = [];
         vm.remoteFilingService.getSubscribers()
             .subscribe(
                 (result) => {
@@ -94,6 +98,7 @@ export class RemoteFilingComponent {
             console.log("No remote subscribers found");
             return;
         }
+        vm.subscriberStats = [];
 
         //for each subscriber, get stats -> set timeFrame from a drop down
         for (var i=0; i<vm.subscribers.length; i++) {
