@@ -24,21 +24,17 @@ export class RemoteFilingComponent {
                 protected log : LoggerService,
                 protected remoteFilingService : RemoteFilingService) {
 
-        this.getSubscribers();
-        //this.getSubscriberStatistics();
     }
 
 
     ngOnInit() {
-        //this.refresh();
-
-        this.getSubscriberStatistics();
+        this.refresh();
     }
 
     refresh() {
         const vm = this;
         vm.getSubscribers();
-        vm.getSubscriberStatistics();
+        //vm.getSubscriberStatistics();
 
         //vm.getPagedFiles();
         //vm.getFileCount();
@@ -89,6 +85,8 @@ export class RemoteFilingComponent {
                 (result) => {
                     vm.subscribers = result;
                     console.log(result);
+
+                    vm.getSubscriberStatistics();
                 },
                 (error) => vm.log.error('Failed to load subscribers', error, 'Load subscribers')
             )
