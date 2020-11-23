@@ -25,12 +25,14 @@ export class RemoteFilingComponent {
                 protected remoteFilingService : RemoteFilingService) {
 
         this.getSubscribers();
-        this.getSubscriberStatistics();
+        //this.getSubscriberStatistics();
     }
 
 
     ngOnInit() {
         //this.refresh();
+
+        this.getSubscriberStatistics();
     }
 
     refresh() {
@@ -81,7 +83,7 @@ export class RemoteFilingComponent {
 
     getSubscribers() {
         var vm = this;
-        vm.subscribers = [];
+        //vm.subscribers = [];
         vm.remoteFilingService.getSubscribers()
             .subscribe(
                 (result) => {
