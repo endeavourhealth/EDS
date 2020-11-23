@@ -108,7 +108,8 @@ export class RemoteFilingComponent {
                 .subscribe(
                     (result) => {
 
-                        vm.subscribers[i].statistics = result;
+                        subscriber.statistics = result;
+
                         //vm.subscriberStats = result;
                         console.log(result);
                     },
