@@ -26,12 +26,12 @@
                                 <td>
                                     <div>Id: {{subscriber.id}}</div>
                                     <div class="text-muted">
-                                        Hostname: here
+                                        Hostname: {{subscriber.jsonDefinition}}
                                     </div>
                                 </td>
                                 <td>
                                     <div class="panel-body">
-                                        <div class="row" *ngFor="let stat of subscriberStats">
+                                        <div class="row" *ngFor="let stat of getSubscriberStats(subscriber.id)">
                                             <div class="col-md-10">
                                                 {{stat.statisticsText}}
                                             </div>
@@ -41,11 +41,9 @@
                                         </div>
                                     </div>
                                 </td>
-
                                 <td>
                                     <button class="btn btn-xs btn-default child-to-show" (click)="viewHistory(subscriber.id)">View History</button>
                                 </td>
-
                             </tr>
                             </tbody>
                         </table>

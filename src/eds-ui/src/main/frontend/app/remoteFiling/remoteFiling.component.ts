@@ -49,6 +49,10 @@ export class RemoteFilingComponent {
 
     }
 
+    getSubscriberStats(subscriberId: number) {
+        return this.subscriberStats.filter((item) => item.subscriberId === subscriberId);
+    }
+
     // getPagedFiles() {
     //     var vm = this;
     //     vm.remoteFilingService.getPagedFiles(vm.pageNumber, vm.pageSize)
@@ -73,7 +77,7 @@ export class RemoteFilingComponent {
     // }
 
     getSubscribers() {
-        const vm = this;
+        var vm = this;
         vm.remoteFilingService.getSubscribers()
             .subscribe(
                 (result) => {
@@ -85,8 +89,7 @@ export class RemoteFilingComponent {
     }
 
     getSubscriberStatistics() {
-        const vm = this;
-
+        var vm = this;
         if (vm.subscribers == null) {
             console.log("No remote subscribers found");
             return;

@@ -116,11 +116,11 @@ public class RemoteFilingEndpoint extends AbstractEndpoint {
         userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
                 "Remote Filing Subscriber Statistics");
 
-        List<RemoteFilingStatistics> fileUUIDs = remoteRepository.getSubscriberStatistics(subscriberId, timeFrame);
+        List<RemoteFilingStatistics> subscriberStatistics = remoteRepository.getSubscriberStatistics(subscriberId, timeFrame);
 
         return Response
                 .ok()
-                .entity(fileUUIDs)
+                .entity(subscriberStatistics)
                 .build();
     }
 }
