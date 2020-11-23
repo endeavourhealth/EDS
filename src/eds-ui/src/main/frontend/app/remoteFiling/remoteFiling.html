@@ -31,7 +31,7 @@
                                 </td>
                                 <td>
                                     <div class="panel-body">
-                                        <div class="row" *ngFor="let stat of getSubscriberStats(subscriber.id)">
+                                        <div class="row" *ngFor="let stat of subscriber.statistics">
                                             <div class="col-md-10">
                                                 {{stat.statisticsText}}
                                             </div>

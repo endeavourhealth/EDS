@@ -5,6 +5,7 @@ import {RemoteFilingService} from "./remoteFiling.service";
 import {SubscriberZipFileUUID} from "./models/SubscriberZipFileUUID";
 import {RemoteFilingStatistics} from "./models/RemoteFilingStatistics";
 import {RemoteFilingSubscribers} from "./models/RemoteFilingSubscribers";
+import {List} from "linqts/dist/linq";
 
 @Component({
     template : require('./remoteFiling.html')
@@ -25,7 +26,6 @@ export class RemoteFilingComponent {
                 protected remoteFilingService : RemoteFilingService) {
 
     }
-
 
     ngOnInit() {
         this.refresh();
@@ -98,7 +98,7 @@ export class RemoteFilingComponent {
             console.log("No remote subscribers found");
             return;
         }
-        vm.subscriberStats = [];
+        //vm.subscriberStats = [];
 
         //for each subscriber, get stats -> set timeFrame from a drop down
         for (var i=0; i<vm.subscribers.length; i++) {
@@ -107,7 +107,9 @@ export class RemoteFilingComponent {
             vm.remoteFilingService.getSubscriberStatistics(id, 'day')
                 .subscribe(
                     (result) => {
-                        vm.subscriberStats = result;
+
+                        vm.subscribers[i].statistics = result;
+                        //vm.subscriberStats = result;
                         console.log(result);
                     },
                     (error) => vm.log.error('Failed to load subscriber statistics for Id: '+id, error, 'Load subscriber statistics')
