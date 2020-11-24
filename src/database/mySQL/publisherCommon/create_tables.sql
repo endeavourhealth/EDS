@@ -76,7 +76,7 @@ KEY_BLOCK_SIZE=8;
 
 
 CREATE TABLE tpp_ctv3_lookup_2 (
-	ctv3_code varchar(5) binary COMMENT 'ctv3 code itself',
+	ctv3_code varchar(5) BINARY COMMENT 'ctv3 code itself',
 	ctv3_term varchar(255) null COMMENT 'term for ctv3 code',
 	dt_last_updated datetime NOT NULL,
 	CONSTRAINT pk_tpp_ctv3_lookup_2 PRIMARY KEY (ctv3_code)
@@ -103,7 +103,7 @@ CREATE INDEX ix_tpp_ctv3_lookup_ctv3_code
 CREATE TABLE tpp_multilex_to_ctv3_map_2
 (
 	multilex_product_id int NOT NULL,
-	ctv3_code varchar(5) NOT NULL,
+	ctv3_code varchar(5) BINARY NOT NULL,
 	ctv3_term text NOT NULL,
 	dt_last_updated datetime NOT NULL,
 	constraint pk primary key (multilex_product_id)
@@ -132,8 +132,8 @@ CREATE INDEX ix_tpp_multilex_to_ctv3_map_multilex_product_id
 
 CREATE TABLE tpp_ctv3_hierarchy_ref_2
 (
-	parent_code varchar(5) binary NOT NULL,
-	child_code varchar(5) binary NOT NULL,
+	parent_code varchar(5) BINARY NOT NULL,
+	child_code varchar(5) BINARY NOT NULL,
 	child_level integer NOT NULL,
 	dt_last_updated datetime NOT NULL,
 	CONSTRAINT pk_tpp_ctv3_hierarchy_ref_2 PRIMARY KEY (child_code, parent_code)
@@ -456,7 +456,7 @@ KEY_BLOCK_SIZE=8;
 CREATE INDEX ix_code_updated ON vision_read2_lookup (read_code, dt_last_updated);*/
 
 CREATE TABLE  tpp_ctv3_to_snomed (
-  ctv3_code varchar(5) NOT NULL,
+  ctv3_code varchar(5) BINARY NOT NULL,
   snomed_concept_id bigint(20) NOT NULL,
   dt_last_updated datetime NOT NULL,
   CONSTRAINT tpp_ctv3_to_snomed_ctv3_code_pk PRIMARY KEY (ctv3_code )
@@ -473,7 +473,7 @@ CREATE INDEX ix_updated ON tpp_ctv3_to_snomed (dt_last_updated);
 
 
 CREATE TABLE vision_read2_code (
-	read_code varchar(5) binary NOT NULL COMMENT 'read2 code',
+	read_code varchar(5) BINARY NOT NULL COMMENT 'read2 code',
 	read_term varchar(255) NOT NULL COMMENT 'term for read2 code',
 	is_vision_code boolean NOT NULL COMMENT 'whether true Read2 or locally added',
 	approx_usage int NOT NULL COMMENT 'approximate count of usage in DDS',
@@ -485,7 +485,7 @@ CREATE TABLE vision_read2_code (
 	COMMENT 'Vision Read2 codes have multiple terms with no indicator which is preferred, so this table stores them all';
 
 CREATE TABLE vision_read2_to_snomed_map (
-	read_code varchar(5) binary NOT NULL COMMENT 'read2 code',
+	read_code varchar(5) BINARY NOT NULL COMMENT 'read2 code',
 	snomed_concept_id bigint(20) NOT NULL COMMENT 'mapped snomed concept ID',
 	d_last_used date NOT NULL COMMENT 'tells us the date this mapping was last used to help calculate if a mapping has changed',
 	dt_last_updated datetime NOT NULL COMMENT 'when this mapping last changed',
