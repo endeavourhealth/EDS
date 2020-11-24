@@ -16,7 +16,6 @@ import java.util.UUID;
 public class Main {
 	private static final Logger LOG = LoggerFactory.getLogger(Main.class);
 
-
 	public static void main(String[] args) throws Exception {
 		String configId = args[0];
 		LOG.info("Initialising config manager");
