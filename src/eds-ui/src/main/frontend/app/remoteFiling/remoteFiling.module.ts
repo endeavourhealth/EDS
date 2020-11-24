@@ -5,6 +5,7 @@ import {NKDatetimeModule} from "ng2-datetime/ng2-datetime";
 import {RemoteFilingComponent} from "./remoteFiling.component";
 import {RemoteFilingService} from "./remoteFiling.service";
 import {NgbModule} from "@ng-bootstrap/ng-bootstrap";
+import {RemoteFilingFilesDialog} from "./remoteFilingFiles.dialog";
 
 @NgModule({
     imports : [
@@ -14,7 +15,11 @@ import {NgbModule} from "@ng-bootstrap/ng-bootstrap";
         NgbModule
     ],
     declarations : [
-        RemoteFilingComponent
+        RemoteFilingComponent,
+        RemoteFilingFilesDialog
+    ],
+    entryComponents : [
+        RemoteFilingFilesDialog
     ],
     providers : [
         RemoteFilingService

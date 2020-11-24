@@ -9,7 +9,19 @@
     </div>
     <div class="module-body">
         <div class="container-fluid">
-
+            <div class="row">
+                <div class="form-group col-md-12">
+                    <label>Time frame</label>
+                    <div class="input-group">
+                        <span class="input-group-addon"><i class="fa fa-laptop fa-lg fa-fw"></i></span>
+                        <select id="timeFrame" class="form-control" [(ngModel)]="timeFrame" name="TimeFrame">
+                            <option value="day">1 day</option>
+                            <option value="month">1 month</option>
+                            <option value="year">1 year</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
             <div class="row">
                 <div class="col-md-12">
                     <div class="table">
@@ -24,18 +36,25 @@
                             <tbody>
                             <tr class="hover-box show-child-on-hover" *ngFor="let subscriber of subscribers">
                                 <td>
-                                    <div>Id: {{subscriber.id}}</div>
-                                    <div class="text-muted">
-                                        Hostname: {{subscriber.jsonDefinition}}
+                                    <div>Id: {{subscriber.id}}
+                                        <span class="fa fa-info-circle fa-right-pad text-muted"
+                                              ngbTooltip="{{getJsonDefinitionFormatted(subscriber.jsonDefinition)}}">
+                                        </span>
                                     </div>
                                 </td>
                                 <td>
                                     <div class="panel-body">
                                         <div class="row" *ngFor="let stat of subscriber.statistics">
-                                            <div class="col-md-10">
+                                            <div class="col-md-10" *ngIf="isStatisticInError(stat)">
+                                                <span class="label label-danger">Warning</span> {{stat.statisticsText}}
+                                            </div>
+                                            <div class="col-md-10" *ngIf="!isStatisticInError(stat)">
                                                 {{stat.statisticsText}}
                                             </div>
-                                            <div class="col-md-2">
+                                            <div class="col-md-2" *ngIf="isStatisticInError(stat)">
+                                                <a (click)="viewErrors(subscriber.id)"> {{stat.statisticsValue}}</a>
+                                            </div>
+                                            <div class="col-md-2" *ngIf="!isStatisticInError(stat)">
                                                 {{stat.statisticsValue}}
                                             </div>
                                         </div>

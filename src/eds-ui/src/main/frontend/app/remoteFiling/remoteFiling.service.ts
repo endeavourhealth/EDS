@@ -41,4 +41,12 @@ export class RemoteFilingService extends BaseHttp2Service {
 
         return this.httpGet('api/remoteFiling/getSubscribers');
     }
+
+    getFailedFiles(subscriberId: number, timeFrame: string):Observable<SubscriberZipFileUUID[]> {
+        const vm = this;
+        const params = new URLSearchParams();
+        params.set('subscriberId', subscriberId.toString());
+        params.set('timeFrame', timeFrame);
+        return this.httpGet('api/remoteFiling/getFailedFilingUUIDEntities', { search : params });
+    }
 }

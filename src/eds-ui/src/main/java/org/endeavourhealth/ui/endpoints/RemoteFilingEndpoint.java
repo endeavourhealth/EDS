@@ -54,6 +54,26 @@ public class RemoteFilingEndpoint extends AbstractEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="RemoteFilingEndpoint.getFailedFilingUUIDEntities")
+    @Path("/getFailedFilingUUIDEntities")
+    public Response getAllRemoteFilingStatus(@Context SecurityContext sc,
+                                             @QueryParam("subscriberId") Integer subscriberId,
+                                             @QueryParam("timeFrame") String timeFrame) throws Exception {
+
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
+                "Remote Filing Statistics");
+
+        List<RdbmsSubscriberZipFileUUIDs> fileUUIDs = remoteRepository.getFailedFilingUUIDEntities(timeFrame, subscriberId);
+
+        return Response
+                .ok()
+                .entity(fileUUIDs)
+                .build();
+    }
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
     @Timed(absolute = true, name="DataSharingManager.RemoteFilingEndpoint.getRemoteFilingCount")
     @Path("/getRemoteFilingCount")
     @ApiOperation(value = "When using server side pagination, this returns the total count of the results of the query")
@@ -73,12 +93,12 @@ public class RemoteFilingEndpoint extends AbstractEndpoint {
     @Timed(absolute = true, name="RemoteFilingEndpoint.getAllRemoteFilingStats")
     @Path("/getStatistics")
     public Response getAllRemoteFilingStats(@Context SecurityContext sc,
-                                            @QueryParam("timeframe") String timeframe) throws Exception {
+                                            @QueryParam("timeFrame") String timeFrame) throws Exception {
 
         userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
                 "Remote Filing Statistics");
 
-        List<RemoteFilingStatistics> fileUUIDs = remoteRepository.getStatistics(timeframe);
+        List<RemoteFilingStatistics> fileUUIDs = remoteRepository.getStatistics(timeFrame);
 
         return Response
                 .ok()
