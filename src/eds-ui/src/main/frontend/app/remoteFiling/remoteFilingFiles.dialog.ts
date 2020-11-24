@@ -32,8 +32,8 @@ export class RemoteFilingFilesDialog  {
         this.activeModal.dismiss();
     }
 
-    messageDialog(title: string, message: string) {
-        MessageBoxDialog.open(
+    messageDialogLarge(title: string, message: string) {
+        MessageBoxDialog.openLarge(
             this.$modal,
             title,
             message,

@@ -1,6 +1,6 @@
 <div class="modal-header">
     <button type="button" class="close" (click)="close()" aria-hidden="true">&times;</button>
-    <h4 class="modal-title">File List (subscriber Id: {{subscriberId}} )</h4>
+    <h4 class="modal-title">File List (Subscriber Id: {{subscriberId}} )</h4>
 </div>
 
 <div class="modal-body">
@@ -24,7 +24,7 @@
                     <tbody>
                     <tr class="hover-box show-child-on-hover" *ngFor="let file of files">
                         <td>{{file.queuedMessageUUID}}</td>
-                        <td><button type="button" class="btn" (click)="messageDialog('Message body', file.queuedMessageBody)">...</button> </td>
+                        <td><button type="button" class="btn" (click)="messageDialogLarge('Message body UUID: {{file.queuedMessageUUID}}', file.queuedMessageBody)">...</button> </td>
                         <td>{{file.fileSent | date:'yyyy-MM-dd HH:mm:ss'}}</td>
                         <td>{{file.fileFilingAttempted | date:'yyyy-MM-dd HH:mm:ss'}}</td>
                         <td>{{file.fileFilingSuccess}}</td>
