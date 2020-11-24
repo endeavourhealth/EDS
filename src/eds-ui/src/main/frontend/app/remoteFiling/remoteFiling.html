@@ -44,18 +44,25 @@
                                 </td>
                                 <td>
                                     <div class="panel-body">
-                                        <div class="row" *ngFor="let stat of subscriber.statistics">
-                                            <div class="col-md-10" *ngIf="isStatisticInError(stat)">
-                                                <span class="label label-danger">Warning</span> {{stat.statisticsText}}
+                                        <div *ngIf="refreshingStatistics">
+                                            <div class="fa fa-sm fa-refresh fa-refresh-animate">
                                             </div>
-                                            <div class="col-md-10" *ngIf="!isStatisticInError(stat)">
-                                                {{stat.statisticsText}}
-                                            </div>
-                                            <div class="col-md-2" *ngIf="isStatisticInError(stat)">
-                                                <a (click)="viewErrors(subscriber.id)"> {{stat.statisticsValue}}</a>
-                                            </div>
-                                            <div class="col-md-2" *ngIf="!isStatisticInError(stat)">
-                                                {{stat.statisticsValue}}
+                                        </div>
+                                        <div *ngIf="!refreshingStatistics">
+                                            <div class="row" *ngFor="let stat of subscriber.statistics">
+                                                <div class="col-md-10" *ngIf="isStatisticInError(stat)">
+                                                    {{stat.statisticsText}} <span class="label label-danger">Warning</span>
+                                                </div>
+                                                <div class="col-md-10" *ngIf="!isStatisticInError(stat)">
+                                                    {{stat.statisticsText}}
+                                                </div>
+
+                                                <div class="col-md-2" *ngIf="isStatisticInError(stat)">
+                                                    <a (click)="viewErrors(subscriber.id)"> {{stat.statisticsValue}}</a>
+                                                </div>
+                                                <div class="col-md-2" *ngIf="!isStatisticInError(stat)">
+                                                    {{stat.statisticsValue}}
+                                                </div>
                                             </div>
                                         </div>
                                     </div>

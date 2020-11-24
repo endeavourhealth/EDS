@@ -18,6 +18,7 @@ export class RemoteFilingComponent {
     pageNumber = 1;
     pageSize = 50;
     timeFrame = 'day';
+    refreshingStatistics: boolean;
 
     constructor(private $modal : NgbModal,
                 protected log : LoggerService,
@@ -49,7 +50,7 @@ export class RemoteFilingComponent {
 
                     console.log(result);
 
-                    RemoteFilingFilesDialog.open(vm.$modal, vm.files);
+                    RemoteFilingFilesDialog.open(vm.$modal, vm.files, subscriberId);
                 },
                 (error) => vm.log.error('Failed to load files', error, 'Load files')
             )
@@ -57,8 +58,12 @@ export class RemoteFilingComponent {
 
     isStatisticInError(subscriberStats : RemoteFilingStatistics) {
 
-        if (subscriberStats.statisticsText.indexOf('errors')) {
-            if (subscriberStats.statisticsValue != '0') {
+        var statisticText = subscriberStats.statisticsText;
+
+        if (statisticText.endsWith('errors')) {
+
+            var statisticValue = subscriberStats.statisticsValue;
+            if (statisticValue != '0') {
                 return true;
             }
         }
@@ -121,6 +126,7 @@ export class RemoteFilingComponent {
         }
 
         //for each subscriber, get stats -> set timeFrame from a drop down
+        vm.refreshingStatistics = true;
         for (var idx in vm.subscribers) {
 
             let id = vm.subscribers[idx].id;
@@ -134,10 +140,13 @@ export class RemoteFilingComponent {
                         });
 
                         remoteFilingSubscriber[0].statistics = result;
-
                         console.log(result);
+                        vm.refreshingStatistics = false;
                     },
-                    (error) => vm.log.error('Failed to load subscriber statistics for Id: '+id, error, 'Load subscriber statistics')
+                    (error) => {
+                        vm.log.error('Failed to load subscriber statistics for Id: ' + id, error, 'Load subscriber statistics')
+                        vm.refreshingStatistics = false;
+                    }
                 )
         }
     }
