@@ -39,6 +39,19 @@ export class RemoteFilingFilesDialog  {
         this.activeModal.dismiss();
     }
 
+    downloadZipData(messageUUID: string, data: string) {
+
+        let zip = require('jszip');
+        zip.loadAsync(data, {base64: true})
+            .then(function (blob) {
+                // will be called, even if content is corrupted
+                let FileSaver = require('file-saver');
+                FileSaver.saveAs(blob,  messageUUID + ".zip");
+            }, function (e) {
+                // won't be called
+            });
+    }
+
     messageDialogLarge(title: string, message: string) {
         MessageBoxDialog.openLarge(
             this.$modal,
