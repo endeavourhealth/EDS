@@ -26,6 +26,12 @@ public class Main {
 			SD201.checkOrgOdsTypes();
 			System.exit(0);
 		}
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("checkOrgOdsParents")) {
+			SD201.checkOrgOdsParents();
+			System.exit(0);
+		}
+
 
 
 		if (args.length >= 1
