@@ -16,7 +16,6 @@ import java.util.UUID;
 public class Main {
 	private static final Logger LOG = LoggerFactory.getLogger(Main.class);
 
-
 	public static void main(String[] args) throws Exception {
 		String configId = args[0];
 		LOG.info("Initialising config manager");
@@ -27,6 +26,12 @@ public class Main {
 			SD201.checkOrgOdsTypes();
 			System.exit(0);
 		}
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("checkOrgOdsParents")) {
+			SD201.checkOrgOdsParents();
+			System.exit(0);
+		}
+
 
 
 		if (args.length >= 1

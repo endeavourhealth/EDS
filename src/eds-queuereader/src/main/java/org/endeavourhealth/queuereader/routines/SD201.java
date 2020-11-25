@@ -44,7 +44,7 @@ public class SD201 extends AbstractRoutine {
 
                 LOG.debug("Checking " + service);
                 String localId = service.getLocalId();
-                checkOds(localId, printer, true, odsCodesDone);
+                checkOdsTypes(localId, printer, true, odsCodesDone);
             }
 
             printer.close();
@@ -55,7 +55,7 @@ public class SD201 extends AbstractRoutine {
         }
     }
 
-    private static void checkOds(String odsCode, CSVPrinter printer, boolean ddsOrg, Set<String> odsCodesDone) throws Exception {
+    private static void checkOdsTypes(String odsCode, CSVPrinter printer, boolean ddsOrg, Set<String> odsCodesDone) throws Exception {
 
         if (odsCodesDone.contains(odsCode)) {
             return;
@@ -87,8 +87,88 @@ public class SD201 extends AbstractRoutine {
         Map<String, OdsOrganisation> parents = odsOrg.getParents();
         for (OdsOrganisation parent: parents.values()) {
             String parentOdsCode = parent.getOdsCode();
-            checkOds(parentOdsCode, printer, false, odsCodesDone);
+            checkOdsTypes(parentOdsCode, printer, false, odsCodesDone);
+        }
+    }
+
+    public static void checkOrgOdsParents() {
+        LOG.debug("Checking ODS for Org Parents");
+        try {
+
+            ServiceDalI serviceDal = DalProvider.factoryServiceDal();
+            List<Service> services = serviceDal.getAll();
+
+
+            String outputFile = "SD201_ods_org_parents.csv";
+            PrintWriter fw = new PrintWriter(outputFile);
+            BufferedWriter bw = new BufferedWriter(fw);
+            CSVFormat format = EmisCsvToFhirTransformer.CSV_FORMAT
+                    .withHeader("ods_code", "dds_org", "parent_ods_1", "org_types_1", "parent_ods_2", "org_types_2", "parent_ods_3", "org_types_3", "parent_ods_4", "org_types_4", "parent_ods_5", "org_types_5"
+                    );
+            CSVPrinter printer = new CSVPrinter(bw, format);
+
+            Set<String> odsCodesDone = new HashSet<>();
+
+            for (Service service: services) {
+
+                LOG.debug("Checking " + service);
+                String localId = service.getLocalId();
+                checkOdsParents(localId, printer, true, odsCodesDone);
+            }
+
+            printer.close();
+
+            LOG.debug("Finished Checking ODS for Org Parents to " + outputFile);
+        } catch (Throwable t) {
+            LOG.error("", t);
+        }
+    }
+
+
+    private static void checkOdsParents(String odsCode, CSVPrinter printer, boolean ddsOrg, Set<String> odsCodesDone) throws Exception {
+
+        if (odsCodesDone.contains(odsCode)) {
+            return;
+        }
+        odsCodesDone.add(odsCode);
+
+        OdsOrganisation odsOrg = OdsWebService.lookupOrganisationViaRest(odsCode);
+        if (odsOrg == null) {
+            return;
         }
 
+        Map<String, OdsOrganisation> hmParents = odsOrg.getParents();
+        List<OdsOrganisation> list = new ArrayList<>(hmParents.values());
+        list.sort(((o1, o2) -> o1.getOrganisationName().compareToIgnoreCase(o2.getOrganisationName())));
+
+        List<String> record = new ArrayList<>();
+        record.add(odsCode);
+        record.add("" + ddsOrg);
+        for (OdsOrganisation parent: list) {
+            record.add(parent.getOdsCode());
+
+            List<String> typeList = new ArrayList<>();
+
+            Set<OrganisationType> types = parent.getOrganisationTypes();
+            for (OrganisationType type: types) {
+                typeList.add(type.getDescription());
+            }
+            typeList.sort(((o1, o2) -> o1.compareToIgnoreCase(o2)));
+            String parentTypeStr = String.join(", ", typeList);
+
+            record.add(parentTypeStr);
+        }
+        while (record.size() < 12) {
+            record.add("");
+        }
+
+        printer.printRecord(record);
+
+        //do parents
+        Map<String, OdsOrganisation> parents = odsOrg.getParents();
+        for (OdsOrganisation parent: parents.values()) {
+            String parentOdsCode = parent.getOdsCode();
+            checkOdsParents(parentOdsCode, printer, false, odsCodesDone);
+        }
     }
 }
