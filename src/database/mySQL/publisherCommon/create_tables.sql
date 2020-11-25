@@ -1,5 +1,8 @@
 use publisher_common;
 
+DROP PROCEDURE IF EXISTS export_vision_codes;
+DROP PROCEDURE IF EXISTS export_tpp_codes;
+DROP PROCEDURE IF EXISTS export_emis_codes;
 DROP TABLE IF EXISTS emis_csv_code_map; -- old table
 DROP TABLE IF EXISTS emis_admin_resource_cache; -- old table
 DROP TABLE IF EXISTS emis_admin_resource_cache_applied;
@@ -495,3 +498,78 @@ CREATE TABLE vision_read2_to_snomed_map (
 	KEY_BLOCK_SIZE=8
 	COMMENT 'Stores the Vision Read2/local code to Snomed mappings';
 
+
+
+
+DELIMITER $$
+CREATE PROCEDURE `export_emis_codes`()
+	BEGIN
+
+		SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
+
+		select
+			c.adjusted_code as `read_code`,
+			c.read_term,
+			if (c.snomed_concept_id is null, '', c.snomed_concept_id) as 'snomed_concept_id',
+			c.is_emis_code,
+			c.code_id,
+			if (h.parent_code_id is null, '', h.parent_code_id) as 'parent_code_id'
+		from emis_clinical_code c
+			left outer join emis_clinical_code_hiearchy h
+				on h.code_id = c.code_id;
+
+
+	END$$
+DELIMITER ;
+
+
+
+DELIMITER $$
+CREATE PROCEDURE `export_tpp_codes`()
+	BEGIN
+
+		SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
+
+		select
+			l.ctv3_code,
+			l.ctv3_term,
+			if (m.snomed_concept_id is null, '', m.snomed_concept_id) as 'snomed_concept_id',
+			if (l.ctv3_code like 'Y%', 1, 0) as 'is_tpp_code'
+		from tpp_ctv3_lookup_2 l
+			left outer join tpp_ctv3_to_snomed m
+				on m.ctv3_code = l.ctv3_code;
+
+
+	END$$
+DELIMITER ;
+
+
+
+
+DELIMITER $$
+CREATE PROCEDURE `export_vision_codes`()
+	BEGIN
+
+		SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
+
+		drop table if exists tmp.vision_code_export;
+
+		create table tmp.vision_code_export as
+			select c.read_code, c.read_term, c.is_vision_code
+			from vision_read2_code c
+			where not exists (
+					select 1
+					from vision_read2_code c2
+					where c2.read_code = c.read_code
+								and c2.approx_usage > c.approx_usage
+			);
+
+		create index ix on tmp.vision_code_export (read_code);
+
+		select l.read_code, l.read_term, if (m.snomed_concept_id is null, '', m.snomed_concept_id) as 'snomed_concept_id', l.is_vision_code
+		from tmp.vision_code_export l
+			left outer join vision_read2_to_snomed_map m
+				on l.read_code = m.read_code;
+
+	END$$
+DELIMITER ;
