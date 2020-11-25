@@ -37,7 +37,7 @@ export class RemoteFilingService extends BaseHttp2Service {
         const params = new URLSearchParams();
         params.set('subscriberId',subscriberId.toString());
 
-        return this.httpGet('api/remoteFiling/getRemoteSubscriberFilingCount');
+        return this.httpGet('api/remoteFiling/getRemoteSubscriberFilingCount', { search : params });
     }
 
     getStatistics(timeframe: string):Observable<RemoteFilingStatistics[]> {
