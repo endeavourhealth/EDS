@@ -23,6 +23,13 @@ public class Main {
 		ConfigManager.initialize("queuereader", configId);
 
 		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("checkOrgOdsTypes")) {
+			SD201.checkOrgOdsTypes();
+			System.exit(0);
+		}
+
+
+		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("findAffectedVisionPatients")) {
 			String odsCodeRegex = null;
 			if (args.length > 1) {
