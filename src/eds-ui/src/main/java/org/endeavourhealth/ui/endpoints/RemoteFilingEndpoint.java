@@ -34,16 +34,37 @@ public class RemoteFilingEndpoint extends AbstractEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    @Timed(absolute = true, name="RemoteFilingEndpoint.getAllRemoteFilingStatus")
-    @Path("/getPagedRemoteFilingStatus")
+    @Timed(absolute = true, name="RemoteFilingEndpoint.getAllRemoteFilingHistoryPaged")
+    @Path("/getAllRemoteFilingHistoryPaged")
     public Response getAllRemoteFilingStatus(@Context SecurityContext sc,
+                                             @ApiParam(value = "page number (defaults to 1 if not provided)") @QueryParam("pageNumber") Integer pageNumber,
+                                             @ApiParam(value = "page size (defaults to 20 if not provided)")@QueryParam("pageSize") Integer pageSize) throws Exception {
+
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
+                "Remote Filing History");
+
+        List<RdbmsSubscriberZipFileUUIDs> fileUUIDs = remoteRepository.getPagedSubscriberZipFileUUIDsEntities(pageNumber, pageSize);
+
+        return Response
+                .ok()
+                .entity(fileUUIDs)
+                .build();
+    }
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="RemoteFilingEndpoint.getSubscriberRemoteFilingHistoryPaged")
+    @Path("/getSubscriberRemoteFilingHistoryPaged")
+    public Response getSubscriberRemoteFilingStatus(@Context SecurityContext sc,
+                                                    @QueryParam("subscriberId") Integer subscriberId,
                                              @ApiParam(value = "page number (defaults to 1 if not provided)") @QueryParam("pageNumber") Integer pageNumber,
                                              @ApiParam(value = "page size (defaults to 20 if not provided)")@QueryParam("pageSize") Integer pageSize) throws Exception {
 
         userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
                 "Remote Filing Statistics");
 
-        List<RdbmsSubscriberZipFileUUIDs> fileUUIDs = remoteRepository.getPagedSubscriberZipFileUUIDsEntities(pageNumber, pageSize);
+        List<RdbmsSubscriberZipFileUUIDs> fileUUIDs = remoteRepository.getPagedSubscriberZipFileUUIDsEntities(subscriberId, pageNumber, pageSize);
 
         return Response
                 .ok()
@@ -80,6 +101,23 @@ public class RemoteFilingEndpoint extends AbstractEndpoint {
     public Response getRemoteFilingCount(@Context SecurityContext sc) throws Exception {
 
         Long count = remoteRepository.getTotalNumberOfSubscriberFiles();
+
+        return Response
+                .ok()
+                .entity(count)
+                .build();
+    }
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="DataSharingManager.RemoteFilingEndpoint.getRemoteSubscriberFilingCount")
+    @Path("/getRemoteSubscriberFilingCount")
+    @ApiOperation(value = "When using server side pagination, this returns the total count of the results of the query")
+    public Response getRemoteSubscriberFilingCount(@Context SecurityContext sc,
+                                                   @QueryParam("subscriberId") Integer subscriberId) throws Exception {
+
+        Long count = remoteRepository.getTotalNumberOfSubscriberFiles(subscriberId);
 
         return Response
                 .ok()

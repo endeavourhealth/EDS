@@ -15,11 +15,29 @@ export class RemoteFilingService extends BaseHttp2Service {
         const params = new URLSearchParams();
         params.set('pageNumber',pageNumber.toString());
         params.set('pageSize',pageSize.toString());
-        return this.httpGet('api/remoteFiling/getPagedRemoteFilingStatus', { search : params });
+        return this.httpGet('api/remoteFiling/getAllRemoteFilingHistoryPaged', { search : params });
+    }
+
+    getSubscriberPagedFiles(subscriberId: number, pageNumber: number, pageSize: number):Observable<SubscriberZipFileUUID[]> {
+        const vm = this;
+        const params = new URLSearchParams();
+        params.set('subscriberId',subscriberId.toString());
+        params.set('pageNumber',pageNumber.toString());
+        params.set('pageSize',pageSize.toString());
+
+        return this.httpGet('api/remoteFiling/getSubscriberRemoteFilingHistoryPaged', { search : params });
     }
 
     getRemoteFilingCount(): Observable<number> {
         return this.httpGet('api/remoteFiling/getRemoteFilingCount');
+    }
+
+    getRemoteSubscriberFilingCount(subscriberId: number): Observable<number> {
+        const vm = this;
+        const params = new URLSearchParams();
+        params.set('subscriberId',subscriberId.toString());
+
+        return this.httpGet('api/remoteFiling/getRemoteSubscriberFilingCount');
     }
 
     getStatistics(timeframe: string):Observable<RemoteFilingStatistics[]> {

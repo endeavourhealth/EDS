@@ -14,7 +14,7 @@ export class RemoteFilingComponent {
     files : SubscriberZipFileUUID[];
     subscriberStats : RemoteFilingStatistics[];
     subscribers : RemoteFilingSubscribers[];
-    totalItems = 10;
+    totalSubscriberFiles = 0;
     pageNumber = 1;
     pageSize = 50;
     timeFrame = 'day';
@@ -35,9 +35,26 @@ export class RemoteFilingComponent {
         vm.getSubscribers();
     }
 
-    viewHistory(subscriberId: string) {
+    viewHistory(subscriberId: number) {
         var vm = this;
+        vm.getSubscriberFileCount(subscriberId);
 
+        vm.remoteFilingService.getSubscriberPagedFiles(subscriberId, vm.pageNumber, vm.pageSize)
+            .subscribe(
+                (result) => {
+                    vm.files = result;
+
+                    console.log(result);
+
+                    RemoteFilingFilesDialog.open(
+                        vm.$modal,
+                        vm.files,
+                        subscriberId,
+                        ' - filing history (all)',
+                        vm.totalSubscriberFiles);
+                },
+                (error) => vm.log.error('Failed to load files', error, 'Load files')
+            )
     }
 
     viewErrors(subscriberId: number) {
@@ -50,7 +67,12 @@ export class RemoteFilingComponent {
 
                     console.log(result);
 
-                    RemoteFilingFilesDialog.open(vm.$modal, vm.files, subscriberId);
+                    RemoteFilingFilesDialog.open(
+                        vm.$modal,
+                        vm.files,
+                        subscriberId,
+                        ' - filing errors ('+vm.timeFrame+')',
+                        vm.totalSubscriberFiles);
                 },
                 (error) => vm.log.error('Failed to load files', error, 'Load files')
             )
@@ -81,28 +103,16 @@ export class RemoteFilingComponent {
         return vm.subscriberStats.filter((item) => item.subscriberId === subscriberId);
     }
 
-    // getPagedFiles() {
-    //     var vm = this;
-    //     vm.remoteFilingService.getPagedFiles(vm.pageNumber, vm.pageSize)
-    //         .subscribe(
-    //             (result) => {
-    //                 vm.files= result;
-    //                 console.log(result);
-    //             },
-    //             (error) => vm.log.error('Failed to load files', error, 'Load files')
-    //         )
-    // }
-
-    // getFileCount() {
-    //     const vm = this;
-    //     vm.remoteFilingService.getRemoteFilingCount()
-    //         .subscribe(
-    //             (result) => {
-    //                 vm.totalItems = result;
-    //             },
-    //             (error) => console.log(error)
-    //         );
-    // }
+    getSubscriberFileCount(subscriberId: number) {
+        var vm = this;
+        vm.remoteFilingService.getRemoteSubscriberFilingCount(subscriberId)
+            .subscribe(
+                (result) => {
+                    vm.totalSubscriberFiles = result;
+                },
+                (error) => console.log(error)
+            );
+    }
 
     getSubscribers() {
         var vm = this;
@@ -150,48 +160,4 @@ export class RemoteFilingComponent {
                 )
         }
     }
-
-    // getDayStatistics() {
-    //     var vm = this;
-    //     vm.remoteFilingService.getStatistics('day')
-    //         .subscribe(
-    //             (result) => {
-    //                 vm.dayStats= result;
-    //                 console.log(result);
-    //             },
-    //             (error) => vm.log.error('Failed to load statistics', error, 'Load statistics')
-    //         )
-    // }
-
-    // getMonthStatistics() {
-    //     var vm = this;
-    //     vm.remoteFilingService.getStatistics('month')
-    //         .subscribe(
-    //             (result) => {
-    //                 vm.monthStats= result;
-    //                 console.log(result);
-    //             },
-    //             (error) => vm.log.error('Failed to load statistics', error, 'Load statistics')
-    //         )
-    // }
-
-    // getYearStatistics() {
-    //     var vm = this;
-    //     vm.remoteFilingService.getStatistics('year')
-    //         .subscribe(
-    //             (result) => {
-    //                 vm.yearStats= result;
-    //                 console.log(result);
-    //             },
-    //             (error) => vm.log.error('Failed to load statistics', error, 'Load statistics')
-    //         )
-    // }
-
-    // pageChanged($event) {
-    //     const vm = this;
-    //     vm.pageNumber = $event;
-    //     vm.getPagedFiles();
-    //     vm.getFileCount();
-    // }
-
 }
