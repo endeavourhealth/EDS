@@ -431,7 +431,7 @@ export class SftpReaderComponent {
             '\"Error Checking\",' +
             '\"Last Extract Received\",' +
             '\"Data From\",' +
-            '\"Filed Received\",' +
+            '\"Files Received\",' +
             '\"Extract Size\",' +
             '\"Valid and Complete\",' +
             '\"Orgs in Extract\"';
