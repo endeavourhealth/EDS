@@ -267,7 +267,7 @@ BEGIN
 	create table tmp.patient_search_baseline as
 	select service_id, patient_id, nhs_number, organisation_type_code
 	from patient_search
-	where dt_created < date(now());
+	where dt_created < date(date_cutoff);
 
 	create index ix on tmp.patient_search_baseline (nhs_number);
 	create index ix2 on tmp.patient_search_baseline (service_id);
@@ -306,15 +306,14 @@ BEGIN
 
 	-- number of GP patient records
 
-
 	select sum(cnt) as `gp_patient_count`
 	from tmp.patient_count_gp g;
 
-	select region_name, sum(cnt) as `gp_patient_count_per_region`
-	from tmp.region r
-	inner join tmp.patient_count_gp g
+    select if (region_name is null, 'Other', region_name) as `region_name`, sum(cnt) as `gp_patient_count_per_region`
+	from tmp.patient_count_gp g
+	left outer join tmp.region r
 	on g.ccg_code = r.ccg_code
-	group by region_name;
+	group by if (region_name is null, 'zzOther', region_name); -- "ZZ" prefix means "other" ends up last
 
 
 	-- number of contributing GP services
@@ -322,11 +321,11 @@ BEGIN
 	select count(distinct local_id) as `gp_practice_count`
 	from tmp.patient_count_gp g;
 
-	select region_name, count(distinct local_id) as `gp_practice_count_per_region`
-	from tmp.region r
-	inner join tmp.patient_count_gp g
+	select if (region_name is null, 'Other', region_name) as `region_name`, count(distinct local_id) as `gp_practice_count_per_region`
+	from tmp.patient_count_gp g
+	left outer join tmp.region r
 	on g.ccg_code = r.ccg_code
-	group by region_name;
+	group by if (region_name is null, 'zzOther', region_name); -- "ZZ" prefix means "other" ends up last
 
 
 	-- number of acute patient records
@@ -352,6 +351,7 @@ BEGIN
 
 END$$
 DELIMITER ;
+
 
 DELIMITER $$
 CREATE PROCEDURE `get_sel_patient_counts`()
