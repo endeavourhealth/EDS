@@ -760,7 +760,7 @@ public abstract class SpecialRoutines extends AbstractRoutine {
         //Long id = GetNextMap3Id(connection);
         //System.out.println(id);
 
-        sql = "INSERT INTO subscriber_id_map_3 (subscriber_table,source_id) values (?,?,?)";
+        sql = "INSERT INTO subscriber_id_map_3 (subscriber_table,source_id) values (?,?)";
         preparedStmt = null;
         preparedStmt = connection.prepareStatement(sql);
         preparedStmt.setString(1,"33");
