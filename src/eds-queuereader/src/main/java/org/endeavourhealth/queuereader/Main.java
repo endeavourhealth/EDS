@@ -61,6 +61,28 @@ public class Main {
 			System.exit(0);
 		}
 
+        if (args.length>=1 && args[0].equalsIgnoreCase("CQCTHREADED")) {
+        	String configName = args[1];
+			String serviceUUID = args[2];
+			String builderFilename = args[3];
+			String systemId = args[4];
+            SpecialRoutines.ThreadCQC(configName, serviceUUID, builderFilename, systemId);
+            System.exit(0);
+        }
+
+		if (args.length>=1 && args[0].equalsIgnoreCase("CQCCREATEBUILDER")) {
+			String configName = args[1];
+			String filename = args[2];
+			String builderFilename = args[3];
+			SpecialRoutines.CQCOrganizationBuilder(configName, filename, builderFilename);
+			System.exit(0);
+		}
+
+		if (args.length>=1 && args[0].equalsIgnoreCase("CQC")) {
+			SpecialRoutines.CQC();
+			System.exit(0);
+		}
+
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("findExchangesNotSentToSubscriber")) {
 			boolean onlySkipCompletedOnes = Boolean.parseBoolean(args[1]);
