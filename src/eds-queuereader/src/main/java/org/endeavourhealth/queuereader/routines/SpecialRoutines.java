@@ -655,7 +655,7 @@ public abstract class SpecialRoutines extends AbstractRoutine {
             if (!opendate.isEmpty()) createContainedCoded(organizationBuilder,"open_date",opendate);
             if (!closedate.isEmpty()) createContainedCoded(organizationBuilder,"close_date",closedate);
 
-            RESOURCE_GUID = scratch(cqc_id);
+            RESOURCE_GUID = scratch(cqc_id, configName);
 
             organizationBuilder.setId(RESOURCE_GUID);
 
@@ -728,7 +728,7 @@ public abstract class SpecialRoutines extends AbstractRoutine {
         return scratch_guid;
     }
 
-    private static String scratch(String cqc_id) throws Exception
+    private static String scratch(String cqc_id, String configName) throws Exception
     {
 
         //PseudoIdDalI pseudoIdDal = DalProvider.factoryPseudoIdDal("subscriber_test");
@@ -736,7 +736,7 @@ public abstract class SpecialRoutines extends AbstractRoutine {
 
         //OrganisationTransformer_v2.TestInsert();
 
-        Connection connection = ConnectionManager.getSubscriberTransformConnection("subscriber_test");
+        Connection connection = ConnectionManager.getSubscriberTransformConnection(configName);
 
         String sql = "";
         String scratch_guid = ResourceExist(cqc_id, connection);
