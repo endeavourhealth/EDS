@@ -5,7 +5,7 @@
     <div class="module-body">
         <div class="container-fluid">
             <div class="row">
-                <div class="form-group col-md-3">
+                <div class="form-group col-md-5">
                     <label>Time frame</label>
                     <div class="input-group">
                         <span class="input-group-addon"><i class="fa fa-laptop fa-lg fa-fw"></i></span>
@@ -14,9 +14,11 @@
                             <option value="month">1 month</option>
                             <option value="year">1 year</option>
                         </select>
+                    </div>
+                    <div>
                         <button class="btn btn-success btn-sm pull-right" [disabled]="refreshingStatistics"
-                            (click)="refresh()"
-                            title="Refresh these statistics"><i class="fa fa-refresh"></i> Refresh
+                                (click)="refresh()"
+                                title="Refresh these statistics"><i class="fa fa-refresh"></i> Refresh
                         </button>
                     </div>
                 </div>

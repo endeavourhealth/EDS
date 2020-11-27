@@ -64,15 +64,21 @@ export class RemoteFilingFilesDialog  {
 
     downloadZipData2(messageUUID: string, data: string) {
 
-        var decodedStr = atob(data);
-        saveAs(decodedStr,  messageUUID + ".zip");
-    }
+        //var decodedStr = atob(data);
 
-    createZipDownloadURI (messageUUID: string, data: string) {
+        const link = document.createElement('a');
+        link.setAttribute('target', '_blank');
+        link.setAttribute('href', 'data:application/zip;base64,'+data);
 
-        var fileName = messageUUID + ".zip";
-        var URI = '<a href="data:application/zip;base64,'+data+'" download="'+fileName+'">'+fileName+'</a>';
-        return URI;
+        var fileName = messageUUID + '.zip';
+        link.setAttribute('download', fileName);
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+     }
+
+    createZipDownloadFileName (messageUUID: string) {
+        return messageUUID + '.zip';
     }
 
     messageDialogLarge(title: string, message: string) {
