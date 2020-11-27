@@ -14,12 +14,11 @@
                             <option value="month">1 month</option>
                             <option value="year">1 year</option>
                         </select>
-                    </div>
-                    <button class="btn btn-success btn-sm pull-right"
+                        <button class="btn btn-success btn-sm pull-right" [disabled]="refreshingStatistics"
                             (click)="refresh()"
-                            title="Refresh these statistics">
-                        <i class="fa fa-refresh"></i> Refresh
-                    </button>
+                            title="Refresh these statistics"><i class="fa fa-refresh"></i> Refresh
+                        </button>
+                    </div>
                 </div>
             </div>
             <div class="row">

@@ -4,6 +4,7 @@ import {NgbModal, NgbActiveModal, NgbModalOptions} from "@ng-bootstrap/ng-bootst
 
 import {SubscriberZipFileUUID} from "./models/SubscriberZipFileUUID";
 import {RemoteFilingService} from "./remoteFiling.service";
+import { saveAs } from 'file-saver';
 
 @Component({
     selector: 'ngbd-modal-content',
@@ -43,24 +44,35 @@ export class RemoteFilingFilesDialog  {
 
         const vm = this;
 
-        console.log('downloadZipData method called');
-
         let zip = require('jszip');
 
-        console.log('call zip.loadAsync');
+        //var decodedStr = atob(messageUUID);
         zip.loadAsync(data, {base64: true})
             .then(function (blob) {
                 // will be called, even if content is corrupted
-                    console.log('loadAsync completed');
-                    let FileSaver = require('file-saver');
-                    FileSaver.saveAs(blob,  messageUUID + ".zip");
+                    //let FileSaver = require('file-saver');
+
+                    saveAs(blob,  messageUUID + ".zip");
                     console.log('saveAs completed');
             },
-                (error) => {
+                function (error) {
                     vm.log.error('Failed to create zip file', error, 'Zip file')
                     console.log('error calling loadAsync')
                 }
             )
+    }
+
+    downloadZipData2(messageUUID: string, data: string) {
+
+        var decodedStr = atob(data);
+        saveAs(decodedStr,  messageUUID + ".zip");
+    }
+
+    createZipDownloadURI (messageUUID: string, data: string) {
+
+        var fileName = messageUUID + ".zip";
+        var URI = '<a href="data:application/zip;base64,'+data+'" download="'+fileName+'">'+fileName+'</a>';
+        return URI;
     }
 
     messageDialogLarge(title: string, message: string) {

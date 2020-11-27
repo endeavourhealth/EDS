@@ -29,7 +29,15 @@
                         <td>
                             <button type="button"
                                     class="btn"
-                                    (click)="downloadZipData(file.queuedMessageUUID, file.queuedMessageBody)">Zip
+                                    (click)="createZipDownloadURI(file.queuedMessageUUID, file.queuedMessageBody)">Zip1
+                            </button>
+                            <button type="button"
+                                    class="btn"
+                                    (click)="downloadZipData(file.queuedMessageUUID, file.queuedMessageBody)">Zip2
+                            </button>
+                            <button type="button"
+                                    class="btn"
+                                    (click)="downloadZipData2(file.queuedMessageUUID, file.queuedMessageBody)">Zip3
                             </button>
                         </td>
                         <td>{{file.fileSent | date:'yyyy-MM-dd HH:mm:ss'}}</td>
