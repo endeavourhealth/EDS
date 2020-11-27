@@ -41,15 +41,26 @@ export class RemoteFilingFilesDialog  {
 
     downloadZipData(messageUUID: string, data: string) {
 
+        const vm = this;
+
+        console.log('downloadZipData method called');
+
         let zip = require('jszip');
+
+        console.log('call zip.loadAsync');
         zip.loadAsync(data, {base64: true})
             .then(function (blob) {
                 // will be called, even if content is corrupted
-                let FileSaver = require('file-saver');
-                FileSaver.saveAs(blob,  messageUUID + ".zip");
-            }, function (e) {
-                // won't be called
-            });
+                    console.log('loadAsync completed');
+                    let FileSaver = require('file-saver');
+                    FileSaver.saveAs(blob,  messageUUID + ".zip");
+                    console.log('saveAs completed');
+            },
+                (error) => {
+                    vm.log.error('Failed to create zip file', error, 'Zip file')
+                    console.log('error calling loadAsync')
+                }
+            )
     }
 
     messageDialogLarge(title: string, message: string) {

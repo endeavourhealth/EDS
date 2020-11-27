@@ -1,11 +1,6 @@
 <div class="module">
     <div class="module-heading">
         Remote Filing Statistics
-        <button class="btn btn-success btn-sm pull-right"
-                (click)="refresh()"
-                title="Refresh these statistics">
-            <i class="fa fa-refresh"></i> Refresh
-        </button>
     </div>
     <div class="module-body">
         <div class="container-fluid">
@@ -20,6 +15,11 @@
                             <option value="year">1 year</option>
                         </select>
                     </div>
+                    <button class="btn btn-success btn-sm pull-right"
+                            (click)="refresh()"
+                            title="Refresh these statistics">
+                        <i class="fa fa-refresh"></i> Refresh
+                    </button>
                 </div>
             </div>
             <div class="row">
