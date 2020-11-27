@@ -19,6 +19,137 @@ import java.util.*;
 public class SD156 extends AbstractRoutine {
     private static final Logger LOG = LoggerFactory.getLogger(SD156.class);
 
+    /**
+     * finds the date that each subscriber feed started for each publisher service
+     * this is currently audited in service_subscriber_audit, but we don't have this captured prior
+     * to mid-2020, so this routine will back-fill that content
+     */
+    public static void findStartDateForEachSubscriber(boolean includeStartedButNotFinishedServices, String orgOdsCodeRegex) {
+        LOG.info("Finding Exchanges Not Sent To Subscriber for " + orgOdsCodeRegex);
+        try {
+
+            ServiceDalI serviceDal = DalProvider.factoryServiceDal();
+            ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
+
+            String bulkOperationName = "find start date for each subscriber SD-156";
+
+            List<Service> services = serviceDal.getAll();
+            for (Service service: services) {
+
+                if (shouldSkipService(service, orgOdsCodeRegex)) {
+                    continue;
+                }
+
+                if (includeStartedButNotFinishedServices) {
+                    //check if already done, so we can make sure EVERY service is done
+                    if (isServiceDoneBulkOperation(service, bulkOperationName)) {
+                        LOG.debug("Skipping " + service + " as already done");
+                        continue;
+                    }
+
+                } else {
+                    //check if already started, to allow us to run multiple instances of this at once
+                    if (isServiceStartedOrDoneBulkOperation(service, bulkOperationName)) {
+                        LOG.debug("Skipping " + service + " as already started or done");
+                        continue;
+                    }
+                }
+
+                LOG.debug("Doing " + service);
+
+                Map<String, Date> hmSubscriberStartDates = new HashMap<>();
+
+                List<UUID> systemIds = SystemHelper.getSystemIdsForService(service);
+                for (UUID systemId: systemIds) {
+
+                    //get all exchanges
+                    List<Exchange> exchanges = exchangeDal.getExchangesByService(service.getId(), systemId, Integer.MAX_VALUE);
+                    LOG.debug("Found " + exchanges.size() + " exchanges");
+
+                    //SQL to find each subscriber date for an exchange was sent to
+                    Connection connection = ConnectionManager.getAuditNonPooledConnection();
+                    String sql = "SELECT DISTINCT a.started, a.subscriber_config_name"
+                            + " FROM exchange_batch b"
+                            + " INNER JOIN exchange_subscriber_transform_audit a"
+                            + " ON b.exchange_id = a.exchange_id"
+                            + " AND b.batch_id = a.exchange_batch_id"
+                            + " WHERE b.exchange_id = ?";
+                    PreparedStatement ps = connection.prepareStatement(sql);
+
+                    int done = 0;
+
+                    //going most-recent-to-oldest
+                    for (Exchange exchange: exchanges) {
+
+                        UUID exchangeId = exchange.getId();
+                        ps.setString(1, exchangeId.toString());
+                        ResultSet rs = ps.executeQuery();
+
+                        while (rs.next()) {
+                            int col = 1;
+                            Date auditDate = new java.util.Date(rs.getTimestamp(col++).getTime());
+                            String subscriberName = rs.getString(col++);
+
+                            Date foundDate = hmSubscriberStartDates.get(subscriberName);
+                            if (foundDate == null
+                                    || auditDate.before(foundDate)) {
+                                hmSubscriberStartDates.put(subscriberName, auditDate);
+                            }
+                        }
+
+                        done ++;
+                        if (done % 100 == 0) {
+                            LOG.debug("Done " + done + " / " + exchanges.size());
+                        }
+                    }
+
+                    LOG.debug("Done " + done + " / " + exchanges.size());
+
+                    ps.close();
+                    connection.close();
+
+                    auditSubscriberStartDates(service.getId(), systemId, hmSubscriberStartDates);
+
+                    //audit that we've done
+                    setServiceDoneBulkOperation(service, bulkOperationName);
+                }
+            }
+
+            LOG.info("Finished Finding Exchanges Not Sent To Subscriber for " + orgOdsCodeRegex);
+        } catch (Throwable t) {
+            LOG.error("", t);
+        }
+    }
+
+    private static void auditSubscriberStartDates(UUID serviceId, UUID systemId, Map<String, Date> hmSubscriberStartDates) throws Exception {
+        if (hmSubscriberStartDates.isEmpty()) {
+            return;
+        }
+
+        Connection connection = ConnectionManager.getAdminConnection();
+        String sql = "REPLACE INTO tmp.SD156_subscriber_start_date (service_id, system_id, earliest_date, subscriber_name) VALUES (?, ?, ?, ?)";
+        PreparedStatement ps = connection.prepareStatement(sql);
+
+        for (String subscriberName: hmSubscriberStartDates.keySet()) {
+            Date earliestDate = hmSubscriberStartDates.get(subscriberName);
+
+            int col = 1;
+
+            ps.setString(col++, serviceId.toString());
+            ps.setString(col++, systemId.toString());
+            ps.setTimestamp(col++, new java.sql.Timestamp(earliestDate.getTime()));
+            ps.setString(col++, subscriberName);
+
+            ps.addBatch();
+        }
+
+        ps.executeBatch();
+        connection.commit();
+
+        ps.close();
+        connection.close();
+    }
+
 
     /**
      * see https://endeavourhealth.atlassian.net/browse/SD-156
