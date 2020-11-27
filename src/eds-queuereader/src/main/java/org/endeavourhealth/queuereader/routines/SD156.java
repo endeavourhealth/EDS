@@ -31,7 +31,7 @@ public class SD156 extends AbstractRoutine {
             ServiceDalI serviceDal = DalProvider.factoryServiceDal();
             ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
 
-            String bulkOperationName = "find start date for each subscriber SD-156";
+            String bulkOperationName = "find start date for each subscriber (SD-156)";
 
             List<Service> services = serviceDal.getAll();
             for (Service service: services) {
@@ -63,8 +63,8 @@ public class SD156 extends AbstractRoutine {
                 for (UUID systemId: systemIds) {
 
                     //get all exchanges
-                    List<Exchange> exchanges = exchangeDal.getExchangesByService(service.getId(), systemId, Integer.MAX_VALUE);
-                    LOG.debug("Found " + exchanges.size() + " exchanges");
+                    List<UUID> exchangeIds = exchangeDal.getExchangeIdsForService(service.getId(), systemId);
+                    LOG.debug("Found " + exchangeIds.size() + " exchanges");
 
                     //SQL to find each subscriber date for an exchange was sent to
                     Connection connection = ConnectionManager.getAuditNonPooledConnection();
@@ -78,10 +78,8 @@ public class SD156 extends AbstractRoutine {
 
                     int done = 0;
 
-                    //going most-recent-to-oldest
-                    for (Exchange exchange: exchanges) {
-
-                        UUID exchangeId = exchange.getId();
+                    //going oldest-to-newest
+                    for (UUID exchangeId: exchangeIds) {
                         ps.setString(1, exchangeId.toString());
                         ResultSet rs = ps.executeQuery();
 
@@ -99,11 +97,11 @@ public class SD156 extends AbstractRoutine {
 
                         done ++;
                         if (done % 100 == 0) {
-                            LOG.debug("Done " + done + " / " + exchanges.size());
+                            LOG.debug("Done " + done + " / " + exchangeIds.size());
                         }
                     }
 
-                    LOG.debug("Done " + done + " / " + exchanges.size());
+                    LOG.debug("Done " + done + " / " + exchangeIds.size());
 
                     ps.close();
                     connection.close();
