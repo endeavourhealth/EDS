@@ -1,25 +1,23 @@
 <div class="module">
     <div class="module-heading">
-        Remote Filing Statistics
+        Remote Filing Status
+        <button class="btn btn-success btn-sm pull-right" [disabled]="refreshingStatus"
+                (click)="refresh()"
+                title="Refresh"><i class="fa fa-refresh"></i> Refresh
+        </button>
     </div>
     <div class="module-body">
         <div class="container-fluid">
             <div class="row">
-                <div class="form-group col-md-5">
+                <div class="form-group col-md-3">
                     <label>Time frame</label>
                     <div class="input-group">
                         <span class="input-group-addon"><i class="fa fa-laptop fa-lg fa-fw"></i></span>
-                        <select id="timeFrame" class="form-control" [(ngModel)]="timeFrame" name="TimeFrame">
+                        <select id="timeFrame" class="form-control" [(ngModel)]="timeFrame" name="TimeFrame" (ngModelChange)="refresh()">
                             <option value="day">1 day</option>
                             <option value="month">1 month</option>
                             <option value="year">1 year</option>
                         </select>
-                    </div>
-                    <div>
-                        <button class="btn btn-success btn-sm pull-right" [disabled]="refreshingStatistics"
-                                (click)="refresh()"
-                                title="Refresh these statistics"><i class="fa fa-refresh"></i> Refresh
-                        </button>
                     </div>
                 </div>
             </div>

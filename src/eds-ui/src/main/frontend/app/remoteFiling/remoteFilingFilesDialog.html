@@ -26,13 +26,9 @@
                     <tr class="hover-box show-child-on-hover" *ngFor="let file of files">
                         <td>{{file.filingOrder}}</td>
                         <td>{{file.queuedMessageUUID}}</td>
-                        <td><a href="data:application/zip;base64,{{file.queuedMessageBody}}"
-                               target="_blank" class="btn btn-border"
-                               download="{{createZipDownloadFileName(file.queuedMessageUUID)}}">Zip}
-                            </a>
-                            <button type="button"
+                        <td><button type="button"
                                     class="btn"
-                                    (click)="downloadZipData2(file.queuedMessageUUID, file.queuedMessageBody)">Zip
+                                    (click)="downloadZipData(file.queuedMessageUUID, file.queuedMessageBody)">Zip
                             </button>
                         </td>
                         <td>{{file.fileSent | date:'yyyy-MM-dd HH:mm:ss'}}</td>
