@@ -58,6 +58,7 @@ public class SD156 extends AbstractRoutine {
                 LOG.debug("Doing " + service);
 
                 Map<String, Date> hmSubscriberStartDates = new HashMap<>();
+                Map<String, Date> hmSubscriberEndDates = new HashMap<>();
 
                 List<UUID> systemIds = SystemHelper.getSystemIdsForService(service);
                 for (UUID systemId: systemIds) {
@@ -93,6 +94,12 @@ public class SD156 extends AbstractRoutine {
                                     || auditDate.before(foundDate)) {
                                 hmSubscriberStartDates.put(subscriberName, auditDate);
                             }
+
+                            foundDate = hmSubscriberEndDates.get(subscriberName);
+                            if (foundDate == null
+                                    || auditDate.after(foundDate)) {
+                                hmSubscriberEndDates.put(subscriberName, auditDate);
+                            }
                         }
 
                         done ++;
@@ -106,7 +113,7 @@ public class SD156 extends AbstractRoutine {
                     ps.close();
                     connection.close();
 
-                    auditSubscriberStartDates(service.getId(), systemId, hmSubscriberStartDates);
+                    auditSubscriberStartDates(service.getId(), hmSubscriberStartDates, hmSubscriberEndDates);
 
                     //audit that we've done
                     setServiceDoneBulkOperation(service, bulkOperationName);
@@ -119,23 +126,24 @@ public class SD156 extends AbstractRoutine {
         }
     }
 
-    private static void auditSubscriberStartDates(UUID serviceId, UUID systemId, Map<String, Date> hmSubscriberStartDates) throws Exception {
+    private static void auditSubscriberStartDates(UUID serviceId, Map<String, Date> hmSubscriberStartDates, Map<String, Date> hmSubscriberEndDates) throws Exception {
         if (hmSubscriberStartDates.isEmpty()) {
             return;
         }
 
         Connection connection = ConnectionManager.getAdminConnection();
-        String sql = "REPLACE INTO tmp.SD156_subscriber_start_date (service_id, system_id, earliest_date, subscriber_name) VALUES (?, ?, ?, ?)";
+        String sql = "REPLACE INTO tmp.SD156_subscriber_start_date (service_id, earliest_date, latest_date, subscriber_name) VALUES (?, ?, ?, ?)";
         PreparedStatement ps = connection.prepareStatement(sql);
 
         for (String subscriberName: hmSubscriberStartDates.keySet()) {
             Date earliestDate = hmSubscriberStartDates.get(subscriberName);
+            Date latestDate = hmSubscriberEndDates.get(subscriberName);
 
             int col = 1;
 
             ps.setString(col++, serviceId.toString());
-            ps.setString(col++, systemId.toString());
             ps.setTimestamp(col++, new java.sql.Timestamp(earliestDate.getTime()));
+            ps.setTimestamp(col++, new java.sql.Timestamp(latestDate.getTime()));
             ps.setString(col++, subscriberName);
 
             ps.addBatch();
