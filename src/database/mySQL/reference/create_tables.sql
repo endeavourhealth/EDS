@@ -270,3 +270,8 @@ CREATE TABLE uprn_property_class (
   preferred_term varchar(255),
   CONSTRAINT pk_read2 PRIMARY KEY (read_code)
 );*/
+-- Scripts for SD 158 - BNF Chapter data is not kept up to date
+
+ALTER TABLE  reference.snomed_to_bnf_chapter_lookup ADD dt_last_updated datetime NOT NULL;
+
+CREATE INDEX ix_code_updated ON reference.snomed_to_bnf_chapter_lookup (snomed_code, dt_last_updated);
