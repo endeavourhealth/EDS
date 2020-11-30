@@ -66,7 +66,8 @@ public class Main {
 			String serviceUUID = args[2];
 			String builderFilename = args[3];
 			String systemId = args[4];
-            SpecialRoutines.ThreadCQC(configName, serviceUUID, builderFilename, systemId);
+            //SpecialRoutines.ThreadCQC(configName, serviceUUID, builderFilename, systemId);
+			CQC.ThreadCQC(configName, serviceUUID, builderFilename, systemId);
             System.exit(0);
         }
 
@@ -74,12 +75,14 @@ public class Main {
 			String configName = args[1];
 			String filename = args[2];
 			String builderFilename = args[3];
-			SpecialRoutines.CQCOrganizationBuilder(configName, filename, builderFilename);
+			//SpecialRoutines.CQCOrganizationBuilder(configName, filename, builderFilename);
+			CQC.CQCOrganizationBuilder(configName, filename, builderFilename);
 			System.exit(0);
 		}
 
 		if (args.length>=1 && args[0].equalsIgnoreCase("CQC")) {
-			SpecialRoutines.CQC();
+			//SpecialRoutines.CQC();
+			CQC.CQC();
 			System.exit(0);
 		}
 
