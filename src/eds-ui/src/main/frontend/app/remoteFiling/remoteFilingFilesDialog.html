@@ -26,8 +26,7 @@
                     <tr class="hover-box show-child-on-hover" *ngFor="let file of files">
                         <td>{{file.filingOrder}}</td>
                         <td>{{file.queuedMessageUUID}}</td>
-                        <td>
-                            <button type="button"
+                        <td><button type="button"
                                     class="btn"
                                     (click)="downloadZipData(file.queuedMessageUUID, file.queuedMessageBody)">Zip
                             </button>

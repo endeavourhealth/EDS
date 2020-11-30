@@ -18,7 +18,7 @@ export class RemoteFilingComponent {
     pageNumber = 1;
     pageSize = 50;
     timeFrame = 'day';
-    refreshingStatistics: boolean;
+    refreshingStatus: boolean;
 
     constructor(private $modal : NgbModal,
                 protected log : LoggerService,
@@ -44,7 +44,7 @@ export class RemoteFilingComponent {
                 (result) => {
                     vm.files = result;
 
-                    console.log(result);
+                    //console.log(result);
 
                     RemoteFilingFilesDialog.open(
                         vm.$modal,
@@ -65,7 +65,7 @@ export class RemoteFilingComponent {
                 (result) => {
                     vm.files = result;
 
-                    console.log(result);
+                    //console.log(result);
 
                     RemoteFilingFilesDialog.open(
                         vm.$modal,
@@ -120,7 +120,7 @@ export class RemoteFilingComponent {
             .subscribe(
                 (result) => {
                     vm.subscribers = result;
-                    console.log(result);
+                    //console.log(result);
 
                     vm.getSubscriberStatistics();
                 },
@@ -136,7 +136,7 @@ export class RemoteFilingComponent {
         }
 
         //for each subscriber, get stats -> set timeFrame from a drop down
-        vm.refreshingStatistics = true;
+        vm.refreshingStatus = true;
         for (var idx in vm.subscribers) {
 
             let id = vm.subscribers[idx].id;
@@ -150,12 +150,12 @@ export class RemoteFilingComponent {
                         });
 
                         remoteFilingSubscriber[0].statistics = result;
-                        console.log(result);
-                        vm.refreshingStatistics = false;
+                        //console.log(result);
+                        vm.refreshingStatus = false;
                     },
                     (error) => {
                         vm.log.error('Failed to load subscriber statistics for Id: ' + id, error, 'Load subscriber statistics')
-                        vm.refreshingStatistics = false;
+                        vm.refreshingStatus = false;
                     }
                 )
         }

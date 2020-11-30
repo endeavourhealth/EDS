@@ -84,13 +84,23 @@ public class Main {
 		}
 
 		if (args.length >= 1
-				&& args[0].equalsIgnoreCase("findExchangesNotSentToSubscriber")) {
-			boolean onlySkipCompletedOnes = Boolean.parseBoolean(args[1]);
+				&& args[0].equalsIgnoreCase("findStartDateForEachSubscriber")) {
+			boolean includeStartedButNotFinishedServices = Boolean.parseBoolean(args[1]);
 			String orgOdsCodeRegex = null;
 			if (args.length > 2) {
 				orgOdsCodeRegex = args[2];
 			}
-			SD156.findExchangesNotSentToSubscriber(onlySkipCompletedOnes, orgOdsCodeRegex);
+			SD156.findStartDateForEachSubscriber(includeStartedButNotFinishedServices, orgOdsCodeRegex);
+			System.exit(0);
+		}
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("findExchangesNotSentToSubscriber")) {
+			boolean includeStartedButNotFinishedServices = Boolean.parseBoolean(args[1]);
+			String orgOdsCodeRegex = null;
+			if (args.length > 2) {
+				orgOdsCodeRegex = args[2];
+			}
+			SD156.findExchangesNotSentToSubscriber(includeStartedButNotFinishedServices, orgOdsCodeRegex);
 			System.exit(0);
 		}
 

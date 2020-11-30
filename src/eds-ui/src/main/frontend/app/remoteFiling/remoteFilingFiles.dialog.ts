@@ -40,17 +40,14 @@ export class RemoteFilingFilesDialog  {
     }
 
     downloadZipData(messageUUID: string, data: string) {
-
-        let zip = require('jszip');
-        zip.loadAsync(data, {base64: true})
-            .then(function (blob) {
-                // will be called, even if content is corrupted
-                let FileSaver = require('file-saver');
-                FileSaver.saveAs(blob,  messageUUID + ".zip");
-            }, function (e) {
-                // won't be called
-            });
-    }
+        const link = document.createElement('a');
+        link.setAttribute('target', '_blank');
+        link.setAttribute('href', 'data:application/zip;base64,'+data);
+        link.setAttribute('download', messageUUID + '.zip');
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+     }
 
     messageDialogLarge(title: string, message: string) {
         MessageBoxDialog.openLarge(
@@ -84,7 +81,6 @@ export class RemoteFilingFilesDialog  {
         if (vm.view.endsWith('filing history (all)')) {
             return true;
         }
-
         return false;
     }
 }

@@ -1,10 +1,9 @@
 <div class="module">
     <div class="module-heading">
-        Remote Filing Statistics
-        <button class="btn btn-success btn-sm pull-right"
+        Remote Filing Status
+        <button class="btn btn-success btn-sm pull-right" [disabled]="refreshingStatus"
                 (click)="refresh()"
-                title="Refresh these statistics">
-            <i class="fa fa-refresh"></i> Refresh
+                title="Refresh"><i class="fa fa-refresh"></i> Refresh
         </button>
     </div>
     <div class="module-body">
@@ -14,7 +13,7 @@
                     <label>Time frame</label>
                     <div class="input-group">
                         <span class="input-group-addon"><i class="fa fa-laptop fa-lg fa-fw"></i></span>
-                        <select id="timeFrame" class="form-control" [(ngModel)]="timeFrame" name="TimeFrame">
+                        <select id="timeFrame" class="form-control" [(ngModel)]="timeFrame" name="TimeFrame" (ngModelChange)="refresh()">
                             <option value="day">1 day</option>
                             <option value="month">1 month</option>
                             <option value="year">1 year</option>
@@ -44,11 +43,11 @@
                                 </td>
                                 <td>
                                     <div class="panel-body">
-                                        <div *ngIf="refreshingStatistics">
+                                        <div *ngIf="refreshingStatus">
                                             <div class="fa fa-sm fa-refresh fa-refresh-animate">
                                             </div>
                                         </div>
-                                        <div *ngIf="!refreshingStatistics">
+                                        <div *ngIf="!refreshingStatus">
                                             <div class="row" *ngFor="let stat of subscriber.statistics">
                                                 <div class="col-md-10" *ngIf="isStatisticInError(stat)">
                                                     {{stat.statisticsText}} <span class="label label-danger">Warning</span>
@@ -79,5 +78,3 @@
         </div>
     </div>
 </div>
-
-
