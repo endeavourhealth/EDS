@@ -1,14 +1,16 @@
 package org.endeavourhealth.queuereader.routines;
 
 import com.google.common.base.Strings;
+import org.endeavourhealth.common.fhir.schema.OrganisationType;
 import org.endeavourhealth.core.database.dal.DalProvider;
 import org.endeavourhealth.core.database.dal.admin.ServiceDalI;
 import org.endeavourhealth.core.database.dal.admin.SystemHelper;
 import org.endeavourhealth.core.database.dal.admin.models.Service;
 import org.endeavourhealth.core.database.dal.audit.ExchangeDalI;
+import org.endeavourhealth.core.database.dal.audit.ServiceSubscriberAuditDalI;
 import org.endeavourhealth.core.database.dal.audit.models.Exchange;
 import org.endeavourhealth.core.database.rdbms.ConnectionManager;
-import org.endeavourhealth.core.subscribers.SubscriberHelper;
+import org.endeavourhealth.transform.common.ExchangeHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -333,7 +335,7 @@ public class SD156 extends AbstractRoutine {
      ok_reason varchar(255)
      );
      */
-    public static void findExchangesNotSentToSubscriber(boolean onlySkipCompletedOnes, String orgOdsCodeRegex) {
+    public static void findExchangesNotSentToSubscriber(boolean includeStartedButNotFinishedServices, String orgOdsCodeRegex) {
         LOG.info("Finding Exchanges Not Sent To Subscriber for " + orgOdsCodeRegex);
         try {
 
@@ -349,14 +351,7 @@ public class SD156 extends AbstractRoutine {
                     continue;
                 }
 
-                //get all subscribers
-                List<String> subscribers = SubscriberHelper.getSubscriberConfigNamesForPublisher(null, service.getId(), service.getLocalId());
-                if (subscribers.isEmpty()) {
-                    LOG.debug("No subscribers so skipping " + service);
-                    continue;
-                }
-
-                if (onlySkipCompletedOnes) {
+                if (includeStartedButNotFinishedServices) {
                     //check if already done, so we can make sure EVERY service is done
                     if (isServiceDoneBulkOperation(service, bulkOperationName)) {
                         LOG.debug("Skipping " + service + " as already done");
@@ -371,15 +366,25 @@ public class SD156 extends AbstractRoutine {
                     }
                 }
 
+
+                //get all subscribers
+                /*List<String> subscribers = SubscriberHelper.getSubscriberConfigNamesForPublisher(null, service.getId(), service.getLocalId());
+                if (subscribers.isEmpty()) {
+                    LOG.debug("No subscribers so skipping " + service);
+                    continue;
+                }*/
+
+                ServiceSubscriberAuditDalI subscriberDal = DalProvider.factoryServiceSubscriberAuditDal();
+                Map<Date, List<String>> hmSubscriberHistory = subscriberDal.getSubscriberHistory(service.getId());
+
                 LOG.debug("Doing " + service);
-                LOG.debug("Got expected subscribers " + subscribers);
 
                 List<UUID> systemIds = SystemHelper.getSystemIdsForService(service);
                 for (UUID systemId: systemIds) {
 
                     //get all exchanges
-                    List<Exchange> exchanges = exchangeDal.getExchangesByService(service.getId(), systemId, Integer.MAX_VALUE);
-                    LOG.debug("Found " + exchanges.size() + " exchanges");
+                    List<UUID> exchangeIds = exchangeDal.getExchangeIdsForService(service.getId(), systemId);
+                    LOG.debug("Found " + exchangeIds.size() + " exchanges");
 
                     Connection connection = ConnectionManager.getAuditNonPooledConnection();
                     String sql = "SELECT DISTINCT b.batch_id, b.eds_patient_id, b.inserted_at, a.subscriber_config_name"
@@ -393,9 +398,14 @@ public class SD156 extends AbstractRoutine {
 
                     int done = 0;
 
-                    for (Exchange exchange: exchanges) {
+                    for (UUID exchangeId: exchangeIds) {
 
-                        UUID exchangeId = exchange.getId();
+                        Exchange ex = exchangeDal.getExchange(exchangeId);
+                        if (!ExchangeHelper.isAllowRequeueing(ex)) {
+                            LOG.debug("Skipping exchange " + exchangeId + " as can't be re-queued");
+                            continue;
+                        }
+
                         ps.setString(1, exchangeId.toString());
                         ResultSet rs = ps.executeQuery();
 
@@ -412,9 +422,14 @@ public class SD156 extends AbstractRoutine {
                             Date insertedAt = new java.util.Date(rs.getTimestamp(col++).getTime());
                             String subscriberName = rs.getString(col++);
 
+                            if (exchangeId.toString().equalsIgnoreCase("4a6dcd82-1461-4d5f-9bd6-1f22c76b82ff")) {
+                                LOG.debug("STOP");
+                            }
+
                             if (subscriberName == null) {
                                 //if a null subscriber, then it wasn't sent to ANY subscriber
-                                auditMissedTransform(service.getId(), systemId, batchId, patientId, insertedAt, new ArrayList(), subscribers);
+                                List<String> expectedSubscribers = calculateExpectedSubscribers(hmSubscriberHistory, insertedAt);
+                                auditMissedTransform(service, systemId, batchId, patientId, insertedAt, new ArrayList(), expectedSubscribers);
                                 lastBatchId = null;
                                 lastPatientId = null;
                                 lastInsertedAt = null;
@@ -427,7 +442,8 @@ public class SD156 extends AbstractRoutine {
                             } else {
                                 //if the first or a different batch
                                 if (lastBatchId != null) {
-                                    auditMissedTransform(service.getId(), systemId, lastBatchId, lastPatientId, lastInsertedAt, subscribersFound, subscribers);
+                                    List<String> expectedSubscribers = calculateExpectedSubscribers(hmSubscriberHistory, lastInsertedAt);
+                                    auditMissedTransform(service, systemId, lastBatchId, lastPatientId, lastInsertedAt, subscribersFound, expectedSubscribers);
                                 }
 
                                 lastBatchId = batchId;
@@ -441,16 +457,17 @@ public class SD156 extends AbstractRoutine {
 
                         //don't forget the last batch
                         if (lastBatchId != null) {
-                            auditMissedTransform(service.getId(), systemId, lastBatchId, lastPatientId, lastInsertedAt, subscribersFound, subscribers);
+                            List<String> expectedSubscribers = calculateExpectedSubscribers(hmSubscriberHistory, lastInsertedAt);
+                            auditMissedTransform(service, systemId, lastBatchId, lastPatientId, lastInsertedAt, subscribersFound, expectedSubscribers);
                         }
 
                         done ++;
                         if (done % 100 == 0) {
-                            LOG.debug("Done " + done + " / " + exchanges.size());
+                            LOG.debug("Done " + done + " / " + exchangeIds.size());
                         }
                     }
 
-                    LOG.debug("Done " + done + " / " + exchanges.size());
+                    LOG.debug("Done " + done + " / " + exchangeIds.size());
 
                     ps.close();
                     connection.close();
@@ -466,16 +483,56 @@ public class SD156 extends AbstractRoutine {
         }
     }
 
-    private static void auditMissedTransform(UUID serviceId, UUID systemId, UUID lastBatchId,
-                                             String lastPatientId, Date lastInsertedAt, List<String> subscribersFound, List<String> subscribers) throws Exception {
-        Set<String> missingSubscribers = new HashSet<>(subscribers);
+    private static List<String> calculateExpectedSubscribers(Map<Date, List<String>> hmSubscriberHistory, Date checkDate) {
+
+        List<Date> dates = new ArrayList<>(hmSubscriberHistory.keySet());
+        dates.sort((a, b) -> a.compareTo(b));
+
+        List<String> lastSubs = null;
+
+        for (int i=0; i<dates.size(); i++) {
+            Date d = dates.get(i);
+
+            if (!checkDate.after(d)) {
+                break;
+            }
+
+            lastSubs = hmSubscriberHistory.get(d);
+        }
+
+        if (lastSubs == null) {
+            //if we've not set this , it means we don't have any subscribers at this point
+            return new ArrayList<>();
+
+        } else {
+            return lastSubs;
+        }
+    }
+
+    private static void auditMissedTransform(Service service, UUID systemId, UUID batchId, String patientId, Date insertedAt,
+                                             List<String> subscribersFound, List<String> expectedSubscribers) throws Exception {
+
+
+        //if a patient batch, ignore any service where the protocol cohort filters out a lot of patients
+        if (!Strings.isNullOrEmpty(patientId)) {
+
+            if (service.getOrganisationType() == null
+                    || service.getOrganisationType() != OrganisationType.GP_PRACTICE) {
+                return;
+            }
+        }
+
+        //work out missing subscribers from expected and found
+        Set<String> missingSubscribers = new HashSet<>(expectedSubscribers);
         missingSubscribers.removeAll(subscribersFound);
 
+        //if none are missing, we're good
         if (missingSubscribers.isEmpty()) {
             return;
         }
 
-        //LOG.debug("Batch " + lastBatchId + " didn't go to subscribers " + missingSubscribers);
+
+        //LOG.debug("Batch " + batchId + " didn't go to subscribers " + missingSubscribers);
 
         Connection connection = ConnectionManager.getAdminConnection();
         String sql = "INSERT INTO tmp.SD156_batches_not_transformed (service_id, system_id, batch_id, patient_id, inserted_at, subscriber_name) VALUES (?, ?, ?, ?, ?, ?)";
@@ -484,11 +541,11 @@ public class SD156 extends AbstractRoutine {
         for (String missingSubscriber: missingSubscribers) {
             int col = 1;
 
-            ps.setString(col++, serviceId.toString());
+            ps.setString(col++, service.getId().toString());
             ps.setString(col++, systemId.toString());
-            ps.setString(col++, lastBatchId.toString());
-            ps.setString(col++, lastPatientId);
-            ps.setTimestamp(col++, new java.sql.Timestamp(lastInsertedAt.getTime()));
+            ps.setString(col++, batchId.toString());
+            ps.setString(col++, patientId);
+            ps.setTimestamp(col++, new java.sql.Timestamp(insertedAt.getTime()));
             ps.setString(col++, missingSubscriber);
 
             ps.addBatch();
