@@ -66,7 +66,7 @@ public class SD156 extends AbstractRoutine {
                     //due to weird behaviour with some List implementations, we have some duplicate empty
                     //records, so detect them and flag them for deletion
                     if (lastConfigNames != null
-                            && lastConfigNames.equals("")
+                            //&& lastConfigNames.equals("")
                             && configNames.equals(lastConfigNames)) {
 
                         datesToDelete.add(d);
