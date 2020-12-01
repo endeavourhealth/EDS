@@ -487,7 +487,7 @@ public class Main {
 
 
 		if (args.length >= 1
-				&& args[0].equalsIgnoreCase("GetResourceHistory")) {
+				&& args[0].equalsIgnoreCase("getResourceHistory")) {
 			String serviceId = args[1];
 			String resourceType = args[2];
 			String resourceId = args[3];
