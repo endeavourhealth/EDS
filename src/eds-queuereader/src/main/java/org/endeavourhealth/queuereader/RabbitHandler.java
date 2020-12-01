@@ -56,7 +56,7 @@ public class RabbitHandler {
 
 	}
 
-	public void start() throws IOException {
+	public void start() throws Exception {
 
 		LOG.info("Connecting to Rabbit queue {} at {}", configuration.getQueue(), RabbitConfig.getInstance().getNodes());
 
