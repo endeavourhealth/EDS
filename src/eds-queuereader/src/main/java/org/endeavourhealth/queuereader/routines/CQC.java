@@ -476,10 +476,13 @@ public abstract class CQC extends AbstractRoutine {
     {
         // String configName = "subscriber_test";
 
-        List<EnterpriseConnector.ConnectionWrapper> connectionWrappers = EnterpriseConnector.openSubscriberConnections(configName);
-        EnterpriseConnector.ConnectionWrapper connectionWrapper = connectionWrappers.get(0);
+        //List<EnterpriseConnector.ConnectionWrapper> connectionWrappers = EnterpriseConnector.openSubscriberConnections(configName);
+        //EnterpriseConnector.ConnectionWrapper connectionWrapper = connectionWrappers.get(0);
 
-        Connection subscriberConnection = connectionWrapper.getConnection();
+        // switch to subscriber_transform database
+        Connection connection = ConnectionManager.getSubscriberTransformConnection(configName);
+
+        //Connection subscriberConnection = connectionWrapper.getConnection();
 
         postcode = postcode.replaceAll(" ","").toLowerCase();
 
@@ -499,7 +502,8 @@ public abstract class CQC extends AbstractRoutine {
 
         String sql = "select * from ods_v2 where uprn = '"+uprn+"' and lower(name) ='"+name.toLowerCase()+"'";
 
-        PreparedStatement ps = subscriberConnection.prepareStatement(sql);
+        //PreparedStatement ps = subscriberConnection.prepareStatement(sql);
+        PreparedStatement ps = connection.prepareStatement(sql);
         ResultSet  rs = ps.executeQuery();
 
         String ret = "";
@@ -526,7 +530,10 @@ public abstract class CQC extends AbstractRoutine {
             ret = ret+"~"+parent_organization+"~"+parent_current+"~"+opendate+"~"+closedate;
         }
         ps.close();
-        subscriberConnection.close();
+
+        //subscriberConnection.close();
+
+        connection.close();
         return ret;
     }
 
