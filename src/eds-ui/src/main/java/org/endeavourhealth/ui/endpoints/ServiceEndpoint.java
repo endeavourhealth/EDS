@@ -571,7 +571,13 @@ public final class ServiceEndpoint extends AbstractEndpoint {
         Map<UUID, LastDataReceived> hmReceived = hmLastDataReceived.get(serviceId);
         Map<UUID, LastDataProcessed> hmProcessed = hmLastDataProcessed.get(serviceId);
 
-        Set<UUID> systemIds = new HashSet<>();
+        //just derive the system ID list from the service, so when we've removed a system from a service, it no longer shows
+        List<ServiceInterfaceEndpoint> systemEndpoints = service.getEndpointsList();
+        if (systemEndpoints.isEmpty()) {
+            return null;
+        }
+
+        /*Set<UUID> systemIds = new HashSet<>();
         if (hsInError != null) {
             systemIds.addAll(hsInError);
         }
@@ -596,15 +602,17 @@ public final class ServiceEndpoint extends AbstractEndpoint {
             }
         }
 
-
         if (systemIds.isEmpty()) {
             return null;
-        }
+        }*/
 
 
         List<JsonServiceSystemStatus> ret = new ArrayList<>();
 
-        for (UUID systemId: systemIds) {
+
+        //for (UUID systemId: systemIds) {
+        for (ServiceInterfaceEndpoint endpoint: systemEndpoints) {
+            UUID systemId = endpoint.getSystemUuid();
 
             JsonServiceSystemStatus status = new JsonServiceSystemStatus();
 
@@ -645,7 +653,8 @@ public final class ServiceEndpoint extends AbstractEndpoint {
                 }
             }
 
-            String publisherMode = hmPublisherInterfaceModes.get(systemId);
+            //String publisherMode = hmPublisherInterfaceModes.get(systemId);
+            String publisherMode = endpoint.getEndpoint();
             status.setPublisherMode(publisherMode);
 
             ret.add(status);
