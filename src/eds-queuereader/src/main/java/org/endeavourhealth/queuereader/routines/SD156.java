@@ -335,7 +335,7 @@ public class SD156 extends AbstractRoutine {
      ok_reason varchar(255)
      );
      */
-    public static void findExchangesNotSentToSubscriber(boolean includeStartedButNotFinishedServices, String orgOdsCodeRegex) {
+    public static void findExchangesNotSentToSubscriber(boolean includeStartedButNotFinishedServices, Date startDate, String orgOdsCodeRegex) {
         LOG.info("Finding Exchanges Not Sent To Subscriber for " + orgOdsCodeRegex);
         try {
 
@@ -406,6 +406,12 @@ public class SD156 extends AbstractRoutine {
                             continue;
                         }
 
+                        Date exDate = ex.getTimestamp();
+                        if (startDate != null
+                            && exDate.before(startDate)) {
+                            continue;
+                        }
+
                         ps.setString(1, exchangeId.toString());
                         ResultSet rs = ps.executeQuery();
 
@@ -429,7 +435,7 @@ public class SD156 extends AbstractRoutine {
                             if (subscriberName == null) {
                                 //if a null subscriber, then it wasn't sent to ANY subscriber
                                 List<String> expectedSubscribers = calculateExpectedSubscribers(hmSubscriberHistory, insertedAt);
-                                auditMissedTransform(service, systemId, batchId, patientId, insertedAt, new ArrayList(), expectedSubscribers);
+                                auditMissedTransform(service, systemId, exchangeId, batchId, patientId, insertedAt, new ArrayList(), expectedSubscribers);
                                 lastBatchId = null;
                                 lastPatientId = null;
                                 lastInsertedAt = null;
@@ -443,7 +449,7 @@ public class SD156 extends AbstractRoutine {
                                 //if the first or a different batch
                                 if (lastBatchId != null) {
                                     List<String> expectedSubscribers = calculateExpectedSubscribers(hmSubscriberHistory, lastInsertedAt);
-                                    auditMissedTransform(service, systemId, lastBatchId, lastPatientId, lastInsertedAt, subscribersFound, expectedSubscribers);
+                                    auditMissedTransform(service, systemId, exchangeId, lastBatchId, lastPatientId, lastInsertedAt, subscribersFound, expectedSubscribers);
                                 }
 
                                 lastBatchId = batchId;
@@ -458,7 +464,7 @@ public class SD156 extends AbstractRoutine {
                         //don't forget the last batch
                         if (lastBatchId != null) {
                             List<String> expectedSubscribers = calculateExpectedSubscribers(hmSubscriberHistory, lastInsertedAt);
-                            auditMissedTransform(service, systemId, lastBatchId, lastPatientId, lastInsertedAt, subscribersFound, expectedSubscribers);
+                            auditMissedTransform(service, systemId, exchangeId, lastBatchId, lastPatientId, lastInsertedAt, subscribersFound, expectedSubscribers);
                         }
 
                         done ++;
@@ -509,7 +515,7 @@ public class SD156 extends AbstractRoutine {
         }
     }
 
-    private static void auditMissedTransform(Service service, UUID systemId, UUID batchId, String patientId, Date insertedAt,
+    private static void auditMissedTransform(Service service, UUID systemId, UUID exchangeId, UUID batchId, String patientId, Date insertedAt,
                                              List<String> subscribersFound, List<String> expectedSubscribers) throws Exception {
 
 
@@ -535,7 +541,7 @@ public class SD156 extends AbstractRoutine {
         //LOG.debug("Batch " + batchId + " didn't go to subscribers " + missingSubscribers);
 
         Connection connection = ConnectionManager.getAdminConnection();
-        String sql = "INSERT INTO tmp.SD156_batches_not_transformed (service_id, system_id, batch_id, patient_id, inserted_at, subscriber_name) VALUES (?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO tmp.SD156_batches_not_transformed (service_id, system_id, exchangeId, batch_id, patient_id, inserted_at, subscriber_name) VALUES (?, ?, ?, ?, ?, ?, ?)";
         PreparedStatement ps = connection.prepareStatement(sql);
 
         for (String missingSubscriber: missingSubscribers) {
@@ -543,6 +549,7 @@ public class SD156 extends AbstractRoutine {
 
             ps.setString(col++, service.getId().toString());
             ps.setString(col++, systemId.toString());
+            ps.setString(col++, exchangeId.toString());
             ps.setString(col++, batchId.toString());
             ps.setString(col++, patientId);
             ps.setTimestamp(col++, new java.sql.Timestamp(insertedAt.getTime()));

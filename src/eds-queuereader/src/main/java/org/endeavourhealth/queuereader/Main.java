@@ -9,6 +9,8 @@ import org.endeavourhealth.transform.common.TransformConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
@@ -20,6 +22,13 @@ public class Main {
 		String configId = args[0];
 		LOG.info("Initialising config manager");
 		ConfigManager.initialize("queuereader", configId);
+
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("postBatchesToProtocol")) {
+			String file = args[1];
+			Queueing.postBatchesToProtocol(file);
+			System.exit(0);
+		}
 
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("checkOrgOdsTypes")) {
@@ -109,11 +118,15 @@ public class Main {
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("findExchangesNotSentToSubscriber")) {
 			boolean includeStartedButNotFinishedServices = Boolean.parseBoolean(args[1]);
-			String orgOdsCodeRegex = null;
+			Date startDate = null;
 			if (args.length > 2) {
-				orgOdsCodeRegex = args[2];
+				startDate = new SimpleDateFormat("yyyy-MM-dd").parse(args[2]);
 			}
-			SD156.findExchangesNotSentToSubscriber(includeStartedButNotFinishedServices, orgOdsCodeRegex);
+			String orgOdsCodeRegex = null;
+			if (args.length > 3) {
+				orgOdsCodeRegex = args[3];
+			}
+			SD156.findExchangesNotSentToSubscriber(includeStartedButNotFinishedServices, startDate, orgOdsCodeRegex);
 			System.exit(0);
 		}
 
@@ -1019,7 +1032,7 @@ public class Main {
 			UUID serviceId = UUID.fromString(args[1]);
 			UUID systemId = UUID.fromString(args[2]);
 			String sourceFile = args[3];
-			Queuing.postPatientsToProtocol(serviceId, systemId, sourceFile);
+			Queueing.postPatientsToProtocol(serviceId, systemId, sourceFile);
 			System.exit(0);
 		}
 
@@ -1191,7 +1204,7 @@ public class Main {
 			if (args.length > 4) {
 				throttle = Integer.parseInt(args[4]);
 			}
-			Queuing.postToRabbit(exchangeName, srcFile, reason, throttle);
+			Queueing.postToRabbit(exchangeName, srcFile, reason, throttle);
 			System.exit(0);
 		}
 
@@ -1199,7 +1212,7 @@ public class Main {
 				&& args[0].equalsIgnoreCase("PostExchangesToProtocol")) {
 			String srcFile = args[1];
 			String reason = args[2];
-			Queuing.postExchangesToProtocol(srcFile, reason);
+			Queueing.postExchangesToProtocol(srcFile, reason);
 			System.exit(0);
 		}
 

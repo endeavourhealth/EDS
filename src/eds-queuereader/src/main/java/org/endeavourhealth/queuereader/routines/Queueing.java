@@ -22,8 +22,8 @@ import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.util.*;
 
-public class Queuing extends AbstractRoutine {
-    private static final Logger LOG = LoggerFactory.getLogger(Queuing.class);
+public class Queueing extends AbstractRoutine {
+    private static final Logger LOG = LoggerFactory.getLogger(Queueing.class);
 
 
     public static void postToRabbit(String exchangeName, String srcFile, String reason, Integer throttle) {
@@ -204,6 +204,103 @@ public class Queuing extends AbstractRoutine {
             }
 
             LOG.info("Finished posting patients from " + sourceFile + " for " + serviceId + " to Protocol queue");
+        } catch (Throwable t) {
+            LOG.error("", t);
+        }
+
+    }
+
+    /**
+     * takes a file of batch UUIDs and posts them into the protocol queue (created for SD-156)
+     */
+    public static void postBatchesToProtocol(String sourceFile) {
+
+        try {
+            LOG.info("Posting exchange batches to Protocol queue from " + sourceFile);
+
+            Set<UUID> batchIds = new HashSet<>();
+            List<String> lines = Files.readAllLines(new File(sourceFile).toPath());
+            for (String line: lines) {
+                batchIds.add(UUID.fromString(line));
+            }
+            LOG.info("Found " + batchIds.size() + " batch IDs");
+
+            //hash them by their exchange ID
+            Map<UUID, Set<UUID>> hmBatchIdsByExchange = new HashMap<>();
+            Map<UUID, Set<UUID>> hmExchangesIdsByService = new HashMap<>();
+
+            ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
+            ExchangeBatchDalI exchangeBatchDal = DalProvider.factoryExchangeBatchDal();
+            ServiceDalI serviceDal = DalProvider.factoryServiceDal();
+
+            int done = 0;
+            for (UUID batchId: batchIds) {
+
+                ExchangeBatch batch = exchangeBatchDal.getForBatchId(batchId);
+                UUID exchangeId = batch.getExchangeId();
+                boolean needToCheckService = false;
+                Set<UUID> s = hmBatchIdsByExchange.get(exchangeId);
+                if (s == null) {
+                    s = new HashSet<>();
+                    hmBatchIdsByExchange.put(exchangeId, s);
+                    needToCheckService = true;
+                }
+                s.add(batchId);
+
+                //if we didn't already have the exchange ID cached, then we need to make sure we
+                //have the service ID
+                if (needToCheckService) {
+                    Exchange exchange = exchangeDal.getExchange(exchangeId);
+                    UUID serviceId = exchange.getServiceId();
+
+                    s = hmExchangesIdsByService.get(serviceId);
+                    if (s == null) {
+                        s = new HashSet<>();
+                        hmExchangesIdsByService.put(serviceId, s);
+                    }
+                    s.add(exchangeId);
+                }
+
+                done ++;
+                if (done % 1000 == 0) {
+                    LOG.debug("Done " + done + " out of " + batchIds.size());
+                }
+            }
+            LOG.debug("Done hashing for all " + done + " out of " + batchIds.size() + " for " + hmExchangesIdsByService.size() + " services");
+            continueOrQuit();
+
+            for (UUID serviceId: hmExchangesIdsByService.keySet()) {
+                Set<UUID> exchangeIds = hmExchangesIdsByService.get(serviceId);
+                Service service = serviceDal.getById(serviceId);
+                LOG.debug("Doing " + service + " with " + exchangeIds + " exchanges");
+
+                List<Exchange> exchanges = new ArrayList<>();
+                for (UUID exchangeId: exchangeIds) {
+                    Exchange exchange = exchangeDal.getExchange(exchangeId);
+                    exchanges.add(exchange);
+                }
+
+                //sort exchanges into date order (not that it really matters)
+                exchanges.sort((o1, o2) -> o1.getTimestamp().compareTo(o2.getTimestamp()));
+
+                for (Exchange exchange: exchanges) {
+                    UUID exchangeId = exchange.getId();
+                    Set<UUID> batchIdsForExchange = hmBatchIdsByExchange.get(exchangeId);
+                    LOG.debug("    Exchange " + exchangeId + " with " + batchIdsForExchange.size() + " batches");
+
+                    //set new batch ID in exchange header
+                    String batchIdString = ObjectMapperPool.getInstance().writeValueAsString(batchIdsForExchange.toArray());
+                    exchange.setHeader(HeaderKeys.BatchIdsJson, batchIdString);
+
+                    //post new batch to protocol queue
+                    PostMessageToExchangeConfig exchangeConfig = QueueHelper.findExchangeConfig(QueueHelper.ExchangeName.PROTOCOL);
+                    PostMessageToExchange component = new PostMessageToExchange(exchangeConfig);
+                    component.process(exchange);
+                }
+            }
+
+            LOG.info("Finished posting exchange batches to Protocol queue from " + sourceFile);
+
         } catch (Throwable t) {
             LOG.error("", t);
         }
