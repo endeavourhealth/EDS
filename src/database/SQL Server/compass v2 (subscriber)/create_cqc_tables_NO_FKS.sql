@@ -69,7 +69,7 @@ CREATE TABLE [organization_additional] (
   [json_value] text DEFAULT NULL ,
   [value] varchar(255) DEFAULT NULL,
   [name] varchar(255) DEFAULT NULL,
-  PRIMARY KEY ([id],[property_id])
+  PRIMARY KEY ([id],[property_id],[value_id])
 )
 GO
 
