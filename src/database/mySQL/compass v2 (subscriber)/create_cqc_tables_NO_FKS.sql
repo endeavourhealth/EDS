@@ -68,7 +68,7 @@ CREATE TABLE `organization_additional` (
   `json_value` json DEFAULT NULL COMMENT 'the JSON data itself',
   `value` varchar(255) COLLATE latin1_bin DEFAULT NULL,
   `name` varchar(255) COLLATE latin1_bin DEFAULT NULL,
-  PRIMARY KEY (`id`,`property_id`)
+  PRIMARY KEY (`id`,`property_id`,`value_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_bin;
 
 DROP TABLE IF EXISTS `organization_contact_v2`;
