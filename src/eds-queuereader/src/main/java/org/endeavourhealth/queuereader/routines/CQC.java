@@ -660,7 +660,8 @@ public abstract class CQC extends AbstractRoutine {
             if (!opendate.isEmpty()) createContainedCoded(organizationBuilder,"open_date",opendate);
             if (!closedate.isEmpty()) createContainedCoded(organizationBuilder,"close_date",closedate);
 
-            RESOURCE_GUID = scratch(cqc_id, configName);
+            //RESOURCE_GUID = scratch(cqc_id, configName);
+            RESOURCE_GUID = scratch(cqc_location, configName);
 
             organizationBuilder.setId(RESOURCE_GUID);
 
