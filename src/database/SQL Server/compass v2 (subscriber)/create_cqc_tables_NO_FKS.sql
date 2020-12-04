@@ -65,7 +65,7 @@ DROP TABLE IF EXISTS [organization_additional];
 CREATE TABLE [organization_additional] (
   [id] bigint NOT NULL ,
   [property_id] bigint NOT NULL ,
-  [value_id] bigint DEFAULT NULL ,
+  [value_id] bigint NOT NULL ,
   [json_value] text DEFAULT NULL ,
   [value] varchar(255) DEFAULT NULL,
   [name] varchar(255) DEFAULT NULL,

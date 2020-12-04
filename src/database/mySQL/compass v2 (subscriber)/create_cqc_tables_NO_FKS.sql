@@ -64,7 +64,7 @@ DROP TABLE IF EXISTS `organization_additional`;
 CREATE TABLE `organization_additional` (
   `id` bigint(20) NOT NULL COMMENT 'same as the id column on the organisation table',
   `property_id` bigint(20) NOT NULL COMMENT 'IM reference (e.g. specialism)',
-  `value_id` bigint(50) DEFAULT NULL COMMENT 'IM reference (e.g. concept id for mental health specialism',
+  `value_id` bigint(50) NOT NULL COMMENT 'IM reference (e.g. concept id for mental health specialism',
   `json_value` json DEFAULT NULL COMMENT 'the JSON data itself',
   `value` varchar(255) COLLATE latin1_bin DEFAULT NULL,
   `name` varchar(255) COLLATE latin1_bin DEFAULT NULL,
