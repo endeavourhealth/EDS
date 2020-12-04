@@ -656,7 +656,8 @@ public abstract class CQC extends AbstractRoutine {
             if (!service_type.isEmpty()) {
                 String[] ss = service_type.split("\\|");
                 for (int i = 0; i < ss.length; i++) {
-                    createContainedCoded(organizationBuilder, "service_type", service_type);
+                    String service = ss[i];
+                    createContainedCoded(organizationBuilder, "service_type", service);
                 }
             }
 
