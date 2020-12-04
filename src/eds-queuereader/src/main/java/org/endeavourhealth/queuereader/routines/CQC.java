@@ -652,7 +652,13 @@ public abstract class CQC extends AbstractRoutine {
             if (!cqc_location.isEmpty()) createContainedCoded(organizationBuilder,"cqc_location",cqc_location);
             if (!cqc_provider_id.isEmpty()) createContainedCoded(organizationBuilder,"cqc_provider_id",cqc_provider_id);
             if (!on_ratings.isEmpty()) createContainedCoded(organizationBuilder,"on_ratings",on_ratings);
-            if (!service_type.isEmpty()) createContainedCoded(organizationBuilder,"service_type",service_type);
+
+            if (!service_type.isEmpty()) {
+                String[] ss = service_type.split("\\|");
+                for (int i = 0; i < ss.length; i++) {
+                    createContainedCoded(organizationBuilder, "service_type", service_type);
+                }
+            }
 
             if (!specialism.isEmpty()) {
                 String[] ss = specialism.split("\\|");
@@ -660,7 +666,6 @@ public abstract class CQC extends AbstractRoutine {
                     String spec = ss[i];
                     createContainedCoded(organizationBuilder,"specialisms/services",spec);
                 }
-                //createContainedCoded(organizationBuilder,"specialisms/services",specialism);
             }
             // ods stuff
             if (!parent_organization.isEmpty()) createContainedCoded(organizationBuilder,"parent_organization",parent_organization);
