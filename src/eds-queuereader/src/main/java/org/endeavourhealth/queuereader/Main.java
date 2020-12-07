@@ -24,6 +24,22 @@ public class Main {
 		ConfigManager.initialize("queuereader", configId);
 
 		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("dumpRawDataForSubscriberId")) {
+			String subscriberConfigName = args[1];
+			long subscriberId = Long.parseLong(args[2]);
+			Fhir.dumpRawDataForSubscriberId(subscriberConfigName, subscriberId);
+			System.exit(0);
+		}
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("dumpRawDataForResourceId")) {
+			String resourceType = args[1];
+			UUID resourceId = UUID.fromString(args[2]);
+			Fhir.dumpRawDataForResourceId(resourceType, resourceId);
+			System.exit(0);
+		}
+
+
+		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("postBatchesToProtocol")) {
 			String file = args[1];
 			Queueing.postBatchesToProtocol(file);
