@@ -219,8 +219,12 @@ create table opcs4_lookup (
 
 create table snomed_to_bnf_chapter_lookup (
   snomed_code varchar(20) NOT NULL PRIMARY KEY,
-  bnf_chapter_code varchar(20)
+  bnf_chapter_code varchar(20),
+  dt_last_updated datetime NULL DEFAULT NULL
 );
+
+CREATE INDEX ix_snomed_to_bnf_chapter_lookup_snomed_code_dt_last_updated 
+ON snomed_to_bnf_chapter_lookup (snomed_code, dt_last_updated);
 
 create table icd10_lookup (
   code varchar(10),
