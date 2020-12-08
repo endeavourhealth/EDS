@@ -31,62 +31,65 @@ public class SubscriberHelper {
 
     public static List<String> getSubscriberConfigNamesForPublisher(UUID exchangeId, UUID serviceId, String odsCode) throws Exception {
 
-        List<String> ret = getSubscriberConfigNamesImpl(serviceId, odsCode);
+        List<String> currentSubscribers = getSubscriberConfigNamesImpl(serviceId);
 
         //audit if this state has changed (only if we have an exchange ID, meaning we're being called from proper pipeline)
         if (exchangeId != null) {
-            auditSubscriberStateChange(exchangeId, serviceId, ret);
+            auditSubscriberStateChange(exchangeId, serviceId, currentSubscribers);
         }
 
-        return ret;
+        return currentSubscribers;
     }
 
     /**
      * if the subscribers have changed from what we last audited, then update the audit
      */
-    private static void auditSubscriberStateChange(UUID exchangeId, UUID serviceId, List<String> subscribers) throws Exception {
+    private static void auditSubscriberStateChange(UUID exchangeId, UUID serviceId, List<String> currentSubscribers) throws Exception {
         ServiceSubscriberAuditDalI dal = DalProvider.factoryServiceSubscriberAuditDal();
 
-        List<String> latest = cachedLatestSubscriberState.get(serviceId);
-        if (latest == null) {
-            latest = dal.getLatestSubscribers(serviceId);
+        List<String> previousSubscribers = cachedLatestSubscriberState.get(serviceId);
+        if (previousSubscribers == null) {
+            previousSubscribers = dal.getLatestSubscribers(serviceId);
         }
 
-        if (latest == null) {
-            latest = new ArrayList<>();
+        if (previousSubscribers == null) {
+            previousSubscribers = new ArrayList<>();
         }
 
-        if (!latest.equals(subscribers)) {
-            dal.saveSubscribers(serviceId, subscribers);
+        if (!previousSubscribers.equals(currentSubscribers)) {
+            dal.saveSubscribers(serviceId, currentSubscribers);
 
             //send Slack message so we know something has changed
             ServiceDalI serviceDalI = DalProvider.factoryServiceDal();
             Service service = serviceDalI.getById(serviceId);
             String msg = "Subscriber state for " + service.getName() + " " + service.getLocalId() + " has changed on exchange " + exchangeId + ":\r\n"
-                    + "[" + String.join(", ", latest) + "] -> [" + String.join(", ", subscribers) + "]";
+                    + "[" + String.join(", ", previousSubscribers) + "] -> [" + String.join(", ", currentSubscribers) + "]";
             SlackHelper.sendSlackMessage(SlackHelper.Channel.QueueReaderAlerts, msg);
+            LOG.debug(msg);
 
             //keep getting messages saying it's changed but "[] -> []", so log out what's going on
-            LOG.debug(msg);
-            LOG.debug("State was: " + latest);
+            /*LOG.debug("State was: " + latest);
             LOG.debug("State new: " + subscribers);
 
             LOG.debug("Latest empty: " + latest.isEmpty() + " cls " + latest.getClass());
             LOG.debug("Latest new: " + subscribers.isEmpty() + " cls " + subscribers.getClass());
-            LOG.debug("Same = " + latest.equals(subscribers));
+            LOG.debug("Same = " + latest.equals(subscribers));*/
         }
 
-        cachedLatestSubscriberState.put(serviceId, new ArrayList<>(subscribers));
-    }
-
-    private static List<String> getSubscriberConfigNamesImpl(UUID serviceId, String odsCode) throws Exception {
-        return getSubscriberConfigNamesFromDsm(serviceId, odsCode);
+        cachedLatestSubscriberState.put(serviceId, new ArrayList<>(previousSubscribers));
     }
 
     /**
      * returns a sorted list of subscriber config names for a given publisher UUID using DSM as the source of information
      */
-    private static List<String> getSubscriberConfigNamesFromDsm(UUID serviceId, String odsCode) throws Exception {
+    private static List<String> getSubscriberConfigNamesImpl(UUID serviceId) throws Exception {
+
+        //NOTE: this fn used to take the ODS code from the Exchange headers, but since a small number of services
+        //have had their ODS codes changes (e.g. 30313) this means that we cannot trust the old exchanges,
+        //so just get the ODS code fresh from the DB
+        ServiceDalI dal = DalProvider.factoryServiceDal();
+        Service service = dal.getById(serviceId);
+        String odsCode = service.getLocalId();
 
         //populate a set, so we can't end up with duplicates
         Set<String> ret = new HashSet<>();

@@ -11,6 +11,7 @@ import org.endeavourhealth.common.utility.FileHelper;
 import org.endeavourhealth.common.utility.SlackHelper;
 import org.endeavourhealth.core.database.dal.DalProvider;
 import org.endeavourhealth.core.database.dal.audit.ScheduledTaskAuditDalI;
+import org.endeavourhealth.core.database.dal.audit.SimplePropertyDalI;
 import org.endeavourhealth.core.database.rdbms.ConnectionManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,10 +27,7 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
-import java.sql.CallableStatement;
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -37,6 +35,9 @@ import java.util.Properties;
 
 public class Main {
     private static final Logger LOG = LoggerFactory.getLogger(Main.class);
+
+    private static final String PROPERTY_LAST_RUN = "LastRun";
+    private static final String KEYWORD_LAST_RUN = "<last_run>";
 
     /**
      * utility to execute a stored procedure and email the results out, used for
@@ -48,17 +49,20 @@ public class Main {
      */
     public static void main(String[] args) throws Exception {
 
-        ConfigManager.Initialize("query-tool");
-
         if (args.length != 1) {
             LOG.error("Parameter required: <query config name>");
             return;
         }
 
         String queryName = args[0];
+        ConfigManager.initialize("query-tool", queryName);
 
         try {
-            runQuery(queryName);
+            Date dtRun = new Date();
+            Date dtLastRun = findDateTimeLastRun();
+
+            runQuery(queryName, dtLastRun);
+            saveDateTimeLastRun(dtRun);
             auditSuccess(queryName, args);
 
         } catch (Throwable t) {
@@ -69,6 +73,15 @@ public class Main {
         }
     }
 
+    private static Date findDateTimeLastRun() throws Exception {
+        SimplePropertyDalI dal = DalProvider.factorySimplePropertyDal();
+        return dal.getPropertyDate(PROPERTY_LAST_RUN);
+    }
+
+    private static void saveDateTimeLastRun(Date dtRun) throws Exception {
+        SimplePropertyDalI dal = DalProvider.factorySimplePropertyDal();
+        dal.savePropertyDate(PROPERTY_LAST_RUN, dtRun);
+    }
 
     private static void auditSuccess(String queryName, String[] args) throws Exception {
         ScheduledTaskAuditDalI dal = DalProvider.factoryScheduledTaskAuditDal();
@@ -80,7 +93,7 @@ public class Main {
         dal.auditTaskFailure(queryName, args, t);
     }
 
-    private static void runQuery(String queryName) throws Exception {
+    private static void runQuery(String queryName, Date dtLastRun) throws Exception {
         String queryJson = ConfigManager.getConfiguration(queryName);
         if (Strings.isNullOrEmpty(queryJson)) {
             throw new Exception("Missing config JSON for query");
@@ -89,7 +102,7 @@ public class Main {
 
         Connection connection = getConnection(query);
         try {
-            List<File> files = executeQueries(connection, query);
+            List<File> files = executeQueries(connection, query, dtLastRun);
 
             sendEmail(query, files);
 
@@ -194,7 +207,7 @@ public class Main {
         }
     }
 
-    private static List<File> executeQueries(Connection connection, QueryDefinition queryDefinition) throws Exception {
+    private static List<File> executeQueries(Connection connection, QueryDefinition queryDefinition, Date dtLastRun) throws Exception {
 
         List<Query> queries = queryDefinition.getQueries();
         if (queries == null || queries.isEmpty()) {
@@ -233,7 +246,23 @@ public class Main {
                 LOG.debug("Running " + storedProc);
                 long msStart = System.currentTimeMillis();
 
-                CallableStatement statement = connection.prepareCall(storedProc);
+                CallableStatement statement = null;
+
+                //substitute the date last run if the keyword is present
+                if (storedProc.contains(KEYWORD_LAST_RUN)) {
+                    storedProc = storedProc.replace(KEYWORD_LAST_RUN, "?");
+
+                    statement = connection.prepareCall(storedProc);
+                    if (dtLastRun == null) {
+                        statement.setNull(1, Types.TIMESTAMP);
+                    } else {
+                        statement.setTimestamp(1, new java.sql.Timestamp(dtLastRun.getTime()));
+                    }
+
+                } else {
+                    statement = connection.prepareCall(storedProc);
+                }
+
                 statement.execute();
                 while (true) {
                     ResultSet rs = statement.getResultSet();
