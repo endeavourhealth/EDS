@@ -272,7 +272,7 @@ public class Queueing extends AbstractRoutine {
             for (UUID serviceId: hmExchangesIdsByService.keySet()) {
                 Set<UUID> exchangeIds = hmExchangesIdsByService.get(serviceId);
                 Service service = serviceDal.getById(serviceId);
-                LOG.debug("Doing " + service + " with " + exchangeIds + " exchanges");
+                LOG.debug("Doing " + service + " with " + exchangeIds.size() + " exchanges");
 
                 List<Exchange> exchanges = new ArrayList<>();
                 for (UUID exchangeId: exchangeIds) {

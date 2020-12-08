@@ -25,6 +25,7 @@ import org.endeavourhealth.core.queueing.MessageFormat;
 import org.endeavourhealth.core.xml.QueryDocument.System;
 import org.endeavourhealth.core.xml.QueryDocument.TechnicalInterface;
 import org.endeavourhealth.transform.common.AuditWriter;
+import org.endeavourhealth.transform.subscriber.transforms.OrganisationTransformer;
 import org.hl7.fhir.instance.model.Binary;
 import org.hl7.fhir.instance.model.Bundle;
 import org.hl7.fhir.instance.model.MessageHeader;
@@ -410,12 +411,15 @@ public class OpenEnvelope extends PipelineComponent {
 			String postcode = odsOrg.getPostcode();
 			s.setPostcode(postcode);
 
-			Set<OrganisationType> types = new HashSet<>(odsOrg.getOrganisationTypes());
-			types.remove(OrganisationType.PRESCRIBING_COST_CENTRE); //always remove so we match to the "better" type
-			if (types.size() == 1) {
-				OrganisationType type = types.iterator().next();
-				s.setOrganisationType(type);
+			OrganisationType fhirOrgType = null;
+			try {
+				fhirOrgType = OrganisationTransformer.findOdsOrganisationType(odsOrg);
+			} catch (Exception ex) {
+				//ignore any exception thrown from the above fn
+			}
 
+			if (fhirOrgType != null) {
+				s.setOrganisationType(fhirOrgType);
 			} else {
 				LOG.warn("Could not select type for org " + odsOrg);
 			}
@@ -439,7 +443,7 @@ public class OpenEnvelope extends PipelineComponent {
 
 			//tell us because we need to manually do a couple of steps
 			String msg = "Auto-created Service for ODS code " + organisationOds + " in Messaging API\r\n"
-					+ s.toString()
+					+ s.getName() + " " + s.getLocalId()
 					+ "\r\nPublisher config name and tags need setting in DDS-UI";
 			SlackHelper.sendSlackMessage(SlackHelper.Channel.QueueReaderAlerts, msg);
 
