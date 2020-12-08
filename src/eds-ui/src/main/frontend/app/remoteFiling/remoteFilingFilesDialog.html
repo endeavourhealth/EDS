@@ -14,11 +14,10 @@
                     <thead>
                     <tr>
                         <th class="col-md-1">#</th>
-                        <th class="col-md-2">UUID</th>
+                        <th class="col-md-3">UUID</th>
                         <th class="col-md-1">Body</th>
                         <th class="col-md-2">Sent</th>
                         <th class="col-md-2">Filing attempted</th>
-                        <th class="col-md-1">Success</th>
                         <th class="col-md-3">Error</th>
                     </tr>
                     </thead>
@@ -33,7 +32,6 @@
                         </td>
                         <td>{{file.fileSent | date:'yyyy-MM-dd HH:mm:ss'}}</td>
                         <td>{{file.fileFilingAttempted | date:'yyyy-MM-dd HH:mm:ss'}}</td>
-                        <td>{{file.fileFilingSuccess}}</td>
                         <td>{{file.filingFailureMessage}}</td>
                     </tr>
                     </tbody>
