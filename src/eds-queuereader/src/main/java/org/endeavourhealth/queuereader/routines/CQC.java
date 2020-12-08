@@ -1,83 +1,44 @@
 package org.endeavourhealth.queuereader.routines;
 
 import com.google.common.base.Strings;
-import jdk.nashorn.internal.objects.NativeJSON;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
-import org.apache.commons.io.FileUtils;
-import org.endeavourhealth.common.fhir.CodeableConceptHelper;
-import org.endeavourhealth.common.fhir.IdentifierHelper;
-import org.endeavourhealth.common.utility.FileHelper;
 import org.endeavourhealth.common.utility.ThreadPool;
 import org.endeavourhealth.common.utility.ThreadPoolError;
-import org.endeavourhealth.core.database.dal.DalProvider;
-import org.endeavourhealth.core.database.dal.admin.LibraryRepositoryHelper;
-import org.endeavourhealth.core.database.dal.admin.ServiceDalI;
-import org.endeavourhealth.core.database.dal.admin.models.Service;
-import org.endeavourhealth.core.database.dal.audit.ExchangeDalI;
-import org.endeavourhealth.core.database.dal.audit.models.Exchange;
-import org.endeavourhealth.core.database.dal.audit.models.ExchangeTransformAudit;
-import org.endeavourhealth.core.database.dal.eds.PatientLinkDalI;
-import org.endeavourhealth.core.database.dal.eds.PatientSearchDalI;
-import org.endeavourhealth.core.database.dal.eds.models.PatientLinkPair;
-import org.endeavourhealth.core.database.dal.ehr.ResourceDalI;
 import org.endeavourhealth.core.database.dal.ehr.models.ResourceWrapper;
-import org.endeavourhealth.core.database.dal.subscriberTransform.PseudoIdDalI;
-import org.endeavourhealth.core.database.dal.subscriberTransform.SubscriberCohortDalI;
-import org.endeavourhealth.core.database.dal.subscriberTransform.SubscriberPersonMappingDalI;
-import org.endeavourhealth.core.database.dal.subscriberTransform.SubscriberResourceMappingDalI;
-import org.endeavourhealth.core.database.dal.subscriberTransform.models.SubscriberCohortRecord;
-import org.endeavourhealth.core.database.dal.subscriberTransform.models.SubscriberId;
+import org.endeavourhealth.core.database.rdbms.ConnectionManager;
 import org.endeavourhealth.core.database.rdbms.enterprise.EnterpriseConnector;
-import org.endeavourhealth.core.fhirStorage.FhirSerializationHelper;
-import org.endeavourhealth.core.messaging.pipeline.PipelineException;
-import org.endeavourhealth.core.queueing.QueueHelper;
-import org.endeavourhealth.core.subscribers.SubscriberHelper;
-import org.endeavourhealth.core.xml.QueryDocument.*;
-import org.endeavourhealth.im.client.IMClient;
 import org.endeavourhealth.im.models.mapping.MapColumnRequest;
 import org.endeavourhealth.im.models.mapping.MapColumnValueRequest;
 import org.endeavourhealth.im.models.mapping.MapResponse;
-import org.endeavourhealth.subscriber.filer.EnterpriseFiler;
 import org.endeavourhealth.subscriber.filer.SubscriberFiler;
 import org.endeavourhealth.transform.common.resourceBuilders.*;
-import org.endeavourhealth.transform.enterprise.EnterpriseTransformHelper;
-import org.endeavourhealth.transform.enterprise.FhirToEnterpriseCsvTransformer;
-import org.endeavourhealth.transform.enterprise.transforms.EpisodeOfCareEnterpriseTransformer;
-import org.endeavourhealth.transform.enterprise.transforms.PatientEnterpriseTransformer;
-import org.endeavourhealth.transform.hl7v2fhir.transforms.OrganizationTransformer;
-import org.endeavourhealth.transform.subscriber.*;
-import org.endeavourhealth.transform.subscriber.targetTables.OrganizationContact_v2;
+import org.endeavourhealth.transform.subscriber.IMHelper;
+import org.endeavourhealth.transform.subscriber.SubscriberConfig;
+import org.endeavourhealth.transform.subscriber.SubscriberTransformHelper;
+import org.endeavourhealth.transform.subscriber.UPRN;
 import org.endeavourhealth.transform.subscriber.targetTables.OutputContainer;
-import org.endeavourhealth.transform.subscriber.targetTables.SubscriberTableId;
-import org.endeavourhealth.transform.subscriber.transforms.EpisodeOfCareTransformer;
-import org.endeavourhealth.transform.subscriber.transforms.OrganisationTransformer;
 import org.endeavourhealth.transform.subscriber.transforms.OrganisationTransformer_v2;
-import org.endeavourhealth.transform.subscriber.transforms.PatientTransformer;
-import org.hl7.fhir.instance.model.Patient;
-import org.hl7.fhir.instance.model.ResourceType;
-import org.hl7.fhir.utilities.CSVReader;
+import org.hl7.fhir.instance.model.CodeableConcept;
+import org.hl7.fhir.instance.model.ContactPoint;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
-import java.lang.System;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import org.endeavourhealth.core.database.rdbms.enterprise.EnterpriseConnector;
-import org.endeavourhealth.core.database.rdbms.ConnectionManager;
-import java.sql.*;
-import javax.persistence.EntityManager;
-import org.hibernate.internal.SessionImpl;
-import org.hl7.fhir.instance.model.*;
-
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.Callable;
 
 public abstract class CQC extends AbstractRoutine {
-    private static final Logger LOG = LoggerFactory.getLogger(SpecialRoutines.class);
+    private static final Logger LOG = LoggerFactory.getLogger(CQC.class);
 
     // test stub that's run on laptops
     public static void CQC() {

@@ -20,7 +20,8 @@
                             <th class="col-md-2">Application</th>
                             <th class="col-md-2">Task</th>
                             <th class="col-md-2">Last Run</th>
-                            <th class="col-md-5">Status</th>
+                            <th class="col-md-1">Due In</th>
+                            <th class="col-md-4">Status</th>
                             <th class="col-md-1">Actions</th>
                         </tr>
                         </thead>
@@ -34,11 +35,11 @@
                                 <div>{{item.taskName}}</div>
                             </td>
 
+                            <!-- last run -->
                             <td>
                                 <div *ngIf="item.timestamp">
                                     <span *ngIf="isItemTooOld(item)" class="label label-danger" ngbTooltip="Not run recently">Warning</span>
                                     {{item.timestamp | date:'yyyy-MM-dd HH:mm'}}
-                                    <span class="fa fa-info-circle fa-right-pad text-muted" ngbTooltip="{{getRuleWithinDesc(item)}}" *ngIf="item.rule && item.rule.within"></span>
                                 </div>
                                 <div *ngIf="!item.timestamp">
                                     <span class="label label-danger" ngbTooltip="Never run">Warning</span>
@@ -46,6 +47,12 @@
                                 </div>
                             </td>
 
+                            <!-- next due in -->
+                            <td>
+                                <span *ngIf="item.rule && item.rule.within" ngbTooltip="{{getRuleWithinDesc(item)}}">{{getItemDueIn(item)}}</span>
+                            </td>
+
+                            <!-- status -->
                             <td>
 
                                 <div *ngIf="item.taskParameters">

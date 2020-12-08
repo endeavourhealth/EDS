@@ -138,33 +138,35 @@ export class ScheduledTasksComponent {
             return true;
         }
 
-        var threshold = 0;
+        var threshold = vm.getRuleTimePeriod(audit);
+        var warningTime = vm.statusLastRefreshed.getTime() - threshold;
+        return audit.timestamp < warningTime;
+    }
+
+    private getRuleTimePeriod(audit: ScheduledTaskAudit): number {
         var rule = audit.rule;
         if (rule.withinUnit == 'minute') {
-            threshold = 1000 * 60 * rule.within;
+            return 1000 * 60 * rule.within;
 
         } else if (rule.withinUnit == 'hour') {
-            threshold = 1000 * 60 * 60 * rule.within;
+            return 1000 * 60 * 60 * rule.within;
 
         } else if (rule.withinUnit == 'day') {
-            threshold = 1000 * 60 * 60 * 24 * rule.within;
+            return 1000 * 60 * 60 * 24 * rule.within;
 
         } else if (rule.withinUnit == 'week') {
-            threshold = 1000 * 60 * 60 * 24 * 7 * rule.within;
+            return 1000 * 60 * 60 * 24 * 7 * rule.within;
 
         } else if (rule.withinUnit == 'month') {
-            threshold = 1000 * 60 * 60 * 24 * 30 * rule.within; //just approx month length
+            return 1000 * 60 * 60 * 24 * 30 * rule.within; //just approx month length
 
         } else if (rule.withinUnit == 'year') {
-            threshold = 1000 * 60 * 60 * 24 * 365 * rule.within;
+            return 1000 * 60 * 60 * 24 * 365 * rule.within;
 
         } else {
             console.log('unexpected rule unit [' + rule.withinUnit + ']');
-            return true;
+            return 0;
         }
-
-        var warningTime = vm.statusLastRefreshed.getTime() - threshold;
-        return audit.timestamp < warningTime;
     }
 
     getRuleWithinDesc(audit: ScheduledTaskAudit): string {
@@ -181,6 +183,31 @@ export class ScheduledTasksComponent {
             ret += 's';
         }
         return ret;
+    }
+
+    getItemDueIn(audit: ScheduledTaskAudit): string {
+        var vm = this;
+
+        //if no rule about how often to run it, then return an empty String
+        if (!audit.rule
+            || !audit.rule.withinUnit
+            || !audit.rule.within) {
+            return '';
+        }
+
+        //if never been run, then it's due NOW
+        if (!audit.timestamp) {
+            return 'Now';
+        }
+
+        //the "due in" is the difference between NOW and when it should be next run, based on the rule
+        //and when it was last run
+        var now = vm.statusLastRefreshed;
+
+        var ruleMillis = vm.getRuleTimePeriod(audit);
+        var nextDueMillis = audit.timestamp + ruleMillis;
+
+        return ServiceListComponent.getDateDiffDesc(now, new Date(nextDueMillis), 2);
     }
 
 
