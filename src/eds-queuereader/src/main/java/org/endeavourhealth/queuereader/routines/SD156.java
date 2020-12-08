@@ -541,7 +541,7 @@ public class SD156 extends AbstractRoutine {
         //LOG.debug("Batch " + batchId + " didn't go to subscribers " + missingSubscribers);
 
         Connection connection = ConnectionManager.getAdminConnection();
-        String sql = "INSERT INTO tmp.SD156_batches_not_transformed (service_id, system_id, exchangeId, batch_id, patient_id, inserted_at, subscriber_name) VALUES (?, ?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO tmp.SD156_batches_not_transformed (service_id, system_id, exchange_id, batch_id, patient_id, inserted_at, subscriber_name) VALUES (?, ?, ?, ?, ?, ?, ?)";
         PreparedStatement ps = connection.prepareStatement(sql);
 
         for (String missingSubscriber: missingSubscribers) {
