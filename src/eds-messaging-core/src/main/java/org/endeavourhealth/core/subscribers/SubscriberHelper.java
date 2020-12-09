@@ -45,17 +45,21 @@ public class SubscriberHelper {
      * if the subscribers have changed from what we last audited, then update the audit
      */
     private static void auditSubscriberStateChange(UUID exchangeId, UUID serviceId, List<String> currentSubscribers) throws Exception {
+
         ServiceSubscriberAuditDalI dal = DalProvider.factoryServiceSubscriberAuditDal();
 
+        //get the latest known subscribers from the cache or audit DB
         List<String> previousSubscribers = cachedLatestSubscriberState.get(serviceId);
         if (previousSubscribers == null) {
             previousSubscribers = dal.getLatestSubscribers(serviceId);
+
+            //if there is no history in the DB, then the above will return null
+            if (previousSubscribers == null) {
+                previousSubscribers = new ArrayList<>();
+            }
         }
 
-        if (previousSubscribers == null) {
-            previousSubscribers = new ArrayList<>();
-        }
-
+        //compare the current and previous subscribers
         if (!previousSubscribers.equals(currentSubscribers)) {
             dal.saveSubscribers(serviceId, currentSubscribers);
 
@@ -76,7 +80,8 @@ public class SubscriberHelper {
             LOG.debug("Same = " + latest.equals(subscribers));*/
         }
 
-        cachedLatestSubscriberState.put(serviceId, new ArrayList<>(previousSubscribers));
+        //add/replace in the cache with the current subscribers
+        cachedLatestSubscriberState.put(serviceId, new ArrayList<>(currentSubscribers));
     }
 
     /**
