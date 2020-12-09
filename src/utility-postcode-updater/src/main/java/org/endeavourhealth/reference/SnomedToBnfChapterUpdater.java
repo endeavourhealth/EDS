@@ -31,14 +31,13 @@ public class SnomedToBnfChapterUpdater {
      * 1. connect BNF website https://www.nhsbsa.nhs.uk/prescription-data/understanding-our-data/bnf-snomed-mapping
      * 2. download the zip file
      * 3. extract the zip file locally
-     * 4. use Apache POI to convert the .xlsx extract to .csv retaining just the columns "SNOMED Code" and "BNF Code"
+     * 4. use fastexcel-reader to convert the .xlsx extract to .csv retaining just the columns "SNOMED Code" and "BNF Code"
      * 5. load the csv to database
      * 6. updates the snomed_to_bnf_chapter_lookup table in the reference DB from NHS BSA data
      * Usage
      * =================================================================================
      * run this utility as:
      *    Main snomedToBnfChapter
-     *    VM options -Xmx8048m
      */
     public static void updateSnomedToBnfChapterLookup(String[] args) throws Exception {
         LOG.info("Snomed To BNF Chapter Update Starting.");

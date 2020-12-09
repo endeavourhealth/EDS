@@ -1,10 +1,14 @@
 package org.endeavourhealth.reference.helpers;
 import java.io.*;
+import java.util.List;
 
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.poi.ss.usermodel.*;
+import org.dhatim.fastexcel.reader.Cell;
+import org.dhatim.fastexcel.reader.ReadableWorkbook;
+import org.dhatim.fastexcel.reader.Row;
+import org.dhatim.fastexcel.reader.Sheet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -12,36 +16,28 @@ public class SnomedAndBnfExcelReader {
 
     private static final Logger LOG = LoggerFactory.getLogger(SnomedAndBnfExcelReader.class);
 
-    public void buildCSV(String csvFilePath, Sheet sheet, String bnfColumnName, String snomedColumnName) throws Exception {
+    private void buildCSV(String csvFilePath, List<Row> rows, String bnfColumnName, String snomedColumnName) throws Exception {
         try {
             LOG.info("Start build CSV ");
-            Row row = null;
-            Cell bnfCodeCell = null;
-            Cell snomedCell = null;
 
             int bnfColumn = -1;
             int snomedColumn = -1;
-            int emptyCounter = 0;
-            int j = 0;
 
-            row = sheet.getRow(0);
-            while (emptyCounter < 4) {
-                Cell cell = row.getCell(j);
+            Row row = rows.get(0);
+            for (int i = 0; i < row.getCellCount(); i++) {
+                Cell cell = row.getCell(i);
                 if (cell != null) {
-                    String value = cell.getStringCellValue();
+                    String value = cell.getRawValue();
                     if (value.equalsIgnoreCase(bnfColumnName)) {
-                        bnfColumn = j;
+                        bnfColumn = i;
                     }
                     if (value.equalsIgnoreCase(snomedColumnName)) {
-                        snomedColumn = j;
+                        snomedColumn = i;
                     }
-                    if (StringUtils.isEmpty(value)) {
-                        emptyCounter++;
-                    }
-                } else {
-                    emptyCounter++;
                 }
-                j++;
+                if (bnfColumn != -1 && snomedColumn != -1) {
+                    break;
+                }
             }
 
             if (bnfColumn == -1) {
@@ -62,16 +58,18 @@ public class SnomedAndBnfExcelReader {
             BufferedWriter writer = new BufferedWriter(osw);
             CSVPrinter csvPrinter = new CSVPrinter(writer, CSVFormat.DEFAULT.withHeader("BNF_Code", "SNOMED_Code"));
 
-            for (int i = 1; i < sheet.getLastRowNum() + 1; i++) {
-                row = sheet.getRow(i);
-                bnfCodeCell = row.getCell(bnfColumn, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK );
-                snomedCell = row.getCell(snomedColumn, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
-                if (!isCellEmpty(bnfCodeCell) && !isCellEmpty(snomedCell)) {
+            for (int i = 1; i < rows.size(); i++) {
+                row = rows.get(i);
+                String bnfCodeCell = row.getCell(bnfColumn).getText();
+                String snomedCell = row.getCell(snomedColumn).getText();
+                if (!StringUtils.isEmpty(bnfCodeCell) && !StringUtils.isEmpty(snomedCell)) {
                     csvPrinter.printRecord(bnfCodeCell, snomedCell);
                 }
             }
             csvPrinter.close();
-
+            writer.close();
+            osw.close();
+            fos.close();
         } catch(Exception e) {
             LOG.error(e.getMessage());
             throw e;
@@ -84,14 +82,15 @@ public class SnomedAndBnfExcelReader {
      * @param csvFilePath the file path for csv file
      */
     public void createCSV(String xlsxFilePath, String csvFilePath, String bnfColumnName, String snomedColumnName) throws Exception {
+
         InputStream inp = null;
-        Workbook wb = null;
+        ReadableWorkbook wb = null;
         try {
             inp = new FileInputStream(xlsxFilePath);
-            wb = WorkbookFactory.create(inp);
-            for(int i=0; i<wb.getNumberOfSheets(); i++) {
-                buildCSV(csvFilePath, wb.getSheetAt(i), bnfColumnName, snomedColumnName);
-            }
+            wb = new ReadableWorkbook(inp);
+            Sheet sheet = wb.getFirstSheet();
+            List<Row> rows = sheet.read();
+            buildCSV(csvFilePath, rows, bnfColumnName, snomedColumnName);
         } catch (Exception ex) {
             LOG.error(ex.getMessage());
             throw ex;
@@ -103,32 +102,5 @@ public class SnomedAndBnfExcelReader {
                 LOG.error(ex.getMessage());
             }
         }
-    }
-
-    /**
-     * Checks if the value of a given {@link Cell} is empty.
-     *
-     * @param cell
-     *            The {@link Cell}.
-     * @return {@code true} if the {@link Cell} is empty. {@code false}
-     *         otherwise.
-     */
-    public boolean isCellEmpty(Cell cell) {
-        if (cell == null) { // use row.getCell(x, Row.CREATE_NULL_AS_BLANK) to avoid null cells
-            return true;
-        }
-
-        if (cell.getCellTypeEnum() == CellType.BLANK) {
-            return true;
-        }
-
-        if (cell.getCellTypeEnum() == CellType.STRING && cell.getStringCellValue().trim().isEmpty()) {
-            return true;
-        }
-
-        if (cell.getCellTypeEnum() == CellType.NUMERIC && cell.getNumericCellValue() == 0) {
-            return true;
-        }
-        return false;
     }
 }
