@@ -60,6 +60,7 @@ public class Main {
         try {
             Date dtRun = new Date();
             Date dtLastRun = findDateTimeLastRun();
+            LOG.debug("Last run " + dtLastRun);
 
             runQuery(queryName, dtLastRun);
             saveDateTimeLastRun(dtRun);

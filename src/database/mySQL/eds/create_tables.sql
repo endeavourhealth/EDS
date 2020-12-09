@@ -199,6 +199,7 @@ END //
 DELIMITER ;
 
 
+
 DELIMITER $$
 CREATE PROCEDURE `get_dds_patient_counts`(
 	    IN date_cutoff date
@@ -208,9 +209,11 @@ BEGIN
 	-- avoid locking the table
 	SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED ;
 
-
+	drop table if exists tmp.gp_services;
 	drop table if exists tmp.acute_services;
-	drop table if exists tmp.region;
+    drop table if exists tmp.community_services;
+    drop table if exists tmp.other_services;
+	drop table if exists tmp.ccg_region;
 	drop table if exists tmp.patient_search_baseline;
 	drop table if exists tmp.person_count_1;
 	drop table if exists tmp.person_count_2;
@@ -218,50 +221,92 @@ BEGIN
 	drop table if exists tmp.patient_count_acute;
 
 
+	-- create table of GP ODS codes
+	create table tmp.gp_services (
+		ods_code varchar(25)
+	);
+
+	insert into tmp.gp_services
+    select local_id
+    from admin.service
+    where organisation_type = 'PR'; -- GP practice
+
+	create index ix on tmp.gp_services  (ods_code);
+
+
 	-- create table of acute ODS codes
 	create table tmp.acute_services (
 		ods_code varchar(25)
 	);
 
-	insert into tmp.acute_services values ('RQX'); -- Homerton
-	insert into tmp.acute_services values ('R1H'); -- Barts
-	insert into tmp.acute_services values ('RF4'); -- BHRUT
+	insert into tmp.acute_services
+	select local_id
+    from admin.service
+    where organisation_type = 'TR'; -- trust
 
 	create index ix on tmp.acute_services (ods_code);
 
-	-- create table of regions
-	create table tmp.region (
+
+	-- create table of community ODS codes
+	create table tmp.community_services (
+		ods_code varchar(25)
+	);
+
+	insert into tmp.community_services
+    select local_id
+    from admin.service
+    where organisation_type = 'CO'; -- community
+
+	create index ix on tmp.community_services (ods_code);
+
+
+ 	-- create table of community ODS codes
+	create table tmp.other_services (
+		ods_code varchar(25)
+	);
+
+	insert into tmp.other_services
+    select local_id
+    from admin.service
+    where organisation_type NOT IN ('CO', 'TR', 'PR')
+    or organisation_type IS NULL;
+
+	create index ix on tmp.other_services  (ods_code);
+
+
+	-- create table of regions so we can break GP practices down by region
+	create table tmp.ccg_region (
 		region_name varchar(25),
 		ccg_code varchar(25)
 	);
 
-	insert into tmp.region values ('NEL', '07L');
-	insert into tmp.region values ('NEL', '08F');
-	insert into tmp.region values ('NEL', '08N');
-	insert into tmp.region values ('NEL', '08M');
-	insert into tmp.region values ('NEL', '08V');
-	insert into tmp.region values ('NEL', '07T');
-	insert into tmp.region values ('NEL', '08W');
+	insert into tmp.ccg_region values ('NEL', '07L');
+	insert into tmp.ccg_region values ('NEL', '08F');
+	insert into tmp.ccg_region values ('NEL', '08N');
+	insert into tmp.ccg_region values ('NEL', '08M');
+	insert into tmp.ccg_region values ('NEL', '08V');
+	insert into tmp.ccg_region values ('NEL', '07T');
+	insert into tmp.ccg_region values ('NEL', '08W');
 
-	insert into tmp.region values ('NWL', '08G');
-	insert into tmp.region values ('NWL', '08C');
-	insert into tmp.region values ('NWL', '08E');
-	insert into tmp.region values ('NWL', '08Y');
-	insert into tmp.region values ('NWL', '07P');
-	insert into tmp.region values ('NWL', '07Y');
-	insert into tmp.region values ('NWL', '07W');
-	insert into tmp.region values ('NWL', '09A');
+	insert into tmp.ccg_region values ('NWL', '08G');
+	insert into tmp.ccg_region values ('NWL', '08C');
+	insert into tmp.ccg_region values ('NWL', '08E');
+	insert into tmp.ccg_region values ('NWL', '08Y');
+	insert into tmp.ccg_region values ('NWL', '07P');
+	insert into tmp.ccg_region values ('NWL', '07Y');
+	insert into tmp.ccg_region values ('NWL', '07W');
+	insert into tmp.ccg_region values ('NWL', '09A');
 
-	insert into tmp.region values ('SEL', '07N');
-	insert into tmp.region values ('SEL', '07Q');
-	insert into tmp.region values ('SEL', '08A');
-	insert into tmp.region values ('SEL', '08K');
-	insert into tmp.region values ('SEL', '08L');
-	insert into tmp.region values ('SEL', '08Q');
-	insert into tmp.region values ('SEL', '72Q');
+	insert into tmp.ccg_region values ('SEL', '07N');
+	insert into tmp.ccg_region values ('SEL', '07Q');
+	insert into tmp.ccg_region values ('SEL', '08A');
+	insert into tmp.ccg_region values ('SEL', '08K');
+	insert into tmp.ccg_region values ('SEL', '08L');
+	insert into tmp.ccg_region values ('SEL', '08Q');
+	insert into tmp.ccg_region values ('SEL', '72Q');
 
-	create index ix on tmp.region (region_name, ccg_code);
-	create index ix2 on tmp.region (ccg_code, region_name);
+	create index ix on tmp.ccg_region (region_name, ccg_code);
+	create index ix2 on tmp.ccg_region (ccg_code, region_name);
 
 	-- create table, baseline to required date
 	create table tmp.patient_search_baseline as
@@ -287,7 +332,8 @@ BEGIN
 	from tmp.patient_search_baseline b
 	inner join admin.service s
 	on s.id = b.service_id
-	where s.organisation_type = 'PR'
+    inner join tmp.gp_services a
+    on a.ods_code = s.local_id
 	group by s.local_id, s.ccg_code;
 
 	create table tmp.patient_count_acute as
@@ -296,6 +342,24 @@ BEGIN
 	inner join admin.service s
 	on s.id = b.service_id
 	inner join tmp.acute_services a
+	on a.ods_code = s.local_id
+	group by s.local_id, s.ccg_code;
+
+	create table tmp.patient_count_community as
+	select s.local_id, s.ccg_code, count(1) as `cnt`
+	from tmp.patient_search_baseline b
+	inner join admin.service s
+	on s.id = b.service_id
+	inner join tmp.community_services a
+	on a.ods_code = s.local_id
+	group by s.local_id, s.ccg_code;
+
+	create table tmp.patient_count_other as
+	select s.local_id, s.ccg_code, count(1) as `cnt`
+	from tmp.patient_search_baseline b
+	inner join admin.service s
+	on s.id = b.service_id
+	inner join tmp.other_services a
 	on a.ods_code = s.local_id
 	group by s.local_id, s.ccg_code;
 
@@ -311,7 +375,7 @@ BEGIN
 
     select if (region_name is null, 'Other', region_name) as `region_name`, sum(cnt) as `gp_patient_count_per_region`
 	from tmp.patient_count_gp g
-	left outer join tmp.region r
+	left outer join tmp.ccg_region r
 	on g.ccg_code = r.ccg_code
 	group by if (region_name is null, 'zzOther', region_name); -- "ZZ" prefix means "other" ends up last
 
@@ -323,7 +387,7 @@ BEGIN
 
 	select if (region_name is null, 'Other', region_name) as `region_name`, count(distinct local_id) as `gp_practice_count_per_region`
 	from tmp.patient_count_gp g
-	left outer join tmp.region r
+	left outer join tmp.ccg_region r
 	on g.ccg_code = r.ccg_code
 	group by if (region_name is null, 'zzOther', region_name); -- "ZZ" prefix means "other" ends up last
 
@@ -336,13 +400,36 @@ BEGIN
 	select count(distinct local_id) as `number_acute_services`
 	from tmp.patient_count_acute;
 
+
+	-- number of community patient records
+
+	select sum(cnt) as `number_community_patients`
+	from tmp.patient_count_community;
+
+	select count(distinct local_id) as `number_community_services`
+	from tmp.patient_count_community;
+
+
+	-- number of community patient records
+
+	select sum(cnt) as `number_other_patients`
+	from tmp.patient_count_other;
+
+	select count(distinct local_id) as `number_other_services`
+	from tmp.patient_count_other;
+
+	drop table if exists tmp.gp_services;
 	drop table if exists tmp.acute_services;
-	drop table if exists tmp.region;
+    drop table if exists tmp.community_services;
+    drop table if exists tmp.other_services;
+	drop table if exists tmp.ccg_region;
 	drop table if exists tmp.patient_search_baseline;
 	drop table if exists tmp.person_count_1;
 	drop table if exists tmp.person_count_2;
 	drop table if exists tmp.patient_count_gp;
 	drop table if exists tmp.patient_count_acute;
+    drop table if exists tmp.patient_count_community;
+    drop table if exists tmp.patient_count_other;
 
 
     -- restore this back to default

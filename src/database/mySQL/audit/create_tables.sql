@@ -418,7 +418,7 @@ CREATE TABLE simple_property (
   application_instance_name varchar(255) not null COMMENT 'identifies the instance of the app e.g. InboundA',
   property_name varchar(255) not null COMMENT 'arbitrary name of the property being stored',
   property_value text not null COMMENT 'arbitrary value being stored',
-  CONSTRAINT pk PRIMARY KEY (application_name, application_instance_name)
+  CONSTRAINT pk PRIMARY KEY (application_name, application_instance_name, property_name)
 )
   ROW_FORMAT=COMPRESSED
   KEY_BLOCK_SIZE=8;
