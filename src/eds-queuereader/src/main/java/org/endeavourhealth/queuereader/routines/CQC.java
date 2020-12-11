@@ -278,10 +278,8 @@ public abstract class CQC extends AbstractRoutine {
     {
         BufferedReader csvReader = new BufferedReader(new FileReader(builderFile));
         String row = ""; String resource_guid = ""; String json = "";
-        //Integer threads = 3;
-        //Integer QBeforeBlock = 4;
-        Integer threads = 1498;
-        Integer QBeforeBlock = 50;
+        Integer threads = 5;
+        Integer QBeforeBlock = 10;
         ThreadPool threadPool = new ThreadPool(threads, QBeforeBlock);
         while ((row = csvReader.readLine()) != null) {
             List<ThreadPoolError>  errors = threadPool.submit(new CQCCallable(row, serviceUUID, subscriberConfigName, systemId));
