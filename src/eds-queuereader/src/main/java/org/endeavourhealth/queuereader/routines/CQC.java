@@ -1,9 +1,12 @@
 package org.endeavourhealth.queuereader.routines;
 
 import com.google.common.base.Strings;
+import com.google.gson.JsonObject;
+import jdk.nashorn.internal.parser.JSONParser;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
+import org.apache.commons.io.FileUtils;
 import org.endeavourhealth.common.utility.ThreadPool;
 import org.endeavourhealth.common.utility.ThreadPoolError;
 import org.endeavourhealth.core.database.dal.ehr.models.ResourceWrapper;
@@ -22,20 +25,27 @@ import org.endeavourhealth.transform.subscriber.targetTables.OutputContainer;
 import org.endeavourhealth.transform.subscriber.transforms.OrganisationTransformer_v2;
 import org.hl7.fhir.instance.model.CodeableConcept;
 import org.hl7.fhir.instance.model.ContactPoint;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
+import java.net.HttpURLConnection;
+import javax.net.ssl.HttpsURLConnection;
+import java.net.URL;
+import java.net.URLEncoder;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.Callable;
+import java.util.concurrent.TimeUnit;
+
+import org.json.JSONObject;
+import com.google.gson.Gson;
 
 public abstract class CQC extends AbstractRoutine {
     private static final Logger LOG = LoggerFactory.getLogger(CQC.class);
@@ -268,8 +278,10 @@ public abstract class CQC extends AbstractRoutine {
     {
         BufferedReader csvReader = new BufferedReader(new FileReader(builderFile));
         String row = ""; String resource_guid = ""; String json = "";
-        Integer threads = 3;
-        Integer QBeforeBlock = 4;
+        //Integer threads = 3;
+        //Integer QBeforeBlock = 4;
+        Integer threads = 1498;
+        Integer QBeforeBlock = 50;
         ThreadPool threadPool = new ThreadPool(threads, QBeforeBlock);
         while ((row = csvReader.readLine()) != null) {
             List<ThreadPoolError>  errors = threadPool.submit(new CQCCallable(row, serviceUUID, subscriberConfigName, systemId));
@@ -433,6 +445,42 @@ public abstract class CQC extends AbstractRoutine {
         }
     }
 
+    public static String FindODSDataUsingODSCode(String odsCode, String configName) throws Exception
+    {
+        Connection connection = ConnectionManager.getSubscriberTransformConnection(configName);
+        String sql = "select * from ods_v2 where ods_code = '"+odsCode+"'";
+        String ret = "";
+
+        PreparedStatement ps = connection.prepareStatement(sql);
+        ResultSet  rs = ps.executeQuery();
+
+        if (rs.next()) {
+            String id = rs.getString("id");
+            String ods_code = rs.getString("ods_code");
+            String filename = rs.getString("filename");
+            String address_line_1 = rs.getString("address_line_1");
+            String address_line_2 = rs.getString("address_line_2");
+            String address_line_3 = rs.getString("address_line_3");
+            String address_line_4 = rs.getString("address_line_4");
+            String address_line_5 = rs.getString("address_line_5");
+            String parent_organization = rs.getString("parent_organization");
+            String parent_current = rs.getString("parent_current");
+            String opendate = rs.getString("opendate");
+            String closedate = rs.getString("closedate");
+
+            if (parent_organization==null) parent_organization="";
+            if (parent_current==null) parent_current="";
+            if (opendate==null) opendate="";
+            if (closedate==null) closedate="";
+
+            ret = id+"~"+ods_code+"~"+address_line_1+"~"+address_line_2+"~"+address_line_3+"~"+address_line_4+"~"+address_line_5+"~"+filename+"~";
+            ret = ret+"~"+parent_organization+"~"+parent_current+"~"+opendate+"~"+closedate;
+        }
+        ps.close();
+        connection.close();
+        return ret;
+    }
+
     public static String FindODSCodeUsingUprn(String postcode, String sFilename, String uprn, String name, String configName) throws Exception
     {
         // String configName = "subscriber_test";
@@ -498,6 +546,161 @@ public abstract class CQC extends AbstractRoutine {
         return ret;
     }
 
+    private static String getElement(String name, JSONObject obj) throws Exception
+    {
+        String ret = "";
+        if (obj.has(name)) ret = obj.getString(name);
+        return ret;
+    }
+
+    // run from laptop
+    public static void callCQCAPI() throws Exception
+    {
+
+        String filename = "D:\\TEMP\\COVID-Jiras\\08_July_2020_CQC_directory_NEL8.csv";
+        BufferedReader reader = new BufferedReader(
+                new InputStreamReader(new FileInputStream(filename), "UTF-8"));
+
+        CSVParser csvParser = new CSVParser(reader, CSVFormat.DEFAULT);
+        Integer ft = 1;
+
+        Integer count = 0;
+
+        FileWriter csvWriter = new FileWriter("C:\\Users\\PaulSimon\\Desktop\\cqc_api.csv");
+        String headers="ID,Name,Also known as,Address,Postcode,Phone number,Service's website (if available),Service types,Date of latest check,Specialisms/services,Provider name,Local Authority,Region,Location URL,CQC Location (for office use only,CQC Provider ID (for office use only),On ratings,carehome,dormancy,uprn,odscode";
+        csvWriter.append(headers);
+        csvWriter.append("\n");
+
+        for (CSVRecord csvRecord : csvParser) {
+
+            if (ft.equals(1)) {ft=0; continue;} // skip headers
+
+            String cqc_location = csvRecord.get(14);
+            String json = CQCAPI(cqc_location);
+
+            String location_url = "https://api.cqc.org.uk/public/v1/locations/"+cqc_location;
+
+            JSONObject jsonObj = new JSONObject(json);
+
+            JSONObject obj = new JSONObject(json);
+            JSONArray specialisms = obj.getJSONArray("specialisms");
+            int n = specialisms.length();
+            String specisms = "";
+            for (int i = 0; i < n; ++i) {
+                JSONObject spec = specialisms.getJSONObject(i);
+                specisms = specisms + spec.getString("name") + "|";
+            }
+
+            String sts = "";
+            if (obj.has("gacServiceTypes")) {
+                JSONArray stypes = obj.getJSONArray("gacServiceTypes");
+                n = stypes.length();
+                //System.out.println(json);
+                for (int i = 0; i < n; ++i) {
+                    JSONObject spec = stypes.getJSONObject(i);
+                    sts = sts + spec.getString("name") + "|";
+                }
+            }
+
+            if (!specisms.isEmpty()) {specisms = specisms.substring(0,specisms.length()-1);}
+            if (!sts.isEmpty()) {sts = sts.substring(0,sts.length()-1);}
+
+            String uprn = getElement("uprn",obj);
+
+            String odsCode = getElement("odsCode",obj);
+
+            String name = getElement("name",obj);
+
+            String website = getElement("website",obj);
+
+            String dormancy = getElement("dormancy",obj);
+
+            String carehome = getElement("careHome",obj);
+
+            String addressline1 = getElement("postalAddressLine1",obj);
+
+            String addressline2 = getElement("postalAddressLine2",obj);
+
+            String towncity = getElement("postalAddressTownCity",obj);
+
+            String county = getElement("postalAddressCounty",obj);
+
+            String postcode = getElement("postalCode",obj);
+
+            String phone = getElement("mainPhoneNumber",obj);
+
+            String provider_id = getElement("providerId",obj);
+
+            String also = getElement("alsoKnownAs",obj);
+
+            String d = "\",\"";
+
+            String lastInspection="";
+            if (obj.has("lastInspection")) {
+                JSONObject li = obj.getJSONObject("lastInspection");
+                lastInspection = li.getString("date");
+            }
+
+            String provname = getElement("brandName",obj);
+            String localauth = getElement("localAuthority",obj);
+            String region = getElement("region",obj);
+
+            String on_ratings = "N";
+            if (obj.has("currentRatings")) {on_ratings = "Y";}
+
+            count++;
+
+            String address = addressline1+","+addressline2+","+towncity+","+county;
+
+            String csv = count+",\""+name+d+also+d+address+d+postcode+d+phone+d+website+d+sts+d+lastInspection+d+specisms+d+provname+d+
+                    localauth+d+region+d+location_url+d+cqc_location+d+provider_id+d+on_ratings+d+carehome+d+dormancy+d+uprn+d+odsCode+'"';
+
+            System.out.println(csv);
+
+            csvWriter.append(csv);
+            csvWriter.append("\n");
+
+            if (count > 598) {
+                System.out.println("sleeping ...");
+                TimeUnit.SECONDS.sleep(64);
+                count =0;
+            }
+        }
+        csvWriter.flush();
+        csvWriter.close();
+    }
+
+    private static String CQCAPI(String location_id) throws Exception
+    {
+        // https://api.cqc.org.uk/public/v1/locations/1-124233374 <== Perrymans
+        String url = "https://api.cqc.org.uk/public/v1/locations/"+location_id;
+        URL obj = new URL(url);
+        HttpsURLConnection con = (HttpsURLConnection) obj.openConnection();
+        con.setRequestMethod("GET");
+
+        int responseCode = con.getResponseCode();
+        if (responseCode != HttpURLConnection.HTTP_OK) {
+            throw new IOException("HTTP response " + responseCode + " returned for GET to " + url);
+        }
+
+        InputStream inputStream = con.getInputStream();
+        InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
+        BufferedReader in = new BufferedReader(inputStreamReader);
+
+        String response = "";
+        while (true) {
+            String line = in.readLine();
+            if (line != null) {
+                response += line;
+            } else {
+                break;
+            }
+        }
+        in.close();
+
+        return response;
+    }
+
     public static boolean indexInBound(String[] data, int index){
         return data != null && index >= 0 && index < data.length;
     }
@@ -552,9 +755,17 @@ public abstract class CQC extends AbstractRoutine {
             String cqc_provider_id = csvRecord.get(15);
             String on_ratings = csvRecord.get(16);
 
-            String uprn = getUPRN(name+","+cqc_address+","+postcode, "cqc`"+cqc_id);
+            //String uprn = getUPRN(name+","+cqc_address+","+postcode, "cqc`"+cqc_id);
+            //String ods_address = FindODSCodeUsingUprn(postcode, "ecarehomesite", uprn, name, configName);
 
-            String ods_address = FindODSCodeUsingUprn(postcode, "ecarehomesite", uprn, name, configName);
+            String cqc_carehome = csvRecord.get(17);
+            String cqc_dormancy = csvRecord.get(18);
+            String cqc_uprn = csvRecord.get(19);
+            String odsCode = csvRecord.get(20);
+
+            String ods_address = "";
+            if (!odsCode.isEmpty()) ods_address = FindODSDataUsingODSCode(odsCode, configName);
+
 
             String ods_code = ""; String addline1=""; String addline2=""; String addline3=""; String addline4=""; String addline5="";
             String parent_organization = ""; String parent_current = ""; String opendate = ""; String closedate = "";
@@ -601,24 +812,28 @@ public abstract class CQC extends AbstractRoutine {
 
             createContactPoint(ContactPoint.ContactPointSystem.PHONE, phone, organizationBuilder);
 
-            if (!cqc_id.isEmpty()) createContainedCoded(organizationBuilder,"ID",cqc_id);
-            if (!name.isEmpty()) createContainedCoded(organizationBuilder,"name",name);
-            if (!also.isEmpty()) createContainedCoded(organizationBuilder,"also_known_as",also);
-            if (!service_web_site.isEmpty()) createContainedCoded(organizationBuilder,"services_web_site",service_web_site);
-            if (!date_of_last_check.isEmpty()) createContainedCoded(organizationBuilder, "date_of_last_check", date_of_last_check);
-            if (!provider_name.isEmpty()) createContainedCoded(organizationBuilder, "provider_name", provider_name);
-            if (!local_authority.isEmpty()) createContainedCoded(organizationBuilder,"local_authority",local_authority);
-            if (!region.isEmpty()) createContainedCoded(organizationBuilder,"region",region);
-            if (!location_url.isEmpty()) createContainedCoded(organizationBuilder,"location_url",location_url);
-            if (!cqc_location.isEmpty()) createContainedCoded(organizationBuilder,"cqc_location",cqc_location);
-            if (!cqc_provider_id.isEmpty()) createContainedCoded(organizationBuilder,"cqc_provider_id",cqc_provider_id);
-            if (!on_ratings.isEmpty()) createContainedCoded(organizationBuilder,"on_ratings",on_ratings);
+            if (!cqc_id.isEmpty()) createContainedCoded(organizationBuilder,"ID",cqc_id,0);
+            if (!name.isEmpty()) createContainedCoded(organizationBuilder,"name",name,0);
+            if (!also.isEmpty()) createContainedCoded(organizationBuilder,"also_known_as",also,0);
+            if (!service_web_site.isEmpty()) createContainedCoded(organizationBuilder,"services_web_site",service_web_site,0);
+            if (!date_of_last_check.isEmpty()) createContainedCoded(organizationBuilder, "date_of_last_check", date_of_last_check,0);
+            if (!provider_name.isEmpty()) createContainedCoded(organizationBuilder, "provider_name", provider_name,0);
+            if (!local_authority.isEmpty()) createContainedCoded(organizationBuilder,"local_authority",local_authority,0);
+            if (!region.isEmpty()) createContainedCoded(organizationBuilder,"region",region,0);
+            if (!location_url.isEmpty()) createContainedCoded(organizationBuilder,"location_url",location_url,0);
+            if (!cqc_location.isEmpty()) createContainedCoded(organizationBuilder,"cqc_location",cqc_location,0);
+            if (!cqc_provider_id.isEmpty()) createContainedCoded(organizationBuilder,"cqc_provider_id",cqc_provider_id,0);
+            if (!on_ratings.isEmpty()) createContainedCoded(organizationBuilder,"on_ratings",on_ratings,0);
+            if (!cqc_uprn.isEmpty()) createContainedCoded(organizationBuilder,"cqc_uprn",cqc_uprn,0);
+            if (!odsCode.isEmpty()) createContainedCoded(organizationBuilder,"cqc_odscode",odsCode,0);
+            if (!cqc_dormancy.isEmpty()) createContainedCoded(organizationBuilder,"cqc_dormancy",cqc_dormancy,0);
+            if (!cqc_carehome.isEmpty()) createContainedCoded(organizationBuilder,"cqc_carehome",cqc_carehome,0);
 
             if (!service_type.isEmpty()) {
                 String[] ss = service_type.split("\\|");
                 for (int i = 0; i < ss.length; i++) {
                     String service = ss[i];
-                    createContainedCoded(organizationBuilder, "service_type", service);
+                    createContainedCoded(organizationBuilder, "service_type", service,1);
                 }
             }
 
@@ -626,14 +841,14 @@ public abstract class CQC extends AbstractRoutine {
                 String[] ss = specialism.split("\\|");
                 for (int i = 0; i < ss.length; i++) {
                     String spec = ss[i];
-                    createContainedCoded(organizationBuilder,"specialisms/services",spec);
+                    createContainedCoded(organizationBuilder,"specialisms/services",spec,1);
                 }
             }
             // ods stuff
-            if (!parent_organization.isEmpty()) createContainedCoded(organizationBuilder,"parent_organization",parent_organization);
-            if (!parent_current.isEmpty()) createContainedCoded(organizationBuilder,"parent_current",parent_current);
-            if (!opendate.isEmpty()) createContainedCoded(organizationBuilder,"open_date",opendate);
-            if (!closedate.isEmpty()) createContainedCoded(organizationBuilder,"close_date",closedate);
+            if (!parent_organization.isEmpty()) createContainedCoded(organizationBuilder,"parent_organization",parent_organization,0);
+            if (!parent_current.isEmpty()) createContainedCoded(organizationBuilder,"parent_current",parent_current,0);
+            if (!opendate.isEmpty()) createContainedCoded(organizationBuilder,"open_date",opendate,0);
+            if (!closedate.isEmpty()) createContainedCoded(organizationBuilder,"close_date",closedate,0);
 
             //RESOURCE_GUID = scratch(cqc_id, configName);
             RESOURCE_GUID = scratch(cqc_location, configName);
@@ -649,7 +864,7 @@ public abstract class CQC extends AbstractRoutine {
         csvWriter.close();
     }
 
-    private static void createContainedCoded(HasContainedParametersI organizationBuilder, String property, String value) throws Exception
+    private static void createContainedCoded(HasContainedParametersI organizationBuilder, String property, String value, Integer isCode) throws Exception
     {
         ContainedParametersBuilder containedParametersBuilder = new ContainedParametersBuilder(organizationBuilder);
 
@@ -659,17 +874,33 @@ public abstract class CQC extends AbstractRoutine {
         );
         MapResponse propertyResponse = IMHelper.getIMMappedPropertyResponse(propertyRequest);
 
-        MapColumnValueRequest valueRequest = new MapColumnValueRequest(
-                "CM_Org_CQC", "CM_Sys_CQC", "CQC", "CQC",
-                property, value
-        );
-        MapResponse valueResponse = IMHelper.getIMMappedPropertyValueResponse(valueRequest);
+        CodeableConcept ccValue = new CodeableConcept();
 
+        if (isCode.equals(1)) {
+            MapColumnValueRequest valueRequest = new MapColumnValueRequest(
+                    "CM_Org_CQC", "CM_Sys_CQC", "CQC", "CQC",
+                    property, value
+            );
+            MapResponse valueResponse = IMHelper.getIMMappedPropertyValueResponse(valueRequest);
+            ccValue.addCoding().setCode(valueResponse.getConcept().getCode())
+                    .setSystem(valueResponse.getConcept().getScheme())
+                    .setDisplay(value + "~" + property + "~" + isCode); // include the property_name
+            //containedParametersBuilder.addParameter(propertyResponse.getConcept().getCode(), ccValue);
+        } else {
+            ccValue.addCoding().setCode(propertyResponse.getConcept().getCode())
+                    .setSystem(propertyResponse.getConcept().getScheme())
+                    .setDisplay(value + "~" + property + "~" + isCode);
+            //containedParametersBuilder.addParameter(propertyResponse.getConcept().getCode(), ccValue);
+        }
+        containedParametersBuilder.addParameter(propertyResponse.getConcept().getCode(), ccValue);
+
+        /*
         CodeableConcept ccValue = new CodeableConcept();
         ccValue.addCoding().setCode(valueResponse.getConcept().getCode())
                 .setSystem(valueResponse.getConcept().getScheme())
-                .setDisplay(value+"~"+property); // include the property_name
+                .setDisplay(value + "~" + property); // include the property_name
         containedParametersBuilder.addParameter(propertyResponse.getConcept().getCode(), ccValue);
+        */
     }
 
     private static void createContactPoint(ContactPoint.ContactPointSystem system, String contactCell, HasContactPointI parentBuilder) throws Exception {
