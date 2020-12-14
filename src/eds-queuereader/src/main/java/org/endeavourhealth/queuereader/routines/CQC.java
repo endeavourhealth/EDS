@@ -3,6 +3,7 @@ package org.endeavourhealth.queuereader.routines;
 import com.google.common.base.Strings;
 import com.google.gson.JsonObject;
 import jdk.nashorn.internal.parser.JSONParser;
+import net.sf.saxon.functions.Substring;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
@@ -564,7 +565,7 @@ public abstract class CQC extends AbstractRoutine {
 
         Integer count = 0;
 
-        FileWriter csvWriter = new FileWriter("C:\\Users\\PaulSimon\\Desktop\\cqc_api.csv");
+        FileWriter csvWriter = new FileWriter("C:\\Users\\PaulSimon\\Desktop\\cqc_api-1.csv");
         String headers="ID,Name,Also known as,Address,Postcode,Phone number,Service's website (if available),Service types,Date of latest check,Specialisms/services,Provider name,Local Authority,Region,Location URL,CQC Location (for office use only,CQC Provider ID (for office use only),On ratings,carehome,dormancy,uprn,odscode";
         csvWriter.append(headers);
         csvWriter.append("\n");
@@ -574,11 +575,11 @@ public abstract class CQC extends AbstractRoutine {
             if (ft.equals(1)) {ft=0; continue;} // skip headers
 
             String cqc_location = csvRecord.get(14);
-            String json = CQCAPI(cqc_location);
 
             String location_url = "https://api.cqc.org.uk/public/v1/locations/"+cqc_location;
+            String json = CallAPI(location_url);
 
-            JSONObject jsonObj = new JSONObject(json);
+            //JSONObject jsonObj = new JSONObject(json);
 
             JSONObject obj = new JSONObject(json);
             JSONArray specialisms = obj.getJSONArray("specialisms");
@@ -668,15 +669,103 @@ public abstract class CQC extends AbstractRoutine {
         csvWriter.close();
     }
 
-    private static String CQCAPI(String location_id) throws Exception
+    private static String ODSAPI(String ODSCode) throws Exception
     {
-        // https://api.cqc.org.uk/public/v1/locations/1-124233374 <== Perrymans
-        String url = "https://api.cqc.org.uk/public/v1/locations/"+location_id;
+        String ods_url="https://directory.spineservices.nhs.uk/ORD/2-0-0/organisations/"+ODSCode;
+        String json = CallAPI(ods_url);
+
+        if (json.isEmpty()) {return "";}
+
+        JSONObject obj = new JSONObject(json);
+        JSONObject org = obj.getJSONObject("Organisation");
+
+        String address_line_1 = ""; String address_line_2 = ""; String address_line_3 = "";
+        String address_line_4 = ""; String address_line_5 = ""; String postcode = "";
+        if (org.has("GeoLoc")) {
+            JSONObject geoloc = org.getJSONObject("GeoLoc");
+            JSONObject location = geoloc.getJSONObject("Location");
+            address_line_1 = getElement("AddrLn1",location);
+            address_line_2 = getElement("AddrLn2",location);
+            address_line_3 = getElement("Town",location);
+            address_line_4 = getElement("County",location);
+            address_line_5 = getElement("Country",location);
+            postcode = getElement("PostCode",location);
+        }
+
+        // 2.16.840.1.113883.2.1.3.2.4.18.48
+        String parent_organizations = "";
+        // 2.16.840.1.113883.2.1.3.2.4.18.48
+        // String parent_current = "";
+
+        if (org.has("Rels")) {
+            JSONObject rels = org.getJSONObject("Rels");
+            JSONArray Rel = rels.getJSONArray("Rel");
+            int n = Rel.length();
+            for (int i = 0; i < n; ++i) {
+                JSONObject z = Rel.getJSONObject(i);
+                if (z.has("Target")) {
+                    JSONObject target = z.getJSONObject("Target");
+                    if (target.has("OrgId")) {
+                        JSONObject orgid = target.getJSONObject("OrgId");
+                        String root = getElement("root",orgid);
+                        if (root.equals("2.16.840.1.113883.2.1.3.2.4.18.48")) {
+                            parent_organizations = parent_organizations + getElement("extension",orgid) + "~";
+                        }
+                    }
+                }
+            }
+        }
+
+        String opendate = "";
+        String closedate = "";
+
+        if (org.has("Date")) {
+            JSONArray date = org.getJSONArray("Date");
+            int n = date.length();
+            for (int i = 0; i < n; ++i) {
+                JSONObject d = date.getJSONObject(i);
+                String type = getElement("Type",d);
+                if (type.equals("Operational")) {
+                    if (d.has("Start")) {
+                        opendate = getElement("Start", d);
+                    }
+                    if (d.has("End")) {
+                        closedate = getElement("End", d);
+                    }
+                }
+            }
+        }
+
+        String id = "";
+        String filename = "";
+
+        String parent_organization = "";
+        String parent_current = "";
+
+        if (!parent_organizations.isEmpty()) {
+            parent_organizations = parent_organizations.substring(0,parent_organizations.length()-1);
+            String ss[] = parent_organizations.split("\\~",-1);
+            if (indexInBound(ss, 0))  parent_organization= ss[0];
+            if (indexInBound(ss, 1))  parent_current = ss[1];
+        }
+
+        String ret = id+"~"+ODSCode+"~"+address_line_1+"~"+address_line_2+"~"+address_line_3+"~"+address_line_4+"~"+address_line_5+"~"+filename+"~";
+        ret = ret+"~"+parent_organization+"~"+parent_current+"~"+opendate+"~"+closedate+"~"+postcode;
+
+        return ret;
+    }
+
+    private static String CallAPI(String url) throws Exception
+    {
         URL obj = new URL(url);
         HttpsURLConnection con = (HttpsURLConnection) obj.openConnection();
         con.setRequestMethod("GET");
 
         int responseCode = con.getResponseCode();
+
+        // /organisations/V82070 <= 404
+        if (responseCode == 404) {return "";}
+
         if (responseCode != HttpURLConnection.HTTP_OK) {
             throw new IOException("HTTP response " + responseCode + " returned for GET to " + url);
         }
@@ -762,7 +851,10 @@ public abstract class CQC extends AbstractRoutine {
             String odsCode = csvRecord.get(20);
 
             String ods_address = "";
-            if (!odsCode.isEmpty()) ods_address = FindODSDataUsingODSCode(odsCode, configName);
+
+            if (!odsCode.isEmpty()) ods_address = ODSAPI(odsCode);
+
+            //if (!odsCode.isEmpty()) ods_address = FindODSDataUsingODSCode(odsCode, configName);
 
 
             String ods_code = ""; String addline1=""; String addline2=""; String addline3=""; String addline4=""; String addline5="";
@@ -772,7 +864,7 @@ public abstract class CQC extends AbstractRoutine {
                 String[] ss = ods_address.split("\\~",-1);
                 ods_code = ss[1]; addline1 = ss[2]; addline2 = ss[3]; addline3 = ss[4]; addline4 = ss[5]; addline5 = ss[6];
                 parent_organization = ss[9]; parent_current = ss[10];
-                opendate = ss[11]; closedate = ss[12];
+                opendate = ss[11]; closedate = ss[12]; postcode = ss[13];
             }
 
             // get the address lines form the cqc file (but no way of working out district/county)
