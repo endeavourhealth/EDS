@@ -413,7 +413,7 @@ public class OpenEnvelope extends PipelineComponent {
 
 			OrganisationType fhirOrgType = null;
 			try {
-				fhirOrgType = OrganisationTransformer.findOdsOrganisationType(odsOrg);
+				fhirOrgType = OrganisationTransformer.findOdsOrganisationType(odsOrg, null);
 			} catch (Exception ex) {
 				//ignore any exception thrown from the above fn
 			}
