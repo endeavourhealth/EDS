@@ -63,7 +63,7 @@ GO
 
 DROP TABLE IF EXISTS [organization_additional];
 CREATE TABLE [organization_additional] (
-  [id] bigint NOT NULL ,
+  [id] bigint NOT NULL IDENTITY,
   [property_id] bigint NOT NULL ,
   [value_id] bigint NOT NULL ,
   [json_value] text DEFAULT NULL ,
@@ -85,7 +85,7 @@ GO
 
 DROP TABLE IF EXISTS [organization_v2];
 CREATE TABLE [organization_v2] (
-  [id] bigint NOT NULL,
+  [id] bigint NOT NULL IDENTITY,
   [ods_code] varchar(50) DEFAULT NULL,
   [name] varchar(255) DEFAULT NULL,
   [type_code] varchar(50) DEFAULT NULL,
@@ -147,7 +147,7 @@ GO
 
 DROP TABLE IF EXISTS [abp_classification_v2];
 CREATE TABLE [abp_classification_v2] (
-  [id] bigint NOT NULL,
+  [id] bigint NOT NULL IDENTITY,
   [code] varchar(255) NOT NULL,
   [term] varchar(255) DEFAULT NULL,
   PRIMARY KEY ([id],[code])
