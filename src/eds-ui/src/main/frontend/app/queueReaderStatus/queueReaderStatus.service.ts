@@ -23,9 +23,10 @@ export class QueueReaderStatusService extends BaseHttp2Service {
         this.showExecutionTime = true;
     }
 
-    getStatus() : Observable<QueueReaderStatus[]> {
+    getStatus(applicationName: string) : Observable<QueueReaderStatus[]> {
 
         var params = new URLSearchParams();
+        params.append('applicationName', applicationName);
 
         return this.httpGet('api/queueReader/status', { search: params });
     }

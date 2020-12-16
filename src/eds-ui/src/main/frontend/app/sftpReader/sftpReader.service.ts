@@ -9,8 +9,23 @@ import {SftpReaderConfiguration} from "./models/SftpReaderConfiguration";
 @Injectable()
 export class SftpReaderService extends BaseHttp2Service {
 
+    //filters for SFTP Reader page so they don't get reset when leaving and returning
+    showMemory: boolean;
+    showExecutionTime: boolean;
+    showJarDate: boolean;
+    showStartDate: boolean;
+    showWarningsOnly: boolean;
+    filterInstanceName: string;
+
+
     constructor(http : Http) {
         super (http);
+
+        var vm = this;
+        vm.filterInstanceName = '';
+        vm.showWarningsOnly = true;
+        vm.showMemory = true;
+        vm.showExecutionTime = true;
     }
 
     getSftpReaderStatus(configurationId: string) : Observable<SftpReaderChannelStatus> {

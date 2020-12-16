@@ -9,7 +9,7 @@
                 <button class="btn btn-sm btn-default" (click)="saveToCsv()" title="Save to CSV">Save to CSV</button>
                 <button class="btn btn-sm btn-default" (click)="togglePauseAll()" title="Toggle Pause All">Toggle Pause All</button>
                 <button class="btn btn-sm btn-default" (click)="odsSearch()" title="Ods Search">ODS Search</button>
-                <button class="btn btn-sm btn-success" (click)="refreshInstances(true)">Refresh</button>
+                <button class="btn btn-sm btn-success" (click)="refreshScreen()">Refresh</button>
 
             </form>
 
@@ -19,15 +19,122 @@
 
         <div class="row">
             <div class="col-md-12">
+                <div class="panel panel-info">
+                    <div class="panel-heading">
+                        Application Instances
+
+                        <div class="pull-right">
+                            <label for="showExecutionTime" class="control-label">Execution Time</label>
+                            <input type="checkbox" id="showExecutionTime" [(ngModel)]="sftpReaderService.showExecutionTime" name="showExecutionTime">
+
+                            <label for="showMemory" class="control-label">Memory (Current/Max)</label>
+                            <input type="checkbox" id="showMemory" [(ngModel)]="sftpReaderService.showMemory" name="showMemory">
+
+                            <label for="showJarDate" class="control-label">Jar Date</label>
+                            <input type="checkbox" id="showJarDate" [(ngModel)]="sftpReaderService.showJarDate" name="showJarDate">
+
+                            <label for="showStartDate" class="control-label">Start Date</label>
+                            <input type="checkbox" id="showStartDate" [(ngModel)]="sftpReaderService.showStartDate" name="showStartDate">
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+<!--        <div class="row">
+            <div class="col-md-12">
+
+
+                <label for="showExecutionTime" class="control-label">Execution Time</label>
+                <input type="checkbox" id="showExecutionTime" [(ngModel)]="sftpReaderService.showExecutionTime" name="showExecutionTime">
+
+                <label for="showMemory" class="control-label">Memory (Current/Max)</label>
+                <input type="checkbox" id="showMemory" [(ngModel)]="sftpReaderService.showMemory" name="showMemory">
+
+                <label for="showJarDate" class="control-label">Jar Date</label>
+                <input type="checkbox" id="showJarDate" [(ngModel)]="sftpReaderService.showJarDate" name="showJarDate">
+
+                <label for="showStartDate" class="control-label">Start Date</label>
+                <input type="checkbox" id="showStartDate" [(ngModel)]="sftpReaderService.showStartDate" name="showStartDate">
+
+            </div>
+        </div>-->
+
+        <div class="row" *ngIf="applicationStatus">
+            <div class="col-md-3" *ngFor="let appStatus of applicationStatus">
+
+                <span [ngStyle]="getApplicationCellColour(appStatus)">
+                    {{appStatus.applicationInstanceName}}
+
+                    <span *ngIf="isApplicationDead(appStatus)">
+                        <span class="label label-danger"><span class="fa fa-warning" ngbTooltip="{{appStatus.isBusyDetail}}"></span>{{getApplicationAgeDesc(appStatus)}}</span>
+                    </span>
+
+                    <span *ngIf="!isApplicationDead(appStatus)">
+
+                        <!-- icon if new jar deployed but app not restarted -->
+                        <span *ngIf="isApplicationNeedsRestart(appStatus)" class="fa fa-clock-o" ngbTooltip="{{getApplicationNeedsRestartDesc(appStatus)}}"></span>
+
+                        <!-- if busy, show the play icon and when it was busy from -->
+                        <span *ngIf="appStatus.isBusy" class="fa fa-play" ngbTooltip="{{appStatus.isBusyDetail}}"></span>
+
+                        <!-- if not doing anything show a pause icon -->
+                        <span *ngIf="!appStatus.isBusy" class="fa fa-pause" ngbTooltip="Application running but idle"></span>
+
+                        <span *ngIf="sftpReaderService.showExecutionTime" class="text-muted"> {{getApplicationExecutionTime(appStatus)}}</span>
+                        <span *ngIf="sftpReaderService.showMemory" class="text-muted"> [{{appStatus.currentHeapDesc}} / {{appStatus.maxHeapDesc}}]</span>
+                        <span *ngIf="sftpReaderService.showJarDate" class="text-muted"> [Jar {{appStatus.dtJar | date:'yyyy-MM-dd HH:mm:ss'}}]</span>
+                        <span *ngIf="sftpReaderService.showStartDate" class="text-muted"> [Started {{appStatus.dtStarted | date:'yyyy-MM-dd HH:mm:ss'}}]</span>
+
+
+                    </span>
+                </span>
+
+            </div>
+        </div>
+
+        <!-- just some spacing -->
+        <div class="row">
+            <span>&nbsp;</span>
+        </div>
+
+        <div class="row">
+            <div class="col-md-12">
+                <div class="panel panel-info">
+                    <div class="panel-heading">
+                        Feed Status
+
+                        <div class="pull-right">
+
+                            <label for="showWarningsOnly" class="control-label">Show Warnings Only</label>
+                            <input type="checkbox" id="showWarningsOnly" [(ngModel)]="sftpReaderService.showWarningsOnly" name="showWarningsOnly">
+                            &nbsp;&nbsp;&nbsp;
+
+                            <label for="filterInstanceName" class="control-label">Instance</label>
+                            <select id="filterInstanceName" name="filterInstanceName" [(ngModel)]="sftpReaderService.filterInstanceName">
+                                <option value="">All</option>
+                                <option *ngFor="let instanceName of getInstanceNames()" value="{{instanceName}}">{{instanceName}}</option>
+                            </select>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+<!--
+        <div class="row">
+            <div class="col-md-12">
 
                 <div class="form-group">
 
                     <label for="showWarningsOnly" class="control-label">Show Warnings Only</label>
-                    <input type="checkbox" id="showWarningsOnly" [(ngModel)]="showWarningsOnly" name="showWarningsOnly">
+                    <input type="checkbox" id="showWarningsOnly" [(ngModel)]="sftpReaderService.showWarningsOnly" name="showWarningsOnly">
                     &nbsp;&nbsp;&nbsp;
 
                     <label for="filterInstanceName" class="control-label">Instance</label>
-                    <select id="filterInstanceName" name="filterInstanceName" [(ngModel)]="filterInstanceName">
+                    <select id="filterInstanceName" name="filterInstanceName" [(ngModel)]="sftpReaderService.filterInstanceName">
                         <option value="">All</option>
                         <option *ngFor="let instanceName of getInstanceNames()" value="{{instanceName}}">{{instanceName}}</option>
                     </select>
@@ -37,6 +144,7 @@
 
             </div>
         </div>
+-->
 
 
         <div class="row">
@@ -46,20 +154,28 @@
                         <thead>
                         <tr>
                             <th class="col-md-2">Configuration</th>
+                            <th class="col-md-1">App Instance</th>
                             <th class="col-md-4">Third Party->SFTP Reader</th>
-                            <th class="col-md-5">SFTP Reader->Messaging API</th>
+                            <th class="col-md-4">SFTP Reader->Messaging API</th>
                             <th class="col-md-1">Actions</th>
                             <!--<th class="col-md-6">Actions</th>-->
                         </tr>
                         </thead>
                         <tbody>
                         <tr class="hover-box show-child-on-hover" *ngFor="let configuration of getConfigurationsToDisplay()">
+
+                            <!-- configuration name -->
                             <td>
                                 <div>{{configuration.configurationId}}</div>
                                 <div class="text-muted">
                                     {{configuration.friendlyName}}
                                 </div>
 
+                            </td>
+
+                            <!-- instance name -->
+                            <td>
+                                <div>{{configuration.instanceName}}</div>
                             </td>
 
                             <td>

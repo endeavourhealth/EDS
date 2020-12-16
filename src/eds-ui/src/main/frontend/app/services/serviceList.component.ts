@@ -434,34 +434,6 @@ export class ServiceListComponent implements OnInit, OnDestroy{
 		return ret;
 	}
 
-	static formatDate(d: Date) : string {
-
-		var year = '' + d.getFullYear();
-		var month = '' + (d.getMonth() + 1);
-		var day = '' + d.getDate();
-
-		var hour = '' + d.getHours();
-		var minute = '' + d.getMinutes();
-		var seconds = '' + d.getSeconds();
-
-		if (month.length < 2) {
-			month = '0' + month;
-		}
-		if (day.length < 2) {
-			day = '0' + day;
-		}
-		if (hour.length < 2) {
-			hour = '0' + hour;
-		}
-		if (minute.length < 2) {
-			minute = '0' + minute;
-		}
-		if (seconds.length < 2) {
-			seconds = '0' + seconds;
-		}
-
-		return day + '/' + month + '/' + year + ' ' + hour + ':' + minute + ':' + seconds;
-	}
 
 	odsSearch() {
 		var vm = this;
@@ -558,4 +530,43 @@ export class ServiceListComponent implements OnInit, OnDestroy{
 		a.remove();
 	}
 
+
+	static formatDate(d: Date): string {
+		if (!d) {
+			return '<missing date>';
+		}
+
+		return d.getFullYear() + '-' + ('0'+(d.getMonth()+1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2)
+			+ ' ' + ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);
+	}
+
+
+	/*static formatDate(d: Date) : string {
+
+		var year = '' + d.getFullYear();
+		var month = '' + (d.getMonth() + 1);
+		var day = '' + d.getDate();
+
+		var hour = '' + d.getHours();
+		var minute = '' + d.getMinutes();
+		var seconds = '' + d.getSeconds();
+
+		if (month.length < 2) {
+			month = '0' + month;
+		}
+		if (day.length < 2) {
+			day = '0' + day;
+		}
+		if (hour.length < 2) {
+			hour = '0' + hour;
+		}
+		if (minute.length < 2) {
+			minute = '0' + minute;
+		}
+		if (seconds.length < 2) {
+			seconds = '0' + seconds;
+		}
+
+		return day + '/' + month + '/' + year + ' ' + hour + ':' + minute + ':' + seconds;
+	}	*/
 }

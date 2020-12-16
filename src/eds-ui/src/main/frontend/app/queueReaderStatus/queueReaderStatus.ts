@@ -9,6 +9,7 @@ export class QueueReaderStatus {
     maxHeapMb: number;
     maxHeapDesc: string;
     currentHeapMb: number;
+    currentHeapDesc: string;
     physicalMemoryMb: number;
     physicalMemoryDesc: string;
     cpuLoad: number;

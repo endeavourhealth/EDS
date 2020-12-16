@@ -12,28 +12,29 @@ import {SftpReaderHistoryDialog} from "./sftpReaderHistory.dialog";
 import {SftpReaderConfiguration} from "./models/SftpReaderConfiguration";
 import {SftpReaderOrgsDialog} from "./sftpReaderOrgs.dialog";
 import {ServiceListComponent} from "../services/serviceList.component";
+import {QueueReaderStatusService} from "../queueReaderStatus/queueReaderStatus.service";
+import {QueueReaderStatus} from "../queueReaderStatus/queueReaderStatus";
 
 @Component({
     template : require('./sftpReader.html')
 })
 export class SftpReaderComponent {
 
-    //resultStr: string;
+    //SFTP configuration status
     configurations: SftpReaderConfiguration[];
     refreshingStatusMap: {};
     statusMap: {};
     statusesLastRefreshed: Date;
-    showWarningsOnly: boolean;
-    filterInstanceName: string;
 
-    //statuses: SftpReaderChannelStatus[];
+    //application status
+    refreshingApplicationStatus: boolean;
+    applicationStatusLastRefreshed: Date;
+    applicationStatus: QueueReaderStatus[];
 
-    //resultStr: string;
-    //showRawJson: boolean;
-    //refreshingStatus: boolean;
 
     constructor(private $modal: NgbModal,
                 protected sftpReaderService: SftpReaderService,
+                private queueReaderStatusService: QueueReaderStatusService,
                 protected logger: LoggerService,
                 protected $state: StateService) {
 
@@ -42,9 +43,42 @@ export class SftpReaderComponent {
 
     ngOnInit() {
         var vm = this;
-        vm.filterInstanceName = '';
-        vm.showWarningsOnly = true;
+
+        vm.refreshScreen();
+    }
+
+    refreshScreen() {
+        var vm = this;
         vm.refreshInstances(true);
+        vm.refreshApplicationStatus();
+    }
+
+    refreshApplicationStatus() {
+        var vm = this;
+        vm.refreshingApplicationStatus = true;
+        vm.applicationStatusLastRefreshed = new Date();
+
+        vm.queueReaderStatusService.getStatus('sftpreader').subscribe(
+            (result) => {
+
+                vm.processApplicationResults(result);
+                vm.refreshingApplicationStatus = false;
+
+            },
+            (error) => {
+                vm.logger.error('Failed get application status', error);
+                vm.refreshingApplicationStatus = false;
+            }
+        );
+    }
+
+    processApplicationResults(results: QueueReaderStatus[]) {
+        var vm = this;
+        vm.applicationStatus = linq(results)
+            .OrderBy(s => s.applicationInstanceName)
+            .ThenBy(s => s.applicationInstanceNumber)
+            .ToArray();
+        //console.log('app status = ' + vm.applicationStatus);
     }
 
     refreshInstances(fullRefresh: boolean) {
@@ -193,14 +227,14 @@ export class SftpReaderComponent {
             //console.log('checking configuration at ' + i);
             //console.log(configuration);
 
-            if (vm.filterInstanceName) {
+            if (vm.sftpReaderService.filterInstanceName) {
                 var configInstanceName = configuration.instanceName;
-                if (vm.filterInstanceName != configInstanceName) {
+                if (vm.sftpReaderService.filterInstanceName != configInstanceName) {
                     continue;
                 }
             }
 
-            if (vm.showWarningsOnly) {
+            if (vm.sftpReaderService.showWarningsOnly) {
 
                 //always include configurations until we've got data back for them
                 if (!vm.isRefreshing(configuration)) {
@@ -529,4 +563,60 @@ export class SftpReaderComponent {
         a.remove();
     }
 
+    isApplicationDead(status: QueueReaderStatus): boolean {
+        var vm = this;
+        //console.log('getting status');
+        //console.log(status);
+        var statusTime = status.timestmp;
+        var warningTime = vm.applicationStatusLastRefreshed.getTime() - (1000 * 60 * 2);
+
+        return statusTime < warningTime;
+    }
+
+    getApplicationAgeDesc(status: QueueReaderStatus): string {
+        var vm = this;
+        return ServiceListComponent.getDateDiffDesc(new Date(status.timestmp), vm.applicationStatusLastRefreshed, 2);
+    }
+
+    getApplicationCellColour(status: QueueReaderStatus): any {
+        var vm = this;
+        //var hostName = status.hostName;
+        //var colour = vm.hostNameColourMap[hostName];
+        var colour = '#e5e7e9';
+        return {'background-color': colour};
+    }
+
+
+    isApplicationNeedsRestart(status: QueueReaderStatus): boolean {
+        if (!status.dtJar
+            || !status.dtStarted) {
+            return false;
+        }
+
+        //it needs a restart if the jar date is more recent than the start date
+        return status.dtJar > status.dtStarted;
+    }
+
+    getApplicationNeedsRestartDesc(status: QueueReaderStatus): string {
+
+        var vm = this;
+
+        if (!status.dtJar
+            || !status.dtStarted) {
+            return '';
+        }
+
+        var dtJar = new Date(status.dtJar);
+        var dtStarted = new Date(status.dtStarted);
+        return 'Jar built: ' + ServiceListComponent.formatDate(dtJar) + ', app started: ' + ServiceListComponent.formatDate(dtStarted);
+    }
+
+    getApplicationExecutionTime(status: QueueReaderStatus): string {
+        var vm = this;
+        if (!status.isBusySince) {
+            return '';
+        } else {
+            return ServiceListComponent.getDateDiffDesc(new Date(status.isBusySince), new Date(status.timestmp), 1);
+        }
+    }
 }

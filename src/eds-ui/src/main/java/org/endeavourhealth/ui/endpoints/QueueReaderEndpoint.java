@@ -23,10 +23,7 @@ import org.endeavourhealth.coreui.endpoints.AbstractEndpoint;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
+import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -48,12 +45,12 @@ public class QueueReaderEndpoint extends AbstractEndpoint {
     @Consumes(MediaType.APPLICATION_JSON)
     @Timed(absolute = true, name="QueueReaderEndpoint.status")
     @Path("/status")
-    public Response getQueueReaderStatus(@Context SecurityContext sc) throws Exception {
+    public Response getQueueReaderStatus(@Context SecurityContext sc, @QueryParam("applicationName") String applicationName) throws Exception {
         super.setLogbackMarkers(sc);
 
         userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load, "Get Queue Reader Status");
 
-        String ret = getQueueReaderStatusJson();
+        String ret = getQueueReaderStatusJson(applicationName);
 
         clearLogbackMarkers();
 
@@ -63,7 +60,7 @@ public class QueueReaderEndpoint extends AbstractEndpoint {
                 .build();
     }
 
-    private static String getQueueReaderStatusJson() throws Exception {
+    private static String getQueueReaderStatusJson(String applicationName) throws Exception {
 
         ObjectMapper mapper = new ObjectMapper();
         ArrayNode root = new ArrayNode(mapper.getNodeFactory());
@@ -78,23 +75,33 @@ public class QueueReaderEndpoint extends AbstractEndpoint {
             String appId = h.getApplicationName();
             String appSubId = h.getApplicationInstanceName();
 
+            //skip any for other applications
+            if (!Strings.isNullOrEmpty(applicationName)
+                    && !applicationName.equalsIgnoreCase(appId)) {
+                continue;
+            }
+
             //if any records for non-queue reader apps that don't have a sub-ID, skip them
-            if (Strings.isNullOrEmpty(appSubId)) {
+            /*if (Strings.isNullOrEmpty(appSubId)) {
                 continue;
-            }
+            }*/
 
+            //if it's a queue reader, find the queue name from the XML config
+            String queueName = null;
             String queueReaderConfigXml = ConfigManager.getConfiguration(appSubId, appId);
-
-            //if not a queue reader app, then skip
-            if (Strings.isNullOrEmpty(queueReaderConfigXml)) {
-                continue;
+            if (!Strings.isNullOrEmpty(queueReaderConfigXml)) {
+                QueueReaderConfiguration configuration = ConfigDeserialiser.deserialise(queueReaderConfigXml);
+                queueName = configuration.getQueue();
             }
-            QueueReaderConfiguration configuration = ConfigDeserialiser.deserialise(queueReaderConfigXml);
-            String queueName = configuration.getQueue();
 
             String maxHeapDesc = null;
             if (h.getMaxHeapMb() != null) {
                 maxHeapDesc = FileUtils.byteCountToDisplaySize(h.getMaxHeapMb() * (1024L * 1024L));
+            }
+
+            String currentHeapDesc = null;
+            if (h.getCurrentHeapMb() != null) {
+                currentHeapDesc = FileUtils.byteCountToDisplaySize(h.getCurrentHeapMb() * (1024L * 1024L));
             }
 
             String physicalMemoryDesc = null;
@@ -168,6 +175,7 @@ public class QueueReaderEndpoint extends AbstractEndpoint {
             objectNode.put("maxHeapMb", h.getMaxHeapMb());
             objectNode.put("maxHeapDesc", maxHeapDesc);
             objectNode.put("currentHeapMb", h.getCurrentHeapMb());
+            objectNode.put("currentHeapDesc", currentHeapDesc);
             objectNode.put("physicalMemoryMb", h.getServerMemoryMb());
             objectNode.put("physicalMemoryDesc", physicalMemoryDesc);
             objectNode.put("cpuLoad", h.getServerCpuUsagePercent());

@@ -154,7 +154,7 @@ export class QueueReaderStatusComponent {
         vm.refreshingQueueReaderStatus = true;
         vm.statusLastRefreshed = new Date();
 
-        vm.queueReaderStatusService.getStatus().subscribe(
+        vm.queueReaderStatusService.getStatus('queuereader').subscribe(
             (result) => {
 
                 vm.processQueueReaderResults(result);
@@ -582,17 +582,9 @@ export class QueueReaderStatusComponent {
 
         var dtJar = new Date(status.dtJar);
         var dtStarted = new Date(status.dtStarted);
-        return 'Jar built: ' + vm.formatDate(dtJar) + ', app started: ' + vm.formatDate(dtStarted);
+        return 'Jar built: ' + ServiceListComponent.formatDate(dtJar) + ', app started: ' + ServiceListComponent.formatDate(dtStarted);
     }
 
-    formatDate(d: Date): string {
-        if (!d) {
-            return '<missing date>';
-        }
-        
-        return d.getFullYear() + '-' + ('0'+(d.getMonth()+1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2)
-            + ' ' + ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);
-    }
 
     playButtonClicked(status: QueueReaderStatus) {
         var vm = this;

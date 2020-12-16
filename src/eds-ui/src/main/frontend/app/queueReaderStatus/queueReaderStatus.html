@@ -87,7 +87,7 @@
                                                         </span>
 
                                                         <!-- if not doing anything show a pause icon -->
-                                                        <span *ngIf="!status.isBusy" class="fa fa-pause"></span>
+                                                        <span *ngIf="!status.isBusy" class="fa fa-pause" ngbTooltip="Application running but idle"></span>
 
                                                         <span *ngIf="queueReaderStatusService.showJarDate" class="text-muted"> {{status.dtJar | date:'yyyy-MM-dd HH:mm:ss'}}</span>
                                                         <span *ngIf="queueReaderStatusService.showStartDate" class="text-muted"> {{status.dtStarted | date:'yyyy-MM-dd HH:mm:ss'}}</span>
@@ -157,7 +157,7 @@
                                                 <span *ngIf="queueReaderStatusService.showDataDate" class="text-muted"> {{status.isBusyDataDate}}</span>
                                             </span>
 
-                                            <span *ngIf="!status.isBusy" class="fa fa-pause"></span>
+                                            <span *ngIf="!status.isBusy" class="fa fa-pause" ngbTooltip="Application running but idle"></span>
 
                                             <span *ngIf="queueReaderStatusService.showJarDate" class="text-muted"> {{status.dtJar | date:'yyyy-MM-dd HH:mm:ss'}}</span>
                                             <span *ngIf="queueReaderStatusService.showStartDate" class="text-muted"> {{status.dtStarted | date:'yyyy-MM-dd HH:mm:ss'}}</span>
