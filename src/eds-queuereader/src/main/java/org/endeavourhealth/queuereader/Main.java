@@ -325,7 +325,7 @@ public class Main {
 			if (args.length > 2) {
 				ccgOdsCodes = args[2];
 			}
-			SpecialRoutines.countVaccinationCodes(sinceDateStr, ccgOdsCodes);
+			SD81.countVaccinationCodes(sinceDateStr, ccgOdsCodes);
 			System.exit(0);
 		}*/
 

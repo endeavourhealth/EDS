@@ -1,16 +1,8 @@
 package org.endeavourhealth.queuereader.routines;
 
 import com.google.common.base.Strings;
-import jdk.nashorn.internal.objects.NativeJSON;
-import org.apache.commons.csv.CSVFormat;
-import org.apache.commons.csv.CSVParser;
-import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.io.FileUtils;
-import org.endeavourhealth.common.fhir.CodeableConceptHelper;
 import org.endeavourhealth.common.fhir.IdentifierHelper;
-import org.endeavourhealth.common.utility.FileHelper;
-import org.endeavourhealth.common.utility.ThreadPool;
-import org.endeavourhealth.common.utility.ThreadPoolError;
 import org.endeavourhealth.core.database.dal.DalProvider;
 import org.endeavourhealth.core.database.dal.admin.LibraryRepositoryHelper;
 import org.endeavourhealth.core.database.dal.admin.ServiceDalI;
@@ -23,14 +15,11 @@ import org.endeavourhealth.core.database.dal.eds.PatientSearchDalI;
 import org.endeavourhealth.core.database.dal.eds.models.PatientLinkPair;
 import org.endeavourhealth.core.database.dal.ehr.ResourceDalI;
 import org.endeavourhealth.core.database.dal.ehr.models.ResourceWrapper;
-import org.endeavourhealth.core.database.dal.subscriberTransform.PseudoIdDalI;
 import org.endeavourhealth.core.database.dal.subscriberTransform.SubscriberCohortDalI;
 import org.endeavourhealth.core.database.dal.subscriberTransform.SubscriberPersonMappingDalI;
 import org.endeavourhealth.core.database.dal.subscriberTransform.SubscriberResourceMappingDalI;
 import org.endeavourhealth.core.database.dal.subscriberTransform.models.SubscriberCohortRecord;
 import org.endeavourhealth.core.database.dal.subscriberTransform.models.SubscriberId;
-import org.endeavourhealth.core.database.rdbms.enterprise.EnterpriseConnector;
-import org.endeavourhealth.core.fhirStorage.FhirSerializationHelper;
 import org.endeavourhealth.core.messaging.pipeline.PipelineException;
 import org.endeavourhealth.core.queueing.QueueHelper;
 import org.endeavourhealth.core.subscribers.SubscriberHelper;
@@ -41,40 +30,25 @@ import org.endeavourhealth.im.models.mapping.MapColumnValueRequest;
 import org.endeavourhealth.im.models.mapping.MapResponse;
 import org.endeavourhealth.subscriber.filer.EnterpriseFiler;
 import org.endeavourhealth.subscriber.filer.SubscriberFiler;
-import org.endeavourhealth.transform.common.resourceBuilders.*;
 import org.endeavourhealth.transform.enterprise.EnterpriseTransformHelper;
 import org.endeavourhealth.transform.enterprise.FhirToEnterpriseCsvTransformer;
 import org.endeavourhealth.transform.enterprise.transforms.EpisodeOfCareEnterpriseTransformer;
 import org.endeavourhealth.transform.enterprise.transforms.PatientEnterpriseTransformer;
-import org.endeavourhealth.transform.hl7v2fhir.transforms.OrganizationTransformer;
 import org.endeavourhealth.transform.subscriber.*;
-import org.endeavourhealth.transform.subscriber.targetTables.OrganizationContact_v2;
 import org.endeavourhealth.transform.subscriber.targetTables.OutputContainer;
 import org.endeavourhealth.transform.subscriber.targetTables.SubscriberTableId;
 import org.endeavourhealth.transform.subscriber.transforms.EpisodeOfCareTransformer;
-import org.endeavourhealth.transform.subscriber.transforms.OrganisationTransformer;
-import org.endeavourhealth.transform.subscriber.transforms.OrganisationTransformer_v2;
 import org.endeavourhealth.transform.subscriber.transforms.PatientTransformer;
 import org.hl7.fhir.instance.model.Patient;
 import org.hl7.fhir.instance.model.ResourceType;
-import org.hl7.fhir.utilities.CSVReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.*;
-import java.lang.System;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import org.endeavourhealth.core.database.rdbms.enterprise.EnterpriseConnector;
-import org.endeavourhealth.core.database.rdbms.ConnectionManager;
-import java.sql.*;
-import javax.persistence.EntityManager;
-import org.hibernate.internal.SessionImpl;
-import org.hl7.fhir.instance.model.*;
-
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.concurrent.Callable;
 
 public abstract class SpecialRoutines extends AbstractRoutine {
     private static final Logger LOG = LoggerFactory.getLogger(SpecialRoutines.class);
@@ -4026,241 +4000,6 @@ public abstract class SpecialRoutines extends AbstractRoutine {
         }
     }*/
 
-    /*public static void countVaccinationCodes(String sinceDateStr, String ccgOdsCodes) {
-        LOG.debug("Counting VaccinationCodes at " + ccgOdsCodes);
-        try {
-
-            Date cutoff = new SimpleDateFormat("yyyy-MM-dd").parse(sinceDateStr);
-            LOG.debug("Counting vaccinations since " + sinceDateStr);
-
-            ServiceDalI serviceDal = DalProvider.factoryServiceDal();
-            List<Service> services = serviceDal.getAll();
-
-
-            Map<String, AtomicInteger> emisResults = new HashMap<>();
-            Map<String, AtomicInteger> tppResults = new HashMap<>();
-            Map<String, AtomicInteger> visionResults = new HashMap<>();
-
-
-            for (Service service: services) {
-
-                if (shouldSkipService(service, ccgOdsCodes)) {
-                    continue;
-                }
-
-                LOG.debug("Doing " + service);
-
-                Map<String, AtomicInteger> hmResults = null;
-                if (service.getTags() == null) {
-                    LOG.warn("No tags set");
-                    continue;
-                } else if (service.getTags().containsKey("TPP")) {
-                    hmResults = tppResults;
-                } else if (service.getTags().containsKey("EMIS")) {
-                    hmResults = emisResults;
-                } else if (service.getTags().containsKey("Vision")) {
-                    hmResults = visionResults;
-                } else {
-                    LOG.error("Unknown system type");
-                    continue;
-                    //throw new Exception();
-                }
-
-                Calendar cal = Calendar.getInstance();
-                cal.setTime(new Date());
-                cal.add(Calendar.YEAR, -20);
-                Date d = cal.getTime();
-                //String dateStr = new SimpleDateFormat("yyyy-MM-dd").format(d);
-
-                List<UUID> patientIds = new ArrayList<>();
-
-                String sql = "SELECT patient_id FROM patient_search WHERE dt_deleted IS NULL AND date_of_birth > ? AND service_id = ?";
-                Connection connection = ConnectionManager.getEdsConnection();
-                PreparedStatement ps = connection.prepareStatement(sql);
-                ps.setTimestamp(1, new java.sql.Timestamp(d.getTime()));
-                ps.setString(2, service.getId().toString());
-
-                ResultSet rs = ps.executeQuery();
-                while (rs.next()) {
-                    String s = rs.getString(1);
-                    patientIds.add(UUID.fromString(s));
-                }
-
-                ps.close();
-                connection.close();
-
-                LOG.debug("Found " + patientIds.size() + " patient IDs");
-
-                int done = 0;
-                for (UUID patientId: patientIds) {
-
-                    ResourceDalI resourceDal = DalProvider.factoryResourceDal();
-                    List<ResourceWrapper> resources = resourceDal.getResourcesByPatient(service.getId(), patientId, ResourceType.Immunization.toString());
-                    for (ResourceWrapper resourceWrapper: resources) {
-                        Immunization imm = (Immunization)resourceWrapper.getResource();
-
-                        if (!imm.hasDateElement()) {
-                            continue;
-                        }
-                        DateTimeType dtVal = imm.getDateElement();
-                        Date dt = dtVal.getValue();
-                        if (dt.before(cutoff)) {
-                            continue;
-                        }
-
-                        if (imm.hasVaccineCode()) {
-                            CodeableConcept cc = imm.getVaccineCode();
-                            ObservationCodeHelper codes = ObservationCodeHelper.extractCodeFields(cc);
-
-                            Long snomedConceptId = codes.getSnomedConceptId();
-                            String originalCode = codes.getOriginalCode();
-                            String originalTerm = codes.getOriginalTerm();
-
-                            //there are Vision immunizations with a Snomed code only
-                            if (originalCode == null) {
-                                originalCode = "NULL";
-                            }
-
-                            if (originalTerm == null) {
-                                originalTerm = "NULL";
-                            }
-
-                            String snomedConceptIdStr;
-                            if (snomedConceptId != null) {
-                                snomedConceptIdStr = "" + snomedConceptId;
-                            } else {
-                                snomedConceptIdStr = "NULL";
-                            }
-
-                            String cacheKey = originalCode + "|" + originalTerm + "|" + snomedConceptIdStr;
-                            AtomicInteger count = hmResults.get(cacheKey);
-                            if (count == null) {
-                                count = new AtomicInteger(0);
-                                hmResults.put(cacheKey, count);
-                            }
-                            count.incrementAndGet();
-                        }
-                    }
-
-                    done ++;
-                    if (done % 100 == 0) {
-                        LOG.debug("Done " + done);
-                    }
-                }
-                LOG.debug("Finished " + done);
-            }
-
-            LOG.debug("Writing results");
-
-            List<String> fileNames = new ArrayList<>();
-            fileNames.add("Immunisation_Codes_TPP.csv");
-            fileNames.add("Immunisation_Codes_Emis.csv");
-            fileNames.add("Immunisation_Codes_Vision.csv");
-
-            for (String fileName: fileNames) {
-
-                Map<String, AtomicInteger> hmResults = null;
-                String localScheme = null;
-                if (fileName.equals("Immunisation_Codes_TPP.csv")) {
-                    hmResults = tppResults;
-                    localScheme = "TPP local";
-                } else if (fileName.equals("Immunisation_Codes_Emis.csv")) {
-                    hmResults = emisResults;
-                    localScheme = "EMIS local";
-                } else if (fileName.equals("Immunisation_Codes_Vision.csv")) {
-                    hmResults = visionResults;
-                    localScheme = "Vision local";
-                } else {
-                    throw new Exception("Unknown file name " + fileName);
-                }
-
-                //find max count
-                Map<Integer, List<String>> hmByCount = new HashMap<>();
-                int max = 0;
-
-                for (String key: hmResults.keySet()) {
-                    AtomicInteger a = hmResults.get(key);
-                    int count = a.get();
-
-                    List<String> l = hmByCount.get(new Integer(count));
-                    if (l == null) {
-                        l = new ArrayList<>();
-                        hmByCount.put(new Integer(count), l);
-                    }
-                    l.add(key);
-
-                    max = Math.max(max, count);
-                }
-
-                File dstFile = new File(fileName);
-                FileOutputStream fos = new FileOutputStream(dstFile);
-                OutputStreamWriter osw = new OutputStreamWriter(fos);
-                BufferedWriter bufferedWriter = new BufferedWriter(osw);
-
-                CSVFormat format = EmisCsvToFhirTransformer.CSV_FORMAT
-                        .withHeader("Code Scheme", "Code", "Term", "Mapped Snomed Concept", "Mapped Snomed Term", "Count"
-                        );
-                CSVPrinter printer = new CSVPrinter(bufferedWriter, format);
-
-                for (int i=max; i>=0; i--) {
-                    List<String> l = hmByCount.get(new Integer(i));
-                    if (l == null) {
-                        continue;
-                    }
-
-                    for (String key: l) {
-                        String[] toks = key.split("|");
-                        String originalCode = toks[0];
-
-                        String originalTerm = "NULL";
-                        String snomedConceptId = "NULL";
-                        String snomedTerm = "NULL";
-
-                        if (toks.length > 1) {
-                            originalTerm = toks[1];
-                        }
-
-                        if (toks.length > 2) {
-                            snomedConceptId = toks[2];
-
-                            SnomedCode snomedCode = TerminologyService.lookupSnomedFromConceptId(snomedConceptId);
-                            if (snomedCode != null) {
-                                snomedTerm = snomedCode.getTerm();
-                            }
-                        }
-
-                        String codeScheme = null;
-
-                        if (originalCode.startsWith("CTV3_")) {
-                            originalCode = originalCode.substring(5);
-                            if (originalCode.startsWith("Y")) {
-                                codeScheme = localScheme;
-                            } else {
-                                codeScheme = "CTV3";
-                            }
-
-                        } else {
-                            Read2Code dbCode = TerminologyService.lookupRead2Code(originalCode);
-                            if (dbCode == null) {
-                                codeScheme = localScheme;
-                            } else {
-                                codeScheme = "Read2";
-                            }
-                        }
-
-                        printer.printRecord(codeScheme, originalCode, originalTerm, snomedConceptId, snomedTerm, new Integer(i));
-                        //String cacheKey = originalCode + "|" + originalTerm + "|" + snomedConceptId;
-                    }
-                }
-
-                printer.close();
-            }
-
-            LOG.debug("Finished Counting VaccinationCodes at " + ccgOdsCodes);
-        } catch (Throwable t) {
-            LOG.error("", t);
-        }
-    }*/
 
     /*public static void compareDsmSubscribers() {
         LOG.debug("Comparing DSM for Subscribers");
