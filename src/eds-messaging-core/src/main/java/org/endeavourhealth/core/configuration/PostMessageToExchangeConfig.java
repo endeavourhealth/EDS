@@ -22,7 +22,6 @@ import java.util.List;
  *         &lt;element name="RoutingHeader" type="{http://www.w3.org/2001/XMLSchema}string" maxOccurs="unbounded"/>
  *         &lt;element name="MulticastHeader" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
  *         &lt;element name="AddLastMessageFlag" type="{http://www.w3.org/2001/XMLSchema}boolean" minOccurs="0"/>
- *         &lt;element name="PersistLastMessageFlag" type="{http://www.w3.org/2001/XMLSchema}boolean" minOccurs="0"/>
  *       &lt;/sequence>
  *     &lt;/extension>
  *   &lt;/complexContent>
@@ -36,8 +35,7 @@ import java.util.List;
     "exchange",
     "routingHeader",
     "multicastHeader",
-    "addLastMessageFlag",
-    "persistLastMessageFlag"
+    "addLastMessageFlag"
 })
 public class PostMessageToExchangeConfig
     extends ComponentConfig
@@ -51,8 +49,6 @@ public class PostMessageToExchangeConfig
     protected String multicastHeader;
     @XmlElement(name = "AddLastMessageFlag")
     protected Boolean addLastMessageFlag;
-    @XmlElement(name = "PersistLastMessageFlag")
-    protected Boolean persistLastMessageFlag;
 
     /**
      * Gets the value of the exchange property.
@@ -153,30 +149,6 @@ public class PostMessageToExchangeConfig
      */
     public void setAddLastMessageFlag(Boolean value) {
         this.addLastMessageFlag = value;
-    }
-
-    /**
-     * Gets the value of the persistLastMessageFlag property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link Boolean }
-     *     
-     */
-    public Boolean isPersistLastMessageFlag() {
-        return persistLastMessageFlag;
-    }
-
-    /**
-     * Sets the value of the persistLastMessageFlag property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link Boolean }
-     *     
-     */
-    public void setPersistLastMessageFlag(Boolean value) {
-        this.persistLastMessageFlag = value;
     }
 
 }
