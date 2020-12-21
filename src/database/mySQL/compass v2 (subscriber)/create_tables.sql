@@ -213,7 +213,7 @@ CREATE TABLE person
 (
   id bigint NOT NULL,
   organization_id bigint NOT NULL,
-  title varchar(50),
+  title varchar(255),
   first_names varchar(255),
   last_name varchar(255),
   gender_concept_id int,
@@ -237,7 +237,7 @@ CREATE TABLE patient
   id bigint NOT NULL,
   organization_id bigint NOT NULL,
   person_id bigint NOT NULL,
-  title varchar(50),
+  title varchar(255), -- got some rare but long titles
   first_names varchar(255),
   last_name varchar(255),
   gender_concept_id int,
