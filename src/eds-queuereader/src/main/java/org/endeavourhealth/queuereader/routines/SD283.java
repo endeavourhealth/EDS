@@ -6,6 +6,7 @@ import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.common.fhir.ExtensionConverter;
+import org.endeavourhealth.common.fhir.ReferenceComponents;
 import org.endeavourhealth.common.fhir.ReferenceHelper;
 import org.endeavourhealth.common.utility.FileHelper;
 import org.endeavourhealth.core.database.dal.DalProvider;
@@ -320,6 +321,7 @@ public class SD283 extends AbstractRoutine {
         int changed = 0;
 
         ResourceDalI resourceDal = DalProvider.factoryResourceDal();
+        Map<String, Date> hmPractitionerDates = new HashMap<>();
 
         for (String combinedRawId: hmSlotsAndSessions.keySet()) {
             String sessionGuid = hmSlotsAndSessions.get(combinedRawId);
@@ -377,6 +379,52 @@ public class SD283 extends AbstractRoutine {
                 }
             }
 
+            //the FHIR->Compass transforms for Appointments used the LAST practitioner, but the Schedule transform used the FIRST. The Appointment
+            //transform has been changed to be consistent, but any appt with multiple practitioners should go through the outbound transform again to fix it
+            if (!madeChange) {
+                int practitionerCount = findPractitionerCount(appointment);
+                if (practitionerCount > 1) {
+
+                    ExtensionConverter.setResourceChanged(appointment);
+                    madeChange = true;
+                    changed ++;
+
+                    if (filer == null) {
+                        LOG.debug("Need to refresh appointment " + appointmentUuid + ", raw ID " + combinedRawId + " because has " + practitionerCount + " practitioners");
+                    }
+                }
+            }
+
+            //if we didn't make a change, we still may need to change the Appt so that it goes through the outbound transform again,
+            //if the Practitioner wasn't created until AFTER the Appointment was created. This is the same problem as affected the Schedules too.
+            if (!madeChange) {
+                Date dtAppointment = findResourceDate(serviceId, ResourceType.Appointment, appointmentUuid.toString(), true);
+
+                //find the first practitioner
+                String practitionerUuidStr = findFirstPractitionerUuid(appointment);
+                if (!Strings.isNullOrEmpty(practitionerUuidStr)) {
+
+                    //find date the practitioner was FIRST sent through to subscribers (use a cache since practitioners will be referenced by lots of schedules)
+                    Date dtPractitioner = hmPractitionerDates.get(practitionerUuidStr);
+                    if (dtPractitioner == null) {
+                        dtPractitioner = findResourceDate(serviceId, ResourceType.Practitioner, practitionerUuidStr, false);
+                        hmPractitionerDates.put(practitionerUuidStr, dtPractitioner);
+                    }
+
+                    if (dtAppointment.before(dtPractitioner)) {
+
+                        ExtensionConverter.setResourceChanged(appointment);
+                        madeChange = true;
+                        changed ++;
+
+                        if (filer == null) {
+                            LOG.debug("Need to refresh appointment " + appointmentUuid + ", raw ID " + combinedRawId + " because transformed before practitioner existed");
+                        }
+                    }
+                }
+            }
+
+
             if (filer != null && madeChange) {
                 filer.savePatientResource(null, false, builder);
             }
@@ -389,6 +437,34 @@ public class SD283 extends AbstractRoutine {
 
         LOG.debug("Finished " + done + " slots, changed " + changed);
 
+    }
+
+    private static int findPractitionerCount(Appointment appointment) {
+        int ret = 0;
+        if (appointment.hasParticipant()) {
+            for (Appointment.AppointmentParticipantComponent participantComponent : appointment.getParticipant()) {
+                Reference reference = participantComponent.getActor();
+                ReferenceComponents components = ReferenceHelper.getReferenceComponents(reference);
+                if (components.getResourceType() == ResourceType.Practitioner) {
+                    ret ++;
+                }
+            }
+        }
+        return ret;
+    }
+
+    private static String findFirstPractitionerUuid(Appointment appointment) {
+
+        if (appointment.hasParticipant()) {
+            for (Appointment.AppointmentParticipantComponent participantComponent : appointment.getParticipant()) {
+                Reference reference = participantComponent.getActor();
+                ReferenceComponents components = ReferenceHelper.getReferenceComponents(reference);
+                if (components.getResourceType() == ResourceType.Practitioner) {
+                    return components.getId();
+                }
+            }
+        }
+        return null;
     }
 
 
