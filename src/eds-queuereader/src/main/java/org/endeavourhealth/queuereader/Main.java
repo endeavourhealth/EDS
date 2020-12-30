@@ -853,6 +853,15 @@ public class Main {
 			System.exit(0);
 		}
 
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("TransformAndFilePatientAgeV2DataForProtocolServices")) {
+			String subscriberConfigName = args[1];
+			String orgOdsCodeRegex = args[2];
+
+			SpecialRoutines.transformAndFilePatientAgeV2DataForProtocolServices(subscriberConfigName, orgOdsCodeRegex);
+			System.exit(0);
+		}
+
 		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("RunPersonUpdater")) {
 			String enterpriseConfigName = args[1];
