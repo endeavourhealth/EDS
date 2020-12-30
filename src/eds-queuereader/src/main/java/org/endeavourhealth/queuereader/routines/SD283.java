@@ -5,6 +5,7 @@ import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
+import org.endeavourhealth.common.fhir.ExtensionConverter;
 import org.endeavourhealth.common.fhir.ReferenceHelper;
 import org.endeavourhealth.common.utility.FileHelper;
 import org.endeavourhealth.core.database.dal.DalProvider;
@@ -32,7 +33,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.InputStreamReader;
-import java.text.SimpleDateFormat;
 import java.util.*;
 
 public class SD283 extends AbstractRoutine {
@@ -168,12 +168,12 @@ public class SD283 extends AbstractRoutine {
                 continue;
             }
 
-            boolean extraLogging = false;
+            /*boolean extraLogging = false;
             LOG.debug("Checking schedule " + scheduleUuid);
             if (scheduleUuid.toString().equals("1f317a5c-2291-49a3-811c-29c5fc71dd0b")) {
                 LOG.debug("UUID matched one for extra logging");
                 extraLogging = true;
-            }
+            }*/
 
             Schedule schedule = (Schedule)resourceDal.getCurrentVersionAsResource(serviceId, ResourceType.Schedule, scheduleUuid.toString());
             if (schedule == null) {
@@ -190,17 +190,17 @@ public class SD283 extends AbstractRoutine {
             String practitionerUuidStr = ReferenceHelper.getReferenceId(actorRef);
             boolean needToSaveSchedule = false;
 
-            if (extraLogging) {
+            /*if (extraLogging) {
                 LOG.debug("Schedule " + scheduleUuid + " has practitioner " + actorRef.getReference());
-            }
+            }*/
 
             //if practitioner NOT exists - create it and update schedule
             Practitioner practitioner = (Practitioner)resourceDal.getCurrentVersionAsResource(serviceId, ResourceType.Practitioner, practitionerUuidStr.toString());
             if (practitioner == null) {
 
-                if (extraLogging) {
+                /*if (extraLogging) {
                     LOG.debug("Practitioner is NULL");
-                }
+                }*/
 
                 //convert practitioner UUID back to Emis GUID
                 Reference rawActorRef = IdHelper.convertEdsReferenceToLocallyUniqueReference(csvHelper, actorRef);
@@ -219,15 +219,15 @@ public class SD283 extends AbstractRoutine {
             } else {
                 //if practitioner created AFTER schedule (later exchange) - update schedule
 
-                if (extraLogging) {
+                /*if (extraLogging) {
                     LOG.debug("Practitioner is not null");
-                }
+                }*/
 
                 //find date this schedule was LAST sent through to subscribers
                 Date dtSchedule = findResourceDate(serviceId, ResourceType.Schedule, scheduleUuid.toString(), true);
-                if (extraLogging) {
+                /*if (extraLogging) {
                     LOG.debug("Schedule was dated " + new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(dtSchedule));
-                }
+                }*/
 
                 //find date the practitioner was FIRST sent through to subscribers (use a cache since practitioners will be referenced by lots of schedules)
                 Date dtPractitioner = hmPractitionerDates.get(practitionerUuidStr);
@@ -235,27 +235,22 @@ public class SD283 extends AbstractRoutine {
                     dtPractitioner = findResourceDate(serviceId, ResourceType.Practitioner, practitionerUuidStr, false);
                     hmPractitionerDates.put(practitionerUuidStr, dtPractitioner);
                 }
-                if (extraLogging) {
+                /*if (extraLogging) {
                     LOG.debug("Practitioner was dated " + new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(dtPractitioner));
-                }
+                }*/
 
                 //if the schedule went through before the practitioner then the schedule
                 //needs to go through again to refresh the schedule table record
                 if (dtSchedule.before(dtPractitioner)) {
 
-                    if (extraLogging) {
+                    /*if (extraLogging) {
                         LOG.debug("Schedule was created before practitioner so needs updating");
-                    }
+                    }*/
 
                     needToSaveSchedule = true;
 
                     if (filer == null) {
                         LOG.debug("Need to refresh schedule " + scheduleUuid + ", raw ID " + sessionGuid + " because transformed before practitioner existed");
-                    }
-                } else {
-
-                    if (extraLogging) {
-                        LOG.debug("Schedule was created after practitioner so does not need updating");
                     }
                 }
             }
@@ -264,8 +259,8 @@ public class SD283 extends AbstractRoutine {
             //in FhirResourceFiler
             if (needToSaveSchedule) {
 
+                ExtensionConverter.setResourceChanged(schedule); //creates an artificial change so FhirResourceFiler will save it
                 ScheduleBuilder builder = new ScheduleBuilder(schedule);
-                builder.setScheduleName(" "); //not ideal, but easiest way to cause it to save
 
                 if (filer != null) {
                     filer.saveAdminResource(null, false, builder);
