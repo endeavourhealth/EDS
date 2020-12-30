@@ -11,10 +11,8 @@ import org.endeavourhealth.core.database.dal.DalProvider;
 import org.endeavourhealth.core.database.dal.admin.ServiceDalI;
 import org.endeavourhealth.core.database.dal.admin.SystemHelper;
 import org.endeavourhealth.core.database.dal.admin.models.Service;
-import org.endeavourhealth.core.database.dal.audit.ExchangeBatchDalI;
 import org.endeavourhealth.core.database.dal.audit.ExchangeDalI;
 import org.endeavourhealth.core.database.dal.audit.models.Exchange;
-import org.endeavourhealth.core.database.dal.audit.models.ExchangeBatch;
 import org.endeavourhealth.core.database.dal.audit.models.HeaderKeys;
 import org.endeavourhealth.core.database.dal.ehr.ResourceDalI;
 import org.endeavourhealth.core.database.dal.ehr.models.ResourceWrapper;
@@ -34,6 +32,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.InputStreamReader;
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 public class SD283 extends AbstractRoutine {
@@ -169,6 +168,13 @@ public class SD283 extends AbstractRoutine {
                 continue;
             }
 
+            boolean extraLogging = false;
+            LOG.debug("Checking schedule " + scheduleUuid);
+            if (scheduleUuid.toString().equals("1f317a5c-2291-49a3-811c-29c5fc71dd0b")) {
+                LOG.debug("UUID matched one for extra logging");
+                extraLogging = true;
+            }
+
             Schedule schedule = (Schedule)resourceDal.getCurrentVersionAsResource(serviceId, ResourceType.Schedule, scheduleUuid.toString());
             if (schedule == null) {
                 LOG.warn("Missing or deleted schedule for UUID " + scheduleUuid + ", raw ID " + sessionGuid);
@@ -184,9 +190,17 @@ public class SD283 extends AbstractRoutine {
             String practitionerUuidStr = ReferenceHelper.getReferenceId(actorRef);
             boolean needToSaveSchedule = false;
 
+            if (extraLogging) {
+                LOG.debug("Schedule " + scheduleUuid + " has practitioner " + actorRef.getReference());
+            }
+
             //if practitioner NOT exists - create it and update schedule
             Practitioner practitioner = (Practitioner)resourceDal.getCurrentVersionAsResource(serviceId, ResourceType.Practitioner, practitionerUuidStr.toString());
             if (practitioner == null) {
+
+                if (extraLogging) {
+                    LOG.debug("Practitioner is NULL");
+                }
 
                 //convert practitioner UUID back to Emis GUID
                 Reference rawActorRef = IdHelper.convertEdsReferenceToLocallyUniqueReference(csvHelper, actorRef);
@@ -205,8 +219,15 @@ public class SD283 extends AbstractRoutine {
             } else {
                 //if practitioner created AFTER schedule (later exchange) - update schedule
 
+                if (extraLogging) {
+                    LOG.debug("Practitioner is not null");
+                }
+
                 //find date this schedule was LAST sent through to subscribers
                 Date dtSchedule = findResourceDate(serviceId, ResourceType.Schedule, scheduleUuid.toString(), true);
+                if (extraLogging) {
+                    LOG.debug("Schedule was dated " + new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(dtSchedule));
+                }
 
                 //find date the practitioner was FIRST sent through to subscribers (use a cache since practitioners will be referenced by lots of schedules)
                 Date dtPractitioner = hmPractitionerDates.get(practitionerUuidStr);
@@ -214,14 +235,27 @@ public class SD283 extends AbstractRoutine {
                     dtPractitioner = findResourceDate(serviceId, ResourceType.Practitioner, practitionerUuidStr, false);
                     hmPractitionerDates.put(practitionerUuidStr, dtPractitioner);
                 }
+                if (extraLogging) {
+                    LOG.debug("Practitioner was dated " + new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(dtPractitioner));
+                }
 
                 //if the schedule went through before the practitioner then the schedule
                 //needs to go through again to refresh the schedule table record
                 if (dtSchedule.before(dtPractitioner)) {
+
+                    if (extraLogging) {
+                        LOG.debug("Schedule was created before practitioner so needs updating");
+                    }
+
                     needToSaveSchedule = true;
 
                     if (filer == null) {
                         LOG.debug("Need to refresh schedule " + scheduleUuid + ", raw ID " + sessionGuid + " because transformed before practitioner existed");
+                    }
+                } else {
+
+                    if (extraLogging) {
+                        LOG.debug("Schedule was created after practitioner so does not need updating");
                     }
                 }
             }
@@ -256,8 +290,6 @@ public class SD283 extends AbstractRoutine {
 
     private static Date findResourceDate(UUID serviceId, ResourceType resourceType, String resourceUuid, boolean findMostRecentDate) throws Exception {
 
-        Date ret = null;
-
         ResourceDalI resourceDal = DalProvider.factoryResourceDal();
         List<ResourceWrapper> history = resourceDal.getResourceHistory(serviceId, resourceType.toString(), UUID.fromString(resourceUuid));
         ResourceWrapper entry = null;
@@ -269,9 +301,11 @@ public class SD283 extends AbstractRoutine {
             entry = history.get(history.size()-1);
         }
 
+        return entry.getCreatedAt();
+
         //we need to get the timestamp of the exchange because resources will be saved at a range of times from processing
         //a single exchange, but we need to work out if they were processed in the same exchange or a later one
-        UUID batchId = entry.getExchangeBatchId();
+        /*UUID batchId = entry.getExchangeBatchId();
 
         ExchangeBatchDalI exchangeBatchDal = DalProvider.factoryExchangeBatchDal();
         ExchangeBatch batch = exchangeBatchDal.getForBatchId(batchId);
@@ -279,7 +313,7 @@ public class SD283 extends AbstractRoutine {
         ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
         Exchange exchange = exchangeDal.getExchange(batch.getExchangeId());
 
-        return exchange.getTimestamp();
+        return exchange.getTimestamp();*/
     }
 
     /**
