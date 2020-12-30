@@ -1,6 +1,7 @@
 USE audit;
 
 DROP PROCEDURE IF EXISTS get_monthly_frailty_stats;
+DROP PROCEDURE IF EXISTS get_transform_warnings;
 DROP FUNCTION IF EXISTS isBulk;
 DROP FUNCTION IF EXISTS isAllowQueueing;
 DROP FUNCTION IF EXISTS isEmisCustom;
@@ -631,4 +632,112 @@ CREATE PROCEDURE get_monthly_frailty_stats()
   END //
 DELIMITER ;
 
+
+
+DELIMITER $$
+CREATE PROCEDURE `get_transform_warnings`(
+  IN _since_date datetime
+)
+  BEGIN
+
+    SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
+
+    drop table if exists tmp.transform_warning_type_tmp;
+    drop table if exists tmp.transform_warning_tmp;
+    drop table if exists tmp.transform_warning_count_tmp;
+    drop table if exists tmp.transform_warning_service_count_tmp;
+    drop table if exists tmp.transform_warning_start_date_tmp;
+
+    create table tmp.transform_warning_type_tmp as
+      select *
+      from transform_warning_type
+      where last_used_at > _since_date;
+
+    create index ix on tmp.transform_warning_type_tmp (id);
+
+    create table tmp.transform_warning_tmp as
+      select w.*
+      from transform_warning w
+        inner join tmp.transform_warning_type_tmp t
+          on t.id = w.transform_warning_type_id
+      where w.inserted_at > _since_date;
+
+    create index ix on tmp.transform_warning_tmp (transform_warning_type_id, service_id);
+
+    -- find which warnings are new/old
+    alter table tmp.transform_warning_type_tmp
+    add is_new boolean default true;
+
+    update tmp.transform_warning_type_tmp t
+    set is_new = false
+    where exists (
+        select 1
+        from transform_warning w
+        where t.id = w.transform_warning_type_id
+              and w.inserted_at <= _since_date
+    );
+
+    create table tmp.transform_warning_count_tmp as
+      select transform_warning_type_id, count(1) as `cnt`
+      from tmp.transform_warning_tmp
+      group by transform_warning_type_id;
+
+    create index ix on tmp.transform_warning_count_tmp (transform_warning_type_id);
+
+    create table tmp.transform_warning_service_count_tmp as
+      select transform_warning_type_id, count(distinct service_id) as `cnt`
+      from tmp.transform_warning_tmp
+      group by transform_warning_type_id;
+
+    create index ix on tmp.transform_warning_service_count_tmp (transform_warning_type_id);
+
+    create table tmp.transform_warning_start_date_tmp as
+      select transform_warning_type_id, min(inserted_at) as `first_used`
+      from tmp.transform_warning_tmp
+      group by transform_warning_type_id;
+
+    create index ix on tmp.transform_warning_start_date_tmp (transform_warning_type_id);
+
+
+
+    -- select NEW warnings
+    select _since_date as 'New Warnings Since';
+
+    select t.id as `warning_id`, t.warning, s.first_used, t.last_used_at as `last_used`, c1.cnt as `warning_count`, c2.cnt as `service_count`
+    from tmp.transform_warning_type_tmp t
+      left outer join tmp.transform_warning_count_tmp c1
+        on c1.transform_warning_type_id = t.id
+      left outer join tmp.transform_warning_service_count_tmp c2
+        on c2.transform_warning_type_id = t.id
+      left outer join tmp.transform_warning_start_date_tmp s
+        on s.transform_warning_type_id = t.id
+    where t.is_new = true
+    order by t.id;
+
+
+    -- find warnings used this week
+    select _since_date as 'All Warnings Since';
+
+    select t.id as `warning_id`, t.warning, t.last_used_at as `last_used`, c1.cnt as `warning_count`, c2.cnt as `service_count`
+    from tmp.transform_warning_type_tmp t
+      left outer join tmp.transform_warning_count_tmp c1
+        on c1.transform_warning_type_id = t.id
+      left outer join tmp.transform_warning_service_count_tmp c2
+        on c2.transform_warning_type_id = t.id
+    order by t.id;
+
+
+    drop table if exists tmp.transform_warning_type_tmp;
+    drop table if exists tmp.transform_warning_tmp;
+    drop table if exists tmp.transform_warning_count_tmp;
+    drop table if exists tmp.transform_warning_service_count_tmp;
+    drop table if exists tmp.transform_warning_start_date_tmp;
+
+
+    -- restore this back to default
+    SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ ;
+
+
+  END$$
+DELIMITER ;
 

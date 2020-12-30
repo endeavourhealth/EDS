@@ -515,6 +515,9 @@ CREATE TABLE [patient] (
 [current_address_id] bigint NULL DEFAULT NULL,
 [ethnic_code_concept_id] int NULL DEFAULT NULL,
 [registered_practice_organization_id] bigint NULL DEFAULT NULL,
+[birth_year] smallint NULL DEFAULT NULL,
+[birth_month] tinyint NULL DEFAULT NULL,
+[birth_week] tinyint NULL DEFAULT NULL,
 PRIMARY KEY ([organization_id], [person_id], [id])
 )
 GO
@@ -616,6 +619,9 @@ CREATE TABLE [person] (
 [current_address_id] bigint NULL DEFAULT NULL,
 [ethnic_code_concept_id] int NULL DEFAULT NULL,
 [registered_practice_organization_id] bigint NULL DEFAULT NULL,
+[birth_year] smallint NULL DEFAULT NULL,
+[birth_month] tinyint NULL DEFAULT NULL,
+[birth_week] tinyint NULL DEFAULT NULL,
 PRIMARY KEY ([id])
 )
 GO
@@ -970,7 +976,7 @@ BEGIN
 
 		MERGE person e
 		USING (
-			SELECT person_id, organization_id, title, first_names, last_name, gender_concept_id, nhs_number, date_of_birth, date_of_death, current_address_id, ethnic_code_concept_id, registered_practice_organization_id
+			SELECT person_id, organization_id, title, first_names, last_name, gender_concept_id, nhs_number, date_of_birth, date_of_death, current_address_id, ethnic_code_concept_id, registered_practice_organization_id, birth_year, birth_month, birth_week
 			FROM patient
 			WHERE id = @best_patient_id
 		) as a
@@ -988,10 +994,13 @@ BEGIN
 				e.date_of_death = a.date_of_death,
 				e.current_address_id = a.current_address_id,
 				e.ethnic_code_concept_id = a.ethnic_code_concept_id,
-				e.registered_practice_organization_id = a.registered_practice_organization_id
+				e.registered_practice_organization_id = a.registered_practice_organization_id,
+			    e.birth_year = a.birth_year,
+			    e.birth_month = a.birth_month,
+			    e.birth_week = a.birth_week
 		WHEN NOT MATCHED BY TARGET
-			THEN INSERT (id, organization_id, title, first_names, last_name, gender_concept_id, nhs_number, date_of_birth, date_of_death, current_address_id, ethnic_code_concept_id, registered_practice_organization_id)
-			VALUES (a.person_id, a.organization_id, a.title, a.first_names, a.last_name, a.gender_concept_id, a.nhs_number, a.date_of_birth, a.date_of_death, a.current_address_id, a.ethnic_code_concept_id, a.registered_practice_organization_id);
+			THEN INSERT (id, organization_id, title, first_names, last_name, gender_concept_id, nhs_number, date_of_birth, date_of_death, current_address_id, ethnic_code_concept_id, registered_practice_organization_id, birth_year, birth_month, birth_week)
+			VALUES (a.person_id, a.organization_id, a.title, a.first_names, a.last_name, a.gender_concept_id, a.nhs_number, a.date_of_birth, a.date_of_death, a.current_address_id, a.ethnic_code_concept_id, a.registered_practice_organization_id, a.birth_year, a.birth_month, a.birth_week);
 	END
 
     IF (@old_person_id IS NOT NULL)

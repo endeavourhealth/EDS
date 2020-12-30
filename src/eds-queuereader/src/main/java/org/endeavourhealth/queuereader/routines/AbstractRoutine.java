@@ -1,9 +1,12 @@
 package org.endeavourhealth.queuereader.routines;
 
 import com.google.common.base.Strings;
+import org.endeavourhealth.common.utility.JsonSerializer;
 import org.endeavourhealth.core.database.dal.admin.models.Service;
 import org.endeavourhealth.core.database.dal.audit.models.Exchange;
+import org.endeavourhealth.core.database.dal.audit.models.HeaderKeys;
 import org.endeavourhealth.core.database.rdbms.ConnectionManager;
+import org.endeavourhealth.transform.common.AuditWriter;
 import org.endeavourhealth.transform.common.ExchangeHelper;
 import org.endeavourhealth.transform.common.ExchangePayloadFile;
 import org.slf4j.Logger;
@@ -16,8 +19,7 @@ import java.nio.file.Files;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 import java.util.regex.Pattern;
 
 /**
@@ -215,5 +217,31 @@ public abstract class AbstractRoutine {
         }
 
         return null;
+    }
+
+
+    public static Exchange createNewExchange(Service service, UUID systemId, String messageFormat, String eventDesc) throws Exception {
+
+        UUID exchangeId = UUID.randomUUID();
+        String bodyJson = JsonSerializer.serialize(new ArrayList<ExchangePayloadFile>());
+        String odsCode = service.getLocalId();
+
+        Exchange ret = new Exchange();
+        ret.setId(exchangeId);
+        ret.setBody(bodyJson);
+        ret.setTimestamp(new Date());
+        ret.setHeaders(new HashMap<>());
+        ret.setHeaderAsUuid(HeaderKeys.SenderServiceUuid, service.getId());
+        ret.setHeader(HeaderKeys.ProtocolIds, ""); //just set to non-null value, so postToExchange(..) can safely recalculate
+        ret.setHeader(HeaderKeys.SenderLocalIdentifier, odsCode);
+        ret.setHeaderAsUuid(HeaderKeys.SenderSystemUuid, systemId);
+        ret.setHeader(HeaderKeys.SourceSystem, messageFormat);
+        ret.setServiceId(service.getId());
+        ret.setSystemId(systemId);
+
+        AuditWriter.writeExchange(ret);
+        AuditWriter.writeExchangeEvent(ret, eventDesc);
+
+        return ret;
     }
 }

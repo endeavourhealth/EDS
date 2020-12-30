@@ -24,6 +24,17 @@ public class Main {
 		ConfigManager.initialize("queuereader", configId);
 
 		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("fixEmisSessionsAndSlots")) {
+			boolean testMode = Boolean.parseBoolean(args[1]);
+			String odsCodeRegex = null;
+			if (args.length > 2) {
+				odsCodeRegex = args[2];
+			}
+			SD283.fixEmisSessionsAndSlots(testMode, odsCodeRegex);
+			System.exit(0);
+		}
+
+		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("dumpRawDataForSubscriberId")) {
 			String subscriberConfigName = args[1];
 			long subscriberId = Long.parseLong(args[2]);
@@ -839,6 +850,15 @@ public class Main {
 			String orgOdsCodeRegex = args[2];
 
 			SpecialRoutines.transformAndFilePatientAddressV2DataForProtocolServices(subscriberConfigName, orgOdsCodeRegex);
+			System.exit(0);
+		}
+
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("TransformAndFilePatientAgeV2DataForProtocolServices")) {
+			String subscriberConfigName = args[1];
+			String orgOdsCodeRegex = args[2];
+
+			SpecialRoutines.transformAndFilePatientAgeV2DataForProtocolServices(subscriberConfigName, orgOdsCodeRegex);
 			System.exit(0);
 		}
 
