@@ -2241,7 +2241,7 @@ public abstract class SpecialRoutines extends AbstractRoutine {
 
                     String discoveryPersonId = patientLinkDal.getPersonId(fhirPatient.getId());
                     if (Strings.isNullOrEmpty(discoveryPersonId)) {
-                        PatientLinkPair pair = patientLinkDal.updatePersonId(serviceId, fhirPatient);
+                        throw new Exception("Null or empty person ID for " + fhirPatient.getId());
                     }
 
                     // transform patient
