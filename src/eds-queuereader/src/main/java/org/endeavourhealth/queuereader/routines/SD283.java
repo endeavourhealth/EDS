@@ -301,6 +301,12 @@ public class SD283 extends AbstractRoutine {
         List<ResourceWrapper> history = resourceDal.getResourceHistory(serviceId, resourceType.toString(), UUID.fromString(resourceUuid));
         ResourceWrapper entry = null;
 
+        //this routine specifcally fixes missing Practitioners, so it's possible we'll be trying to
+        //find the creation date of a Practitioner that isn't there (yet)
+        /*if (history.isEmpty() && resourceType == ResourceType.Practitioner) {
+            return null;
+        }*/
+
         //history is most-recent-first
         if (findMostRecentDate) {
             entry = history.get(0);
@@ -420,7 +426,12 @@ public class SD283 extends AbstractRoutine {
                     //find date the practitioner was FIRST sent through to subscribers (use a cache since practitioners will be referenced by lots of schedules)
                     Date dtPractitioner = hmPractitionerDates.get(practitionerUuidStr);
                     if (dtPractitioner == null) {
-                        dtPractitioner = findResourceDate(serviceId, ResourceType.Practitioner, practitionerUuidStr, false);
+                        try {
+                            dtPractitioner = findResourceDate(serviceId, ResourceType.Practitioner, practitionerUuidStr, false);
+                        } catch (Exception ex) {
+                            LOG.error("Error getting practitioner date for appointment " + appointmentUuid + " with practitioner UUID " + practitionerUuidStr);
+                            throw ex;
+                        }
                         hmPractitionerDates.put(practitionerUuidStr, dtPractitioner);
                     }
 
