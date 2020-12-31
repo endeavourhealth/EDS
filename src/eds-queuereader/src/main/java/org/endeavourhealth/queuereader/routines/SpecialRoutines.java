@@ -2244,49 +2244,45 @@ public abstract class SpecialRoutines extends AbstractRoutine {
                         LOG.warn("Null or empty person ID for " + fhirPatient.getId());
                         continue;
                         // throw new Exception("Null or empty person ID for " + fhirPatient.getId());
-                    } else {
+                    }
 
-                        // transform patient
-                        if (subscriberConfig.getSubscriberType() == SubscriberConfig.SubscriberType.CompassV2) {
-
-                            if (compassV2Container == null) {
-                                compassV2Container = new OutputContainer();
-                            }
-
-                            String ref = patientWrapper.getReferenceString();
-                            SubscriberId subscriberPatientId = patientIdDal.findSubscriberId(SubscriberTableId.PATIENT.getId(), ref);
-                            if (subscriberPatientId == null) {
-                                LOG.warn("Failed to find subscriberPatientId for " + ref);
-                                continue;
-                                // throw new Exception("Failed to find subscriberPatientId for " + ref);
-                            } else {
-                                try {
-                                    SubscriberTransformHelper params = new SubscriberTransformHelper(serviceId, null, null, null, subscriberConfig, wrappers, false, compassV2Container);
-                                    Long orgId = FhirToSubscriberCsvTransformer.findEnterpriseOrgId(serviceId, params, new ArrayList<>());
-                                    params.setSubscriberOrganisationId(orgId);
-                                    PatientTransformer pt = new PatientTransformer();
-                                    pt.transformResources(wrappers, params);
-
-                                    // if batch is full then save what has been done
-                                    batchSize++;
-                                    if (batchSize >= 100) {
-                                        saveCompassV2PatientAgeData(subscriberConfigName, compassV2Container);
-                                        compassV2Container = null;
-                                        batchSize = 0;
-                                    }
-                                } catch (Throwable t) {
-                                    LOG.warn("Error with transform: " + t);
-                                }
-                            }
-                        } else {
-                            throw new Exception("Unexpected subscriber type [" + subscriberConfig.getSubscriberType() + "]");
+                    // transform patient
+                    if (subscriberConfig.getSubscriberType() == SubscriberConfig.SubscriberType.CompassV2) {
+                        if (compassV2Container == null) {
+                            compassV2Container = new OutputContainer();
                         }
+
+                        String ref = patientWrapper.getReferenceString();
+                        SubscriberId subscriberPatientId = patientIdDal.findSubscriberId(SubscriberTableId.PATIENT.getId(), ref);
+                        if (subscriberPatientId == null) {
+                            LOG.warn("Failed to find subscriberPatientId for " + ref);
+                            continue;
+                            // throw new Exception("Failed to find subscriberPatientId for " + ref);
+                        }
+
+                        try {
+                            SubscriberTransformHelper params = new SubscriberTransformHelper(serviceId, null, null, null, subscriberConfig, wrappers, false, compassV2Container);
+                            Long orgId = FhirToSubscriberCsvTransformer.findEnterpriseOrgId(serviceId, params, new ArrayList<>());
+                            params.setSubscriberOrganisationId(orgId);
+                            PatientTransformer pt = new PatientTransformer();
+                            pt.transformResources(wrappers, params);
+                            // if batch is full then save what has been done
+                            batchSize++;
+                            if (batchSize >= 100) {
+                                saveCompassV2PatientAgeData(subscriberConfigName, compassV2Container);
+                                compassV2Container = null;
+                                batchSize = 0;
+                            }
+                        } catch (Throwable t) {
+                            LOG.warn("Error with transform for patient " + patientId, t);
+                        }
+                    } else {
+                        throw new Exception("Unexpected subscriber type [" + subscriberConfig.getSubscriberType() + "]");
                     }
                 }
 
                 //save any part completed batch
                 if (batchSize > 0) {
-
                     if (subscriberConfig.getSubscriberType() == SubscriberConfig.SubscriberType.CompassV2) {
                         saveCompassV2PatientAgeData(subscriberConfigName, compassV2Container);
                     } else {
