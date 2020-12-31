@@ -2172,7 +2172,7 @@ public abstract class SpecialRoutines extends AbstractRoutine {
 
     // For the config name provided, get the list of services which are publishers
     // and send their transformed Patient FHIR resources to the Filer
-    public static void transformAndFilePatientAgeV2DataForProtocolServices(String subscriberConfigName, String orgOdsCodeRegex) {
+    public static void transformAndFilePatientAgeV2DataForProtocolServices(boolean includeStartedButNotFinishedServices, String subscriberConfigName, String orgOdsCodeRegex) {
         LOG.debug("Populating CompassV2 patient (and person) tables for additional age columns for " + subscriberConfigName + " regex " + orgOdsCodeRegex);
         try {
 
@@ -2201,10 +2201,19 @@ public abstract class SpecialRoutines extends AbstractRoutine {
                     continue;
                 }
 
-                // check if already done
-                if (isServiceDoneBulkOperation(service, bulkOperationName)) {
-                    LOG.debug("Skipping " + service + " as already done");
-                    continue;
+                if (includeStartedButNotFinishedServices) {
+                    //check if already done, so we can make sure EVERY service is done
+                    if (isServiceDoneBulkOperation(service, bulkOperationName)) {
+                        LOG.debug("Skipping " + service + " as already done");
+                        continue;
+                    }
+
+                } else {
+                    //check if already started, to allow us to run multiple instances of this at once
+                    if (isServiceStartedOrDoneBulkOperation(service, bulkOperationName)) {
+                        LOG.debug("Skipping " + service + " as already started or done");
+                        continue;
+                    }
                 }
 
                 LOG.debug("Doing " + service);

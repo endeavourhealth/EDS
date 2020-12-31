@@ -856,10 +856,11 @@ public class Main {
 
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("TransformAndFilePatientAgeV2DataForProtocolServices")) {
-			String subscriberConfigName = args[1];
-			String orgOdsCodeRegex = args[2];
+			boolean includeStartedButNotFinishedServices = Boolean.parseBoolean(args[1]);
+			String subscriberConfigName = args[2];
+			String orgOdsCodeRegex = args[3];
 
-			SpecialRoutines.transformAndFilePatientAgeV2DataForProtocolServices(subscriberConfigName, orgOdsCodeRegex);
+			SpecialRoutines.transformAndFilePatientAgeV2DataForProtocolServices(includeStartedButNotFinishedServices, subscriberConfigName, orgOdsCodeRegex);
 			System.exit(0);
 		}
 
