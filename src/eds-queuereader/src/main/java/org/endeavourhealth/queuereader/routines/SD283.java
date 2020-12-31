@@ -42,12 +42,12 @@ public class SD283 extends AbstractRoutine {
     /**
      * fixes data for both SD-283 and SD-284
      */
-    public static void fixEmisSessionsAndSlots(boolean testMode, String odsCodeRegex) {
+    public static void fixEmisSessionsAndSlots(boolean includeStartedButNotFinishedServices, boolean testMode, String odsCodeRegex) {
         LOG.debug("Fixing Emis Sessions and Slots at " + odsCodeRegex + " test mode = " + testMode);
         try {
             ServiceDalI serviceDal = DalProvider.factoryServiceDal();
 
-            String operationName = "Fixing Emis sessions and slots (SD-283 and SD-284)";
+            String bulkOperationName = "Fixing Emis sessions and slots (SD-283 and SD-284)";
 
             List<Service> services = serviceDal.getAll();
             for (Service service : services) {
@@ -63,8 +63,19 @@ public class SD283 extends AbstractRoutine {
                 }
 
                 if (!testMode) {
-                    if (isServiceDoneBulkOperation(service, operationName)) {
-                        continue;
+                    if (includeStartedButNotFinishedServices) {
+                        //check if already done, so we can make sure EVERY service is done
+                        if (isServiceDoneBulkOperation(service, bulkOperationName)) {
+                            LOG.debug("Skipping " + service + " as already done");
+                            continue;
+                        }
+
+                    } else {
+                        //check if already started, to allow us to run multiple instances of this at once
+                        if (isServiceStartedOrDoneBulkOperation(service, bulkOperationName)) {
+                            LOG.debug("Skipping " + service + " as already started or done");
+                            continue;
+                        }
                     }
                 }
 
@@ -73,7 +84,7 @@ public class SD283 extends AbstractRoutine {
 
                 //record as done
                 if (!testMode) {
-                    setServiceDoneBulkOperation(service, operationName);
+                    setServiceDoneBulkOperation(service, bulkOperationName);
                 }
 
             }
@@ -328,6 +339,7 @@ public class SD283 extends AbstractRoutine {
 
             UUID appointmentUuid = IdHelper.getEdsResourceId(serviceId, ResourceType.Appointment, combinedRawId);
             if (appointmentUuid == null) {
+                //happens because we receive Slots for patient GUIDs that we don't know about, which are skipped
                 LOG.warn("No appointment UUID found for raw ID " + combinedRawId);
                 continue;
             }
@@ -340,6 +352,7 @@ public class SD283 extends AbstractRoutine {
 
             List<String> practitionerGuids = hmSessionsAndPractitioners.get(sessionGuid);
             if (practitionerGuids == null) {
+                //we have this situation where an appt should be deleted but isn't so it's (sort of) fine for now. See SD-286
                 LOG.warn("No practitioner GUIDs found for appointment " + appointmentUuid + ", raw ID " + combinedRawId + ", session GUID " + sessionGuid);
                 continue;
             }
