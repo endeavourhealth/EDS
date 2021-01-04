@@ -855,7 +855,7 @@ public class Main {
 		}
 
 		if (args.length >= 1
-				&& args[0].equalsIgnoreCase("TransformAndFilePatientAgeV2DataForProtocolServices")) {
+				&& args[0].equalsIgnoreCase("transformAndFilePatientAgeV2DataForProtocolServices")) {
 			boolean includeStartedButNotFinishedServices = Boolean.parseBoolean(args[1]);
 			String subscriberConfigName = args[2];
 			String orgOdsCodeRegex = args[3];
