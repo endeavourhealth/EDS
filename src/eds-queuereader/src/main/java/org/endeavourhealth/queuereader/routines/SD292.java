@@ -10,7 +10,7 @@ public class SD292 extends AbstractRoutine {
     private static final Logger LOG = LoggerFactory.getLogger(SD292.class);
 
 
-    public static void testDates() {
+    public static void testDates(String overridingLocaleStr) {
         try {
 
             List<String> strs = new ArrayList<>();
@@ -24,9 +24,21 @@ public class SD292 extends AbstractRoutine {
             LOG.debug("Timezone = " + tz.getDisplayName());
 
             Locale locale = Locale.getDefault(Locale.Category.FORMAT);
-            LOG.debug("Locale = " + locale.getDisplayName());
+            LOG.debug("DefaultLocale = " + locale.getDisplayName());
 
-            Calendar cal = Calendar.getInstance();
+            Calendar cal = null;
+
+            if (overridingLocaleStr != null) {
+                Locale overridingLocale = Locale.forLanguageTag(overridingLocaleStr);
+                LOG.debug("OverridingLocale = " + overridingLocale.getDisplayName());
+
+                cal = Calendar.getInstance(overridingLocale);
+
+            } else {
+                cal = Calendar.getInstance(); //uses default locale
+            }
+
+            Calendar.getInstance();
             LOG.debug("Calendar = " + cal);
 
             for (String str: strs) {
@@ -34,7 +46,6 @@ public class SD292 extends AbstractRoutine {
                 SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
                 Date dob = sdf.parse(str);
 
-                cal = Calendar.getInstance();
                 cal.setTime(dob);
                 int birthYear = cal.get(Calendar.YEAR);
                 int birthMonth = cal.get(Calendar.MONTH) + 1; //Java month is zero-indexed

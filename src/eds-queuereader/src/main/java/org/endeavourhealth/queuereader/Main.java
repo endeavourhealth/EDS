@@ -25,7 +25,11 @@ public class Main {
 
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("SD292TestDates")) {
-			SD292.testDates();
+			String localeStr = null;
+			if (args.length > 1) {
+				localeStr = args[1];
+			}
+			SD292.testDates(localeStr);
 			System.exit(0);
 		}
 
