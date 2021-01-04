@@ -295,6 +295,9 @@ public class SD283 extends AbstractRoutine {
             LOG.debug("Generating missing Practitioners");
             csvHelper.getAdminHelper().processAdminChanges(filer, csvHelper);
             csvHelper.stopThreadPool();
+
+            //need to make sure all Practitioners are saved to the DB before going on to do Slots
+            filer.waitUntilEverythingIsSaved();
         }
     }
 
