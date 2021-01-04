@@ -1,5 +1,6 @@
 package org.endeavourhealth.queuereader.routines;
 
+import org.apache.commons.lang3.LocaleUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,7 +30,8 @@ public class SD292 extends AbstractRoutine {
             Calendar cal = null;
 
             if (overridingLocaleStr != null) {
-                Locale overridingLocale = Locale.forLanguageTag(overridingLocaleStr);
+                Locale overridingLocale = LocaleUtils.toLocale(overridingLocaleStr);
+                //Locale overridingLocale = Locale.forLanguageTag(overridingLocaleStr);
                 LOG.debug("OverridingLocale = " + overridingLocale.getDisplayName());
 
                 cal = Calendar.getInstance(overridingLocale);
