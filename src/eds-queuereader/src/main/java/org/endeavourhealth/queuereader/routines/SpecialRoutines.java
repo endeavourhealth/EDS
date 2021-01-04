@@ -2222,6 +2222,7 @@ public abstract class SpecialRoutines extends AbstractRoutine {
                 List<UUID> patientIds = patientSearchDal.getPatientIds(serviceId, false);
                 LOG.debug("Found " + patientIds.size() + " patients");
 
+                int done = 0;
                 int batchSize = 0;
                 // org.endeavourhealth.transform.enterprise.outputModels.OutputContainer compassV1Container = null;
                 OutputContainer compassV2Container = null;
@@ -2288,6 +2289,11 @@ public abstract class SpecialRoutines extends AbstractRoutine {
                     } else {
                         throw new Exception("Unexpected subscriber type [" + subscriberConfig.getSubscriberType() + "]");
                     }
+
+                    done ++;
+                    if (done % 1000 == 0) {
+                        LOG.debug("Done " + done + " / " + patientIds.size() + " patients");
+                    }
                 }
 
                 //save any part completed batch
@@ -2298,6 +2304,8 @@ public abstract class SpecialRoutines extends AbstractRoutine {
                         throw new Exception("Unexpected subscriber type [" + subscriberConfig.getSubscriberType() + "]");
                     }
                 }
+
+                LOG.debug("Completed " + done + " / " + patientIds.size() + " patients");
 
                 //audit what has been done
                 setServiceDoneBulkOperation(service, bulkOperationName);
