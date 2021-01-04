@@ -4,10 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
 public class SD292 extends AbstractRoutine {
     private static final Logger LOG = LoggerFactory.getLogger(SD292.class);
@@ -22,6 +19,12 @@ public class SD292 extends AbstractRoutine {
             strs.add("1983-01-02");
             strs.add("1983-01-04");
             strs.add("1983-12-28");
+
+            TimeZone tz = TimeZone.getDefault();
+            LOG.debug("Timezone = " + tz.getDisplayName());
+
+            Locale locale = Locale.getDefault(Locale.Category.FORMAT);
+            LOG.debug("Locale = " + locale.getDisplayName());
 
             Calendar cal = Calendar.getInstance();
             LOG.debug("Calendar = " + cal);
