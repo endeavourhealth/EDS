@@ -176,6 +176,7 @@ public class SD283 extends AbstractRoutine {
 
             UUID scheduleUuid = IdHelper.getEdsResourceId(serviceId, ResourceType.Schedule, sessionGuid);
             if (scheduleUuid == null) {
+                //seen this a few times but only for cases where new data had arrived and was in the inbound queue
                 LOG.warn("No schedule UUID found for raw ID " + sessionGuid);
                 continue;
             }
@@ -224,9 +225,10 @@ public class SD283 extends AbstractRoutine {
                 //csvHelper.getAdminHelper().addRequiredUserInRole(cell);
                 needToSaveSchedule = true;
 
-                if (filer == null) {
+                LOG.debug("Will create missing practitioner for schedule " + scheduleUuid + ", raw ID " + sessionGuid + " - practitioner GUID " + rawPractitionerGuid + " UUID " + ReferenceHelper.getReferenceId(actorRef));
+                /*if (filer == null) {
                     LOG.debug("Will create missing practitioner for schedule " + scheduleUuid + ", raw ID " + sessionGuid + " - practitioner GUID " + rawPractitionerGuid + " UUID " + ReferenceHelper.getReferenceId(actorRef));
-                }
+                }*/
 
             } else {
                 //if practitioner created AFTER schedule (later exchange) - update schedule
@@ -292,6 +294,7 @@ public class SD283 extends AbstractRoutine {
         if (filer != null) {
             LOG.debug("Generating missing Practitioners");
             csvHelper.getAdminHelper().processAdminChanges(filer, csvHelper);
+            csvHelper.stopThreadPool();
         }
     }
 
