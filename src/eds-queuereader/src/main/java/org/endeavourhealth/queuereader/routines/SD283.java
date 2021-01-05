@@ -308,10 +308,10 @@ public class SD283 extends AbstractRoutine {
         ResourceWrapper entry = null;
 
         //this routine specifcally fixes missing Practitioners, so it's possible we'll be trying to
-        //find the creation date of a Practitioner that isn't there (yet)
-        /*if (history.isEmpty() && resourceType == ResourceType.Practitioner) {
+        //find the creation date of a Practitioner that doesn't exist (Emis data has missing practitioners)
+        if (history.isEmpty() && resourceType == ResourceType.Practitioner) {
             return null;
-        }*/
+        }
 
         //history is most-recent-first
         if (findMostRecentDate) {
@@ -441,7 +441,9 @@ public class SD283 extends AbstractRoutine {
                         hmPractitionerDates.put(practitionerUuidStr, dtPractitioner);
                     }
 
-                    if (dtAppointment.before(dtPractitioner)) {
+
+                    if (dtPractitioner != null //may have null date if practitioner doesn't exist
+                        && dtAppointment.before(dtPractitioner)) {
 
                         ExtensionConverter.setResourceChanged(appointment);
                         madeChange = true;
