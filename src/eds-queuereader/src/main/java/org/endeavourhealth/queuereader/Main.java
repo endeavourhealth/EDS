@@ -34,6 +34,18 @@ public class Main {
 		}
 
 		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("fixTppSessionsAndSlots")) {
+			boolean includeStartedButNotFinishedServices = Boolean.parseBoolean(args[1]);
+			boolean testMode = Boolean.parseBoolean(args[2]);
+			String odsCodeRegex = null;
+			if (args.length > 3) {
+				odsCodeRegex = args[3];
+			}
+			SD280.fixTppSessionsAndSlots(includeStartedButNotFinishedServices, testMode, odsCodeRegex);
+			System.exit(0);
+		}
+
+		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("fixEmisSessionsAndSlots")) {
 			boolean includeStartedButNotFinishedServices = Boolean.parseBoolean(args[1]);
 			boolean testMode = Boolean.parseBoolean(args[2]);
