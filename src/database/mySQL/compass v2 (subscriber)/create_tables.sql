@@ -223,6 +223,9 @@ CREATE TABLE person
   current_address_id bigint,
   ethnic_code_concept_id int,
   registered_practice_organization_id bigint,
+  birth_year smallint,
+  birth_month tinyint,
+  birth_week tinyint,
   CONSTRAINT pk_person_id PRIMARY KEY (id)
 );
 
@@ -247,6 +250,9 @@ CREATE TABLE patient
   current_address_id bigint,
   ethnic_code_concept_id int,
   registered_practice_organization_id bigint,
+  birth_year smallint,
+  birth_month tinyint,
+  birth_week tinyint,
   CONSTRAINT pk_patient_id_organization_id PRIMARY KEY (`organization_id`,`person_id`,`id`),
   CONSTRAINT fk_patient_organization_id FOREIGN KEY (organization_id)
       REFERENCES organization (id) MATCH SIMPLE
@@ -1170,7 +1176,8 @@ BEGIN
 	);
 
 	REPLACE INTO person
-	SELECT person_id, organization_id, title, first_names, last_name, gender_concept_id, nhs_number, date_of_birth, date_of_death, current_address_id, ethnic_code_concept_id, registered_practice_organization_id
+	SELECT person_id, organization_id, title, first_names, last_name, gender_concept_id, nhs_number, date_of_birth, date_of_death,
+	       current_address_id, ethnic_code_concept_id, registered_practice_organization_id, birth_year, birth_month, birth_week
 	FROM patient
 	WHERE id = _best_patient_id;
 

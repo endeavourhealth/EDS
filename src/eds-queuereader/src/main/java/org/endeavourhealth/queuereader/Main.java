@@ -24,6 +24,40 @@ public class Main {
 		ConfigManager.initialize("queuereader", configId);
 
 		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("SD292TestDates")) {
+			String localeStr = null;
+			if (args.length > 1) {
+				localeStr = args[1];
+			}
+			SD292.testDates(localeStr);
+			System.exit(0);
+		}
+
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("fixTppSessionsAndSlots")) {
+			boolean includeStartedButNotFinishedServices = Boolean.parseBoolean(args[1]);
+			boolean testMode = Boolean.parseBoolean(args[2]);
+			String odsCodeRegex = null;
+			if (args.length > 3) {
+				odsCodeRegex = args[3];
+			}
+			SD280.fixTppSessionsAndSlots(includeStartedButNotFinishedServices, testMode, odsCodeRegex);
+			System.exit(0);
+		}
+
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("fixEmisSessionsAndSlots")) {
+			boolean includeStartedButNotFinishedServices = Boolean.parseBoolean(args[1]);
+			boolean testMode = Boolean.parseBoolean(args[2]);
+			String odsCodeRegex = null;
+			if (args.length > 3) {
+				odsCodeRegex = args[3];
+			}
+			SD283.fixEmisSessionsAndSlots(includeStartedButNotFinishedServices, testMode, odsCodeRegex);
+			System.exit(0);
+		}
+
+		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("dumpRawDataForSubscriberId")) {
 			String subscriberConfigName = args[1];
 			long subscriberId = Long.parseLong(args[2]);
@@ -839,6 +873,16 @@ public class Main {
 			String orgOdsCodeRegex = args[2];
 
 			SpecialRoutines.transformAndFilePatientAddressV2DataForProtocolServices(subscriberConfigName, orgOdsCodeRegex);
+			System.exit(0);
+		}
+
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("transformAndFilePatientAgeV2DataForProtocolServices")) {
+			boolean includeStartedButNotFinishedServices = Boolean.parseBoolean(args[1]);
+			String subscriberConfigName = args[2];
+			String orgOdsCodeRegex = args[3];
+
+			SpecialRoutines.transformAndFilePatientAgeV2DataForProtocolServices(includeStartedButNotFinishedServices, subscriberConfigName, orgOdsCodeRegex);
 			System.exit(0);
 		}
 

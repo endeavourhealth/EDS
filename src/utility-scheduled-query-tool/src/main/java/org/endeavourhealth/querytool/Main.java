@@ -76,7 +76,14 @@ public class Main {
 
     private static Date findDateTimeLastRun() throws Exception {
         SimplePropertyDalI dal = DalProvider.factorySimplePropertyDal();
-        return dal.getPropertyDate(PROPERTY_LAST_RUN);
+        Date ret = dal.getPropertyDate(PROPERTY_LAST_RUN);
+
+        //if no last run date, use the dawn of time
+        if (ret == null) {
+            ret = new Date(0);
+        }
+
+        return ret;
     }
 
     private static void saveDateTimeLastRun(Date dtRun) throws Exception {
