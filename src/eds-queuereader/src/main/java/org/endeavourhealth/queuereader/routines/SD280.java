@@ -1,6 +1,14 @@
 package org.endeavourhealth.queuereader.routines;
 
+import com.google.common.base.Strings;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVParser;
+import org.apache.commons.csv.CSVRecord;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
+import org.endeavourhealth.common.fhir.ExtensionConverter;
+import org.endeavourhealth.common.fhir.ReferenceComponents;
+import org.endeavourhealth.common.fhir.ReferenceHelper;
+import org.endeavourhealth.common.utility.FileHelper;
 import org.endeavourhealth.core.database.dal.DalProvider;
 import org.endeavourhealth.core.database.dal.admin.ServiceDalI;
 import org.endeavourhealth.core.database.dal.admin.SystemHelper;
@@ -15,12 +23,20 @@ import org.endeavourhealth.core.queueing.MessageFormat;
 import org.endeavourhealth.core.queueing.QueueHelper;
 import org.endeavourhealth.core.xml.transformError.TransformError;
 import org.endeavourhealth.transform.common.AuditWriter;
+import org.endeavourhealth.transform.common.CsvCell;
 import org.endeavourhealth.transform.common.FhirResourceFiler;
 import org.endeavourhealth.transform.common.IdHelper;
-import org.hl7.fhir.instance.model.ResourceType;
+import org.endeavourhealth.transform.common.resourceBuilders.AppointmentBuilder;
+import org.endeavourhealth.transform.common.resourceBuilders.ScheduleBuilder;
+import org.endeavourhealth.transform.tpp.TppCsvToFhirTransformer;
+import org.endeavourhealth.transform.tpp.csv.helpers.TppCsvHelper;
+import org.hl7.fhir.instance.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.InputStreamReader;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 public class SD280 extends AbstractRoutine {
@@ -96,10 +112,13 @@ public class SD280 extends AbstractRoutine {
         ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
         List<Exchange> exchanges = exchangeDal.getExchangesByService(serviceId, systemId, Integer.MAX_VALUE);
         LOG.debug("Found " + exchanges.size() + " exchanges");
-        /*Map<String, List<String>> hmSessionsAndPractitioners = findRotaPractitioners(exchanges);
-        LOG.debug("Cached " + hmSessionsAndPractitioners.size() + " session GUIDs");*/
-        /*Map<String, String> hmSlotsAndSessions = findAppointments(exchanges);
-        LOG.debug("Cached " + hmSlotsAndSessions.size() + " slot GUIDs");*/
+        Map<Long, Long> hmRotaStaffProfiles = new HashMap<>();
+        Map<Long, Set<Long>> hmRotaAppointments = new HashMap<>();
+        Map<Long, Date> hmAppointmentStartDates = new HashMap<>();
+        findAppointmentDetailsForRotas(exchanges, hmRotaStaffProfiles, hmRotaAppointments, hmAppointmentStartDates);
+        LOG.debug("Cached " + hmAppointmentStartDates.size() + " appointments");
+        Map<Long, Date> hmRotasAndStartDates = findRotaIdAndStartDates(exchanges);
+        LOG.debug("Cached " + hmRotasAndStartDates.size() + " rota IDs");
 
         Exchange newExchange = null;
         FhirResourceFiler filer = null;
@@ -112,10 +131,11 @@ public class SD280 extends AbstractRoutine {
         }
 
         try {
-            LOG.debug("Fixing sessions");
-            //fixRotas(serviceId, hmSessionsAndPractitioners, filer);
-            LOG.debug("Fixing slots");
-            //fixSlots(serviceId, hmSessionsAndPractitioners, hmSlotsAndSessions, filer);
+            LOG.debug("Fixing appointments");
+            fixAppointments(serviceId, hmAppointmentStartDates, filer);
+            LOG.debug("Fixing rotas");
+            fixRotas(serviceId, hmRotasAndStartDates, hmRotaStaffProfiles, hmRotaAppointments, hmAppointmentStartDates, filer);
+            
 
         } catch (Throwable ex) {
             LOG.error("Error doing service " + service, ex);
@@ -148,145 +168,110 @@ public class SD280 extends AbstractRoutine {
         }
     }
 
-    /*private static void fixRotas(UUID serviceId, Map<String, List<String>> hmSessionsAndPractitioners, FhirResourceFiler filer) throws Exception {
+    /**
+     * SD-280 - set StartDate on FHIR Schedules (from SRRota file or SRAppointment)
+     * SD-281 - set Practitioner on FHIR Schedules (from SRAppointment)
+     */
+    private static void fixRotas(UUID serviceId,
+                                 Map<Long, Date> hmRotasAndStartDates,
+                                 Map<Long, Long> hmRotaStaffProfiles,
+                                 Map<Long, Set<Long>> hmRotaAppointments,
+                                 Map<Long, Date> hmAppointmentStartDates,
+                                 FhirResourceFiler filer) throws Exception {
 
         int done = 0;
-        int changed = 0;
 
         ResourceDalI resourceDal = DalProvider.factoryResourceDal();
-        Map<String, Date> hmPractitionerDates = new HashMap<>();
 
-        TppCsvHelper csvHelper = new TppCsvHelper(serviceId, null, null, null, null);
+        for (Long rotaId: hmRotasAndStartDates.keySet()) {
 
-        for (String sessionGuid: hmSessionsAndPractitioners.keySet()) {
-            List<String> practitionerGuids = hmSessionsAndPractitioners.get(sessionGuid);
-
-            UUID scheduleUuid = IdHelper.getEdsResourceId(serviceId, ResourceType.Schedule, sessionGuid);
+            UUID scheduleUuid = IdHelper.getEdsResourceId(serviceId, ResourceType.Schedule, "" + rotaId);
             if (scheduleUuid == null) {
                 //seen this a few times but only for cases where new data had arrived and was in the inbound queue
-                LOG.warn("No schedule UUID found for raw ID " + sessionGuid);
+                LOG.warn("No schedule UUID found for raw ID " + rotaId);
                 continue;
             }
-
-            *//*boolean extraLogging = false;
-            LOG.debug("Checking schedule " + scheduleUuid);
-            if (scheduleUuid.toString().equals("1f317a5c-2291-49a3-811c-29c5fc71dd0b")) {
-                LOG.debug("UUID matched one for extra logging");
-                extraLogging = true;
-            }*//*
 
             Schedule schedule = (Schedule)resourceDal.getCurrentVersionAsResource(serviceId, ResourceType.Schedule, scheduleUuid.toString());
             if (schedule == null) {
-                LOG.warn("Missing or deleted schedule for UUID " + scheduleUuid + ", raw ID " + sessionGuid);
+                LOG.warn("Missing or deleted schedule for UUID " + scheduleUuid + ", raw ID " + rotaId);
                 continue;
             }
 
-            if (!schedule.hasActor()) {
-                LOG.warn("Schedule " + scheduleUuid + ", raw ID " + sessionGuid + " has no actor but raw data has " + practitionerGuids.size());
+            //clear any existing practitioner since they'll all be garbage
+            ScheduleBuilder builder = new ScheduleBuilder(schedule);
+            builder.clearActors();
+
+            //get the profile ID cached from the appointment data and forwards map to a UUID
+            Long profileId = hmRotaStaffProfiles.get(rotaId);
+            UUID practitionerUuid = IdHelper.getEdsResourceId(serviceId, ResourceType.Practitioner, "" + profileId);
+            if (practitionerUuid == null) {
+                LOG.warn("No practitioner UUID found for profile ID " + profileId + " when doing slot " + scheduleUuid + ", raw ID " + rotaId);
                 continue;
             }
 
-            Reference actorRef = schedule.getActor();
-            String practitionerUuidStr = ReferenceHelper.getReferenceId(actorRef);
-            boolean needToSaveSchedule = false;
+            //set the mapped practitioner reference on the Schedule
+            Reference mappedPractitionerRef = ReferenceHelper.createReference(ResourceType.Practitioner, practitionerUuid.toString());
+            builder.addActor(mappedPractitionerRef);
 
-            *//*if (extraLogging) {
-                LOG.debug("Schedule " + scheduleUuid + " has practitioner " + actorRef.getReference());
-            }*//*
+            //get the cached start date from the SRRota files
+            Date rotaStartDate = hmRotasAndStartDates.get(rotaId);
 
-            //if practitioner NOT exists - create it and update schedule
-            Practitioner practitioner = (Practitioner)resourceDal.getCurrentVersionAsResource(serviceId, ResourceType.Practitioner, practitionerUuidStr.toString());
-            if (practitioner == null) {
-
-                *//*if (extraLogging) {
-                    LOG.debug("Practitioner is NULL");
-                }*//*
-
-                //convert practitioner UUID back to TPP unique ID
-                Reference rawActorRef = IdHelper.convertEdsReferenceToLocallyUniqueReference(csvHelper, actorRef);
-                String rawPractitionerGuid = ReferenceHelper.getReferenceId(rawActorRef);
-                CsvCell cell = CsvCell.factoryDummyWrapper(rawPractitionerGuid);
-
-                //because the GUID->UUID mapping already exists, we need to log this as a user that has CHANGED
-                csvHelper.getAdminHelper().addUserInRoleChanged(cell);
-                //csvHelper.getAdminHelper().addRequiredUserInRole(cell);
-                needToSaveSchedule = true;
-
-                LOG.debug("Will create missing practitioner for schedule " + scheduleUuid + ", raw ID " + sessionGuid + " - practitioner GUID " + rawPractitionerGuid + " UUID " + ReferenceHelper.getReferenceId(actorRef));
-                *//*if (filer == null) {
-                    LOG.debug("Will create missing practitioner for schedule " + scheduleUuid + ", raw ID " + sessionGuid + " - practitioner GUID " + rawPractitionerGuid + " UUID " + ReferenceHelper.getReferenceId(actorRef));
-                }*//*
-
-            } else {
-                //if practitioner created AFTER schedule (later exchange) - update schedule
-
-                *//*if (extraLogging) {
-                    LOG.debug("Practitioner is not null");
-                }*//*
-
-                //find date this schedule was LAST sent through to subscribers
-                Date dtSchedule = findResourceDate(serviceId, ResourceType.Schedule, scheduleUuid.toString(), true);
-                *//*if (extraLogging) {
-                    LOG.debug("Schedule was dated " + new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(dtSchedule));
-                }*//*
-
-                //find date the practitioner was FIRST sent through to subscribers (use a cache since practitioners will be referenced by lots of schedules)
-                Date dtPractitioner = hmPractitionerDates.get(practitionerUuidStr);
-                if (dtPractitioner == null) {
-                    dtPractitioner = findResourceDate(serviceId, ResourceType.Practitioner, practitionerUuidStr, false);
-                    hmPractitionerDates.put(practitionerUuidStr, dtPractitioner);
-                }
-                *//*if (extraLogging) {
-                    LOG.debug("Practitioner was dated " + new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(dtPractitioner));
-                }*//*
-
-                //if the schedule went through before the practitioner then the schedule
-                //needs to go through again to refresh the schedule table record
-                if (dtSchedule.before(dtPractitioner)) {
-
-                    *//*if (extraLogging) {
-                        LOG.debug("Schedule was created before practitioner so needs updating");
-                    }*//*
-
-                    needToSaveSchedule = true;
-
-                    if (filer == null) {
-                        LOG.debug("Need to refresh schedule " + scheduleUuid + ", raw ID " + sessionGuid + " because transformed before practitioner existed");
-                    }
-                }
+            //if we didn't find a start date in the SRRota file, then we need to work it out from the SRAppointment data
+            if (rotaStartDate == null) {
+                rotaStartDate = calculateRotaStartDate(rotaId, hmRotaAppointments, hmAppointmentStartDates);
             }
 
-            //if we need to send the schedule through again, then we need to change it in some way that will bypass the checksum checking
-            //in FhirResourceFiler
-            if (needToSaveSchedule) {
+            //we may still have a null start date for rotas, if we've never received any appointment data for them, in which case we leave it
+            if (rotaStartDate != null) {
+                builder.setPlanningHorizonStart(rotaStartDate);
+            }
 
-                ExtensionConverter.setResourceChanged(schedule); //creates an artificial change so FhirResourceFiler will save it
-                ScheduleBuilder builder = new ScheduleBuilder(schedule);
-
-                if (filer != null) {
-                    filer.saveAdminResource(null, false, builder);
-                }
-                changed ++;
+            if (filer != null) {
+                filer.saveAdminResource(null, false, builder);
             }
 
             done ++;
             if (done % 1000 == 0) {
-                LOG.debug("Done " + done + " / " + hmSessionsAndPractitioners.size() + " schedules, changed " + changed);
+                LOG.debug("Done " + done + " / " + hmRotasAndStartDates.size() + " schedules");
             }
         }
 
-        LOG.debug("Finished " + done + " schedules, changed " + changed);
+        LOG.debug("Finished " + done + " schedules");
+    }
 
-        //generate new practitioners
-        if (filer != null) {
-            LOG.debug("Generating missing Practitioners");
-            csvHelper.getAdminHelper().processAdminChanges(filer, csvHelper);
-            csvHelper.stopThreadPool();
+    /**
+     * in the absence of a start date in the SRRota file, we try to work out a start date from
+     * date in the SRAppointment file
+     */
+    private static Date calculateRotaStartDate(Long rotaId, Map<Long, Set<Long>> hmRotaAppointments, Map<Long, Date> hmAppointmentStartDates) {
 
-            //need to make sure all Practitioners are saved to the DB before going on to do Slots
-            filer.waitUntilEverythingIsSaved();
+        //get the appt IDs for our rota
+        Set<Long> hsApptsInRota = hmRotaAppointments.get(rotaId);
+        if (hsApptsInRota == null) {
+            return null;
         }
-    }*/
+
+        Date earliestStart = null;
+
+        //for each appt ID, get its start date and find the earliest
+        for (Long apptId: hsApptsInRota) {
+            Date apptStart = hmAppointmentStartDates.get(apptId);
+
+            //we'll have a null start if the appt was deleted
+            if (apptStart == null) {
+                continue;
+            }
+
+            if (earliestStart == null
+                    || apptStart.before(earliestStart)) {
+                earliestStart = apptStart;
+            }
+        }
+
+        return earliestStart;
+
+    }
 
     private static Date findResourceDate(UUID serviceId, ResourceType resourceType, String resourceUuid, boolean findMostRecentDate) throws Exception {
 
@@ -311,9 +296,9 @@ public class SD280 extends AbstractRoutine {
     }
 
     /**
-     * FHIR Slots don't have their Practitioner references set (see SD-284)
+     * FHIR Appointments have Practitioner references set but the Practitioner doesn't exist or was created AFTER (see SD-282)
      */
-    /*private static void fixSlots(UUID serviceId, Map<String, List<String>> hmSessionsAndPractitioners, Map<String, String> hmSlotsAndSessions, FhirResourceFiler filer) throws Exception {
+    private static void fixAppointments(UUID serviceId, Map<Long, Date> hmAppointmentStartDates, FhirResourceFiler filer) throws Exception {
 
         int done = 0;
         int changed = 0;
@@ -321,130 +306,108 @@ public class SD280 extends AbstractRoutine {
         ResourceDalI resourceDal = DalProvider.factoryResourceDal();
         Map<String, Date> hmPractitionerDates = new HashMap<>();
 
-        for (String combinedRawId: hmSlotsAndSessions.keySet()) {
-            String sessionGuid = hmSlotsAndSessions.get(combinedRawId);
+        TppCsvHelper csvHelper = new TppCsvHelper(serviceId, null, null);
 
-            UUID appointmentUuid = IdHelper.getEdsResourceId(serviceId, ResourceType.Appointment, combinedRawId);
+        for (Long appointmentId: hmAppointmentStartDates.keySet()) {
+
+            UUID appointmentUuid = IdHelper.getEdsResourceId(serviceId, ResourceType.Appointment, "" + appointmentId);
             if (appointmentUuid == null) {
-                //happens because we receive Slots for patient GUIDs that we don't know about, which are skipped
-                LOG.warn("No appointment UUID found for raw ID " + combinedRawId);
+                LOG.warn("No appointment UUID found for raw ID " + appointmentId);
                 continue;
             }
 
             Appointment appointment = (Appointment)resourceDal.getCurrentVersionAsResource(serviceId, ResourceType.Appointment, appointmentUuid.toString());
             if (appointment == null) {
-                LOG.warn("Missing or deleted appointment for UUID " + appointmentUuid + ", raw ID " + combinedRawId);
+                LOG.warn("Missing or deleted appointment for UUID " + appointmentUuid + ", raw ID " + appointment);
                 continue;
             }
 
-            List<String> practitionerGuids = hmSessionsAndPractitioners.get(sessionGuid);
-            if (practitionerGuids == null) {
-                //we have this situation where an appt should be deleted but isn't so it's (sort of) fine for now. See SD-286
-                LOG.warn("No practitioner GUIDs found for appointment " + appointmentUuid + ", raw ID " + combinedRawId + ", session GUID " + sessionGuid);
+            boolean needToSaveAppointment = false;
+
+            String practitionerUuidStr = findFirstPractitionerUuid(appointment);
+            if (Strings.isNullOrEmpty(practitionerUuidStr)) {
+                LOG.warn("No practitioner on appointment UUID " + appointmentUuid + ", raw ID " + appointment);
                 continue;
             }
 
-            AppointmentBuilder builder = new AppointmentBuilder(appointment);
-            boolean madeChange = false;
+            //if practitioner NOT exists - create it and update appt
+            Practitioner practitioner = (Practitioner)resourceDal.getCurrentVersionAsResource(serviceId, ResourceType.Practitioner, practitionerUuidStr.toString());
+            if (practitioner == null) {
 
-            for (String practitionerGuid: practitionerGuids) {
+                //convert the practitioner UUID back to a TPP staff profile ID
+                Reference practitionerRef = ReferenceHelper.createReference(ResourceType.Practitioner, practitionerUuidStr);
+                Reference rawPractitionerRef = IdHelper.convertEdsReferenceToLocallyUniqueReference(csvHelper, practitionerRef);
+                String profileId = ReferenceHelper.getReferenceId(rawPractitionerRef);
+                CsvCell cell = CsvCell.factoryDummyWrapper(profileId);
 
-                UUID practitionerUuid = IdHelper.getEdsResourceId(serviceId, ResourceType.Practitioner, practitionerGuid);
-                if (practitionerUuid == null) {
-                    LOG.warn("No practitioner UUID found for GUID " + practitionerGuid + " when doing appointment " + appointmentUuid + ", raw ID " + combinedRawId);
-                    continue;
-                }
+                //and call this fn with the profile ID to make sure it's registered as a missing practitioner
+                Reference practitionerReference = csvHelper.createPractitionerReferenceForProfileId(cell);
 
-                Reference mappedPractitionerRef = ReferenceHelper.createReference(ResourceType.Practitioner, practitionerUuid.toString());
+                needToSaveAppointment = true;
 
-                //only add if not found
-                boolean found = false;
-                for (Appointment.AppointmentParticipantComponent participant: appointment.getParticipant()) {
-                    Reference ref = participant.getActor();
-                    if (ReferenceHelper.equals(ref, mappedPractitionerRef)) {
-                        found = true;
-                        break;
-                    }
-                }
+                LOG.debug("Will create missing practitioner for Appointment " + appointmentUuid + ", raw ID " + appointmentId + " - profile ID " + profileId + " UUID " + ReferenceHelper.getReferenceId(practitionerRef));
+                /*if (filer == null) {
+                    LOG.debug("Will create missing practitioner for Appointment " + appointmentUuid + ", raw ID " + appointmentId + " - profile ID " + profileId + " UUID " + ReferenceHelper.getReferenceId(practitionerRef));
+                }*/
 
-                if (!found) {
-                    builder.addParticipant(mappedPractitionerRef, Appointment.ParticipationStatus.ACCEPTED);
-                    madeChange = true;
-                    changed ++;
+            } else {
+                //if practitioner created AFTER appointment (later exchange) - update appointment
 
-                    //if no filer, we're in test mode, so log it out
-                    if (filer == null) {
-                        LOG.debug("Appointment " + appointmentUuid + ", raw ID " + combinedRawId + " was missing practitioner " + practitionerUuid + ", raw ID " + practitionerGuid);
-                    }
-                }
-            }
-
-            //the FHIR->Compass transforms for Appointments used the LAST practitioner, but the Schedule transform used the FIRST. The Appointment
-            //transform has been changed to be consistent, but any appt with multiple practitioners should go through the outbound transform again to fix it
-            if (!madeChange) {
-                int practitionerCount = findPractitionerCount(appointment);
-                if (practitionerCount > 1) {
-
-                    ExtensionConverter.setResourceChanged(appointment);
-                    madeChange = true;
-                    changed ++;
-
-                    if (filer == null) {
-                        LOG.debug("Need to refresh appointment " + appointmentUuid + ", raw ID " + combinedRawId + " because has " + practitionerCount + " practitioners");
-                    }
-                }
-            }
-
-            //if we didn't make a change, we still may need to change the Appt so that it goes through the outbound transform again,
-            //if the Practitioner wasn't created until AFTER the Appointment was created. This is the same problem as affected the Schedules too.
-            if (!madeChange) {
+                //find date this schedule was LAST sent through to subscribers
                 Date dtAppointment = findResourceDate(serviceId, ResourceType.Appointment, appointmentUuid.toString(), true);
 
-                //find the first practitioner
-                String practitionerUuidStr = findFirstPractitionerUuid(appointment);
-                if (!Strings.isNullOrEmpty(practitionerUuidStr)) {
+                //find date the practitioner was FIRST sent through to subscribers (use a cache since practitioners will be referenced by lots of schedules)
+                Date dtPractitioner = hmPractitionerDates.get(practitionerUuidStr);
+                if (dtPractitioner == null) {
+                    dtPractitioner = findResourceDate(serviceId, ResourceType.Practitioner, practitionerUuidStr, false);
+                    hmPractitionerDates.put(practitionerUuidStr, dtPractitioner);
+                }
 
-                    //find date the practitioner was FIRST sent through to subscribers (use a cache since practitioners will be referenced by lots of schedules)
-                    Date dtPractitioner = hmPractitionerDates.get(practitionerUuidStr);
-                    if (dtPractitioner == null) {
-                        try {
-                            dtPractitioner = findResourceDate(serviceId, ResourceType.Practitioner, practitionerUuidStr, false);
-                        } catch (Exception ex) {
-                            LOG.error("Error getting practitioner date for appointment " + appointmentUuid + " with practitioner UUID " + practitionerUuidStr);
-                            throw ex;
-                        }
-                        hmPractitionerDates.put(practitionerUuidStr, dtPractitioner);
-                    }
+                //if the schedule went through before the practitioner then the schedule
+                //needs to go through again to refresh the schedule table record
+                if (dtAppointment.before(dtPractitioner)) {
 
+                    needToSaveAppointment = true;
 
-                    if (dtPractitioner != null //may have null date if practitioner doesn't exist
-                            && dtAppointment.before(dtPractitioner)) {
-
-                        ExtensionConverter.setResourceChanged(appointment);
-                        madeChange = true;
-                        changed ++;
-
-                        if (filer == null) {
-                            LOG.debug("Need to refresh appointment " + appointmentUuid + ", raw ID " + combinedRawId + " because transformed before practitioner existed");
-                        }
+                    if (filer == null) {
+                        LOG.debug("Need to refresh appointment " + appointmentUuid + ", raw ID " + appointmentId + " because transformed before practitioner existed");
                     }
                 }
             }
 
+            //if we need to send the schedule through again, then we need to change it in some way that will bypass the checksum checking
+            //in FhirResourceFiler
+            if (needToSaveAppointment) {
 
-            if (filer != null && madeChange) {
-                filer.savePatientResource(null, false, builder);
+                ExtensionConverter.setResourceChanged(appointment); //creates an artificial change so FhirResourceFiler will save it
+                AppointmentBuilder builder = new AppointmentBuilder(appointment);
+
+                if (filer != null) {
+                    filer.savePatientResource(null, false, builder);
+                }
+                changed ++;
             }
 
             done ++;
             if (done % 1000 == 0) {
-                LOG.debug("Done " + done + " / " + hmSlotsAndSessions.size() + " slots, changed " + changed);
+                LOG.debug("Done " + done + " / " + hmAppointmentStartDates.size() + " appointments, changed " + changed);
             }
         }
 
-        LOG.debug("Finished " + done + " slots, changed " + changed);
+        //make sure to create any missing practitioners we found
+        if (filer != null) {
+            csvHelper.getStaffMemberCache().processChangedStaffMembers(csvHelper, filer);
 
-    }*/
+            //close this down properly
+            csvHelper.stopThreadPool();
+
+            //need to make sure all Practitioners are saved to the DB before going on to do Slots
+            filer.waitUntilEverythingIsSaved();
+        }
+
+        LOG.debug("Finished " + done + " appointments, changed " + changed);
+
+    }
 
     /*private static int findPractitionerCount(Appointment appointment) {
         int ret = 0;
@@ -458,7 +421,7 @@ public class SD280 extends AbstractRoutine {
             }
         }
         return ret;
-    }
+    }*/
 
     private static String findFirstPractitionerUuid(Appointment appointment) {
 
@@ -472,17 +435,20 @@ public class SD280 extends AbstractRoutine {
             }
         }
         return null;
-    }*/
+    }
 
 
-    /*private static Map<String, String> findAppointments(List<Exchange> exchanges) throws Exception {
+    private static void findAppointmentDetailsForRotas(List<Exchange> exchanges,
+                                                       Map<Long, Long> hmRotaStaffProfiles,
+                                                       Map<Long, Set<Long>> hmRotaAppointments,
+                                                       Map<Long, Date> hmAppointmentStartDates) throws Exception {
 
-        Map<String, String> ret = new HashMap<>();
+        DateFormat dateFormat = new SimpleDateFormat(TppCsvToFhirTransformer.DATE_FORMAT + " " + TppCsvToFhirTransformer.TIME_FORMAT);
 
         //list if most-recent-first, so go backwards
         for (int i=exchanges.size()-1; i>=0; i--) {
             Exchange exchange = exchanges.get(i);
-            String filePath = findFilePathInExchange(exchange, "Appointment_Slot");
+            String filePath = findFilePathInExchange(exchange, "Appointment");
             if (filePath == null) {
                 continue;
             }
@@ -493,39 +459,77 @@ public class SD280 extends AbstractRoutine {
 
             while (iterator.hasNext()) {
                 CSVRecord record = iterator.next();
-                String slotGuid = record.get("SlotGuid");
-                String patientGuid = record.get("PatientGuid");
-                if (Strings.isNullOrEmpty(patientGuid)) {
-                    continue;
-                }
-                String combinedId = patientGuid + ":" + slotGuid;
-                String deleted = record.get("Deleted");
-                String sessionGuid = record.get("SessionGuid");
-                boolean isDeleted = Boolean.parseBoolean(deleted);
 
-                if (isDeleted) {
-                    ret.remove(combinedId);
+                String apptIdStr = record.get("RowIdentifier");
+                String rotaIdStr = record.get("IDRota");
+                String startDateStr = record.get("DateStart");
+                String profileIdStr = record.get("IDProfileClinician");
+
+                //check if deleted (deleted column isn't always present)
+                boolean isDeleted = false;
+                if (parser.getHeaderMap().containsKey("RemovedData")) {
+                    String removedStr = record.get("RemovedData");
+                    if (removedStr.equals("1")) {
+                        isDeleted = true;
+                    }
+                }
+
+                if (!isDeleted) {
+                    if (Strings.isNullOrEmpty(rotaIdStr)) {
+                        throw new Exception("Null rota ID for appt " + apptIdStr + " in " + filePath);
+                    }
+                    if (Strings.isNullOrEmpty(startDateStr)) {
+                        throw new Exception("Null start date for appt " + apptIdStr + " in " + filePath);
+                    }
+                    if (Strings.isNullOrEmpty(profileIdStr)) {
+                        throw new Exception("Null profile ID for appt " + apptIdStr + " in " + filePath);
+                    }
+
+
+                    Long apptId = Long.valueOf(apptIdStr);
+                    Long rotaId = Long.valueOf(rotaIdStr);
+                    Date startDate = dateFormat.parse(startDateStr);
+                    Long profileId = Long.valueOf(profileIdStr);
+
+                    //all appts for a rota have the same profile, so just set in the map
+                    hmRotaStaffProfiles.put(rotaId, profileId);
+
+                    //link between rotas and appts
+                    Set<Long> hsApptIds = hmRotaAppointments.get(rotaId);
+                    if (hsApptIds == null) {
+                        hsApptIds = new HashSet<>();
+                        hmRotaAppointments.put(rotaId, hsApptIds);
+                    }
+                    hsApptIds.add(apptId);
+
+                    //cache appt start times
+                    hmAppointmentStartDates.put(apptId, startDate);
+
                 } else {
-                    ret.put(combinedId, sessionGuid);
+
+                    Long apptId = Long.valueOf(apptIdStr);
+
+                    //if an appt is deleted, remove its cached start date so we
+                    //don't factor it in when working out a rotas date
+                    hmAppointmentStartDates.remove(apptId);
                 }
             }
 
             parser.close();
-
         }
+    }
 
-        return ret;
-    }*/
-
-    /*private static Map<String, List<String>> findRotaPractitioners(List<Exchange> exchanges) throws Exception {
+    private static Map<Long, Date> findRotaIdAndStartDates(List<Exchange> exchanges) throws Exception {
 
         //the session user file doesn't have an org ID, so we need to check the session file first, which does
-        Set<String> sessionGuids = new HashSet<>();
+        Map<Long, Date> ret = new HashMap<>();
+
+        DateFormat dateFormat = new SimpleDateFormat(TppCsvToFhirTransformer.DATE_FORMAT + " " + TppCsvToFhirTransformer.TIME_FORMAT);
 
         //list if most-recent-first, so go backwards
         for (int i=exchanges.size()-1; i>=0; i--) {
             Exchange exchange = exchanges.get(i);
-            String sessionFilePath = findFilePathInExchange(exchange, "Appointment_Session");
+            String sessionFilePath = findFilePathInExchange(exchange, "Rota");
             if (sessionFilePath == null) {
                 continue;
             }
@@ -536,66 +540,40 @@ public class SD280 extends AbstractRoutine {
 
             while (iterator.hasNext()) {
                 CSVRecord record = iterator.next();
-                String sessionGuid = record.get("AppointmentSessionGuid");
-                String deleted = record.get("Deleted");
-                boolean isDeleted = Boolean.parseBoolean(deleted);
+
+                String rotaIdStr = record.get("RowIdentifier");
+                Long rotaId = Long.valueOf(rotaIdStr);
+
+                //check if deleted (deleted column isn't always present)
+                boolean isDeleted = false;
+                if (parser.getHeaderMap().containsKey("RemovedData")) {
+                    String removedStr = record.get("RemovedData");
+                    if (removedStr.equals("1")) {
+                        isDeleted = true;
+                    }
+                }
 
                 if (isDeleted) {
-                    sessionGuids.remove(sessionGuid);
-
+                    ret.remove(rotaId);
                 } else {
-                    sessionGuids.add(sessionGuid);
+
+                    Date startDate = null;
+
+                    //see if we have the start date column
+                    if (parser.getHeaderMap().containsKey("DateStart")) {
+                        String startDateStr = record.get("DateStart");
+                        startDate = dateFormat.parse(startDateStr);
+                    }
+
+                    ret.put(rotaId, startDate); //note this start date may still be null
                 }
             }
 
             parser.close();
-        }
-
-        Map<String, List<String>> ret = new HashMap<>();
-
-        //list if most-recent-first, so go backwards
-        for (int i=exchanges.size()-1; i>=0; i--) {
-            Exchange exchange = exchanges.get(i);
-            String sessionUserFilePath = findFilePathInExchange(exchange, "Appointment_SessionUser");
-            if (sessionUserFilePath == null) {
-                continue;
-            }
-
-            InputStreamReader isr = FileHelper.readFileReaderFromSharedStorage(sessionUserFilePath);
-            CSVParser parser = new CSVParser(isr, CSVFormat.DEFAULT.withHeader());
-            Iterator<CSVRecord> iterator = parser.iterator();
-
-            while (iterator.hasNext()) {
-                CSVRecord record = iterator.next();
-                String sessionGuid = record.get("SessionGuid");
-                //skip any session GUIDs for other orgs
-                if (!sessionGuids.contains(sessionGuid)) {
-                    continue;
-                }
-                String userInRoleGuid = record.get("UserInRoleGuid");
-                String deleted = record.get("Deleted");
-                boolean isDeleted = Boolean.parseBoolean(deleted);
-
-                List<String> l = ret.get(sessionGuid);
-                if (l == null) {
-                    l = new ArrayList<>();
-                    ret.put(sessionGuid, l);
-                }
-
-                if (isDeleted) {
-                    l.remove(userInRoleGuid);
-
-                } else if (!l.contains(userInRoleGuid)) { //don't add duplicates
-                    l.add(userInRoleGuid);
-                }
-            }
-
-            parser.close();
-
         }
 
         return ret;
-    }*/
+    }
 
 
 }
