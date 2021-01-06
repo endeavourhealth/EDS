@@ -118,7 +118,7 @@ public class SD280 extends AbstractRoutine {
         findAppointmentDetailsForRotas(exchanges, hmRotaStaffProfiles, hmRotaAppointments, hmAppointmentStartDates);
         LOG.debug("Cached " + hmAppointmentStartDates.size() + " appointments");
         Map<Long, Date> hmRotasAndStartDates = findRotaIdAndStartDates(exchanges);
-        LOG.debug("Cached " + hmRotasAndStartDates.size() + " rota IDs");
+        LOG.debug("Cached " + hmRotasAndStartDates.size() + " rota");
 
         Exchange newExchange = null;
         FhirResourceFiler filer = null;
@@ -180,6 +180,7 @@ public class SD280 extends AbstractRoutine {
                                  FhirResourceFiler filer) throws Exception {
 
         int done = 0;
+        int changed = 0;
 
         ResourceDalI resourceDal = DalProvider.factoryResourceDal();
 
@@ -198,21 +199,29 @@ public class SD280 extends AbstractRoutine {
                 continue;
             }
 
-            //clear any existing practitioner since they'll all be garbage
             ScheduleBuilder builder = new ScheduleBuilder(schedule);
-            builder.clearActors();
+            boolean madeChange = false;
+
+            //clear any existing practitioner since they'll all be garbage
+            if (schedule.hasActor()) {
+                builder.clearActors();
+                madeChange = true;
+            }
 
             //get the profile ID cached from the appointment data and forwards map to a UUID
             Long profileId = hmRotaStaffProfiles.get(rotaId);
-            UUID practitionerUuid = IdHelper.getEdsResourceId(serviceId, ResourceType.Practitioner, "" + profileId);
-            if (practitionerUuid == null) {
-                LOG.warn("No practitioner UUID found for profile ID " + profileId + " when doing slot " + scheduleUuid + ", raw ID " + rotaId);
-                continue;
-            }
+            if (profileId != null) { //may be null for rotas without any appts
+                UUID practitionerUuid = IdHelper.getEdsResourceId(serviceId, ResourceType.Practitioner, "" + profileId);
+                if (practitionerUuid == null) {
+                    LOG.warn("No practitioner UUID found for profile ID " + profileId + " when doing Rota " + scheduleUuid + ", raw ID " + rotaId);
+                    continue;
+                }
 
-            //set the mapped practitioner reference on the Schedule
-            Reference mappedPractitionerRef = ReferenceHelper.createReference(ResourceType.Practitioner, practitionerUuid.toString());
-            builder.addActor(mappedPractitionerRef);
+                //set the mapped practitioner reference on the Schedule
+                Reference mappedPractitionerRef = ReferenceHelper.createReference(ResourceType.Practitioner, practitionerUuid.toString());
+                builder.addActor(mappedPractitionerRef);
+                madeChange = true;
+            }
 
             //get the cached start date from the SRRota files
             Date rotaStartDate = hmRotasAndStartDates.get(rotaId);
@@ -225,19 +234,23 @@ public class SD280 extends AbstractRoutine {
             //we may still have a null start date for rotas, if we've never received any appointment data for them, in which case we leave it
             if (rotaStartDate != null) {
                 builder.setPlanningHorizonStart(rotaStartDate);
+                madeChange = true;
             }
 
-            if (filer != null) {
-                filer.saveAdminResource(null, false, builder);
+            if (madeChange) {
+                changed ++;
+                if (filer != null) {
+                    filer.saveAdminResource(null, false, builder);
+                }
             }
 
             done ++;
             if (done % 1000 == 0) {
-                LOG.debug("Done " + done + " / " + hmRotasAndStartDates.size() + " schedules");
+                LOG.debug("Done " + done + " / " + hmRotasAndStartDates.size() + " rotas, changed " + changed);
             }
         }
 
-        LOG.debug("Finished " + done + " schedules");
+        LOG.debug("Finished " + done + " rotas, changed " + changed);
     }
 
     /**
