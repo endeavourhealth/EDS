@@ -55,24 +55,27 @@
                             <!-- status -->
                             <td>
 
-                                <div *ngIf="item.taskParameters">
-                                    Parameters: {{item.taskParameters}}
-                                </div>
-                                <div *ngIf="item.hostName">
-                                    Server: {{item.hostName}}
-                                </div>
+                                <span *ngIf="item.hostName">
+                                    {{item.hostName}}
+                                </span>
+                                <span *ngIf="item.hostName && item.taskParameters">
+                                    &nbsp;|&nbsp;
+                                </span>
+                                <span *ngIf="item.taskParameters">
+                                    {{item.taskParameters}}
+                                </span>
 
-                                <div *ngIf="item.success">
+                                <!--<div *ngIf="item.success">
                                     State: OK
-                                </div>
+                                </div>-->
                                 <div *ngIf="!item.success">
                                     <div *ngIf="item.timestamp">
                                         <span class="label label-danger" ngbTooltip="Execution failed">Warning</span>
-                                        State: FAILED
+                                        FAILED
                                     </div>
                                     <div *ngIf="!item.timestamp">
                                         <span class="label label-danger" ngbTooltip="Never run">Warning</span>
-                                        State: NEVER RUN
+                                        NEVER RUN
                                     </div>
                                 </div>
 
