@@ -58,7 +58,7 @@ public class RabbitHandler {
 
 	public void start() throws Exception {
 
-		LOG.info("Connecting to Rabbit queue {} at {}", configuration.getQueue(), RabbitConfig.getInstance().getNodes());
+		LOG.info("Connecting to Rabbit queue {} at {} ", configuration.getQueue(), RabbitConfig.getInstance().getNodes());
 
 		// Begin consuming messages
 		AMQP.Queue.DeclareOk response = channel.queueDeclare(
@@ -71,7 +71,7 @@ public class RabbitHandler {
 		//the above return value tells us how many consumers that queue has, which we use in the heartbeat table
 		int consumerCount = response.getConsumerCount();
 		consumer.setInstanceNumber(consumerCount+1);
-		LOG.info("Consumer number:=" + consumerCount+1);
+		LOG.info("Consumer number number:=" + consumerCount+1);
 
 		//pass true for the exclusive parameter, so we can only have one consumer per queue
 		//channel.basicConsume(configuration.getQueue(), false, consumer);
