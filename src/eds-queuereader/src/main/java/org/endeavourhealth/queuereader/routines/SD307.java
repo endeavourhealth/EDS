@@ -4,7 +4,10 @@ import com.google.common.base.Strings;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
+import org.apache.commons.io.FilenameUtils;
 import org.endeavourhealth.common.utility.FileHelper;
+import org.endeavourhealth.common.utility.FileInfo;
+import org.endeavourhealth.common.utility.JsonSerializer;
 import org.endeavourhealth.core.database.dal.DalProvider;
 import org.endeavourhealth.core.database.dal.admin.ServiceDalI;
 import org.endeavourhealth.core.database.dal.admin.SystemHelper;
@@ -14,6 +17,7 @@ import org.endeavourhealth.core.database.dal.audit.models.Exchange;
 import org.endeavourhealth.core.fhirStorage.ServiceInterfaceEndpoint;
 import org.endeavourhealth.core.queueing.MessageFormat;
 import org.endeavourhealth.transform.common.ExchangeHelper;
+import org.endeavourhealth.transform.common.ExchangePayloadFile;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -83,8 +87,12 @@ public class SD307 extends AbstractRoutine {
 
             String filePath = findFilePathInExchange(exchange, "Manifest");
             if (Strings.isNullOrEmpty(filePath)) {
-                LOG.warn("Missing manifest file in exchange " + exchange.getId());
-                continue;
+                attemptFixExchangeMissingManifest(exchange);
+                filePath = findFilePathInExchange(exchange, "Manifest");
+                if (Strings.isNullOrEmpty(filePath)) {
+                    LOG.warn("Missing manifest file in exchange " + exchange.getId());
+                    continue;
+                }
             }
 
             InputStreamReader isr = FileHelper.readFileReaderFromSharedStorage(filePath);
@@ -183,6 +191,57 @@ public class SD307 extends AbstractRoutine {
                 lastDateRange = dateRange;
             }
         }
+    }
+
+    /**
+     * on older exchanges, we didn't used to copy the SRManifest.csv file into the service-specific "Split" directory.
+     * The SRManfiest files were copied over a while back, but the Exchange bodies weren't updated accordingly
+     */
+    private static void attemptFixExchangeMissingManifest(Exchange exchange) throws Exception {
+
+        LOG.debug("Attempting to fix Exchange " + exchange.getId() + " without SRManifest in body");
+
+        String exchangeBody = exchange.getBody();
+        List<ExchangePayloadFile> files = ExchangeHelper.parseExchangeBody(exchangeBody);
+        if (files.isEmpty()) {
+            LOG.debug("No files in Exchange body");
+            return;
+        }
+
+        ExchangePayloadFile first = files.get(0);
+        String firstPath = first.getPath();
+        String dir = FilenameUtils.getFullPath(firstPath);
+        LOG.debug("Getting listing of " + dir);
+
+        List<FileInfo> listing = FileHelper.listFilesInSharedStorageWithInfo(dir);
+        for (FileInfo info: listing) {
+            String path = info.getFilePath();
+            if (path.endsWith("SRManifest.csv")) {
+                LOG.debug("Found manifest file at " + path);
+
+                List<ExchangePayloadFile> filesNoPrefix = ExchangeHelper.parseExchangeBody(exchangeBody, false);
+                first = files.get(0);
+                firstPath = first.getPath();
+                dir = FilenameUtils.getFullPath(firstPath);
+                String newPath = FilenameUtils.concat(dir, "SRManifest.csv");
+
+                ExchangePayloadFile f = new ExchangePayloadFile();
+                f.setPath(newPath);
+                f.setSize(new Long(info.getSize()));
+                f.setType("Manifest");
+                filesNoPrefix.add(f);
+
+                String json = JsonSerializer.serialize(filesNoPrefix);
+                exchange.setBody(json);
+
+                //TODO - restore this
+                //AuditWriter.writeExchange(exchange);
+
+                return;
+            }
+        }
+
+
     }
 
     private static class DateRange {
