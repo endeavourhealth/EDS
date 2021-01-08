@@ -119,7 +119,12 @@ public class Main {
 			SD186.findVisionCodes();
 			System.exit(0);
 		}
-		
+
+		if (args.length>=1 && args[0].equalsIgnoreCase("CQCGETALLLOCATIONS")) {
+			CQC.getAllCQCLocationIds();
+			System.exit(0);
+		}
+
 		if (args.length>=1 && args[0].equalsIgnoreCase("CQCAPI")) {
             CQC.callCQCAPI();
             System.exit(0);
