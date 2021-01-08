@@ -961,6 +961,41 @@ public abstract class SpecialRoutines extends AbstractRoutine {
             LOG.debug("    " + tppCode + " -> non-core " + tppNonCoreConceptId + " -> core " + tppCoreConceptId);
 
 
+            LOG.debug("");
+            LOG.debug("");
+            LOG.debug("----SD-308 Free-text Referral Priorities ------------------------------------------------");
+
+            List<String> toks = new ArrayList<>();
+            toks.add("0 - 48 hours");
+            toks.add("Choose and Book");
+            toks.add("Planned");
+            toks.add("Priority 4: 8 weeks");
+            toks.add("0 - 1 Week");
+            toks.add("25 Days");
+            toks.add("Low Need");
+            toks.add("Next Month (please specify)");
+            toks.add("Priority");
+            toks.add("Same Day");
+            toks.add("High Risk");
+            toks.add("Within 5 days");
+            toks.add("72 Hours");
+            toks.add("Priority 1: 2 working days");
+            toks.add("Triage");
+            toks.add("Low Risk");
+            toks.add("Priority 2: 10 working days");
+            toks.add("Not in Use");
+            toks.add("Priority 3: 4 weeks");
+            toks.add("0 - 10 DAYS");
+            toks.add("Advice");
+            toks.add("0 - 2 hours");
+            toks.add("Planned (4 weeks)");
+            toks.add("Medium");
+            toks.add("2 - 48 Hours");
+
+            for (String tok: toks) {
+                Integer conceptId = IMClient.getConceptDbidForTypeTerm(IMConstant.FHIR_REFERRAL_PRIORITY, tok, true);
+                LOG.debug("" + tok + " -> " + conceptId);
+            }
 
             LOG.debug("Finished Testing Information Model");
         } catch (Throwable t) {
