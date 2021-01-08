@@ -1,5 +1,6 @@
 package org.endeavourhealth.queuereader.routines;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.base.Strings;
 import com.google.gson.JsonObject;
 import jdk.nashorn.internal.parser.JSONParser;
@@ -8,6 +9,7 @@ import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.io.FileUtils;
+import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.common.utility.ThreadPool;
 import org.endeavourhealth.common.utility.ThreadPoolError;
 import org.endeavourhealth.core.database.dal.ehr.models.ResourceWrapper;
@@ -223,12 +225,14 @@ public abstract class CQC extends AbstractRoutine {
         private UUID serviceUUID;
         private String subscriberConfigName;
         private String systemId;
+        private String baseUrl;
 
-        public CQCCallable(String row, UUID serviceUUID, String subscriberConfigName, String systemId) {
+        public CQCCallable(String row, UUID serviceUUID, String subscriberConfigName, String systemId, String baseUrl) {
             this.row = row;
             this.serviceUUID = serviceUUID;
             this.subscriberConfigName = subscriberConfigName;
             this.systemId = systemId;
+            this.baseUrl = baseUrl;
         }
 
         @Override
@@ -267,12 +271,35 @@ public abstract class CQC extends AbstractRoutine {
 
             SubscriberFiler.file(batchId, queuedMessageId, base64, subscriberConfigName);
 
+            String subsciberId = getSubscriberId(subscriberConfigName, resource_guid);
+            Integer response = SendTLS(baseUrl+"api2/cqcarchive?subscriber_id="+subsciberId+"&config="+subscriberConfigName, json);
+
             } catch (Throwable t) {
                 LOG.error("", t);
             }
 
             return null;
         }
+    }
+
+    private static String getSubscriberId(String configName, String resource_guid) throws Exception
+    {
+        Connection connection = ConnectionManager.getSubscriberTransformConnection(configName);
+
+        String sql = "SELECT subscriber_id FROM subscriber_id_map_3 where source_id='Organization/"+resource_guid+"'";
+        PreparedStatement ps = connection.prepareStatement(sql);
+
+        String ret = "?";
+        ResultSet  rs = ps.executeQuery();
+
+        if (rs.next()) {
+            ret =  rs.getString("subscriber_id");
+        }
+
+        ps.close();
+        connection.close();
+
+        return ret;
     }
 
     public static void ThreadCQCFile(String builderFile, UUID serviceUUID, String subscriberConfigName, String systemId) throws Exception
@@ -282,8 +309,10 @@ public abstract class CQC extends AbstractRoutine {
         Integer threads = 5;
         Integer QBeforeBlock = 10;
         ThreadPool threadPool = new ThreadPool(threads, QBeforeBlock);
+        JsonNode config = ConfigManager.getConfigurationAsJson("uprn");
+        String baseUrl = config.get("uprn_endpoint").asText();
         while ((row = csvReader.readLine()) != null) {
-            List<ThreadPoolError>  errors = threadPool.submit(new CQCCallable(row, serviceUUID, subscriberConfigName, systemId));
+            List<ThreadPoolError>  errors = threadPool.submit(new CQCCallable(row, serviceUUID, subscriberConfigName, systemId, baseUrl));
             handleErrors(errors);
         }
         List<ThreadPoolError> errors = threadPool.waitAndStop();
@@ -556,7 +585,8 @@ public abstract class CQC extends AbstractRoutine {
     public static void callCQCAPI() throws Exception
     {
 
-        String filename = "D:\\TEMP\\COVID-Jiras\\08_July_2020_CQC_directory_NEL8.csv";
+        //String filename = "D:\\TEMP\\COVID-Jiras\\08_July_2020_CQC_directory_NEL8.csv";
+        String filename = "C:\\Users\\PaulSimon\\Desktop\\cqc-location-ids.csv";
         BufferedReader reader = new BufferedReader(
                 new InputStreamReader(new FileInputStream(filename), "UTF-8"));
 
@@ -572,9 +602,10 @@ public abstract class CQC extends AbstractRoutine {
 
         for (CSVRecord csvRecord : csvParser) {
 
-            if (ft.equals(1)) {ft=0; continue;} // skip headers
+            // if (ft.equals(1)) {ft=0; continue;} // skip headers
 
-            String cqc_location = csvRecord.get(14);
+            //String cqc_location = csvRecord.get(14);
+            String cqc_location = csvRecord.get(0);
 
             String location_url = "https://api.cqc.org.uk/public/v1/locations/"+cqc_location;
             String json = CallAPI(location_url);
@@ -755,6 +786,103 @@ public abstract class CQC extends AbstractRoutine {
         return ret;
     }
 
+    public static void getAllCQCLocationIds() throws Exception
+    {
+        String url = "https://api.cqc.org.uk/public/v1/locations?page=1&perPage=20000";
+        String response = CallAPI(url);
+        System.out.println(response);
+        parseJson(response);
+    }
+
+    private static void parseJson(String json) throws Exception
+    {
+        JSONObject obj = new JSONObject(json);
+
+        FileWriter csvWriter = new FileWriter("C:\\Users\\PaulSimon\\Desktop\\cqc-location-ids.csv");
+
+        parseLocations(json, csvWriter);
+
+        Integer totalPages = obj.getInt("totalPages");
+
+        int n = totalPages.intValue();
+        for (int i = 2; i <n; ++i) {
+            String url = "https://api.cqc.org.uk/public/v1/locations?page="+i+"&perPage=20000";
+            String response = CallAPI(url);
+            parseLocations(response, csvWriter);
+        }
+
+        csvWriter.flush();
+        csvWriter.close();
+    }
+
+    private static String parsePostCode(String str) throws Exception
+    {
+        int p = 0;
+        for (char c : str.toCharArray())
+        {
+            if (Character.isDigit(c)) break;
+            p = p + 1;
+        }
+        return str.substring(0, p);
+    }
+
+    private static void parseLocations(String json, FileWriter csvWriter) throws Exception
+    {
+        String postalArea = "/EC/WC/E/N/NW/SE/SW/W/BR/CR/DA/EN/HA/IG/KT/RM/SM/TW/UB/WD/";
+        JSONObject obj = new JSONObject(json);
+        JSONArray Locations = obj.getJSONArray("locations");
+        int n = Locations.length();
+        for (int i = 0; i < n; ++i) {
+            JSONObject z = Locations.getJSONObject(i);
+            String postcode = getElement("postalCode",z);
+            String region = "/"+parsePostCode(postcode)+"/";
+            if (postalArea.contains(region)) {
+                String location_id = getElement("locationId", z);
+                System.out.println(getElement("locationId", z) + "," + getElement("postalCode", z) + "," + region);
+                csvWriter.append(location_id+","+postcode);
+                csvWriter.append("\n");
+            }
+        }
+    }
+
+    private static Integer SendTLS(String url, String encoded)
+    {
+        try {
+            URL obj = new URL(url);
+            HttpsURLConnection con = (HttpsURLConnection) obj.openConnection();
+
+            con.setRequestMethod("POST");
+
+            con.setRequestProperty("Content-Type","application/json");
+
+            // Send request
+            con.setDoOutput(true);
+            DataOutputStream wr = new DataOutputStream(con.getOutputStream());
+            wr.writeBytes(encoded);
+            wr.flush();
+            wr.close();
+
+            int responseCode = con.getResponseCode();
+
+            BufferedReader in = new BufferedReader(
+                    new InputStreamReader(con.getInputStream()));
+            String output;
+            StringBuffer response = new StringBuffer();
+
+            while ((output = in.readLine()) != null) {
+                response.append(output);
+            }
+            in.close();
+
+            System.out.println(responseCode);
+
+            return responseCode;
+        }catch(Exception e){
+            System.out.println(e);
+            return 0;
+        }
+    }
+
     private static String CallAPI(String url) throws Exception
     {
         URL obj = new URL(url);
@@ -808,6 +936,9 @@ public abstract class CQC extends AbstractRoutine {
     // subscriber_test, D:\\TEMP\\COVID-Jiras\\08_July_2020_CQC_directory_NEL8.csv, C:\\Users\\PaulSimon\\Desktop\\builder.txt
     public static void OrganizationBuilder(String configName, String filename, String builderFilename) throws Exception
     {
+
+        //JsonNode config = ConfigManager.getConfigurationAsJson("uprn");
+        //String baseUrl = config.get("uprn_endpoint").asText();
 
         Connection connection = ConnectionManager.getSubscriberTransformConnection(configName);
 
@@ -919,6 +1050,16 @@ public abstract class CQC extends AbstractRoutine {
             if (!cqc_dormancy.isEmpty()) createContainedCoded(organizationBuilder,"cqc_dormancy",cqc_dormancy,0);
             if (!cqc_carehome.isEmpty()) createContainedCoded(organizationBuilder,"cqc_carehome",cqc_carehome,0);
 
+            if (!addline1.isEmpty()) {createContainedCoded(organizationBuilder,"addline1",addline1,0);}
+            if (!addline2.isEmpty()) {createContainedCoded(organizationBuilder,"addline2",addline2,0);}
+            if (!addline3.isEmpty()) {createContainedCoded(organizationBuilder,"addline3",addline3,0);}
+            if (!addline4.isEmpty()) {createContainedCoded(organizationBuilder,"addline4",addline4,0);}
+            if (!addline5.isEmpty()) {createContainedCoded(organizationBuilder,"addline5",addline5,0);}
+            if (!postcode.isEmpty()) {createContainedCoded(organizationBuilder,"postcode",postcode,0);}
+            if (!phone.isEmpty()) {createContainedCoded(organizationBuilder,"cqc_phone",phone,0);}
+
+            createContainedCoded(organizationBuilder,"config",configName,0);
+
             if (!service_type.isEmpty()) {
                 String[] ss = service_type.split("\\|");
                 for (int i = 0; i < ss.length; i++) {
@@ -947,6 +1088,8 @@ public abstract class CQC extends AbstractRoutine {
 
             String json = OrganisationTransformer_v2.Test(organizationBuilder);
             System.out.println(json);
+
+            //Integer response = SendTLS(baseUrl+"api/cqcarchive",json);
 
             csvWriter.write(RESOURCE_GUID + "\t"+ json + "\n");
         }
