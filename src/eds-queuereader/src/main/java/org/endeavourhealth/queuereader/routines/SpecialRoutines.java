@@ -997,6 +997,28 @@ public abstract class SpecialRoutines extends AbstractRoutine {
                 LOG.debug("" + tok + " -> " + conceptId);
             }
 
+
+            LOG.debug("----SD-308 Free-text Referral Types ------------------------------------------------");
+
+            toks = new ArrayList<>();
+            toks.add("Admission");
+            toks.add("Bereavement support");
+            toks.add("Discharge planning");
+            toks.add("Information to patient/carers");
+            toks.add("Pain / Symptom Control");
+            toks.add("Social/financial");
+            toks.add("Emotional/psychological support");
+            toks.add("Assessment for hospice");
+            toks.add("Other (Specify)");
+            toks.add("DN - Falls Assessment");
+            toks.add("Cancers");
+            toks.add("Anaemia");
+
+            for (String tok: toks) {
+                Integer conceptId = IMClient.getConceptDbidForTypeTerm(IMConstant.FHIR_REFERRAL_TYPE, tok, true);
+                LOG.debug("" + tok + " -> " + conceptId);
+            }
+
             LOG.debug("Finished Testing Information Model");
         } catch (Throwable t) {
             LOG.error("", t);

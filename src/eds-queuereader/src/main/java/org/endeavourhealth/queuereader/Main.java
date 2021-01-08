@@ -24,6 +24,17 @@ public class Main {
 		ConfigManager.initialize("queuereader", configId);
 
 		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("SD307findTppServicesMissingDeltas")) {
+			boolean verbose = Boolean.parseBoolean(args[1]);
+			String odsCodeRegex = null;
+			if (args.length > 2) {
+				odsCodeRegex = args[2];
+			}
+			SD307.findTppServicesMissingDeltas(verbose, odsCodeRegex);
+			System.exit(0);
+		}
+
+		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("SD292TestDates")) {
 			String localeStr = null;
 			if (args.length > 1) {
