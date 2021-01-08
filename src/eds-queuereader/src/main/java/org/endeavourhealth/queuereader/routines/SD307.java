@@ -143,9 +143,10 @@ public class SD307 extends AbstractRoutine {
         for (String fileName: fileNames) {
             List<DateRange> list = hmFiles.get(fileName);
 
-            if (verbose) {
+            LOG.debug("Checking " + fileName + " >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
+            /*if (verbose) {
                 LOG.debug("Checking " + fileName + " >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
-            }
+            }*/
 
             DateRange lastDateRange = list.get(0);
             for (int i=1; i<list.size(); i++) {
@@ -162,12 +163,15 @@ public class SD307 extends AbstractRoutine {
                 }
 
                 //if the start and end don't match up, then something is off
-                if (currentStart.equals(previousEnd)) {
+                if (currentStart == null) {
+                    LOG.warn("    NULL START DATE: exchange " + dateRange.getExchangeId());
+
+                } else if (currentStart.equals(previousEnd)) {
                     //OK
 
                 } else if (previousStart != null && currentStart.equals(previousStart)
                         && currentEnd.equals(previousEnd)) {
-                    LOG.warn("    DUPLICATE FOUND: " + dateRange.getExchangeId() + " has range " + dateFormat.format(currentStart) + " - " + dateFormat.format(currentEnd) + " which is the same as previous");
+                    LOG.warn("    DUPLICATE FOUND: exchange " + dateRange.getExchangeId() + " has range " + dateFormat.format(currentStart) + " - " + dateFormat.format(currentEnd) + " which is the same as previous");
 
                 } else if (currentStart.after(previousEnd)) {
                     LOG.error("    GAP FOUND: exchange " + dateRange.getExchangeId() + " expecting start " + dateFormat.format(previousEnd) + " but got " + dateFormat.format(currentStart));
@@ -249,7 +253,18 @@ public class SD307 extends AbstractRoutine {
         @Override
         public String toString() {
             StringBuffer sb = new StringBuffer();
-            sb.append("" + fromStr + " -> " + toStr + " (exchange " + exchangeId + ")");
+            if (fromStr == null) {
+                sb.append("NULL");
+            } else {
+                sb.append(fromStr);
+            }
+            sb.append(" -> ");
+            if (toStr == null) {
+                sb.append("NULL");
+            } else {
+                sb.append(toStr);
+            }
+            sb.append(" (exchange " + exchangeId + ")");
             if (isBulk) {
                 sb.append(" BULK");
             }
