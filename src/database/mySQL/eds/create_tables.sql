@@ -76,6 +76,7 @@ CREATE TABLE patient_search
 	organisation_type_code varchar(10),
 	nhs_number_verification_status char(2),
   dt_created datetime,
+  test_patient boolean,
 	CONSTRAINT pk_patient_search PRIMARY KEY (service_id, patient_id)
 );
 
