@@ -182,6 +182,7 @@ public class SD280 extends AbstractRoutine {
         int done = 0;
         int changed = 0;
 
+        TppCsvHelper csvHelper = new TppCsvHelper(serviceId, null, null);
         ResourceDalI resourceDal = DalProvider.factoryResourceDal();
 
         for (Long rotaId: hmRotasAndStartDates.keySet()) {
@@ -213,8 +214,21 @@ public class SD280 extends AbstractRoutine {
             if (profileId != null) { //may be null for rotas without any appts
                 UUID practitionerUuid = IdHelper.getEdsResourceId(serviceId, ResourceType.Practitioner, "" + profileId);
                 if (practitionerUuid == null) {
-                    LOG.warn("No practitioner UUID found for profile ID " + profileId + " when doing Rota " + scheduleUuid + ", raw ID " + rotaId);
-                    continue;
+
+                    //if the rota only has textual appointments, then the practitioner may not have been created, so
+                    //generate the UUID for the profile now, and make sure the practitioner is created
+                    practitionerUuid = IdHelper.getOrCreateEdsResourceId(serviceId, ResourceType.Practitioner, "" + profileId);
+
+                    CsvCell cell = CsvCell.factoryDummyWrapper("" + profileId);
+
+                    //and call this fn with the profile ID to make sure it's registered as a missing practitioner
+                    csvHelper.getStaffMemberCache().addChangedProfileId(cell);
+                    //csvHelper.createPractitionerReferenceForProfileId(cell);
+
+                    /*LOG.warn("No practitioner UUID found for profile ID " + profileId + " when doing Rota " + scheduleUuid + ", raw ID " + rotaId);
+                    continue;*/
+
+                    LOG.warn("No practitioner UUID found for profile ID " + profileId + " when doing Rota " + scheduleUuid + ", raw ID " + rotaId + " so will created");
                 }
 
                 //set the mapped practitioner reference on the Schedule
@@ -248,6 +262,17 @@ public class SD280 extends AbstractRoutine {
             if (done % 1000 == 0) {
                 LOG.debug("Done " + done + " / " + hmRotasAndStartDates.size() + " rotas, changed " + changed);
             }
+        }
+
+        //make sure to create any missing practitioners we found
+        if (filer != null) {
+            csvHelper.getStaffMemberCache().processChangedStaffMembers(csvHelper, filer);
+
+            //close this down properly
+            csvHelper.stopThreadPool();
+
+            //need to make sure all Practitioners are saved to the DB before going on to do Slots
+            filer.waitUntilEverythingIsSaved();
         }
 
         LOG.debug("Finished " + done + " rotas, changed " + changed);
@@ -325,7 +350,8 @@ public class SD280 extends AbstractRoutine {
 
             UUID appointmentUuid = IdHelper.getEdsResourceId(serviceId, ResourceType.Appointment, "" + appointmentId);
             if (appointmentUuid == null) {
-                LOG.warn("No appointment UUID found for raw ID " + appointmentId);
+                //we get this loads, for each textual appointment, so don't bother logging
+                //LOG.warn("No appointment UUID found for raw ID " + appointmentId);
                 continue;
             }
 
@@ -353,8 +379,10 @@ public class SD280 extends AbstractRoutine {
                 String profileId = ReferenceHelper.getReferenceId(rawPractitionerRef);
                 CsvCell cell = CsvCell.factoryDummyWrapper(profileId);
 
-                //and call this fn with the profile ID to make sure it's registered as a missing practitioner
-                Reference practitionerReference = csvHelper.createPractitionerReferenceForProfileId(cell);
+                //the ID mapping of profile ID -> UUID already exists, so we need to call the "changed" function to
+                //register the staff member as needing creating in FHIR
+                csvHelper.getStaffMemberCache().addChangedProfileId(cell);
+                //csvHelper.createPractitionerReferenceForProfileId(cell);
 
                 needToSaveAppointment = true;
 
@@ -383,7 +411,7 @@ public class SD280 extends AbstractRoutine {
                     needToSaveAppointment = true;
 
                     if (filer == null) {
-                        LOG.debug("Need to refresh appointment " + appointmentUuid + ", raw ID " + appointmentId + " because transformed before practitioner existed");
+                        LOG.debug("Need to refresh appointment " + appointmentUuid + ", raw ID " + appointmentId + " because transformed before practitioner " + practitionerUuidStr + " existed");
                     }
                 }
             }
