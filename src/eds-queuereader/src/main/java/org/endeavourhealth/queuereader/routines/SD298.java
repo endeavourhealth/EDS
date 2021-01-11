@@ -226,47 +226,51 @@ public class SD298 extends AbstractRoutine {
                 continue;
             }
 
-            InputStreamReader isr = FileHelper.readFileReaderFromSharedStorage(filePath);
-            CSVParser parser = new CSVParser(isr, CSVFormat.DEFAULT.withHeader());
-            Iterator<CSVRecord> iterator = parser.iterator();
+            try {
+                InputStreamReader isr = FileHelper.readFileReaderFromSharedStorage(filePath);
+                CSVParser parser = new CSVParser(isr, CSVFormat.DEFAULT.withHeader());
+                Iterator<CSVRecord> iterator = parser.iterator();
 
-            while (iterator.hasNext()) {
-                CSVRecord record = iterator.next();
+                while (iterator.hasNext()) {
+                    CSVRecord record = iterator.next();
 
-                String eventIdStr = record.get("IDEvent");
-                String apptIdStr = record.get("IDAppointment");
-                String visitIdStr = record.get("IDVisit");
+                    String eventIdStr = record.get("IDEvent");
+                    String apptIdStr = record.get("IDAppointment");
+                    String visitIdStr = record.get("IDVisit");
 
-                Long eventId = Long.valueOf(eventIdStr);
-                
-                Long apptId = null;
-                if (!Strings.isNullOrEmpty(apptIdStr)
-                        && !apptIdStr.equals("-1")) {
-                    apptId = Long.valueOf(apptIdStr);
+                    Long eventId = Long.valueOf(eventIdStr);
+
+                    Long apptId = null;
+                    if (!Strings.isNullOrEmpty(apptIdStr)
+                            && !apptIdStr.equals("-1")) {
+                        apptId = Long.valueOf(apptIdStr);
+                    }
+
+                    Long visitId = null;
+                    if (!Strings.isNullOrEmpty(visitIdStr)
+                            && !visitIdStr.equals("-1")) {
+                        visitId = Long.valueOf(visitIdStr);
+                    }
+
+                    if (apptId != null && visitId != null) {
+                        throw new Exception("Got both appt ID " + apptId + " and visit ID " + visitId + " for event " + eventId + " in " + filePath);
+
+                    } else if (apptId != null) {
+                        ret.put(eventId, "" + apptId);
+
+                    } else if (visitId != null) {
+                        ret.put(eventId, SRVisitTransformer.VISIT_ID_PREFIX + visitId); //SRVisit has a prefix to differentiate from SRAppointment
+
+                    } else {
+                        //do nothing
+                    }
+
                 }
 
-                Long visitId = null;
-                if (!Strings.isNullOrEmpty(visitIdStr)
-                        && !visitIdStr.equals("-1")) {
-                    visitId = Long.valueOf(visitIdStr);
-                }
-
-                if (apptId != null && visitId != null) {
-                    throw new Exception("Got both appt ID " + apptId + " and visit ID " + visitId + " for event " + eventId + " in " + filePath);
-
-                } else if (apptId != null) {
-                    ret.put(eventId, "" + apptId);
-
-                } else if (visitId != null) {
-                    ret.put(eventId, SRVisitTransformer.VISIT_ID_PREFIX + visitId); //SRVisit has a prefix to differentiate from SRAppointment
-
-                } else {
-                    //do nothing
-                }
-
+                parser.close();
+            } catch (Exception ex) {
+                throw new Exception("Exception reading file " + filePath, ex);
             }
-
-            parser.close();
         }
 
         return ret;
