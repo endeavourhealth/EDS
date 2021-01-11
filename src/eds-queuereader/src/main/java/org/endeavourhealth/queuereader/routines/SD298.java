@@ -238,6 +238,18 @@ public class SD298 extends AbstractRoutine {
                     String apptIdStr = record.get("IDAppointment");
                     String visitIdStr = record.get("IDVisit");
 
+                    //check if deleted (deleted column isn't always present)
+                    boolean isDeleted = false;
+                    if (parser.getHeaderMap().containsKey("RemovedData")) {
+                        String removedStr = record.get("RemovedData");
+                        if (removedStr.equals("1")) {
+                            isDeleted = true;
+                        }
+                    }
+                    if (isDeleted) {
+                        continue;
+                    }
+
                     Long eventId = Long.valueOf(eventIdStr);
 
                     Long apptId = null;
