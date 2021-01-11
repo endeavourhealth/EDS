@@ -132,6 +132,7 @@ public class Main {
 		}
 
 		if (args.length>=1 && args[0].equalsIgnoreCase("CQCGETALLLOCATIONS")) {
+			// force new build
 			CQC.getAllCQCLocationIds();
 			System.exit(0);
 		}
