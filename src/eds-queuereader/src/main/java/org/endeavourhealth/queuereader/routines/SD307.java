@@ -224,6 +224,7 @@ public class SD307 extends AbstractRoutine {
                 firstPath = first.getPath();
                 dir = FilenameUtils.getFullPath(firstPath);
                 String newPath = FilenameUtils.concat(dir, "SRManifest.csv");
+                LOG.debug("Adding path to body " + newPath);
 
                 ExchangePayloadFile f = new ExchangePayloadFile();
                 f.setPath(newPath);
@@ -232,6 +233,7 @@ public class SD307 extends AbstractRoutine {
                 filesNoPrefix.add(f);
 
                 String json = JsonSerializer.serialize(filesNoPrefix);
+                LOG.debug("New body: " + json);
                 exchange.setBody(json);
 
                 //TODO - restore this
