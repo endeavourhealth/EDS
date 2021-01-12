@@ -187,7 +187,9 @@ public class SD298 extends AbstractRoutine {
 
                 UUID targetUuid = IdHelper.getEdsResourceId(serviceId, ResourceType.Appointment, target);
                 if (targetUuid == null) {
-                    LOG.warn("No Appointment UUID found for source ID " + target);
+                    //we've got vast amounts of records where the EventLink is pointing to an appt at another practice, because the EventLink
+                    //was transferred into the current practice, but appts aren't. So removing the logging for clarity.
+                    //LOG.warn("No Appointment UUID found for source ID " + target);
                     continue;
                 }
 
