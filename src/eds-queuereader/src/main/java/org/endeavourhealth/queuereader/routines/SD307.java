@@ -16,6 +16,7 @@ import org.endeavourhealth.core.database.dal.audit.ExchangeDalI;
 import org.endeavourhealth.core.database.dal.audit.models.Exchange;
 import org.endeavourhealth.core.fhirStorage.ServiceInterfaceEndpoint;
 import org.endeavourhealth.core.queueing.MessageFormat;
+import org.endeavourhealth.transform.common.AuditWriter;
 import org.endeavourhealth.transform.common.ExchangeHelper;
 import org.endeavourhealth.transform.common.ExchangePayloadFile;
 import org.slf4j.Logger;
@@ -138,11 +139,20 @@ public class SD307 extends AbstractRoutine {
                 }
                 list.add(r);
 
-                //verify if the end date is always the same for records
-                if (firstEndStr == null) {
-                    firstEndStr = endStr;
-                } else if (!firstEndStr.equalsIgnoreCase(endStr)) {
-                    LOG.warn("Got multiple distinct end dates " + firstEndStr + " vs " + endStr + " in " + filePath);
+                //why would any record have an empty start
+                if (Strings.isNullOrEmpty(startStr) && Strings.isNullOrEmpty(endStr)) {
+                    LOG.warn("NULL start and end date for " + fileName + " in " + filePath);
+
+                } else if (Strings.isNullOrEmpty(startStr)) {
+                    LOG.warn("NULL start date for " + fileName + " in " + filePath);
+
+                } else {
+                    //verify if the end date is always the same for records
+                    if (firstEndStr == null) {
+                        firstEndStr = endStr;
+                    } else if (!firstEndStr.equalsIgnoreCase(endStr)) {
+                        LOG.warn("Got multiple distinct end dates " + firstEndStr + " vs " + endStr + " in " + filePath);
+                    }
                 }
             }
 
@@ -245,8 +255,8 @@ public class SD307 extends AbstractRoutine {
                 //LOG.debug("New body: " + json);
                 exchange.setBody(json);
 
-                //TODO - restore this
-                //AuditWriter.writeExchange(exchange);
+                //fix on the DB
+                AuditWriter.writeExchange(exchange);
 
                 return;
             }
