@@ -113,7 +113,7 @@ public class SD305 extends AbstractRoutine {
         List<UUID> batchIdsCreated = new ArrayList<>();
 
         if (!testMode) {
-            newExchange = createNewExchange(service, systemId, MessageFormat.EMIS_CSV, "Manually created to Emis slot and session practitioners (SD-283 and SD-284)");
+            newExchange = createNewExchange(service, systemId, MessageFormat.EMIS_CSV, "Manually created to fix Emis session mappings (SD-305)");
             UUID exchangeId = newExchange.getId();
             filer = new FhirResourceFiler(exchangeId, service.getId(), systemId, new TransformError(), batchIdsCreated);
         }
