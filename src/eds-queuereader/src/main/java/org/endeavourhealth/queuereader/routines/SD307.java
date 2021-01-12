@@ -141,12 +141,25 @@ public class SD307 extends AbstractRoutine {
 
                 //why would any record have an empty start
                 if (Strings.isNullOrEmpty(startStr) && Strings.isNullOrEmpty(endStr)) {
-                    LOG.warn("NULL start and end date for " + fileName + " in " + filePath);
+
+                    //there's something odd about this file and it seems to have null dates in every manifest, so just ignore it
+                    if (!fileName.equals("SRAppointmentAttendees")) {
+                        LOG.warn("NULL start and end date for " + fileName + " in " + filePath);
+                    }
 
                 } else if (Strings.isNullOrEmpty(startStr)) {
-                    LOG.warn("NULL start date for " + fileName + " in " + filePath);
 
-                } else {
+                    //null start is OK if we're a bulk
+                    if (!isBulk) {
+                        LOG.warn("NULL start date for " + fileName + " in " + filePath);
+                    }
+
+                } else if (Strings.isNullOrEmpty(endStr)) {
+                    LOG.warn("NULL end date for " + fileName + " in " + filePath);
+                }
+
+
+                if (!Strings.isNullOrEmpty(endStr)) {
                     //verify if the end date is always the same for records
                     if (firstEndStr == null) {
                         firstEndStr = endStr;
