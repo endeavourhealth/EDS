@@ -103,6 +103,7 @@ public class SD307 extends AbstractRoutine {
 
             //20200705_1707
             DateFormat dateFormat = new SimpleDateFormat("yyyyMMdd_HHmm");
+            String firstEndStr = null;
 
             while (iterator.hasNext()) {
                 CSVRecord record = iterator.next();
@@ -136,6 +137,13 @@ public class SD307 extends AbstractRoutine {
                     r.setTo(dateFormat.parse(endStr));
                 }
                 list.add(r);
+
+                //verify if the end date is always the same for records
+                if (firstEndStr == null) {
+                    firstEndStr = endStr;
+                } else if (!firstEndStr.equalsIgnoreCase(endStr)) {
+                    LOG.warn("Got multiple distinct end dates " + firstEndStr + " vs " + endStr + " in " + filePath);
+                }
             }
 
             parser.close();
@@ -219,8 +227,9 @@ public class SD307 extends AbstractRoutine {
             if (path.endsWith("SRManifest.csv")) {
                 LOG.debug("Found manifest file at " + path);
 
+                //get the file list again, but this time without the storage prefix, so we can use to populate the exchange body from it
                 List<ExchangePayloadFile> filesNoPrefix = ExchangeHelper.parseExchangeBody(exchangeBody, false);
-                first = files.get(0);
+                first = filesNoPrefix.get(0);
                 firstPath = first.getPath();
                 dir = FilenameUtils.getFullPath(firstPath);
                 String newPath = FilenameUtils.concat(dir, "SRManifest.csv");
@@ -233,7 +242,7 @@ public class SD307 extends AbstractRoutine {
                 filesNoPrefix.add(f);
 
                 String json = JsonSerializer.serialize(filesNoPrefix);
-                LOG.debug("New body: " + json);
+                //LOG.debug("New body: " + json);
                 exchange.setBody(json);
 
                 //TODO - restore this
