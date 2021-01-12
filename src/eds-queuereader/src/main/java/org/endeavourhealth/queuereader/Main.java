@@ -24,6 +24,18 @@ public class Main {
 		ConfigManager.initialize("queuereader", configId);
 
 		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("SD305fixEmisSessions")) {
+			boolean includeStartedButNotFinishedServices = Boolean.parseBoolean(args[1]);
+			boolean testMode = Boolean.parseBoolean(args[2]);
+			String odsCodeRegex = null;
+			if (args.length > 3) {
+				odsCodeRegex = args[3];
+			}
+			SD305.fixEmisSessions(includeStartedButNotFinishedServices, testMode, odsCodeRegex);
+			System.exit(0);
+		}
+
+		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("SD298fixTppEncounterLinks")) {
 			boolean includeStartedButNotFinishedServices = Boolean.parseBoolean(args[1]);
 			boolean testMode = Boolean.parseBoolean(args[2]);
