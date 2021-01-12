@@ -194,7 +194,7 @@ public class SD305 extends AbstractRoutine {
             }
 
             String desc = cache.getDescription();
-            if (Strings.isNullOrEmpty(desc)) {
+            if (!Strings.isNullOrEmpty(desc)) {
                 builder.setScheduleName(desc);
             }
 
