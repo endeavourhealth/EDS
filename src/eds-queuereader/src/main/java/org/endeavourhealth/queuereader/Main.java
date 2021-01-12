@@ -1605,9 +1605,9 @@ public class Main {
 			return;
 		}
 
-		LOG.info("----------------------------------------------------");
+		LOG.info("--------------------------------------------------");
 		LOG.info("EDS Queue Reader " + configId);
-		LOG.info("----------------------------------------------------");
+		LOG.info("--------------------------------------------------");
 
 		LOG.info("Fetching queuereader configuration");
 		String configXml = ConfigManager.getConfiguration(configId);
