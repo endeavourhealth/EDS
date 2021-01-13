@@ -82,9 +82,11 @@ public class SD307 extends AbstractRoutine {
         //exchange list is most-recent-first, so go backwards
         for (int i=exchanges.size()-1; i>=0; i--) {
             Exchange exchange = exchanges.get(i);
-            if (!ExchangeHelper.isAllowRequeueing(exchange)) {
+
+            //let these be counted
+            /*if (!ExchangeHelper.isAllowRequeueing(exchange)) {
                 continue;
-            }
+            }*/
 
             String filePath = findFilePathInExchange(exchange, "Manifest");
             if (Strings.isNullOrEmpty(filePath)) {
