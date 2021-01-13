@@ -44,7 +44,7 @@ public class SD317 extends AbstractRoutine {
             BufferedWriter bufferedWriter = new BufferedWriter(osw);
 
             CSVFormat format = CSVFormat.DEFAULT
-                    .withHeader("Name", "ODS Code", "Last Patient", "Diff Patient", "Last Code", "Diff Code", "Last Medication", "Diff Medication"
+                    .withHeader("Name", "ODS Code", "Last Patient", "Diff Patient", "Last Event", "Diff Event", "Last Code", "Diff Code", "Last Medication", "Diff Medication"
                     );
             CSVPrinter printer = new CSVPrinter(bufferedWriter, format);
 
@@ -90,6 +90,7 @@ public class SD317 extends AbstractRoutine {
         LOG.debug("Found " + exchanges.size() + " exchanges");
 
         Date lastPatientFile = null;
+        Date lastEventFile = null;
         Date lastCodeFile = null;
         Date lastMedicationFile = null;
 
@@ -105,6 +106,11 @@ public class SD317 extends AbstractRoutine {
             String filePath = findFilePathInExchange(exchange, "Patient");
             if (!Strings.isNullOrEmpty(filePath)) {
                 lastPatientFile = dataDate;
+            }
+
+            filePath = findFilePathInExchange(exchange, "Event");
+            if (!Strings.isNullOrEmpty(filePath)) {
+                lastEventFile = dataDate;
             }
 
             filePath = findFilePathInExchange(exchange, "Code");
@@ -123,13 +129,13 @@ public class SD317 extends AbstractRoutine {
                 service.getLocalId(),
                 dateFormat(lastPatientFile),
                 dateDiff(lastPatientFile),
+                dateFormat(lastEventFile),
+                dateDiff(lastEventFile),
                 dateFormat(lastCodeFile),
                 dateDiff(lastCodeFile),
                 dateFormat(lastMedicationFile),
                 dateDiff(lastMedicationFile)
         );
-
-        //"Name", "ODS Code", "Last Patient", "Diff Patient", "Last Code", "Diff Code", "Last Medication", "Diff Medication"
     }
 
     private static String dateDiff(Date d) {

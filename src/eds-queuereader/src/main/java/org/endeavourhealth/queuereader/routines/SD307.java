@@ -39,6 +39,8 @@ public class SD307 extends AbstractRoutine {
             ServiceDalI serviceDal = DalProvider.factoryServiceDal();
 
             List<Service> services = serviceDal.getAll();
+            List<Service> servicesWithGaps = new ArrayList<>();
+
             for (Service service : services) {
 
                 Map<String, String> tags = service.getTags();
@@ -52,22 +54,31 @@ public class SD307 extends AbstractRoutine {
                 }
 
                 LOG.debug("Doing " + service);
-                findTppServicesMissingDeltasForService(verbose, service);
+                boolean gapFound = findTppServicesMissingDeltasForService(verbose, service);
+
+                if (gapFound) {
+                    servicesWithGaps.add(service);
+                }
             }
 
             LOG.debug("Finished Finding TPP Services Missing Deltas " + odsCodeRegex);
+
+            LOG.debug("Found " + servicesWithGaps.size() + " services with gaps");
+            for (Service service: servicesWithGaps) {
+                LOG.debug("" + service);
+            }
 
         } catch (Throwable t) {
             LOG.error("", t);
         }
     }
 
-    private static void findTppServicesMissingDeltasForService(boolean verbose, Service service) throws Exception {
+    private static boolean findTppServicesMissingDeltasForService(boolean verbose, Service service) throws Exception {
 
         ServiceInterfaceEndpoint endpoint = SystemHelper.findEndpointForSoftware(service, MessageFormat.TPP_CSV);
         if (endpoint == null) {
             LOG.warn("No emis endpoint found for " + service);
-            return;
+            return false;
         }
 
         UUID serviceId = service.getId();
@@ -177,6 +188,7 @@ public class SD307 extends AbstractRoutine {
         LOG.debug("Cached " + hmFiles.size() + " file metadata, checking...");
 
         DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm");
+        boolean gapFound = false;
 
         List<String> fileNames = new ArrayList<>(hmFiles.keySet());
         fileNames.sort((a, b) -> a.compareToIgnoreCase(b));
@@ -220,6 +232,7 @@ public class SD307 extends AbstractRoutine {
 
                 } else if (currentStart.after(previousEnd)) {
                     LOG.error("    GAP FOUND: exchange " + dateRange.getExchangeId() + " expecting start " + dateFormat.format(previousEnd) + " but got " + dateFormat.format(currentStart));
+                    gapFound = true;
 
                 } else {
                     LOG.error("    GONE BACK: exchange " + dateRange.getExchangeId() + " expecting start " + dateFormat.format(previousEnd) + " but got " + dateFormat.format(currentStart));
@@ -228,6 +241,8 @@ public class SD307 extends AbstractRoutine {
                 lastDateRange = dateRange;
             }
         }
+
+        return gapFound;
     }
 
     /**
