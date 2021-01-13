@@ -46,6 +46,7 @@ public class PostMessageToExchange extends PipelineComponent {
 
 		//if the exchange is flagged so as to prevent re-queuing, then ignore it
 		if (!ExchangeHelper.isAllowRequeueing(exchange)) {
+			LOG.warn("Not queueing exchange " + exchange.getId() + " because flagged to prevent it");
 			return false;
 		}
 
@@ -64,81 +65,39 @@ public class PostMessageToExchange extends PipelineComponent {
 		Channel channel = getChannel(connection);
 
 		//copy the headers from the exchange, since we may be changing it
-		Map<String, Object> headers = new HashMap<>();
-		for (String key : exchange.getHeaders().keySet()) {
-			//skip the authorization header, since that's comparatively huge and there's no need to carry it through RabbbitMQ
-			if (key.equalsIgnoreCase("authorization")) {
-				continue;
-			}
-			headers.put(key, exchange.getHeader(key));
-		}
-
-		AMQP.BasicProperties properties = new AMQP.BasicProperties()
-				.builder()
-				.deliveryMode(2)    // Persistent message
-				.headers(headers)
-				.build();
+		Map<String, Object> headers = copyHeaders(exchange);
+		boolean wasLastMessage = ExchangeHelper.isLastMessage(exchange);
 
 		// Handle multicast
 		String multicastHeader = config.getMulticastHeader();
 		if (Strings.isNullOrEmpty(multicastHeader)) {
 
-			//LOG.trace("Posting exchange {} to Rabbit exchange {} with routing key {}", messageUuid, config.getExchange(), routingKey);
-			publishMessage(routingKey, messageUuid, channel, properties);
+			//if we have no multicast setting, then just send a single message
+			publishMessage(routingKey, messageUuid, channel, headers, wasLastMessage, true);
 
 		} else {
-			//LOG.trace("Posting exchange {} to Rabbit exchange {} with routing key {} and multicast header {}", messageUuid, config.getExchange(), routingKey, multicastHeader);
+			//if we have a multicast setting, then get it out of the exchange header map
 			String multicastData = exchange.getHeader(multicastHeader);
-
-			//adding handler for when we're missing multicast header data
 			if (Strings.isNullOrEmpty(multicastData)) {
 				throw new PipelineException("No multicast data for " + multicastHeader + " to post exchange " + exchange.getId() + " to " + config.getExchange());
 			}
 
 			try {
 				Object[] multicastItems = ObjectMapperPool.getInstance().readValue(multicastData, Object[].class);
+				Throttle throttle = Throttle.factory(multicastItems.length, exchange.getId());
 
-				int perSecondThrottle = TransformConfig.instance().getRabbitMessagePerSecondThrottle();
-				boolean applyThrottle = multicastItems.length > perSecondThrottle;
-				if (applyThrottle) {
-					LOG.info("Got " + multicastItems.length + " message to post for exchange " + exchange.getId() + ", but will throttle to " + perSecondThrottle + " /sec");
-				}
-				long startMs = System.currentTimeMillis();
-				int doneThisSecond = 0;
-				int doneTotal = 0;
-
-				for (Object multicastItem : multicastItems) {
+				for (int i=0; i<multicastItems.length; i++) {
+					Object multicastItem = multicastItems[i];
 					String itemData = ObjectMapperPool.getInstance().writeValueAsString(multicastItem);
-					// Replace header list with individual value
+					boolean isLastMessage = (i+1) == multicastItems.length;
+
+					//replace multicast header with individual item
 					headers.put(multicastHeader, itemData);
-					properties = properties.builder().headers(headers).build();
-					publishMessage(routingKey, messageUuid, channel, properties);
+					publishMessage(routingKey, messageUuid, channel, headers, wasLastMessage, isLastMessage);
 
-					if (applyThrottle) {
-						doneThisSecond++;
-						doneTotal++;
-
-						if (doneThisSecond > perSecondThrottle) {
-							long now = System.currentTimeMillis();
-							long sleep = 1000 - (now - startMs);
-
-							if (sleep > 0) {
-								try {
-									Thread.sleep(sleep);
-								} catch (Exception ex) {
-									LOG.error("", ex);
-								}
-							}
-
-							startMs = System.currentTimeMillis();
-							doneThisSecond = 0;
-						}
-
-						if (doneTotal % perSecondThrottle == 0) {
-							LOG.info("Done " + doneTotal);
-						}
-					}
+					throttle.applyBreaks();
 				}
+
 			} catch (IOException e) {
 				throw new PipelineException("Could not parse multicast data", e);
 			}
@@ -148,6 +107,26 @@ public class PostMessageToExchange extends PipelineComponent {
 		closeChannel(channel);
 		return true;
 	}
+
+	private static Map<String, Object> copyHeaders(Exchange exchange) {
+		Map<String, Object> ret = new HashMap<>();
+		for (String key : exchange.getHeaders().keySet()) {
+
+			//skip the authorization header, since that's comparatively huge and there's no need to carry it through RabbbitMQ
+			if (key.equalsIgnoreCase("authorization")) {
+				continue;
+			}
+
+			ret.put(key, exchange.getHeader(key));
+		}
+		return ret;
+	}
+
+	private boolean isAddLastMessageFlag() {
+		Boolean b = this.config.isAddLastMessageFlag();
+		return b != null && b.booleanValue();
+	}
+
 
 	/**
 	 * works out if the service and system have been set into "bulk" mode which is factored in to
@@ -181,7 +160,7 @@ public class PostMessageToExchange extends PipelineComponent {
 			} catch (IOException e) {
 				LOG.warn("Couldn't close Rabbit channel : ", e);
 			} catch (TimeoutException e) {
-				e.printStackTrace();
+				LOG.error("", e);
 			}
 	}
 
@@ -191,17 +170,34 @@ public class PostMessageToExchange extends PipelineComponent {
 				throw new PipelineException("Messages posted but not confirmed");
 			}
 		} catch (InterruptedException e) {
-			e.printStackTrace();
+			LOG.error("", e);
 		}
 	}
 
-	private void publishMessage(String routingKey, UUID messageUuid, Channel channel, AMQP.BasicProperties properties) throws PipelineException {
+	private void publishMessage(String routingKey, UUID messageUuid, Channel channel, Map<String, Object> headers, boolean wasLastMessage, boolean isLastMessage) throws PipelineException {
+
+		//set or remove the "last message" flag accordingly:
+		//if this IS the last message and we're configured to add the flag, do so
+		//if this WAS the last message, then persist the flag
+		if ((isLastMessage && isAddLastMessageFlag()) || wasLastMessage) {
+			headers.put(HeaderKeys.LastMessageForExchange, Boolean.TRUE.toString());
+		}
+
+		//build the RabbitMQ property object from our headers
+		AMQP.BasicProperties properties = new AMQP.BasicProperties()
+				.builder()
+				.deliveryMode(2) //Persistent message
+				.headers(headers)
+				.build();
+
+		//and post to RabbitMQ
 		try {
 			channel.basicPublish(
 					config.getExchange(),
 					routingKey,
 					properties,
 					messageUuid.toString().getBytes());
+
 		} catch (IOException e) {
 			LOG.error("Unable to publish message", e);
 			throw new PipelineException("Unable to publish message: " + e.getMessage(), e);
@@ -270,4 +266,63 @@ public class PostMessageToExchange extends PipelineComponent {
 		return RoutingManager.getInstance().getRoutingKeyForIdentifier(exchangeName, fullRoutingValue);
 	}
 
+	static class Throttle {
+
+		private int perSecondThrottle;
+		private long startMs;
+		private int doneThisSecond;
+		private int doneTotal;
+
+		private Throttle(int perSecondThrottle) {
+			this.perSecondThrottle = perSecondThrottle;
+			this.startMs = System.currentTimeMillis();
+			this.doneThisSecond = 0;
+			this.doneTotal = 0;
+		}
+
+		public void applyBreaks() {
+
+			//if we don't want to apply any throttling, this will be set to -1
+			if (perSecondThrottle == -1) {
+				return;
+			}
+
+			doneThisSecond++;
+			doneTotal++;
+
+			if (doneThisSecond > perSecondThrottle) {
+				long now = System.currentTimeMillis();
+				long sleep = 1000 - (now - startMs);
+
+				if (sleep > 0) {
+					try {
+						Thread.sleep(sleep);
+					} catch (Exception ex) {
+						LOG.error("", ex);
+					}
+				}
+
+				startMs = System.currentTimeMillis();
+				doneThisSecond = 0;
+			}
+
+			if (doneTotal % perSecondThrottle == 0) {
+				LOG.info("Done " + doneTotal);
+			}
+		}
+
+		public static Throttle factory(int numItems, UUID exchangeId) {
+			int perSecondThrottle = TransformConfig.instance().getRabbitMessagePerSecondThrottle();
+			boolean applyThrottle = numItems > perSecondThrottle;
+			if (applyThrottle) {
+				LOG.info("Got " + numItems + " message to post for exchange " + exchangeId + ", but will throttle to " + perSecondThrottle + " /sec");
+				return new Throttle(perSecondThrottle);
+
+			} else {
+				//if not throttling, still return an instance, but set to -1 so we know to not actually apply any breaks
+				return new Throttle(-1);
+			}
+		}
+
+	}
 }

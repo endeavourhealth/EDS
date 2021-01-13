@@ -229,6 +229,13 @@ public class MessageTransformInbound extends PipelineComponent {
 		//if we make it here, we fully transformed OK
 		updateDataProcessed(exchange);
 
+		//if our transform didn't generate any batch IDs we still need to send something through the
+		//queues so that we update the last_data_to_subscriber table that records that subscribers are up-to-date,
+		//so use add this special "dummy" UUID
+		if (batchIds.isEmpty()) {
+			batchIds.add(ExchangeHelper.DUMMY_BATCH_ID);
+		}
+
 		return batchIds;
 	}
 

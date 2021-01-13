@@ -29,6 +29,7 @@ import org.endeavourhealth.core.messaging.pipeline.TransformBatch;
 import org.endeavourhealth.core.queueing.QueueHelper;
 import org.endeavourhealth.core.subscribers.SubscriberHelper;
 import org.endeavourhealth.core.xml.QueryDocument.LibraryItem;
+import org.endeavourhealth.transform.common.ExchangeHelper;
 import org.endeavourhealth.transform.subscriber.SubscriberConfig;
 import org.hl7.fhir.instance.model.*;
 import org.slf4j.Logger;
@@ -80,23 +81,34 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 
 				TransformBatch.TransformAction action = null;
 
-				//check if this batch falls into the protocol cohort
-				UUID patientId = tmpCache.findPatientId();
-				if (patientId == null) {
-					//for admin data, we always just let the delta through
+				//if an inbound transform didn't generate any batches, then it'll send through this
+				//dummy UUID so we still have messages going through the queues
+				if (batchId.equals(ExchangeHelper.DUMMY_BATCH_ID)) {
+					//if the dummy batch, there's no action to take
+					action = TransformBatch.TransformAction.NONE;
+
+				} else if (tmpCache.findPatientId() == null) {
+					//for admin data we might want to do a delta for a full load
 					action = calculateActionForAdminData(exchange, batchId, subscriberConfigName);
 
 				} else {
+					//for patient batches we need to look at the subscriber cohort definition
 					action = calculateActionForPatientData(tmpCache, exchange, subscriberConfigName);
 				}
 
-				if (action != null) {
-					TransformBatch transformBatch = new TransformBatch();
-					transformBatch.setBatchId(batchId);
-					transformBatch.setSubscriberConfigName(subscriberConfigName);
-					transformBatch.setAction(action);
-					transformBatches.add(transformBatch);
+				//if there is no action to take and we're not flagged as the last message, then
+				//don't bother creating the TransformBatch as there's no point in sending extra messages through RabbitMQ
+				if (action == TransformBatch.TransformAction.NONE
+					&& !ExchangeHelper.isLastMessage(exchange)) {
+					continue;
 				}
+
+				//create the TransformBatch for our outbound transform
+				TransformBatch transformBatch = new TransformBatch();
+				transformBatch.setBatchId(batchId);
+				transformBatch.setSubscriberConfigName(subscriberConfigName);
+				transformBatch.setAction(action);
+				transformBatches.add(transformBatch);
 
 			} catch (Exception ex) {
 				throw new PipelineException("Error checking cohort for " + subscriberConfigName, ex);
@@ -130,7 +142,7 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 
 			//if a bulk delete, then we don't need to worry about admin data, so just ignore it
 			LOG.trace("Admin batch " + batchId + " for bulk delete will be ignored for " + subscriberConfigName);
-			return null;
+			return TransformBatch.TransformAction.NONE;
 
 		} else { //this includes QUICK_REFRESH
 
@@ -235,7 +247,7 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 						dal.saveCohortRecord(newResult);
 					}
 					//leave ACTION null
-					return null;
+					return TransformBatch.TransformAction.NONE;
 
 				} else {
 					//if not in cohort now but previously was, then we need to do a full delete

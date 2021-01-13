@@ -77,7 +77,7 @@ public class SD307 extends AbstractRoutine {
 
         ServiceInterfaceEndpoint endpoint = SystemHelper.findEndpointForSoftware(service, MessageFormat.TPP_CSV);
         if (endpoint == null) {
-            LOG.warn("No emis endpoint found for " + service);
+            LOG.warn("No TPP endpoint found for " + service);
             return false;
         }
 

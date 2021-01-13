@@ -3,7 +3,6 @@ package org.endeavourhealth.core.messaging.pipeline.components;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.base.Strings;
-import com.google.common.collect.Lists;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.core.configuration.MessageTransformOutboundConfig;
@@ -26,6 +25,7 @@ import org.endeavourhealth.core.messaging.pipeline.TransformBatch;
 import org.endeavourhealth.core.xml.TransformErrorSerializer;
 import org.endeavourhealth.core.xml.TransformErrorUtility;
 import org.endeavourhealth.core.xml.transformError.TransformError;
+import org.endeavourhealth.transform.common.ExchangeHelper;
 import org.endeavourhealth.transform.enterprise.FhirToEnterpriseCsvTransformer;
 import org.endeavourhealth.transform.subscriber.FhirToSubscriberCsvTransformer;
 import org.endeavourhealth.transform.subscriber.SubscriberConfig;
@@ -37,7 +37,6 @@ import org.joda.time.Years;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.*;
 
 
@@ -59,7 +58,7 @@ public class MessageTransformOutbound extends PipelineComponent {
     public void process(Exchange exchange) throws PipelineException {
 
         UUID exchangeId = exchange.getId();
-        List<TransformBatch> transformBatches = getTransformBatches(exchange);
+        List<TransformBatch> transformBatches = TransformBatch.getTransformBatches(exchange);
         if (transformBatches.isEmpty()) {
             //if there's nothing to send to any subscribers, then we'll still end up in the Transform queue
             //but with an empty list of batches. So just drop out of the transform.
@@ -84,14 +83,17 @@ public class MessageTransformOutbound extends PipelineComponent {
 
             try {
 
-                //do the outbound transform
-                String outboundData = performTransform(exchange, batchId, resourceWrappers, subscriberConfigName, action);
+                //do the outbound transform unless the batch ID is the dummy one (i.e. an aritifical batch because an inbound transformo
+                //didn't generate any changes) or the action is NONE (i.e. the patient is not in the subscriber cohort)
+                String outboundData = null;
+                if (!batchId.equals(ExchangeHelper.DUMMY_BATCH_ID)
+                        && batch.getAction() != TransformBatch.TransformAction.NONE) {
+                    outboundData = performTransform(exchange, batchId, resourceWrappers, subscriberConfigName, action);
+                }
 
-                //if we've got data to send to our subscriber, then store it
+                //if we've got data to send to our subscriber, then store it in the queued message table
                 UUID queuedMessageId = null;
                 if (!Strings.isNullOrEmpty(outboundData)) {
-
-                    // Store transformed message
                     queuedMessageId = UUID.randomUUID();
 
                     try {
@@ -100,6 +102,12 @@ public class MessageTransformOutbound extends PipelineComponent {
                     } catch (Exception ex) {
                         throw new PipelineException("Failed to save queued message", ex);
                     }
+                }
+
+                //if we've got a queued message OR we're the last message from the original inbound data, then
+                //create a subscriber batch for the subscriber Queue Reader to actually send to the subscriber
+                if (queuedMessageId != null
+                        || ExchangeHelper.isLastMessage(exchange)) {
 
                     SubscriberBatch subscriberBatch = new SubscriberBatch();
                     subscriberBatch.setQueuedMessageId(queuedMessageId);
@@ -164,6 +172,11 @@ public class MessageTransformOutbound extends PipelineComponent {
 
     private UUID findPatientId(UUID exchangeId, UUID batchId) throws PipelineException {
 
+        //if the batch ID is the placeholder to represent the last message in an exchange then there's no patient ID
+        if (batchId.equals(ExchangeHelper.DUMMY_BATCH_ID)) {
+            return null;
+        }
+
         try {
             ExchangeBatchDalI exchangeBatchDal = DalProvider.factoryExchangeBatchDal();
             ExchangeBatch exchangeBatch = exchangeBatchDal.getForExchangeAndBatchId(exchangeId, batchId);
@@ -198,139 +211,7 @@ public class MessageTransformOutbound extends PipelineComponent {
         }
     }
 
-	/*private static void sendHttpPost(String payload, String url) throws Exception {
 
-		//String url = "http://127.0.0.1:8002/notify";
-		//String url = "http://localhost:8002";
-		//String url = "http://posttestserver.com/post.php";
-
-		if (url == null || url.length() <= "http://".length()) {
-			LOG.trace("No/invalid url : [" + url + "]");
-			return;
-		}
-
-		HttpClient client = HttpClientBuilder.create().build();
-		HttpPost post = new HttpPost(url);
-
-
-		// add header
-		//post.setHeader("User-Agent", USER_AGENT);
-
-		*//*List<NameValuePair> urlParameters = new ArrayList<NameValuePair>();
-        urlParameters.add(new BasicNameValuePair("sn", "C02G8416DRJM"));
-		urlParameters.add(new BasicNameValuePair("cn", ""));
-		urlParameters.add(new BasicNameValuePair("locale", ""));
-		urlParameters.add(new BasicNameValuePair("caller", ""));
-		urlParameters.add(new BasicNameValuePair("num", "12345"));
-
-		post.setEntity(new UrlEncodedFormEntity(urlParameters));*//*
-
-		HttpEntity entity = new ByteArrayEntity(payload.getBytes("UTF-8"));
-		post.setEntity(entity);
-
-		LOG.trace("Sending 'POST' request to URL : " + url);
-		LOG.trace("Post parameters : " + post.getEntity());
-
-		HttpResponse response = client.execute(post);
-		LOG.trace("Response Code : " + response.getStatusLine().getStatusCode());
-
-		BufferedReader rd = new BufferedReader(new InputStreamReader(response.getEntity().getContent()));
-
-		StringBuffer result = new StringBuffer();
-		String line = "";
-		while ((line = rd.readLine()) != null) {
-			result.append(line);
-		}
-
-		LOG.trace(result.toString());
-
-		int statusCode = response.getStatusLine().getStatusCode();
-		if (statusCode != HttpStatus.SC_OK) {
-			throw new IOException("Failed to post to " + url);
-		}
-	}*/
-
-	/*@Override
-	public void process(Exchange exchange) throws PipelineException {
-		// Get the transformation data from the exchange
-		// List of resources and subscriber service contracts
-		TransformBatch transformBatch = getTransformBatch(exchange);
-
-		// Get distinct list of technical interfaces that these resources need transforming to
-		List<TechnicalInterface> interfaces = transformBatch.getSubscribers().stream()
-				.map(sc -> sc.getTechnicalInterface())
-				.distinct()
-				.collect(Collectors.toList());
-
-		// Run the transform, creating a subscriber batch for each
-		// (Holds transformed message id and destination endpoints)
-		List<SubscriberBatch> subscriberBatches = new ArrayList<>();
-
-		for (TechnicalInterface technicalInterface : interfaces) {
-			SubscriberBatch subscriberBatch = new SubscriberBatch();
-			subscriberBatch.setTechnicalInterface(technicalInterface);
-			List<String> endpoints = getSubscriberEndpoints(transformBatch);
-			subscriberBatch.getEndpoints().addAll(endpoints);
-
-			try {
-				String serviceIdStr = exchange.getHeader(HeaderKeys.SenderServiceUuid);
-				UUID serviceId = UUID.fromString(serviceIdStr);
-				String orgIdStr = exchange.getHeader(HeaderKeys.SenderOrganisationUuid);
-				UUID orglId = UUID.fromString(orgIdStr);
-
-				String outbound = EnterpriseFhirTransformer.transformFromFhir(serviceId, orgId, transformBatch.getBatchId(), null);
-				EnterpriseFiler.file(outbound);
-
-				throw new PipelineException("Transform out not implemented", ex);
-
-				// Store transformed message
-				UUID messageUuid = UUID.randomUUID();
-				new QueuedMessageRepository().save(messageUuid, outbound);
-				subscriberBatch.setOutputMessageId(messageUuid);
-
-				subscriberBatches.add(subscriberBatch);
-			} catch (Exception ex) {
-				throw new PipelineException("Exception tranforming to CEG CSV", ex);
-			}
-		}
-
-		String subscriberBatchesJson = null;
-		try {
-			subscriberBatchesJson = ObjectMapperPool.getInstance().writeValueAsString(subscriberBatches);
-		} catch (JsonProcessingException e) {
-			LOG.error("Error serializing subscriber batch JSON", e);
-			throw new PipelineException("Error serializing subscriber batch JSON", e);
-		}
-		exchange.setHeader(HeaderKeys.SubscriberBatch, subscriberBatchesJson);
-		LOG.trace("Message transformed (outbound)");
-	}*/
-
-
-
-
-    /**
-     * returns the transform batches from the exchange header key
-     */
-    public static List<TransformBatch> getTransformBatches(Exchange exchange) throws PipelineException {
-        String transformBatchJson = exchange.getHeader(HeaderKeys.TransformBatch);
-
-        //depending on whether new way or old way, we may have a single batch or an array of them - handle both
-        try {
-            TransformBatch[] arr = ObjectMapperPool.getInstance().readValue(transformBatchJson, TransformBatch[].class);
-            return Lists.newArrayList(arr);
-
-        } catch (IOException e) {
-            try {
-                TransformBatch batch = ObjectMapperPool.getInstance().readValue(transformBatchJson, TransformBatch.class);
-                List<TransformBatch> ret = new ArrayList<>();
-                ret.add(batch);
-                return ret;
-
-            } catch (IOException ex) {
-                throw new PipelineException("Error deserializing transformation batch JSON", ex);
-            }
-        }
-    }
 
 
     private static void saveTransformAudit(UUID exchangeId, UUID batchId, String subscriberConfigName, Date started,

@@ -14,6 +14,7 @@ import org.endeavourhealth.core.xml.TransformErrorUtility;
 import org.endeavourhealth.core.xml.transformError.TransformError;
 import org.endeavourhealth.subscriber.filer.EnterpriseFiler;
 import org.endeavourhealth.subscriber.filer.SubscriberFiler;
+import org.endeavourhealth.transform.common.ExchangeHelper;
 import org.endeavourhealth.transform.subscriber.SubscriberConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,15 +38,24 @@ public class PostToSubscriberWebService extends PipelineComponent {
 	public void process(Exchange exchange) throws PipelineException {
 
 		SubscriberBatch subscriberBatch = SubscriberBatch.getSubscriberBatch(exchange);
-
+		UUID batchId = findBatchId(exchange);
 		UUID queuedMessageId = subscriberBatch.getQueuedMessageId();
+
+		//validate we've data to send to the subscriber
 		if (queuedMessageId == null) {
-			//we may not have a queued message ID if we're just passing a message through RabbitMQ to
-			//track the last message from an exchange being applied, so just return out if so
-			return;
+			//we may legitimately not have a queued message ID if our message was flagged as the last
+			//one in an exchange but the transform didn't generate any data to send to subscribers
+			if (ExchangeHelper.isLastMessage(exchange)) {
+				return;
+
+			} else {
+				//if we've got a null queued message ID but aren't the last message, then
+				//something has gone weirdly wrong
+				throw new PipelineException("Null queued message ID for exchange " + exchange);
+			}
 		}
 
-		UUID batchId = findBatchId(exchange);
+
 		UUID exchangeId = exchange.getId();
 		String subscriberConfigName = subscriberBatch.getEndpoint();
 
@@ -63,20 +73,24 @@ public class PostToSubscriberWebService extends PipelineComponent {
 				return;
 			}
 
+			//actually send the data to the subscriber (for local subscriber DBs this will actually apply it to the DB)
 			sendToSubscriberNewWay(payload, exchangeId, batchId, queuedMessageId, subscriberConfigName);
 
+			//audit the sucessful sending
 			auditSending(exchangeId, batchId, subscriberConfigName, queuedMessageId, null);
 
+			//tidy up queued message table
 			queuedMessageDal.delete(queuedMessageId);
 
 		} catch (Exception ex) {
+			//audit the failure and throw the exception
 			auditSending(exchangeId, batchId, subscriberConfigName, queuedMessageId, ex);
 			throw new PipelineException("Failed to send to " + subscriberConfigName + " for exchange " + exchangeId + " and batch " + batchId + " and queued message " + queuedMessageId, ex);
 		}
 	}
 
 	private UUID findBatchId(Exchange exchange) throws PipelineException {
-		List<TransformBatch> transformBatches = MessageTransformOutbound.getTransformBatches(exchange);
+		List<TransformBatch> transformBatches = TransformBatch.getTransformBatches(exchange);
 		return MessageTransformOutbound.getBatchId(transformBatches);
 	}
 
