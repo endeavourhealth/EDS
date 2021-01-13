@@ -172,7 +172,7 @@ public class SD307 extends AbstractRoutine {
             parser.close();
         }
 
-        LOG.debug("Cached file metadata, checking...");
+        LOG.debug("Cached " + hmFiles.size() + " file metadata, checking...");
 
         DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm");
 
@@ -188,6 +188,10 @@ public class SD307 extends AbstractRoutine {
             }*/
 
             DateRange lastDateRange = list.get(0);
+            if (verbose) {
+                LOG.debug("    " + lastDateRange);
+            }
+
             for (int i=1; i<list.size(); i++) {
                 DateRange dateRange = list.get(i);
 
