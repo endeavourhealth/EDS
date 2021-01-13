@@ -24,6 +24,13 @@ public class Main {
 		ConfigManager.initialize("queuereader", configId);
 
 		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("SD299fixingTppVisits")) {
+			boolean includeStartedButNotFinishedServices = Boolean.parseBoolean(args[1]);
+			SD299.fixingTppVisits(includeStartedButNotFinishedServices);
+			System.exit(0);
+		}
+
+		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("SD317findTppServicesMissingClinicalData")) {
 			boolean verbose = Boolean.parseBoolean(args[1]);
 			String odsCodeRegex = null;
