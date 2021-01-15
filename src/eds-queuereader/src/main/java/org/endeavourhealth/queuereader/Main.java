@@ -3,12 +3,17 @@ package org.endeavourhealth.queuereader;
 import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.core.configuration.ConfigDeserialiser;
 import org.endeavourhealth.core.configuration.QueueReaderConfiguration;
+import org.endeavourhealth.core.database.rdbms.ConnectionManager;
 import org.endeavourhealth.core.queueing.QueueHelper;
 import org.endeavourhealth.queuereader.routines.*;
 import org.endeavourhealth.transform.common.TransformConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.persistence.EntityManager;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashSet;
@@ -19,9 +24,42 @@ public class Main {
 	private static final Logger LOG = LoggerFactory.getLogger(Main.class);
 
 	public static void main(String[] args) throws Exception {
+
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("TestUserManagerConnection")) {
+
+			LOG.info("Testing User Manager Connection");
+			String appId = "FHIR_API";
+			ConfigManager.Initialize(appId);
+
+			LOG.debug("Raw Connection Test");
+			Connection connection = ConnectionManager.getUserManagerConnection();
+			String sql = "SELECT 1";
+			PreparedStatement ps = connection.prepareStatement(sql);
+			ResultSet rs = ps.executeQuery();
+			LOG.debug("Executed query");
+			while (rs.next()) {
+				Object obj = rs.getObject(1);
+				LOG.debug("Got " + obj);
+			}
+			ps.close();
+			connection.close();
+			LOG.debug("Finished Raw Connection Test");
+
+			LOG.debug("Getting Entity Manager");
+			EntityManager entityManager = ConnectionManager.getUmEntityManager();
+			LOG.debug("Got Entity Manager");
+			entityManager.close();
+
+			System.exit(0);
+			return;
+		}
+
 		String configId = args[0];
 		LOG.info("Initialising config manager");
 		ConfigManager.initialize("queuereader", configId);
+
+
 
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("SD322fixTppSessions")) {
