@@ -171,7 +171,8 @@ public class SD305 extends AbstractRoutine {
 
             Schedule schedule = (Schedule)resourceDal.getCurrentVersionAsResource(serviceId, ResourceType.Schedule, scheduleUuid.toString());
             if (schedule == null) {
-                LOG.warn("Missing or deleted schedule for UUID " + scheduleUuid + ", raw ID " + sessionGuid);
+                //there are a lot of deleted schedules, so don't bother with all this logging
+                //LOG.warn("Missing or deleted schedule for UUID " + scheduleUuid + ", raw ID " + sessionGuid);
                 continue;
             }
 

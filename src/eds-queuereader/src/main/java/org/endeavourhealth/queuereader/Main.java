@@ -24,6 +24,17 @@ public class Main {
 		ConfigManager.initialize("queuereader", configId);
 
 		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("SD322fixTppSessions")) {
+			boolean includeStartedButNotFinishedServices = Boolean.parseBoolean(args[1]);
+			String odsCodeRegex = null;
+			if (args.length > 2) {
+				odsCodeRegex = args[2];
+			}
+			SD322.fixTppSessions(includeStartedButNotFinishedServices, odsCodeRegex);
+			System.exit(0);
+		}
+
+		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("SD299fixingTppVisits")) {
 			boolean includeStartedButNotFinishedServices = Boolean.parseBoolean(args[1]);
 			SD299.fixingTppVisits(includeStartedButNotFinishedServices);
