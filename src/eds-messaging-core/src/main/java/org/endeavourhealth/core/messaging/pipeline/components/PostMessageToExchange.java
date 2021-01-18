@@ -50,8 +50,6 @@ public class PostMessageToExchange extends PipelineComponent {
 			return false;
 		}
 
-		String routingKey = getRoutingKey(exchange, config);
-
 		// Generate message identifier and store message in db
 		UUID messageUuid = exchange.getId();
 		try {
@@ -65,14 +63,17 @@ public class PostMessageToExchange extends PipelineComponent {
 		Channel channel = getChannel(connection);
 
 		//copy the headers from the exchange, since we may be changing it
-		Map<String, Object> headers = copyHeaders(exchange);
+		Map<String, String> headers = copyHeaders(exchange);
 		boolean wasLastMessage = ExchangeHelper.isLastMessage(exchange);
+
+		boolean bulkMode = isBulkMode(exchange);
 
 		// Handle multicast
 		String multicastHeader = config.getMulticastHeader();
 		if (Strings.isNullOrEmpty(multicastHeader)) {
 
 			//if we have no multicast setting, then just send a single message
+			String routingKey = getRoutingKey(bulkMode, headers, config);
 			publishMessage(routingKey, messageUuid, channel, headers, wasLastMessage, true);
 
 		} else {
@@ -93,6 +94,7 @@ public class PostMessageToExchange extends PipelineComponent {
 
 					//replace multicast header with individual item
 					headers.put(multicastHeader, itemData);
+					String routingKey = getRoutingKey(bulkMode, headers, config);
 					publishMessage(routingKey, messageUuid, channel, headers, wasLastMessage, isLastMessage);
 
 					throttle.applyBreaks();
@@ -108,8 +110,8 @@ public class PostMessageToExchange extends PipelineComponent {
 		return true;
 	}
 
-	private static Map<String, Object> copyHeaders(Exchange exchange) {
-		Map<String, Object> ret = new HashMap<>();
+	private static Map<String, String> copyHeaders(Exchange exchange) {
+		Map<String, String> ret = new HashMap<>();
 		for (String key : exchange.getHeaders().keySet()) {
 
 			//skip the authorization header, since that's comparatively huge and there's no need to carry it through RabbbitMQ
@@ -132,25 +134,30 @@ public class PostMessageToExchange extends PipelineComponent {
 	 * works out if the service and system have been set into "bulk" mode which is factored in to
 	 * the routing, allowing us to route exchanges for services differently to how they otherwise would be
      */
-	private static boolean isBulkMode(Exchange exchange) throws Exception {
+	private static boolean isBulkMode(Exchange exchange) throws PipelineException {
 
 		UUID serviceId = exchange.getHeaderAsUuid(HeaderKeys.SenderServiceUuid);
 		UUID systemId = exchange.getHeaderAsUuid(HeaderKeys.SenderSystemUuid);
 
-		ServiceDalI serviceDal = DalProvider.factoryServiceDal();
-		Service service = serviceDal.getById(serviceId);
-		for (ServiceInterfaceEndpoint serviceInterface: service.getEndpointsList()) {
-			if (serviceInterface.getSystemUuid().equals(systemId)) {
+		try {
+			ServiceDalI serviceDal = DalProvider.factoryServiceDal();
+			Service service = serviceDal.getById(serviceId);
+			for (ServiceInterfaceEndpoint serviceInterface : service.getEndpointsList()) {
+				if (serviceInterface.getSystemUuid().equals(systemId)) {
 
-				String publisherStatus = serviceInterface.getEndpoint();
-				if (publisherStatus != null
-						&& publisherStatus.equals(ServiceInterfaceEndpoint.STATUS_BULK_PROCESSING)) {
-					return true;
+					String publisherStatus = serviceInterface.getEndpoint();
+					if (publisherStatus != null
+							&& publisherStatus.equals(ServiceInterfaceEndpoint.STATUS_BULK_PROCESSING)) {
+						return true;
+					}
 				}
 			}
+			return false;
+
+		} catch (Exception ex) {
+			throw new PipelineException("Failed to detect bulk mode for exchange " + exchange.getId(), ex);
 		}
 
-		return false;
 	}
 
 	private void closeChannel(Channel channel) {
@@ -174,7 +181,7 @@ public class PostMessageToExchange extends PipelineComponent {
 		}
 	}
 
-	private void publishMessage(String routingKey, UUID messageUuid, Channel channel, Map<String, Object> headers, boolean wasLastMessage, boolean isLastMessage) throws PipelineException {
+	private void publishMessage(String routingKey, UUID messageUuid, Channel channel, Map<String, String> headers, boolean wasLastMessage, boolean isLastMessage) throws PipelineException {
 
 		//set or remove the "last message" flag accordingly:
 		//if this IS the last message and we're configured to add the flag, do so
@@ -183,11 +190,18 @@ public class PostMessageToExchange extends PipelineComponent {
 			headers.put(HeaderKeys.LastMessageForExchange, Boolean.TRUE.toString());
 		}
 
+		//we need a map of String to Object, so copy and change
+		Map<String, Object> headerCopy = new HashMap<>();
+		for (String headerKey: headers.keySet()) {
+			String headerVal = headers.get(headerKey);
+			headerCopy.put(headerKey, headerVal);
+		}
+
 		//build the RabbitMQ property object from our headers
 		AMQP.BasicProperties properties = new AMQP.BasicProperties()
 				.builder()
 				.deliveryMode(2) //Persistent message
-				.headers(headers)
+				.headers(headerCopy)
 				.build();
 
 		//and post to RabbitMQ
@@ -237,26 +251,21 @@ public class PostMessageToExchange extends PipelineComponent {
 		}
 	}
 
-	public static String getRoutingKey(Exchange exchange, PostMessageToExchangeConfig config) throws PipelineException {
+	public static String getRoutingKey(boolean bulkMode, Map<String, String> headers, PostMessageToExchangeConfig config) throws PipelineException {
 
 		List<String> routingValues = new ArrayList<>();
 
-		//if the service/system has been set into bulk mode, then factor this into the routing key
-		try {
-			boolean bulkMode = isBulkMode(exchange);
-			if (bulkMode) {
-				routingValues.add("BULK");
-			}
-		} catch (Exception ex) {
-			throw new PipelineException("Failed to determine if in bulk mode", ex);
+		//if the service/system has been set into bulk mode, then factor this into the routing key as the first element
+		if (bulkMode) {
+			routingValues.add("BULK");
 		}
 
 		//get the value we're routing on, which will be one or more headers from the exchange
 		List<String> routingHeaders = config.getRoutingHeader();
 		for (String routingHeader: routingHeaders) {
-			String routingValue = exchange.getHeader(routingHeader);
+			String routingValue = headers.get(routingHeader);
 			if (Strings.isNullOrEmpty(routingValue)) {
-				throw new PipelineException("Failed to find routing value for " + routingHeader + " in exchange " + exchange);
+				throw new PipelineException("Failed to find routing value for " + routingHeader);
 			}
 			routingValues.add(routingValue);
 		}

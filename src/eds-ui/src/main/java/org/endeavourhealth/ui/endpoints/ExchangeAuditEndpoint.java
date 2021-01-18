@@ -19,6 +19,7 @@ import org.endeavourhealth.core.database.dal.admin.models.Service;
 import org.endeavourhealth.core.database.dal.audit.ExchangeDalI;
 import org.endeavourhealth.core.database.dal.audit.UserAuditDalI;
 import org.endeavourhealth.core.database.dal.audit.models.*;
+import org.endeavourhealth.core.messaging.pipeline.PipelineException;
 import org.endeavourhealth.core.messaging.pipeline.components.OpenEnvelope;
 import org.endeavourhealth.core.messaging.pipeline.components.PostMessageToExchange;
 import org.endeavourhealth.core.queueing.QueueHelper;
@@ -243,8 +244,15 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
 
         for (QueueHelper.ExchangeName exchangeName: exchangeNames) {
             PostMessageToExchangeConfig config = QueueHelper.findExchangeConfig(exchangeName);
-            String routingKey = PostMessageToExchange.getRoutingKey(exchange, config);
-            ret.put(exchangeName.getName(), routingKey);
+
+            try {
+                String routingKey = PostMessageToExchange.getRoutingKey(false, exchange.getHeaders(), config);
+                ret.put(exchangeName.getName(), routingKey);
+            } catch (PipelineException px) {
+                //with the subscriber queues configured to require a subscriber batch, the above will
+                //throw an exception because there is no subscriber batch in the exchange header, so deal with it
+                ret.put(exchangeName.getName(), "N/A");
+            }
         }
 
         return ret;
