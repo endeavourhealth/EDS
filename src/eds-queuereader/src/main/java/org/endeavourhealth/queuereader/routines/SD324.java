@@ -99,7 +99,7 @@ public class SD324 extends AbstractRoutine {
         }
 
         DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-        Date dFixed = dateFormat.parse("2020-04-02");
+        Date dFixed = dateFormat.parse("2020-04-03"); //fix was on 2nd, but not sure when it was deployed on that day
 
         ServiceInterfaceEndpoint endpoint = SystemHelper.findEndpointForSoftware(service, messageFormat);
         if (endpoint == null) {
