@@ -959,7 +959,8 @@ public abstract class CQC extends AbstractRoutine {
             String name = csvRecord.get(1);
             String also = csvRecord.get(2);
             String cqc_address = csvRecord.get(3);
-            String postcode = csvRecord.get(4);
+            //String postcode = csvRecord.get(4);
+            String cqc_postcode = csvRecord.get(4);
             String phone = csvRecord.get(5);
             String service_web_site = csvRecord.get(6);
             String service_type = csvRecord.get(7);
@@ -987,15 +988,41 @@ public abstract class CQC extends AbstractRoutine {
 
             //if (!odsCode.isEmpty()) ods_address = FindODSDataUsingODSCode(odsCode, configName);
 
+            String ods_code = "";
+            String cqc_addline1 = ""; String cqc_addline2 = ""; String cqc_addline3 = ""; String cqc_addline4 = ""; String cqc_addline5 = "";
+            String ods_addline1 = ""; String ods_addline2 = ""; String ods_addline3 = ""; String ods_addline4 = ""; String ods_addline5 = "";
+            String ods_postcode = "";
+            String parent_organization = ""; String parent_current = ""; String opendate = ""; String closedate = "";
+            String ods_disco_uprn = "";
 
+            if (!ods_address.isEmpty()) {
+                String[] ss = ods_address.split("\\~",-1);
+                ods_code = ss[1]; ods_addline1 = ss[2]; ods_addline2 = ss[3]; ods_addline3 = ss[4]; ods_addline4 = ss[5]; ods_addline5 = ss[6];
+                parent_organization = ss[9]; parent_current = ss[10];
+                opendate = ss[11]; closedate = ss[12]; ods_postcode = ss[13];
+                String ods_adr = ods_addline1+","+ods_addline2+","+ods_addline3+","+ods_addline4+","+ods_addline5+","+ods_postcode;
+                ods_disco_uprn = getUPRN(ods_adr, "odsload`"+ods_code);
+            }
+
+            String[] ss = cqc_address.split("\\,",-1);
+            if (indexInBound(ss, 0)) cqc_addline1 = ss[0].trim();
+            if (indexInBound(ss, 1)) cqc_addline2 = ss[1].trim();
+            if (indexInBound(ss, 2)) cqc_addline3 = ss[2].trim();
+            if (indexInBound(ss, 3)) cqc_addline4 = ss[3].trim();
+            if (indexInBound(ss, 4)) cqc_addline5 = ss[4].trim();
+
+            /*
             String ods_code = ""; String addline1=""; String addline2=""; String addline3=""; String addline4=""; String addline5="";
             String parent_organization = ""; String parent_current = ""; String opendate = ""; String closedate = "";
+            String ods_disco_uprn = "";
 
             if (!ods_address.isEmpty()) {
                 String[] ss = ods_address.split("\\~",-1);
                 ods_code = ss[1]; addline1 = ss[2]; addline2 = ss[3]; addline3 = ss[4]; addline4 = ss[5]; addline5 = ss[6];
                 parent_organization = ss[9]; parent_current = ss[10];
                 opendate = ss[11]; closedate = ss[12]; postcode = ss[13];
+                String ods_adr = addline1+","+addline2+","+addline3+","+addline4+","+addline5+","+postcode;
+                ods_disco_uprn = getUPRN(ods_adr, "odsload`"+ods_code);
             }
 
             // get the address lines form the cqc file (but no way of working out district/county)
@@ -1007,6 +1034,7 @@ public abstract class CQC extends AbstractRoutine {
                 if (indexInBound(ss, 1)) addline2 = ss[1].trim();
                 if (indexInBound(ss, 2)) addline3 = ss[2].trim();
             }
+             */
 
             // >>> VLTVL~107 NEAVE CRESCENT~HAROLD HILL~~ROMFORD~ESSEX~RM3 8HW
 
@@ -1020,6 +1048,18 @@ public abstract class CQC extends AbstractRoutine {
             organizationBuilder.setName(name);
 
             AddressBuilder addressBuilder = new AddressBuilder(organizationBuilder);
+
+            addressBuilder.addLine(cqc_addline1);
+            addressBuilder.addLine(cqc_addline2);
+            addressBuilder.addLine(cqc_addline3);
+
+            // assume 4 & 5 is the city and district
+            addressBuilder.setCity(cqc_addline4);
+            addressBuilder.setDistrict(cqc_addline5);
+
+            addressBuilder.setPostcode(cqc_postcode);
+
+            /*
             addressBuilder.addLine(addline1);
             addressBuilder.addLine(addline2);
             addressBuilder.addLine(addline3);
@@ -1030,6 +1070,7 @@ public abstract class CQC extends AbstractRoutine {
             }
 
             addressBuilder.setPostcode(postcode);
+            */
 
             createContactPoint(ContactPoint.ContactPointSystem.PHONE, phone, organizationBuilder);
 
@@ -1050,18 +1091,38 @@ public abstract class CQC extends AbstractRoutine {
             if (!cqc_dormancy.isEmpty()) createContainedCoded(organizationBuilder,"cqc_dormancy",cqc_dormancy,0);
             if (!cqc_carehome.isEmpty()) createContainedCoded(organizationBuilder,"cqc_carehome",cqc_carehome,0);
 
+            if (!ods_disco_uprn.isEmpty()) createContainedCoded(organizationBuilder,"ods_disco_uprn",ods_disco_uprn,0);
+
+            /*
             if (!addline1.isEmpty()) {createContainedCoded(organizationBuilder,"addline1",addline1,0);}
             if (!addline2.isEmpty()) {createContainedCoded(organizationBuilder,"addline2",addline2,0);}
             if (!addline3.isEmpty()) {createContainedCoded(organizationBuilder,"addline3",addline3,0);}
             if (!addline4.isEmpty()) {createContainedCoded(organizationBuilder,"addline4",addline4,0);}
             if (!addline5.isEmpty()) {createContainedCoded(organizationBuilder,"addline5",addline5,0);}
             if (!postcode.isEmpty()) {createContainedCoded(organizationBuilder,"postcode",postcode,0);}
+             */
+
+            if (!cqc_addline1.isEmpty()) {createContainedCoded(organizationBuilder,"cqc_addline1",cqc_addline1,0);}
+            if (!cqc_addline2.isEmpty()) {createContainedCoded(organizationBuilder,"cqc_addline2",cqc_addline2,0);}
+            if (!cqc_addline3.isEmpty()) {createContainedCoded(organizationBuilder,"cqc_addline3",cqc_addline3,0);}
+            if (!cqc_addline4.isEmpty()) {createContainedCoded(organizationBuilder,"cqc_addline4",cqc_addline4,0);}
+            if (!cqc_addline5.isEmpty()) {createContainedCoded(organizationBuilder,"cqc_addline5",cqc_addline5,0);}
+            if (!cqc_postcode.isEmpty()) {createContainedCoded(organizationBuilder,"cqc_postcode",cqc_postcode,0);}
+
+            if (!ods_addline1.isEmpty()) {createContainedCoded(organizationBuilder,"cqc_ods_addline1",ods_addline1,0);}
+            if (!ods_addline2.isEmpty()) {createContainedCoded(organizationBuilder,"cqc_ods_addline2",ods_addline2,0);}
+            if (!ods_addline3.isEmpty()) {createContainedCoded(organizationBuilder,"cqc_ods_addline3",ods_addline3,0);}
+            if (!ods_addline4.isEmpty()) {createContainedCoded(organizationBuilder,"cqc_ods_addline4",ods_addline4,0);}
+            if (!ods_addline5.isEmpty()) {createContainedCoded(organizationBuilder,"cqc_ods_addline5",ods_addline5,0);}
+            if (!ods_postcode.isEmpty()) {createContainedCoded(organizationBuilder,"cqc_ods_postcode",ods_postcode,0);}
+
             if (!phone.isEmpty()) {createContainedCoded(organizationBuilder,"cqc_phone",phone,0);}
 
             createContainedCoded(organizationBuilder,"config",configName,0);
 
             if (!service_type.isEmpty()) {
-                String[] ss = service_type.split("\\|");
+                //String[] ss = service_type.split("\\|");
+                ss = service_type.split("\\|");
                 for (int i = 0; i < ss.length; i++) {
                     String service = ss[i];
                     createContainedCoded(organizationBuilder, "service_type", service,1);
@@ -1069,7 +1130,8 @@ public abstract class CQC extends AbstractRoutine {
             }
 
             if (!specialism.isEmpty()) {
-                String[] ss = specialism.split("\\|");
+                //String[] ss = specialism.split("\\|");
+                ss = specialism.split("\\|");
                 for (int i = 0; i < ss.length; i++) {
                     String spec = ss[i];
                     createContainedCoded(organizationBuilder,"specialisms/services",spec,1);
