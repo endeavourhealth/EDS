@@ -131,13 +131,28 @@ public class SD324 extends AbstractRoutine {
         try {
             for (UUID patientId: patientIds) {
 
+                boolean extraLogging = patientId.toString().equalsIgnoreCase("0f49a28f-65ad-44ef-be71-af1b6bb1b8a5");
+                if (extraLogging) {
+                    LOG.debug("DOING Patient " + patientId);
+                }
+
                 List<ResourceWrapper> wrappers = resourceDal.getResourcesByPatient(serviceId, patientId, ResourceType.Appointment.toString());
+                if (extraLogging) {
+                    LOG.debug("Found " + wrappers.size() + " appointments");
+                }
+
                 for (ResourceWrapper wrapper: wrappers) {
 
+
                     processedAppts ++;
+                    Date dtLastUpdated = wrapper.getCreatedAt();
+
+
+                    if (extraLogging) {
+                        LOG.debug("Doing Appointment " + wrapper.getResourceId() + " last updated " + dtLastUpdated + " will need to fix appt = " + (!dtLastUpdated.after(dFixed)));
+                    }
 
                     //if the appointment was last updated BEFORE the fix was made, then force a change so it'll get sent out again
-                    Date dtLastUpdated = wrapper.getCreatedAt();
                     if (!dtLastUpdated.after(dFixed)) {
 
                         Appointment appointment = (Appointment)wrapper.getResource();
