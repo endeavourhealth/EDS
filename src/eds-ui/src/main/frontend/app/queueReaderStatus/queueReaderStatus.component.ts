@@ -21,6 +21,7 @@ export class QueueReaderStatusComponent {
     routingExchangeNames: string[]; //distinct exchange names (EdsInbound, EdsProtocol etc.)
     routingKeys: string[]; //distinct set of all routing keys (A, B, C etc.)
     routingQueueNames: string[]; //set of all queue names (EdsInbound-A, EdsInbound-B etc.)
+    routingQueueDescs: {}; //map of routing queue names to the description of what the queue is for
     rabbitNodes: RabbitNode[];
 
     //queue reader status
@@ -125,6 +126,7 @@ export class QueueReaderStatusComponent {
         vm.routingExchangeNames = [];
         vm.routingKeys = [];
         vm.routingQueueNames = [];
+        vm.routingQueueDescs = {};
 
         //get a distinct list of exchange names and routing keys from the array
         var len = routings.length;
@@ -143,6 +145,9 @@ export class QueueReaderStatusComponent {
 
             var combined = vm.combineIntoQueueName(exchangeName, routingKey);
             vm.routingQueueNames.push(combined);
+
+            var desc = r.description;
+            vm.routingQueueDescs[combined] = desc;
         }
 
         //sort the routing key array so they appear as expected (but don't sort the exchange names)
@@ -622,6 +627,12 @@ export class QueueReaderStatusComponent {
         } else {
             return '';
         }
+    }
+
+    getQueueRoutingDesc(exchangeName: string, routingKey: string): string {
+        var vm = this;
+        var combined = vm.combineIntoQueueName(exchangeName, routingKey);
+        return vm.routingQueueDescs[combined];
     }
 
 }

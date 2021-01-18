@@ -48,7 +48,8 @@
 
 
                                     <span *ngIf="isValidQueue(exchangeName, routingKey)">
-                                        <b>{{routingKey}}  </b>
+                                        <b><span ngbTooltip="{{getQueueRoutingDesc(exchangeName, routingKey)}}">{{routingKey}}  </span></b>
+
                                         <span class="fa fa-sm fa-refresh fa-refresh-animate" *ngIf="refreshingRabbitQueueStatus">
                                         </span>
                                         <span *ngIf="!refreshingRabbitQueueStatus">
