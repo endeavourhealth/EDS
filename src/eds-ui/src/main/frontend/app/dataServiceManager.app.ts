@@ -55,6 +55,7 @@ import {ScheduledTasksModule} from "./scheduledTasks/scheduledTasks.module";
 import {ScheduledTasksComponent} from "./scheduledTasks/scheduledTasks.component";
 import {SubscribersModule} from "./subscribers/subscribers.module";
 import {SubscribersComponent} from "./subscribers/subscribers.component";
+import {SubscriberDetailComponent} from "./subscribers/subscriberDetail.component";
 
 @NgModule(
 	Application.Define({
@@ -112,7 +113,8 @@ import {SubscribersComponent} from "./subscribers/subscribers.component";
 			{name: 'app.queueReaderStatus', url: '/queueReaderStatus', component: QueueReaderStatusComponent},
 			{name: 'app.configManager', url: '/configManager', component: ConfigManagerComponent},
 			{name: 'app.scheduledTasks', url: '/scheduledTasks', component: ScheduledTasksComponent},
-			{name: 'app.subscribers', url: '/subscribers', component: SubscribersComponent}
+			{name: 'app.subscribers', url: '/subscribers', component: SubscribersComponent},
+			{name: 'app.subscriberDetail', url: '/subscribers/:subscriberName', component: SubscriberDetailComponent}
 		],
 		defaultState : { state: 'app.queueReaderStatus', params: {} },
 		menuManager : DataServiceManagerMenuService

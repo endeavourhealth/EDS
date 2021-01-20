@@ -5,17 +5,17 @@ export class SubscriberConfiguration {
     description: string;
     schema: string;
     deidentified: boolean;
-    excludeTestPatients: boolean; //todo
-    excludeNhsNumberRegex: string; //todo
-    excludePatientsWithoutNhsNumber: boolean; //todo
+    excludeTestPatients: boolean; 
+    excludeNhsNumberRegex: string; 
+    excludePatientsWithoutNhsNumber: boolean; 
     remoteSubscriberId: number;
     subscriberLocation: string;
-    cohortType: string; //todo
-    cohort: string[]; //todo
-    subscriberDatabase: string; //todo
-    subscriberDatabaseName: string; //todo
-    subscriberTransformDatabase: string; //todo
-    subscriberTransformDatabaseName: string; //todo
+    cohortType: string; 
+    cohort: string[]; 
+    subscriberDatabase: string; 
+    subscriberDatabaseName: string; 
+    subscriberTransformDatabase: string; 
+    subscriberTransformDatabaseName: string; 
     numPublishers: number;
     inboundUpToDate: number;
     inboundOneDay: number;

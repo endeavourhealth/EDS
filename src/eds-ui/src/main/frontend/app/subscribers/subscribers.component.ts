@@ -308,7 +308,7 @@ export class SubscribersComponent {
     }*/
 
 
-    getSubscriberTypeDesc(sub: SubscriberConfiguration): string {
+    getSubscriberLocationDesc(sub: SubscriberConfiguration): string {
         if (!sub.subscriberLocation) {
             return '?'
         } else if (sub.subscriberLocation == 'Internal') {
@@ -342,4 +342,141 @@ export class SubscribersComponent {
         }
     }
 
+    viewSubscriberDetails(sub: SubscriberConfiguration) {
+        var vm = this;
+
+        var subscriberName = sub.name;
+        console.log('view detail for ' + subscriberName);
+
+        vm.$state.go('app.subscriberDetail', {subscriberName: subscriberName});
+    }
+
+
+    /**
+     * saves current list to CSV
+     */
+    saveToCsv() {
+
+        var vm = this;
+
+        //create CSV content in a String
+        var lines = [];
+        var line;
+
+        line = '\"Subscriber Name\",' +
+            '\"Description\",' +
+            '\"Location\",' +
+            '\"Remote Subscriber ID\",' +
+            '\"Schema\",' +
+            '\"PI\",' +
+            '\"Excludes Test Patients\",' +
+            '\"Excludes Blank NHS Number Patients\",' +
+            '\"Exclude NHS Number Regex\",' +
+            '\"Cohort\",' +
+            '\"Subscriber DB\",' +
+            '\"Subscriber DB Name\",' +
+            '\"Subscriber Transform DB\",' +
+            '\"Subscriber Transform DB Name\",' +
+            '\"Publishers\",' +
+            '\"In Up-to-date\",' +
+            '\"In 1d Behind\",' +
+            '\"In 2d+ Behind\",' +
+            '\"Out Up-to-date\",' +
+            '\"Out 1d Behind\",' +
+            '\"Out 2d+ Behind\"';
+        lines.push(line);
+
+        var subs = vm.getSubscribersToDisplay();
+        for (var i=0; i<subs.length; i++) {
+            var config = subs[i] as SubscriberConfiguration;
+
+            var cols = [];
+
+
+            /*
+
+             numPublishers: number;
+             inboundUpToDate: number;
+             inboundOneDay: number;
+             inboundMoreDays: number;
+             outboundUpToDate: number;
+             outboundOneDay: number;
+             outboundMoreDays: number;
+             */
+
+
+            cols.push(config.name);
+            cols.push(config.description);
+            cols.push(vm.getSubscriberLocationDesc(config));
+            if (config.remoteSubscriberId) {
+                cols.push(config.remoteSubscriberId);
+            } else {
+                cols.push('');
+            }
+            cols.push(vm.getSubscriberSchemaDesc(config));
+            if (config.deidentified) {
+                cols.push('N');
+            } else {
+                cols.push('Y');
+            }
+            if (config.excludeTestPatients) {
+                cols.push('Y');
+            } else {
+                cols.push('N');
+            }
+            if (config.excludePatientsWithoutNhsNumber) {
+                cols.push('Y');
+            } else {
+                cols.push('N');
+            }
+            if (config.excludePatientsWithoutNhsNumber) {
+                cols.push(config.excludePatientsWithoutNhsNumber);
+            } else {
+                cols.push('');
+            }
+            if (config.cohortType == 'GpRegisteredAt') {
+                var scopeDesc = config.cohort.join(', ');
+                cols.push(config.cohortType + ' [' + scopeDesc + ']');
+            } else {
+                cols.push(config.cohortType);
+            }
+            if (config.subscriberDatabase) {
+                cols.push(config.subscriberDatabase);
+            } else {
+                cols.push('');
+            }
+            if (config.subscriberDatabaseName) {
+                cols.push(config.subscriberDatabaseName);
+            } else {
+                cols.push('');
+            }
+            cols.push(config.subscriberTransformDatabase);
+            cols.push(config.subscriberTransformDatabaseName);
+            cols.push(config.numPublishers);
+            cols.push(config.inboundUpToDate);
+            cols.push(config.inboundOneDay);
+            cols.push(config.inboundMoreDays);
+            cols.push(config.outboundUpToDate);
+            cols.push(config.outboundOneDay);
+            cols.push(config.outboundMoreDays);
+
+            line = '\"' + cols.join('\",\"') + '\"';
+            lines.push(line);
+        }
+
+        var csvStr = lines.join('\r\n');
+
+        const filename = 'subscriber_status.csv';
+        const blob = new Blob([csvStr], { type: 'text/plain' });
+
+        let url = window.URL.createObjectURL(blob);
+        let a = document.createElement('a');
+        document.body.appendChild(a);
+        a.setAttribute('style', 'display: none');
+        a.href = url;
+        a.download = filename;
+        a.click();
+        window.URL.revokeObjectURL(url);
+        a.remove();
+    }
 }

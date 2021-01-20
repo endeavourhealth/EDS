@@ -129,9 +129,14 @@ public class SubscriberEndpoint extends AbstractEndpoint {
                                     Map<UUID, Set<LastDataProcessed>> hmStatusInbound,
                                     Map<UUID, Set<LastDataToSubscriber>> hmStatusOutbound) throws Exception {
 
-
+        //this might be null if we've got no publishers
         if (services == null) {
             services = new ArrayList<>();
+        }
+
+        //this might be null if o service has nothing in the subscriber yet
+        if (hmStatusOutbound == null) {
+            hmStatusOutbound = new HashMap<>();
         }
 
         //number publishers up to date with inbound processing

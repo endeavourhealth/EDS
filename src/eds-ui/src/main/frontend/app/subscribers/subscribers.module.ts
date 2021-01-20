@@ -4,6 +4,7 @@ import {FormsModule} from "@angular/forms";
 import {NgbModule} from "@ng-bootstrap/ng-bootstrap";
 import {SubscribersComponent} from "./subscribers.component";
 import {SubscribersService} from "./subscribers.service";
+import {SubscriberDetailComponent} from "./subscriberDetail.component";
 
 @NgModule({
     imports : [
@@ -12,7 +13,8 @@ import {SubscribersService} from "./subscribers.service";
         NgbModule
     ],
     declarations : [
-        SubscribersComponent
+        SubscribersComponent,
+        SubscriberDetailComponent
 
     ],
     entryComponents : [
