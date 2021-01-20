@@ -7,6 +7,7 @@ export class SubscriberConfiguration {
     deidentified: boolean;
     excludeTestPatients: boolean; //todo
     excludeNhsNumberRegex: string; //todo
+    excludePatientsWithoutNhsNumber: boolean; //todo
     remoteSubscriberId: number;
     subscriberLocation: string;
     cohortType: string; //todo
@@ -16,4 +17,10 @@ export class SubscriberConfiguration {
     subscriberTransformDatabase: string; //todo
     subscriberTransformDatabaseName: string; //todo
     numPublishers: number;
+    inboundUpToDate: number;
+    inboundOneDay: number;
+    inboundMoreDays: number;
+    outboundUpToDate: number;
+    outboundOneDay: number;
+    outboundMoreDays: number;    
 }

@@ -9,6 +9,7 @@ import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.common.security.SecurityUtils;
 import org.endeavourhealth.core.database.dal.DalProvider;
 import org.endeavourhealth.core.database.dal.admin.ServiceDalI;
+import org.endeavourhealth.core.database.dal.admin.SystemHelper;
 import org.endeavourhealth.core.database.dal.admin.models.Service;
 import org.endeavourhealth.core.database.dal.audit.ExchangeDalI;
 import org.endeavourhealth.core.database.dal.audit.UserAuditDalI;
@@ -81,6 +82,7 @@ public class SubscriberEndpoint extends AbstractEndpoint {
             boolean isPseudonymised = config.isPseudonymised();
             boolean excludeTestPatients = config.isExcludeTestPatients();
             String excludeNhsNumberRegex = config.getExcludeNhsNumberRegex();
+            boolean excludePatientsWithoutNhsNumber = config.isExcludePatientsWithoutNhsNumber();
             Integer remoteSubscriberId = config.getRemoteSubscriberId();
             String subscriberLocation = "" + config.getSubscriberLocation();
             String cohortType = "" + config.getCohortType();
@@ -92,6 +94,7 @@ public class SubscriberEndpoint extends AbstractEndpoint {
             obj.put("deidentified", isPseudonymised);
             obj.put("excludeTestPatients", excludeTestPatients);
             obj.put("excludeNhsNumberRegex", excludeNhsNumberRegex);
+            obj.put("excludePatientsWithoutNhsNumber", excludePatientsWithoutNhsNumber);
             obj.put("subscriberLocation", subscriberLocation);
             obj.put("remoteSubscriberId", remoteSubscriberId);
             obj.put("cohortType", cohortType);
@@ -131,14 +134,11 @@ public class SubscriberEndpoint extends AbstractEndpoint {
             services = new ArrayList<>();
         }
 
-        //total number of publishers
-        obj.put("numPublishers", services.size());
-
         //number publishers up to date with inbound processing
-        int inboundUptoDate = 0;
+        int inboundUpToDate = 0;
         int inboundOneDay = 0;
         int inboundMoreDays = 0;
-        int outboundUptoDate = 0;
+        int outboundUpToDate = 0;
         int outboundOneDay = 0;
         int outboundMoreDays = 0;
 
@@ -146,14 +146,18 @@ public class SubscriberEndpoint extends AbstractEndpoint {
 
         for (Service service: services) {
             UUID serviceId = service.getId();
+            List<UUID> systemIds = SystemHelper.getSystemIdsForService(service);
+            Set<UUID> hsSystemIds = new HashSet<>(systemIds);
             
             Date dLastDataReceived = null;
             Set<LastDataReceived> hsReceived = hmStatusReceived.get(serviceId);
             if (hsReceived != null) {
                 for (LastDataReceived r: hsReceived) {
-                    if (dLastDataReceived == null
-                            || r.getDataDate().before(dLastDataReceived)) {
-                        dLastDataReceived = r.getDataDate();
+                    if (hsSystemIds.contains(r.getSystemId())) {
+                        if (dLastDataReceived == null
+                                || r.getDataDate().before(dLastDataReceived)) {
+                            dLastDataReceived = r.getDataDate();
+                        }
                     }
                 }
             }
@@ -166,9 +170,11 @@ public class SubscriberEndpoint extends AbstractEndpoint {
             Set<LastDataProcessed> hsInbound = hmStatusInbound.get(serviceId);
             if (hsInbound != null) {
                 for (LastDataProcessed r: hsInbound) {
-                    if (dLastDataProcessedInbound == null
-                            || r.getDataDate().before(dLastDataProcessedInbound)) {
-                        dLastDataProcessedInbound = r.getDataDate();
+                    if (hsSystemIds.contains(r.getSystemId())) {
+                        if (dLastDataProcessedInbound == null
+                                || r.getDataDate().before(dLastDataProcessedInbound)) {
+                            dLastDataProcessedInbound = r.getDataDate();
+                        }
                     }
                 }
             }
@@ -177,35 +183,61 @@ public class SubscriberEndpoint extends AbstractEndpoint {
             Set<LastDataToSubscriber> hsOutbound = hmStatusOutbound.get(serviceId);
             if (hsOutbound != null) {
                 for (LastDataToSubscriber r: hsOutbound) {
-                    if (dLastDataProcessedOutbound == null
-                            || r.getDataDate().before(dLastDataProcessedOutbound)) {
-                        dLastDataProcessedOutbound = r.getDataDate();
+                    if (hsSystemIds.contains(r.getSystemId())) {
+                        if (dLastDataProcessedOutbound == null
+                                || r.getDataDate().before(dLastDataProcessedOutbound)) {
+                            dLastDataProcessedOutbound = r.getDataDate();
+                        }
                     }
                 }
             }
 
             //inbound status
-            if (dLastDataProcessedInbound == null) {
-                inboundMoreDays ++;
+            int daysDiffInbound = getDaysDiff(dLastDataReceived, dLastDataProcessedInbound);
+            if (daysDiffInbound == 0) {
+                inboundUpToDate ++;
 
-            } else if (dLastDataProcessedInbound.equals(dLastDataReceived)) {
-                inboundUptoDate ++;
+            } else if (daysDiffInbound <= 1) {
+                inboundOneDay++;
 
+            } else {
+                inboundMoreDays++;
             }
 
-            /*
-                    int inboundUptoDate = 0;
-        int inboundOneDay = 0;
-        int inboundMoreDays = 0;
-        int outboundUptoDate = 0;
-        int outboundOneDay = 0;
-        int outboundMoreDays = 0;
-             */
-            
-            /*ObjectNode serviceObj = arr.addObject();
-            serviceObj.put("odsCode", service.getLocalId());
-            serviceObj.put()*/
+            //outbound
+            int daysDiffOutbound = getDaysDiff(dLastDataProcessedInbound, dLastDataProcessedOutbound);
+            if (daysDiffOutbound == 0) {
+                outboundUpToDate ++;
+
+            } else if (daysDiffOutbound <= 1) {
+                outboundOneDay++;
+
+            } else {
+                outboundMoreDays++;
+            }
         }
+
+        //total number of publishers
+        obj.put("numPublishers", services.size());
+        obj.put("inboundUpToDate", inboundUpToDate);
+        obj.put("inboundOneDay", inboundOneDay);
+        obj.put("inboundMoreDays", inboundMoreDays);
+        obj.put("outboundUpToDate", outboundUpToDate);
+        obj.put("outboundOneDay", outboundOneDay);
+        obj.put("outboundMoreDays", outboundMoreDays);
+    }
+
+    private int getDaysDiff(Date dtFrom, Date dtTo) {
+
+        if (dtTo == null
+                || dtFrom == null) {
+            return Integer.MAX_VALUE;
+        }
+
+        long msFrom = dtFrom.getTime();
+        long msTo = dtTo.getTime();
+        long msDiff = msTo - msFrom;
+        return (int)(msDiff / (1000 * 60 * 60 * 24));
     }
 
     private Map<String, Map<UUID, Set<LastDataToSubscriber>>> findOutboundStatus() throws Exception {
