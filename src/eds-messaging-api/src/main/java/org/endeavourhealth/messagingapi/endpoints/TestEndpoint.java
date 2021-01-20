@@ -98,7 +98,7 @@ public class TestEndpoint extends AbstractEndpoint {
         } else {
 
             UUID serviceId = service.getId();
-            List<String> subscriberConfigNames = SubscriberHelper.getSubscriberConfigNamesForPublisher(null, serviceId, odsCode);
+            List<String> subscriberConfigNames = SubscriberHelper.getSubscriberConfigNamesForPublisher(null, serviceId);
 
             ObjectNode objectNode = root.addObject();
             ArrayNode arrayNode = objectNode.putArray("subscriberConfigNames");

@@ -16,8 +16,9 @@ export class DataServiceManagerMenuService implements  MenuService {
 		return [
 			/*{caption: 'Dashboard', state: 'app.dashboard', icon: 'fa fa-tachometer', role: 'eds-ui:dashboard'},*/
 			/*{caption: 'Protocols', state: 'app.library', icon: 'fa fa-share-alt', role: 'eds-ui:protocols'},*/
-			{caption: 'Services', state: 'app.serviceList', icon: 'fa fa-building-o', role: 'eds-ui:services'},
-			{caption: 'Systems', state: 'app.systemList', icon: 'fa fa-building-o', role: 'eds-ui:services'},
+			{caption: 'Publishers', state: 'app.serviceList', icon: 'fa  fa-toggle-up', role: 'eds-ui:services'},
+			{caption: 'Publisher Systems', state: 'app.systemList', icon: 'fa fa-building-o', role: 'eds-ui:services'},
+			{caption: 'Subscribers', state: 'app.subscribers', icon: 'fa fa-toggle-down', role: 'eds-ui:services'},
 			{caption: 'Queueing', state: 'app.queueing', icon: 'fa fa-map-signs', role: 'eds-ui:queueing'},
 			{caption: 'Queue Readers', state: 'app.queueReaderStatus', icon: 'fa fa-tachometer', role: 'eds-ui:monitoring'},
 			{caption: 'Frailty API', state: 'app.frailtyApi', icon: 'fa fa-flask', role: 'eds-ui:monitoring'},

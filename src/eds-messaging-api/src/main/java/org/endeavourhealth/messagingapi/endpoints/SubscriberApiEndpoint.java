@@ -261,7 +261,7 @@ public class SubscriberApiEndpoint {
 
             org.endeavourhealth.core.database.dal.admin.models.Service service = serviceDal.getById(patientServiceId);
             String odsCode = service.getLocalId();
-            List<String> subscriberConfigNames = SubscriberHelper.getSubscriberConfigNamesForPublisher(null, patientServiceId, odsCode);
+            List<String> subscriberConfigNames = SubscriberHelper.getSubscriberConfigNamesForPublisher(null, patientServiceId);
 
             for (String subscriberConfigName : subscriberConfigNames) {
                 if (!permittedSubscribers.contains(subscriberConfigName)) {

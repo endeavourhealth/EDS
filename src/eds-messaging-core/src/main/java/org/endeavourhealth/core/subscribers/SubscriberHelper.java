@@ -29,7 +29,7 @@ public class SubscriberHelper {
 
     private static Map<String, UUID> odsCodeToServiceIdCache = new ExpiringCache<>(1000 * 60 * 5);
 
-    public static List<String> getSubscriberConfigNamesForPublisher(UUID exchangeId, UUID serviceId, String odsCode) throws Exception {
+    public static List<String> getSubscriberConfigNamesForPublisher(UUID exchangeId, UUID serviceId) throws Exception {
 
         List<String> currentSubscribers = getSubscriberConfigNamesImpl(serviceId);
 

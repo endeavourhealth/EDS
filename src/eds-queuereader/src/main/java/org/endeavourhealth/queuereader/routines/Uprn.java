@@ -692,7 +692,7 @@ public class Uprn extends AbstractRoutine {
                 continue;
             }
 
-            List<String> subscriberConfigNames = SubscriberHelper.getSubscriberConfigNamesForPublisher(null, service.getId(), service.getLocalId());
+            List<String> subscriberConfigNames = SubscriberHelper.getSubscriberConfigNamesForPublisher(null, service.getId());
             if (!subscriberConfigNames.contains(subscriberConfigName)) {
                 LOG.debug("Skipping " + service + " as not a publisher");
                 continue;

@@ -1043,7 +1043,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
         ServiceDalI serviceDal = DalProvider.factoryServiceDal();
         Service service = serviceDal.getById(serviceId);
         String odsCode = service.getLocalId();
-        List<String> ret = SubscriberHelper.getSubscriberConfigNamesForPublisher(null, serviceId, odsCode);
+        List<String> ret = SubscriberHelper.getSubscriberConfigNamesForPublisher(null, serviceId);
 
         clearLogbackMarkers();
 

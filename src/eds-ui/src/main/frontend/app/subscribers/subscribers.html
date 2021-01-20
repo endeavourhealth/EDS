@@ -1,0 +1,180 @@
+<div class="module">
+    <div class="module-heading">
+        Subscriber Status <span
+            *ngIf="statusesLastRefreshed">(as of {{statusesLastRefreshed | date:'HH:mm:ss'}})</span>
+        <div class="pull-right">
+
+            <form class="form-inline">
+
+                <button class="btn btn-sm btn-default" (click)="saveToCsv()" title="Save to CSV">Save to CSV</button>
+                <button class="btn btn-sm btn-success" (click)="refreshScreen()">Refresh</button>
+
+            </form>
+
+        </div>
+    </div>
+    <div class="module-body">
+
+        <!--<div class="row">
+            <div class="col-md-12">
+                <div class="panel panel-info">
+                    <div class="panel-heading">
+                        Application Instances
+
+                        <div class="pull-right">
+                            <label for="showExecutionTime" class="control-label">Execution Time</label>
+                            <input type="checkbox" id="showExecutionTime" [(ngModel)]="subscribersService.showExecutionTime" name="showExecutionTime">
+
+                            <label for="showMemory" class="control-label">Memory (Current/Max)</label>
+                            <input type="checkbox" id="showMemory" [(ngModel)]="subscribersService.showMemory" name="showMemory">
+
+                            <label for="showJarDate" class="control-label">Jar Date</label>
+                            <input type="checkbox" id="showJarDate" [(ngModel)]="subscribersService.showJarDate" name="showJarDate">
+
+                            <label for="showStartDate" class="control-label">Start Date</label>
+                            <input type="checkbox" id="showStartDate" [(ngModel)]="subscribersService.showStartDate" name="showStartDate">
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>-->
+
+
+        <!--<div class="row" *ngIf="applicationStatus">
+            <div class="col-md-3" *ngFor="let appStatus of applicationStatus">
+
+                <span [ngStyle]="getApplicationCellColour(appStatus)">
+                    {{appStatus.applicationInstanceName}}
+
+                    <span *ngIf="isApplicationDead(appStatus)">
+                        <span class="label label-danger"><span class="fa fa-warning" ngbTooltip="{{appStatus.isBusyDetail}}"></span>{{getApplicationAgeDesc(appStatus)}}</span>
+                    </span>
+
+                    <span *ngIf="!isApplicationDead(appStatus)">
+
+                        &lt;!&ndash; icon if new jar deployed but app not restarted &ndash;&gt;
+                        <span *ngIf="isApplicationNeedsRestart(appStatus)" class="fa fa-clock-o" ngbTooltip="{{getApplicationNeedsRestartDesc(appStatus)}}"></span>
+
+                        &lt;!&ndash; if busy, show the play icon and when it was busy from &ndash;&gt;
+                        <span *ngIf="appStatus.isBusy" class="fa fa-play" ngbTooltip="{{appStatus.isBusyDetail}}"></span>
+
+                        &lt;!&ndash; if not doing anything show a pause icon &ndash;&gt;
+                        <span *ngIf="!appStatus.isBusy" class="fa fa-pause" ngbTooltip="Application running but idle"></span>
+
+                        <span *ngIf="subscribersService.showExecutionTime" class="text-muted"> {{getApplicationExecutionTime(appStatus)}}</span>
+                        <span *ngIf="subscribersService.showMemory" class="text-muted"> [{{appStatus.currentHeapDesc}} / {{appStatus.maxHeapDesc}}]</span>
+                        <span *ngIf="subscribersService.showJarDate" class="text-muted"> [Jar {{appStatus.dtJar | date:'yyyy-MM-dd HH:mm:ss'}}]</span>
+                        <span *ngIf="subscribersService.showStartDate" class="text-muted"> [Started {{appStatus.dtStarted | date:'yyyy-MM-dd HH:mm:ss'}}]</span>
+
+
+                    </span>
+                </span>
+
+            </div>
+        </div>-->
+
+        <!-- just some spacing -->
+        <!--<div class="row">
+            <span>&nbsp;</span>
+        </div>-->
+
+        <!--<div class="row">
+            <div class="col-md-12">
+                <div class="panel panel-info">
+                    <div class="panel-heading">
+                        Feed Status
+
+                        <div class="pull-right">
+
+                            <label for="showWarningsOnly" class="control-label">Show Warnings Only</label>
+                            <input type="checkbox" id="showWarningsOnly" [(ngModel)]="subscribersService.showWarningsOnly" name="showWarningsOnly">
+                            &nbsp;&nbsp;&nbsp;
+
+                            <label for="filterInstanceName" class="control-label">Instance</label>
+                            <select id="filterInstanceName" name="filterInstanceName" [(ngModel)]="subscribersService.filterInstanceName">
+                                <option value="">All</option>
+                                <option *ngFor="let instanceName of getInstanceNames()" value="{{instanceName}}">{{instanceName}}</option>
+                            </select>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>-->
+
+
+
+        <div class="row">
+            <div class="col-md-12">
+                <div class="table">
+                    <table class="table table-striped table-condensed">
+                        <thead>
+                        <tr>
+                            <th class="col-md-2">Subscriber</th> <!-- name and desc -->
+                            <th class="col-md-1">Type</th> <!-- internal or remote -->
+                            <th class="col-md-1">Schema</th> <!-- compass v1/v2 -->
+                            <th class="col-md-1">PI</th> <!-- PI or deidentified -->
+                            <th class="col-md-1">Publishers</th> <!-- number of publishers -->
+                            <th class="col-md-1">Up-to-date</th>
+                            <th class="col-md-1">1d Behind</th>
+                            <th class="col-md-1">2d+ Behind</th>
+                            <th class="col-md-1"></th> <!-- actions -->
+
+                            <!--name: string;
+                            description: string;
+                            schema: string;
+                            deidentified: boolean;
+                            excludeTestPatients: boolean;
+                            excludeNhsNumberRegex: string;
+                            remoteSubscriberId: number;
+                            cohortType: string;
+                            cohort: string[];-->
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr class="hover-box show-child-on-hover" *ngFor="let subscriber of getSubscribersToDisplay()">
+
+                            <!-- name and desc -->
+                            <td>
+                                <div>{{subscriber.name}}</div>
+                                <div class="text-muted">
+                                    {{subscriber.description}}
+                                </div>
+                            </td>
+
+                            <!-- internal or remote -->
+                            <td>
+                                <span ngbTooltip="{{getRemoteSubscriberIdDesc(subscriber)}}">{{getSubscriberTypeDesc(subscriber)}}</span>
+                            </td>
+
+                            <!-- compass v1/v2 -->
+                            <td>
+                                <div>{{getSubscriberSchemaDesc(subscriber)}}</div>
+                            </td>
+
+                            <!-- PI or deidentified -->
+                            <td>
+                                <span *ngIf="!subscriber.deidentified" class="fa fa-check"></span>
+                            </td>
+
+                            <!-- number of publishers -->
+                            <td>
+                                {{subscriber.numPublishers}}
+                            </td>
+
+                            <!--<span *ngIf="needsRestart(status)" class="fa fa-clock-o" ngbTooltip="{{getNeedsRestartDesc(status)}}"></span>-->
+
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+
+
+    </div>
+</div>
+
+

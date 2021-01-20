@@ -872,7 +872,7 @@ public class OldRoutines extends AbstractRoutine {
 				ResourceWrapper wrapper = resourceDalI.getCurrentVersion(serviceId, ResourceType.Patient.toString(), patientId);
 				LOG.debug("EHR done " + (wrapper != null));
 
-                List<String> subscriberConfigNames = SubscriberHelper.getSubscriberConfigNamesForPublisher(null, serviceId, odsCode);
+                List<String> subscriberConfigNames = SubscriberHelper.getSubscriberConfigNamesForPublisher(null, serviceId);
 				for (String subscriberConfigName: subscriberConfigNames) {
 
 					//subscriber transform
