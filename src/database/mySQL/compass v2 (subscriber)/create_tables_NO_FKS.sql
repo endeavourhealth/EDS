@@ -1137,7 +1137,6 @@ CREATE TRIGGER after_patient_delete
     ) VALUES (
 		now(3), -- current time inc ms
         2, -- delete
-        2, -- delete
         2, -- patient
         OLD.id
     );

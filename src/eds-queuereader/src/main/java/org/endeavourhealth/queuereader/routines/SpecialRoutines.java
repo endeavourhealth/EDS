@@ -2,6 +2,7 @@ package org.endeavourhealth.queuereader.routines;
 
 import com.google.common.base.Strings;
 import org.apache.commons.io.FileUtils;
+import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.common.fhir.IdentifierHelper;
 import org.endeavourhealth.core.database.dal.DalProvider;
 import org.endeavourhealth.core.database.dal.admin.LibraryRepositoryHelper;
@@ -4064,7 +4065,7 @@ public abstract class SpecialRoutines extends AbstractRoutine {
 
     }*/
 
-    /*public static void testSubscriberConfigs() {
+    public static void testSubscriberConfigs() {
         LOG.debug("Testing Subscriber Configs");
         try {
 
@@ -4092,7 +4093,7 @@ public abstract class SpecialRoutines extends AbstractRoutine {
             LOG.error("", t);
         }
 
-    }*/
+    }
 
     /*public static void validateProtocolCohorts() {
         LOG.debug("Validating Protocol Cohorts");
