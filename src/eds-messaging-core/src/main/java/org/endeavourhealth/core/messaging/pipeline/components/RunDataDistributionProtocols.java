@@ -272,7 +272,7 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 				UUID exchangeId = exchange.getId();
 				UUID serviceId = exchange.getServiceId();
 				String odsCode = exchange.getHeader(HeaderKeys.SenderLocalIdentifier);
-				return SubscriberHelper.getSubscriberConfigNamesForPublisher(exchangeId, serviceId, odsCode);
+				return SubscriberHelper.getSubscriberConfigNamesForPublisher(exchangeId, serviceId);
 			}
 
 		} catch (Exception ex) {
@@ -311,9 +311,20 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 		}
 
 		//exclude by NHS number
+		String nhsNumber = tmpCache.findPatientNhsNumber();
+
+		//see if patients w/o NHS numbers are allowed
+		if (subscriberConfig.isExcludePatientsWithoutNhsNumber()
+				&& Strings.isNullOrEmpty(nhsNumber)) {
+
+			newResult.setInCohort(false);
+			newResult.setReason("Patients without NHS number are excluded by config");
+			return;
+		}
+
+		//see if patients with specific NHS numbers are excluded
 		String excludeNhsNumberRegex = subscriberConfig.getExcludeNhsNumberRegex();
 		if (!Strings.isNullOrEmpty(excludeNhsNumberRegex)) {
-			String nhsNumber = tmpCache.findPatientNhsNumber();
 			if (!Strings.isNullOrEmpty(nhsNumber)
 					&& Pattern.matches(excludeNhsNumberRegex, nhsNumber)) {
 
