@@ -582,11 +582,11 @@ public abstract class CQC extends AbstractRoutine {
     }
 
     // run from laptop
-    public static void callCQCAPI() throws Exception
+    public static void callCQCAPI(String filename, String outfile) throws Exception
     {
 
         //String filename = "D:\\TEMP\\COVID-Jiras\\08_July_2020_CQC_directory_NEL8.csv";
-        String filename = "C:\\Users\\PaulSimon\\Desktop\\cqc-location-ids.csv";
+        //String filename = "C:\\Users\\PaulSimon\\Desktop\\cqc-location-ids.csv";
         BufferedReader reader = new BufferedReader(
                 new InputStreamReader(new FileInputStream(filename), "UTF-8"));
 
@@ -595,7 +595,8 @@ public abstract class CQC extends AbstractRoutine {
 
         Integer count = 0;
 
-        FileWriter csvWriter = new FileWriter("C:\\Users\\PaulSimon\\Desktop\\cqc_api-1.csv");
+        //FileWriter csvWriter = new FileWriter("C:\\Users\\PaulSimon\\Desktop\\cqc_api-1.csv");
+        FileWriter csvWriter = new FileWriter(outfile);
         String headers="ID,Name,Also known as,Address,Postcode,Phone number,Service's website (if available),Service types,Date of latest check,Specialisms/services,Provider name,Local Authority,Region,Location URL,CQC Location (for office use only,CQC Provider ID (for office use only),On ratings,carehome,dormancy,uprn,odscode";
         csvWriter.append(headers);
         csvWriter.append("\n");
@@ -786,19 +787,20 @@ public abstract class CQC extends AbstractRoutine {
         return ret;
     }
 
-    public static void getAllCQCLocationIds() throws Exception
+    public static void getAllCQCLocationIds(String dirandfile) throws Exception
     {
         String url = "https://api.cqc.org.uk/public/v1/locations?page=1&perPage=20000";
         String response = CallAPI(url);
         System.out.println(response);
-        parseJson(response);
+        parseJson(response, dirandfile);
     }
 
-    private static void parseJson(String json) throws Exception
+    private static void parseJson(String json, String dirandfile) throws Exception
     {
         JSONObject obj = new JSONObject(json);
 
-        FileWriter csvWriter = new FileWriter("C:\\Users\\PaulSimon\\Desktop\\cqc-location-ids.csv");
+        //FileWriter csvWriter = new FileWriter("C:\\Users\\PaulSimon\\Desktop\\cqc-location-ids.csv");
+        FileWriter csvWriter = new FileWriter(dirandfile);
 
         parseLocations(json, csvWriter);
 

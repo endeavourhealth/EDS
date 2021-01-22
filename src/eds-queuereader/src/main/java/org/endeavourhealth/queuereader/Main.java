@@ -199,12 +199,15 @@ public class Main {
 
 		if (args.length>=1 && args[0].equalsIgnoreCase("CQCGETALLLOCATIONS")) {
 			// force new build!
-			CQC.getAllCQCLocationIds();
+            String dirandfile = args[1];
+			CQC.getAllCQCLocationIds(dirandfile);
 			System.exit(0);
 		}
 
 		if (args.length>=1 && args[0].equalsIgnoreCase("CQCAPI")) {
-            CQC.callCQCAPI();
+			String filename = args[1];
+			String outfile = args[2];
+            CQC.callCQCAPI(filename, outfile);
             System.exit(0);
         }
 
