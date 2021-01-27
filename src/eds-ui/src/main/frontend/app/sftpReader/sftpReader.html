@@ -214,7 +214,8 @@
                                                 </span>
                                                 Last Extract Received {{status.latestBatchReceived | date:'yyyy-MM-dd HH:mm'}}
                                             </div>
-                                            <div>Data From: {{status.latestBatchIdentifier}}</div>
+                                            <!--<div>Data From: {{status.latestBatchIdentifier}}</div>-->
+                                            <div>Extract Cutoff: {{status.latestBatchExtractCutoff | date:'yyyy-MM-dd HH:mm'}}</div>
                                             <div>
                                                 Files Received: {{status.latestBatchFileCount}}
                                                 , Extract Size: {{status.latestBatchSizeBytes}}

@@ -15,6 +15,8 @@ export class SftpReaderChannelStatus {
     latestPollingBatchSplitsNotifiedFailure: number;
     latestBatchId: number;
     latestBatchIdentifier: string;
+    latestBatchExtractDate: number;
+    latestBatchExtractCutoff: number;
     latestBatchReceived: number;
     latestBatchSequenceNumber: number;
     latestBatchComplete: boolean;

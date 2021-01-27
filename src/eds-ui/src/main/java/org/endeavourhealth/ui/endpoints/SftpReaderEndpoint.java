@@ -200,24 +200,24 @@ public class SftpReaderEndpoint extends AbstractEndpoint {
             //get the details of the batches and files
             sql = null;
             if (ConnectionManager.isPostgreSQL(connection)) {
-                sql = "SELECT b.batch_id, b.insert_date, b.batch_identifier, b.sequence_number, b.is_complete, count(f.batch_file_id), sum(remote_size_bytes)"
+                sql = "SELECT b.batch_id, b.insert_date, b.batch_identifier, b.sequence_number, b.is_complete, b.extract_date, b.extract_cutoff, count(f.batch_file_id), sum(remote_size_bytes)"
                         + " FROM log.batch b"
                         + " INNER JOIN log.batch_file f"
                         + " ON f.batch_id = b.batch_id"
                         + " WHERE b.configuration_id = ?"
                         + " AND b.insert_date >= ?"
                         + " AND b.insert_date <= ?"
-                        + " GROUP BY b.batch_id, b.insert_date, b.batch_identifier, b.sequence_number, b.is_complete"
+                        + " GROUP BY b.batch_id, b.insert_date, b.batch_identifier, b.sequence_number, b.is_complete, b.extract_date, b.extract_cutoff"
                         + " ORDER BY b.insert_date desc";
             } else {
-                sql = "SELECT b.batch_id, b.insert_date, b.batch_identifier, b.sequence_number, b.is_complete, count(f.batch_file_id), sum(remote_size_bytes)"
+                sql = "SELECT b.batch_id, b.insert_date, b.batch_identifier, b.sequence_number, b.is_complete, b.extract_date, b.extract_cutoff, count(f.batch_file_id), sum(remote_size_bytes)"
                         + " FROM batch b"
                         + " INNER JOIN batch_file f"
                         + " ON f.batch_id = b.batch_id"
                         + " WHERE b.configuration_id = ?"
                         + " AND b.insert_date >= ?"
                         + " AND b.insert_date <= ?"
-                        + " GROUP BY b.batch_id, b.insert_date, b.batch_identifier, b.sequence_number, b.is_complete"
+                        + " GROUP BY b.batch_id, b.insert_date, b.batch_identifier, b.sequence_number, b.is_complete, b.extract_date, b.extract_cutoff"
                         + " ORDER BY b.insert_date desc";
             }
 
@@ -236,6 +236,19 @@ public class SftpReaderEndpoint extends AbstractEndpoint {
                 String batchIdentifier = rs.getString(col++);
                 int sequenceNumber = rs.getInt(col++);
                 boolean isComplete = rs.getBoolean(col++);
+
+                java.sql.Timestamp ts = rs.getTimestamp(col++);
+                Date extractDate = null;
+                if (ts != null) {
+                    extractDate = new Date(ts.getTime());
+                }
+
+                ts = rs.getTimestamp(col++);
+                Date extractCutoff = null;
+                if (ts != null) {
+                    extractCutoff = new Date(ts.getTime());
+                }
+
                 int numFiles = rs.getInt(col++);
                 long sizeBytes = rs.getLong(col++);
                 String sizeDesc = FileUtils.byteCountToDisplaySize(sizeBytes);
@@ -246,6 +259,12 @@ public class SftpReaderEndpoint extends AbstractEndpoint {
                 obj.put("identifier", batchIdentifier);
                 obj.put("sequenceNumber", sequenceNumber);
                 obj.put("complete", isComplete);
+                if (extractDate != null) {
+                    obj.put("extractDate", extractDate.getTime());
+                }
+                if (extractCutoff != null) {
+                    obj.put("extractCutoff", extractCutoff.getTime());
+                }
                 obj.put("fileCount", numFiles);
                 obj.put("sizeBytes", sizeBytes);
                 obj.put("sizeDesc", sizeDesc);
@@ -432,21 +451,21 @@ public class SftpReaderEndpoint extends AbstractEndpoint {
 
             //get the latest batch received
             if (ConnectionManager.isPostgreSQL(connection)) {
-                sql = "select b.batch_id, b.batch_identifier, b.insert_date, b.sequence_number, b.is_complete, count(1), sum(f.remote_size_bytes)"
+                sql = "select b.batch_id, b.batch_identifier, b.insert_date, b.sequence_number, b.is_complete, b.extract_date, b.extract_cutoff, count(1), sum(f.remote_size_bytes)"
                         + " from log.batch b"
                         + " left outer join log.batch_file f"
                         + " on f.batch_id = b.batch_id"
                         + " where b.configuration_id = ?"
-                        + " group by b.batch_id, b.batch_identifier, b.insert_date, b.sequence_number, b.is_complete"
+                        + " group by b.batch_id, b.batch_identifier, b.insert_date, b.sequence_number, b.is_complete, b.extract_date, b.extract_cutoff"
                         + " order by b.insert_date desc"
                         + " limit 1";
             } else {
-                sql = "select b.batch_id, b.batch_identifier, b.insert_date, b.sequence_number, b.is_complete, count(1), sum(f.remote_size_bytes)"
+                sql = "select b.batch_id, b.batch_identifier, b.insert_date, b.sequence_number, b.is_complete, b.extract_date, b.extract_cutoff, count(1), sum(f.remote_size_bytes)"
                         + " from batch b"
                         + " left outer join batch_file f"
                         + " on f.batch_id = b.batch_id"
                         + " where b.configuration_id = ?"
-                        + " group by b.batch_id, b.batch_identifier, b.insert_date, b.sequence_number, b.is_complete"
+                        + " group by b.batch_id, b.batch_identifier, b.insert_date, b.sequence_number, b.is_complete, b.extract_date, b.extract_cutoff"
                         + " order by b.insert_date desc"
                         + " limit 1";
             }
@@ -461,6 +480,19 @@ public class SftpReaderEndpoint extends AbstractEndpoint {
                 Date insertDate = new Date(rs.getTimestamp(col++).getTime());
                 int sequenceNumber = rs.getInt(col++);
                 boolean isComplete = rs.getBoolean(col++);
+
+                java.sql.Timestamp ts = rs.getTimestamp(col++);
+                Date extractDate = null;
+                if (ts != null) {
+                    extractDate = new Date(ts.getTime());
+                }
+
+                ts = rs.getTimestamp(col++);
+                Date extractCutoff = null;
+                if (ts != null) {
+                    extractCutoff = new Date(ts.getTime());
+                }
+
                 int fileCount = rs.getInt(col++);
                 long extractSize = rs.getLong(col++);
 
@@ -469,6 +501,12 @@ public class SftpReaderEndpoint extends AbstractEndpoint {
                 root.put("latestBatchId", batchId);
                 root.put("latestBatchIdentifier", batchIdentifier);
                 root.put("latestBatchReceived", insertDate.getTime());
+                if (extractDate != null) {
+                    root.put("latestBatchExtractDate", extractDate.getTime());
+                }
+                if (extractCutoff != null) {
+                    root.put("latestBatchExtractCutoff", extractCutoff.getTime());
+                }
                 root.put("latestBatchSequenceNumber", sequenceNumber);
                 root.put("latestBatchComplete", isComplete);
                 root.put("latestBatchFileCount", fileCount);

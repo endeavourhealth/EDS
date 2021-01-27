@@ -42,7 +42,7 @@
                     <tr>
                         <!--<th class="col-md-1">Batch</th>-->
                         <th class="col-md-2">Received</th>
-                        <th class="col-md-3">Data Date</th>
+                        <th class="col-md-3">Extract Cutoff</th>
                         <th class="col-md-1">Sequence#</th>
                         <!--<th class="col-md-1">Complete</th>-->
                         <th class="col-md-1">Files</th>
@@ -55,8 +55,11 @@
                     <tr class="hover-box show-child-on-hover" *ngFor="let result of results">
 
                         <!--<td>{{result.id}}</td>-->
-                        <td>{{result.received | date:'dd-MMM-yyyy'}}</td>
-                        <td>{{result.identifier}}</td>
+                        <td>{{result.received | date:'yyyy-MM-dd HH:mm'}}</td>
+                        <td>
+                            <!--{{result.identifier}}-->
+                            {{result.extractCutoff | date:'yyyy-MM-dd HH:mm'}}
+                        </td>
                         <td>{{result.sequenceNumber}}</td>
                         <!--<td>{{result.complete}}</td>-->
                         <td>{{result.fileCount}}</td>
