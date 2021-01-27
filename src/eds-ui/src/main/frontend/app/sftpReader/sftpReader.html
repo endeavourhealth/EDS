@@ -215,7 +215,9 @@
                                                 Last Extract Received {{status.latestBatchReceived | date:'yyyy-MM-dd HH:mm'}}
                                             </div>
                                             <!--<div>Data From: {{status.latestBatchIdentifier}}</div>-->
-                                            <div>Extract Cutoff: {{status.latestBatchExtractCutoff | date:'yyyy-MM-dd HH:mm'}}</div>
+                                            <div>
+                                                Last Extract Cutoff: {{status.latestBatchExtractCutoff | date:'yyyy-MM-dd HH:mm'}}
+                                            </div>
                                             <div>
                                                 Files Received: {{status.latestBatchFileCount}}
                                                 , Extract Size: {{status.latestBatchSizeBytes}}
@@ -256,9 +258,10 @@
                                         </div>
 
                                         <div *ngIf="status.completeBatchId">
-                                            <div>Extract Received: {{status.completeBatchReceived | date:'yyyy-MM-dd HH:mm:ss'}}</div>
-                                            <div>Data From: {{status.completeBatchIdentifier}}</div>
-                                            <div>Extract Sequence No: {{status.completeBatchSequenceNumber}}</div>
+                                            <div>Posted to API: {{status.completeBatchCompletionDate | date:'yyyy-MM-dd HH:mm'}}</div>
+                                            <div>Posted Extract Received: {{status.completeBatchReceived | date:'yyyy-MM-dd HH:mm'}}</div>
+                                            <div>Posted Extract Cutoff: {{status.completeBatchExtractCutoff | date:'yyyy-MM-dd HH:mm'}}</div>
+                                            <!--<div>Extract Sequence No: {{status.completeBatchSequenceNumber}}</div>-->
 
                                             <div>
                                                 <a (click)="viewOrgs(status, status.completeBatchContents)">{{status.completeBatchContents.length}} Orgs in extract</a>

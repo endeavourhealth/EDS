@@ -517,13 +517,13 @@ public class SftpReaderEndpoint extends AbstractEndpoint {
 
             //find the latest complete batch
             if (ConnectionManager.isPostgreSQL(connection)) {
-                sql = "SELECT batch_id, batch_identifier, insert_date, sequence_number"
+                sql = "SELECT batch_id, batch_identifier, insert_date, sequence_number, complete_date, extract_date, extract_cutoff"
                         + " FROM log.batch"
                         + " WHERE configuration_id = ? AND is_complete = true"
                         + " ORDER BY sequence_number desc"
                         + " LIMIT 1";
             } else {
-                sql = "SELECT batch_id, batch_identifier, insert_date, sequence_number"
+                sql = "SELECT batch_id, batch_identifier, insert_date, sequence_number, complete_date, extract_date, extract_cutoff"
                         + " FROM batch"
                         + " WHERE configuration_id = ? AND is_complete = true"
                         + " ORDER BY sequence_number desc"
@@ -542,9 +542,36 @@ public class SftpReaderEndpoint extends AbstractEndpoint {
                 Date insertDate = new Date(rs.getTimestamp(col++).getTime());
                 int sequenceNumber = rs.getInt(col++);
 
+                java.sql.Timestamp ts = rs.getTimestamp(col++);
+                Date completeDate = null;
+                if (ts != null) {
+                    completeDate = new Date(ts.getTime());
+                }
+
+                ts = rs.getTimestamp(col++);
+                Date extractDate = null;
+                if (ts != null) {
+                    extractDate = new Date(ts.getTime());
+                }
+
+                ts = rs.getTimestamp(col++);
+                Date extractCutoff = null;
+                if (ts != null) {
+                    extractCutoff = new Date(ts.getTime());
+                }
+
                 root.put("completeBatchId", latestCompleteBatchId);
+                if (completeDate != null) {
+                    root.put("completeBatchCompletionDate", completeDate.getTime());
+                }
                 root.put("completeBatchIdentifier", batchIdentifier);
                 root.put("completeBatchReceived", insertDate.getTime());
+                if (extractDate != null) {
+                    root.put("completeBatchExtractDate", extractDate.getTime());
+                }
+                if (extractCutoff != null) {
+                    root.put("completeBatchExtractCutoff", extractCutoff.getTime());
+                }
                 root.put("completeBatchSequenceNumber", sequenceNumber);
             }
 

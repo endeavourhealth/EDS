@@ -22,8 +22,11 @@ export class SftpReaderChannelStatus {
     latestBatchComplete: boolean;
     latestBatchFileCount: number;
     latestBatchSizeBytes: string;
+    completeBatchCompletionDate: number;
     completeBatchId: number;
     completeBatchIdentifier: string;
+    completeBatchExtractDate: number;
+    completeBatchExtractCutoff: number;
     completeBatchReceived: number;
     completeBatchSequenceNumber: number;
     completeBatchContents: SftpReaderBatchContents[];
