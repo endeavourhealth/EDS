@@ -631,14 +631,14 @@ public final class ServiceEndpoint extends AbstractEndpoint {
 
                     status.setLastReceivedExtract(lastReceived.getReceivedDate());
                     status.setLastReceivedExtractDate(lastReceived.getExtractDate());
-                    status.setLastProcessedExtractCutoff(lastReceived.getExtractCutoff());
+                    status.setLastReceivedExtractCutoff(lastReceived.getExtractCutoff());
 
                     if (hmProcessed != null) {
                         LastDataProcessed processedObj = hmProcessed.get(systemId);
                         if (processedObj != null) {
 
                             status.setLastProcessedExtract(processedObj.getProcessedDate());
-                            status.setLastProcessedExtract(processedObj.getExtractDate());
+                            status.setLastProcessedExtractDate(processedObj.getExtractDate());
                             status.setLastProcessedExtractCutoff(processedObj.getExtractCutoff());
 
                             //if the exchange ID on both is the same, then we're up to date

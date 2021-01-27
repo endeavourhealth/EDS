@@ -194,10 +194,10 @@ export class ServiceListComponent implements OnInit, OnDestroy{
 
 	formatLastDataTooltip(service: Service, status: SystemStatus) : string {
 
-		if (status.lastReceivedExtractDate) {
+		if (status.lastReceivedExtractCutoff) {
 
 			var lastDate = new Date();
-			lastDate.setTime(status.lastReceivedExtractDate);
+			lastDate.setTime(status.lastReceivedExtractCutoff);
 
 			var lastDataReceived = new Date();
 			lastDataReceived.setTime(status.lastReceivedExtract);
@@ -224,9 +224,9 @@ export class ServiceListComponent implements OnInit, OnDestroy{
 			ret += ': ';
 		}
 
-		if (status.lastReceivedExtractDate) {
+		if (status.lastReceivedExtractCutoff) {
 			var lastDate = new Date();
-			lastDate.setTime(status.lastReceivedExtractDate);
+			lastDate.setTime(status.lastReceivedExtractCutoff);
 
 			var today = new Date();
 
@@ -352,13 +352,11 @@ export class ServiceListComponent implements OnInit, OnDestroy{
 			d.setTime(status.lastProcessedExtract);
 			ret += 'Last successfully processed on ' + ServiceListComponent.formatDate(d);
 
-			if (status.lastProcessedExtractDate) {
+			if (status.lastProcessedExtractCutoff) {
 				var d2 = new Date();
-				d2.setTime(status.lastProcessedExtractDate);
+				d2.setTime(status.lastProcessedExtractCutoff);
 				ret += ' for ' + ServiceListComponent.formatDate(d2);
 			}
-
-			//ret += ' [' + status.lastProcessedExtractDate + ']';
 
 		} else {
 			ret += 'Not successfully processed any data yet';
@@ -416,12 +414,12 @@ export class ServiceListComponent implements OnInit, OnDestroy{
 			|| !status.processingUpToDate) {
 
 			//note that we're showing the data date of the last successfully processed data not WHEN it was processed
-			if (status.lastProcessedExtractDate) {
+			if (status.lastProcessedExtractCutoff) {
 
 				//cache on status object so we're not constantly calculating it
 				if (!status.cachedLastProcessedDiffDesc) {
 					var d = new Date();
-					d.setTime(status.lastProcessedExtractDate);
+					d.setTime(status.lastProcessedExtractCutoff);
 
 					var today = new Date();
 					status.cachedLastProcessedDiffDesc = ServiceListComponent.getDateDiffDesc(d, today, 2);
