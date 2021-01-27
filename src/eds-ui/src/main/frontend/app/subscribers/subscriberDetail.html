@@ -15,5 +15,111 @@
         </div>
     </div>
     <div class="module-body">
+
+
+        <div class="panel panel-primary" *ngIf="serviceService.showFilters">
+            <div class="panel-body">
+                <form class="form-horizontal" role="form">
+                    <div class="form-group">
+
+                        <!-- show dates vs show relative dates -->
+                        <div class="col-sm-2">
+
+                            <label for="showDatesFilter" class="control-label">Show Dates</label>
+                            <input type="checkbox" id="showDatesFilter" [(ngModel)]="subscribersService.showDates" name="showDatesFilter">
+
+                        </div>
+
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-12">
+                <div class="table">
+                    <table class="table table-striped table-condensed">
+                        <thead>
+                        <tr>
+                            <th class="col-md-2">Publisher</th> <!-- publisher name and alias -->
+                            <th class="col-md-1">ODS Code</th> <!-- publisher ODS code -->
+                            <th class="col-md-1">System</th> <!-- Emis, TPP etc. -->
+                            <th class="col-md-1">Last Received</th> <!-- cutoff of last extract -->
+                            <th class="col-md-1">Last Data In</th> <!-- cutoff of last data processed in -->
+                            <th class="col-md-1">Last Data Out</th> <!-- cutoff of last data processed out -->
+                            <th class="col-md-1"></th> <!-- actions -->
+
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr class="hover-box show-child-on-hover" *ngFor="let publisher of getPublishersToShow()">
+
+                            <!-- publisher name and alias -->
+                            <td>
+                                <a (click)="editPublisher(publisher.uuid)">{{publisher.name}}</a>
+                                <!-- icon with tooltip showing alias -->
+                                <span class="fa fa-info-circle fa-right-pad text-muted" ngbTooltip="{{publisher.alias}}" *ngIf="publisher.alias"></span>
+                            </td>
+
+                            <!-- publisher ODS code -->
+                            <td>
+                                {{publisher.odsCode}}
+                            </td>
+
+                            <!-- Emis, TPP etc. -->
+                            <td>
+                                <div *ngFor="let system of publisher.systemStatus">
+                                    {{system.name}}
+                                </div>
+                            </td>
+
+                            <!-- cutoff of last extract -->
+                            <td>
+                                <div *ngFor="let system of publisher.systemStatus">
+                                    <div *ngIf="subscribersService.showDates">
+                                        {{system.lastReceivedExtractCutoff |  date:'yyyy-MM-dd HH:mm'}}
+                                    </div>
+                                    <div *ngIf="!subscribersService.showDates">
+                                        {{getDateDiff(system.lastReceivedExtractCutoff)}}
+                                    </div>
+                                </div>
+                            </td>
+
+                            <!-- cutoff of last data processed in -->
+                            <td>
+                                <div *ngFor="let system of publisher.systemStatus">
+                                    <div *ngIf="subscribersService.showDates">
+                                        {{system.lastProcessedInExtractCutoff |  date:'yyyy-MM-dd HH:mm'}}
+                                    </div>
+                                    <div *ngIf="!subscribersService.showDates">
+                                        {{getDateDiff(system.lastProcessedInExtractCutoff)}}
+                                    </div>
+                                </div>
+                            </td>
+
+                            <!-- cutoff of last data processed out -->
+                            <td>
+                                <div *ngFor="let system of publisher.systemStatus">
+                                    <div *ngIf="subscribersService.showDates">
+                                        {{system.lastProcessedOutExtractCutoff |  date:'yyyy-MM-dd HH:mm'}}
+                                    </div>
+                                    <div *ngIf="!subscribersService.showDates">
+                                        {{getDateDiff(system.lastProcessedOutExtractCutoff)}}
+                                    </div>
+                                </div>
+                            </td>
+
+                            <!-- actions -->
+                            <td>
+                                <button class="btn btn-xs btn-default child-to-show" (click)="viewPublisherExchanges(publisher.uuid)">View Exchanges</button>
+                            </td>
+
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
     </div>
 </div>

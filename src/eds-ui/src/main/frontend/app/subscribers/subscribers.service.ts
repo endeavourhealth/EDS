@@ -8,6 +8,8 @@ import {SubscriberConfiguration} from "./models/SubscriberConfiguration";
 export class SubscribersService extends BaseHttp2Service {
 
     //filters for Subscribers page so they don't get reset when leaving and returning
+    showDates: boolean; //show dates vs show date diff
+
     /*showMemory: boolean;
     showExecutionTime: boolean;
     showJarDate: boolean;
@@ -20,6 +22,7 @@ export class SubscribersService extends BaseHttp2Service {
         super (http);
 
         var vm = this;
+        vm.showDates = false;
         /*vm.filterInstanceName = '';
         vm.showWarningsOnly = true;
         vm.showMemory = true;
