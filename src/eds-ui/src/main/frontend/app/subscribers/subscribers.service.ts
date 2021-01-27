@@ -30,6 +30,14 @@ export class SubscribersService extends BaseHttp2Service {
         return this.httpGet('api/subscribers/subscribers', { });
     }
 
+    getSubscriberDetails(subscriberName: string) : Observable<SubscriberConfiguration> {
+
+        var params = new URLSearchParams();
+        params.append('subscriberName', '' + subscriberName);
+
+        return this.httpGet('api/subscribers/subscriberDetail', { search : params});
+    }
+
     /*getSubscribersStatus(configurationId: string) : Observable<SubscribersChannelStatus> {
         var params = new URLSearchParams();
         params.append('configurationId', '' + configurationId);

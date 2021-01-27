@@ -1,15 +1,20 @@
 export class SystemStatus {
 
+    //returned from endpoint
     systemName: string;
-    lastDataDate: number;
-    lastDataReceived: number;
+    lastReceivedExtract: number;
+    lastReceivedExtractDate: number;
+    lastReceivedExtractCutoff: number;
     processingUpToDate: boolean;
     processingInError: boolean;
-    lastDateSuccessfullyProcessed: number;
-    lastDataDateSuccessfullyProcessed: number;
+    lastProcessedExtract: number;
+    lastProcessedExtractDate: number;
+    lastProcessedExtractCutoff: number;
     publisherMode: string;
+
+    //cached variables
     cachedLastDataDateDesc: string;
-    lastDataDateSuccessfullyProcessedDesc: string;
+    cachedLastProcessedDiffDesc: string;
 
     constructor() {}
 }

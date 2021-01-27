@@ -1,4 +1,5 @@
 
+import {PublisherService} from "./PublisherService";
 export class SubscriberConfiguration {
 
     name: string;
@@ -22,5 +23,6 @@ export class SubscriberConfiguration {
     inboundMoreDays: number;
     outboundUpToDate: number;
     outboundOneDay: number;
-    outboundMoreDays: number;    
+    outboundMoreDays: number;
+    publisherServices: PublisherService[];
 }

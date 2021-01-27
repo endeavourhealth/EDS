@@ -626,26 +626,24 @@ public final class ServiceEndpoint extends AbstractEndpoint {
                 LastDataReceived lastReceived = hmReceived.get(systemId);
 
                 if (lastReceived != null) {
-                    Date dtLastData = lastReceived.getDataDate();
-                    UUID exchangeIdLastReceived = lastReceived.getExchangeId();
-                    Date dtLastDataReceived = lastReceived.getReceivedDate();
 
-                    status.setLastDataDate(dtLastData);
-                    status.setLastDataReceived(dtLastDataReceived);
+                    UUID exchangeIdLastReceived = lastReceived.getExchangeId();
+
+                    status.setLastReceivedExtract(lastReceived.getReceivedDate());
+                    status.setLastReceivedExtractDate(lastReceived.getExtractDate());
+                    status.setLastProcessedExtractCutoff(lastReceived.getExtractCutoff());
 
                     if (hmProcessed != null) {
                         LastDataProcessed processedObj = hmProcessed.get(systemId);
                         if (processedObj != null) {
 
-                            Date lastDataProcessedDate = processedObj.getProcessedDate();
-                            status.setLastDateSuccessfullyProcessed(lastDataProcessedDate);
+                            status.setLastProcessedExtract(processedObj.getProcessedDate());
+                            status.setLastProcessedExtract(processedObj.getExtractDate());
+                            status.setLastProcessedExtractCutoff(processedObj.getExtractCutoff());
 
-                            Date lastDataDateProcessed = processedObj.getDataDate();
-                            status.setLastDataDateSuccessfullyProcessed(lastDataDateProcessed);
-
+                            //if the exchange ID on both is the same, then we're up to date
                             UUID lastExchangeProcessed = processedObj.getExchangeId();
                             if (lastExchangeProcessed.equals(exchangeIdLastReceived)) {
-
                                 status.setProcessingUpToDate(true);
                             }
                         }
@@ -669,6 +667,8 @@ public final class ServiceEndpoint extends AbstractEndpoint {
             return new HashMap<>();
         }
 
+        LastDataDalI dal = DalProvider.factoryLastDataDal();
+
         //if we've less than X services, hit the DB one at a time, rather than loading the full error list
         List<LastDataProcessed> list = null;
         if (services.size() < 5) {
@@ -677,12 +677,12 @@ public final class ServiceEndpoint extends AbstractEndpoint {
 
             for (Service service : services) {
                 UUID serviceId = service.getId();
-                list.addAll(exchangeAuditRepository.getLastDataProcessed(serviceId));
+                list.addAll(dal.getLastDataProcessed(serviceId));
             }
 
         } else {
             //if we're lots of services, it's easier to load all the error states
-            list = exchangeAuditRepository.getLastDataProcessed();
+            list = dal.getLastDataProcessed();
         }
 
         Map<UUID, Map<UUID, LastDataProcessed>> ret = new HashMap<>();
@@ -709,6 +709,8 @@ public final class ServiceEndpoint extends AbstractEndpoint {
             return new HashMap<>();
         }
 
+        LastDataDalI dal = DalProvider.factoryLastDataDal();
+
         //if we've less than X services, hit the DB one at a time, rather than loading the full error list
         List<LastDataReceived> list = null;
         if (services.size() < 5) {
@@ -717,12 +719,12 @@ public final class ServiceEndpoint extends AbstractEndpoint {
 
             for (Service service : services) {
                 UUID serviceId = service.getId();
-                list.addAll(exchangeAuditRepository.getLastDataReceived(serviceId));
+                list.addAll(dal.getLastDataReceived(serviceId));
             }
 
         } else {
             //if we're lots of services, it's easier to load all the error states
-            list = exchangeAuditRepository.getLastDataReceived();
+            list = dal.getLastDataReceived();
         }
 
         Map<UUID, Map<UUID, LastDataReceived>> ret = new HashMap<>();
@@ -744,7 +746,7 @@ public final class ServiceEndpoint extends AbstractEndpoint {
     }
 
 
-    private static String findSoftwareDescForSystem(UUID systemId) throws Exception {
+    public static String findSoftwareDescForSystem(UUID systemId) throws Exception {
 
         LibraryItem libraryItem = LibraryRepositoryHelper.getLibraryItemUsingCache(systemId);
         if (libraryItem == null) {

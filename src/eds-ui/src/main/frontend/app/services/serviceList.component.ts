@@ -194,13 +194,13 @@ export class ServiceListComponent implements OnInit, OnDestroy{
 
 	formatLastDataTooltip(service: Service, status: SystemStatus) : string {
 
-		if (status.lastDataDate) {
+		if (status.lastReceivedExtractDate) {
 
 			var lastDate = new Date();
-			lastDate.setTime(status.lastDataDate);
+			lastDate.setTime(status.lastReceivedExtractDate);
 
 			var lastDataReceived = new Date();
-			lastDataReceived.setTime(status.lastDataReceived);
+			lastDataReceived.setTime(status.lastReceivedExtract);
 
 			return 'Last data received ' + ServiceListComponent.formatDate(lastDataReceived) + ' for ' + ServiceListComponent.formatDate(lastDate);
 
@@ -224,9 +224,9 @@ export class ServiceListComponent implements OnInit, OnDestroy{
 			ret += ': ';
 		}
 
-		if (status.lastDataDate) {
+		if (status.lastReceivedExtractDate) {
 			var lastDate = new Date();
-			lastDate.setTime(status.lastDataDate);
+			lastDate.setTime(status.lastReceivedExtractDate);
 
 			var today = new Date();
 
@@ -346,19 +346,19 @@ export class ServiceListComponent implements OnInit, OnDestroy{
 			}
 		}
 
-		if (status.lastDateSuccessfullyProcessed) {
+		if (status.lastProcessedExtract) {
 
 			var d = new Date();
-			d.setTime(status.lastDateSuccessfullyProcessed);
+			d.setTime(status.lastProcessedExtract);
 			ret += 'Last successfully processed on ' + ServiceListComponent.formatDate(d);
 
-			if (status.lastDataDateSuccessfullyProcessed) {
+			if (status.lastProcessedExtractDate) {
 				var d2 = new Date();
-				d2.setTime(status.lastDataDateSuccessfullyProcessed);
+				d2.setTime(status.lastProcessedExtractDate);
 				ret += ' for ' + ServiceListComponent.formatDate(d2);
 			}
 
-			//ret += ' [' + status.lastDataDateSuccessfullyProcessed + ']';
+			//ret += ' [' + status.lastProcessedExtractDate + ']';
 
 		} else {
 			ret += 'Not successfully processed any data yet';
@@ -404,7 +404,7 @@ export class ServiceListComponent implements OnInit, OnDestroy{
 		} else if (status.processingUpToDate) {
 			ret += 'OK';
 
-		} else if (status.lastDataReceived) {
+		} else if (status.lastReceivedExtract) {
 			ret += 'Behind';
 
 		} else {
@@ -416,18 +416,18 @@ export class ServiceListComponent implements OnInit, OnDestroy{
 			|| !status.processingUpToDate) {
 
 			//note that we're showing the data date of the last successfully processed data not WHEN it was processed
-			if (status.lastDataDateSuccessfullyProcessed) {
+			if (status.lastProcessedExtractDate) {
 
 				//cache on status object so we're not constantly calculating it
-				if (!status.lastDataDateSuccessfullyProcessedDesc) {
+				if (!status.cachedLastProcessedDiffDesc) {
 					var d = new Date();
-					d.setTime(status.lastDataDateSuccessfullyProcessed);
+					d.setTime(status.lastProcessedExtractDate);
 
 					var today = new Date();
-					status.lastDataDateSuccessfullyProcessedDesc = ServiceListComponent.getDateDiffDesc(d, today, 2);
+					status.cachedLastProcessedDiffDesc = ServiceListComponent.getDateDiffDesc(d, today, 2);
 				}
 
-				ret += ' (' + status.lastDataDateSuccessfullyProcessedDesc + ')';
+				ret += ' (' + status.cachedLastProcessedDiffDesc + ')';
 			}
 		}
 

@@ -18,6 +18,8 @@ import {Transition} from "ui-router-ng2/ng2";
 export class SubscriberDetailComponent {
 
     subscriberName: string;
+    statusLastRefreshed: Date;
+    status: SubscriberConfiguration;
 
     //subscriber status
 
@@ -46,6 +48,20 @@ export class SubscriberDetailComponent {
     refreshScreen() {
         var vm = this;
         //vm.refreshSubscribers(true);
+    }
+
+    refreshSubscribers() {
+        var vm = this;
+        vm.statusLastRefreshed = new Date();
+
+        vm.subscribersService.getSubscriberDetails(vm.subscriberName).subscribe(
+            (result) => {
+                vm.status = result;
+            },
+            (error) => {
+                vm.logger.error('Failed get subscriber details', error);
+            }
+        )
     }
 
     close() {

@@ -392,19 +392,6 @@ export class SubscribersComponent {
 
             var cols = [];
 
-
-            /*
-
-             numPublishers: number;
-             inboundUpToDate: number;
-             inboundOneDay: number;
-             inboundMoreDays: number;
-             outboundUpToDate: number;
-             outboundOneDay: number;
-             outboundMoreDays: number;
-             */
-
-
             cols.push(config.name);
             cols.push(config.description);
             cols.push(vm.getSubscriberLocationDesc(config));
@@ -429,8 +416,8 @@ export class SubscribersComponent {
             } else {
                 cols.push('N');
             }
-            if (config.excludePatientsWithoutNhsNumber) {
-                cols.push(config.excludePatientsWithoutNhsNumber);
+            if (config.excludeNhsNumberRegex) {
+                cols.push(config.excludeNhsNumberRegex);
             } else {
                 cols.push('');
             }

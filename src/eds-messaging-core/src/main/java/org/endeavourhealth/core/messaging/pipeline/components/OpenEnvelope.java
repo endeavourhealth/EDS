@@ -1,7 +1,6 @@
 package org.endeavourhealth.core.messaging.pipeline.components;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.google.common.base.Strings;
 import org.apache.commons.io.FileUtils;
 import org.endeavourhealth.common.cache.ParserPool;
 import org.endeavourhealth.common.config.ConfigManager;
@@ -16,12 +15,12 @@ import org.endeavourhealth.core.database.dal.admin.ServiceDalI;
 import org.endeavourhealth.core.database.dal.admin.SystemHelper;
 import org.endeavourhealth.core.database.dal.admin.models.Service;
 import org.endeavourhealth.core.database.dal.audit.ExchangeDalI;
+import org.endeavourhealth.core.database.dal.audit.LastDataDalI;
 import org.endeavourhealth.core.database.dal.audit.models.*;
 import org.endeavourhealth.core.database.dal.usermanager.caching.OrganisationCache;
 import org.endeavourhealth.core.fhirStorage.ServiceInterfaceEndpoint;
 import org.endeavourhealth.core.messaging.pipeline.PipelineComponent;
 import org.endeavourhealth.core.messaging.pipeline.PipelineException;
-import org.endeavourhealth.core.queueing.MessageFormat;
 import org.endeavourhealth.core.xml.QueryDocument.System;
 import org.endeavourhealth.core.xml.QueryDocument.TechnicalInterface;
 import org.endeavourhealth.transform.common.AuditWriter;
@@ -33,7 +32,6 @@ import org.hl7.fhir.instance.model.Resource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
@@ -211,7 +209,59 @@ public class OpenEnvelope extends PipelineComponent {
 		serviceDal.save(service);
 	}
 
+	/**
+	 * works out the date of the newly published data, which is calculated from the exchange body
+	 */
 	private void calculateLastDataDate(Exchange exchange) throws PipelineException {
+
+		//if not attached to a service or system, then ignore
+		UUID serviceId = exchange.getServiceId();
+		UUID systemId = exchange.getSystemId();
+		if (serviceId == null
+				|| systemId == null) {
+			return;
+		}
+
+		try {
+			//the last data date is now sent by the SFTP Reader and HL7 Receiver in the exchange
+			//header, since they're able to calculate it. For backwards compatability purposes,
+			//we just copy over the extract date header that they have set.
+			Date extractDate = exchange.getHeaderAsDate(HeaderKeys.ExtractDate);
+			Date extractCutoff = exchange.getHeaderAsDate(HeaderKeys.ExtractCutoff);
+			boolean hasPatientData = exchange.getHeaderAsBoolean(HeaderKeys.HasPatientData, true); //this header is only set when FALSE, so default to true otherwise
+
+			if (extractDate != null) {
+				//set the date in the exchange header
+				exchange.setHeaderAsDate(HeaderKeys.DataDate, extractDate);
+
+			} else {
+				LOG.warn("No " + HeaderKeys.ExtractDate + " header set in exchange " + exchange.getId() + " for service " + serviceId);
+			}
+
+			//and save the dates to the audit table used by our dashboards (but only if it contains actual patient data)
+			if (hasPatientData
+					&& extractDate != null
+					&& extractCutoff != null) {
+
+				LastDataReceived obj = new LastDataReceived();
+				obj.setServiceId(serviceId);
+				obj.setSystemId(systemId);
+				obj.setExchangeId(exchange.getId());
+				obj.setReceivedDate(new Date());
+				obj.setExtractDate(extractDate);
+				obj.setExtractCutoff(extractCutoff);
+
+				LastDataDalI dal = DalProvider.factoryLastDataDal();
+				dal.save(obj);
+			}
+
+		} catch (Throwable t) {
+			//any exception, just log it out without throwing further up
+			LOG.error("Failed to work out last extract date for " + exchange.getId(), t);
+		}
+	}
+
+	/*private void calculateLastDataDate(Exchange exchange) throws PipelineException {
 
 		UUID serviceId = exchange.getServiceId();
 		UUID systemId = exchange.getSystemId();
@@ -255,9 +305,6 @@ public class OpenEnvelope extends PipelineComponent {
 		}
 	}
 
-	/**
-	 * works out the date of the newly published data, which is calculated from the exchange body
-     */
 	public static Date calculateLastDataDate(String software, String version, String body) throws Exception {
 
 		//unlike all the others, the HL7 exchanges contain a FHIR resourse in JSON, with a timestamp in its body
@@ -269,7 +316,7 @@ public class OpenEnvelope extends PipelineComponent {
 		}
 
 		if (software.equalsIgnoreCase(MessageFormat.IMPERIAL_HL7_V2)) {
-			/*String timestampStr = findFirstElement(body, "datadate");*/
+			*//*String timestampStr = findFirstElement(body, "datadate");*//*
 			SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 			return sdf.parse(sdf.format(new Date()));
 		}
@@ -330,10 +377,7 @@ public class OpenEnvelope extends PipelineComponent {
 		throw new Exception("Failed to work out data date from " + firstFile);
 	}
 
-	/**
-	 * the exchange body is always JSON, but rather than parsing the entire string into a Json structure, this
-	 * function will find the first element for a given name without needing to do all that parsing
-     */
+
 	private static String findFirstElement(String json, String elementName) {
 		elementName = "\"" + elementName + "\"";
 		int index = json.indexOf(elementName);
@@ -341,7 +385,7 @@ public class OpenEnvelope extends PipelineComponent {
 		int endIndex = json.indexOf("\"", index+1);
 		String elementValue = json.substring(index+1, endIndex);
 		return elementValue;
-	}
+	}*/
 
 	private Service processHeader(Exchange exchange, MessageHeader messageHeader) throws PipelineException {
 

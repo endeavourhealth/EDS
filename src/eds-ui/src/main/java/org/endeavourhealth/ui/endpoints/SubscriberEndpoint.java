@@ -5,26 +5,24 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.google.common.base.Strings;
 import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.common.security.SecurityUtils;
 import org.endeavourhealth.core.database.dal.DalProvider;
 import org.endeavourhealth.core.database.dal.admin.ServiceDalI;
-import org.endeavourhealth.core.database.dal.admin.SystemHelper;
 import org.endeavourhealth.core.database.dal.admin.models.Service;
-import org.endeavourhealth.core.database.dal.audit.ExchangeDalI;
+import org.endeavourhealth.core.database.dal.audit.LastDataDalI;
 import org.endeavourhealth.core.database.dal.audit.UserAuditDalI;
 import org.endeavourhealth.core.database.dal.audit.models.*;
 import org.endeavourhealth.core.database.rdbms.ConnectionManager;
+import org.endeavourhealth.core.fhirStorage.ServiceInterfaceEndpoint;
 import org.endeavourhealth.core.subscribers.SubscriberHelper;
 import org.endeavourhealth.coreui.endpoints.AbstractEndpoint;
 import org.endeavourhealth.transform.subscriber.SubscriberConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
+import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -47,7 +45,7 @@ public class SubscriberEndpoint extends AbstractEndpoint {
 
         userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load, "Get Subscribers");
 
-        String ret = getSubscriberSummaryJson();
+        String ret = getSubscriberJson(null, false);
 
         clearLogbackMarkers();
 
@@ -60,7 +58,7 @@ public class SubscriberEndpoint extends AbstractEndpoint {
     /**
      * gets top level details on the subscriber feeds
      */
-    private String getSubscriberSummaryJson() throws Exception {
+    private String getSubscriberJson(String specificSubscriber, boolean detailedOutput) throws Exception {
 
         Map<String, List<Service>> hmPublishers = findPublishers();
 
@@ -74,6 +72,12 @@ public class SubscriberEndpoint extends AbstractEndpoint {
 
         Map<String, String> subscriberMap = ConfigManager.getConfigurations("db_subscriber");
         for (String subscriberName: subscriberMap.keySet()) {
+
+            //skip if we're looking for a specific one
+            if (!Strings.isNullOrEmpty(specificSubscriber)
+                    && specificSubscriber.equalsIgnoreCase(subscriberName)) {
+                continue;
+            }
 
             //don't bother messing with the JSON in the above map, just re-get using the proper object class
             SubscriberConfig config = SubscriberConfig.readFromConfig(subscriberName);
@@ -111,23 +115,20 @@ public class SubscriberEndpoint extends AbstractEndpoint {
 
             List<Service> servicesToSubscriber = hmPublishers.get(subscriberName);
             Map<UUID, Set<LastDataToSubscriber>> hmStatusOutbound = hmStatusOutboundBySubscriber.get(subscriberName);
-            getPublisherStatus(obj, subscriberName, servicesToSubscriber, hmStatusReceived, hmStatusInbound, hmStatusOutbound);
+            getPublisherStatus(obj, servicesToSubscriber, hmStatusReceived, hmStatusInbound, hmStatusOutbound, detailedOutput);
 
 
-
-            //publishers where inbound transform is complete
-            //publishers where outbound transform
         }
 
         return mapper.writeValueAsString(root);
     }
 
     private void getPublisherStatus(ObjectNode obj,
-                                    String subscriberName,
                                     List<Service> services,
                                     Map<UUID, Set<LastDataReceived>> hmStatusReceived,
                                     Map<UUID, Set<LastDataProcessed>> hmStatusInbound,
-                                    Map<UUID, Set<LastDataToSubscriber>> hmStatusOutbound) throws Exception {
+                                    Map<UUID, Set<LastDataToSubscriber>> hmStatusOutbound,
+                                    boolean detailedOutput) throws Exception {
 
         //this might be null if we've got no publishers
         if (services == null) {
@@ -147,25 +148,87 @@ public class SubscriberEndpoint extends AbstractEndpoint {
         int outboundOneDay = 0;
         int outboundMoreDays = 0;
 
-        //ArrayNode arr = obj.putArray("publishers");
+        ArrayNode arr = null;
+        if (detailedOutput) {
+            arr = obj.putArray("publisherDetails");
+        }
 
         for (Service service: services) {
             UUID serviceId = service.getId();
-            List<UUID> systemIds = SystemHelper.getSystemIdsForService(service);
-            Set<UUID> hsSystemIds = new HashSet<>(systemIds);
-            
+
+            //add the publisher details if we've been asked for it
+            ArrayNode systemsNode = null;
+            if (detailedOutput) {
+                ObjectNode serviceNode = arr.addObject();
+
+                serviceNode.put("uuid", service.getId().toString());
+                serviceNode.put("odsCode", service.getLocalId());
+                serviceNode.put("name", service.getName());
+
+                ObjectNode tagsNode = serviceNode.putObject("tags");
+                Map<String, String> tags = service.getTags();
+                for (String tag: tags.keySet()) {
+                    String tagValue = tags.get(tag);
+                    tagsNode.put(tag, tagValue);
+                }
+
+                systemsNode = serviceNode.putArray("systemStatus");
+            }
+
+            List<ServiceInterfaceEndpoint> systemEndpoints = service.getEndpointsList();
+            for (ServiceInterfaceEndpoint endpoint: systemEndpoints) {
+                UUID systemId = endpoint.getSystemUuid();
+
+
+                if (detailedOutput) {
+
+                    String systemDesc = ServiceEndpoint.findSoftwareDescForSystem(systemId);
+                    String publisherMode = endpoint.getEndpoint();
+
+                    ObjectNode systemNode = systemsNode.addObject();
+                    systemNode.put("uuid", systemId.toString());
+                    systemNode.put("name", systemDesc);
+                    systemNode.put("publisherMode", publisherMode); //bulk/regular etc.
+
+                    /*
+    lastReceivedExtract: number;
+    lastReceivedExtractDate: number;
+    lastReceivedExtractCutoff: number;
+
+    //INBOUND data processing
+    processingInError: boolean;
+    processingInErrorMessage: string;
+    lastProcessedInExtract: number;
+    lastProcessedInExtractDate: number;
+    lastProcessedInExtractCutoff: number;
+
+    //OUTBOUND data processing
+    lastProcessedOutExtract: number;
+    lastProcessedOutExtractDate: number;
+    lastProcessedOutExtractCutoff: number;
+                     */
+                }
+
+
+
+            }
+         /*
             Date dLastDataReceived = null;
             Set<LastDataReceived> hsReceived = hmStatusReceived.get(serviceId);
             if (hsReceived != null) {
                 for (LastDataReceived r: hsReceived) {
                     if (hsSystemIds.contains(r.getSystemId())) {
                         if (dLastDataReceived == null
-                                || r.getDataDate().before(dLastDataReceived)) {
-                            dLastDataReceived = r.getDataDate();
+                                || r.getExtractDate().before(dLastDataReceived)) {
+                            dLastDataReceived = r.getExtractDate();
                         }
                     }
                 }
             }
+
+
+
+
             //if we've never received anything for this service, then skip it
             if (dLastDataReceived == null) {
                 continue;
@@ -177,8 +240,8 @@ public class SubscriberEndpoint extends AbstractEndpoint {
                 for (LastDataProcessed r: hsInbound) {
                     if (hsSystemIds.contains(r.getSystemId())) {
                         if (dLastDataProcessedInbound == null
-                                || r.getDataDate().before(dLastDataProcessedInbound)) {
-                            dLastDataProcessedInbound = r.getDataDate();
+                                || r.getExtractDate().before(dLastDataProcessedInbound)) {
+                            dLastDataProcessedInbound = r.getExtractDate();
                         }
                     }
                 }
@@ -190,8 +253,8 @@ public class SubscriberEndpoint extends AbstractEndpoint {
                 for (LastDataToSubscriber r: hsOutbound) {
                     if (hsSystemIds.contains(r.getSystemId())) {
                         if (dLastDataProcessedOutbound == null
-                                || r.getDataDate().before(dLastDataProcessedOutbound)) {
-                            dLastDataProcessedOutbound = r.getDataDate();
+                                || r.getExtractDate().before(dLastDataProcessedOutbound)) {
+                            dLastDataProcessedOutbound = r.getExtractDate();
                         }
                     }
                 }
@@ -219,7 +282,7 @@ public class SubscriberEndpoint extends AbstractEndpoint {
 
             } else {
                 outboundMoreDays++;
-            }
+            }*/
         }
 
         //total number of publishers
@@ -249,8 +312,8 @@ public class SubscriberEndpoint extends AbstractEndpoint {
 
         Map<String, Map<UUID, Set<LastDataToSubscriber>>> ret = new HashMap<>();
 
-        ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
-        List<LastDataToSubscriber> statusReceived = exchangeDal.getLastDataToSubscriber();
+        LastDataDalI dal = DalProvider.factoryLastDataDal();
+        List<LastDataToSubscriber> statusReceived = dal.getLastDataToSubscriber();
         for (LastDataToSubscriber r: statusReceived) {
             String subscriber = r.getSubscriberConfigName();
             UUID serviceId = r.getServiceId();
@@ -277,8 +340,8 @@ public class SubscriberEndpoint extends AbstractEndpoint {
 
         Map<UUID, Set<LastDataProcessed>> ret = new HashMap<>();
 
-        ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
-        List<LastDataProcessed> statusReceived = exchangeDal.getLastDataProcessed();
+        LastDataDalI dal = DalProvider.factoryLastDataDal();
+        List<LastDataProcessed> statusReceived = dal.getLastDataProcessed();
         for (LastDataProcessed r: statusReceived) {
             UUID serviceId = r.getServiceId();
 
@@ -297,8 +360,8 @@ public class SubscriberEndpoint extends AbstractEndpoint {
 
         Map<UUID, Set<LastDataReceived>> ret = new HashMap<>();
 
-        ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
-        List<LastDataReceived> statusReceived = exchangeDal.getLastDataReceived();
+        LastDataDalI dal = DalProvider.factoryLastDataDal();
+        List<LastDataReceived> statusReceived = dal.getLastDataReceived();
         for (LastDataReceived r: statusReceived) {
             UUID serviceId = r.getServiceId();
 
@@ -311,12 +374,6 @@ public class SubscriberEndpoint extends AbstractEndpoint {
         }
 
         return ret;
-    }
-
-    private void getProcessingStatus() throws Exception {
-
-
-
     }
 
     /**
@@ -443,4 +500,25 @@ public class SubscriberEndpoint extends AbstractEndpoint {
 
         return ret;
     }
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="SubscriberEndpoint.subscriberDetail")
+    @Path("/subscriberDetail")
+    public Response getSubscriberDetail(@Context SecurityContext sc, @QueryParam("subscriberName") String subscriberName) throws Exception {
+        super.setLogbackMarkers(sc);
+
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load, "Get Subscriber Detail", "Subscriber", subscriberName);
+
+        String ret = getSubscriberJson(subscriberName, true);
+
+        clearLogbackMarkers();
+
+        return Response
+                .ok()
+                .entity(ret)
+                .build();
+    }
+
 }
