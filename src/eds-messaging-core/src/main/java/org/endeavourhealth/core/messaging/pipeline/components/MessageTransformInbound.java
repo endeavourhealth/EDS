@@ -11,6 +11,7 @@ import org.endeavourhealth.core.database.dal.admin.ServiceDalI;
 import org.endeavourhealth.core.database.dal.admin.models.Service;
 import org.endeavourhealth.core.database.dal.audit.ExchangeBatchDalI;
 import org.endeavourhealth.core.database.dal.audit.ExchangeDalI;
+import org.endeavourhealth.core.database.dal.audit.LastDataDalI;
 import org.endeavourhealth.core.database.dal.audit.models.*;
 import org.endeavourhealth.core.fhirStorage.ServiceInterfaceEndpoint;
 import org.endeavourhealth.core.messaging.pipeline.PipelineComponent;
@@ -273,24 +274,28 @@ public class MessageTransformInbound extends PipelineComponent {
 		UUID systemId = exchange.getSystemId();*/
 
 		try {
+			Date extractDate = exchange.getHeaderAsDate(HeaderKeys.ExtractDate);
+			Date extractCutoff = exchange.getHeaderAsDate(HeaderKeys.ExtractCutoff);
+			boolean hasPatientData = exchange.getHeaderAsBoolean(HeaderKeys.HasPatientData, true); //this header is only set when FALSE, so default to true otherwise
 
-			Date lastDataDate = exchange.getHeaderAsDate(HeaderKeys.DataDate);
-
-			//won't always be present on really old exchanges
-			if (lastDataDate == null) {
+			//if we don't have dates or the extract doesn't contain any patient data, then don't update the audit
+			if (extractDate == null
+					|| extractCutoff == null
+					|| !hasPatientData) {
 				return;
 			}
 
 			//and save the date to the special table so we can retrieve it quicker
-			LastDataProcessed obj = new LastDataProcessed();
-			obj.setServiceId(serviceId);
-			obj.setSystemId(systemId);
-			obj.setExchangeId(exchange.getId());
-			obj.setProcessedDate(new Date());
-			obj.setDataDate(lastDataDate);
+			LastDataProcessed a = new LastDataProcessed();
+			a.setServiceId(serviceId);
+			a.setSystemId(systemId);
+			a.setExchangeId(exchange.getId());
+			a.setProcessedDate(new Date());
+			a.setExtractDate(extractDate);
+			a.setExtractCutoff(extractCutoff);
 
-			ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
-			exchangeDal.save(obj);
+			LastDataDalI dal = DalProvider.factoryLastDataDal();
+			dal.save(a);
 
 		} catch (Throwable t) {
 			//any exception, just log it out without throwing further up

@@ -506,7 +506,6 @@ export class ExchangeAuditComponent {
 	canBeQueued(exchange: Exchange): boolean {
 		var key = exchange.headers['AllowQueueing'];
 
-
 		//if header key not present, it CAN be queued
 		if (key && key == 'false') {
 			return false;
@@ -514,6 +513,18 @@ export class ExchangeAuditComponent {
 			return true;
 		}
 	}
+
+	hasPatientData(exchange: Exchange): boolean {
+		var key = exchange.headers['has-patient-data'];
+
+		//if header key not present, it HAS patient data
+		if (key && key == 'false') {
+			return false;
+		} else {
+			return true;
+		}
+	}
+
 
 	formatTransformAuditDuration(transformAudit: TransformErrorDetail) : string {
 		if (!transformAudit
@@ -704,6 +715,10 @@ export class ExchangeAuditComponent {
 
 	editService() {
 		var vm = this;
+
+		//NOTE: despite repeated attempts, the CLOSE button on the next page doesn't work, so
+		//to avoid errors being thrown, we close the current view (i.e. return to previous page)
+		//and then invoke the new page from that.
 
 		//first close this view
 		vm.$state.go(vm.transition.from());

@@ -110,6 +110,7 @@
                                         </span>
                                         <span class="fa fa-plus-circle" *ngIf="isBulk(exchange)" ngbTooltip="Bulk extract"></span>
                                         <span class="fa fa-chevron-down" *ngIf="!canBeQueued(exchange)" ngbTooltip="Cannot be re-queued"></span>
+                                        <span class="fa fa-minus-square" *ngIf="!hasPatientData(exchange)" ngbTooltip="No patient data"></span>
                                     </td>
                                     <td>
                                         <div *ngIf="exchange.inError">

@@ -328,7 +328,7 @@ export class ServiceService extends BaseHttp2Service {
 							var systemStatus = service.systemStatuses[j];
 
 							var lastDate = new Date();
-							lastDate.setTime(systemStatus.lastDataDate);
+							lastDate.setTime(systemStatus.lastReceivedExtractCutoff);
 
 							if ((!minLastData || lastDate.getTime() >= minLastData.getTime())
 								&& (!maxLastData || lastDate.getTime() < maxLastData.getTime())) {
@@ -488,11 +488,11 @@ export class ServiceService extends BaseHttp2Service {
 
 			for (var i = 0; i < s.systemStatuses.length; i++) {
 				var status = s.systemStatuses[i];
-				if (status.lastDataDate
+				if (status.lastReceivedExtractCutoff
 					&& (!ret
-					|| status.lastDataDate > ret)) {
+					|| status.lastReceivedExtractCutoff > ret)) {
 
-					ret = status.lastDataDate;
+					ret = status.lastReceivedExtractCutoff;
 				}
 			}
 		}
@@ -519,7 +519,7 @@ export class ServiceService extends BaseHttp2Service {
 
 				var thisVal;
 
-				if (!status.lastDataReceived) { //no data
+				if (!status.lastReceivedExtract) { //no data
 					thisVal = 1;
 
 				} else if (!status.processingInError //OK

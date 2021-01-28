@@ -19,6 +19,7 @@ export class SubscribersComponent {
     //subscriber status
     subscribers: SubscriberConfiguration[];
     statusesLastRefreshed: Date;
+    refreshingStatus: boolean;
 
     /*configurations: SubscribersConfiguration[];
     refreshingStatusMap: {};
@@ -43,29 +44,23 @@ export class SubscribersComponent {
 
     refreshScreen() {
         var vm = this;
-        vm.refreshSubscribers(true);
+        vm.refreshSubscribers();
     }
 
 
-    refreshSubscribers(fullRefresh: boolean) {
+    refreshSubscribers() {
         var vm = this;
         vm.statusesLastRefreshed = new Date();
-
-        if (fullRefresh) {
-            /*vm.configurations = null;
-            vm.refreshingStatusMap = {};
-            vm.statusMap = {};*/
-        }
+        vm.refreshingStatus = true;
 
         vm.subscribersService.getSubscribersInstances().subscribe(
             (result) => {
                 vm.subscribers = linq(result).OrderBy(s => s.name).ToArray();
-                if (fullRefresh) {
-                    //vm.refreshStatuses();
-                }
+                vm.refreshingStatus = false;
             },
             (error) => {
                 vm.logger.error('Failed get subscriber details', error);
+                vm.refreshingStatus = false;
             }
         )
     }
@@ -392,19 +387,6 @@ export class SubscribersComponent {
 
             var cols = [];
 
-
-            /*
-
-             numPublishers: number;
-             inboundUpToDate: number;
-             inboundOneDay: number;
-             inboundMoreDays: number;
-             outboundUpToDate: number;
-             outboundOneDay: number;
-             outboundMoreDays: number;
-             */
-
-
             cols.push(config.name);
             cols.push(config.description);
             cols.push(vm.getSubscriberLocationDesc(config));
@@ -429,8 +411,8 @@ export class SubscribersComponent {
             } else {
                 cols.push('N');
             }
-            if (config.excludePatientsWithoutNhsNumber) {
-                cols.push(config.excludePatientsWithoutNhsNumber);
+            if (config.excludeNhsNumberRegex) {
+                cols.push(config.excludeNhsNumberRegex);
             } else {
                 cols.push('');
             }

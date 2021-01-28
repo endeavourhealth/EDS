@@ -2,7 +2,7 @@ package org.endeavourhealth.core.messaging.pipeline.components;
 
 import org.endeavourhealth.core.configuration.AuditLastMessageConfig;
 import org.endeavourhealth.core.database.dal.DalProvider;
-import org.endeavourhealth.core.database.dal.audit.ExchangeDalI;
+import org.endeavourhealth.core.database.dal.audit.LastDataDalI;
 import org.endeavourhealth.core.database.dal.audit.models.Exchange;
 import org.endeavourhealth.core.database.dal.audit.models.HeaderKeys;
 import org.endeavourhealth.core.database.dal.audit.models.LastDataToSubscriber;
@@ -42,22 +42,27 @@ public class AuditLastMessage extends PipelineComponent {
             UUID serviceId = exchange.getServiceId();
             UUID systemId = exchange.getSystemId();
             UUID exchangeId = exchange.getId();
-            Date lastDataDate = exchange.getHeaderAsDate(HeaderKeys.DataDate);
+            Date extractDate = exchange.getHeaderAsDate(HeaderKeys.ExtractDate);
+            Date extractCutoff = exchange.getHeaderAsDate(HeaderKeys.ExtractCutoff);
+            boolean hasPatientData = exchange.getHeaderAsBoolean(HeaderKeys.HasPatientData, true); //this header is only set when FALSE, so default to true otherwise
 
-            //won't always be present on really old exchanges or "special" ones created for non-standard transformations
-            if (lastDataDate == null) {
+            //if we don't have dates or the extract doesn't contain any patient data, then don't update the audit
+            if (extractDate == null
+                    || extractCutoff == null
+                    || !hasPatientData) {
                 return;
             }
 
             a.setServiceId(serviceId);
             a.setSystemId(systemId);
             a.setSubscriberConfigName(subscriberName);
-            a.setDataDate(lastDataDate);
             a.setSentDate(new Date());
             a.setExchangeId(exchangeId);
+            a.setExtractDate(extractDate);
+            a.setExtractCutoff(extractCutoff);
 
-            ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
-            exchangeDal.save(a);
+            LastDataDalI dal = DalProvider.factoryLastDataDal();
+            dal.save(a);
 
 
         } catch (Exception ex) {

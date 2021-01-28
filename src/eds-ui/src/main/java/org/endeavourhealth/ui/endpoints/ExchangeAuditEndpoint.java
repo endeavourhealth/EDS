@@ -19,6 +19,7 @@ import org.endeavourhealth.core.database.dal.admin.models.Service;
 import org.endeavourhealth.core.database.dal.audit.ExchangeDalI;
 import org.endeavourhealth.core.database.dal.audit.UserAuditDalI;
 import org.endeavourhealth.core.database.dal.audit.models.*;
+import org.endeavourhealth.core.database.rdbms.ConnectionManager;
 import org.endeavourhealth.core.messaging.pipeline.PipelineException;
 import org.endeavourhealth.core.messaging.pipeline.components.OpenEnvelope;
 import org.endeavourhealth.core.messaging.pipeline.components.PostMessageToExchange;
@@ -44,6 +45,9 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
@@ -787,7 +791,131 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
         UUID serviceId = UUID.fromString(serviceIdStr);
         UUID systemId = UUID.fromString(systemIdStr);
 
-        List<JsonTransformExchangeError> ret = new ArrayList<>();
+        List<JsonTransformEvent> ret = getInboundTransformEvents(serviceId, systemId, exchangeId, getAllAuditsAndEvents);
+
+        //if we want everything, also include the exchange_event records for the exchange
+        if (getAllAuditsAndEvents) {
+            List<JsonTransformEvent> l = getExchangeEvents(exchangeId);
+            ret.addAll(l);
+
+            List<JsonTransformEvent> l2 = getOutboundTransformEvents(exchangeId);
+            ret.addAll(l2);
+
+            List<JsonTransformEvent> l3 = getOutboundSendEvents(exchangeId);
+            ret.addAll(l3);
+        }
+
+        clearLogbackMarkers();
+
+        return Response
+                .ok()
+                .entity(ret)
+                .build();
+    }
+
+    private List<JsonTransformEvent> getOutboundSendEvents(UUID exchangeId) throws Exception {
+        List<JsonTransformEvent> ret = new ArrayList<>();
+
+        //since this SQL is going to be used in just this ONE place, I'm not going to add to the core repo for others to reuse
+        Connection connection = ConnectionManager.getAuditConnection();
+        PreparedStatement ps = null;
+        try {
+            //this SQL gets a rough grouping of outbound transform audits, since it's not reasonable to get each distinct event
+            String sql = "SELECT a.subscriber_config_name, min(a.inserted_at), max(a.inserted_at), count(1)"
+                    + " FROM exchange_batch b"
+                    + " INNER JOIN exchange_subscriber_send_audit a"
+                    + " ON a.exchange_id = b.exchange_id"
+                    + " AND a.exchange_batch_id = b.batch_id"
+                    + " WHERE b.exchange_id = ?"
+                    + " GROUP BY a.subscriber_config_name, date(a.inserted_at)";
+            ps = connection.prepareStatement(sql);
+
+            int col = 1;
+            ps.setString(col++, exchangeId.toString());
+
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                col = 1;
+
+                String subscriber = rs.getString(col++);
+                java.util.Date started = new java.util.Date(rs.getTimestamp(col++).getTime());
+                java.util.Date ended = new java.util.Date(rs.getTimestamp(col++).getTime());
+                int count = rs.getInt(col++);
+
+                String eventDesc = "Outbound Writing to " + subscriber;
+
+                JsonTransformEvent a = new JsonTransformEvent();
+                a.setExchangeId(exchangeId);
+                a.setEventDesc(eventDesc);
+                a.setTransformStart(started);
+                a.setTransformEnd(ended);
+                a.setNumberBatchIdsCreated(new Integer(count));
+                ret.add(a);
+            }
+
+        } finally {
+            if (ps != null) {
+                ps.close();
+            }
+            connection.close();
+        }
+
+        return ret;
+    }
+
+    private List<JsonTransformEvent> getOutboundTransformEvents(UUID exchangeId) throws Exception {
+        List<JsonTransformEvent> ret = new ArrayList<>();
+
+        //since this SQL is going to be used in just this ONE place, I'm not going to add to the core repo for others to reuse
+        Connection connection = ConnectionManager.getAuditConnection();
+        PreparedStatement ps = null;
+        try {
+            //this SQL gets a rough grouping of outbound transform audits, since it's not reasonable to get each distinct event
+            String sql = "SELECT a.subscriber_config_name, min(a.started), max(a.started), count(1)"
+                    + " FROM exchange_batch b"
+                    + " INNER JOIN exchange_subscriber_transform_audit a"
+                    + " ON a.exchange_id = b.exchange_id"
+                    + " AND a.exchange_batch_id = b.batch_id"
+                    + " WHERE b.exchange_id = ?"
+                    + " GROUP BY a.subscriber_config_name, date(a.started)";
+            ps = connection.prepareStatement(sql);
+
+            int col = 1;
+            ps.setString(col++, exchangeId.toString());
+
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                col = 1;
+
+                String subscriber = rs.getString(col++);
+                java.util.Date started = new java.util.Date(rs.getTimestamp(col++).getTime());
+                java.util.Date ended = new java.util.Date(rs.getTimestamp(col++).getTime());
+                int count = rs.getInt(col++);
+
+                String eventDesc = "Outbound Transform to " + subscriber;
+
+                JsonTransformEvent a = new JsonTransformEvent();
+                a.setExchangeId(exchangeId);
+                a.setEventDesc(eventDesc);
+                a.setTransformStart(started);
+                a.setTransformEnd(ended);
+                a.setNumberBatchIdsCreated(new Integer(count));
+                ret.add(a);
+            }
+
+        } finally {
+            if (ps != null) {
+                ps.close();
+            }
+            connection.close();
+        }
+
+        return ret;
+    }
+
+    private List<JsonTransformEvent> getInboundTransformEvents(UUID serviceId, UUID systemId, UUID exchangeId, boolean getAllAuditsAndEvents) throws Exception {
+
+        List<JsonTransformEvent> ret = new ArrayList<>();
 
         List<ExchangeTransformAudit> transformAudits = null;
 
@@ -795,6 +923,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
             transformAudits = auditRepository.getAllExchangeTransformAudits(serviceId, systemId, exchangeId);
 
         } else {
+            //if not getting ALL, then just get the latest audit
             ExchangeTransformAudit transformAudit = auditRepository.getMostRecentExchangeTransform(serviceId, systemId, exchangeId);
             transformAudits = new ArrayList<>();
             transformAudits.add(transformAudit);
@@ -802,14 +931,14 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
 
         for (ExchangeTransformAudit transformAudit: transformAudits) {
 
-            String desc = "Transform";
+            String desc = "Inbound Transform";
             if (transformAudit.getEnded() == null) {
                 desc += " (started)";
             } else {
                 desc += " (finished)";
             }
 
-            JsonTransformExchangeError jsonObj = new JsonTransformExchangeError();
+            JsonTransformEvent jsonObj = new JsonTransformEvent();
             jsonObj.setExchangeId(exchangeId);
             jsonObj.setVersion(transformAudit.getId());
             jsonObj.setEventDesc(desc);
@@ -830,28 +959,27 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
             }
         }
 
-        //if we want everything, also include the exchange_event records for the exchange
-        if (getAllAuditsAndEvents) {
-            List<ExchangeEvent> exchangeEvents = auditRepository.getExchangeEvents(exchangeId);
-            for (ExchangeEvent event: exchangeEvents) {
-                String eventDesc = event.getEventDesc();
-                Date eventTimestamp = event.getTimestamp();
+        return ret;
+    }
 
-                //we can only populate a few fields on the json proxy, but the javascript handles this
-                JsonTransformExchangeError jsonObj = new JsonTransformExchangeError();
-                jsonObj.setExchangeId(exchangeId);
-                jsonObj.setEventDesc(eventDesc);
-                jsonObj.setTransformStart(eventTimestamp);
-                ret.add(jsonObj);
-            }
+    private List<JsonTransformEvent> getExchangeEvents(UUID exchangeId) throws Exception {
+
+        List<JsonTransformEvent> ret = new ArrayList<>();
+
+        List<ExchangeEvent> exchangeEvents = auditRepository.getExchangeEvents(exchangeId);
+        for (ExchangeEvent event: exchangeEvents) {
+            String eventDesc = event.getEventDesc();
+            Date eventTimestamp = event.getTimestamp();
+
+            //we can only populate a few fields on the json proxy, but the javascript handles this
+            JsonTransformEvent jsonObj = new JsonTransformEvent();
+            jsonObj.setExchangeId(exchangeId);
+            jsonObj.setEventDesc(eventDesc);
+            jsonObj.setTransformStart(eventTimestamp);
+            ret.add(jsonObj);
         }
 
-        clearLogbackMarkers();
-
-        return Response
-                .ok()
-                .entity(ret)
-                .build();
+        return ret;
     }
 
     private List<String> formatTransformAuditErrorLines(ExchangeTransformAudit transformAudit) throws Exception {

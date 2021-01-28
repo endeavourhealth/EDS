@@ -1,14 +1,13 @@
 <div class="module">
     <div class="module-heading">
-        Subscriber Status <span
-            *ngIf="statusesLastRefreshed">(as of {{statusesLastRefreshed | date:'HH:mm:ss'}})</span>
+            Subscriber Status
+            <span *ngIf="statusesLastRefreshed"> (as of {{statusesLastRefreshed | date:'HH:mm:ss'}})</span>
         <div class="pull-right">
 
             <form class="form-inline">
 
-                <button class="btn btn-sm btn-default" (click)="saveToCsv()" title="Save to CSV">Save to CSV</button>
-                <button class="btn btn-sm btn-success" (click)="refreshScreen()">Refresh</button>
-
+                <button class="btn btn-sm btn-default" [disabled]="refreshingStatus" (click)="saveToCsv()">Save to CSV</button>
+                <button class="btn btn-sm btn-success" [disabled]="refreshingStatus" (click)="refreshScreen()">Refresh&nbsp;<span class="fa fa-sm fa-refresh fa-refresh-animate" *ngIf="refreshingStatus"></span></button>
             </form>
 
         </div>
@@ -24,15 +23,17 @@
                         <tr>
                             <th class="col-md-3">Subscriber</th> <!-- name and desc -->
                             <th class="col-md-1">Type</th> <!-- internal or remote -->
-                            <!--<th class="col-md-1">Schema</th> &lt;!&ndash; compass v1/v2 &ndash;&gt;-->
-                            <!--<th class="col-md-1">PI</th> &lt;!&ndash; PI or deidentified &ndash;&gt;-->
+                            <th class="col-md-1">Schema</th> <!-- compass v1/v2 -->
+                            <th class="col-md-1">PI</th> <!-- PI or deidentified -->
                             <th class="col-md-1">Publishers</th> <!-- number of publishers -->
-                            <th class="col-md-1">In Up-to-date</th>
-                            <th class="col-md-1">In 1d Behind</th>
-                            <th class="col-md-1">In 2d+ Behind</th>
-                            <th class="col-md-1">Out Up-to-date</th>
-                            <th class="col-md-1">Out 1d Behind</th>
-                            <th class="col-md-1">Out 2d+ Behind</th>
+                            <th class="col-md-2">
+                                Inbound
+                                <span class="fa fa-info-circle fa-right-pad text-muted" ngbTooltip="OK / 1d behind / 2d+ behind"></span>
+                            </th> <!-- inbound status -->
+                            <th class="col-md-2">
+                                Outbound
+                                <span class="fa fa-info-circle fa-right-pad text-muted" ngbTooltip="OK / 1d behind / 2d+ behind"></span>
+                            </th> <!-- outbound status -->
                             <th class="col-md-1"></th> <!-- actions -->
 
                         </tr>
@@ -54,41 +55,38 @@
                             </td>
 
                             <!-- compass v1/v2 -->
-                            <!--<td>
+                            <td>
                                 <div>{{getSubscriberSchemaDesc(subscriber)}}</div>
-                            </td>-->
+                            </td>
 
                             <!-- PI or deidentified -->
-                            <!--<td>
+                            <td>
                                 <span *ngIf="!subscriber.deidentified" class="fa fa-check"></span>
-                            </td>-->
+                            </td>
 
                             <!-- number of publishers -->
                             <td>
                                 {{subscriber.numPublishers}}
                             </td>
 
+                            <!-- inbound status -->
                             <td>
                                 {{subscriber.inboundUpToDate}}
-                            </td>
-                            <td>
+                                &nbsp;&nbsp;/&nbsp;&nbsp;
                                 {{subscriber.inboundOneDay}}
-                                <span class="label label-warning" *ngIf="subscriber.inboundOneDay > 0">Warning</span>
-                            </td>
-                            <td>
+                                &nbsp;&nbsp;/&nbsp;&nbsp;
                                 {{subscriber.inboundMoreDays}}
-                                <span class="label label-danger" *ngIf="subscriber.inboundMoreDays > 0">Warning</span>
+                                <span class="label label-danger" *ngIf="subscriber.inboundMoreDays > 0" ngbTooltip="Inbound processing 2d+ behind">Warning</span>
                             </td>
+
+                            <!-- outbound status -->
                             <td>
                                 {{subscriber.outboundUpToDate}}
-                            </td>
-                            <td>
+                                &nbsp;&nbsp;/&nbsp;&nbsp;
                                 {{subscriber.outboundOneDay}}
-                                <span class="label label-warning" *ngIf="subscriber.outboundOneDay > 0">Warning</span>
-                            </td>
-                            <td>
+                                &nbsp;&nbsp;/&nbsp;&nbsp;
                                 {{subscriber.outboundMoreDays}}
-                                <span class="label label-danger" *ngIf="subscriber.outboundMoreDays > 0">Warning</span>
+                                <span class="label label-danger" *ngIf="subscriber.outboundMoreDays > 0" ngbTooltip="Outbound processing 2d+ behind">Warning</span>
                             </td>
 
                             <!-- actions -->
