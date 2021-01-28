@@ -13,6 +13,7 @@ import {SubscriberConfiguration} from "./models/SubscriberConfiguration";
 import {Transition} from "ui-router-ng2/ng2";
 import {PublisherService} from "./models/PublisherService";
 import {Service} from "../services/models/Service";
+import {PublisherSystem} from "./models/PublisherSystem";
 
 @Component({
     template : require('./subscriberDetail.html')
@@ -26,6 +27,7 @@ export class SubscriberDetailComponent {
     cachedSystemNames: string[];
     refreshingStatus: boolean;
     selectedPublisher: PublisherService;
+    twoDayDuration: number;
 
     //subscriber status
 
@@ -49,7 +51,7 @@ export class SubscriberDetailComponent {
 
     ngOnInit() {
         var vm = this;
-
+        vm.twoDayDuration = 1000 * 60 * 60 * 24 * 2;
         vm.refreshScreen();
     }
 
@@ -89,8 +91,6 @@ export class SubscriberDetailComponent {
             return;
         }
 
-        var twoDayDur = 1000 * 60 * 60 * 24 * 2;
-
         var arrayLength = vm.status.publisherServices.length;
         for (var i = 0; i < arrayLength; i++) {
             var publisher = vm.status.publisherServices[i] as PublisherService;
@@ -119,7 +119,7 @@ export class SubscriberDetailComponent {
                         }
 
                         //if inbound processing 2+ days behind we need a warning
-                        if (msBehind > twoDayDur) {
+                        if (msBehind > vm.twoDayDuration) {
 
                             var from = new Date();
                             from.setTime(systemStatus.lastProcessedInExtractCutoff);
@@ -147,7 +147,7 @@ export class SubscriberDetailComponent {
                         }
 
                         //if outbound processing 2+ days behind then it needs a warning
-                        if (msBehind > twoDayDur) {
+                        if (msBehind > vm.twoDayDuration) {
 
                             var from = new Date();
                             from.setTime(systemStatus.lastProcessedOutExtractCutoff);
@@ -459,5 +459,39 @@ export class SubscriberDetailComponent {
             ret = '';
         }
         return ret;
+    }
+
+    /**
+     * returns the panel "class" definition for the system, depending on it's status
+     */
+    getPanelClass(systemStatus: PublisherSystem): string {
+        var vm = this;
+
+        //if nothing has been received, then it's a weird case
+        if (!systemStatus.lastReceivedExtractCutoff) {
+            return 'panel panel-info';
+        }
+
+        //any transform error or if we've never processed
+        if (systemStatus.processingInError
+            || !systemStatus.lastProcessedInExtractCutoff
+            || !systemStatus.lastProcessedOutExtractCutoff) {
+            return 'panel panel-danger';
+        }
+
+        //work out if we're behind in inbound processing
+        var msInboundBehind = systemStatus.lastReceivedExtractCutoff - systemStatus.lastProcessedInExtractCutoff;
+        var msOutboundBehind = systemStatus.lastReceivedExtractCutoff - systemStatus.lastProcessedOutExtractCutoff;
+        if (msInboundBehind > vm.twoDayDuration
+            || msOutboundBehind > vm.twoDayDuration) {
+            return 'panel panel-danger';
+        }
+
+        if (msInboundBehind > 0
+            || msOutboundBehind > 0) {
+            return 'panel panel-warning';
+        }
+
+        return 'panel panel-success';
     }
 }
