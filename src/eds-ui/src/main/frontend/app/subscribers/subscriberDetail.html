@@ -188,8 +188,12 @@
                             <div class="panel-body">
 
                                 <div *ngIf="system.processingInError">
-                                    Inbound processing error: <b>{{system.processingInErrorMessage}}</b>
+                                    <div>
+                                        Inbound processing error: <b>{{system.processingInErrorMessage}}</b>
+                                    </div>
+                                    <div>&nbsp;</div>
                                 </div>
+
                                 <div>
                                     Last extract received:
                                     <span *ngIf="system.lastReceivedExtract ">{{system.lastReceivedExtract | date:'yyyy-MM-dd HH:mm:ss'}}</span>
@@ -200,10 +204,22 @@
                                     <span *ngIf="system.lastReceivedExtractCutoff ">{{system.lastReceivedExtractCutoff | date:'yyyy-MM-dd HH:mm:ss'}}</span>
                                     <span *ngIf="!system.lastReceivedExtractCutoff ">Never</span>
                                 </div>
+                                <div>&nbsp;</div>
+                                <div>
+                                    Inbound processing completed:
+                                    <span *ngIf="system.lastProcessedInExtract ">{{system.lastProcessedInExtract | date:'yyyy-MM-dd HH:mm:ss'}}</span>
+                                    <span *ngIf="!system.lastProcessedInExtract ">Never</span>
+                                </div>
                                 <div>
                                     Inbound extract cutoff:
                                     <span *ngIf="system.lastProcessedInExtractCutoff ">{{system.lastProcessedInExtractCutoff | date:'yyyy-MM-dd HH:mm:ss'}}</span>
                                     <span *ngIf="!system.lastProcessedInExtractCutoff ">Never</span>
+                                </div>
+                                <div>&nbsp;</div>
+                                <div>
+                                    Outbound processing completed:
+                                    <span *ngIf="system.lastProcessedOutExtract ">{{system.lastProcessedOutExtract | date:'yyyy-MM-dd HH:mm:ss'}}</span>
+                                    <span *ngIf="!system.lastProcessedOutExtract ">Never</span>
                                 </div>
                                 <div>
                                     Outbound extract cutoff:
