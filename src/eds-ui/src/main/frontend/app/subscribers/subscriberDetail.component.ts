@@ -25,6 +25,7 @@ export class SubscriberDetailComponent {
     filteredServices: PublisherService[];
     cachedSystemNames: string[];
     refreshingStatus: boolean;
+    selectedPublisher: PublisherService;
 
     //subscriber status
 
@@ -62,6 +63,7 @@ export class SubscriberDetailComponent {
         var vm = this;
         vm.statusLastRefreshed = new Date();
         vm.refreshingStatus = true;
+        vm.selectedPublisher = null;
 
         vm.subscribersService.getSubscriberDetails(vm.subscriberName).subscribe(
             (result) => {
@@ -94,7 +96,9 @@ export class SubscriberDetailComponent {
             var publisher = vm.status.publisherServices[i] as PublisherService;
 
             var inboundWarning = null;
+            var inboundBehind = false;
             var outboundWarning = null;
+            var outboundBehind = false;
 
             for (var j=0; j<publisher.systemStatus.length; j++) {
                 var systemStatus = publisher.systemStatus[j];
@@ -102,13 +106,19 @@ export class SubscriberDetailComponent {
                 //inbound warning if in inbound error
                 if (systemStatus.processingInError) {
                     inboundWarning = 'Inbound transform error: ' + systemStatus.processingInErrorMessage;
+                    inboundBehind = true;
 
                 } else if (systemStatus.lastReceivedExtractCutoff) {
 
                     if (systemStatus.lastProcessedInExtractCutoff) {
 
-                        //if inbound processing 2+ days behind
+                        //work out if we're behind in inbound processing
                         var msBehind = systemStatus.lastReceivedExtractCutoff - systemStatus.lastProcessedInExtractCutoff;
+                        if (msBehind > 0) {
+                            inboundBehind = true;
+                        }
+
+                        //if inbound processing 2+ days behind we need a warning
                         if (msBehind > twoDayDur) {
 
                             var from = new Date();
@@ -122,14 +132,21 @@ export class SubscriberDetailComponent {
                     } else {
                         //if never finished any inbound processing
                         inboundWarning = 'No inbound processing completed';
+                        inboundBehind = true;
                     }
                 }
 
                 //outbound warning if 2+ days behind
                 if (systemStatus.lastReceivedExtractCutoff) {
                     if (systemStatus.lastProcessedOutExtractCutoff) {
-                        //if inbound processing 2+ days behind
+
+                        //check if behing in outbound processing
                         var msBehind = systemStatus.lastReceivedExtractCutoff - systemStatus.lastProcessedOutExtractCutoff;
+                        if (msBehind > 0) {
+                            outboundBehind = true;
+                        }
+
+                        //if outbound processing 2+ days behind then it needs a warning
                         if (msBehind > twoDayDur) {
 
                             var from = new Date();
@@ -143,12 +160,15 @@ export class SubscriberDetailComponent {
 
                     } else {
                         outboundWarning = 'No outbound processing completed';
+                        outboundBehind = true;
                     }
                 }
             }
 
             publisher.inboundWarning = inboundWarning;
+            publisher.inboundBehind = inboundBehind;
             publisher.outboundWarning = outboundWarning;
+            publisher.outboundBehind = outboundWarning;
         }
     }
 
@@ -217,20 +237,47 @@ export class SubscriberDetailComponent {
 
     editPublisher(serviceUuid: string) {
         var vm = this;
-        ServiceListComponent.editService(serviceUuid, vm.$state);
+
+        //NOTE: despite repeated attempts, the CLOSE button on the next page doesn't work, so
+        //to avoid errors being thrown, we close the current view (i.e. return to previous page)
+        //and then invoke the new page from that.
+
+        //first close this view
+        vm.$state.go(vm.transition.from());
+
+        //then invoke the new one from the new view
+        setTimeout(()=>{
+            ServiceListComponent.editService(serviceUuid, vm.$state);
+        }, 2000);
     }
 
     viewPublisherExchanges(serviceUuid: string) {
+
         var vm = this;
-        vm.serviceService.get(serviceUuid).subscribe(
-            (result) => {
-                var service = result as Service;
-                ServiceListComponent.viewExchanges(service, vm.$state, vm.$modal);
-            },
-            (error) => {
-                vm.logger.error('Failed get service details', error);
-            }
-        )
+
+        //NOTE: despite repeated attempts, the CLOSE button on the next page doesn't work, so
+        //to avoid errors being thrown, we close the current view (i.e. return to previous page)
+        //and then invoke the new page from that.
+
+        //first close this view
+        vm.$state.go(vm.transition.from());
+
+        //then invoke the new one from the new view
+        setTimeout(()=>{
+
+            vm.serviceService.get(serviceUuid).subscribe(
+                (result) => {
+                    var service = result as Service;
+                    ServiceListComponent.viewExchanges(service, vm.$state, vm.$modal);
+                },
+                (error) => {
+                    vm.logger.error('Failed get service details', error);
+                }
+            )
+
+        }, 2000);
+
+
     }
 
     getNonNullOdsCode(publisher: PublisherService): string {
@@ -381,5 +428,36 @@ export class SubscriberDetailComponent {
         vm.filteredServices = filtered;
     }
 
+    getTagNames(publisher: PublisherService): string[] {
+        var vm = this;
+        var ret = [];
 
+        var tags = publisher.tags;
+        if (!tags) {
+            return ret;
+        }
+
+        var allTagNames = vm.serviceService.getTagNamesFromCache();
+        for (var i=0; i<allTagNames.length; i++) {
+            var tagName = allTagNames[i];
+            if (tags.hasOwnProperty(tagName)) {
+                ret.push(tagName);
+            }
+        }
+
+        return ret;
+    }
+
+    getTagValueDesc(tagName: string, publisher: PublisherService): string {
+        var tags = publisher.tags;
+        if (!tags) {
+            return '';
+        }
+
+        var ret = tags[tagName];
+        if (!ret) {
+            ret = '';
+        }
+        return ret;
+    }
 }

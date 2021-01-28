@@ -1,8 +1,8 @@
 <div class="module">
     <div class="module-heading">
-            {{subscriberName}} Details
-            <span *ngIf="statusLastRefreshed">(as of {{statusLastRefreshed | date:'HH:mm:ss'}})</span>
-            <span *ngIf="status && filteredServices">({{filteredServices.length}} shown of {{status.publisherServices.length}})</span>
+            {{subscriberName}} details
+            <span *ngIf="statusLastRefreshed"> as of {{statusLastRefreshed | date:'HH:mm:ss'}}</span>
+            <span *ngIf="status && filteredServices"> ({{filteredServices.length}} shown of {{status.publisherServices.length}})</span>
         <div class="pull-right">
 
             <form class="form-inline">
@@ -17,8 +17,7 @@
     </div>
     <div class="module-body">
 
-
-        <div class="panel panel-primary" *ngIf="serviceService.showFilters">
+        <div class="panel panel-primary">
             <div class="panel-body">
                 <form class="form-horizontal" role="form">
                     <div class="form-group">
@@ -79,23 +78,23 @@
         </div>
 
         <div class="row">
-            <div class="col-md-12">
+            <div class="col-md-9">
                 <div class="table">
                     <table class="table table-striped table-condensed">
                         <thead>
                         <tr>
-                            <th class="col-md-2">Publisher</th> <!-- publisher name and alias -->
+                            <th class="col-md-3">Publisher</th> <!-- publisher name and alias -->
                             <th class="col-md-1">ODS Code</th> <!-- publisher ODS code -->
                             <th class="col-md-1">System</th> <!-- Emis, TPP etc. -->
                             <th class="col-md-1">Last Received</th> <!-- cutoff of last extract -->
                             <th class="col-md-1">Last Data In</th> <!-- cutoff of last data processed in -->
                             <th class="col-md-1">Last Data Out</th> <!-- cutoff of last data processed out -->
-                            <th class="col-md-1"></th> <!-- actions -->
+                            <!--<th class="col-md-1"></th> &lt;!&ndash; actions &ndash;&gt;-->
 
                         </tr>
                         </thead>
                         <tbody>
-                        <tr class="hover-box show-child-on-hover" *ngFor="let publisher of filteredServices">
+                        <tr class="hover-box show-child-on-hover" *ngFor="let publisher of filteredServices" (click)="selectedPublisher = publisher;" [ngClass]="{'selection': publisher == selectedPublisher}">
 
                             <!-- publisher name and alias -->
                             <td>
@@ -138,6 +137,7 @@
                                         {{getDateDiff(system.lastProcessedInExtractCutoff)}}
                                     </span>
                                     <span class="label label-danger" *ngIf="publisher.inboundWarning" ngbTooltip="{{publisher.inboundWarning}}">Warning</span>
+                                    <span class="fa fa-reply" *ngIf="!publisher.inboundWarning && publisher.inboundBehind" ngbTooltip="Behind"></span>
                                 </div>
                             </td>
 
@@ -151,17 +151,98 @@
                                         {{getDateDiff(system.lastProcessedOutExtractCutoff)}}
                                     </span>
                                     <span class="label label-danger" *ngIf="publisher.outboundWarning" ngbTooltip="{{publisher.outboundWarning}}">Warning</span>
+                                    <span class="fa fa-reply" *ngIf="!publisher.outboundWarning && publisher.outboundBehind" ngbTooltip="Behind"></span>
                                 </div>
                             </td>
 
                             <!-- actions -->
-                            <td>
+                            <!--<td>
                                 <button class="btn btn-xs btn-default child-to-show" (click)="viewPublisherExchanges(publisher.uuid)">View Exchanges</button>
-                            </td>
+                            </td>-->
 
                         </tr>
                         </tbody>
                     </table>
+                </div>
+            </div>
+
+            <div class="col-md-3">
+                <div class="panel panel-primary" *ngIf="selectedPublisher">
+
+                    <div class="row">
+                        <div class="col-md-12">
+
+                            <div>
+                                Name: {{selectedPublisher.name}}
+                            </div>
+                            <div>&nbsp;</div>
+                            <div>
+                                ID: {{selectedPublisher.odsCode}}
+                            </div>
+                            <div>&nbsp;</div>
+                            <div>
+                                Tags:
+                            </div>
+                            <div *ngFor="let tagName of getTagNames(selectedPublisher)">
+                                &nbsp;&nbsp;&nbsp;&nbsp;{{tagName}} {{getTagValueDesc(tagName, selectedPublisher)}}
+                            </div>
+
+                            <div *ngFor="let system of selectedPublisher.systemStatus">
+                                <div>&nbsp;</div>
+                                <div>
+                                    {{system.name}}
+                                </div>
+                                <div *ngIf="system.processingInError">
+                                    Inbound processing error: {{system.processingInErrorMessage}}
+                                </div>
+
+                                <div class="table">
+                                    <table class="table table-striped table-condensed">
+                                        <thead>
+                                            <tr>
+                                                <th class="col-md-3">HEADE</th>
+                                                <th class="col-md-3">HEADE</th>
+                                                <th class="col-md-3">HEADE</th>
+
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td>
+                                                    Received
+                                                </td>
+                                                <td>
+                                                    <span *ngIf="system.lastReceivedExtract ">{{system.lastReceivedExtract | date:'yyyy-MM-dd HH:mm:ss'}}</span>
+                                                    <span *ngIf="!system.lastReceivedExtract ">Never</span>
+                                                </td>
+                                                <td>
+                                                    <span *ngIf="system.lastReceivedExtractCutoff ">{{system.lastReceivedExtractCutoff | date:'yyyy-MM-dd HH:mm:ss'}}</span>
+                                                    <span *ngIf="!system.lastReceivedExtractCutoff ">Never</span>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+
+
+                            <!--
+    lastReceivedExtract: number;
+    lastReceivedExtractCutoff: number;
+
+    lastProcessedInExtract: number;
+    lastProcessedInExtractCutoff: number;
+
+    lastProcessedOutExtract: number;
+    lastProcessedOutExtractCutoff: number;
+                            -->
+
+                            <div>
+                                <button class="btn btn-xs btn-default" (click)="viewPublisherExchanges(selectedPublisher.uuid)">View Exchanges</button>
+                            </div>
+
+                        </div>
+                    </div>
+
                 </div>
             </div>
         </div>

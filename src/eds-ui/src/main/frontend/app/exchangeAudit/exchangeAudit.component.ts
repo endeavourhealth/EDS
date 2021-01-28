@@ -716,6 +716,10 @@ export class ExchangeAuditComponent {
 	editService() {
 		var vm = this;
 
+		//NOTE: despite repeated attempts, the CLOSE button on the next page doesn't work, so
+		//to avoid errors being thrown, we close the current view (i.e. return to previous page)
+		//and then invoke the new page from that.
+
 		//first close this view
 		vm.$state.go(vm.transition.from());
 
