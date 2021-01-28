@@ -281,7 +281,9 @@ public class SubscriberEndpoint extends AbstractEndpoint {
             }
 
             //outbound
-            int daysDiffOutbound = getDaysDiff(firstLastProcessedIn, firstLastProcessedOut);
+            //base outbound on the data received
+            //int daysDiffOutbound = getDaysDiff(firstLastProcessedIn, firstLastProcessedOut);
+            int daysDiffOutbound = getDaysDiff(firstLastReceived, firstLastProcessedOut);
             if (daysDiffOutbound == 0) {
                 outboundUpToDate ++;
 

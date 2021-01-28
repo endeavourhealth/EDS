@@ -27,8 +27,14 @@
                             <th class="col-md-1">Schema</th> <!-- compass v1/v2 -->
                             <th class="col-md-1">PI</th> <!-- PI or deidentified -->
                             <th class="col-md-1">Publishers</th> <!-- number of publishers -->
-                            <th class="col-md-2">Inbound</th> <!-- inbound status -->
-                            <th class="col-md-2">Outbound</th> <!-- outbound status -->
+                            <th class="col-md-2">
+                                Inbound
+                                <span class="fa fa-info-circle fa-right-pad text-muted" ngbTooltip="OK / 1d behind / 2d+ behind"></span>
+                            </th> <!-- inbound status -->
+                            <th class="col-md-2">
+                                Outbound
+                                <span class="fa fa-info-circle fa-right-pad text-muted" ngbTooltip="OK / 1d behind / 2d+ behind"></span>
+                            </th> <!-- outbound status -->
                             <th class="col-md-1"></th> <!-- actions -->
 
                         </tr>
@@ -69,10 +75,9 @@
                                 {{subscriber.inboundUpToDate}}
                                 &nbsp;&nbsp;/&nbsp;&nbsp;
                                 {{subscriber.inboundOneDay}}
-                                <span class="label label-warning" *ngIf="subscriber.inboundOneDay > 0">Warning</span>
                                 &nbsp;&nbsp;/&nbsp;&nbsp;
                                 {{subscriber.inboundMoreDays}}
-                                <span class="label label-danger" *ngIf="subscriber.inboundMoreDays > 0">Warning</span>
+                                <span class="label label-danger" *ngIf="subscriber.inboundMoreDays > 0" ngbTooltip="Inbound processing 2d+ behind">Warning</span>
                             </td>
 
                             <!-- outbound status -->
@@ -80,10 +85,9 @@
                                 {{subscriber.outboundUpToDate}}
                                 &nbsp;&nbsp;/&nbsp;&nbsp;
                                 {{subscriber.outboundOneDay}}
-                                <span class="label label-warnoutg" *ngIf="subscriber.outboundOneDay > 0">Warning</span>
                                 &nbsp;&nbsp;/&nbsp;&nbsp;
                                 {{subscriber.outboundMoreDays}}
-                                <span class="label label-danger" *ngIf="subscriber.outboundMoreDays > 0">Warning</span>
+                                <span class="label label-danger" *ngIf="subscriber.outboundMoreDays > 0" ngbTooltip="Outbound processing 2d+ behind">Warning</span>
                             </td>
 
                             <!-- actions -->

@@ -1,7 +1,8 @@
 <div class="module">
     <div class="module-heading">
-        {{subscriberName}} Subscriber Details <span
-            *ngIf="statusLastRefreshed">(as of {{statusLastRefreshed | date:'HH:mm:ss'}})</span>
+            {{subscriberName}} Details
+            <span *ngIf="statusLastRefreshed">(as of {{statusLastRefreshed | date:'HH:mm:ss'}})</span>
+            <span *ngIf="status && filteredServices">({{filteredServices.length}} shown of {{status.publisherServices.length}})</span>
         <div class="pull-right">
 
             <form class="form-inline">
@@ -22,12 +23,43 @@
                 <form class="form-horizontal" role="form">
                     <div class="form-group">
 
+                        <!-- name and ID filtering -->
+                        <div class="col-sm-2">
+
+                            <label for="publisherNameFilter" for="inputType" class="control-label">Name/ODS</label>
+                            <input type="text" id="publisherNameFilter" class="form-control" id="inputType" placeholder="Regex" [(ngModel)]="subscribersService.publisherNameFilter" name="publisherNameFilter" (ngModelChange)="applyFiltering()">
+
+                        </div>
+
+                        <!-- system type filtering -->
+                        <div class="col-sm-2">
+                            <label for="systemNameFilter" class="control-label">System</label>
+                            <select id="systemNameFilter" class="form-control" [(ngModel)]="subscribersService.systemNameFilter" name="systemNameFilter" (ngModelChange)="applyFiltering()">
+                                <option value=""></option>
+                                <option *ngFor="let systemName of cachedSystemNames" value="{{systemName}}">{{systemName}}</option>
+                            </select>
+                        </div>
+
+
                         <!-- show dates vs show relative dates -->
                         <div class="col-sm-2">
 
                             <label for="showDatesFilter" class="control-label">Show Dates</label>
                             <input type="checkbox" id="showDatesFilter" [(ngModel)]="subscribersService.showDates" name="showDatesFilter">
 
+                        </div>
+
+
+                        <div class="col-sm-2">
+                            <label for="sortFilter" class="control-label">Sorting</label>
+                            <select id="sortFilter" class="form-control" [(ngModel)]="subscribersService.sortFilter" name="sortFilter" (ngModelChange)="applyFiltering()">
+                                <option value="NameAsc">Name Asc</option>
+                                <option value="NameDesc">Name Desc</option>
+                                <option value="IDAsc">ID Asc</option>
+                                <option value="IDDesc">ID Desc</option>
+                                <option value="LastDataAsc">Last Data Asc</option>
+                                <option value="LastDataDesc">Last Data Desc</option>
+                            </select>
                         </div>
 
                     </div>
@@ -52,7 +84,7 @@
                         </tr>
                         </thead>
                         <tbody>
-                        <tr class="hover-box show-child-on-hover" *ngFor="let publisher of getPublishersToShow()">
+                        <tr class="hover-box show-child-on-hover" *ngFor="let publisher of filteredServices">
 
                             <!-- publisher name and alias -->
                             <td>

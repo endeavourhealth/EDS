@@ -22,6 +22,8 @@ export class SubscriberDetailComponent {
     subscriberName: string;
     statusLastRefreshed: Date;
     status: SubscriberConfiguration;
+    filteredServices: PublisherService[];
+    cachedSystemNames: string[];
 
     //subscriber status
 
@@ -62,6 +64,8 @@ export class SubscriberDetailComponent {
         vm.subscribersService.getSubscriberDetails(vm.subscriberName).subscribe(
             (result) => {
                 vm.status = result;
+                vm.cacheSystemNames();
+                vm.applyFiltering();
             },
             (error) => {
                 vm.logger.error('Failed get subscriber details', error);
@@ -74,25 +78,44 @@ export class SubscriberDetailComponent {
         vm.$state.go(vm.transition.from());
     }
 
-    getPublishersToShow(): PublisherService[] {
+    cacheSystemNames() {
         var vm = this;
-        if (!vm.status) {
-            return [];
+
+        //we only need to do this once, so return if already done
+        if (vm.cachedSystemNames) {
+            return;
         }
 
-        //TODO - add any filtering here
+        var vm = this;
+        if (!vm.status) {
+            return;
+        }
 
-        var joined = JSON.stringify(vm.status, null, 2);
-        console.log(joined);
-        console.log('Returning ' + vm.status.publisherServices.length + ' publishers');
-        return vm.status.publisherServices;
+        var list = [];
+
+        var arrayLength = vm.status.publisherServices.length;
+        for (var i = 0; i < arrayLength; i++) {
+            var publisher = vm.status.publisherServices[i] as PublisherService;
+
+            for (var j=0; j<publisher.systemStatus.length; j++) {
+                var systemStatus = publisher.systemStatus[j];
+                var systemName = systemStatus.name;
+
+                if (list.indexOf(systemName) == -1) {
+                    list.push(systemName);
+                }
+            }
+        }
+
+        list = linq(list).OrderBy(s => s.toLowerCase()).ToArray();
+        vm.cachedSystemNames = list;
     }
 
     getDateDiff(fromMs: number): string {
 
         var vm = this;
 
-        if (!from) {
+        if (!fromMs) {
             return 'n/a';
         }
 
@@ -128,6 +151,128 @@ export class SubscriberDetailComponent {
                 vm.logger.error('Failed get service details', error);
             }
         )
-
     }
+
+    getNonNullOdsCode(publisher: PublisherService): string {
+        if (publisher && publisher.odsCode) {
+            return publisher.odsCode;
+        } else {
+            return '';
+        }
+    }
+
+    getLastDataCutoff(publisher: PublisherService): number {
+
+        var ret;
+
+        //if our publisher has multiple systems, always use the OLDER date
+        if (publisher && publisher.systemStatus) {
+
+            for (var i=0; i<publisher.systemStatus.length; i++) {
+                var systemStatus = publisher.systemStatus[i];
+                var cutoff = systemStatus.lastReceivedExtractCutoff;
+                if (cutoff
+                    && (!ret || cutoff < ret)) {
+                    ret = cutoff;
+                }
+            }
+        }
+
+        if (!ret) {
+            ret = 0;
+        }
+        return ret;
+    }
+
+    /**
+     * filters the list of publishers accoring to options selected and caches
+     */
+    applyFiltering() {
+        var vm = this;
+
+        var vm = this;
+        if (!vm.status) {
+            return;
+        }
+
+        var filtered = [];
+
+        //work out if the name/ID search text is valid regex and force it to lower case if so
+        var validNameFilterRegex;
+        if (vm.subscribersService.publisherNameFilter) {
+            try {
+                new RegExp(vm.subscribersService.publisherNameFilter);
+                validNameFilterRegex = vm.subscribersService.publisherNameFilter.toLowerCase().trim();
+            } catch (e) {
+                //do nothing
+            }
+        }
+
+
+        var arrayLength = vm.status.publisherServices.length;
+        for (var i = 0; i < arrayLength; i++) {
+            var publisher = vm.status.publisherServices[i] as PublisherService;
+
+            //only apply the name filter if it's valid regex
+            if (validNameFilterRegex) {
+                var name = publisher.name;
+                var alias = publisher.alias;
+                var id = publisher.odsCode;
+                var uuid = publisher.uuid;
+
+                var include = false;
+                if (name && name.toLowerCase().match(validNameFilterRegex)) {
+                    include = true;
+
+                } if (alias && alias.toLowerCase().match(validNameFilterRegex)) {
+                    include = true;
+
+                } else if (id && id.toLowerCase().match(validNameFilterRegex)) {
+                    include = true;
+
+                } else if (uuid && uuid.toLowerCase() == validNameFilterRegex) { //don't compare this as regex
+                    include = true;
+
+                }
+
+                if (!include) {
+                    continue;
+                }
+            }
+
+            filtered.push(publisher);
+        }
+
+        //always sort by name first
+        filtered = linq(filtered).OrderBy(s => s.name.toLowerCase()).ToArray();
+
+        if (vm.subscribersService.sortFilter == 'NameAsc') {
+            //no extra sorting
+
+        } else if (vm.subscribersService.sortFilter == 'NameDesc') {
+            //already sorted by name asc, so just rverse
+            filtered = filtered.reverse();
+
+        } else if (vm.subscribersService.sortFilter == 'IDAsc') {
+            filtered = linq(filtered).OrderBy(s => vm.getNonNullOdsCode(s)).ToArray();
+
+        } else if (vm.subscribersService.sortFilter == 'IDDesc') {
+            filtered = linq(filtered).OrderBy(s => vm.getNonNullOdsCode(s)).ToArray();
+            filtered = filtered.reverse();
+
+        } else if (vm.subscribersService.sortFilter == 'LastDataAsc') {
+            filtered = linq(filtered).OrderBy(s => vm.getLastDataCutoff(s)).ToArray();
+            filtered = filtered.reverse();
+
+        } else if (vm.subscribersService.sortFilter == 'LastDataDesc') {
+            filtered = linq(filtered).OrderBy(s => vm.getLastDataCutoff(s)).ToArray();
+
+        } else {
+            console.log('unknown sort mode ' + vm.subscribersService.sortFilter);
+        }
+
+        vm.filteredServices = filtered;
+    }
+
+
 }
