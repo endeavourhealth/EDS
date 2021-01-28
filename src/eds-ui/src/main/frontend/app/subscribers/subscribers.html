@@ -6,9 +6,8 @@
 
             <form class="form-inline">
 
-                <button class="btn btn-sm btn-default" (click)="saveToCsv()" title="Save to CSV">Save to CSV</button>
-                <button class="btn btn-sm btn-success" (click)="refreshScreen()">Refresh</button>
-
+                <button class="btn btn-sm btn-default" [disabled]="refreshingStatus" (click)="saveToCsv()">Save to CSV</button>
+                <button class="btn btn-sm btn-success" [disabled]="refreshingStatus" (click)="refreshScreen()">Refresh&nbsp;<span class="fa fa-sm fa-refresh fa-refresh-animate" *ngIf="refreshingStatus"></span></button>
             </form>
 
         </div>

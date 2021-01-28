@@ -352,21 +352,21 @@ public class SubscriberEndpoint extends AbstractEndpoint {
         }
     }
     
-    private int getDaysDiff(Date dtFrom, Date dtTo) {
+    private int getDaysDiff(Date dtReceived, Date dtProcessed) {
 
         //if we don't have a "from" date, then by definition the "to" date is up to date
-        if (dtFrom == null) {
+        if (dtReceived == null) {
             return 0;
         }
 
         //if we don't have a "to" date then we're very behind
-        if (dtTo == null) {
+        if (dtProcessed == null) {
             return Integer.MAX_VALUE;
         }
 
         //if we have both dates, then work out the actual number of days difference
-        long msFrom = dtFrom.getTime();
-        long msTo = dtTo.getTime();
+        long msFrom = dtProcessed.getTime();
+        long msTo = dtReceived.getTime();
         long msDiff = msTo - msFrom;
         return (int)(msDiff / (1000 * 60 * 60 * 24));
     }

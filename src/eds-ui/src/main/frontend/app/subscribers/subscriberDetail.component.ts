@@ -24,6 +24,7 @@ export class SubscriberDetailComponent {
     status: SubscriberConfiguration;
     filteredServices: PublisherService[];
     cachedSystemNames: string[];
+    refreshingStatus: boolean;
 
     //subscriber status
 
@@ -60,18 +61,97 @@ export class SubscriberDetailComponent {
     refreshSubscribers() {
         var vm = this;
         vm.statusLastRefreshed = new Date();
+        vm.refreshingStatus = true;
 
         vm.subscribersService.getSubscriberDetails(vm.subscriberName).subscribe(
             (result) => {
                 vm.status = result;
                 vm.cacheSystemNames();
+                vm.calculateWarnings();
                 vm.applyFiltering();
+                vm.refreshingStatus = false;
             },
             (error) => {
                 vm.logger.error('Failed get subscriber details', error);
+                vm.refreshingStatus = false;
             }
         )
     }
+
+    /**
+     * goes through the publisher status objects and works out any warnings
+     */
+    calculateWarnings() {
+        var vm = this;
+        if (!vm.status) {
+            return;
+        }
+
+        var twoDayDur = 1000 * 60 * 60 * 24 * 2;
+
+        var arrayLength = vm.status.publisherServices.length;
+        for (var i = 0; i < arrayLength; i++) {
+            var publisher = vm.status.publisherServices[i] as PublisherService;
+
+            var inboundWarning = null;
+            var outboundWarning = null;
+
+            for (var j=0; j<publisher.systemStatus.length; j++) {
+                var systemStatus = publisher.systemStatus[j];
+
+                //inbound warning if in inbound error
+                if (systemStatus.processingInError) {
+                    inboundWarning = 'Inbound transform error: ' + systemStatus.processingInErrorMessage;
+
+                } else if (systemStatus.lastReceivedExtractCutoff) {
+
+                    if (systemStatus.lastProcessedInExtractCutoff) {
+
+                        //if inbound processing 2+ days behind
+                        var msBehind = systemStatus.lastReceivedExtractCutoff - systemStatus.lastProcessedInExtractCutoff;
+                        if (msBehind > twoDayDur) {
+
+                            var from = new Date();
+                            from.setTime(systemStatus.lastProcessedInExtractCutoff);
+                            var to = new Date();
+                            to.setTime(systemStatus.lastReceivedExtractCutoff);
+
+                            var behindDesc = ServiceListComponent.getDateDiffDesc(from, to, 2);
+                            inboundWarning = 'Inbound processing ' + behindDesc + ' behind';
+                        }
+                    } else {
+                        //if never finished any inbound processing
+                        inboundWarning = 'No inbound processing completed';
+                    }
+                }
+
+                //outbound warning if 2+ days behind
+                if (systemStatus.lastReceivedExtractCutoff) {
+                    if (systemStatus.lastProcessedOutExtractCutoff) {
+                        //if inbound processing 2+ days behind
+                        var msBehind = systemStatus.lastReceivedExtractCutoff - systemStatus.lastProcessedOutExtractCutoff;
+                        if (msBehind > twoDayDur) {
+
+                            var from = new Date();
+                            from.setTime(systemStatus.lastProcessedOutExtractCutoff);
+                            var to = new Date();
+                            to.setTime(systemStatus.lastReceivedExtractCutoff);
+
+                            var behindDesc = ServiceListComponent.getDateDiffDesc(from, to, 2);
+                            outboundWarning = 'Outbound processing ' + behindDesc + ' behind';
+                        }
+
+                    } else {
+                        outboundWarning = 'No outbound processing completed';
+                    }
+                }
+            }
+
+            publisher.inboundWarning = inboundWarning;
+            publisher.outboundWarning = outboundWarning;
+        }
+    }
+
 
     close() {
         var vm = this;
@@ -213,6 +293,17 @@ export class SubscriberDetailComponent {
         for (var i = 0; i < arrayLength; i++) {
             var publisher = vm.status.publisherServices[i] as PublisherService;
 
+            if (vm.subscribersService.showWarningsOnly) {
+                var include = false;
+                if (publisher.inboundWarning || publisher.outboundWarning) {
+                    include = true;
+                }
+
+                if (!include) {
+                    continue;
+                }
+            }
+
             //only apply the name filter if it's valid regex
             if (validNameFilterRegex) {
                 var name = publisher.name;
@@ -233,6 +324,22 @@ export class SubscriberDetailComponent {
                 } else if (uuid && uuid.toLowerCase() == validNameFilterRegex) { //don't compare this as regex
                     include = true;
 
+                }
+
+                if (!include) {
+                    continue;
+                }
+            }
+
+            if (vm.subscribersService.systemNameFilter) {
+                var include = false;
+
+                for (var j=0; j<publisher.systemStatus.length; j++) {
+                    var systemStatus = publisher.systemStatus[j];
+                    if (systemStatus.name == vm.subscribersService.systemNameFilter) {
+                        include = true;
+                        break;
+                    }
                 }
 
                 if (!include) {

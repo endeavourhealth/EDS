@@ -30,7 +30,7 @@ export class ExchangeAuditService extends BaseHttp2Service {
         super(http);
 
         var vm = this;
-        vm.exchangesToShow = 100;
+        vm.exchangesToShow = 20;
         vm.searchMode = 'Recent';
         vm.postMode = 'Onwards';
         vm.postShowAllSubscriberConfigNames = false;

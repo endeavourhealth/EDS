@@ -7,8 +7,8 @@
 
             <form class="form-inline">
 
-                <button class="btn btn-sm btn-default" (click)="saveToCsv()" title="Save to CSV">Save to CSV</button>
-                <button class="btn btn-sm btn-success" (click)="refreshScreen()">Refresh</button>
+                <button class="btn btn-sm btn-default" [disabled]="refreshingStatus" (click)="saveToCsv()">Save to CSV</button>
+                <button class="btn btn-sm btn-success" [disabled]="refreshingStatus" (click)="refreshScreen()">Refresh&nbsp;<span class="fa fa-sm fa-refresh fa-refresh-animate" *ngIf="refreshingStatus"></span></button>
                 <button type="button" class="btn btn-sm btn-default" (click)="close()">Close</button>
 
             </form>
@@ -44,10 +44,21 @@
                         <!-- show dates vs show relative dates -->
                         <div class="col-sm-2">
 
-                            <label for="showDatesFilter" class="control-label">Show Dates</label>
-                            <input type="checkbox" id="showDatesFilter" [(ngModel)]="subscribersService.showDates" name="showDatesFilter">
+                            <div>
+                                <label for="showDatesFilter" class="control-label">Show Dates</label>
+                                <input type="checkbox" id="showDatesFilter" [(ngModel)]="subscribersService.showDates" name="showDatesFilter">
+                            </div>
+
+                            <div>
+                                <label for="showWarningsOnly" class="control-label">Show Warnings Only</label>
+                                <input type="checkbox" id="showWarningsOnly" [(ngModel)]="subscribersService.showWarningsOnly" name="showWarningsOnly" (ngModelChange)="applyFiltering()">
+                            </div>
+
+
 
                         </div>
+
+
 
 
                         <div class="col-sm-2">
@@ -120,24 +131,26 @@
                             <!-- cutoff of last data processed in -->
                             <td>
                                 <div *ngFor="let system of publisher.systemStatus">
-                                    <div *ngIf="subscribersService.showDates">
+                                    <span *ngIf="subscribersService.showDates">
                                         {{system.lastProcessedInExtractCutoff |  date:'yyyy-MM-dd HH:mm'}}
-                                    </div>
-                                    <div *ngIf="!subscribersService.showDates">
+                                    </span>
+                                    <span *ngIf="!subscribersService.showDates">
                                         {{getDateDiff(system.lastProcessedInExtractCutoff)}}
-                                    </div>
+                                    </span>
+                                    <span class="label label-danger" *ngIf="publisher.inboundWarning" ngbTooltip="{{publisher.inboundWarning}}">Warning</span>
                                 </div>
                             </td>
 
                             <!-- cutoff of last data processed out -->
                             <td>
                                 <div *ngFor="let system of publisher.systemStatus">
-                                    <div *ngIf="subscribersService.showDates">
-                                        {{system.lastProcessedOutExtractCutoff |  date:'yyyy-MM-dd HH:mm'}}
-                                    </div>
-                                    <div *ngIf="!subscribersService.showDates">
+                                    <span *ngIf="subscribersService.showDates">
+                                        {{system.lastProcessedOutExtractCutoff | date:'yyyy-MM-dd HH:mm'}}
+                                    </span>
+                                    <span *ngIf="!subscribersService.showDates">
                                         {{getDateDiff(system.lastProcessedOutExtractCutoff)}}
-                                    </div>
+                                    </span>
+                                    <span class="label label-danger" *ngIf="publisher.outboundWarning" ngbTooltip="{{publisher.outboundWarning}}">Warning</span>
                                 </div>
                             </td>
 

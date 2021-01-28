@@ -19,6 +19,7 @@ export class SubscribersComponent {
     //subscriber status
     subscribers: SubscriberConfiguration[];
     statusesLastRefreshed: Date;
+    refreshingStatus: boolean;
 
     /*configurations: SubscribersConfiguration[];
     refreshingStatusMap: {};
@@ -43,29 +44,23 @@ export class SubscribersComponent {
 
     refreshScreen() {
         var vm = this;
-        vm.refreshSubscribers(true);
+        vm.refreshSubscribers();
     }
 
 
-    refreshSubscribers(fullRefresh: boolean) {
+    refreshSubscribers() {
         var vm = this;
         vm.statusesLastRefreshed = new Date();
-
-        if (fullRefresh) {
-            /*vm.configurations = null;
-            vm.refreshingStatusMap = {};
-            vm.statusMap = {};*/
-        }
+        vm.refreshingStatus = true;
 
         vm.subscribersService.getSubscribersInstances().subscribe(
             (result) => {
                 vm.subscribers = linq(result).OrderBy(s => s.name).ToArray();
-                if (fullRefresh) {
-                    //vm.refreshStatuses();
-                }
+                vm.refreshingStatus = false;
             },
             (error) => {
                 vm.logger.error('Failed get subscriber details', error);
+                vm.refreshingStatus = false;
             }
         )
     }
