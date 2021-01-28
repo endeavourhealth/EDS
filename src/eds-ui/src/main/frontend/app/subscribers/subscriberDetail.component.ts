@@ -494,4 +494,99 @@ export class SubscriberDetailComponent {
 
         return 'panel panel-success';
     }
+
+
+    /**
+     * saves current list to CSV
+     */
+    saveToCsv() {
+
+        var vm = this;
+
+        //create CSV content in a String
+        var lines = [];
+        var line;
+
+        line = '\"Publisher Name\",' +
+            '\"ODS Code\",' +
+            '\"System\",' +
+            '\"Inbound Error\",' +
+            '\"Last Extract Received\",' +
+            '\"Last Extract Cutoff\",' +
+            '\"Complete Inbound Extract Cutoff\",' +
+            '\"Complete Outbound Extract Cutoff\"';
+        lines.push(line);
+
+        for (var i=0; i<vm.filteredServices.length; i++) {
+            var publisher = vm.filteredServices[i] as PublisherService;
+
+            for (var j=0; j<publisher.systemStatus.length; j++) {
+                var system = publisher.systemStatus[j];
+
+
+                var cols = [];
+
+                cols.push(publisher.name);
+                cols.push(publisher.odsCode);
+                cols.push(system.name);
+
+                if (system.processingInError) {
+                    cols.push(system.processingInErrorMessage);
+                } else {
+                    cols.push('');
+                }
+
+                if (system.lastReceivedExtract) {
+                    var d = new Date();
+
+                    d.setTime(system.lastReceivedExtract);
+                    cols.push(ServiceListComponent.formatDate(d));
+
+                    d.setTime(system.lastReceivedExtractCutoff);
+                    cols.push(ServiceListComponent.formatDate(d));
+
+                    if (system.lastProcessedInExtractCutoff) {
+                        d.setTime(system.lastProcessedInExtractCutoff);
+                        cols.push(ServiceListComponent.formatDate(d));
+
+                    } else {
+                        cols.push('None');
+                    }
+
+                    if (system.lastProcessedOutExtractCutoff) {
+                        d.setTime(system.lastProcessedOutExtractCutoff);
+                        cols.push(ServiceListComponent.formatDate(d));
+
+                    } else {
+                        cols.push('None');
+                    }
+
+                } else {
+
+                    cols.push('Never');
+                    cols.push('');
+                }
+
+
+                line = '\"' + cols.join('\",\"') + '\"';
+                lines.push(line);
+            }
+
+        }
+
+        var csvStr = lines.join('\r\n');
+
+        const filename = vm.subscriberName + '_status.csv';
+        const blob = new Blob([csvStr], { type: 'text/plain' });
+
+        let url = window.URL.createObjectURL(blob);
+        let a = document.createElement('a');
+        document.body.appendChild(a);
+        a.setAttribute('style', 'display: none');
+        a.href = url;
+        a.download = filename;
+        a.click();
+        window.URL.revokeObjectURL(url);
+        a.remove();
+    }
 }
