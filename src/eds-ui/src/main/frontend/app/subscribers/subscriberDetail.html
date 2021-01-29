@@ -39,6 +39,17 @@
                             </select>
                         </div>
 
+                        <!-- status filtering -->
+                        <div class="col-sm-2">
+                            <label for="statusFilter" class="control-label">System</label>
+                            <select id="statusFilter" class="form-control" [(ngModel)]="subscribersService.statusFilter" name="statusFilter" (ngModelChange)="applyFiltering()">
+                                <option value=""></option>
+                                <option value="warnings">Warnings Only</option>
+                                <option value="behind">Behind &amp; Warnings</option>
+                                <option value="up-to-date">Up-to-date</option>
+                            </select>
+                        </div>
+
 
                         <!-- show dates vs show relative dates -->
                         <div class="col-sm-2">
@@ -48,10 +59,10 @@
                                 <input type="checkbox" id="showDatesFilter" [(ngModel)]="subscribersService.showDates" name="showDatesFilter">
                             </div>
 
-                            <div>
+      <!--                      <div>
                                 <label for="showWarningsOnly" class="control-label">Show Warnings Only</label>
                                 <input type="checkbox" id="showWarningsOnly" [(ngModel)]="subscribersService.showWarningsOnly" name="showWarningsOnly" (ngModelChange)="applyFiltering()">
-                            </div>
+                            </div>-->
 
 
 
@@ -136,8 +147,8 @@
                                     <span *ngIf="!subscribersService.showDates">
                                         {{getDateDiff(system.lastProcessedInExtractCutoff)}}
                                     </span>
-                                    <span class="label label-danger" *ngIf="publisher.inboundWarning" ngbTooltip="{{publisher.inboundWarning}}">Warning</span>
-                                    <span class="fa fa-reply" *ngIf="!publisher.inboundWarning && publisher.inboundBehind" ngbTooltip="Behind"></span>
+                                    <span class="label label-danger" *ngIf="system.inboundWarning" ngbTooltip="{{system.inboundWarning}}">Warning</span>
+                                    <span class="fa fa-reply" *ngIf="!system.inboundWarning && system.inboundBehind" ngbTooltip="Behind"></span>
                                 </div>
                             </td>
 
@@ -150,8 +161,8 @@
                                     <span *ngIf="!subscribersService.showDates">
                                         {{getDateDiff(system.lastProcessedOutExtractCutoff)}}
                                     </span>
-                                    <span class="label label-danger" *ngIf="publisher.outboundWarning" ngbTooltip="{{publisher.outboundWarning}}">Warning</span>
-                                    <span class="fa fa-reply" *ngIf="!publisher.outboundWarning && publisher.outboundBehind" ngbTooltip="Behind"></span>
+                                    <span class="label label-danger" *ngIf="system.outboundWarning" ngbTooltip="{{system.outboundWarning}}">Warning</span>
+                                    <span class="fa fa-reply" *ngIf="!system.outboundWarning && system.outboundBehind" ngbTooltip="Behind"></span>
                                 </div>
                             </td>
 
@@ -214,6 +225,8 @@
                                     Inbound extract cutoff:
                                     <span *ngIf="system.lastProcessedInExtractCutoff ">{{system.lastProcessedInExtractCutoff | date:'yyyy-MM-dd HH:mm:ss'}}</span>
                                     <span *ngIf="!system.lastProcessedInExtractCutoff ">Never</span>
+                                    <span class="label label-danger" *ngIf="system.inboundWarning" ngbTooltip="{{system.inboundWarning}}">Warning</span>
+                                    <span class="fa fa-reply" *ngIf="!system.inboundWarning && system.inboundBehind" ngbTooltip="Behind"></span>
                                 </div>
                                 <div>&nbsp;</div>
                                 <div>
@@ -225,6 +238,8 @@
                                     Outbound extract cutoff:
                                     <span *ngIf="system.lastProcessedOutExtractCutoff ">{{system.lastProcessedOutExtractCutoff | date:'yyyy-MM-dd HH:mm:ss'}}</span>
                                     <span *ngIf="!system.lastProcessedOutExtractCutoff ">Never</span>
+                                    <span class="label label-danger" *ngIf="system.outboundWarning" ngbTooltip="{{system.outboundWarning}}">Warning</span>
+                                    <span class="fa fa-reply" *ngIf="!system.outboundWarning && system.outboundBehind" ngbTooltip="Behind"></span>
                                 </div>
 
 

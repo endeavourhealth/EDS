@@ -95,13 +95,13 @@ export class SubscriberDetailComponent {
         for (var i = 0; i < arrayLength; i++) {
             var publisher = vm.status.publisherServices[i] as PublisherService;
 
-            var inboundWarning = null;
-            var inboundBehind = false;
-            var outboundWarning = null;
-            var outboundBehind = false;
-
             for (var j=0; j<publisher.systemStatus.length; j++) {
-                var systemStatus = publisher.systemStatus[j];
+                var systemStatus = publisher.systemStatus[j] as PublisherSystem;
+
+                var inboundWarning = null;
+                var inboundBehind = false;
+                var outboundWarning = null;
+                var outboundBehind = false;
 
                 //inbound warning if in inbound error
                 if (systemStatus.processingInError) {
@@ -163,12 +163,14 @@ export class SubscriberDetailComponent {
                         outboundBehind = true;
                     }
                 }
+
+                systemStatus.inboundWarning = inboundWarning;
+                systemStatus.inboundBehind = inboundBehind;
+                systemStatus.outboundWarning = outboundWarning;
+                systemStatus.outboundBehind = inboundBehind;
             }
 
-            publisher.inboundWarning = inboundWarning;
-            publisher.inboundBehind = inboundBehind;
-            publisher.outboundWarning = outboundWarning;
-            publisher.outboundBehind = outboundWarning;
+
         }
     }
 
@@ -340,10 +342,39 @@ export class SubscriberDetailComponent {
         for (var i = 0; i < arrayLength; i++) {
             var publisher = vm.status.publisherServices[i] as PublisherService;
 
-            if (vm.subscribersService.showWarningsOnly) {
+            if (vm.subscribersService.statusFilter) {
                 var include = false;
-                if (publisher.inboundWarning || publisher.outboundWarning) {
-                    include = true;
+
+                for (var j=0; j<publisher.systemStatus.length; j++) {
+                    var systemStatus = publisher.systemStatus[j];
+
+                    if (vm.subscribersService.statusFilter == 'warnings') {
+                        if (systemStatus.inboundWarning || systemStatus.outboundWarning) {
+                            include = true;
+                        }
+
+                    } else if (vm.subscribersService.statusFilter == 'behind') {
+                        if (systemStatus.outboundBehind || systemStatus.outboundBehind) {
+                            include = true;
+                        }
+
+                    } else if (vm.subscribersService.statusFilter == 'up-to-date') {
+                        if (!systemStatus.outboundBehind && !systemStatus.outboundBehind) {
+                            include = true;
+                        }
+
+                    } else {
+                        console.log('Unknown status filter [' + vm.subscribersService.statusFilter + ']');
+                    }
+
+                    /*<option value="warnings">Warnings Only</option>
+                    <option value="behind">Behind &amp; Warnings</option>
+                    <option value="up-to-date">Up-to-date</option>*/
+
+                    if (systemStatus.name == vm.subscribersService.systemNameFilter) {
+                        include = true;
+                        break;
+                    }
                 }
 
                 if (!include) {

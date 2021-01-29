@@ -9,10 +9,10 @@ export class SubscribersService extends BaseHttp2Service {
 
     //filters for Subscribers page so they don't get reset when leaving and returning
     showDates: boolean; //show dates vs show date diff
-    showWarningsOnly: boolean;
     publisherNameFilter: string;
     systemNameFilter: string;
     sortFilter: string;
+    statusFilter: string;
 
 
     constructor(http : Http) {
@@ -20,8 +20,8 @@ export class SubscribersService extends BaseHttp2Service {
 
         var vm = this;
         vm.showDates = false;
-        vm.showWarningsOnly = true;
         vm.sortFilter = 'NameAsc';
+        vm.statusFilter = 'behind';
     }
 
     getSubscribersInstances() : Observable<SubscriberConfiguration[]> {
