@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.google.common.base.Strings;
 import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.common.security.SecurityUtils;
 import org.endeavourhealth.common.utility.ExpiringObject;
@@ -314,6 +315,24 @@ public class SubscriberEndpoint extends AbstractEndpoint {
         ExchangeTransformAudit transformAudit = dal.getMostRecentExchangeTransform(serviceId, systemId, exchangeId);
         if (transformAudit == null) {
             return "<<UNKNOWN ERROR>>";
+        }
+
+        //the error XML will contain the detail of the exception, but will be null if we've re-queued the exchange and it's mid-way through being processed again
+        if (Strings.isNullOrEmpty(transformAudit.getErrorXml())) {
+            //so retrieve all audits and find the last one with an error XML
+            List<ExchangeTransformAudit> allTransformAudits = dal.getAllExchangeTransformAudits(serviceId, systemId, exchangeId);
+            for (int i=allTransformAudits.size()-1; i>=0; i--) {
+                ExchangeTransformAudit a = allTransformAudits.get(i);
+                if (!Strings.isNullOrEmpty(a.getErrorXml())) {
+                    transformAudit = a;
+                    break;
+                }
+            }
+
+            //if still null, then something is wrong
+            if (Strings.isNullOrEmpty(transformAudit.getErrorXml())) {
+                return "<<NO ERROR DATA>>";
+            }
         }
 
         String errorXml = transformAudit.getErrorXml();
