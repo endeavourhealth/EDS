@@ -45,7 +45,7 @@
                             <select id="statusFilter" class="form-control" [(ngModel)]="subscribersService.statusFilter" name="statusFilter" (ngModelChange)="applyFiltering()">
                                 <option value=""></option>
                                 <option value="warnings">Warnings Only</option>
-                                <option value="behind">Behind &amp; Warnings</option>
+                                <option value="warnings-and-behind">Behind &amp; Warnings</option>
                                 <option value="up-to-date">Up-to-date</option>
                             </select>
                         </div>
@@ -148,7 +148,7 @@
                                         {{getDateDiff(system.lastProcessedInExtractCutoff)}}
                                     </span>
 
-                                    <span class="label label-danger" *ngIf="system.processingInError" ngbTooltip="Inbound error: {{system.processingInErrorMessage}}">Warning</span>
+                                    <span class="label label-danger" *ngIf="system.processingInError" ngbTooltip="Inbound error: {{system.processingInErrorMessage}}">Error</span>
                                     <span class="label label-danger" *ngIf="!system.processingInError && system.inboundBehindWarning" ngbTooltip="{{system.inboundBehindWarning}}">Warning</span>
                                     <span class="fa fa-reply" *ngIf="!system.processingInError && !system.inboundBehindWarning && system.inboundBehindDays > 0" ngbTooltip="Behind"></span>
                                 </div>
@@ -205,7 +205,7 @@
                                     <div>
                                         Inbound processing error: <b>{{system.processingInErrorMessage}}</b>
                                     </div>
-                                    <span class="label label-danger" ngbTooltip="Inbound error">Warning</span>
+                                    <span class="label label-danger" ngbTooltip="Inbound error">Error</span>
                                     <div>&nbsp;</div>
                                 </div>
 

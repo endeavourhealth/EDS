@@ -327,12 +327,13 @@ export class SubscriberDetailComponent {
                     var systemStatus = publisher.systemStatus[j];
 
                     if (vm.subscribersService.statusFilter == 'warnings') {
-                        if (systemStatus.inboundBehindWarning || systemStatus.outboundBehindWarning) {
+                        if (systemStatus.processingInError || systemStatus.inboundBehindWarning || systemStatus.outboundBehindWarning) {
                             include = true;
                         }
 
-                    } else if (vm.subscribersService.statusFilter == 'behind') {
-                        if (systemStatus.inboundBehindDays > 0 || systemStatus.outboundBehindDays > 0) {
+                    } else if (vm.subscribersService.statusFilter == 'warnings-and-behind') {
+                        if (systemStatus.processingInError || systemStatus.inboundBehindWarning || systemStatus.outboundBehindWarning
+                            || systemStatus.inboundBehindDays > 0 || systemStatus.outboundBehindDays > 0) {
                             include = true;
                         }
 

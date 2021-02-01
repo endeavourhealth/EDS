@@ -21,7 +21,7 @@ export class SubscribersService extends BaseHttp2Service {
         var vm = this;
         vm.showDates = false;
         vm.sortFilter = 'NameAsc';
-        vm.statusFilter = 'behind';
+        vm.statusFilter = 'warnings-and-behind';
     }
 
     getSubscribersInstances() : Observable<SubscriberConfiguration[]> {
