@@ -111,12 +111,9 @@ export class SubscriberDetailComponent {
 
                         //work out if we're behind in inbound processing
                         var msBehind = systemStatus.lastReceivedExtractCutoff - systemStatus.lastProcessedInExtractCutoff;
+                        var behindDesc = ServiceListComponent.getDateDiffDescMs(systemStatus.lastProcessedInExtractCutoff, systemStatus.lastReceivedExtractCutoff, 2);
                         inboundBehindDays = msBehind / vm.dayDuration;
-
-                        if (inboundBehindDays > 0) {
-                            var behindDesc = ServiceListComponent.getDateDiffDescMs(systemStatus.lastProcessedInExtractCutoff, systemStatus.lastReceivedExtractCutoff, 2);
-                            inboundBehindWarning = 'Inbound processing ' + behindDesc + ' behind';
-                        }
+                        inboundBehindWarning = 'Inbound processing ' + behindDesc + ' behind';
 
                     } else {
                         //if never finished any inbound processing
@@ -127,14 +124,11 @@ export class SubscriberDetailComponent {
                     //outbound warning if 2+ days behind
                     if (systemStatus.lastProcessedOutExtractCutoff) {
 
-                        //check if behing in outbound processing
+                        //check if behind in outbound processing
                         var msBehind = systemStatus.lastReceivedExtractCutoff - systemStatus.lastProcessedOutExtractCutoff;
+                        var behindDesc = ServiceListComponent.getDateDiffDescMs(systemStatus.lastProcessedOutExtractCutoff, systemStatus.lastReceivedExtractCutoff, 2);
                         outboundBehindDays = msBehind / vm.dayDuration;
-
-                        if (outboundBehindDays > 0) {
-                            var behindDesc = ServiceListComponent.getDateDiffDescMs(systemStatus.lastProcessedOutExtractCutoff, systemStatus.lastReceivedExtractCutoff, 2);
-                            outboundBehindWarning = 'Outbound processing ' + behindDesc + ' behind';
-                        }
+                        outboundBehindWarning = 'Outbound processing ' + behindDesc + ' behind';
 
                     } else {
                         outboundBehindDays = 999; //just some arbitrary max value
@@ -319,43 +313,60 @@ export class SubscriberDetailComponent {
         var arrayLength = vm.status.publisherServices.length;
         for (var i = 0; i < arrayLength; i++) {
             var publisher = vm.status.publisherServices[i] as PublisherService;
+            //console.log('Doing ' + publisher.odsCode);
 
             if (vm.subscribersService.statusFilter) {
+                //console.log('vm.subscribersService.statusFilter = ' + vm.subscribersService.statusFilter);
                 var include = false;
 
                 for (var j=0; j<publisher.systemStatus.length; j++) {
                     var systemStatus = publisher.systemStatus[j];
 
-                    if (vm.subscribersService.statusFilter == 'warnings') {
-                        if (systemStatus.processingInError || systemStatus.inboundBehindWarning || systemStatus.outboundBehindWarning) {
+                    if (vm.subscribersService.statusFilter == 'up-to-date') {
+                        /*console.log('systemStatus.processingInError = ' + systemStatus.processingInError);
+                        console.log('systemStatus.inboundBehindDays = ' + systemStatus.inboundBehindDays);
+                        console.log('systemStatus.outboundBehindDays = ' + systemStatus.outboundBehindDays);*/
+
+                        if (!systemStatus.processingInError
+                            && systemStatus.inboundBehindDays == 0
+                            && systemStatus.outboundBehindDays == 0) {
                             include = true;
                         }
 
-                    } else if (vm.subscribersService.statusFilter == 'warnings-and-behind') {
-                        if (systemStatus.processingInError || systemStatus.inboundBehindWarning || systemStatus.outboundBehindWarning
-                            || systemStatus.inboundBehindDays > 0 || systemStatus.outboundBehindDays > 0) {
+                    } else if (vm.subscribersService.statusFilter == 'inbound-error') {
+
+                        if (systemStatus.processingInError) {
                             include = true;
                         }
 
-                    } else if (vm.subscribersService.statusFilter == 'up-to-date') {
-                        if (systemStatus.inboundBehindDays == 0 && systemStatus.outboundBehindDays == 0) {
+                    } else if (vm.subscribersService.statusFilter == 'any-behind') {
+
+                        if (systemStatus.inboundBehindDays > 0
+                            || systemStatus.outboundBehindDays > 0) {
+                            include = true;
+                        }
+
+                    } else if (vm.subscribersService.statusFilter == 'severe-behind') {
+
+                        if (systemStatus.inboundBehindDays > 1
+                            || systemStatus.outboundBehindDays > 1) {
+                            include = true;
+                        }
+
+                    } else if (vm.subscribersService.statusFilter == 'any-issue') {
+
+                        if (systemStatus.processingInError
+                            || systemStatus.inboundBehindDays > 1
+                            || systemStatus.outboundBehindDays > 1) {
                             include = true;
                         }
 
                     } else {
                         console.log('Unknown status filter [' + vm.subscribersService.statusFilter + ']');
                     }
-
-                    /*<option value="warnings">Warnings Only</option>
-                    <option value="behind">Behind &amp; Warnings</option>
-                    <option value="up-to-date">Up-to-date</option>*/
-
-                    if (systemStatus.name == vm.subscribersService.systemNameFilter) {
-                        include = true;
-                        break;
-                    }
                 }
 
+                //console.log('include = ' + include);
                 if (!include) {
                     continue;
                 }
@@ -490,7 +501,7 @@ export class SubscriberDetailComponent {
         }
 
         //if we're WAY behind then make it red
-        if (systemStatus.inboundBehindWarning || systemStatus.outboundBehindWarning) {
+        if (systemStatus.inboundBehindDays > 1 || systemStatus.outboundBehindDays > 1) {
             return 'panel panel-danger';
         }
 
