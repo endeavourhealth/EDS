@@ -25,8 +25,8 @@
                         <!-- name and ID filtering -->
                         <div class="col-sm-2">
 
-                            <label for="publisherNameFilter" for="inputType" class="control-label">Name/ODS</label>
-                            <input type="text" id="publisherNameFilter" class="form-control" id="inputType" placeholder="Regex" [(ngModel)]="subscribersService.publisherNameFilter" name="publisherNameFilter" (ngModelChange)="applyFiltering()">
+                            <label for="publisherNameFilter" class="control-label">Name/ODS</label>
+                            <input type="text" id="publisherNameFilter" class="form-control" placeholder="Regex" [(ngModel)]="subscribersService.publisherNameFilter" name="publisherNameFilter" (ngModelChange)="applyFiltering()">
 
                         </div>
 
@@ -53,22 +53,7 @@
                         </div>
 
 
-                        <!-- show dates vs show relative dates -->
-                        <div class="col-sm-2">
 
-                            <div>
-                                <label for="showDatesFilter" class="control-label">Show Dates</label>
-                                <input type="checkbox" id="showDatesFilter" [(ngModel)]="subscribersService.showDates" name="showDatesFilter">
-                            </div>
-
-      <!--                      <div>
-                                <label for="showWarningsOnly" class="control-label">Show Warnings Only</label>
-                                <input type="checkbox" id="showWarningsOnly" [(ngModel)]="subscribersService.showWarningsOnly" name="showWarningsOnly" (ngModelChange)="applyFiltering()">
-                            </div>-->
-
-
-
-                        </div>
 
 
 
@@ -85,10 +70,137 @@
                             </select>
                         </div>
 
+                        <!-- show dates vs show relative dates -->
+                        <div class="col-sm-3">
+
+                            <div>
+                                <label for="showDatesFilter" class="control-label">Show Dates</label>
+                                <input type="checkbox" id="showDatesFilter" [(ngModel)]="subscribersService.showDates" name="showDatesFilter">
+                            </div>
+
+                            <div>
+                                <label for="showFullSubscriberConfigDetails" class="control-label">Show Subscriber Configuration</label>
+                                <input type="checkbox" id="showFullSubscriberConfigDetails" [(ngModel)]="subscribersService.showFullSubscriberConfigDetails" name="showFullSubscriberConfigDetails">
+                            </div>
+
+                            <!--                      <div>
+                                                      <label for="showWarningsOnly" class="control-label">Show Warnings Only</label>
+                                                      <input type="checkbox" id="showWarningsOnly" [(ngModel)]="subscribersService.showWarningsOnly" name="showWarningsOnly" (ngModelChange)="applyFiltering()">
+                                                  </div>-->
+
+
+
+                        </div>
+
                     </div>
                 </form>
             </div>
         </div>
+
+
+        <div class="panel panel-primary" *ngIf="subscribersService.showFullSubscriberConfigDetails && status">
+            <div class="panel-body">
+                <form class="form-horizontal" role="form">
+                    <div class="form-group">
+
+                        <div class="row">
+
+                            <div class="col-sm-3">
+                                <label for="statusName" class="control-label">Name</label>
+                                <input type="text" id="statusName" name="statusName" class="form-control" [disabled]="true" [(ngModel)]="status.name">
+                            </div>
+
+
+                            <div class="col-sm-9">
+                                <label for="statusDescription" class="control-label">Description</label>
+                                <input type="text" id="statusDescription" name="statusDescription" class="form-control" [disabled]="true" [(ngModel)]="status.description">
+                            </div>
+
+                        </div>
+
+                        <div class="row">
+
+                            <div class="col-sm-3">
+                                <label for="statusLocation" class="control-label">Location</label>
+                                <input type="text" id="statusLocation" name="statusLocation" class="form-control" [disabled]="true" [(ngModel)]="status.subscriberLocation">
+                            </div>
+
+                            <div class="col-sm-3">
+                                <label for="statusRemoteSubscriberId" class="control-label">Remote Subscriber ID</label>
+                                <input type="text" id="statusRemoteSubscriberId" name="statusRemoteSubscriberId" class="form-control" [disabled]="true" [(ngModel)]="status.remoteSubscriberId">
+                            </div>
+
+                            <div class="col-sm-3">
+                                <label for="statusSchema" class="control-label">Schema</label>
+                                <input type="text" id="statusSchema" name="statusSchema" class="form-control" [disabled]="true" [(ngModel)]="status.schema">
+                            </div>
+
+                            <div class="col-sm-3">
+                                <label for="statusCohort" class="control-label">Cohort</label>
+                                <input type="text" id="statusCohort" name="statusCohort" class="form-control" [disabled]="true" [(ngModel)]="status.cohortDesc">
+                            </div>
+
+
+                        </div>
+
+
+                        <div class="row">
+
+                            <div class="col-sm-3">
+                                <label for="statusDeidentified" class="control-label">PI</label>
+                                <input type="text" id="statusDeidentified" name="statusDeidentified" class="form-control" [disabled]="true" [(ngModel)]="!status.deidentified">
+                            </div>
+
+                            <div class="col-sm-3">
+                                <label for="statusExcludeTestPatients" class="control-label">Excludes Test Patients</label>
+                                <input type="text" id="statusExcludeTestPatients" name="statusExcludeTestPatients" class="form-control" [disabled]="true" [(ngModel)]="status.excludeTestPatients">
+                            </div>
+
+                            <div class="col-sm-3">
+                                <label for="statusExcludePatientsWithoutNhsNumber" class="control-label">Exclude Records Without NHS Number</label>
+                                <input type="text" id="statusExcludePatientsWithoutNhsNumber" name="statusExcludePatientsWithoutNhsNumber" class="form-control" [disabled]="true" [(ngModel)]="status.excludePatientsWithoutNhsNumber">
+                            </div>
+
+                            <div class="col-sm-3">
+                                <label for="statusExcludeNhsNumberRegex" class="control-label">Exclude NHS Numbers Regex</label>
+                                <input type="text" id="statusExcludeNhsNumberRegex" name="statusExcludeNhsNumberRegex" class="form-control" [disabled]="true" [(ngModel)]="status.excludeNhsNumberRegex">
+                            </div>
+
+
+                        </div>
+
+
+
+
+                        <div class="row">
+
+                            <div class="col-sm-3">
+                                <label for="statusSubscriberDatabase" class="control-label">Subscriber Database</label>
+                                <input type="text" id="statusSubscriberDatabase" name="statusSubscriberDatabase" class="form-control" [disabled]="true" [(ngModel)]="status.subscriberDatabase">
+                            </div>
+
+                            <div class="col-sm-3">
+                                <label for="statusSubscriberDatabaseName" class="control-label">Subscriber Database Name</label>
+                                <input type="text" id="statusSubscriberDatabaseName" name="statusSubscriberDatabaseName" class="form-control" [disabled]="true" [(ngModel)]="status.subscriberDatabaseName">
+                            </div>
+
+                            <div class="col-sm-3">
+                                <label for="statusSubscriberTransformDatabase" class="control-label">Subscriber Transform Database</label>
+                                <input type="text" id="statusSubscriberTransformDatabase" name="statusSubscriberTransformDatabase" class="form-control" [disabled]="true" [(ngModel)]="status.subscriberTransformDatabase">
+                            </div>
+
+                            <div class="col-sm-3">
+                                <label for="statusSubscriberTransformDatabaseName" class="control-label">Subscriber Transform Database Name</label>
+                                <input type="text" id="statusSubscriberTransformDatabaseName" name="statusSubscriberTransformDatabaseName" class="form-control" [disabled]="true" [(ngModel)]="status.subscriberTransformDatabaseName">
+                            </div>
+
+                        </div>
+
+                    </div>
+                </form>
+            </div>
+        </div>
+
 
         <div class="row">
             <div class="col-md-9">
@@ -255,6 +367,9 @@
                             </div>
                         </div>
 
+                        <div>
+                            <button class="btn btn-xs btn-default" (click)="viewPublisherExchanges(selectedPublisher.uuid)">View Exchanges</button>
+                        </div>
 
                     </div>
                 </div>

@@ -13,13 +13,14 @@ export class SubscribersService extends BaseHttp2Service {
     systemNameFilter: string;
     sortFilter: string;
     statusFilter: string;
-
+    showFullSubscriberConfigDetails: boolean;
 
     constructor(http : Http) {
         super (http);
 
         var vm = this;
         vm.showDates = false;
+        vm.showFullSubscriberConfigDetails = false;
         vm.sortFilter = 'NameAsc';
         vm.statusFilter = 'any-issue';
     }

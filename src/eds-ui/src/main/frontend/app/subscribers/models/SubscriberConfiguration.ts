@@ -12,7 +12,8 @@ export class SubscriberConfiguration {
     remoteSubscriberId: number;
     subscriberLocation: string;
     cohortType: string; 
-    cohort: string[]; 
+    cohort: string[];
+    cohortDesc: string; //textual version of the above two
     subscriberDatabase: string; 
     subscriberDatabaseName: string; 
     subscriberTransformDatabase: string; 

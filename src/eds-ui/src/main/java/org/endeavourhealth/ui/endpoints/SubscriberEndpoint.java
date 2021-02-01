@@ -132,7 +132,10 @@ public class SubscriberEndpoint extends AbstractEndpoint {
         Integer remoteSubscriberId = config.getRemoteSubscriberId();
         String subscriberLocation = "" + config.getSubscriberLocation();
         String cohortType = "" + config.getCohortType();
-
+        String cohortDesc = cohortType;
+        if (config.getCohortType() == SubscriberConfig.CohortType.GpRegisteredAt) {
+            cohortDesc += " [" + String.join(", ", config.getCohortGpServices()) + "]";
+        }
 
         obj.put("name", subscriberName);
         obj.put("description", description);
@@ -144,6 +147,7 @@ public class SubscriberEndpoint extends AbstractEndpoint {
         obj.put("subscriberLocation", subscriberLocation);
         obj.put("remoteSubscriberId", remoteSubscriberId);
         obj.put("cohortType", cohortType);
+        obj.put("cohortDesc", cohortDesc);
 
         if (config.getCohortGpServices() != null) {
             ArrayNode arr = obj.putArray("cohort");

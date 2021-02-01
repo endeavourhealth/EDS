@@ -10,6 +10,7 @@ import {ServiceListComponent} from "../services/serviceList.component";
 import {QueueReaderStatusService} from "../queueReaderStatus/queueReaderStatus.service";
 import {QueueReaderStatus} from "../queueReaderStatus/queueReaderStatus";
 import {SubscriberConfiguration} from "./models/SubscriberConfiguration";
+import {SubscriberDetailComponent} from "./subscriberDetail.component";
 
 @Component({
     template : require('./subscribers.html')
@@ -416,12 +417,7 @@ export class SubscribersComponent {
             } else {
                 cols.push('');
             }
-            if (config.cohortType == 'GpRegisteredAt') {
-                var scopeDesc = config.cohort.join(', ');
-                cols.push(config.cohortType + ' [' + scopeDesc + ']');
-            } else {
-                cols.push(config.cohortType);
-            }
+            cols.push(config.cohortDesc);
             if (config.subscriberDatabase) {
                 cols.push(config.subscriberDatabase);
             } else {
@@ -461,4 +457,6 @@ export class SubscribersComponent {
         window.URL.revokeObjectURL(url);
         a.remove();
     }
+
+
 }

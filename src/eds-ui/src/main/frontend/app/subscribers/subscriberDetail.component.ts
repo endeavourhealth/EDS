@@ -238,7 +238,6 @@ export class SubscriberDetailComponent {
 
         //then invoke the new one from the new view
         setTimeout(()=>{
-
             vm.serviceService.get(serviceUuid).subscribe(
                 (result) => {
                     var service = result as Service;
@@ -250,8 +249,6 @@ export class SubscriberDetailComponent {
             )
 
         }, 2000);
-
-
     }
 
     getNonNullOdsCode(publisher: PublisherService): string {
@@ -607,4 +604,7 @@ export class SubscriberDetailComponent {
         window.URL.revokeObjectURL(url);
         a.remove();
     }
+
+
+
 }
