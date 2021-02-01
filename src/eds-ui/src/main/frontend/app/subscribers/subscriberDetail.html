@@ -149,8 +149,9 @@
                                     </span>
 
                                     <span class="label label-danger" *ngIf="system.processingInError" ngbTooltip="Inbound error: {{system.processingInErrorMessage}}">Error</span>
-                                    <span class="label label-danger" *ngIf="!system.processingInError && system.inboundBehindWarning" ngbTooltip="{{system.inboundBehindWarning}}">Warning</span>
-                                    <span class="fa fa-reply" *ngIf="!system.processingInError && !system.inboundBehindWarning && system.inboundBehindDays > 0" ngbTooltip="Behind"></span>
+
+                                    <span class="label label-danger" *ngIf="system.inboundBehindWarning" ngbTooltip="{{system.inboundBehindWarning}}">Warning</span>
+                                    <span class="fa fa-reply" *ngIf="!system.inboundBehindWarning && system.inboundBehindDays > 0" ngbTooltip="Behind"></span>
                                 </div>
                             </td>
 
