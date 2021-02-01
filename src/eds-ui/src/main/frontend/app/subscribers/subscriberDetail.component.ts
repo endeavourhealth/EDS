@@ -27,7 +27,7 @@ export class SubscriberDetailComponent {
     cachedSystemNames: string[];
     refreshingStatus: boolean;
     selectedPublisher: PublisherService;
-    twoDayDuration: number;
+    dayDuration: number;
 
     //subscriber status
 
@@ -51,7 +51,7 @@ export class SubscriberDetailComponent {
 
     ngOnInit() {
         var vm = this;
-        vm.twoDayDuration = 1000 * 60 * 60 * 24 * 2;
+        vm.dayDuration = 1000 * 60 * 60 * 24;
         vm.refreshScreen();
     }
 
@@ -98,76 +98,54 @@ export class SubscriberDetailComponent {
             for (var j=0; j<publisher.systemStatus.length; j++) {
                 var systemStatus = publisher.systemStatus[j] as PublisherSystem;
 
-                var inboundWarning = null;
-                var inboundBehind = false;
-                var outboundWarning = null;
-                var outboundBehind = false;
+                var inboundBehindDays = 0;
+                var inboundBehindWarning = null;
+                var outboundBehindDays = 0;
+                var outboundBehindWarning = null;
 
-                //inbound warning if in inbound error
-                if (systemStatus.processingInError) {
-                    inboundWarning = 'Inbound transform error: ' + systemStatus.processingInErrorMessage;
-                    inboundBehind = true;
 
-                } else if (systemStatus.lastReceivedExtractCutoff) {
+                if (systemStatus.lastReceivedExtractCutoff) {
 
+                    //inbound warning if in inbound error
                     if (systemStatus.lastProcessedInExtractCutoff) {
 
                         //work out if we're behind in inbound processing
                         var msBehind = systemStatus.lastReceivedExtractCutoff - systemStatus.lastProcessedInExtractCutoff;
-                        if (msBehind > 0) {
-                            inboundBehind = true;
+                        inboundBehindDays = msBehind / vm.dayDuration;
+
+                        if (inboundBehindDays > 0) {
+                            var behindDesc = ServiceListComponent.getDateDiffDescMs(systemStatus.lastProcessedInExtractCutoff, systemStatus.lastReceivedExtractCutoff, 2);
+                            inboundBehindWarning = 'Inbound processing ' + behindDesc + ' behind';
                         }
 
-                        //if inbound processing 2+ days behind we need a warning
-                        if (msBehind > vm.twoDayDuration) {
-
-                            var from = new Date();
-                            from.setTime(systemStatus.lastProcessedInExtractCutoff);
-                            var to = new Date();
-                            to.setTime(systemStatus.lastReceivedExtractCutoff);
-
-                            var behindDesc = ServiceListComponent.getDateDiffDesc(from, to, 2);
-                            inboundWarning = 'Inbound processing ' + behindDesc + ' behind';
-                        }
                     } else {
                         //if never finished any inbound processing
-                        inboundWarning = 'No inbound processing completed';
-                        inboundBehind = true;
+                        inboundBehindDays = 999; //just some arbitrary max value
+                        inboundBehindWarning = 'No inbound processing complete';
                     }
-                }
 
-                //outbound warning if 2+ days behind
-                if (systemStatus.lastReceivedExtractCutoff) {
+                    //outbound warning if 2+ days behind
                     if (systemStatus.lastProcessedOutExtractCutoff) {
 
                         //check if behing in outbound processing
                         var msBehind = systemStatus.lastReceivedExtractCutoff - systemStatus.lastProcessedOutExtractCutoff;
-                        if (msBehind > 0) {
-                            outboundBehind = true;
-                        }
+                        outboundBehindDays = msBehind / vm.dayDuration;
 
-                        //if outbound processing 2+ days behind then it needs a warning
-                        if (msBehind > vm.twoDayDuration) {
-
-                            var from = new Date();
-                            from.setTime(systemStatus.lastProcessedOutExtractCutoff);
-                            var to = new Date();
-                            to.setTime(systemStatus.lastReceivedExtractCutoff);
-
-                            var behindDesc = ServiceListComponent.getDateDiffDesc(from, to, 2);
-                            outboundWarning = 'Outbound processing ' + behindDesc + ' behind';
+                        if (outboundBehindDays > 0) {
+                            var behindDesc = ServiceListComponent.getDateDiffDescMs(systemStatus.lastProcessedOutExtractCutoff, systemStatus.lastReceivedExtractCutoff, 2);
+                            outboundBehindWarning = 'Outbound processing ' + behindDesc + ' behind';
                         }
 
                     } else {
-                        outboundWarning = 'No outbound processing completed';
-                        outboundBehind = true;
+                        outboundBehindDays = 999; //just some arbitrary max value
+                        outboundBehindWarning = 'No inbound processing complete';
                     }
                 }
 
-                systemStatus.inboundWarning = inboundWarning;
-                systemStatus.inboundBehind = inboundBehind;
-                systemStatus.outboundWarning = outboundWarning;
-                systemStatus.outboundBehind = inboundBehind;
+                systemStatus.inboundBehindDays = inboundBehindDays;
+                systemStatus.inboundBehindWarning = inboundBehindWarning;
+                systemStatus.outboundBehindDays = outboundBehindDays;
+                systemStatus.outboundBehindWarning = outboundBehindWarning;
             }
 
 
@@ -349,17 +327,17 @@ export class SubscriberDetailComponent {
                     var systemStatus = publisher.systemStatus[j];
 
                     if (vm.subscribersService.statusFilter == 'warnings') {
-                        if (systemStatus.inboundWarning || systemStatus.outboundWarning) {
+                        if (systemStatus.inboundBehindWarning || systemStatus.outboundBehindWarning) {
                             include = true;
                         }
 
                     } else if (vm.subscribersService.statusFilter == 'behind') {
-                        if (systemStatus.outboundBehind || systemStatus.outboundBehind) {
+                        if (systemStatus.inboundBehindDays > 0 || systemStatus.outboundBehindDays > 0) {
                             include = true;
                         }
 
                     } else if (vm.subscribersService.statusFilter == 'up-to-date') {
-                        if (!systemStatus.outboundBehind && !systemStatus.outboundBehind) {
+                        if (systemStatus.inboundBehindDays == 0 && systemStatus.outboundBehindDays == 0) {
                             include = true;
                         }
 
@@ -510,16 +488,13 @@ export class SubscriberDetailComponent {
             return 'panel panel-danger';
         }
 
-        //work out if we're behind in inbound processing
-        var msInboundBehind = systemStatus.lastReceivedExtractCutoff - systemStatus.lastProcessedInExtractCutoff;
-        var msOutboundBehind = systemStatus.lastReceivedExtractCutoff - systemStatus.lastProcessedOutExtractCutoff;
-        if (msInboundBehind > vm.twoDayDuration
-            || msOutboundBehind > vm.twoDayDuration) {
+        //if we're WAY behind then make it red
+        if (systemStatus.inboundBehindWarning || systemStatus.outboundBehindWarning) {
             return 'panel panel-danger';
         }
 
-        if (msInboundBehind > 0
-            || msOutboundBehind > 0) {
+        //if we're less than a day behind, make it amber
+        if (systemStatus.inboundBehindDays > 0 || systemStatus.outboundBehindDays > 0) {
             return 'panel panel-warning';
         }
 

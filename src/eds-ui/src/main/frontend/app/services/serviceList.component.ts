@@ -247,6 +247,14 @@ export class ServiceListComponent implements OnInit, OnDestroy{
 		return ServiceListComponent.getDateDiffDesc(earlier, later, 2);
 	}*/
 
+	static getDateDiffDescMs(earlier: number, later: number, numToks: number): string {
+		var from = new Date();
+		from.setTime(earlier);
+		var to = new Date();
+		to.setTime(later);
+		return ServiceListComponent.getDateDiffDesc(from, to, numToks);
+	}
+
 	static getDateDiffDesc(earlier: Date, later: Date, numToks: number): string {
 
 		//optionalArg = (typeof optionalArg === 'undefined') ? 'default' : optionalArg;
