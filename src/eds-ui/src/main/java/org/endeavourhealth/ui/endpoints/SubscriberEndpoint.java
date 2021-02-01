@@ -171,6 +171,7 @@ public class SubscriberEndpoint extends AbstractEndpoint {
         }
 
         //number publishers up to date with inbound processing
+        int inboundError = 0;
         int inboundUpToDate = 0;
         int inboundOneDay = 0;
         int inboundMoreDays = 0;
@@ -209,6 +210,7 @@ public class SubscriberEndpoint extends AbstractEndpoint {
             Date firstLastReceived = null;
             Date firstLastProcessedIn = null;
             Date firstLastProcessedOut = null;
+            boolean hasInboundError = false;
 
             List<ServiceInterfaceEndpoint> systemEndpoints = service.getEndpointsList();
             for (ServiceInterfaceEndpoint endpoint: systemEndpoints) {
@@ -227,6 +229,11 @@ public class SubscriberEndpoint extends AbstractEndpoint {
                 }
                 if (lastProcessedOut != null) {
                     firstLastProcessedOut = getEarliest(firstLastProcessedOut, lastProcessedOut.getExtractCutoff());
+                }
+
+                UUID inboundErrorExchangeId = lastData.getInboundErrorExchangeId(serviceId, systemId);
+                if (inboundErrorExchangeId != null) {
+                    hasInboundError = true;
                 }
 
                 //add the detail if we need it
@@ -259,7 +266,6 @@ public class SubscriberEndpoint extends AbstractEndpoint {
                     }
 
                     //work out if we've got an inbound error
-                    UUID inboundErrorExchangeId = lastData.getInboundErrorExchangeId(serviceId, systemId);
                     if (inboundErrorExchangeId != null) {
                         systemNode.put("processingInError", true);
 
@@ -267,6 +273,10 @@ public class SubscriberEndpoint extends AbstractEndpoint {
                         systemNode.put("processingInErrorMessage", errorMessage);
                     }
                 }
+            }
+
+            if (hasInboundError) {
+                inboundError ++;
             }
 
             //inbound status
@@ -298,6 +308,7 @@ public class SubscriberEndpoint extends AbstractEndpoint {
 
         //total number of publishers
         obj.put("numPublishers", services.size());
+        obj.put("inboundError", inboundError);
         obj.put("inboundUpToDate", inboundUpToDate);
         obj.put("inboundOneDay", inboundOneDay);
         obj.put("inboundMoreDays", inboundMoreDays);

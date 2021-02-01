@@ -26,20 +26,21 @@
                             <th class="col-md-1">Schema</th> <!-- compass v1/v2 -->
                             <th class="col-md-1">PI</th> <!-- PI or deidentified -->
                             <th class="col-md-1">Publishers</th> <!-- number of publishers -->
+                            <th class="col-md-1">Inbound Err</th> <!-- number of inbound errors -->
                             <th class="col-md-2">
-                                Inbound
+                                Inbound Behind
                                 <span class="fa fa-info-circle fa-right-pad text-muted" ngbTooltip="OK / 1d behind / 2d+ behind"></span>
                             </th> <!-- inbound status -->
                             <th class="col-md-2">
-                                Outbound
+                                Outbound Behind
                                 <span class="fa fa-info-circle fa-right-pad text-muted" ngbTooltip="OK / 1d behind / 2d+ behind"></span>
                             </th> <!-- outbound status -->
-                            <th class="col-md-1"></th> <!-- actions -->
+                            <!--<th class="col-md-1"></th> &lt;!&ndash; actions &ndash;&gt;-->
 
                         </tr>
                         </thead>
                         <tbody>
-                        <tr class="hover-box show-child-on-hover" *ngFor="let subscriber of getSubscribersToDisplay()">
+                        <tr class="hover-box show-child-on-hover" *ngFor="let subscriber of getSubscribersToDisplay()" (click)="viewSubscriberDetails(subscriber)">
 
                             <!-- name and desc -->
                             <td>
@@ -69,6 +70,12 @@
                                 {{subscriber.numPublishers}}
                             </td>
 
+                            <!-- number of inbound errors -->
+                            <td>
+                                {{subscriber.inboundError}}
+                                <span class="label label-danger" *ngIf="subscriber.inboundError > 0" ngbTooltip="Inbound processing errors">Warning</span>
+                            </td>
+
                             <!-- inbound status -->
                             <td>
                                 {{subscriber.inboundUpToDate}}
@@ -90,9 +97,9 @@
                             </td>
 
                             <!-- actions -->
-                            <td>
+                            <!--<td>
                                 <button class="btn btn-xs btn-default child-to-show" (click)="viewSubscriberDetails(subscriber)">View Details</button>
-                            </td>
+                            </td>-->
 
                         </tr>
                         </tbody>

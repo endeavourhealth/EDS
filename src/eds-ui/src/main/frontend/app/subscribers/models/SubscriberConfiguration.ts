@@ -18,6 +18,7 @@ export class SubscriberConfiguration {
     subscriberTransformDatabase: string; 
     subscriberTransformDatabaseName: string; 
     numPublishers: number;
+    inboundError: number;
     inboundUpToDate: number;
     inboundOneDay: number;
     inboundMoreDays: number;
