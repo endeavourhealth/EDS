@@ -10,6 +10,7 @@ import {SystemService} from "../system/system.service";
 import {SystemPickerDialog} from "../system/systemPicker.dialog";
 import {SystemStatus} from "./models/SystemStatus";
 import {OdsSearchDialog} from "./odsSearch.dialog";
+import {DateTimeFormatter} from "../utility/DateTimeFormatter";
 
 @Component({
 	template: require('./serviceList.html')
@@ -212,7 +213,7 @@ export class ServiceListComponent implements OnInit, OnDestroy{
 
 			var today = new Date();
 
-			ret += ServiceListComponent.getDateDiffDesc(lastDate, today, 2);
+			ret += DateTimeFormatter.getDateDiffDesc(lastDate, today, 2);
 
 		} else {
 			ret += 'n/a';
@@ -243,92 +244,6 @@ export class ServiceListComponent implements OnInit, OnDestroy{
 		}
 	}
 
-
-
-
-	static getDateDiffDescMs(earlier: number, later: number, numToks: number): string {
-		var from = new Date();
-		from.setTime(earlier);
-		var to = new Date();
-		to.setTime(later);
-		return ServiceListComponent.getDateDiffDesc(from, to, numToks);
-	}
-
-	static getDateDiffDesc(earlier: Date, later: Date, numToks: number): string {
-
-		//optionalArg = (typeof optionalArg === 'undefined') ? 'default' : optionalArg;
-
-		var diffMs = later.getTime() - earlier.getTime();
-
-		var durSec = 1000;
-		var durMin = durSec * 60;
-		var durHour = durMin * 60;
-		var durDay = durHour * 25;
-		var durWeek = durDay * 7;
-		var durYear = durDay * 365.25;
-
-		var toks = [];
-
-		if (toks.length < numToks) {
-			var years = Math.floor(diffMs / durYear);
-			if (years > 0) {
-				toks.push('' + years + 'y');
-				diffMs -= years * durYear;
-			}
-		}
-
-		if (toks.length < numToks) {
-			var weeks = Math.floor(diffMs / durWeek);
-			if (weeks > 0) {
-				toks.push('' + weeks + 'w');
-				diffMs -= weeks * durWeek;
-			}
-		}
-
-		if (toks.length < numToks) {
-			var days = Math.floor(diffMs / durDay);
-			if (days > 0) {
-				toks.push('' + days + 'd');
-				diffMs -= days * durDay;
-			}
-		}
-
-		if (toks.length < numToks) {
-			var hours = Math.floor(diffMs / durHour);
-			if (hours > 0) {
-				toks.push('' + hours + 'h');
-				diffMs -= hours * durHour;
-			}
-		}
-
-		if (toks.length < numToks) {
-			var mins = Math.floor(diffMs / durMin);
-			if (mins > 0 ) {
-				toks.push('' + mins + 'm');
-				diffMs -= mins * durMin;
-			}
-		}
-
-		if (toks.length < numToks) {
-			var secs = Math.floor(diffMs / durSec);
-			if (secs > 0 ) {
-				toks.push('' + secs + 's');
-				diffMs -= secs * durSec;
-			}
-		}
-
-		if (toks.length < numToks) {
-			if (diffMs > 0) {
-				toks.push('' + diffMs + 'ms');
-			}
-		}
-
-		if (toks.length == 0) {
-			toks.push('0s');
-		}
-
-		return toks.join(' ');
-	}
 
 	formatProcessingStatusTooltip(service: Service, status: SystemStatus) : string {
 
@@ -429,7 +344,7 @@ export class ServiceListComponent implements OnInit, OnDestroy{
 					d.setTime(status.lastProcessedExtractCutoff);
 
 					var today = new Date();
-					status.cachedLastProcessedDiffDesc = ServiceListComponent.getDateDiffDesc(d, today, 2);
+					status.cachedLastProcessedDiffDesc = DateTimeFormatter.getDateDiffDesc(d, today, 2);
 				}
 
 				ret += ' (' + status.cachedLastProcessedDiffDesc + ')';

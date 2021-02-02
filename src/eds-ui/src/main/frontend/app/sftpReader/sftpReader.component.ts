@@ -14,6 +14,7 @@ import {SftpReaderOrgsDialog} from "./sftpReaderOrgs.dialog";
 import {ServiceListComponent} from "../services/serviceList.component";
 import {QueueReaderStatusService} from "../queueReaderStatus/queueReaderStatus.service";
 import {QueueReaderStatus} from "../queueReaderStatus/queueReaderStatus";
+import {DateTimeFormatter} from "../utility/DateTimeFormatter";
 
 @Component({
     template : require('./sftpReader.html')
@@ -575,7 +576,7 @@ export class SftpReaderComponent {
 
     getApplicationAgeDesc(status: QueueReaderStatus): string {
         var vm = this;
-        return ServiceListComponent.getDateDiffDesc(new Date(status.timestmp), vm.applicationStatusLastRefreshed, 2);
+        return DateTimeFormatter.getDateDiffDesc(new Date(status.timestmp), vm.applicationStatusLastRefreshed, 2);
     }
 
     getApplicationCellColour(status: QueueReaderStatus): any {
@@ -616,7 +617,7 @@ export class SftpReaderComponent {
         if (!status.isBusySince) {
             return '';
         } else {
-            return ServiceListComponent.getDateDiffDesc(new Date(status.isBusySince), new Date(status.timestmp), 1);
+            return DateTimeFormatter.getDateDiffDesc(new Date(status.isBusySince), new Date(status.timestmp), 1);
         }
     }
 }

@@ -54,10 +54,10 @@
                         <tbody>
                             <tr class="hover-box" *ngFor="let stat of recentStats">
                                 <td *ngIf="recentStatResultsGroupBy!='second'">
-                                    {{stat.dFrom | date:'dd-MMM-yyyy HH:mm'}} - {{stat.dTo | date:'HH:mm'}}
+                                    {{formatYYYYMMDDHHMM(stat.dFrom)}} - {{formatHHMM(stat.dTo | date:'HH:mm')}}
                                 </td>
                                 <td *ngIf="recentStatResultsGroupBy=='second'">
-                                    {{stat.dFrom | date:'yyyy-MM-dd HH:mm:ss'}} - {{stat.dTo | date:'HH:mm:ss'}}
+                                    {{formatYYYYMMDDHHMM(stat.dFrom)}} - {{formatHHMM(stat.dTo | date:'HH:mm:ss')}}
                                 </td>
                                 <td>{{stat.matchedAndFrail}}</td>
                                 <td>{{stat.matchedAndNotFrail}}</td>
