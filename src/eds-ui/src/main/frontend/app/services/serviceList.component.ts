@@ -191,25 +191,7 @@ export class ServiceListComponent implements OnInit, OnDestroy{
 		vm.applyFiltering();
 	}
 
-
-	formatLastDataTooltip(service: Service, status: SystemStatus) : string {
-
-		if (status.lastReceivedExtractCutoff) {
-
-			var lastDate = new Date();
-			lastDate.setTime(status.lastReceivedExtractCutoff);
-
-			var lastDataReceived = new Date();
-			lastDataReceived.setTime(status.lastReceivedExtract);
-
-			return 'Last data received ' + ServiceListComponent.formatDate(lastDataReceived) + ' for ' + ServiceListComponent.formatDate(lastDate);
-
-		} else {
-			return 'No data received';
-		}
-	}
-
-	formatLastData(service: Service, status: SystemStatus) : string {
+	formatLatestCutoff(service: Service, status: SystemStatus) : string {
 
 		//if we've a cached value, return that
 		if (status.cachedLastDataDateDesc) {
@@ -243,9 +225,26 @@ export class ServiceListComponent implements OnInit, OnDestroy{
 
 	}
 
-	/*static getDateDiffDesc(earlier: Date, later: Date): string {
-		return ServiceListComponent.getDateDiffDesc(earlier, later, 2);
-	}*/
+
+	formatLatestCutoffTooltip(service: Service, status: SystemStatus) : string {
+
+		if (status.lastReceivedExtractCutoff) {
+
+			var lastDate = new Date();
+			lastDate.setTime(status.lastReceivedExtractCutoff);
+
+			var lastDataReceived = new Date();
+			lastDataReceived.setTime(status.lastReceivedExtract);
+
+			return 'Last data received ' + ServiceListComponent.formatDate(lastDataReceived) + ' for ' + ServiceListComponent.formatDate(lastDate);
+
+		} else {
+			return 'No data received';
+		}
+	}
+
+
+
 
 	static getDateDiffDescMs(earlier: number, later: number, numToks: number): string {
 		var from = new Date();
@@ -482,7 +481,7 @@ export class ServiceListComponent implements OnInit, OnDestroy{
 		var line;
 
 		//line = 'Name,ID,Parent,Publisher Config,Last Data,Status,Tags';
-		line = '\"Name\",\"ID\",\"Parent\",\"Last Data\",\"Status\",\"Tags\"';
+		line = '\"Name\",\"ID\",\"Parent\",\"Latest Data Cutoff\",\"Status\",\"Tags\"';
 		lines.push(line);
 
 		for (var i=0; i<vm.filteredServices.length; i++) {
@@ -503,7 +502,7 @@ export class ServiceListComponent implements OnInit, OnDestroy{
 				for (var j=0; j<service.systemStatuses.length; j++) {
 					var status = service.systemStatuses[j];
 
-					var lastDataStr = vm.formatLastData(service, status);
+					var lastDataStr = vm.formatLatestCutoff(service, status);
 					var statusStr = vm.formatProcessingStatus(service, status);
 
 					cols[3] = lastDataStr;

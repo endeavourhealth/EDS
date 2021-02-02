@@ -143,7 +143,7 @@
 										<th class="col-md-1">ID</th>
 										<th class="col-md-1">Parent</th>
 										<th class="col-md-1">Publisher Config</th>
-										<th class="col-md-1">Last Data</th>
+										<th class="col-md-1">Latest Cutoff</th>
 										<th class="col-md-1">Status</th>
 										<th class="col-md-3">Tags</th>
 										<th class="col-md-1">Actions</th>
@@ -174,11 +174,11 @@
 										<!-- publisher config -->
 										<td>{{service.publisherConfigName}}</td>
 
-										<!-- last data -->
+										<!-- Latest Cutoff -->
 										<td>
 											<div *ngIf="service.systemStatuses">
 												<div *ngFor="let status of service.systemStatuses">
-													<span ngbTooltip="{{formatLastDataTooltip(service, status)}}">{{formatLastData(service, status)}}</span>
+													<span ngbTooltip="{{formatLatestCutoffTooltip(service, status)}}">{{formatLatestCutoff(service, status)}}</span>
 												</div>
 											</div>
 										</td>
