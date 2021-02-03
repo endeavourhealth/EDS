@@ -218,6 +218,11 @@ public class SD307 extends AbstractRoutine {
             for (String fileName : fileNames) {
                 List<DateRange> list = hmFiles.get(fileName);
 
+                //don't care about files we don't process
+                if (!getTransformedFileNames().contains(fileName)) {
+                    continue;
+                }
+
                 LOG.debug("Checking " + fileName + " >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
                 /*if (verbose) {
                     LOG.debug("Checking " + fileName + " >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
@@ -266,6 +271,38 @@ public class SD307 extends AbstractRoutine {
         }
 
         return gapFound;
+    }
+
+    private static Set<String> getTransformedFileNames() {
+        Set<String> ret = new HashSet<>();
+
+        ret.add("SRCcg");
+        ret.add("SROrganisationBranch");
+        ret.add("SROrganisation");
+        ret.add("SRTrust");
+        ret.add("SRAppointmentFlags");
+        ret.add("SRAppointment");
+        ret.add("SRRota");
+        ret.add("SRVisit");
+        ret.add("SRChildAtRisk");
+        ret.add("SRCode");
+        ret.add("SRDrugSensitivity");
+        ret.add("SREvent");
+        ret.add("SRImmunisation");
+        ret.add("SRPersonAtRisk");
+        ret.add("SRProblem");
+        ret.add("SRRecall");
+        ret.add("SRReferralOut");
+        ret.add("SRRepeatTemplate");
+        ret.add("SRSpecialNotes");
+        ret.add("SRConfiguredListOption");
+        ret.add("SRCtv3");
+        ret.add("SRCtv3ToSnomed");
+        ret.add("SRImmunisationContent");
+        ret.add("SRMapping");
+        ret.add("SRMedicationReadCodeDetails");
+
+        return ret;
     }
 
     /**
