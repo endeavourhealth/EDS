@@ -84,6 +84,7 @@ public class SD307 extends AbstractRoutine {
 
         UUID serviceId = service.getId();
         UUID systemId = endpoint.getSystemUuid();
+        String odsCode = service.getLocalId();
 
         ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
         List<Exchange> exchanges = exchangeDal.getExchangesByService(serviceId, systemId, Integer.MAX_VALUE);
@@ -242,21 +243,21 @@ public class SD307 extends AbstractRoutine {
 
                     //if the start and end don't match up, then something is off
                     if (currentStart == null) {
-                        LOG.warn("    NULL START DATE: " + extractConfiguration + "::" + fileName + " exchange " + dateRange.getExchangeId());
+                        LOG.warn("    NULL START DATE: " + odsCode + " " + extractConfiguration + "::" + fileName + " exchange " + dateRange.getExchangeId());
 
                     } else if (currentStart.equals(previousEnd)) {
                         //OK
 
                     } else if (previousStart != null && currentStart.equals(previousStart)
                             && currentEnd.equals(previousEnd)) {
-                        LOG.warn("    DUPLICATE FOUND: " + extractConfiguration + "::" + fileName + " exchange " + dateRange.getExchangeId() + " has range " + dateFormat.format(currentStart) + " - " + dateFormat.format(currentEnd) + " which is the same as previous");
+                        LOG.warn("    DUPLICATE FOUND: " + odsCode + " " + extractConfiguration + "::" + fileName + " exchange " + dateRange.getExchangeId() + " has range " + dateFormat.format(currentStart) + " - " + dateFormat.format(currentEnd) + " which is the same as previous");
 
                     } else if (currentStart.after(previousEnd)) {
-                        LOG.error("    GAP FOUND: " + extractConfiguration + "::" + fileName + " exchange " + dateRange.getExchangeId() + " expecting start " + dateFormat.format(previousEnd) + " but got " + dateFormat.format(currentStart));
+                        LOG.error("    GAP FOUND: " + odsCode + " " + extractConfiguration + "::" + fileName + " exchange " + dateRange.getExchangeId() + " expecting start " + dateFormat.format(previousEnd) + " but got " + dateFormat.format(currentStart));
                         gapFound = true;
 
                     } else {
-                        LOG.warn("    GONE BACK: " + extractConfiguration + "::" + fileName + " exchange " + dateRange.getExchangeId() + " expecting start " + dateFormat.format(previousEnd) + " but got " + dateFormat.format(currentStart));
+                        LOG.warn("    GONE BACK: " + odsCode + " " + extractConfiguration + "::" + fileName + " exchange " + dateRange.getExchangeId() + " expecting start " + dateFormat.format(previousEnd) + " but got " + dateFormat.format(currentStart));
                     }
 
                     lastDateRange = dateRange;
