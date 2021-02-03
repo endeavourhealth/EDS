@@ -5,17 +5,22 @@ import {Subscription} from "rxjs/Subscription";
 import {ServiceService} from "../services/service.service";
 import {Hl7ReceiverService} from "./hl7Receiver.service";
 import {Hl7ReceiverChannelStatus} from "./Hl7ReceiverChannelStatus";
+import {DateTimeFormatter} from "../utility/DateTimeFormatter";
 
 @Component({
     template : require('./hl7Receiver.html')
 })
 export class Hl7ReceiverComponent {
 
+    //SD-338 - need to import the static formatting functions so they can be used by the HTML template
+    formatYYYYMMDDHHMMSS = DateTimeFormatter.formatYYYYMMDDHHMMSS;
+    formatYYYYMMDDHHMM = DateTimeFormatter.formatYYYYMMDDHHMM;
+    formatHHMMSS = DateTimeFormatter.formatHHMMSS;
+
+
     refreshingStatus: boolean;
     statusLastRefreshed: Date;
     channels: Hl7ReceiverChannelStatus[];
-    resultStr: string;
-    showRawJson: boolean;
 
     constructor(protected hl7ReceiverService:Hl7ReceiverService,
                 protected logger:LoggerService,
@@ -37,8 +42,6 @@ export class Hl7ReceiverComponent {
             (result) => {
                 vm.logger.success('Successfully got HL7 status', 'HL7 Status');
                 vm.channels = result;
-                vm.resultStr = JSON.stringify(result, null, 2);
-
                 vm.refreshingStatus = false;
             },
             (error) => {

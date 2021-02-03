@@ -13,11 +13,17 @@ import {Protocol} from "./Protocol";
 import {MessageBoxDialog} from "eds-common-js/dist/index";
 import {ServiceListComponent} from "../services/serviceList.component";
 import {MultiSelecterOption} from "./MultiSelecterOption";
+import {DateTimeFormatter} from "../utility/DateTimeFormatter";
 
 @Component({
 	template : require('./exchangeAudit.html')
 })
 export class ExchangeAuditComponent {
+
+	//SD-338 - need to import the static formatting functions so they can be used by the HTML template
+	formatYYYYMMDDHHMM = DateTimeFormatter.formatYYYYMMDDHHMM;
+	formatYYYYMMDDHHMMSS = DateTimeFormatter.formatYYYYMMDDHHMMSS;
+
 
 	service: Service;
 	systemId: string;
@@ -539,7 +545,7 @@ export class ExchangeAuditComponent {
 		var endDate = new Date();
 		endDate.setTime(transformAudit.transformEnd);
 
-		return ServiceListComponent.getDateDiffDesc(startDate, endDate, 2);
+		return DateTimeFormatter.getDateDiffDesc(startDate, endDate, 2);
 	}
 
 	getCellColour(exchange: Exchange): any {
@@ -770,4 +776,5 @@ export class ExchangeAuditComponent {
 			(error) => vm.log.error('Failed to add note', error)
 		)
 	}
+
 }

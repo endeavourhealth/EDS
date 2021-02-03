@@ -92,7 +92,7 @@
 						</div>
 					</div>
 					<div class="form-group col-md-6">
-						<label class="control-label">Publisher Config Name</label>
+						<label class="control-label">Publisher DB Name</label>
 						<button type="button" class="btn btn-xs btn-success" (click)="addNewConfigName()">New Config</button>
 						<select class="form-control" [(ngModel)]="service.publisherConfigName" name="publisherConfigName">
 
@@ -243,7 +243,7 @@
 										<td>{{currentHasDpa}}</td>
 									</tr>
 									<tr *ngFor="let h of historyHasDpa">
-										<td>{{h.date | date:'yyyy-MM-dd HH:mm'}}*</td>
+										<td>{{formatYYYYMMDDHHMM(h.date)}}*</td>
 										<td>{{h.hasDpa}}</td>
 									</tr>
 								</tbody>
@@ -266,7 +266,7 @@
 									<td>{{joinArr(currentSubscribers)}}</td>
 								</tr>
 								<tr *ngFor="let h of historySubscribers">
-									<td>{{h.date | date:'yyyy-MM-dd HH:mm'}}*</td>
+									<td>{{formatYYYYMMDDHHMM(h.date)}}*</td>
 									<td>{{joinArr(h.subscribers)}}</td>
 								</tr>
 								</tbody>

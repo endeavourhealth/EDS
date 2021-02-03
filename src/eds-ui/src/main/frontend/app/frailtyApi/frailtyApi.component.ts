@@ -5,11 +5,17 @@ import {Subscription} from "rxjs/Subscription";
 import {ServiceService} from "../services/service.service";
 import {FrailtyApiService} from "./frailtyApi.service";
 import {FrailtyStat} from "./FrailtyStat";
+import {ServiceListComponent} from "../services/serviceList.component";
+import {DateTimeFormatter} from "../utility/DateTimeFormatter";
 
 @Component({
     template : require('./frailtyApi.html')
 })
 export class FrailtyApiComponent {
+
+    //SD-338 - need to import the static formatting functions so they can be used by the HTML template
+    formatYYYYMMDDHHMM = DateTimeFormatter.formatYYYYMMDDHHMM;
+    formatHHMM = DateTimeFormatter.formatHHMM;
 
     recentStatsGroupBy: string;
     recentStatsMinutesBack: number;

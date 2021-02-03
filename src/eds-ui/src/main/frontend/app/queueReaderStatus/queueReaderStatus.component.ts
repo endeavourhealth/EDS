@@ -11,11 +11,17 @@ import {ServiceListComponent} from "../services/serviceList.component";
 import {RabbitNode} from "../queueing/models/RabbitNode";
 import {Service} from "../services/models/Service";
 import {NgbModal} from "@ng-bootstrap/ng-bootstrap";
+import {DateTimeFormatter} from "../utility/DateTimeFormatter";
 
 @Component({
     template : require('./queueReaderStatus.html')
 })
 export class QueueReaderStatusComponent {
+
+
+    //SD-338 - need to import the static formatting functions so they can be used by the HTML template
+    formatHHMMSS = DateTimeFormatter.formatHHMMSS;
+    formatYYYYMMDDHHMMSS = DateTimeFormatter.formatYYYYMMDDHHMMSS;
 
     //properties derived from Rabbit config
     routingExchangeNames: string[]; //distinct exchange names (EdsInbound, EdsProtocol etc.)
@@ -448,7 +454,7 @@ export class QueueReaderStatusComponent {
 
     getStatusAgeDesc(status: QueueReaderStatus): string {
         var vm = this;
-        return ServiceListComponent.getDateDiffDesc(new Date(status.timestmp), vm.statusLastRefreshed, 2);
+        return DateTimeFormatter.getDateDiffDesc(new Date(status.timestmp), vm.statusLastRefreshed, 2);
     }
 
     getExecutionTime(status: QueueReaderStatus): string {
@@ -456,7 +462,7 @@ export class QueueReaderStatusComponent {
         if (!status.isBusySince) {
             return '';
         } else {
-            return ServiceListComponent.getDateDiffDesc(new Date(status.isBusySince), new Date(status.timestmp), 1);
+            return DateTimeFormatter.getDateDiffDesc(new Date(status.isBusySince), new Date(status.timestmp), 1);
         }
     }
 

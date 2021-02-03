@@ -5,12 +5,16 @@ import {Subscription} from "rxjs/Subscription";
 import {OdsSearchDialog} from "../services/odsSearch.dialog";
 import {ScheduledTasksService} from "./scheduledTasks.service";
 import {ScheduledTaskAudit} from "./models/ScheduledTaskAudit";
+import {DateTimeFormatter} from "../utility/DateTimeFormatter";
 
 @Component({
     selector: 'ngbd-modal-content',
     template: require('./scheduledTaskHistoryDialog.html')
 })
 export class ScheduledTaskHistoryDialog  {
+
+    //SD-338 - need to import the static formatting functions so they can be used by the HTML template
+    formatYYYYMMDDHHMM = DateTimeFormatter.formatYYYYMMDDHHMM;
 
     @Input() audit: ScheduledTaskAudit;
 

@@ -14,11 +14,16 @@ import {Transition} from "ui-router-ng2/ng2";
 import {PublisherService} from "./models/PublisherService";
 import {Service} from "../services/models/Service";
 import {PublisherSystem} from "./models/PublisherSystem";
+import {DateTimeFormatter} from "../utility/DateTimeFormatter";
 
 @Component({
     template : require('./subscriberDetail.html')
 })
 export class SubscriberDetailComponent {
+
+    //SD-338 - need to import the static formatting functions so they can be used by the HTML template
+    formatYYYYMMDDHHMM = DateTimeFormatter.formatYYYYMMDDHHMM;
+    formatHHMMSS = DateTimeFormatter.formatHHMMSS;
 
     subscriberName: string;
     statusLastRefreshed: Date;
@@ -111,7 +116,7 @@ export class SubscriberDetailComponent {
 
                         //work out if we're behind in inbound processing
                         var msBehind = systemStatus.lastReceivedExtractCutoff - systemStatus.lastProcessedInExtractCutoff;
-                        var behindDesc = ServiceListComponent.getDateDiffDescMs(systemStatus.lastProcessedInExtractCutoff, systemStatus.lastReceivedExtractCutoff, 2);
+                        var behindDesc = DateTimeFormatter.getDateDiffDescMs(systemStatus.lastProcessedInExtractCutoff, systemStatus.lastReceivedExtractCutoff, 2);
                         inboundBehindDays = msBehind / vm.dayDuration;
                         inboundBehindWarning = 'Inbound processing ' + behindDesc + ' behind';
 
@@ -126,7 +131,7 @@ export class SubscriberDetailComponent {
 
                         //check if behind in outbound processing
                         var msBehind = systemStatus.lastReceivedExtractCutoff - systemStatus.lastProcessedOutExtractCutoff;
-                        var behindDesc = ServiceListComponent.getDateDiffDescMs(systemStatus.lastProcessedOutExtractCutoff, systemStatus.lastReceivedExtractCutoff, 2);
+                        var behindDesc = DateTimeFormatter.getDateDiffDescMs(systemStatus.lastProcessedOutExtractCutoff, systemStatus.lastReceivedExtractCutoff, 2);
                         outboundBehindDays = msBehind / vm.dayDuration;
                         outboundBehindWarning = 'Outbound processing ' + behindDesc + ' behind';
 
@@ -203,7 +208,7 @@ export class SubscriberDetailComponent {
 
         var now = new Date();
 
-        ret = ServiceListComponent.getDateDiffDesc(from, now, 2);
+        ret = DateTimeFormatter.getDateDiffDesc(from, now, 2);
         vm.dateDiffCache[fromMs] = ret;
 
         return ret;
@@ -353,8 +358,8 @@ export class SubscriberDetailComponent {
                     } else if (vm.subscribersService.statusFilter == 'any-issue') {
 
                         if (systemStatus.processingInError
-                            || systemStatus.inboundBehindDays > 1
-                            || systemStatus.outboundBehindDays > 1) {
+                            || systemStatus.inboundBehindDays > 0
+                            || systemStatus.outboundBehindDays > 0) {
                             include = true;
                         }
 

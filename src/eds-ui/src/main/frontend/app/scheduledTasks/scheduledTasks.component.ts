@@ -13,11 +13,16 @@ import {ScheduledTasksService} from "./scheduledTasks.service";
 import {ScheduledTaskAudit} from "./models/ScheduledTaskAudit";
 import {ScheduledTaskRule} from "./models/ScheduledTaskRule";
 import {ScheduledTaskHistoryDialog} from "./scheduledTaskHistory.dialog";
+import {DateTimeFormatter} from "../utility/DateTimeFormatter";
 
 @Component({
     template : require('./scheduledTasks.html')
 })
 export class ScheduledTasksComponent {
+
+    //SD-338 - need to import the static formatting functions so they can be used by the HTML template
+    formatYYYYMMDDHHMM = DateTimeFormatter.formatYYYYMMDDHHMM;
+    formatHHMMSS = DateTimeFormatter.formatHHMMSS;
 
     latest: ScheduledTaskAudit[];
     rules: ScheduledTaskRule[];
@@ -207,7 +212,7 @@ export class ScheduledTasksComponent {
         var ruleMillis = vm.getRuleTimePeriod(audit);
         var nextDueMillis = audit.timestamp + ruleMillis;
 
-        return ServiceListComponent.getDateDiffDesc(now, new Date(nextDueMillis), 2);
+        return DateTimeFormatter.getDateDiffDesc(now, new Date(nextDueMillis), 2);
     }
 
 

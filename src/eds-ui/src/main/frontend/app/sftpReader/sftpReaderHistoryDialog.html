@@ -55,10 +55,10 @@
                     <tr class="hover-box show-child-on-hover" *ngFor="let result of results">
 
                         <!--<td>{{result.id}}</td>-->
-                        <td>{{result.received | date:'yyyy-MM-dd HH:mm'}}</td>
+                        <td>{{formatYYYYMMDDHHMM(result.received)}}</td>
                         <td>
                             <!--{{result.identifier}}-->
-                            {{result.extractCutoff | date:'yyyy-MM-dd HH:mm'}}
+                            {{formatYYYYMMDDHHMM(result.extractCutoff)}}
                         </td>
                         <td>{{result.sequenceNumber}}</td>
                         <!--<td>{{result.complete}}</td>-->

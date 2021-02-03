@@ -11,11 +11,15 @@ import {QueueReaderStatusService} from "../queueReaderStatus/queueReaderStatus.s
 import {QueueReaderStatus} from "../queueReaderStatus/queueReaderStatus";
 import {SubscriberConfiguration} from "./models/SubscriberConfiguration";
 import {SubscriberDetailComponent} from "./subscriberDetail.component";
+import {DateTimeFormatter} from "../utility/DateTimeFormatter";
 
 @Component({
     template : require('./subscribers.html')
 })
 export class SubscribersComponent {
+
+    //SD-338 - need to import the static formatting functions so they can be used by the HTML template
+    formatHHMMSS = DateTimeFormatter.formatHHMMSS;
 
     //subscriber status
     subscribers: SubscriberConfiguration[];

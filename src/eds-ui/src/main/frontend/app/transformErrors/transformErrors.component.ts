@@ -7,11 +7,16 @@ import {ExchangeAuditService} from "../exchangeAudit/exchangeAudit.service";
 import {Subscription} from "rxjs/Subscription";
 import {ServiceService} from "../services/service.service";
 import {Service} from "../services/models/Service";
+import {DateTimeFormatter} from "../utility/DateTimeFormatter";
 
 @Component({
 	template : require('./transformErrors.html')
 })
 export class TransformErrorsComponent {
+
+	//SD-338 - need to import the static formatting functions so they can be used by the HTML template
+	formatYYYYMMDDHHMMSS = DateTimeFormatter.formatYYYYMMDDHHMMSS;
+
 	transformErrorSummaries: TransformErrorSummary[];
 	selectedSummary: TransformErrorSummary;
 	selectedExchangeIndex: number;
@@ -202,14 +207,6 @@ export class TransformErrorsComponent {
 			}
 		}
 
-	}
-
-	toggleFilter() {
-		var vm = this;
-		vm.serviceService.toggleFiltering();
-
-		//call the filtered changed method to remove the applied filtering
-		vm.applyFiltering();
 	}
 
 	clearFilters() {

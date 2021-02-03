@@ -22,6 +22,7 @@ import org.endeavourhealth.transform.common.ExchangePayloadFile;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.io.InputStreamReader;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -88,7 +89,7 @@ public class SD307 extends AbstractRoutine {
         List<Exchange> exchanges = exchangeDal.getExchangesByService(serviceId, systemId, Integer.MAX_VALUE);
         LOG.debug("Found " + exchanges.size() + " exchanges");
 
-        Map<String, List<DateRange>> hmFiles = new HashMap<>();
+        Map<String, Map<String, List<DateRange>>> hmExtractConfiguration = new HashMap<>();
 
         //exchange list is most-recent-first, so go backwards
         for (int i=exchanges.size()-1; i>=0; i--) {
@@ -125,6 +126,16 @@ public class SD307 extends AbstractRoutine {
                 String isDeltaYN = record.get("IsDelta");
                 String startStr = record.get("DateExtractFrom");
                 String endStr = record.get("DateExtractTo");
+
+                //the main hash map is keyed by the extract configuration part of the path,
+                //since we have TPP practices that were in multiple SystmOne extract configurations
+                String extractConfiguration = findExtractConfiguration(filePath);
+
+                Map<String, List<DateRange>> hmFiles = hmExtractConfiguration.get(extractConfiguration);
+                if (hmFiles == null) {
+                    hmFiles = new HashMap<>();
+                    hmExtractConfiguration.put(extractConfiguration, hmFiles);
+                }
 
                 List<DateRange> list = hmFiles.get(fileName);
                 if (list == null) {
@@ -185,64 +196,92 @@ public class SD307 extends AbstractRoutine {
             parser.close();
         }
 
-        LOG.debug("Cached " + hmFiles.size() + " file metadata, checking...");
-
         DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm");
         boolean gapFound = false;
 
-        List<String> fileNames = new ArrayList<>(hmFiles.keySet());
-        fileNames.sort((a, b) -> a.compareToIgnoreCase(b));
+        if (hmExtractConfiguration.size() > 1) {
+            LOG.error("Service is in MULTIPLE extract configurations");
+        } else {
+            LOG.debug("Service is in ONE extract configurations");
+        }
 
-        for (String fileName: fileNames) {
-            List<DateRange> list = hmFiles.get(fileName);
+        for (String extractConfiguration: hmExtractConfiguration.keySet()) {
+            LOG.debug("Extract configuration " + extractConfiguration + " =========================================================================");
 
-            LOG.debug("Checking " + fileName + " >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
-            /*if (verbose) {
+            Map<String, List<DateRange>> hmFiles = hmExtractConfiguration.get(extractConfiguration);
+            //LOG.debug("Cached " + hmFiles.size() + " file metadata, checking...");
+
+            List<String> fileNames = new ArrayList<>(hmFiles.keySet());
+            fileNames.sort((a, b) -> a.compareToIgnoreCase(b));
+
+            for (String fileName : fileNames) {
+                List<DateRange> list = hmFiles.get(fileName);
+
                 LOG.debug("Checking " + fileName + " >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
-            }*/
+                /*if (verbose) {
+                    LOG.debug("Checking " + fileName + " >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
+                }*/
 
-            DateRange lastDateRange = list.get(0);
-            if (verbose) {
-                LOG.debug("    " + lastDateRange);
-            }
-
-            for (int i=1; i<list.size(); i++) {
-                DateRange dateRange = list.get(i);
-
-                Date previousStart = lastDateRange.getFrom();
-                Date previousEnd = lastDateRange.getTo();
-
-                Date currentStart = dateRange.getFrom();
-                Date currentEnd = dateRange.getTo();
-
+                DateRange lastDateRange = list.get(0);
                 if (verbose) {
-                    LOG.debug("    " + dateRange);
+                    LOG.debug("    " + lastDateRange);
                 }
 
-                //if the start and end don't match up, then something is off
-                if (currentStart == null) {
-                    LOG.warn("    NULL START DATE: exchange " + dateRange.getExchangeId());
+                for (int i = 1; i < list.size(); i++) {
+                    DateRange dateRange = list.get(i);
 
-                } else if (currentStart.equals(previousEnd)) {
-                    //OK
+                    Date previousStart = lastDateRange.getFrom();
+                    Date previousEnd = lastDateRange.getTo();
 
-                } else if (previousStart != null && currentStart.equals(previousStart)
-                        && currentEnd.equals(previousEnd)) {
-                    LOG.warn("    DUPLICATE FOUND: exchange " + dateRange.getExchangeId() + " has range " + dateFormat.format(currentStart) + " - " + dateFormat.format(currentEnd) + " which is the same as previous");
+                    Date currentStart = dateRange.getFrom();
+                    Date currentEnd = dateRange.getTo();
 
-                } else if (currentStart.after(previousEnd)) {
-                    LOG.error("    GAP FOUND: exchange " + dateRange.getExchangeId() + " expecting start " + dateFormat.format(previousEnd) + " but got " + dateFormat.format(currentStart));
-                    gapFound = true;
+                    if (verbose) {
+                        LOG.debug("    " + dateRange);
+                    }
 
-                } else {
-                    LOG.error("    GONE BACK: exchange " + dateRange.getExchangeId() + " expecting start " + dateFormat.format(previousEnd) + " but got " + dateFormat.format(currentStart));
+                    //if the start and end don't match up, then something is off
+                    if (currentStart == null) {
+                        LOG.warn("    NULL START DATE: exchange " + dateRange.getExchangeId());
+
+                    } else if (currentStart.equals(previousEnd)) {
+                        //OK
+
+                    } else if (previousStart != null && currentStart.equals(previousStart)
+                            && currentEnd.equals(previousEnd)) {
+                        LOG.warn("    DUPLICATE FOUND: exchange " + dateRange.getExchangeId() + " has range " + dateFormat.format(currentStart) + " - " + dateFormat.format(currentEnd) + " which is the same as previous");
+
+                    } else if (currentStart.after(previousEnd)) {
+                        LOG.error("    GAP FOUND: exchange " + dateRange.getExchangeId() + " expecting start " + dateFormat.format(previousEnd) + " but got " + dateFormat.format(currentStart));
+                        gapFound = true;
+
+                    } else {
+                        LOG.error("    GONE BACK: exchange " + dateRange.getExchangeId() + " expecting start " + dateFormat.format(previousEnd) + " but got " + dateFormat.format(currentStart));
+                    }
+
+                    lastDateRange = dateRange;
                 }
-
-                lastDateRange = dateRange;
             }
         }
 
         return gapFound;
+    }
+
+    /**
+     * extracts the element of the path that indicates the extract configuration it came from
+     * e.g.
+     * from
+     *  S3/discoverysftplanding/endeavour/sftpReader/TPP/YDDH3_08Y/2021-01-01T04.03.00/Split/E87711/SRManifest.csv
+     * find
+     *  YDDH3_08Y
+     */
+    private static String findExtractConfiguration(String filePath) {
+        File f = new File(filePath);
+        f = f.getParentFile(); //S3/discoverysftplanding/endeavour/sftpReader/TPP/YDDH3_08Y/2021-01-01T04.03.00/Split/E87711
+        f = f.getParentFile(); //S3/discoverysftplanding/endeavour/sftpReader/TPP/YDDH3_08Y/2021-01-01T04.03.00/Split
+        f = f.getParentFile(); //S3/discoverysftplanding/endeavour/sftpReader/TPP/YDDH3_08Y/2021-01-01T04.03.00/
+        f = f.getParentFile(); //S3/discoverysftplanding/endeavour/sftpReader/TPP/YDDH3_08Y/
+        return f.getName();
     }
 
     /**

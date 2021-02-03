@@ -1,7 +1,7 @@
 <div class="module">
     <div class="module-heading">
             Subscriber Status
-            <span *ngIf="statusesLastRefreshed"> (as of {{statusesLastRefreshed | date:'HH:mm:ss'}})</span>
+            <span *ngIf="statusesLastRefreshed"> (as of {{formatHHMMSS(statusesLastRefreshed)}})</span>
         <div class="pull-right">
 
             <form class="form-inline">
@@ -28,11 +28,11 @@
                             <th class="col-md-1">Publishers</th> <!-- number of publishers -->
                             <th class="col-md-1">Inbound Err</th> <!-- number of inbound errors -->
                             <th class="col-md-2">
-                                Inbound Behind
+                                Inbound Status
                                 <span class="fa fa-info-circle fa-right-pad text-muted" ngbTooltip="OK / 1d behind / 2d+ behind"></span>
                             </th> <!-- inbound status -->
                             <th class="col-md-2">
-                                Outbound Behind
+                                Outbound Status
                                 <span class="fa fa-info-circle fa-right-pad text-muted" ngbTooltip="OK / 1d behind / 2d+ behind"></span>
                             </th> <!-- outbound status -->
                             <!--<th class="col-md-1"></th> &lt;!&ndash; actions &ndash;&gt;-->
@@ -73,7 +73,7 @@
                             <!-- number of inbound errors -->
                             <td>
                                 {{subscriber.inboundError}}
-                                <span class="label label-danger" *ngIf="subscriber.inboundError > 0" ngbTooltip="Inbound processing errors">Warning</span>
+                                <span class="label label-danger" *ngIf="subscriber.inboundError > 0" ngbTooltip="Inbound processing errors">Error</span>
                             </td>
 
                             <!-- inbound status -->

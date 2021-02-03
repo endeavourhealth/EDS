@@ -1,6 +1,6 @@
 <div class="module">
     <div class="module-heading">
-        Queue Reader Status <span *ngIf="statusLastRefreshed">(as of {{statusLastRefreshed | date:'HH:mm:ss'}})</span>
+        Queue Reader Status <span *ngIf="statusLastRefreshed">(as of {{formatHHMMSS(statusLastRefreshed)}})</span>
 
         <div class="pull-right">
 
@@ -90,8 +90,8 @@
                                                         <!-- if not doing anything show a pause icon -->
                                                         <span *ngIf="!status.isBusy" class="fa fa-pause" ngbTooltip="Application running but idle"></span>
 
-                                                        <span *ngIf="queueReaderStatusService.showJarDate" class="text-muted"> {{status.dtJar | date:'yyyy-MM-dd HH:mm:ss'}}</span>
-                                                        <span *ngIf="queueReaderStatusService.showStartDate" class="text-muted"> {{status.dtStarted | date:'yyyy-MM-dd HH:mm:ss'}}</span>
+                                                        <span *ngIf="queueReaderStatusService.showJarDate" class="text-muted"> {{formatYYYYMMDDHHMMSS(status.dtJar)}}</span>
+                                                        <span *ngIf="queueReaderStatusService.showStartDate" class="text-muted"> {{formatYYYYMMDDHHMMSS(status.dtStarted)}}</span>
                                                     </span>
 
                                                 </span>
@@ -160,8 +160,8 @@
 
                                             <span *ngIf="!status.isBusy" class="fa fa-pause" ngbTooltip="Application running but idle"></span>
 
-                                            <span *ngIf="queueReaderStatusService.showJarDate" class="text-muted"> {{status.dtJar | date:'yyyy-MM-dd HH:mm:ss'}}</span>
-                                            <span *ngIf="queueReaderStatusService.showStartDate" class="text-muted"> {{status.dtStarted | date:'yyyy-MM-dd HH:mm:ss'}}</span>
+                                            <span *ngIf="queueReaderStatusService.showJarDate" class="text-muted"> {{formatYYYYMMDDHHMMSS(status.dtJar)}}</span>
+                                            <span *ngIf="queueReaderStatusService.showStartDate" class="text-muted"> {{formatYYYYMMDDHHMMSS(status.dtStarted)}}</span>
 
                                         </span>
 

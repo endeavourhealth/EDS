@@ -1,7 +1,7 @@
 <div class="module">
     <div class="module-heading">
             {{subscriberName}} details
-            <span *ngIf="statusLastRefreshed"> as of {{statusLastRefreshed | date:'HH:mm:ss'}}</span>
+            <span *ngIf="statusLastRefreshed"> as of {{formatHHMMSS(statusLastRefreshed)}}</span>
             <span *ngIf="status && filteredServices"> ({{filteredServices.length}} shown of {{status.publisherServices.length}})</span>
         <div class="pull-right">
 
@@ -82,13 +82,6 @@
                                 <label for="showFullSubscriberConfigDetails" class="control-label">Show Subscriber Configuration</label>
                                 <input type="checkbox" id="showFullSubscriberConfigDetails" [(ngModel)]="subscribersService.showFullSubscriberConfigDetails" name="showFullSubscriberConfigDetails">
                             </div>
-
-                            <!--                      <div>
-                                                      <label for="showWarningsOnly" class="control-label">Show Warnings Only</label>
-                                                      <input type="checkbox" id="showWarningsOnly" [(ngModel)]="subscribersService.showWarningsOnly" name="showWarningsOnly" (ngModelChange)="applyFiltering()">
-                                                  </div>-->
-
-
 
                         </div>
 
@@ -274,7 +267,7 @@
                             <td>
                                 <div *ngFor="let system of publisher.systemStatus">
                                     <span *ngIf="subscribersService.showDates">
-                                        {{system.lastProcessedOutExtractCutoff | date:'yyyy-MM-dd HH:mm'}}
+                                        {{formatYYYYMMDDHHMM(system.lastProcessedOutExtractCutoff)}}
                                     </span>
                                     <span *ngIf="!subscribersService.showDates">
                                         {{getDateDiff(system.lastProcessedOutExtractCutoff)}}
@@ -327,23 +320,23 @@
 
                                 <div>
                                     Last extract received:
-                                    <span *ngIf="system.lastReceivedExtract ">{{system.lastReceivedExtract | date:'yyyy-MM-dd HH:mm:ss'}}</span>
+                                    <span *ngIf="system.lastReceivedExtract ">{{formatYYYYMMDDHHMM(system.lastReceivedExtract)}}</span>
                                     <span *ngIf="!system.lastReceivedExtract ">Never</span>
                                 </div>
                                 <div>
                                     Last extract cutoff:
-                                    <span *ngIf="system.lastReceivedExtractCutoff ">{{system.lastReceivedExtractCutoff | date:'yyyy-MM-dd HH:mm:ss'}}</span>
+                                    <span *ngIf="system.lastReceivedExtractCutoff ">{{formatYYYYMMDDHHMM(system.lastReceivedExtractCutoff)}}</span>
                                     <span *ngIf="!system.lastReceivedExtractCutoff ">Never</span>
                                 </div>
                                 <div>&nbsp;</div>
                                 <div>
                                     Inbound processing completed:
-                                    <span *ngIf="system.lastProcessedInExtract ">{{system.lastProcessedInExtract | date:'yyyy-MM-dd HH:mm:ss'}}</span>
+                                    <span *ngIf="system.lastProcessedInExtract ">{{formatYYYYMMDDHHMM(system.lastProcessedInExtract)}}</span>
                                     <span *ngIf="!system.lastProcessedInExtract ">Never</span>
                                 </div>
                                 <div>
                                     Inbound extract cutoff:
-                                    <span *ngIf="system.lastProcessedInExtractCutoff ">{{system.lastProcessedInExtractCutoff | date:'yyyy-MM-dd HH:mm:ss'}}</span>
+                                    <span *ngIf="system.lastProcessedInExtractCutoff ">{{formatYYYYMMDDHHMM(system.lastProcessedInExtractCutoff)}}</span>
                                     <span *ngIf="!system.lastProcessedInExtractCutoff ">Never</span>
                                     <span class="label label-danger" *ngIf="system.inboundBehindDays > 1" ngbTooltip="{{system.inboundBehindWarning}}">Behind</span>
                                     <span class="label label-warning" *ngIf="system.inboundBehindDays > 0 && system.inboundBehindDays <= 1" ngbTooltip="{{system.inboundBehindWarning}}">Behind</span>
@@ -352,12 +345,12 @@
                                 <div>&nbsp;</div>
                                 <div>
                                     Outbound processing completed:
-                                    <span *ngIf="system.lastProcessedOutExtract ">{{system.lastProcessedOutExtract | date:'yyyy-MM-dd HH:mm:ss'}}</span>
+                                    <span *ngIf="system.lastProcessedOutExtract ">{{formatYYYYMMDDHHMM(system.lastProcessedOutExtract)}}</span>
                                     <span *ngIf="!system.lastProcessedOutExtract ">Never</span>
                                 </div>
                                 <div>
                                     Outbound extract cutoff:
-                                    <span *ngIf="system.lastProcessedOutExtractCutoff ">{{system.lastProcessedOutExtractCutoff | date:'yyyy-MM-dd HH:mm:ss'}}</span>
+                                    <span *ngIf="system.lastProcessedOutExtractCutoff ">{{formatYYYYMMDDHHMM(system.lastProcessedOutExtractCutoff)}}</span>
                                     <span *ngIf="!system.lastProcessedOutExtractCutoff ">Never</span>
                                     <span class="label label-danger" *ngIf="system.outboundBehindDays > 1" ngbTooltip="{{system.outboundBehindWarning}}">Behind</span>
                                     <span class="label label-warning" *ngIf="system.outboundBehindDays > 0 && system.outboundBehindDays <= 1" ngbTooltip="{{system.outboundBehindWarning}}">Behind</span>

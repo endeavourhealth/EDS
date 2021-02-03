@@ -7,17 +7,16 @@
 			</span>
 
 			<div class="pull-right">
-				<button class="btn btn-sm btn-default" (click)="odsSearch()" title="Ods Search">ODS Search</button>
-				<button class="btn btn-sm btn-default" (click)="saveToCsv()" title="Save to CSV">Save to CSV</button>
-				<button class="btn btn-sm btn-default" (click)="clearFilters()" title="Clear Filters">Clear Filters</button>
-				<button class="btn btn-sm btn-default" (click)="toggleFilter()" title="Toggle Filter">Toggle Filter</button>
-				<button class="btn btn-sm btn-default" (click)="refreshAllServices()" title="Toggle Filters">Refresh</button>
-				<button class="btn btn-sm btn-success" (click)="add()" title="Add">Add new</button>
+				<button class="btn btn-sm btn-default" (click)="odsSearch()">ODS Search</button>
+				<button class="btn btn-sm btn-default" (click)="saveToCsv()">Save to CSV</button>
+				<button class="btn btn-sm btn-default" (click)="clearFilters()">Reset Filters</button>
+				<button class="btn btn-sm btn-default" (click)="refreshAllServices()">Refresh</button>
+				<button class="btn btn-sm btn-success" (click)="add()">Add new</button>
 			</div>
 		</div>
 		<div class="module-body">
 
-			<div class="panel panel-primary" *ngIf="serviceService.showFilters">
+			<div class="panel panel-primary">
 				<div class="panel-body">
 					<form class="form-horizontal" role="form">
 						<div class="form-group">
@@ -63,7 +62,7 @@
 
 							<!-- publisher config filtering -->
 							<div class="col-sm-2">
-								<label for="inputType5" class="control-label">Publisher Config</label>
+								<label for="inputType5" class="control-label">Publisher DB</label>
 								<select id="inputType5" class="form-control" [(ngModel)]="serviceService.servicePublisherConfigFilter" name="servicePublisherConfigFilter" (ngModelChange)="applyFiltering()">
 									<option value=""></option>
 									<option *ngFor="let publisherConfigName of serviceService.getPublisherConfigNamesFromCache()" value="{{publisherConfigName}}">{{publisherConfigName}}</option>
@@ -73,14 +72,14 @@
 
 							<!-- last data date filtering -->
 							<div class="col-sm-1">
-								<label for="inputType4" class="control-label">Last Data</label>
+								<label for="inputType4" class="control-label">Latest Cutoff</label>
 								<select id="inputType4" class="form-control" [(ngModel)]="serviceService.serviceLastDataFilter" name="lastDataFilter" (ngModelChange)="applyFiltering()">
 									<option value=""></option>
-									<option value="Today">Today</option>
-									<option value="Yesterday">Yesterday</option>
-									<option value="ThisWeek">This Week</option>
-									<option value="LastWeek">Last Week</option>
-									<option value="Older">Older</option>
+									<option value="1d">&le;1d</option>
+									<option value="2d">&le;2d</option>
+									<option value="1wk">&le;1wkd</option>
+									<option value="2wk">&le;2wk</option>
+									<option value="older">&gt;2wk</option>
 								</select>
 							</div>
 
@@ -112,19 +111,29 @@
 							<div class="col-sm-2">
 								<label for="sortFilter" class="control-label">Sorting</label>
 								<select id="sortFilter" class="form-control" [(ngModel)]="serviceService.sortFilter" name="sortFilter" (ngModelChange)="applyFiltering()">
-									<option value="NameAsc">Name Asc</option>
-									<option value="NameDesc">Name Desc</option>
-									<option value="IDAsc">ID Asc</option>
-									<option value="IDDesc">ID Desc</option>
-									<option value="ParentAsc">Parent Asc</option>
-									<option value="ParentDesc">Parent Desc</option>
-									<option value="PublisherConfigAsc">Publisher Config Asc</option>
-									<option value="PublisherConfigDesc">Publisher Config Desc</option>
-									<option value="LastDataAsc">Last Data Asc</option>
-									<option value="LastDataDesc">Last Data Desc</option>
-									<option value="StatusAsc">Status Asc</option>
-									<option value="StatusDesc">Status Desc</option>
+									<option value="NameAsc">Name</option>
+									<option value="NameDesc">Name (D)</option>
+									<option value="IDAsc">ID</option>
+									<option value="IDDesc">ID (D)</option>
+									<option value="ParentAsc">Parent</option>
+									<option value="ParentDesc">Parent (D)</option>
+									<option value="PublisherConfigAsc">Publisher DB</option>
+									<option value="PublisherConfigDesc">Publisher DB (D)</option>
+									<option value="LastDataAsc">Latest Cutoff</option>
+									<option value="LastDataDesc">Latest Cutoff (D)</option>
+									<option value="StatusAsc">Status</option>
+									<option value="StatusDesc">Status (D)</option>
 								</select>
+							</div>
+
+							<!-- check box options -->
+							<div class="col-sm-1">
+
+								<div>
+									<label for="hideClosedFilter" class="control-label">Hide Closed</label>
+									<input type="checkbox" id="hideClosedFilter" [(ngModel)]="serviceService.serviceHideClosedFilter" name="hideClosedFilter" (ngModelChange)="applyFiltering()">
+								</div>
+
 							</div>
 
 						</div>
@@ -142,7 +151,7 @@
 										<th class="col-md-3">Name</th>
 										<th class="col-md-1">ID</th>
 										<th class="col-md-1">Parent</th>
-										<th class="col-md-1">Publisher Config</th>
+										<th class="col-md-1">Publisher DB</th>
 										<th class="col-md-1">Latest Cutoff</th>
 										<th class="col-md-1">Status</th>
 										<th class="col-md-3">Tags</th>
