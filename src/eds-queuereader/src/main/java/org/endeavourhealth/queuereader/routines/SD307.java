@@ -100,17 +100,17 @@ public class SD307 extends AbstractRoutine {
                 continue;
             }*/
 
-            String filePath = findFilePathInExchange(exchange, "Manifest");
-            if (Strings.isNullOrEmpty(filePath)) {
+            String manifestFilePath = findFilePathInExchange(exchange, "Manifest");
+            if (Strings.isNullOrEmpty(manifestFilePath)) {
                 attemptFixExchangeMissingManifest(exchange);
-                filePath = findFilePathInExchange(exchange, "Manifest");
-                if (Strings.isNullOrEmpty(filePath)) {
+                manifestFilePath = findFilePathInExchange(exchange, "Manifest");
+                if (Strings.isNullOrEmpty(manifestFilePath)) {
                     LOG.warn("Missing manifest file in exchange " + exchange.getId());
                     continue;
                 }
             }
 
-            InputStreamReader isr = FileHelper.readFileReaderFromSharedStorage(filePath);
+            InputStreamReader isr = FileHelper.readFileReaderFromSharedStorage(manifestFilePath);
             CSVParser parser = new CSVParser(isr, CSVFormat.DEFAULT.withHeader());
             Iterator<CSVRecord> iterator = parser.iterator();
 
@@ -129,7 +129,7 @@ public class SD307 extends AbstractRoutine {
 
                 //the main hash map is keyed by the extract configuration part of the path,
                 //since we have TPP practices that were in multiple SystmOne extract configurations
-                String extractConfiguration = findExtractConfiguration(filePath);
+                String extractConfiguration = findExtractConfiguration(manifestFilePath);
 
                 Map<String, List<DateRange>> hmFiles = hmExtractConfiguration.get(extractConfiguration);
                 if (hmFiles == null) {
@@ -150,7 +150,7 @@ public class SD307 extends AbstractRoutine {
                 }
 
                 DateRange r = new DateRange();
-                r.setFilePath(filePath);
+                r.setManifestFilePath(manifestFilePath);
                 r.setBulk(isBulk);
                 r.setExchangeId(exchange.getId());
                 r.setFromStr(startStr);
@@ -168,18 +168,18 @@ public class SD307 extends AbstractRoutine {
 
                     //there's something odd about this file and it seems to have null dates in every manifest, so just ignore it
                     if (!fileName.equals("SRAppointmentAttendees")) {
-                        LOG.warn("NULL start and end date for " + fileName + " in " + filePath);
+                        LOG.warn("NULL start and end date for " + fileName + " in " + manifestFilePath);
                     }
 
                 } else if (Strings.isNullOrEmpty(startStr)) {
 
                     //null start is OK if we're a bulk
                     if (!isBulk) {
-                        LOG.warn("NULL start date for " + fileName + " in " + filePath);
+                        LOG.warn("NULL start date for " + fileName + " in " + manifestFilePath);
                     }
 
                 } else if (Strings.isNullOrEmpty(endStr)) {
-                    LOG.warn("NULL end date for " + fileName + " in " + filePath);
+                    LOG.warn("NULL end date for " + fileName + " in " + manifestFilePath);
                 }
 
 
@@ -188,7 +188,7 @@ public class SD307 extends AbstractRoutine {
                     if (firstEndStr == null) {
                         firstEndStr = endStr;
                     } else if (!firstEndStr.equalsIgnoreCase(endStr)) {
-                        LOG.warn("Got multiple distinct end dates " + firstEndStr + " vs " + endStr + " in " + filePath);
+                        LOG.error("Got multiple distinct end dates " + firstEndStr + " vs " + endStr + " in " + manifestFilePath);
                     }
                 }
             }
@@ -206,7 +206,7 @@ public class SD307 extends AbstractRoutine {
         }
 
         for (String extractConfiguration: hmExtractConfiguration.keySet()) {
-            LOG.debug("Extract configuration " + extractConfiguration + " =========================================================================");
+            LOG.debug("Extract configuration " + extractConfiguration + " ===================================================================================================================================");
 
             Map<String, List<DateRange>> hmFiles = hmExtractConfiguration.get(extractConfiguration);
             //LOG.debug("Cached " + hmFiles.size() + " file metadata, checking...");
@@ -256,7 +256,7 @@ public class SD307 extends AbstractRoutine {
                         gapFound = true;
 
                     } else {
-                        LOG.error("    GONE BACK: exchange " + dateRange.getExchangeId() + " expecting start " + dateFormat.format(previousEnd) + " but got " + dateFormat.format(currentStart));
+                        LOG.warn("    GONE BACK: exchange " + dateRange.getExchangeId() + " expecting start " + dateFormat.format(previousEnd) + " but got " + dateFormat.format(currentStart));
                     }
 
                     lastDateRange = dateRange;
@@ -290,14 +290,13 @@ public class SD307 extends AbstractRoutine {
      */
     private static void attemptFixExchangeMissingManifest(Exchange exchange) throws Exception {
 
-        LOG.debug("Attempting to fix Exchange " + exchange.getId() + " without SRManifest in body");
-
         String exchangeBody = exchange.getBody();
         List<ExchangePayloadFile> files = ExchangeHelper.parseExchangeBody(exchangeBody);
         if (files.isEmpty()) {
-            LOG.debug("No files in Exchange body");
             return;
         }
+
+        LOG.debug("Attempting to fix Exchange " + exchange.getId() + " without SRManifest in body");
 
         ExchangePayloadFile first = files.get(0);
         String firstPath = first.getPath();
@@ -345,7 +344,7 @@ public class SD307 extends AbstractRoutine {
         private Date from;
         private Date to;
         private UUID exchangeId;
-        private String filePath;
+        private String manifestFilePath;
 
         public boolean isBulk() {
             return isBulk;
@@ -395,12 +394,12 @@ public class SD307 extends AbstractRoutine {
             this.exchangeId = exchangeId;
         }
 
-        public String getFilePath() {
-            return filePath;
+        public String getManifestFilePath() {
+            return manifestFilePath;
         }
 
-        public void setFilePath(String filePath) {
-            this.filePath = filePath;
+        public void setManifestFilePath(String manifestFilePath) {
+            this.manifestFilePath = manifestFilePath;
         }
 
         @Override
@@ -421,7 +420,7 @@ public class SD307 extends AbstractRoutine {
             if (isBulk) {
                 sb.append(" BULK");
             }
-            sb.append(" " + filePath);
+            sb.append(" " + manifestFilePath);
             return sb.toString();
         }
     }
