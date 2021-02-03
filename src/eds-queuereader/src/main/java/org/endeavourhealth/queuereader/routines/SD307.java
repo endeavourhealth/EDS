@@ -242,21 +242,21 @@ public class SD307 extends AbstractRoutine {
 
                     //if the start and end don't match up, then something is off
                     if (currentStart == null) {
-                        LOG.warn("    NULL START DATE: exchange " + dateRange.getExchangeId());
+                        LOG.warn("    NULL START DATE: " + extractConfiguration + " exchange " + dateRange.getExchangeId());
 
                     } else if (currentStart.equals(previousEnd)) {
                         //OK
 
                     } else if (previousStart != null && currentStart.equals(previousStart)
                             && currentEnd.equals(previousEnd)) {
-                        LOG.warn("    DUPLICATE FOUND: exchange " + dateRange.getExchangeId() + " has range " + dateFormat.format(currentStart) + " - " + dateFormat.format(currentEnd) + " which is the same as previous");
+                        LOG.warn("    DUPLICATE FOUND: " + extractConfiguration + " exchange " + dateRange.getExchangeId() + " has range " + dateFormat.format(currentStart) + " - " + dateFormat.format(currentEnd) + " which is the same as previous");
 
                     } else if (currentStart.after(previousEnd)) {
-                        LOG.error("    GAP FOUND: exchange " + dateRange.getExchangeId() + " expecting start " + dateFormat.format(previousEnd) + " but got " + dateFormat.format(currentStart));
+                        LOG.error("    GAP FOUND: " + extractConfiguration + " exchange " + dateRange.getExchangeId() + " expecting start " + dateFormat.format(previousEnd) + " but got " + dateFormat.format(currentStart));
                         gapFound = true;
 
                     } else {
-                        LOG.warn("    GONE BACK: exchange " + dateRange.getExchangeId() + " expecting start " + dateFormat.format(previousEnd) + " but got " + dateFormat.format(currentStart));
+                        LOG.warn("    GONE BACK: " + extractConfiguration + " exchange " + dateRange.getExchangeId() + " expecting start " + dateFormat.format(previousEnd) + " but got " + dateFormat.format(currentStart));
                     }
 
                     lastDateRange = dateRange;
