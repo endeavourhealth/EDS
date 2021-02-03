@@ -14,7 +14,6 @@ import {SubscriberHistory} from "./models/SubscriberHistory";
 export class ServiceService extends BaseHttp2Service {
 
 	//common filter options used by the Service list and Transform Errors page
-	showFilters: boolean;
 	serviceNameFilter: string;
 	serviceNameSearchIncludeTags: boolean;
 	serviceNameSearchSpecificTag: string;
@@ -26,7 +25,9 @@ export class ServiceService extends BaseHttp2Service {
 	serviceCcgCodeFilterIsRegex: boolean;
 	serviceLastDataFilter: string;
 	servicePublisherModeFilter: string;
+	serviceHideClosedFilter: boolean;
 	sortFilter: string;
+
 
 	tagNameCache: string[];
 	refreshingTagNameCache: boolean;
@@ -42,7 +43,6 @@ export class ServiceService extends BaseHttp2Service {
 		super (http);
 
 		var vm = this;
-		vm.showFilters = true;
 		vm.clearFilters();
 	}
 
@@ -134,16 +134,11 @@ export class ServiceService extends BaseHttp2Service {
 		return this.httpGet('api/service/ccgNames', {});
 	}
 
-	toggleFiltering() {
-		var vm = this;
-		vm.showFilters = !vm.showFilters;
-	}
-
-	private addDays(date: Date, days: number) {
+	/*private addDays(date: Date, days: number) {
 		var result = new Date(date);
 		result.setDate(result.getDate() + days);
 		return result;
-	}
+	}*/
 
 	applyFiltering(services: Service[], transformErrorsView: boolean) : Service[] {
 		var vm = this;
@@ -179,46 +174,25 @@ export class ServiceService extends BaseHttp2Service {
 		}
 
 		//work out the bounding dates if searching by last data
-		var minLastData;
-		var maxLastData;
+		var latestCutoffLimit;
+		var now = new Date().getTime();
+		var dayDuration = 1000 * 60 * 60 * 24;
+
 		if (vm.serviceLastDataFilter) {
-			if (vm.serviceLastDataFilter == 'Today') {
-				minLastData = new Date();
-				minLastData.setHours(0, 0, 0, 0);
+			if (vm.serviceLastDataFilter == '1d') {
+				latestCutoffLimit = now - dayDuration;
 
-			} else if (vm.serviceLastDataFilter == 'Yesterday') {
-				maxLastData = new Date();
-				maxLastData.setHours(0, 0, 0, 0);
+			} else if (vm.serviceLastDataFilter == '2d') {
+				latestCutoffLimit = now - (dayDuration * 2);
 
-				minLastData = new Date(maxLastData.getTime());
-				minLastData = vm.addDays(minLastData, -1);
+			} else if (vm.serviceLastDataFilter == '1wk') {
+				latestCutoffLimit = now - (dayDuration * 7);
 
-			} else if (vm.serviceLastDataFilter == 'ThisWeek') {
+			} else if (vm.serviceLastDataFilter == '2wk') {
+				latestCutoffLimit = now - (dayDuration * 14);
 
-				minLastData = new Date();
-				minLastData.setHours(0, 0, 0, 0);
-				while (minLastData.getDay() != 1) {
-					minLastData = vm.addDays(minLastData, -1);
-				}
-			} else if (vm.serviceLastDataFilter == 'LastWeek') {
-
-				maxLastData = new Date();
-				maxLastData.setHours(0, 0, 0, 0);
-				while (maxLastData.getDay() != 1) {
-					maxLastData = vm.addDays(maxLastData, -1);
-				}
-
-				minLastData = new Date(maxLastData.getTime());
-				minLastData = vm.addDays(minLastData, -7);
-
-			} else if (vm.serviceLastDataFilter == 'Older') {
-
-				maxLastData = new Date();
-				maxLastData.setHours(0, 0, 0, 0);
-				while (maxLastData.getDay() != 1) {
-					maxLastData = vm.addDays(maxLastData, -1);
-				}
-				maxLastData = vm.addDays(maxLastData, -7);
+			} else if (vm.serviceLastDataFilter == 'older') {
+				latestCutoffLimit = now - (dayDuration * 14); //specifically the same as the 2wk filter above
 
 			} else {
 				console.log('unknown last data filer ' + vm.serviceLastDataFilter);
@@ -227,177 +201,181 @@ export class ServiceService extends BaseHttp2Service {
 			//console.log('filter from ' + minLastData + ' to ' + maxLastData);
 		}
 
+
 		var arrayLength = services.length;
 		for (var i = 0; i < arrayLength; i++) {
 			var service = services[i];
 
-			//only apply the filters if we're showing the panel
-			if (vm.showFilters) {
+			if (vm.servicePublisherConfigFilter) {
+				var publisherConfigName = service.publisherConfigName;
+				if (vm.servicePublisherConfigFilter == 'NoPublisher') {
+					if (publisherConfigName) {
+						continue;
+					}
 
-				if (vm.servicePublisherConfigFilter) {
-					var publisherConfigName = service.publisherConfigName;
-					if (vm.servicePublisherConfigFilter == 'NoPublisher') {
-						if (publisherConfigName) {
-							continue;
+				} else {
+					if (!publisherConfigName || publisherConfigName != vm.servicePublisherConfigFilter) {
+						continue;
+					}
+				}
+			}
+
+			//if it's not regex, then just compare strings
+			if (!vm.serviceCcgCodeFilterIsRegex
+				&& vm.serviceCcgCodeFilterStr) {
+
+				var ccgCode = service.ccgCode;
+				if (!ccgCode || ccgCode != vm.serviceCcgCodeFilterStr) {
+					continue;
+				}
+			}
+
+			//if it's not regex, then just compare strings
+			if (vm.serviceCcgCodeFilterIsRegex
+				&& validParentFilterRegex) {
+
+				var ccgCode = service.ccgCode;
+				if (!ccgCode || !ccgCode.toLowerCase().match(validParentFilterRegex)) {
+					continue;
+				}
+			}
+
+			if (vm.serviceStatusFilter
+				&& !transformErrorsView) { //only applies to full service list
+
+				var desiredVal;
+				if (vm.serviceStatusFilter == 'NoStatus') {
+					desiredVal = 0;
+				} else if (vm.serviceStatusFilter == 'NoData') {
+					desiredVal = 1;
+				} else if (vm.serviceStatusFilter == 'OK') {
+					desiredVal = 2;
+				} else if (vm.serviceStatusFilter == 'Behind') {
+					desiredVal = 3;
+				} else if (vm.serviceStatusFilter == 'Error') {
+					desiredVal = 4;
+				} else {
+					console.log('Unknown sort mode ' + vm.serviceStatusFilter);
+				}
+				//console.log('sort mode = ' + vm.serviceStatusFilter + ' val = ' + desiredVal);
+
+				var statusVal = vm.getSortingStatusValue(service);
+				//console.log('service ' + service.localIdentifier + ' has status val ' + statusVal + ' looking for ' + vm.serviceStatusFilter);
+				if (statusVal != desiredVal) {
+					//console.log('skipped');
+					continue;
+				} else {
+					//console.log('include');
+				}
+			}
+
+			if (vm.servicePublisherModeFilter) {
+				//&& !transformErrorsView) { //only applies to main services view
+				var include = false;
+
+				if (service.systemStatuses) {
+					for (var j=0; j<service.systemStatuses.length; j++) {
+						var systemStatus = service.systemStatuses[j];
+						if (systemStatus.publisherMode == vm.servicePublisherModeFilter) {
+							include = true;
+							break;
 						}
+					}
+				}
 
-					} else {
-						if (!publisherConfigName || publisherConfigName != vm.servicePublisherConfigFilter) {
-							continue;
+				if (!include) {
+					continue;
+				}
+			}
+
+			if (latestCutoffLimit) {
+				var include = false;
+
+				if (service.systemStatuses) {
+					for (var j=0; j<service.systemStatuses.length; j++) {
+						var systemStatus = service.systemStatuses[j];
+						var cutoff = systemStatus.lastReceivedExtractCutoff;
+
+						if (vm.serviceLastDataFilter == 'older') {
+							//if wanting things OLDER than the limit, then we want a smaller number
+							if (cutoff < latestCutoffLimit) {
+								include = true;
+							}
+
+						} else {
+							//if wanting things NEWER than the limit, then we want a larger number
+							if (cutoff > latestCutoffLimit) {
+								include = true;
+							}
 						}
-
-					}
-
-				}
-
-				//if it's not regex, then just compare strings
-				if (!vm.serviceCcgCodeFilterIsRegex
-					&& vm.serviceCcgCodeFilterStr) {
-
-					var ccgCode = service.ccgCode;
-					if (!ccgCode || ccgCode != vm.serviceCcgCodeFilterStr) {
-						continue;
 					}
 				}
 
-				//if it's not regex, then just compare strings
-				if (vm.serviceCcgCodeFilterIsRegex
-					&& validParentFilterRegex) {
-
-					var ccgCode = service.ccgCode;
-					if (!ccgCode || !ccgCode.toLowerCase().match(validParentFilterRegex)) {
-						continue;
-					}
+				if (!include) {
+					continue;
 				}
+			}
 
-				if (vm.serviceStatusFilter
-					&& !transformErrorsView) { //only applies to full service list
-
-					var desiredVal;
-					if (vm.serviceStatusFilter == 'NoStatus') {
-						desiredVal = 0;
-					} else if (vm.serviceStatusFilter == 'NoData') {
-						desiredVal = 1;
-					} else if (vm.serviceStatusFilter == 'OK') {
-						desiredVal = 2;
-					} else if (vm.serviceStatusFilter == 'Behind') {
-						desiredVal = 3;
-					} else if (vm.serviceStatusFilter == 'Error') {
-						desiredVal = 4;
-					} else {
-						console.log('Unknown sort mode ' + vm.serviceStatusFilter);
-					}
-					//console.log('sort mode = ' + vm.serviceStatusFilter + ' val = ' + desiredVal);
-
-					var statusVal = vm.getSortingStatusValue(service);
-					//console.log('service ' + service.localIdentifier + ' has status val ' + statusVal + ' looking for ' + vm.serviceStatusFilter);
-					if (statusVal != desiredVal) {
-						//console.log('skipped');
-						continue;
- 					} else {
-						//console.log('include');
-					}
+			//hide closed filter
+			if (vm.serviceHideClosedFilter) {
+				if (service.tags
+				&& service.tags.hasOwnProperty('Closed')) {
+					continue;
 				}
+			}
 
-				if (vm.servicePublisherModeFilter) {
-					//&& !transformErrorsView) { //only applies to main services view
-					var include = false;
+			//if filtering by a specific tag, this rules out any service WITHOUT that tag
+			if (vm.serviceNameSearchIncludeTags
+				&& vm.serviceNameSearchSpecificTag) {
 
-					if (service.systemStatuses) {
-						for (var j=0; j<service.systemStatuses.length; j++) {
-							var systemStatus = service.systemStatuses[j];
-							if (systemStatus.publisherMode == vm.servicePublisherModeFilter) {
+				if (!service.tags
+					|| !service.tags.hasOwnProperty(vm.serviceNameSearchSpecificTag)) {
+					continue;
+				}
+			}
+
+			//only apply the name filter if it's valid regex
+			if (validNameFilterRegex) {
+				var name = service.name;
+				var alias = service.alias;
+				var id = service.localIdentifier;
+				var uuid = service.uuid;
+
+				var include = false;
+				if (name && name.toLowerCase().match(validNameFilterRegex)) {
+					include = true;
+
+				} if (alias && alias.toLowerCase().match(validNameFilterRegex)) {
+					include = true;
+
+				} else if (id && id.toLowerCase().match(validNameFilterRegex)) {
+					include = true;
+
+				} else if (uuid && uuid.toLowerCase() == validNameFilterRegex) { //don't compare this as regex
+					include = true;
+
+				} else if (service.tags && vm.serviceNameSearchIncludeTags ) {
+
+					var tagNames = Object.keys(service.tags);
+					for (var j=0; j<tagNames.length; j++) {
+						var tagName = tagNames[j];
+						var tagValue = service.tags[tagName];
+
+						//if restricting to a specific tag, skip any others
+						if (!vm.serviceNameSearchSpecificTag
+								|| tagName == vm.serviceNameSearchSpecificTag) {
+
+							if (tagName.toLowerCase().match(validNameFilterRegex)
+								|| (tagValue && tagValue.toLowerCase().match(validNameFilterRegex))) {
 								include = true;
 								break;
 							}
 						}
 					}
-
-					if (!include) {
-						continue;
-					}
 				}
 
-
-				if ((minLastData || maxLastData)) {
-					//&& !transformErrorsView { //only applies to main services view
-					var include = false;
-
-					if (service.systemStatuses) {
-						for (var j=0; j<service.systemStatuses.length; j++) {
-							var systemStatus = service.systemStatuses[j];
-
-							var lastDate = new Date();
-							lastDate.setTime(systemStatus.lastReceivedExtractCutoff);
-
-							if ((!minLastData || lastDate.getTime() >= minLastData.getTime())
-								&& (!maxLastData || lastDate.getTime() < maxLastData.getTime())) {
-
-								include = true;
-								break;
-							}
-						}
-					}
-
-					if (!include) {
-						continue;
-					}
-
-				}
-				
-				//if filtering by a specific tag, this rules out any service WITHOUT that tag
-				if (vm.serviceNameSearchIncludeTags
-					&& vm.serviceNameSearchSpecificTag) {
-
-					if (!service.tags
-						|| !service.tags.hasOwnProperty(vm.serviceNameSearchSpecificTag)) {
-						continue;
-					}
-				}
-
-				//only apply the name filter if it's valid regex
-				if (validNameFilterRegex) {
-					var name = service.name;
-					var alias = service.alias;
-					var id = service.localIdentifier;
-					var uuid = service.uuid;
-
-					var include = false;
-					if (name && name.toLowerCase().match(validNameFilterRegex)) {
-						include = true;
-
-					} if (alias && alias.toLowerCase().match(validNameFilterRegex)) {
-						include = true;
-
-					} else if (id && id.toLowerCase().match(validNameFilterRegex)) {
-						include = true;
-
-					} else if (uuid && uuid.toLowerCase() == validNameFilterRegex) { //don't compare this as regex
-						include = true;
-
-					} else if (service.tags && vm.serviceNameSearchIncludeTags ) {
-
-						var tagNames = Object.keys(service.tags);
-						for (var j=0; j<tagNames.length; j++) {
-							var tagName = tagNames[j];
-							var tagValue = service.tags[tagName];
-
-							//if restricting to a specific tag, skip any others
-							if (!vm.serviceNameSearchSpecificTag
-									|| tagName == vm.serviceNameSearchSpecificTag) {
-
-								if (tagName.toLowerCase().match(validNameFilterRegex)
-									|| (tagValue && tagValue.toLowerCase().match(validNameFilterRegex))) {
-									include = true;
-									break;
-								}
-							}
-						}
-					}
-
-					if (!include) {
-						continue;
-					}
+				if (!include) {
+					continue;
 				}
 			}
 
@@ -953,6 +931,7 @@ export class ServiceService extends BaseHttp2Service {
 		vm.serviceCcgCodeFilterRegex = null;
 		vm.serviceLastDataFilter = null;
 		vm.servicePublisherModeFilter = null;
+		vm.serviceHideClosedFilter = true;
 	}
 
 

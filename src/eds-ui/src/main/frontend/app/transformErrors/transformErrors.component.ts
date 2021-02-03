@@ -209,14 +209,6 @@ export class TransformErrorsComponent {
 
 	}
 
-	toggleFilter() {
-		var vm = this;
-		vm.serviceService.toggleFiltering();
-
-		//call the filtered changed method to remove the applied filtering
-		vm.applyFiltering();
-	}
-
 	clearFilters() {
 		var vm = this;
 		vm.serviceService.clearFilters();

@@ -176,14 +176,6 @@ export class ServiceListComponent implements OnInit, OnDestroy{
 		//console.log('filtered down to ' + vm.filteredServices.length);
 	}
 
-	toggleFilter() {
-		var vm = this;
-		vm.serviceService.toggleFiltering();
-
-		//call the filtered changed method to remove the applied filtering
-		vm.applyFiltering();
-	}
-
 	clearFilters() {
 		var vm = this;
 		vm.serviceService.clearFilters();

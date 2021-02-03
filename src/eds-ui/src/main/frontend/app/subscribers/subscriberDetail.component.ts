@@ -358,8 +358,8 @@ export class SubscriberDetailComponent {
                     } else if (vm.subscribersService.statusFilter == 'any-issue') {
 
                         if (systemStatus.processingInError
-                            || systemStatus.inboundBehindDays > 1
-                            || systemStatus.outboundBehindDays > 1) {
+                            || systemStatus.inboundBehindDays > 0
+                            || systemStatus.outboundBehindDays > 0) {
                             include = true;
                         }
 
