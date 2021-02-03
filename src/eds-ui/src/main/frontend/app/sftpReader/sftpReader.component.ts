@@ -21,6 +21,11 @@ import {DateTimeFormatter} from "../utility/DateTimeFormatter";
 })
 export class SftpReaderComponent {
 
+    //SD-338 - need to import the static formatting functions so they can be used by the HTML template
+    formatYYYYMMDDHHMMSS = DateTimeFormatter.formatYYYYMMDDHHMMSS;
+    formatYYYYMMDDHHMM = DateTimeFormatter.formatYYYYMMDDHHMM;
+    formatHHMMSS = DateTimeFormatter.formatHHMMSS;
+
     //SFTP configuration status
     configurations: SftpReaderConfiguration[];
     refreshingStatusMap: {};

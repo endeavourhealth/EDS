@@ -18,6 +18,11 @@ import {DateTimeFormatter} from "../utility/DateTimeFormatter";
 })
 export class QueueReaderStatusComponent {
 
+
+    //SD-338 - need to import the static formatting functions so they can be used by the HTML template
+    formatHHMMSS = DateTimeFormatter.formatHHMMSS;
+    formatYYYYMMDDHHMMSS = DateTimeFormatter.formatYYYYMMDDHHMMSS;
+
     //properties derived from Rabbit config
     routingExchangeNames: string[]; //distinct exchange names (EdsInbound, EdsProtocol etc.)
     routingKeys: string[]; //distinct set of all routing keys (A, B, C etc.)

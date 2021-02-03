@@ -9,11 +9,16 @@ import {LibraryService} from "eds-common-js/dist/index";
 import {SystemService} from "./system.service";
 import {ItemSummaryList} from "eds-common-js/dist/library/models/ItemSummaryList";
 import {FolderItem} from "eds-common-js/dist/folder/models/FolderItem";
+import {DateTimeFormatter} from "../utility/DateTimeFormatter";
 
 @Component({
     template: require('./systemList.html')
 })
 export class SystemListComponent implements OnInit, OnDestroy{
+
+    //SD-338 - need to import the static formatting functions so they can be used by the HTML template
+    formatYYYYMMDDHHMM = DateTimeFormatter.formatYYYYMMDDHHMM;
+
 
     systems: FolderItem[];
 

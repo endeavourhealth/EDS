@@ -8,12 +8,16 @@ import {SftpReaderConfiguration} from "./models/SftpReaderConfiguration";
 import {OdsSearchDialog} from "../services/odsSearch.dialog";
 import {SftpReaderOrgsDialog} from "./sftpReaderOrgs.dialog";
 import {SftpReaderBatchContents} from "./models/SftpReaderBatchContents";
+import {DateTimeFormatter} from "../utility/DateTimeFormatter";
 
 @Component({
     selector: 'ngbd-modal-content',
     template: require('./sftpReaderHistoryDialog.html')
 })
 export class SftpReaderHistoryDialog  {
+
+    //SD-338 - need to import the static formatting functions so they can be used by the HTML template
+    formatYYYYMMDDHHMM = DateTimeFormatter.formatYYYYMMDDHHMM;
 
     @Input() configuration: SftpReaderConfiguration;
 

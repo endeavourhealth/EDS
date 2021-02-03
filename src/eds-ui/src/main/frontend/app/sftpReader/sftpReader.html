@@ -1,7 +1,7 @@
 <div class="module">
     <div class="module-heading">
         SFTP Reader Status <span
-            *ngIf="statusesLastRefreshed">(as of {{statusesLastRefreshed | date:'HH:mm:ss'}})</span>
+            *ngIf="statusesLastRefreshed">(as of {{formatHHMMSS(statusesLastRefreshed)}})</span>
         <div class="pull-right">
 
             <form class="form-inline">
@@ -84,8 +84,8 @@
 
                         <span *ngIf="sftpReaderService.showExecutionTime" class="text-muted"> {{getApplicationExecutionTime(appStatus)}}</span>
                         <span *ngIf="sftpReaderService.showMemory" class="text-muted"> [{{appStatus.currentHeapDesc}} / {{appStatus.maxHeapDesc}}]</span>
-                        <span *ngIf="sftpReaderService.showJarDate" class="text-muted"> [Jar {{appStatus.dtJar | date:'yyyy-MM-dd HH:mm:ss'}}]</span>
-                        <span *ngIf="sftpReaderService.showStartDate" class="text-muted"> [Started {{appStatus.dtStarted | date:'yyyy-MM-dd HH:mm:ss'}}]</span>
+                        <span *ngIf="sftpReaderService.showJarDate" class="text-muted"> [Jar {{formatYYYYMMDDHHMMSS(appStatus.dtJar)}}]</span>
+                        <span *ngIf="sftpReaderService.showStartDate" class="text-muted"> [Started {{formatYYYYMMDDHHMMSS(appStatus.dtStarted)}}]</span>
 
 
                     </span>
@@ -193,7 +193,7 @@
                                             <span class="label label-danger" *ngIf="isLastPollAttemptTooOld(status)">Warning</span>
                                             &nbsp;
                                         </span>
-                                            Last Checked for Data: {{status.latestPollingStart | date:'yyyy-MM-dd HH:mm'}}
+                                            Last Checked for Data: {{formatYYYYMMDDHHMM(status.latestPollingStart)}}
                                         </div>
                                         <div *ngIf="!status.latestPollingStart">
                                             <span class="label label-danger">Warning</span>&nbsp;Last Checked for Data:
@@ -212,11 +212,11 @@
                                                     <span class="label label-danger" *ngIf="isLastExtractTooOld(status)">Warning</span>
                                                     &nbsp;
                                                 </span>
-                                                Last Extract Received {{status.latestBatchReceived | date:'yyyy-MM-dd HH:mm'}}
+                                                Last Extract Received {{formatYYYYMMDDHHMM(status.latestBatchReceived)}}
                                             </div>
                                             <!--<div>Data From: {{status.latestBatchIdentifier}}</div>-->
                                             <div>
-                                                Last Extract Cutoff: {{status.latestBatchExtractCutoff | date:'yyyy-MM-dd HH:mm'}}
+                                                Last Extract Cutoff: {{formatYYYYMMDDHHMM(status.latestBatchExtractCutoff)}}
                                             </div>
                                             <div>
                                                 Files Received: {{status.latestBatchFileCount}}
@@ -254,13 +254,13 @@
                                     <div class="row" *ngFor="let status of getStatusToDisplay(configuration)">
 
                                         <div *ngIf="configuration.dtPaused">
-                                            <span class="label label-warning">PAUSED {{configuration.dtPaused | date:'yyyy-MM-dd HH:mm'}}</span>
+                                            <span class="label label-warning">PAUSED {{formatYYYYMMDDHHMM(configuration.dtPaused)}}</span>
                                         </div>
 
                                         <div *ngIf="status.completeBatchId">
-                                            <div>Posted to API: {{status.completeBatchCompletionDate | date:'yyyy-MM-dd HH:mm'}}</div>
-                                            <div>Posted Extract Received: {{status.completeBatchReceived | date:'yyyy-MM-dd HH:mm'}}</div>
-                                            <div>Posted Extract Cutoff: {{status.completeBatchExtractCutoff | date:'yyyy-MM-dd HH:mm'}}</div>
+                                            <div>Posted to API: {{formatYYYYMMDDHHMM(status.completeBatchCompletionDate)}}</div>
+                                            <div>Posted Extract Received: {{formatYYYYMMDDHHMM(status.completeBatchReceived)}}</div>
+                                            <div>Posted Extract Cutoff: {{formatYYYYMMDDHHMM(status.completeBatchExtractCutoff)}}</div>
                                             <!--<div>Extract Sequence No: {{status.completeBatchSequenceNumber}}</div>-->
 
                                             <div>

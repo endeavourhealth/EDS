@@ -15,11 +15,15 @@ import {linq} from "eds-common-js/dist/index";
 import {Tag} from "./models/Tag";
 import {SubscriberHistory} from "./models/SubscriberHistory";
 import {DpaHistory} from "./models/DpaHistory";
+import {DateTimeFormatter} from "../utility/DateTimeFormatter";
 
 @Component({
 	template : require('./serviceEditor.html')
 })
 export class ServiceEditComponent {
+
+	//SD-338 - need to import the static formatting functions so they can be used by the HTML template
+	formatYYYYMMDDHHMM = DateTimeFormatter.formatYYYYMMDDHHMM;
 
 	service : Service = <Service>{};
 	systems : System[];

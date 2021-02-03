@@ -21,6 +21,10 @@ import {DateTimeFormatter} from "../utility/DateTimeFormatter";
 })
 export class SubscriberDetailComponent {
 
+    //SD-338 - need to import the static formatting functions so they can be used by the HTML template
+    formatYYYYMMDDHHMM = DateTimeFormatter.formatYYYYMMDDHHMM;
+    formatHHMMSS = DateTimeFormatter.formatHHMMSS;
+
     subscriberName: string;
     statusLastRefreshed: Date;
     status: SubscriberConfiguration;

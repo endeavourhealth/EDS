@@ -8,11 +8,15 @@ import {ConfigManagerService} from "./configManager.service";
 import {MessageBoxDialog} from "eds-common-js/dist/index";
 import {NgbModal} from "@ng-bootstrap/ng-bootstrap";
 import {ConfigHistory} from "./ConfigHistory";
+import {DateTimeFormatter} from "../utility/DateTimeFormatter";
 
 @Component({
     template : require('./configManager.html')
 })
 export class ConfigManagerComponent {
+
+    //SD-338 - need to import the static formatting functions so they can be used by the HTML template
+    formatYYYYMMDDHHMMSS = DateTimeFormatter.formatYYYYMMDDHHMMSS;
 
     refreshingStatus: boolean;
     records: ConfigRecord[];

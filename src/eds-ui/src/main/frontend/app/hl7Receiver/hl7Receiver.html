@@ -1,6 +1,6 @@
 <div class="module">
     <div class="module-heading">
-        HL7 Receiver <span *ngIf="statusLastRefreshed">(as of {{statusLastRefreshed | date:'HH:mm:ss'}})</span>
+        HL7 Receiver <span *ngIf="statusLastRefreshed">(as of {{formatHHMMSS(statusLastRefreshed)}})</span>
         <div class="pull-right">
             <button class="btn btn-sm btn-success" [disabled]="refreshingStatus" (click)="refreshStatus()" title="Refresh">Refresh&nbsp;<span class="fa fa-sm fa-refresh fa-refresh-animate" *ngIf="refreshingStatus"></span></button>
         </div>
@@ -23,7 +23,7 @@
                                 <div *ngIf="channel.lastMessageId">
                                     <div>
                                         <span *ngIf="isLastMessageReceivedTooOld(channel)" class="label label-danger" ngbTooltip="No recent messages received">Warning</span>
-                                        Last Message Received: {{channel.lastMessageReceived | date:'yyyy-MM-dd HH:mm:ss'}}
+                                        Last Message Received: {{formatYYYYMMDDHHMMSS(channel.lastMessageReceived)}}
                                     </div>
                                     <div>Last Message ID: {{channel.lastMessageId}}</div>
                                 </div>
@@ -45,7 +45,7 @@
                                     </div>
                                     <br>
                                     <b>Message in Error:</b>
-                                    <div>Received: {{channel.errorMessageReceived | date:'yyyy-MM-dd HH:mm:ss'}}</div>
+                                    <div>Received: {{formatYYYYMMDDHHMMSS(channel.errorMessageReceived)}}</div>
                                     <div>Type: {{channel.errorMessageType}}</div>
                                     <div>ID: {{channel.errorMessageId}}</div>
                                     <pre>{{channel.errorMessage}}</pre>
@@ -65,7 +65,7 @@
                                         <b>First Message in Queue:</b>
                                         <div>
                                             <span *ngIf="isCurrentMessageTooOld(channel)" class="label label-danger" ngbTooltip="Message being processed from >1 day ago">Warning</span>
-                                            Received: {{channel.transformQueueFirstMessageDate | date:'yyyy-MM-dd HH:mm:ss'}}
+                                            Received: {{formatYYYYMMDDHHMMSS(channel.transformQueueFirstMessageDate)}}
                                         </div>
                                         <div>Type: {{channel.transformQueueFirstMessageType}}</div>
                                         <div>ID: {{channel.transformQueueFirstMessageId}}</div>
@@ -86,7 +86,7 @@
                                     </thead>
                                     <tbody>
                                     <tr class="hover-box" *ngFor="let status of channel.transformQueueFirstStatus">
-                                        <td>{{status.date | date:'yyyy-MM-dd HH:mm:ss'}}</td>
+                                        <td>{{formatYYYYMMDDHHMMSS(status.date)}}</td>
                                         <td>{{status.status}}</td>
                                         <td><pre *ngIf="status.error">{{status.error}}</pre></td>
                                     </tr>
@@ -106,13 +106,6 @@
 
                         </div>
                     </div>
-                </div>
-            </div>
-
-            <div class="row">
-                <div class="col-md-12">
-                    Show raw JSON<input type="checkbox" id="showRawJson" [(ngModel)]="showRawJson" name="showRawJson">
-                    <pre *ngIf="showRawJson">{{resultStr}}</pre>
                 </div>
             </div>
 

@@ -4,12 +4,16 @@ import {NgbModal, NgbActiveModal, NgbModalOptions} from "@ng-bootstrap/ng-bootst
 
 import {SubscriberZipFileUUID} from "./models/SubscriberZipFileUUID";
 import {RemoteFilingService} from "./remoteFiling.service";
+import {DateTimeFormatter} from "../utility/DateTimeFormatter";
 
 @Component({
     selector: 'ngbd-modal-content',
     template: require('./remoteFilingFilesDialog.html')
 })
 export class RemoteFilingFilesDialog  {
+
+    //SD-338 - need to import the static formatting functions so they can be used by the HTML template
+    formatYYYYMMDDHHMMSS = DateTimeFormatter.formatYYYYMMDDHHMMSS;
 
     @Input() files: SubscriberZipFileUUID[];
     @Input() subscriberId: number;

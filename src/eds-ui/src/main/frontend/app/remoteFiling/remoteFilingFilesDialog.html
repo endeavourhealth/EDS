@@ -30,8 +30,8 @@
                                     (click)="downloadZipData(file.queuedMessageUUID, file.queuedMessageBody)">Zip
                             </button>
                         </td>
-                        <td>{{file.fileSent | date:'yyyy-MM-dd HH:mm:ss'}}</td>
-                        <td>{{file.fileFilingAttempted | date:'yyyy-MM-dd HH:mm:ss'}}</td>
+                        <td>{{formatYYYYMMDDHHMMSS(file.fileSent)}}</td>
+                        <td>{{formatYYYYMMDDHHMMSS(file.fileFilingAttempted)}}</td>
                         <td>{{file.filingFailureMessage}}</td>
                     </tr>
                     </tbody>

@@ -130,7 +130,7 @@
                                         </thead>
                                         <tbody>
                                             <tr class="hover-box show-child-on-hover" *ngFor="let history of getHistory(selectedRecord)" (click)="selectHistory(history);" [ngClass]="{'selection': history == selectedHistory}">
-                                                <td>{{history.dtChanged | date:'yyyy-MM-dd HH:mm:ss'}}</td>
+                                                <td>{{formatYYYYMMDDHHMMSS(history.dtChanged)}}</td>
                                             </tr>
                                         </tbody>
                                     </table>

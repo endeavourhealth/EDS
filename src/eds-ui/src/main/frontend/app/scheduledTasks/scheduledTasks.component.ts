@@ -20,6 +20,10 @@ import {DateTimeFormatter} from "../utility/DateTimeFormatter";
 })
 export class ScheduledTasksComponent {
 
+    //SD-338 - need to import the static formatting functions so they can be used by the HTML template
+    formatYYYYMMDDHHMM = DateTimeFormatter.formatYYYYMMDDHHMM;
+    formatHHMMSS = DateTimeFormatter.formatHHMMSS;
+
     latest: ScheduledTaskAudit[];
     rules: ScheduledTaskRule[];
     statusLastRefreshed: Date;
