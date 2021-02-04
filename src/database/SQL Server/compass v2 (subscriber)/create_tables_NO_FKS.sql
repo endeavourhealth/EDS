@@ -64,6 +64,11 @@ IF OBJECT_ID('dbo.patient_address_match', 'U') IS NOT NULL DROP TABLE dbo.patien
 GO
 IF OBJECT_ID('dbo.patient_address_ralf', 'U') IS NOT NULL DROP TABLE dbo.patient_address_ralf
 GO
+IF OBJECT_ID('dbo.concept', 'U') IS NOT NULL DROP TABLE dbo.concept
+GO
+IF OBJECT_ID('dbo.concept_map', 'U') IS NOT NULL DROP TABLE dbo.concept_map
+GO
+
 
 CREATE TABLE [allergy_intolerance] (
 [id] bigint,
@@ -748,6 +753,39 @@ CREATE INDEX [patient_address_ralf_patient_address_id] ON [patient_address_ralf]
 GO
 
 CREATE INDEX [patient_address_ralf_patient_address_match_uprn_ralf_00] ON [patient_address_ralf] ([patient_address_match_uprn_ralf00])
+GO
+
+
+
+CREATE TABLE [concept](
+	[dbid] [int] NOT NULL,
+	[document] [int] NOT NULL,
+	[id] [varchar](150) NOT NULL,
+	[draft] [smallint] NOT NULL,
+	[name] [varchar](255) NULL,
+	[description] [varchar](400) NULL,
+	[scheme] [bigint] NULL,
+	[code] [varchar](40) NULL,
+	[use_count] [bigint] NOT NULL,
+	[updated] [datetime] NOT NULL,
+PRIMARY KEY CLUSTERED
+(
+	[dbid] ASC
+));
+
+GO
+
+CREATE TABLE [concept_map](
+	[legacy] [int] NOT NULL,
+	[core] [int] NOT NULL,
+	[updated] [datetime] NOT NULL,
+	[id] [int] NOT NULL,
+	[deleted] [smallint] NOT NULL,
+PRIMARY KEY CLUSTERED
+(
+	[id] ASC
+));
+
 GO
 
 
