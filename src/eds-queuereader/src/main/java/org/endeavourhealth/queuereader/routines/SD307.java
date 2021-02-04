@@ -14,6 +14,7 @@ import org.endeavourhealth.core.database.dal.admin.SystemHelper;
 import org.endeavourhealth.core.database.dal.admin.models.Service;
 import org.endeavourhealth.core.database.dal.audit.ExchangeDalI;
 import org.endeavourhealth.core.database.dal.audit.models.Exchange;
+import org.endeavourhealth.core.database.dal.audit.models.HeaderKeys;
 import org.endeavourhealth.core.fhirStorage.ServiceInterfaceEndpoint;
 import org.endeavourhealth.core.queueing.MessageFormat;
 import org.endeavourhealth.transform.common.AuditWriter;
@@ -92,8 +93,22 @@ public class SD307 extends AbstractRoutine {
 
         Map<String, Map<String, List<DateRange>>> hmExtractConfiguration = new HashMap<>();
 
-        //exchange list is most-recent-first, so go backwards
-        for (int i=exchanges.size()-1; i>=0; i--) {
+        //exchange list is most-recent-first, so go forwards to find the most recent bulk
+        int bulkIndex = -1;
+        for (int i=0; i<exchanges.size()-1; i++) {
+            Exchange exchange = exchanges.get(i);
+            Boolean isBulk = exchange.getHeaderAsBoolean(HeaderKeys.IsBulk);
+            if (isBulk != null && isBulk.booleanValue()) {
+                bulkIndex = i;
+                break;
+            }
+        }
+        if (bulkIndex == -1) {
+            throw new Exception("Failed to find bulk for " + service);
+        }
+
+        //exchange list is most-recent-first, so go backwards FROM the last bulk TO the latest data
+        for (int i=bulkIndex; i>=0; i--) {
             Exchange exchange = exchanges.get(i);
 
             //let these be counted
