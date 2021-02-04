@@ -95,7 +95,7 @@ public class SD307 extends AbstractRoutine {
 
         //exchange list is most-recent-first, so go forwards to find the most recent bulk
         int bulkIndex = -1;
-        for (int i=0; i<exchanges.size()-1; i++) {
+        for (int i=0; i<exchanges.size(); i++) {
             Exchange exchange = exchanges.get(i);
             Boolean isBulk = exchange.getHeaderAsBoolean(HeaderKeys.IsBulk);
             if (isBulk != null && isBulk.booleanValue()) {
