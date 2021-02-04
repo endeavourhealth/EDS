@@ -41,7 +41,7 @@ public class SD307 extends AbstractRoutine {
             ServiceDalI serviceDal = DalProvider.factoryServiceDal();
 
             List<Service> services = serviceDal.getAll();
-            List<Service> servicesWithGaps = new ArrayList<>();
+            Map<Service, String> servicesWithGaps = new HashMap<>();
 
             for (Service service : services) {
 
@@ -56,18 +56,19 @@ public class SD307 extends AbstractRoutine {
                 }
 
                 LOG.debug("Doing " + service);
-                boolean gapFound = findTppServicesMissingDeltasForService(verbose, service);
+                String gapFoundErr = findTppServicesMissingDeltasForService(verbose, service);
 
-                if (gapFound) {
-                    servicesWithGaps.add(service);
+                if (gapFoundErr != null) {
+                    servicesWithGaps.put(service, gapFoundErr);
                 }
             }
 
             LOG.debug("Finished Finding TPP Services Missing Deltas " + odsCodeRegex);
 
             LOG.debug("Found " + servicesWithGaps.size() + " services with gaps");
-            for (Service service: servicesWithGaps) {
-                LOG.debug("" + service);
+            for (Service service: servicesWithGaps.keySet()) {
+                String err = servicesWithGaps.get(service);
+                LOG.debug("" + service + " -> " + err);
             }
 
         } catch (Throwable t) {
@@ -75,12 +76,12 @@ public class SD307 extends AbstractRoutine {
         }
     }
 
-    private static boolean findTppServicesMissingDeltasForService(boolean verbose, Service service) throws Exception {
+    private static String findTppServicesMissingDeltasForService(boolean verbose, Service service) throws Exception {
 
         ServiceInterfaceEndpoint endpoint = SystemHelper.findEndpointForSoftware(service, MessageFormat.TPP_CSV);
         if (endpoint == null) {
             LOG.warn("No TPP endpoint found for " + service);
-            return false;
+            return null;
         }
 
         UUID serviceId = service.getId();
@@ -104,7 +105,9 @@ public class SD307 extends AbstractRoutine {
             }
         }
         if (bulkIndex == -1) {
-            throw new Exception("Failed to find bulk for " + service);
+            LOG.error("Failed to find bulk for " + service);
+            return "Failed to find bulk";
+            //throw new Exception("Failed to find bulk for " + service);
         }
 
         //exchange list is most-recent-first, so go backwards FROM the last bulk TO the latest data
@@ -213,7 +216,7 @@ public class SD307 extends AbstractRoutine {
         }
 
         DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm");
-        boolean gapFound = false;
+        String gapFound = null;
 
         if (hmExtractConfiguration.size() > 1) {
             LOG.error("Service is in MULTIPLE extract configurations");
@@ -274,7 +277,7 @@ public class SD307 extends AbstractRoutine {
 
                     } else if (currentStart.after(previousEnd)) {
                         LOG.error("    GAP FOUND: " + odsCode + " " + extractConfiguration + "::" + fileName + " exchange " + dateRange.getExchangeId() + " expecting start " + dateFormat.format(previousEnd) + " but got " + dateFormat.format(currentStart));
-                        gapFound = true;
+                        gapFound = fileName + " exchange " + dateRange.getExchangeId() + " expecting start " + dateFormat.format(previousEnd) + " but got " + dateFormat.format(currentStart);
 
                     } else {
                         LOG.warn("    GONE BACK: " + odsCode + " " + extractConfiguration + "::" + fileName + " exchange " + dateRange.getExchangeId() + " expecting start " + dateFormat.format(previousEnd) + " but got " + dateFormat.format(currentStart));
