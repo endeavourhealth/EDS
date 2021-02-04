@@ -124,7 +124,7 @@ public class SD307 extends AbstractRoutine {
                 attemptFixExchangeMissingManifest(exchange);
                 manifestFilePath = findFilePathInExchange(exchange, "Manifest");
                 if (Strings.isNullOrEmpty(manifestFilePath)) {
-                    LOG.warn("Missing manifest file in exchange " + exchange.getId());
+                    //LOG.warn("Missing manifest file in exchange " + exchange.getId());
                     continue;
                 }
             }
@@ -266,21 +266,27 @@ public class SD307 extends AbstractRoutine {
 
                     //if the start and end don't match up, then something is off
                     if (currentStart == null) {
-                        LOG.warn("    NULL START DATE: " + odsCode + " " + extractConfiguration + "::" + fileName + " exchange " + dateRange.getExchangeId());
+                        if (verbose) {
+                            LOG.warn("    NULL START DATE: " + odsCode + " " + extractConfiguration + "::" + fileName + " exchange " + dateRange.getExchangeId());
+                        }
 
                     } else if (currentStart.equals(previousEnd)) {
                         //OK
 
                     } else if (previousStart != null && currentStart.equals(previousStart)
                             && currentEnd.equals(previousEnd)) {
-                        LOG.warn("    DUPLICATE FOUND: " + odsCode + " " + extractConfiguration + "::" + fileName + " exchange " + dateRange.getExchangeId() + " has range " + dateFormat.format(currentStart) + " - " + dateFormat.format(currentEnd) + " which is the same as previous");
+                        if (verbose) {
+                            LOG.warn("    DUPLICATE FOUND: " + odsCode + " " + extractConfiguration + "::" + fileName + " exchange " + dateRange.getExchangeId() + " has range " + dateFormat.format(currentStart) + " - " + dateFormat.format(currentEnd) + " which is the same as previous");
+                        }
 
                     } else if (currentStart.after(previousEnd)) {
                         LOG.error("    GAP FOUND: " + odsCode + " " + extractConfiguration + "::" + fileName + " exchange " + dateRange.getExchangeId() + " expecting start " + dateFormat.format(previousEnd) + " but got " + dateFormat.format(currentStart));
                         gapFound = fileName + " exchange " + dateRange.getExchangeId() + " expecting start " + dateFormat.format(previousEnd) + " but got " + dateFormat.format(currentStart);
 
                     } else {
-                        LOG.warn("    GONE BACK: " + odsCode + " " + extractConfiguration + "::" + fileName + " exchange " + dateRange.getExchangeId() + " expecting start " + dateFormat.format(previousEnd) + " but got " + dateFormat.format(currentStart));
+                        if (verbose) {
+                            LOG.warn("    GONE BACK: " + odsCode + " " + extractConfiguration + "::" + fileName + " exchange " + dateRange.getExchangeId() + " expecting start " + dateFormat.format(previousEnd) + " but got " + dateFormat.format(currentStart));
+                        }
                     }
 
                     lastDateRange = dateRange;
@@ -319,6 +325,14 @@ public class SD307 extends AbstractRoutine {
         ret.add("SRImmunisationContent");
         ret.add("SRMapping");
         ret.add("SRMedicationReadCodeDetails");
+        ret.add("SRPatientAddress");
+        ret.add("SRPatientContact");
+        ret.add("SRPatientRegistration");
+        ret.add("SRPatientRelationship");
+        ret.add("SRPatient");
+        ret.add("SRRecordStatus");
+        ret.add("SRStaffMember");
+        ret.add("SRStaffMemberProfile");
 
         return ret;
     }
