@@ -601,6 +601,8 @@ public abstract class CQC extends AbstractRoutine {
         csvWriter.append(headers);
         csvWriter.append("\n");
 
+        FileWriter tabWriter = new FileWriter(outfile+".txt");
+
         for (CSVRecord csvRecord : csvParser) {
 
             // if (ft.equals(1)) {ft=0; continue;} // skip headers
@@ -686,10 +688,17 @@ public abstract class CQC extends AbstractRoutine {
             String csv = count+",\""+name+d+also+d+address+d+postcode+d+phone+d+website+d+sts+d+lastInspection+d+specisms+d+provname+d+
                     localauth+d+region+d+location_url+d+cqc_location+d+provider_id+d+on_ratings+d+carehome+d+dormancy+d+uprn+d+odsCode+'"';
 
+            d = "\t";
+            String tabbed = count+"\t"+name+d+also+d+address+d+postcode+d+phone+d+website+d+sts+d+lastInspection+d+specisms+d+provname+d+
+                    localauth+d+region+d+location_url+d+cqc_location+d+provider_id+d+on_ratings+d+carehome+d+dormancy+d+uprn+d+odsCode+'"';
+
             System.out.println(csv);
 
             csvWriter.append(csv);
             csvWriter.append("\n");
+
+            tabWriter.append(tabbed);
+            tabWriter.append("\n");
 
             if (count > 598) {
                 System.out.println("sleeping ...");
@@ -699,6 +708,9 @@ public abstract class CQC extends AbstractRoutine {
         }
         csvWriter.flush();
         csvWriter.close();
+
+        tabWriter.flush();
+        tabWriter.close();
     }
 
     private static String ODSAPI(String ODSCode) throws Exception
