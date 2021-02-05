@@ -1,5 +1,6 @@
 USE audit;
 
+DROP PROCEDURE IF EXISTS check_for_bulk_extracts;
 DROP PROCEDURE IF EXISTS get_monthly_frailty_stats;
 DROP PROCEDURE IF EXISTS get_transform_warnings;
 DROP FUNCTION IF EXISTS isBulk;
@@ -851,3 +852,83 @@ CREATE FUNCTION getExtractCutoff ( exchange_headers TEXT )
 DELIMITER ;
 
 
+
+
+/**
+  procedure to check that all publishers have actually had a bulk extract received (see SD-352)
+ */
+DELIMITER //
+CREATE PROCEDURE check_for_bulk_extracts()
+  BEGIN
+
+    SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
+
+    drop table if exists tmp.bulk_services;
+    drop table if exists tmp.bulk_systems;
+
+    -- find services, but exclude
+    create table tmp.bulk_services as
+      select *
+      from admin.service
+      where tags not like '%ADT%'
+            or tags like '%BARTSDW%'
+            or tags like '%BHRUT%';
+
+    create index ix on tmp.bulk_services (id);
+
+    -- find active system IDs
+    create table tmp.bulk_systems as
+      select p.service_id, p.system_id
+      from audit.latest_data_processed p -- use this table so we don't look a publishers we've not started processing yet
+        inner join tmp.bulk_services s
+          on s.id = p.service_id
+      where p.processed_date > date_add(now(), INTERVAL -14 DAY);
+
+    alter table tmp.bulk_systems
+    add done boolean default false,
+    add has_bulk boolean default false;
+
+    create index ix on tmp.bulk_systems (service_id, system_id);
+    create index ix2 on tmp.bulk_systems (done);
+
+    -- find a bulk extract for each service/system
+    WHILE (select 1 from tmp.bulk_systems where done = false limit 1) DO
+
+      drop table if exists tmp.bulk_systems_batch;
+
+      create table tmp.bulk_systems_batch
+        select *
+        from tmp.bulk_systems
+        where done = 0
+        limit 1;
+
+      create index ix on tmp.bulk_systems_batch (service_id, system_id);
+
+      update tmp.bulk_systems_batch b
+        inner join audit.exchange x
+          on x.service_id = b.service_id
+             and x.system_id = b.system_id
+      set b.has_bulk = true;
+
+      update tmp.bulk_systems y
+        inner join tmp.bulk_systems_batch b
+          on y.service_id = b.service_id
+             and y.system_id = b.system_id
+      set
+        y.has_bulk = b.has_bulk,
+        y.done = true;
+
+    END WHILE;
+
+    select s.name, s.local_id, y.service_id, y.system_id
+    from tmp.bulk_systems y
+      inner join tmp.bulk_services s
+        on y.service_id = s.id
+    where has_bulk != true;
+
+    drop table if exists tmp.bulk_systems_batch;
+    drop table if exists tmp.bulk_services;
+    drop table if exists tmp.bulk_systems;
+
+  END //
+DELIMITER ;
