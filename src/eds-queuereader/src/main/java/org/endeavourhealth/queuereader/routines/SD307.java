@@ -114,10 +114,10 @@ public class SD307 extends AbstractRoutine {
         for (int i=bulkIndex; i>=0; i--) {
             Exchange exchange = exchanges.get(i);
 
-            //let these be counted
-            /*if (!ExchangeHelper.isAllowRequeueing(exchange)) {
+            //do not let these be counted
+            if (!ExchangeHelper.isAllowRequeueing(exchange)) {
                 continue;
-            }*/
+            }
 
             String manifestFilePath = findFilePathInExchange(exchange, "Manifest");
             if (Strings.isNullOrEmpty(manifestFilePath)) {
@@ -186,7 +186,8 @@ public class SD307 extends AbstractRoutine {
                 if (Strings.isNullOrEmpty(startStr) && Strings.isNullOrEmpty(endStr)) {
 
                     //there's something odd about this file and it seems to have null dates in every manifest, so just ignore it
-                    if (!fileName.equals("SRAppointmentAttendees")) {
+                    if (!fileName.equals("SRAppointmentAttendees")
+                            && !fileName.equals("SRReferralContactEvent")) {
                         LOG.warn("NULL start and end date for " + fileName + " in " + manifestFilePath);
                     }
 

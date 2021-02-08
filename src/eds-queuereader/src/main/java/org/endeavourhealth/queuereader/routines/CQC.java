@@ -597,11 +597,13 @@ public abstract class CQC extends AbstractRoutine {
 
         //FileWriter csvWriter = new FileWriter("C:\\Users\\PaulSimon\\Desktop\\cqc_api-1.csv");
         FileWriter csvWriter = new FileWriter(outfile);
-        String headers="ID,Name,Also known as,Address,Postcode,Phone number,Service's website (if available),Service types,Date of latest check,Specialisms/services,Provider name,Local Authority,Region,Location URL,CQC Location (for office use only,CQC Provider ID (for office use only),On ratings,carehome,dormancy,uprn,odscode";
+        String headers="ID,Name,Also known as,Address,Postcode,Phone number,Service's website (if available),Service types,Date of latest check,Specialisms/services,Provider name,Local Authority,Region,Location URL,CQC Location (for office use only,CQC Provider ID (for office use only),On ratings,carehome,dormancy,uprn,odscode,regstatus,regdate,deregdate";
         csvWriter.append(headers);
         csvWriter.append("\n");
 
         FileWriter tabWriter = new FileWriter(outfile+".txt");
+
+
 
         for (CSVRecord csvRecord : csvParser) {
 
@@ -666,6 +668,10 @@ public abstract class CQC extends AbstractRoutine {
 
             String also = getElement("alsoKnownAs",obj);
 
+            String regstatus = getElement("registrationStatus",obj);
+            String regdate = getElement("registrationDate",obj);
+            String deregdate = getElement("deregistrationDate",obj);
+
             String d = "\",\"";
 
             String lastInspection="";
@@ -686,11 +692,11 @@ public abstract class CQC extends AbstractRoutine {
             String address = addressline1+","+addressline2+","+towncity+","+county;
 
             String csv = count+",\""+name+d+also+d+address+d+postcode+d+phone+d+website+d+sts+d+lastInspection+d+specisms+d+provname+d+
-                    localauth+d+region+d+location_url+d+cqc_location+d+provider_id+d+on_ratings+d+carehome+d+dormancy+d+uprn+d+odsCode+'"';
+                    localauth+d+region+d+location_url+d+cqc_location+d+provider_id+d+on_ratings+d+carehome+d+dormancy+d+uprn+d+odsCode+d+regstatus+d+regdate+d+deregdate+'"';
 
             d = "\t";
             String tabbed = count+"\t"+name+d+also+d+address+d+postcode+d+phone+d+website+d+sts+d+lastInspection+d+specisms+d+provname+d+
-                    localauth+d+region+d+location_url+d+cqc_location+d+provider_id+d+on_ratings+d+carehome+d+dormancy+d+uprn+d+odsCode+'"';
+                    localauth+d+region+d+location_url+d+cqc_location+d+provider_id+d+on_ratings+d+carehome+d+dormancy+d+uprn+d+odsCode+d+regstatus+d+regdate+d+deregdate;
 
             System.out.println(csv);
 
@@ -996,6 +1002,10 @@ public abstract class CQC extends AbstractRoutine {
             String cqc_uprn = csvRecord.get(19);
             String odsCode = csvRecord.get(20);
 
+            String regstatus = csvRecord.get(21);
+            String regdate = csvRecord.get(22);
+            String deregdate = csvRecord.get(23);
+
             String ods_address = "";
 
             if (!odsCode.isEmpty()) ods_address = ODSAPI(odsCode);
@@ -1156,6 +1166,10 @@ public abstract class CQC extends AbstractRoutine {
             if (!parent_current.isEmpty()) createContainedCoded(organizationBuilder,"parent_current",parent_current,0);
             if (!opendate.isEmpty()) createContainedCoded(organizationBuilder,"open_date",opendate,0);
             if (!closedate.isEmpty()) createContainedCoded(organizationBuilder,"close_date",closedate,0);
+
+            if (!regstatus.isEmpty()) createContainedCoded(organizationBuilder,"cqc_regstatus",regstatus,0);
+            if (!regdate.isEmpty()) createContainedCoded(organizationBuilder,"cqc_regdate",regdate,0);
+            if (!deregdate.isEmpty()) createContainedCoded(organizationBuilder,"cqc_deregdate",deregdate,0);
 
             //RESOURCE_GUID = scratch(cqc_id, configName);
             RESOURCE_GUID = scratch(cqc_location, configName);

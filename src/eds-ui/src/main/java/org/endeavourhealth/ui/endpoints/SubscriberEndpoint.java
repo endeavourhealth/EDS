@@ -19,6 +19,8 @@ import org.endeavourhealth.core.database.rdbms.ConnectionManager;
 import org.endeavourhealth.core.fhirStorage.ServiceInterfaceEndpoint;
 import org.endeavourhealth.core.subscribers.SubscriberHelper;
 import org.endeavourhealth.core.xml.TransformErrorSerializer;
+import org.endeavourhealth.core.xml.TransformErrorUtility;
+import org.endeavourhealth.core.xml.transformError.Arg;
 import org.endeavourhealth.core.xml.transformError.Error;
 import org.endeavourhealth.core.xml.transformError.TransformError;
 import org.endeavourhealth.coreui.endpoints.AbstractEndpoint;
@@ -94,12 +96,14 @@ public class SubscriberEndpoint extends AbstractEndpoint {
         ObjectMapper mapper = new ObjectMapper();
         ArrayNode root = new ArrayNode(mapper.getNodeFactory());
 
+        LOG.trace("Getting subscriber summary");
         Map<String, String> subscriberMap = ConfigManager.getConfigurations("db_subscriber");
         for (String subscriberName: subscriberMap.keySet()) {
 
             ObjectNode obj = root.addObject();
             populateSubscriberNode(obj, subscriberName, false, hmPublishers, lastData);
         }
+        LOG.trace("Finished getting subscriber summary");
 
         return mapper.writeValueAsString(root);
     }
@@ -122,6 +126,7 @@ public class SubscriberEndpoint extends AbstractEndpoint {
 
 
         //don't bother messing with the JSON in the above map, just re-get using the proper object class
+        LOG.trace("Getting node for subscriber " + subscriberName);
         SubscriberConfig config = SubscriberConfig.readFromConfig(subscriberName);
         String description = config.getDescription();
         String schema = "" + config.getSubscriberType();
@@ -157,9 +162,11 @@ public class SubscriberEndpoint extends AbstractEndpoint {
         }
 
         //get details about the databases, since this is useful sometimes
+        LOG.trace("Getting database details for " + subscriberName);
         getDatabaseDetails(obj, subscriberName);
 
         List<Service> servicesToSubscriber = hmPublishers.get(subscriberName);
+        LOG.trace("Getting publisher status for " + subscriberName);
         getPublisherStatus(obj, subscriberName, servicesToSubscriber, lastData, detailedOutput);
     }
 
@@ -359,9 +366,25 @@ public class SubscriberEndpoint extends AbstractEndpoint {
 
         org.endeavourhealth.core.xml.transformError.Error firstError = errors.get(0);
         org.endeavourhealth.core.xml.transformError.Exception exception = firstError.getException();
-        String msg = exception.getMessage();
-        LOG.trace("Found exception msg [" + msg + "] for service " + serviceId + " and system " + systemId + " and exchange " + exchangeId);
-        return msg;
+        if (exception == null) {
+
+            //if an error with a previous exchange was fixed, and we've already processed that exchange, we might be processing one
+            //of the subsequent exchanges, that won't have the original exception on. So try to generate something meaningful in this case.
+            List<Arg> args = firstError.getArg();
+            for (Arg arg: args) {
+                if (arg.getName().equals(TransformErrorUtility.ARG_WAITING)) {
+                    return "Recovering from previous error";
+                }
+            }
+
+            LOG.error("Failed to find error message in audit data from " + transformAudit.getStarted() + " for service " + serviceId + " and exchange " + exchangeId);
+            return "<<FAILED TO GET ERROR MESSAGE>>";
+
+        } else {
+            String msg = exception.getMessage();
+            LOG.trace("Found exception msg [" + msg + "] for service " + serviceId + " and system " + systemId + " and exchange " + exchangeId);
+            return msg;
+        }
     }
 
     /**
