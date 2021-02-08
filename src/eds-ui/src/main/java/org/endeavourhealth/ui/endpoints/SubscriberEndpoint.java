@@ -359,9 +359,15 @@ public class SubscriberEndpoint extends AbstractEndpoint {
 
         org.endeavourhealth.core.xml.transformError.Error firstError = errors.get(0);
         org.endeavourhealth.core.xml.transformError.Exception exception = firstError.getException();
-        String msg = exception.getMessage();
-        LOG.trace("Found exception msg [" + msg + "] for service " + serviceId + " and system " + systemId + " and exchange " + exchangeId);
-        return msg;
+        if (exception == null) {
+            LOG.error("Failed to find error message in audit data for service " + serviceId + " and exchange " + exchangeId);
+            return "<<FAILED TO GET ERROR MESSAGE>>";
+
+        } else {
+            String msg = exception.getMessage();
+            LOG.trace("Found exception msg [" + msg + "] for service " + serviceId + " and system " + systemId + " and exchange " + exchangeId);
+            return msg;
+        }
     }
 
     /**
