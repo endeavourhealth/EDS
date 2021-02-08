@@ -94,12 +94,14 @@ public class SubscriberEndpoint extends AbstractEndpoint {
         ObjectMapper mapper = new ObjectMapper();
         ArrayNode root = new ArrayNode(mapper.getNodeFactory());
 
+        LOG.trace("Getting subscriber summary");
         Map<String, String> subscriberMap = ConfigManager.getConfigurations("db_subscriber");
         for (String subscriberName: subscriberMap.keySet()) {
 
             ObjectNode obj = root.addObject();
             populateSubscriberNode(obj, subscriberName, false, hmPublishers, lastData);
         }
+        LOG.trace("Finished getting subscriber summary");
 
         return mapper.writeValueAsString(root);
     }
@@ -122,6 +124,7 @@ public class SubscriberEndpoint extends AbstractEndpoint {
 
 
         //don't bother messing with the JSON in the above map, just re-get using the proper object class
+        LOG.trace("Getting node for subscriber " + subscriberName);
         SubscriberConfig config = SubscriberConfig.readFromConfig(subscriberName);
         String description = config.getDescription();
         String schema = "" + config.getSubscriberType();
@@ -157,9 +160,11 @@ public class SubscriberEndpoint extends AbstractEndpoint {
         }
 
         //get details about the databases, since this is useful sometimes
+        LOG.trace("Getting database details for " + subscriberName);
         getDatabaseDetails(obj, subscriberName);
 
         List<Service> servicesToSubscriber = hmPublishers.get(subscriberName);
+        LOG.trace("Getting publisher status for " + subscriberName);
         getPublisherStatus(obj, subscriberName, servicesToSubscriber, lastData, detailedOutput);
     }
 
