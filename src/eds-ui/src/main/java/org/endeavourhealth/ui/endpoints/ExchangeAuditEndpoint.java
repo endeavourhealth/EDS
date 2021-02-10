@@ -513,7 +513,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
     @Consumes(MediaType.APPLICATION_JSON)
     @Timed(absolute = true, name="ExchangeAuditEndpoint.PostToExchangeApi")
     @Path("/postToExchangeApi")
-    @RolesAllowed({"dds_requeue_message"}) //first to allow use by DDS-UI and second to allow use from Emis transform code
+    //@RolesAllowed({"dds_requeue_message"}) //first to allow use by DDS-UI and second to allow use from Emis transform code
     public Response postToExchangeApi(@Context SecurityContext sc, JsonPostToExchangeRequest request) throws Exception {
         return postToExchangeImpl(sc, request);
     }
