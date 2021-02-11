@@ -25,7 +25,7 @@ public class Main {
 		ConfigManager.initialize("queuereader", configId);
 
 		if (args.length >= 1
-				&& args[0].equalsIgnoreCase("SD324fixAppointmentStartTimes")) {
+				&& args[0].equalsIgnoreCase("SD289fixEmisDeletedSlots")) {
 			boolean includeStartedButNotFinishedServices = Boolean.parseBoolean(args[1]);
 			boolean testMode = Boolean.parseBoolean(args[2]);
 			String odsCodeRegex = null;
