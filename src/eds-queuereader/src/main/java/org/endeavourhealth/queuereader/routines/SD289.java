@@ -277,13 +277,21 @@ public class SD289 extends AbstractRoutine {
                     ret.put(slotGuid, patientGuids);
                 }
 
+                //remove any existing instance of this from the list already since it's only the most recent instances we're interested in
+                for (int j=patientGuids.size()-1; j>=0; j--) {
+                    String lastGuid = patientGuids.get(j);
+                    if (lastGuid.equals(patientGuid)) {
+                        patientGuids.remove(j);
+                    }
+                }
+
                 //if it's the same as the last in the list, skip it
-                if (!patientGuids.isEmpty()) {
+                /*if (!patientGuids.isEmpty()) {
                     String lastGuid = patientGuids.get(patientGuids.size()-1);
                     if (lastGuid.equals(patientGuid)) {
                         continue;
                     }
-                }
+                }*/
 
                 patientGuids.add(patientGuid);
             }
