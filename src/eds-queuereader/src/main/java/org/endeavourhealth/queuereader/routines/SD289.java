@@ -179,16 +179,20 @@ public class SD289 extends AbstractRoutine {
             //only save if filer is NOT NULL
             if (filer != null) {
 
-                String mappingStr = String.join("|", patientGuids);
-                InternalIdMap m = new InternalIdMap();
-                m.setServiceId(serviceId);
-                m.setIdType("EmisSlotLatestPatientGuid");
-                m.setSourceId(slotGuid);
-                m.setDestinationId(mappingStr);
-                List<InternalIdMap> l = new ArrayList<>();
-                l.add(m);
+                //if there's only one patient ID, then the internal ID map will already be OK
+                if (hsPatientGuids.size() > 1) {
 
-                internalIdDal.save(l);
+                    String mappingStr = String.join("|", hsPatientGuids);
+                    InternalIdMap m = new InternalIdMap();
+                    m.setServiceId(serviceId);
+                    m.setIdType("EmisSlotLatestPatientGuid");
+                    m.setSourceId(slotGuid);
+                    m.setDestinationId(mappingStr);
+                    List<InternalIdMap> l = new ArrayList<>();
+                    l.add(m);
+
+                    internalIdDal.save(l);
+                }
 
             } else {
                 LOG.debug("Slot " + slotGuid + " associated with " + hsPatientGuids.size() + " patient GUIDS: " + hsPatientGuids);
