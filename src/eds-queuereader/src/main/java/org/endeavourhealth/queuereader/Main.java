@@ -983,6 +983,16 @@ public class Main {
 			System.exit(0);
 		}
 
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("transformAndFilePatientV2IdentifiableDataForProtocolServices")) {
+			boolean includeStartedButNotFinishedServices = Boolean.parseBoolean(args[1]);
+			String subscriberConfigName = args[2];
+			String orgOdsCodeRegex = args[3];
+
+			SpecialRoutines.transformAndFilePatientV2IdentifiableDataForProtocolServices(includeStartedButNotFinishedServices, subscriberConfigName, orgOdsCodeRegex);
+			System.exit(0);
+		}
+
 		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("RunPersonUpdater")) {
 			String enterpriseConfigName = args[1];
