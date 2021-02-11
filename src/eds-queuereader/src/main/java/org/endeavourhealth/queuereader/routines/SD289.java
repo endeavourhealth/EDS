@@ -155,6 +155,7 @@ public class SD289 extends AbstractRoutine {
     private static void fixSlots(UUID serviceId, Map<String, List<String>> hmSlotsAndPatients, FhirResourceFiler filer) throws Exception {
 
         int done = 0;
+        int changed = 0;
 
         ResourceDalI resourceDal = DalProvider.factoryResourceDal();
         InternalIdDalI internalIdDal = DalProvider.factoryInternalIdDal();
@@ -190,12 +191,17 @@ public class SD289 extends AbstractRoutine {
                 internalIdDal.save(l);
 
             } else {
-                LOG.debug("Slot " + slotGuid + " associated with " + hsPatientGuids.size() + " patient GUIDS: [" + hsPatientGuids + "]");
+                LOG.debug("Slot " + slotGuid + " associated with " + hsPatientGuids.size() + " patient GUIDS: " + hsPatientGuids);
             }
 
             //now ensure that all patients except the last (if still in the slot) have their appts cancelled
             for (int i=0; i<patientGuids.size()-1; i++) { //doing ALL BUT THE LAST
                 String patientGuid = patientGuids.get(i);
+
+                //we'll have the empty patientGuids in this list, so just skip them
+                if (Strings.isNullOrEmpty(patientGuid)) {
+                    continue;
+                }
                 String combinedId = patientGuid + ":" + slotGuid;
 
                 UUID appointmentUuid = IdHelper.getEdsResourceId(serviceId, ResourceType.Appointment, combinedId);
@@ -228,14 +234,16 @@ public class SD289 extends AbstractRoutine {
                 } else {
                     LOG.debug("Setting appointment UUID " + appointmentUuid + ", raw ID " + combinedId + " to cancelled (currently " + appointment.getStatus() + ")");
                 }
+
+                changed ++;
             }
 
             done ++;
             if (done % 1000 == 0) {
-                LOG.debug("Done " + done);
+                LOG.debug("Done " + done + " fixed " + changed);
             }
         }
-        LOG.debug("Finished " + done);
+        LOG.debug("Finished " + done + " fixed " + changed);
     }
 
 
