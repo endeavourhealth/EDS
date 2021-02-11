@@ -33,7 +33,7 @@ import org.endeavourhealth.transform.emis.EmisCustomCsvToFhirTransformer;
 import org.endeavourhealth.transform.emis.EmisOpenToFhirTransformer;
 import org.endeavourhealth.transform.fhirhl7v2.FhirHl7v2Filer;
 import org.endeavourhealth.transform.hl7v2fhir.FhirTransformer;
-import org.endeavourhealth.transform.homerton.HomertonCsvToFhirTransformer;
+import org.endeavourhealth.transform.homertonhi.HomertonHiCsvToFhirTransformer;
 import org.endeavourhealth.transform.tpp.TppCsvToFhirTransformer;
 import org.endeavourhealth.transform.vision.VisionCsvToFhirTransformer;
 import org.hl7.fhir.instance.model.Resource;
@@ -156,7 +156,8 @@ public class MessageTransformInbound extends PipelineComponent {
 					processBartsCsvTransform(exchange, fhirResourceFiler, messageVersion);
 
 				} else if (software.equalsIgnoreCase(MessageFormat.HOMERTON_CSV)) {
-					processHomertonCsvTransform(exchange, fhirResourceFiler, messageVersion);
+					//processHomertonCsvTransform(exchange, fhirResourceFiler, messageVersion);
+					processHomertonHiCsvTransform(exchange, fhirResourceFiler, messageVersion);
 
 				} else if (software.equalsIgnoreCase(MessageFormat.VISION_CSV)) {
 					processVisionCsvTransform(exchange, fhirResourceFiler, messageVersion);
@@ -554,12 +555,18 @@ public class MessageTransformInbound extends PipelineComponent {
 		BartsCsvToFhirTransformer.transform(exchangeBody, fhirResourceFiler, version);
 	}
 
-	private void processHomertonCsvTransform(Exchange exchange, FhirResourceFiler fhirResourceFiler, String version) throws Exception {
+//	private void processHomertonCsvTransform(Exchange exchange, FhirResourceFiler fhirResourceFiler, String version) throws Exception {
+//
+//		String exchangeBody = exchange.getBody();
+//		UUID exchangeId = exchange.getId();
+//
+//		HomertonCsvToFhirTransformer.transform(exchangeBody, fhirResourceFiler, version);
+//	}
+
+	private void processHomertonHiCsvTransform(Exchange exchange, FhirResourceFiler fhirResourceFiler, String version) throws Exception {
 
 		String exchangeBody = exchange.getBody();
-		UUID exchangeId = exchange.getId();
-
-		HomertonCsvToFhirTransformer.transform(exchangeBody, fhirResourceFiler, version);
+		HomertonHiCsvToFhirTransformer.transform(exchangeBody, fhirResourceFiler, version);
 	}
 
 	private void processVisionCsvTransform(Exchange exchange, FhirResourceFiler fhirResourceFiler, String version) throws Exception {
