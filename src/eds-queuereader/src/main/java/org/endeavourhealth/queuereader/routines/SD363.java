@@ -489,6 +489,7 @@ public class SD363 extends AbstractRoutine {
                 String patientId = record.get("PID");
                 //String action = record.get("ACTION");
                 String readCode = record.get("CODE");
+                readCode = readCode.trim(); //CsvCell does this automatically
 
                 String formattedReadCode = VisionCodeHelper.formatReadCode(CsvCell.factoryDummyWrapper(readCode), csvHelper);
                 if (!Strings.isNullOrEmpty(formattedReadCode)) {
