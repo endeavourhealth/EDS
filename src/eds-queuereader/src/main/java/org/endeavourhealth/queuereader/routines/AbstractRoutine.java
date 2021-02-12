@@ -239,8 +239,11 @@ public abstract class AbstractRoutine {
 
 
     public static Exchange createNewExchange(Service service, UUID systemId, String messageFormat, String eventDesc) throws Exception {
+        return createNewExchange(service, systemId, messageFormat, eventDesc, UUID.randomUUID());
+    }
 
-        UUID exchangeId = UUID.randomUUID();
+    public static Exchange createNewExchange(Service service, UUID systemId, String messageFormat, String eventDesc, UUID exchangeId) throws Exception {
+
         String bodyJson = JsonSerializer.serialize(new ArrayList<ExchangePayloadFile>());
         String odsCode = service.getLocalId();
 
