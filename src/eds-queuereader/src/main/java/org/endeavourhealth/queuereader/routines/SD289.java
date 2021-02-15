@@ -304,7 +304,7 @@ public class SD289 extends AbstractRoutine {
                 patientGuids.add(patientGuid);
 
                 records ++;
-                if (records % 1000 == 0) {
+                if (records % 100000 == 0) {
                     LOG.debug("Read " + records + " records and " + ret.size() + " patients");
                 }
             }
