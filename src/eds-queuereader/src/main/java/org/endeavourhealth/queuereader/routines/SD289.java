@@ -270,6 +270,10 @@ public class SD289 extends AbstractRoutine {
             CSVParser parser = new CSVParser(isr, CSVFormat.DEFAULT.withHeader());
             Iterator<CSVRecord> iterator = parser.iterator();
 
+            LOG.trace("Doing " + filePath + " with " + ret.size() + " found so far");
+
+            int records = 0;
+
             while (iterator.hasNext()) {
                 CSVRecord record = iterator.next();
                 String slotGuid = record.get("SlotGuid");
@@ -298,6 +302,12 @@ public class SD289 extends AbstractRoutine {
                 }*/
 
                 patientGuids.add(patientGuid);
+
+                records ++;
+                if (records % 1000 == 0) {
+                    LOG.debug("Read " + records + " records");
+                }
+                LOG.debug("Finished on " + records + " records");
             }
 
             parser.close();
