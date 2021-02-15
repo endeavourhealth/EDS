@@ -305,10 +305,10 @@ public class SD289 extends AbstractRoutine {
 
                 records ++;
                 if (records % 1000 == 0) {
-                    LOG.debug("Read " + records + " records");
+                    LOG.debug("Read " + records + " records and " + ret.size() + " patients");
                 }
-                LOG.debug("Finished on " + records + " records");
             }
+            LOG.debug("Finished on " + records + " records and " + ret.size() + " patients");
 
             parser.close();
 
