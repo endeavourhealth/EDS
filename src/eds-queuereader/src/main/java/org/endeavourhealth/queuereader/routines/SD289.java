@@ -23,6 +23,7 @@ import org.endeavourhealth.core.xml.transformError.TransformError;
 import org.endeavourhealth.transform.common.AuditWriter;
 import org.endeavourhealth.transform.common.FhirResourceFiler;
 import org.endeavourhealth.transform.common.IdHelper;
+import org.endeavourhealth.transform.common.StringMemorySaver;
 import org.endeavourhealth.transform.common.resourceBuilders.AppointmentBuilder;
 import org.hl7.fhir.instance.model.Appointment;
 import org.hl7.fhir.instance.model.ResourceType;
@@ -102,7 +103,7 @@ public class SD289 extends AbstractRoutine {
         ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
         List<Exchange> exchanges = exchangeDal.getExchangesByService(serviceId, systemId, Integer.MAX_VALUE);
         LOG.debug("Found " + exchanges.size() + " exchanges");
-        Map<String, List<String>> hmSlotsAndPatients = findSlots(exchanges);
+        Map<StringMemorySaver, List<StringMemorySaver>> hmSlotsAndPatients = findSlots(exchanges);
         LOG.debug("Cached " + hmSlotsAndPatients.size() + " slot GUIDs");
 
         Exchange newExchange = null;
@@ -152,7 +153,7 @@ public class SD289 extends AbstractRoutine {
 
     }
 
-    private static void fixSlots(UUID serviceId, Map<String, List<String>> hmSlotsAndPatients, FhirResourceFiler filer) throws Exception {
+    private static void fixSlots(UUID serviceId, Map<StringMemorySaver, List<StringMemorySaver>> hmSlotsAndPatients, FhirResourceFiler filer) throws Exception {
 
         int done = 0;
         int changed = 0;
@@ -160,12 +161,14 @@ public class SD289 extends AbstractRoutine {
         ResourceDalI resourceDal = DalProvider.factoryResourceDal();
         InternalIdDalI internalIdDal = DalProvider.factoryInternalIdDal();
 
-        for (String slotGuid: hmSlotsAndPatients.keySet()) {
-            List<String> patientGuids = hmSlotsAndPatients.get(slotGuid);
+        for (StringMemorySaver slotGuidSaver: hmSlotsAndPatients.keySet()) {
+            String slotGuid = slotGuidSaver.toString();
+            List<StringMemorySaver> patientGuids = hmSlotsAndPatients.get(slotGuidSaver);
 
             //update the internal map table to have all patient GUIDs in there
             Set<String> hsPatientGuids = new HashSet<>();
-            for (String patientGuid: patientGuids) {
+            for (StringMemorySaver patientGuidSaver: patientGuids) {
+                String patientGuid = patientGuidSaver.toString();
                 if (!Strings.isNullOrEmpty(patientGuid)) {
                     hsPatientGuids.add(patientGuid);
                 }
@@ -200,7 +203,8 @@ public class SD289 extends AbstractRoutine {
 
             //now ensure that all patients except the last (if still in the slot) have their appts cancelled
             for (int i=0; i<patientGuids.size()-1; i++) { //doing ALL BUT THE LAST
-                String patientGuid = patientGuids.get(i);
+                StringMemorySaver patientGuidSaver = patientGuids.get(i);
+                String patientGuid = patientGuidSaver.toString();
 
                 //we'll have the empty patientGuids in this list, so just skip them
                 if (Strings.isNullOrEmpty(patientGuid)) {
@@ -254,9 +258,9 @@ public class SD289 extends AbstractRoutine {
     /**
      * finds all patient guids associated with a slot, in order, including when it was blank
      */
-    private static Map<String, List<String>> findSlots(List<Exchange> exchanges) throws Exception {
+    private static Map<StringMemorySaver, List<StringMemorySaver>> findSlots(List<Exchange> exchanges) throws Exception {
 
-        Map<String, List<String>> ret = new HashMap<>();
+        Map<StringMemorySaver, List<StringMemorySaver>> ret = new HashMap<>();
 
         //list if most-recent-first, so go backwards
         for (int i=exchanges.size()-1; i>=0; i--) {
@@ -279,16 +283,19 @@ public class SD289 extends AbstractRoutine {
                 String slotGuid = record.get("SlotGuid");
                 String patientGuid = record.get("PatientGuid");
 
-                List<String> patientGuids = ret.get(slotGuid);
+                StringMemorySaver slotGuidSaver = new StringMemorySaver(slotGuid);
+                StringMemorySaver patientGuidSaver = new StringMemorySaver(patientGuid);
+
+                List<StringMemorySaver> patientGuids = ret.get(slotGuidSaver);
                 if (patientGuids == null) {
                     patientGuids = new ArrayList<>();
-                    ret.put(slotGuid, patientGuids);
+                    ret.put(slotGuidSaver, patientGuids);
                 }
 
                 //remove any existing instance of this from the list already since it's only the most recent instances we're interested in
                 for (int j=patientGuids.size()-1; j>=0; j--) {
-                    String lastGuid = patientGuids.get(j);
-                    if (lastGuid.equals(patientGuid)) {
+                    StringMemorySaver lastGuidSaver = patientGuids.get(j);
+                    if (lastGuidSaver.equals(patientGuidSaver)) {
                         patientGuids.remove(j);
                     }
                 }
@@ -301,7 +308,7 @@ public class SD289 extends AbstractRoutine {
                     }
                 }*/
 
-                patientGuids.add(patientGuid);
+                patientGuids.add(patientGuidSaver);
 
                 records ++;
                 if (records % 100000 == 0) {

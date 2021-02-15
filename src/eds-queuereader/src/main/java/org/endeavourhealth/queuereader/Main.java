@@ -26,6 +26,15 @@ public class Main {
 
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("SD363fixVisionLocalCodes")) {
+			String odsCodeRegex = args[1];
+			String sourceFile = args[2];
+			String dstFile = args[3];
+			SD367.findEthnicityCodes(odsCodeRegex, sourceFile, dstFile);
+			System.exit(0);
+		}
+
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("SD363fixVisionLocalCodes")) {
 			boolean includeStartedButNotFinishedServices = Boolean.parseBoolean(args[1]);
 			boolean testMode = Boolean.parseBoolean(args[2]);
 			String odsCodeRegex = null;
