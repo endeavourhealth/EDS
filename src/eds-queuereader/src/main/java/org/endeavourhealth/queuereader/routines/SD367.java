@@ -44,7 +44,7 @@ public class SD367 extends AbstractRoutine {
             LOG.debug("Finding Ethnicity Codes from " + sourceFile + " to " + dstFile);
 
             Set<String> serviceIds = findServiceIds(odsCodeRegex);
-            LOG.debug("Found " + serviceIds + " service IDs");
+            LOG.debug("Found " + serviceIds.size() + " service IDs");
 
             List<String> nhsNumbers = findNhsNumbers(sourceFile);
             LOG.debug("Found " + nhsNumbers.size() + " NHS numbers");
@@ -192,14 +192,18 @@ public class SD367 extends AbstractRoutine {
                 CodeableConcept codeableConcept = CodeableConceptHelper.findMainCodeableConcept(resource);
                 Date effectiveDate = CodeableConceptHelper.findMainEffectiveDate(resource);
 
-
-                Coding coding = CodeableConceptHelper.findOriginalCoding(codeableConcept);
-                if (coding == null) {
-                    LOG.warn("No original coding found for " + resource.getResourceType() + " " + resource.getId());
+                if (codeableConcept == null) {
+                    LOG.warn("No codeable concept found for " + resource.getResourceType() + " " + resource.getId() + " for patient " + patientId);
                     continue;
                 }
 
-                if (isEthnicityCode(coding)) {
+                Coding coding = CodeableConceptHelper.findOriginalCoding(codeableConcept);
+                if (coding == null) {
+                    LOG.warn("No original coding found for " + resource.getResourceType() + " " + resource.getId() + " for patient " + patientId);
+                    continue;
+                }
+
+                if (isEthnicityCode(coding, resource, patientId)) {
                     if (latestEthnicityDate == null || effectiveDate.after(latestEthnicityDate)) {
 
                         latestEthnicity = codeableConcept;
@@ -2768,7 +2772,7 @@ public class SD367 extends AbstractRoutine {
         return EmisMappingHelper.findEthnicityCode(c);
     }
 
-    private static boolean isEthnicityCode(Coding coding) throws Exception {
+    private static boolean isEthnicityCode(Coding coding, Resource resource, UUID patientId) throws Exception {
 
         String system = coding.getSystem();
         String code = coding.getCode();
@@ -2792,7 +2796,7 @@ public class SD367 extends AbstractRoutine {
             return VisionMappingHelper.isPotentialEthnicity(code);
 
         } else {
-            LOG.error("Unexpected code system " + system);
+            LOG.error("Unexpected code system " + system + " on resource " + resource.getResourceType() + " " + resource.getId() + " for patient " + patientId);
             return false;
         }
     }

@@ -1,6 +1,9 @@
 package org.endeavourhealth.queuereader.routines;
 
 import org.endeavourhealth.common.cache.ObjectMapperPool;
+import org.endeavourhealth.common.fhir.CodeableConceptHelper;
+import org.endeavourhealth.common.fhir.FhirCodeUri;
+import org.endeavourhealth.common.fhir.schema.EthnicCategory;
 import org.endeavourhealth.core.database.dal.DalProvider;
 import org.endeavourhealth.core.database.dal.admin.ServiceDalI;
 import org.endeavourhealth.core.database.dal.admin.SystemHelper;
@@ -10,6 +13,7 @@ import org.endeavourhealth.core.database.dal.audit.models.HeaderKeys;
 import org.endeavourhealth.core.database.dal.eds.PatientSearchDalI;
 import org.endeavourhealth.core.database.dal.ehr.ResourceDalI;
 import org.endeavourhealth.core.database.dal.ehr.models.ResourceWrapper;
+import org.endeavourhealth.core.database.dal.publisherCommon.models.EmisClinicalCode;
 import org.endeavourhealth.core.fhirStorage.ServiceInterfaceEndpoint;
 import org.endeavourhealth.core.queueing.MessageFormat;
 import org.endeavourhealth.core.queueing.QueueHelper;
@@ -17,14 +21,15 @@ import org.endeavourhealth.core.xml.transformError.TransformError;
 import org.endeavourhealth.transform.common.AuditWriter;
 import org.endeavourhealth.transform.common.FhirResourceFiler;
 import org.endeavourhealth.transform.common.IdHelper;
-import org.hl7.fhir.instance.model.ResourceType;
+import org.endeavourhealth.transform.common.resourceBuilders.PatientBuilder;
+import org.endeavourhealth.transform.emis.csv.helpers.EmisMappingHelper;
+import org.endeavourhealth.transform.tpp.csv.helpers.TppMappingHelper;
+import org.endeavourhealth.transform.vision.helpers.VisionMappingHelper;
+import org.hl7.fhir.instance.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 public class SD350 extends AbstractRoutine {
     private static final Logger LOG = LoggerFactory.getLogger(SD350.class);
@@ -178,9 +183,141 @@ public class SD350 extends AbstractRoutine {
         List<ResourceWrapper> wrappers = resourceDal.getResourcesByPatient(serviceId, patientId, ResourceType.Observation.toString());
         wrappers.addAll(resourceDal.getResourcesByPatient(serviceId, patientId, ResourceType.Condition.toString()));
 
+        CodeableConcept latestEthnicity = null;
+        Date latestEthnicityDate = null;
+
         for (ResourceWrapper wrapper: wrappers) {
 
+            Resource resource = wrapper.getResource();
+            CodeableConcept codeableConcept = CodeableConceptHelper.findMainCodeableConcept(resource);
+            Date effectiveDate = CodeableConceptHelper.findMainEffectiveDate(resource);
+
+
+            Coding coding = CodeableConceptHelper.findOriginalCoding(codeableConcept);
+            if (coding == null) {
+                LOG.warn("No original coding found for " + resource.getResourceType() + " " + resource.getId());
+                continue;
+            }
+
+            if (isEthnicityCode(coding)) {
+                if (latestEthnicityDate == null || effectiveDate.after(latestEthnicityDate)) {
+
+                    latestEthnicity = codeableConcept;
+                    latestEthnicityDate = effectiveDate;
+                    LOG.debug("Patient " + patientId + " found ethnicity in " + resource.getResourceType() + " " + resource.getId() + " with date " + effectiveDate);
+                }
+            }
         }
+
+        if (latestEthnicity != null) {
+            Coding coding = CodeableConceptHelper.findOriginalCoding(latestEthnicity);
+            EthnicCategory newEc = findEthnicCategory(coding);
+
+            Patient patient = (Patient)resourceDal.getCurrentVersionAsResource(serviceId, ResourceType.Patient, patientId.toString());
+            PatientBuilder patientBuilder = new PatientBuilder(patient);
+            EthnicCategory currentEc = patientBuilder.getEthnicity();
+
+            if (((newEc == null) != (currentEc == null))
+                || (newEc != null && currentEc != null && newEc != currentEc)) {
+
+                patientBuilder.setEthnicity(newEc);
+
+                if (filer != null) {
+                    filer.savePatientResource(null, false, patientBuilder);
+
+                } else {
+                    LOG.debug("Patient ID " + patientId + " changed ethnicity from " + currentEc + " -> " + newEc);
+                }
+            }
+        }
+    }
+
+
+    private static EthnicCategory findEthnicCategory(Coding coding) throws Exception {
+        String system = coding.getSystem();
+        String code = coding.getCode();
+
+        if (system.equals(FhirCodeUri.CODE_SYSTEM_READ2)) {
+
+            //need to check Emis and Vision for this
+            //note I've already verified that any code present in both Emis and Vision do have the same mappings
+            //so it doesn't matter that we prefer Emis over Vision
+            EthnicCategory ec = findEmisEthnicityCode(code);
+            if (ec == null) {
+                ec = VisionMappingHelper.findEthnicityCode(code);
+            }
+            return ec;
+
+        } else if (system.equals(FhirCodeUri.CODE_SYSTEM_EMIS_CODE)) {
+            return findEmisEthnicityCode(code);
+
+        } else if (system.equals(FhirCodeUri.CODE_SYSTEM_CTV3)) {
+            return TppMappingHelper.findEthnicityCode(code);
+
+        } else if (system.equals(FhirCodeUri.CODE_SYSTEM_TPP_CTV3)) {
+            return TppMappingHelper.findEthnicityCode(code);
+
+        } else if (system.equals(FhirCodeUri.CODE_SYSTEM_VISION_CODE)) {
+            return VisionMappingHelper.findEthnicityCode(code);
+
+        } else {
+            LOG.error("Unexpected code system " + system);
+            return null;
+        }
+    }
+
+    private static EthnicCategory findEmisEthnicityCode(String code) throws Exception {
+
+        EmisClinicalCode c = new EmisClinicalCode();
+        c.setAdjustedCode(code);
+        return EmisMappingHelper.findEthnicityCode(c);
+    }
+
+
+    private static boolean isEthnicityCode(Coding coding) throws Exception {
+
+        String system = coding.getSystem();
+        String code = coding.getCode();
+
+        if (system.equals(FhirCodeUri.CODE_SYSTEM_READ2)) {
+
+            //need to check Emis and Vision for this
+            return isEmisEthnicityCode(code)
+                    || VisionMappingHelper.isPotentialEthnicity(code);
+
+        } else if (system.equals(FhirCodeUri.CODE_SYSTEM_EMIS_CODE)) {
+            return isEmisEthnicityCode(code);
+
+        } else if (system.equals(FhirCodeUri.CODE_SYSTEM_CTV3)) {
+            return TppMappingHelper.isEthnicityCode(code);
+
+        } else if (system.equals(FhirCodeUri.CODE_SYSTEM_TPP_CTV3)) {
+            return TppMappingHelper.isEthnicityCode(code);
+
+        } else if (system.equals(FhirCodeUri.CODE_SYSTEM_VISION_CODE)) {
+            return VisionMappingHelper.isPotentialEthnicity(code);
+
+        } else {
+            LOG.error("Unexpected code system " + system);
+            return false;
+        }
+    }
+
+    private static boolean isEmisEthnicityCode(String code) throws Exception {
+        try {
+            EmisClinicalCode c = new EmisClinicalCode();
+            c.setAdjustedCode(code);
+            EmisMappingHelper.findEthnicityCode(c);
+            return true;
+
+        } catch (RuntimeException ex) {
+            if (ex.getMessage() != null && ex.getMessage().contains("Unknown ethnicity code")) {
+                return false;
+            } else {
+                throw ex;
+            }
+        }
+
     }
 
 
