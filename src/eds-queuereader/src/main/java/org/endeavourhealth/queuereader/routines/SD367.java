@@ -2743,10 +2743,10 @@ public class SD367 extends AbstractRoutine {
 
             //need to check Emis and Vision for this
             //note I've already verified that any code present in both Emis and Vision do have the same mappings
-            //so it doesn't matter that we prefer Emis over Vision
-            EthnicCategory ec = findEmisEthnicityCode(code);
+            //so it doesn't matter that we prefer Vision over Emis
+            EthnicCategory ec = VisionMappingHelper.findEthnicityCode(code);
             if (ec == null) {
-                ec = VisionMappingHelper.findEthnicityCode(code);
+                ec = findEmisEthnicityCode(code);
             }
             return ec;
 

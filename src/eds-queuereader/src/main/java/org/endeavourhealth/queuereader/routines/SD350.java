@@ -186,6 +186,10 @@ public class SD350 extends AbstractRoutine {
         CodeableConcept latestEthnicity = null;
         Date latestEthnicityDate = null;
 
+        if (filer == null) {
+            LOG.trace("Doing patient " + patientId);
+        }
+
         for (ResourceWrapper wrapper: wrappers) {
 
             Resource resource = wrapper.getResource();
@@ -200,11 +204,14 @@ public class SD350 extends AbstractRoutine {
             }
 
             if (isEthnicityCode(coding)) {
-                if (latestEthnicityDate == null || effectiveDate.after(latestEthnicityDate)) {
+                if (latestEthnicityDate == null
+                        || (effectiveDate != null && effectiveDate.after(latestEthnicityDate))) {
 
                     latestEthnicity = codeableConcept;
                     latestEthnicityDate = effectiveDate;
-                    LOG.debug("Patient " + patientId + " found ethnicity in " + resource.getResourceType() + " " + resource.getId() + " with date " + effectiveDate);
+                    if (filer == null) {
+                        LOG.debug("Patient " + patientId + " found ethnicity in " + resource.getResourceType() + " " + resource.getId() + " with date " + effectiveDate);
+                    }
                 }
             }
         }
@@ -241,10 +248,10 @@ public class SD350 extends AbstractRoutine {
 
             //need to check Emis and Vision for this
             //note I've already verified that any code present in both Emis and Vision do have the same mappings
-            //so it doesn't matter that we prefer Emis over Vision
-            EthnicCategory ec = findEmisEthnicityCode(code);
+            //so it doesn't matter that we prefer Vision over Emis
+            EthnicCategory ec = VisionMappingHelper.findEthnicityCode(code);
             if (ec == null) {
-                ec = VisionMappingHelper.findEthnicityCode(code);
+                ec = findEmisEthnicityCode(code);
             }
             return ec;
 
