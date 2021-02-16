@@ -27,7 +27,7 @@ export class ServiceService extends BaseHttp2Service {
 	servicePublisherModeFilter: string;
 	serviceHideClosedFilter: boolean;
 	sortFilter: string;
-
+	serviceShowDateFilter: boolean;
 
 	tagNameCache: string[];
 	refreshingTagNameCache: boolean;
@@ -932,6 +932,7 @@ export class ServiceService extends BaseHttp2Service {
 		vm.serviceLastDataFilter = null;
 		vm.servicePublisherModeFilter = null;
 		vm.serviceHideClosedFilter = true;
+		vm.serviceShowDateFilter = false;
 	}
 
 
