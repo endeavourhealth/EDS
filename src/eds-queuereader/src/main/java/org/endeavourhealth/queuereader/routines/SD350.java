@@ -231,10 +231,9 @@ public class SD350 extends AbstractRoutine {
 
                 if (filer != null) {
                     filer.savePatientResource(null, false, patientBuilder);
-
-                } else {
-                    LOG.debug("Patient ID " + patientId + " changed ethnicity from " + currentEc + " -> " + newEc);
                 }
+
+                LOG.debug("Patient ID " + patientId + " changed ethnicity from " + currentEc + " -> " + newEc);
             }
         }
     }
