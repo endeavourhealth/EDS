@@ -25,7 +25,7 @@ public class Main {
 		ConfigManager.initialize("queuereader", configId);
 
 		if (args.length >= 1
-				&& args[0].equalsIgnoreCase("SD363fixVisionLocalCodes")) {
+				&& args[0].equalsIgnoreCase("SD367findEthnicityCodes")) {
 			String odsCodeRegex = args[1];
 			String sourceFile = args[2];
 			String dstFile = args[3];

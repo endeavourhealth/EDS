@@ -426,6 +426,7 @@ create table emis_clinical_code (
 
 CREATE INDEX ix_row_date ON emis_clinical_code (code_id, dt_last_updated);
 
+create index ix_adjusted_code on emis_clinical_code (adjusted_code);
 
 CREATE TABLE emis_clinical_code_hiearchy (
 	code_id bigint NOT NULL,
