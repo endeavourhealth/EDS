@@ -250,7 +250,13 @@ public class SD350 extends AbstractRoutine {
             //so it doesn't matter that we prefer Vision over Emis
             EthnicCategory ec = VisionMappingHelper.findEthnicityCode(code);
             if (ec == null) {
-                ec = findEmisEthnicityCode(code);
+                try {
+                    ec = findEmisEthnicityCode(code);
+                } catch (RuntimeException ex) {
+                    if (ex.getMessage() == null || !ex.getMessage().contains("Unknown ethnicity code")) {
+                        throw ex;
+                    }
+                }
             }
             return ec;
 
