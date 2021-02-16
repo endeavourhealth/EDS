@@ -183,6 +183,7 @@ public class SD367 extends AbstractRoutine {
                     || resource.getResourceType() == ResourceType.Encounter
                     || resource.getResourceType() == ResourceType.Patient
                     || resource.getResourceType() == ResourceType.EpisodeOfCare
+                    || resource.getResourceType() == ResourceType.Immunization
                     || resource.getResourceType() == ResourceType.MedicationStatement
                     || resource.getResourceType() == ResourceType.MedicationOrder) {
                 continue;
@@ -204,7 +205,8 @@ public class SD367 extends AbstractRoutine {
                 }
 
                 if (isEthnicityCode(coding, resource, patientId)) {
-                    if (latestEthnicityDate == null || effectiveDate.after(latestEthnicityDate)) {
+                    if (latestEthnicityDate == null
+                            || (effectiveDate != null && effectiveDate.after(latestEthnicityDate))) {
 
                         latestEthnicity = codeableConcept;
                         latestEthnicityDate = effectiveDate;
@@ -213,7 +215,8 @@ public class SD367 extends AbstractRoutine {
                 }
                 
                 if (isLanguageCode(codeableConcept)) {
-                    if (latestLanguageDate == null || effectiveDate.after(latestLanguageDate)) {
+                    if (latestLanguageDate == null ||
+                            (effectiveDate != null && effectiveDate.after(latestLanguageDate))) {
 
                         latestLanguage = codeableConcept;
                         latestLanguageDate = effectiveDate;
