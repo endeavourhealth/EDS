@@ -8,6 +8,8 @@ import org.endeavourhealth.core.database.dal.admin.models.Service;
 import org.endeavourhealth.core.database.dal.audit.models.Exchange;
 import org.endeavourhealth.core.database.dal.audit.models.HeaderKeys;
 import org.endeavourhealth.core.database.dal.eds.PatientSearchDalI;
+import org.endeavourhealth.core.database.dal.ehr.ResourceDalI;
+import org.endeavourhealth.core.database.dal.ehr.models.ResourceWrapper;
 import org.endeavourhealth.core.fhirStorage.ServiceInterfaceEndpoint;
 import org.endeavourhealth.core.queueing.MessageFormat;
 import org.endeavourhealth.core.queueing.QueueHelper;
@@ -15,6 +17,7 @@ import org.endeavourhealth.core.xml.transformError.TransformError;
 import org.endeavourhealth.transform.common.AuditWriter;
 import org.endeavourhealth.transform.common.FhirResourceFiler;
 import org.endeavourhealth.transform.common.IdHelper;
+import org.hl7.fhir.instance.model.ResourceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -168,9 +171,16 @@ public class SD350 extends AbstractRoutine {
         LOG.debug("Finished " + done + " patients");
     }
 
-    private static void fixEthnicityForPatient(UUID serviceId, UUID patientId, FhirResourceFiler filer) {
+    private static void fixEthnicityForPatient(UUID serviceId, UUID patientId, FhirResourceFiler filer) throws Exception {
 
-        //ResourceDalI resourceDal =
+        ResourceDalI resourceDal = DalProvider.factoryResourceDal();
+
+        List<ResourceWrapper> wrappers = resourceDal.getResourcesByPatient(serviceId, patientId, ResourceType.Observation.toString());
+        wrappers.addAll(resourceDal.getResourcesByPatient(serviceId, patientId, ResourceType.Condition.toString()));
+
+        for (ResourceWrapper wrapper: wrappers) {
+
+        }
     }
 
 

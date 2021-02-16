@@ -866,7 +866,7 @@ public class SD367 extends AbstractRoutine {
             hs.add("^ESCTBI723315"); //Bislama language
             hs.add("^ESCTBL584395"); //Blackfoot language
             hs.add("^ESCTBO584564"); //Bodo language
-            hs.add("^ESCTBO729920"); //Bokmï¿½l, Norwegian
+            hs.add("^ESCTBO729920"); //Norwegian
             hs.add("^ESCTBO730047"); //Bosnian language
             hs.add("^ESCTBO759314"); //Bolivian sign language
             hs.add("^ESCTBR583999"); //Bribri language
