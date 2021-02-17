@@ -196,7 +196,9 @@ public class SD350 extends AbstractRoutine {
             CodeableConcept codeableConcept = CodeableConceptHelper.findMainCodeableConcept(resource);
             Date effectiveDate = CodeableConceptHelper.findMainEffectiveDate(resource);
             if (codeableConcept == null) {
-                LOG.warn("No codeable concept found for " + resource.getResourceType() + " " + resource.getId());
+                if (filer == null) {
+                    LOG.warn("No codeable concept found for " + resource.getResourceType() + " " + resource.getId());
+                }
                 continue;
             }
 

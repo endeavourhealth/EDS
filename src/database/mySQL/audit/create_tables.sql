@@ -239,7 +239,7 @@ create index ix on subscriber_api_audit (user_uuid, timestmp);
 
 create index ix2 on subscriber_api_audit (timestmp);
 
-
+create index ix_timestmp_requestpath on audit.subscriber_api_audit (timestmp, request_path);
 
 
 CREATE TABLE published_file_type (
