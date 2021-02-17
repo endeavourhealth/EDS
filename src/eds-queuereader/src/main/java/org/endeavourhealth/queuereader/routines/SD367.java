@@ -2741,19 +2741,28 @@ public class SD367 extends AbstractRoutine {
 
         if (system.equals(FhirCodeUri.CODE_SYSTEM_READ2)) {
 
-            //need to check Emis and Vision for this
-            //note I've already verified that any code present in both Emis and Vision do have the same mappings
-            //so it doesn't matter that we prefer Vision over Emis
-            EthnicCategory ec = VisionMappingHelper.findEthnicityCode(code);
+            //need to check both Emis and Vision for this - note I've already verified that any code present in both Emis and Vision do have the same mappings
+            //so it doesn't matter what order we do these checks in
+            EthnicCategory ec = null;
+            try {
+                ec = VisionMappingHelper.findEthnicityCode(code);
+            } catch (RuntimeException ex) {
+                if (ex.getMessage() == null || !ex.getMessage().contains("Unknown ethnicity code")) {
+                    throw ex;
+                }
+            }
+
+            //if no luck with Vision, check Emis
             if (ec == null) {
                 try {
                     ec = findEmisEthnicityCode(code);
-                } catch (Exception ex) {
+                } catch (RuntimeException ex) {
                     if (ex.getMessage() == null || !ex.getMessage().contains("Unknown ethnicity code")) {
                         throw ex;
                     }
                 }
             }
+
             return ec;
 
         } else if (system.equals(FhirCodeUri.CODE_SYSTEM_EMIS_CODE)) {
