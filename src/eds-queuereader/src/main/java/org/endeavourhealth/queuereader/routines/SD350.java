@@ -204,9 +204,20 @@ public class SD350 extends AbstractRoutine {
             }
 
             if (isEthnicityCode(coding, messageFormat)) {
+                boolean keep = false;
                 if (latestEthnicityDate == null
                         || (effectiveDate != null && effectiveDate.after(latestEthnicityDate))) {
+                    keep = true;
 
+                } else if (effectiveDate != null && effectiveDate.equals(latestEthnicityDate)) {
+                    //if on the same date prefer ones with mappings
+                    EthnicCategory newEc = findEthnicCategory(coding, messageFormat);
+                    if (newEc != null) {
+                        keep = true;
+                    }
+                }
+
+                if (keep) {
                     latestEthnicity = codeableConcept;
                     latestEthnicityDate = effectiveDate;
                     if (filer == null) {
