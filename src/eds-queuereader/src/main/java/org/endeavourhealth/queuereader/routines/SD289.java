@@ -5,6 +5,7 @@ import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
+import org.endeavourhealth.common.fhir.ReferenceHelper;
 import org.endeavourhealth.common.utility.FileHelper;
 import org.endeavourhealth.core.database.dal.DalProvider;
 import org.endeavourhealth.core.database.dal.admin.ServiceDalI;
@@ -16,6 +17,7 @@ import org.endeavourhealth.core.database.dal.audit.models.HeaderKeys;
 import org.endeavourhealth.core.database.dal.ehr.ResourceDalI;
 import org.endeavourhealth.core.database.dal.publisherTransform.InternalIdDalI;
 import org.endeavourhealth.core.database.dal.publisherTransform.models.InternalIdMap;
+import org.endeavourhealth.core.database.rdbms.ConnectionManager;
 import org.endeavourhealth.core.fhirStorage.ServiceInterfaceEndpoint;
 import org.endeavourhealth.core.queueing.MessageFormat;
 import org.endeavourhealth.core.queueing.QueueHelper;
@@ -23,13 +25,19 @@ import org.endeavourhealth.core.xml.transformError.TransformError;
 import org.endeavourhealth.transform.common.AuditWriter;
 import org.endeavourhealth.transform.common.FhirResourceFiler;
 import org.endeavourhealth.transform.common.IdHelper;
+import org.endeavourhealth.transform.common.StringMemorySaver;
 import org.endeavourhealth.transform.common.resourceBuilders.AppointmentBuilder;
+import org.endeavourhealth.transform.emis.csv.helpers.EmisCsvHelper;
 import org.hl7.fhir.instance.model.Appointment;
+import org.hl7.fhir.instance.model.Reference;
 import org.hl7.fhir.instance.model.ResourceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.InputStreamReader;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.util.*;
 
 public class SD289 extends AbstractRoutine {
@@ -102,7 +110,8 @@ public class SD289 extends AbstractRoutine {
         ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
         List<Exchange> exchanges = exchangeDal.getExchangesByService(serviceId, systemId, Integer.MAX_VALUE);
         LOG.debug("Found " + exchanges.size() + " exchanges");
-        Map<String, List<String>> hmSlotsAndPatients = findSlots(exchanges);
+        Set<String> hsPatientGuids = findPatientGuids(serviceId);
+        Map<StringMemorySaver, List<StringMemorySaver>> hmSlotsAndPatients = findSlots(exchanges, hsPatientGuids);
         LOG.debug("Cached " + hmSlotsAndPatients.size() + " slot GUIDs");
 
         Exchange newExchange = null;
@@ -152,7 +161,53 @@ public class SD289 extends AbstractRoutine {
 
     }
 
-    private static void fixSlots(UUID serviceId, Map<String, List<String>> hmSlotsAndPatients, FhirResourceFiler filer) throws Exception {
+    /**
+     * finds the raw patient GUIDs of all known patients at the service
+     */
+    private static Set<String> findPatientGuids(UUID serviceId) throws Exception {
+
+        List<UUID> patientUuids = new ArrayList<>();
+
+        Connection connection = ConnectionManager.getEdsConnection();
+        PreparedStatement ps = null;
+        try {
+
+            String sql = "SELECT patient_id FROM patient_search WHERE service_id = ?";
+            ps = connection.prepareStatement(sql);
+
+            ps.setString(1, serviceId.toString());
+
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                UUID patientUuid = UUID.fromString(rs.getString(1));
+                patientUuids.add(patientUuid);
+            }
+
+        } finally {
+            if (ps != null) {
+                ps.close();
+            }
+            connection.close();
+        }
+
+        LOG.debug("Found " + patientUuids.size() + " patient UUIDs");
+
+        Set<String> ret = new HashSet<>();
+
+        EmisCsvHelper csvHelper = new EmisCsvHelper(serviceId, null, null, null, null);
+
+        for (UUID patientUuid: patientUuids) {
+            Reference ref = ReferenceHelper.createReference(ResourceType.Patient, patientUuid.toString());
+            ref = IdHelper.convertEdsReferenceToLocallyUniqueReference(csvHelper, ref);
+            String patientGuid = ReferenceHelper.getReferenceId(ref);
+            ret.add(patientGuid);
+        }
+
+        LOG.debug("Found " + ret.size() + " patient GUIDs");
+        return ret;
+    }
+
+    private static void fixSlots(UUID serviceId, Map<StringMemorySaver, List<StringMemorySaver>> hmSlotsAndPatients, FhirResourceFiler filer) throws Exception {
 
         int done = 0;
         int changed = 0;
@@ -160,12 +215,14 @@ public class SD289 extends AbstractRoutine {
         ResourceDalI resourceDal = DalProvider.factoryResourceDal();
         InternalIdDalI internalIdDal = DalProvider.factoryInternalIdDal();
 
-        for (String slotGuid: hmSlotsAndPatients.keySet()) {
-            List<String> patientGuids = hmSlotsAndPatients.get(slotGuid);
+        for (StringMemorySaver slotGuidSaver: hmSlotsAndPatients.keySet()) {
+            String slotGuid = slotGuidSaver.toString();
+            List<StringMemorySaver> patientGuids = hmSlotsAndPatients.get(slotGuidSaver);
 
             //update the internal map table to have all patient GUIDs in there
             Set<String> hsPatientGuids = new HashSet<>();
-            for (String patientGuid: patientGuids) {
+            for (StringMemorySaver patientGuidSaver: patientGuids) {
+                String patientGuid = patientGuidSaver.toString();
                 if (!Strings.isNullOrEmpty(patientGuid)) {
                     hsPatientGuids.add(patientGuid);
                 }
@@ -200,7 +257,8 @@ public class SD289 extends AbstractRoutine {
 
             //now ensure that all patients except the last (if still in the slot) have their appts cancelled
             for (int i=0; i<patientGuids.size()-1; i++) { //doing ALL BUT THE LAST
-                String patientGuid = patientGuids.get(i);
+                StringMemorySaver patientGuidSaver = patientGuids.get(i);
+                String patientGuid = patientGuidSaver.toString();
 
                 //we'll have the empty patientGuids in this list, so just skip them
                 if (Strings.isNullOrEmpty(patientGuid)) {
@@ -254,9 +312,9 @@ public class SD289 extends AbstractRoutine {
     /**
      * finds all patient guids associated with a slot, in order, including when it was blank
      */
-    private static Map<String, List<String>> findSlots(List<Exchange> exchanges) throws Exception {
+    private static Map<StringMemorySaver, List<StringMemorySaver>> findSlots(List<Exchange> exchanges, Set<String> hsPatientGuids) throws Exception {
 
-        Map<String, List<String>> ret = new HashMap<>();
+        Map<StringMemorySaver, List<StringMemorySaver>> ret = new HashMap<>();
 
         //list if most-recent-first, so go backwards
         for (int i=exchanges.size()-1; i>=0; i--) {
@@ -270,21 +328,28 @@ public class SD289 extends AbstractRoutine {
             CSVParser parser = new CSVParser(isr, CSVFormat.DEFAULT.withHeader());
             Iterator<CSVRecord> iterator = parser.iterator();
 
+            LOG.trace("Doing " + filePath + " with " + ret.size() + " found so far");
+
+            int records = 0;
+
             while (iterator.hasNext()) {
                 CSVRecord record = iterator.next();
                 String slotGuid = record.get("SlotGuid");
                 String patientGuid = record.get("PatientGuid");
 
-                List<String> patientGuids = ret.get(slotGuid);
+                StringMemorySaver slotGuidSaver = new StringMemorySaver(slotGuid);
+                StringMemorySaver patientGuidSaver = new StringMemorySaver(patientGuid);
+
+                List<StringMemorySaver> patientGuids = ret.get(slotGuidSaver);
                 if (patientGuids == null) {
                     patientGuids = new ArrayList<>();
-                    ret.put(slotGuid, patientGuids);
+                    ret.put(slotGuidSaver, patientGuids);
                 }
 
                 //remove any existing instance of this from the list already since it's only the most recent instances we're interested in
                 for (int j=patientGuids.size()-1; j>=0; j--) {
-                    String lastGuid = patientGuids.get(j);
-                    if (lastGuid.equals(patientGuid)) {
+                    StringMemorySaver lastGuidSaver = patientGuids.get(j);
+                    if (lastGuidSaver.equals(patientGuidSaver)) {
                         patientGuids.remove(j);
                     }
                 }
@@ -297,8 +362,14 @@ public class SD289 extends AbstractRoutine {
                     }
                 }*/
 
-                patientGuids.add(patientGuid);
+                patientGuids.add(patientGuidSaver);
+
+                records ++;
+                if (records % 100000 == 0) {
+                    LOG.debug("Read " + records + " records and " + ret.size() + " slots");
+                }
             }
+            LOG.debug("Finished on " + records + " records and " + ret.size() + " slots");
 
             parser.close();
 

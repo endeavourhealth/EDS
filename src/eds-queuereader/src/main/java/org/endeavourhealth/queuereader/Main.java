@@ -25,6 +25,27 @@ public class Main {
 		ConfigManager.initialize("queuereader", configId);
 
 		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("SD350fixEthnicityMappings")) {
+			boolean includeStartedButNotFinishedServices = Boolean.parseBoolean(args[1]);
+			boolean testMode = Boolean.parseBoolean(args[2]);
+			String odsCodeRegex = null;
+			if (args.length > 3) {
+				odsCodeRegex = args[3];
+			}
+			SD350.fixEthnicityMappings(includeStartedButNotFinishedServices, testMode, odsCodeRegex);
+			System.exit(0);
+		}
+
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("SD367findEthnicityCodes")) {
+			String odsCodeRegex = args[1];
+			String sourceFile = args[2];
+			String dstFile = args[3];
+			SD367.findEthnicityCodes(odsCodeRegex, sourceFile, dstFile);
+			System.exit(0);
+		}
+
+		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("SD363fixVisionLocalCodes")) {
 			boolean includeStartedButNotFinishedServices = Boolean.parseBoolean(args[1]);
 			boolean testMode = Boolean.parseBoolean(args[2]);
@@ -385,15 +406,14 @@ public class Main {
 		}*/
 
 		if (args.length >= 1
-				&& args[0].equalsIgnoreCase("fixEmisEpisodesChangingDate")) {
-
-			boolean testMode = Boolean.parseBoolean(args[1]);
-			String orgOdsCodeRegex = null;
-			if (args.length > 2) {
-				orgOdsCodeRegex = args[2];
+				&& args[0].equalsIgnoreCase("SD99fixEmisEpisodesChangingDate")) {
+			boolean includeStartedButNotFinishedServices = Boolean.parseBoolean(args[1]);
+			boolean testMode = Boolean.parseBoolean(args[2]);
+			String odsCodeRegex = null;
+			if (args.length > 3) {
+				odsCodeRegex = args[3];
 			}
-
-			SD99.fixEmisEpisodesChangingDate(testMode, orgOdsCodeRegex);
+			SD99.fixEmisEpisodesChangingDate(includeStartedButNotFinishedServices, testMode, odsCodeRegex);
 			System.exit(0);
 		}
 
