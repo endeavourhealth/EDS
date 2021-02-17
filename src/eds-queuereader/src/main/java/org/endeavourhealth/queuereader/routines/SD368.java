@@ -178,6 +178,10 @@ public class SD368 extends AbstractRoutine {
             Resource resource = wrapper.getResource();
             CodeableConcept codeableConcept = CodeableConceptHelper.findMainCodeableConcept(resource);
             Date effectiveDate = CodeableConceptHelper.findMainEffectiveDate(resource);
+            if (codeableConcept == null) {
+                LOG.warn("No codeable concept found for " + resource.getResourceType() + " " + resource.getId());
+                continue;
+            }
 
             Coding coding = CodeableConceptHelper.findOriginalCoding(codeableConcept);
             if (coding == null) {

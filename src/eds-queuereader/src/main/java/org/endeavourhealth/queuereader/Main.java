@@ -36,7 +36,6 @@ public class Main {
 			System.exit(0);
 		}
 
-
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("SD350fixEthnicityMappings")) {
 			boolean includeStartedButNotFinishedServices = Boolean.parseBoolean(args[1]);
