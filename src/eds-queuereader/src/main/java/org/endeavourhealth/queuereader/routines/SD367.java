@@ -94,6 +94,8 @@ public class SD367 extends AbstractRoutine {
 
         for (String nhsNumber: nhsNumbers) {
 
+            LOG.debug("Doing " + nhsNumber + " (" + (done+1) + " of " + nhsNumbers.size() + ")");
+
             //validate NHS number, inluding the length
             Boolean b = IdentifierHelper.isValidNhsNumber(nhsNumber);
             if (!b.booleanValue()) {
@@ -138,20 +140,21 @@ public class SD367 extends AbstractRoutine {
                 LOG.trace("Found " + regularPatientSearches.size() + " GP records for " + nhsNumber);
             }
 
-            //find an active one
-            PatientSearch bestPatientSearch = regularPatientSearches.get(0);
+            //find an active one, or the most recent ended one
+            PatientSearch bestPatientSearch = regularPatientSearches.get(regularPatientSearches.size()-1);
 
             UUID patientId = bestPatientSearch.getPatientId();
             UUID serviceId = bestPatientSearch.getServiceId();
 
             String comments = null;
             if (bestPatientSearch.getRegistrationEnd() != null) {
-                comments = "Using deducted GP record";
+                comments = "Found deducted GP record";
 
             } else {
-                comments = "Using active GP record";
+                comments = "Found active GP record";
             }
 
+            LOG.trace("Best patient ID = " + patientId);
             findEthnicityCodeForPatient(nhsNumber, patientId, serviceId, printer, comments);
 
             done ++;
@@ -214,7 +217,7 @@ public class SD367 extends AbstractRoutine {
                 Date effectiveDate = CodeableConceptHelper.findMainEffectiveDate(resource);
 
                 if (codeableConcept == null) {
-                    LOG.warn("No codeable concept found for " + resource.getResourceType() + " " + resource.getId() + " for patient " + patientId);
+                    //LOG.warn("No codeable concept found for " + resource.getResourceType() + " " + resource.getId() + " for patient " + patientId);
                     continue;
                 }
 
