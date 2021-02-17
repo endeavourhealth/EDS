@@ -123,7 +123,7 @@ public class SD350 extends AbstractRoutine {
         }
 
         try {
-            fixEthnicities(serviceId, filer);
+            fixEthnicities(serviceId, filer, messageFormat);
 
         } catch (Throwable ex) {
             LOG.error("Error doing service " + service, ex);
@@ -156,7 +156,7 @@ public class SD350 extends AbstractRoutine {
         }
     }
 
-    private static void fixEthnicities(UUID serviceId, FhirResourceFiler filer) throws Exception {
+    private static void fixEthnicities(UUID serviceId, FhirResourceFiler filer, String messageFormat) throws Exception {
 
         PatientSearchDalI patientSearchDal = DalProvider.factoryPatientSearchDal();
         List<UUID> patientIds = patientSearchDal.getPatientIds(serviceId, false);
@@ -166,7 +166,7 @@ public class SD350 extends AbstractRoutine {
 
         for (UUID patientId: patientIds) {
 
-            fixEthnicityForPatient(serviceId, patientId, filer);
+            fixEthnicityForPatient(serviceId, patientId, filer, messageFormat);
 
             done ++;
             if (done % 1000 == 0) {
@@ -176,7 +176,7 @@ public class SD350 extends AbstractRoutine {
         LOG.debug("Finished " + done + " patients");
     }
 
-    private static void fixEthnicityForPatient(UUID serviceId, UUID patientId, FhirResourceFiler filer) throws Exception {
+    private static void fixEthnicityForPatient(UUID serviceId, UUID patientId, FhirResourceFiler filer, String messageFormat) throws Exception {
 
         ResourceDalI resourceDal = DalProvider.factoryResourceDal();
 
@@ -203,7 +203,7 @@ public class SD350 extends AbstractRoutine {
                 continue;
             }
 
-            if (isEthnicityCode(coding)) {
+            if (isEthnicityCode(coding, messageFormat)) {
                 if (latestEthnicityDate == null
                         || (effectiveDate != null && effectiveDate.after(latestEthnicityDate))) {
 
@@ -218,7 +218,7 @@ public class SD350 extends AbstractRoutine {
 
         if (latestEthnicity != null) {
             Coding coding = CodeableConceptHelper.findOriginalCoding(latestEthnicity);
-            EthnicCategory newEc = findEthnicCategory(coding);
+            EthnicCategory newEc = findEthnicCategory(coding, messageFormat);
 
             Patient patient = (Patient)resourceDal.getCurrentVersionAsResource(serviceId, ResourceType.Patient, patientId.toString());
             PatientBuilder patientBuilder = new PatientBuilder(patient);
@@ -239,35 +239,21 @@ public class SD350 extends AbstractRoutine {
     }
 
 
-    private static EthnicCategory findEthnicCategory(Coding coding) throws Exception {
+    private static EthnicCategory findEthnicCategory(Coding coding, String messageFormat) throws Exception {
         String system = coding.getSystem();
         String code = coding.getCode();
 
         if (system.equals(FhirCodeUri.CODE_SYSTEM_READ2)) {
 
-            //need to check both Emis and Vision for this - note I've already verified that any code present in both Emis and Vision do have the same mappings
-            //so it doesn't matter what order we do these checks in
-            EthnicCategory ec = null;
-            try {
-                ec = VisionMappingHelper.findEthnicityCode(code);
-            } catch (RuntimeException ex) {
-                if (ex.getMessage() == null || !ex.getMessage().contains("Unknown ethnicity code")) {
-                    throw ex;
-                }
-            }
+            if (messageFormat.equals(MessageFormat.EMIS_CSV)) {
+                return findEmisEthnicityCode(code);
 
-            //if no luck with Vision, check Emis
-            if (ec == null) {
-                try {
-                    ec = findEmisEthnicityCode(code);
-                } catch (RuntimeException ex) {
-                    if (ex.getMessage() == null || !ex.getMessage().contains("Unknown ethnicity code")) {
-                        throw ex;
-                    }
-                }
-            }
+            } else if (messageFormat.equals(MessageFormat.VISION_CSV)) {
+                return VisionMappingHelper.findEthnicityCode(code);
 
-            return ec;
+            } else {
+                throw new Exception("Unexpected message forma t" + messageFormat + " for Read2 code");
+            }
 
         } else if (system.equals(FhirCodeUri.CODE_SYSTEM_EMIS_CODE)) {
             return findEmisEthnicityCode(code);
@@ -295,16 +281,22 @@ public class SD350 extends AbstractRoutine {
     }
 
 
-    private static boolean isEthnicityCode(Coding coding) throws Exception {
+    private static boolean isEthnicityCode(Coding coding, String messageFormat) throws Exception {
 
         String system = coding.getSystem();
         String code = coding.getCode();
 
         if (system.equals(FhirCodeUri.CODE_SYSTEM_READ2)) {
 
-            //need to check Emis and Vision for this
-            return isEmisEthnicityCode(code)
-                    || VisionMappingHelper.isPotentialEthnicity(code);
+            if (messageFormat.equals(MessageFormat.EMIS_CSV)) {
+                return isEmisEthnicityCode(code);
+
+            } else if (messageFormat.equals(MessageFormat.VISION_CSV)) {
+                return VisionMappingHelper.isPotentialEthnicity(code);
+
+            } else {
+                throw new Exception("Unexpected message format " + messageFormat + " for Read2 code");
+            }
 
         } else if (system.equals(FhirCodeUri.CODE_SYSTEM_EMIS_CODE)) {
             return isEmisEthnicityCode(code);

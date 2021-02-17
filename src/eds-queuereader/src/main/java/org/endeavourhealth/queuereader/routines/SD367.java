@@ -19,6 +19,7 @@ import org.endeavourhealth.core.database.dal.eds.models.PatientSearch;
 import org.endeavourhealth.core.database.dal.ehr.ResourceDalI;
 import org.endeavourhealth.core.database.dal.ehr.models.ResourceWrapper;
 import org.endeavourhealth.core.database.dal.publisherCommon.models.EmisClinicalCode;
+import org.endeavourhealth.core.queueing.MessageFormat;
 import org.endeavourhealth.transform.emis.csv.helpers.EmisMappingHelper;
 import org.endeavourhealth.transform.tpp.csv.helpers.TppMappingHelper;
 import org.endeavourhealth.transform.vision.helpers.VisionMappingHelper;
@@ -166,6 +167,25 @@ public class SD367 extends AbstractRoutine {
 
     private static void findEthnicityCodeForPatient(String nhsNumber, UUID patientId, UUID serviceId, CSVPrinter printer, String comments) throws Exception {
 
+        //work out what system the service is
+        String messageFormat = null;
+        ServiceDalI serviceDal = DalProvider.factoryServiceDal();
+        Service service = serviceDal.getById(serviceId);
+
+        Map<String, String> tags = service.getTags();
+        if (tags.containsKey("EMIS")) {
+            messageFormat = MessageFormat.EMIS_CSV;
+
+        } else if (tags.containsKey("TPP")) {
+            messageFormat = MessageFormat.TPP_CSV;
+
+        } else if (tags.containsKey("Vision")) {
+            messageFormat = MessageFormat.VISION_CSV;
+
+        } else {
+            throw new Exception("Unknown system type for " + service);
+        }
+
         ResourceDalI resourceDal = DalProvider.factoryResourceDal();
 
         List<ResourceWrapper> wrappers = resourceDal.getResourcesByPatient(serviceId, patientId);
@@ -204,7 +224,7 @@ public class SD367 extends AbstractRoutine {
                     continue;
                 }
 
-                if (isEthnicityCode(coding, resource, patientId)) {
+                if (isEthnicityCode(coding, resource, patientId, messageFormat)) {
                     if (latestEthnicityDate == null
                             || (effectiveDate != null && effectiveDate.after(latestEthnicityDate))) {
 
@@ -244,7 +264,7 @@ public class SD367 extends AbstractRoutine {
             rawEthnicityCode = coding.getCode();
             rawEthnicityTerm = coding.getDisplay();
 
-            EthnicCategory ec = findEthnicCategory(coding);
+            EthnicCategory ec = findEthnicCategory(coding, messageFormat);
             if (ec == null) {
                 ddEthnicityCode = "";
                 ddEthnicityTerm = "";
@@ -2735,35 +2755,21 @@ public class SD367 extends AbstractRoutine {
         return hsSnomedLanguageCodes.contains(snomedConceptId);
     }
 
-    private static EthnicCategory findEthnicCategory(Coding coding) throws Exception {
+    private static EthnicCategory findEthnicCategory(Coding coding, String messageFormat) throws Exception {
         String system = coding.getSystem();
         String code = coding.getCode();
 
         if (system.equals(FhirCodeUri.CODE_SYSTEM_READ2)) {
 
-            //need to check both Emis and Vision for this - note I've already verified that any code present in both Emis and Vision do have the same mappings
-            //so it doesn't matter what order we do these checks in
-            EthnicCategory ec = null;
-            try {
-                ec = VisionMappingHelper.findEthnicityCode(code);
-            } catch (RuntimeException ex) {
-                if (ex.getMessage() == null || !ex.getMessage().contains("Unknown ethnicity code")) {
-                    throw ex;
-                }
-            }
+            if (messageFormat.equals(MessageFormat.EMIS_CSV)) {
+                return findEmisEthnicityCode(code);
 
-            //if no luck with Vision, check Emis
-            if (ec == null) {
-                try {
-                    ec = findEmisEthnicityCode(code);
-                } catch (RuntimeException ex) {
-                    if (ex.getMessage() == null || !ex.getMessage().contains("Unknown ethnicity code")) {
-                        throw ex;
-                    }
-                }
-            }
+            } else if (messageFormat.equals(MessageFormat.VISION_CSV)) {
+                return VisionMappingHelper.findEthnicityCode(code);
 
-            return ec;
+            } else {
+                throw new Exception("Unexpected message format " + messageFormat + " for Read2 code");
+            }
 
         } else if (system.equals(FhirCodeUri.CODE_SYSTEM_EMIS_CODE)) {
             return findEmisEthnicityCode(code);
@@ -2790,16 +2796,22 @@ public class SD367 extends AbstractRoutine {
         return EmisMappingHelper.findEthnicityCode(c);
     }
 
-    private static boolean isEthnicityCode(Coding coding, Resource resource, UUID patientId) throws Exception {
+    private static boolean isEthnicityCode(Coding coding, Resource resource, UUID patientId, String messageFormat) throws Exception {
 
         String system = coding.getSystem();
         String code = coding.getCode();
 
         if (system.equals(FhirCodeUri.CODE_SYSTEM_READ2)) {
 
-            //need to check Emis and Vision for this
-            return isEmisEthnicityCode(code)
-                    || VisionMappingHelper.isPotentialEthnicity(code);
+            if (messageFormat.equals(MessageFormat.EMIS_CSV)) {
+                return isEmisEthnicityCode(code);
+
+            } else if (messageFormat.equals(MessageFormat.VISION_CSV)) {
+                return VisionMappingHelper.isPotentialEthnicity(code);
+
+            } else {
+                throw new Exception("Unexpected message format " + messageFormat + " for Read2");
+            }
 
         } else if (system.equals(FhirCodeUri.CODE_SYSTEM_EMIS_CODE)) {
             return isEmisEthnicityCode(code);
