@@ -49,7 +49,7 @@ public class RoutingManager {
 
 		//if our first time, or the cache has expired, then retreive from the ConfigManager and generate the map
 		if (map == null) {
-			LOG.trace("Routing cache is null, so rebuilding");
+			//LOG.trace("Routing cache is null, so rebuilding");
 			map = new HashMap<>();
 
 			String routings = ConfigManager.getConfiguration("routings");
@@ -81,7 +81,7 @@ public class RoutingManager {
 
 		Map<UUID, List<RoutingOverride>> map = cachedRoutingOverrides.get();
 		if (map == null) {
-			LOG.trace("Routing override cache is null, so rebuilding");
+			//LOG.trace("Routing override cache is null, so rebuilding");
 			map = new HashMap<>();
 
 			try {
