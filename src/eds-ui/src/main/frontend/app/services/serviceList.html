@@ -134,6 +134,11 @@
 									<input type="checkbox" id="hideClosedFilter" [(ngModel)]="serviceService.serviceHideClosedFilter" name="hideClosedFilter" (ngModelChange)="applyFiltering()">
 								</div>
 
+								<div>
+									<label for="showDateFilter" class="control-label">Show Dates</label>
+									<input type="checkbox" id="showDateFilter" [(ngModel)]="serviceService.serviceShowDateFilter" name="showDateFilter">
+								</div>
+
 							</div>
 
 						</div>
@@ -187,7 +192,12 @@
 										<td>
 											<div *ngIf="service.systemStatuses">
 												<div *ngFor="let status of service.systemStatuses">
-													<span ngbTooltip="{{formatLatestCutoffTooltip(service, status)}}">{{formatLatestCutoff(service, status)}}</span>
+
+													<!-- show date diff -->
+													<span *ngIf="!serviceService.serviceShowDateFilter" ngbTooltip="{{formatLatestCutoffTooltip(service, status)}}">{{formatLatestCutoff(service, status)}}</span>
+
+													<!-- show date -->
+													<span *ngIf="serviceService.serviceShowDateFilter" ngbTooltip="{{formatLatestCutoffTooltip(service, status)}}">{{formatYYYYMMDDHHMM(status.lastReceivedExtractCutoff)}}</span>
 												</div>
 											</div>
 										</td>

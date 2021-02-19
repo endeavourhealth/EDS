@@ -52,6 +52,24 @@ public abstract class AbstractRoutine {
         return true;
     }
 
+    public static boolean isServiceStartedOrDoneBulkOperation(Service service, String bulkOperationName, boolean includeStartedButNotFinishedServices) throws Exception {
+        if (includeStartedButNotFinishedServices) {
+            //if including started ones, we only want to exclude DONE ones
+            boolean ret = isServiceDoneBulkOperation(service, bulkOperationName);
+            if (ret) {
+                LOG.debug("Skipping " + service + " as already done");
+            }
+            return ret;
+
+        } else {
+            //if not including started ones, exclude any DONE or STARTED
+            boolean ret = isServiceStartedOrDoneBulkOperation(service, bulkOperationName);
+            if (ret) {
+                LOG.debug("Skipping " + service + " as already started or done");
+            }
+            return ret;
+        }
+    }
 
     /**
      * checks if the given service has already done the given bulk operation and audits the start if not
@@ -221,8 +239,11 @@ public abstract class AbstractRoutine {
 
 
     public static Exchange createNewExchange(Service service, UUID systemId, String messageFormat, String eventDesc) throws Exception {
+        return createNewExchange(service, systemId, messageFormat, eventDesc, UUID.randomUUID());
+    }
 
-        UUID exchangeId = UUID.randomUUID();
+    public static Exchange createNewExchange(Service service, UUID systemId, String messageFormat, String eventDesc, UUID exchangeId) throws Exception {
+
         String bodyJson = JsonSerializer.serialize(new ArrayList<ExchangePayloadFile>());
         String odsCode = service.getLocalId();
 

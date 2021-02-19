@@ -17,6 +17,9 @@ import {DateTimeFormatter} from "../utility/DateTimeFormatter";
 })
 export class ServiceListComponent implements OnInit, OnDestroy{
 
+	//SD-338 - need to import the static formatting functions so they can be used by the HTML template
+	formatYYYYMMDDHHMM = DateTimeFormatter.formatYYYYMMDDHHMM;
+
 	services : Service[];
 	filteredServices: Service[];
 	tagStrDisplayLimit: number;

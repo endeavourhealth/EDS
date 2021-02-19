@@ -237,7 +237,7 @@
                             <td>
                                 <div *ngFor="let system of publisher.systemStatus">
                                     <div *ngIf="subscribersService.showDates">
-                                        {{system.lastReceivedExtractCutoff |  date:'yyyy-MM-dd HH:mm'}}
+                                        {{formatYYYYMMDDHHMM(system.lastReceivedExtractCutoff)}}
                                     </div>
                                     <div *ngIf="!subscribersService.showDates">
                                         {{getDateDiff(system.lastReceivedExtractCutoff)}}
@@ -249,7 +249,7 @@
                             <td>
                                 <div *ngFor="let system of publisher.systemStatus">
                                     <span *ngIf="subscribersService.showDates">
-                                        {{system.lastProcessedInExtractCutoff |  date:'yyyy-MM-dd HH:mm'}}
+                                        {{formatYYYYMMDDHHMM(system.lastProcessedInExtractCutoff)}}
                                     </span>
                                     <span *ngIf="!subscribersService.showDates">
                                         {{getDateDiff(system.lastProcessedInExtractCutoff)}}

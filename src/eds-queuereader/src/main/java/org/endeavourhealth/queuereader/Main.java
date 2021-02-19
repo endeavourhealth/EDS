@@ -25,6 +25,63 @@ public class Main {
 		ConfigManager.initialize("queuereader", configId);
 
 		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("SD368fixMaritalStatusMappings")) {
+			boolean includeStartedButNotFinishedServices = Boolean.parseBoolean(args[1]);
+			boolean testMode = Boolean.parseBoolean(args[2]);
+			String odsCodeRegex = null;
+			if (args.length > 3) {
+				odsCodeRegex = args[3];
+			}
+			SD368.fixMaritalStatusMappings(includeStartedButNotFinishedServices, testMode, odsCodeRegex);
+			System.exit(0);
+		}
+
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("SD350fixEthnicityMappings")) {
+			boolean includeStartedButNotFinishedServices = Boolean.parseBoolean(args[1]);
+			boolean testMode = Boolean.parseBoolean(args[2]);
+			String odsCodeRegex = null;
+			if (args.length > 3) {
+				odsCodeRegex = args[3];
+			}
+			SD350.fixEthnicityMappings(includeStartedButNotFinishedServices, testMode, odsCodeRegex);
+			System.exit(0);
+		}
+
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("SD367findEthnicityCodes")) {
+			String odsCodeRegex = args[1];
+			String sourceFile = args[2];
+			String dstFile = args[3];
+			SD367.findEthnicityCodes(odsCodeRegex, sourceFile, dstFile);
+			System.exit(0);
+		}
+
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("SD363fixVisionLocalCodes")) {
+			boolean includeStartedButNotFinishedServices = Boolean.parseBoolean(args[1]);
+			boolean testMode = Boolean.parseBoolean(args[2]);
+			String odsCodeRegex = null;
+			if (args.length > 3) {
+				odsCodeRegex = args[3];
+			}
+			SD363.fixVisionLocalCodes(includeStartedButNotFinishedServices, testMode, odsCodeRegex);
+			System.exit(0);
+		}
+
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("SD289fixEmisDeletedSlots")) {
+			boolean includeStartedButNotFinishedServices = Boolean.parseBoolean(args[1]);
+			boolean testMode = Boolean.parseBoolean(args[2]);
+			String odsCodeRegex = null;
+			if (args.length > 3) {
+				odsCodeRegex = args[3];
+			}
+			SD289.fixEmisDeletedSlots(includeStartedButNotFinishedServices, testMode, odsCodeRegex);
+			System.exit(0);
+		}
+
+		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("SD324fixAppointmentStartTimes")) {
 			boolean includeStartedButNotFinishedServices = Boolean.parseBoolean(args[1]);
 			String odsCodeRegex = null;
@@ -361,15 +418,14 @@ public class Main {
 		}*/
 
 		if (args.length >= 1
-				&& args[0].equalsIgnoreCase("fixEmisEpisodesChangingDate")) {
-
-			boolean testMode = Boolean.parseBoolean(args[1]);
-			String orgOdsCodeRegex = null;
-			if (args.length > 2) {
-				orgOdsCodeRegex = args[2];
+				&& args[0].equalsIgnoreCase("SD99fixEmisEpisodesChangingDate")) {
+			boolean includeStartedButNotFinishedServices = Boolean.parseBoolean(args[1]);
+			boolean testMode = Boolean.parseBoolean(args[2]);
+			String odsCodeRegex = null;
+			if (args.length > 3) {
+				odsCodeRegex = args[3];
 			}
-
-			SD99.fixEmisEpisodesChangingDate(testMode, orgOdsCodeRegex);
+			SD99.fixEmisEpisodesChangingDate(includeStartedButNotFinishedServices, testMode, odsCodeRegex);
 			System.exit(0);
 		}
 
@@ -968,6 +1024,16 @@ public class Main {
 			String orgOdsCodeRegex = args[3];
 
 			SpecialRoutines.transformAndFilePatientAgeV2DataForProtocolServices(includeStartedButNotFinishedServices, subscriberConfigName, orgOdsCodeRegex);
+			System.exit(0);
+		}
+
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("transformAndFilePatientV2IdentifiableDataForProtocolServices")) {
+			boolean includeStartedButNotFinishedServices = Boolean.parseBoolean(args[1]);
+			String subscriberConfigName = args[2];
+			String orgOdsCodeRegex = args[3];
+
+			SpecialRoutines.transformAndFilePatientV2IdentifiableDataForProtocolServices(includeStartedButNotFinishedServices, subscriberConfigName, orgOdsCodeRegex);
 			System.exit(0);
 		}
 
@@ -1644,6 +1710,21 @@ public class Main {
 			System.exit(0);
 		}
 
+		if (args.length >=1 && args[0].contains("REFERENCERANGES")) {
+
+			Integer threads = 5; Integer QBeforeBlock = 10;
+			String[] tb = args[0].split(":",-1);
+			if (!tb[1].isEmpty()) {threads = Integer.parseInt(tb[1]);}
+			if (!tb[2].isEmpty()) { QBeforeBlock = Integer.parseInt(tb[2]);}
+
+			String configName = args[1];
+			String filePath = args[2];
+			String debug = args[3];
+			ReferenceRangeSignificance.bulkProcessReferenceRangesThreaded(configName, filePath, debug, threads, QBeforeBlock);
+
+			System.exit(0);
+		}
+
 		if (args.length != 1) {
 			LOG.error("Usage: queuereader config_id");
 			return;
@@ -1665,6 +1746,5 @@ public class Main {
 		rabbitHandler.start();
 		LOG.info("EDS Queue reader running (kill file location " + TransformConfig.instance().getKillFileLocation() + ")");
 	}
-
 
 }
