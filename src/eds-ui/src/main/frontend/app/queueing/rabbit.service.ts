@@ -7,6 +7,7 @@ import {RabbitExchange} from "./models/RabbitExchange";
 import {RabbitQueue} from "./models/RabbitQueue";
 import {RabbitNode} from "./models/RabbitNode";
 import {Routing} from "./Routing";
+import {RoutingOverride} from "./models/RoutingOverride";
 
 @Injectable()
 export class RabbitService extends BaseHttp2Service {
@@ -49,6 +50,20 @@ export class RabbitService extends BaseHttp2Service {
 	}
 
 	saveRoutings(routings : Routing[]) : Observable<any> {
+		console.log('saving routings');
+		console.log(routings);
+
 		return this.httpPost('api/rabbit/routings', routings);
+	}
+
+	getRoutingOverrides(): Observable<RoutingOverride[]> {
+		return this.httpGet('api/rabbit/overrides');
+	}
+
+	saveRoutingOverrides(overrides : RoutingOverride[]) : Observable<any> {
+		console.log('saving routing overrides');
+		console.log(overrides);
+
+		return this.httpPost('api/rabbit/overrides', overrides);
 	}
 }

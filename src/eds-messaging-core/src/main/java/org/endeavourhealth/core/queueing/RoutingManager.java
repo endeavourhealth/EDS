@@ -1,9 +1,9 @@
 package org.endeavourhealth.core.queueing;
 
-import org.endeavourhealth.common.cache.CacheManager;
-import org.endeavourhealth.common.cache.ICache;
+import com.google.common.base.Strings;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.common.config.ConfigManager;
+import org.endeavourhealth.common.utility.ExpiringObject;
 import org.endeavourhealth.core.messaging.pipeline.PipelineException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,19 +11,17 @@ import org.slf4j.LoggerFactory;
 import java.util.*;
 import java.util.regex.Pattern;
 
-public class RoutingManager implements ICache {
+public class RoutingManager {
 	private static final Logger LOG = LoggerFactory.getLogger(RoutingManager.class);
 
 	private static RoutingManager instance;
 
-	//private RouteGroup[] routingMap;
-	private Map<String, List<RouteGroup>> cachedRoutingsByExchangeName;
-	private Date cacheExpiry = null;
+	private ExpiringObject<Map<String, List<RouteGroup>>> cachedRoutingsByExchangeName = new ExpiringObject(1000L * 60L * 1L);
+	private ExpiringObject<Map<UUID, List<RoutingOverride>>> cachedRoutingOverrides = new ExpiringObject(1000L * 60L * 1L);
 
-	public static RoutingManager getInstance() {
+	public static RoutingManager instance() {
 		if (instance == null) {
 			instance = new RoutingManager();
-			CacheManager.registerCache(instance);
 		}
 		return instance;
 	}
@@ -47,17 +45,17 @@ public class RoutingManager implements ICache {
 
 	private List<RouteGroup> getRoutingMapForExchange(String exchangeName) throws PipelineException {
 
-		if (cachedRoutingsByExchangeName == null
-				|| cacheExpiry.before(new Date())) {
-			//LOG.debug("Re-creating routing map cache");
+		Map<String, List<RouteGroup>> map = this.cachedRoutingsByExchangeName.get();
 
-			Map<String, List<RouteGroup>> map = new HashMap<>();
+		//if our first time, or the cache has expired, then retreive from the ConfigManager and generate the map
+		if (map == null) {
+			LOG.trace("Routing cache is null, so rebuilding");
+			map = new HashMap<>();
 
 			String routings = ConfigManager.getConfiguration("routings");
-
 			try {
 				RouteGroup[] arr = ObjectMapperPool.getInstance().readValue(routings, RouteGroup[].class);
-				//LOG.debug("Routing table loaded : " + routings);
+
 				for (RouteGroup r: arr) {
 
 					List<RouteGroup> list = map.get(r.getExchangeName());
@@ -72,27 +70,52 @@ public class RoutingManager implements ICache {
 				throw new PipelineException("Failed to populate routing map from JSON " + routings, ex);
 			}
 
-			this.cacheExpiry = new Date(System.currentTimeMillis() + (5L * 1000L * 60L)); //expire this cache in five minutes
-			this.cachedRoutingsByExchangeName = map;
+			this.cachedRoutingsByExchangeName.set(map);
 		}
 
-		return cachedRoutingsByExchangeName.get(exchangeName);
+		return map.get(exchangeName);
 	}
 
-	@Override
-	public String getName() {
-		return "RoutingManager";
-	}
 
-	@Override
-	public
-	long getSize() {
-		return cachedRoutingsByExchangeName == null ? 0 : cachedRoutingsByExchangeName.size();
-	}
+	public String findRoutingOverride(String exchangeName, UUID serviceId) throws PipelineException {
 
-	@Override
-	public void clearCache() {
-		cachedRoutingsByExchangeName = null;
-	}
+		Map<UUID, List<RoutingOverride>> map = cachedRoutingOverrides.get();
+		if (map == null) {
+			LOG.trace("Routing override cache is null, so rebuilding");
+			map = new HashMap<>();
 
+			try {
+				String json = ConfigManager.getConfiguration("routing_overrides");
+				if (!Strings.isNullOrEmpty(json)) {
+
+					RoutingOverride[] arr = ObjectMapperPool.getInstance().readValue(json, RoutingOverride[].class);
+					for (RoutingOverride o: arr) {
+						UUID oServiceId = o.getServiceId();
+
+						List<RoutingOverride> list = map.get(oServiceId);
+						if (list == null) {
+							list = new ArrayList<>();
+							map.put(oServiceId, list);
+						}
+						list.add(o);
+					}
+				}
+
+			} catch (Exception ex) {
+				throw new PipelineException("Failed to populate routing overrides map", ex);
+			}
+
+			this.cachedRoutingOverrides.set(map);
+		}
+
+		List<RoutingOverride> list = map.get(serviceId);
+		if (list != null) {
+			for (RoutingOverride o: list) {
+				if (o.getExchangeName().equals(exchangeName)) {
+					return o.getRoutingKey();
+				}
+			}
+		}
+		return null;
+	}
 }

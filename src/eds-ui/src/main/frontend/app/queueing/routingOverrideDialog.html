@@ -1,0 +1,46 @@
+<div class="modal-header">
+    <button type="button" class="close" (click)="cancel()" aria-hidden="true">&times;</button>
+    <h4 class="modal-title">Routing Override</h4>
+</div>
+<div class="modal-body">
+    <form endUserRole="form" class="container-fluid">
+
+        <div class="row">
+            <div class="form-group col-md-12">
+                <label class="control-label">Publisher</label>
+                <input type="text" class="form-control" placeholder="" [(ngModel)]="serviceDesc" name="exchange" [disabled]="!allowEditingExchange">
+                <button type="button" class="btn btn-primary" (click)="selectPublisher()">Search Publishers</button>
+            </div>
+        </div>
+
+
+        <div class="row">
+            <div class="form-group col-md-12">
+                <label class="control-label">Exchange</label>
+
+                <select class="form-control" [(ngModel)]="routingOverride.exchangeName" name="exchangeNameCombo">
+                    <option value=""></option>
+                    <option *ngFor="let exchangeName of routingExchangeNames" value="{{exchangeName}}">{{exchangeName}}</option>
+                </select>
+
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="form-group col-md-12">
+                <label class="control-label">Routing Key</label>
+
+                <select class="form-control" [(ngModel)]="routingOverride.routingKey" name="routingKeyCombo">
+                    <option *ngFor="let routingKey of getRoutingKeysForExchange()" value="{{routingKey}}">{{routingKey}}</option>
+                </select>
+
+            </div>
+        </div>
+
+
+    </form>
+</div>
+<div class="modal-footer">
+    <button type="button" class="btn" (click)="cancel()">Cancel</button>
+    <button type="button" class="btn btn-primary" (click)="ok();">Ok</button>
+</div>

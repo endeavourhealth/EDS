@@ -2,6 +2,7 @@ package org.endeavourhealth.ui.endpoints;
 
 import com.codahale.metrics.annotation.Timed;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.google.common.base.Strings;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.common.security.SecurityUtils;
@@ -11,6 +12,7 @@ import org.endeavourhealth.core.database.dal.audit.UserAuditDalI;
 import org.endeavourhealth.core.database.dal.audit.models.AuditAction;
 import org.endeavourhealth.core.database.dal.audit.models.AuditModule;
 import org.endeavourhealth.core.queueing.RabbitConfig;
+import org.endeavourhealth.core.queueing.RoutingOverride;
 import org.endeavourhealth.coreui.endpoints.AbstractEndpoint;
 import org.endeavourhealth.ui.json.*;
 import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
@@ -526,5 +528,46 @@ public final class RabbitEndpoint extends AbstractEndpoint {
 			throw new Exception("Unable do declare the queue, HTTP code " + status.getStatusCode() + " " + status.getReasonPhrase());
 		}
 		response.close();
+	}
+
+	@GET
+	@Produces(MediaType.APPLICATION_JSON)
+	/*@Consumes(MediaType.APPLICATION_JSON)*/
+	@Timed(absolute = true, name="RabbitEndpoint.GetRoutingOverrides")
+	@Path("/overrides")
+	public Response getRoutingOverrides(@Context SecurityContext sc) throws Exception {
+		super.setLogbackMarkers(sc);
+		userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load, "GetRoutingOverrides");
+
+		List<RoutingOverride> ret = new ArrayList<>();
+
+		String json = ConfigManager.getConfiguration("routing_overrides");
+		if (!Strings.isNullOrEmpty(json)) {
+			RoutingOverride[] arr = ObjectMapperPool.getInstance().readValue(json, RoutingOverride[].class);
+			for (RoutingOverride o: arr) {
+				ret.add(o);
+			}
+		}
+
+		return Response
+				.ok()
+				.entity(ret)
+				.build();
+	}
+
+	@POST
+	@Produces(MediaType.APPLICATION_JSON)
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Timed(absolute = true, name="RabbitEndpoint.SaveRoutingOverrides")
+	@Path("/overrides")
+	public Response saveRoutingOverrides(@Context SecurityContext sc, String overridesJson) throws Exception {
+		super.setLogbackMarkers(sc);
+		userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load, "SaveRoutingOverrides");
+
+		ConfigManager.setConfiguration("routing_overrides", overridesJson);
+
+		return Response
+				.ok()
+				.build();
 	}
 }

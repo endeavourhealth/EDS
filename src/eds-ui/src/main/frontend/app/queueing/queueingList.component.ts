@@ -6,6 +6,10 @@ import {RabbitService} from "./rabbit.service";
 import {LoggerService, MessageBoxDialog} from "eds-common-js";
 import {NgbModal} from "@ng-bootstrap/ng-bootstrap";
 import {QueueEditDialog} from "./queueingEditor.dialog";
+import {RoutingOverride} from "./models/RoutingOverride";
+import {RoutingOverrideDialog} from "./routingOverride.dialog";
+import {Service} from "../services/models/Service";
+import {ServiceService} from "../services/service.service";
 
 @Component({
 	template : require('./queueingList.html')
@@ -16,11 +20,49 @@ export class QueueingListComponent {
 	routingExchangeNames: string[];
 	routingMap: {}; //bindings from our config
 	bindingMap: {}; //actual bindings from Rabbit
+	routingOverrides: RoutingOverride[];
+	serviceMapById: {};
 
 	constructor(private $modal : NgbModal,
 							private rabbitService : RabbitService,
+							private serviceService : ServiceService,
 							private log : LoggerService) {
-		this.getRabbitNodes();
+
+		this.refresh();
+	}
+
+	refresh() {
+		var vm = this;
+		vm.getRabbitNodes();
+		vm.getServices();
+		vm.getRoutingOverrides();
+
+	}
+
+	getRoutingOverrides():void {
+		var vm = this;
+		vm.rabbitService.getRoutingOverrides()
+			.subscribe(
+				(data) => {
+					vm.routingOverrides = data;
+				},
+				(error) => {
+					vm.log.error('Faield to get routing overrides');
+				}
+			);
+	}
+
+	saveRoutingOverrides():void {
+		var vm = this;
+		vm.rabbitService.saveRoutingOverrides(vm.routingOverrides)
+			.subscribe(
+				(data) => {
+					//vm.log.info('Saved overrides OK');
+				},
+				(error) => {
+					vm.log.error('Faield to save routing overrides');
+				}
+			);
 	}
 
 	getRabbitNodes() {
@@ -215,18 +257,6 @@ export class QueueingListComponent {
 
 				vm.saveRoutings();
 
-				/*var list = vm.getRoutingAsList();
-				var index = list.indexOf(item);
-				list.splice(index, 1);
-
-				vm.rabbitService.saveRoutings(list)
-					.subscribe(
-						() => {
-							vm.getRouteGroups();
-							vm.log.success('Route group deleted', item, 'Delete route group');
-						},
-						(error) => vm.log.error('Failed to delete route group', error, 'Delete route group')
-					);*/
 			})
 			.catch((reason) => vm.log.info("Delete cancelled"));
 	}
@@ -321,9 +351,72 @@ export class QueueingListComponent {
 		vm.saveRoutings();
 	}
 
-	refresh() {
+
+	addNewOverride() {
 		var vm = this;
-		vm.getRabbitNodes();
+		var newOverride = new RoutingOverride();
+
+		RoutingOverrideDialog.open(this.$modal, newOverride, vm.routingExchangeNames, vm.routingMap, vm.serviceMapById)
+			.result.then(function(editedItem : RoutingOverride) {
+
+				//the edited item seems to be an array rather than a single routing,
+				//so copy back into the routing object we created and add that to the map
+				jQuery.extend(true, newOverride, editedItem);
+				vm.routingOverrides.push(newOverride);
+
+				vm.saveRoutingOverrides();
+			})
+			.catch((reason) => {});
 	}
 
+	deleteRoutingOverride(override: RoutingOverride) {
+		var vm = this;
+
+		MessageBoxDialog.open(vm.$modal, 'Delete Override', 'Are you sure you want to delete the routing override?', 'Yes', 'No')
+			.result.then(function () {
+
+				var index = vm.routingOverrides.indexOf(override);
+				vm.routingOverrides.splice(index, 1);
+
+				vm.saveRoutingOverrides();
+			})
+			.catch((reason) => vm.log.info("Delete cancelled"));
+	}
+
+
+	private getServices():void {
+		var vm = this;
+
+		vm.serviceService.getAll()
+			.subscribe(
+				(result) => {
+					vm.serviceMapById = {};
+
+					for (var i=0; i<result.length; i++) {
+						var service = result[i];
+						vm.serviceMapById[service.uuid] = service;
+					}
+				},
+				(error) => vm.log.error('Failed to load services', error, 'Load services')
+			);
+
+	}
+
+
+
+	getServiceDesc(override: RoutingOverride):string {
+		var vm = this;
+
+		if (!override.serviceId
+			|| !vm.serviceMapById) { //if not retrieved this yet
+			return '';
+		}
+
+		var service = vm.serviceMapById[override.serviceId] as Service;
+		if (!service) {
+			return 'Missing service for ' + override.serviceId;
+		}
+
+		return service.localIdentifier + ', ' + service.name;
+	}
 }

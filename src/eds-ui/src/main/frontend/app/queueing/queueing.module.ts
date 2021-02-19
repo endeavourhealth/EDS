@@ -5,6 +5,7 @@ import {NgbModule} from "@ng-bootstrap/ng-bootstrap";
 import {QueueingListComponent} from "./queueingList.component";
 import {QueueEditDialog} from "./queueingEditor.dialog";
 import {RabbitService} from "./rabbit.service";
+import {RoutingOverrideDialog} from "./routingOverride.dialog";
 
 @NgModule({
 	imports : [
@@ -15,9 +16,11 @@ import {RabbitService} from "./rabbit.service";
 	declarations : [
 		QueueingListComponent,
 		QueueEditDialog,
+		RoutingOverrideDialog
 	],
 	entryComponents : [
-		QueueEditDialog
+		QueueEditDialog,
+		RoutingOverrideDialog
 	],
 	providers : [
 		RabbitService

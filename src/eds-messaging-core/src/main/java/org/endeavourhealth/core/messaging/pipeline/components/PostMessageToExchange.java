@@ -253,6 +253,19 @@ public class PostMessageToExchange extends PipelineComponent {
 
 	public static String getRoutingKey(boolean bulkMode, Map<String, String> headers, PostMessageToExchangeConfig config) throws PipelineException {
 
+		String exchangeName = config.getExchange();
+
+		//we can configure service-specific overrides of routing, so we can route services to different queues than normal -
+		//this allows better balancing when processing lots of bulks. Check if an override exists for our service.
+		String serviceIdStr = headers.get(HeaderKeys.SenderServiceUuid);
+		UUID serviceId = UUID.fromString(serviceIdStr);
+		String overridingRoutingKey = RoutingManager.instance().findRoutingOverride(exchangeName, serviceId);
+		if (!Strings.isNullOrEmpty(overridingRoutingKey)) {
+			LOG.info("Overriding routing for service " + serviceIdStr + " for exchange " + exchangeName + " with routing key " + overridingRoutingKey);
+			return overridingRoutingKey;
+		}
+
+
 		List<String> routingValues = new ArrayList<>();
 
 		//if the service/system has been set into bulk mode, then factor this into the routing key as the first element
@@ -271,8 +284,7 @@ public class PostMessageToExchange extends PipelineComponent {
 		}
 
 		String fullRoutingValue = String.join(":", routingValues);
-		String exchangeName = config.getExchange();
-		return RoutingManager.getInstance().getRoutingKeyForIdentifier(exchangeName, fullRoutingValue);
+		return RoutingManager.instance().getRoutingKeyForIdentifier(exchangeName, fullRoutingValue);
 	}
 
 	static class Throttle {
