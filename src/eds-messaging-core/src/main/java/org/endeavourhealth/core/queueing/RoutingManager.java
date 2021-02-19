@@ -16,8 +16,8 @@ public class RoutingManager {
 
 	private static RoutingManager instance;
 
-	private ExpiringObject<Map<String, List<RouteGroup>>> cachedRoutingsByExchangeName = new ExpiringObject(1000L * 60L * 1L);
-	private ExpiringObject<Map<UUID, List<RoutingOverride>>> cachedRoutingOverrides = new ExpiringObject(1000L * 60L * 1L);
+	private ExpiringObject<Map<String, List<RouteGroup>>> cachedRoutingsByExchangeName = new ExpiringObject(1000L * 60L * 5L);
+	private ExpiringObject<Map<UUID, List<RoutingOverride>>> cachedRoutingOverrides = new ExpiringObject(1000L * 60L * 5L);
 
 	public static RoutingManager instance() {
 		if (instance == null) {
@@ -49,7 +49,7 @@ public class RoutingManager {
 
 		//if our first time, or the cache has expired, then retreive from the ConfigManager and generate the map
 		if (map == null) {
-			LOG.trace("Routing cache is null, so rebuilding");
+			//LOG.trace("Routing cache is null, so rebuilding");
 			map = new HashMap<>();
 
 			String routings = ConfigManager.getConfiguration("routings");
@@ -81,7 +81,7 @@ public class RoutingManager {
 
 		Map<UUID, List<RoutingOverride>> map = cachedRoutingOverrides.get();
 		if (map == null) {
-			LOG.trace("Routing override cache is null, so rebuilding");
+			//LOG.trace("Routing override cache is null, so rebuilding");
 			map = new HashMap<>();
 
 			try {
