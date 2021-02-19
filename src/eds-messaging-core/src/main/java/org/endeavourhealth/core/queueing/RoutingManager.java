@@ -16,8 +16,8 @@ public class RoutingManager {
 
 	private static RoutingManager instance;
 
-	private ExpiringObject<Map<String, List<RouteGroup>>> cachedRoutingsByExchangeName = new ExpiringObject(1000L * 60L * 1L);
-	private ExpiringObject<Map<UUID, List<RoutingOverride>>> cachedRoutingOverrides = new ExpiringObject(1000L * 60L * 1L);
+	private ExpiringObject<Map<String, List<RouteGroup>>> cachedRoutingsByExchangeName = new ExpiringObject(1000L * 60L * 5L);
+	private ExpiringObject<Map<UUID, List<RoutingOverride>>> cachedRoutingOverrides = new ExpiringObject(1000L * 60L * 5L);
 
 	public static RoutingManager instance() {
 		if (instance == null) {
