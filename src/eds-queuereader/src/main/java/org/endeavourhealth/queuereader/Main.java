@@ -1527,11 +1527,11 @@ public class Main {
 		}*/
 
 
-		/*if (args.length >= 1
+		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("TestSlack")) {
-			testSlack();
+			SpecialRoutines.testSlack();
 			System.exit(0);
-		}*/
+		}
 
 		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("PostToInbound")) {

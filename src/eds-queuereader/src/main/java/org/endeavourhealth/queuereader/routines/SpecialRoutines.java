@@ -4,6 +4,8 @@ import com.google.common.base.Strings;
 import org.apache.commons.io.FileUtils;
 import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.common.fhir.IdentifierHelper;
+import org.endeavourhealth.common.utility.MetricsHelper;
+import org.endeavourhealth.common.utility.SlackHelper;
 import org.endeavourhealth.core.database.dal.DalProvider;
 import org.endeavourhealth.core.database.dal.admin.LibraryRepositoryHelper;
 import org.endeavourhealth.core.database.dal.admin.ServiceDalI;
@@ -5886,4 +5888,18 @@ public abstract class SpecialRoutines extends AbstractRoutine {
             EnterpriseFiler.file(batchId, UUID.randomUUID(), base64, subscriberConfigName);
         }
     }*/
+
+
+	public static void testSlack() {
+
+		try {
+            LOG.info("Testing slack on " + MetricsHelper.getHostName());
+
+			SlackHelper.sendSlackMessage(SlackHelper.Channel.QueueReaderAlerts, "Test Message from Queue Reader " + MetricsHelper.getHostName());
+			LOG.info("Finished testing slack on " + MetricsHelper.getHostName());
+
+		} catch (Exception ex) {
+			LOG.error("", ex);
+		}
+	}
 }

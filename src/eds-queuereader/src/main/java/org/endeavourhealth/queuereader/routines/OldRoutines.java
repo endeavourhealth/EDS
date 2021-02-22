@@ -10931,17 +10931,6 @@ public class OldRoutines extends AbstractRoutine {
     }
 
 
-	/*private static void testSlack() {
-		LOG.info("Testing slack");
-
-		try {
-			SlackHelper.sendSlackMessage(SlackHelper.Channel.QueueReaderAlerts, "Test Message from Queue Reader");
-			LOG.info("Finished testing slack");
-
-		} catch (Exception ex) {
-			LOG.error("", ex);
-		}
-	}*/
 
 
 
