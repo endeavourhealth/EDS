@@ -367,7 +367,8 @@ INSERT INTO registration_type (id, code, description) VALUES (17, 'OH', 'Out of 
 CREATE TABLE patient_additional (
   id bigint NOT NULL COMMENT 'same as the id column on the patient table ',
   property_id character varying(255)  NOT NULL COMMENT 'IM reference (e.g. Cause of death)',
-  value_id character varying(255) NOT NULL COMMENT 'IM reference (e.g. COVID)',
+  value_id character varying(255) NULL COMMENT 'IM reference (e.g. COVID)',
+  json_value json NULL COMMENT 'where there is no mapped value_id, just raw JSON',
   CONSTRAINT pk_patient_additional_id PRIMARY KEY (id, property_id)
 );
 CREATE INDEX ix_patient_additional_id
