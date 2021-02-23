@@ -863,72 +863,83 @@ CREATE PROCEDURE check_for_bulk_extracts()
 
     SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
 
-    drop table if exists tmp.bulk_services;
-    drop table if exists tmp.bulk_systems;
+    DROP TABLE IF EXISTS tmp.bulk_services;
+    DROP TABLE IF EXISTS tmp.bulk_systems;
 
     -- find services, but exclude
-    create table tmp.bulk_services as
-      select *
-      from admin.service
-      where tags not like '%ADT%'
-            or tags like '%BARTSDW%'
-            or tags like '%BHRUT%';
+    CREATE TABLE tmp.bulk_services AS
+      SELECT *
+      FROM admin.service
+      WHERE tags NOT LIKE '%ADT%'
+            OR tags LIKE '%BARTSDW%'
+            OR tags LIKE '%BHRUT%'
+            OR tags LIKE '%Adastra%';
 
-    create index ix on tmp.bulk_services (id);
+    CREATE INDEX ix ON tmp.bulk_services (id);
 
     -- find active system IDs
-    create table tmp.bulk_systems as
-      select p.service_id, p.system_id
-      from audit.latest_data_processed p -- use this table so we don't look a publishers we've not started processing yet
-        inner join tmp.bulk_services s
-          on s.id = p.service_id
-      where p.processed_date > date_add(now(), INTERVAL -14 DAY);
+    CREATE TABLE tmp.bulk_systems AS
+      SELECT
+        p.service_id,
+        p.system_id
+      FROM audit.latest_data_processed p -- use this table so we don't look a publishers we've not started processing yet
+        INNER JOIN tmp.bulk_services s
+          ON s.id = p.service_id
+      WHERE p.processed_date > date_add(now(), INTERVAL -14 DAY);
 
-    alter table tmp.bulk_systems
-    add done boolean default false,
-    add has_bulk boolean default false;
+    ALTER TABLE tmp.bulk_systems
+    ADD done BOOLEAN DEFAULT FALSE,
+    ADD has_bulk BOOLEAN DEFAULT FALSE;
 
-    create index ix on tmp.bulk_systems (service_id, system_id);
-    create index ix2 on tmp.bulk_systems (done);
+    CREATE INDEX ix ON tmp.bulk_systems (service_id, system_id);
+    CREATE INDEX ix2 ON tmp.bulk_systems (done);
 
     -- find a bulk extract for each service/system
-    WHILE (select 1 from tmp.bulk_systems where done = false limit 1) DO
+    WHILE (SELECT 1
+           FROM tmp.bulk_systems
+           WHERE done = FALSE
+           LIMIT 1) DO
 
-      drop table if exists tmp.bulk_systems_batch;
+      DROP TABLE IF EXISTS tmp.bulk_systems_batch;
 
-      create table tmp.bulk_systems_batch
-        select *
-        from tmp.bulk_systems
-        where done = 0
-        limit 1;
+      CREATE TABLE tmp.bulk_systems_batch
+        SELECT *
+        FROM tmp.bulk_systems
+        WHERE done = 0
+        LIMIT 1;
 
-      create index ix on tmp.bulk_systems_batch (service_id, system_id);
+      CREATE INDEX ix ON tmp.bulk_systems_batch (service_id, system_id);
 
-      update tmp.bulk_systems_batch b
-        inner join audit.exchange x
-          on x.service_id = b.service_id
-             and x.system_id = b.system_id
-      set b.has_bulk = true;
+      UPDATE tmp.bulk_systems_batch b
+        INNER JOIN audit.exchange x
+          ON x.service_id = b.service_id
+             AND x.system_id = b.system_id
+             AND isBulk(x.headers)
+      SET b.has_bulk = TRUE;
 
-      update tmp.bulk_systems y
-        inner join tmp.bulk_systems_batch b
-          on y.service_id = b.service_id
-             and y.system_id = b.system_id
-      set
+      UPDATE tmp.bulk_systems y
+        INNER JOIN tmp.bulk_systems_batch b
+          ON y.service_id = b.service_id
+             AND y.system_id = b.system_id
+      SET
         y.has_bulk = b.has_bulk,
-        y.done = true;
+        y.done     = TRUE;
 
     END WHILE;
 
-    select s.name, s.local_id, y.service_id, y.system_id
-    from tmp.bulk_systems y
-      inner join tmp.bulk_services s
-        on y.service_id = s.id
-    where has_bulk != true;
+    SELECT
+      s.name,
+      s.local_id,
+      y.service_id,
+      y.system_id
+    FROM tmp.bulk_systems y
+      INNER JOIN tmp.bulk_services s
+        ON y.service_id = s.id
+    WHERE has_bulk != TRUE;
 
-    drop table if exists tmp.bulk_systems_batch;
-    drop table if exists tmp.bulk_services;
-    drop table if exists tmp.bulk_systems;
+    DROP TABLE IF EXISTS tmp.bulk_systems_batch;
+    DROP TABLE IF EXISTS tmp.bulk_services;
+    DROP TABLE IF EXISTS tmp.bulk_systems;
 
   END //
 DELIMITER ;

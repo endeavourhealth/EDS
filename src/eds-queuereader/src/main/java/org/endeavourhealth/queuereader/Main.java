@@ -24,6 +24,14 @@ public class Main {
 		LOG.info("Initialising config manager");
 		ConfigManager.initialize("queuereader", configId);
 
+
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("makeExchangesUnqueuable")) {
+			String srcFile = args[1];
+			Queueing.makeExchangesUnqueuable(srcFile);
+			System.exit(0);
+		}
+
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("SD368fixMaritalStatusMappings")) {
 			boolean includeStartedButNotFinishedServices = Boolean.parseBoolean(args[1]);

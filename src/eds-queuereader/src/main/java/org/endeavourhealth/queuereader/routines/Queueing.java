@@ -1,6 +1,7 @@
 package org.endeavourhealth.queuereader.routines;
 
 import com.google.common.base.Strings;
+import org.apache.commons.io.FileUtils;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.core.configuration.PostMessageToExchangeConfig;
 import org.endeavourhealth.core.database.dal.DalProvider;
@@ -13,6 +14,7 @@ import org.endeavourhealth.core.database.dal.audit.models.ExchangeBatch;
 import org.endeavourhealth.core.database.dal.audit.models.HeaderKeys;
 import org.endeavourhealth.core.messaging.pipeline.components.PostMessageToExchange;
 import org.endeavourhealth.core.queueing.QueueHelper;
+import org.endeavourhealth.transform.common.ExchangeHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -305,5 +307,51 @@ public class Queueing extends AbstractRoutine {
             LOG.error("", t);
         }
 
+    }
+
+    /**
+     * sometimes we need to change exchanges to make them so they can't be re-queued
+     */
+    public static void makeExchangesUnqueuable(String srcFile) {
+        LOG.debug("Making Exchanges Unqueueable from " + srcFile);
+        try {
+            List<UUID> exchangeIds = new ArrayList<>();
+            List<String> lines = FileUtils.readLines(new File(srcFile));
+            for (String line: lines) {
+                UUID exchangeId = UUID.fromString(line);
+                exchangeIds.add(exchangeId);
+            }
+            LOG.debug("Read " + exchangeIds.size() + " exchange IDs");
+            continueOrQuit();
+
+            ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
+
+            int done = 0;
+            for (UUID exchangeId: exchangeIds) {
+
+                Exchange exchange = exchangeDal.getExchange(exchangeId);
+                if (exchange == null) {
+                    throw new Exception("Failed to find exchange " + exchangeId);
+                }
+
+                if (!ExchangeHelper.isAllowRequeueing(exchange)) {
+                    LOG.trace("Exchange " + exchangeId + " is already unqueueable");
+
+                } else {
+                    exchange.setHeaderAsBoolean(HeaderKeys.AllowQueueing, Boolean.FALSE);
+                    exchangeDal.save(exchange);
+                }
+
+                done ++;
+                if (done % 100 == 0) {
+                    LOG.debug("Done " + done + " of " + exchangeIds.size());
+                }
+            }
+            LOG.debug("Finished " + done + " of " + exchangeIds.size());
+            LOG.debug("Finished Making Exchanges Unqueueable from " + srcFile);
+
+        } catch (Throwable t) {
+            LOG.error("", t);
+        }
     }
 }
