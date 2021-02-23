@@ -481,11 +481,13 @@ GO
  
 CREATE TABLE [observation_additional] (
   [id] bigint NOT NULL,
-  [property_id] bigint NOT NULL, -- IM reference 
-  [value_id] bigint NULL,
+  [property_id] int NOT NULL, -- IM dbid reference
+  [value_id] int NULL,
   [json_value] json NULL,
   PRIMARY KEY ([id], [property_id])
 )
+GO
+CREATE INDEX [observation_additional_value_id] ON [observation_additional] ([value_id]);
 GO
 
 CREATE TABLE [organization] (

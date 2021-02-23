@@ -752,11 +752,14 @@ CREATE INDEX ix_observation_person_id
 
 CREATE TABLE observation_additional (
   id bigint NOT NULL COMMENT 'same as the id column on the observation table',
-  property_id bigint NOT NULL COMMENT 'IM reference (i.e. significance)', -- IM reference 
-  value_id bigint(50) NULL COMMENT 'IM reference (i.e. minor, significant)',
+  property_id int NOT NULL COMMENT 'IM reference (i.e. significance)', -- IM dbid reference
+  value_id int NULL COMMENT 'IM reference (i.e. minor, significant)',
   json_value json NULL COMMENT 'the JSON data itself ',
   CONSTRAINT pk_observation_additional_id PRIMARY KEY (id, property_id)
 );
+CREATE INDEX observation_additional_value_id
+    ON observation_additional
+        (value_id);
 
  -- Table: diagnostic_order
 
