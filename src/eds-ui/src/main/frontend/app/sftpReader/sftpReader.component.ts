@@ -471,6 +471,7 @@ export class SftpReaderComponent {
             '\"Error Checking\",' +
             '\"Last Extract Received\",' +
             '\"Data From\",' +
+            '\"Data Cutoff\",' +
             '\"Files Received\",' +
             '\"Extract Size\",' +
             '\"Valid and Complete\",' +
@@ -493,7 +494,6 @@ export class SftpReaderComponent {
 
             cols.push(config.configurationId);
             cols.push(config.friendlyName);
-
 
             if (status.latestPollingStart) {
                 var d = new Date();
@@ -521,6 +521,15 @@ export class SftpReaderComponent {
 
             if (status.latestBatchIdentifier) {
                 cols.push(status.latestBatchIdentifier);
+            } else {
+                cols.push('');
+            }
+
+            if (status.latestBatchExtractCutoff) {
+                var d = new Date();
+                d.setTime(status.latestBatchExtractCutoff);
+                var s = ServiceListComponent.formatDate(d);
+                cols.push(s);
             } else {
                 cols.push('');
             }
