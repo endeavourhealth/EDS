@@ -870,10 +870,11 @@ CREATE PROCEDURE check_for_bulk_extracts()
     CREATE TABLE tmp.bulk_services AS
       SELECT *
       FROM admin.service
-      WHERE tags NOT LIKE '%ADT%'
-            OR tags LIKE '%BARTSDW%'
-            OR tags LIKE '%BHRUT%'
-            OR tags LIKE '%Adastra%';
+      WHERE
+          tags NOT LIKE '%ADT%'
+          AND tags NOT LIKE '%BARTSDW%'
+          AND tags NOT LIKE '%BHRUT%'
+          AND tags NOT LIKE '%Adastra%';
 
     CREATE INDEX ix ON tmp.bulk_services (id);
 
