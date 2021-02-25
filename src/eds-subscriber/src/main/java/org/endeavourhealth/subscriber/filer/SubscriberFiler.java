@@ -689,11 +689,6 @@ public class SubscriberFiler {
             return;
         }
 
-        if (tableName.equalsIgnoreCase("patient_additional")) {
-            LOG.warn("Skipping upsert to patient_additional table");
-            return;
-        }
-
         //the first element in the columns list is the save mode, so remove that
         columns = new ArrayList<>(columns);
         columns.remove(COL_IS_DELETE);

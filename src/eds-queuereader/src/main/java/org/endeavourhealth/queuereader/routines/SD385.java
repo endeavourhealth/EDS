@@ -236,6 +236,7 @@ public class SD385 extends AbstractRoutine {
     private static Map<String, List<CacheObj>> findImmunisationIds(List<Exchange> exchanges) throws Exception {
 
         Map<String, List<CacheObj>> ret = new HashMap<>();
+        Set<Long> idsFound = new HashSet<>();
 
         //list if most-recent-first, so go backwards to to earliest to latest
         for (int i=exchanges.size()-1; i>=0; i--) {
@@ -263,6 +264,12 @@ public class SD385 extends AbstractRoutine {
                     || !readCode.startsWith("Y")) {
                     continue;
                 }
+
+                //we had a load of TPP re-bulks so just make sure we only add each code once
+                if (idsFound.contains(new Long(id))) {
+                    continue;
+                }
+                idsFound.add(new Long(id));
 
                 List<CacheObj> l = ret.get(patientId);
                 if (l == null) {
