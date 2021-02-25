@@ -24,6 +24,18 @@ public class Main {
 		LOG.info("Initialising config manager");
 		ConfigManager.initialize("queuereader", configId);
 
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("SD385fixTppLocalCodes")) {
+			boolean includeStartedButNotFinishedServices = Boolean.parseBoolean(args[1]);
+			boolean testMode = Boolean.parseBoolean(args[2]);
+			String odsCodeRegex = null;
+			if (args.length > 3) {
+				odsCodeRegex = args[3];
+			}
+			SD385.fixTppLocalCodes(includeStartedButNotFinishedServices, testMode, odsCodeRegex);
+			System.exit(0);
+		}
+
 
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("makeExchangesUnqueuable")) {
