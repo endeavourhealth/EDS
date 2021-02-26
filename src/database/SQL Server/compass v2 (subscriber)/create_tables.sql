@@ -423,8 +423,9 @@ CREATE INDEX [fk_medication_statement_practitioner_id] ON [medication_statement]
 GO
 CREATE INDEX [medication_statement_patient_id] ON [medication_statement] ([patient_id])
 GO
-CREATE INDEX [medication_statement_dmd_id] ON [medication_statement] ([patient_id])
-GO
+-- removed as duplicate of above (and weirdly named)
+/*CREATE INDEX [medication_statement_dmd_id] ON [medication_statement] ([patient_id])
+GO*/
 
 
 CREATE TABLE [observation] (
@@ -631,8 +632,9 @@ CREATE TABLE [person] (
 PRIMARY KEY ([id])
 )
 GO
-CREATE UNIQUE INDEX [person_id] ON [person] ([id])
-GO
+-- removed as the primary key already does this
+/*CREATE UNIQUE INDEX [person_id] ON [person] ([id])
+GO*/
 
 
 CREATE TABLE [practitioner] (
@@ -645,8 +647,9 @@ CREATE TABLE [practitioner] (
 PRIMARY KEY ([id])
 )
 GO
-CREATE UNIQUE INDEX [practitioner_id] ON [practitioner] ([id])
-GO
+-- removed as the primary key already does this
+/*CREATE UNIQUE INDEX [practitioner_id] ON [practitioner] ([id])
+GO*/
 CREATE INDEX [fk_practitioner_organisation_id] ON [practitioner] ([organization_id])
 GO
 
