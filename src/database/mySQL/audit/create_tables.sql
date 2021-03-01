@@ -626,6 +626,7 @@ CREATE PROCEDURE get_monthly_frailty_stats()
       from audit.subscriber_api_audit
       where user_uuid = '4d4ebdd9-7b83-4736-b558-b5cc97147cd4' -- Redwood user
             and request_path not like '%=999999%'
+            and request_path like '%289999999105%' -- frailty code only
             -- and date(timestmp) >= '2018-09-26'
             and date(timestmp) >= '2018-11-01'
       order by `date`;
