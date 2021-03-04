@@ -6,6 +6,7 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.DefaultConsumer;
 import com.rabbitmq.client.Envelope;
 import org.endeavourhealth.common.config.ConfigManager;
+import org.endeavourhealth.common.utility.FileHelper;
 import org.endeavourhealth.common.utility.MetricsHelper;
 import org.endeavourhealth.common.utility.SlackHelper;
 import org.endeavourhealth.core.application.ApplicationHeartbeatCallbackI;
@@ -369,7 +370,15 @@ public class RabbitConsumer extends DefaultConsumer
 
 		String killFileLocation = TransformConfig.instance().getKillFileLocation();
 		if (Strings.isNullOrEmpty(killFileLocation)) {
-			LOG.error("No kill file location set in common queue reader config");
+			LOG.error("No kill file directory set in common queue reader config");
+			return false;
+		}
+
+		//SD-398 - create the kill file directory if not found
+		try {
+			FileHelper.createDirectoryIfNotExists(killFileLocation);
+		} catch (IOException ioe) {
+			LOG.error("Failed to create kill file directory " + killFileLocation, ioe);
 			return false;
 		}
 
