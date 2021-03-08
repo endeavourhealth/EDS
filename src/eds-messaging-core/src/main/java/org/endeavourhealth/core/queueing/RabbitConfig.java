@@ -65,7 +65,7 @@ public class RabbitConfig {
 				}
 
 			} else {
-				//LOG.trace("Loading Rabbit config new way");
+				//LOG.trace("Loading Rabbit config new way 1");
 
 				int managementPort = rabbitConfig.get("managementPort").asInt();
 				String[] nodeArray = nodes.split(" *, *");
