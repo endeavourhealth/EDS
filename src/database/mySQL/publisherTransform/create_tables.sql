@@ -1,5 +1,6 @@
 use publisher_transform_???;
 
+DROP TABLE IF EXISTS fhir_mapping_audit;
 DROP TABLE IF EXISTS resource_id_map;
 DROP TABLE IF EXISTS sus_resource_map;
 DROP TABLE IF EXISTS resource_merge_map;
@@ -201,3 +202,21 @@ CREATE TABLE source_file_record_audit (
   published_file_id int,
   PRIMARY KEY (id)
 ) COMMENT 'table to replace the other four source_file... tables, joining the old audit data to the new audit.published_file... tables';
+
+
+
+CREATE TABLE fhir_mapping_audit (
+  service_id char(36) NOT NULL COMMENT 'service the FHIR resource belongs to',
+  resource_id char(36) NOT NULL COMMENT 'FHIR resource ID',
+  resource_type varchar(50) NOT NULL COMMENT 'FHIR resource type',
+  version char(36) NOT NULL COMMENT 'corresponds to version UUID on resource_history table',
+  created_at datetime NOT NULL COMMENT 'corresponds to created_at field on resource_history table',
+  mappings_json MEDIUMTEXT COMMENT 'JSON document of mappings from raw data to FHIR',
+  CONSTRAINT pk_fhir_mapping_audit PRIMARY KEY (service_id, created_at, version)
+)
+COMMENT 'staging table for raw data to FHIR resource audit mappings, before moving to archive'
+ROW_FORMAT=COMPRESSED
+KEY_BLOCK_SIZE=8;
+
+-- index for retrieving mapping data for a specific resource
+CREATE INDEX ix_resource_created_version ON fhir_mapping_audit (resource_id, resource_type, created_at, version);
