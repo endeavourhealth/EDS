@@ -71,7 +71,7 @@ public class RabbitHandler {
 		//the above return value tells us how many consumers that queue has, which we use in the heartbeat table
 		int consumerCount = response.getConsumerCount();
 		consumer.setInstanceNumber(consumerCount+1);
-		LOG.info("Consumer number 1   :=" + consumerCount+1);
+		LOG.info("Consumer number number:=" + consumerCount+1);
 
 		//pass true for the exclusive parameter, so we can only have one consumer per queue
 		//channel.basicConsume(configuration.getQueue(), false, consumer);
