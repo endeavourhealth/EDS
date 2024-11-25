@@ -11,7 +11,7 @@
     "ng-cache-loader": "0.0.21",
     "raw-loader": "0.5.1",
     "style-loader": "0.13.1",
-    "swagger-ui": "2.2.6",
+    "swagger-ui": "3.24.0",
     "ts-loader": "0.8.2",
     "typescript": "2.1.4",
     "typings": "1.4.0",
