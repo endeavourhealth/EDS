@@ -13,7 +13,6 @@ import org.endeavourhealth.core.database.dal.admin.models.Service;
 import org.endeavourhealth.core.database.dal.audit.ExchangeBatchDalI;
 import org.endeavourhealth.core.database.dal.audit.ExchangeDalI;
 import org.endeavourhealth.core.database.dal.audit.models.*;
-import org.endeavourhealth.core.database.dal.datagenerator.SubscriberZipFileUUIDsDalI;
 import org.endeavourhealth.core.database.dal.eds.PatientLinkDalI;
 import org.endeavourhealth.core.database.dal.eds.PatientSearchDalI;
 import org.endeavourhealth.core.database.dal.eds.models.PatientLinkPair;
@@ -28,10 +27,8 @@ import org.endeavourhealth.core.database.dal.publisherCommon.models.EmisClinical
 import org.endeavourhealth.core.database.dal.publisherTransform.ResourceIdTransformDalI;
 import org.endeavourhealth.core.database.dal.publisherTransform.models.ResourceFieldMappingAudit;
 import org.endeavourhealth.core.database.dal.subscriberTransform.SubscriberOrgMappingDalI;
-import org.endeavourhealth.core.database.dal.subscriberTransform.models.SubscriberId;
 import org.endeavourhealth.core.database.rdbms.ConnectionManager;
 import org.endeavourhealth.core.database.rdbms.enterprise.EnterpriseConnector;
-import org.endeavourhealth.core.queueing.QueueHelper;
 import org.endeavourhealth.core.subscribers.SubscriberHelper;
 import org.endeavourhealth.core.terminology.TerminologyService;
 import org.endeavourhealth.core.xml.TransformErrorSerializer;
@@ -40,8 +37,6 @@ import org.endeavourhealth.core.xml.transformError.Error;
 import org.endeavourhealth.core.xml.transformError.ExceptionLine;
 import org.endeavourhealth.core.xml.transformError.TransformError;
 import org.endeavourhealth.transform.common.ExchangePayloadFile;
-import org.endeavourhealth.transform.subscriber.targetTables.OutputContainer;
-import org.endeavourhealth.transform.subscriber.targetTables.SubscriberTableId;
 import org.hibernate.internal.SessionImpl;
 import org.hl7.fhir.instance.model.Patient;
 import org.hl7.fhir.instance.model.Reference;
@@ -656,7 +651,7 @@ public class OldRoutines extends AbstractRoutine {
 
 
 
-    public static void createDeleteZipsForSubscriber(int batchSize, String sourceTable, int subscriberId) {
+    /*public static void createDeleteZipsForSubscriber(int batchSize, String sourceTable, int subscriberId) {
         LOG.info("Create Zips For Subscriber from " + sourceTable + " subscriberId " + subscriberId + " and batchSize " + batchSize);
         try {
 
@@ -730,7 +725,7 @@ public class OldRoutines extends AbstractRoutine {
         } catch (Throwable t) {
             LOG.error("", t);
         }
-    }
+    }*/
 
 
 
@@ -3911,55 +3906,6 @@ public class OldRoutines extends AbstractRoutine {
 			LOG.error("", t);
 		}
 	}*/
-
-    public static void subscriberTransformPatients(String sourceFile, boolean bulkDelete, String reason, Set<String> subscriberConfigNames) {
-        LOG.info("Subscriber transforming patients from " + sourceFile);
-        LOG.info("BulkDelete = " + bulkDelete);
-        LOG.info("Reason = " + reason);
-        if (subscriberConfigNames == null || subscriberConfigNames.isEmpty()) {
-            LOG.info("To all current subscribers");
-
-        } else {
-            LOG.info("To explicit subscribers " + subscriberConfigNames);
-        }
-
-        try {
-            List<UUID> patientIds = new ArrayList<>();
-
-            File f = new File(sourceFile);
-            if (!f.exists()) {
-                LOG.error("File " + f + " doesn't exist");
-                return;
-            }
-            List<String> lines = FileUtils.readLines(f);
-            for (String line: lines) {
-                line = line.trim();
-                if (line.startsWith("#")) {
-                    continue;
-                }
-
-                UUID uuid = UUID.fromString(line);
-                patientIds.add(uuid);
-            }
-
-            if (patientIds.isEmpty()) {
-                LOG.error("No patient IDs found");
-                return;
-            }
-            LOG.info("Found " + patientIds.size() + " patient IDs");
-
-            LOG.info("Double-check the above before continuing");
-            continueOrQuit();
-
-            boolean bulkRefresh = !bulkDelete;
-
-            QueueHelper.queueUpPatientsForSubscriberTransform(patientIds, bulkDelete, bulkRefresh, false, reason, subscriberConfigNames);
-
-            LOG.info("Finished transforming patients from " + sourceFile);
-        } catch (Throwable t) {
-            LOG.error("", t);
-        }
-    }
 
 	/*private static void countNhsNumberChanges(String odsCodes) {
 		LOG.info("Counting NHS number changes for " + odsCodes);

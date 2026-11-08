@@ -71,13 +71,26 @@ public class OnsUpdater {
         OnsMsoaHelper.processFile(r);
         zis.close();
 
-        LOG.info("Looking for CCG file...");
+//        LOG.info("Looking for CCG file...");
+//        zis = ZipHelper.createZipInputStream(file);
+//        //as of Apr 2019, the UK CCG file was replaced with just an English one
+//        //r = ZipHelper.findFile(zis, "Documents/Names and Codes/CCG.*UK.*csv");
+//        r = ZipHelper.findFile(zis, "Documents/Names and Codes/CCG.*EN.*csv");
+//        if (r == null) {
+//            LOG.error("Failed to find CCG file");
+//            return;
+//        }
+
+        // LOG.info("Looking for LOC(CCG) file...");
+        LOG.info("Looking for ICB file...");
         zis = ZipHelper.createZipInputStream(file);
-        //as of Apr 2019, the UK CCG file was replaced with just an English one
-        //r = ZipHelper.findFile(zis, "Documents/Names and Codes/CCG.*UK.*csv");
-        r = ZipHelper.findFile(zis, "Documents/Names and Codes/CCG.*EN.*csv");
+        //as of July 2022, the UK CCG file was replaced with a UK LOC file, starting with the August 2022 update
+        //r = ZipHelper.findFile(zis, "Documents/Names and Codes/CCG.*EN.*csv");
+        //as of April 2023, the UK LOC file was replaced with a UK ICB file, implemented from the Feb 2024 update
+        //r = ZipHelper.findFile(zis, "Documents/Names and Codes/LOC.*EN.*csv");
+        r = ZipHelper.findFile(zis, "Documents/Names and Codes/ICB.*EN.*csv");
         if (r == null) {
-            LOG.error("Failed to find CCG file");
+            LOG.error("Failed to find ICB file");
             return;
         }
         OnsCcgHelper.processFile(r);

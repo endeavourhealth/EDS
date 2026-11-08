@@ -74,12 +74,12 @@ public class SnomedToBnfChapterUpdater {
                 FileUtils.forceMkdir(path);
             }
             String bnfColumn = config.get("bnf_column").textValue();
-            if (StringUtils.isEmpty(localPath)) {
+            if (StringUtils.isEmpty(bnfColumn)) {
                 LOG.error("Required config not found: bnf_column");
                 throw new Exception("Required config not found: bnf_column");
             }
             String snomedColumn = config.get("snomed_column").textValue();
-            if (StringUtils.isEmpty(localPath)) {
+            if (StringUtils.isEmpty(snomedColumn)) {
                 LOG.error("Required config not found: snomed_column");
                 throw new Exception("Required config not found: snomed_column");
             }

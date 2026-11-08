@@ -539,7 +539,7 @@ public class Uprn extends AbstractRoutine {
 
                         //  Is a random UUID ok to use as a queued message ID
                         if (containerString != null) {
-                            org.endeavourhealth.subscriber.filer.SubscriberFiler.file(batchUUID, UUID.randomUUID(), containerString, subscriberConfigName);
+                            org.endeavourhealth.subscriber.filer.SubscriberFiler.file(serviceUUID, null, null, batchUUID, UUID.randomUUID(), containerString, subscriberConfigName);
                         }
 
                     } else {
@@ -547,7 +547,7 @@ public class Uprn extends AbstractRoutine {
 
                         //  Is a random UUID ok to use as a queued message ID
                         if (containerString != null) {
-                            EnterpriseFiler.file(batchUUID, UUID.randomUUID(), containerString, subscriberConfigName);
+                            EnterpriseFiler.file(serviceUUID, null, null, batchUUID, UUID.randomUUID(), containerString, subscriberConfigName);
                         }
                     }
                 }
@@ -556,6 +556,25 @@ public class Uprn extends AbstractRoutine {
         }
     }
 
+    public static void ListServicesForConfig(String subscriberConfigName) throws Exception
+    {
+        //String subscriberConfigName = "nwl_wsic";
+
+        ServiceDalI serviceDal = DalProvider.factoryServiceDal();
+        List<Service> services = serviceDal.getAll();
+
+        for (Service service : services) {
+
+            //LOG.debug("["+service.getId().toString()+"]");
+
+            List<String> subscriberConfigNames = SubscriberHelper.getSubscriberConfigNamesForPublisher(null, service.getId());
+            if (!subscriberConfigNames.contains(subscriberConfigName)) {
+                continue;
+            }
+            LOG.debug(service.getName());
+            LOG.debug(service.getId().toString());
+        }
+    }
 
     public static void bulkProcessUPRNThreaded(String subscriberConfigName, String protocolName, String outputFormat, String filePath, String debug, Integer threads, Integer QBeforeBlock) throws Exception {
 
@@ -638,63 +657,44 @@ public class Uprn extends AbstractRoutine {
                                                      Integer threads,
                                                      Integer QBeforeBlock) throws Exception {
 
-        Set<UUID> hsPatientUuids = new HashSet<>();
+        //Set<UUID> hsPatientUuids = new HashSet<>();
         Set<UUID> hsServiceUuids = new HashSet<>();
-        File f = new File(filePath);
-        if (f.exists()) {
-            List<String> lines = Files.readAllLines(f.toPath());
-            for (String line : lines) {
-                hsPatientUuids.add(UUID.fromString(line));
-            }
-        }
+//        File f = new File(filePath);
+//        if (f.exists()) {
+//            List<String> lines = Files.readAllLines(f.toPath());
+//            for (String line : lines) {
+//                hsPatientUuids.add(UUID.fromString(line));
+//            }
+//        }
 
-        /*
-        LibraryItem matchedLibraryItem = BulkHelper.findProtocolLibraryItem(protocolName);
-
-        if (matchedLibraryItem == null) {
-            LOG.debug("Protocol not found : " + protocolName);
-            return;
+        // to speed up, replaced the writing / reading of patient UUIDs to
+        // file and use the filename as a unique name for auditing
+        if (filePath.contains("/")) {
+            int x = filePath.lastIndexOf("/")+1;
+            filePath = filePath.substring(x);
         }
-        List<ServiceContract> l = matchedLibraryItem.getProtocol().getServiceContract();
-        String serviceId = "";
-        */
+        String bulkOperationName
+                = "Bulk load of patient_address_match and patient_address_ralf tables for " + filePath + " " + subscriberConfigName;
+
+        ResourceDalI dal = DalProvider.factoryResourceDal();
+        SubscriberCohortDalI subscriberCohortDalI = DalProvider.factorySubscriberCohortDal();
+        PatientSearchDalI patientSearchDal = DalProvider.factoryPatientSearchDal();
+        //SubscriberResourceMappingDalI enterpriseIdDal = DalProvider.factorySubscriberResourceMappingDal(subscriberConfigName);
+        ThreadPool threadPool = new ThreadPool(threads, QBeforeBlock);
+        //Long ret;
 
         ServiceDalI serviceDal = DalProvider.factoryServiceDal();
         List<Service> services = serviceDal.getAll();
-        SubscriberCohortDalI subscriberCohortDalI = DalProvider.factorySubscriberCohortDal();
-        String bulkOperationName = "Bulk load of patient_address_match and patient_address_ralf tables for " + subscriberConfigName;
-
-        ResourceDalI dal = DalProvider.factoryResourceDal();
-        PatientSearchDalI patientSearchDal = DalProvider.factoryPatientSearchDal();
-        SubscriberResourceMappingDalI enterpriseIdDal = DalProvider.factorySubscriberResourceMappingDal(subscriberConfigName);
-        ThreadPool threadPool = new ThreadPool(threads, QBeforeBlock);
-        Long ret;
-
-        // for (ServiceContract serviceContract : l) {
         for (Service service : services) {
-
-            /*
-            if (serviceContract.getType().equals(ServiceContractType.PUBLISHER) && serviceContract.getActive() == ServiceContractActive.TRUE) {
-
-                UUID batchUUID = UUID.randomUUID();
-                serviceId = serviceContract.getService().getUuid();
-                UUID serviceUUID = UUID.fromString(serviceId);
-
-                if (hsServiceUuids.contains(serviceUUID)) {
-                    // already processed the service
-                    continue;
-                }
-             */
-
-            // List<UUID> patientIds = patientSearchDal.getPatientIds(serviceUUID, true);
 
             if (shouldSkipService(service, orgOdsCodeRegex)) {
                 continue;
             }
 
-            List<String> subscriberConfigNames = SubscriberHelper.getSubscriberConfigNamesForPublisher(null, service.getId());
+            List<String> subscriberConfigNames
+                    = SubscriberHelper.getSubscriberConfigNamesForPublisher(null, service.getId());
             if (!subscriberConfigNames.contains(subscriberConfigName)) {
-                LOG.debug("Skipping " + service + " as not a publisher");
+                LOG.debug("Skipping " + service + " as not a publisher to "+subscriberConfigName);
                 continue;
             }
 
@@ -716,29 +716,31 @@ public class Uprn extends AbstractRoutine {
 
             for (UUID patientId : patientIds) {
 
-                // check if in cohort
-                SubscriberCohortRecord cohortRecord = subscriberCohortDalI.getLatestCohortRecord(subscriberConfigName, patientId, UUID.randomUUID());
+                // check if patient in cohort
+                SubscriberCohortRecord cohortRecord
+                        = subscriberCohortDalI.getLatestCohortRecord(subscriberConfigName, patientId, UUID.randomUUID());
                 if (cohortRecord == null
                         || !cohortRecord.isInCohort()) {
                     continue;
                 }
 
                 // check if we have processed the patient already
-                if (hsPatientUuids.contains(patientId)) {
-                    continue;
-                }
+//                if (hsPatientUuids.contains(patientId)) {
+//                    continue;
+//                }
 
-                List<String> newLines = new ArrayList<>();
-                newLines.add(patientId.toString());
-                Files.write(f.toPath(), newLines, StandardOpenOption.CREATE, StandardOpenOption.APPEND, StandardOpenOption.WRITE);
+//                List<String> newLines = new ArrayList<>();
+//                newLines.add(patientId.toString());
+//                Files.write(f.toPath(), newLines, StandardOpenOption.CREATE, StandardOpenOption.APPEND, StandardOpenOption.WRITE);
 
-                LOG.info(patientId.toString());
-                ret = enterpriseIdDal.findEnterpriseIdOldWay("Patient", patientId.toString());
-                if (ret != null) {
-                    // check if the patient has previously been processed?
-                    LOG.info(ret.toString());
-                }
-                List<ThreadPoolError> errors = threadPool.submit(new UPRNCallable(serviceId, ResourceType.Patient.toString(), patientId, debug, dal, outputFormat, subscriberConfigName, batchUUID));
+                //LOG.info(patientId.toString());
+//                ret = enterpriseIdDal.findEnterpriseIdOldWay("Patient", patientId.toString());
+//                if (ret != null) {
+//                    // check if the patient has previously been processed?
+//                    LOG.info(ret.toString());
+//                }
+                List<ThreadPoolError> errors
+                        = threadPool.submit(new UPRNCallable(serviceId, ResourceType.Patient.toString(), patientId, debug, dal, outputFormat, subscriberConfigName, batchUUID));
                 //handleErrors(errors);
             }
 
@@ -746,9 +748,7 @@ public class Uprn extends AbstractRoutine {
 
             //audit what has been done
             setServiceDoneBulkOperation(service, bulkOperationName);
-
         }
-
         List<ThreadPoolError> errors = threadPool.waitAndStop();
         //handleErrors(errors);
     }
@@ -801,7 +801,7 @@ public class Uprn extends AbstractRoutine {
 
                     //  Is a random UUID ok to use as a queued message ID
                     if (containerString != null) {
-                        org.endeavourhealth.subscriber.filer.SubscriberFiler.file(batchUUID, UUID.randomUUID(), containerString, subscriberConfigName);
+                        org.endeavourhealth.subscriber.filer.SubscriberFiler.file(serviceUUID, null, null, batchUUID, UUID.randomUUID(), containerString, subscriberConfigName);
                     }
 
                 } else {
@@ -809,7 +809,7 @@ public class Uprn extends AbstractRoutine {
 
                     //  Is a random UUID ok to use as a queued message ID
                     if (containerString != null) {
-                        EnterpriseFiler.file(batchUUID, UUID.randomUUID(), containerString, subscriberConfigName);
+                        EnterpriseFiler.file(serviceUUID, null, null, batchUUID, UUID.randomUUID(), containerString, subscriberConfigName);
                     }
                 }
                 return null;
@@ -819,5 +819,4 @@ public class Uprn extends AbstractRoutine {
             return null;
         }
     }
-
 }

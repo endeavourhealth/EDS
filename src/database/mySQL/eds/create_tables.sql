@@ -219,7 +219,9 @@ BEGIN
 	drop table if exists tmp.person_count_1;
 	drop table if exists tmp.person_count_2;
 	drop table if exists tmp.patient_count_gp;
+    drop table if exists tmp.patient_count_community;
 	drop table if exists tmp.patient_count_acute;
+    drop table if exists tmp.patient_count_other;
 
 
 	-- create table of GP ODS codes
@@ -230,7 +232,8 @@ BEGIN
 	insert into tmp.gp_services
     select local_id
     from admin.service
-    where organisation_type = 'PR'; -- GP practice
+    where organisation_type = 'PR' -- GP practices which are not closed or decommissioned (no longer publishing)
+	and (tags not like '%"Decommissioned"%' and tags not like '%Closed%');
 
 	create index ix on tmp.gp_services  (ods_code);
 
@@ -243,7 +246,8 @@ BEGIN
 	insert into tmp.acute_services
 	select local_id
     from admin.service
-    where organisation_type = 'TR'; -- trust
+    where organisation_type = 'TR' -- Trusts which are not closed or decommissioned (no longer publishing)
+    and (tags not like '%"Decommissioned"%' and tags not like '%Closed%');
 
 	create index ix on tmp.acute_services (ods_code);
 
@@ -256,7 +260,8 @@ BEGIN
 	insert into tmp.community_services
     select local_id
     from admin.service
-    where organisation_type = 'CO'; -- community
+    where organisation_type = 'CO' -- Community which are not closed or decommissioned (no longer publishing)
+    and (tags not like '%"Decommissioned"%' and tags not like '%Closed%');
 
 	create index ix on tmp.community_services (ods_code);
 
@@ -270,7 +275,8 @@ BEGIN
     select local_id
     from admin.service
     where organisation_type NOT IN ('CO', 'TR', 'PR')
-    or organisation_type IS NULL;
+    or organisation_type IS NULL
+    and (tags not like '%"Decommissioned"%' and tags not like '%Closed%');
 
 	create index ix on tmp.other_services  (ods_code);
 
@@ -297,6 +303,7 @@ BEGIN
 	insert into tmp.ccg_region values ('NWL', '07Y');
 	insert into tmp.ccg_region values ('NWL', '07W');
 	insert into tmp.ccg_region values ('NWL', '09A');
+	insert into tmp.ccg_region values ('NWL', 'W2U3Z'); -- new NWL CCG for all STP
 
 	insert into tmp.ccg_region values ('SEL', '07N');
 	insert into tmp.ccg_region values ('SEL', '07Q');
@@ -304,7 +311,7 @@ BEGIN
 	insert into tmp.ccg_region values ('SEL', '08K');
 	insert into tmp.ccg_region values ('SEL', '08L');
 	insert into tmp.ccg_region values ('SEL', '08Q');
-	insert into tmp.ccg_region values ('SEL', '72Q');
+	insert into tmp.ccg_region values ('SEL', '72Q'); -- new SEL CCG for all STP
 
 	create index ix on tmp.ccg_region (region_name, ccg_code);
 	create index ix2 on tmp.ccg_region (ccg_code, region_name);
@@ -313,7 +320,8 @@ BEGIN
 	create table tmp.patient_search_baseline as
 	select service_id, patient_id, nhs_number, organisation_type_code
 	from patient_search
-	where dt_created < date(date_cutoff);
+	where dt_created < date(date_cutoff)
+	and dt_deleted is null;  -- exclude deleted patients
 
 	create index ix on tmp.patient_search_baseline (nhs_number);
 	create index ix2 on tmp.patient_search_baseline (service_id);
@@ -371,14 +379,15 @@ BEGIN
 
 	-- number of GP patient records
 
-	select sum(cnt) as `gp_patient_count`
+	select ifnull(sum(cnt),0) as `gp_patient_count`
 	from tmp.patient_count_gp g;
 
     select if (region_name is null, 'Other', region_name) as `region_name`, sum(cnt) as `gp_patient_count_per_region`
 	from tmp.patient_count_gp g
 	left outer join tmp.ccg_region r
 	on g.ccg_code = r.ccg_code
-	group by if (region_name is null, 'zzOther', region_name); -- "ZZ" prefix means "other" ends up last
+    group by if (region_name is null, 'zzOther', region_name)
+    order by if (region_name is null, 'zzOther', region_name); -- "ZZ" prefix means "other" ends up last
 
 
 	-- number of contributing GP services
@@ -390,12 +399,14 @@ BEGIN
 	from tmp.patient_count_gp g
 	left outer join tmp.ccg_region r
 	on g.ccg_code = r.ccg_code
-	group by if (region_name is null, 'zzOther', region_name); -- "ZZ" prefix means "other" ends up last
+    group by if (region_name is null, 'zzOther', region_name)
+    order by if (region_name is null, 'zzOther', region_name); -- "ZZ" prefix means "other" ends up last
+
 
 
 	-- number of acute patient records
 
-	select sum(cnt) as `number_acute_patients`
+	select ifnull(sum(cnt),0) as `number_acute_patients`
 	from tmp.patient_count_acute;
 
 	select count(distinct local_id) as `number_acute_services`
@@ -404,7 +415,7 @@ BEGIN
 
 	-- number of community patient records
 
-	select sum(cnt) as `number_community_patients`
+	select ifnull(sum(cnt),0) as `number_community_patients`
 	from tmp.patient_count_community;
 
 	select count(distinct local_id) as `number_community_services`
@@ -413,11 +424,24 @@ BEGIN
 
 	-- number of community patient records
 
-	select sum(cnt) as `number_other_patients`
+	select ifnull(sum(cnt),0) as `number_other_patients`
 	from tmp.patient_count_other;
 
 	select count(distinct local_id) as `number_other_services`
 	from tmp.patient_count_other;
+
+    -- 'Other' ods codes identified (SD-1040)
+    if (select count(1) from tmp.other_services) > 0 then
+        select ods_code as `NOTE: These 'Other' publisher types are either not defined or set as a types other than GP, Community or Acute. Please update via DDS-UI:`
+        from tmp.other_services;
+    end if;
+	-- total number of patients across all record types (SD-1040)
+    select
+        (select ifnull(sum(cnt),0) from tmp.patient_count_gp) +
+        (select ifnull(sum(cnt),0) from tmp.patient_count_acute) +
+        (select ifnull(sum(cnt),0) from tmp.patient_count_community) +
+        (select ifnull(sum(cnt),0) from tmp.patient_count_other)
+            as `total_patient_count`;
 
 	drop table if exists tmp.gp_services;
 	drop table if exists tmp.acute_services;

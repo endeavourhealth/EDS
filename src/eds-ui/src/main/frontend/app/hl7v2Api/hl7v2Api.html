@@ -1,0 +1,99 @@
+<div class="module">
+    <div class="module-heading">
+        HL7v2 API {{getDateDiffSimpleFromNow(statusLastRefreshed)}}
+
+        <div class="pull-right">
+            <button class="btn btn-sm btn-success" [disabled]="refreshingStatus" (click)="refreshStatus()" title="Refresh">Refresh&nbsp;<span class="fa fa-sm fa-refresh fa-refresh-animate" *ngIf="refreshingStatus"></span></button>
+        </div>
+    </div>
+    <div class="module-body">
+
+        <div *ngIf="status">
+            <div class="row" *ngFor="let channel of status">
+                <div class="col-md-12">
+                    <div class="panel panel-primary">
+                        <div class="panel-heading">
+                            <b>{{channel.name}}</b> ({{channel.odsCode}})
+                        </div>
+
+                        <div class="panel-body">
+
+                            <div class="col-md-6">
+                                <h4>Hospital->HL7v2 API</h4>
+
+                                <div *ngIf="channel.lastReceivedMessageId">
+                                    <div>
+                                        Last Message Received: {{formatYYYYMMDDHHMMSS(channel.lastReceivedTimestamp)}}
+                                        <span *ngIf="isLastMessageReceivedTooOld(channel)" class="label label-danger" ngbTooltip="No recent messages received">Warning</span>
+                                    </div>
+                                    <div>
+                                        Last Message ID: {{channel.lastReceivedMessageId}} (#{{channel.lastReceivedId}})
+                                    </div>
+                                </div>
+                                <div *ngIf="!channel.lastReceivedMessageId">
+                                    <div>
+                                        Last Message Received: NEVER</div>
+                                        <span class="label label-danger" ngbTooltip="No messages received">Warning</span>
+                                    <div>
+                                        Last Message ID: n/a
+                                    </div>
+                                </div>
+                            </div>
+
+
+                            <div class="col-md-6">
+                                <h4>HL7v2 API->Messaging API</h4>
+
+                                <div>
+                                    Status:
+                                    <span *ngIf="applicationStatus">
+                                        <!--{{applicationStatus.applicationInstanceName}}-->
+
+                                        <span *ngIf="isApplicationDead(applicationStatus)">
+                                            <!-- if application isn't running, show a warning -->
+                                            <span class="label label-danger"><span class="fa fa-warning" ngbTooltip="{{applicationStatus.isBusyDetail}}"></span>{{getApplicationAgeDesc(applicationStatus)}}</span>
+
+                                        </span>
+                                        <span *ngIf="!isApplicationDead(applicationStatus)">
+
+                                            <!-- if busy, show the play icon and when it was busy from -->
+                                            <span *ngIf="applicationStatus.isBusy" class="fa fa-play" ngbTooltip="{{applicationStatus.isBusyDetail}}"></span>
+
+                                            <!-- if not doing anything show a pause icon -->
+                                            <span *ngIf="!applicationStatus.isBusy" class="fa fa-pause" ngbTooltip="Application running but idle"></span>
+
+
+                                        </span>
+                                    </span>
+                                    <span *ngIf="!applicationStatus">
+                                        Unknown
+                                    </span>
+                                </div>
+
+                                <div>Queue Size: {{channel.queueSize}}</div>
+
+                                <div *ngIf="channel.queueSize>0">
+                                    <br>
+                                    <b>First Message in Queue:</b>
+                                    <div>
+                                        Received: {{formatYYYYMMDDHHMMSS(channel.queueOldestTimestamp)}}
+                                        <span *ngIf="isQueueudMessageTooOld(channel)" class="label label-danger" ngbTooltip="Message being processed from >1 day ago">Warning</span>
+                                    </div>
+                                    <div>
+                                        ID: {{channel.queueMessageId}} (#{{channel.queueId}})
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+</div>

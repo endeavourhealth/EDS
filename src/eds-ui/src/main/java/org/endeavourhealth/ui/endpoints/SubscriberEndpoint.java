@@ -2,9 +2,6 @@ package org.endeavourhealth.ui.endpoints;
 
 import com.codahale.metrics.annotation.Timed;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.base.Strings;
 import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.common.security.SecurityUtils;
@@ -15,6 +12,7 @@ import org.endeavourhealth.core.database.dal.admin.models.Service;
 import org.endeavourhealth.core.database.dal.audit.ExchangeDalI;
 import org.endeavourhealth.core.database.dal.audit.UserAuditDalI;
 import org.endeavourhealth.core.database.dal.audit.models.*;
+import org.endeavourhealth.core.database.dal.datagenerator.models.RemoteFilingRecord;
 import org.endeavourhealth.core.database.rdbms.ConnectionManager;
 import org.endeavourhealth.core.fhirStorage.ServiceInterfaceEndpoint;
 import org.endeavourhealth.core.subscribers.SubscriberHelper;
@@ -25,6 +23,9 @@ import org.endeavourhealth.core.xml.transformError.Error;
 import org.endeavourhealth.core.xml.transformError.TransformError;
 import org.endeavourhealth.coreui.endpoints.AbstractEndpoint;
 import org.endeavourhealth.transform.subscriber.SubscriberConfig;
+import org.endeavourhealth.ui.json.JsonSubscriberPublisherService;
+import org.endeavourhealth.ui.json.JsonSubscriberPublisherSystem;
+import org.endeavourhealth.ui.json.JsonSubscriberStatus;
 import org.endeavourhealth.ui.utility.LastDataCache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,6 +35,8 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 @Path("/subscribers")
@@ -42,7 +45,10 @@ public class SubscriberEndpoint extends AbstractEndpoint {
 
     private static final UserAuditDalI userAudit = DalProvider.factoryUserAuditDal(AuditModule.EdsUiModule.Library);
     
-    private static final ExpiringObject<Map<String, List<Service>>> cachedPublishersForSubscribers = new ExpiringObject<>(1000 * 60 * 5); 
+    private static final ExpiringObject<Map<String, List<Service>>> cachedPublishersForSubscribers = new ExpiringObject<>(1000 * 60 * 5);
+    private static final ExpiringObject<LastDataCache> cachedSubscriberData = new ExpiringObject<>(1000 * 60 * 1); //cache for one min
+
+    private static final long MS_HOUR_DUR = 1000L * 60L * 60L;
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
@@ -54,7 +60,7 @@ public class SubscriberEndpoint extends AbstractEndpoint {
 
         userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load, "Get Subscribers");
 
-        String ret = getSubscriberSummaryJson();
+        List<JsonSubscriberStatus> ret = getSubscriberSummaryJson();
 
         clearLogbackMarkers();
 
@@ -74,7 +80,7 @@ public class SubscriberEndpoint extends AbstractEndpoint {
 
         userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load, "Get Subscriber Detail", "Subscriber", subscriberName);
 
-        String ret = getSubscriberDetailJson(subscriberName);
+        JsonSubscriberStatus ret = getSubscriberDetailJson(subscriberName);
 
         clearLogbackMarkers();
 
@@ -88,46 +94,109 @@ public class SubscriberEndpoint extends AbstractEndpoint {
     /**
      * gets top level details on the subscriber feeds
      */
-    private String getSubscriberSummaryJson() throws Exception {
+    private List<JsonSubscriberStatus> getSubscriberSummaryJson() throws Exception {
 
-        Map<String, List<Service>> hmPublishers = findPublishersBySubscriber();
-        LastDataCache lastData = LastDataCache.getLastData();
-
-        ObjectMapper mapper = new ObjectMapper();
-        ArrayNode root = new ArrayNode(mapper.getNodeFactory());
+        //retrieve all the data we need, using a short-duration cache
+        LastDataCache lastData = cachedSubscriberData.get();
+        if (lastData == null) {
+            lastData = new LastDataCache(null);
+            cachedSubscriberData.set(lastData);
+        }
 
         LOG.trace("Getting subscriber summary");
-        Map<String, String> subscriberMap = ConfigManager.getConfigurations("db_subscriber");
-        for (String subscriberName: subscriberMap.keySet()) {
-
-            ObjectNode obj = root.addObject();
-            populateSubscriberNode(obj, subscriberName, false, hmPublishers, lastData);
-        }
+        List<JsonSubscriberStatus> ret = getSubscribersStatus(false, lastData);
         LOG.trace("Finished getting subscriber summary");
 
-        return mapper.writeValueAsString(root);
+        return ret;
     }
 
-    private String getSubscriberDetailJson(String specificSubscriber) throws Exception {
+    private JsonSubscriberStatus getSubscriberDetailJson(String specificSubscriber) throws Exception {
 
-        Map<String, List<Service>> hmPublishers = findPublishersBySubscriber();
-        LastDataCache lastData = LastDataCache.getLastData();
+        //for the detail view, we only want to load data specific to that subscriber, so don't bother using a cache
+        LastDataCache lastData = new LastDataCache(specificSubscriber);
 
-        ObjectMapper mapper = new ObjectMapper();
-        ObjectNode root = new ObjectNode(mapper.getNodeFactory());
-
-        populateSubscriberNode(root, specificSubscriber, true, hmPublishers, lastData);
-
-        return mapper.writeValueAsString(root);
+        List<JsonSubscriberStatus> ret = getSubscribersStatus(true, lastData);
+        return ret.get(0); //since our last data cache was initialised with the specific subscriber, this will only have one element
     }
 
-    private void populateSubscriberNode(ObjectNode obj, String subscriberName, boolean detailedOutput,
-                                        Map<String, List<Service>> hmPublishers, LastDataCache lastData) throws Exception {
+    private static List<JsonSubscriberStatus> getSubscribersStatus(boolean detailedOutput, LastDataCache lastData) throws Exception {
+
+        List<JsonSubscriberStatus> ret = new ArrayList<>();
+
+        //work out which publishers are linked to which subscriber
+        Map<String, List<Service>> hmPublishers = findsPublishersPerSubscriber();
+
+        //create a status object for each subscriber and populate with the basic details about it
+        Set<String> subscriberNames = lastData.getSubscriberNames();
+        for (String subscriberName: subscriberNames) {
+            JsonSubscriberStatus status = new JsonSubscriberStatus();
+            status.setName(subscriberName);
+
+            //config properties
+            populateBasicProperties(status, lastData);
+
+            //technical details
+            populateTechnicalDetails(status, lastData);
+
+            //populate the publisher details
+            List<Service> publishers = hmPublishers.get(subscriberName);
+            if (publishers != null) { //some subscribers don't have publishers at first
+                for (Service service: publishers) {
+                    getPublisherStatus(service, status, lastData, detailedOutput);
+                }
+            }
+
+            ret.add(status);
+        }
+
+        //return all the status objects
+        return ret;
+    }
 
 
-        //don't bother messing with the JSON in the above map, just re-get using the proper object class
-        LOG.trace("Getting node for subscriber " + subscriberName);
-        SubscriberConfig config = SubscriberConfig.readFromConfig(subscriberName);
+    /**
+     * populates the technical details of the subscriber object, such as database names
+     */
+    private static void populateTechnicalDetails(JsonSubscriberStatus status, LastDataCache lastData) throws Exception {
+
+        String subscriberName = status.getName();
+
+        //subscriber DB
+        String subscriberConfigName = ConnectionManager.Db.Subscriber.getConfigNameIncludingInstance(subscriberName);
+        JsonNode json = ConfigManager.getConfigurationAsJson(subscriberConfigName);
+        if (json != null
+                && json.has("url")) {
+            String url = json.get("url").asText();
+
+            String[] details = getDatabaseDetailsFromUrl(url);
+            if (details != null) {
+                status.setSubscriberDatabase(details[0]);
+                status.setSubscriberDatabaseName(details[1]);
+            }
+        }
+
+        //subscriber transform DB
+        subscriberConfigName = ConnectionManager.Db.SubscriberTransform.getConfigNameIncludingInstance(subscriberName);
+        json = ConfigManager.getConfigurationAsJson(subscriberConfigName);
+        if (json != null
+                && json.has("url")) {
+            String url = json.get("url").asText();
+
+            String[] details = getDatabaseDetailsFromUrl(url);
+            if (details != null) {
+                status.setSubscriberTransformDatabase(details[0]);
+                status.setSubscriberTransformDatabaseName(details[1]);
+            }
+        }
+    }
+
+    /**
+     * populates the return object with basic config settings about the subscriber
+     */
+    private static void populateBasicProperties(JsonSubscriberStatus status, LastDataCache lastData) {
+
+        SubscriberConfig config = lastData.getSubscriberConfig(status.getName());
+
         String description = config.getDescription();
         String schema = "" + config.getSubscriberType();
         boolean isPseudonymised = config.isPseudonymised();
@@ -138,200 +207,254 @@ public class SubscriberEndpoint extends AbstractEndpoint {
         String subscriberLocation = "" + config.getSubscriberLocation();
         String cohortType = "" + config.getCohortType();
         String cohortDesc = cohortType;
-        if (config.getCohortType() == SubscriberConfig.CohortType.GpRegisteredAt) {
+        if (config.getCohortType() == SubscriberConfig.CohortType.GpRegisteredAt
+            || config.getCohortType() == SubscriberConfig.CohortType.ActiveOnlyGpRegisteredAt)  {
             cohortDesc += " [" + String.join(", ", config.getCohortGpServices()) + "]";
         }
 
-        obj.put("name", subscriberName);
-        obj.put("description", description);
-        obj.put("schema", schema);
-        obj.put("deidentified", isPseudonymised);
-        obj.put("excludeTestPatients", excludeTestPatients);
-        obj.put("excludeNhsNumberRegex", excludeNhsNumberRegex);
-        obj.put("excludePatientsWithoutNhsNumber", excludePatientsWithoutNhsNumber);
-        obj.put("subscriberLocation", subscriberLocation);
-        obj.put("remoteSubscriberId", remoteSubscriberId);
-        obj.put("cohortType", cohortType);
-        obj.put("cohortDesc", cohortDesc);
+        //basic properties of the subscriber
+        status.setDescription(description);
+        status.setSchema(schema);
+        status.setDeidentified(isPseudonymised);
+        status.setExcludeTestPatients(excludeTestPatients);
+        status.setExcludeNhsNumberRegex(excludeNhsNumberRegex);
+        status.setExcludePatientsWithoutNhsNumber(excludePatientsWithoutNhsNumber);
+        status.setSubscriberLocation(subscriberLocation);
+        status.setRemoteSubscriberId(remoteSubscriberId);
+        status.setCohortType(cohortType);
+        status.setCohortDesc(cohortDesc);
 
         if (config.getCohortGpServices() != null) {
-            ArrayNode arr = obj.putArray("cohort");
+            List<String> cohortMember = new ArrayList<>();
             for (String odsCode: config.getCohortGpServices()) {
-                arr.add(odsCode);
+                cohortMember.add(odsCode);
             }
+            status.setCohort(cohortMember);
         }
-
-        //get details about the databases, since this is useful sometimes
-        LOG.trace("Getting database details for " + subscriberName);
-        getDatabaseDetails(obj, subscriberName);
-
-        List<Service> servicesToSubscriber = hmPublishers.get(subscriberName);
-        LOG.trace("Getting publisher status for " + subscriberName);
-        getPublisherStatus(obj, subscriberName, servicesToSubscriber, lastData, detailedOutput);
     }
 
-    private void getPublisherStatus(ObjectNode obj,
-                                    String subscriberName, 
-                                    List<Service> services,
-                                    LastDataCache lastData,
-                                    boolean detailedOutput) throws Exception {
 
-        //this might be null if we've got no publishers
-        if (services == null) {
-            services = new ArrayList<>();
-        }
+    private static void getPublisherStatus(Service service, JsonSubscriberStatus subscriberStatus, LastDataCache lastData, boolean detailedOutput) throws Exception {
 
-        //number publishers up to date with inbound processing
-        int inboundError = 0;
-        int inboundUpToDate = 0;
-        int inboundOneDay = 0;
-        int inboundMoreDays = 0;
-        int outboundUpToDate = 0;
-        int outboundOneDay = 0;
-        int outboundMoreDays = 0;
+        UUID serviceId = service.getId();
+        List<ServiceInterfaceEndpoint> systemEndpoints = service.getEndpointsList();
+        String subscriberName = subscriberStatus.getName();
 
-        ArrayNode arr = null;
+        //add the publisher details if we've been asked for it
+        JsonSubscriberPublisherService serviceStatus = null;
         if (detailedOutput) {
-            arr = obj.putArray("publisherServices");
+            serviceStatus = new JsonSubscriberPublisherService();
+            subscriberStatus.getPublisherServices().add(serviceStatus);
+
+            serviceStatus.setUuid(service.getId());
+            serviceStatus.setOdsCode(service.getLocalId());
+            serviceStatus.setName(service.getName());
+            serviceStatus.setAlias(service.getAlias());
+            serviceStatus.setTags(service.getTags());
         }
 
-        for (Service service: services) {
-            UUID serviceId = service.getId();
+        //work out all the global things, that aren't specific to a subscriber (e.g. inbound status)
+        boolean hasInboundError = false;
+        Date firstLastReceived = null;
+        Date firstLastProcessedIn = null;
+        Date firstLastProcessedOut = null;
+        Date firstLastWrittenOut = null;
+        boolean hasOutboundError = false;
 
-            //add the publisher details if we've been asked for it
-            ArrayNode systemsNode = null;
+        for (ServiceInterfaceEndpoint endpoint: systemEndpoints) {
+            UUID systemId = endpoint.getSystemUuid();
+
+            LastDataReceived lastReceived = lastData.getLastReceived(serviceId, systemId);
+            LastDataProcessed lastProcessedIn = lastData.getLastProcessedInbound(serviceId, systemId);
+            LastDataToSubscriber lastProcessedOut = lastData.getLastProcessedOutbound(serviceId, systemId, subscriberName);
+            LastDataInSubscriber lastWrittenOut = lastData.getLastWrittenOutbound(serviceId, systemId, subscriberName);
+
+            //see if we've got an inbound error
+            UUID inboundErrorExchangeId = lastData.getInboundErrorExchangeId(serviceId, systemId);
+            if (inboundErrorExchangeId != null) {
+                hasInboundError = true;
+            }
+
+            //for the summary display, we need to just have one set of dates per service, so use the earliest found out of all systems for the service
+            if (lastReceived != null) {
+                firstLastReceived = getEarliest(firstLastReceived, lastReceived.getExtractCutoff());
+            }
+            if (lastProcessedIn != null) {
+                firstLastProcessedIn = getEarliest(firstLastProcessedIn, lastProcessedIn.getExtractCutoff());
+            }
+
+            if (lastProcessedOut != null) {
+                firstLastProcessedOut = getEarliest(firstLastProcessedOut, lastProcessedOut.getExtractCutoff());
+            }
+            if (lastWrittenOut != null) {
+                firstLastWrittenOut = getEarliest(firstLastWrittenOut, lastWrittenOut.getExtractCutoff());
+            }
+
+            //see if we've got an outbound error
+            List<RemoteFilingRecord> outboundWriteErrors = lastData.getOutboundWriteErrors(serviceId, systemId, subscriberName);
+            if (!outboundWriteErrors.isEmpty()) {
+                hasOutboundError = true;
+            }
+
+
+            //add the detail if we need it
             if (detailedOutput) {
-                ObjectNode serviceNode = arr.addObject();
+                JsonSubscriberPublisherSystem systemStatus = new JsonSubscriberPublisherSystem();
+                serviceStatus.getSystemStatus().add(systemStatus);
 
-                serviceNode.put("uuid", service.getId().toString());
-                serviceNode.put("odsCode", service.getLocalId());
-                serviceNode.put("name", service.getName());
-                serviceNode.put("alias", service.getAlias());
+                String systemDesc = ServiceEndpoint.findSoftwareDescForSystem(systemId);
+                String publisherMode = endpoint.getEndpoint();
 
-                ObjectNode tagsNode = serviceNode.putObject("tags");
-                Map<String, String> tags = service.getTags();
-                for (String tag: tags.keySet()) {
-                    String tagValue = tags.get(tag);
-                    tagsNode.put(tag, tagValue);
-                }
+                systemStatus.setUuid(systemId);
+                systemStatus.setName(systemDesc);
+                systemStatus.setPublisherMode(publisherMode); //bulk/regular etc.
 
-                systemsNode = serviceNode.putArray("systemStatus");
-            }
-
-            Date firstLastReceived = null;
-            Date firstLastProcessedIn = null;
-            Date firstLastProcessedOut = null;
-            boolean hasInboundError = false;
-
-            List<ServiceInterfaceEndpoint> systemEndpoints = service.getEndpointsList();
-            for (ServiceInterfaceEndpoint endpoint: systemEndpoints) {
-                UUID systemId = endpoint.getSystemUuid();
-
-                LastDataReceived lastReceived = lastData.getLastReceived(serviceId, systemId);
-                LastDataProcessed lastProcessedIn = lastData.getLastProcessedInbound(serviceId, systemId);
-                LastDataToSubscriber lastProcessedOut = lastData.getLastProcessedOutbound(serviceId, systemId, subscriberName);
-
-                //for the summary display, we need to just have one set of dates per service, so use the earliest found out of all systems for the service
                 if (lastReceived != null) {
-                    firstLastReceived = getEarliest(firstLastReceived, lastReceived.getExtractCutoff());
+                    systemStatus.setLastReceivedTimestamp(lastReceived.getReceivedDate());
+                    systemStatus.setLastReceivedExtractDate(lastReceived.getExtractDate());
+                    systemStatus.setLastReceivedExtractCutoff(lastReceived.getExtractCutoff());
                 }
+
                 if (lastProcessedIn != null) {
-                    firstLastProcessedIn = getEarliest(firstLastProcessedIn, lastProcessedIn.getExtractCutoff());
+                    systemStatus.setLastProcessedInTimestamp(lastProcessedIn.getProcessedDate());
+                    systemStatus.setLastProcessedInExtractDate(lastProcessedIn.getExtractDate());
+                    systemStatus.setLastProcessedInExtractCutoff(lastProcessedIn.getExtractCutoff());
                 }
+
                 if (lastProcessedOut != null) {
-                    firstLastProcessedOut = getEarliest(firstLastProcessedOut, lastProcessedOut.getExtractCutoff());
+                    systemStatus.setLastProcessedOutTimestamp(lastProcessedOut.getSentDate());
+                    systemStatus.setLastProcessedOutExtractDate(lastProcessedOut.getExtractDate());
+                    systemStatus.setLastProcessedOutExtractCutoff(lastProcessedOut.getExtractCutoff());
                 }
 
-                UUID inboundErrorExchangeId = lastData.getInboundErrorExchangeId(serviceId, systemId);
+                if (lastWrittenOut != null) {
+                    systemStatus.setLastWriteOutTimestamp(lastWrittenOut.getWrittenDate());
+                    systemStatus.setLastWriteOutExtractDate(lastWrittenOut.getExtractDate());
+                    systemStatus.setLastWriteOutExtractCutoff(lastWrittenOut.getExtractCutoff());
+                }
+
+                //provide inbound error details
                 if (inboundErrorExchangeId != null) {
-                    hasInboundError = true;
+                    systemStatus.setProcessingInError(true);
+
+                    String errorMessage = findErrorMessage(serviceId, systemId, inboundErrorExchangeId);
+                    systemStatus.setProcessingInErrorMessage(errorMessage);
                 }
 
-                //add the detail if we need it
-                if (detailedOutput) {
+                //provide outbound error details
+                if (!outboundWriteErrors.isEmpty()) {
+                    systemStatus.setWriteOutError(true);
 
-                    String systemDesc = ServiceEndpoint.findSoftwareDescForSystem(systemId);
-                    String publisherMode = endpoint.getEndpoint();
-
-                    ObjectNode systemNode = systemsNode.addObject();
-                    systemNode.put("uuid", systemId.toString());
-                    systemNode.put("name", systemDesc);
-                    systemNode.put("publisherMode", publisherMode); //bulk/regular etc.
-
-                    if (lastReceived != null) {
-                        systemNode.put("lastReceivedExtract", lastReceived.getReceivedDate().getTime());
-                        systemNode.put("lastReceivedExtractDate", lastReceived.getExtractDate().getTime());
-                        systemNode.put("lastReceivedExtractCutoff", lastReceived.getExtractCutoff().getTime());
-                    }
-
-                    if (lastProcessedIn != null) {
-                        systemNode.put("lastProcessedInExtract", lastProcessedIn.getProcessedDate().getTime());
-                        systemNode.put("lastProcessedInExtractDate", lastProcessedIn.getExtractDate().getTime());
-                        systemNode.put("lastProcessedInExtractCutoff", lastProcessedIn.getExtractCutoff().getTime());
-                    }
-
-                    if (lastProcessedOut != null) {
-                        systemNode.put("lastProcessedOutExtract", lastProcessedOut.getSentDate().getTime());
-                        systemNode.put("lastProcessedOutExtractDate", lastProcessedOut.getExtractDate().getTime());
-                        systemNode.put("lastProcessedOutExtractCutoff", lastProcessedOut.getExtractCutoff().getTime());
-                    }
-
-                    //work out if we've got an inbound error
-                    if (inboundErrorExchangeId != null) {
-                        systemNode.put("processingInError", true);
-
-                        String errorMessage = findErrorMessage(serviceId, systemId, inboundErrorExchangeId);
-                        systemNode.put("processingInErrorMessage", errorMessage);
-                    }
+                    String errorMessage = findErrorMessage(outboundWriteErrors);
+                    systemStatus.setWriteOutErrorMessage(errorMessage);
                 }
-            }
-
-            if (hasInboundError) {
-                inboundError ++;
-            }
-
-            //inbound status
-            int daysDiffInbound = getDaysDiff(firstLastReceived, firstLastProcessedIn);
-            if (daysDiffInbound == 0) {
-                inboundUpToDate ++;
-
-            } else if (daysDiffInbound <= 1) {
-                inboundOneDay++;
-
-            } else {
-                inboundMoreDays++;
-            }
-
-            //outbound
-            //base outbound on the data received
-            //int daysDiffOutbound = getDaysDiff(firstLastProcessedIn, firstLastProcessedOut);
-            int daysDiffOutbound = getDaysDiff(firstLastReceived, firstLastProcessedOut);
-            if (daysDiffOutbound == 0) {
-                outboundUpToDate ++;
-
-            } else if (daysDiffOutbound <= 1) {
-                outboundOneDay++;
-
-            } else {
-                outboundMoreDays++;
             }
         }
 
-        //total number of publishers
-        obj.put("numPublishers", services.size());
-        obj.put("inboundError", inboundError);
-        obj.put("inboundUpToDate", inboundUpToDate);
-        obj.put("inboundOneDay", inboundOneDay);
-        obj.put("inboundMoreDays", inboundMoreDays);
-        obj.put("outboundUpToDate", outboundUpToDate);
-        obj.put("outboundOneDay", outboundOneDay);
-        obj.put("outboundMoreDays", outboundMoreDays);
+        //update the status object with what we've found
+        subscriberStatus.incrementNumPublishers();
+
+        //NOTE: in all the below, it counts "one day" as being 25 hours.
+        //This is intentional - DDS receives a lot of extracts at ABOUT the same time each day, so this gives
+        //the display a bit of wiggle room before starting to show everything as being late.
+
+        //receipt
+        long msDiffReceipt = getMsDiff(new Date(), firstLastReceived);
+        if (msDiffReceipt <= MS_HOUR_DUR * 25L) {
+            subscriberStatus.incrementReceivedOneDay();
+
+        } else if (msDiffReceipt <= MS_HOUR_DUR * 25L * 2) {
+            subscriberStatus.incrementReceivedTwoDays();
+
+        } else {
+            subscriberStatus.incrementReceivedMoreDays();
+        }
+
+        if (hasInboundError) {
+            subscriberStatus.incrementInboundError();
+        }
+
+        //inbound transform
+        long msDiffInbound = getMsDiff(firstLastReceived, firstLastProcessedIn);
+        //when bypassing the Messaging API to test transforms in non-production environments, we can end up with a negative, so
+        //treat any negative number as being zero
+        if (msDiffInbound <= 0) {
+            subscriberStatus.incrementInboundUpToDate();
+
+        } else if (msDiffInbound <= MS_HOUR_DUR * 25L) {
+            subscriberStatus.incrementInboundOneDay();
+
+        } else {
+            subscriberStatus.incrementInboundMoreDays();
+        }
+
+        //outbound transform
+        //base this on the difference between the inbound transform and this stage, otherwise we end up showing errors everywhere due to an inbound error
+        long msDiffOutbound = getMsDiff(firstLastProcessedIn, firstLastProcessedOut);
+        //long msDiffOutbound = getMsDiff(firstLastReceived, firstLastProcessedOut);
+        if (msDiffOutbound <= 0) {
+            subscriberStatus.incrementOutboundUpToDate();
+
+        } else if (msDiffOutbound <= MS_HOUR_DUR * 25L) {
+            subscriberStatus.incrementOutboundOneDay();
+
+        } else {
+            subscriberStatus.incrementOutboundMoreDays();
+        }
+
+        //outbound writing
+        //base this on the difference between the inbound transform and this stage, otherwise we end up showing errors everywhere due to an inbound error
+        long msDiffWriteOut = getMsDiff(firstLastProcessedOut, firstLastWrittenOut);
+        //long msDiffWriteOut = getMsDiff(firstLastReceived, firstLastWrittenOut);
+        if (msDiffWriteOut <= 0) {
+            subscriberStatus.incrementWriteOutUpToDate();
+
+        } else if (msDiffWriteOut <= MS_HOUR_DUR * 25L) {
+            subscriberStatus.incrementWriteOutOneDay();
+
+        } else {
+            subscriberStatus.incrementWriteOutMoreDays();
+        }
+
+        if (hasOutboundError) {
+            subscriberStatus.incrementOutboundError();
+        }
+    }
+
+    /**
+     * generates a suitable error message from the given outbound write errors
+     */
+    private static String findErrorMessage(List<RemoteFilingRecord> outboundWriteErrors) {
+
+        StringBuilder sb = new StringBuilder();
+
+        //add the details of the most recent
+        RemoteFilingRecord latest = outboundWriteErrors.get(0);
+        Date dtFailed = latest.getDtFileFilingAttempted();
+        String message = latest.getFilingFailureMessage();
+        DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm");
+        sb.append("Latest error ");
+        sb.append(dateFormat.format(dtFailed));
+        sb.append(": ");
+        sb.append(message);
+
+        //work out a suitable size. If we've retrieved our max, then all we know is that there's at least that number
+        int size = outboundWriteErrors.size();
+        if (size == LastDataCache.MAX_OUTBOUND_WRITE_ERRORS) {
+            sb.append(" (" + (size-1) + "+ errors)");
+        } else if (size == 1) {
+            sb.append(" (1 error)");
+        } else {
+            sb.append(" (" + size + " errors)");
+        }
+
+        return sb.toString();
     }
 
     /**
      * attempts to find an error message in the inbound transform for the given details
      */
-    private String findErrorMessage(UUID serviceId, UUID systemId, UUID exchangeId) throws Exception {
+    private static String findErrorMessage(UUID serviceId, UUID systemId, UUID exchangeId) throws Exception {
 
         ExchangeDalI dal = DalProvider.factoryExchangeDal();
         ExchangeTransformAudit transformAudit = dal.getMostRecentExchangeTransform(serviceId, systemId, exchangeId);
@@ -409,7 +532,7 @@ public class SubscriberEndpoint extends AbstractEndpoint {
         }
     }
     
-    private int getDaysDiff(Date dtReceived, Date dtProcessed) {
+    private static long getMsDiff(Date dtReceived, Date dtProcessed) {
 
         //if we don't have a "from" date, then by definition the "to" date is up to date
         if (dtReceived == null) {
@@ -424,45 +547,11 @@ public class SubscriberEndpoint extends AbstractEndpoint {
         //if we have both dates, then work out the actual number of days difference
         long msFrom = dtProcessed.getTime();
         long msTo = dtReceived.getTime();
-        long msDiff = msTo - msFrom;
-        return (int)(msDiff / (1000 * 60 * 60 * 24));
+        return msTo - msFrom;
     }
 
 
 
-    /**
-     * gets the database server and name for our subscriber DBs
-     */
-    private void getDatabaseDetails(ObjectNode obj, String subscriberName) throws Exception {
-
-        //subscriber DB
-        String subscriberConfigName = ConnectionManager.Db.Subscriber.getConfigNameIncludingInstance(subscriberName);
-        JsonNode json = ConfigManager.getConfigurationAsJson(subscriberConfigName);
-        if (json != null
-                && json.has("url")) {
-            String url = json.get("url").asText();
-
-            String[] details = getDatabaseDetailsFromUrl(url);
-            if (details != null) {
-                obj.put("subscriberDatabase", details[0]);
-                obj.put("subscriberDatabaseName", details[1]);
-            }
-        }
-
-        //subscriber transform DB
-        subscriberConfigName = ConnectionManager.Db.SubscriberTransform.getConfigNameIncludingInstance(subscriberName);
-        json = ConfigManager.getConfigurationAsJson(subscriberConfigName);
-        if (json != null
-                && json.has("url")) {
-            String url = json.get("url").asText();
-
-            String[] details = getDatabaseDetailsFromUrl(url);
-            if (details != null) {
-                obj.put("subscriberTransformDatabase", details[0]);
-                obj.put("subscriberTransformDatabaseName", details[1]);
-            }
-        }
-    }
 
     /**
      *
@@ -473,7 +562,7 @@ public class SubscriberEndpoint extends AbstractEndpoint {
      *  jdbc:mysql://localhost:3306/publisher_common?useSSL=false
      *  jdbc:sqlserver://localhost;database=compass_v1_pseudo;integratedSecurity=false
      */
-    private String[] getDatabaseDetailsFromUrl(String url) {
+    private static String[] getDatabaseDetailsFromUrl(String url) {
 
         try {
 
@@ -533,7 +622,7 @@ public class SubscriberEndpoint extends AbstractEndpoint {
         }
     }
 
-    private Map<String, List<Service>> findPublishersBySubscriber() throws Exception {
+    private static Map<String, List<Service>> findsPublishersPerSubscriber() throws Exception {
         
         //cache this set for five minutes, since it will rarely change
         Map<String, List<Service>> ret = cachedPublishersForSubscribers.get();

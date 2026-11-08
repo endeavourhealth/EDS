@@ -25,12 +25,14 @@ export class SftpReaderComponent {
     formatYYYYMMDDHHMMSS = DateTimeFormatter.formatYYYYMMDDHHMMSS;
     formatYYYYMMDDHHMM = DateTimeFormatter.formatYYYYMMDDHHMM;
     formatHHMMSS = DateTimeFormatter.formatHHMMSS;
+    getDateDiffSimple = DateTimeFormatter.getDateDiffSimple;
+    getDateDiffSimpleFromNow = DateTimeFormatter.getDateDiffSimpleFromNow;
 
     //SFTP configuration status
     configurations: SftpReaderConfiguration[];
     refreshingStatusMap: {};
     statusMap: {};
-    statusesLastRefreshed: Date;
+    statusLastRefreshed: Date;
 
     //application status
     refreshingApplicationStatus: boolean;
@@ -112,7 +114,7 @@ export class SftpReaderComponent {
 
     refreshStatuses() {
         var vm = this;
-        vm.statusesLastRefreshed = new Date();
+        vm.statusLastRefreshed = new Date();
 
         for (var i = 0; i < vm.configurations.length; i++) {
             var configuration = vm.configurations[i];
@@ -297,7 +299,7 @@ export class SftpReaderComponent {
         pollingFrequencyMs = (pollingFrequencyMs * 2); //double the polling frequency to give a fair window
 
         //var now = new Date();
-        var now = vm.statusesLastRefreshed; //use date of refresh rather than current date so it doesn't change if you don't refresh the page
+        var now = vm.statusLastRefreshed; //use date of refresh rather than current date so it doesn't change if you don't refresh the page
         var lastPolledDiffMs = now.getTime() - lastPolled;
 
         return lastPolledDiffMs > pollingFrequencyMs;
@@ -316,7 +318,7 @@ export class SftpReaderComponent {
         dataFrequencyMs = (dataFrequencyMs * 1.5); //add 10% to the poling frequency so it's less touchy
 
         //var now = new Date();
-        var now = vm.statusesLastRefreshed; //use date of refresh rather than current date so it doesn't change if you don't refresh the page
+        var now = vm.statusLastRefreshed; //use date of refresh rather than current date so it doesn't change if you don't refresh the page
         var lastExtractDiffMs = now.getTime() - lastExtract;
 
         return lastExtractDiffMs > dataFrequencyMs;

@@ -8,3 +8,8 @@ export class FrailtyStat {
     errorOther: number;
     total: number;
 }
+
+export class SubscriberFlag {
+    code : string;
+    term : string;
+}

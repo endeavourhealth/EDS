@@ -154,6 +154,32 @@ public class Queueing extends AbstractRoutine {
         }
     }
 
+    public static void postExchangesToSpecificSubscriberProtocol(String srcFile, String specificSubscriberConfigName , String reason) {
+        LOG.info("Posting to protocol for "+specificSubscriberConfigName+" from " + srcFile);
+        try {
+            List<UUID> exchangeIds = new ArrayList<>();
+
+            List<String> lines = Files.readAllLines(new File(srcFile).toPath());
+            for (String line: lines) {
+                if (!Strings.isNullOrEmpty(line)) {
+                    UUID uuid = UUID.fromString(line);
+                    exchangeIds.add(uuid);
+                }
+            }
+
+            LOG.info("Posting " + exchangeIds.size() + " to Protocol queue for "+specificSubscriberConfigName);
+
+            Set<String> setOfConfigs = new HashSet<>();
+            setOfConfigs.add(specificSubscriberConfigName);
+
+            QueueHelper.postToExchange(exchangeIds, QueueHelper.ExchangeName.PROTOCOL, setOfConfigs, reason);
+
+            LOG.info("Finished Posting to protocol for "+specificSubscriberConfigName+" from " + srcFile);
+        } catch (Throwable t) {
+            LOG.error("", t);
+        }
+    }
+
     public static void postPatientsToProtocol(UUID serviceId, UUID systemId, String sourceFile) {
 
         try {
@@ -354,4 +380,57 @@ public class Queueing extends AbstractRoutine {
             LOG.error("", t);
         }
     }
+
+    /**
+     * sends a specific set of patients through the outbound transform
+     */
+    public static void subscriberTransformPatients(String sourceFile, boolean bulkDelete, String reason, Set<String> subscriberConfigNames) {
+        LOG.info("Subscriber transforming patients from " + sourceFile);
+        LOG.info("BulkDelete = " + bulkDelete);
+        LOG.info("Reason = " + reason);
+        if (subscriberConfigNames == null || subscriberConfigNames.isEmpty()) {
+            LOG.info("To all current subscribers");
+
+        } else {
+            LOG.info("To explicit subscribers " + subscriberConfigNames);
+        }
+
+        try {
+            List<UUID> patientIds = new ArrayList<>();
+
+            File f = new File(sourceFile);
+            if (!f.exists()) {
+                LOG.error("File " + f + " doesn't exist");
+                return;
+            }
+            List<String> lines = FileUtils.readLines(f);
+            for (String line: lines) {
+                line = line.trim();
+                if (line.startsWith("#")) {
+                    continue;
+                }
+
+                UUID uuid = UUID.fromString(line);
+                patientIds.add(uuid);
+            }
+
+            if (patientIds.isEmpty()) {
+                LOG.error("No patient IDs found");
+                return;
+            }
+            LOG.info("Found " + patientIds.size() + " patient IDs");
+
+            LOG.info("Double-check the above before continuing");
+            continueOrQuit();
+
+            boolean bulkRefresh = !bulkDelete;
+
+            QueueHelper.queueUpPatientsForSubscriberTransform(patientIds, bulkDelete, bulkRefresh, false, reason, subscriberConfigNames);
+
+            LOG.info("Finished transforming patients from " + sourceFile);
+        } catch (Throwable t) {
+            LOG.error("", t);
+        }
+    }
+
 }

@@ -41,11 +41,11 @@ public class EnterpriseFiler {
     private static final String UPSERT = "Upsert";
     private static final String DELETE = "Delete";
 
-    private static final int UPSERT_ATTEMPTS = 15;
-
-
-
-    public static void file(UUID batchId, UUID queuedMessageId, String base64, String configName) throws Exception {
+    /**
+     * files the given payload (Base64 encoded zip of CSV data) into the indicated subscriber DB (if internal)
+     * or stages for sending out via SFTP (if remote)
+     */
+    public static void file(UUID serviceId, UUID systemId, UUID exchangeId, UUID batchId, UUID queuedMessageId, String base64, String configName) throws Exception {
 
         byte[] bytes = Base64.getDecoder().decode(base64);
         LOG.debug("Filing " + FileUtils.byteCountToDisplaySize(bytes.length) + " from batch " + batchId + " into " + configName);
@@ -69,7 +69,8 @@ public class EnterpriseFiler {
             if (wrapper.hasRemoteSubscriberId()) {
                 int subscriberId = wrapper.getRemoteSubscriberId().intValue();
                 SubscriberZipFileUUIDsDalI szfudi = DalProvider.factorySubscriberZipFileUUIDs();
-                szfudi.createSubscriberZipFileUUIDsEntity(subscriberId, batchId.toString(), queuedMessageId.toString(), base64);
+                szfudi.createSubscriberZipFileUUIDsEntity(subscriberId, serviceId, systemId, exchangeId, batchId, queuedMessageId, base64);
+                LOG.trace("Written data to remote sending table with subscriber ID " + subscriberId + " and queued message ID " + queuedMessageId);
             }
         }
     }

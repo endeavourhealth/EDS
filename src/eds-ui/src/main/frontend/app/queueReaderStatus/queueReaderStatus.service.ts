@@ -31,4 +31,12 @@ export class QueueReaderStatusService extends BaseHttp2Service {
         return this.httpGet('api/queueReader/status', { search: params });
     }
 
+    queueReaderCommand(): Observable<any> {
+
+        var request = {
+            'command': 'sudo ./queueReader/deploy.sh'
+        };
+        return this.httpPost('api/queueReader/queueReaderCommand', request);
+    }
+
 }

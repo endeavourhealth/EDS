@@ -204,4 +204,11 @@ export class ExchangeAuditService extends BaseHttp2Service {
         };
         return this.httpPost('api/exchangeAudit/addExchangeEvent', request);
     }
+
+    makeNonQueueable(exchangeId: string): Observable<any> {
+        var request = {
+            'exchangeId': exchangeId
+        };
+        return this.httpPost('api/exchangeAudit/makeNonQueueable', request);
+    }
 }

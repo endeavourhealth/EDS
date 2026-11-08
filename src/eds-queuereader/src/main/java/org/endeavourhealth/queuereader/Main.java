@@ -1,5 +1,6 @@
 package org.endeavourhealth.queuereader;
 
+import com.google.common.base.Strings;
 import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.core.configuration.ConfigDeserialiser;
 import org.endeavourhealth.core.configuration.QueueReaderConfiguration;
@@ -16,13 +17,167 @@ import java.util.Set;
 import java.util.UUID;
 
 public class Main {
+
 	private static final Logger LOG = LoggerFactory.getLogger(Main.class);
 
 	public static void main(String[] args) throws Exception {
 
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("CompareEMISandTRUDR2maps")) {
+			String emisFilePath = args[1];
+			String trudFilePath = args[2];
+			SpecialRoutines.CompareEmisAndTrudRead2CodeMaps(emisFilePath, trudFilePath);
+			System.exit(0);
+		}
+
 		String configId = args[0];
 		LOG.info("Initialising config manager");
 		ConfigManager.initialize("queuereader", configId);
+
+		if (args.length >= 1 && "postAllSystemsExchangesForServiceToInbound".equalsIgnoreCase(args[0])) {
+		    UUID serviceUuid = UUID.fromString(args[1]);
+		    String reason = args[2];
+		    SpecialRoutines.postAllSystemsExchangesForServiceToInbound(serviceUuid, reason);
+		    System.exit(0);
+        }
+
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("SD529fixTppMedicationOrderToStatementLinks")) {
+			boolean includeStartedButNotFinishedServices = Boolean.parseBoolean(args[1]);
+			boolean testMode = Boolean.parseBoolean(args[2]);
+			int minsDelay = Integer.parseInt(args[3]);
+			String odsCodeRegex = null;
+			if (args.length > 4) {
+				odsCodeRegex = args[4];
+			}
+			UUID patientUuidFilter = null;
+			if (args.length > 5) {
+				patientUuidFilter = UUID.fromString(args[5]);
+			}
+			SD529.SD529fixTppMedicationOrderToStatementLinks(includeStartedButNotFinishedServices, testMode, minsDelay, odsCodeRegex, patientUuidFilter);
+			System.exit(0);
+		}
+
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("SD131testDdsuiBackendCall")) {
+			String configName = args[1];
+			SD131.testDdsuiBackendCall(configName);
+			System.exit(0);
+		}
+
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("TestUserCache")) {
+			String userUuid = args[1];
+			SD518.lookUpUser(userUuid);
+			System.exit(0);
+		}
+
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("SD511fixTppEncounterEpisodeLinks")) {
+			boolean includeStartedButNotFinishedServices = Boolean.parseBoolean(args[1]);
+			boolean testMode = Boolean.parseBoolean(args[2]);
+			String odsCodeRegex = null;
+			if (args.length > 3) {
+				odsCodeRegex = args[3];
+			}
+			SD511.fixTppEncounterEpisodeLinks(includeStartedButNotFinishedServices, testMode, odsCodeRegex);
+			System.exit(0);
+		}
+
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("SD489fixTppEndedDrugSensitivities")) {
+			boolean includeStartedButNotFinishedServices = Boolean.parseBoolean(args[1]);
+			boolean testMode = Boolean.parseBoolean(args[2]);
+			String odsCodeRegex = null;
+			if (args.length > 3) {
+				odsCodeRegex = args[3];
+			}
+			SD489.fixTppEndedDrugSensitivities(includeStartedButNotFinishedServices, testMode, odsCodeRegex);
+			System.exit(0);
+		}
+
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("SD422fixPublishedFileRecords")) {
+			SD422.fixPublishedFileRecords();
+			System.exit(0);
+		}
+
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("SD472fixTppEncounters")) {
+			boolean includeStartedButNotFinishedServices = Boolean.parseBoolean(args[1]);
+			boolean testMode = Boolean.parseBoolean(args[2]);
+			int minsDelay = Integer.parseInt(args[3]);
+			String odsCodeRegex = null;
+			if (args.length > 4) {
+				odsCodeRegex = args[4];
+			}
+			SD472.fixTppEncounters(includeStartedButNotFinishedServices, testMode, minsDelay, odsCodeRegex);
+			System.exit(0);
+		}
+
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("SD478fixTppLocalCodes")) {
+			boolean includeStartedButNotFinishedServices = Boolean.parseBoolean(args[1]);
+			boolean testMode = Boolean.parseBoolean(args[2]);
+			String odsCodeRegex = null;
+			if (args.length > 3) {
+				odsCodeRegex = args[3];
+			}
+			SD478.fixTppLocalCodes(includeStartedButNotFinishedServices, testMode, odsCodeRegex);
+			System.exit(0);
+		}
+
+
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("SD476fixNwlRecordsAffectedByBstProblem")) {
+			boolean includeStartedButNotFinishedServices = Boolean.parseBoolean(args[1]);
+			boolean testMode = Boolean.parseBoolean(args[2]);
+			int minsDelay = Integer.parseInt(args[3]);
+			String odsCodeRegex = null;
+			if (args.length > 4) {
+				odsCodeRegex = args[4];
+			}
+			SD476.fixNwlRecordsAffectedByBstProblem(includeStartedButNotFinishedServices, testMode, minsDelay, odsCodeRegex);
+			System.exit(0);
+		}
+
+
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("SD451fixTppRecordsWithMultipleAddresses")) {
+			boolean includeStartedButNotFinishedServices = Boolean.parseBoolean(args[1]);
+			boolean testMode = Boolean.parseBoolean(args[2]);
+			int minsDelay = Integer.parseInt(args[3]);
+			String odsCodeRegex = null;
+			if (args.length > 4) {
+				odsCodeRegex = args[4];
+			}
+			UUID patientUuidFilter = null;
+			if (args.length > 5) {
+				patientUuidFilter = UUID.fromString(args[5]);
+			}
+			SD451.fixTppRecordsWithMultipleAddresses(includeStartedButNotFinishedServices, testMode, minsDelay, odsCodeRegex, patientUuidFilter);
+			System.exit(0);
+		}
+
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("SD107testS3Permissions")) {
+			String path = args[1];
+			SD107x.testS3Permissions(path);
+			System.exit(0);
+		}
+
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("SD107moveFhirResourceMappings")) {
+			boolean includeStartedButNotFinishedServices = Boolean.parseBoolean(args[1]);
+			int batchSize = Integer.parseInt(args[2]);
+			boolean verbose = Boolean.parseBoolean(args[3]);
+			String odsCodeRegex = null;
+			if (args.length > 4) {
+				odsCodeRegex = args[4];
+			}
+			SD107x.moveFhirResourceMappings(includeStartedButNotFinishedServices, batchSize, verbose, odsCodeRegex);
+			System.exit(0);
+		}
 
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("SD385fixTppLocalCodes")) {
@@ -73,6 +228,7 @@ public class Main {
 			String odsCodeRegex = args[1];
 			String sourceFile = args[2];
 			String dstFile = args[3];
+			//String mobileFile = args[4];
 			SD367.findEthnicityCodes(odsCodeRegex, sourceFile, dstFile);
 			System.exit(0);
 		}
@@ -240,11 +396,61 @@ public class Main {
 			System.exit(0);
 		}
 		if (args.length >= 1
-				&& args[0].equalsIgnoreCase("checkOrgOdsParents")) {
-			SD201.checkOrgOdsParents();
+				&& args[0].equalsIgnoreCase("resolveAllDuplicateDataEntries")) {
+			if(args.length > 2){
+				SD877.resolveAllDuplicateDataEntries(args[1], args[2]);
+			} else {
+				SD877.resolveAllDuplicateDataEntries(args[1]);
+			}
 			System.exit(0);
 		}
-
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("resolveDuplicateDataEntry")) {
+			if(args.length > 2){
+				SD877.resolveDuplicateDataEntry(args[1], args[2], "");
+			} else {
+				SD877.resolveDuplicateDataEntry(args[1]);
+			}
+			System.exit(0);
+		}
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("resolveAllDuplicateDataEntriesThreaded")) {
+			if(args.length > 2){
+				SD877.resolveAllDuplicateDataEntriesThreaded(args[1], args[2]);
+			} else {
+				SD877.resolveAllDuplicateDataEntriesThreaded(args[1]);
+			}
+			System.exit(0);
+		}
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("resolveDuplicateDataEntryThreaded")) {
+			if(args.length > 2){
+				SD877.resolveDuplicateDataEntryThreaded(args[1], args[2], "");
+			} else {
+				SD877.resolveDuplicateDataEntryThreaded(args[1]);
+			}
+			System.exit(0);
+		}
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("testOrganisationLookup")) {
+			if(args.length > 3){
+				SD929.testOrganisationLookup(args[1], args[2], args[3]);
+			} else if(args.length > 2){
+				SD929.testOrganisationLookup(args[1], args[2]);
+			} else {
+				SD929.testOrganisationLookup("1", args[1]);
+			}
+			System.exit(0);
+		}
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("testMultiOrgLookup")) {
+			if(args.length > 2){
+				SD929.testMultiOrgLookup(args[1], args[2]);
+			} else if(args.length > 1){
+				SD929.testMultiOrgLookup("1", args[1]);
+			}
+			System.exit(0);
+		}
 
 
 		if (args.length >= 1
@@ -277,14 +483,28 @@ public class Main {
 		if (args.length>=1 && args[0].equalsIgnoreCase("CQCGETALLLOCATIONS")) {
 			// force new build!
             String dirandfile = args[1];
-			CQC.getAllCQCLocationIds(dirandfile);
+			CQC.getAllCQCLocationIds(dirandfile, "https://api.cqc.org.uk/public/v1/locations");
+			System.exit(0);
+		}
+
+		if (args.length>=1 && args[0].equalsIgnoreCase("CQCGETALLPROVIDERS")) {
+			String dirandfile = args[1];
+			CQC.getAllCQCLocationIds(dirandfile, "https://api.cqc.org.uk/public/v1/providers");
+			System.exit(0);
+		}
+
+		if (args.length>=1 && args[0].equalsIgnoreCase("CQCPROVAPI")) {
+			String filename = args[1];
+			String outfile = args[2];
+			CQC.callCQCAPIforProviders(filename, outfile);
 			System.exit(0);
 		}
 
 		if (args.length>=1 && args[0].equalsIgnoreCase("CQCAPI")) {
 			String filename = args[1];
 			String outfile = args[2];
-            CQC.callCQCAPI(filename, outfile);
+			String provfile = args[3];
+            CQC.callCQCAPI(filename, outfile, provfile);
             System.exit(0);
         }
 
@@ -310,6 +530,33 @@ public class Main {
 		if (args.length>=1 && args[0].equalsIgnoreCase("CQC")) {
 			//SpecialRoutines.CQC();
 			CQC.CQC();
+			System.exit(0);
+		}
+
+		if (args.length>=1 && args[0].equals("HEALTHCHECKS")) {
+
+			String configName = args[1];
+			String eligibleTable = args[2];
+			String ineligibleTable = args[3];
+
+			HealthChecks.FixIneligibles(configName, eligibleTable, ineligibleTable);
+			System.exit(0);
+		}
+
+		if (args.length>=1 && args[0].equals("VITT")) {
+			String nhsno = args[1];
+			VITT.Start(nhsno);
+			System.exit(0);
+		}
+
+		if (args.length>=1 && args[0].equals("COVIDVACCINEEVENTS")) {
+			String gpconfigName = args[1];
+			String hospitalconfigName = args[2];
+			String hospitalOrganizationId = args[3];
+			String sourceFile = args[4];
+			String u = args[5];
+			String p = args[6];
+			COVIDVaccineEvents.Start(gpconfigName, hospitalconfigName, hospitalOrganizationId, sourceFile, u, p);
 			System.exit(0);
 		}
 
@@ -445,7 +692,11 @@ public class Main {
 			if (args.length > 3) {
 				odsCodeRegex = args[3];
 			}
-			SD99.fixEmisEpisodesChangingDate(includeStartedButNotFinishedServices, testMode, odsCodeRegex);
+			UUID patientUuidFilter = null;
+			if (args.length > 4) {
+				patientUuidFilter = UUID.fromString(args[4]);
+			}
+			SD99.fixEmisEpisodesChangingDate(includeStartedButNotFinishedServices, testMode, odsCodeRegex, patientUuidFilter);
 			System.exit(0);
 		}
 
@@ -587,14 +838,16 @@ public class Main {
 			System.exit(0);
 		}*/
 
-		/*if (args.length >= 1
+		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("DeleteDataFromOldCoreDB")) {
 
-			UUID serviceId = UUID.fromString(args[1]);
+			//UUID serviceId = UUID.fromString(args[1]);
+			String odsCode = args[1];
 			String previousPublisherConfig = args[2];
-			SpecialRoutines.deleteDataForOldCoreDBFromSubscribers(serviceId, previousPublisherConfig);
+			String subscriberConfig = args[3];
+			SpecialRoutines.deleteDataForOldCoreDBFromSubscribers(odsCode, previousPublisherConfig, subscriberConfig);
 			System.exit(0);
-		}*/
+		}
 
 		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("DeleteTppEpisodesElsewhere")) {
@@ -826,6 +1079,14 @@ public class Main {
 			System.exit(0);
 		}
 
+		/*
+		if (args.length >= 1 && args[0].contains("SERVICESFORCONFIG")) {
+            String configName = args[1];
+		    Uprn.ListServicesForConfig(configName);
+            System.exit(0);
+        }
+		*/
+
 		if (args.length >= 1 && args[0].contains("UPRNANDRALFTHREADED")) {
 
 			Integer threads = 5;
@@ -869,14 +1130,14 @@ public class Main {
 		}*/
 
 
-		if (args.length >= 1
+		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("CreateDeleteZipsForSubscriber")) {
 			int batchSize = Integer.parseInt(args[1]);
 			String sourceTable = args[2];
 			int subscriberId = Integer.parseInt(args[3]);
 			OldRoutines.createDeleteZipsForSubscriber(batchSize, sourceTable, subscriberId);
 			System.exit(0);
-		}
+		}*/
 
 		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("TestJMX")) {
@@ -1001,6 +1262,36 @@ public class Main {
 			System.exit(0);
 		}
 
+		if(args.length >= 1 && args[0].equalsIgnoreCase("ReprocessTPPScheduleResources")){
+			String subscriberConfigName = args[1];
+			String orgOdsCodeRegex = null;
+			if(args.length > 2) {
+				orgOdsCodeRegex = args[2];
+			}
+			SpecialRoutines.reprocessTPPScheduleResources(subscriberConfigName, orgOdsCodeRegex);
+			System.exit(0);
+		}
+
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("TransformAndFileTPPEncountersForProtocolServices")) {
+			String subscriberConfigName = args[1];
+			String orgOdsCodeRegex = args[2];
+			String year = args[3];
+
+			SD802.transformAndFileTPPEncountersForProtocolServices(subscriberConfigName, orgOdsCodeRegex, year);
+			System.exit(0);
+		}
+
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("TransformAndFileTPPReferralsForProtocolServices")) {
+			String subscriberConfigName = args[1];
+			String orgOdsCodeRegex = args[2];
+			String year = args[3];
+
+			SD1028.transformAndFileTPPReferralForProtocolServices(subscriberConfigName, orgOdsCodeRegex, year);
+			System.exit(0);
+		}
+
 		if (args.length >= 1
 				&& args[0].contains("TransformAndFilePatientsAndEpisodesForProtocolServicesThreaded")) {
 
@@ -1015,6 +1306,7 @@ public class Main {
 					QBeforeBlock = Integer.parseInt(tb[2]);
 				}
 			}
+
 
 			String protocolName = args[1];
 			String subscriberConfigName = args[2];
@@ -1048,12 +1340,24 @@ public class Main {
 		}
 
 		if (args.length >= 1
-				&& args[0].equalsIgnoreCase("transformAndFilePatientV2IdentifiableDataForProtocolServices")) {
+				&& args[0].equalsIgnoreCase("transformAndFilePatientDeIdentifiedTables")) {
 			boolean includeStartedButNotFinishedServices = Boolean.parseBoolean(args[1]);
 			String subscriberConfigName = args[2];
 			String orgOdsCodeRegex = args[3];
 
-			SpecialRoutines.transformAndFilePatientV2IdentifiableDataForProtocolServices(includeStartedButNotFinishedServices, subscriberConfigName, orgOdsCodeRegex);
+			SD477.transformAndFilePatientDeIdentifiedTables(includeStartedButNotFinishedServices, subscriberConfigName, orgOdsCodeRegex);
+			System.exit(0);
+		}
+
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("transformAndFilePatientV2IdentifiableDataForProtocolServices")) {
+			boolean includeStartedButNotFinishedServices = Boolean.parseBoolean(args[1]);
+			String subscriberConfigName = args[2];
+			String orgOdsCodeRegex = args[3];
+			boolean testMode = Boolean.parseBoolean(args[4]);
+
+			SD355.transformAndFilePatientV2IdentifiableDataForProtocolServices(
+					includeStartedButNotFinishedServices, subscriberConfigName, orgOdsCodeRegex, testMode);
 			System.exit(0);
 		}
 
@@ -1081,7 +1385,7 @@ public class Main {
 			for (int i = 4; i < args.length; i++) {
 				subscriberConfigNames.add(args[i]);
 			}
-			OldRoutines.subscriberTransformPatients(sourceFile, bulkDelete, reason, subscriberConfigNames);
+			Queueing.subscriberTransformPatients(sourceFile, bulkDelete, reason, subscriberConfigNames);
 			System.exit(0);
 		}
 
@@ -1451,6 +1755,15 @@ public class Main {
 			System.exit(0);
 		}
 
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("PostExchangesToSpecificSubscriberProtocol")) {
+			String srcFile = args[1];
+			String subscriberConfigName = args[2];
+			String reason = args[3];
+			Queueing.postExchangesToSpecificSubscriberProtocol(srcFile, subscriberConfigName, reason);
+			System.exit(0);
+		}
+
 		/*if (args.length >= 1
 				&& args[0].equalsIgnoreCase("FixBartsPatients")) {
 			UUID serviceId = UUID.fromString(args[1]);
@@ -1550,6 +1863,15 @@ public class Main {
 		if (args.length >= 1
 				&& args[0].equalsIgnoreCase("TestSlack")) {
 			SpecialRoutines.testSlack();
+			System.exit(0);
+		}
+
+		if (args.length >= 1
+				&& args[0].equalsIgnoreCase("TestRabbitNode")) {
+			String node = args[1];
+			if (!Strings.isNullOrEmpty(node)) {
+				SD865.testRabbitNode(node);
+			}
 			System.exit(0);
 		}
 

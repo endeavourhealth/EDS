@@ -31,8 +31,11 @@ public class Main {
         String type = args[0];
 
         try {
-            if (type.equalsIgnoreCase("deprivation")) {
-                DeprivationUpdater.updateDeprivationScores(args);
+            if (type.equalsIgnoreCase("imd")) {
+                ImdDeprivationUpdater.updateDeprivationScores(args);
+
+            } else if (type.equalsIgnoreCase("townsend")) {
+                TownsendDeprivationUpdater.updateDeprivationScores(args);
 
             } else if (type.equalsIgnoreCase("opcs4")) {
                 Opcs4Updater.updateOpcs4Lookup(args);

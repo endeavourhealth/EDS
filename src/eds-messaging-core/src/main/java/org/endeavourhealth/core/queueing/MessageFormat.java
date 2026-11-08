@@ -23,9 +23,11 @@ public class MessageFormat {
     public static final String ADASTRA_CSV = "ADASTRACSV";
     public static final String JSON_API = "JSON_API";
     public static final String PCR_CSV = "PCR_CSV";
+    public static final String NEMS_XML = "NEMSXML";
     public static final String SUBSCRIBER_CSV = "SUBSCRIBER_CSV";
     public static final String BHRUT_CSV = "BHRUTCSV";
-    public static final String IMPERIAL_HL7_V2 = "IMPERIALHL7V2";
+    public static final String ACUTE_HL7V2 = "ACUTEHL7V2";
+    public static final String IMPERIAL_CSV = "IMPERIALCSV";
 
     public static final String DUMMY_SENDER_SOFTWARE_FOR_BULK_DELETE = "BULK_DELETE_DATA";
 

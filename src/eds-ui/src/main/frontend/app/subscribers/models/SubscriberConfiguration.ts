@@ -19,6 +19,9 @@ export class SubscriberConfiguration {
     subscriberTransformDatabase: string; 
     subscriberTransformDatabaseName: string; 
     numPublishers: number;
+    receivedOneDay: number;
+    receivedTwoDays: number;
+    receivedMoreDays: number;
     inboundError: number;
     inboundUpToDate: number;
     inboundOneDay: number;
@@ -26,5 +29,9 @@ export class SubscriberConfiguration {
     outboundUpToDate: number;
     outboundOneDay: number;
     outboundMoreDays: number;
+    writeOutUpToDate: number;
+    writeOutOneDay: number;
+    writeOutMoreDays: number;
+    outboundError: number;
     publisherServices: PublisherService[];
 }

@@ -4,6 +4,10 @@ IF OBJECT_ID('dbo.update_person_record') IS NOT NULL DROP PROCEDURE update_perso
 GO
 
 -- drop tables
+IF OBJECT_ID('dbo.patient_address_match', 'U') IS NOT NULL DROP TABLE dbo.patient_address_match
+GO
+IF OBJECT_ID('dbo.patient_address_ralf', 'U') IS NOT NULL DROP TABLE dbo.patient_address_ralf
+GO
 IF OBJECT_ID('dbo.registration_status_history', 'U') IS NOT NULL DROP TABLE dbo.registration_status_history
 GO
 IF OBJECT_ID('dbo.patient_pseudo_id', 'U') IS NOT NULL DROP TABLE dbo.patient_pseudo_id
@@ -28,6 +32,8 @@ IF OBJECT_ID('dbo.procedure_request', 'U') IS NOT NULL DROP TABLE dbo.procedure_
 GO
 IF OBJECT_ID('dbo.referral_request', 'U') IS NOT NULL DROP TABLE dbo.referral_request
 GO
+IF OBJECT_ID('dbo.referral_request_additional', 'U') IS NOT NULL DROP TABLE dbo.referral_request_additional
+GO
 IF OBJECT_ID('dbo.patient_contact', 'U') IS NOT NULL DROP TABLE dbo.patient_contact
 GO
 IF OBJECT_ID('dbo.patient_address', 'U') IS NOT NULL DROP TABLE dbo.patient_address
@@ -46,6 +52,8 @@ IF OBJECT_ID('dbo.encounter', 'U') IS NOT NULL DROP TABLE dbo.encounter
 GO
 IF OBJECT_ID('dbo.appointment', 'U') IS NOT NULL DROP TABLE dbo.appointment
 GO
+IF OBJECT_ID('dbo.appointment_additional', 'U') IS NOT NULL DROP TABLE dbo.appointment_additional
+GO
 IF OBJECT_ID('dbo.episode_of_care', 'U') IS NOT NULL DROP TABLE dbo.episode_of_care
 GO
 IF OBJECT_ID('dbo.patient', 'U') IS NOT NULL DROP TABLE dbo.patient
@@ -60,14 +68,15 @@ IF OBJECT_ID('dbo.practitioner', 'U') IS NOT NULL DROP TABLE dbo.practitioner
 GO
 IF OBJECT_ID('dbo.organization', 'U') IS NOT NULL DROP TABLE dbo.organization
 GO
-IF OBJECT_ID('dbo.patient_address_match', 'U') IS NOT NULL DROP TABLE dbo.patient_address_match
-GO
-IF OBJECT_ID('dbo.patient_address_ralf', 'U') IS NOT NULL DROP TABLE dbo.patient_address_ralf
-GO
 IF OBJECT_ID('dbo.concept', 'U') IS NOT NULL DROP TABLE dbo.concept
 GO
 IF OBJECT_ID('dbo.concept_map', 'U') IS NOT NULL DROP TABLE dbo.concept_map
 GO
+IF OBJECT_ID('dbo.organization_metadata', 'U') IS NOT NULL DROP TABLE dbo.organization_metadata
+GO
+IF OBJECT_ID('dbo.database_version', 'U') IS NOT NULL DROP TABLE dbo.database_version
+GO
+IF OBJECT_ID('dbo.schedule_additional', 'U') IS NOT NULL DROP TABLE dbo.schedule_additional;
 
 
 CREATE TABLE [allergy_intolerance] (
@@ -75,15 +84,15 @@ CREATE TABLE [allergy_intolerance] (
 [organization_id] bigint NOT NULL,
 [patient_id] bigint NOT NULL,
 [person_id] bigint NOT NULL,
-[encounter_id] bigint NULL DEFAULT NULL,
-[practitioner_id] bigint NULL DEFAULT NULL,
-[clinical_effective_date] date NULL DEFAULT NULL,
-[date_precision_concept_id] int NULL DEFAULT NULL,
+[encounter_id] bigint NULL,
+[practitioner_id] bigint NULL,
+[clinical_effective_date] datetime NULL,
+[date_precision_concept_id] int NULL,
 [is_review] tinyint NOT NULL,
-[core_concept_id] int NULL DEFAULT NULL,
-[non_core_concept_id] int NULL DEFAULT NULL,
-[age_at_event] decimal(5,2) NULL DEFAULT NULL,
-[date_recorded] datetime NULL DEFAULT NULL,
+[core_concept_id] int NULL,
+[non_core_concept_id] int NULL,
+[age_at_event] decimal(5,2) NULL,
+[date_recorded] datetime NULL,
 PRIMARY KEY ([organization_id], [person_id], [id])
 )
 GO
@@ -101,18 +110,18 @@ CREATE TABLE [appointment] (
 [organization_id] bigint NOT NULL,
 [patient_id] bigint NOT NULL,
 [person_id] bigint NOT NULL,
-[practitioner_id] bigint NULL DEFAULT NULL,
-[schedule_id] bigint NULL DEFAULT NULL,
-[start_date] datetime2(0) NULL DEFAULT NULL,
-[planned_duration] int NULL DEFAULT NULL,
-[actual_duration] int NULL DEFAULT NULL,
-[appointment_status_concept_id] int NULL DEFAULT NULL,
-[patient_wait] int NULL DEFAULT NULL,
-[patient_delay] int NULL DEFAULT NULL,
-[date_time_sent_in] datetime2(0) NULL DEFAULT NULL,
-[date_time_left] datetime2(0) NULL DEFAULT NULL,
-[source_id] varchar(36) NULL DEFAULT NULL,
-[cancelled_date] datetime2(0) NULL DEFAULT NULL,
+[practitioner_id] bigint NULL,
+[schedule_id] bigint NULL,
+[start_date] datetime2(0) NULL,
+[planned_duration] int NULL,
+[actual_duration] int NULL,
+[appointment_status_concept_id] int NULL,
+[patient_wait] int NULL,
+[patient_delay] int NULL,
+[date_time_sent_in] datetime2(0) NULL,
+[date_time_left] datetime2(0) NULL,
+[source_id] varchar(36) NULL,
+[cancelled_date] datetime2(0) NULL,
 PRIMARY KEY ([organization_id], [person_id], [id])
 )
 GO
@@ -121,30 +130,46 @@ GO
 CREATE INDEX [appointment_patient_id] ON [appointment] ([patient_id])
 GO
 
+--Table: appointment_additional
+CREATE TABLE [appointment_additional]
+(
+    [id]          bigint NOT NULL,
+    [property_id] int    NOT NULL,
+    [value_id]    int NULL,
+    [json_value]  nvarchar(max) NULL,
+    [text_value]  nvarchar(255) NULL,
+    PRIMARY KEY  ([id], [property_id])
+);
+GO
+CREATE INDEX [appointment_additional_value_id]
+    ON [appointment_additional]
+        ([value_id]);
+GO
 
 CREATE TABLE [diagnostic_order] (
 [id] bigint,
 [organization_id] bigint NOT NULL,
 [patient_id] bigint NOT NULL,
 [person_id] bigint NOT NULL,
-[encounter_id] bigint NULL DEFAULT NULL,
-[practitioner_id] bigint NULL DEFAULT NULL,
-[clinical_effective_date] date NULL DEFAULT NULL,
-[date_precision_concept_id] int NULL DEFAULT NULL,
-[result_value] float NULL DEFAULT NULL,
-[result_value_units] varchar(50) NULL DEFAULT NULL,
-[result_date] date NULL DEFAULT NULL,
-[result_text] varchar(MAX) NULL DEFAULT NULL,
-[result_concept_id] int NULL DEFAULT NULL,
+[encounter_id] bigint NULL,
+[practitioner_id] bigint NULL,
+[clinical_effective_date] datetime NULL,
+[date_precision_concept_id] int NULL,
+[result_value] float NULL,
+[result_value_units] varchar(50) NULL,
+[result_date] date NULL,
+[result_text] varchar(MAX) NULL,
+[result_concept_id] int NULL,
 [is_problem] tinyint NOT NULL,
 [is_review] tinyint NOT NULL,
-[problem_end_date] date NULL DEFAULT NULL,
-[parent_observation_id] bigint NULL DEFAULT NULL,
-[core_concept_id] int NULL DEFAULT NULL,
-[non_core_concept_id] int NULL DEFAULT NULL,
-[age_at_event] decimal(5,2) NULL DEFAULT NULL,
-[episodicity_concept_id] int NULL DEFAULT NULL,
-[is_primary] tinyint NULL DEFAULT NULL,
+[problem_end_date] date NULL,
+[parent_observation_id] bigint NULL,
+[core_concept_id] int NULL,
+[non_core_concept_id] int NULL,
+[age_at_event] decimal(5,2) NULL,
+[episodicity_concept_id] int NULL,
+[is_primary] tinyint NULL,
+[date_recorded] datetime NULL,
 PRIMARY KEY ([organization_id], [person_id], [id])
 )
 GO
@@ -173,21 +198,21 @@ CREATE TABLE [encounter] (
 [organization_id] bigint NOT NULL,
 [patient_id] bigint NOT NULL,
 [person_id] bigint NOT NULL,
-[practitioner_id] bigint NULL DEFAULT NULL,
-[appointment_id] bigint NULL DEFAULT NULL,
-[clinical_effective_date] date NULL DEFAULT NULL,
-[date_precision_concept_id] int NULL DEFAULT NULL,
-[episode_of_care_id] bigint NULL DEFAULT NULL,
-[service_provider_organization_id] bigint NULL DEFAULT NULL,
-[core_concept_id] int NULL DEFAULT NULL,
-[non_core_concept_id] int NULL DEFAULT NULL,
-[age_at_event] decimal(5,2) NULL DEFAULT NULL,
-[type] varchar(MAX) NULL DEFAULT NULL,
-[sub_type] varchar(MAX) NULL DEFAULT NULL,
-[admission_method] varchar(40) NULL DEFAULT NULL,
-[end_date] date NULL DEFAULT NULL,
-[institution_location_id] varchar(MAX) NULL DEFAULT NULL,
-[date_recorded] datetime NULL DEFAULT NULL,
+[practitioner_id] bigint NULL,
+[appointment_id] bigint NULL,
+[clinical_effective_date] datetime NULL,
+[date_precision_concept_id] int NULL,
+[episode_of_care_id] bigint NULL,
+[service_provider_organization_id] bigint NULL,
+[core_concept_id] int NULL,
+[non_core_concept_id] int NULL,
+[age_at_event] decimal(5,2) NULL,
+[type] varchar(MAX) NULL,
+[sub_type] varchar(MAX) NULL,
+[admission_method] varchar(40) NULL,
+[end_date] datetime NULL,
+[institution_location_id] varchar(MAX) NULL,
+[date_recorded] datetime NULL,
 PRIMARY KEY ([organization_id], [person_id], [id])
 )
 GO
@@ -206,21 +231,21 @@ CREATE TABLE [encounter_event] (
 [patient_id] bigint NOT NULL,
 [person_id] bigint NOT NULL,
 [encounter_id] bigint NOT NULL,
-[practitioner_id] bigint NULL DEFAULT NULL,
-[appointment_id] bigint NULL DEFAULT NULL,
-[clinical_effective_date] datetime NULL DEFAULT NULL,
-[date_precision_concept_id] int NULL DEFAULT NULL,
-[episode_of_care_id] bigint NULL DEFAULT NULL,
-[service_provider_organization_id] bigint NULL DEFAULT NULL,
-[core_concept_id] int NULL DEFAULT NULL,
-[non_core_concept_id] int NULL DEFAULT NULL,
-[age_at_event] decimal(5,2) NULL DEFAULT NULL,
-[type] varchar(MAX) NULL DEFAULT NULL,
-[sub_type] varchar(MAX) NULL DEFAULT NULL,
-[admission_method] varchar(40) NULL DEFAULT NULL,
-[end_date] date NULL DEFAULT NULL,
-[institution_location_id] varchar(MAX) NULL DEFAULT NULL,
-[date_recorded] datetime NULL DEFAULT NULL,
+[practitioner_id] bigint NULL,
+[appointment_id] bigint NULL,
+[clinical_effective_date] datetime NULL,
+[date_precision_concept_id] int NULL,
+[episode_of_care_id] bigint NULL,
+[service_provider_organization_id] bigint NULL,
+[core_concept_id] int NULL,
+[non_core_concept_id] int NULL,
+[age_at_event] decimal(5,2) NULL,
+[type] varchar(MAX) NULL,
+[sub_type] varchar(MAX) NULL,
+[admission_method] varchar(40) NULL,
+[end_date] date NULL,
+[institution_location_id] varchar(MAX) NULL,
+[date_recorded] datetime NULL,
 [finished] bit NOT NULL,
 PRIMARY KEY ([organization_id], [person_id], [id])
 )
@@ -233,12 +258,13 @@ CREATE INDEX [encounter_event_core_concept_id_clinical_effective_date] ON [encou
 GO
 
 CREATE TABLE [encounter_additional] (
-    [id] bigint NOT NULL,
-    [property_id] int NOT NULL,
-    [value_id] int NULL,
-    [json_value] nvarchar(max) NULL,
-     PRIMARY KEY ([id], [property_id])
-    )
+[id] bigint NOT NULL,
+[property_id] int NOT NULL,
+[value_id] int NULL,
+[json_value] nvarchar(max) NULL,
+[text_value] nvarchar(255) NULL,
+PRIMARY KEY ([id], [property_id])
+)
 GO
 CREATE INDEX [encounter_additional_value_id] ON [encounter_additional] ([value_id])
 GO
@@ -248,11 +274,11 @@ CREATE TABLE [episode_of_care] (
 [organization_id] bigint NOT NULL,
 [patient_id] bigint NOT NULL,
 [person_id] bigint NOT NULL,
-[registration_type_concept_id] int NULL DEFAULT NULL,
-[registration_status_concept_id] int NULL DEFAULT NULL,
-[date_registered] date NULL DEFAULT NULL,
-[date_registered_end] date NULL DEFAULT NULL,
-[usual_gp_practitioner_id] bigint NULL DEFAULT NULL,
+[registration_type_concept_id] int NULL,
+[registration_status_concept_id] int NULL,
+[date_registered] date NULL,
+[date_registered_end] date NULL,
+[usual_gp_practitioner_id] bigint NULL,
 PRIMARY KEY ([organization_id], [person_id], [id])
 )
 GO
@@ -285,10 +311,10 @@ CREATE TABLE [flag] (
 [organization_id] bigint NOT NULL,
 [patient_id] bigint NOT NULL,
 [person_id] bigint NOT NULL,
-[effective_date] date NULL DEFAULT NULL,
-[date_precision_concept_id] int NULL DEFAULT NULL,
+[effective_date] datetime NULL,
+[date_precision_concept_id] int NULL,
 [is_active] tinyint NOT NULL,
-[flag_text] varchar(MAX) NULL DEFAULT NULL,
+[flag_text] varchar(MAX) NULL,
 PRIMARY KEY ([organization_id], [person_id], [id])
 )
 GO
@@ -300,11 +326,11 @@ GO
 
 CREATE TABLE [location] (
 [id] bigint,
-[name] varchar(255) NULL DEFAULT NULL,
-[type_code] varchar(50) NULL DEFAULT NULL,
-[type_desc] varchar(255) NULL DEFAULT NULL,
-[postcode] varchar(10) NULL DEFAULT NULL,
-[managing_organization_id] bigint NULL DEFAULT NULL,
+[name] varchar(255) NULL,
+[type_code] varchar(50) NULL,
+[type_desc] varchar(255) NULL,
+[postcode] varchar(10) NULL,
+[managing_organization_id] bigint NULL,
 PRIMARY KEY ([id])
 )
 GO
@@ -316,21 +342,22 @@ CREATE TABLE [medication_order] (
 [organization_id] bigint NOT NULL,
 [patient_id] bigint NOT NULL,
 [person_id] bigint NOT NULL,
-[encounter_id] bigint NULL DEFAULT NULL,
-[practitioner_id] bigint NULL DEFAULT NULL,
-[clinical_effective_date] date NULL DEFAULT NULL,
-[date_precision_concept_id] int NULL DEFAULT NULL,
-[dose] varchar(1000) NULL DEFAULT NULL,
-[quantity_value] float NULL DEFAULT NULL,
-[quantity_unit] varchar(255) NULL DEFAULT NULL,
-[duration_days] int NULL DEFAULT NULL,
-[estimated_cost] float NULL DEFAULT NULL,
-[medication_statement_id] bigint NULL DEFAULT NULL,
-[core_concept_id] int NULL DEFAULT NULL,
-[non_core_concept_id] int NULL DEFAULT NULL,
-[bnf_reference] varchar(6) NULL DEFAULT NULL,
-[age_at_event] decimal(5,2) NULL DEFAULT NULL,
-[issue_method] varchar(MAX) NULL DEFAULT NULL,
+[encounter_id] bigint NULL,
+[practitioner_id] bigint NULL,
+[clinical_effective_date] datetime NULL,
+[date_precision_concept_id] int NULL,
+[dose] varchar(1000) NULL,
+[quantity_value] float NULL,
+[quantity_unit] varchar(255) NULL,
+[duration_days] int NULL,
+[estimated_cost] float NULL,
+[medication_statement_id] bigint NULL,
+[core_concept_id] int NULL,
+[non_core_concept_id] int NULL,
+[bnf_reference] varchar(6) NULL,
+[age_at_event] decimal(5,2) NULL,
+[issue_method] varchar(MAX) NULL,
+[date_recorded] datetime NULL,
 PRIMARY KEY ([organization_id], [person_id], [id])
 )
 GO
@@ -347,21 +374,21 @@ CREATE TABLE [medication_statement] (
 [organization_id] bigint NOT NULL,
 [patient_id] bigint NOT NULL,
 [person_id] bigint NOT NULL,
-[encounter_id] bigint NULL DEFAULT NULL,
-[practitioner_id] bigint NULL DEFAULT NULL,
-[clinical_effective_date] date NULL DEFAULT NULL,
-[date_precision_concept_id] int NULL DEFAULT NULL,
-[is_active] tinyint NULL,
-[cancellation_date] date NULL DEFAULT NULL,
-[dose] varchar(1000) NULL DEFAULT NULL,
-[quantity_value] float NULL DEFAULT NULL,
-[quantity_unit] varchar(255) NULL DEFAULT NULL,
-[authorisation_type_concept_id] int NULL DEFAULT NULL,
-[core_concept_id] int NULL DEFAULT NULL,
-[non_core_concept_id] int NULL DEFAULT NULL,
-[bnf_reference] varchar(6) NULL DEFAULT NULL,
-[age_at_event] decimal(5,2) NULL DEFAULT NULL,
-[issue_method] varchar(MAX) NULL DEFAULT NULL,
+[encounter_id] bigint NULL,
+[practitioner_id] bigint NULL,
+[clinical_effective_date] datetime NULL,
+[date_precision_concept_id] int NULL,
+[cancellation_date] date NULL,
+[dose] varchar(1000) NULL,
+[quantity_value] float NULL,
+[quantity_unit] varchar(255) NULL,
+[authorisation_type_concept_id] int NULL,
+[core_concept_id] int NULL,
+[non_core_concept_id] int NULL,
+[bnf_reference] varchar(6) NULL,
+[age_at_event] decimal(5,2) NULL,
+[issue_method] varchar(MAX) NULL,
+[date_recorded] datetime NULL,
 PRIMARY KEY ([organization_id], [person_id], [id])
 )
 GO
@@ -379,25 +406,25 @@ CREATE TABLE [observation] (
 [organization_id] bigint NOT NULL,
 [patient_id] bigint NOT NULL,
 [person_id] bigint NOT NULL,
-[encounter_id] bigint NULL DEFAULT NULL,
-[practitioner_id] bigint NULL DEFAULT NULL,
-[clinical_effective_date] date NULL DEFAULT NULL,
-[date_precision_concept_id] int NULL DEFAULT NULL,
-[result_value] float NULL DEFAULT NULL,
-[result_value_units] varchar(50) NULL DEFAULT NULL,
-[result_date] date NULL DEFAULT NULL,
-[result_text] varchar(MAX) NULL DEFAULT NULL,
-[result_concept_id] int NULL DEFAULT NULL,
+[encounter_id] bigint NULL,
+[practitioner_id] bigint NULL,
+[clinical_effective_date] datetime NULL,
+[date_precision_concept_id] int NULL,
+[result_value] float NULL,
+[result_value_units] varchar(50) NULL,
+[result_date] date NULL,
+[result_text] varchar(MAX) NULL,
+[result_concept_id] int NULL,
 [is_problem] tinyint NOT NULL,
 [is_review] tinyint NOT NULL,
-[problem_end_date] date NULL DEFAULT NULL,
-[parent_observation_id] bigint NULL DEFAULT NULL,
-[core_concept_id] int NULL DEFAULT NULL,
-[non_core_concept_id] int NULL DEFAULT NULL,
-[age_at_event] decimal(5,2) NULL DEFAULT NULL,
-[episodicity_concept_id] int NULL DEFAULT NULL,
-[is_primary] tinyint NULL DEFAULT NULL,
-[date_recorded] datetime NULL DEFAULT NULL,
+[problem_end_date] date NULL,
+[parent_observation_id] bigint NULL,
+[core_concept_id] int NULL,
+[non_core_concept_id] int NULL,
+[age_at_event] decimal(5,2) NULL,
+[episodicity_concept_id] int NULL,
+[is_primary] tinyint NULL,
+[date_recorded] datetime NULL,
 PRIMARY KEY ([organization_id], [person_id], [id])
 )
 GO
@@ -419,12 +446,13 @@ CREATE INDEX [ix_observation_clinical_effective_date] ON [observation] ([clinica
 GO
 CREATE INDEX [ix_observation_person_id] ON [observation] ([person_id])
 GO
- 
+
 CREATE TABLE [observation_additional] (
   [id] bigint NOT NULL,
   [property_id] int NOT NULL, -- IM dbid reference
   [value_id] int NULL,
   [json_value] nvarchar(max) NULL,
+  [text_value] nvarchar(255) NULL,
   PRIMARY KEY ([id], [property_id])
 )
 GO
@@ -433,35 +461,44 @@ GO
 
 CREATE TABLE [organization] (
 [id] bigint,
-[ods_code] varchar(50) NULL DEFAULT NULL,
-[name] varchar(255) NULL DEFAULT NULL,
-[type_code] varchar(50) NULL DEFAULT NULL,
-[type_desc] varchar(255) NULL DEFAULT NULL,
-[postcode] varchar(10) NULL DEFAULT NULL,
-[parent_organization_id] bigint NULL DEFAULT NULL,
+[ods_code] varchar(50) NULL,
+[name] varchar(255) NULL,
+[type_code] varchar(50) NULL,
+[type_desc] varchar(255) NULL,
+[postcode] varchar(10) NULL,
+[parent_organization_id] bigint NULL,
 PRIMARY KEY ([id])
 )
 GO
 CREATE UNIQUE INDEX [organization_id] ON [organization] ([id])
 GO
 
+CREATE TABLE [organization_metadata] (
+    [id] bigint,
+    [publishing_software] varchar(50),
+    [last_data_to_dds] datetime,
+    [last_data_cutoff] datetime,
+    PRIMARY KEY ([id],[publishing_software])
+    )
+GO
+
 CREATE TABLE [patient] (
 [id] bigint,
 [organization_id] bigint NOT NULL,
 [person_id] bigint NOT NULL,
-[title] varchar(50) NULL DEFAULT NULL,
-[first_names] varchar(255) NULL DEFAULT NULL,
-[last_name] varchar(255) NULL DEFAULT NULL,
-[gender_concept_id] int NULL DEFAULT NULL,
-[nhs_number] varchar(255) NULL DEFAULT NULL,
-[date_of_birth] date NULL DEFAULT NULL,
-[date_of_death] date NULL DEFAULT NULL,
-[current_address_id] bigint NULL DEFAULT NULL,
-[ethnic_code_concept_id] int NULL DEFAULT NULL,
-[registered_practice_organization_id] bigint NULL DEFAULT NULL,
-[birth_year] smallint NULL DEFAULT NULL,
-[birth_month] tinyint NULL DEFAULT NULL,
-[birth_week] tinyint NULL DEFAULT NULL,
+[title] varchar(50) NULL,
+[first_names] varchar(255) NULL,
+[last_name] varchar(255) NULL,
+[gender_concept_id] int NULL,
+[nhs_number] varchar(255) NULL,
+[date_of_birth] date NULL,
+[date_of_death] date NULL,
+[current_address_id] bigint NULL,
+[ethnic_code_concept_id] int NULL,
+[registered_practice_organization_id] bigint NULL,
+[birth_year] smallint NULL,
+[birth_month] tinyint NULL,
+[birth_week] tinyint NULL,
 PRIMARY KEY ([organization_id], [person_id], [id])
 )
 GO
@@ -476,21 +513,22 @@ CREATE TABLE [patient_address] (
 [organization_id] bigint NOT NULL,
 [patient_id] bigint NOT NULL,
 [person_id] bigint NOT NULL,
-[address_line_1] varchar(255) NULL DEFAULT NULL,
-[address_line_2] varchar(255) NULL DEFAULT NULL,
-[address_line_3] varchar(255) NULL DEFAULT NULL,
-[address_line_4] varchar(255) NULL DEFAULT NULL,
-[city] varchar(255) NULL DEFAULT NULL,
-[postcode] varchar(255) NULL DEFAULT NULL,
+[address_line_1] varchar(255) NULL,
+[address_line_2] varchar(255) NULL,
+[address_line_3] varchar(255) NULL,
+[address_line_4] varchar(255) NULL,
+[city] varchar(255) NULL,
+[postcode] varchar(255) NULL,
 [use_concept_id] int NOT NULL,
-[start_date] date NULL DEFAULT NULL,
-[end_date] date NULL DEFAULT NULL,
-[lsoa_2001_code] varchar(9) NULL DEFAULT NULL,
-[lsoa_2011_code] varchar(9) NULL DEFAULT NULL,
-[msoa_2001_code] varchar(9) NULL DEFAULT NULL,
-[msoa_2011_code] varchar(9) NULL DEFAULT NULL,
-[ward_code] varchar(9) NULL DEFAULT NULL,
-[local_authority_code] varchar(9) NULL DEFAULT NULL,
+[start_date] date NULL,
+[end_date] date NULL,
+[lsoa_2001_code] varchar(9) NULL,
+[lsoa_2011_code] varchar(9) NULL,
+[msoa_2001_code] varchar(9) NULL,
+[msoa_2011_code] varchar(9) NULL,
+[ward_code] varchar(9) NULL,
+[local_authority_code] varchar(9) NULL,
+[townsend_deprivation_index] real NULL,
 PRIMARY KEY ([organization_id], [id], [patient_id], [person_id])
 )
 GO
@@ -502,10 +540,13 @@ CREATE TABLE [patient_additional] (
     [property_id] int NOT NULL,
     [value_id] int NULL,
     [json_value] nvarchar(max) NULL,
+    [text_value] nvarchar(255) NULL,
   PRIMARY KEY ([id], [property_id])
 )
 GO
 CREATE INDEX [ix_patient_additional_id]  ON [patient_additional]  (value_id)
+GO
+CREATE INDEX [ix_patient_additional_text_value]  ON [patient_additional]  (text_value)
 GO
 
 CREATE TABLE [patient_contact] (
@@ -513,11 +554,11 @@ CREATE TABLE [patient_contact] (
 [organization_id] bigint NOT NULL,
 [patient_id] bigint NOT NULL,
 [person_id] bigint NOT NULL,
-[use_concept_id] int NULL DEFAULT NULL,
-[type_concept_id] int NULL DEFAULT NULL,
-[start_date] date NULL DEFAULT NULL,
-[end_date] date NULL DEFAULT NULL,
-[value] varchar(255) NULL DEFAULT NULL,
+[use_concept_id] int NULL,
+[type_concept_id] int NULL,
+[start_date] date NULL,
+[end_date] date NULL,
+[value] varchar(255) NULL,
 PRIMARY KEY ([organization_id], [id], [patient_id], [person_id])
 )
 GO
@@ -529,14 +570,14 @@ CREATE TABLE [patient_uprn] (
 [patient_id] bigint,
 [organization_id] bigint NOT NULL,
 [person_id] bigint NOT NULL,
-[uprn] bigint NULL DEFAULT NULL,
-[qualifier] varchar(50) NULL DEFAULT NULL,
-[algorithm] varchar(255) NULL DEFAULT NULL,
-[match] varchar(255) NULL DEFAULT NULL,
-[no_address] tinyint NULL DEFAULT NULL,
-[invalid_address] tinyint NULL DEFAULT NULL,
-[missing_postcode] tinyint NULL DEFAULT NULL,
-[invalid_postcode] tinyint NULL DEFAULT NULL,
+[uprn] bigint NULL,
+[qualifier] varchar(50) NULL,
+[algorithm] varchar(255) NULL,
+[match] varchar(255) NULL,
+[no_address] tinyint NULL,
+[invalid_address] tinyint NULL,
+[missing_postcode] tinyint NULL,
+[invalid_postcode] tinyint NULL,
 PRIMARY KEY ([organization_id], [person_id], [patient_id])
 )
 GO
@@ -546,19 +587,19 @@ GO
 CREATE TABLE [person] (
 [id] bigint,
 [organization_id] bigint NOT NULL,
-[title] varchar(50) NULL DEFAULT NULL,
-[first_names] varchar(255) NULL DEFAULT NULL,
-[last_name] varchar(255) NULL DEFAULT NULL,
-[gender_concept_id] int NULL DEFAULT NULL,
-[nhs_number] varchar(255) NULL DEFAULT NULL,
-[date_of_birth] date NULL DEFAULT NULL,
-[date_of_death] date NULL DEFAULT NULL,
-[current_address_id] bigint NULL DEFAULT NULL,
-[ethnic_code_concept_id] int NULL DEFAULT NULL,
-[registered_practice_organization_id] bigint NULL DEFAULT NULL,
-[birth_year] smallint NULL DEFAULT NULL,
-[birth_month] tinyint NULL DEFAULT NULL,
-[birth_week] tinyint NULL DEFAULT NULL,
+[title] varchar(255) NULL,
+[first_names] varchar(255) NULL,
+[last_name] varchar(255) NULL,
+[gender_concept_id] int NULL,
+[nhs_number] varchar(255) NULL,
+[date_of_birth] date NULL,
+[date_of_death] date NULL,
+[current_address_id] bigint NULL,
+[ethnic_code_concept_id] int NULL,
+[registered_practice_organization_id] bigint NULL,
+[birth_year] smallint NULL,
+[birth_month] tinyint NULL,
+[birth_week] tinyint NULL,
 PRIMARY KEY ([id])
 )
 GO
@@ -570,10 +611,10 @@ GO*/
 CREATE TABLE [practitioner] (
 [id] bigint,
 [organization_id] bigint NOT NULL,
-[name] varchar(1024) NULL DEFAULT NULL,
-[role_code] varchar(50) NULL DEFAULT NULL,
-[role_desc] varchar(255) NULL DEFAULT NULL,
-[gmc_code] varchar(50) NULL DEFAULT NULL,
+[name] varchar(1024) NULL,
+[role_code] varchar(50) NULL,
+[role_desc] varchar(255) NULL,
+[gmc_code] varchar(50) NULL,
 PRIMARY KEY ([id])
 )
 GO
@@ -586,15 +627,15 @@ CREATE TABLE [procedure_request] (
 [organization_id] bigint NOT NULL,
 [patient_id] bigint NOT NULL,
 [person_id] bigint NOT NULL,
-[encounter_id] bigint NULL DEFAULT NULL,
-[practitioner_id] bigint NULL DEFAULT NULL,
-[clinical_effective_date] date NULL DEFAULT NULL,
-[date_precision_concept_id] int NULL DEFAULT NULL,
-[status_concept_id] int NULL DEFAULT NULL,
-[core_concept_id] int NULL DEFAULT NULL,
-[non_core_concept_id] int NULL DEFAULT NULL,
-[age_at_event] decimal(5,2) NULL DEFAULT NULL,
-[date_recorded] datetime NULL DEFAULT NULL,
+[encounter_id] bigint NULL,
+[practitioner_id] bigint NULL,
+[clinical_effective_date] datetime NULL,
+[date_precision_concept_id] int NULL,
+[status_concept_id] int NULL,
+[core_concept_id] int NULL,
+[non_core_concept_id] int NULL,
+[age_at_event] decimal(5,2) NULL,
+[date_recorded] datetime NULL,
 PRIMARY KEY ([organization_id], [person_id], [id])
 )
 GO
@@ -609,7 +650,7 @@ CREATE TABLE [pseudo_id] (
 [id] bigint,
 [patient_id] bigint NOT NULL,
 [salt_key_name] varchar(50) NOT NULL,
-[pseudo_id] varchar(255) NULL DEFAULT NULL,
+[pseudo_id] varchar(255) NULL,
 PRIMARY KEY ([patient_id], [salt_key_name])
 )
 GO
@@ -625,21 +666,21 @@ CREATE TABLE [referral_request] (
 [organization_id] bigint NOT NULL,
 [patient_id] bigint NOT NULL,
 [person_id] bigint NOT NULL,
-[encounter_id] bigint NULL DEFAULT NULL,
-[practitioner_id] bigint NULL DEFAULT NULL,
-[clinical_effective_date] date NULL DEFAULT NULL,
-[date_precision_concept_id] int NULL DEFAULT NULL,
-[requester_organization_id] bigint NULL DEFAULT NULL,
-[recipient_organization_id] bigint NULL DEFAULT NULL,
-[referral_request_priority_concept_id] int NULL DEFAULT NULL,
-[referral_request_type_concept_id] int NULL DEFAULT NULL,
-[mode] varchar(50) NULL DEFAULT NULL,
-[outgoing_referral] tinyint NULL DEFAULT NULL,
+[encounter_id] bigint NULL,
+[practitioner_id] bigint NULL,
+[clinical_effective_date] datetime NULL,
+[date_precision_concept_id] int NULL,
+[requester_organization_id] bigint NULL,
+[recipient_organization_id] bigint NULL,
+[referral_request_priority_concept_id] int NULL,
+[referral_request_type_concept_id] int NULL,
+[mode] varchar(50) NULL,
+[outgoing_referral] tinyint NULL,
 [is_review] tinyint NOT NULL,
-[core_concept_id] int NULL DEFAULT NULL,
-[non_core_concept_id] int NULL DEFAULT NULL,
-[age_at_event] decimal(5,2) NULL DEFAULT NULL,
-[date_recorded] datetime NULL DEFAULT NULL,
+[core_concept_id] int NULL,
+[non_core_concept_id] int NULL,
+[age_at_event] decimal(5,2) NULL,
+[date_recorded] datetime NULL,
 PRIMARY KEY ([organization_id], [person_id], [id])
 )
 
@@ -652,15 +693,28 @@ GO
 CREATE INDEX [referral_request_core_concept_id] ON [referral_request] ([core_concept_id])
 GO
 
+CREATE TABLE [referral_request_additional] (
+    [id] bigint NOT NULL ,
+    [property_id] int NOT NULL,
+    [value_id] int NULL,
+    [json_value] nvarchar(max) NULL,
+    [text_value] nvarchar(255) NULL,
+    PRIMARY KEY ([id], [property_id])
+    )
+    GO
+CREATE INDEX [ix_referral_request_additional_id]  ON [referral_request_additional]  (value_id)
+    GO
+CREATE INDEX [ix_referral_request_additional_text_value]  ON [referral_request_additional]  (text_value)
+    GO
 
 CREATE TABLE [schedule] (
 [id] bigint,
 [organization_id] bigint NOT NULL,
-[practitioner_id] bigint NULL DEFAULT NULL,
-[start_date] date NULL DEFAULT NULL,
-[type] varchar(255) NULL DEFAULT NULL,
-[location] varchar(255) NULL DEFAULT NULL,
-[name] varchar(150) NULL DEFAULT NULL,
+[practitioner_id] bigint NULL,
+[start_date] datetime NULL,
+[type] varchar(255) NULL,
+[location] varchar(255) NULL,
+[name] varchar(150) NULL,
 PRIMARY KEY ([organization_id], [id])
 )
 GO
@@ -691,10 +745,10 @@ CREATE TABLE registration_status_history (
    organization_id bigint NOT NULL,
    patient_id bigint NOT NULL,
    person_id bigint NOT NULL,
-   episode_of_care_id bigint DEFAULT NULL,
-   registration_status_concept_id int DEFAULT NULL,
-   start_date datetime DEFAULT NULL,
-   end_date datetime DEFAULT NULL,
+   episode_of_care_id bigint,
+   registration_status_concept_id int,
+   start_date datetime,
+   end_date datetime,
    PRIMARY KEY (organization_id, id, patient_id, person_id)
 );
 GO
@@ -703,34 +757,40 @@ GO
 CREATE INDEX ix_registration_status_history_patient ON registration_status_history (patient_id);
 GO
 
+
 CREATE TABLE patient_address_match (
-  [id] bigint NOT NULL,
-  [uprn] varchar(255) NOT NULL,
-  [status] smallint DEFAULT NULL,
-  [classification] varchar(45) DEFAULT NULL,
-  [latitude] float DEFAULT NULL,
-  [longitude] float DEFAULT NULL,
-  [xcoordinate] float DEFAULT NULL,
-  [ycoordinate] float DEFAULT NULL,
-  [qualifier] varchar(50) DEFAULT NULL,
-  [algorithm] varchar(255) DEFAULT NULL,
-  [match_date] datetime DEFAULT NULL,
-  [abp_address_number] varchar(255) DEFAULT NULL,
-  [abp_address_street] varchar(255) DEFAULT NULL,
-  [abp_address_locality] varchar(255) DEFAULT NULL,
-  [abp_address_town] varchar(255) DEFAULT NULL,
-  [abp_address_postcode] varchar(10) DEFAULT NULL,
-  [abp_address_organization] varchar(255) DEFAULT NULL,
-  [match_pattern_postcode] varchar(255) DEFAULT NULL,
-  [match_pattern_street] varchar(255) DEFAULT NULL,
-  [match_pattern_number] varchar(255) DEFAULT NULL,
-  [match_pattern_building] varchar(255) DEFAULT NULL,
-  [match_pattern_flat] varchar(255) DEFAULT NULL,
-  [algorithm_version] varchar(255) DEFAULT NULL,
-  [epoc] varchar(255) DEFAULT NULL,
-  PRIMARY KEY ([id],[uprn])
-  )   ;
-CREATE INDEX [patient_address_uprn_index] ON patient_address_match ([uprn]);
+  [id] bigint NOT NULL IDENTITY(1,1),
+  [patient_address_id] bigint NOT NULL,
+  [uprn] varchar(255),
+  [uprn_ralf00] varchar(255),
+  [status] tinyint,
+  [uprn_property_classification] varchar(45),
+  [latitude] float,
+  [longitude] float,
+  [uprn_xcoordinate] float,
+  [uprn_ycoordinate] float,
+  [qualifier] varchar(50),
+  [match_rule] varchar(4096),
+  [match_date] datetime,
+  [abp_address_number] varchar(255),
+  [abp_address_street] varchar(255),
+  [abp_address_locality] varchar(255),
+  [abp_address_town] varchar(255),
+  [abp_address_postcode] varchar(10),
+  [abp_address_organization] varchar(255),
+  [match_pattern_postcode] varchar(255),
+  [match_pattern_street] varchar(255),
+  [match_pattern_number] varchar(255),
+  [match_pattern_building] varchar(255),
+  [match_pattern_flat] varchar(255),
+  [algorithm_version] varchar(255),
+  [epoch] varchar(255),
+  PRIMARY KEY ([id])
+);
+GO
+
+CREATE INDEX [patient_address_uprn_index] ON patient_address_match ([uprn])
+GO
 CREATE INDEX [patient_address_patient_address_id] ON patient_address_match ([id],[uprn]);
 GO
 
@@ -748,7 +808,7 @@ CREATE TABLE [patient_address_ralf] (
 );
 GO
 
-CREATE UNIQUE INDEX [patient_address_ralf_id] ON [patient_address_ralf] ([id])
+CREATE INDEX [patient_address_ralf_id] ON [patient_address_ralf] ([id])
 GO
 
 CREATE INDEX [patient_address_ralf_patient_id] ON [patient_address_ralf] ([patient_id])
@@ -780,6 +840,7 @@ PRIMARY KEY CLUSTERED
 
 GO
 
+
 CREATE TABLE [concept_map](
 	[legacy] [int] NOT NULL,
 	[core] [int] NOT NULL,
@@ -793,6 +854,28 @@ PRIMARY KEY CLUSTERED
 
 GO
 
+ALTER TABLE [concept_map] ADD CONSTRAINT concept_map_uq UNIQUE (legacy,deleted,updated);
+GO
+
+CREATE TABLE database_version (
+    version varchar(255) NOT NULL ,
+    valid_from date NOT NULL ,
+    valid_to date NULL ,
+    wiki_page varchar(255) ,
+    PRIMARY KEY (valid_from),
+    CONSTRAINT valid_to_uq UNIQUE (valid_to)
+);
+GO
+
+CREATE TABLE [schedule_additional](
+    [id]          bigint NOT NULL,
+    [property_id] int    NOT NULL,
+    [value_id]int NULL,
+    [json_value]  nvarchar(max),
+    [text_value]  nvarchar(255),
+    CONSTRAINT pk_schedule_additional_id PRIMARY KEY (id, property_id)
+);
+GO
 
 CREATE PROCEDURE update_person_record(
 	@new_person_id AS bigint,
@@ -855,9 +938,9 @@ BEGIN
 				e.current_address_id = a.current_address_id,
 				e.ethnic_code_concept_id = a.ethnic_code_concept_id,
 				e.registered_practice_organization_id = a.registered_practice_organization_id,
-                e.birth_year = a.birth_year,
-                e.birth_month = a.birth_month,
-                e.birth_week = a.birth_week
+        e.birth_year = a.birth_year,
+        e.birth_month = a.birth_month,
+        e.birth_week = a.birth_week
 		WHEN NOT MATCHED BY TARGET
 			THEN INSERT (id, organization_id, title, first_names, last_name, gender_concept_id, nhs_number, date_of_birth, date_of_death, current_address_id, ethnic_code_concept_id, registered_practice_organization_id, birth_year, birth_month, birth_week)
 			VALUES (a.person_id, a.organization_id, a.title, a.first_names, a.last_name, a.gender_concept_id, a.nhs_number, a.date_of_birth, a.date_of_death, a.current_address_id, a.ethnic_code_concept_id, a.registered_practice_organization_id, a.birth_year, a.birth_month, a.birth_week);
@@ -885,8 +968,6 @@ BEGIN
 END
 
 GO
-
-
 
 CREATE TRIGGER [after_allergy_intolerance_insert]
 ON [allergy_intolerance]
@@ -2130,6 +2211,67 @@ GO
 ALTER TABLE [referral_request] ENABLE TRIGGER [after_referral_request_delete]
 GO
 
+CREATE TRIGGER [after_referral_request_additional_insert]
+ON [referral_request_additional]
+WITH EXECUTE AS CALLER
+After INSERT
+AS
+BEGIN
+INSERT INTO event_log (
+    dt_change,
+    change_type,
+    table_id,
+    record_id
+) select
+      GETDATE(), -- current time inc ms
+      0, -- insert
+      41, -- referral_request_additional
+      id from inserted
+END
+GO
+ALTER TABLE [referral_request_additional] ENABLE TRIGGER [after_referral_request_additional_insert]
+    GO
+CREATE TRIGGER [after_referral_request_additional_update]
+ON [referral_request_additional]
+WITH EXECUTE AS CALLER
+After UPDATE
+                         AS
+BEGIN
+INSERT INTO event_log (
+    dt_change,
+    change_type,
+    table_id,
+    record_id
+) select
+      GETDATE(), -- current time inc ms
+      1, -- update
+      41, -- referral_request_additional
+      id from deleted
+END
+GO
+ALTER TABLE [referral_request_additional] ENABLE TRIGGER [after_referral_request_additional_update]
+    GO
+CREATE TRIGGER [after_referral_request_additional_delete]
+ON [referral_request_additional]
+WITH EXECUTE AS CALLER
+After DELETE
+AS
+BEGIN
+INSERT INTO event_log (
+    dt_change,
+    change_type,
+    table_id,
+    record_id
+) select
+      GETDATE(), -- current time inc ms
+      2, -- delete
+      41, -- referral_request_additional
+      id from deleted
+END
+GO
+ALTER TABLE [referral_request_additional] ENABLE TRIGGER [after_referral_request_additional_delete]
+    GO
+
 CREATE TRIGGER [after_schedule_insert]
 ON [schedule]
 WITH EXECUTE AS CALLER
@@ -2393,7 +2535,7 @@ BEGIN
 	) select
 		GETDATE(), -- current time inc ms
         0, -- insert
-        28, -- patient_additional
+        29, -- patient_additional
         id from inserted
   END
 GO
@@ -2413,7 +2555,7 @@ BEGIN
 	) select
 		GETDATE(), -- current time inc ms
         1, -- update
-        28, -- patient_additional
+        29, -- patient_additional
         id from deleted
   END
 GO
@@ -2433,7 +2575,7 @@ BEGIN
 	) select
 		GETDATE(), -- current time inc ms
         2, -- delete
-        28, -- patient_additional
+        29, -- patient_additional
         id from deleted
   END
 GO
@@ -2579,3 +2721,276 @@ GO
 
 ALTER TABLE [patient_address_ralf] ENABLE TRIGGER [after_patient_address_ralf_delete]
 GO
+
+
+CREATE TRIGGER [after_organization_metadata_insert]
+ON [organization_metadata]
+WITH EXECUTE AS CALLER
+AFTER INSERT
+AS
+BEGIN
+INSERT INTO event_log (
+    dt_change,
+    change_type,
+    table_id,
+    record_id
+) SELECT
+      GETDATE(),
+      0, -- insert
+      24, -- organization_metadata
+      id FROM inserted;
+END
+GO
+
+ALTER TABLE [organization_metadata] ENABLE TRIGGER [after_organization_metadata_insert]
+GO
+
+
+CREATE TRIGGER [after_organization_metadata_update]
+ON [organization_metadata]
+WITH EXECUTE AS CALLER
+AFTER UPDATE
+AS
+BEGIN
+INSERT INTO event_log (
+    dt_change,
+    change_type,
+    table_id,
+    record_id
+) SELECT
+      GETDATE(),
+      1, -- update
+      24, -- organization_metadata
+      id FROM deleted;
+END
+GO
+
+ALTER TABLE [organization_metadata] ENABLE TRIGGER [after_organization_metadata_update]
+GO
+
+
+CREATE TRIGGER [after_organization_metadata_delete]
+ON [organization_metadata]
+WITH EXECUTE AS CALLER
+AFTER DELETE
+AS
+BEGIN
+INSERT INTO event_log (
+    dt_change,
+    change_type,
+    table_id,
+    record_id
+) SELECT
+      GETDATE(),
+      2, -- delete
+      24, -- patient_address_ralf
+      id FROM deleted;
+END
+GO
+
+ALTER TABLE [organization_metadata] ENABLE TRIGGER [after_organization_metadata_delete]
+GO
+
+CREATE TRIGGER [after_encounter_additional_insert]
+ON [encounter_additional]
+WITH EXECUTE AS CALLER
+After INSERT
+AS
+BEGIN
+INSERT INTO event_log (
+    dt_change,
+    change_type,
+    table_id,
+    record_id
+) select
+      GETDATE(), -- current time inc ms
+      0, -- insert
+      26, -- encounter_additional
+      id from inserted
+END
+GO
+ALTER TABLE [encounter_additional] ENABLE TRIGGER [after_encounter_additional_insert]
+GO
+
+CREATE TRIGGER [after_encounter_additional_update]
+ON [encounter_additional]
+WITH EXECUTE AS CALLER
+After UPDATE
+AS
+BEGIN
+INSERT INTO event_log (
+    dt_change,
+    change_type,
+    table_id,
+    record_id
+) select
+      GETDATE(), -- current time inc ms
+      1, -- update
+      26, -- encounter_additional
+      id from deleted
+END
+GO
+ALTER TABLE [encounter_additional] ENABLE TRIGGER [after_encounter_additional_update]
+GO
+
+CREATE TRIGGER [after_encounter_additional_delete]
+ON [encounter_additional]
+WITH EXECUTE AS CALLER
+After DELETE
+AS
+BEGIN
+INSERT INTO event_log (
+    dt_change,
+    change_type,
+    table_id,
+    record_id
+) select
+      GETDATE(), -- current time inc ms
+      2, -- delete
+      26, -- encounter_additional
+      id from deleted
+END
+GO
+ALTER TABLE [encounter_additional] ENABLE TRIGGER [after_encounter_additional_delete]
+GO
+
+CREATE TRIGGER [after_appointment_additional_insert]
+ON [appointment_additional]
+WITH EXECUTE AS CALLER
+After INSERT
+AS
+BEGIN
+INSERT INTO event_log (
+    dt_change,
+    change_type,
+    table_id,
+    record_id
+) select
+      GETDATE(), -- current time inc ms
+      0, -- insert
+      39, -- appointment_additional
+      id from inserted
+END
+GO
+ALTER TABLE [appointment_additional] ENABLE TRIGGER [after_appointment_additional_insert]
+GO
+
+CREATE TRIGGER [after_appointment_additional_update]
+ON [appointment_additional]
+WITH EXECUTE AS CALLER
+After UPDATE
+AS
+BEGIN
+INSERT INTO event_log (
+    dt_change,
+    change_type,
+    table_id,
+    record_id
+) select
+      GETDATE(), -- current time inc ms
+      1, -- update
+      39, -- appointment_additional
+      id from deleted
+END
+GO
+ALTER TABLE [appointment_additional] ENABLE TRIGGER [after_appointment_additional_update]
+GO
+
+CREATE TRIGGER [after_appointment_additional_delete]
+ON [appointment_additional]
+WITH EXECUTE AS CALLER
+After DELETE
+AS
+BEGIN
+INSERT INTO event_log (
+    dt_change,
+    change_type,
+    table_id,
+    record_id
+) select
+      GETDATE(), -- current time inc ms
+      2, -- delete
+      39, -- appointment_additional
+      id from deleted
+END
+GO
+ALTER TABLE [appointment_additional] ENABLE TRIGGER [after_appointment_additional_delete]
+GO
+
+CREATE TRIGGER [after_schedule_additional_delete]
+    ON [schedule_additional]
+    WITH EXECUTE AS CALLER
+    After DELETE
+AS
+BEGIN
+    INSERT INTO event_log (
+        dt_change,
+        change_type,
+        table_id,
+        record_id
+    ) select
+          GETDATE(), -- current time inc ms
+          2, -- delete
+          40, -- schedule_additional
+          id from deleted
+END
+GO
+ALTER TABLE [schedule_additional] ENABLE TRIGGER [after_schedule_additional_delete]
+GO
+
+CREATE TRIGGER [after_schedule_additional_insert]
+    ON [schedule_additional]
+    WITH EXECUTE AS CALLER
+    After INSERT
+AS
+BEGIN
+    INSERT INTO event_log (
+        dt_change,
+        change_type,
+        table_id,
+        record_id
+    ) select
+          GETDATE(), -- current time inc ms
+          0, -- insert
+          40, -- schedule_additional
+          id from inserted
+END
+GO
+ALTER TABLE [schedule_additional] ENABLE TRIGGER [after_schedule_additional_insert]
+GO
+
+CREATE TRIGGER [after_schedule_additional_update]
+        ON [schedule_additional]
+        WITH EXECUTE AS CALLER
+        After UPDATE
+AS
+BEGIN
+    INSERT INTO event_log (dt_change,
+                           change_type,
+                           table_id,
+                           record_id)
+    select
+        GETDATE(), -- current time inc ms
+        1, -- update
+        40, -- schedule_additional
+        id from deleted
+END
+GO
+ALTER TABLE [schedule_additional] ENABLE TRIGGER [after_schedule_additional_update]
+GO
+
+IF OBJECT_ID('dbo.update_database_version') IS NOT NULL DROP PROCEDURE update_database_version
+GO
+CREATE procedure update_database_version (@ver as varchar(255))
+AS
+BEGIN
+    DELETE FROM database_version where valid_from = CAST( GETDATE() AS Date );
+    UPDATE database_version
+    SET valid_to = CAST( GETDATE() AS Date )
+    WHERE valid_to is null;
+
+    INSERT INTO database_version (version, valid_from, valid_to, wiki_page)
+    VALUES (@ver, CAST( GETDATE() AS Date ), NULL, CONCAT('https://wiki.discoverydataservice.org/Compass_',@ver,'_Schema_Documentation'));
+END
+GO
+EXEC update_database_version '2.3.0';

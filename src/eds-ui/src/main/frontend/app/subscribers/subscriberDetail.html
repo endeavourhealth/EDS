@@ -196,7 +196,7 @@
 
 
         <div class="row">
-            <div class="col-md-9">
+            <div class="col-md-12">
                 <div class="table">
                     <table class="table table-striped table-condensed">
                         <thead>
@@ -207,12 +207,13 @@
                             <th class="col-md-1">Last Received</th> <!-- cutoff of last extract -->
                             <th class="col-md-1">Last Data In</th> <!-- cutoff of last data processed in -->
                             <th class="col-md-1">Last Data Out</th> <!-- cutoff of last data processed out -->
-                            <!--<th class="col-md-1"></th> &lt;!&ndash; actions &ndash;&gt;-->
+                            <th class="col-md-1">Last Data Written</th> <!-- cutoff of last data written to subscriber -->
+                            <th class="col-md-1"></th> <!-- actions -->
 
                         </tr>
                         </thead>
                         <tbody>
-                        <tr class="hover-box show-child-on-hover" *ngFor="let publisher of filteredServices" (click)="selectedPublisher = publisher;" [ngClass]="{'selection': publisher == selectedPublisher}">
+                        <tr class="hover-box show-child-on-hover" *ngFor="let publisher of filteredServices">
 
                             <!-- publisher name and alias -->
                             <td>
@@ -236,10 +237,10 @@
                             <!-- cutoff of last extract -->
                             <td>
                                 <div *ngFor="let system of publisher.systemStatus">
-                                    <div *ngIf="subscribersService.showDates">
+                                    <div *ngIf="subscribersService.showDates" ngbTooltip="Extract received {{formatYYYYMMDDHHMM(system.lastReceivedTimestamp)}}">
                                         {{formatYYYYMMDDHHMM(system.lastReceivedExtractCutoff)}}
                                     </div>
-                                    <div *ngIf="!subscribersService.showDates">
+                                    <div *ngIf="!subscribersService.showDates" ngbTooltip="Extract received {{formatYYYYMMDDHHMM(system.lastReceivedTimestamp)}}">
                                         {{getDateDiff(system.lastReceivedExtractCutoff)}}
                                     </div>
                                 </div>
@@ -248,10 +249,10 @@
                             <!-- cutoff of last data processed in -->
                             <td>
                                 <div *ngFor="let system of publisher.systemStatus">
-                                    <span *ngIf="subscribersService.showDates">
+                                    <span *ngIf="subscribersService.showDates" ngbTooltip="Transform completed {{formatYYYYMMDDHHMM(system.lastProcessedInTimestamp)}}">
                                         {{formatYYYYMMDDHHMM(system.lastProcessedInExtractCutoff)}}
                                     </span>
-                                    <span *ngIf="!subscribersService.showDates">
+                                    <span *ngIf="!subscribersService.showDates" ngbTooltip="Transform completed {{formatYYYYMMDDHHMM(system.lastProcessedInTimestamp)}}">
                                         {{getDateDiff(system.lastProcessedInExtractCutoff)}}
                                     </span>
 
@@ -266,10 +267,10 @@
                             <!-- cutoff of last data processed out -->
                             <td>
                                 <div *ngFor="let system of publisher.systemStatus">
-                                    <span *ngIf="subscribersService.showDates">
+                                    <span *ngIf="subscribersService.showDates" ngbTooltip="Transform completed {{formatYYYYMMDDHHMM(system.lastProcessedOutTimestamp)}}">
                                         {{formatYYYYMMDDHHMM(system.lastProcessedOutExtractCutoff)}}
                                     </span>
-                                    <span *ngIf="!subscribersService.showDates">
+                                    <span *ngIf="!subscribersService.showDates" ngbTooltip="Transform completed {{formatYYYYMMDDHHMM(system.lastProcessedOutTimestamp)}}">
                                         {{getDateDiff(system.lastProcessedOutExtractCutoff)}}
                                     </span>
 
@@ -278,10 +279,28 @@
                                 </div>
                             </td>
 
+                            <!-- cutoff of last data written to subscriber -->
+                            <td>
+                                <div *ngFor="let system of publisher.systemStatus">
+                                    <span *ngIf="subscribersService.showDates" ngbTooltip="Transform completed {{formatYYYYMMDDHHMM(system.lastWriteOutTimestamp)}}">
+                                        {{formatYYYYMMDDHHMM(system.lastWriteOutExtractCutoff)}}
+                                    </span>
+                                    <span *ngIf="!subscribersService.showDates" ngbTooltip="Transform completed {{formatYYYYMMDDHHMM(system.lastWriteOutTimestamp)}}">
+                                        {{getDateDiff(system.lastWriteOutExtractCutoff)}}
+                                    </span>
+
+                                    <span class="label label-danger" *ngIf="system.writeOutError" ngbTooltip="Inbound error: {{system.writeOutErrorMessage}}">Error</span>
+
+                                    <span class="label label-danger" *ngIf="system.outboundWriteBehindDays > 1" ngbTooltip="{{system.outboundWriteBehindWarning}}">Behind</span>
+                                    <span class="label label-warning" *ngIf="system.outboundWriteBehindDays > 0 && system.outboundWriteBehindDays <= 1" ngbTooltip="{{system.outboundWriteBehindWarning}}">Behind</span>
+                                </div>
+                            </td>
+
                             <!-- actions -->
-                            <!--<td>
-                                <button class="btn btn-xs btn-default child-to-show" (click)="viewPublisherExchanges(publisher.uuid)">View Exchanges</button>
-                            </td>-->
+                            <td>
+                                <button class="btn btn-xs btn-default child-to-show" (click)="viewPublisherExchanges(publisher.uuid)">Exchanges</button>
+                                <button class="btn btn-xs btn-default child-to-show" (click)="viewPublisherDetails(publisher)">Status</button>
+                            </td>
 
                         </tr>
                         </tbody>
@@ -289,84 +308,6 @@
                 </div>
             </div>
 
-            <div class="col-md-3">
-
-                <div class="panel panel-info" *ngIf="selectedPublisher">
-                    <div class="panel-heading">
-                        <b>{{selectedPublisher.odsCode}}</b> {{selectedPublisher.name}}
-                    </div>
-                    <div class="panel-body">
-
-                        <div *ngFor="let tagName of getTagNames(selectedPublisher)">
-                            {{tagName}} {{getTagValueDesc(tagName, selectedPublisher)}}
-                        </div>
-                        <div>&nbsp;</div>
-
-                        <!-- sub panel for each system -->
-                        <!--<div class="panel panel-info" *ngFor="let system of selectedPublisher.systemStatus">-->
-                        <div class="{{getPanelClass(system)}}" *ngFor="let system of selectedPublisher.systemStatus">
-                            <div class="panel-heading">
-                                {{system.name}}
-                            </div>
-                            <div class="panel-body">
-
-                                <div *ngIf="system.processingInError">
-                                    <div>
-                                        Inbound processing error: <b>{{system.processingInErrorMessage}}</b>
-                                    </div>
-                                    <span class="label label-danger" ngbTooltip="Inbound error">Error</span>
-                                    <div>&nbsp;</div>
-                                </div>
-
-                                <div>
-                                    Last extract received:
-                                    <span *ngIf="system.lastReceivedExtract ">{{formatYYYYMMDDHHMM(system.lastReceivedExtract)}}</span>
-                                    <span *ngIf="!system.lastReceivedExtract ">Never</span>
-                                </div>
-                                <div>
-                                    Last extract cutoff:
-                                    <span *ngIf="system.lastReceivedExtractCutoff ">{{formatYYYYMMDDHHMM(system.lastReceivedExtractCutoff)}}</span>
-                                    <span *ngIf="!system.lastReceivedExtractCutoff ">Never</span>
-                                </div>
-                                <div>&nbsp;</div>
-                                <div>
-                                    Inbound processing completed:
-                                    <span *ngIf="system.lastProcessedInExtract ">{{formatYYYYMMDDHHMM(system.lastProcessedInExtract)}}</span>
-                                    <span *ngIf="!system.lastProcessedInExtract ">Never</span>
-                                </div>
-                                <div>
-                                    Inbound extract cutoff:
-                                    <span *ngIf="system.lastProcessedInExtractCutoff ">{{formatYYYYMMDDHHMM(system.lastProcessedInExtractCutoff)}}</span>
-                                    <span *ngIf="!system.lastProcessedInExtractCutoff ">Never</span>
-                                    <span class="label label-danger" *ngIf="system.inboundBehindDays > 1" ngbTooltip="{{system.inboundBehindWarning}}">Behind</span>
-                                    <span class="label label-warning" *ngIf="system.inboundBehindDays > 0 && system.inboundBehindDays <= 1" ngbTooltip="{{system.inboundBehindWarning}}">Behind</span>
-
-                                </div>
-                                <div>&nbsp;</div>
-                                <div>
-                                    Outbound processing completed:
-                                    <span *ngIf="system.lastProcessedOutExtract ">{{formatYYYYMMDDHHMM(system.lastProcessedOutExtract)}}</span>
-                                    <span *ngIf="!system.lastProcessedOutExtract ">Never</span>
-                                </div>
-                                <div>
-                                    Outbound extract cutoff:
-                                    <span *ngIf="system.lastProcessedOutExtractCutoff ">{{formatYYYYMMDDHHMM(system.lastProcessedOutExtractCutoff)}}</span>
-                                    <span *ngIf="!system.lastProcessedOutExtractCutoff ">Never</span>
-                                    <span class="label label-danger" *ngIf="system.outboundBehindDays > 1" ngbTooltip="{{system.outboundBehindWarning}}">Behind</span>
-                                    <span class="label label-warning" *ngIf="system.outboundBehindDays > 0 && system.outboundBehindDays <= 1" ngbTooltip="{{system.outboundBehindWarning}}">Behind</span>
-                                </div>
-
-
-                            </div>
-                        </div>
-
-                        <div>
-                            <button class="btn btn-xs btn-default" (click)="viewPublisherExchanges(selectedPublisher.uuid)">View Exchanges</button>
-                        </div>
-
-                    </div>
-                </div>
-            </div>
         </div>
 
     </div>

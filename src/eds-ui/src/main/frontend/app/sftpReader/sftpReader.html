@@ -1,7 +1,7 @@
 <div class="module">
     <div class="module-heading">
-        SFTP Reader Status <span
-            *ngIf="statusesLastRefreshed">(as of {{formatHHMMSS(statusesLastRefreshed)}})</span>
+        SFTP Reader Status {{getDateDiffSimpleFromNow(statusLastRefreshed)}}
+
         <div class="pull-right">
 
             <form class="form-inline">
@@ -104,11 +104,18 @@
                 <div class="panel panel-info">
                     <div class="panel-heading">
                         Feed Status
+                        <span *ngIf="configurations">
+                            (showing {{getConfigurationsToDisplay().length}} of {{configurations.length}})
+                        </span>
 
                         <div class="pull-right">
 
                             <label for="showWarningsOnly" class="control-label">Show Warnings Only</label>
                             <input type="checkbox" id="showWarningsOnly" [(ngModel)]="sftpReaderService.showWarningsOnly" name="showWarningsOnly">
+                            &nbsp;&nbsp;&nbsp;
+
+                            <label for="showDates" class="control-label">Show Dates</label>
+                            <input type="checkbox" id="showDates" [(ngModel)]="sftpReaderService.showDates" name="showDates">
                             &nbsp;&nbsp;&nbsp;
 
                             <label for="filterInstanceName" class="control-label">Instance</label>
@@ -189,11 +196,17 @@
                                     <div class="row" *ngFor="let status of getStatusToDisplay(configuration)">
 
                                         <div *ngIf="status.latestPollingStart">
-                                        <span *ngIf="isLastPollAttemptTooOld(status)">
-                                            <span class="label label-danger" *ngIf="isLastPollAttemptTooOld(status)">Warning</span>
-                                            &nbsp;
-                                        </span>
-                                            Last Checked for Data: {{formatYYYYMMDDHHMM(status.latestPollingStart)}}
+                                            <span *ngIf="isLastPollAttemptTooOld(status)">
+                                                <span class="label label-danger" *ngIf="isLastPollAttemptTooOld(status)">Warning</span>
+                                                &nbsp;
+                                            </span>
+                                            <span *ngIf="sftpReaderService.showDates">
+                                                Last Checked for Data: {{formatYYYYMMDDHHMM(status.latestPollingStart)}}
+                                            </span>
+                                            <span *ngIf="!sftpReaderService.showDates">
+                                                Last Checked for Data: {{getDateDiffSimple(status.latestPollingStart, statusLastRefreshed)}}
+                                            </span>
+
                                         </div>
                                         <div *ngIf="!status.latestPollingStart">
                                             <span class="label label-danger">Warning</span>&nbsp;Last Checked for Data:
@@ -212,11 +225,26 @@
                                                     <span class="label label-danger" *ngIf="isLastExtractTooOld(status)">Warning</span>
                                                     &nbsp;
                                                 </span>
-                                                Last Extract Received {{formatYYYYMMDDHHMM(status.latestBatchReceived)}}
+
+                                                Last Extract Received:
+                                                <span *ngIf="sftpReaderService.showDates">
+                                                    {{formatYYYYMMDDHHMM(status.latestBatchReceived)}}
+                                                </span>
+                                                <span *ngIf="!sftpReaderService.showDates">
+                                                    {{getDateDiffSimple(status.latestBatchReceived, statusLastRefreshed)}}
+                                                </span>
+
+                                                , Cutoff:
+                                                <span *ngIf="sftpReaderService.showDates">
+                                                    {{formatYYYYMMDDHHMM(status.latestBatchExtractCutoff)}}
+                                                </span>
+                                                <span *ngIf="!sftpReaderService.showDates">
+                                                    {{getDateDiffSimple(status.latestBatchExtractCutoff, statusLastRefreshed)}}
+                                                </span>
                                             </div>
                                             <!--<div>Data From: {{status.latestBatchIdentifier}}</div>-->
                                             <div>
-                                                Last Extract Cutoff: {{formatYYYYMMDDHHMM(status.latestBatchExtractCutoff)}}
+
                                             </div>
                                             <div>
                                                 Files Received: {{status.latestBatchFileCount}}
@@ -254,13 +282,42 @@
                                     <div class="row" *ngFor="let status of getStatusToDisplay(configuration)">
 
                                         <div *ngIf="configuration.dtPaused">
-                                            <span class="label label-warning">PAUSED {{formatYYYYMMDDHHMM(configuration.dtPaused)}}</span>
+                                            <span *ngIf="sftpReaderService.showDates">
+                                                <span class="label label-warning">PAUSED {{formatYYYYMMDDHHMM(configuration.dtPaused)}}</span>
+                                            </span>
+                                            <span *ngIf="!sftpReaderService.showDates">
+                                                <span class="label label-warning">PAUSED {{getDateDiffSimple(configuration.dtPaused, statusLastRefreshed)}}</span>
+                                            </span>
                                         </div>
 
                                         <div *ngIf="status.completeBatchId">
-                                            <div>Posted to API: {{formatYYYYMMDDHHMM(status.completeBatchCompletionDate)}}</div>
-                                            <div>Posted Extract Received: {{formatYYYYMMDDHHMM(status.completeBatchReceived)}}</div>
-                                            <div>Posted Extract Cutoff: {{formatYYYYMMDDHHMM(status.completeBatchExtractCutoff)}}</div>
+                                            <div>
+                                                <span *ngIf="sftpReaderService.showDates">
+                                                    Posted to API: {{formatYYYYMMDDHHMM(status.completeBatchCompletionDate)}}
+                                                </span>
+                                                <span *ngIf="!sftpReaderService.showDates">
+                                                    Posted to API: {{getDateDiffSimple(status.completeBatchCompletionDate, statusLastRefreshed)}}
+                                                </span>
+                                            </div>
+                                            <div>
+
+                                                Posted Extract Received:
+                                                <span *ngIf="sftpReaderService.showDates">
+                                                    {{formatYYYYMMDDHHMM(status.completeBatchReceived)}}
+                                                </span>
+                                                <span *ngIf="!sftpReaderService.showDates">
+                                                    {{getDateDiffSimple(status.completeBatchReceived, statusLastRefreshed)}}
+                                                </span>
+
+                                                , Cutoff:
+                                                <span *ngIf="sftpReaderService.showDates">
+                                                    {{formatYYYYMMDDHHMM(status.completeBatchExtractCutoff)}}
+                                                </span>
+                                                <span *ngIf="!sftpReaderService.showDates">
+                                                    {{getDateDiffSimple(status.completeBatchExtractCutoff, statusLastRefreshed)}}
+                                                </span>
+                                            </div>
+
                                             <!--<div>Extract Sequence No: {{status.completeBatchSequenceNumber}}</div>-->
 
                                             <div>

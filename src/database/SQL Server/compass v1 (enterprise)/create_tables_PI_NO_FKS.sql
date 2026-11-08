@@ -34,6 +34,7 @@ DROP TABLE IF EXISTS encounter_event;
 DROP TABLE IF EXISTS encounter_additional;
 DROP TABLE IF EXISTS encounter;
 DROP TABLE IF EXISTS appointment;
+DROP TABLE IF EXISTS appointment_additional;
 DROP TABLE IF EXISTS episode_of_care;
 DROP TABLE IF EXISTS patient;
 DROP TABLE IF EXISTS person;
@@ -608,6 +609,20 @@ CREATE INDEX appointment_patient_id
   ON appointment
   (patient_id);
 
+--Table: appointment_additional
+CREATE TABLE appointment_additional
+(
+    id          bigint NOT NULL COMMENT 'same as the id column on the patient table ',
+    property_id int    NOT NULL COMMENT 'IM reference (e.g. appointment type)',
+    value_id    int NULL COMMENT 'IM reference (e.g. appointment type)',
+    json_value  json NULL COMMENT 'where there is no mapped value_id, just raw JSON',
+    text_value  varchar(255) NULL COMMENT 'where there is no mapped value_id or raw JSON, just a basic text value (i.e. GP Practitioner number)',
+    CONSTRAINT pk_appointment_additional_id PRIMARY KEY (id, property_id)
+);
+CREATE INDEX appointment_additional_value_id
+    on appointment_additional
+        (value_id);
+
 -- Table: encounter
 
 CREATE TABLE encounter
@@ -1141,7 +1156,7 @@ CREATE TABLE patient_address_match (
   [xcoordinate] float DEFAULT NULL,
   [ycoordinate] float DEFAULT NULL,
   [qualifier] varchar(50) DEFAULT NULL,
-  [algorithm] varchar(50) DEFAULT NULL,
+  [algorithm] varchar(4096) DEFAULT NULL,
   [match_date] datetime DEFAULT NULL,
   [abp_address_number] varchar(255) DEFAULT NULL,
   [abp_address_street] varchar(255) DEFAULT NULL,

@@ -10,6 +10,7 @@ import org.endeavourhealth.common.fhir.FhirCodeUri;
 import org.endeavourhealth.common.fhir.IdentifierHelper;
 import org.endeavourhealth.common.fhir.PeriodHelper;
 import org.endeavourhealth.common.fhir.schema.EthnicCategory;
+import org.endeavourhealth.common.fhir.schema.OrganisationType;
 import org.endeavourhealth.common.fhir.schema.RegistrationType;
 import org.endeavourhealth.core.database.dal.DalProvider;
 import org.endeavourhealth.core.database.dal.admin.ServiceDalI;
@@ -30,6 +31,8 @@ import org.slf4j.LoggerFactory;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.sql.SQLException;
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 public class SD367 extends AbstractRoutine {
@@ -40,8 +43,16 @@ public class SD367 extends AbstractRoutine {
     private static Set<String> hsEmisLanguageCodes = null;
     private static Set<String> hsVisionLanguageCodes = null;
 
+    private static List<List<String>> xPatients;
+
     public static void findEthnicityCodes(String odsCodeRegex, String sourceFile, String dstFile) {
         try {
+
+            //LOG.debug("test");
+            //Scanner scan = new Scanner(System.in);
+            //System.out.print("Press any key to continue . . . ");
+            //scan.nextLine();
+
             LOG.debug("Finding Ethnicity Codes from " + sourceFile + " to " + dstFile);
 
             Set<String> serviceIds = findServiceIds(odsCodeRegex);
@@ -51,6 +62,8 @@ public class SD367 extends AbstractRoutine {
             LOG.debug("Found " + nhsNumbers.size() + " NHS numbers");
 
             findEthnicityCodesForNhsNumbers(serviceIds, nhsNumbers, dstFile);
+
+            //GetMobileNumbers(mobileFile);
 
             LOG.debug("Finished Finding Ethnicity Codes from " + sourceFile + " to " + dstFile);
 
@@ -68,13 +81,68 @@ public class SD367 extends AbstractRoutine {
         List<Service> services = serviceDal.getAll();
         for (Service service : services) {
 
+            /*
             if (!shouldSkipService(service, odsCodeRegex)) {
                 ret.add(service.getId().toString());
             }
+             */
 
+
+            String odsCode = service.getLocalId();
+            String ccgCode = service.getCcgCode();
+
+            /*
+            OrganisationType type = service.getOrganisationType();
+            String typeCode = type.getCode();
+             */
+
+            LOG.debug(odsCodeRegex+" * "+odsCode);
+            LOG.debug(odsCodeRegex+" * "+ccgCode);
+
+            if (!odsCodeRegex.contains("~"+odsCode+"~") && !odsCodeRegex.contains("~"+ccgCode+"~")) continue;
+
+            LOG.debug(">>>> "+ service.getId().toString());
+
+            ret.add(service.getId().toString());
         }
 
         return ret;
+    }
+
+    private static void findMissingData(String nhsNumber, UUID patientId, UUID serviceId, CSVPrinter printer) throws Exception
+    {
+        ResourceDalI resourceDal = DalProvider.factoryResourceDal();
+        List<ResourceWrapper> wrappers = resourceDal.getResourcesByPatient(serviceId, patientId);
+
+        for (ResourceWrapper wrapper: wrappers) {
+            Resource resource = wrapper.getResource();
+            if (resource.getResourceType() != ResourceType.Patient) continue;
+
+            Patient fhirPatient = (Patient) wrapper.getResource();
+
+            System.out.println(wrapper.getResourceData());
+
+            Date dod = null;
+            if (fhirPatient.hasDeceased()) {
+                dod = fhirPatient.getDeceasedDateTimeType().toCalendar().getTime();
+                SimpleDateFormat sdf = new SimpleDateFormat("dd.MM.yyyy");
+                printer.printRecord(nhsNumber, null, null, null, null, null, null, null, null, null, null, sdf.format(dod));
+            }
+
+            if (fhirPatient.hasTelecom()) {
+                for (int i = 0; i < fhirPatient.getTelecom().size(); i++) {
+                    ContactPoint telecom = fhirPatient.getTelecom().get(i);
+                    // telecom no longer in use?
+                    if (telecom.hasPeriod() && telecom.getPeriod().hasEnd()) continue;
+
+                    if (telecom.hasUse()) {
+                        if (telecom.getUse().name().toLowerCase().equals("mobile")) {
+                            printer.printRecord(nhsNumber, null, null, null, null, null, null, null, null, null, telecom.getValue(), null);
+                        }
+                    }
+                }
+            }
+        }
     }
 
     private static void findEthnicityCodesForNhsNumbers(Set<String> serviceIds, List<String> nhsNumbers, String dstFile) throws Exception {
@@ -84,11 +152,13 @@ public class SD367 extends AbstractRoutine {
         BufferedWriter bufferedWriter = new BufferedWriter(osw);
 
         CSVFormat format = CSVFormat.DEFAULT
-                .withHeader("nhs_number", "raw_ethnicity_code", "raw_ethnicity_term", "data_dictionary_ethnicity_code", "data_dictionary_ethnicity_term", "raw_language_code", "raw_language_term", "snomed_language_concept_id", "snomed_language_term", "comment"
+                .withHeader("nhs_number", "raw_ethnicity_code", "raw_ethnicity_term", "data_dictionary_ethnicity_code", "data_dictionary_ethnicity_term", "raw_language_code", "raw_language_term", "snomed_language_concept_id", "snomed_language_term", "comment", "mobile", "date_of_death"
                 );
         CSVPrinter printer = new CSVPrinter(bufferedWriter, format);
 
         PatientSearchDalI patientSearchDal = DalProvider.factoryPatientSearchDal();
+
+        xPatients = new ArrayList<>();
 
         int done = 0;
 
@@ -119,7 +189,7 @@ public class SD367 extends AbstractRoutine {
             }
 
             if (regularPatientSearches.isEmpty()) {
-                printer.printRecord(nhsNumber, null, null, null, null, null, null, null, null, "No GP record found in DDS cohort");
+                printer.printRecord(nhsNumber, null, null, null, null, null, null, null, null, "No GP record found in DDS cohort ");
                 continue;
             }
             
@@ -157,6 +227,8 @@ public class SD367 extends AbstractRoutine {
             LOG.trace("Best patient ID = " + patientId);
             findEthnicityCodeForPatient(nhsNumber, patientId, serviceId, printer, comments);
 
+            //findMissingData(nhsNumber, patientId, serviceId, printer);
+
             done ++;
             if (done % 100 == 0) {
                 LOG.debug("Done " + done + " patients");
@@ -168,12 +240,63 @@ public class SD367 extends AbstractRoutine {
 
     }
 
+    private static void GetMobileNumbers(String mobileFile) throws Exception
+    {
+        FileOutputStream fos = new FileOutputStream(new File(mobileFile));
+        OutputStreamWriter osw = new OutputStreamWriter(fos);
+        BufferedWriter bufferedWriter = new BufferedWriter(osw);
+
+        CSVFormat format = CSVFormat.DEFAULT
+                .withHeader("nhs_number", "mobile_number"
+                );
+        CSVPrinter printer = new CSVPrinter(bufferedWriter, format);
+
+        for(List<String> rec : xPatients) {
+            String nhsNumber = rec.get(0);
+            UUID patientId = UUID.fromString(rec.get(1));
+            UUID serviceId = UUID.fromString(rec.get(2));
+
+            ResourceDalI resourceDal = DalProvider.factoryResourceDal();
+            List<ResourceWrapper> wrappers = resourceDal.getResourcesByPatient(serviceId, patientId);
+
+            for (ResourceWrapper wrapper: wrappers) {
+                Resource resource = wrapper.getResource();
+                if (resource.getResourceType() != ResourceType.Patient) continue;
+
+                Patient fhirPatient = (Patient) wrapper.getResource();
+
+                String dod = "";
+                if (fhirPatient.hasDeceased()) {
+                    dod = fhirPatient.getDeceasedDateTimeType().toString();
+                }
+
+                if (fhirPatient.hasTelecom()) {
+                    for (int i = 0; i < fhirPatient.getTelecom().size(); i++) {
+                        ContactPoint telecom = fhirPatient.getTelecom().get(i);
+                        if (telecom.hasUse()) {
+                            if (telecom.getUse().name().toLowerCase().equals("mobile")) {
+                                printer.printRecord(nhsNumber, telecom.getValue());
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        printer.close();
+    }
+
     private static void findEthnicityCodeForPatient(String nhsNumber, UUID patientId, UUID serviceId, CSVPrinter printer, String comments) throws Exception {
 
         //work out what system the service is
         String messageFormat = null;
         ServiceDalI serviceDal = DalProvider.factoryServiceDal();
         Service service = serviceDal.getById(serviceId);
+
+        /*
+        String serviceName = service.getName();
+        String ODScode = service.getLocalId();
+        String CCG = service.getCcgCode();
+         */
 
         Map<String, String> tags = service.getTags();
         if (tags.containsKey("EMIS")) {
@@ -197,9 +320,36 @@ public class SD367 extends AbstractRoutine {
         Date latestEthnicityDate = null;
         CodeableConcept latestLanguage = null;
         Date latestLanguageDate = null;
-        
+
+        Date dod = null; String mobile = "";
+
+        SimpleDateFormat sdf = new SimpleDateFormat("dd.MM.yyyy");
+
         for (ResourceWrapper wrapper: wrappers) {
             Resource resource = wrapper.getResource();
+
+            if (resource.getResourceType() == ResourceType.Patient) {
+
+                Patient fhirPatient = (Patient) wrapper.getResource();
+                if (fhirPatient.hasDeceased()) {
+                    dod = fhirPatient.getDeceasedDateTimeType().toCalendar().getTime();
+                }
+
+                if (fhirPatient.hasTelecom()) {
+                    for (int i = 0; i < fhirPatient.getTelecom().size(); i++) {
+                        ContactPoint telecom = fhirPatient.getTelecom().get(i);
+
+                        if (telecom.hasPeriod() && telecom.getPeriod().hasEnd()) continue;
+
+                        if (telecom.hasUse()) {
+                            if (telecom.getUse().name().toLowerCase().equals("mobile")) {
+                                mobile = telecom.getValue()+"|"+mobile;
+                            }
+                        }
+                    }
+                }
+
+            }
 
             //skip resource types that aren't interesting for this
             if (resource.getResourceType() == ResourceType.Appointment
@@ -309,7 +459,21 @@ public class SD367 extends AbstractRoutine {
             comments = "";
         }
 
-        printer.printRecord(nhsNumber, rawEthnicityCode, rawEthnicityTerm, ddEthnicityCode, ddEthnicityTerm, rawLanguageCode, rawLanguageTerm, snomedLanguageCode, snomedLanguageTerm, comments);
+        String sDod = "";
+        if (dod != null) {
+            sDod = sdf.format(dod);
+        }
+
+        printer.printRecord(nhsNumber, rawEthnicityCode, rawEthnicityTerm, ddEthnicityCode, ddEthnicityTerm, rawLanguageCode, rawLanguageTerm, snomedLanguageCode, snomedLanguageTerm, comments, mobile, sDod);
+        printer.flush();
+
+        /*
+        List<String> row = new ArrayList<>();
+        row.add(nhsNumber);
+        row.add(patientId.toString());
+        row.add(serviceId.toString());
+        xPatients.add(row);
+         */
     }
 
     private static boolean isLanguageCode(CodeableConcept codeableConcept) {
@@ -983,7 +1147,7 @@ public class SD367 extends AbstractRoutine {
             hs.add("^ESCTCR584397"); //Cree language
             hs.add("^ESCTCR584440"); //Creek language
             hs.add("^ESCTCR584462"); //Crow language
-            hs.add("^ESCTCR602986"); //Crï¿½ole language
+            hs.add("^ESCTCR602986"); //Criole language
             hs.add("^ESCTCR730152"); //Croatian language
             hs.add("^ESCTCR759236"); //Croatian sign language
             hs.add("^ESCTCU583870"); //Cushitic language
@@ -1049,7 +1213,7 @@ public class SD367 extends AbstractRoutine {
             hs.add("^ESCTFO584399"); //Fox language
             hs.add("^ESCTFR584092"); //Frisian language
             hs.add("^ESCTFR584104"); //French language
-            hs.add("^ESCTFR584521"); //French Crï¿½ole language
+            hs.add("^ESCTFR584521"); //French Criole language
             hs.add("^ESCTFR759209"); //Franco-American sign language
             hs.add("^ESCTFR759244"); //French sign language
             hs.add("^ESCTFR759323"); //French Canadian sign language
@@ -1277,7 +1441,7 @@ public class SD367 extends AbstractRoutine {
             hs.add("^ESCTMA584516"); //Marind language
             hs.add("^ESCTMA584551"); //Mandarin dialect
             hs.add("^ESCTMA584593"); //Mari language
-            hs.add("^ESCTMA676350"); //Main spoken language French Crï¿½ole
+            hs.add("^ESCTMA676350"); //Main spoken language French Criole
             hs.add("^ESCTMA729804"); //Manx language
             hs.add("^ESCTMA751104"); //Main spoken language Abkhaz
             hs.add("^ESCTMA751114"); //Main spoken language Faroese
@@ -1291,7 +1455,7 @@ public class SD367 extends AbstractRoutine {
             hs.add("^ESCTMA822830"); //Main spoken language Fulani
             hs.add("^ESCTMA835629"); //Main spoken language Scottish Gaelic
             hs.add("^ESCTMA835630"); //Main spoken language Nuosu
-            hs.add("^ESCTMA835636"); //Main spoken language Volapï¿½k
+            hs.add("^ESCTMA835636"); //Main spoken language Volapi
             hs.add("^ESCTMB584258"); //Mbum language
             hs.add("^ESCTMB584297"); //Mbundu language
             hs.add("^ESCTMB759219"); //Mbour sign language
@@ -1421,7 +1585,7 @@ public class SD367 extends AbstractRoutine {
             hs.add("^ESCTPE759333"); //Peruvian sign language
             hs.add("^ESCTPH759287"); //Philippine sign language
             hs.add("^ESCTPI584483"); //Pima language
-            hs.add("^ESCTPI584518"); //Pidgin and Crï¿½ole language
+            hs.add("^ESCTPI584518"); //Pidgin and Criole language
             hs.add("^ESCTPI584526"); //Pidgin English language
             hs.add("^ESCTPL759334"); //Plains Indian sign language
             hs.add("^ESCTPO584109"); //Portuguese language
@@ -1606,7 +1770,7 @@ public class SD367 extends AbstractRoutine {
             hs.add("^ESCTUR453897"); //Urdu language
             hs.add("^ESCTUR584370"); //Urhobo language
             hs.add("^ESCTUR584586"); //Uralic language
-            hs.add("^ESCTUR759316"); //Urubï¿½-Kaapor sign language
+            hs.add("^ESCTUR759316"); //Urubi-Kaapor sign language
             hs.add("^ESCTUR759338"); //Uruguayan sign language
             hs.add("^ESCTUT584475"); //Uto-Aztecan language
             hs.add("^ESCTUT584486"); //Ute language
@@ -2641,7 +2805,7 @@ public class SD367 extends AbstractRoutine {
             hs.add(new Long(698889008L)); //Main spoken language Bashkir (finding)
             hs.add(new Long(315586005L)); //Main spoken language Sylheti (finding)
             hs.add(new Long(407657008L)); //Main spoken language Turkish (finding)
-            hs.add(new Long(970821000000100L)); //Main spoken language Norwegian Bokmål (finding)
+            hs.add(new Long(970821000000100L)); //Main spoken language Norwegian Bokmal (finding)
             hs.add(new Long(970881000000104L)); //Main spoken language Pali (finding)
             hs.add(new Long(315587001L)); //Main spoken language Tamil (finding)
             hs.add(new Long(609095001L)); //Main spoken language Tetum (finding)
@@ -2649,7 +2813,7 @@ public class SD367 extends AbstractRoutine {
             hs.add(new Long(315572006L)); //Main spoken language Gujerati (finding)
             hs.add(new Long(698913002L)); //Main spoken language Ndebele (finding)
             hs.add(new Long(698894008L)); //Main spoken language Danish (finding)
-            hs.add(new Long(971021000000103L)); //Main spoken language Volapük (finding)
+            hs.add(new Long(971021000000103L)); //Main spoken language Volapuk (finding)
             hs.add(new Long(315580004L)); //Main spoken language Portuguese (finding)
             hs.add(new Long(315574007L)); //Main spoken language Hausa (finding)
             hs.add(new Long(698672002L)); //Main spoken language Malay (finding)
@@ -2712,7 +2876,7 @@ public class SD367 extends AbstractRoutine {
             hs.add(new Long(357001000000106L)); //Main spoken language Faeroese (finding)
             hs.add(new Long(698927007L)); //Main spoken language Tongan (finding)
             hs.add(new Long(970871000000101L)); //Main spoken language Ossetian (finding)
-            hs.add(new Long(408521009L)); //Main spoken language French Créole (finding)
+            hs.add(new Long(408521009L)); //Main spoken language French Creole (finding)
             hs.add(new Long(698660008L)); //Main spoken language Faroese (finding)
             hs.add(new Long(970681000000100L)); //Main spoken language Kuanyama (finding)
             hs.add(new Long(764526007L)); //Refusal by patient to provide information about spoken language (situation)

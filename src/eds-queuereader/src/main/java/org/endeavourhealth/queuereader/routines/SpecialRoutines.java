@@ -1,14 +1,23 @@
 package org.endeavourhealth.queuereader.routines;
 
 import com.google.common.base.Strings;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVParser;
+import org.apache.commons.csv.CSVRecord;
+import org.apache.commons.csv.QuoteMode;
 import org.apache.commons.io.FileUtils;
 import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.common.fhir.IdentifierHelper;
+import org.endeavourhealth.common.fhir.ReferenceHelper;
+import org.endeavourhealth.common.fhir.schema.ReferralPriority;
 import org.endeavourhealth.common.utility.MetricsHelper;
+import org.endeavourhealth.common.utility.MetricsTimer;
 import org.endeavourhealth.common.utility.SlackHelper;
+import org.endeavourhealth.core.csv.CsvHelper;
 import org.endeavourhealth.core.database.dal.DalProvider;
 import org.endeavourhealth.core.database.dal.admin.LibraryRepositoryHelper;
 import org.endeavourhealth.core.database.dal.admin.ServiceDalI;
+import org.endeavourhealth.core.database.dal.admin.SystemHelper;
 import org.endeavourhealth.core.database.dal.admin.models.Service;
 import org.endeavourhealth.core.database.dal.audit.ExchangeDalI;
 import org.endeavourhealth.core.database.dal.audit.models.Exchange;
@@ -23,6 +32,9 @@ import org.endeavourhealth.core.database.dal.subscriberTransform.SubscriberPerso
 import org.endeavourhealth.core.database.dal.subscriberTransform.SubscriberResourceMappingDalI;
 import org.endeavourhealth.core.database.dal.subscriberTransform.models.SubscriberCohortRecord;
 import org.endeavourhealth.core.database.dal.subscriberTransform.models.SubscriberId;
+import org.endeavourhealth.core.database.rdbms.ConnectionManager;
+import org.endeavourhealth.core.database.rdbms.ehr.RdbmsResourceDal;
+import org.endeavourhealth.core.database.rdbms.ehr.models.AdminResourceRetrieverI;
 import org.endeavourhealth.core.messaging.pipeline.PipelineException;
 import org.endeavourhealth.core.queueing.QueueHelper;
 import org.endeavourhealth.core.subscribers.SubscriberHelper;
@@ -38,25 +50,180 @@ import org.endeavourhealth.transform.enterprise.FhirToEnterpriseCsvTransformer;
 import org.endeavourhealth.transform.enterprise.transforms.EpisodeOfCareEnterpriseTransformer;
 import org.endeavourhealth.transform.enterprise.transforms.PatientEnterpriseTransformer;
 import org.endeavourhealth.transform.subscriber.*;
+import org.endeavourhealth.transform.subscriber.json.LinkDistributorConfig;
 import org.endeavourhealth.transform.subscriber.targetTables.OutputContainer;
+import org.endeavourhealth.transform.subscriber.targetTables.PatientPseudoId;
+import org.endeavourhealth.transform.subscriber.targetTables.RegistrationStatusHistory;
 import org.endeavourhealth.transform.subscriber.targetTables.SubscriberTableId;
 import org.endeavourhealth.transform.subscriber.transforms.EpisodeOfCareTransformer;
 import org.endeavourhealth.transform.subscriber.transforms.PatientTransformer;
-import org.hl7.fhir.instance.model.Patient;
-import org.hl7.fhir.instance.model.ResourceType;
+import org.endeavourhealth.transform.subscriber.transforms.ScheduleTransformer;
+import org.hibernate.annotations.BatchSize;
+import org.hl7.fhir.instance.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
+import java.io.Reader;
+import java.lang.System;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+
+import static org.endeavourhealth.transform.subscriber.transforms.EpisodeOfCareTransformer.getRegStatusList;
+import static org.endeavourhealth.transform.subscriber.transforms.PatientTransformer.findPseudoIdIds;
 
 public abstract class SpecialRoutines extends AbstractRoutine {
     private static final Logger LOG = LoggerFactory.getLogger(SpecialRoutines.class);
     public static final String COMPASS_V1 = "compass_v1";
     public static final String COMPASS_V2 = "compass_v2";
+
+
+
+    public static void reprocessTPPScheduleResources(String subscriberConfigName, String orgOdsCodeRegex) {
+        LOG.debug("Populating Compass with Schedule Additional Resources for " + subscriberConfigName + " regex " + orgOdsCodeRegex);
+        try {
+            String bulkOperationName = null;
+            ServiceDalI serviceDal = DalProvider.factoryServiceDal();
+            List<Service> services = null;
+
+            bulkOperationName = "REPROCESS SCHEDULE RESOURCES FOR " + subscriberConfigName +" regex " + orgOdsCodeRegex;
+            Service onlyService = null;
+            if(orgOdsCodeRegex!=null){
+                onlyService = serviceDal.getByLocalIdentifier(orgOdsCodeRegex);
+            } else {
+                services = serviceDal.getAll();
+            }
+
+            SubscriberConfig subscriberConfig = SubscriberConfig.readFromConfig(subscriberConfigName);
+
+            if(orgOdsCodeRegex == null) {
+
+                for (Service service : services) {
+                    Map<String, String> tags = service.getTags();
+                    if (tags == null || !tags.containsKey("TPP")) {
+                        LOG.debug("Skipping " + service + " as not an TPP system");
+                        continue;
+                    }
+                    List<String> subscriberConfigNames = SubscriberHelper.getSubscriberConfigNamesForPublisher(null, service.getId());
+                    if (!subscriberConfigNames.contains(subscriberConfigName)) {
+                        LOG.debug("Skipping " + service + " as not a publisher");
+                        continue;
+                    }
+
+                    //check if already done
+                    if (isServiceDoneBulkOperation(service, bulkOperationName)) {
+                        LOG.debug("Skipping " + service + " as already done");
+                        continue;
+                    }
+
+                    LOG.debug("Doing " + service);
+                    UUID serviceId = service.getId();
+
+                    ResourceDalI resourceDalI = DalProvider.factoryResourceDal();
+                    List<ResourceWrapper> scheduleWrappers = resourceDalI.getAllAdminResourcesByType(serviceId.toString(), ResourceType.Schedule, true);
+
+                    OutputContainer compassV2Container = null;
+
+                    LOG.debug(scheduleWrappers.size() + " total schedules");
+                    //transform patient
+                    if (subscriberConfig.getSubscriberType() == SubscriberConfig.SubscriberType.CompassV2) {
+
+                        if (compassV2Container == null) {
+                            compassV2Container = new OutputContainer();
+                        }
+
+                        SubscriberTransformHelper params = new SubscriberTransformHelper(serviceId, null, null, null, subscriberConfig, scheduleWrappers, false, false, compassV2Container);
+                        Long orgId = FhirToSubscriberCsvTransformer.findEnterpriseOrgId(serviceId, params, new ArrayList<>());
+                        params.setSubscriberOrganisationId(orgId);
+                        ScheduleTransformer t = new ScheduleTransformer();
+                        t.transformResources(scheduleWrappers, params);
+                        LOG.debug("Transformed Schedule Resources");
+
+                        //Save the schedules
+                        saveCompassV2ScheduleData(serviceId, subscriberConfigName, compassV2Container);
+                    } else {
+                        throw new Exception("Unexpected subscriber type [" + subscriberConfig.getSubscriberType() + "]");
+                    }
+
+                    //audit that we've done
+                    setServiceDoneBulkOperation(service, bulkOperationName);
+                }
+            }else if(onlyService != null){
+                Map<String, String> tags = onlyService.getTags();
+                if (tags == null || !tags.containsKey("TPP")) {
+                    LOG.debug("Skipping " + onlyService + " as not an TPP system");
+                    return;
+                }
+                List<String> subscriberConfigNames = SubscriberHelper.getSubscriberConfigNamesForPublisher(null, onlyService.getId());
+                if (!subscriberConfigNames.contains(subscriberConfigName)) {
+                    LOG.debug("Skipping " + onlyService + " as not a publisher");
+                    return;
+                }
+
+                //check if already done
+                if (isServiceDoneBulkOperation(onlyService, bulkOperationName)) {
+                    LOG.debug("Skipping " + onlyService + " as already done");
+                    return;
+                }
+
+                LOG.debug("Doing " + onlyService);
+                UUID serviceId = onlyService.getId();
+
+                ResourceDalI resourceDalI = DalProvider.factoryResourceDal();
+                List<ResourceWrapper> scheduleWrappers = resourceDalI.getAllAdminResourcesByType(serviceId.toString(), ResourceType.Schedule, true);
+
+                OutputContainer compassV2Container = null;
+
+                LOG.debug(scheduleWrappers.size() + " total schedules");
+                //transform patient
+                if (subscriberConfig.getSubscriberType() == SubscriberConfig.SubscriberType.CompassV2) {
+
+                    if (compassV2Container == null) {
+                        compassV2Container = new OutputContainer();
+                    }
+
+                    SubscriberTransformHelper params = new SubscriberTransformHelper(serviceId, null, null, null, subscriberConfig, scheduleWrappers, false, false, compassV2Container);
+                    Long orgId = FhirToSubscriberCsvTransformer.findEnterpriseOrgId(serviceId, params, new ArrayList<>());
+                    params.setSubscriberOrganisationId(orgId);
+                    ScheduleTransformer t = new ScheduleTransformer();
+                    t.transformResources(scheduleWrappers, params);
+                    LOG.debug("Transformed Schedule Resources");
+
+                    //Save the schedules
+                    saveCompassV2ScheduleData(serviceId, subscriberConfigName, compassV2Container);
+
+                    setServiceDoneBulkOperation(onlyService, bulkOperationName);
+                } else {
+                    throw new Exception("Unexpected subscriber type [" + subscriberConfig.getSubscriberType() + "]");
+                }
+
+            }
+            LOG.debug("Finished reprocessing schedules for " + subscriberConfigName + " regex " + orgOdsCodeRegex);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static void saveCompassV2ScheduleData(UUID serviceId, String subscriberConfigName, OutputContainer compassV2Container) throws Exception {
+        LOG.debug("Saving CompassV2 schedule data");
+
+        List<SubscriberTableId> toKeep = new ArrayList<>();
+        toKeep.add(SubscriberTableId.SCHEDULE);
+        toKeep.add(SubscriberTableId.SCHEDULE_ADDITIONAL);
+        compassV2Container.clearDownOutputContainer(toKeep);
+
+        byte[] bytes = compassV2Container.writeToZip();
+        if (bytes != null) {
+            String base64 = Base64.getEncoder().encodeToString(bytes);
+            UUID batchId = UUID.randomUUID();
+            SubscriberFiler.file(serviceId, null, null, batchId, UUID.randomUUID(), base64, subscriberConfigName);
+        }
+    }
 
     /*public static void populateExchangeFileSizes(String odsCodeRegex) {
         LOG.info("Populating Exchange File Sizes for " + odsCodeRegex);
@@ -320,6 +487,120 @@ public abstract class SpecialRoutines extends AbstractRoutine {
             File fInvalid = new File(dir, "INVALID_" + fileName);
             FileUtils.writeLines(fInvalid, invalid);
             LOG.info("" + invalid.size() + " NHS numbers written to " + fInvalid);
+
+        } catch (Throwable t) {
+            LOG.error("", t);
+        }
+    }
+
+    public static void CompareEmisAndTrudRead2CodeMaps(String emisFilePath, String trudFilePath) {
+        LOG.info("Comparing Read2 code maps in " + emisFilePath + " and " + trudFilePath);
+        try {
+            Map<String, String> emisMap = new HashMap<>();
+            Map<String, String> snomedTerms = new HashMap<>();
+            Map<String, String> trudMap = new HashMap<>();
+
+            //this map file is comma delimied
+            CSVFormat format = CSVFormat.DEFAULT.withQuoteMode(QuoteMode.MINIMAL);
+
+            CSVParser parser = null;
+            CSVParser parser2 = null;
+            try {
+                Reader r = new FileReader(emisFilePath);
+                parser = new CSVParser(r, format.withHeader());
+                Iterator<CSVRecord> iterator = parser.iterator();
+
+                while (iterator.hasNext()) {
+                    CSVRecord record = iterator.next();
+
+                    String readCode = record.get("read_code");
+                    if (!readCode.contains("-")) {
+                        readCode = record.get("adjusted_code");     //the 5 byte adjusted code
+                    }
+                    String snomedTerm = record.get("snomed_term");
+                    String SnomedCt = record.get("snomed_concept_id");
+                    emisMap.put(readCode, SnomedCt);
+                    snomedTerms.put(readCode, snomedTerm);
+                }
+
+                Reader r2 = new FileReader(trudFilePath);
+                parser2 = new CSVParser(r2, format.withHeader());
+                Iterator<CSVRecord> iterator2 = parser2.iterator();
+                while (iterator2.hasNext()) {
+                    CSVRecord record2 = iterator2.next();
+
+                    //String isAssured = record2.get("IS_ASSURED");
+                    String isActive = record2.get("MapStatus");
+                    if (!isActive.equals("1")) {
+                        continue;
+                    }
+
+                    String read2Code = record2.get("ReadCode");
+                    String termCode = record2.get("TermCode");   //synonym level 11, 12, 13, 14 etc.
+                    if (!termCode.equals("00")) {
+                        //remove 1 prefix from termCode and concat to read2Code without .
+                        read2Code = read2Code.replace(".","");
+
+                        //11 -> 1, 12 -> 2, 13 -> 3, 20 -> 20
+                        String termCodePrefix = termCode.substring(0,1);
+                        if (termCodePrefix.equals("1")) {
+                            termCode = termCode.substring(1);
+                        }
+                        //eg. 4E and 13 becomes 4E-3, Eu453 and 21 becomes Eu453-21
+                        read2Code = read2Code.concat("-").concat(termCode);
+                    }
+                    String SnomedCt = record2.get("ConceptId");
+                    trudMap.put(read2Code+"#"+SnomedCt,isActive);
+                }
+
+            } finally {
+                if (parser != null) {
+                    parser.close();
+                }
+                if (parser2 != null) {
+                    parser2.close();
+                }
+            }
+            //now find all EMIS maps with no TRUD map
+            Map<String, String> emisMapNoTrud = new HashMap<>();
+            for (String read2Code: emisMap.keySet()) {
+                String SnomedCt = emisMap.get(read2Code);
+
+                //if the R2 / SCT map exists in trud maps, continue
+                if (trudMap.remove(read2Code+"#"+SnomedCt,"1")) {
+                    continue;
+                }
+                emisMapNoTrud.put(read2Code, SnomedCt);
+            }
+
+            LOG.info("" + emisMapNoTrud.size() + " missing EMIS TRUD maps");
+            if (!emisMapNoTrud.isEmpty()) {
+                File file = new File(trudFilePath);
+                String dir = file.getParent();
+                File fMissing = new File(dir, "trud_missing_emis_maps.csv");
+                if (fMissing.exists()) {
+                    fMissing.delete();
+                }
+                List<String> missing = new ArrayList<>();
+
+                //sort the map by key
+                Map<String, String> sortedEmisMapNoTrud = new TreeMap<>(emisMapNoTrud);
+                //int count = 0;
+                for (String read2Code : sortedEmisMapNoTrud.keySet()) {
+                    //ignore synonym level 90+
+//                    if (read2Code.contains("-9")) {
+//                        continue;
+//                    }
+
+                    String snomedCt = emisMapNoTrud.get(read2Code);
+                    String snomedTerm = snomedTerms.remove(read2Code);
+//                    System.out.println(count++);
+//                    System.out.println(read2Code + '#' + snomedCt + '#' +snomedTerm);
+                    String line = read2Code.concat(",").concat(snomedCt).concat(",\"").concat(snomedTerm).concat("\"");
+                    missing.add(line);
+                }
+                FileUtils.writeLines(fMissing, missing);
+            }
 
         } catch (Throwable t) {
             LOG.error("", t);
@@ -1001,6 +1282,19 @@ public abstract class SpecialRoutines extends AbstractRoutine {
             }
 
 
+            LOG.debug("----SD-308 Free-text vs Coded Referral Priorities ------------------------------------------------");
+
+            ReferralPriority fhirReferralPriority = ReferralPriority.ROUTINE;
+            int referralRequestPriorityId = fhirReferralPriority.ordinal();
+            String desc = fhirReferralPriority.getDescription();
+            int conceptIdFromEnum = IMHelper.getIMConcept(null, new ProcedureRequest(), IMConstant.FHIR_REFERRAL_PRIORITY, "" + referralRequestPriorityId, desc);
+            LOG.debug("For coded referral priority got " + conceptIdFromEnum);
+
+            String text = "Two-Week Wait";
+            int conceptIdFromText = IMClient.getConceptDbidForTypeTerm(IMConstant.FHIR_REFERRAL_PRIORITY, text, true);
+            LOG.debug("For free-text priority got " + conceptIdFromText);
+
+
             LOG.debug("----SD-308 Free-text Referral Types ------------------------------------------------");
 
             toks = new ArrayList<>();
@@ -1019,6 +1313,27 @@ public abstract class SpecialRoutines extends AbstractRoutine {
 
             for (String tok: toks) {
                 Integer conceptId = IMClient.getConceptDbidForTypeTerm(IMConstant.FHIR_REFERRAL_TYPE, tok, true);
+                LOG.debug("" + tok + " -> " + conceptId);
+            }
+
+
+
+
+            LOG.debug("----SD-159 Free-text Procedure Requests ------------------------------------------------");
+
+            toks = new ArrayList<>();
+            toks.add("Medication Check");
+            toks.add("Cytology Smear");
+            toks.add("Miscellaneous");
+            toks.add("Immunisation");
+            toks.add("Over 75 Check");
+            toks.add("Influenza Vaccination");
+            toks.add("medication review");
+            toks.add("Asthma");
+            toks.add("Cervical neoplasia screen");
+
+            for (String tok: toks) {
+                Integer conceptId = IMClient.getConceptDbidForTypeTerm(IMConstant.FHIR_PROCEDURE_REQUEST_FREE_TEXT_TYPE, tok, true);
                 LOG.debug("" + tok + " -> " + conceptId);
             }
 
@@ -1936,6 +2251,8 @@ public abstract class SpecialRoutines extends AbstractRoutine {
     }*/
 
 
+
+
 	// For the config name provided, get the list of services which are publishers and send
     // their transformed Patient and EpisodeOfCare FHIR resources to the Filer
     public static void transformAndFilePatientsAndEpisodesForProtocolServices(String subscriberConfigName, String orgOdsCodeRegex) {
@@ -1950,7 +2267,6 @@ public abstract class SpecialRoutines extends AbstractRoutine {
             ResourceDalI resourceDal = DalProvider.factoryResourceDal();
             PatientLinkDalI patientLinkDal = DalProvider.factoryPatientLinkDal();
             SubscriberResourceMappingDalI patientIdDal = DalProvider.factorySubscriberResourceMappingDal(subscriberConfigName);
-
             SubscriberConfig subscriberConfig = SubscriberConfig.readFromConfig(subscriberConfigName);
 
             String bulkOperationName = "bulk load of patient data and registration_status_history for " + subscriberConfigName;
@@ -2039,7 +2355,7 @@ public abstract class SpecialRoutines extends AbstractRoutine {
                         //if batch is full then save what we've done
                         batchSize++;
                         if (batchSize >= 100) {
-                            saveCompassV1PatientData(subscriberConfigName, compassV1Container);
+                            saveCompassV1PatientData(serviceId, subscriberConfigName, compassV1Container);
                             compassV1Container = null;
                             batchSize = 0;
                         }
@@ -2056,7 +2372,7 @@ public abstract class SpecialRoutines extends AbstractRoutine {
                             throw new Exception("Failed to find subscriberPatientId for " + ref);
                         }
 
-                        SubscriberTransformHelper params = new SubscriberTransformHelper(serviceId, null, null, null, subscriberConfig, wrappers, false, compassV2Container);
+                        SubscriberTransformHelper params = new SubscriberTransformHelper(serviceId, null, null, null, subscriberConfig, wrappers, false, false, compassV2Container);
                         Long orgId = FhirToSubscriberCsvTransformer.findEnterpriseOrgId(serviceId, params, new ArrayList<>());
                         params.setSubscriberOrganisationId(orgId);
                         PatientTransformer t = new PatientTransformer();
@@ -2070,7 +2386,7 @@ public abstract class SpecialRoutines extends AbstractRoutine {
                         //if batch is full then save what we've done
                         batchSize++;
                         if (batchSize >= 100) {
-                            saveCompassV2PatientData(subscriberConfigName, compassV2Container);
+                            saveCompassV2PatientData(serviceId, subscriberConfigName, compassV2Container);
                             compassV2Container = null;
                             batchSize = 0;
                         }
@@ -2084,10 +2400,10 @@ public abstract class SpecialRoutines extends AbstractRoutine {
                 if (batchSize > 0) {
 
                     if (subscriberConfig.getSubscriberType() == SubscriberConfig.SubscriberType.CompassV1) {
-                        saveCompassV1PatientData(subscriberConfigName, compassV1Container);
+                        saveCompassV1PatientData(serviceId, subscriberConfigName, compassV1Container);
 
                     } else if (subscriberConfig.getSubscriberType() == SubscriberConfig.SubscriberType.CompassV2) {
-                        saveCompassV2PatientData(subscriberConfigName, compassV2Container);
+                        saveCompassV2PatientData(serviceId, subscriberConfigName, compassV2Container);
 
                     } else {
                         throw new Exception("Unexpected subscriber type [" + subscriberConfig.getSubscriberType() + "]");
@@ -2191,7 +2507,7 @@ public abstract class SpecialRoutines extends AbstractRoutine {
                             throw new Exception("Failed to find subscriberPatientId for " + ref);
                         }
 
-                        SubscriberTransformHelper params = new SubscriberTransformHelper(serviceId, null, null, null, subscriberConfig, wrappers, false, compassV2Container);
+                        SubscriberTransformHelper params = new SubscriberTransformHelper(serviceId, null, null, null, subscriberConfig, wrappers, false, false, compassV2Container);
                         Long orgId = FhirToSubscriberCsvTransformer.findEnterpriseOrgId(serviceId, params, new ArrayList<>());
                         params.setSubscriberOrganisationId(orgId);
                         PatientTransformer pt = new PatientTransformer();
@@ -2200,7 +2516,7 @@ public abstract class SpecialRoutines extends AbstractRoutine {
                         // if batch is full then save what has been done
                         batchSize++;
                         if (batchSize >= 100) {
-                            saveCompassV2PatientAddressData(subscriberConfigName, compassV2Container);
+                            saveCompassV2PatientAddressData(serviceId, subscriberConfigName, compassV2Container);
                             compassV2Container = null;
                             batchSize = 0;
                         }
@@ -2213,7 +2529,7 @@ public abstract class SpecialRoutines extends AbstractRoutine {
                 if (batchSize > 0) {
 
                     if (subscriberConfig.getSubscriberType() == SubscriberConfig.SubscriberType.CompassV2) {
-                        saveCompassV2PatientAddressData(subscriberConfigName, compassV2Container);
+                        saveCompassV2PatientAddressData(serviceId, subscriberConfigName, compassV2Container);
                     } else {
                         throw new Exception("Unexpected subscriber type [" + subscriberConfig.getSubscriberType() + "]");
                     }
@@ -2331,7 +2647,7 @@ public abstract class SpecialRoutines extends AbstractRoutine {
                         }
 
                         try {
-                            SubscriberTransformHelper params = new SubscriberTransformHelper(serviceId, null, null, null, subscriberConfig, wrappers, false, compassV2Container);
+                            SubscriberTransformHelper params = new SubscriberTransformHelper(serviceId, null, null, null, subscriberConfig, wrappers, false, false, compassV2Container);
                             Long orgId = FhirToSubscriberCsvTransformer.findEnterpriseOrgId(serviceId, params, new ArrayList<>());
                             params.setSubscriberOrganisationId(orgId);
                             PatientTransformer pt = new PatientTransformer();
@@ -2339,7 +2655,7 @@ public abstract class SpecialRoutines extends AbstractRoutine {
                             // if batch is full then save what has been done
                             batchSize++;
                             if (batchSize >= 100) {
-                                saveCompassV2PatientAgeData(subscriberConfigName, compassV2Container);
+                                saveCompassV2PatientAgeData(serviceId, subscriberConfigName, compassV2Container);
                                 compassV2Container = null;
                                 batchSize = 0;
                             }
@@ -2359,7 +2675,7 @@ public abstract class SpecialRoutines extends AbstractRoutine {
                 //save any part completed batch
                 if (batchSize > 0) {
                     if (subscriberConfig.getSubscriberType() == SubscriberConfig.SubscriberType.CompassV2) {
-                        saveCompassV2PatientAgeData(subscriberConfigName, compassV2Container);
+                        saveCompassV2PatientAgeData(serviceId, subscriberConfigName, compassV2Container);
                     } else {
                         throw new Exception("Unexpected subscriber type [" + subscriberConfig.getSubscriberType() + "]");
                     }
@@ -2533,7 +2849,6 @@ public abstract class SpecialRoutines extends AbstractRoutine {
             BufferedReader br = new BufferedReader(fr);
 
             ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
-            ServiceDalI serviceDalI = DalProvider.factoryServiceDal();
 
             while (true) {
                 String line = br.readLine();
@@ -2561,52 +2876,83 @@ public abstract class SpecialRoutines extends AbstractRoutine {
             }
             br.close();
 
-            LOG.debug("Found exchanges for " + hmExchangeIds.size() + " services");
-
-            for (UUID serviceId: hmExchangeIds.keySet()) {
-                Map<UUID, List<UUID>> inner = hmExchangeIds.get(serviceId);
-
-                Service service = serviceDalI.getById(serviceId);
-                LOG.debug("Doing " + service);
-
-                for (UUID systemId: inner.keySet()) {
-
-                    List<UUID> exchangeIds = inner.get(systemId);
-
-                    int count = 0;
-                    List<UUID> exchangeIdBatch = new ArrayList<>();
-
-                    for (UUID exchangeId : exchangeIds) {
-
-                        count++;
-                        exchangeIdBatch.add(exchangeId);
-
-                        //update the transform audit, so EDS UI knows we've re-queued this exchange
-                        ExchangeTransformAudit audit = exchangeDal.getMostRecentExchangeTransform(serviceId, systemId, exchangeId);
-                        if (audit != null
-                                && !audit.isResubmitted()) {
-                            audit.setResubmitted(true);
-                            exchangeDal.save(audit);
-                        }
-
-                        if (exchangeIdBatch.size() >= 1000) {
-                            QueueHelper.postToExchange(exchangeIdBatch, QueueHelper.ExchangeName.INBOUND, null, reason);
-                            exchangeIdBatch = new ArrayList<>();
-                            LOG.info("Done " + count);
-                        }
-                    }
-
-                    if (!exchangeIdBatch.isEmpty()) {
-                        QueueHelper.postToExchange(exchangeIdBatch, QueueHelper.ExchangeName.INBOUND, null, reason);
-                        LOG.info("Done " + count);
-                    }
-                }
-            }
-
-            LOG.info("Finished Posting to inbound");
+            postExchangesToInbound(reason, hmExchangeIds, exchangeDal, DalProvider.factoryServiceDal());
         } catch (Throwable ex) {
             LOG.error("", ex);
         }
+    }
+
+    public static void postAllSystemsExchangesForServiceToInbound(UUID serviceUuid, String reason) {
+        Map<UUID, List<UUID>> systemExchanges = new HashMap<>();
+
+        try {
+            ServiceDalI serviceDal = DalProvider.factoryServiceDal();
+            ExchangeDalI exchangeDal = DalProvider.factoryExchangeDal();
+
+            Service service = serviceDal.getById(serviceUuid);
+
+            for (UUID systemId : SystemHelper.getSystemIdsForService(service)) {
+                List<UUID> exchangeIds = exchangeDal.getExchangeIdsForService(service.getId(), systemId);
+
+                if (exchangeIds != null && !exchangeIds.isEmpty())
+                    systemExchanges.put(systemId, exchangeIds);
+            }
+
+            Map<UUID, Map<UUID, List<UUID>>> serviceExchanges = new HashMap<>();
+            serviceExchanges.put(serviceUuid, systemExchanges);
+
+            postExchangesToInbound(reason, serviceExchanges, exchangeDal, serviceDal);
+        } catch (Throwable ex) {
+            LOG.error("", ex);
+        }
+    }
+
+    // hmExchangeIds = map of <Service <System, Exchange[]>>
+    private static void postExchangesToInbound(String reason, Map<UUID, Map<UUID, List<UUID>>> hmExchangeIds, ExchangeDalI exchangeDal, ServiceDalI serviceDalI) throws Exception {
+
+        LOG.debug("Found exchanges for " + hmExchangeIds.size() + " services");
+
+        for (UUID serviceId: hmExchangeIds.keySet()) {
+            Map<UUID, List<UUID>> inner = hmExchangeIds.get(serviceId);
+
+            Service service = serviceDalI.getById(serviceId);
+            LOG.debug("Doing " + service);
+
+            for (UUID systemId: inner.keySet()) {
+
+                List<UUID> exchangeIds = inner.get(systemId);
+
+                int count = 0;
+                List<UUID> exchangeIdBatch = new ArrayList<>();
+
+                for (UUID exchangeId : exchangeIds) {
+
+                    count++;
+                    exchangeIdBatch.add(exchangeId);
+
+                    //update the transform audit, so EDS UI knows we've re-queued this exchange
+                    ExchangeTransformAudit audit = exchangeDal.getMostRecentExchangeTransform(serviceId, systemId, exchangeId);
+                    if (audit != null
+                            && !audit.isResubmitted()) {
+                        audit.setResubmitted(true);
+                        exchangeDal.save(audit);
+                    }
+
+                    if (exchangeIdBatch.size() >= 1000) {
+                        QueueHelper.postToExchange(exchangeIdBatch, QueueHelper.ExchangeName.INBOUND, null, reason);
+                        exchangeIdBatch = new ArrayList<>();
+                        LOG.info("Done " + count);
+                    }
+                }
+
+                if (!exchangeIdBatch.isEmpty()) {
+                    QueueHelper.postToExchange(exchangeIdBatch, QueueHelper.ExchangeName.INBOUND, null, reason);
+                    LOG.info("Done " + count);
+                }
+            }
+        }
+
+        LOG.info("Finished Posting to inbound");
     }
 
     /**
@@ -2755,16 +3101,16 @@ public abstract class SpecialRoutines extends AbstractRoutine {
     /**
      * if a service was moved from one CoreXX DB to another, without maintaining the resource ID mappings,
      * then we need to use this routine to tidy up the mess left on the subscriber DBs. SQL will need
-     * to be manually run on the CoreXX DB to delete theresources, but only AFTER this has run.
+     * to be manually run on the CoreXX DB to delete the resources, but only AFTER this has run.
      */
-    /*public static void deleteDataForOldCoreDBFromSubscribers(UUID serviceId, String previousPublisherConfigName) {
-        LOG.debug("Deleting data from old Core DB server for " + serviceId);
+    public static void deleteDataForOldCoreDBFromSubscribers(String odsCode, String previousPublisherConfigName, String subscriberConfigNameIn) {
+        LOG.debug("Deleting Subscriber data from ("+subscriberConfigNameIn+") for old Core DB server ("+previousPublisherConfigName+") for " + odsCode);
         try {
             ServiceDalI serviceDal = DalProvider.factoryServiceDal();
-            Service service = serviceDal.getById(serviceId);
-            LOG.debug("Service = " + service);
+            Service service = serviceDal.getByLocalIdentifier(odsCode);
+            LOG.debug("Service: " + service);
 
-            //find a service on the OLD config DB
+            //find at least one service on the Core DB
             UUID altServiceId = null;
             for (Service s: serviceDal.getAll()) {
                 if (s.getPublisherConfigName() != null
@@ -2774,27 +3120,50 @@ public abstract class SpecialRoutines extends AbstractRoutine {
                 }
             }
             if (altServiceId == null) {
-                throw new Exception("Failed to find any service on publisher " + previousPublisherConfigName);
+                throw new Exception("Failed to find any service on publisher config: " + previousPublisherConfigName);
             }
 
             //find all subscriber config names
-            List<String> subscriberConfigNames = RunDataDistributionProtocols.getSubscriberConfigNamesFromOldProtocols(serviceId);
+            UUID serviceId = service.getId();
+            List<String> subscriberConfigNames = SubscriberHelper.getSubscriberConfigNamesForPublisher(null, serviceId);
             LOG.debug("Found " + subscriberConfigNames.size() + " subscribers: " + subscriberConfigNames);
+
+            //if the publisher has no current subscriber configs set is as the one passed in (if valid)
+            if (subscriberConfigNames.isEmpty()) {
+                if (!Strings.isNullOrEmpty(subscriberConfigNameIn)) {
+
+                    SubscriberConfig subscriberConfigCheck = SubscriberConfig.readFromConfig(subscriberConfigNameIn);
+                    if (subscriberConfigCheck != null) {
+                        LOG.debug("No subscribers found so forcing subscriber as valid arg[3]: " + subscriberConfigNameIn);
+                        subscriberConfigNames.add(subscriberConfigNameIn);
+                    }
+                }
+            }
 
             PatientSearchDalI patientSearchDal = DalProvider.factoryPatientSearchDal();
             List<UUID> patientIds = patientSearchDal.getPatientIds(serviceId, true);
-            LOG.debug("Found " + patientIds.size());
+            LOG.debug("Found patients: " + patientIds.size());
             patientIds.add(null); //for admin resources
 
+            //get the core DB EHR connection based on the previous config of another service!
             Connection ehrConnection = ConnectionManager.getEhrNonPooledConnection(altServiceId);
 
             int done = 0;
             for (UUID patientId: patientIds) {
 
-                //send to each subscriber
-                for (String subscriberConfigName: subscriberConfigNames) {
+                //send ALL subscribers if subscriberConfigNameIn is NOT passed in
+                for (String subscriberConfigName : subscriberConfigNames) {
 
-                    SubscriberResourceMappingDalI subscriberDal = DalProvider.factorySubscriberResourceMappingDal(subscriberConfigName);
+                    //if the subscriber config IS passed in, ONLY perform deletes to that subscriber configuration
+                    if (!Strings.isNullOrEmpty(subscriberConfigNameIn)) {
+                        if (!subscriberConfigName.equals(subscriberConfigNameIn)) {
+                            continue;
+                        }
+                        //LOG.debug("Deleting patient (" + patientId + ") data from: " + subscriberConfigNameIn + " ONLY");
+                    }
+
+                    SubscriberResourceMappingDalI subscriberDal
+                            = DalProvider.factorySubscriberResourceMappingDal(subscriberConfigName);
                     OutputContainer output = new OutputContainer();
                     boolean doneSomething = false;
 
@@ -2838,6 +3207,9 @@ public abstract class SpecialRoutines extends AbstractRoutine {
                         } else if (resourceType.equals("Observation")
                                 || resourceType.equals("Condition")
                                 || resourceType.equals("Immunization")
+                                || resourceType.equals("Procedure")
+                                || resourceType.equals("Specimen")
+                                || resourceType.equals("DiagnosticReport")
                                 || resourceType.equals("FamilyMemberHistory")) {
                             subscriberTableId = SubscriberTableId.OBSERVATION;
                         } else if (resourceType.equals("Organization")) {
@@ -2861,9 +3233,9 @@ public abstract class SpecialRoutines extends AbstractRoutine {
                             throw new Exception("Unexpected resource type " + resourceType + " " + resourceId);
                         }
 
-
                         SubscriberId subscriberId = subscriberDal.findSubscriberId(subscriberTableId.getId(), sourceId);
                         if (subscriberId == null) {
+                            LOG.debug("No subscriber data in config: "+subscriberConfigNameIn+" for table: "+subscriberTableId+", sourceId: "+sourceId);
                             continue;
                         }
 
@@ -2872,31 +3244,58 @@ public abstract class SpecialRoutines extends AbstractRoutine {
                         if (resourceType.equals("Patient")) {
                             output.getPatients().writeDelete(subscriberId);
 
-                            //the database doesn't have any pseudo IDs, so don't need to worry about that table
+                            ResourceWrapper resourceWrapperCurrentDeleted
+                                    = getCurrentDeletedResourceVersion(altServiceId, serviceId, resourceType, UUID.fromString(resourceId));
 
-                            int maxAddresses = 0;
-                            int maxTelecoms = 0;
-                            ResourceDalI resourceDal = DalProvider.factoryResourceDal();
-                            List<ResourceWrapper> history = resourceDal.getResourceHistory(altServiceId, resourceType, UUID.fromString(resourceId));
-                            for (ResourceWrapper h: history) {
-                                Patient p = (Patient)h.getResource();
+                            if (resourceWrapperCurrentDeleted != null && resourceWrapperCurrentDeleted.getResourceData() != null) {
+
+                                SubscriberConfig subscriberConfig = SubscriberConfig.readFromConfig(subscriberConfigName);
+
+                                //delete any dependent pseudo ID records
+                                List<LinkDistributorConfig> linkDistributorConfigs = subscriberConfig.getPseudoSalts();
+
+                                Map<LinkDistributorConfig, SubscriberId> hmIds
+                                        = findPseudoIdIds(linkDistributorConfigs, subscriberConfigName, resourceWrapperCurrentDeleted, false);
+
+                                for (LinkDistributorConfig ldConfig : linkDistributorConfigs) {
+
+                                    //get the source ID from the patient UUID plus the salt key name
+                                    SubscriberId subTableId = hmIds.get(ldConfig);
+                                    if (subTableId != null) {
+                                        output.getPatientPseudoId().writeDelete(subTableId);
+                                    }
+                                }
+
+                                //delete any address and contacts
+                                int maxAddresses = 0;
+                                int maxTelecoms = 0;
+
+                                Patient p = (Patient) resourceWrapperCurrentDeleted.getResource();
+                                //LOG.debug("Patient history resourceData: " + resourceWrapperCurrentDeleted.getResourceData());
                                 if (p != null) {
                                     maxAddresses = Math.max(maxAddresses, p.getAddress().size());
                                     maxTelecoms = Math.max(maxTelecoms, p.getTelecom().size());
                                 }
-                            }
-                            for (int i=0; i<maxAddresses; i++) {
-                                String subSourceId = sourceId + "-ADDR-" + i;
-                                SubscriberId subTableId = subscriberDal.findSubscriberId(SubscriberTableId.PATIENT_ADDRESS.getId(), subSourceId);
-                                if (subTableId != null) {
-                                    output.getPatientAddresses().writeDelete(subTableId);
+                                //}
+                                LOG.debug("Patient resource: " + resourceId + " has: " + maxAddresses + " addresses and: " + maxTelecoms + " contacts");
+                                for (int i = 0; i < maxAddresses; i++) {
+                                    String subSourceId = sourceId + "-ADDR-" + i;
+                                    SubscriberId subTableId
+                                            = subscriberDal.findSubscriberId(SubscriberTableId.PATIENT_ADDRESS.getId(), subSourceId);
+                                    if (subTableId != null) {
+                                        output.getPatientAddresses().writeDelete(subTableId);
+                                    } else {
+                                        LOG.debug("No subscriber data in config: " + subscriberConfigNameIn + " for subSourceId: " + subSourceId);
+                                    }
                                 }
-                            }
-                            for (int i=0; i<maxTelecoms; i++) {
-                                String subSourceId = sourceId + "-TELECOM-" + i;
-                                SubscriberId subTableId = subscriberDal.findSubscriberId(SubscriberTableId.PATIENT_CONTACT.getId(), subSourceId);
-                                if (subTableId != null) {
-                                    output.getPatientContacts().writeDelete(subTableId);
+                                for (int i = 0; i < maxTelecoms; i++) {
+                                    String subSourceId = sourceId + "-TELECOM-" + i;
+                                    SubscriberId subTableId = subscriberDal.findSubscriberId(SubscriberTableId.PATIENT_CONTACT.getId(), subSourceId);
+                                    if (subTableId != null) {
+                                        output.getPatientContacts().writeDelete(subTableId);
+                                    } else {
+                                        LOG.debug("No subscriber data in config: " + subscriberConfigNameIn + " for subSourceId: " + subSourceId);
+                                    }
                                 }
                             }
 
@@ -2904,9 +3303,41 @@ public abstract class SpecialRoutines extends AbstractRoutine {
                             output.getAllergyIntolerances().writeDelete(subscriberId);
                         } else if (resourceType.equals("Encounter")) {
                             output.getEncounters().writeDelete(subscriberId);
+                            //output.getEncounterEvents().writeDelete(subscriberId);  -- not for gp
+                            //output.getEncounterAdditional().writeDelete(subscriberId);  -- not for gp
                         } else if (resourceType.equals("EpisodeOfCare")) {
+
+                            //reg status history table first - need to get all status history and ids from resource history
+                            ResourceWrapper resourceWrapperCurrentDeleted
+                                    = getCurrentDeletedResourceVersion(altServiceId, serviceId, resourceType, UUID.fromString(resourceId));
+                            if (resourceWrapperCurrentDeleted != null && resourceWrapperCurrentDeleted.getResourceData() != null) {
+
+                                Set<EpisodeOfCareTransformer.RegStatus> regStatuses = new HashSet<>();
+                                EpisodeOfCare episodeOfCare = (EpisodeOfCare) resourceWrapperCurrentDeleted.getResource();
+                                if (episodeOfCare != null) {
+                                    List<EpisodeOfCareTransformer.RegStatus> statuses = getRegStatusList(episodeOfCare);
+                                    for (EpisodeOfCareTransformer.RegStatus status : statuses) {
+                                        regStatuses.add(status);
+                                    }
+                                    LOG.debug("regStatus: " + regStatuses.size() + " for resource_id: " + resourceId);
+
+                                    Map<EpisodeOfCareTransformer.RegStatus, SubscriberId> hmIds
+                                            = EpisodeOfCareTransformer.findRegStatusIds(regStatuses, subscriberConfigName, false);
+                                    for (EpisodeOfCareTransformer.RegStatus regStatus : regStatuses) {
+
+                                        SubscriberId subTableId = hmIds.get(regStatus);
+                                        if (subTableId != null) { //may be null if never transformed before
+
+                                            output.getRegistrationStatusHistory().writeDelete(subTableId);
+                                        } else {
+                                            LOG.debug("No reg status data in config: " + subscriberConfigNameIn + " for regStatus: " + regStatus + " and resource_id: " + resourceId);
+                                        }
+                                    }
+                                }
+                            }
+                            //then delete the episode of care
                             output.getEpisodesOfCare().writeDelete(subscriberId);
-                            //reg status history table isn't populated yet, so can ignore that
+
                         } else if (resourceType.equals("Flag")) {
                             output.getFlags().writeDelete(subscriberId);
                         } else if (resourceType.equals("Location")) {
@@ -2918,6 +3349,9 @@ public abstract class SpecialRoutines extends AbstractRoutine {
                         } else if (resourceType.equals("Observation")
                                 || resourceType.equals("Condition")
                                 || resourceType.equals("Immunization")
+                                || resourceType.equals("Procedure")
+                                || resourceType.equals("Specimen")
+                                || resourceType.equals("DiagnosticReport")
                                 || resourceType.equals("FamilyMemberHistory")) {
                             output.getObservations().writeDelete(subscriberId);
                         } else if (resourceType.equals("Organization")) {
@@ -2938,34 +3372,115 @@ public abstract class SpecialRoutines extends AbstractRoutine {
                             throw new Exception("Unexpected resource type " + resourceType + " " + resourceId);
                         }
                     }
-
                     ps.close();
 
                     if (doneSomething) {
 
                         byte[] bytes = output.writeToZip();
                         String base64 = Base64.getEncoder().encodeToString(bytes);
-
                         UUID batchId = UUID.randomUUID();
 
-                        SubscriberFiler.file(batchId, UUID.randomUUID(), base64, subscriberConfigName);
+                        LOG.debug("Deletion batch: " + batchId + " to: " + subscriberConfigName);
+                        SubscriberFiler.file(serviceId, null, null, batchId, UUID.randomUUID(), base64, subscriberConfigName);
                     }
                 }
 
-                done ++;
+                done++;
                 if (done % 100 == 0) {
                     LOG.debug("Done " + done);
                 }
             }
             LOG.debug("Done " + done);
-
             ehrConnection.close();
 
-            LOG.debug("Finished Deleting data from old Core DB server for " + serviceId);
+            LOG.debug("Finished Deleting Subscriber data from ("+subscriberConfigNameIn+") for old Core DB server ("+previousPublisherConfigName+") for " + odsCode);
         } catch (Throwable t) {
             LOG.error("", t);
         }
-    }*/
+    }
+
+    //local resource getter for utility above where you can specify the ehr connection and get the latest deleted resource
+    //NOTE: the ehr connection is found using an alternative service currently on that old configuration (altServiceId)
+    private static ResourceWrapper getCurrentDeletedResourceVersion(UUID altServiceId, UUID serviceId, String resourceType, UUID resourceId) throws Exception {
+
+        Connection ehrConnection = ConnectionManager.getEhrNonPooledConnection(altServiceId);
+        PreparedStatement ps = null;
+        try (MetricsTimer timer = MetricsHelper.recordTime("getCurrentDeletedResourceVersion")) {
+
+            String sql = "SELECT service_id, system_id, resource_type, resource_id, created_at, patient_id, resource_data, resource_checksum, is_deleted, exchange_batch_id, version "
+                    + " FROM resource_history "
+                    + " WHERE resource_type = ?"
+                    + " AND resource_id = ?"
+                    + " AND is_deleted = ?"
+                    + " LIMIT 1"; //there will only be one
+            ps = ehrConnection.prepareStatement(sql);
+
+            int col = 1;
+            ps.setString(col++, resourceType);
+            ps.setString(col++, resourceId.toString());
+            ps.setBoolean(col++, true);
+
+            ResultSet rs = ps.executeQuery();
+            List<ResourceWrapper> l
+                    = readResourceWrappersFromResourceCurrentResultSet(rs, Integer.MAX_VALUE);
+            if (l.isEmpty()) {
+                return null;
+
+            } else {
+                return l.get(0);
+            }
+
+        } finally {
+            if (ps != null) {
+                ps.close();
+            }
+            ehrConnection.close();
+        }
+    }
+
+    private static List<ResourceWrapper> readResourceWrappersFromResourceCurrentResultSet(ResultSet rs, int maxResources) throws Exception {
+        List<ResourceWrapper> ret = new ArrayList<>();
+
+        //MUST check the size before calling next() otherwise we advance in the result set
+        //before we know we want to, and end up missing resources
+        //while (rs.next() && ret.size() < maxResources) {
+        while (ret.size() < maxResources && rs.next()) {
+            int col = 1;
+
+            ResourceWrapper w = new ResourceWrapper();
+            w.setServiceId(UUID.fromString(rs.getString(col++)));
+            w.setSystemId(UUID.fromString(rs.getString(col++)));
+            w.setResourceType(rs.getString(col++));
+            w.setResourceId(UUID.fromString(rs.getString(col++)));
+            w.setCreatedAt(new java.util.Date(rs.getTimestamp(col++).getTime()));
+
+            String patientIdStr = rs.getString(col++);
+            if (!Strings.isNullOrEmpty(patientIdStr)) {
+                w.setPatientId(UUID.fromString(patientIdStr));
+            }
+
+            String resourceData = rs.getString(col++);
+            long resourceChecksum = rs.getLong(col++);
+
+            //if the resource data is null, then the resource has been deleted
+            if (Strings.isNullOrEmpty(resourceData)) {
+                w.setResourceData(null);
+                w.setResourceChecksum(null);
+                w.setDeleted(true);
+
+            } else {
+                w.setResourceData(resourceData);
+                w.setResourceChecksum(resourceChecksum);
+                w.setDeleted(false);
+            }
+
+            ret.add(w);
+        }
+
+        return ret;
+    }
+
+
 
     /*public static void populateMissingOrgsInCompassV1(String subscriberConfigName, boolean testMode) {
         LOG.debug("Populating Missing Orgs In CompassV1 " + subscriberConfigName + " testMode = " + testMode);
@@ -4476,7 +4991,7 @@ public abstract class SpecialRoutines extends AbstractRoutine {
                         //if batch is full then save what we've done
                         batchSize++;
                         if (batchSize >= 100) {
-                            saveCompassV1PseudoIdData(subscriberConfigName, compassV1Container);
+                            saveCompassV1PseudoIdData(serviceId, subscriberConfigName, compassV1Container);
                             compassV1Container = null;
                             batchSize = 0;
                         }
@@ -4493,7 +5008,7 @@ public abstract class SpecialRoutines extends AbstractRoutine {
                             throw new Exception("Failed to find subscriberPatientId for " + ref);
                         }
 
-                        SubscriberTransformHelper params = new SubscriberTransformHelper(serviceId, null, null, null, subscriberConfig, wrappers, false, compassV2Container);
+                        SubscriberTransformHelper params = new SubscriberTransformHelper(serviceId, null, null, null, subscriberConfig, wrappers, false, false, compassV2Container);
                         Long orgId = FhirToSubscriberCsvTransformer.findEnterpriseOrgId(serviceId, params, new ArrayList<>());
                         params.setSubscriberOrganisationId(orgId);
                         PatientTransformer t = new PatientTransformer();
@@ -4502,7 +5017,7 @@ public abstract class SpecialRoutines extends AbstractRoutine {
                         //if batch is full then save what we've done
                         batchSize++;
                         if (batchSize >= 100) {
-                            saveCompassV2PseudoIdData(subscriberConfigName, compassV2Container);
+                            saveCompassV2PseudoIdData(serviceId, subscriberConfigName, compassV2Container);
                             compassV2Container = null;
                             batchSize = 0;
                         }
@@ -4516,10 +5031,10 @@ public abstract class SpecialRoutines extends AbstractRoutine {
                 if (batchSize > 0) {
 
                     if (subscriberConfig.getSubscriberType() == SubscriberConfig.SubscriberType.CompassV1) {
-                        saveCompassV1PseudoIdData(subscriberConfigName, compassV1Container);
+                        saveCompassV1PseudoIdData(serviceId, subscriberConfigName, compassV1Container);
 
                     } else if (subscriberConfig.getSubscriberType() == SubscriberConfig.SubscriberType.CompassV2) {
-                        saveCompassV2PseudoIdData(subscriberConfigName, compassV2Container);
+                        saveCompassV2PseudoIdData(serviceId, subscriberConfigName, compassV2Container);
 
                     } else {
                         throw new Exception("Unexpected subscriber type [" + subscriberConfig.getSubscriberType() + "]");
@@ -4536,157 +5051,7 @@ public abstract class SpecialRoutines extends AbstractRoutine {
         }
     }
 
-    // For the config name provided, get the list of services which are publishers
-    // and send their transformed Patient FHIR resources to the Filer
-    public static void transformAndFilePatientV2IdentifiableDataForProtocolServices(boolean includeStartedButNotFinishedServices, String subscriberConfigName, String orgOdsCodeRegex) {
-
-        LOG.debug("Populating CompassV2 patient, patient_address and patient_contact tables for identifiable data for " + subscriberConfigName + " regex " + orgOdsCodeRegex);
-
-        try {
-
-            ServiceDalI serviceDal = DalProvider.factoryServiceDal();
-            List<Service> services = serviceDal.getAll();
-
-            SubscriberCohortDalI subscriberCohortDalI = DalProvider.factorySubscriberCohortDal();
-            PatientSearchDalI patientSearchDal = DalProvider.factoryPatientSearchDal();
-            ResourceDalI resourceDal = DalProvider.factoryResourceDal();
-            PatientLinkDalI patientLinkDal = DalProvider.factoryPatientLinkDal();
-            SubscriberResourceMappingDalI patientIdDal = DalProvider.factorySubscriberResourceMappingDal(subscriberConfigName);
-
-            SubscriberConfig subscriberConfig = SubscriberConfig.readFromConfig(subscriberConfigName);
-
-            String bulkOperationName = "Bulk load of patient, patient_address and patient_contact tables for identifiable data for " + subscriberConfigName;
-
-            for (Service service: services) {
-
-                if (shouldSkipService(service, orgOdsCodeRegex)) {
-                    continue;
-                }
-
-                List<String> subscriberConfigNames = SubscriberHelper.getSubscriberConfigNamesForPublisher(null, service.getId());
-                if (!subscriberConfigNames.contains(subscriberConfigName)) {
-                    LOG.debug("Skipping " + service + " as not a publisher");
-                    continue;
-                }
-
-                if (includeStartedButNotFinishedServices) {
-                    //check if already done, so we can make sure EVERY service is done
-                    if (isServiceDoneBulkOperation(service, bulkOperationName)) {
-                        LOG.debug("Skipping " + service + " as already done");
-                        continue;
-                    }
-
-                } else {
-                    //check if already started, to allow us to run multiple instances of this at once
-                    if (isServiceStartedOrDoneBulkOperation(service, bulkOperationName)) {
-                        LOG.debug("Skipping " + service + " as already started or done");
-                        continue;
-                    }
-                }
-
-                LOG.debug("Doing " + service);
-                UUID serviceId = service.getId();
-
-                List<UUID> patientIds = patientSearchDal.getPatientIds(serviceId, false);
-                LOG.debug("Found " + patientIds.size() + " patients");
-
-                int done = 0;
-                int batchSize = 0;
-                // org.endeavourhealth.transform.enterprise.outputModels.OutputContainer compassV1Container = null;
-                OutputContainer compassV2Container = null;
-
-                for (UUID patientId : patientIds) {
-
-                    // check if in cohort
-                    SubscriberCohortRecord cohortRecord = subscriberCohortDalI.getLatestCohortRecord(subscriberConfigName, patientId, UUID.randomUUID());
-                    if (cohortRecord == null
-                            || !cohortRecord.isInCohort()) {
-                        continue;
-                    }
-
-                    // retrieve FHIR patient
-                    ResourceWrapper patientWrapper = resourceDal.getCurrentVersion(serviceId, ResourceType.Patient.toString(), patientId);
-                    if (patientWrapper == null
-                            || patientWrapper.isDeleted()) {
-                        LOG.warn("Null patient resource for patient ID " + patientId);
-                        continue;
-                        // throw new Exception("Null patient resource for patient ID " + patientId);
-                    }
-                    List<ResourceWrapper> wrappers = new ArrayList<>();
-                    wrappers.add(patientWrapper);
-
-                    Patient fhirPatient = (Patient)patientWrapper.getResource();
-
-                    String discoveryPersonId = patientLinkDal.getPersonId(fhirPatient.getId());
-                    if (Strings.isNullOrEmpty(discoveryPersonId)) {
-                        LOG.warn("Null or empty person ID for " + fhirPatient.getId());
-                        continue;
-                        // throw new Exception("Null or empty person ID for " + fhirPatient.getId());
-                    }
-
-                    // transform patient
-                    if (subscriberConfig.getSubscriberType() == SubscriberConfig.SubscriberType.CompassV2) {
-                        if (compassV2Container == null) {
-                            compassV2Container = new OutputContainer();
-                        }
-
-                        String ref = patientWrapper.getReferenceString();
-                        SubscriberId subscriberPatientId = patientIdDal.findSubscriberId(SubscriberTableId.PATIENT.getId(), ref);
-                        if (subscriberPatientId == null) {
-                            LOG.warn("Failed to find subscriberPatientId for " + ref);
-                            continue;
-                            // throw new Exception("Failed to find subscriberPatientId for " + ref);
-                        }
-
-                        try {
-                            SubscriberTransformHelper params = new SubscriberTransformHelper(serviceId, null, null, null, subscriberConfig, wrappers, false, compassV2Container);
-                            Long orgId = FhirToSubscriberCsvTransformer.findEnterpriseOrgId(serviceId, params, new ArrayList<>());
-                            params.setSubscriberOrganisationId(orgId);
-                            PatientTransformer pt = new PatientTransformer();
-                            pt.transformResources(wrappers, params);
-                            // if batch is full then save what has been done
-                            batchSize++;
-                            if (batchSize >= 100) {
-                                saveCompassV2PatientIdentifiableData(subscriberConfigName, compassV2Container);
-                                compassV2Container = null;
-                                batchSize = 0;
-                            }
-                        } catch (Throwable t) {
-                            LOG.warn("Error with transform for patient " + patientId, t);
-                        }
-                    } else {
-                        throw new Exception("Unexpected subscriber type [" + subscriberConfig.getSubscriberType() + "]");
-                    }
-
-                    done ++;
-                    if (done % 1000 == 0) {
-                        LOG.debug("Done " + done + " / " + patientIds.size() + " patients");
-                    }
-                }
-
-                //save any part completed batch
-                if (batchSize > 0) {
-                    if (subscriberConfig.getSubscriberType() == SubscriberConfig.SubscriberType.CompassV2) {
-                        saveCompassV2PatientIdentifiableData(subscriberConfigName, compassV2Container);
-                    } else {
-                        throw new Exception("Unexpected subscriber type [" + subscriberConfig.getSubscriberType() + "]");
-                    }
-                }
-
-                LOG.debug("Completed " + done + " / " + patientIds.size() + " patients");
-
-                //audit what has been done
-                setServiceDoneBulkOperation(service, bulkOperationName);
-            }
-
-            LOG.debug("Finished populating CompassV2 patient, patient_address and patient_contact tables for identifiable data for " + subscriberConfigName + " regex " + orgOdsCodeRegex);
-
-        } catch (Throwable t) {
-            LOG.error("", t);
-        }
-    }
-
-    private static void saveCompassV2PseudoIdData(String subscriberConfigName, OutputContainer compassV2Container) throws Exception {
+    private static void saveCompassV2PseudoIdData(UUID serviceId, String subscriberConfigName, OutputContainer compassV2Container) throws Exception {
         List<SubscriberTableId> toKeep = new ArrayList<>();
         toKeep.add(SubscriberTableId.PATIENT_PSEUDO_ID);
         compassV2Container.clearDownOutputContainer(toKeep);
@@ -4695,11 +5060,11 @@ public abstract class SpecialRoutines extends AbstractRoutine {
         if (bytes != null) {
             String base64 = Base64.getEncoder().encodeToString(bytes);
             UUID batchId = UUID.randomUUID();
-            SubscriberFiler.file(batchId, UUID.randomUUID(), base64, subscriberConfigName);
+            SubscriberFiler.file(serviceId, null, null, batchId, UUID.randomUUID(), base64, subscriberConfigName);
         }
     }
 
-    private static void saveCompassV1PseudoIdData(String subscriberConfigName, org.endeavourhealth.transform.enterprise.outputModels.OutputContainer compassV1Container) throws Exception {
+    private static void saveCompassV1PseudoIdData(UUID serviceId, String subscriberConfigName, org.endeavourhealth.transform.enterprise.outputModels.OutputContainer compassV1Container) throws Exception {
         List<String> toKeep = new ArrayList<>();
         toKeep.add("patient_pseudo_id");
         compassV1Container.clearDownOutputContainer(toKeep);
@@ -4708,12 +5073,11 @@ public abstract class SpecialRoutines extends AbstractRoutine {
         if (bytes != null) {
             String base64 = Base64.getEncoder().encodeToString(bytes);
             UUID batchId = UUID.randomUUID();
-            EnterpriseFiler.file(batchId, UUID.randomUUID(), base64, subscriberConfigName);
+            EnterpriseFiler.file(serviceId, null, null, batchId, UUID.randomUUID(), base64, subscriberConfigName);
         }
     }
 
-
-    private static void saveCompassV2PatientData(String subscriberConfigName, OutputContainer compassV2Container) throws Exception {
+    private static void saveCompassV2PatientData(UUID serviceId, String subscriberConfigName, OutputContainer compassV2Container) throws Exception {
         List<SubscriberTableId> toKeep = new ArrayList<>();
         toKeep.add(SubscriberTableId.PATIENT);
         toKeep.add(SubscriberTableId.PATIENT_ADDRESS);
@@ -4725,11 +5089,11 @@ public abstract class SpecialRoutines extends AbstractRoutine {
         if (bytes != null) {
             String base64 = Base64.getEncoder().encodeToString(bytes);
             UUID batchId = UUID.randomUUID();
-            SubscriberFiler.file(batchId, UUID.randomUUID(), base64, subscriberConfigName);
+            SubscriberFiler.file(serviceId, null, null, batchId, UUID.randomUUID(), base64, subscriberConfigName);
         }
     }
 
-    private static void saveCompassV1PatientData(String subscriberConfigName, org.endeavourhealth.transform.enterprise.outputModels.OutputContainer compassV1Container) throws Exception {
+    private static void saveCompassV1PatientData(UUID serviceId, String subscriberConfigName, org.endeavourhealth.transform.enterprise.outputModels.OutputContainer compassV1Container) throws Exception {
         List<String> toKeep = new ArrayList<>();
         toKeep.add("patient");
         toKeep.add("patient_address");
@@ -4741,11 +5105,11 @@ public abstract class SpecialRoutines extends AbstractRoutine {
         if (bytes != null) {
             String base64 = Base64.getEncoder().encodeToString(bytes);
             UUID batchId = UUID.randomUUID();
-            EnterpriseFiler.file(batchId, UUID.randomUUID(), base64, subscriberConfigName);
+            EnterpriseFiler.file(serviceId, null, null, batchId, UUID.randomUUID(), base64, subscriberConfigName);
         }
     }
 
-    private static void saveCompassV2PatientAddressData(String subscriberConfigName, OutputContainer compassV2Container) throws Exception {
+    private static void saveCompassV2PatientAddressData(UUID serviceId, String subscriberConfigName, OutputContainer compassV2Container) throws Exception {
         List<SubscriberTableId> toKeep = new ArrayList<>();
         // toKeep.add(SubscriberTableId.PATIENT);
         // toKeep.add(SubscriberTableId.PATIENT_ADDRESS);
@@ -4757,11 +5121,11 @@ public abstract class SpecialRoutines extends AbstractRoutine {
         if (bytes != null) {
             String base64 = Base64.getEncoder().encodeToString(bytes);
             UUID batchId = UUID.randomUUID();
-            SubscriberFiler.file(batchId, UUID.randomUUID(), base64, subscriberConfigName);
+            SubscriberFiler.file(serviceId, null, null, batchId, UUID.randomUUID(), base64, subscriberConfigName);
         }
     }
 
-    private static void saveCompassV2PatientAgeData(String subscriberConfigName, OutputContainer compassV2Container) throws Exception {
+    private static void saveCompassV2PatientAgeData(UUID serviceId, String subscriberConfigName, OutputContainer compassV2Container) throws Exception {
         List<SubscriberTableId> toKeep = new ArrayList<>();
         toKeep.add(SubscriberTableId.PATIENT);
         compassV2Container.clearDownOutputContainer(toKeep);
@@ -4770,25 +5134,9 @@ public abstract class SpecialRoutines extends AbstractRoutine {
         if (bytes != null) {
             String base64 = Base64.getEncoder().encodeToString(bytes);
             UUID batchId = UUID.randomUUID();
-            SubscriberFiler.file(batchId, UUID.randomUUID(), base64, subscriberConfigName);
+            SubscriberFiler.file(serviceId, null, null, batchId, UUID.randomUUID(), base64, subscriberConfigName);
         }
     }
-
-    private static void saveCompassV2PatientIdentifiableData(String subscriberConfigName, OutputContainer compassV2Container) throws Exception {
-        List<SubscriberTableId> toKeep = new ArrayList<>();
-        toKeep.add(SubscriberTableId.PATIENT);
-        toKeep.add(SubscriberTableId.PATIENT_ADDRESS);
-        toKeep.add(SubscriberTableId.PATIENT_CONTACT);
-        compassV2Container.clearDownOutputContainer(toKeep);
-
-        byte[] bytes = compassV2Container.writeToZip();
-        if (bytes != null) {
-            String base64 = Base64.getEncoder().encodeToString(bytes);
-            UUID batchId = UUID.randomUUID();
-            SubscriberFiler.file(batchId, UUID.randomUUID(), base64, subscriberConfigName);
-        }
-    }
-
 
     /*public static void quickRefreshForAllTpp(String orgOdsCodeRegex) {
         LOG.info("Doing quick refresh for all TPP at " + orgOdsCodeRegex);
@@ -5895,7 +6243,11 @@ public abstract class SpecialRoutines extends AbstractRoutine {
 		try {
             LOG.info("Testing slack on " + MetricsHelper.getHostName());
 
-			SlackHelper.sendSlackMessage(SlackHelper.Channel.QueueReaderAlerts, "Test Message from Queue Reader " + MetricsHelper.getHostName());
+            for (SlackHelper.Channel channel: SlackHelper.Channel.values()) {
+                LOG.debug("Testing channel " + channel);
+                SlackHelper.sendSlackMessage(channel, "Testing DDS alert for " + channel.getChannelDisplayName() + " alerts, sending from " + MetricsHelper.getHostName());
+            }
+
 			LOG.info("Finished testing slack on " + MetricsHelper.getHostName());
 
 		} catch (Exception ex) {

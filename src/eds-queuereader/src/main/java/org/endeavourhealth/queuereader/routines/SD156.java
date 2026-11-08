@@ -522,8 +522,9 @@ public class SD156 extends AbstractRoutine {
         //if a patient batch, ignore any service where the protocol cohort filters out a lot of patients
         if (!Strings.isNullOrEmpty(patientId)) {
 
+            OrganisationType gp = OrganisationType.fromCode(OrganisationType.CODE_GP_PRACTICE);
             if (service.getOrganisationType() == null
-                    || service.getOrganisationType() != OrganisationType.GP_PRACTICE) {
+                    || service.getOrganisationType() != gp) {
                 return;
             }
         }

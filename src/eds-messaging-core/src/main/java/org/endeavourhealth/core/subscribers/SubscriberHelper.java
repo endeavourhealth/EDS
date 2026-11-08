@@ -234,7 +234,7 @@ public class SubscriberHelper {
         if (LOG.isTraceEnabled()) {
             List<String> l = ret.stream().map(r -> r.toString()).collect(Collectors.toList());
             l.sort(((o1, o2) -> o1.compareTo(o2)));
-            LOG.trace("[" + String.join(", ", l) + "]");
+            //LOG.trace("[" + String.join(", ", l) + "]");
         }
 
         return ret;
@@ -247,8 +247,7 @@ public class SubscriberHelper {
         ServiceDalI serviceDal = DalProvider.factoryServiceDal();
 
         List<String> publisherOdsCodes = ProjectCache.getAllPublishersForProjectWithSubscriberCheck(headerProjectId, headerOdsCode);
-        LOG.trace("For ODS code [" + headerOdsCode + "] and project ID [" + headerProjectId + "] got " + publisherOdsCodes.size() + " publisher ODS codes");
-        LOG.trace("" + publisherOdsCodes);
+        LOG.trace("For ODS code [" + headerOdsCode + "] and project ID [" + headerProjectId + "] got " + publisherOdsCodes.size() + " publisher ODS codes: " + publisherOdsCodes);
 
         for (String publisherOdsCode: publisherOdsCodes) {
 

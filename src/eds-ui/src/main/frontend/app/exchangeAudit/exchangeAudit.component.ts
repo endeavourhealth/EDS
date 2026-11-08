@@ -14,6 +14,7 @@ import {MessageBoxDialog} from "eds-common-js/dist/index";
 import {ServiceListComponent} from "../services/serviceList.component";
 import {MultiSelecterOption} from "./MultiSelecterOption";
 import {DateTimeFormatter} from "../utility/DateTimeFormatter";
+import {ClipboardHelper} from "../utility/ClipboardHelper";
 
 @Component({
 	template : require('./exchangeAudit.html')
@@ -459,6 +460,10 @@ export class ExchangeAuditComponent {
 		TransformErrorsDialog.open(vm.$modal, serviceId, systemId, transformAudit);
 	}
 
+	copyStringToClipboard(str: string) {
+		var vm = this;
+		ClipboardHelper.copyBodyToClipboard(str, vm.log);
+	}
 
 	copyBodyToClipboard(asJson: boolean) {
 		var vm = this;
@@ -482,31 +487,7 @@ export class ExchangeAuditComponent {
 			}
 		}
 
-		//create a text area containing the text and insert into the document
-		var txtArea = document.createElement("textarea");
-		txtArea.style.position = 'fixed';
-		txtArea.value = joined;
-		document.body.appendChild(txtArea);
-		txtArea.select();
-
-		//invoke the copy action on the text area
-		try {
-			var successful = document.execCommand('copy');
-			if (successful) {
-				this.log.success('Copied to clipboard');
-			} else {
-				this.log.error('Failed to copy to clipboard');
-			}
-
-		} catch (err) {
-			console.log('Failed to copy text to clipboard');
-			console.log(err);
-
-			this.log.error('Failed to copy to clipboard', err, 'Copy');
-		}
-
-		//remove from the document
-		document.body.removeChild(txtArea);
+		ClipboardHelper.copyBodyToClipboard(joined, vm.log);
 	}
 
 	canBeQueued(exchange: Exchange): boolean {
@@ -775,6 +756,29 @@ export class ExchangeAuditComponent {
 			},
 			(error) => vm.log.error('Failed to add note', error)
 		)
+	}
+
+	makeNonQueueable() {
+		var vm = this;
+
+		MessageBoxDialog.open(vm.$modal, 'Make Non-Queueable', 'Are you sure you want to make this exchange non-queueable?', 'Yes', 'No')
+			.result.then(function () {
+				vm.makeNonQueueableImpl();
+			});
+	}
+
+	makeNonQueueableImpl() {
+		var vm = this;
+		var exchangeId = vm.selectedExchange.exchangeId;
+
+		vm.exchangeAuditService.makeNonQueueable(exchangeId).subscribe(
+			(result) => {
+				vm.refreshExchanges(false);
+			},
+			(error) => {
+				vm.log.error('Failed to change exchange', error);
+			}
+		);
 	}
 
 }

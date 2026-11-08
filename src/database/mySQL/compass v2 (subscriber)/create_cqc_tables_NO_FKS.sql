@@ -30,6 +30,7 @@ CREATE TABLE `address_v2` (
   `county` varchar(255) COLLATE latin1_bin DEFAULT NULL,
   `postcode` varchar(255) COLLATE latin1_bin DEFAULT NULL,
   `location_id` bigint(20) DEFAULT NULL,
+  `source` varchar(10) COLLATE latin1_bin DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `idx_addv2_location_id` (`location_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=167593 DEFAULT CHARSET=latin1 COLLATE=latin1_bin;

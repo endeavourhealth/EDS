@@ -5,77 +5,83 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.base.Strings;
 import io.swagger.annotations.ApiParam;
 import org.endeavourhealth.common.config.ConfigManager;
-import org.endeavourhealth.common.fhir.ReferenceHelper;
 import org.endeavourhealth.common.security.SecurityUtils;
+import org.endeavourhealth.common.utility.ExpiringCache;
 import org.endeavourhealth.common.utility.MetricsHelper;
+import org.endeavourhealth.common.utility.SlackHelper;
 import org.endeavourhealth.core.database.dal.DalProvider;
-import org.endeavourhealth.core.database.dal.admin.ServiceDalI;
 import org.endeavourhealth.core.database.dal.audit.models.SubscriberApiAudit;
 import org.endeavourhealth.core.database.dal.audit.models.SubscriberApiAuditHelper;
 import org.endeavourhealth.core.database.dal.eds.PatientLinkDalI;
 import org.endeavourhealth.core.database.dal.eds.PatientSearchDalI;
-import org.endeavourhealth.core.database.dal.subscriberTransform.SubscriberResourceMappingDalI;
-import org.endeavourhealth.core.database.dal.subscriberTransform.models.SubscriberId;
+import org.endeavourhealth.core.database.dal.subscriberTransform.SubscriberPersonMappingDalI;
+import org.endeavourhealth.core.database.dal.usermanager.caching.UserCache;
 import org.endeavourhealth.core.database.rdbms.ConnectionManager;
 import org.endeavourhealth.core.fhirStorage.FhirSerializationHelper;
 import org.endeavourhealth.core.subscribers.SubscriberHelper;
 import org.endeavourhealth.transform.subscriber.SubscriberConfig;
-import org.endeavourhealth.transform.subscriber.targetTables.SubscriberTableId;
-import org.hl7.fhir.instance.model.*;
+import org.hl7.fhir.instance.model.CodeableConcept;
+import org.hl7.fhir.instance.model.OperationOutcome;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.security.RolesAllowed;
+import javax.annotation.security.PermitAll;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.*;
 import javax.ws.rs.core.*;
+import java.sql.CallableStatement;
 import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.util.*;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 @Path("/subscriber")
 public class SubscriberApiEndpoint {
+    //Initialize logger
     private static final Logger LOG = LoggerFactory.getLogger(SubscriberApiEndpoint.class);
 
-    private static final String FRAILTY_CODE = "289999999105";
-    private static final String FRAILTY_TERM = "Potentially frail";
-    private static final String SUBSCRIBER_SYSTEM_NAME = "JSON_API"; //"Subscriber_Rest_API";
-    private static final String FRAILTY_PROJECT_ID = "320baf45-37e2-4c8b-b7ee-27a9f877b95c"; //specific ID for live Frailty project
+    //This UM_APP_NAME to check access for request in user-management
+    private static final String APP_NAME = "Subscriber API";
 
-    private static final String METRIC_ERROR = "frailty-api.response-error";
-    private static final String METRIC_NOT_FOUND = "frailty-api.response-not-found";
-    private static final String METRIC_OK = "frailty-api.response-ok";
-    private static final String METRIC_MS_DURATION = "frailty-api.ms-duration";
+    //This is frailty project_code and It should be hardcoded if no project code passed in header for the flag_code 289999999105
+    private static final String DEFAULT_FRAILTY_PROJECT_ID = "320baf45-37e2-4c8b-b7ee-27a9f877b95c";
 
-    private static final ServiceDalI serviceDal = DalProvider.factoryServiceDal();
-    //private static final Map<String, String> mainSaltKeyCache = new ExpiringCache<>(1000 * 60 * 5); //cache for five mins
-    //private static final Map<String, UUID> odsCodeToServiceIdCache = new ExpiringCache<>(1000 * 60 * 5); //cache for five mins
-    //private static String lastDsmSlackMessage = null;
+    private static final String METRIC_ERROR = "subscriber-api.response-error";
+    private static final String METRIC_NOT_FOUND = "subscriber-api.response-not-found";
+    private static final String METRIC_OK = "subscriber-api.response-ok";
+    private static final String METRIC_MS_DURATION = "subscriber-api.ms-duration";
 
+    //Initialize slack alert timer
+    private static ExpiringCache<String, Boolean> hmErrorAlertTimer = new ExpiringCache<>(60L * 60L * 1000L);
 
     @GET
     @Path("/{resourceType}")
     @Produces(MediaType.APPLICATION_JSON)
-    @Timed(absolute = true, name="SubscriberApiEndpoint.GET")
-    @RolesAllowed({"dds_api_read_only"})
+    @Timed(absolute = true, name = "SubscriberApiEndpoint.GET")
+    @PermitAll
     public Response getResources(@Context HttpServletRequest request,
                                  @Context SecurityContext sc,
-                                @Context UriInfo uriInfo,
-                                @ApiParam(value="Resource Type") @PathParam(value = "resourceType") String resourceTypeRequested,
-                                @ApiParam(value="ODS Code") @HeaderParam(value = "OdsCode") String headerOdsCode,
-                                @ApiParam(value="Auth Token") @HeaderParam(value = "Authorization") String headerAuthToken,
-                                 @ApiParam(value="Project ID") @HeaderParam(value = "ProjectID") String headerProjectId) throws Exception{
+                                 @Context UriInfo uriInfo,
+                                 @ApiParam(value = "Resource Type") @PathParam(value = "resourceType") String resourceTypeRequested,
+                                 @ApiParam(value = "ODS Code") @HeaderParam(value = "OdsCode") String headerOdsCode,
+                                 @ApiParam(value = "Auth Token") @HeaderParam(value = "Authorization") String headerAuthToken,
+                                 @ApiParam(value = "Project ID") @HeaderParam(value = "ProjectID") String headerProjectIds) throws Exception {
 
         LOG.info("Subscriber API request received with resource type = [" + resourceTypeRequested + "] and ODS code [" + headerOdsCode + "]");
 
+        //UserID from security context
         UUID userUuid = SecurityUtils.getCurrentUserId(sc);
+
+        //Create audit  with userid,request,userinfo
         SubscriberApiAudit audit = SubscriberApiAuditHelper.factory(userUuid, request, uriInfo);
 
         try {
             String subjectNhsNumber = null;
             String code = null;
 
+            //read subject ,code from Query parameters and validate it for null check
             MultivaluedMap<String, String> params = uriInfo.getQueryParameters();
             for (String key : params.keySet()) {
                 String value = params.getFirst(key);
@@ -85,72 +91,75 @@ public class SubscriberApiEndpoint {
                     subjectNhsNumber = value;
 
                 } else if (key.equalsIgnoreCase("code")) {
+
                     code = value;
 
                 } else {
-                    return createErrorResponse(OperationOutcome.IssueType.STRUCTURE, "Invalid parameter '" + key + "'", audit);
+                    return createErrorResponse(OperationOutcome.IssueType.STRUCTURE, "Invalid parameter '" + key + "'", audit, code);
+                }
+            }
+            String errorMessage = doNullCheck(code, subjectNhsNumber, resourceTypeRequested, headerOdsCode);
+            if (null != errorMessage) {
+                return createErrorResponse(OperationOutcome.IssueType.REQUIRED, errorMessage, audit, code);
+            }
+
+            //project ID check in header parameter
+            //current redwood user not passing ProjectID for frailty code 289999999105 , code should support for it.other than code 289999999105 projectID is mandatory
+            if (Strings.isNullOrEmpty(headerProjectIds)) {
+                if (code.equalsIgnoreCase("289999999105")) {
+                    LOG.trace("No project ID specified for old Frailty code so will use hard-coded project ID");
+                    headerProjectIds = DEFAULT_FRAILTY_PROJECT_ID;
+                } else {
+                    return createErrorResponse(OperationOutcome.IssueType.REQUIRED, "Missing ProjectID from request headers", audit, code);
                 }
             }
 
-            //validate all expected parameters and headers are there
-            if (Strings.isNullOrEmpty(resourceTypeRequested)) {
-                return createErrorResponse(OperationOutcome.IssueType.REQUIRED, "Missing resource type requested from URL path", audit);
+            // Read configuration details for given code, if not found raise an error
+            String storedProcedureName, um_attribute, positive_response, negative_response;
+            JsonNode config_subscriber_api = ConfigManager.getConfigurationAsJson("Flag:" + code);
+            if (null != config_subscriber_api) {
+                storedProcedureName = config_subscriber_api.get("sp_name").textValue();
+                um_attribute = config_subscriber_api.get("um_attribute").textValue();
+                positive_response = config_subscriber_api.get("positive_response").toString();
+                negative_response = config_subscriber_api.get("negative_response").toString();
+            } else {
+                return createErrorResponse(OperationOutcome.IssueType.NOTSUPPORTED, "Invalid code " + code + " requested", audit, code);
             }
 
-            //ODS code tells us who is making the request
-            if (Strings.isNullOrEmpty(headerOdsCode)) {
-                return createErrorResponse(OperationOutcome.IssueType.REQUIRED, "Missing OdsCode from request headers", audit);
+            //validate user with ProjectID
+            String[] projectIds = headerProjectIds.split(Pattern.quote("|"));
+            for (String projectId: projectIds) {
+                String err = validateUserWithProjectID(userUuid, projectId, um_attribute, code);
+                if (null != err) {
+                    return createErrorResponse(OperationOutcome.IssueType.FORBIDDEN, err, audit, code);
+                }
             }
 
-            //project ID is used in the DSM to get us to the protocol
-            if (Strings.isNullOrEmpty(headerProjectId)) {
-                //the need for the project ID was added AFTER the original implementation by the third party, so we've agreed
-                //to hardcode it for now, to avoid them having to make and deploy changes
-                headerProjectId = FRAILTY_PROJECT_ID;
-                //return createErrorResponse(OperationOutcome.IssueType.REQUIRED, "Missing ProjectID from request headers", audit);
+            //check for given project_id, odscode there should be one subscriber  then fetch all publishers for project_id
+            LOG.trace("Getting publishing service IDs for requester " + headerOdsCode + " and project " + headerProjectIds);
+            Set<UUID> publisherServiceIds = new HashSet<>();
+            for (String projectId: projectIds) {
+
+                try {
+                    Set<UUID> ids = SubscriberHelper.findPublisherServiceIdsForSubscriber(headerOdsCode, projectId);
+                    publisherServiceIds.addAll(ids);
+
+                } catch (Exception ex) {
+                    //log any exception
+                    LOG.error("Error getting publisher services for subscriber " + headerOdsCode + " and project " + projectId, ex);
+
+                    //any exception should be returned as a processing error
+                    String err = "Unexpected error finding publishers for project " + projectId + ": " + ex.getMessage();
+                    return createErrorResponse(OperationOutcome.IssueType.PROCESSING, err, audit, code);
+                }
+            }
+            LOG.trace("Found " + publisherServiceIds.size() + " publishers for project ID(s) " + headerProjectIds);
+
+            if (publisherServiceIds.isEmpty()) {
+                return createErrorResponse(OperationOutcome.IssueType.PROCESSING, "No publishers found for requesting organisation " + headerOdsCode + " and project " + headerProjectIds + " (either project has no publishers or requesting ODS code not valid)", audit, code);
             }
 
-            if (Strings.isNullOrEmpty(subjectNhsNumber)) {
-                return createErrorResponse(OperationOutcome.IssueType.REQUIRED, "Missing subject parameter", audit);
-            }
-
-            if (Strings.isNullOrEmpty(code)) {
-                return createErrorResponse(OperationOutcome.IssueType.REQUIRED, "Missing code parameter", audit);
-            }
-
-            //validate the parameters match what we're expecting
-            if (!resourceTypeRequested.equalsIgnoreCase("flag")) {
-                return createErrorResponse(OperationOutcome.IssueType.NOTSUPPORTED, "Only flag FHIR resource types can be requested", audit);
-            }
-
-            if (!code.equalsIgnoreCase(FRAILTY_CODE)) {
-                return createErrorResponse(OperationOutcome.IssueType.NOTSUPPORTED, "Only code " + FRAILTY_CODE + " can be requested", audit);
-            }
-
-            //validate that the keycloak user (from the token) is permitted to make requests on behalf of the ODS code being requested for
-            LOG.trace("Getting service IDs for security context");
-            Set<String> permittedOdsCodes = SecurityUtils.getUserAllowedOrganisationIdsFromSecurityContext(sc);
-            //permittedOdsCodes = convertPermittedOdsCodes(permittedOdsCodes);
-            LOG.trace("Got service IDs for security context " + permittedOdsCodes);
-
-            //note that keyCloak may be configured with Service UUIDs or ODS codes
-            if (!permittedOdsCodes.contains(headerOdsCode)) {
-                LOG.error("Requesting ODS code " + headerOdsCode + " not in set of permitted ones");
-                return createErrorResponse(OperationOutcome.IssueType.BUSINESSRULE, "You are not permitted to request for ODS code " + headerOdsCode, audit);
-            }
-
-            //ensure the service is a valid subscriber to at least one protocol
-            LOG.trace("Getting publishing service IDs for requester " + headerOdsCode + " and project " + headerProjectId);
-            Set<UUID> publisherServiceIds = null;
-            try {
-                publisherServiceIds = SubscriberHelper.findPublisherServiceIdsForSubscriber(headerOdsCode, headerProjectId);
-            } catch (Exception ex) {
-                //any exception from checking protocols the flag should be returned as a processing error
-                String err = ex.getMessage();
-                return createErrorResponse(OperationOutcome.IssueType.PROCESSING, err, audit);
-            }
-
-            //find patient records, filtering by the service IDs (gets map of patient UUID and service UUID)
+            //search in Patient_Search table for the service IDs and nhsNumber (gets map of patient UUID and service UUID)
             LOG.trace("Searching on NHS number against " + publisherServiceIds.size() + " service IDs");
             PatientSearchDalI patientSearchDal = DalProvider.factoryPatientSearchDal();
             Map<UUID, UUID> patientSearchResults = patientSearchDal.findPatientIdsForNhsNumber(publisherServiceIds, subjectNhsNumber);
@@ -158,40 +167,39 @@ public class SubscriberApiEndpoint {
 
             if (patientSearchResults.isEmpty()) {
                 LOG.trace("Patient not found at services");
-                return createErrorResponse(OperationOutcome.IssueType.NOTFOUND, "No patient record could be found for NHS number " + subjectNhsNumber, audit);
+                return createErrorResponse(OperationOutcome.IssueType.NOTFOUND, "No patient record could be found for NHS number " + subjectNhsNumber, audit, code);
             }
 
-            //calculate the flag (note that returning a NULL flag is a valid result if the patient isn't frail)
+            //Search for the flag ,any exception from calculating the flag should be returned as a processing error
             try {
-
+                //Find the SubscriberConfigNames
                 Set<String> enterpriseEndpoints = getEnterpriseEndpoints(patientSearchResults);
-                if (!enterpriseEndpoints.isEmpty()) {
-                    LOG.info("Calculating frailty using " + enterpriseEndpoints);
-                    Response response = null;
 
+                if (enterpriseEndpoints.isEmpty()) {
+                    return createErrorResponse(OperationOutcome.IssueType.PROCESSING, "Failed to find suitable subscriber database for subject " + subjectNhsNumber, audit, code);
+                } else {
+                    LOG.info("Calculating Flag using " + enterpriseEndpoints);
+                    Response response = null;
                     //test each endpoint until we get a result
                     for (String enterpriseEndpoint: enterpriseEndpoints) {
-                        response = calculateFrailtyFlagLive(enterpriseEndpoint, patientSearchResults, params, subjectNhsNumber, audit);
+                        LOG.trace("Calculating Flag on " + enterpriseEndpoint + " using " + storedProcedureName);
+                        response = calculateFlag(enterpriseEndpoint, patientSearchResults, subjectNhsNumber, audit, storedProcedureName, positive_response);
                         if (response != null) {
                             break;
                         }
                     }
-
                     //if no result, then return a positive response without a flag
                     if (response == null) {
-                        response = createSuccessResponse(null, params, audit);
+                        response = createNegativeResponse(negative_response, subjectNhsNumber, audit);
                     }
                     return response;
-
-                } else {
-                    LOG.info("Using DUMMY mechanism to calculate Frailty");
-                    return calculateFrailtyFlagDummy(patientSearchResults, params, audit);
                 }
-
             } catch (Exception ex) {
                 //any exception from calculating the flag should be returned as a processing error
+                LOG.error("Error calculating flag for " + subjectNhsNumber + " and code " + code, ex);
+
                 String err = ex.getMessage();
-                return createErrorResponse(OperationOutcome.IssueType.PROCESSING, err, audit);
+                return createErrorResponse(OperationOutcome.IssueType.PROCESSING, err, audit, code);
             }
 
         } finally {
@@ -208,108 +216,88 @@ public class SubscriberApiEndpoint {
         }
     }
 
-    /**
-     * Keycloak is configured to have service UUIDs rather than ODS codes, so we need to convert if any UUID is found
-     * Keycloak now updated to have ODS codes
-     */
-    /*private static Set<String> convertPermittedOdsCodes(Set<String> set) throws Exception {
-
-        LOG.trace("Received service IDs/ODS codes from Keycloak " + set);
-
-        Set<String> ret = new HashSet<>();
-        for (String s: set) {
-            if (s.equals("00000000-0000-0000-0000-000000000000")) {
-                continue;
-            }
-
-            try {
-                UUID serviceId = UUID.fromString(s);
-                ServiceDalI serviceDal = DalProvider.factoryServiceDal();
-                Service service = serviceDal.getById(serviceId);
-                if (service == null) {
-                    throw new Exception("Failed to look up ODS code for service UUID " + serviceId);
-                }
-                String odsCode = service.getLocalId();
-                ret.add(odsCode);
-                LOG.debug("Converted service ID " + serviceId + " to ODS code " + odsCode);
-
-            } catch (IllegalArgumentException iae) {
-                //if not a UUID then it's an ODS code already, so is OK
-                ret.add(s);
-            }
+    private String doNullCheck(String code, String subjectNhsNumber, String resourceTypeRequested, String headerOdsCode) {
+        if (Strings.isNullOrEmpty(subjectNhsNumber)) {
+            return "Missing subject parameter";
+        }
+        if (Strings.isNullOrEmpty(code)) {
+            return "Missing code parameter";
+        }
+        //validate  resourceType , resource type should be flag
+        if (Strings.isNullOrEmpty(resourceTypeRequested)) {
+            return "Missing resource type ";
+        }
+        if (!resourceTypeRequested.equalsIgnoreCase("flag")) {
+            return "Only flag resource types can be requested";
         }
 
-        return ret;
-    }*/
+        //Ods code null check in header parameter
+        if (Strings.isNullOrEmpty(headerOdsCode)) {
+            return "Missing OdsCode from request headers";
+        }
+
+        return null;
+    }
+
+    private String validateUserWithProjectID(UUID userUuid, String projectId, String um_attribute, String code) {
+
+        try {
+            //validating user application policy , dsm project-application policy and policy attributes
+            boolean canUseApi = UserCache.getUserProjectApplicationAccess(userUuid.toString(), projectId, APP_NAME);
+            if (!canUseApi) {
+                return "User not permitted to use DDS Subscriber API for project " + projectId;
+            }
+            boolean canUseApiForCode = UserCache.getUserProjectApplicationAttributeAccess(userUuid.toString(), projectId, APP_NAME, um_attribute);
+            if (!canUseApiForCode) {
+                return "User not permitted to request Subscriber API with code " + code + " for project " + projectId;
+            }
+
+            return null;
+
+        } catch (Exception ex) {
+            //log any exception
+            LOG.error("Error validating user " + userUuid + " for project " + projectId + " and code " + code, ex);
+
+            //any exception should be returned as a processing error
+            String err = ex.getMessage();
+            return "Unexpected error validating project " + projectId + ": " + ex.getMessage();
+        }
+    }
 
     /**
-     * finds enterprise endpoint(s) that point to local (i.e. not remote) subscriber DBs that can be used
+     * Method to finds enterprise endpoint(s) that point to local (i.e. not remote) subscriber DBs that can be used
      * to search for the given patient
      */
     private static Set<String> getEnterpriseEndpoints(Map<UUID, UUID> patientSearchResults) throws Exception {
-
-        Set<String> ret = new HashSet<>();
-
-        ServiceDalI serviceDal = DalProvider.factoryServiceDal();
-
-        //we have a config record telling us what subscribers we're allowed to use
-        Set<String> permittedSubscribers = getPermittedSubscribers();
-
+        List<String> subscriberConfigList = new ArrayList<>();
         //find all subscriber configs for each of the services that has a record for the person
         List<UUID> patientServiceIds = new ArrayList<>(patientSearchResults.values());
+        //we have a config record telling us what subscribers we're allowed to use
+        Set<String> permittedSubscribers = getPermittedSubscribers();
         for (UUID patientServiceId : patientServiceIds) {
-
-            org.endeavourhealth.core.database.dal.admin.models.Service service = serviceDal.getById(patientServiceId);
-            String odsCode = service.getLocalId();
             List<String> subscriberConfigNames = SubscriberHelper.getSubscriberConfigNamesForPublisher(null, patientServiceId);
-
             for (String subscriberConfigName : subscriberConfigNames) {
-                if (!permittedSubscribers.contains(subscriberConfigName)) {
-                    continue;
+                if (permittedSubscribers.contains(subscriberConfigName)) {
+                    subscriberConfigList.add(subscriberConfigName);
                 }
-
-                ret.add(subscriberConfigName);
             }
         }
+    /*
+    Although the query will be run against all relevant subscriber databases to find a match,
+    this sorting ensures that databases with more data for the NHS number will be searched first,
+    potentially reducing the need to query against the lower ranked databases if an early match is found
+    */
+        return sortByRepetition(subscriberConfigList);
 
-        return ret;
     }
 
-    /*private Set<String> getEnterpriseEndpoints(org.endeavourhealth.core.database.dal.admin.models.Service service, UUID systemId) throws Exception {
+    /**
+     * Method to create nagative response based on the given template
+     */
+    private Response createNegativeResponse(String json, String nhsnumber, SubscriberApiAudit audit) throws Exception {
 
-        Set<String> ret = new HashSet<>();
+        json = json.replace("<subject>", nhsnumber);
 
-        List<ServiceInterfaceEndpoint> serviceEndpoints = service.getEndpointsList();
-        for (ServiceInterfaceEndpoint serviceEndpoint: serviceEndpoints) {
-            if (serviceEndpoint.getSystemUuid().equals(systemId)) {
-                String endpoint = serviceEndpoint.getEndpoint();
-                ret.add(endpoint);
-            }
-        }
-
-        return ret;
-    }*/
-
-    private Response createSuccessResponse(Flag frailtyFlag, MultivaluedMap<String, String> requestParams, SubscriberApiAudit audit) throws Exception {
-
-        //the response object is a parameters resource, containing the
-        //original request parameters, plus a special parameter containing the
-        //response resource (this pattern is defined on the FHIR site)
-        Parameters parameters = new Parameters();
-
-        for (String key: requestParams.keySet()) {
-            String value = requestParams.getFirst(key);
-
-            Parameters.ParametersParameterComponent comp = parameters.addParameter();
-            comp.setName(key);
-            comp.setValue(new StringType(value));
-        }
-
-        Parameters.ParametersParameterComponent comp = parameters.addParameter();
-        comp.setName("return");
-        comp.setResource(frailtyFlag); //note that this may be null if not frail
-
-        String json = FhirSerializationHelper.serializeResource(parameters);
         LOG.info("Returning success response: " + json);
 
         Response response = Response
@@ -325,7 +313,41 @@ public class SubscriberApiEndpoint {
         return response;
     }
 
-    private Response createErrorResponse(OperationOutcome.IssueType issueType, String message, SubscriberApiAudit audit) throws Exception {
+    /**
+     * Method to create positive response based on the given template
+     */
+    private Response createPositiveResponse(String json, String nhsnumber, SubscriberApiAudit audit, Map<String, String> results) throws Exception {
+
+        json = json.replace("<subject>", nhsnumber);
+
+        Set<String> keyset = results.keySet();
+        for (String key : keyset) {
+            json = json.replace("<" + key + ">", results.get(key));
+        }
+
+
+        LOG.info("Returning success response: " + json);
+
+        Response response = Response
+                .ok()
+                .entity(json)
+                .build();
+
+        SubscriberApiAuditHelper.updateAudit(audit, response, true);
+
+        //update graphite
+        MetricsHelper.recordEvent(METRIC_OK);
+
+        return response;
+    }
+
+    /**
+     * Method to create error response for validation errors and technical exceptions
+     */
+
+    private Response createErrorResponse(OperationOutcome.IssueType issueType, String message, SubscriberApiAudit audit, String code) throws Exception {
+
+        code = (null != code ? code : "NaN");
 
         OperationOutcome outcome = new OperationOutcome();
         OperationOutcome.OperationOutcomeIssueComponent issue = outcome.addIssue();
@@ -337,7 +359,17 @@ public class SubscriberApiEndpoint {
         issue.setDetails(concept);
 
         String json = FhirSerializationHelper.serializeResource(outcome);
-        LOG.info("Returning error response: " + json);
+
+        //the Not Found response is expected, but if it's anything else send an alert and log the stack
+        if (issueType != OperationOutcome.IssueType.NOTFOUND) {
+            Exception ex = new Exception();
+            ex.fillInStackTrace();
+            LOG.error("Returning error response: " + json, ex);
+            sendSlackAlert(new Exception(message), code);
+
+        } else {
+            LOG.error("Returning error response: " + json);
+        }
 
         Response response = Response
                 .status(Response.Status.BAD_REQUEST)
@@ -356,309 +388,161 @@ public class SubscriberApiEndpoint {
         return response;
     }
 
-    private Response calculateFrailtyFlagLive(String subscriberConfigName, Map<UUID, UUID> patientAndServiceUuids,
-                                              MultivaluedMap<String, String> requestParams, String subjectNhsNumber,
-                                              SubscriberApiAudit audit) throws Exception {
+    /**
+     * Method to finds the Flag if found send positive response
+     */
+    private Response calculateFlag(String subscriberConfigName, Map<UUID, UUID> patientAndServiceUuids,
+                                   String subjectNhsNumber, SubscriberApiAudit audit, String spname, String responsejsonTemplate) throws Exception {
 
 
         SubscriberConfig subscriberConfig = SubscriberConfig.readFromConfig(subscriberConfigName);
-        SubscriberResourceMappingDalI patientIdDal = DalProvider.factorySubscriberResourceMappingDal(subscriberConfigName);
+        SubscriberPersonMappingDalI personMappingDal = DalProvider.factorySubscriberPersonMappingDal(subscriberConfigName);
 
-        Set<String> results = new HashSet<>();
+        Set<String> personIdsChecked = new HashSet<>();
 
-        for (UUID patientUuid: patientAndServiceUuids.keySet()) {
-            UUID serviceUuid = patientAndServiceUuids.get(patientUuid);
-            LOG.trace("Testing patient " + patientUuid + " at " + serviceUuid);
-
-            if (subscriberConfig.getSubscriberType() == SubscriberConfig.SubscriberType.CompassV1) {
-
-                Long enterpriseId = patientIdDal.findEnterpriseIdOldWay(ResourceType.Patient.toString(), patientUuid.toString());
-                LOG.trace("Found compass v1 enterprise ID " + enterpriseId);
-                if (enterpriseId != null) {
-                    String result = runCompassFrailtyQuery(subscriberConfig, enterpriseId);
-                    LOG.trace("Got result " + result);
-                    if (!Strings.isNullOrEmpty(result)) {
-                        results.add(result);
-                    }
-                }
-
-            } else if (subscriberConfig.getSubscriberType() == SubscriberConfig.SubscriberType.CompassV2) {
-
-                String ref = ReferenceHelper.createResourceReference(ResourceType.Patient, patientUuid.toString());
-                SubscriberId subscriberId = patientIdDal.findSubscriberId(SubscriberTableId.PATIENT.getId(), ref);
-                LOG.trace("Found compass v2 enterprise ID " + subscriberId);
-                if (subscriberId != null) {
-                    String result = runCompassFrailtyQuery(subscriberConfig, subscriberId.getSubscriberId());
-                    LOG.trace("Got result " + result);
-                    if (!Strings.isNullOrEmpty(result)) {
-                        results.add(result);
-                    }
-                }
-
-            } else {
-                throw new Exception("Unexpected subscriber database type " + subscriberConfig.getSubscriberType());
+        for (UUID patientUuid : patientAndServiceUuids.keySet()) {
+            //look up the internal DDS global person UUID from the patient UUID
+            PatientLinkDalI patientLinkDal = DalProvider.factoryPatientLinkDal();
+            String discoveryPersonId = patientLinkDal.getPersonId(patientUuid.toString());
+            if (Strings.isNullOrEmpty(discoveryPersonId)) {
+                continue;
             }
-        }
 
-        if (results.contains("1_MILD")
-                || results.contains("2_MODERATE")
-                || results.contains("3_SEVERE")) {
+            //if we find multiple patient IDs they will all map to the same person ID so only check each person ID
+            //once. There should be no reason by there would be multiple person IDs, but better to be safe and assume there might be
+            if (personIdsChecked.contains(discoveryPersonId)) {
+                continue;
+            }
+            personIdsChecked.add(discoveryPersonId);
 
-            //if we got any of these back, then this is something we want to use as our result for the Flag
-            CodeableConcept codeableConcept = new CodeableConcept();
-            Coding coding = codeableConcept.addCoding();
-            coding.setCode(FRAILTY_CODE);
-            coding.setDisplay(FRAILTY_TERM);
-            codeableConcept.setText(FRAILTY_TERM);
+            //look up the subscriber-specific person LONG for the person UUID
+            List<Long> personIds = personMappingDal.findEnterprisePersonIdsForPersonId(discoveryPersonId);
+            //if no person ID then the patient deosn't exist in that database, so skip checking it
+            if (personIds.isEmpty()) {
+                continue;
+            }
 
-            Flag flag = new Flag();
-            flag.setStatus(Flag.FlagStatus.ACTIVE);
-            flag.setCode(codeableConcept);
+            //the above function only returns one element in the list, so just get the first one out​​​​​​​
+            Long personId = personIds.get(0);
+            //then run the frailty/remote monitoring query, using this person ID
+            Map<String, String> results = runCompassFlagQuery(subscriberConfig, personId, spname);
+            if (null != results) {
+                return createPositiveResponse(responsejsonTemplate, subjectNhsNumber, audit, results);
+            }
 
-            return createSuccessResponse(flag, requestParams, audit);
+        }//for
 
-        } else {
-            return null;
-        }
+        return null;
+
     }
 
-    private static String runCompassFrailtyQuery(SubscriberConfig subscriberConfig, long patientId) throws Exception {
-
-        String queryConfigName = null;
-        if (subscriberConfig.getSubscriberType() == SubscriberConfig.SubscriberType.CompassV1) {
-            queryConfigName = "frailtyQueryCompassv1";
-
-        } else if (subscriberConfig.getSubscriberType() == SubscriberConfig.SubscriberType.CompassV2) {
-            queryConfigName = "frailtyQueryCompassv2";
-
-        } else {
-            throw new Exception("Unexpected subscriber database type " + subscriberConfig.getSubscriberType());
+    /**
+     * Method to send slack alert
+     */
+    private static void sendSlackAlert(Exception ex, String code) {
+        Boolean alertAlreadySent = hmErrorAlertTimer.get(code);
+        if (alertAlreadySent != null
+                && alertAlreadySent.booleanValue()) {
+            return;
         }
+        String msg = "Error in Subscriber API for code " + code + " (this alert will only be sent every hour)";
+        SlackHelper.sendSlackMessage(SlackHelper.Channel.MessagingApi, msg, ex);
+        //add to map so we don't send again
+        hmErrorAlertTimer.put(code, Boolean.TRUE);
+    }
 
-        String sql = ConfigManager.getConfiguration(queryConfigName);
-        if (Strings.isNullOrEmpty(sql)) {
-            throw new Exception("Failed to find query for config name [" + queryConfigName + "]");
-        }
+    /**
+     * Method to execute the stored procedure for given personId and schema_name and procedure name
+     */
+    private static Map<String, String> runCompassFlagQuery(SubscriberConfig subscriberConfig, long personId, String spname) throws Exception {
 
+        Map<String, String> rsMap = null;
         Connection connection = ConnectionManager.getSubscriberConnection(subscriberConfig.getSubscriberConfigName());
-        PreparedStatement ps = null;
+        CallableStatement stmt = null;
+
         try {
-            ps = connection.prepareStatement(sql);
-            ps.setLong(1, patientId);
+            LOG.trace("Calling " + spname + " (" + personId + ") for " + subscriberConfig.getSubscriberConfigName());
 
-            ResultSet rs = ps.executeQuery();
-            if (rs.next()) {
-                String result = rs.getString(1);
-                return result;
+            String query = "{CALL " + spname + "(?)}";
+            stmt = connection.prepareCall(query);
+            stmt.setLong(1, personId);
 
-            } else {
-                return null;
+            ResultSet rs = stmt.executeQuery();
+            ResultSetMetaData meta = rs.getMetaData();
+
+            //WARNING: due to a change in the MySQL driver, the metadata contains the true column
+            //names of the selected result set and ignores any specified aliases, so if there are problems
+            //with column names, it's almost certainly going to be that (see https://bugs.mysql.com/bug.php?id=88949)
+            //So change the SQL to not use aliases and change the flag JSON to use the true column names
+            String[] columnNames = new String[meta.getColumnCount()];
+            for (int i = 0; i < meta.getColumnCount(); i++) {
+                String columnName = meta.getColumnName(i + 1);
+                //LOG.trace("Column " + i + " = [" + columnName + "]");
+                columnNames[i] = columnName;
             }
 
+            if (rs.next()) {
+
+                for (String columnName : columnNames) {
+                    String value = rs.getString(columnName);
+
+                    //if null is returned for any result, ignore it
+                    if (value == null) {
+                        continue;
+                    }
+
+                    //create the result map is still null
+                    if (rsMap == null) {
+                        rsMap = new HashMap<>();
+                    }
+
+                    rsMap.put(columnName, value);
+                }
+            }
+
+            //all Subscriber API stored procedures should return 0 or 1 result set rows. If a second row is
+            //present, then this SP isn't necessarily right
+            if (rs.next()) {
+                throw new Exception("More than one result returned for " + spname + " on " + subscriberConfig.getSubscriberConfigName());
+            }
+
+            return rsMap;
+
         } finally {
-            if (ps != null) {
-                ps.close();
+            if (stmt != null) {
+                stmt.close();
             }
             connection.close();
         }
     }
 
-
-    /*private Response calculateFrailtyFlagLive(String enterpriseEndpoint, Map<UUID, UUID> results, UriInfo uriInfo, MultivaluedMap<String, String> requestParams, String headerAuthToken, SubscriberApiAudit audit) throws Exception {
-
-        //there are cases where we've had different dates of birth for the same patient, resulting
-        //in multiple pseudo IDs, so we need to perform the test for EACH pseudo ID and return the "best" result (i.e. worst)
-        Set<String> pseudoIds = new HashSet<>();
-
-        PseudoIdDalI pseudoIdDal = DalProvider.factoryPseudoIdDal(enterpriseEndpoint);
-
-        SubscriberConfig subscriberConfig = SubscriberConfig.readFromConfig(enterpriseEndpoint);
-        String mainSaltKeyName = findMainSaltKeyName(subscriberConfig);
-
-        for (UUID patientUuid: results.keySet()) {
-            //String pseudoId = pseudoIdDal.findPseudoIdOldWay(patientUuid.toString());
-            String pseudoId = pseudoIdDal.findSubscriberPseudoId(patientUuid, mainSaltKeyName);
-            if (!Strings.isNullOrEmpty(pseudoId)) {
-                pseudoIds.add(pseudoId);
-            }
-        }
-
-        //make the call to the Enterprise web server
-        String serverUrl = subscriberConfig.getEnterpriseServerUrl();
-
-        Map<String, String> hmResults = new HashMap<>();
-
-        //work out the path we should call on the Enterprise server based on our path
-        //this is only necessary because this endpoint may be called with either realm, so we need
-        //to ensure the down-stream call uses the same realm, since we just pass through the original Keycloak token
-        String enterprisePath = null;
-        String requestPath = uriInfo.getRequestUri().toString();
-        if (requestPath.indexOf("machine-api") > -1) {
-            enterprisePath = "machine-api/cohort/getFrailty";
-        } else {
-            enterprisePath = "api/cohort/getFrailty";
-        }
-
-        Client client = ClientBuilder.newClient();
-
-        for (String pseudoId: pseudoIds) {
-
-            WebTarget target = client.target(serverUrl).path(enterprisePath);
-            LOG.debug("Making call to " + target.getUri());
-            target = target.queryParam("pseudoId", pseudoId);
-
-            try {
-                Response response = target
-                        .request()
-                        .header("Authorization", headerAuthToken)
-                        .get();
-
-                if (response.getStatus() == HttpStatus.SC_OK) {
-                    String calculatedFrailty = response.readEntity(String.class);
-                    LOG.debug("Received response [" + calculatedFrailty + "] for pseudo ID " + pseudoId);
-
-                    hmResults.put(pseudoId, calculatedFrailty);
-
-                } else {
-                    String msg = "HTTP error " + response.getStatus() + " calling into frailty calculation service";
-
-                    try {
-                        String errResponse = response.readEntity(String.class);
-                        if (!Strings.isNullOrEmpty(errResponse)) {
-                            msg += " (" + errResponse + ")";
-                        }
-                    } catch (Exception ex) {
-                        //do nothing
-                    }
-
-                    return createErrorResponse(OperationOutcome.IssueType.PROCESSING, msg, audit);
-                }
-
-            } catch (Exception ex) {
-                String msg = ex.getMessage();
-                return createErrorResponse(OperationOutcome.IssueType.EXCEPTION, msg, audit);
-            }
-        }
-
-        //now check the results to find the most appropriate result to return
-        for (String pseudoId: hmResults.keySet()) {
-            String result = hmResults.get(pseudoId);
-
-            if (result.equalsIgnoreCase("NONE")) {
-                //if we got "none" back, then it's a valid result, but not one we're interested in
-
-            } else if (result.equalsIgnoreCase("MILD")
-                    || result.equalsIgnoreCase("MODERATE")
-                    || result.equalsIgnoreCase("SEVERE")) {
-
-                //if we got any of these back, then this is something we want to use as our result for the Flag
-                CodeableConcept codeableConcept = new CodeableConcept();
-                Coding coding = codeableConcept.addCoding();
-                coding.setCode(FRAILTY_CODE);
-                coding.setDisplay(FRAILTY_TERM);
-                codeableConcept.setText(FRAILTY_TERM);
-
-                Flag flag = new Flag();
-                flag.setStatus(Flag.FlagStatus.ACTIVE);
-                flag.setCode(codeableConcept);
-
-                return createSuccessResponse(flag, requestParams, audit);
-
-            } else {
-                throw new Exception("Unsupported frailty calculated value [" + result + "] from pseudo ID " + pseudoId);
-            }
-        }
-
-        //if we get here, we only got "none" back for all our results, so return a positive response without a flag
-        return createSuccessResponse(null, requestParams, audit);
-    }
-
-    private String findMainSaltKeyName(SubscriberConfig subscriberConfig) throws Exception {
-
-        if (!subscriberConfig.isPseudonymised()) {
-            throw new Exception("Subscriber " + subscriberConfig.getSubscriberConfigName() + " isn't pseudonymised");
-        }
-
-        List<LinkDistributorConfig> pseudoIds = subscriberConfig.getPseudoSalts();
-        if (pseudoIds == null || pseudoIds.isEmpty()) {
-            throw new Exception("Subscriber " + subscriberConfig.getSubscriberConfigName() + " doesn't have any pseudo IDs set");
-        }
-
-        LinkDistributorConfig first = pseudoIds.get(0);
-        return first.getSaltKeyName();
-    }*/
-
     /**
-     * function to calculate the frailty flag of a person in Discovery, using only data held
-     * by the publisher service IDs supplied. If a frailty flag can't be calculated, an exception
-     * is thrown with the reason for the failure. If the patient is calculated to not be frail, null is returned.
-     *
-     * Note: this returns a Flag from the DSTU2 FHIR library, but this is compatible with STU3,
-     * so receivers of this flag shouldn't need to worry about it being DSTU2.
+     * Method to read all permitted subscriber schema (config names)
      */
-    private Response calculateFrailtyFlagDummy(Map<UUID, UUID> searchResults, MultivaluedMap<String, String> requestParams, SubscriberApiAudit audit) throws Exception {
-
-        //ensure all results, map to the same PERSON
-        PatientLinkDalI patientLinkDal = DalProvider.factoryPatientLinkDal();
-
-        String personId = null;
-        for (UUID patientUuid: searchResults.keySet()) {
-            String patientId = patientUuid.toString();
-
-            String thisPersonId = patientLinkDal.getPersonId(patientId);
-            if (personId == null
-                    || personId.equals(thisPersonId)) {
-                personId = thisPersonId;
-
-            } else {
-                //this shouldn't happen while we continue to match patient-person on NHS number, but if that changes, this will be relevant
-                return createErrorResponse(OperationOutcome.IssueType.PROCESSING, "Multiple person records exist for patients with NHS number", audit);
-            }
-        }
-
-        //there are four potential outcomes, so use the hashcode of the person ID to determine
-        //which result should be returned, so it's consistent for NHS numbers
-        long hashCode = UUID.fromString(personId).hashCode();
-        long result = hashCode % 4;
-
-        if (result == 0) {
-            //error
-            throw new Exception("Error calculating frailty flag");
-
-        } else if (result == 1) {
-            //not enough data to calculate accurately
-            throw new Exception("Insufficient data to calculate frailty");
-
-        } else if (result == 2) {
-            //not frail
-            return createSuccessResponse(null, requestParams, audit);
-
-        } else {
-            //potentially frail
-            CodeableConcept codeableConcept = new CodeableConcept();
-            Coding coding = codeableConcept.addCoding();
-            coding.setCode(FRAILTY_CODE);
-            coding.setDisplay(FRAILTY_TERM);
-            codeableConcept.setText(FRAILTY_TERM);
-
-            Flag flag = new Flag();
-            flag.setStatus(Flag.FlagStatus.ACTIVE);
-            flag.setCode(codeableConcept);
-
-            return createSuccessResponse(flag, requestParams, audit);
-        }
-    }
-
     private static Set<String> getPermittedSubscribers() throws Exception {
 
         Set<String> ret = new HashSet<>();
 
-        JsonNode json = ConfigManager.getConfigurationAsJson("frailtyCompassDatabases");
-        for (int i=0; i<json.size(); i++) {
+        JsonNode json = ConfigManager.getConfigurationAsJson("SubscriberAPICompassDatabases");
+        for (int i = 0; i < json.size(); i++) {
             String subscriber = json.get(i).asText();
             ret.add(subscriber);
         }
-
         return ret;
     }
+
+    /**
+     * Method to sort string list based on max repetition of element
+     */
+    private static Set<String> sortByRepetition(List<String> slist) {
+        Set<String> set = new HashSet<>();
+        if (slist != null) {
+            List<String> sortedList = slist.stream().sorted().collect(Collectors.toList());
+            sortedList.sort(Comparator.comparingInt(i -> Collections.frequency(sortedList, i)).reversed());
+            set = new LinkedHashSet<String>(sortedList);
+        }
+        return set;
+
+    }
+
 }

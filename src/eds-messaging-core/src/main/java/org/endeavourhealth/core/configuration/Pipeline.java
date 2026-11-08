@@ -1,3 +1,4 @@
+
 package org.endeavourhealth.core.configuration;
 
 import javax.xml.bind.annotation.*;
@@ -34,6 +35,7 @@ import java.util.List;
  *           &lt;element name="PostToRest" type="{}PostToRestConfig" maxOccurs="unbounded" minOccurs="0"/>
  *           &lt;element name="PGPDecrypt" type="{}PGPDecryptConfig" maxOccurs="unbounded" minOccurs="0"/>
  *           &lt;element name="AuditLastMessage" type="{}AuditLastMessageConfig" minOccurs="0"/>
+ *           &lt;element name="CompleteMessageTransformInbound" type="{}CompleteMessageTransformInboundConfig" minOccurs="0"/>
  *         &lt;/choice>
  *       &lt;/sequence>
  *     &lt;/restriction>
@@ -67,7 +69,8 @@ public class Pipeline {
         @XmlElement(name = "PostToSubscriberWebService", type = PostToSubscriberWebServiceConfig.class),
         @XmlElement(name = "PostToRest", type = PostToRestConfig.class),
         @XmlElement(name = "PGPDecrypt", type = PGPDecryptConfig.class),
-        @XmlElement(name = "AuditLastMessage", type = AuditLastMessageConfig.class)
+        @XmlElement(name = "AuditLastMessage", type = AuditLastMessageConfig.class),
+        @XmlElement(name = "CompleteMessageTransformInbound", type = CompleteMessageTransformInboundConfig.class)
     })
     protected List<ComponentConfig> pipelineComponents;
 
@@ -107,6 +110,7 @@ public class Pipeline {
      * {@link PostToRestConfig }
      * {@link PGPDecryptConfig }
      * {@link AuditLastMessageConfig }
+     * {@link CompleteMessageTransformInboundConfig }
      * 
      * 
      */

@@ -1,3 +1,4 @@
+
 package org.endeavourhealth.core.configuration;
 
 import javax.xml.bind.annotation.XmlAccessType;

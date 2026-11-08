@@ -22,11 +22,14 @@ export class QueueReaderStatusComponent {
     //SD-338 - need to import the static formatting functions so they can be used by the HTML template
     formatHHMMSS = DateTimeFormatter.formatHHMMSS;
     formatYYYYMMDDHHMMSS = DateTimeFormatter.formatYYYYMMDDHHMMSS;
+    getDateDiffSimpleFromNow = DateTimeFormatter.getDateDiffSimpleFromNow;
 
     //properties derived from Rabbit config
     routingExchangeNames: string[]; //distinct exchange names (EdsInbound, EdsProtocol etc.)
-    routingKeys: string[]; //distinct set of all routing keys (A, B, C etc.)
-    routingQueueNames: string[]; //set of all queue names (EdsInbound-A, EdsInbound-B etc.)
+    //routingKeys: string[]; //distinct set of all routing keys (A, B, C etc.)
+    rowIndexes: number[]; //array of numbers 0, 1, 2, 3 etc.
+    exchangeRoutingKeyMap: {}; //map of exchange name and array of routing keys for queues in that exchange
+    //routingQueueNames: string[]; //set of all queue names (EdsInbound-A, EdsInbound-B etc.)
     routingQueueDescs: {}; //map of routing queue names to the description of what the queue is for
     rabbitNodes: RabbitNode[];
 
@@ -50,7 +53,7 @@ export class QueueReaderStatusComponent {
 
     constructor(private $modal : NgbModal,
                 private serviceService : ServiceService,
-                private queueReaderStatusService:QueueReaderStatusService,
+                private queueReaderStatusService: QueueReaderStatusService,
                 private rabbitService: RabbitService,
                 private logger: LoggerService,
                 private $state: StateService) {
@@ -60,11 +63,16 @@ export class QueueReaderStatusComponent {
 
     ngOnInit() {
         var vm = this;
-        vm.presetColours = ['#e6b0aa', '#d7bde2', '#a9cce3', '#a3e4d7', '#a9dfbf', '#f9e79f', '#f5cba7', '#e5e7e9', '#ccd1d1', '#abb2b9', '#f5b7b1', '#d2b4de', '#aed6f1', '#a2d9ce', '#abebc6', '#fad7a0 ', '#edbb99', '#d5dbdb', '#aeb6bf', '#f7f9f9'];
+
+        vm.presetColours = [
+            '#f5b7b1', '#d2b4de', '#aed6f1', '#a2d9ce', '#abebc6', '#fad7a0 ', '#edbb99', //7 colours
+            '#e6b0aa', '#d7bde2', '#a9cce3', '#a3e4d7', '#a9dfbf', '#f9e79f', '#f5cba7', //7 colours
+            '#e5e7e9', '#ccd1d1', '#abb2b9', //3 greys
+            '#d5dbdb', '#aeb6bf', '#f7f9f9' //3 greys
+        ];
+
         vm.cacheRabbitConfig();
         vm.cacheRabbitNodes();
-
-
     }
 
     cacheRabbitNodes() {
@@ -130,8 +138,10 @@ export class QueueReaderStatusComponent {
         var vm = this;
 
         vm.routingExchangeNames = [];
-        vm.routingKeys = [];
-        vm.routingQueueNames = [];
+        //vm.routingKeys = [];
+        vm.rowIndexes = [];
+        vm.exchangeRoutingKeyMap = {};
+        //vm.routingQueueNames = [];
         vm.routingQueueDescs = {};
 
         //get a distinct list of exchange names and routing keys from the array
@@ -144,20 +154,49 @@ export class QueueReaderStatusComponent {
                 vm.routingExchangeNames.push(exchangeName);
             }
 
+
             var routingKey = r.routeKey;
-            if ($.inArray(routingKey, vm.routingKeys) == -1) {
-                vm.routingKeys.push(routingKey);
+
+            //work out the total number of queues for each exchange
+            var routingKeysForForExchange = vm.exchangeRoutingKeyMap[exchangeName] as string[];
+            if (!routingKeysForForExchange) {
+                routingKeysForForExchange = [];
             }
+            routingKeysForForExchange.push(routingKey);
+            vm.exchangeRoutingKeyMap[exchangeName] = routingKeysForForExchange;
+
+            /*if ($.inArray(routingKey, vm.routingKeys) == -1) {
+                vm.routingKeys.push(routingKey);
+            }*/
 
             var combined = vm.combineIntoQueueName(exchangeName, routingKey);
-            vm.routingQueueNames.push(combined);
+
+            //vm.routingQueueNames.push(combined);
 
             var desc = r.description;
             vm.routingQueueDescs[combined] = desc;
         }
 
+        //take the max number of queues for an exchange and create an array of integers up to that number
+        //so we can use this array for the rows in the table
+        var maxQueues = 0;
+        for (var i=0; i<vm.routingExchangeNames.length; i++) {
+            var exchangeName = vm.routingExchangeNames[i];
+            var routingKeys = vm.exchangeRoutingKeyMap[exchangeName] as string[];
+
+            //sort all queues so their in alpha order
+            routingKeys = linq(routingKeys).OrderBy(s => s.toLowerCase()).ToArray();
+
+            if (routingKeys.length > maxQueues) {
+                maxQueues = routingKeys.length;
+            }
+        }
+        for (var i=0; i<maxQueues; i++) {
+            vm.rowIndexes.push(i);
+        }
+
         //sort the routing key array so they appear as expected (but don't sort the exchange names)
-        vm.routingKeys = linq(vm.routingKeys).OrderBy(s => s.toLowerCase()).ToArray();
+        //vm.routingKeys = linq(vm.routingKeys).OrderBy(s => s.toLowerCase()).ToArray();
     }
 
     refreshQueueReaders() {
@@ -406,11 +445,13 @@ export class QueueReaderStatusComponent {
     }
 
 
-    isValidQueue(exchangeName: string, routingKey: string): boolean {
+    /*isValidQueue(exchangeName: string, queueIndex: number): boolean {
         var vm = this;
-        var combined = vm.combineIntoQueueName(exchangeName, routingKey);
-        return $.inArray(combined, vm.routingQueueNames) > -1;
-    }
+
+        var queuesForExchange = vm.exchangeRoutingKeyMap[exchangeName] as string[];
+        return queuesForExchange
+                && queueIndex < queuesForExchange.length;
+    }*/
 
     private combineIntoQueueName(exchangeName: string, routingKey: string): string {
         return exchangeName + '-' + routingKey;
@@ -639,6 +680,43 @@ export class QueueReaderStatusComponent {
         var vm = this;
         var combined = vm.combineIntoQueueName(exchangeName, routingKey);
         return vm.routingQueueDescs[combined];
+    }
+
+    deployAll() {
+        var vm = this;
+
+        vm.queueReaderStatusService.queueReaderCommand()
+            .subscribe(
+                data => {
+                    if (data) {
+                        vm.logger.info(data);
+                    }
+                },
+                (error) => {
+                    vm.logger.error(error)
+                }
+            );
+
+    }
+
+    /**
+     * returns the routing key for the given exchange and index number
+     * returns the routing key in an array so we can use it as a variable in an ngfor loop
+     */
+    getRoutingKeyForExchangeAndIndex(exchangeName: string, queueIndex: number): string[] {
+        var vm = this;
+        
+        var routingKeysForExchange = vm.exchangeRoutingKeyMap[exchangeName] as string[];
+        if (!routingKeysForExchange
+            || queueIndex >= routingKeysForExchange.length) {
+            return [];
+        }
+
+        var routingKey = routingKeysForExchange[queueIndex];
+
+        var ret = [];
+        ret.push(routingKey);
+        return ret;
     }
 
 }

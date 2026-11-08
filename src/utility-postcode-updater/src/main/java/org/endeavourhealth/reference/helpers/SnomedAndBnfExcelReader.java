@@ -1,6 +1,4 @@
 package org.endeavourhealth.reference.helpers;
-import java.io.*;
-import java.util.List;
 
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
@@ -11,6 +9,9 @@ import org.dhatim.fastexcel.reader.Row;
 import org.dhatim.fastexcel.reader.Sheet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.*;
+import java.util.List;
 
 public class SnomedAndBnfExcelReader {
 
@@ -60,10 +61,16 @@ public class SnomedAndBnfExcelReader {
 
             for (int i = 1; i < rows.size(); i++) {
                 row = rows.get(i);
-                String bnfCodeCell = row.getCell(bnfColumn).getText();
-                String snomedCell = row.getCell(snomedColumn).getText();
-                if (!StringUtils.isEmpty(bnfCodeCell) && !StringUtils.isEmpty(snomedCell)) {
-                    csvPrinter.printRecord(bnfCodeCell, snomedCell);
+                Cell bnfCodeCell = row.getCell(bnfColumn);
+                Cell snomedCodeCell = row.getCell(snomedColumn);
+                //SD-846 - check both cell values are not null before attempting text get
+                if (bnfCodeCell != null && snomedCodeCell != null) {
+
+                    String bnfCode = bnfCodeCell.getText();
+                    String snomedCode = snomedCodeCell.getText();
+                    if (!StringUtils.isEmpty(bnfCode) && !StringUtils.isEmpty(snomedCode)) {
+                        csvPrinter.printRecord(bnfCode, snomedCode);
+                    }
                 }
             }
             csvPrinter.close();

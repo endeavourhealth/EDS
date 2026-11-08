@@ -74,12 +74,12 @@ public class ReferenceRangeSignificance {
 
                 if (observationContainerString != null) {
                     LOG.info("filing data");
-                    org.endeavourhealth.subscriber.filer.SubscriberFiler.file(batchUUID, UUID.randomUUID(), observationContainerString, subscriberConfigName);
+                    org.endeavourhealth.subscriber.filer.SubscriberFiler.file(serviceUUID, null, null, batchUUID, UUID.randomUUID(), observationContainerString, subscriberConfigName);
                 }
 
                 if (conditionContainerString != null) {
                     LOG.info("filing data");
-                    org.endeavourhealth.subscriber.filer.SubscriberFiler.file(batchUUID, UUID.randomUUID(), conditionContainerString, subscriberConfigName);
+                    org.endeavourhealth.subscriber.filer.SubscriberFiler.file(serviceUUID, null, null, batchUUID, UUID.randomUUID(), observationContainerString, subscriberConfigName);
                 }
 
                 return null;

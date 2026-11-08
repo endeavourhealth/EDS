@@ -133,4 +133,10 @@
         </xs:complexContent>
     </xs:complexType>
 
+    <xs:complexType name="CompleteMessageTransformInboundConfig">
+        <xs:complexContent>
+            <xs:extension base="ComponentConfig"/>
+        </xs:complexContent>
+    </xs:complexType>
+
 </xs:schema>

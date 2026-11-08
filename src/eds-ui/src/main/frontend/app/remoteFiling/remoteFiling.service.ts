@@ -5,12 +5,50 @@ import {Observable} from "rxjs";
 import {SubscriberZipFileUUID} from "./models/SubscriberZipFileUUID";
 import {RemoteFilingStatistics} from "./models/RemoteFilingStatistics";
 import {RemoteFilingSubscribers} from "./models/RemoteFilingSubscribers";
+import {RemoteFiler} from "./models/RemoteFiler";
+import {RemoteFilerStatus} from "./models/RemoteFilerStatus";
 
 @Injectable()
 export class RemoteFilingService extends BaseHttp2Service {
-    constructor (http : Http) { super (http); }
 
-    getPagedFiles(pageNumber: number, pageSize: number):Observable<SubscriberZipFileUUID[]> {
+    showWarningsOnly: boolean;
+    showDates: boolean;
+    sortByFilter: string;
+
+    constructor (http : Http) {
+        super (http);
+
+        var vm = this;
+        vm.showWarningsOnly = true;
+        vm.showDates = false;
+        vm.sortByFilter = 'name';
+    }
+
+    getRemoteFilers(): Observable<RemoteFiler[]> {
+        return this.httpGet('api/remoteFiling/getRemoteFilers');
+    }
+
+    getRemoteFilerStatus(subscriberId: number): Observable<RemoteFilerStatus> {
+
+        var params = new URLSearchParams();
+        params.set('subscriberId', '' + subscriberId);
+        return this.httpGet('api/remoteFiling/getRemoteFilerStatus', { search : params });
+    }
+
+    getQueuedMessage(queuedMessageId: string): Observable<string> {
+
+        var params = new URLSearchParams();
+        params.set('queuedMessageId', '' + queuedMessageId);
+        return this.httpGet('api/remoteFiling/getQueuedMessage', { search : params });
+    }
+
+
+
+
+
+
+
+    /*getPagedFiles(pageNumber: number, pageSize: number):Observable<SubscriberZipFileUUID[]> {
         const vm = this;
         const params = new URLSearchParams();
         params.set('pageNumber',pageNumber.toString());
@@ -66,5 +104,5 @@ export class RemoteFilingService extends BaseHttp2Service {
         params.set('subscriberId', subscriberId.toString());
         params.set('timeFrame', timeFrame);
         return this.httpGet('api/remoteFiling/getFailedFilingUUIDEntities', { search : params });
-    }
+    }*/
 }

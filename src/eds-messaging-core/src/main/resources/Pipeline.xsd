@@ -30,6 +30,8 @@
                 <xs:element name="PostToRest" type="PostToRestConfig" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="PGPDecrypt" type="PGPDecryptConfig" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="AuditLastMessage" type="AuditLastMessageConfig" minOccurs="0" maxOccurs="1"/>
+                <xs:element name="CompleteMessageTransformInbound" type="CompleteMessageTransformInboundConfig" minOccurs="0" maxOccurs="1"/>
+
             </xs:choice>
         </xs:sequence>
     </xs:complexType>

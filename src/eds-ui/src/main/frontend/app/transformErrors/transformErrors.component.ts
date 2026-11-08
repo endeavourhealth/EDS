@@ -8,6 +8,8 @@ import {Subscription} from "rxjs/Subscription";
 import {ServiceService} from "../services/service.service";
 import {Service} from "../services/models/Service";
 import {DateTimeFormatter} from "../utility/DateTimeFormatter";
+import {ServiceListComponent} from "../services/serviceList.component";
+import {NgbModal} from "@ng-bootstrap/ng-bootstrap";
 
 @Component({
 	template : require('./transformErrors.html')
@@ -16,9 +18,11 @@ export class TransformErrorsComponent {
 
 	//SD-338 - need to import the static formatting functions so they can be used by the HTML template
 	formatYYYYMMDDHHMMSS = DateTimeFormatter.formatYYYYMMDDHHMMSS;
+	getDateDiffSimpleFromNow = DateTimeFormatter.getDateDiffSimpleFromNow;
 
 	transformErrorSummaries: TransformErrorSummary[];
 	selectedSummary: TransformErrorSummary;
+	statusLastRefreshed: Date;
 	selectedExchangeIndex: number;
 	tagStrDisplayLimit: number;
 	cachedTagStrs: {};
@@ -29,7 +33,8 @@ export class TransformErrorsComponent {
 	//filtering
 	filteredErrorSummaries: TransformErrorSummary[];
 
-	constructor(private serviceService : ServiceService,
+	constructor(private $modal : NgbModal,
+				private serviceService : ServiceService,
 				protected exchangeAuditService:ExchangeAuditService,
 				protected logger:LoggerService,
 				protected $state : StateService) {
@@ -46,6 +51,7 @@ export class TransformErrorsComponent {
 
 	refreshSummaries() {
 		var vm = this;
+		vm.statusLastRefreshed = new Date();
 		vm.transformErrorSummaries = null;
 		vm.selectedSummary = null;
 
@@ -310,5 +316,10 @@ export class TransformErrorsComponent {
 			vm.cachedTagStrs[service.uuid] = str;
 		}
 		return vm.cachedTagStrs[service.uuid]
+	}
+
+	viewExchanges(service: Service) {
+		var vm = this;
+		ServiceListComponent.viewExchanges(service, vm.$state, vm.$modal);
 	}
 }

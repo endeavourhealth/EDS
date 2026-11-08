@@ -171,11 +171,12 @@ export class DateTimeFormatter {
             }
         }
 
-        if (toks.length < numToks) {
+        //we get errors when expressions seem to change rapidly, and if we're factoring in millis, then this happens a lot
+        /*if (toks.length < numToks) {
             if (diffMs > 0) {
                 toks.push('' + diffMs + 'ms');
             }
-        }
+        }*/
 
         if (toks.length == 0) {
             toks.push('0s');
@@ -183,4 +184,53 @@ export class DateTimeFormatter {
 
         return toks.join(' ');
     }
+
+    static getDateDiffSimpleFromNow(earlier: number | Date): string {
+
+        if (!earlier) {
+            return '';
+        }
+
+        var dEarlier = null;
+        if (typeof earlier === "number") {
+            dEarlier = new Date(earlier as number);
+        } else {
+            dEarlier = earlier;
+        }
+
+        var dLater = new Date();
+
+        var diffMs = dLater.getTime() - dEarlier.getTime();
+        var durSec = 1000;
+        var durMin = durSec * 60;
+        if (diffMs < durMin) {
+            return '(just now)';
+        } else {
+            return '(' + DateTimeFormatter.getDateDiffDesc(dEarlier, dLater, 1) + ' ago)';
+        }
+    }
+
+    static getDateDiffSimple(earlier: number | Date, later: number | Date): string {
+
+        if (!earlier || !later) {
+            return '';
+        }
+
+        var dEarlier = null;
+        if (typeof earlier === "number") {
+            dEarlier = new Date(earlier as number);
+        } else {
+            dEarlier = earlier;
+        }
+
+        var dLater = null;
+        if (typeof later === "number") {
+            dLater = new Date(later as number);
+        } else {
+            dLater = later;
+        }
+
+        return DateTimeFormatter.getDateDiffDesc(dEarlier, dLater, 2);
+    }
+
 }

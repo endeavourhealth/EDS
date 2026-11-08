@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.base.Strings;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.common.config.ConfigManager;
+import org.endeavourhealth.common.fhir.ReferenceHelper;
 import org.endeavourhealth.core.configuration.MessageTransformOutboundConfig;
 import org.endeavourhealth.core.database.dal.DalProvider;
 import org.endeavourhealth.core.database.dal.audit.ExchangeBatchDalI;
@@ -14,6 +15,7 @@ import org.endeavourhealth.core.database.dal.audit.models.*;
 import org.endeavourhealth.core.database.dal.ehr.ResourceDalI;
 import org.endeavourhealth.core.database.dal.ehr.models.ResourceWrapper;
 import org.endeavourhealth.core.database.dal.subscriberTransform.ExchangeBatchExtraResourceDalI;
+import org.endeavourhealth.core.database.dal.subscriberTransform.SubscriberInstanceMappingDalI;
 import org.endeavourhealth.core.database.dal.subscriberTransform.SubscriberResourceMappingDalI;
 import org.endeavourhealth.core.database.dal.subscriberTransform.models.SubscriberId;
 import org.endeavourhealth.core.database.rdbms.ehr.models.AdminResourceRetrieverI;
@@ -82,13 +84,23 @@ public class MessageTransformOutbound extends PipelineComponent {
             List<ResourceWrapper> resourceWrappers = resourceCache.getResources(action, subscriberConfigName);
 
             try {
+                SubscriberConfig subscriberConfig = SubscriberConfig.readFromConfig(subscriberConfigName);
 
-                //do the outbound transform unless the batch ID is the dummy one (i.e. an aritifical batch because an inbound transformo
+                //do the outbound transform unless the batch ID is the dummy one (i.e. an artificial batch because an inbound transform
                 //didn't generate any changes) or the action is NONE (i.e. the patient is not in the subscriber cohort)
                 String outboundData = null;
                 if (!batchId.equals(ExchangeHelper.DUMMY_BATCH_ID)
                         && batch.getAction() != TransformBatch.TransformAction.NONE) {
-                    outboundData = performTransform(exchange, batchId, resourceWrappers, subscriberConfigName, action);
+                    outboundData = performTransform(exchange, batchId, resourceWrappers, subscriberConfig, action);
+                }
+
+                //if the outbound transform didn't generate anything (or wasn't called) and
+                //our message is the last one, then we still need to send something through to subscribers so
+                //that we can audit where we're up to. So generate a payload that will do nothing.
+                if (Strings.isNullOrEmpty(outboundData)
+                        && ExchangeHelper.isLastMessage(exchange)) {
+
+                    outboundData = createEmptyPayload(subscriberConfig);
                 }
 
                 //if we've got data to send to our subscriber, then store it in the queued message table
@@ -104,10 +116,8 @@ public class MessageTransformOutbound extends PipelineComponent {
                     }
                 }
 
-                //if we've got a queued message OR we're the last message from the original inbound data, then
-                //create a subscriber batch for the subscriber Queue Reader to actually send to the subscriber
-                if (queuedMessageId != null
-                        || ExchangeHelper.isLastMessage(exchange)) {
+                //if we've got a queued message to send, then create a subscriber batch for the subscriber Queue Reader to actually send to the subscriber
+                if (queuedMessageId != null) {
 
                     SubscriberBatch subscriberBatch = new SubscriberBatch();
                     subscriberBatch.setQueuedMessageId(queuedMessageId);
@@ -133,6 +143,22 @@ public class MessageTransformOutbound extends PipelineComponent {
         }
 
         setSubscriberBatchesOnExchange(exchange, subscriberBatches);
+    }
+
+    /**
+     * generates a payload for each outbound transform type that still counts as valid (including by the Remote Filer) but doesn't actually do anything
+     */
+    private String createEmptyPayload(SubscriberConfig subscriberConfig) throws Exception {
+
+        if (subscriberConfig.getSubscriberType() == SubscriberConfig.SubscriberType.CompassV1) {
+            return FhirToEnterpriseCsvTransformer.createEmptyPayload();
+
+        } else if (subscriberConfig.getSubscriberType() == SubscriberConfig.SubscriberType.CompassV2) {
+            return FhirToSubscriberCsvTransformer.createEmptyPayload();
+
+        } else {
+            throw new Exception("Unsupported outbound software " + subscriberConfig.getSubscriberType());
+        }
     }
 
     private static void setSubscriberBatchesOnExchange(Exchange exchange, List<SubscriberBatch> subscriberBatches) throws PipelineException {
@@ -190,7 +216,7 @@ public class MessageTransformOutbound extends PipelineComponent {
     private String performTransform(Exchange exchange,
                                     UUID batchId,
                                     List<ResourceWrapper> filteredResources,
-                                    String subscriberConfigName,
+                                    SubscriberConfig subscriberConfig,
                                     TransformBatch.TransformAction action) throws Exception {
 
         UUID serviceId = exchange.getServiceId();
@@ -198,13 +224,21 @@ public class MessageTransformOutbound extends PipelineComponent {
         UUID exchangeId = exchange.getId();
 
         boolean isBulkDeleteFromSubscriber = action == TransformBatch.TransformAction.FULL_DELETE;
-        SubscriberConfig subscriberConfig = SubscriberConfig.readFromConfig(subscriberConfigName);
+        boolean isLastExchangeMessage = ExchangeHelper.isLastMessage(exchange);
 
         if (subscriberConfig.getSubscriberType() == SubscriberConfig.SubscriberType.CompassV1) {
             return FhirToEnterpriseCsvTransformer.transformFromFhir(serviceId, systemId, exchangeId, batchId, filteredResources, subscriberConfig, isBulkDeleteFromSubscriber);
 
         } else if (subscriberConfig.getSubscriberType() == SubscriberConfig.SubscriberType.CompassV2) {
-            return FhirToSubscriberCsvTransformer.transformFromFhir(serviceId, systemId, exchangeId, batchId, filteredResources, subscriberConfig, isBulkDeleteFromSubscriber);
+            return FhirToSubscriberCsvTransformer.transformFromFhir(
+                    serviceId,
+                    systemId,
+                    exchangeId,
+                    batchId,
+                    filteredResources,
+                    subscriberConfig,
+                    isBulkDeleteFromSubscriber,
+                    isLastExchangeMessage);
 
         } else {
             throw new PipelineException("Unsupported outbound software " + subscriberConfig.getSubscriberType() + " for exchange " + exchange.getId());
@@ -382,6 +416,8 @@ public class MessageTransformOutbound extends PipelineComponent {
                         throw new Exception("Unexpected subscriber type " + subscriberConfig.getSubscriberType() + " for " + subscriberConfigName);
                     }
 
+                    //LOG.debug("Found "+toKeep.size()+" resources to keep for config: "+subscriberConfigName);
+
                     ret.addAll(toKeep);
 
                     //remove wrappers we know we already want to do
@@ -398,8 +434,8 @@ public class MessageTransformOutbound extends PipelineComponent {
                     }
                 }
             }
-
             LOG.debug("Finished checking all " + totalChecked + " admin resources for " + serviceId + " and found " + ret.size());
+
             return ret;
         }
 
@@ -435,8 +471,15 @@ public class MessageTransformOutbound extends PipelineComponent {
                     tableId = SubscriberTableId.PRACTITIONER;
 
                 } else if (type == ResourceType.Schedule) {
-                    tableId = SubscriberTableId.SCHEDULE;
-
+                    //tableId = SubscriberTableId.SCHEDULE;
+                    //one off temp change to exclude Schedules for F84039 (SD-1167) and 588593824109 (SD-1193)
+//                    if (serviceId.equals(UUID.fromString("9ea305f8-71c0-4b56-b482-56c94249c3e7")) ||
+//                         serviceId.equals(UUID.fromString("5059dd44-c41a-4b9b-9357-149da543a685"))) {
+//                            LOG.debug("Excluding "+toCheck.size()+" Schedule resources for " + serviceId);
+//                            continue;
+//                    } else {
+                        tableId = SubscriberTableId.SCHEDULE;
+//                    }
                 } else if (type == ResourceType.Slot) {
                     //slot resources aren't transformed by the Compass v2 transform
                     //so just discard them here
@@ -452,15 +495,38 @@ public class MessageTransformOutbound extends PipelineComponent {
                 for (int i=0; i<toCheck.size(); i++) {
                     ResourceWrapper wrapper = toCheck.get(i);
                     String referenceStr = wrapper.getReferenceString();
+
+                    //add the first/non mapped reference string
+                    //including the main reference plus any other mapped
+                    //references for: https://endeavourhealth.atlassian.net/browse/DDSEUS-306
                     batchStrs.add(referenceStr);
                     hmBatch.put(referenceStr, wrapper);
+
+                    //check if this resource is also mapped to another instance of the same concept (e.g. practitioner),
+                    //in which case we want to add that referenceStr for that OTHER mapped instance for checking for a subscriberId as well
+                    if (type == ResourceType.Organization || type == ResourceType.Practitioner) {
+
+                        SubscriberInstanceMappingDalI instanceMapper
+                                = DalProvider.factorySubscriberInstanceMappingDal(subscriberConfigName);
+                        UUID resourceId = wrapper.getResourceId();
+                        UUID mappedResourceId = instanceMapper.findInstanceMappedId(type, resourceId);
+                        //if it has a different mapped resource reference, we need to use that to look for a subscriberId as well
+                        if (mappedResourceId != null && !mappedResourceId.equals(resourceId)) {
+
+                            //create a referenceStr using the mapped reference
+                            referenceStr = ReferenceHelper.createResourceReference(type, mappedResourceId.toString());
+                            //add the additional mapped reference string for id checking (DDSEUS-306)
+                            batchStrs.add(referenceStr);
+                            hmBatch.put(referenceStr, wrapper);
+                        }
+                    }
 
                     if (batchStrs.size() >= batchSize
                             || i+1 >= toCheck.size()) {
 
                         Map<String, SubscriberId> hmMappings = subscriberDal.findSubscriberIds(tableId.getId(), batchStrs);
 
-                        //anything with an ID should be kept
+                        //anything with an id should be kept, including mapped referenced subscriberIds
                         for (String mappedReferenceStr: hmMappings.keySet()) {
                             ResourceWrapper mappedResource = hmBatch.get(mappedReferenceStr);
                             toKeep.add(mappedResource);

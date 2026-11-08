@@ -1,6 +1,20 @@
 <div class="module">
     <div class="module-heading">
-        Exchange History for {{service.name}} {{service.localIdentifier}} {{service.uuid}} on {{service.publisherConfigName}} {{getTagStr(service)}}
+        Exchange History for {{service.name}}
+
+        {{service.localIdentifier}}
+        <button type="button" class="btn btn-default btn-xs" ngbTooltip="Copy to clipboard" (click)="copyStringToClipboard(service.localIdentifier)">
+            <span class="fa fa-sm fa-copy"></span>
+        </button>
+
+        <!--<a (click)="copyStringToClipboard(service.uuid)">{{service.uuid}}</a>-->
+        {{service.uuid}}
+        <button type="button" class="btn btn-default btn-xs" ngbTooltip="Copy to clipboard" (click)="copyStringToClipboard(service.uuid)">
+            <span class="fa fa-sm fa-copy"></span>
+        </button>
+
+        on {{service.publisherConfigName}}
+        <!--{{getTagStr(service)}}-->
 
         <div class="pull-right">
 
@@ -89,6 +103,7 @@
                         </div>
                     </div>
 
+                    <!-- table of exchanges down the left -->
                     <div class="table scroll-box-500">
                         <table class="table table-striped table-condensed">
                             <thead>
@@ -131,9 +146,189 @@
 
                 </div>
 
+                <!-- main right-hand panel -->
                 <div class="col-md-8" *ngIf="selectedExchange">
 
-                    <h4>Exchange {{selectedExchange.exchangeId}}</h4>
+                    <div class="row">
+
+                        <div class="form-group col-md-8">
+
+                            <div class="panel panel-info">
+
+                                <div class="panel-heading">
+                                    Actions for Exchange {{selectedExchange.exchangeId}}
+
+                                    <button type="button" class="btn btn-default btn-xs" ngbTooltip="Copy to clipboard" (click)="copyStringToClipboard(selectedExchange.exchangeId)">
+                                        <span class="fa fa-sm fa-copy"></span>
+                                    </button>
+
+                                    <div *ngIf="canBeQueued(selectedExchange)" class="pull-right">
+                                        <button type="button" class="btn btn-default btn-xs" (click)="makeNonQueueable()">
+                                            Make Non-Queueable
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="panel-body">
+
+                                    <div class="row">
+                                        <div class="form-group col-md-12">
+
+                                            Post to Exchange:
+                                            <select id="postExchange" [(ngModel)]="exchangeAuditService.postExchange">
+                                                <option value=""></option>
+                                                <option value="edsInbound">Inbound</option>
+                                                <option value="edsProtocol">Protocol</option>
+                                            </select>
+
+                                            Exchanges to post:
+                                            <select id="postMode" [(ngModel)]="exchangeAuditService.postMode">
+                                                <option value="This">This Exchange Only</option>
+                                                <option value="Onwards">This Exchange and Onwards</option>
+                                                <option value="All">All Exchanges</option>
+                                                <!--<option *ngIf="exchangeAuditService.postExchange=='edsProtocol'" value="FullLoad">Full Load of Data</option>-->
+                                                <option *ngIf="exchangeAuditService.postExchange=='edsProtocol'" value="FullDelete">Full Delete of Data</option>
+                                                <option *ngIf="exchangeAuditService.postExchange=='edsProtocol'" value="FullRefresh">Full Refresh of Data</option>
+                                                <option *ngIf="exchangeAuditService.postExchange=='edsProtocol'" value="QuickRefresh">Quick Refresh of Data</option>
+                                                <option *ngIf="exchangeAuditService.postExchange=='edsProtocol'" value="FullRefreshAdminOnly">Full Refresh of Admin Data</option>
+                                            </select>
+
+                                            <div>
+                                                Queues:
+                                                Inbound={{selectedExchange.queueRoutingKeys['EdsInbound']}},
+                                                Protocol={{selectedExchange.queueRoutingKeys['EdsProtocol']}},
+                                                Transform={{selectedExchange.queueRoutingKeys['EdsTransform']}},
+                                                Subscriber={{selectedExchange.queueRoutingKeys['EdsSubscriber']}}
+                                            </div>
+                                            <!--Queues [Inbound={{selectedExchange.queueRoutingKeys['EdsInbound']}} Protocol={{selectedExchange.selectedExchange.queueRoutingKeys['EdsProtocol']}}]-->
+
+                                        </div>
+                                    </div>
+
+
+                                    <div class="row" *ngIf="exchangeAuditService.postExchange=='edsInbound'">
+                                        <div class="form-group col-md-12">
+
+                                            Reason:
+                                            <input type="text" id="postReason" [(ngModel)]="exchangeAuditService.postReason" name="postReason">
+
+                                            Delete error state:
+                                            <input type="checkbox" id="deleteErrorStateCheckbox" [(ngModel)]="exchangeAuditService.postDeleteErrorState" name="postDeleteErrorState">
+
+                                            Filter file types:
+                                            <input type="checkbox" id="filterFileTypesCheckbox" [(ngModel)]="exchangeAuditService.postFilterFileTypes" name="filterFileTypes">
+
+                                        </div>
+                                    </div>
+
+                                    <div class="row" *ngIf="exchangeAuditService.postExchange=='edsInbound' && exchangeAuditService.postFilterFileTypes">
+                                        <div class="form-group col-md-12">
+                                            <textarea rows="8" class="form-control" id="description" [(ngModel)]="exchangeAuditService.postFilterFileTypesSelected" placeholder="File types to filter on (space, comma or newline separated)" name="postFilterFileTypesSelected"></textarea>
+                                        </div>
+                                    </div>
+
+                                    <div class="row" *ngIf="exchangeAuditService.postExchange=='edsProtocol'">
+                                        <div class="form-group col-md-10">
+
+                                            Protocol(s) to apply (leave unchecked to do all):
+                                            <angular2-multiselect [data]="subscriberConfigNames"
+                                                                  [(ngModel)]="postSpecificProtocols"
+                                                                  [settings]="dropdownSettings"></angular2-multiselect>
+
+                                            <!--<angular2-multiselect [data]="dropdownList" [(ngModel)]="selectedItems"
+                                                                  [settings]="dropdownSettings"
+                                                                  (onSelect)="onItemSelect($event)"
+                                                                  (onDeSelect)="OnItemDeSelect($event)"
+                                                                  (onSelectAll)="onSelectAll($event)"
+                                                                  (onDeSelectAll)="onDeSelectAll($event)"></angular2-multiselect>-->
+
+
+
+                                            <!--<select id="protocol" [(ngModel)]="postSpecificProtocol" name="protocolId">
+                                                <option value="">&#45;&#45;All Subscribers&#45;&#45;</option>
+                                                <option *ngFor="let subscriberConfigName of subscriberConfigNames" value="{{subscriberConfigName}}">{{subscriberConfigName}}</option>
+                                            </select>-->
+
+                                        </div>
+
+                                        <div class="form-group col-md-2">
+                                            Include all subscribers:
+                                            <input type="checkbox" id="postShowAllSubscriberConfigNames" [(ngModel)]="exchangeAuditService.postShowAllSubscriberConfigNames" name="postShowAllSubscriberConfigNames" (ngModelChange)="refreshSubscriberConfigNames()">
+                                        </div>
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="form-group col-md-12">
+
+                                            <div *ngIf="canBeQueued(selectedExchange)">
+                                                <button type="button" class="btn btn-sm btn-success" [disabled]="busyPostingToExchange" (click)="postToExchange()">GO!</button>
+                                                <span class="fa fa-sm fa-refresh fa-refresh-animate" *ngIf="busyPostingToExchange"></span>
+                                            </div>
+
+                                            <div *ngIf="!canBeQueued(selectedExchange)">
+                                                <span class="label label-warning">This exchange cannot be re-queued</span>
+                                            </div>
+
+
+
+                                        </div>
+                                    </div>
+
+                                </div>
+                            </div>
+                        </div>
+
+                        <div *ngIf="publisherMode" class="form-group col-md-4">
+
+                            <div class="panel panel-info" >
+
+                                <div class="panel-heading">
+                                    Publisher-level Settings
+                                </div>
+
+                                <div class="panel-body">
+
+                                    <div  class="row">
+                                        <div class="form-group col-md-12">
+
+                                            <div>
+                                                Publisher mode:
+
+                                                <select id="publisherStatus" [(ngModel)]="publisherMode" name="publisherStatus">
+                                                    <option value="Publisher_Draft">Draft</option>
+                                                    <option value="Publisher_Normal">Normal</option>
+                                                    <option value="Publisher_Auto_Fail">Auto-fail</option>
+                                                    <option value="Publisher_Bulk">Bulk</option>
+                                                </select>
+                                            </div>
+
+                                            <div>
+                                                Publisher config:
+
+                                                <select id="publisherConfigName" [(ngModel)]="service.publisherConfigName" name="publisherConfigName">
+
+                                                    <!-- blank option -->
+                                                    <option value=""></option>
+
+                                                    <!-- if cached list not loaded yet, just populate with what's on the service already -->
+                                                    <option *ngIf="!serviceService.getPublisherConfigNamesFromCache()" value="{{service.publisherConfigName}}">{{service.publisherConfigName}}</option>
+
+                                                    <!-- once org type list loaded, fully populate with everything in the list -->
+                                                    <option *ngFor="let publisherConfigName of serviceService.getPublisherConfigNamesFromCache()" value="{{publisherConfigName}}">{{publisherConfigName}}</option>
+
+
+                                                </select>
+
+                                                <button type="button" class="btn btn-sm btn-success" (click)="savePublisherMode()">Save</button>
+                                            </div>
+                                        </div>
+
+                                    </div>
+
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
                     <!--show the exchange headers in an accordion, so we don't have to see them all the time-->
                     <ngb-accordion #acc="ngbAccordion">
@@ -161,159 +356,6 @@
                         </ngb-panel>
                     </ngb-accordion>
 
-                    <div class="row">
-
-                        <div class="panel panel-primary col-md-9">
-                            <div class="panel-body">
-
-                                <div class="row">
-                                    <div class="form-group col-md-12">
-
-                                        Post to Exchange:
-                                        <select id="postExchange" [(ngModel)]="exchangeAuditService.postExchange">
-                                            <option value=""></option>
-                                            <option value="edsInbound">Inbound</option>
-                                            <option value="edsProtocol">Protocol</option>
-                                        </select>
-
-                                        Exchanges to post:
-                                        <select id="postMode" [(ngModel)]="exchangeAuditService.postMode">
-                                            <option value="This">This Exchange Only</option>
-                                            <option value="Onwards">This Exchange and Onwards</option>
-                                            <option value="All">All Exchanges</option>
-                                            <!--<option *ngIf="exchangeAuditService.postExchange=='edsProtocol'" value="FullLoad">Full Load of Data</option>-->
-                                            <option *ngIf="exchangeAuditService.postExchange=='edsProtocol'" value="FullDelete">Full Delete of Data</option>
-                                            <option *ngIf="exchangeAuditService.postExchange=='edsProtocol'" value="FullRefresh">Full Refresh of Data</option>
-                                            <option *ngIf="exchangeAuditService.postExchange=='edsProtocol'" value="QuickRefresh">Quick Refresh of Data</option>
-                                            <option *ngIf="exchangeAuditService.postExchange=='edsProtocol'" value="FullRefreshAdminOnly">Full Refresh of Admin Data</option>
-                                        </select>
-
-                                        <div>
-                                            Queues:
-                                            Inbound={{selectedExchange.queueRoutingKeys['EdsInbound']}},
-                                            Protocol={{selectedExchange.queueRoutingKeys['EdsProtocol']}},
-                                            Transform={{selectedExchange.queueRoutingKeys['EdsTransform']}},
-                                            Subscriber={{selectedExchange.queueRoutingKeys['EdsSubscriber']}}
-                                        </div>
-                                        <!--Queues [Inbound={{selectedExchange.queueRoutingKeys['EdsInbound']}} Protocol={{selectedExchange.selectedExchange.queueRoutingKeys['EdsProtocol']}}]-->
-
-                                    </div>
-                                </div>
-
-
-                                <div class="row" *ngIf="exchangeAuditService.postExchange=='edsInbound'">
-                                    <div class="form-group col-md-12">
-
-                                        Reason:
-                                        <input type="text" id="postReason" [(ngModel)]="exchangeAuditService.postReason" name="postReason">
-
-                                        Delete error state:
-                                        <input type="checkbox" id="deleteErrorStateCheckbox" [(ngModel)]="exchangeAuditService.postDeleteErrorState" name="postDeleteErrorState">
-
-                                        Filter file types:
-                                        <input type="checkbox" id="filterFileTypesCheckbox" [(ngModel)]="exchangeAuditService.postFilterFileTypes" name="filterFileTypes">
-
-                                    </div>
-                                </div>
-
-                                <div class="row" *ngIf="exchangeAuditService.postExchange=='edsInbound' && exchangeAuditService.postFilterFileTypes">
-                                    <div class="form-group col-md-12">
-                                        <textarea rows="8" class="form-control" id="description" [(ngModel)]="exchangeAuditService.postFilterFileTypesSelected" placeholder="File types to filter on (space, comma or newline separated)" name="postFilterFileTypesSelected"></textarea>
-                                    </div>
-                                </div>
-
-                                <div class="row" *ngIf="exchangeAuditService.postExchange=='edsProtocol'">
-                                    <div class="form-group col-md-10">
-
-                                        Protocol(s) to apply (leave unchecked to do all):
-                                        <angular2-multiselect [data]="subscriberConfigNames"
-                                                              [(ngModel)]="postSpecificProtocols"
-                                                              [settings]="dropdownSettings"></angular2-multiselect>
-
-                                        <!--<angular2-multiselect [data]="dropdownList" [(ngModel)]="selectedItems"
-                                                              [settings]="dropdownSettings"
-                                                              (onSelect)="onItemSelect($event)"
-                                                              (onDeSelect)="OnItemDeSelect($event)"
-                                                              (onSelectAll)="onSelectAll($event)"
-                                                              (onDeSelectAll)="onDeSelectAll($event)"></angular2-multiselect>-->
-
-
-
-                                        <!--<select id="protocol" [(ngModel)]="postSpecificProtocol" name="protocolId">
-                                            <option value="">&#45;&#45;All Subscribers&#45;&#45;</option>
-                                            <option *ngFor="let subscriberConfigName of subscriberConfigNames" value="{{subscriberConfigName}}">{{subscriberConfigName}}</option>
-                                        </select>-->
-
-                                    </div>
-
-                                    <div class="form-group col-md-2">
-                                        Include all subscribers:
-                                        <input type="checkbox" id="postShowAllSubscriberConfigNames" [(ngModel)]="exchangeAuditService.postShowAllSubscriberConfigNames" name="postShowAllSubscriberConfigNames" (ngModelChange)="refreshSubscriberConfigNames()">
-                                    </div>
-                                </div>
-
-                                <div class="row">
-                                    <div class="form-group col-md-12">
-
-                                        <button type="button" class="btn btn-sm btn-success" [disabled]="busyPostingToExchange" (click)="postToExchange()">GO!</button>
-                                        <span class="fa fa-sm fa-refresh fa-refresh-animate" *ngIf="busyPostingToExchange"></span>
-
-                                    </div>
-                                </div>
-
-                            </div>
-                        </div>
-
-                        <div class="panel panel-primary col-md-3" >
-                            <div class="panel-body">
-
-                                <div *ngIf="publisherMode" class="row">
-                                    <div class="form-group">
-
-                                        <div>
-                                            Publisher mode:
-
-                                            <select id="publisherStatus" [(ngModel)]="publisherMode" name="publisherStatus">
-                                                <option value="Publisher_Draft">Draft</option>
-                                                <option value="Publisher_Normal">Normal</option>
-                                                <option value="Publisher_Auto_Fail">Auto-fail</option>
-                                                <option value="Publisher_Bulk">Bulk</option>
-                                            </select>
-                                        </div>
-
-                                        <div>
-                                            Publisher config:
-
-                                            <select id="publisherConfigName" [(ngModel)]="service.publisherConfigName" name="publisherConfigName">
-
-                                                <!-- blank option -->
-                                                <option value=""></option>
-
-                                                <!-- if cached list not loaded yet, just populate with what's on the service already -->
-                                                <option *ngIf="!serviceService.getPublisherConfigNamesFromCache()" value="{{service.publisherConfigName}}">{{service.publisherConfigName}}</option>
-
-                                                <!-- once org type list loaded, fully populate with everything in the list -->
-                                                <option *ngFor="let publisherConfigName of serviceService.getPublisherConfigNamesFromCache()" value="{{publisherConfigName}}">{{publisherConfigName}}</option>
-
-
-                                            </select>
-
-                                            <button type="button" class="btn btn-sm btn-success" (click)="savePublisherMode()">Save</button>
-                                        </div>
-
-
-
-                                    </div>
-
-                                </div>
-
-                            </div>
-                        </div>
-                    </div>
-
-                    <div *ngIf="selectedExchange && !canBeQueued(selectedExchange)">
-                        <span class="label label-warning">This exchange cannot be re-queued</span>
-                    </div>
 
 
                     <!--transform audits table-->

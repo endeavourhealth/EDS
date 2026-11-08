@@ -5,6 +5,9 @@ import {NgbModal, NgbActiveModal, NgbModalOptions} from "@ng-bootstrap/ng-bootst
 import {SubscriberZipFileUUID} from "./models/SubscriberZipFileUUID";
 import {RemoteFilingService} from "./remoteFiling.service";
 import {DateTimeFormatter} from "../utility/DateTimeFormatter";
+import {RemoteFiler} from "./models/RemoteFiler";
+import {RemoteFilerError} from "./models/RemoteFilerError";
+import {linq} from "eds-common-js/dist/index";
 
 @Component({
     selector: 'ngbd-modal-content',
@@ -15,12 +18,16 @@ export class RemoteFilingFilesDialog  {
     //SD-338 - need to import the static formatting functions so they can be used by the HTML template
     formatYYYYMMDDHHMMSS = DateTimeFormatter.formatYYYYMMDDHHMMSS;
 
-    @Input() files: SubscriberZipFileUUID[];
+    @Input() filer: RemoteFiler;
+    @Input() errors: RemoteFilerError[];
+    showLimitWarning: boolean;
+
+    /*@Input() files: SubscriberZipFileUUID[];
     @Input() subscriberId: number;
     @Input() view: string;
     @Input() totalSubscriberFiles: number;
 
-    pageNumber = 1;
+    pageNumber = 1;*/
 
     constructor(private $modal: NgbModal,
                 protected log : LoggerService,
@@ -28,13 +35,17 @@ export class RemoteFilingFilesDialog  {
                 private remoteFilingService: RemoteFilingService) {
     }
 
-    public static open(modalService: NgbModal, files: SubscriberZipFileUUID[], subscriberId: number, view: string, totalSubscriberFiles: number) {
+    public static open(modalService: NgbModal, filer: RemoteFiler, errors: RemoteFilerError[]) {
 
         const modalRef = modalService.open(RemoteFilingFilesDialog, { backdrop : "static", size : "lg"} as NgbModalOptions);
-        modalRef.componentInstance.files = files;
+        modalRef.componentInstance.filer = filer;
+        modalRef.componentInstance.errors = errors;
+        modalRef.componentInstance.formatForDisplay();
+
+        /*modalRef.componentInstance.files = files;
         modalRef.componentInstance.subscriberId = subscriberId;
         modalRef.componentInstance.view = view;
-        modalRef.componentInstance.totalSubscriberFiles = totalSubscriberFiles;
+        modalRef.componentInstance.totalSubscriberFiles = totalSubscriberFiles;*/
 
         return modalRef;
     }
@@ -43,7 +54,50 @@ export class RemoteFilingFilesDialog  {
         this.activeModal.dismiss();
     }
 
-    downloadZipData(messageUUID: string, data: string) {
+    formatForDisplay() {
+        var vm = this;
+
+        //the server only returns the latest 101 errors for each service, to avoid returning
+        //to much data. However, for simplicity, just display the 50 most recent in total.
+        if (vm.errors.length > 50) {
+            var sorted = linq(vm.errors).OrderBy(s => s.dtInserted)
+                .Reverse()
+                .ToArray();
+
+            vm.errors = [];
+            for (var i=0; i<50; i++) {
+                vm.errors.push(sorted[i]);
+            }
+
+            vm.showLimitWarning = true;
+        }
+    }
+
+    downloadMessage(error: RemoteFilerError) {
+        var vm = this;
+        var queuedMessageId = error.queuedMessageId;
+        vm.remoteFilingService.getQueuedMessage(queuedMessageId)
+            .subscribe(
+                (result) => {
+                    vm.downloadQueuedMessageData(queuedMessageId, result);
+                },
+                (error) => {
+                    vm.log.error('Failed to get queued message data');
+                }
+            );
+    }
+
+    downloadQueuedMessageData(messageUUID: string, data: string) {
+        const link = document.createElement('a');
+        link.setAttribute('target', '_blank');
+        link.setAttribute('href', 'data:application/zip;base64,'+data);
+        link.setAttribute('download', messageUUID + '.zip');
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+    }
+
+    /*downloadZipData(messageUUID: string, data: string) {
         const link = document.createElement('a');
         link.setAttribute('target', '_blank');
         link.setAttribute('href', 'data:application/zip;base64,'+data);
@@ -86,5 +140,5 @@ export class RemoteFilingFilesDialog  {
             return true;
         }
         return false;
-    }
+    }*/
 }

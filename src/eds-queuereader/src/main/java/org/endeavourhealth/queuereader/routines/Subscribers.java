@@ -154,7 +154,7 @@ public class Subscribers extends AbstractRoutine {
 
                     //  Use  a random UUID for a queued message ID
                     if (patientContainerString != null) {
-                        EnterpriseFiler.file(batchUuid, UUID.randomUUID(), patientContainerString, subscriberConfigName);
+                        EnterpriseFiler.file(serviceUuid, null, null, batchUuid, UUID.randomUUID(), patientContainerString, subscriberConfigName);
                     }
                 } else if (compassVersion.equalsIgnoreCase(SpecialRoutines.COMPASS_V2)) {
                     String patientContainerString
@@ -162,7 +162,7 @@ public class Subscribers extends AbstractRoutine {
 
                     //  Use  a random UUID for a queued message ID
                     if (patientContainerString != null) {
-                        SubscriberFiler.file(batchUuid, UUID.randomUUID(), patientContainerString, subscriberConfigName);
+                        SubscriberFiler.file(serviceUuid, null, null, batchUuid, UUID.randomUUID(), patientContainerString, subscriberConfigName);
                     }
                 }
 
@@ -185,7 +185,7 @@ public class Subscribers extends AbstractRoutine {
 
                         //  Use  a random UUID for a queued message ID
                         if (episodeContainerString != null) {
-                            EnterpriseFiler.file(batchUuid, UUID.randomUUID(), episodeContainerString, subscriberConfigName);
+                            EnterpriseFiler.file(serviceUuid, null, null, batchUuid, UUID.randomUUID(), episodeContainerString, subscriberConfigName);
                         }
                     } else if (compassVersion.equalsIgnoreCase(SpecialRoutines.COMPASS_V2)) {
                         String episodeContainerString
@@ -193,7 +193,7 @@ public class Subscribers extends AbstractRoutine {
 
                         //  Use  a random UUID for a queued message ID
                         if (episodeContainerString != null) {
-                            SubscriberFiler.file(batchUuid, UUID.randomUUID(), episodeContainerString, subscriberConfigName);
+                            SubscriberFiler.file(serviceUuid, null, null, batchUuid, UUID.randomUUID(), episodeContainerString, subscriberConfigName);
                         }
                     }
                 }

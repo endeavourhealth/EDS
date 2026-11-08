@@ -1,0 +1,81 @@
+<div class="modal-header">
+    <button type="button" class="close" (click)="close()" aria-hidden="true">&times;</button>
+    <h4 class="modal-title">Technical Details for {{filer.name}} (ID {{filer.subscriberId}})</h4>
+</div>
+
+<div class="modal-body">
+
+    <div class="row" *ngIf="showLimitWarning">
+        <div class="col-md-12">
+            <span class="label label-warning">Only most recent 50 errors are shown</span>
+        </div>
+    </div>
+
+
+    <div class="panel panel-info">
+        <div class="panel-heading">
+            File Paths
+        </div>
+        <div class="panel-body">
+
+            <div>
+                Data: {{filer.technicalDetails.subscriberFileLocationDetails.dataDir}}
+            </div>
+            <div>
+                Staging: {{filer.technicalDetails.subscriberFileLocationDetails.stagingDir}}
+            </div>
+            <div>
+                Archive: {{filer.technicalDetails.subscriberFileLocationDetails.archiveDir}}
+            </div>
+            <div>
+                SFTP Server Destination: {{filer.technicalDetails.subscriberFileLocationDetails.destinationDir}}
+            </div>
+            <div>
+                PGP certificate: {{filer.technicalDetails.subscriberFileLocationDetails.pgpCertFile}}
+            </div>
+            <div>
+                Private key: {{filer.technicalDetails.subscriberFileLocationDetails.privateKeyFile}}
+            </div>
+            <div>
+                SFTP Server Results Source: {{filer.technicalDetails.subscriberFileLocationDetails.resultsSourceDir}}
+            </div>
+            <div>
+                Results staging: {{filer.technicalDetails.subscriberFileLocationDetails.resultsStagingDir}}
+            </div>
+        </div>
+    </div>
+
+    <div class="panel panel-info">
+        <div class="panel-heading">
+            SFTP Server Details
+        </div>
+        <div class="panel-body">
+
+            <div>
+                Host name: {{filer.technicalDetails.sftpConnectionDetails.hostname}}
+            </div>
+            <div>
+                Port: {{filer.technicalDetails.sftpConnectionDetails.port}}
+            </div>
+            <div>
+                Username: {{filer.technicalDetails.sftpConnectionDetails.username}}
+            </div>
+            <div>
+                Public key: {{filer.technicalDetails.sftpConnectionDetails.hostPublicKey}}
+            </div>
+            <div>
+                Private key: {{filer.technicalDetails.sftpConnectionDetails.clientPrivateKey}}
+            </div>
+            <!-- do not show this-->
+            <!--<div>
+                Private key password: {{filer.technicalDetails.sftpConnectionDetails.clientPrivateKeyPassword}}
+            </div>-->
+
+        </div>
+    </div>
+
+</div>
+
+<div class="modal-footer">
+    <button type="button" class="btn" (click)="close()">Close</button>
+</div>

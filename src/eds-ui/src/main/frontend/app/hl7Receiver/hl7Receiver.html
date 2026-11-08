@@ -1,6 +1,7 @@
 <div class="module">
     <div class="module-heading">
-        HL7 Receiver <span *ngIf="statusLastRefreshed">(as of {{formatHHMMSS(statusLastRefreshed)}})</span>
+        HL7 Receiver {{getDateDiffSimpleFromNow(statusLastRefreshed)}}
+
         <div class="pull-right">
             <button class="btn btn-sm btn-success" [disabled]="refreshingStatus" (click)="refreshStatus()" title="Refresh">Refresh&nbsp;<span class="fa fa-sm fa-refresh fa-refresh-animate" *ngIf="refreshingStatus"></span></button>
         </div>

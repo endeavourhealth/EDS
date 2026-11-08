@@ -1,0 +1,145 @@
+DROP PROCEDURE IF EXISTS refresh_frailty_codes;
+DROP PROCEDURE IF EXISTS get_frailty_flag;
+
+/*
+	call refresh_frailty_codes();
+
+    select *
+    from frailty_codes;
+*/
+
+DELIMITER $$
+CREATE PROCEDURE `refresh_frailty_codes`()
+BEGIN
+
+	DROP TEMPORARY TABLE IF EXISTS tmp.frailty_snomed_codes;
+
+	-- build a table of the Snomed codes (and ranges, if relevant) that the flag is defined as
+	CREATE TEMPORARY TABLE tmp.frailty_snomed_codes (
+		snomed_code varchar(40) BINARY,
+		min_value double,
+		max_value double,
+		frailty_result varchar(10)
+	);
+
+	INSERT INTO tmp.frailty_snomed_codes VALUES ('713634000', 0.36, null, '3_SEVERE'); -- fiFrailtyIndex
+	INSERT INTO tmp.frailty_snomed_codes VALUES ('713636003', 0.36, null, '3_SEVERE'); -- fiFrailtyIndex2
+	INSERT INTO tmp.frailty_snomed_codes VALUES ('445414007', 6, null, '3_SEVERE'); -- cshaFrailtyScale
+	INSERT INTO tmp.frailty_snomed_codes VALUES ('925861000000102', null, null, '3_SEVERE'); -- severeFrailty
+	-- SD-449 Emis-authored Snomed codes are not in the IM so must be added using the Read2 equivalent which is
+	-- INSERT INTO tmp.frailty_snomed_codes VALUES ('2010301000006105', null, null, '3_SEVERE'); -- qFrailtySevereFrailty
+	-- INSERT INTO tmp.frailty_snomed_codes VALUES ('2010341000006107', null, null, '3_SEVERE'); -- qFrailtySevereFrailtyEstimate
+	INSERT INTO tmp.frailty_snomed_codes VALUES ('EMISNQQF7', null, null, '3_SEVERE'); -- QFrailty category - severe frailty
+	INSERT INTO tmp.frailty_snomed_codes VALUES ('EMISNQQF11', null, null, '3_SEVERE'); -- QFrailty category - severe frailty (estimate)
+
+	INSERT INTO tmp.frailty_snomed_codes VALUES ('713634000', 0.24, 0.36, '2_MODERATE'); -- fiFrailtyIndex
+	INSERT INTO tmp.frailty_snomed_codes VALUES ('713636003', 0.24, 0.36, '2_MODERATE'); -- fiFrailtyIndex2
+	INSERT INTO tmp.frailty_snomed_codes VALUES ('445414007', 5, 6, '2_MODERATE'); -- cshaFrailtyScale
+	INSERT INTO tmp.frailty_snomed_codes VALUES ('925831000000107', null, null, '2_MODERATE'); -- moderateFrailty
+	INSERT INTO tmp.frailty_snomed_codes VALUES ('248279007', null, null, '2_MODERATE'); -- frailty
+	-- SD-449 Emis-authored Snomed codes are not in the IM so must be added using the Read2 equivalent which is
+	-- INSERT INTO tmp.frailty_snomed_codes VALUES ('1839051000006106', null, null, '2_MODERATE'); -- onFrailtyRegister
+	-- INSERT INTO tmp.frailty_snomed_codes VALUES ('910301000006104', null, null, '2_MODERATE');, -- frailPerson
+	-- INSERT INTO tmp.frailty_snomed_codes VALUES ('908431000006104', null, null, '2_MODERATE'); -- frailElderlyPeople1
+	-- INSERT INTO tmp.frailty_snomed_codes VALUES ('909011000006109', null, null, '2_MODERATE'); -- frailElderlyPeople2
+	-- INSERT INTO tmp.frailty_snomed_codes VALUES ('2010291000006109', null, null, '2_MODERATE'); -- qFrailtyModerateFrailty
+	-- INSERT INTO tmp.frailty_snomed_codes VALUES ('2010331000006102', null, null, '2_MODERATE'); -- qFrailtyModerateFrailtyEstimate
+	INSERT INTO tmp.frailty_snomed_codes VALUES ('EMISNQON5', null, null, '2_MODERATE'); -- On frailty register
+	INSERT INTO tmp.frailty_snomed_codes VALUES ('HNGNQRF75', null, null, '2_MODERATE'); -- [RFC] Frail person
+	INSERT INTO tmp.frailty_snomed_codes VALUES ('HNG0500', null, null, '2_MODERATE'); -- [RFC] Frail elderly people
+	INSERT INTO tmp.frailty_snomed_codes VALUES ('HNG0632', null, null, '2_MODERATE'); -- [RFC] Frail elderly people
+	INSERT INTO tmp.frailty_snomed_codes VALUES ('EMISNQQF6', null, null, '2_MODERATE'); -- QFrailty category - moderate frailty
+	INSERT INTO tmp.frailty_snomed_codes VALUES ('EMISNQQF10', null, null, '2_MODERATE'); -- QFrailty category - moderate frailty (estimate)
+
+	INSERT INTO tmp.frailty_snomed_codes VALUES ('713634000', 0.13, 0.24, '1_MILD'); -- fiFrailtyIndex
+	INSERT INTO tmp.frailty_snomed_codes VALUES ('713636003', 0.13, 0.24, '1_MILD'); -- fiFrailtyIndex2
+	INSERT INTO tmp.frailty_snomed_codes VALUES ('445414007', 4, 5, '1_MILD'); -- cshaFrailtyScale
+	INSERT INTO tmp.frailty_snomed_codes VALUES ('925791000000100', null, null, '1_MILD'); -- mildFrailty
+	-- SD-449 Emis-authored Snomed codes are not in the IM so must be added using the Read2 equivalent which is
+	-- INSERT INTO tmp.frailty_snomed_codes VALUES ('2010281000006106', null, null, '1_MILD'); -- qFrailtyMildFrailty
+	-- INSERT INTO tmp.frailty_snomed_codes VALUES ('2010321000006100', null, null, '1_MILD'); -- qFrailtyMildFrailtyEstimate
+	INSERT INTO tmp.frailty_snomed_codes VALUES ('EMISNQQF5', null, null, '1_MILD'); -- QFrailty category - mild frailty
+	INSERT INTO tmp.frailty_snomed_codes VALUES ('EMISNQQF9', null, null, '1_MILD'); -- QFrailty category - mild frailty (estimate)
+
+
+	DROP TEMPORARY TABLE IF EXISTS tmp.frailty_codes;
+
+	-- find the concept ID for all the Snomed codes
+	CREATE TEMPORARY TABLE tmp.frailty_codes AS
+	SELECT
+		c.dbid as `concept_id`,
+		s.*
+	FROM tmp.frailty_snomed_codes s
+	INNER JOIN concept c
+	ON c.code = s.snomed_code;
+
+	-- get the original codes that are all mapped to the snomed codes
+	INSERT INTO tmp.frailty_codes
+	SELECT
+		m.legacy as `concept_id`,
+		s.*
+	FROM tmp.frailty_snomed_codes s
+	INNER JOIN concept c
+	ON c.code = s.snomed_code
+	INNER JOIN concept_map m
+	ON m.core = c.dbid;
+
+	-- copy into the database proper
+	DROP TABLE IF EXISTS frailty_codes_tmp;
+
+	CREATE TABLE frailty_codes_tmp AS
+	SELECT *
+	from tmp.frailty_codes;
+
+	CREATE INDEX ix ON frailty_codes_tmp (concept_id);
+
+	-- swap new table in
+	DROP TABLE IF EXISTS frailty_codes;
+	RENAME TABLE frailty_codes_tmp to frailty_codes;
+
+
+END$$
+DELIMITER ;
+
+
+
+DELIMITER $$
+CREATE PROCEDURE `get_frailty_flag`(
+	_person_id bigint
+)
+BEGIN
+
+	DROP TEMPORARY TABLE IF EXISTS tmp.frailty_patients;
+
+	CREATE TEMPORARY TABLE tmp.frailty_patients AS
+	SELECT id as `patient_id`
+	FROM patient
+	WHERE person_id = _person_id;
+
+	CREATE INDEX ix ON tmp.frailty_patients (patient_id);
+
+	DROP TEMPORARY TABLE IF EXISTS tmp.frailty_obs;
+
+	CREATE TEMPORARY TABLE tmp.frailty_obs AS
+	SELECT ob.*
+	FROM tmp.frailty_patients p
+	INNER JOIN observation ob
+	ON ob.patient_id = p.patient_id;
+
+	CREATE INDEX ix ON tmp.frailty_obs (non_core_concept_id);
+
+	SELECT c.frailty_result
+	FROM tmp.frailty_obs o
+	INNER JOIN frailty_codes c
+	ON c.concept_id = o.non_core_concept_id
+	WHERE
+		(c.min_value IS NULL
+			OR (o.result_value IS NOT NULL AND o.result_value > c.min_value))
+		AND (c.max_value IS NULL
+			OR (o.result_value IS NOT NULL AND o.result_value <= c.max_value))
+	ORDER BY frailty_result DESC -- frailty result has 1, 2, 3 so this will return the most severe
+	LIMIT 1;
+
+
+END$$
+DELIMITER ;

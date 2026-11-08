@@ -15,6 +15,7 @@ import {PublisherService} from "./models/PublisherService";
 import {Service} from "../services/models/Service";
 import {PublisherSystem} from "./models/PublisherSystem";
 import {DateTimeFormatter} from "../utility/DateTimeFormatter";
+import {PublisherStatusDialog} from "./publisherStatus.dialog";
 
 @Component({
     template : require('./subscriberDetail.html')
@@ -31,7 +32,6 @@ export class SubscriberDetailComponent {
     filteredServices: PublisherService[];
     cachedSystemNames: string[];
     refreshingStatus: boolean;
-    selectedPublisher: PublisherService;
     dayDuration: number;
 
     //subscriber status
@@ -70,7 +70,6 @@ export class SubscriberDetailComponent {
         var vm = this;
         vm.statusLastRefreshed = new Date();
         vm.refreshingStatus = true;
-        vm.selectedPublisher = null;
 
         vm.subscribersService.getSubscriberDetails(vm.subscriberName).subscribe(
             (result) => {
@@ -107,6 +106,8 @@ export class SubscriberDetailComponent {
                 var inboundBehindWarning = null;
                 var outboundBehindDays = 0;
                 var outboundBehindWarning = null;
+                var outboundWriteBehindDays = 0;
+                var outboundWriteBehindWarning = null;
 
 
                 if (systemStatus.lastReceivedExtractCutoff) {
@@ -118,12 +119,12 @@ export class SubscriberDetailComponent {
                         var msBehind = systemStatus.lastReceivedExtractCutoff - systemStatus.lastProcessedInExtractCutoff;
                         var behindDesc = DateTimeFormatter.getDateDiffDescMs(systemStatus.lastProcessedInExtractCutoff, systemStatus.lastReceivedExtractCutoff, 2);
                         inboundBehindDays = msBehind / vm.dayDuration;
-                        inboundBehindWarning = 'Inbound processing ' + behindDesc + ' behind';
+                        inboundBehindWarning = 'Inbound transform ' + behindDesc + ' behind';
 
                     } else {
                         //if never finished any inbound processing
                         inboundBehindDays = 999; //just some arbitrary max value
-                        inboundBehindWarning = 'No inbound processing complete';
+                        inboundBehindWarning = 'No inbound transform complete';
                     }
 
                     //outbound warning if 2+ days behind
@@ -133,11 +134,25 @@ export class SubscriberDetailComponent {
                         var msBehind = systemStatus.lastReceivedExtractCutoff - systemStatus.lastProcessedOutExtractCutoff;
                         var behindDesc = DateTimeFormatter.getDateDiffDescMs(systemStatus.lastProcessedOutExtractCutoff, systemStatus.lastReceivedExtractCutoff, 2);
                         outboundBehindDays = msBehind / vm.dayDuration;
-                        outboundBehindWarning = 'Outbound processing ' + behindDesc + ' behind';
+                        outboundBehindWarning = 'Outbound transform ' + behindDesc + ' behind';
 
                     } else {
                         outboundBehindDays = 999; //just some arbitrary max value
-                        outboundBehindWarning = 'No inbound processing complete';
+                        outboundBehindWarning = 'No outbound transform complete';
+                    }
+
+                    //outbound write warning if 2+ days behind
+                    if (systemStatus.lastWriteOutExtractCutoff) {
+
+                        //check if behind in outbound processing
+                        var msBehind = systemStatus.lastReceivedExtractCutoff - systemStatus.lastWriteOutExtractCutoff;
+                        var behindDesc = DateTimeFormatter.getDateDiffDescMs(systemStatus.lastWriteOutExtractCutoff, systemStatus.lastReceivedExtractCutoff, 2);
+                        outboundWriteBehindDays = msBehind / vm.dayDuration;
+                        outboundWriteBehindWarning = 'Outbound write ' + behindDesc + ' behind';
+
+                    } else {
+                        outboundWriteBehindDays = 999; //just some arbitrary max value
+                        outboundWriteBehindWarning = 'No outbound writing complete';
                     }
                 }
 
@@ -145,6 +160,8 @@ export class SubscriberDetailComponent {
                 systemStatus.inboundBehindWarning = inboundBehindWarning;
                 systemStatus.outboundBehindDays = outboundBehindDays;
                 systemStatus.outboundBehindWarning = outboundBehindWarning;
+                systemStatus.outboundWriteBehindDays = outboundWriteBehindDays;
+                systemStatus.outboundWriteBehindWarning = outboundWriteBehindWarning;
             }
 
 
@@ -214,47 +231,7 @@ export class SubscriberDetailComponent {
         return ret;
     }
 
-    editPublisher(serviceUuid: string) {
-        var vm = this;
 
-        //NOTE: despite repeated attempts, the CLOSE button on the next page doesn't work, so
-        //to avoid errors being thrown, we close the current view (i.e. return to previous page)
-        //and then invoke the new page from that.
-
-        //first close this view
-        vm.$state.go(vm.transition.from());
-
-        //then invoke the new one from the new view
-        setTimeout(()=>{
-            ServiceListComponent.editService(serviceUuid, vm.$state);
-        }, 2000);
-    }
-
-    viewPublisherExchanges(serviceUuid: string) {
-
-        var vm = this;
-
-        //NOTE: despite repeated attempts, the CLOSE button on the next page doesn't work, so
-        //to avoid errors being thrown, we close the current view (i.e. return to previous page)
-        //and then invoke the new page from that.
-
-        //first close this view
-        vm.$state.go(vm.transition.from());
-
-        //then invoke the new one from the new view
-        setTimeout(()=>{
-            vm.serviceService.get(serviceUuid).subscribe(
-                (result) => {
-                    var service = result as Service;
-                    ServiceListComponent.viewExchanges(service, vm.$state, vm.$modal);
-                },
-                (error) => {
-                    vm.logger.error('Failed get service details', error);
-                }
-            )
-
-        }, 2000);
-    }
 
     getNonNullOdsCode(publisher: PublisherService): string {
         if (publisher && publisher.odsCode) {
@@ -324,6 +301,11 @@ export class SubscriberDetailComponent {
                 for (var j=0; j<publisher.systemStatus.length; j++) {
                     var systemStatus = publisher.systemStatus[j];
 
+                    /*console.log('service = ' + publisher.name);
+                    console.log('inboundBehindDays = ' + systemStatus.inboundBehindDays);
+                    console.log('outboundBehindDays = ' + systemStatus.outboundBehindDays);
+                    console.log('outboundWriteBehindDays = ' + systemStatus.outboundWriteBehindDays);*/
+
                     if (vm.subscribersService.statusFilter == 'up-to-date') {
                         /*console.log('systemStatus.processingInError = ' + systemStatus.processingInError);
                         console.log('systemStatus.inboundBehindDays = ' + systemStatus.inboundBehindDays);
@@ -331,7 +313,8 @@ export class SubscriberDetailComponent {
 
                         if (!systemStatus.processingInError
                             && systemStatus.inboundBehindDays == 0
-                            && systemStatus.outboundBehindDays == 0) {
+                            && systemStatus.outboundBehindDays == 0
+                            && systemStatus.outboundWriteBehindDays == 0) {
                             include = true;
                         }
 
@@ -344,14 +327,16 @@ export class SubscriberDetailComponent {
                     } else if (vm.subscribersService.statusFilter == 'any-behind') {
 
                         if (systemStatus.inboundBehindDays > 0
-                            || systemStatus.outboundBehindDays > 0) {
+                            || systemStatus.outboundBehindDays > 0
+                            || systemStatus.outboundWriteBehindDays > 0) {
                             include = true;
                         }
 
                     } else if (vm.subscribersService.statusFilter == 'severe-behind') {
 
                         if (systemStatus.inboundBehindDays > 1
-                            || systemStatus.outboundBehindDays > 1) {
+                            || systemStatus.outboundBehindDays > 1
+                            || systemStatus.outboundWriteBehindDays > 1) {
                             include = true;
                         }
 
@@ -359,7 +344,8 @@ export class SubscriberDetailComponent {
 
                         if (systemStatus.processingInError
                             || systemStatus.inboundBehindDays > 0
-                            || systemStatus.outboundBehindDays > 0) {
+                            || systemStatus.outboundBehindDays > 0
+                            || systemStatus.outboundWriteBehindDays > 0) {
                             include = true;
                         }
 
@@ -451,69 +437,6 @@ export class SubscriberDetailComponent {
         vm.filteredServices = filtered;
     }
 
-    getTagNames(publisher: PublisherService): string[] {
-        var vm = this;
-        var ret = [];
-
-        var tags = publisher.tags;
-        if (!tags) {
-            return ret;
-        }
-
-        var allTagNames = vm.serviceService.getTagNamesFromCache();
-        for (var i=0; i<allTagNames.length; i++) {
-            var tagName = allTagNames[i];
-            if (tags.hasOwnProperty(tagName)) {
-                ret.push(tagName);
-            }
-        }
-
-        return ret;
-    }
-
-    getTagValueDesc(tagName: string, publisher: PublisherService): string {
-        var tags = publisher.tags;
-        if (!tags) {
-            return '';
-        }
-
-        var ret = tags[tagName];
-        if (!ret) {
-            ret = '';
-        }
-        return ret;
-    }
-
-    /**
-     * returns the panel "class" definition for the system, depending on it's status
-     */
-    getPanelClass(systemStatus: PublisherSystem): string {
-        var vm = this;
-
-        //if nothing has been received, then it's a weird case
-        if (!systemStatus.lastReceivedExtractCutoff) {
-            return 'panel panel-info';
-        }
-
-        //any transform error or if we've never processed
-        if (systemStatus.processingInError
-            || !systemStatus.lastProcessedInExtractCutoff
-            || !systemStatus.lastProcessedOutExtractCutoff) {
-            return 'panel panel-danger';
-        }
-
-        //if we're WAY behind then make it red
-        if (systemStatus.inboundBehindDays > 1 || systemStatus.outboundBehindDays > 1) {
-            return 'panel panel-danger';
-        }
-
-        //if we're less than a day behind, make it amber
-        if (systemStatus.inboundBehindDays > 0 || systemStatus.outboundBehindDays > 0) {
-            return 'panel panel-warning';
-        }
-
-        return 'panel panel-success';
-    }
 
 
     /**
@@ -534,7 +457,9 @@ export class SubscriberDetailComponent {
             '\"Last Extract Received\",' +
             '\"Last Extract Cutoff\",' +
             '\"Complete Inbound Extract Cutoff\",' +
-            '\"Complete Outbound Extract Cutoff\"';
+            '\"Complete Outbound Extract Cutoff\",' +
+            '\"Complete Outbound Write Extract Cutoff\",' +
+            '\"Outbound Error\"';
         lines.push(line);
 
         for (var i=0; i<vm.filteredServices.length; i++) {
@@ -556,10 +481,10 @@ export class SubscriberDetailComponent {
                     cols.push('');
                 }
 
-                if (system.lastReceivedExtract) {
+                if (system.lastReceivedTimestamp) {
                     var d = new Date();
 
-                    d.setTime(system.lastReceivedExtract);
+                    d.setTime(system.lastReceivedTimestamp);
                     cols.push(ServiceListComponent.formatDate(d));
 
                     d.setTime(system.lastReceivedExtractCutoff);
@@ -581,12 +506,28 @@ export class SubscriberDetailComponent {
                         cols.push('None');
                     }
 
+                    if (system.lastWriteOutExtractCutoff) {
+                        d.setTime(system.lastWriteOutExtractCutoff);
+                        cols.push(ServiceListComponent.formatDate(d));
+
+                    } else {
+                        cols.push('None');
+                    }
+
                 } else {
 
                     cols.push('Never');
                     cols.push('');
+                    cols.push('');
+                    cols.push('');
+                    cols.push('');
                 }
 
+                if (system.writeOutError) {
+                    cols.push(system.writeOutErrorMessage);
+                } else {
+                    cols.push('');
+                }
 
                 line = '\"' + cols.join('\",\"') + '\"';
                 lines.push(line);
@@ -610,6 +551,53 @@ export class SubscriberDetailComponent {
         a.remove();
     }
 
+    editPublisher(serviceUuid: string) {
+        var vm = this;
 
+        //NOTE: despite repeated attempts, the CLOSE button on the next page doesn't work, so
+        //to avoid errors being thrown, we close the current view (i.e. return to previous page)
+        //and then invoke the new page from that.
+
+        //first close this view
+        vm.$state.go(vm.transition.from());
+
+        //then invoke the new one from the new view
+        setTimeout(()=>{
+            ServiceListComponent.editService(serviceUuid, vm.$state);
+        }, 2000);
+    }
+
+
+    viewPublisherExchanges(serviceUuid: string) {
+
+        var vm = this;
+
+        //NOTE: despite repeated attempts, the CLOSE button on the next page doesn't work, so
+        //to avoid errors being thrown, we close the current view (i.e. return to previous page)
+        //and then invoke the new page from that.
+
+        //first close this view
+        vm.$state.go(vm.transition.from());
+
+        //then invoke the new one from the new view
+        setTimeout(()=>{
+            vm.serviceService.get(serviceUuid).subscribe(
+                (result) => {
+                    var service = result as Service;
+                    ServiceListComponent.viewExchanges(service, vm.$state, vm.$modal);
+                },
+                (error) => {
+                    vm.logger.error('Failed get service details', error);
+                }
+            )
+
+        }, 2000);
+    }
+
+    viewPublisherDetails(publisher: PublisherService) {
+
+        var vm = this;
+        PublisherStatusDialog.open(vm.$modal, publisher);
+    }
 
 }

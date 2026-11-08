@@ -16,8 +16,31 @@ import java.util.Map;
 public class OnsWardHelper {
     private static final Logger LOG = LoggerFactory.getLogger(OnsWardHelper.class);
 
-    private static final String COL_CODE = "\uFEFFWD19CD";
-    private static final String COL_NAME = "WD19NM";
+    //cols changed August 2026
+    private static final String COL_CODE = "\uFEFFWD26CD";
+    private static final String COL_NAME = "WD26NM";
+
+    //cols changed August 2025
+    //private static final String COL_CODE = "\uFEFFWD25CD";
+    //private static final String COL_NAME = "WD25NM";
+
+    //cols changed Nov 2024
+    //private static final String COL_CODE = "\uFEFFWD24CD";
+    //private static final String COL_NAME = "WD24NM";
+
+    //cols changed May 2023
+    //private static final String COL_CODE = "\uFEFFWD23CD";
+    //private static final String COL_NAME = "WD23NM";
+
+    //cols changed May 2022
+    //private static final String COL_CODE = "\uFEFFWD22CD";
+    //private static final String COL_NAME = "WD22NM";
+
+    //cols changed May 2021
+    //private static final String COL_CODE = "\uFEFFWD21CD";
+    //private static final String COL_NAME = "WD21NM";
+    /*private static final String COL_CODE = "\uFEFFWD19CD";
+    private static final String COL_NAME = "WD19NM";*/
 
     public static void processFile(Reader r) throws Exception {
 

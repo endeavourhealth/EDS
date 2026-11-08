@@ -9,7 +9,7 @@
 
   <properties>
     <java.version>1.8</java.version>
-    <node.version>v6.10.1</node.version>
+    <node.version>v6.17.1</node.version>
     <maven-compiler-plugin.version>3.1</maven-compiler-plugin.version>
     <frontend-maven-plugin.version>1.4</frontend-maven-plugin.version>
   </properties>
@@ -36,6 +36,9 @@
     <module>src/utility-enterprise-age-updater</module>
     <module>src/utility-database-deidentifier</module>
     <module>src/utility-scheduled-query-tool</module>
+    <module>src/utility-fhir-mapping-archiver</module>
+    <module>src/utility-subscriber-cohort-recalculator</module>
+    <module>src/utility-cie-scheduler</module>
   </modules>
 
   <repositories>
@@ -45,13 +48,13 @@
       </snapshots>
       <id>central</id>
       <name>libs-release</name>
-      <url>http://maven.endeavourhealth.net:8081/artifactory/libs-release</url>
+      <url>https://maven.endeavourhealth.net/artifactory/libs-release</url>
     </repository>
     <repository>
       <snapshots/>
       <id>snapshots</id>
       <name>libs-snapshot</name>
-      <url>http://maven.endeavourhealth.net:8081/artifactory/libs-snapshot</url>
+      <url>https://maven.endeavourhealth.net/artifactory/libs-snapshot</url>
     </repository>
   </repositories>
 
@@ -59,7 +62,7 @@
     <snapshotRepository>
       <id>snapshots</id>
       <name>maven.endeavourhealth.org-snapshots</name>
-      <url>http://maven.endeavourhealth.net:8081/artifactory/libs-snapshot-local</url>
+      <url>https://maven.endeavourhealth.net/artifactory/libs-snapshot-local</url>
     </snapshotRepository>
   </distributionManagement>
 

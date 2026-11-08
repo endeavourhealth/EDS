@@ -107,6 +107,8 @@ public class PipelineProcessor {
 				return new PGPDecrypt((PGPDecryptConfig) processConfig);
 			case "AuditLastMessageConfig":
 				return new AuditLastMessage((AuditLastMessageConfig) processConfig);
+			case "CompleteMessageTransformInboundConfig":
+				return new CompleteMessageTransformInbound((CompleteMessageTransformInboundConfig) processConfig);
 
 			default:
 				throw new PipelineException("Unknown component : " + xmlTagName);

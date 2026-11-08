@@ -57,6 +57,8 @@ public class PostToSubscriberWebService extends PipelineComponent {
 
 
 		UUID exchangeId = exchange.getId();
+		UUID serviceId = exchange.getServiceId();
+		UUID systemId = exchange.getSystemId();
 		String subscriberConfigName = subscriberBatch.getEndpoint();
 
 		try {
@@ -74,7 +76,7 @@ public class PostToSubscriberWebService extends PipelineComponent {
 			}
 
 			//actually send the data to the subscriber (for local subscriber DBs this will actually apply it to the DB)
-			sendToSubscriberNewWay(payload, exchangeId, batchId, queuedMessageId, subscriberConfigName);
+			sendToSubscriber(serviceId, systemId, exchangeId, batchId, queuedMessageId, payload, subscriberConfigName);
 
 			//audit the sucessful sending
 			auditSending(exchangeId, batchId, subscriberConfigName, queuedMessageId, null);
@@ -134,15 +136,15 @@ public class PostToSubscriberWebService extends PipelineComponent {
 		}
 	}
 
-	private void sendToSubscriberNewWay(String payload, UUID exchangeId, UUID batchId, UUID queuedMessageId, String subscriberConfigName) throws Exception {
+	private void sendToSubscriber(UUID serviceId, UUID systemId, UUID exchangeId, UUID batchId, UUID queuedMessageId, String payload, String subscriberConfigName) throws Exception {
 
 		SubscriberConfig subscriberConfig = SubscriberConfig.readFromConfig(subscriberConfigName);
 
 		if (subscriberConfig.getSubscriberType() == SubscriberConfig.SubscriberType.CompassV1) {
-			EnterpriseFiler.file(batchId, queuedMessageId, payload, subscriberConfigName);
+			EnterpriseFiler.file(serviceId, systemId, exchangeId, batchId, queuedMessageId, payload, subscriberConfigName);
 
 		} else if (subscriberConfig.getSubscriberType() == SubscriberConfig.SubscriberType.CompassV2) {
-			SubscriberFiler.file(batchId, queuedMessageId, payload, subscriberConfigName);
+			SubscriberFiler.file(serviceId, systemId, exchangeId, batchId, queuedMessageId, payload, subscriberConfigName);
 
 		} else {
 			throw new PipelineException("Unsupported outbound software " + subscriberConfig.getSubscriberType() + " for exchange " + exchangeId + " and batch " + batchId);

@@ -15,28 +15,32 @@ import java.io.File;
 import java.nio.charset.Charset;
 import java.util.Iterator;
 
-public class DeprivationUpdater {
-    private static final Logger LOG = LoggerFactory.getLogger(DeprivationUpdater.class);
+public class ImdDeprivationUpdater {
+    private static final Logger LOG = LoggerFactory.getLogger(ImdDeprivationUpdater.class);
 
     /**
      * updates the deprivation_lookup table in the reference DB from ONS data
      *
+     * previous releases:
+     * https://www.gov.uk/government/statistics/english-indices-of-deprivation-2019
+     * https://www.gov.uk/government/statistics/english-indices-of-deprivation-2015
+     *
      * Usage
      * =================================================================================
-     * 1. go to https://www.gov.uk/government/statistics/english-indices-of-deprivation-2015
+     * 1. go to
      * 2. download "File 7: all ranks, deciles and scores for the indices of deprivation, and population denominators"
      * 3. Then run this utility on that CSV file, as:
-     *      Main deprivation <csv file>
+     *      Main imd <csv file>
      */
     public static void updateDeprivationScores(String[] args) throws Exception {
 
         if (args.length != 2) {
             LOG.error("Incorrect number of parameters");
-            LOG.error("Usage: deprivation <deprivation CSV file>");
+            LOG.error("Usage: imd <IMD deprivation CSV file>");
             return;
         }
 
-        LOG.info("Deprivation Update Starting");
+        LOG.info("IMD Deprivation Update Starting");
 
         File f = new File(args[1]);
 
@@ -44,9 +48,9 @@ public class DeprivationUpdater {
             LOG.error("" + f + " doesn't exist");
         }
 
-        LOG.info("Processing Deprivation file");
+        LOG.info("Processing IMD Deprivation file");
         processFile(f);
-        LOG.info("Finished Deprivation file");
+        LOG.info("Finished IMD Deprivation file");
     }
 
     private static void processFile(File f) throws Exception {
@@ -169,10 +173,10 @@ public class DeprivationUpdater {
         lookup.setOutdoorsSubDomainRank(convertInt(record, "Outdoors Sub-domain Rank (where 1 is most deprived)"));
         lookup.setOutdoorsSubDomainDecile(convertInt(record, "Outdoors Sub-domain Decile (where 1 is most deprived 10% of LSOAs)"));
 
-        lookup.setTotalPopulation(convertInt(record, "Total population: mid 2012 (excluding prisoners)"));
-        lookup.setDependentChildren0To15(convertInt(record, "Dependent Children aged 0-15: mid 2012 (excluding prisoners)"));
-        lookup.setPopulation16To59(convertInt(record, "Population aged 16-59: mid 2012 (excluding prisoners)"));
-        lookup.setOlderPopulation60AndOver(convertInt(record, "Older population aged 60 and over: mid 2012 (excluding prisoners)"));
+        lookup.setTotalPopulation(convertInt(record, "Total population: mid 2015 (excluding prisoners)"));
+        lookup.setDependentChildren0To15(convertInt(record, "Dependent Children aged 0-15: mid 2015 (excluding prisoners)"));
+        lookup.setPopulation16To59(convertInt(record, "Population aged 16-59: mid 2015 (excluding prisoners)"));
+        lookup.setOlderPopulation60AndOver(convertInt(record, "Older population aged 60 and over: mid 2015 (excluding prisoners)"));
 
         //this data seems to contain a non-integer value, which makes no sense, so ignoring it
         //lookup.setWorkingAgePopulation(convertInt(record, "Working age population 18-59/64: for use with Employment Deprivation Domain (excluding prisoners) ")); //note trailing space is in the source file
@@ -186,8 +190,8 @@ public class DeprivationUpdater {
         return new String[]{
                 "LSOA code (2011)",
                 "LSOA name (2011)",
-                "Local Authority District code (2013)",
-                "Local Authority District name (2013)",
+                "Local Authority District code (2019)",
+                "Local Authority District name (2019)",
                 "Index of Multiple Deprivation (IMD) Score",
                 "Index of Multiple Deprivation (IMD) Rank (where 1 is most deprived)",
                 "Index of Multiple Deprivation (IMD) Decile (where 1 is most deprived 10% of LSOAs)",
@@ -236,10 +240,10 @@ public class DeprivationUpdater {
                 "Outdoors Sub-domain Score",
                 "Outdoors Sub-domain Rank (where 1 is most deprived)",
                 "Outdoors Sub-domain Decile (where 1 is most deprived 10% of LSOAs)",
-                "Total population: mid 2012 (excluding prisoners)",
-                "Dependent Children aged 0-15: mid 2012 (excluding prisoners)",
-                "Population aged 16-59: mid 2012 (excluding prisoners)",
-                "Older population aged 60 and over: mid 2012 (excluding prisoners)",
+                "Total population: mid 2015 (excluding prisoners)",
+                "Dependent Children aged 0-15: mid 2015 (excluding prisoners)",
+                "Population aged 16-59: mid 2015 (excluding prisoners)",
+                "Older population aged 60 and over: mid 2015 (excluding prisoners)",
                 "Working age population 18-59/64: for use with Employment Deprivation Domain (excluding prisoners) " //note trailing space is in the source file
         };
     }

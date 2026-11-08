@@ -107,7 +107,7 @@ BEGIN
 		concat('CLEVE-', cleve.event_id) as unique_id,
 		if (cleve.active_ind = 0
 			or ifnull(cleve.event_result_txt, '') = "DELETED"
-            or cleve.event_result_status_cd in (24, 26, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 39, 40, 654643)
+            or cleve.event_result_status_cd in (24, 26, 28, 29, 30, 31, 32, 33, 36, 37, 39, 40, 654643)
             , true, false) as is_delete,
         cleve.event_id as event_id,
 		cleve.person_id as person_id,

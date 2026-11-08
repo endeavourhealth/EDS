@@ -941,7 +941,7 @@ public final class ServiceEndpoint extends AbstractEndpoint {
 
         List<JsonOrganisationType> ret = new ArrayList<>();
 
-        for (OrganisationType t: OrganisationType.values()) {
+        for (OrganisationType t: OrganisationType.getTypesList()) {
             ret.add(new JsonOrganisationType(t));
         }
 

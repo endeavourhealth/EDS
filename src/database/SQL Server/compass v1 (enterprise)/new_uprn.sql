@@ -15,7 +15,7 @@ CREATE TABLE patient_address_match (
   [xcoordinate] float DEFAULT NULL,
   [ycoordinate] float DEFAULT NULL,
   [qualifier] varchar(50) DEFAULT NULL,
-  [algorithm] varchar(50) DEFAULT NULL,
+  [algorithm] varchar(4096) DEFAULT NULL,
   [match_date] datetime2(0) DEFAULT NULL,
   [abp_address_number] varchar(255) DEFAULT NULL,
   [abp_address_street] varchar(255) DEFAULT NULL,

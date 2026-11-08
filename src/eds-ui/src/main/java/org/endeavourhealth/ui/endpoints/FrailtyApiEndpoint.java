@@ -1,8 +1,15 @@
 package org.endeavourhealth.ui.endpoints;
 
 import com.codahale.metrics.annotation.Timed;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Strings;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
+import org.endeavourhealth.common.cache.ObjectMapperPool;
+import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.common.security.SecurityUtils;
 import org.endeavourhealth.core.database.dal.DalProvider;
 import org.endeavourhealth.core.database.dal.audit.UserAuditDalI;
@@ -22,10 +29,8 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
 import java.io.StringWriter;
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.Calendar;
+import java.util.*;
 import java.util.Date;
-import java.util.List;
 
 @Path("/frailtyApi")
 public class FrailtyApiEndpoint extends AbstractEndpoint {
@@ -40,15 +45,17 @@ public class FrailtyApiEndpoint extends AbstractEndpoint {
     @Path("/recentStats")
     public Response getRecentStats(@Context SecurityContext sc,
                                    @QueryParam("minutesBack") int minutesBack,
-                                   @QueryParam("groupBy") String groupBy) throws Exception {
+                                   @QueryParam("groupBy") String groupBy,
+                                   @QueryParam("flagCode") String flagCode) throws Exception {
         super.setLogbackMarkers(sc);
 
         userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load, "Get Frailty API Recent Stats",
                 "Minutes Back", minutesBack,
-                "Group By", groupBy);
+                "Group By", groupBy,
+                "Flag Code", flagCode);
 
         //all the below should really be moved to core, but this is all one-off stuff (hopefully)
-        List<FrailtyStat> ret = getRecentStats(minutesBack, groupBy);
+        List<FrailtyStat> ret = getRecentStats(minutesBack, groupBy, flagCode);
 
         clearLogbackMarkers();
 
@@ -59,6 +66,41 @@ public class FrailtyApiEndpoint extends AbstractEndpoint {
     }
 
     @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Path("/subscriberFlags")
+    public Response getSubscriberFlags(@Context SecurityContext sc) throws Exception {
+        //all the below should really be moved to core, but this is all one-off stuff (hopefully)
+        JsonNode ret = getSubscriberFlags();
+        return Response
+                .ok()
+                .entity(ret)
+                .build();
+    }
+
+    private static JsonNode getSubscriberFlags() throws Exception {
+        Map<String, String> map = ConfigManager.getConfigurations("messaging-api");
+
+//        JSONObject[] Flags = new JSONObject[];
+        JsonArray Flags = new JsonArray();
+        Iterator var3 = map.keySet().iterator();
+
+        while(var3.hasNext()) {
+            String configId = (String)var3.next();
+            if(configId.contains("Flag:")){
+                String json = (String)map.get(configId);
+                JsonNode jsonNode = ObjectMapperPool.getInstance().readTree(json);
+                    JsonObject flag= new JsonObject();
+                    flag.addProperty("code",jsonNode.get("code").textValue());
+                    flag.addProperty("term",jsonNode.get("term").textValue());
+                    Flags.add(flag);
+            }
+        }
+        JsonNode result = new ObjectMapper().readTree(Flags.toString());
+        return result;
+    }
+
+    @GET
     @Produces(MediaType.TEXT_PLAIN)
     @Timed(absolute = true, name="FrailtyApiEndpoint.downloadMonthlyStats")
     @Path("/downloadMonthlyStats")
@@ -66,7 +108,6 @@ public class FrailtyApiEndpoint extends AbstractEndpoint {
         super.setLogbackMarkers(sc);
 
         userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load, "Download Frailty API Monthly Stats");
-
         String s = getMonthlyStats();
 
         clearLogbackMarkers();
@@ -80,11 +121,13 @@ public class FrailtyApiEndpoint extends AbstractEndpoint {
 
         EntityManager entityManager = ConnectionManager.getAuditEntityManager();
         CallableStatement stmt = null;
+
         try {
             SessionImpl session = (SessionImpl) entityManager.getDelegate();
             Connection connection = session.connection();
 
             String query = "{CALL get_monthly_frailty_stats()}";
+
             stmt = connection.prepareCall(query);
 
             ResultSet rs = stmt.executeQuery();
@@ -123,7 +166,7 @@ public class FrailtyApiEndpoint extends AbstractEndpoint {
         }
     }
 
-    private static List<FrailtyStat> getRecentStats(int minutesBack, String groupBy) throws Exception {
+    private static List<FrailtyStat> getRecentStats(int minutesBack, String groupBy, String flagCode) throws Exception {
 
         Calendar cal = Calendar.getInstance();
         cal.setTime(new Date());
@@ -211,22 +254,30 @@ public class FrailtyApiEndpoint extends AbstractEndpoint {
             SessionImpl session = (SessionImpl) entityManager.getDelegate();
             Connection connection = session.connection();
 
-            String sql = "SELECT timestmp, response_code, response_body" +
+            String sql = "SELECT timestmp, response_code, response_body, request_path" +
                     " FROM subscriber_api_audit" +
                     " WHERE timestmp >= ?";
+            if (!Strings.isNullOrEmpty(flagCode)) {
+                sql += " AND request_path LIKE ?";
+            }
 
             ps = connection.prepareStatement(sql);
 
-            ps.setTimestamp(1, new Timestamp(earliestDate.getTime()));
+            int col = 1;
+            ps.setTimestamp(col++, new Timestamp(earliestDate.getTime()));
+            if (!Strings.isNullOrEmpty(flagCode)) {
+                ps.setString(col++, "%" + flagCode + "%");
+            }
 
             ResultSet rs = ps.executeQuery();
 
             while (rs.next()) {
-                int col = 1;
+                col = 1;
 
                 Date d = new Date(rs.getTimestamp(col++).getTime());
                 int responseCode = rs.getInt(col++);
                 String responseBody = rs.getString(col++);
+                String request_path = rs.getString(col++);
 
                 FrailtyStat stat = null;
                 for (FrailtyStat s: stats) {
@@ -241,21 +292,28 @@ public class FrailtyApiEndpoint extends AbstractEndpoint {
                 }
 
                 if (responseCode == 200) {
-                    if (responseBody.contains("Potentially")) {
+                    //response code 200 is used for both positive (frail) and negative (not frail) results,
+                    //so check the response to see if it's returning a flag or not
+                    if (responseBody.contains("\"resourceType\":\"Flag\"")) {
                         stat.incrementMatchedAndFrail();
+                        stat.incrementTotal();
+
                     } else {
                         stat.incremantMatchedAndNotFrail();
+                        stat.incrementTotal();
                     }
 
                 } else {
+                    //a non-200 response code is used for all errors and cases where the patient record
+                    //could not be matched, so check for the specific error about not matching
                     if (responseBody != null && responseBody.contains("No patient record could be found")) {
                         stat.incrementErrorNotMatched();
+                        stat.incrementTotal();
                     } else {
                         stat.incrementErrorOther();
+                        stat.incrementTotal();
                     }
                 }
-
-                stat.incrementTotal();
             }
 
             return stats;

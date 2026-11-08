@@ -1,9 +1,15 @@
 <div class="modal-header">
     <button type="button" class="close" (click)="close()" aria-hidden="true">&times;</button>
-    <h4 class="modal-title">File List (Subscriber Id: {{subscriberId}}) {{view}}</h4>
+    <h4 class="modal-title">Errors for {{filer.name}} (ID {{filer.subscriberId}})</h4>
 </div>
 
 <div class="modal-body">
+
+    <div class="row" *ngIf="showLimitWarning">
+        <div class="col-md-12">
+            <span class="label label-warning">Only most recent 50 errors are shown</span>
+        </div>
+    </div>
 
     <div class="row">
         <div class="col-md-12">
@@ -13,43 +19,48 @@
                 <table class="table table-striped table-condensed">
                     <thead>
                     <tr>
-                        <th class="col-md-1">#</th>
-                        <th class="col-md-3">UUID</th>
-                        <th class="col-md-1">Body</th>
-                        <th class="col-md-2">Sent</th>
-                        <th class="col-md-2">Filing attempted</th>
-                        <th class="col-md-3">Error</th>
+                        <th class="col-md-1">Publisher</th> <!-- publishing ODS code -->
+                        <th class="col-md-3">Queued Message ID</th> <!-- queued message UUID -->
+                        <th class="col-md-2">Filing Attempted</th> <!-- datetime filing attempted -->
+                        <th class="col-md-3">Error Message</th> <!-- filing error message -->
+                        <th class="col-md-2"></th> <!-- actions -->
                     </tr>
                     </thead>
                     <tbody>
-                    <tr class="hover-box show-child-on-hover" *ngFor="let file of files">
-                        <td>{{file.filingOrder}}</td>
-                        <td>{{file.queuedMessageUUID}}</td>
-                        <td><button type="button"
-                                    class="btn"
-                                    (click)="downloadZipData(file.queuedMessageUUID, file.queuedMessageBody)">Zip
-                            </button>
+                    <tr class="hover-box show-child-on-hover" *ngFor="let error of errors">
+
+                        <!-- publishing ODS code -->
+                        <td>
+                            <span ngbTooltip="{{error.serviceName}}">{{error.serviceOdsCode}}</span>
                         </td>
-                        <td>{{formatYYYYMMDDHHMMSS(file.fileSent)}}</td>
-                        <td>{{formatYYYYMMDDHHMMSS(file.fileFilingAttempted)}}</td>
-                        <td>{{file.filingFailureMessage}}</td>
+
+                        <!-- queued message UUID -->
+                        <td>
+                            {{error.queuedMessageId}}
+                        </td>
+
+                        <!-- datetime filing attempted -->
+                        <td>
+                            {{formatYYYYMMDDHHMMSS(error.dtFileFilingAttempted)}}
+                        </td>
+
+                        <!-- filing error message -->
+                        <td>
+                            {{error.filingFailureMessage}}
+                        </td>
+
+                        <!-- actions -->
+                        <td>
+                            <button class="btn btn-xs btn-default child-to-show" (click)="downloadMessage(error)">Download</button>
+                        </td>
+
                     </tr>
                     </tbody>
                 </table>
             </div>
         </div>
     </div>
-    <div class="row" *ngIf="isFullyHistoryView()">
-        <div class="col-md-12" >
-            <ngb-pagination [maxSize]="50"
-                            [boundaryLinks]="true"
-                            [collectionSize]="totalSubscriberFiles"
-                            [pageSize]="50"
-                            [(page)]="pageNumber"
-                            (pageChange)="pageChanged($event)" name="pagination">
-            </ngb-pagination>
-        </div>
-    </div>
+
 </div>
 
 <div class="modal-footer">

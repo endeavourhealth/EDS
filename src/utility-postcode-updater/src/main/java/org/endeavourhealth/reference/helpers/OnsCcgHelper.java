@@ -17,10 +17,27 @@ import java.util.Map;
 public class OnsCcgHelper {
     private static final Logger LOG = LoggerFactory.getLogger(OnsCcgHelper.class);
 
+    //cols changed in May 2026 and no longer have the weird character prefixing the first column header
+    private static final String COL_UNKNOWN = "ICB26CD"; //No longer has the weird character (SD-1211)
+    private static final String COL_CODE = "ICB26CDH";
+    private static final String COL_NAME = "ICB26NM";
+
+    //cols change in new file April 2023 for ICBs
+    /*private static final String COL_UNKNOWN = "\uFEFFICB23CD"; //like most ONS files, has a weird character at the start
+    private static final String COL_CODE = "ICB23CDH";
+    private static final String COL_NAME = "ICB23NM";*/
+    //cols changed July 2022
+    /*private static final String COL_UNKNOWN = "\uFEFFLOC22CD"; //like most ONS files, has a weird character at the start
+    private static final String COL_CODE = "LOC22CDH";
+    private static final String COL_NAME = "LOC22NM";*/
+    //cols changed May 2021
+    /*private static final String COL_UNKNOWN = "\uFEFFCCG21CD"; //like most ONS files, has a weird character at the start
+    private static final String COL_CODE = "CCG21CDH";
+    private static final String COL_NAME = "CCG21NM"; */
     //cols changed May 2020
-    private static final String COL_UNKNOWN = "\uFEFFCCG20CD"; //like most ONS files, has a weird character at the start
+    /*private static final String COL_UNKNOWN = "\uFEFFCCG20CD"; //like most ONS files, has a weird character at the start
     private static final String COL_CODE = "CCG20CDH";
-    private static final String COL_NAME = "CCG20NM";
+    private static final String COL_NAME = "CCG20NM";*/
     //cols changed Apr 2019
     /*private static final String COL_UNKNOWN = "\uFEFFCCG19CD"; //like most ONS files, has a weird character at the start
     private static final String COL_CODE = "CCG19CDH";
@@ -44,7 +61,7 @@ public class OnsCcgHelper {
 
             done ++;
             if (done % 50 == 0) {
-                LOG.info("Done " + done + " CCG mappings (out of approx 200)");
+                LOG.info("Done " + done + " ICB mappings (out of approx 36)");
             }
         }
     }
@@ -53,7 +70,7 @@ public class OnsCcgHelper {
     private static Map<String, String> readFile(Reader r) throws Exception {
         Map<String, String> map = new HashMap<>();
 
-        //this map file is TAB delimied
+        //this map file is Comma delimied
         //changed to CSV in May 2018
         CSVFormat format = CSVFormat.DEFAULT;
         //CSVFormat format = CSVFormat1.TDF;
@@ -64,10 +81,10 @@ public class OnsCcgHelper {
             Iterator<CSVRecord> iterator = parser.iterator();
 
             //validate the headers are what we expect
-            //cols changed Apr 2019
+            //cols changed again in new file Apr 2023
             //String[] expectedHeaders = new String[]{COL_UNKNOWN, COL_CODE, COL_NAME, COL_NAME_WELSH};
             String[] expectedHeaders = new String[]{COL_UNKNOWN, COL_CODE, COL_NAME};
-            CsvHelper.validateCsvHeaders(parser, "CCG File", expectedHeaders);
+            CsvHelper.validateCsvHeaders(parser, "ICB File", expectedHeaders);
 
             while (iterator.hasNext()) {
                 CSVRecord record = iterator.next();

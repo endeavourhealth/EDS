@@ -1,3 +1,4 @@
+
 package org.endeavourhealth.core.configuration;
 
 import javax.xml.bind.annotation.*;
@@ -28,21 +29,22 @@ import javax.xml.bind.annotation.*;
 })
 @XmlSeeAlso({
     ForEachConfig.class,
+    MessageTransformInboundConfig.class,
+    DetermineRelevantProtocolIdsConfig.class,
+    EnvelopMessageConfig.class,
+    CompleteMessageTransformInboundConfig.class,
+    PostMessageToExchangeConfig.class,
+    PostToSubscriberWebServiceConfig.class,
     PostToRestConfig.class,
     RunDataDistributionProtocolsConfig.class,
     ReturnResponseAcknowledgementConfig.class,
     ValidateMessageTypeConfig.class,
     PostToEventStoreConfig.class,
     LoadSenderConfigurationConfig.class,
-    MessageTransformInboundConfig.class,
     PGPDecryptConfig.class,
     PostMessageToLogConfig.class,
-    DetermineRelevantProtocolIdsConfig.class,
-    EnvelopMessageConfig.class,
     MessageTransformOutboundConfig.class,
     AuditLastMessageConfig.class,
-    PostMessageToExchangeConfig.class,
-    PostToSubscriberWebServiceConfig.class,
     OpenEnvelopeConfig.class,
     ValidateSenderConfig.class
 })

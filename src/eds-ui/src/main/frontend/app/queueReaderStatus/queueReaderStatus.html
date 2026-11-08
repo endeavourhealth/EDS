@@ -1,6 +1,6 @@
 <div class="module">
     <div class="module-heading">
-        Queue Reader Status <span *ngIf="statusLastRefreshed">(as of {{formatHHMMSS(statusLastRefreshed)}})</span>
+        Queue Reader Status {{getDateDiffSimpleFromNow(statusLastRefreshed)}}
 
         <div class="pull-right">
 
@@ -43,12 +43,77 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <tr class="hover-box show-child-on-hover" *ngFor="let routingKey of routingKeys">
+                            <tr class="hover-box show-child-on-hover" *ngFor="let rowIndex of rowIndexes">
                                 <td *ngFor="let exchangeName of routingExchangeNames" >
 
+                                    <span *ngFor="let routingKey of getRoutingKeyForExchangeAndIndex(exchangeName, rowIndex)">
 
-                                    <span *ngIf="isValidQueue(exchangeName, routingKey)">
-                                        <b><span ngbTooltip="{{getQueueRoutingDesc(exchangeName, routingKey)}}">{{routingKey}}  </span></b>
+                                        <div class="row">
+                                            <div class="col-md-4">
+
+                                                <b><span ngbTooltip="{{getQueueRoutingDesc(exchangeName, routingKey)}}">{{routingKey}}  </span></b>
+
+                                                <span class="fa fa-sm fa-refresh fa-refresh-animate" *ngIf="refreshingRabbitQueueStatus">
+                                                </span>
+                                                <span *ngIf="!refreshingRabbitQueueStatus">
+                                                    {{getQueueSize(exchangeName, routingKey)}}
+                                                </span>
+
+                                            </div>
+                                            <div class="col-md-8">
+
+
+                                                <div *ngIf="refreshingQueueReaderStatus">
+                                                    <div class="fa fa-sm fa-refresh fa-refresh-animate">
+                                                    </div>
+                                                </div>
+                                                <div *ngIf="!refreshingQueueReaderStatus">
+                                                    <div *ngFor="let status of getStatusesForExchangeAndKey(exchangeName, routingKey)">
+
+                                                        <span [ngStyle]="getCellColour(status)">
+                                                            {{status.hostName}}
+                                                            {{getInstanceNumber(status)}}
+                                                            {{getStatusMemoryDesc(status)}}
+
+                                                            <span *ngIf="isStatusDead(status)">
+                                                                <span class="label label-danger"><span class="fa fa-warning" ngbTooltip="{{status.isBusyDetail}}" (click)="warningButtonClicked(status)"></span> {{getStatusAgeDesc(status)}}</span>
+                                                            </span>
+
+                                                            <span *ngIf="!isStatusDead(status)">
+
+                                                                <!-- icon if new jar deployed but app not restarted -->
+                                                                <span *ngIf="needsRestart(status)" class="fa fa-clock-o" ngbTooltip="{{getNeedsRestartDesc(status)}}"></span>
+
+                                                                <!-- if busy, show the play icon and when it was busy from -->
+                                                                <span *ngIf="status.isBusy">
+                                                                    <span class="fa fa-play" ngbTooltip="{{status.isBusyDetail}}" (click)="playButtonClicked(status)"></span>
+
+                                                                    <span *ngIf="queueReaderStatusService.showExecutionTime" class="text-muted"> {{getExecutionTime(status)}}</span>
+                                                                    <span *ngIf="queueReaderStatusService.showOdsCode" class="text-muted"> {{status.isBusyOdsCode}}</span>
+                                                                    <span *ngIf="queueReaderStatusService.showPublisherConfig" class="text-muted"> {{status.isBusyPublisherConfigName}}</span>
+                                                                    <span *ngIf="queueReaderStatusService.showDataDate" class="text-muted"> {{status.isBusyDataDate}}</span>
+                                                                </span>
+
+                                                                <!-- if not doing anything show a pause icon -->
+                                                                <span *ngIf="!status.isBusy" class="fa fa-pause" ngbTooltip="Application running but idle"></span>
+
+                                                                <span *ngIf="queueReaderStatusService.showJarDate" class="text-muted"> {{formatYYYYMMDDHHMMSS(status.dtJar)}}</span>
+                                                                <span *ngIf="queueReaderStatusService.showStartDate" class="text-muted"> {{formatYYYYMMDDHHMMSS(status.dtStarted)}}</span>
+                                                            </span>
+
+                                                        </span>
+                                                    </div>
+                                                </div>
+
+
+                                            </div>
+                                        </div>
+
+
+
+
+
+                                        <!--<b><span ngbTooltip="{{getQueueRoutingDesc(exchangeName, routingKey)}}">{{routingKey}}  </span></b>
 
                                         <span class="fa fa-sm fa-refresh fa-refresh-animate" *ngIf="refreshingRabbitQueueStatus">
                                         </span>
@@ -74,10 +139,10 @@
 
                                                     <span *ngIf="!isStatusDead(status)">
 
-                                                        <!-- icon if new jar deployed but app not restarted -->
+                                                        &lt;!&ndash; icon if new jar deployed but app not restarted &ndash;&gt;
                                                         <span *ngIf="needsRestart(status)" class="fa fa-clock-o" ngbTooltip="{{getNeedsRestartDesc(status)}}"></span>
 
-                                                        <!-- if busy, show the play icon and when it was busy from -->
+                                                        &lt;!&ndash; if busy, show the play icon and when it was busy from &ndash;&gt;
                                                         <span *ngIf="status.isBusy">
                                                             <span class="fa fa-play" ngbTooltip="{{status.isBusyDetail}}" (click)="playButtonClicked(status)"></span>
 
@@ -87,7 +152,7 @@
                                                             <span *ngIf="queueReaderStatusService.showDataDate" class="text-muted"> {{status.isBusyDataDate}}</span>
                                                         </span>
 
-                                                        <!-- if not doing anything show a pause icon -->
+                                                        &lt;!&ndash; if not doing anything show a pause icon &ndash;&gt;
                                                         <span *ngIf="!status.isBusy" class="fa fa-pause" ngbTooltip="Application running but idle"></span>
 
                                                         <span *ngIf="queueReaderStatusService.showJarDate" class="text-muted"> {{formatYYYYMMDDHHMMSS(status.dtJar)}}</span>
@@ -96,12 +161,12 @@
 
                                                 </span>
                                             </div>
-                                        </div>
+                                        </div>-->
 
                                     </span>
-                                    <span class="text-muted" *ngIf="!isValidQueue(exchangeName, routingKey)">
+                                    <!--<span class="text-muted" *ngIf="!isValidQueue(exchangeName, routingKey)">
                                         {{routingKey}}  n/a
-                                    </span>
+                                    </span>-->
                                 </td>
                             </tr>
                         </tbody>
@@ -109,6 +174,24 @@
                 </div>
             </div>
         </div>
+
+        <!-- commands panel -->
+        <!--<div class="row">
+            <div class="col-md-12">
+                <div class="panel panel-info">
+                    <div class="panel-heading">
+                        Commands
+                    </div>
+
+                    <div class="panel-body">
+
+                        <button class="btn btn-sm btn-success" (click)="deployAll()">Deploy (All)</button>
+
+                    </div>
+                </div>
+            </div>
+        </div>-->
+
 
         <div class="row" *ngIf="!refreshingRabbitQueueStatus">
             <div class="form-group col-md-12">

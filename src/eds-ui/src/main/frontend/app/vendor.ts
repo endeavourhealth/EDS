@@ -1,4 +1,3 @@
-/// <reference path="../typings/index.d.ts"/>
 require('zone.js/dist/zone.min.js');
 require('reflect-metadata/Reflect.js');
 require('es6-shim/es6-shim.min.js');

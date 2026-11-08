@@ -1,13 +1,207 @@
 <div class="module">
     <div class="module-heading">
-        Remote Filing Status
-        <button class="btn btn-success btn-sm pull-right" [disabled]="refreshingStatus"
-                (click)="refresh()"
-                title="Refresh"><i class="fa fa-refresh"></i> Refresh
-        </button>
+        Remote Filing Status {{getDateDiffSimpleFromNow(statusLastRefreshed)}}
+
+        <button class="btn btn-success btn-sm pull-right" (click)="refresh()" title="Refresh">Refresh</button>
     </div>
     <div class="module-body">
-        <div class="container-fluid">
+
+        <div class="row">
+            <div class="col-md-12">
+                <div class="panel panel-info">
+                    <div class="panel-heading">
+                        Remote Feed Status
+
+                        <span *ngIf="remoteFilers">
+                            (showing {{getRemoteFilersToDisplay().length}} of {{remoteFilers.length}})
+                        </span>
+
+                        <div class="pull-right">
+
+                            <label for="showWarningsOnly" class="control-label">Show Warnings Only</label>
+                            <input type="checkbox" id="showWarningsOnly" [(ngModel)]="remoteFilingService.showWarningsOnly" name="showWarningsOnly">
+                            &nbsp;&nbsp;&nbsp;
+
+                            <label for="showDates" class="control-label">Show Dates</label>
+                            <input type="checkbox" id="showDates" [(ngModel)]="remoteFilingService.showDates" name="showDates">
+                            &nbsp;&nbsp;&nbsp;
+
+
+                            <label for="sortByFilter" class="control-label">Sort By</label>
+                            <select id="sortByFilter" name="sortByFilter" [(ngModel)]="remoteFilingService.sortByFilter">
+                                <option value="name">Name</option>
+                                <option value="id">ID</option>
+                            </select>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-12">
+                <div class="table">
+                    <table class="table table-striped table-condensed">
+                        <thead>
+                        <tr>
+                            <th class="col-md-3">Subscriber Configuration</th>
+                            <th class="col-md-1">Subscriber ID</th>
+                            <th class="col-md-2">Queued in Database</th>
+                            <th class="col-md-2">Written to SFTP / Sent</th>
+                            <th class="col-md-2">Subscriber Error</th>
+                            <th class="col-md-2"></th> <!-- actions -->
+
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr class="hover-box show-child-on-hover" *ngFor="let remoteFiler of getRemoteFilersToDisplay()">
+
+                            <!-- name -->
+                            <td>
+                                <div>{{remoteFiler.name}}</div>
+                                <div class="text-muted">
+                                    {{remoteFiler.description}}
+                                </div>
+                            </td>
+
+                            <!-- subscriberId -->
+                            <td>
+                                <div>{{remoteFiler.subscriberId}}</div>
+                            </td>
+
+                            <!-- Queued -->
+                            <td>
+
+                                <div *ngIf="isRefreshing(remoteFiler)">
+                                    <span class="fa fa-sm fa-refresh fa-refresh-animate"></span>
+                                </div>
+                                <div *ngIf="!isRefreshing(remoteFiler)">
+
+                                    <div *ngFor="let status of getStatusForFiler(remoteFiler)">
+
+                                        <div>
+                                            {{status.countQueuedMessages}}
+                                        </div>
+                                        <div *ngIf="status.oldestQueuedMessage">
+                                            <div>
+                                                <span *ngIf="remoteFilingService.showDates">
+                                                    Oldest: {{formatYYYYMMDDHHMM(status.oldestQueuedMessage)}}
+                                                </span>
+                                                <span *ngIf="!remoteFilingService.showDates">
+                                                    Oldest: {{getDateDiffSimple(status.oldestQueuedMessage, statusLastRefreshed)}}
+                                                </span>
+                                                <span class="label label-danger" *ngIf="status.queuedMessageWarning" ngbTooltip="{{status.queuedMessageWarning}}">Warning</span>
+                                            </div>
+                                            <div>
+                                                <span *ngIf="remoteFilingService.showDates">
+                                                    Newest: {{formatYYYYMMDDHHMM(status.newestQueuedMessage)}}
+                                                </span>
+                                                <span *ngIf="!remoteFilingService.showDates">
+                                                    Newest: {{getDateDiffSimple(status.newestQueuedMessage, statusLastRefreshed)}}
+                                                </span>
+
+                                            </div>
+
+                                        </div>
+
+                                    </div>
+
+                                </div>
+                            </td>
+
+                            <!-- Staged to SFTP -->
+                            <td>
+
+                                <div *ngIf="isRefreshing(remoteFiler)">
+                                    <span class="fa fa-sm fa-refresh fa-refresh-animate"></span>
+                                </div>
+                                <div *ngIf="!isRefreshing(remoteFiler)">
+
+                                    <div *ngFor="let status of getStatusForFiler(remoteFiler)">
+
+                                        <div>
+                                            {{status.countMessagesWrittenToSftp}}
+                                        </div>
+                                        <div *ngIf="status.oldestMessageWrittenToSftp">
+                                            <div>
+                                                <span *ngIf="remoteFilingService.showDates">
+                                                    Oldest: {{formatYYYYMMDDHHMM(status.oldestMessageWrittenToSftp)}}
+                                                </span>
+                                                <span *ngIf="!remoteFilingService.showDates">
+                                                    Oldest: {{getDateDiffSimple(status.oldestMessageWrittenToSftp, statusLastRefreshed)}}
+                                                </span>
+                                                <span class="label label-danger" *ngIf="status.writtenToSftpWarning" ngbTooltip="{{status.writtenToSftpWarning}}">Warning</span>
+                                            </div>
+                                            <div>
+                                                <span *ngIf="remoteFilingService.showDates">
+                                                    Newest: {{formatYYYYMMDDHHMM(status.newestMessageWrittenToSftp)}}
+                                                </span>
+                                                <span *ngIf="!remoteFilingService.showDates">
+                                                    Newest: {{getDateDiffSimple(status.newestMessageWrittenToSftp, statusLastRefreshed)}}
+                                                </span>
+
+                                            </div>
+
+                                        </div>
+
+                                    </div>
+
+                                </div>
+                            </td>
+
+                            <!-- Subscriber Error -->
+                            <td>
+
+                                <div *ngIf="isRefreshing(remoteFiler)">
+                                    <span class="fa fa-sm fa-refresh fa-refresh-animate"></span>
+                                </div>
+                                <div *ngIf="!isRefreshing(remoteFiler)">
+
+                                    <div *ngFor="let status of getStatusForFiler(remoteFiler)">
+
+                                        <div>
+                                            {{status.countMessagesInError}}
+                                            <span class="label label-danger" *ngIf="status.countMessagesInError > 0" ngbTooltip="{{status.messagesInErrorWarning}}">Warning</span>
+                                        </div>
+                                        <div *ngIf="status.oldestMessageInError">
+                                            <div>
+                                                Oldest: {{formatYYYYMMDDHHMM(status.oldestMessageInError)}}
+                                            </div>
+                                            <div>
+                                                Newest: {{formatYYYYMMDDHHMM(status.newestMessageInError)}}
+                                            </div>
+
+                                        </div>
+
+                                    </div>
+
+                                </div>
+                            </td>
+
+                            <!-- actions -->
+                            <td>
+                                <div *ngIf="!isRefreshing(remoteFiler)">
+                                    <div *ngFor="let status of getStatusForFiler(remoteFiler)">
+
+                                        <button class="btn btn-xs btn-default child-to-show" (click)="viewTechnicalDetails(remoteFiler)">Technical Details</button>
+                                        <button class="btn btn-xs btn-default child-to-show" *ngIf="status.countMessagesInError > 0" (click)="viewErrors(remoteFiler, status)">View Errors</button>
+
+                                    </div>
+                                </div>
+                            </td>
+
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+
+
+        <!--<div class="container-fluid">
+
             <div class="row">
                 <div class="form-group col-md-3">
                     <label>Time frame</label>
@@ -75,6 +269,6 @@
                     </div>
                 </div>
             </div>
-        </div>
+        </div>-->
     </div>
 </div>

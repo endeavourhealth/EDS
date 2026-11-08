@@ -5,12 +5,13 @@ import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.endeavourhealth.common.utility.ThreadPool;
 import org.endeavourhealth.common.utility.ThreadPoolError;
-import org.endeavourhealth.core.database.dal.DalProvider;
-import org.endeavourhealth.core.database.dal.reference.ReferenceUpdaterDalI;
+import org.endeavourhealth.core.database.rdbms.ConnectionManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.Reader;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -232,11 +233,69 @@ public class OnsPostcodeHelper {
             String msoa2001Code = record.get(POSTCODE_2001_CENSUS_MSOA);
             String msoa2011Code = record.get(POSTCODE_2011_CENSUS_MSOA);
 
-            ReferenceUpdaterDalI referenceUpdaterDal = DalProvider.factoryReferenceUpdaterDal();
-            referenceUpdaterDal.updatePostcodeMap(postcode, lsoaCode, msoaCode, ward, ccgCode, localAuthority,
-                    lsoa2001Code, lsoa2011Code, msoa2001Code, msoa2011Code);
+            try {
+                updatePostcodeTable(postcode, lsoaCode, msoaCode, ward, ccgCode, localAuthority, lsoa2001Code, lsoa2011Code, msoa2001Code, msoa2011Code);
+
+            } catch (Exception ex) {
+                LOG.error("Error saving postcode [" + postcode + "]");
+                throw ex;
+            }
 
             return null;
+        }
+    }
+
+    private static void updatePostcodeTable(String postcode, String lsoaCode, String msoaCode, String ward, String ccgCode, String localAuthority,
+                                  String lsoa2001Code, String lsoa2011Code, String msoa2001Code, String msoa2011Code) throws Exception {
+
+        //always make sure this is uppercase
+        postcode = postcode.toUpperCase();
+        String postcodeNoSpace = postcode.replace(" ", "");
+
+        Connection connection = ConnectionManager.getReferenceConnection();
+        PreparedStatement ps = null;
+        try {
+            String sql = "INSERT INTO postcode_lookup (postcode_no_space, postcode, lsoa_code, msoa_code, ward_code, ccg_code, local_authority_code,"
+                    + " lsoa_2001_code, lsoa_2011_code, msoa_2001_code, msoa_2011_code)"
+                    + " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+                    + " ON DUPLICATE KEY UPDATE"
+                    + " postcode = VALUES(postcode), "
+                    + " lsoa_code = VALUES(lsoa_code), "
+                    + " msoa_code = VALUES(msoa_code), "
+                    + " ward_code = VALUES(ward_code), "
+                    + " ccg_code = VALUES(ccg_code), "
+                    + " local_authority_code = VALUES(local_authority_code), "
+                    + " lsoa_2001_code = VALUES(lsoa_2001_code), "
+                    + " lsoa_2011_code = VALUES(lsoa_2011_code), "
+                    + " msoa_2001_code = VALUES(msoa_2001_code), "
+                    + " msoa_2011_code = VALUES(msoa_2011_code)";
+            ps = connection.prepareStatement(sql);
+
+            int col = 1;
+            ps.setString(col++, postcodeNoSpace);
+            ps.setString(col++, postcode);
+            ps.setString(col++, lsoaCode);
+            ps.setString(col++, msoaCode);
+            ps.setString(col++, ward);
+            ps.setString(col++, ccgCode);
+            ps.setString(col++, localAuthority);
+            ps.setString(col++, lsoa2001Code);
+            ps.setString(col++, lsoa2011Code);
+            ps.setString(col++, msoa2001Code);
+            ps.setString(col++, msoa2011Code);
+
+            ps.executeUpdate();
+            connection.commit();
+
+        } catch (Exception ex) {
+            connection.rollback();
+            throw ex;
+
+        } finally {
+            if (ps != null) {
+                ps.close();
+            }
+            connection.close();
         }
     }
 

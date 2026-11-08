@@ -19,6 +19,7 @@ import org.endeavourhealth.core.messaging.pipeline.PipelineException;
 import org.endeavourhealth.core.queueing.ConnectionManager;
 import org.endeavourhealth.core.queueing.RabbitConfig;
 import org.endeavourhealth.core.queueing.RoutingManager;
+import org.endeavourhealth.core.queueing.RoutingOverride;
 import org.endeavourhealth.transform.common.ExchangeHelper;
 import org.endeavourhealth.transform.common.TransformConfig;
 import org.slf4j.Logger;
@@ -254,14 +255,22 @@ public class PostMessageToExchange extends PipelineComponent {
 	public static String getRoutingKey(boolean bulkMode, Map<String, String> headers, PostMessageToExchangeConfig config) throws PipelineException {
 
 		String exchangeName = config.getExchange();
+		String serviceIdStr = headers.get(HeaderKeys.SenderServiceUuid);
+		UUID serviceId = UUID.fromString(serviceIdStr);
+
+
+		//see if there's an explicit header in the exchange to override the routing
+		String overridingRoutingKey = findExchangeHeaderRoutingOverride(exchangeName, headers);
+		if (!Strings.isNullOrEmpty(overridingRoutingKey)) {
+			LOG.info("Explicitly overriding routing for service " + serviceIdStr + " for exchange " + exchangeName + " with routing key " + overridingRoutingKey);
+			return overridingRoutingKey;
+		}
 
 		//we can configure service-specific overrides of routing, so we can route services to different queues than normal -
 		//this allows better balancing when processing lots of bulks. Check if an override exists for our service.
-		String serviceIdStr = headers.get(HeaderKeys.SenderServiceUuid);
-		UUID serviceId = UUID.fromString(serviceIdStr);
-		String overridingRoutingKey = RoutingManager.instance().findRoutingOverride(exchangeName, serviceId);
+		overridingRoutingKey = RoutingManager.instance().findRoutingOverride(exchangeName, serviceId);
 		if (!Strings.isNullOrEmpty(overridingRoutingKey)) {
-			LOG.info("Overriding routing for service " + serviceIdStr + " for exchange " + exchangeName + " with routing key " + overridingRoutingKey);
+			LOG.info("Configured overriding routing for service " + serviceIdStr + " for exchange " + exchangeName + " with routing key " + overridingRoutingKey);
 			return overridingRoutingKey;
 		}
 
@@ -285,6 +294,28 @@ public class PostMessageToExchange extends PipelineComponent {
 
 		String fullRoutingValue = String.join(":", routingValues);
 		return RoutingManager.instance().getRoutingKeyForIdentifier(exchangeName, fullRoutingValue);
+	}
+
+	private static String findExchangeHeaderRoutingOverride(String exchangeName, Map<String, String> headers) throws PipelineException {
+
+		String routingOverrideJson = headers.get(HeaderKeys.RoutingOverride);
+		if (Strings.isNullOrEmpty(routingOverrideJson)) {
+			return null;
+		}
+
+		try {
+			RoutingOverride[] arr = ObjectMapperPool.getInstance().readValue(routingOverrideJson, RoutingOverride[].class);
+			for (RoutingOverride o : arr) {
+				if (o.getExchangeName().equals(exchangeName)) {
+					return o.getRoutingKey();
+				}
+			}
+
+			return null;
+
+		} catch (Exception ex) {
+			throw new PipelineException("Failed to parse routing override JSON [" + routingOverrideJson + "]", ex);
+		}
 	}
 
 	static class Throttle {

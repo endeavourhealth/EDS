@@ -9,9 +9,13 @@ import {ScheduledTaskRule} from "./models/ScheduledTaskRule";
 @Injectable()
 export class ScheduledTasksService extends BaseHttp2Service {
 
+    showWarningsOnly: boolean;
 
     constructor(http : Http) {
         super (http);
+
+        var vm = this;
+        vm.showWarningsOnly = true;
     }
 
 

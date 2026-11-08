@@ -26,13 +26,19 @@ export class DataServiceManagerMenuService implements  MenuService {
 		o = {caption: 'Subscribers', state: 'app.subscribers', icon: 'fa fa-toggle-down', role: 'eds-ui:services'};
 		ret.push(o);
 
+		o = {caption: 'Remote Filing', state: 'app.remoteFiling', icon: 'fa fa-external-link-square', role: 'eds-ui:audit'};
+		ret.push(o);
+
 		o = {caption: 'Queue Readers', state: 'app.queueReaderStatus', icon: 'fa fa-tachometer', role: 'eds-ui:monitoring'};
 		ret.push(o);
 
-		o = {caption: 'Frailty API', state: 'app.frailtyApi', icon: 'fa fa-flask', role: 'eds-ui:monitoring'};
+		o = {caption: 'Subscriber API', state: 'app.frailtyApi', icon: 'fa fa-flask', role: 'eds-ui:monitoring'};
 		ret.push(o);
 
 		o = {caption: 'HL7 Receiver', state: 'app.hl7Receiver', icon: 'fa fa-fire', role: 'eds-ui:monitoring'};
+		ret.push(o);
+
+		o = {caption: 'HL7v2 API', state: 'app.hl7v2Api', icon: 'fa fa-fire', role: 'eds-ui:monitoring'};
 		ret.push(o);
 
 		o = {caption: 'SFTP Reader', state: 'app.sftpReader', icon: 'fa fa-table', role: 'eds-ui:monitoring'};
@@ -48,9 +54,6 @@ export class DataServiceManagerMenuService implements  MenuService {
 		ret.push(o);
 
 		o = {caption: 'Monitoring', state: 'app.monitoring', icon: 'fa fa-list-alt', role: 'eds-ui:monitoring'};
-		ret.push(o);
-
-		o = {caption: 'Remote Filing', state: 'app.remoteFiling', icon: 'fa fa-external-link-square', role: 'eds-ui:audit'};
 		ret.push(o);
 
 		o = {caption: 'Routing Config', state: 'app.queueing', icon: 'fa fa-map-signs', role: 'eds-ui:queueing'};

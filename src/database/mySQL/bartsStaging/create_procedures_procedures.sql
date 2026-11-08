@@ -458,23 +458,46 @@ BEGIN
     DROP TEMPORARY TABLE IF EXISTS procedure_proce_duplicates;
 
     CREATE TEMPORARY TABLE procedure_proce_duplicates as
-	SELECT
-		target_proce.unique_id,
-        min(target_cds.audit_json) as cds_audit_json -- group by and min(..) so that we just get ONE cds match per PROCE
+    SELECT
+        unique_id,
+        min(cds_audit_json) as cds_audit_json
+    FROM (
+             SELECT
+                 target_proce.unique_id,
+                 target_cds.audit_json as cds_audit_json -- group by and min(..) so that we just get ONE cds match per PROCE
+             FROM
+                 procedure_target target_proce
+                     INNER JOIN procedure_target target_cds
+                                on target_proce.person_id = target_cds.person_id
+                                    -- and target_proce.encounter_id = target_cds.encounter_id -- DAB-115 don't join on encounter ID
+                                    and date(target_proce.dt_performed) = target_cds.dt_performed -- CDS procs don't have times
+            and target_proce.procedure_code = target_cds.procedure_code
+            and target_proce.unique_id != target_cds.unique_id
+    WHERE
+        target_proce.exchange_id = _exchange_id
+      and target_proce.unique_id like 'PROCE-%'
+      and target_cds.unique_id like 'CDS-%'
+
+    UNION
+
+    SELECT
+        target_proce.unique_id,
+        target_cds.audit_json as cds_audit_json -- group by and min(..) so that we just get ONE cds match per PROCE
     FROM
         procedure_target target_proce
-	INNER JOIN procedure_target target_cds
-		on target_proce.person_id = target_cds.person_id
-		-- and target_proce.encounter_id = target_cds.encounter_id -- DAB-115 don't join on encounter ID
-		and date(target_proce.dt_performed) = target_cds.dt_performed -- CDS procs don't have times
-		and target_proce.procedure_code = target_cds.procedure_code
-		and target_proce.unique_id != target_cds.unique_id
-	WHERE
-		(target_proce.exchange_id = _exchange_id
-			or target_cds.exchange_id = _exchange_id)
-		and target_proce.unique_id like 'PROCE-%'
-		and target_cds.unique_id like 'CDS-%'
-	GROUP BY target_proce.unique_id;
+            INNER JOIN procedure_target target_cds
+                       on target_proce.person_id = target_cds.person_id
+                           -- and target_proce.encounter_id = target_cds.encounter_id -- DAB-115 don't join on encounter ID
+                           and date(target_proce.dt_performed) = target_cds.dt_performed -- CDS procs don't have times
+        and target_proce.procedure_code = target_cds.procedure_code
+        and target_proce.unique_id != target_cds.unique_id
+    WHERE
+        target_cds.exchange_id = _exchange_id
+      and target_proce.unique_id like 'PROCE-%'
+      and target_cds.unique_id like 'CDS-%'
+        ) result
+
+    GROUP BY unique_id;
 
     -- remove anything out of our target table for our current exchange
     DELETE target_proce

@@ -2,7 +2,7 @@ import {BaseHttp2Service} from "eds-common-js";
 import {Http, URLSearchParams} from "@angular/http";
 import {Observable} from "rxjs";
 import {Injectable} from "@angular/core";
-import {FrailtyStat} from "./FrailtyStat";
+import {FrailtyStat, SubscriberFlag} from "./FrailtyStat";
 
 @Injectable()
 export class FrailtyApiService extends BaseHttp2Service {
@@ -11,11 +11,12 @@ export class FrailtyApiService extends BaseHttp2Service {
         super (http);
     }
 
-    getRecentStats(minutesBack: number, groupBy: string) : Observable<FrailtyStat[]> {
+    getRecentStats(minutesBack: number, groupBy: string , flagCode : string) : Observable<FrailtyStat[]> {
 
         var params = new URLSearchParams();
         params.append('minutesBack', '' + minutesBack);
         params.append('groupBy', groupBy);
+        params.append('flagCode', flagCode)
 
         return this.httpGet('api/frailtyApi/recentStats', { search: params });
     }
@@ -23,4 +24,9 @@ export class FrailtyApiService extends BaseHttp2Service {
     downloadMonthlyStats(): Observable<string> {
         return this.httpGet('api/frailtyApi/downloadMonthlyStats');
     }
+
+    getSubscriberFlags(): Observable<SubscriberFlag[]> {
+        return this.httpGet('api/frailtyApi/subscriberFlags');
+    }
+
 }

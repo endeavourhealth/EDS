@@ -1,10 +1,14 @@
 package org.endeavourhealth.ui.endpoints;
 
 import com.codahale.metrics.annotation.Timed;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.base.Strings;
+import com.jcraft.jsch.ChannelExec;
+import com.jcraft.jsch.JSch;
+import com.jcraft.jsch.Session;
 import org.apache.commons.io.FileUtils;
 import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.common.security.SecurityUtils;
@@ -20,6 +24,7 @@ import org.endeavourhealth.core.database.dal.audit.models.ApplicationHeartbeat;
 import org.endeavourhealth.core.database.dal.audit.models.AuditAction;
 import org.endeavourhealth.core.database.dal.audit.models.AuditModule;
 import org.endeavourhealth.coreui.endpoints.AbstractEndpoint;
+import org.endeavourhealth.ui.json.JsonQueueReaderCommand;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,9 +33,9 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
+import java.io.InputStream;
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
 @Path("/queueReader")
 public class QueueReaderEndpoint extends AbstractEndpoint {
@@ -205,5 +210,156 @@ public class QueueReaderEndpoint extends AbstractEndpoint {
         }
         return publisherConfigName;
     }
+
+    @POST
+    @Produces(MediaType.TEXT_PLAIN)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="QueueReaderEndpoint.QueueReaderCommand")
+    @Path("/queueReaderCommand")
+    public Response queueReaderCommand(@Context SecurityContext sc, JsonQueueReaderCommand command) throws Exception {
+        super.setLogbackMarkers(sc);
+
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load, "Queue Reader Command", "Command", command.getCommand());
+
+        validateCommand(command);
+        //TODO - validate command
+
+
+        Map<String, String> hmServers = getIpAddresses(command);
+        for (String hostName: hmServers.keySet()) {
+            String userAndIp = hmServers.get(hostName);
+            executeCommand(hostName, userAndIp, command.getCommand());
+        }
+
+        //TODO - generate response
+
+        //String ret = getQueueReaderStatusJson(applicationName);
+        String ret = "Deploy all";
+
+        clearLogbackMarkers();
+
+        return Response
+                .ok()
+                .entity(ret)
+                .build();
+    }
+
+    private void validateCommand(JsonQueueReaderCommand command) {
+
+        if (command.getCommand().equals("sudo ./queueReader/deploy.sh")
+                || command.getCommand().equals("sudo ./queueReader/deployScripts.sh")) {
+            //valid
+            return;
+        }
+
+        throw new RuntimeException("Invalid command: " + command.getCommand());
+    }
+
+    /**
+     * executes the specified SSH command on the Queue Reader server
+     */
+    private void executeCommand(String hostName, String userAndIp, String command) {
+        try {
+            JSch jsch = new JSch();
+
+            int ix = userAndIp.indexOf("@");
+            String userName = userAndIp.substring(0, ix-1);
+            String ip = userAndIp.substring(ix+1);
+
+            Session session = jsch.getSession(userName, ip, 22);
+
+            /*UserInfo ui=new MyUserInfo();
+            session.setUserInfo(ui);
+            session.connect();*/
+
+            session.connect();
+
+            ChannelExec channel = (ChannelExec)session.openChannel("exec");
+            channel.setCommand(command);
+
+            // X Forwarding
+            // channel.setXForwarding(true);
+
+            //channel.setInputStream(System.in);
+            channel.setInputStream(null);
+
+            //channel.setOutputStream(System.out);
+
+            //FileOutputStream fos=new FileOutputStream("/tmp/stderr");
+            //((ChannelExec)channel).setErrStream(fos);
+            ((ChannelExec)channel).setErrStream(System.err);
+
+            InputStream in = channel.getInputStream();
+
+            channel.connect();
+
+            byte[] tmp=new byte[1024];
+            while(true){
+                while(in.available()>0){
+                    int i=in.read(tmp, 0, 1024);
+                    if(i<0)break;
+                    LOG.debug(new String(tmp, 0, i));
+                }
+                if (channel.isClosed()){
+                    if (in.available()>0) {
+                        continue;
+                    }
+                    LOG.debug("exit-status: "+channel.getExitStatus());
+                    break;
+                }
+
+                Thread.sleep(1000);
+            }
+            channel.disconnect();
+            session.disconnect();
+            LOG.debug("Completed command on " + hostName);
+
+        } catch (Exception ex) {
+            LOG.error("Error with command on " + hostName + " (" + userAndIp + ")", ex);
+        }
+
+    }
+
+    /**
+     * finds the IP addresses for the servers listed in the command (or all QRs if not specified)
+     */
+    private Map<String, String> getIpAddresses(JsonQueueReaderCommand command) throws Exception {
+
+        Set<String> hostNames = new HashSet<>();
+        ApplicationHeartbeatDalI dal = DalProvider.factoryApplicationHeartbeatDal();
+        List<ApplicationHeartbeat> latest = dal.getLatest();
+        for (ApplicationHeartbeat h: latest) {
+
+            //only count servers running Queue Reader apps
+            if (!h.getApplicationName().equals("queuereader")) {
+                continue;
+            }
+
+            //only count servers in the request, if specified
+            String hostName = h.getHostName();
+            if (command.getHostNames() != null
+                    && !command.getHostNames().isEmpty()
+                    && !command.getHostNames().contains(hostName)) {
+                continue;
+            }
+
+            hostNames.add(hostName);
+        }
+
+        Map<String, String> ret = new HashMap<>();
+
+        JsonNode json = ConfigManager.getConfigurationAsJson("server_ips");
+        for (int i=0; i<json.size(); i++) {
+            JsonNode child = json.get(i);
+            String hostName = child.get("hostName").asText();
+            if (hostNames.contains(hostName)) {
+                String userAndIp = child.get("userAndIp").asText();
+                ret.put(hostName, userAndIp);
+            }
+        }
+
+        return ret;
+    }
+
 
 }

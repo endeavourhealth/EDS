@@ -16,7 +16,7 @@ export class Hl7ReceiverComponent {
     formatYYYYMMDDHHMMSS = DateTimeFormatter.formatYYYYMMDDHHMMSS;
     formatYYYYMMDDHHMM = DateTimeFormatter.formatYYYYMMDDHHMM;
     formatHHMMSS = DateTimeFormatter.formatHHMMSS;
-
+    getDateDiffSimpleFromNow = DateTimeFormatter.getDateDiffSimpleFromNow;
 
     refreshingStatus: boolean;
     statusLastRefreshed: Date;

@@ -1,8 +1,6 @@
 package org.endeavourhealth.ui.endpoints;
 
 import com.codahale.metrics.annotation.Timed;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.base.Strings;
 import org.apache.commons.io.FileUtils;
 import org.endeavourhealth.common.config.ConfigManager;
@@ -38,8 +36,6 @@ import org.endeavourhealth.ui.json.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.security.PermitAll;
-import javax.annotation.security.RolesAllowed;
 import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
@@ -400,121 +396,19 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
         return ret;
     }
 
-    /*@GET
-    @Produces(MediaType.APPLICATION_JSON)
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Timed(absolute = true, name="ExchangeAuditEndpoint.GetExchangeEvents")
-    @Path("/getExchangeEvents")
-    public Response getExchangeEvents(@Context SecurityContext sc, @QueryParam("exchangeId") String exchangeIdStr) throws Exception {
-        super.setLogbackMarkers(sc);
-
-        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load, "Get Exchange Events",
-                "Exchange Id", exchangeIdStr);
-
-        List<JsonExchangeEvent> ret = new ArrayList<>();
-
-        UUID exchangeId = UUID.fromString(exchangeIdStr);
-
-        List<ExchangeEvent> exchangeEvents = auditRepository.getExchangeEvents(exchangeId);
-        for (ExchangeEvent exchangeEvent: exchangeEvents) {
-
-            Date timestamp = exchangeEvent.getTimestamp();
-            String eventStr = exchangeEvent.getEventDesc();
-
-            JsonExchangeEvent jsonExchangeEvent = new JsonExchangeEvent(timestamp, eventStr);
-            ret.add(jsonExchangeEvent);
-        }
-
-        clearLogbackMarkers();
-
-        return Response
-                .ok()
-                .entity(ret)
-                .build();
-    }*/
 
     /**
-     * endpoint just for testing that users with two different roles can make a specific call
+     * called to re-queue messages.
+     * NOTE, this is called from the Emis Inbound transform as well as the DDS-UI front end, so any changes
+     * need to consider that and make sure that transform API still works
      */
     @POST
     @Produces(MediaType.APPLICATION_JSON)
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Timed(absolute = true, name="TestEndpoint.TestPostToExchange")
-    @Path("/testPostToExchange")
-    @RequiresAdmin
-    public Response testPostToExchange(@Context SecurityContext sc) throws Exception {
-        return testPostToExchangeImpl(sc);
-    }
-
-    @POST
-    @Produces(MediaType.APPLICATION_JSON)
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Timed(absolute = true, name="TestEndpoint.TestPostToExchangeApi")
-    @Path("/testPostToExchangeApi")
-    @RolesAllowed({"dds_requeue_message"})
-    public Response testPostToExchangeApi(@Context SecurityContext sc) throws Exception {
-        return testPostToExchangeImpl(sc);
-    }
-
-    @POST
-    @Produces(MediaType.APPLICATION_JSON)
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Timed(absolute = true, name="TestEndpoint.TestPostToExchangeAll")
-    @Path("/testPostToExchangeAll")
-    @PermitAll
-    public Response testPostToExchangeAll(@Context SecurityContext sc) throws Exception {
-        return testPostToExchangeImpl(sc);
-    }
-
-
-    private Response testPostToExchangeImpl(SecurityContext sc) throws Exception {
-        super.setLogbackMarkers(sc);
-
-        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load, "TestPostToExchange");
-
-        LOG.info("TestPostToExchange");
-
-        ObjectMapper mapper = new ObjectMapper();
-        ObjectNode root = new ObjectNode(mapper.getNodeFactory());
-        root.put("Ok", "Yes");
-
-        String json = mapper.writeValueAsString(root);
-        LOG.info(json);
-
-        clearLogbackMarkers();
-
-        return Response
-                .ok()
-                .entity(json)
-                .build();
-    }
-
-    /**
-     * version of the function called by DDS-UI front-end to post into RabbitMQ,
-     * requires the eds_admin user role from the realm used by regular users
-     */
-    @POST
-    @Produces(MediaType.TEXT_PLAIN)
     @Consumes(MediaType.APPLICATION_JSON)
     @Timed(absolute = true, name="ExchangeAuditEndpoint.PostToExchange")
     @Path("/postToExchange")
     @RequiresAdmin
     public Response postToExchange(@Context SecurityContext sc, JsonPostToExchangeRequest request) throws Exception {
-        return postToExchangeImpl(sc, request);
-    }
-
-
-    /**
-     * version of the function called by the Inbound Queue Reader to post into RabbitMQ,
-     * requires the dds_requeue_message user role from the machine realm
-     */
-    @POST
-    @Produces(MediaType.TEXT_PLAIN)
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Timed(absolute = true, name="ExchangeAuditEndpoint.PostToExchangeApi")
-    @Path("/postToExchangeApi")
-    @RolesAllowed({"dds_requeue_message"}) //first to allow use by DDS-UI and second to allow use from Emis transform code
-    public Response postToExchangeApi(@Context SecurityContext sc, JsonPostToExchangeRequest request) throws Exception {
         return postToExchangeImpl(sc, request);
     }
 
@@ -842,7 +736,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
                 java.util.Date ended = new java.util.Date(rs.getTimestamp(col++).getTime());
                 int count = rs.getInt(col++);
 
-                String eventDesc = "Outbound Writing to " + subscriber;
+                String eventDesc = "Outbound Writing/Staging to " + subscriber;
 
                 JsonTransformEvent a = new JsonTransformEvent();
                 a.setExchangeId(exchangeId);
@@ -1259,5 +1153,30 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
                 .build();
     }
 
+    @POST
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="ExchangeAuditEndpoint.MakeNonQueueable")
+    @Path("/makeNonQueueable")
+    @RequiresAdmin
+    public Response makeNonQueueable(@Context SecurityContext sc, JsonAddExchangeEventRequest request) throws Exception {
+        super.setLogbackMarkers(sc);
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Save,
+                "Make Non-Queueable",
+                "Request", request);
+
+        UUID exchangeId = request.getExchangeId();
+
+        ExchangeDalI dal = DalProvider.factoryExchangeDal();
+        Exchange exchange = dal.getExchange(exchangeId);
+        exchange.setHeaderAsBoolean(HeaderKeys.AllowQueueing, Boolean.FALSE);
+        dal.save(exchange);
+
+        clearLogbackMarkers();
+
+        return Response
+                .ok()
+                .build();
+    }
 }
 

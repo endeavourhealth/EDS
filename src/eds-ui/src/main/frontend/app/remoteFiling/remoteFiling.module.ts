@@ -6,6 +6,7 @@ import {RemoteFilingComponent} from "./remoteFiling.component";
 import {RemoteFilingService} from "./remoteFiling.service";
 import {NgbModule} from "@ng-bootstrap/ng-bootstrap";
 import {RemoteFilingFilesDialog} from "./remoteFilingFiles.dialog";
+import {RemoteFilingTechnicalDetailsDialog} from "./remoteFilingTechnicalDetails.dialog";
 
 @NgModule({
     imports : [
@@ -16,10 +17,12 @@ import {RemoteFilingFilesDialog} from "./remoteFilingFiles.dialog";
     ],
     declarations : [
         RemoteFilingComponent,
-        RemoteFilingFilesDialog
+        RemoteFilingFilesDialog,
+        RemoteFilingTechnicalDetailsDialog
     ],
     entryComponents : [
-        RemoteFilingFilesDialog
+        RemoteFilingFilesDialog,
+        RemoteFilingTechnicalDetailsDialog
     ],
     providers : [
         RemoteFilingService

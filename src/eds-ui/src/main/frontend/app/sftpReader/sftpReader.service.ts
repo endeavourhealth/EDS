@@ -16,7 +16,7 @@ export class SftpReaderService extends BaseHttp2Service {
     showStartDate: boolean;
     showWarningsOnly: boolean;
     filterInstanceName: string;
-
+    showDates: boolean;
 
     constructor(http : Http) {
         super (http);
@@ -26,6 +26,7 @@ export class SftpReaderService extends BaseHttp2Service {
         vm.showWarningsOnly = true;
         vm.showMemory = true;
         vm.showExecutionTime = true;
+        vm.showDates = false;
     }
 
     getSftpReaderStatus(configurationId: string) : Observable<SftpReaderChannelStatus> {

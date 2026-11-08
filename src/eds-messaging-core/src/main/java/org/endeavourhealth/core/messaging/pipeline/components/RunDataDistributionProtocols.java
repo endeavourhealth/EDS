@@ -32,9 +32,12 @@ import org.endeavourhealth.core.xml.QueryDocument.LibraryItem;
 import org.endeavourhealth.transform.common.ExchangeHelper;
 import org.endeavourhealth.transform.subscriber.SubscriberConfig;
 import org.hl7.fhir.instance.model.*;
+import org.joda.time.LocalDate;
+import org.joda.time.Years;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.regex.Pattern;
 
@@ -223,6 +226,10 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 			//compare the current against previous state to work out what action should be taken
 			SubscriberCohortRecord previousResult = dal.getLatestCohortRecord(subscriberConfigName, patientId, batchId);
 
+			//the new Cohort persistence setting either remove or retain (default = remove) to apply logic to current and previous states
+			SubscriberConfig subscriberConfig = SubscriberConfig.readFromConfig(newResult.getSubscriberConfigName());
+			SubscriberConfig.CohortPersistence cohortPersistence = subscriberConfig.getCohortPersistence();
+
 			if (newResult.isInCohort()) {
 				if (previousResult == null
 						|| !previousResult.isInCohort()) {
@@ -250,10 +257,23 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 					return TransformBatch.TransformAction.NONE;
 
 				} else {
-					//if not in cohort now but previously was, then we need to do a full delete
-					LOG.trace("Previously in cohort so will bulk delete");
-					dal.saveCohortRecord(newResult);
-					return TransformBatch.TransformAction.FULL_DELETE;
+					//if not in cohort now but previously was, then depending on the Cohort persistence setting we need
+					//to do a full delete (if Remove) or a delta (if Retain) to send the last update and not do a full delete
+					if (cohortPersistence == SubscriberConfig.CohortPersistence.Remove) {
+
+						LOG.trace("Previously in cohort and persistence = Remove so will bulk delete");
+						dal.saveCohortRecord(newResult);
+						return TransformBatch.TransformAction.FULL_DELETE;
+
+					} else if (cohortPersistence == SubscriberConfig.CohortPersistence.Retain) {
+
+						LOG.trace("Previously in cohort and persistence = Retain so will process delta");
+						dal.saveCohortRecord(newResult);
+						return TransformBatch.TransformAction.DELTA;
+					} else {
+						//the default persistence is set as Remove so this should never throw unless it is set as something else unknown about
+						throw new PipelineException("Unknown CohortPersistence for subscriber " + newResult.getSubscriberConfigName() + ", "+ cohortPersistence);
+					}
 				}
 			}
 		}
@@ -299,7 +319,8 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 
 		//exclude test patients
 		if (subscriberConfig.isExcludeTestPatients()) {
-			BooleanType isTestPatient = (BooleanType) ExtensionConverter.findExtensionValue(fhirPatient, FhirExtensionUri.PATIENT_IS_TEST_PATIENT);
+			BooleanType isTestPatient
+					= (BooleanType) ExtensionConverter.findExtensionValue(fhirPatient, FhirExtensionUri.PATIENT_IS_TEST_PATIENT);
 			if (isTestPatient != null
 					&& isTestPatient.hasValue()
 					&& isTestPatient.getValue().booleanValue()) {
@@ -334,8 +355,40 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 			}
 		}
 
-		SubscriberConfig.CohortType cohortType = subscriberConfig.getCohortType();
+		//exclude by minimum age based criteria
+		Integer minPatientAgeYears = subscriberConfig.getMinPatientAgeYears();
+		if (minPatientAgeYears != null) {
+			if (fhirPatient.hasBirthDate()) {
 
+				Date dateOfBirth = fhirPatient.getBirthDate();
+				Years ageInYears = Years.yearsBetween(new LocalDate(dateOfBirth), new LocalDate());
+				int yearsOld = ageInYears.getYears();
+				if (yearsOld < minPatientAgeYears) {
+
+					newResult.setInCohort(false);
+					newResult.setReason("Patient is excluded by minimum age check config: "+minPatientAgeYears+ " years and DOB: "+dateOfBirth);
+					return;
+				}
+			} else {
+
+				//if the patient has no DOB (rare) it is impossible to determine their age therefore they
+				//cannot be included if the minimum age check is set
+				newResult.setInCohort(false);
+				newResult.setReason("Patient is excluded by minimum age check config: "+minPatientAgeYears+ " years without a DOB");
+				return;
+			}
+		}
+
+		//For projects such as Know Diabetes, only include patients who have a code in the inclusion list
+		Set<String> cohortInclusionCodes = subscriberConfig.getCohortInclusionSnomedConcepts();
+		if (cohortInclusionCodes != null && !cohortInclusionCodes.isEmpty()) {
+
+			if (!hasPatientGotCohortInclusionCode(newResult, cohortInclusionCodes, tmpCache)) {
+				return;
+			}
+		}
+
+		SubscriberConfig.CohortType cohortType = subscriberConfig.getCohortType();
 		if (cohortType == SubscriberConfig.CohortType.AllPatients) {
 			newResult.setInCohort(true);
 			newResult.setReason("Cohort is all patients");
@@ -343,19 +396,42 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 		} else if (cohortType == SubscriberConfig.CohortType.ExplicitPatients) {
 			checkExplicitCohort(newResult, tmpCache);
 
-		} else if (cohortType == SubscriberConfig.CohortType.GpRegisteredAt) {
-			checkServiceDefinedCohort(newResult, tmpCache, odsCode);
+		} else if (cohortType == SubscriberConfig.CohortType.GpRegisteredAt ||
+				cohortType == SubscriberConfig.CohortType.ActiveOnlyGpRegisteredAt) {
+			checkServiceDefinedCohort(newResult, tmpCache, odsCode, subscriberConfig);
 
 		} else {
 			throw new PipelineException("Unknown cohort " + cohortType + " for subscriber " + newResult.getSubscriberConfigName());
 		}
 	}
 
+	private boolean hasPatientGotCohortInclusionCode (SubscriberCohortRecord newResult,
+									   					Set<String> cohortInclusionCodes,
+									   					TmpCache tmpCache) throws Exception
+	{
+		Long patientCohortInclusionCode
+				= tmpCache.findPatientCohortInclusionCode(tmpCache.findPatientId(), tmpCache.serviceId, cohortInclusionCodes);
 
-	private void checkServiceDefinedCohort(SubscriberCohortRecord newResult, TmpCache tmpCache, String odsCode) throws Exception {
+		if (patientCohortInclusionCode != null) {
+
+			newResult.setInCohort(true);
+			newResult.setReason("Patient is included by having cohort inclusion code: " + patientCohortInclusionCode);
+			return true;
+		} else {
+
+			newResult.setInCohort(false);
+			newResult.setReason("Patient is excluded by having no cohort inclusion code");
+			return false;
+		}
+	}
+
+	private void checkServiceDefinedCohort(SubscriberCohortRecord newResult,
+										   TmpCache tmpCache,
+										   String odsCode,
+										   SubscriberConfig subscriberConfig) throws Exception {
 
 		//find the list of service UUIDs that define the cohort
-		SubscriberConfig subscriberConfig = SubscriberConfig.readFromConfig(newResult.getSubscriberConfigName());
+		//SubscriberConfig subscriberConfig = SubscriberConfig.readFromConfig(newResult.getSubscriberConfigName());
 		Set<String> cohortOdsCodes = subscriberConfig.getCohortGpServices();
 		cohortOdsCodes = makeUpperCase(cohortOdsCodes); //just in case, make everything uppercase
 		LOG.trace("Found " + cohortOdsCodes.size() + " ODS codes that define the cohort");
@@ -365,16 +441,21 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 			throw new Exception("No ODS codes set in config for " + newResult.getSubscriberConfigName());
 		}
 
-		//check to see if our service is one of the defining service contracts, in which case it automatically passes
-		if (isOdsCodeInCohort(odsCode, cohortOdsCodes)) {
+		//check to see if our service is one of the defining service contracts, in which case it automatically passes.
+		//NOTE: this is only relevant where the cohort type is GpRegisteredAt ana will include ANY registration type
+		//including temporary, deducted, active, private, deceased etc.
+		if (subscriberConfig.getCohortType() == SubscriberConfig.CohortType.GpRegisteredAt && isOdsCodeInCohort(odsCode, cohortOdsCodes)) {
 			LOG.trace("PASS - This service (" + odsCode + ") is in defining list for batch ID " + tmpCache.getBatchId());
 			newResult.setInCohort(true);
-			newResult.setReason("Publishing org " + odsCode + " is part of cohort");
+			newResult.setReason("Publishing org " + odsCode + " is part of cohort and type is GpRegisteredAt");
 			return;
 		}
 
 		//check the FHIR data to see if the patient is registered in our cohort
-		checkPersonIsRegisteredAtServices(newResult, tmpCache, cohortOdsCodes);
+		//if the Cohort type is the new ActiveOnlyGpRegisteredAt then it will have skipped the previous check
+		//and the patient will only be included via this next check if they are a regular GMS registration a one
+		//of the cohort's organisations, which may include this service itself if its in the cohort
+		checkPersonIsRegisteredAtServices(newResult, tmpCache, cohortOdsCodes, subscriberConfig);
 
 		//Ive been told - once a patient has entered the cohort, they don't leave
 		//So, if the patient is NOT in the cohort now (because we failed the above check) but the patient
@@ -438,12 +519,15 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 	/**
 	 * checks if any patient record for the person is GMS/Regular registered within the cohort
      */
-	private void checkPersonIsRegisteredAtServices(SubscriberCohortRecord newResult, TmpCache tmpCache, Set<String> cohortOdsCodes) throws Exception {
+	private void checkPersonIsRegisteredAtServices(SubscriberCohortRecord newResult,
+												   TmpCache tmpCache,
+												   Set<String> cohortOdsCodes,
+												   SubscriberConfig subscriberConfig) throws Exception {
 
 		//first check the patient resource at our own service
 		LOG.trace("Checking patient " + tmpCache.findPatientId() + " at service " + tmpCache.getServiceId());
-		if (checkPatientIsRegisteredAtServices(tmpCache.findPatientId(), tmpCache.getServiceId(), tmpCache, cohortOdsCodes)) {
-			LOG.trace("PASS - Patient " + tmpCache.findPatientId() + " is registered at one of defining services");
+		if (checkPatientIsRegisteredAtServices(tmpCache.findPatientId(), tmpCache.getServiceId(), tmpCache, cohortOdsCodes, subscriberConfig)) {
+			LOG.trace("PASS - Patient " + tmpCache.findPatientId() + " is regular GMS registered at one of defining services");
 			newResult.setInCohort(true);
 			newResult.setReason("Patient resource at publisher is part of cohort");
 			return;
@@ -467,20 +551,24 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 			}
 
 			LOG.debug("Checking patient " + otherPatientId + " at service " + otherServiceUuidStr);
-			if (checkPatientIsRegisteredAtServices(otherPatientUuid, otherServiceUuid, tmpCache, cohortOdsCodes)) {
-				LOG.trace("PASS - Patient " + otherPatientId + " is registered at one of defining services");
+			if (checkPatientIsRegisteredAtServices(otherPatientUuid, otherServiceUuid, tmpCache, cohortOdsCodes, subscriberConfig)) {
+				LOG.trace("PASS - Patient " + otherPatientId + " is regular GMS registered at one of defining services");
 				newResult.setInCohort(true);
 				newResult.setReason("Patient resource " + otherPatientId + " is part of cohort");
 				return;
 			}
 		}
 
-		LOG.trace("FAIL - Patient " + tmpCache.findPatientId() + " is NOT registered at one of defining services");
+		LOG.trace("FAIL - Patient " + tmpCache.findPatientId() + " is NOT regular GMS registered at one of defining services");
 		newResult.setInCohort(false);
 		newResult.setReason("Patient resource not registered in cohort");
 	}
 
-	private boolean checkPatientIsRegisteredAtServices(UUID patientUuid, UUID serviceId, TmpCache tmpCache, Set<String> cohortOdsCodes) throws Exception {
+	private boolean checkPatientIsRegisteredAtServices(UUID patientUuid,
+													   UUID serviceId,
+													   TmpCache tmpCache,
+													   Set<String> cohortOdsCodes,
+													   SubscriberConfig subscriberConfig) throws Exception {
 
 		Patient fhirPatient = tmpCache.findPatientResource(patientUuid, serviceId);
 		if (fhirPatient == null) {
@@ -523,11 +611,44 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 		LOG.debug("      Found " + episodesOfCare.size() + " episodes for patient " + patientUuid);
 		for (EpisodeOfCare episodeOfCare: episodesOfCare) {
 
-			//skip if ended
+			//skip if ended (unless the episode period ended after an include ended after date if set)
 			if (episodeOfCare.hasPeriod()
 					&& !PeriodHelper.isActive(episodeOfCare.getPeriod())) {
-				LOG.debug("      Episode " + episodeOfCare.getId() + " is ended");
-				continue;
+
+				// if the episode of care has ended (isInactive = true) then they have either left or died.
+				// if the subscriber config is set to include ended registrations after an IncludeEndedAfterDate
+				// and the episode period end date is before that date, then skip  otherwise continue to include
+				// it in the next checks.  eg. patient registration ended on 3rd March 2020. The IncludeEndedAfterDate
+				// is set as 1st Jan 2019. therefore the patient episode is not excluded from further checks as the episode
+				// end date is after the IncludeEndedAfterDate.  Only application when ActiveOnlyGpRegisteredAt cohort type is set.
+				if (subscriberConfig.getCohortType() == SubscriberConfig.CohortType.ActiveOnlyGpRegisteredAt) {
+
+					//is there and IncludeEndedAfterDate config set?
+					String includeEndedAfterDate = subscriberConfig.getActiveOnlyIncludeEndedAfterDate();
+					if (!Strings.isNullOrEmpty(includeEndedAfterDate)) {
+
+						//check the period end date (which will be present having passed the inActive test)
+						//is before the set date
+						Date endedAfterDate = new SimpleDateFormat("dd/MM/yyyy").parse(includeEndedAfterDate);
+						if (episodeOfCare.getPeriod().getEnd().before(endedAfterDate)) {
+
+							//the period end date is before the includeEndedAfterDate so skip this episode of care
+							continue;
+						} else {
+							//go onto next checks as the end date is after the includeEndedAfterDate
+							LOG.debug("      Episode " + episodeOfCare.getId() + " is inactive but IS included as it ended after includeEndedAfterDate: "+endedAfterDate);
+						}
+					} else {
+
+						LOG.debug("      Episode " + episodeOfCare.getId() + " is ended");
+						continue;
+					}
+				} else {
+
+					//the default behaviour for other cohort type's ended episodes
+					LOG.debug("      Episode " + episodeOfCare.getId() + " is ended");
+					continue;
+				}
 			}
 
 			//find reg type
@@ -545,13 +666,13 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 				continue;
 			}
 
-			//get mananging org reference
+			//get managing org reference
 			if (!episodeOfCare.hasManagingOrganization()) {
 				LOG.debug("      Episode " + episodeOfCare.getId() + " has no managing org reference");
 				continue;
 			}
 
-			//get ODS code for mananging org
+			//get ODS code for managing org
 			Reference managingOrgReference = episodeOfCare.getManagingOrganization();
 			String odsCode = findOdsCodeFromReference(tmpCache, managingOrgReference, serviceId);
 
@@ -736,6 +857,8 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 		private Map<UUID, Organization> hmOrgs = new HashMap<>();
 		private Map<UUID, Practitioner> hmPractitioners = new HashMap<>();
 
+		private Map<UUID, Long> hmCohortInclusionSnomedCode = new HashMap<>();
+
 		public TmpCache(UUID exchangeId, UUID serviceId, UUID batchId) {
 			this.exchangeId = exchangeId;
 			this.serviceId = serviceId;
@@ -852,6 +975,69 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 				hmEpisodes.put(patientUuid, l);
 			}
 			return hmEpisodes.get(patientUuid);
+		}
+
+		public Long findPatientCohortInclusionCode(UUID patientUuid,
+													 UUID serviceId,
+													 Set<String> cohortInclusionCodes)
+														throws Exception {
+
+			//has the patient got a cohort inclusion code already cached?
+			if (!hmCohortInclusionSnomedCode.containsKey((patientUuid))) {
+
+				//nothing cached so hit the database to search for cohort inclusion Condition resources first
+				List<ResourceWrapper> conditionWrappers
+						= resourceRepository.getResourcesByPatient(serviceId, patientUuid, ResourceType.Condition.toString());
+				for (ResourceWrapper conditionsWrapper : conditionWrappers) {
+
+					//this should only ever return non-deleted resources, but can't hurt to check
+					if (conditionsWrapper.isDeleted()) {
+						continue;
+					}
+
+					String json = conditionsWrapper.getResourceData();
+					Condition condition = (Condition) FhirSerializationHelper.deserializeResource(json);
+					//find the Snomed coding and check against the cohort inclusion list
+					if (condition.hasCode()) {
+
+						Long snomedConceptId = CodeableConceptHelper.findSnomedConceptId(condition.getCode());
+						if (snomedConceptId != null) {
+							if (cohortInclusionCodes.contains(snomedConceptId.toString())) {
+								hmCohortInclusionSnomedCode.put(patientUuid, snomedConceptId);
+								//found an inclusion code in patient's Condition record so stop searching and return out
+								return hmCohortInclusionSnomedCode.get(patientUuid);
+							}
+						}
+					}
+				}
+				//if it has got to this point, no patient Conditions resources have matched in the inclusion list
+				//so try finding a match in the patient's Observation resources
+				List<ResourceWrapper> observationWrappers
+						= resourceRepository.getResourcesByPatient(serviceId, patientUuid, ResourceType.Observation.toString());
+				for (ResourceWrapper observationWrapper : observationWrappers) {
+
+					//this should only ever return non-deleted resources, but can't hurt to check
+					if (observationWrapper.isDeleted()) {
+						continue;
+					}
+
+					String json = observationWrapper.getResourceData();
+					Observation observation = (Observation) FhirSerializationHelper.deserializeResource(json);
+					//find the Snomed coding and check against the cohort inclusion list
+					if (observation.hasCode()) {
+
+						Long snomedConceptId = CodeableConceptHelper.findSnomedConceptId(observation.getCode());
+						if (snomedConceptId != null) {
+							if (cohortInclusionCodes.contains(snomedConceptId.toString())) {
+								hmCohortInclusionSnomedCode.put(patientUuid, snomedConceptId);
+								//found an inclusion code in patient's Observation record so stop searching and return out
+								return hmCohortInclusionSnomedCode.get(patientUuid);
+							}
+						}
+					}
+				}
+			}
+			return hmCohortInclusionSnomedCode.get(patientUuid);
 		}
 
 		public Practitioner findPractitioner(UUID practitionerUuid, UUID serviceId) throws Exception {

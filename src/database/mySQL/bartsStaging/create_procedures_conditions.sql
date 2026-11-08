@@ -436,25 +436,48 @@ BEGIN
 	-- all diagnosis from CDS are also in DIAGN, so we need to de-duplicate those
 	-- also need to handle CDS files received at a later date (see DAB-115) to the DIAGN file, and send
 	-- through a is_delete = true rather than just delete from the target table
-	DROP TEMPORARY TABLE IF EXISTS condition_diag_duplicates;
+    DROP TEMPORARY TABLE IF EXISTS condition_diag_duplicates;
 
-	CREATE TEMPORARY TABLE condition_diag_duplicates as
-	SELECT
-		target_cond.unique_id,
-		min(target_cds.audit_json) as cds_audit_json    -- group by and min(..) so that we just get ONE cds match per DIAGN
-	FROM
-		condition_target target_cond
-			INNER JOIN condition_target target_cds
-								 on target_cond.person_id = target_cds.person_id
-									 and date(target_cond.dt_performed) = target_cds.dt_performed -- CDS diags don't have times
-									 and target_cond.condition_code = target_cds.condition_code
-									 and target_cond.unique_id != target_cds.unique_id
-	WHERE
-		(target_cond.exchange_id = _exchange_id
-			or target_cds.exchange_id = _exchange_id)
-		and target_cond.unique_id like 'DIAGN-%'
-		and target_cds.unique_id like 'CDS-%'
-	GROUP BY target_cond.unique_id;
+        CREATE TEMPORARY TABLE condition_diag_duplicates as
+    SELECT
+        unique_id,
+        min(cds_audit_json) as cds_audit_json
+    FROM (
+
+             SELECT
+                 target_cond.unique_id,
+                 target_cds.audit_json as cds_audit_json    -- group by and min(..) so that we just get ONE cds match per DIAGN
+             FROM
+                 condition_target target_cond
+                     INNER JOIN condition_target target_cds
+                                on target_cond.person_id = target_cds.person_id
+                                    and date(target_cond.dt_performed) = target_cds.dt_performed -- CDS diags don't have times
+                                         and target_cond.condition_code = target_cds.condition_code
+                                         and target_cond.unique_id != target_cds.unique_id
+    WHERE
+        target_cds.exchange_id = _exchange_id
+      and target_cond.unique_id like 'DIAGN-%'
+      and target_cds.unique_id like 'CDS-%'
+    GROUP BY target_cond.unique_id
+
+    UNION
+
+    SELECT
+        target_cond.unique_id,
+        target_cds.audit_json as cds_audit_json    -- group by and min(..) so that we just get ONE cds match per DIAGN
+    FROM
+        condition_target target_cond
+            INNER JOIN condition_target target_cds
+                       on target_cond.person_id = target_cds.person_id
+                           and date(target_cond.dt_performed) = target_cds.dt_performed -- CDS diags don't have times
+        and target_cond.condition_code = target_cds.condition_code
+        and target_cond.unique_id != target_cds.unique_id
+    WHERE
+        target_cond.exchange_id = _exchange_id
+      and target_cond.unique_id like 'DIAGN-%'
+      and target_cds.unique_id like 'CDS-%'
+        ) result
+    GROUP BY unique_id;
 
 	-- remove anything out of our target table for our current exchange
 	DELETE target_cond

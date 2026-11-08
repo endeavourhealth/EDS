@@ -1,0 +1,68 @@
+DELIMITER $$
+CREATE  PROCEDURE `get_remote_monitoring_flag`(
+	_person_id bigint
+)
+BEGIN
+    drop TEMPORARY table IF EXISTS tmp.remote_monitoring_patients ;
+   CREATE TEMPORARY TABLE tmp.remote_monitoring_patients AS
+    SELECT id as `patient_id`
+    FROM patient
+    WHERE person_id = _person_id;
+    CREATE INDEX ix ON tmp.remote_monitoring_patients (patient_id);
+   
+  drop TEMPORARY table IF EXISTS tmp.remote_monitoring_snomed_concepts;
+
+CREATE TEMPORARY TABLE tmp.remote_monitoring_snomed_concepts (
+qualifying_code varchar(50),
+ends_monitoring boolean,
+type tinyint,
+qualifying_term varchar(150),
+snamed_id varchar(50)
+);
+INSERT INTO tmp.remote_monitoring_snomed_concepts (qualifying_code, ends_monitoring,type,qualifying_term) VALUES  
+	('784431000000109', false, 1,'Admission to virtual ward (procedure)'), 
+	('708252004', true, 1,'Discharge from virtual ward (procedure)'), 
+ 	('726861000000100', false, 2,'Starting of telehealth monitoring (regime/therapy)'), 
+    ('726871000000107', true, 2,'Ending of telehealth monitoring (regime/therapy)'), 
+ 	('1325191000000108', false, 3,'Telehealth pulse oximetry monitoring started (situation)'),
+    ('1325201000000105', true, 3,'Telehealth pulse oximetry monitoring ended (situation)'), 
+ 	('897931000000108', false, 4,'Remote care monitoring commenced (situation)'), 
+    ('897951000000101', true, 4,'Remote care monitoring ended (situation)');
+    
+
+drop TEMPORARY TABLE IF EXISTS  tmp.remote_monitoring_obs1;
+    CREATE TEMPORARY TABLE tmp.remote_monitoring_obs1 AS
+    SELECT 
+		c.*, ob.patient_id, ob.clinical_effective_date
+	FROM observation ob
+	INNER JOIN tmp.remote_monitoring_snomed_concepts c
+		ON c.qualifying_code = ob.snomed_concept_id
+     INNER JOIN   tmp.remote_monitoring_patients p
+ ON p.patient_id = ob.patient_id;
+ CREATE INDEX ix ON tmp.remote_monitoring_obs1 (ends_monitoring, patient_id, clinical_effective_date);
+
+ drop TEMPORARY TABLE IF EXISTS  tmp.remote_monitoring_obs2;
+    CREATE TEMPORARY TABLE tmp.remote_monitoring_obs2 AS
+    SELECT 
+		*
+	FROM tmp.remote_monitoring_obs1;
+	 CREATE INDEX ix ON tmp.remote_monitoring_obs2 (ends_monitoring, patient_id, clinical_effective_date);
+
+ SELECT 
+		qualifying_code,
+		qualifying_term
+    FROM tmp.remote_monitoring_obs1 o1
+    WHERE 
+        o1.ends_monitoring = false
+        AND NOT EXISTS (
+			SELECT 1
+            FROM tmp.remote_monitoring_obs2 o2
+            WHERE o2.patient_id = o1.patient_id
+            AND o2.ends_monitoring = true
+            AND o2.clinical_effective_date >= o1.clinical_effective_date
+			AND o2.type = o1.type
+        )
+	ORDER BY o1.clinical_effective_date DESC 
+	LIMIT 1;
+END$$
+DELIMITER ;

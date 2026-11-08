@@ -1,12 +1,12 @@
 package org.endeavourhealth.querytool;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.base.Strings;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.csv.QuoteMode;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.common.config.ConfigManager;
+import org.endeavourhealth.common.utility.EmailSender;
 import org.endeavourhealth.common.utility.FileHelper;
 import org.endeavourhealth.common.utility.SlackHelper;
 import org.endeavourhealth.core.database.dal.DalProvider;
@@ -16,13 +16,6 @@ import org.endeavourhealth.core.database.rdbms.ConnectionManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.activation.DataHandler;
-import javax.activation.FileDataSource;
-import javax.mail.*;
-import javax.mail.internet.InternetAddress;
-import javax.mail.internet.MimeBodyPart;
-import javax.mail.internet.MimeMessage;
-import javax.mail.internet.MimeMultipart;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -31,7 +24,6 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.Properties;
 
 public class Main {
     private static final Logger LOG = LoggerFactory.getLogger(Main.class);
@@ -122,8 +114,29 @@ public class Main {
         }
     }
 
-
     private static void sendEmail(QueryDefinition query, List<File> files) throws Exception {
+
+        LOG.debug("Sending email");
+
+        String subject = query.getEmailSubject();
+        if (Strings.isNullOrEmpty(subject)) {
+            throw new Exception("No subject found for email");
+        }
+        String bodyText = query.getEmailBody();
+        if (Strings.isNullOrEmpty(bodyText)) {
+            throw new Exception("No body found for email");
+        }
+        List<String> recipients = query.getEmailRecipients();
+        if (recipients == null || recipients.isEmpty()) {
+            throw new Exception("No recipients found for email");
+        }
+
+        boolean sentOk = EmailSender.sendEmail(recipients, subject, bodyText, files);
+        LOG.debug("Email sent = " + sentOk);
+    }
+
+
+    /*private static void sendEmail(QueryDefinition query, List<File> files) throws Exception {
 
         LOG.debug("Sending email");
 
@@ -206,7 +219,7 @@ public class Main {
         // to authenticate to the mail server.
         Transport.send(msg, fromAddress, password);
         LOG.debug("Email sent");
-    }
+    }*/
 
 
     private static void deleteFiles(List<File> files) {

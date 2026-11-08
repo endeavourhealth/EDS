@@ -5,6 +5,7 @@ import {NgbModule} from "@ng-bootstrap/ng-bootstrap";
 import {SubscribersComponent} from "./subscribers.component";
 import {SubscribersService} from "./subscribers.service";
 import {SubscriberDetailComponent} from "./subscriberDetail.component";
+import {PublisherStatusDialog} from "./publisherStatus.dialog";
 
 @NgModule({
     imports : [
@@ -14,11 +15,11 @@ import {SubscriberDetailComponent} from "./subscriberDetail.component";
     ],
     declarations : [
         SubscribersComponent,
-        SubscriberDetailComponent
-
+        SubscriberDetailComponent,
+        PublisherStatusDialog
     ],
     entryComponents : [
-
+        PublisherStatusDialog
     ],
     providers : [
         SubscribersService

@@ -353,7 +353,7 @@ COMMENT 'records when a patient entered or left a subscriber cohort';
 
 
 CREATE TABLE explicit_cohort_patient (
-  subscriber_config_name varchar(50) NOT NULL,
+  subscriber_config_name varchar(60) NOT NULL,
   nhs_number varchar(10),
   dt_updated datetime(3),
   in_cohort boolean,
@@ -361,4 +361,4 @@ CREATE TABLE explicit_cohort_patient (
 )
 ROW_FORMAT=COMPRESSED
 KEY_BLOCK_SIZE=8
-COMMENT 'defines patient list in explcit cohorts';
+COMMENT 'defines patient list in explicit cohorts';

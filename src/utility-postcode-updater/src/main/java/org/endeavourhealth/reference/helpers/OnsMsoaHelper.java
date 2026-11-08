@@ -34,7 +34,7 @@ public class OnsMsoaHelper {
 
             done ++;
             if (done % 1000 == 0) {
-                LOG.info("Done " + done + " MSOA mappings (out of approx 7K)");
+                LOG.info("Done " + done + " MSOA mappings (out of approx 8k)");
             }
         }
     }

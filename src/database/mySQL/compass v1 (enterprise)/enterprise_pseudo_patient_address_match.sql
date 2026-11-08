@@ -29,7 +29,7 @@ CREATE TABLE `patient_address_match` (
   `status` tinyint(1) DEFAULT NULL,
   `classification` varchar(45) CHARACTER SET utf8 DEFAULT NULL,
   `qualifier` varchar(255) CHARACTER SET utf8 DEFAULT NULL,
-  `algorithm` varchar(255) CHARACTER SET utf8 DEFAULT NULL,
+  `algorithm` varchar(4096) CHARACTER SET utf8 DEFAULT NULL,
   `match_date` datetime DEFAULT NULL,
   `algorithm_version` varchar(255) CHARACTER SET utf8 DEFAULT NULL,
   `epoc` varchar(255) COLLATE utf8_bin DEFAULT NULL,

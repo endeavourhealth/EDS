@@ -50,10 +50,10 @@
     </dependency>
 
     <!--Dashboard Information for json and enums-->
-    <dependency>
-      <groupId>org.endeavourhealth.discoveryDashboard</groupId>
-      <artifactId>DashboardInformation</artifactId>
-    </dependency>
+<!--    <dependency>-->
+<!--      <groupId>org.endeavourhealth.discoveryDashboard</groupId>-->
+<!--      <artifactId>DashboardInformation</artifactId>-->
+<!--    </dependency>-->
 
     <!-- Jersey -->
     <dependency>
@@ -238,6 +238,12 @@
       <artifactId>metrics-jvm</artifactId>
     </dependency>
 
+    <!-- JSCH for SSH -->
+    <dependency>
+      <groupId>com.jcraft</groupId>
+      <artifactId>jsch</artifactId>
+    </dependency>
+
   </dependencies>
 
   <build>
@@ -276,15 +282,15 @@
               <goal>npm</goal>
             </goals>
           </execution>
-          <execution>
-            <id>typings install</id>
-            <goals>
-              <goal>npm</goal>
-            </goals>
-            <configuration>
-              <arguments>run typings -- install</arguments>
-            </configuration>
-          </execution>
+<!--          <execution>-->
+<!--            <id>typings install</id>-->
+<!--            <goals>-->
+<!--              <goal>npm</goal>-->
+<!--            </goals>-->
+<!--            <configuration>-->
+<!--              <arguments>run typings &#45;&#45; install</arguments>-->
+<!--            </configuration>-->
+<!--          </execution>-->
           <execution>
             <id>tsc</id>
             <goals>

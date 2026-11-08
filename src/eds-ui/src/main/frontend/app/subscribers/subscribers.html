@@ -1,7 +1,7 @@
 <div class="module">
     <div class="module-heading">
-            Subscriber Status
-            <span *ngIf="statusesLastRefreshed"> (as of {{formatHHMMSS(statusesLastRefreshed)}})</span>
+        Subscriber Status {{getDateDiffSimpleFromNow(statusLastRefreshed)}}
+
         <div class="pull-right">
 
             <form class="form-inline">
@@ -21,21 +21,30 @@
                     <table class="table table-striped table-condensed">
                         <thead>
                         <tr>
-                            <th class="col-md-3">Subscriber</th> <!-- name and desc -->
-                            <th class="col-md-1">Type</th> <!-- internal or remote -->
-                            <th class="col-md-1">Schema</th> <!-- compass v1/v2 -->
-                            <th class="col-md-1">PI</th> <!-- PI or deidentified -->
+                            <th class="col-md-2">Subscriber</th> <!-- name and desc -->
+                            <th class="col-md-1">
+                                Details
+                                <span class="fa fa-info-circle fa-right-pad text-muted" ngbTooltip="Internal or Remote / Compass version / PI or not"></span>
+                            </th> <!-- internal or remote, v1/v2, PI/de-identified -->
                             <th class="col-md-1">Publishers</th> <!-- number of publishers -->
-                            <th class="col-md-1">Inbound Err</th> <!-- number of inbound errors -->
-                            <th class="col-md-2">
-                                Inbound Status
-                                <span class="fa fa-info-circle fa-right-pad text-muted" ngbTooltip="OK / 1d behind / 2d+ behind"></span>
+                            <th class="col-md-1">
+                                Receipt Status
+                                <span class="fa fa-info-circle fa-right-pad text-muted" ngbTooltip="&lt;1d / &lt;2d / 2d+"></span>
                             </th> <!-- inbound status -->
-                            <th class="col-md-2">
+                            <th class="col-md-1">Inbound Err</th> <!-- number of inbound errors -->
+                            <th class="col-md-1">
+                                Inbound Status
+                                <span class="fa fa-info-circle fa-right-pad text-muted" ngbTooltip="OK / 1d behind received / 2d+ behind received"></span>
+                            </th> <!-- inbound status -->
+                            <th class="col-md-1">
                                 Outbound Status
-                                <span class="fa fa-info-circle fa-right-pad text-muted" ngbTooltip="OK / 1d behind / 2d+ behind"></span>
+                                <span class="fa fa-info-circle fa-right-pad text-muted" ngbTooltip="OK / 1d behind received / 2d+ behind received"></span>
                             </th> <!-- outbound status -->
-                            <!--<th class="col-md-1"></th> &lt;!&ndash; actions &ndash;&gt;-->
+                            <th class="col-md-1">
+                                Outbound Write
+                                <span class="fa fa-info-circle fa-right-pad text-muted" ngbTooltip="OK / 1d behind received / 2d+ behind received"></span>
+                            </th> <!-- outbound write status -->
+                            <th class="col-md-1">Outbound Err</th> <!-- number of outbound errors -->
 
                         </tr>
                         </thead>
@@ -53,53 +62,118 @@
                             <!-- internal or remote -->
                             <td>
                                 <span ngbTooltip="{{getRemoteSubscriberIdDesc(subscriber)}}">{{getSubscriberLocationDesc(subscriber)}}</span>
-                            </td>
-
-                            <!-- compass v1/v2 -->
-                            <td>
-                                <div>{{getSubscriberSchemaDesc(subscriber)}}</div>
-                            </td>
-
-                            <!-- PI or deidentified -->
-                            <td>
-                                <span *ngIf="!subscriber.deidentified" class="fa fa-check"></span>
+                                &nbsp;/&nbsp;
+                                <span>{{getSubscriberSchemaDesc(subscriber)}}</span>
+                                &nbsp;/&nbsp;
+                                <span>{{getSubscriberPiDesc(subscriber)}}</span>
                             </td>
 
                             <!-- number of publishers -->
                             <td>
-                                {{subscriber.numPublishers}}
+                                {{padNumber(subscriber.numPublishers)}}
+                            </td>
+
+                            <!-- Receipt Status -->
+                            <td>
+                                <!--<code>{{padNumber(subscriber.receivedOneDay)}}&nbsp;/&nbsp;{{padNumber(subscriber.receivedTwoDays)}}&nbsp;/&nbsp;{{padNumber(subscriber.receivedMoreDays)}}</code>-->
+                                <!-- there are too many reasons why data might not have arrived, so don't show a warning for older ones -->
+                                <!--<span class="label label-danger" *ngIf="subscriber.receivedMoreDays > 0" ngbTooltip="No data received 2d+ days">Warning</span>-->
+
+                                <div class="row">
+                                    <div class="col-md-2">
+                                        {{padNumber(subscriber.receivedOneDay)}}
+                                    </div>
+                                    <div class="col-md-2">
+                                        {{padNumber(subscriber.receivedTwoDays)}}
+                                    </div>
+                                    <div class="col-md-2">
+                                        {{padNumber(subscriber.receivedMoreDays)}}
+                                    </div>
+                                    <div class="col-md-2">
+                                        <!-- there are too many reasons why data might not have arrived, so don't show a warning for older ones -->
+                                        <!--<span class="label label-danger" *ngIf="subscriber.receivedMoreDays > 0" ngbTooltip="No data received 2d+ days">Warning</span>-->
+                                    </div>
+                                </div>
+
+
                             </td>
 
                             <!-- number of inbound errors -->
                             <td>
-                                {{subscriber.inboundError}}
+                                {{padNumber(subscriber.inboundError)}}
                                 <span class="label label-danger" *ngIf="subscriber.inboundError > 0" ngbTooltip="Inbound processing errors">Error</span>
                             </td>
 
                             <!-- inbound status -->
                             <td>
-                                {{subscriber.inboundUpToDate}}
-                                &nbsp;&nbsp;/&nbsp;&nbsp;
-                                {{subscriber.inboundOneDay}}
-                                &nbsp;&nbsp;/&nbsp;&nbsp;
-                                {{subscriber.inboundMoreDays}}
-                                <span class="label label-danger" *ngIf="subscriber.inboundMoreDays > 0" ngbTooltip="Inbound processing 2d+ behind">Warning</span>
+                                <!--<code>{{padNumber(subscriber.inboundUpToDate)}}&nbsp;/&nbsp;{{padNumber(subscriber.inboundOneDay)}}&nbsp;/&nbsp;{{padNumber(subscriber.inboundMoreDays)}}</code>
+                                <span class="label label-danger" *ngIf="subscriber.inboundMoreDays > 0" ngbTooltip="Inbound processing 2d+ behind">Warning</span>-->
+
+                                <div class="row">
+                                    <div class="col-md-2">
+                                        {{padNumber(subscriber.inboundUpToDate)}}
+                                    </div>
+                                    <div class="col-md-2">
+                                        {{padNumber(subscriber.inboundOneDay)}}
+                                    </div>
+                                    <div class="col-md-2">
+                                        {{padNumber(subscriber.inboundMoreDays)}}
+                                    </div>
+                                    <div class="col-md-2">
+                                        <span class="label label-danger" *ngIf="subscriber.inboundMoreDays > 0" ngbTooltip="Inbound processing 2d+ behind">Warning</span>
+                                    </div>
+                                </div>
+
                             </td>
 
                             <!-- outbound status -->
                             <td>
-                                {{subscriber.outboundUpToDate}}
-                                &nbsp;&nbsp;/&nbsp;&nbsp;
-                                {{subscriber.outboundOneDay}}
-                                &nbsp;&nbsp;/&nbsp;&nbsp;
-                                {{subscriber.outboundMoreDays}}
-                                <span class="label label-danger" *ngIf="subscriber.outboundMoreDays > 0" ngbTooltip="Outbound processing 2d+ behind">Warning</span>
+                                <!--<code>{{padNumber(subscriber.outboundUpToDate)}}&nbsp;/&nbsp;{{padNumber(subscriber.outboundOneDay)}}&nbsp;/&nbsp;{{padNumber(subscriber.outboundMoreDays)}}</code>
+                                <span class="label label-danger" *ngIf="subscriber.outboundMoreDays > 0" ngbTooltip="Outbound processing 2d+ behind">Warning</span>-->
+
+                                <div class="row">
+                                    <div class="col-md-2">
+                                        {{padNumber(subscriber.outboundUpToDate)}}
+                                    </div>
+                                    <div class="col-md-2">
+                                        {{padNumber(subscriber.outboundOneDay)}}
+                                    </div>
+                                    <div class="col-md-2">
+                                        {{padNumber(subscriber.outboundMoreDays)}}
+                                    </div>
+                                    <div class="col-md-2">
+                                        <span class="label label-danger" *ngIf="subscriber.outboundMoreDays > 0" ngbTooltip="Outbound processing 2d+ behind">Warning</span>
+                                    </div>
+                                </div>
                             </td>
 
-                            <!-- actions -->
-                            <!--<td>
-                                <button class="btn btn-xs btn-default child-to-show" (click)="viewSubscriberDetails(subscriber)">View Details</button>
-                            </td>-->
+                            <!-- outbound write -->
+                            <td>
+                                <!--<code>{{padNumber(subscriber.writeOutUpToDate)}}&nbsp;/&nbsp;{{padNumber(subscriber.writeOutOneDay)}}&nbsp;/&nbsp;{{padNumber(subscriber.writeOutMoreDays)}}</code>
+                                <span class="label label-danger" *ngIf="subscriber.writeOutMoreDays > 0" ngbTooltip="Outbound write 2d+ behind">Warning</span>-->
+
+                                <div class="row">
+                                    <div class="col-md-2">
+                                        {{padNumber(subscriber.writeOutUpToDate)}}
+                                    </div>
+                                    <div class="col-md-2">
+                                        {{padNumber(subscriber.writeOutOneDay)}}
+                                    </div>
+                                    <div class="col-md-2">
+                                        {{padNumber(subscriber.writeOutMoreDays)}}
+                                    </div>
+                                    <div class="col-md-2">
+                                        <span class="label label-danger" *ngIf="subscriber.writeOutMoreDays > 0" ngbTooltip="Outbound write 2d+ behind">Warning</span>
+                                    </div>
+                                </div>
+
+                            </td>
+
+                            <!-- number of outbound errors -->
+                            <td>
+                                {{padNumber(subscriber.outboundError)}}
+                                <span class="label label-danger" *ngIf="subscriber.outboundError > 0" ngbTooltip="Outbound writing errors">Error</span>
+                            </td>
 
                         </tr>
                         </tbody>

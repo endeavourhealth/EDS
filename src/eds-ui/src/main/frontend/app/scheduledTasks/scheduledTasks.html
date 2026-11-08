@@ -1,11 +1,21 @@
 <div class="module">
     <div class="module-heading">
-        Scheduled Tasks <span *ngIf="statusLastRefreshed">(as of {{formatHHMMSS(statusLastRefreshed)}})</span>
+        Scheduled Tasks {{getDateDiffSimpleFromNow(statusLastRefreshed)}}
+
+        <span *ngIf="latest">
+            (showing {{getSummariesToDisplay().length}} of {{latest.length}})
+        </span>
+
 
         <div class="pull-right">
-
             <button class="btn btn-sm btn-success" (click)="refreshAll()">Refresh</button>
         </div>
+
+        <div class="pull-right">
+            <label for="showWarningsOnly" class="control-label">Show Warnings Only</label>
+            <input type="checkbox" id="showWarningsOnly" [(ngModel)]="scheduledTasksService.showWarningsOnly" name="showWarningsOnly">
+        </div>
+
     </div>
 
     <div class="module-body">
@@ -21,7 +31,7 @@
                             <th class="col-md-2">Task</th>
                             <th class="col-md-2">Last Run</th>
                             <th class="col-md-1">Due In</th>
-                            <th class="col-md-4">Status</th>
+                            <th class="col-md-4">Details</th>
                             <th class="col-md-1">Actions</th>
                         </tr>
                         </thead>
@@ -38,7 +48,7 @@
                             <!-- last run -->
                             <td>
                                 <div *ngIf="item.timestamp">
-                                    <span *ngIf="isItemTooOld(item)" class="label label-danger" ngbTooltip="Not run recently">Warning</span>
+                                    <span *ngIf="item.notRunWarning" class="label label-danger" ngbTooltip="Not run recently">Warning</span>
                                     {{formatYYYYMMDDHHMM(item.timestamp)}}
                                 </div>
                                 <div *ngIf="!item.timestamp">

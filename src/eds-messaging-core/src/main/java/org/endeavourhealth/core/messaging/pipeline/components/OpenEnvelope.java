@@ -2,6 +2,7 @@ package org.endeavourhealth.core.messaging.pipeline.components;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import org.apache.commons.io.FileUtils;
+import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.common.cache.ParserPool;
 import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.common.fhir.schema.OrganisationType;
@@ -10,6 +11,7 @@ import org.endeavourhealth.common.ods.OdsWebService;
 import org.endeavourhealth.common.utility.ExpiringCache;
 import org.endeavourhealth.common.utility.SlackHelper;
 import org.endeavourhealth.core.configuration.OpenEnvelopeConfig;
+import org.endeavourhealth.core.configuration.PostMessageToExchangeConfig;
 import org.endeavourhealth.core.database.dal.DalProvider;
 import org.endeavourhealth.core.database.dal.admin.ServiceDalI;
 import org.endeavourhealth.core.database.dal.admin.SystemHelper;
@@ -21,6 +23,9 @@ import org.endeavourhealth.core.database.dal.usermanager.caching.OrganisationCac
 import org.endeavourhealth.core.fhirStorage.ServiceInterfaceEndpoint;
 import org.endeavourhealth.core.messaging.pipeline.PipelineComponent;
 import org.endeavourhealth.core.messaging.pipeline.PipelineException;
+import org.endeavourhealth.core.queueing.MessageFormat;
+import org.endeavourhealth.core.queueing.QueueHelper;
+import org.endeavourhealth.core.queueing.RoutingOverride;
 import org.endeavourhealth.core.xml.QueryDocument.System;
 import org.endeavourhealth.core.xml.QueryDocument.TechnicalInterface;
 import org.endeavourhealth.transform.common.AuditWriter;
@@ -82,6 +87,7 @@ public class OpenEnvelope extends PipelineComponent {
 			calculateLastDataDate(exchange); //work out when the data was from
 			populateBulkTag(exchange, service);
 			rerouteLargeExchanges(exchange, service);
+			rerouteEmisCustomExchanges(exchange, service);
 
 			//commit what we've just received to the DB
 			AuditWriter.writeExchange(exchange);
@@ -91,6 +97,40 @@ public class OpenEnvelope extends PipelineComponent {
 		}
 
 		LOG.debug("Message envelope processed");
+	}
+
+	/**
+	 * SD-505 Automatically re-route Emis custom extracts into the bulk queues.
+	 * Unlike the other "reroute" function in this class, this only re-routes the specific exchange and
+	 * does not change the service as a whole. This is because the custom extracts don't need to be processed
+	 * in order with regular daily deltas, which must be done in order.
+     */
+	private void rerouteEmisCustomExchanges(Exchange exchange, Service service) throws Exception {
+
+		String software = exchange.getHeader(HeaderKeys.SourceSystem);
+		String version = exchange.getHeader(HeaderKeys.SystemVersion);
+
+		//if not an Emis custom exchange, return out
+		if (!software.equals(MessageFormat.EMIS_CSV)
+				|| !version.equalsIgnoreCase("CUSTOM")) {
+			return;
+		}
+
+		//work out what the routing key for this service would be if in bulk mode
+		PostMessageToExchangeConfig config = QueueHelper.findExchangeConfig(QueueHelper.ExchangeName.INBOUND);
+		String routingKey = PostMessageToExchange.getRoutingKey(true, exchange.getHeaders(), config);
+		LOG.trace("Re-routing exchange " + exchange.getId() + " for service " + service.getId() + " using routing key " + routingKey);
+
+		//generate a routing override
+		RoutingOverride override = new RoutingOverride();
+		override.setServiceId(service.getId());
+		override.setExchangeName(QueueHelper.ExchangeName.INBOUND.getName());
+		override.setRoutingKey(routingKey);
+		RoutingOverride[] overrideArr = new RoutingOverride[]{override};
+		String routingOverrideJson = ObjectMapperPool.getInstance().writeValueAsString(overrideArr);
+
+		//and route into the bulk queues
+		exchange.setHeader(HeaderKeys.RoutingOverride, routingOverrideJson);
 	}
 
 	/**
@@ -472,7 +512,7 @@ public class OpenEnvelope extends PipelineComponent {
 			for (String parentOds: parents.keySet()) {
 				OdsOrganisation parent = parents.get(parentOds);
 				//only select parent if it's NOT a PCN
-				if (!parent.getOrganisationTypes().contains(OrganisationType.PRIMARY_CARE_NETWORK)) {
+				if (!parent.getOrganisationTypes().contains(OrganisationType.fromCode(OrganisationType.CODE_PRIMARY_CARE_NETWORK))) {
 					s.setCcgCode(parentOds);
 					break;
 				}

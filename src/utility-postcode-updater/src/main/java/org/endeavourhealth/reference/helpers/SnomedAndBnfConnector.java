@@ -44,6 +44,7 @@ public class SnomedAndBnfConnector {
         URL url = new URL(urlForZipFile);
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
         connection.setRequestMethod("GET");
+        connection.addRequestProperty("User-Agent", "Mozilla/5.0");  //SD-1181
         InputStream in = connection.getInputStream();
         FileOutputStream out = new FileOutputStream(localPath + zipFileName);
         //download zip locally
@@ -65,6 +66,7 @@ public class SnomedAndBnfConnector {
             url = new URL(urlToRead);
             conn = (HttpURLConnection) url.openConnection();
             conn.setRequestMethod("GET");
+            conn.addRequestProperty("User-Agent", "Mozilla/5.0");  //SD-1181
             rd = new BufferedReader(new InputStreamReader(conn.getInputStream()));
             while ((line = rd.readLine()) != null) {
                 if (line.contains(PATTERN_ZIP)) {

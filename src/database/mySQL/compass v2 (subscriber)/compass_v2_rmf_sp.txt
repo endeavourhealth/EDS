@@ -1,0 +1,149 @@
+DROP PROCEDURE IF EXISTS refresh_remote_monitoring_codes;
+DROP PROCEDURE IF EXISTS get_remote_monitoring_flag;
+
+
+/*
+	call refresh_remote_monitoring_codes();
+
+    select *
+    from remote_monitoring_codes;
+*/
+
+DELIMITER $$
+CREATE  PROCEDURE `refresh_remote_monitoring_codes`()
+BEGIN
+
+	DROP TEMPORARY TABLE IF EXISTS tmp.remote_monitoring_snomed_codes;
+
+	CREATE TEMPORARY TABLE tmp.remote_monitoring_snomed_codes (
+		snomed_code varchar(50),
+		ends_monitoring boolean,
+		type tinyint
+	);
+
+	INSERT INTO tmp.remote_monitoring_snomed_codes (snomed_code, ends_monitoring, type) VALUES
+		('784431000000109', false, 1),
+		-- Admission to virtual ward (procedure)
+		('708252004', true, 1),
+		-- Discharge from virtual ward (procedure)
+		('726861000000100', false, 2),
+		-- Starting of telehealth monitoring (regime/therapy)
+		('726871000000107', true, 2),
+		-- Ending of telehealth monitoring (regime/therapy)
+		('1325191000000108', false, 3),
+		-- Telehealth pulse oximetry monitoring started (situation)
+		('1325201000000105', true, 3),
+		-- Telehealth pulse oximetry monitoring ended (situation)
+		('897931000000108', false, 4),
+		-- Remote care monitoring commenced (situation)
+		('897951000000101', true, 4);
+		-- Remote care monitoring ended (situation)
+
+	DROP TEMPORARY TABLE IF EXISTS tmp.remote_monitoring_codes;
+
+	-- find the concept ID for all the Snomed codes
+	CREATE TEMPORARY TABLE tmp.remote_monitoring_codes AS
+	SELECT
+		c.dbid as `concept_id`,
+		s.*,
+        c.description as `snomed_term`
+	FROM tmp.remote_monitoring_snomed_codes s
+	INNER JOIN concept c
+	ON c.code = s.snomed_code;
+
+	-- get the original codes that are all mapped to the snomed codes
+	INSERT INTO tmp.remote_monitoring_codes
+	SELECT
+		m.legacy as `concept_id`,
+		s.*,
+        c.description as `snomed_term`
+	FROM tmp.remote_monitoring_snomed_codes s
+	INNER JOIN concept c
+	ON c.code = s.snomed_code
+	INNER JOIN concept_map m
+	ON m.core = c.dbid;
+
+	-- copy into the database proper
+	DROP TABLE IF EXISTS remote_monitoring_codes_tmp;
+
+	CREATE TABLE remote_monitoring_codes_tmp AS
+	SELECT *
+	from tmp.remote_monitoring_codes;
+
+	CREATE INDEX ix ON remote_monitoring_codes_tmp (concept_id);
+
+	-- swap new table in
+	DROP TABLE IF EXISTS remote_monitoring_codes;
+	RENAME TABLE remote_monitoring_codes_tmp to remote_monitoring_codes;
+
+
+END$$
+DELIMITER ;
+
+
+DELIMITER $$
+CREATE  PROCEDURE `get_remote_monitoring_flag`(
+	_person_id bigint
+)
+BEGIN
+
+	DROP TEMPORARY TABLE IF EXISTS tmp.remote_monitoring_patients;
+
+	CREATE TEMPORARY TABLE tmp.remote_monitoring_patients AS
+    SELECT id as `patient_id`
+    FROM patient
+    WHERE person_id = _person_id;
+    CREATE INDEX ix ON tmp.remote_monitoring_patients (patient_id);
+
+	DROP TEMPORARY TABLE IF EXISTS tmp.remote_monitoring_obs_1;
+
+    -- get all observations for the patient
+    CREATE TEMPORARY TABLE tmp.remote_monitoring_obs_1 AS
+    SELECT
+		ob.*
+	FROM observation ob
+    INNER JOIN tmp.remote_monitoring_patients p
+		ON p.patient_id = ob.patient_id;
+
+	CREATE INDEX ix ON tmp.remote_monitoring_obs_1 (non_core_concept_id);
+
+    DROP TEMPORARY TABLE IF EXISTS tmp.remote_monitoring_obs_2;
+
+    -- filter down on the remote monitoring codes
+    CREATE TEMPORARY TABLE tmp.remote_monitoring_obs_2 AS
+    SELECT
+		c.*, ob.clinical_effective_date
+    FROM tmp.remote_monitoring_obs_1 ob
+    INNER JOIN remote_monitoring_codes c
+		ON c.concept_id = ob.non_core_concept_id;
+
+
+	DROP TEMPORARY TABLE IF EXISTS tmp.remote_monitoring_obs_3;
+
+	-- MySQL doesn't allow joining a temporary table to itself so we need to copy it
+    CREATE TEMPORARY TABLE tmp.remote_monitoring_obs_3 AS
+    SELECT *
+    FROM tmp.remote_monitoring_obs_2;
+
+    CREATE INDEX ix ON tmp.remote_monitoring_obs_2 (ends_monitoring, clinical_effective_date, type);
+    CREATE INDEX ix ON tmp.remote_monitoring_obs_3 (ends_monitoring, clinical_effective_date, type);
+
+   -- select most recent starting monitoring code without a subsequent ending monitoring code for the same patient_id
+    SELECT
+		o1.snomed_code, -- these column names selected need to match the flag configuration JSON
+		o1.snomed_term -- but also aliases cannot be used (see https://bugs.mysql.com/bug.php?id=88949) so the actual column names have to be selected
+	FROM tmp.remote_monitoring_obs_2 o1
+	WHERE
+		o1.ends_monitoring = false
+		AND NOT EXISTS (
+			SELECT 1
+			FROM tmp.remote_monitoring_obs_3 o2
+			WHERE o2.ends_monitoring = true
+			AND o2.clinical_effective_date >= o1.clinical_effective_date
+			AND o2.type = o1.type -- this means we match the right start and end codes together
+		)
+	ORDER BY o1.clinical_effective_date DESC
+	LIMIT 1;
+
+END$$
+DELIMITER ;

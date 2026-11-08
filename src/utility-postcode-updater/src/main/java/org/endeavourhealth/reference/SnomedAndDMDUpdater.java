@@ -1,5 +1,6 @@
 package org.endeavourhealth.reference;
 
+import com.google.common.base.Strings;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
@@ -101,7 +102,9 @@ public class SnomedAndDMDUpdater {
 
         LOG.info("Doing DM+D CT Description->Concept Mappings");
         ZipInputStream zis = ZipHelper.createZipInputStream(file);
-        Reader r = ZipHelper.findFile(zis, "SnomedCT_UKDrugRF2_PRODUCTION_.*/Snapshot/Terminology/sct2_Description_Snapshot-en_GB1000001_.*.txt");
+        //file name has changed in May 2021
+        //Reader r = ZipHelper.findFile(zis, "SnomedCT_UKDrugRF2_PRODUCTION_.*/Snapshot/Terminology/sct2_Description_Snapshot-en_GB1000001_.*.txt");
+        Reader r = ZipHelper.findFile(zis, "SnomedCT_UKDrugRF2_PRODUCTION_.*/Snapshot/Terminology/sct2_Description_UKDGSnapshot-en_GB1000001_.*.txt");
         if (r == null) {
             throw new Exception("Failed to find international description file");
         }
@@ -111,7 +114,9 @@ public class SnomedAndDMDUpdater {
         //we now need to process the UK refset file to work out the preferred description for each concept
         LOG.info("Doing DM+D Refset");
         zis = ZipHelper.createZipInputStream(file);
-        r = ZipHelper.findFile(zis, "SnomedCT_UKDrugRF2_PRODUCTION_.*/Snapshot/Refset/Language/der2_cRefset_LanguageSnapshot-en_GB1000001_.*.txt");
+        //file name has changed in May 2021
+        r = ZipHelper.findFile(zis, "SnomedCT_UKDrugRF2_PRODUCTION_.*/Snapshot/Refset/Language/der2_cRefset_LanguageUKDGSnapshot-en_GB1000001_.*.txt");
+        //r = ZipHelper.findFile(zis, "SnomedCT_UKDrugRF2_PRODUCTION_.*/Snapshot/Refset/Language/der2_cRefset_LanguageSnapshot-en_GB1000001_.*.txt");
         if (r == null) {
             throw new Exception("Failed to find UK refset file");
         }
@@ -138,7 +143,9 @@ public class SnomedAndDMDUpdater {
         //find UK concepts file
         LOG.info("Doing UK Snomed CT Description->Concept Mappings");
         zis = ZipHelper.createZipInputStream(file);
-        r = ZipHelper.findFile(zis, "SnomedCT_UKClinicalRF2_PRODUCTION_.*/Snapshot/Terminology/sct2_Description_Snapshot-en_GB1000000_.*.txt");
+        //changed file name in May 2021
+        //r = ZipHelper.findFile(zis, "SnomedCT_UKClinicalRF2_PRODUCTION_.*/Snapshot/Terminology/sct2_Description_Snapshot-en_GB1000000_.*.txt");
+        r = ZipHelper.findFile(zis, "SnomedCT_UKClinicalRF2_PRODUCTION_.*/Snapshot/Terminology/sct2_Description_UKCLSnapshot-en_GB1000000_.*.txt");
         if (r == null) {
             throw new Exception("Failed to find UK description file");
         }
@@ -148,7 +155,9 @@ public class SnomedAndDMDUpdater {
         //we now need to process the UK refset file to work out the preferred description for each concept
         LOG.info("Doing UK Snomed Refset");
         zis = ZipHelper.createZipInputStream(file);
-        r = ZipHelper.findFile(zis, "SnomedCT_UKClinicalRF2_PRODUCTION_.*/Snapshot/Refset/Language/der2_cRefset_LanguageSnapshot-en_GB1000000_.*.txt");
+        //changed file name in May 2021
+        //r = ZipHelper.findFile(zis, "SnomedCT_UKClinicalRF2_PRODUCTION_.*/Snapshot/Refset/Language/der2_cRefset_LanguageSnapshot-en_GB1000000_.*.txt");
+        r = ZipHelper.findFile(zis, "SnomedCT_UKClinicalRF2_PRODUCTION_.*/Snapshot/Refset/Language/der2_cRefset_LanguageUKCLSnapshot-en_GB1000000_.*.txt");
         if (r == null) {
             throw new Exception("Failed to find UK refset file");
         }
@@ -182,7 +191,9 @@ public class SnomedAndDMDUpdater {
                 String conceptId = record.get("conceptId");
                 String typeId = record.get("typeId");
                 String term = record.get("term");
-
+                if (!Strings.isNullOrEmpty(term)) {
+                    term = term.replace('ā', 'a');  //SD-1116
+                }
                 if (!typeId.equals(TYPE_FULLY_SPECIFIED_NAME)
                         && !typeId.equals(TYPE_SYNONYM)) {
                     throw new Exception("Unexpected type ID " + typeId + " for concept " + conceptId + " and term ID " + descriptionId);

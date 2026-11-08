@@ -56,6 +56,8 @@ import {ScheduledTasksComponent} from "./scheduledTasks/scheduledTasks.component
 import {SubscribersModule} from "./subscribers/subscribers.module";
 import {SubscribersComponent} from "./subscribers/subscribers.component";
 import {SubscriberDetailComponent} from "./subscribers/subscriberDetail.component";
+import {Hl7v2ApiComponent} from "./hl7v2Api/hl7v2Api.component";
+import {Hl7v2ApiModule} from "./hl7v2Api/hl7v2Api.module";
 
 @NgModule(
 	Application.Define({
@@ -79,6 +81,7 @@ import {SubscriberDetailComponent} from "./subscribers/subscriberDetail.componen
 			ExchangeAuditModule,
 			RemoteFilingModule,
 			Hl7ReceiverModule,
+			Hl7v2ApiModule,
 			FrailtyApiModule,
 			SftpReaderModule,
 			DatabaseStatsModule,
@@ -107,6 +110,7 @@ import {SubscriberDetailComponent} from "./subscribers/subscriberDetail.componen
 			{name: 'app.countReportEdit', url: '/countReportEdit/:itemAction/:itemUuid', component: CountReportEditComponent},
             {name: 'app.remoteFiling', url: '/remoteFiling', component: RemoteFilingComponent},
 			{name: 'app.hl7Receiver', url: '/hl7Receiver', component: Hl7ReceiverComponent},
+			{name: 'app.hl7v2Api', url: '/hl7v2Api', component: Hl7v2ApiComponent},
 			{name: 'app.frailtyApi', url: '/frailtyApi', component: FrailtyApiComponent},
 			{name: 'app.sftpReader', url: '/sftpReader', component: SftpReaderComponent},
 			{name: 'app.databaseStats', url: '/databaseStats', component: DatabaseStatsComponent},

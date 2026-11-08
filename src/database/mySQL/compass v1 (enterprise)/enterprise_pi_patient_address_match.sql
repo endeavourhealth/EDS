@@ -33,7 +33,7 @@ CREATE TABLE `patient_address_match` (
   `xcoordinate` double DEFAULT NULL,
   `ycoordinate` double DEFAULT NULL,
   `qualifier` varchar(50) CHARACTER SET utf8 DEFAULT NULL,
-  `algorithm` varchar(255) CHARACTER SET utf8 DEFAULT NULL,
+  `algorithm` varchar(4096) CHARACTER SET utf8 DEFAULT NULL,
   `match_date` datetime DEFAULT NULL,
   `abp_address_number` varchar(255) CHARACTER SET utf8 DEFAULT NULL,
   `abp_address_street` varchar(255) CHARACTER SET utf8 DEFAULT NULL,

@@ -7,9 +7,11 @@ import org.endeavourhealth.core.database.dal.admin.ServiceDalI;
 import org.endeavourhealth.core.database.dal.admin.models.Service;
 import org.endeavourhealth.core.database.dal.ehr.ResourceDalI;
 import org.endeavourhealth.core.database.dal.ehr.models.ResourceWrapper;
+import org.endeavourhealth.core.database.dal.publisherTransform.SourceFileMappingDalI;
 import org.endeavourhealth.core.database.dal.publisherTransform.models.ResourceFieldMappingAudit;
 import org.endeavourhealth.core.database.rdbms.ConnectionManager;
 import org.endeavourhealth.transform.subscriber.SubscriberConfig;
+import org.hl7.fhir.instance.model.ResourceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -134,7 +136,8 @@ public class Fhir extends AbstractRoutine {
         LOG.debug("Resource history size is " + history.size());
 
         //find all the mapping documents, and hash by version
-        Map<UUID, ResourceFieldMappingAudit> hmAudits = findResourceMappings(serviceId, resourceType, resourceId);
+        SourceFileMappingDalI mappingDal = DalProvider.factorySourceFileMappingDal();
+        Map<UUID, ResourceFieldMappingAudit> hmAudits = mappingDal.findAllMappingsForResource(serviceId, ResourceType.valueOf(resourceType), resourceId);
 
         for (ResourceWrapper wrapper: history) {
             SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
@@ -288,40 +291,6 @@ public class Fhir extends AbstractRoutine {
         }
     }
 
-    private static Map<UUID, ResourceFieldMappingAudit> findResourceMappings(UUID serviceId, String resourceType, UUID resourceId) throws Exception {
-
-        Map<UUID, ResourceFieldMappingAudit> ret = new HashMap<>();
-
-        String sql = "SELECT version, mappings_json FROM resource_field_mappings WHERE resource_type = ? AND resource_id = ?";
-
-        Connection connection = ConnectionManager.getPublisherTransformConnection(serviceId);
-        PreparedStatement ps = connection.prepareStatement(sql);
-        ps.setString(1, resourceType);
-        ps.setString(2, resourceId.toString());
-        ResultSet rs = ps.executeQuery();
-        while (rs.next()) {
-            UUID version = UUID.fromString(rs.getString(1));
-            ResourceFieldMappingAudit audit = ResourceFieldMappingAudit.readFromJson(rs.getString(2));
-            ret.put(version, audit);
-        }
-        ps.close();
-        connection.close();
-
-        connection = ConnectionManager.getFhirAuditConnection();
-        ps = connection.prepareStatement(sql);
-        ps.setString(1, resourceType);
-        ps.setString(2, resourceId.toString());
-        rs = ps.executeQuery();
-        while (rs.next()) {
-            UUID version = UUID.fromString(rs.getString(1));
-            ResourceFieldMappingAudit audit = ResourceFieldMappingAudit.readFromJson(rs.getString(2));
-            ret.put(version, audit);
-        }
-        ps.close();
-        connection.close();
-
-        return ret;
-    }
 
     private static Map<String, Service> findPublisherConfigNames() throws Exception {
 

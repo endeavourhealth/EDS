@@ -20,16 +20,17 @@ export class SubscribersComponent {
 
     //SD-338 - need to import the static formatting functions so they can be used by the HTML template
     formatHHMMSS = DateTimeFormatter.formatHHMMSS;
+    getDateDiffSimpleFromNow = DateTimeFormatter.getDateDiffSimpleFromNow;
 
     //subscriber status
     subscribers: SubscriberConfiguration[];
-    statusesLastRefreshed: Date;
+    statusLastRefreshed: Date;
     refreshingStatus: boolean;
 
     /*configurations: SubscribersConfiguration[];
     refreshingStatusMap: {};
     statusMap: {};
-    statusesLastRefreshed: Date;*/
+    statusLastRefreshed: Date;*/
 
 
     constructor(private $modal: NgbModal,
@@ -55,7 +56,7 @@ export class SubscribersComponent {
 
     refreshSubscribers() {
         var vm = this;
-        vm.statusesLastRefreshed = new Date();
+        vm.statusLastRefreshed = new Date();
         vm.refreshingStatus = true;
 
         vm.subscribersService.getSubscribersInstances().subscribe(
@@ -111,7 +112,7 @@ export class SubscribersComponent {
 
     /*refreshStatuses() {
         var vm = this;
-        vm.statusesLastRefreshed = new Date();
+        vm.statusLastRefreshed = new Date();
 
         for (var i = 0; i < vm.configurations.length; i++) {
             var configuration = vm.configurations[i];
@@ -255,7 +256,7 @@ export class SubscribersComponent {
         pollingFrequencyMs = (pollingFrequencyMs * 2); //double the polling frequency to give a fair window
 
         //var now = new Date();
-        var now = vm.statusesLastRefreshed; //use date of refresh rather than current date so it doesn't change if you don't refresh the page
+        var now = vm.statusLastRefreshed; //use date of refresh rather than current date so it doesn't change if you don't refresh the page
         var lastPolledDiffMs = now.getTime() - lastPolled;
 
         return lastPolledDiffMs > pollingFrequencyMs;
@@ -274,7 +275,7 @@ export class SubscribersComponent {
         dataFrequencyMs = (dataFrequencyMs * 1.5); //add 10% to the poling frequency so it's less touchy
 
         //var now = new Date();
-        var now = vm.statusesLastRefreshed; //use date of refresh rather than current date so it doesn't change if you don't refresh the page
+        var now = vm.statusLastRefreshed; //use date of refresh rather than current date so it doesn't change if you don't refresh the page
         var lastExtractDiffMs = now.getTime() - lastExtract;
 
         return lastExtractDiffMs > dataFrequencyMs;
@@ -334,6 +335,14 @@ export class SubscribersComponent {
         }
     }
 
+    getSubscriberPiDesc(sub: SubscriberConfiguration): string {
+        if (sub.deidentified) {
+            return "pseudo";
+        } else {
+            return 'PI';
+        }
+    }
+
     getRemoteSubscriberIdDesc(sub: SubscriberConfiguration): string {
         if (!sub.remoteSubscriberId) {
             return null
@@ -378,12 +387,18 @@ export class SubscribersComponent {
             '\"Subscriber Transform DB\",' +
             '\"Subscriber Transform DB Name\",' +
             '\"Publishers\",' +
-            '\"In Up-to-date\",' +
-            '\"In 1d Behind\",' +
-            '\"In 2d+ Behind\",' +
-            '\"Out Up-to-date\",' +
-            '\"Out 1d Behind\",' +
-            '\"Out 2d+ Behind\"';
+            '\"Inbound Errors\",' +
+            '\"Transform In Up-to-date\",' +
+            '\"Transform In 1d Behind\",' +
+            '\"Transform In 2d+ Behind\",' +
+            '\"Transform Out Up-to-date\",' +
+            '\"Transform Out 1d Behind\",' +
+            '\"Transform Out 2d+ Behind\",' +
+            '\"Write Out Up-to-date\",' +
+            '\"Write Out 1d Behind\",' +
+            '\"Write Out 2d+ Behind\",' +
+            '\"Outbound Errors\"';
+        ;
         lines.push(line);
 
         var subs = vm.getSubscribersToDisplay();
@@ -435,12 +450,17 @@ export class SubscribersComponent {
             cols.push(config.subscriberTransformDatabase);
             cols.push(config.subscriberTransformDatabaseName);
             cols.push(config.numPublishers);
+            cols.push(config.inboundError);
             cols.push(config.inboundUpToDate);
             cols.push(config.inboundOneDay);
             cols.push(config.inboundMoreDays);
             cols.push(config.outboundUpToDate);
             cols.push(config.outboundOneDay);
             cols.push(config.outboundMoreDays);
+            cols.push(config.writeOutUpToDate);
+            cols.push(config.writeOutOneDay);
+            cols.push(config.writeOutMoreDays);
+            cols.push(config.outboundError);
 
             line = '\"' + cols.join('\",\"') + '\"';
             lines.push(line);
@@ -462,5 +482,16 @@ export class SubscribersComponent {
         a.remove();
     }
 
+    /**
+     * pads a number out so that it is always a three-character string
+     */
+    padNumber(value: number): string {
+        var ret = '' + value;
+        while (ret.length < 3) {
+            ret += '\xa0'; //code for non-breaking space
+            //ret += '0'; //code for non-breaking space
+        }
+        return ret;
+    }
 
 }

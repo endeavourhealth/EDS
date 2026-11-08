@@ -6,6 +6,9 @@ DROP PROCEDURE IF EXISTS update_person_record_2;
 drop trigger if exists after_patient_insert;
 drop trigger if exists after_patient_update;
 drop trigger if exists after_patient_delete;
+drop trigger if exists after_patient_additional_insert;
+drop trigger if exists after_patient_additional_update;
+drop trigger if exists after_patient_additional_delete;
 drop trigger if exists after_person_insert;
 drop trigger if exists after_person_update;
 drop trigger if exists after_person_delete;
@@ -18,6 +21,9 @@ drop trigger if exists after_encounter_event_delete;
 drop trigger if exists after_encounter_additional_insert;
 drop trigger if exists after_encounter_additional_update;
 drop trigger if exists after_encounter_additional_delete;
+drop trigger if exists after_appointment_additional_insert;
+drop trigger if exists after_appointment_additional_update;
+drop trigger if exists after_appointment_additional_delete;
 drop trigger if exists after_encounter_insert;
 drop trigger if exists after_encounter_update;
 drop trigger if exists after_encounter_delete;
@@ -48,6 +54,9 @@ drop trigger if exists after_observation_additional_delete;
 drop trigger if exists after_organization_insert;
 drop trigger if exists after_organization_update;
 drop trigger if exists after_organization_delete;
+drop trigger if exists after_organization_metadata_insert;
+drop trigger if exists after_organization_metadata_update;
+drop trigger if exists after_organization_metadata_delete;
 drop trigger if exists after_practitioner_insert;
 drop trigger if exists after_practitioner_update;
 drop trigger if exists after_practitioner_delete;
@@ -60,6 +69,9 @@ drop trigger if exists after_pseudo_id_delete;
 drop trigger if exists after_referral_request_insert;
 drop trigger if exists after_referral_request_update;
 drop trigger if exists after_referral_request_delete;
+drop trigger if exists after_referral_request_additional_insert;
+drop trigger if exists after_referral_request_additional_update;
+drop trigger if exists after_referral_request_additional_delete;
 drop trigger if exists after_schedule_insert;
 drop trigger if exists after_schedule_update;
 drop trigger if exists after_schedule_delete;
@@ -84,6 +96,11 @@ drop trigger if exists after_patient_address_match_delete;
 drop trigger if exists after_patient_address_ralf_insert;
 drop trigger if exists after_patient_address_ralf_update;
 drop trigger if exists after_patient_address_ralf_delete;
+drop trigger if exists after_schedule_additional_update;
+drop trigger if exists after_schedule_additional_insert;
+drop trigger if exists after_schedule_additional_delete;
+DROP TABLE IF EXISTS patient_address_match;
+DROP TABLE IF EXISTS patient_address_ralf;
 DROP TABLE IF EXISTS patient_pseudo_id;
 DROP TABLE IF EXISTS allergy_intolerance;
 DROP TABLE IF EXISTS diagnostic_order;
@@ -94,6 +111,7 @@ DROP TABLE IF EXISTS observation;
 DROP TABLE IF EXISTS observation_additional;
 DROP TABLE IF EXISTS procedure_request;
 DROP TABLE IF EXISTS referral_request;
+DROP TABLE IF EXISTS referral_request_additional;
 DROP TABLE IF EXISTS pseudo_id; -- deleted table
 DROP TABLE IF EXISTS patient_contact;
 DROP TABLE IF EXISTS patient_address;
@@ -102,6 +120,7 @@ DROP TABLE IF EXISTS patient_additional;
 DROP TABLE IF EXISTS event_log;
 DROP TABLE IF EXISTS encounter_event;
 DROP TABLE IF EXISTS encounter_additional;
+DROP TABLE IF EXISTS appointment_additional;
 DROP TABLE IF EXISTS encounter;
 DROP TABLE IF EXISTS appointment;
 DROP TABLE IF EXISTS registration_status_history;
@@ -112,22 +131,22 @@ DROP TABLE IF EXISTS location;
 DROP TABLE IF EXISTS `schedule`;
 DROP TABLE IF EXISTS practitioner;
 DROP TABLE IF EXISTS organization;
-DROP TABLE IF EXISTS patient_address_match;
-DROP TABLE IF EXISTS patient_address_ralf;
+DROP TABLE IF EXISTS organization_metadata;
 DROP TABLE IF EXISTS concept;
 DROP TABLE IF EXISTS concept_map;
+DROP TABLE IF EXISTS schedule_additional;
 
 -- Table: organization
 
 CREATE TABLE organization
 (
-  id bigint NOT NULL,
-  ods_code character varying(50),
-  name character varying(255),
-  type_code character varying(50),
-  type_desc character varying(255),
-  postcode character varying(10),
-  parent_organization_id bigint,
+    id bigint NOT NULL COMMENT 	'Unique Id of the organisation'	,
+    ods_code varchar(50) NULL COMMENT 	'ODS Code of the organisation'	,
+    name varchar(255) NULL COMMENT 	'Name of the organisation'	,
+    type_code varchar(50) NULL COMMENT 	'The type of organisation'	,
+    type_desc varchar(255) NULL COMMENT 	'Textual description of the type of organisation eg GP Practice'	,
+    postcode varchar(10) NULL COMMENT 	'The postcode of the organisation'	,
+    parent_organization_id bigint NULL COMMENT 	'The id of the parent organisation'	,
   CONSTRAINT pk_organization_id PRIMARY KEY (id)
 );
 
@@ -139,15 +158,26 @@ CREATE INDEX fki_organization_parent_organization_id
   ON organization
   (parent_organization_id);
 
+-- Table: organization_metadata
+
+create table organization_metadata
+(
+    id bigint comment 'organisation ID, corresponds to same ID in the organizaton table',
+    publishing_software varchar(50) comment 'software name of publishing system, i.e. SystmOne',
+    last_data_to_dds datetime comment 'date time data was last sent to DDS',
+    last_data_cutoff datetime comment 'cutoff date time of the last extract from the publishing system',
+    CONSTRAINT pk_organization_metadata PRIMARY KEY (id, publishing_software)
+);
+
 -- Table: location
 
 CREATE TABLE location (
-  id bigint NOT NULL,
-  name character varying(255),
-  type_code character varying(50),
-  type_desc character varying(255),
-  postcode character varying(10),
-  managing_organization_id bigint,
+  id bigint NOT NULL COMMENT 	'Unique Id of the location'	,
+  name varchar(255) NULL COMMENT 	'The name of a location set by the publisher. E.g. ward, clinic, domiciliary'	,
+  type_code varchar(50) NULL COMMENT 	'The type of location'	,
+  type_desc varchar(255) NULL COMMENT 	'Textual description of the type of location eg GP Practice'	,
+  postcode varchar(10) NULL COMMENT 	'The postcode of the location'	,
+  managing_organization_id bigint NULL COMMENT 	'Reference to the managing organisation of the location'	,
   CONSTRAINT pk_location_id PRIMARY KEY (id),
   CONSTRAINT fk_location_organisation_id FOREIGN KEY (managing_organization_id)
       REFERENCES organization (id) MATCH SIMPLE
@@ -166,12 +196,12 @@ CREATE INDEX fk_location_managing_organisation_id
 
 CREATE TABLE practitioner
 (
-  id bigint NOT NULL,
-  organization_id bigint NOT NULL,
-  name character varying(1024),
-  role_code character varying(50),
-  role_desc character varying(255),
-  gmc_code character varying(50),
+    id bigint NOT NULL COMMENT 	'Unique Id of the practitioner',
+    organization_id bigint NOT NULL COMMENT 	'Owning organisation (i.e. publisher)',
+    name varchar(1024) NULL COMMENT 	'Name of the practitioner',
+    role_code varchar(50) NULL COMMENT 	'The code representing the role of the practitioner',
+    role_desc varchar(255) NULL COMMENT 	'Textual description of the role of the practitioner eg General Medical Practitioner',
+    gmc_code varchar(50) NULL COMMENT 	'The GMC code of the practitioner',
   CONSTRAINT pk_practitioner_id PRIMARY KEY (id),
   CONSTRAINT fk_practitioner_organisation_id FOREIGN KEY (organization_id)
       REFERENCES organization (id) MATCH SIMPLE
@@ -186,13 +216,13 @@ CREATE UNIQUE INDEX practitioner_id
 
 CREATE TABLE schedule
 (
-  id bigint NOT NULL,
-  organization_id bigint NOT NULL,
-  practitioner_id bigint,
-  start_date date,
-  type character varying(255),
-  location character varying(255),
-  name varchar(150),
+    id bigint NOT NULL COMMENT 	'Unique Id of the schedule'	,
+    organization_id bigint NOT NULL COMMENT 	'Owning organisation (i.e. publisher)'	,
+    practitioner_id bigint NULL COMMENT 	'Reference to the practitioner who owns the schedule'	,
+    start_date datetime NULL COMMENT 	'The start date of the schedule'	,
+    type varchar(255) NULL COMMENT 	'The type of schedule eg Timed Appointments'	,
+    location varchar(255) NULL COMMENT 	'Textual description of the location the schedule was held at'	,
+    name varchar(150) NULL COMMENT 	'The name of the schedule'	,
   CONSTRAINT pk_schedule_id PRIMARY KEY (organization_id, id),
   CONSTRAINT fk_schedule_organization_id FOREIGN KEY (organization_id)
       REFERENCES organization (id) MATCH SIMPLE
@@ -211,21 +241,21 @@ CREATE UNIQUE INDEX schedule_id
 
 CREATE TABLE person
 (
-  id bigint NOT NULL,
-  organization_id bigint NOT NULL,
-  title varchar(255),
-  first_names varchar(255),
-  last_name varchar(255),
-  gender_concept_id int,
-  nhs_number character varying(255),
-  date_of_birth date,
-  date_of_death date,
-  current_address_id bigint,
-  ethnic_code_concept_id int,
-  registered_practice_organization_id bigint,
-  birth_year smallint,
-  birth_month tinyint,
-  birth_week tinyint,
+    id bigint NOT NULL COMMENT 	'Unique Id of the person'	,
+    organization_id bigint NOT NULL COMMENT 	'Owning organisation (i.e. publisher)'	,
+    title varchar(255) NULL COMMENT 	'The title of the person'	,
+    first_names varchar(255) NULL COMMENT 	'The first names of the person'	,
+    last_name varchar(255) NULL COMMENT 	'The last name of the person'	,
+    gender_concept_id int NULL COMMENT 	'Reference to the gender of the person'	,
+    nhs_number varchar(255) NULL COMMENT 	'The NHS number of the person'	,
+    date_of_birth date NULL COMMENT 	'The date of birth of the person'	,
+    date_of_death date NULL COMMENT 	'The date of death of the person'	,
+    current_address_id bigint NULL COMMENT 	'Reference to the current address of the person'	,
+    ethnic_code_concept_id int NULL COMMENT 	'Reference to the ethnicity of the person'	,
+    registered_practice_organization_id bigint NULL COMMENT 	'Reference to the organisation the person is registered at'	,
+    birth_year smallint,
+    birth_month tinyint,
+    birth_week tinyint,
   CONSTRAINT pk_person_id PRIMARY KEY (id)
 );
 
@@ -237,22 +267,22 @@ CREATE UNIQUE INDEX person_id
 
 CREATE TABLE patient
 (
-  id bigint NOT NULL,
-  organization_id bigint NOT NULL,
-  person_id bigint NOT NULL,
-  title varchar(255), -- got some rare but long titles
-  first_names varchar(255),
-  last_name varchar(255),
-  gender_concept_id int,
-  nhs_number character varying(255),
-  date_of_birth date,
-  date_of_death date,
-  current_address_id bigint,
-  ethnic_code_concept_id int,
-  registered_practice_organization_id bigint,
-  birth_year smallint,
-  birth_month tinyint,
-  birth_week tinyint,
+    id bigint NOT NULL COMMENT 	'Unique Id of the patient'	,
+    organization_id bigint NOT NULL COMMENT 	'Owning organisation (i.e. publisher)'	,
+    person_id bigint NOT NULL COMMENT 	'Unique individual across all organisations'	,
+    title varchar(255)  COMMENT 	'The title of the patient'	,
+    first_names varchar(255)  COMMENT 	'The first names of the patient'	,
+    last_name varchar(255)  COMMENT 	'The last name of the patient'	,
+    gender_concept_id int  COMMENT 	'Reference to the gender of the patient'	,
+    nhs_number varchar(255)  COMMENT 	'The NHS number of the patient'	,
+    date_of_birth date  COMMENT 	'The date of birth of the patient'	,
+    date_of_death date  COMMENT 	'The date of death of the patient'	,
+    current_address_id bigint  COMMENT 	'Reference to the current address of the patient'	,
+    ethnic_code_concept_id int  COMMENT 	'Reference to the ethnicity of the patient'	,
+    registered_practice_organization_id bigint  COMMENT 	'Reference to the organisation the patient is registered at'	,
+    birth_year smallint,
+    birth_month tinyint,
+    birth_week tinyint,
   CONSTRAINT pk_patient_id_organization_id PRIMARY KEY (`organization_id`,`person_id`,`id`),
   CONSTRAINT fk_patient_organization_id FOREIGN KEY (organization_id)
       REFERENCES organization (id) MATCH SIMPLE
@@ -274,25 +304,29 @@ CREATE TABLE patient_additional (
   property_id int NOT NULL COMMENT 'IM reference (e.g. Cause of death)',
   value_id int NULL COMMENT 'IM reference (e.g. COVID)',
   json_value json NULL COMMENT 'where there is no mapped value_id, just raw JSON',
+  text_value varchar(255) NULL COMMENT 'where there is no mapped value_id or raw JSON, just a basic text value (i.e. GP Practitioner number)',
   CONSTRAINT pk_patient_additional_id PRIMARY KEY (id, property_id)
 );
 CREATE INDEX ix_patient_additional_id
     ON patient_additional
     (value_id);
+CREATE INDEX ix_patient_additional_text_value
+    ON patient_additional
+    (text_value);
 
 -- Table: episode_of_care
 
 CREATE TABLE episode_of_care
 (
-  id bigint NOT NULL,
-  organization_id bigint NOT NULL,
-  patient_id bigint NOT NULL,
-  person_id bigint NOT NULL,
-  registration_type_concept_id int,
-  registration_status_concept_id int,
-  date_registered date,
-  date_registered_end date,
-  usual_gp_practitioner_id bigint,
+    id bigint NOT NULL COMMENT 	'Unique Id of the episode of care'	,
+    organization_id bigint NOT NULL COMMENT 	'Owning organisation (i.e. publisher)'	,
+    patient_id bigint NOT NULL COMMENT 	'The organisations record for this person’s registration. Patients may have multiple records across clinical systems and may have registered at an organisation multiple times'	,
+    person_id bigint NOT NULL COMMENT 	'Unique individual across all organisations'	,
+    registration_type_concept_id int NULL COMMENT 	'Reference to the registration type of the patient'	,
+    registration_status_concept_id int NULL COMMENT 	'Reference to the registration status of the patient'	,
+    date_registered date NULL COMMENT 	'The date the registration was started  for this episode of care'	,
+    date_registered_end date NULL COMMENT 	'The date the registration was ended  for this episode of care'	,
+    usual_gp_practitioner_id bigint NULL COMMENT 	'Reference to the usual GP for this episode of care'	,
   CONSTRAINT pk_episode_of_care_id PRIMARY KEY (`organization_id`,`person_id`,`id`),
   CONSTRAINT fk_episode_of_care_patient_id_organisation_id FOREIGN KEY (patient_id, organization_id)
       REFERENCES patient (id, organization_id) MATCH SIMPLE
@@ -334,14 +368,14 @@ CREATE INDEX episode_of_care_organization_id
 -- Table: registration_status_history
 
 CREATE TABLE registration_status_history (
-   id bigint(20) NOT NULL,
-   organization_id bigint(20) NOT NULL,
-   patient_id bigint(20) NOT NULL,
-   person_id bigint(20) NOT NULL,
-   episode_of_care_id bigint(20) DEFAULT NULL,
-   registration_status_concept_id int(11) DEFAULT NULL,
-   start_date datetime DEFAULT NULL,
-   end_date datetime DEFAULT NULL,
+ id bigint(20) NOT NULL COMMENT 	'Unique Id of the registration status history'	,
+ organization_id bigint(20) NOT NULL COMMENT 	'Owning organisation (i.e. publisher)'	,
+ patient_id bigint(20) NOT NULL COMMENT 	'Reference to the patient this registration status history belongs to'	,
+ person_id bigint(20) NOT NULL COMMENT 	'Reference to the person this registration status history belongs to'	,
+ episode_of_care_id bigint(20) NULL COMMENT 	'Reference to the episode of care this status history belongs to'	,
+ registration_status_concept_id int(11) NULL COMMENT 	'Reference to the registration status'	,
+ start_date datetime NULL COMMENT 	'The start date for the period this registration status history was valid'	,
+ end_date datetime NULL COMMENT 	'The end date for the period this registration status history was valid'	,
    PRIMARY KEY (organization_id, id, patient_id, person_id),
   CONSTRAINT fk_registration_status_history_episode_id FOREIGN KEY (episode_of_care_id)
       REFERENCES episode_of_care (id) MATCH SIMPLE
@@ -355,22 +389,22 @@ CREATE TABLE registration_status_history (
 
 CREATE TABLE appointment
 (
-  id bigint NOT NULL,
-  organization_id bigint NOT NULL,
-  patient_id bigint NOT NULL,
-  person_id bigint NOT NULL,
-  practitioner_id bigint,
-  schedule_id bigint,
-  start_date datetime,
-  planned_duration integer,
-  actual_duration integer,
-  appointment_status_concept_id int,
-  patient_wait integer,
-  patient_delay integer,
-  date_time_sent_in datetime,
-  date_time_left datetime,
-  source_id varchar(36),
-  cancelled_date datetime,
+    id bigint NOT NULL COMMENT 	'Unique Id of the appointment'	,
+    organization_id bigint NOT NULL COMMENT 	'Owning organisation (i.e. publisher)'	,
+    patient_id bigint NOT NULL COMMENT 	'The organisations record for this person’s registration. Patients may have multiple records across clinical systems and may have registered at an organisation multiple times'	,
+    person_id bigint NOT NULL COMMENT 	'Unique individual across all organisations'	,
+    practitioner_id bigint NULL COMMENT 	'The clinician the activity is recorded against'	,
+    schedule_id bigint NULL COMMENT 	'The schedule the patient was put on to book multiple appointments. ID unique to the applied schedule'	,
+    start_date datetime NULL COMMENT 	'The start date of the appointment'	,
+    planned_duration int NULL COMMENT 	'The time allocated for the appointment, not necessarily the actual duration always in minutes'	,
+    actual_duration int NULL COMMENT 	'Time between sent in and left always in minutes'	,
+    appointment_status_concept_id int NULL COMMENT 	'The status of the appointment e.g. arrived/sent in/left/DNA'	,
+    patient_wait int NULL COMMENT 	'How long the patient waited from being marked as arrived to being sent in'	,
+    patient_delay int NULL COMMENT 	'How long the patient was delayed for'	,
+    date_time_sent_in datetime NULL COMMENT 	'Date and time the patient was sent into the practitioner'	,
+    date_time_left datetime NULL COMMENT 	'Date and time the patient left the practitioner'	,
+    source_id varchar(36) NULL COMMENT 	'Unique reference to the source of the appointment'	,
+    cancelled_date datetime NULL COMMENT 	'The date the appointment was cancelled'	,
   CONSTRAINT pk_appointment_id PRIMARY KEY (organization_id,person_id,id),
   CONSTRAINT fk_appointment_organization_id FOREIGN KEY (organization_id)
       REFERENCES organization (id) MATCH SIMPLE
@@ -392,25 +426,25 @@ CREATE INDEX appointment_patient_id
 
 CREATE TABLE encounter
 (
-  id bigint NOT NULL,
-  organization_id bigint NOT NULL,
-  patient_id bigint NOT NULL,
-  person_id bigint NOT NULL,
-  practitioner_id bigint,
-  appointment_id bigint,
-  clinical_effective_date date,
-  date_precision_concept_id int,
-  episode_of_care_id bigint,
-  service_provider_organization_id bigint,
-  core_concept_id int,
-  non_core_concept_id int,
-  age_at_event decimal (5,2),
-  type text,
-  sub_type text,
-  admission_method varchar(40),
-  end_date date,
-  institution_location_id text,
-  date_recorded datetime,
+    id bigint NOT NULL COMMENT 	'Unique Id of the encounter'	,
+    organization_id bigint NOT NULL COMMENT 	'Owning organisation (i.e. publisher)'	,
+    patient_id bigint NOT NULL COMMENT 	'The organisations record for this person’s registration. Patients may have multiple records across clinical systems and may have registered at an organisation multiple times'	,
+    person_id bigint NOT NULL COMMENT 	'Unique individual across all organisations'	,
+    practitioner_id bigint NULL COMMENT 	'The clinician the activity is recorded against'	,
+    appointment_id bigint NULL COMMENT 	'Reference to the appointment this encounter took part on'	,
+    clinical_effective_date datetime NULL COMMENT 	'The date the clinical code is recorded for'	,
+    date_precision_concept_id int NULL COMMENT 	'Reference to the precision of the date of the encounter'	,
+    episode_of_care_id bigint NULL COMMENT 	'Is this instance of the code a review of a previous encounter'	,
+    service_provider_organization_id bigint NULL COMMENT 	'Reference to the service provider organisation'	,
+    core_concept_id int NULL COMMENT 	'Reference to the type of encounter'	,
+    non_core_concept_id int NULL COMMENT 	'Reference to the type of encounter'	,
+    age_at_event decimal(5,2) NULL COMMENT 	'The age the patient was when this encounter took place'	,
+    type text NULL COMMENT 	'Unused'	,
+    sub_type text NULL COMMENT 	'Unused'	,
+    admission_method varchar(40) NULL COMMENT 	'The admission method of the encounter'	,
+    end_date datetime NULL COMMENT 	'The end date of the encounter'	,
+    institution_location_id text NULL COMMENT 	'Reference to the institution the encounter took place at'	,
+    date_recorded datetime NULL COMMENT 	'The date the encounter was recorded'	,
   CONSTRAINT pk_encounter_id PRIMARY KEY (organization_id,person_id,id),
   /*known examples of Emis consultations referring to unknown appointments, so removed this
   CONSTRAINT fk_encounter_appointment_id FOREIGN KEY (appointment_id)
@@ -458,27 +492,27 @@ CREATE INDEX encounter_core_concept_id_clinical_effective_date
 
 CREATE TABLE encounter_event
 (
-  id bigint NOT NULL,
-  organization_id bigint NOT NULL,
-  patient_id bigint NOT NULL,
-  person_id bigint NOT NULL,
-  encounter_id bigint NOT NULL COMMENT 'parent encounter record',
-  practitioner_id bigint,
-  appointment_id bigint,
-  clinical_effective_date datetime,
-  date_precision_concept_id int,
-  episode_of_care_id bigint,
-  service_provider_organization_id bigint,
-  core_concept_id int,
-  non_core_concept_id int,
-  age_at_event decimal (5,2),
-  type text,
-  sub_type text,
-  admission_method varchar(40),
-  end_date date,
-  institution_location_id bigint,
-  date_recorded datetime,
-  finished boolean,
+    id bigint NOT NULL COMMENT 	'Unique Id of the encounter event'	,
+    organization_id bigint NOT NULL COMMENT 	'Owning organisation (i.e. publisher)'	,
+    patient_id bigint NOT NULL COMMENT 	'The patient this event belongs to'	,
+    person_id bigint NOT NULL COMMENT 	'The person this event belongs to'	,
+    encounter_id bigint NOT NULL COMMENT 	'Reference to the parent encounter record'	,
+    practitioner_id bigint NULL COMMENT 	'The clinician the activity is recorded against'	,
+    appointment_id bigint NULL COMMENT 	'Reference to the appointment this encounter took part on'	,
+    clinical_effective_date datetime NULL COMMENT 	'The date the encounter took place'	,
+    date_precision_concept_id int NULL COMMENT 	'Reference to the precision of the date of the encounter'	,
+    episode_of_care_id bigint NULL COMMENT 	'Reference to the episode of care this encounter belongs to'	,
+    service_provider_organization_id bigint NULL COMMENT 	'Reference to the service provider organisation'	,
+    core_concept_id int NULL COMMENT 	'Reference to the type of encounter'	,
+    non_core_concept_id int NULL COMMENT 	'Reference to the type of encounter'	,
+    age_at_event decimal(5,2) NULL COMMENT 	'The age of the patient at the time of the encounter'	,
+    type text NULL COMMENT 	'Unused'	,
+    sub_type text NULL COMMENT 	'Unused'	,
+    admission_method varchar(40) NULL COMMENT 	'The admission method of the encounter'	,
+    end_date datetime NULL COMMENT 	'The end date of the encounter'	,
+    institution_location_id bigint NULL COMMENT 	'Reference to the institution the encounter took place at'	,
+    date_recorded datetime NULL COMMENT 	'The date the encounter was recorded'	,
+    finished boolean NULL COMMENT 	'Whether the encounter is finished'	,
   CONSTRAINT pk_encounter_event_id PRIMARY KEY (organization_id, person_id, id),
   CONSTRAINT fk_encounter_event_patient_id_organization_id FOREIGN KEY (patient_id, organization_id)
       REFERENCES patient (id, organization_id) MATCH SIMPLE
@@ -505,31 +539,45 @@ CREATE TABLE encounter_additional (
   property_id int NOT NULL COMMENT 'IM concept id reference (i.e. Admission method)',
   value_id int NULL COMMENT 'IM concept id reference (i.e. Emergency admission)',
   json_value JSON NULL COMMENT 'where there is no mapped value_id, just raw JSON (i.e. birth delivery details)',
+  text_value varchar(255) NULL COMMENT 'where there is no mapped value_id, or raw JSON, just a basic text value (i.e. FIN number)',
   CONSTRAINT pk_encounter_additional_id PRIMARY KEY (id, property_id)
 );
 CREATE INDEX encounter_additional_value_id
     ON encounter_additional
         (value_id);
 
+-- Table: appointment_additional
+CREATE TABLE appointment_additional
+(
+    id          bigint NOT NULL COMMENT 'same as the id column on the patient table ',
+    property_id int    NOT NULL COMMENT 'IM reference (e.g. appointment type)',
+    value_id    int NULL COMMENT 'IM reference (e.g. appointment type)',
+    json_value  json NULL COMMENT 'where there is no mapped value_id, just raw JSON',
+    text_value  varchar(255) NULL COMMENT 'where there is no mapped value_id or raw JSON, just a basic text value (i.e. GP Practitioner number)',
+    CONSTRAINT pk_appointment_additional_id PRIMARY KEY (id, property_id)
+);
+CREATE INDEX appointment_additional_value_id
+    on appointment_additional
+        (value_id);
 
 -- Table: allergy_intolerance
 
 CREATE TABLE allergy_intolerance
 (
-  id bigint NOT NULL,
-  organization_id bigint NOT NULL,
-  patient_id bigint NOT NULL,
-  person_id bigint NOT NULL,
-  encounter_id bigint,
-  practitioner_id bigint,
-  clinical_effective_date date,
-  date_precision_concept_id int,
-  is_review boolean NOT NULL,
-  core_concept_id int,
-  non_core_concept_id int,
-  age_at_event decimal (5,2),
-  date_recorded datetime,
-  CONSTRAINT pk_allergy_intolerance_id PRIMARY KEY (`organization_id`,`person_id`,`id`),
+    id bigint NOT NULL COMMENT 	'Unique Id of the allergy'	,
+    organization_id bigint NOT NULL COMMENT 	'Owning organisation (i.e. publisher)'	,
+    patient_id bigint NOT NULL COMMENT 	'The organisations record for this person’s registration. Patients may have multiple records across clinical systems and may have registered at an organisation multiple times'	,
+    person_id bigint NOT NULL COMMENT 	'Unique individual across all organisations'	,
+    encounter_id bigint NULL COMMENT 	'Reference to the encounter this allergy was record in'	,
+    practitioner_id bigint NULL COMMENT 	'The clinician the activity is recorded against'	,
+    clinical_effective_date datetime NULL COMMENT 	'The date the clinical code is recorded for'	,
+    date_precision_concept_id int NULL COMMENT 	'Identifies the precision of the clinical effectiveness date to either year (1) month (2) day (5) minute (12) second (13) millisecond (14)'	,
+    is_review boolean NOT NULL COMMENT 	'Is this instance of the code a review of a previous encounter'	,
+    core_concept_id int NULL COMMENT 	'Reference to the clinical coding of the allergy'	,
+    non_core_concept_id int NULL COMMENT 	'Reference to the clinical coding of the allergy'	,
+    age_at_event decimal(5,2) NULL COMMENT 	'The age the patient was at the time of this event'	,
+    date_recorded datetime NULL COMMENT 	'The date the allergy was recorded'	,
+    CONSTRAINT pk_allergy_intolerance_id PRIMARY KEY (`organization_id`,`person_id`,`id`),
   CONSTRAINT fk_allergy_intolerance_encounter_id FOREIGN KEY (encounter_id)
       REFERENCES encounter (id) MATCH SIMPLE
       ON UPDATE NO ACTION ON DELETE NO ACTION,
@@ -557,25 +605,25 @@ CREATE INDEX allergy_intolerance_core_concept_id
 
 CREATE TABLE medication_statement
 (
-  id bigint NOT NULL,
-  organization_id bigint NOT NULL,
-  patient_id bigint NOT NULL,
-  person_id bigint NOT NULL,
-  encounter_id bigint,
-  practitioner_id bigint,
-  clinical_effective_date date,
-  date_precision_concept_id int,
-  -- is_active boolean NULL,
-  cancellation_date date,
-  dose character varying(1000),
-  quantity_value real,
-  quantity_unit character varying(255),
-  authorisation_type_concept_id int,
-  core_concept_id int,
-  non_core_concept_id int,
-  bnf_reference varchar(6),
-  age_at_event decimal (5,2),
-  issue_method text,
+    id bigint(20) NOT NULL COMMENT 	'Unique Id of the medication'	,
+    organization_id bigint(20) NOT NULL COMMENT 	'Owning organisation (i.e. publisher)'	,
+    patient_id bigint(20) NOT NULL COMMENT 	'The organisations record for this person’s registration. Patients may have multiple records across clinical systems and may have registered at an organisation multiple times'	,
+    person_id bigint(20) NOT NULL COMMENT 	'Unique individual across all organisations'	,
+    encounter_id bigint(20) NULL COMMENT 	'Reference to the encounter this medication was recorded in'	,
+    practitioner_id bigint(20) NULL COMMENT 	'The clinician the activity is recorded against'	,
+    clinical_effective_date datetime NULL COMMENT 	'The date the medication was clinical relevant'	,
+    date_precision_concept_id int NULL COMMENT 	'Identifies the precision of the clinical effectiveness date to either year (1) month (2) day (5) minute (12) second (13) millisecond (14)'	,
+    cancellation_date date NULL COMMENT 	'The date the medication was cancelled'	,
+    dose varchar(1000) NULL COMMENT 	'Texual description of the dose of the medication'	,
+    quantity_value real NULL COMMENT 	'The value of the medication that was prescribed eg 50'	,
+    quantity_unit varchar(255) NULL COMMENT 	'The unit of the medication that was prescribed eg tablets'	,
+    authorisation_type_concept_id int NULL COMMENT 	'Reference to the authorisation type'	,
+    core_concept_id int NULL COMMENT 	'Reference to the clinical coding of the medication'	,
+    non_core_concept_id int NULL COMMENT 	'Reference to the clinical coding of the medication'	,
+    bnf_reference varchar(6) NULL COMMENT 	'A reference to the drug in the BNF dictionary'	,
+    age_at_event decimal(5,2) NULL COMMENT 	'The age the patient was at the time of this event'	,
+    issue_method text NULL COMMENT 	'The issue method of the medication eg hand written'	,
+    date_recorded datetime,
   CONSTRAINT pk_medication_statement_id PRIMARY KEY (`organization_id`,`person_id`,`id`),
   CONSTRAINT fk_medication_statement_encounter_id FOREIGN KEY (encounter_id)
       REFERENCES encounter (id) MATCH SIMPLE
@@ -598,31 +646,32 @@ CREATE INDEX medication_statement_patient_id
 
 CREATE INDEX medication_statement_dmd_id
   ON medication_statement
-  (patient_id);
+  (core_concept_id);
 
 -- Table: medication_order
 
 CREATE TABLE medication_order
 (
-  id bigint NOT NULL,
-  organization_id bigint NOT NULL,
-  patient_id bigint NOT NULL,
-  person_id bigint NOT NULL,
-  encounter_id bigint,
-  practitioner_id bigint,
-  clinical_effective_date date,
-  date_precision_concept_id int,
-  dose character varying(1000),
-  quantity_value real,
-  quantity_unit character varying(255),
-  duration_days integer,
-  estimated_cost real,
-  medication_statement_id bigint,
-  core_concept_id int,
-  non_core_concept_id int,
-  bnf_reference varchar(6),
-  age_at_event decimal (5,2),
-  issue_method text,
+    id bigint NOT NULL COMMENT 	'Unique Id of the medication order'	,
+    organization_id bigint NOT NULL COMMENT 	'Owning organisation (i.e. publisher)'	,
+    patient_id bigint NOT NULL COMMENT 	'The organisations record for this person’s registration. Patients may have multiple records across clinical systems and may have registered at an organisation multiple times'	,
+    person_id bigint NOT NULL COMMENT 	'Unique individual across all organisations'	,
+    encounter_id bigint NULL COMMENT 	'Reference to the encounter the medication order was issued in'	,
+    practitioner_id bigint NULL COMMENT 	'The clinician the activity is recorded against'	,
+    clinical_effective_date datetime NULL COMMENT 	'The date the medication order was issued'	,
+    date_precision_concept_id int NULL COMMENT 	'Identifies the precision of the clinical effectiveness date to either year (1) month (2) day (5) minute (12) second (13) millisecond (14)'	,
+    dose varchar(1000) NULL COMMENT 	'Textual description of the dose'	,
+    quantity_value real NULL COMMENT 	'The value of the medication that was prescribed eg 50'	,
+    quantity_unit varchar(255) NULL COMMENT 	'The unit of the medication that was prescribed eg tablets'	,
+    duration_days int NULL COMMENT 	'How many days the medication is prescribed for'	,
+    estimated_cost real NULL COMMENT 	'The estimated cost of the medication'	,
+    medication_statement_id bigint NULL COMMENT 	'Reference to the medication statement.  A medication statement can have many medication orders'	,
+    core_concept_id int NULL COMMENT 	'Reference to the clinical coding of the medication'	,
+    non_core_concept_id int NULL COMMENT 	'Reference to the clinical coding of the medication'	,
+    bnf_reference varchar(6) NULL COMMENT 	'A reference to the drug in the BNF dictionary'	,
+    age_at_event decimal(5,2) NULL COMMENT 	'The age the patient was at the time of this event'	,
+    issue_method text NULL COMMENT 	'The issue method of the medication eg hand written'	,
+  date_recorded datetime,
   CONSTRAINT pk_medication_order_id PRIMARY KEY (`organization_id`,`person_id`,`id`),
   CONSTRAINT fk_medication_order_encounter_id FOREIGN KEY (encounter_id)
       REFERENCES encounter (id) MATCH SIMPLE
@@ -651,14 +700,14 @@ CREATE INDEX medication_order_core_concept_id
 
 CREATE TABLE flag
 (
-  id bigint NOT NULL,
-  organization_id bigint NOT NULL,
-  patient_id bigint NOT NULL,
-  person_id bigint NOT NULL,
-  effective_date date,
-  date_precision_concept_id int,
-  is_active boolean NOT NULL,
-  flag_text text,
+    id bigint NOT NULL COMMENT 	'Unique Id of the flag'	,
+    organization_id bigint NOT NULL COMMENT 	'Owning organisation (i.e. publisher)'	,
+    patient_id bigint NOT NULL COMMENT 	'The organisations record for this person’s registration. Patients may have multiple records across clinical systems and may have registered at an organisation multiple times'	,
+    person_id bigint NOT NULL COMMENT 	'Unique individual across all organisations'	,
+    effective_date datetime NULL COMMENT 	'The date the flag was entered onto the patients record'	,
+    date_precision_concept_id int NULL COMMENT 	'Identifies the precision of the clinical effectiveness date to either year (1) month (2) day (5) minute (12) second (13) millisecond (14)'	,
+    is_active boolean NOT NULL COMMENT 	'Whether the flag is active or not'	,
+    flag_text text  COMMENT 	'This is a warning set by the publisher regarding he patient'	,
   CONSTRAINT pk_flag_id PRIMARY KEY (`organization_id`,`person_id`,`id`),
   CONSTRAINT fk_flag_patient_id_organization_id FOREIGN KEY (patient_id, organization_id)
   REFERENCES patient (id, organization_id) MATCH SIMPLE
@@ -677,29 +726,29 @@ CREATE INDEX flag_patient_id
 
 CREATE TABLE observation
 (
-  id bigint NOT NULL,
-  organization_id bigint NOT NULL,
-  patient_id bigint NOT NULL,
-  person_id bigint NOT NULL,
-  encounter_id bigint,
-  practitioner_id bigint,
-  clinical_effective_date date,
-  date_precision_concept_id int,
-  result_value real,
-  result_value_units character varying(50),
-  result_date date,
-  result_text text,
-  result_concept_id int,
-  is_problem boolean NOT NULL,
-  is_review boolean NOT NULL,
-  problem_end_date date,
-  parent_observation_id bigint,
-  core_concept_id int,
-  non_core_concept_id int,
-  age_at_event decimal (5,2),
-  episodicity_concept_id int,
-  is_primary boolean,
-  date_recorded datetime,
+    id bigint NOT NULL COMMENT 	'Unique Id of the observation'	,
+    organization_id bigint NOT NULL COMMENT 	'Owning organisation (i.e. publisher)'	,
+    patient_id bigint NOT NULL COMMENT 	'The organisations record for this person’s registration. Patients may have multiple records across clinical systems and may have registered at an organisation multiple times'	,
+    person_id bigint NOT NULL COMMENT 	'Unique individual across all organisations'	,
+    encounter_id bigint NULL COMMENT 	'Reference to the encounter the observation was recorded at'	,
+    practitioner_id bigint NULL COMMENT 	'The clinician the activity is recorded against'	,
+    clinical_effective_date datetime NULL COMMENT 	'The date the observation was identified by a clinician'	,
+    date_precision_concept_id int NULL COMMENT 	'Identifies the precision of the clinical effectiveness date to either year (1) month (2) day (5) minute (12) second (13) millisecond (14)'	,
+    result_value real NULL COMMENT 	'The value of the result of the observation'	,
+    result_value_units varchar(50) NULL COMMENT 	'The units of the result of the observation'	,
+    result_date date NULL COMMENT 	'The date of the result'	,
+    result_text text  COMMENT 	'Any text associated with the result'	,
+    result_concept_id int NULL COMMENT 	'Reference to the clinical coding of the result'	,
+    is_problem boolean NOT NULL COMMENT 	'Whether the observation is marked as a problem'	,
+    is_review boolean NOT NULL COMMENT 	'Whether the observation is a review of an existing problem'	,
+    problem_end_date date NULL COMMENT 	'The end date of the problem'	,
+    parent_observation_id bigint(20) NULL COMMENT 	'Reference to the parent observation in a complex observation eg systolic and diastolic blood pressures will have a parent observation of Blood pressure'	,
+    core_concept_id int NULL COMMENT 	'Reference to the clinical coding of the observation'	,
+    non_core_concept_id int NULL COMMENT 	'Reference to the clinical coding of the observation'	,
+    age_at_event decimal (5,2) NULL COMMENT 	'The age of the patient at the time of the observation'	,
+    episodicity_concept_id int NULL COMMENT 	'Reference to the episodicity of the problem eg First, review, flare'	,
+    is_primary boolean NULL COMMENT 	'Whether the observation is a primary observation'	,
+    date_recorded datetime NULL COMMENT 	'The date the observation was recorded in the system'	,
   CONSTRAINT pk_observation_id PRIMARY KEY (`organization_id`,`person_id`,`id`),
   CONSTRAINT fk_observation_encounter_id FOREIGN KEY (encounter_id)
       REFERENCES encounter (id) MATCH SIMPLE
@@ -747,7 +796,7 @@ CREATE INDEX ix_observation_clinical_effective_date
 CREATE INDEX ix_observation_person_id
   ON observation
   (person_id);
- 
+
  -- Table: observation_additional
 
 CREATE TABLE observation_additional (
@@ -755,6 +804,7 @@ CREATE TABLE observation_additional (
   property_id int NOT NULL COMMENT 'IM reference (i.e. significance)', -- IM dbid reference
   value_id int NULL COMMENT 'IM reference (i.e. minor, significant)',
   json_value json NULL COMMENT 'the JSON data itself ',
+  text_value varchar(255) NULL COMMENT 'where there is no mapped value_id or raw JSON, just a basic text value',
   CONSTRAINT pk_observation_additional_id PRIMARY KEY (id, property_id)
 );
 CREATE INDEX observation_additional_value_id
@@ -765,28 +815,29 @@ CREATE INDEX observation_additional_value_id
 
 CREATE TABLE diagnostic_order
 (
-  id bigint NOT NULL,
-  organization_id bigint NOT NULL,
-  patient_id bigint NOT NULL,
-  person_id bigint NOT NULL,
-  encounter_id bigint,
-  practitioner_id bigint,
-  clinical_effective_date date,
-  date_precision_concept_id int,
-  result_value real,
-  result_value_units character varying(50),
-  result_date date,
-  result_text text,
-  result_concept_id int,
-  is_problem boolean NOT NULL,
-  is_review boolean NOT NULL,
-  problem_end_date date,
-  parent_observation_id bigint,
-  core_concept_id int,
-  non_core_concept_id int,
-  age_at_event decimal (5,2),
-  episodicity_concept_id int,
-  is_primary boolean,
+    id bigint NOT NULL COMMENT 	'Unique Id of the diagnostic order'	,
+    organization_id bigint NOT NULL COMMENT 	'Owning organisation (i.e. publisher)'	,
+    patient_id bigint NOT NULL COMMENT 	'The organisations record for this person’s registration. Patients may have multiple records across clinical systems and may have registered at an organisation multiple times'	,
+    person_id bigint NOT NULL COMMENT 	'Unique individual across all organisations'	,
+    encounter_id bigint NULL COMMENT 	'Reference to the encounter the observation was recorded at'	,
+    practitioner_id bigint NULL COMMENT 	'The clinician the activity is recorded against'	,
+    clinical_effective_date datetime NULL COMMENT 	'The date the diagnostic order was identified by a clinician'	,
+    date_precision_concept_id int NULL COMMENT 	'Identifies the precision of the clinical effectiveness date to either year (1) month (2) day (5) minute (12) second (13) millisecond (14)'	,
+    result_value real NULL COMMENT 	'The value of the result of the observation'	,
+    result_value_units varchar(50) NULL COMMENT 	'The units of the result of the observation'	,
+    result_date date NULL COMMENT 	'The date of the result'	,
+    result_text text NULL COMMENT 	'Any text associated with the result'	,
+    result_concept_id int NULL COMMENT 	'Reference to the clinical coding of the result'	,
+    is_problem boolean NOT NULL COMMENT 	'Whether the observation is marked as a problem'	,
+    is_review boolean NOT NULL COMMENT 	'Whether the observation is a review of an existing problem'	,
+    problem_end_date date NULL COMMENT 	'The end date of the problem'	,
+    parent_observation_id bigint NULL COMMENT 	'Reference to the parent observation in a complex observation eg systolic and diastolic blood pressures will have a parent observation of Blood pressure'	,
+    core_concept_id int NULL COMMENT 	'Reference to the clinical coding of the observation'	,
+    non_core_concept_id int NULL COMMENT 	'Reference to the clinical coding of the observation'	,
+    age_at_event decimal (5,2) NULL COMMENT 	'The age of the patient at the time of the observation'	,
+    episodicity_concept_id int NULL COMMENT 	'Reference to the episodicity of the problem eg First, review, flare'	,
+    is_primary boolean NULL COMMENT 	'Whether the diagnostic order is a primary order'	,
+    date_recorded datetime,
   CONSTRAINT pk_diagnostic_order_id PRIMARY KEY (`organization_id`,`person_id`,`id`),
   CONSTRAINT fk_diagnostic_order_encounter_id FOREIGN KEY (encounter_id)
       REFERENCES encounter (id) MATCH SIMPLE
@@ -834,24 +885,24 @@ CREATE INDEX ix_diagnostic_order_clinical_effective_date
 CREATE INDEX ix_diagnostic_order_person_id
   ON diagnostic_order
   (person_id);
-  
+
 -- Table: procedure_request
 
 CREATE TABLE procedure_request
 (
-  id bigint NOT NULL,
-  organization_id bigint NOT NULL,
-  patient_id bigint NOT NULL,
-  person_id bigint NOT NULL,
-  encounter_id bigint,
-  practitioner_id bigint,
-  clinical_effective_date date,
-  date_precision_concept_id int,
-  status_concept_id int,
-  core_concept_id int,
-  non_core_concept_id int,
-  age_at_event decimal (5,2),
-  date_recorded datetime,
+    id bigint NOT NULL COMMENT 	'Unique Id of the procedure'	,
+    organization_id bigint NOT NULL COMMENT 	'Owning organisation (i.e. publisher)'	,
+    patient_id bigint NOT NULL COMMENT 	'The organisations record for this person’s registration. Patients may have multiple records across clinical systems and may have registered at an organisation multiple times'	,
+    person_id bigint NOT NULL COMMENT 	'Unique individual across all organisations'	,
+    encounter_id bigint NULL COMMENT 	'Reference to the encounter the procedure was administered at'	,
+    practitioner_id bigint NULL COMMENT 	'The clinician the activity is recorded against'	,
+    clinical_effective_date datetime NULL COMMENT 	'The date the procedure was administered by a clinician'	,
+    date_precision_concept_id int NULL COMMENT 	'Identifies the precision of the clinical effectiveness date to either year (1) month (2) day (5) minute (12) second (13) millisecond (14)'	,
+    status_concept_id int NULL COMMENT 	'Reference to the status of the procedure'	,
+    core_concept_id int NULL COMMENT 	'Reference to the clinical coding of the procedure'	,
+    non_core_concept_id int NULL COMMENT 	'Reference to the clinical coding of the procedure'	,
+    age_at_event decimal(5,2) NULL COMMENT 	'The age of the patient at the time of the procedure'	,
+    date_recorded datetime NULL COMMENT 	'The date the procedure was recorded in the source system'	,
   CONSTRAINT pk_procedure_request_id PRIMARY KEY (`organization_id`,`person_id`,`id`),
   /*got an Emis procedure request referring to a confidential encounter, so can't enforce this
   CONSTRAINT fk_procedure_request_encounter_id FOREIGN KEY (encounter_id)
@@ -877,25 +928,25 @@ CREATE INDEX procedure_request_patient_id
 
 CREATE TABLE referral_request
 (
-  id bigint NOT NULL,
-  organization_id bigint NOT NULL,
-  patient_id bigint NOT NULL,
-  person_id bigint NOT NULL,
-  encounter_id bigint,
-  practitioner_id bigint,
-  clinical_effective_date date,
-  date_precision_concept_id int,
-  requester_organization_id bigint,
-  recipient_organization_id bigint,
-  referral_request_priority_concept_id int,
-  referral_request_type_concept_id int,
-  mode character varying(50),
-  outgoing_referral boolean,
-  is_review boolean NOT NULL,
-  core_concept_id int,
-  non_core_concept_id int,
-  age_at_event decimal (5,2),
-  date_recorded datetime,
+    id bigint NOT NULL COMMENT 	'Unique Id of the referral'	,
+    organization_id bigint NOT NULL COMMENT 	'Owning organisation (i.e. publisher)'	,
+    patient_id bigint NOT NULL COMMENT 	'The organisations record for this person’s registration. Patients may have multiple records across clinical systems and may have registered at an organisation multiple times'	,
+    person_id bigint NOT NULL COMMENT 	'Unique individual across all organisations'	,
+    encounter_id bigint NULL COMMENT 	'Reference to the encounter the referral was made in'	,
+    practitioner_id bigint NULL COMMENT 	'The clinician the activity is recorded against'	,
+    clinical_effective_date datetime NULL COMMENT 	'The date the referral was made'	,
+    date_precision_concept_id int NULL COMMENT 	'Identifies the precision of the clinical effectiveness date to either year (1) month (2) day (5) minute (12) second (13) millisecond (14)'	,
+    requester_organization_id bigint NULL COMMENT 	'Reference to the organisation that made the refereral request'	,
+    recipient_organization_id bigint NULL COMMENT 	'Reference to the organization receiving the referral'	,
+    referral_request_priority_concept_id int NULL COMMENT 	'Reference to the priority of the referral'	,
+    referral_request_type_concept_id int NULL COMMENT 	'Reference to the type of referral request'	,
+    mode varchar(50) NULL COMMENT 	'The mode of the referral'	,
+    outgoing_referral boolean NULL COMMENT 	'Whether this is an outgoing referral'	,
+    is_review boolean NOT NULL COMMENT 	'Whether this referral is a review'	,
+    core_concept_id int NULL COMMENT 	'Reference to the clinical coding of the referral'	,
+    non_core_concept_id int NULL COMMENT 	'Reference to the clinical coding of the referral'	,
+    age_at_event decimal(5,2) NULL COMMENT 	'The age of the patient at the time of the referral'	,
+    date_recorded datetime NULL COMMENT 	'The date the referral request was added to the source system'	,
   CONSTRAINT pk_referral_request_id PRIMARY KEY (`organization_id`,`person_id`,`id`),
   /*got an Emis referral request referring to a confidential encounter, so can't enforce this
   CONSTRAINT fk_referral_request_encounter_id FOREIGN KEY (encounter_id)
@@ -928,6 +979,23 @@ CREATE INDEX referral_request_core_concept_id
   (core_concept_id);
 
 
+-- Table: referral_request_additional
+
+CREATE TABLE referral_request_additional (
+     id          bigint NOT NULL COMMENT 'the id of the referral ',
+     property_id int    NOT NULL COMMENT 'concept id for the e.g. referral service offered ',
+     value_id    int NULL COMMENT 'currently unused ',
+     json_value  json NULL COMMENT 'currently unused ',
+     text_value  varchar(255) NULL COMMENT 'text name of the referral service offered, e.g. Ealing North MINT ',
+     CONSTRAINT pk_referral_request_additional_id PRIMARY KEY (id, property_id)
+);
+CREATE INDEX ix_referral_request_additional_id
+    ON referral_request_additional
+        (value_id);
+CREATE INDEX ix_referral_request_additional_text_value
+    ON referral_request_additional
+        (text_value);
+
 /*
 -- Table: pseudo_id
 
@@ -953,9 +1021,9 @@ CREATE INDEX pseudo_id_pseudo_id
 -- Table: patient_uprn
 
 CREATE TABLE patient_uprn (
-	patient_id bigint,
-    organization_id bigint,
-    person_id bigint,
+    patient_id bigint NOT NULL COMMENT 	'The organisations record for this person’s registration. Patients may have multiple records across clinical systems and may have registered at an organisation multiple times',
+    organization_id bigint NOT NULL COMMENT 	'Owning organisation (i.e. publisher)',
+    person_id bigint NOT NULL COMMENT 	'Unique individual across all organisations',
     uprn bigint,
     qualifier varchar(50),
     `algorithm` varchar(255),
@@ -978,15 +1046,15 @@ CREATE UNIQUE INDEX patient_uprn_id
 
 CREATE TABLE patient_contact
 (
-  id                         bigint       NOT NULL,
-  organization_id 			 bigint		  NOT NULL,
-  patient_id                 bigint       NOT NULL,
-  person_id 				 bigint,
-  use_concept_id            int COMMENT 'use of contact (e.g. mobile, home, work)',
-  type_concept_id            int COMMENT 'type of contact (e.g. phone, email)',
-  start_date date,
-  end_date				   date,
-  value                      varchar(255) COMMENT 'the actual phone number or email address',
+    id bigint NOT NULL COMMENT 	'Unique Id of the patient contact'	,
+    organization_id bigint NOT NULL COMMENT 	'Owning organisation (i.e. publisher)'	,
+    patient_id bigint NOT NULL COMMENT 	'The organisations record for this person’s registration. Patients may have multiple records across clinical systems and may have registered at an organisation multiple times'	,
+    person_id bigint NOT NULL COMMENT 	'Unique individual across all organisations'	,
+    use_concept_id int NULL COMMENT 	'use of contact (e.g. mobile, home,work'	,
+    type_concept_id int NULL COMMENT 	'type of contact (e.g. phone, email)'	,
+    start_date date NULL COMMENT 	'The start date of the contact being valid'	,
+    end_date date NULL COMMENT 	'The end date of the contact being valid'	,
+    value varchar(255) NULL COMMENT 	'The value of the contact information eg phone number, email address'	,
   CONSTRAINT pk_organization_id_id_patient_id_person_id PRIMARY KEY (`organization_id`,`id`,`patient_id`,`person_id`),
   CONSTRAINT fk_patient_contact_patient_id_organisation_id FOREIGN KEY (patient_id, organization_id)
       REFERENCES patient (id, organization_id)
@@ -998,25 +1066,26 @@ create unique index ux_patient_contact_id on patient_contact (id);
 
 CREATE TABLE patient_address
 (
-  id                       bigint 			NOT NULL,
-  organization_id 		   bigint		    NOT NULL,
-  patient_id               bigint          	NOT NULL,
-  person_id 			   bigint,
-  address_line_1           varchar(255),
-  address_line_2           varchar(255),
-  address_line_3           varchar(255),
-  address_line_4           varchar(255),
-  city varchar(255),
-  postcode                 varchar(255),
-  use_concept_id          int	NOT NULL COMMENT 'use of address (e.g. home, temporary)',
-  start_date date,
-  end_date				   date,
-  lsoa_2001_code           varchar(9),
-  lsoa_2011_code           varchar(9),
-  msoa_2001_code           varchar(9),
-  msoa_2011_code           varchar(9),
-  ward_code                varchar(9),
-  local_authority_code     varchar(9),
+    id bigint NOT NULL COMMENT 	'Unique Id of the address'	,
+    organization_id bigint NOT NULL COMMENT 	'Owning organisation (i.e. publisher)'	,
+    patient_id bigint NOT NULL COMMENT 	'The organisations record for this person’s registration. Patients may have multiple records across clinical systems and may have registered at an organisation multiple times'	,
+    person_id bigint NOT NULL COMMENT 	'Unique individual across all organisations'	,
+    address_line_1 varchar(255) NULL COMMENT 	'The first line of the address'	,
+    address_line_2 varchar(255) NULL COMMENT 	'The second line of the address'	,
+    address_line_3 varchar(255) NULL COMMENT 	'The third line of the address'	,
+    address_line_4 varchar(255) NULL COMMENT 	'The fourth line of the address'	,
+    city varchar(255) NULL COMMENT 	'The city'	,
+    postcode varchar(255) NULL COMMENT 	'The postcode'	,
+    use_concept_id int NOT NULL COMMENT 	'use of address (e.g. home, temporary)'	,
+    start_date date NULL COMMENT 	'The start date of this address being relevant'	,
+    end_date date NULL COMMENT 	'The end date of this address being relevant'	,
+    lsoa_2001_code varchar(9) NULL COMMENT 	'A reference to the LSOA_2001 code'	,
+    lsoa_2011_code varchar(9) NULL COMMENT 	'A reference to the LSOA_2011 code'	,
+    msoa_2001_code varchar(9) NULL COMMENT 	'A reference to the MSOA_2001 code'	,
+    msoa_2011_code varchar(9) NULL COMMENT 	'A reference to the MSOA_2011 code'	,
+    ward_code varchar(9) NULL COMMENT 	'The ward the address belongs to'	,
+    local_authority_code varchar(9) NULL COMMENT 	'The local authority the address belongs to'	,
+    townsend_deprivation_index real,
   CONSTRAINT pk_organization_id_id_patient_id_person_id PRIMARY KEY (`organization_id`,`id`,`patient_id`,`person_id`),
   CONSTRAINT fk_patient_address_patient_id_organization_id FOREIGN KEY (patient_id, organization_id)
       REFERENCES patient (id, organization_id)
@@ -1038,14 +1107,14 @@ CREATE TABLE event_log (
 
 CREATE TABLE patient_pseudo_id
 (
-  id bigint NOT NULL,
-  organization_id bigint NOT NULL,
-  patient_id bigint NOT NULL,
-  person_id bigint NOT NULL,
-  salt_name varchar(50) NOT NULL,
-  skid varchar(255) NOT NULL,
-  is_nhs_number_valid boolean NOT NULL,
-  is_nhs_number_verified_by_publisher boolean NOT NULL,
+    id bigint(20) NOT NULL COMMENT 	'Unique Id of the patient pseudo id'	,
+    organization_id bigint(20) NOT NULL COMMENT 	'Owning organisation (i.e. publisher)'	,
+    patient_id bigint(20) NOT NULL COMMENT 	'Reference to the patient this registration status history belongs to'	,
+    person_id bigint(20) NOT NULL COMMENT 	'Reference to the person this registration status history belongs to'	,
+    salt_name varchar(50) NOT NULL COMMENT 	'The name of the salt used to create the pseudo id'	,
+    skid varchar(255) NOT NULL COMMENT 	'"Secure Key IDentifier" - the pseudonymised ID generated for this patient using the salt specified in the salt_name column. Typically generated from patient NHS number, but is configurable on a case by case basis (e.g. may include date of birth)'	,
+    is_nhs_number_valid boolean NOT NULL COMMENT 	'Whether the nhs number is valid'	,
+    is_nhs_number_verified_by_publisher boolean NOT NULL COMMENT 	'Whether the nhs number has been verified by the publisher'	,
   CONSTRAINT pk_patient_pseudo_id PRIMARY KEY (`organization_id`,`person_id`,`id`),
   CONSTRAINT fk_patient_pseudo_id FOREIGN KEY (patient_id, organization_id)
       REFERENCES patient (id, organization_id)
@@ -1058,16 +1127,18 @@ CREATE INDEX patient_pseudo_id_patient ON patient_pseudo_id (patient_id);
 -- Table: patient_address_match
 
 CREATE TABLE `patient_address_match` (
-  `id` bigint(20) NOT NULL,
-  `uprn` varchar(255) COLLATE utf8_bin NOT NULL,
+  `id`  bigint(50) NOT NULL AUTO_INCREMENT,
+  `patient_address_id`  bigint(20) NOT NULL,
+  `uprn` varchar(255) COLLATE utf8_bin,
+  `uprn_ralf00` varchar(255),
   `status` tinyint(1) DEFAULT NULL,
-  `classification` varchar(45) CHARACTER SET utf8 DEFAULT NULL,
+  `uprn_property_classification` varchar(45) CHARACTER SET utf8 DEFAULT NULL,
   `latitude` double DEFAULT NULL,
   `longitude` double DEFAULT NULL,
-  `xcoordinate` double DEFAULT NULL,
-  `ycoordinate` double DEFAULT NULL,
+  `uprn_xcoordinate` double DEFAULT NULL,
+  `uprn_ycoordinate` double DEFAULT NULL,
   `qualifier` varchar(50) CHARACTER SET utf8 DEFAULT NULL,
-  `algorithm` varchar(255) CHARACTER SET utf8 DEFAULT NULL,
+  `match_rule` varchar(4096) CHARACTER SET utf8 DEFAULT NULL,
   `match_date` datetime DEFAULT NULL,
   `abp_address_number` varchar(255) CHARACTER SET utf8 DEFAULT NULL,
   `abp_address_street` varchar(255) CHARACTER SET utf8 DEFAULT NULL,
@@ -1081,11 +1152,11 @@ CREATE TABLE `patient_address_match` (
   `match_pattern_building` varchar(255) CHARACTER SET utf8 DEFAULT NULL,
   `match_pattern_flat` varchar(255) CHARACTER SET utf8 DEFAULT NULL,
   `algorithm_version` varchar(255) CHARACTER SET utf8 DEFAULT NULL,
-  `epoc` varchar(255) COLLATE utf8_bin DEFAULT NULL,
-  PRIMARY KEY (`id`,`uprn`),
+  `epoch` varchar(255) COLLATE utf8_bin DEFAULT NULL,
+  PRIMARY KEY (`id`),
   KEY `patient_address_uprn_index` (`uprn`),
   KEY `patient_address_patient_address_id` (`id`,`uprn`),
-  CONSTRAINT `patient_address_uprn_patient_address_id_fk` FOREIGN KEY (`id`) REFERENCES `patient_address` (`id`)
+  CONSTRAINT `patient_address_uprn_patient_address_id_fk` FOREIGN KEY (`patient_address_id`) REFERENCES `patient_address` (`id`)
 );
 
 -- Table: patient_address_ralf
@@ -1106,7 +1177,7 @@ CREATE TABLE patient_address_ralf (
     CONSTRAINT fk_patient_address_ralf_patient_address_id FOREIGN KEY (patient_address_id) REFERENCES patient_address (id)
 );
 
-CREATE UNIQUE INDEX ux_patient_address_ralf_id ON patient_address_ralf (id);
+CREATE INDEX ux_patient_address_ralf_id ON patient_address_ralf (id);
 
 CREATE INDEX patient_address_ralf_patient_id ON patient_address_ralf (patient_id);
 
@@ -1121,30 +1192,50 @@ CREATE TABLE concept (
    document int(11) COMMENT 'Document this concept originated from',
    id varchar(150) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL COMMENT 'Unique human-readable concept id',
    draft tinyint(1),
-   name varchar(255),
-   description varchar(400),
-   scheme bigint(20),
-   code varchar(40) CHARACTER SET utf8 COLLATE utf8_bin DEFAULT NULL,
-   use_count bigint(20),
-   updated datetime NOT NULL,
+   name varchar(255) NULL COMMENT 	'Short name'	,
+   description varchar(400) NULL COMMENT 	'Full name (or term for ontological concepts)'	,
+   scheme bigint(20) NULL COMMENT 	'The coding scheme for the code (Read, CTV3, SNOMED etc)'	,
+   code varchar(40) CHARACTER SET utf8 COLLATE utf8_bin DEFAULT NULL COMMENT 	'The code (non-unique unless coupled with a scheme)'	,
+   use_count bigint(20) NULL DEFAULT 0 COMMENT 	'Rough indicator of number of occurences of the concept'	,
+   updated datetime NOT NULL COMMENT 	'The timestamp of the last update to the concept'	,
    PRIMARY KEY (dbid),
    KEY ix_scheme_code (scheme,code),
    KEY ix_code (code)
  );
 
+create index ix_dbid_code on concept (dbid, code);
+
 -- Table: concept_map
- 
+
  CREATE TABLE concept_map (
-   legacy int(11) NOT NULL,
-   core int(11) NOT NULL,
-   updated datetime NOT NULL,
+   legacy int(11) NOT NULL COMMENT 	'the legacy (read 2, ctv3, icd10, opcs4, emis local, etc) concept',
+   core int(11) NOT NULL COMMENT 	'the core (snomed, discovery) concept that the legacy concept maps to',
+   updated datetime NOT NULL COMMENT 	'Timestamp the map was last updated/added',
    id int(11),
    deleted tinyint(1),
    PRIMARY KEY (id),
    UNIQUE KEY concept_map_uq (legacy,deleted,updated)
  );
- 
- 
+
+create index ix_legacy_core on concept_map (legacy, core);
+
+CREATE TABLE IF NOT EXISTS database_version (
+    version varchar(255) NOT NULL COMMENT 'version of the database',
+    valid_from date NOT NULL COMMENT 'date that the version was updated',
+    valid_to date NULL COMMENT 'date that the version was made outdated',
+    wiki_page varchar(255) COMMENT 'the wiki page where this database structure is found',
+    PRIMARY KEY (valid_from),
+    UNIQUE KEY valid_to_uq (valid_to)
+);
+
+CREATE TABLE schedule_additional(
+    id          bigint NOT NULL COMMENT 'the location id of the appointment ',
+    property_id int    NOT NULL COMMENT 'concept id for the locationType',
+    value_id    int NULL COMMENT 'unused',
+    json_value  json NULL COMMENT 'unused',
+    text_value  varchar(255) NULL COMMENT 'text representation of the schedule location type',
+    CONSTRAINT pk_schedule_additional_id PRIMARY KEY (id, property_id)
+);
 
 DELIMITER //
 CREATE PROCEDURE update_person_record_2(
@@ -1602,6 +1693,56 @@ CREATE TRIGGER after_encounter_additional_delete
   END$$
 DELIMITER ;
 
+ DELIMITER $$
+    CREATE TRIGGER after_appointment_additional_insert
+        AFTER INSERT
+        ON appointment_additional
+        FOR EACH ROW
+    BEGIN
+        INSERT INTO event_log (dt_change,
+                               change_type,
+                               table_id,
+                               record_id)
+        VALUES (now(3), -- current time inc ms
+                0, -- insert
+                39, -- appointment
+                NEW.id);
+        END$$
+        DELIMITER ;
+
+        DELIMITER $$
+        CREATE TRIGGER after_appointment_additional_update
+            AFTER UPDATE
+            ON appointment_additional
+            FOR EACH ROW
+        BEGIN
+            INSERT INTO event_log (dt_change,
+                                   change_type,
+                                   table_id,
+                                   record_id)
+            VALUES (now(3), -- current time inc ms
+                    1, -- update
+                    39, -- appointment_additional
+                    NEW.id);
+            END$$
+            DELIMITER ;
+
+            DELIMITER $$
+            CREATE TRIGGER after_appointment_additional_delete
+                AFTER DELETE
+                ON appointment_additional
+                FOR EACH ROW
+            BEGIN
+                INSERT INTO event_log (dt_change,
+                                       change_type,
+                                       table_id,
+                                       record_id)
+                VALUES (now(3), -- current time inc ms
+                        2, -- delete
+                        39, -- appointment_additional
+                        OLD.id);
+                END$$
+                DELIMITER ;
 DELIMITER $$
 CREATE TRIGGER after_episode_of_care_insert
   AFTER INSERT ON episode_of_care
@@ -2411,6 +2552,64 @@ CREATE TRIGGER after_referral_request_delete
 DELIMITER ;
 
 
+DELIMITER $$
+CREATE TRIGGER after_referral_request_additional_insert
+    AFTER INSERT ON referral_request_additional
+    FOR EACH ROW
+BEGIN
+    INSERT INTO event_log (
+        dt_change,
+        change_type,
+        table_id,
+        record_id
+    ) VALUES (
+                 now(3), -- current time inc ms
+                 0, -- insert
+                 41, -- referral_request_additional
+                 NEW.id
+             );
+    END$$
+    DELIMITER ;
+
+
+DELIMITER $$
+CREATE TRIGGER after_referral_request_additional_update
+AFTER UPDATE ON referral_request_additional
+FOR EACH ROW
+BEGIN
+INSERT INTO event_log (
+    dt_change,
+    change_type,
+    table_id,
+    record_id
+) VALUES (
+             now(3), -- current time inc ms
+             1, -- update
+             41, -- referral_request_additional
+             NEW.id
+         );
+END$$
+DELIMITER ;
+
+
+DELIMITER $$
+CREATE TRIGGER after_referral_request_additional_delete
+    AFTER DELETE ON referral_request_additional
+    FOR EACH ROW
+BEGIN
+    INSERT INTO event_log (
+        dt_change,
+        change_type,
+        table_id,
+        record_id
+    ) VALUES (
+                 now(3), -- current time inc ms
+                 2, -- delete
+                 41, -- referral_request_additional
+                 OLD.id
+             );
+    END$$
+    DELIMITER ;
 
 
 DELIMITER $$
@@ -2798,7 +2997,7 @@ CREATE TRIGGER after_patient_additional_insert
     ) VALUES (
 		now(3), -- current time inc ms
         0, -- insert
-        28, -- patient_additional
+        29, -- patient_additional
         NEW.id
     );
   END$$
@@ -2818,7 +3017,7 @@ CREATE TRIGGER after_patient_additional_update
     ) VALUES (
 		now(3), -- current time inc ms
         1, -- update
-        28, -- patient_additional
+        29, -- patient_additional
         NEW.id
     );
   END$$
@@ -2838,7 +3037,7 @@ CREATE TRIGGER after_patient_additional_delete
     ) VALUES (
 		now(3), -- current time inc ms
         2, -- delete
-        28, -- patient_additional
+        29, -- patient_additional
         OLD.id
     );
   END$$
@@ -2965,3 +3164,137 @@ BEGIN
              );
 END$$
 DELIMITER ;
+
+DELIMITER $$
+CREATE TRIGGER after_organization_metadata_insert
+    AFTER INSERT ON organization_metadata
+    FOR EACH ROW
+BEGIN
+    INSERT INTO event_log (
+        dt_change,
+        change_type,
+        table_id,
+        record_id
+    ) VALUES (
+                 now(3), -- current time inc ms
+                 0, -- insert
+                 24, -- organization_metadata
+                 NEW.id
+             );
+END$$
+DELIMITER ;
+
+
+DELIMITER $$
+CREATE TRIGGER after_organization_metadata_update
+    AFTER UPDATE ON organization_metadata
+    FOR EACH ROW
+BEGIN
+    INSERT INTO event_log (
+        dt_change,
+        change_type,
+        table_id,
+        record_id
+    ) VALUES (
+                 now(3), -- current time inc ms
+                 1, -- update
+                 24, -- organization_metadata
+                 NEW.id
+             );
+END$$
+DELIMITER ;
+
+
+DELIMITER $$
+CREATE TRIGGER after_organization_metadata_delete
+    AFTER DELETE ON organization_metadata
+    FOR EACH ROW
+BEGIN
+    INSERT INTO event_log (
+        dt_change,
+        change_type,
+        table_id,
+        record_id
+    ) VALUES (
+                 now(3), -- current time inc ms
+                 2, -- delete
+                 24, -- organization_metadata
+                 OLD.id
+             );
+END$$
+
+DELIMITER $$
+CREATE TRIGGER after_schedule_additional_delete
+    AFTER DELETE ON schedule_additional
+    FOR EACH ROW
+BEGIN
+    INSERT INTO event_log (
+        dt_change,
+        change_type,
+        table_id,
+        record_id
+    ) VALUES (
+                 now(3), -- current time inc ms
+                 2, -- delete
+                 40, -- schedule_additional
+                 OLD.id
+             );
+END$$
+
+DELIMITER ;
+
+DELIMITER $$
+CREATE TRIGGER after_schedule_additional_insert
+    AFTER INSERT ON schedule_additional
+    FOR EACH ROW
+BEGIN
+    INSERT INTO event_log (
+        dt_change,
+        change_type,
+        table_id,
+        record_id
+    ) VALUES (
+                 now(3), -- current time inc ms
+                 0, -- insert
+                 40, -- schedule_additional
+                 NEW.id
+             );
+END$$
+DELIMITER ;
+
+
+DELIMITER $$
+CREATE TRIGGER after_schedule_additional_update
+    AFTER UPDATE ON schedule_additional
+    FOR EACH ROW
+BEGIN
+    INSERT INTO event_log (
+        dt_change,
+        change_type,
+        table_id,
+        record_id
+    ) VALUES (
+                 now(3), -- current time inc ms
+                 1, -- update
+                 40, -- schedule_additional
+                 NEW.id
+             );
+END$$
+
+DELIMITER ;
+
+DELIMITER $$
+    CREATE procedure update_database_version (IN ver varchar(255))
+    BEGIN
+    DELETE FROM database_version where valid_from = current_date();
+    UPDATE database_version
+    SET valid_to = CURRENT_DATE()
+    WHERE valid_to is null;
+
+    INSERT INTO database_version (version, valid_from, valid_to, wiki_page)
+    VALUES (ver, current_date(), NULL, CONCAT('https://wiki.discoverydataservice.org/Compass_',UPPER(ver),'_Schema_Documentation'));
+    END$$
+DELIMITER ;
+
+-- (adding a table increments a major version e.g. v2.2 adding a column increments minor version eg 2.1.1)
+call update_database_version('2.3.0'); -- update this each time we update the version of the database

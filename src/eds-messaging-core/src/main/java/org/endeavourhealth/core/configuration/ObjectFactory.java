@@ -1,3 +1,4 @@
+
 package org.endeavourhealth.core.configuration;
 
 import javax.xml.bind.annotation.XmlRegistry;
@@ -34,6 +35,54 @@ public class ObjectFactory {
      */
     public ForEachConfig createForEachConfig() {
         return new ForEachConfig();
+    }
+
+    /**
+     * Create an instance of {@link MessageTransformInboundConfig }
+     * 
+     */
+    public MessageTransformInboundConfig createMessageTransformInboundConfig() {
+        return new MessageTransformInboundConfig();
+    }
+
+    /**
+     * Create an instance of {@link DetermineRelevantProtocolIdsConfig }
+     * 
+     */
+    public DetermineRelevantProtocolIdsConfig createDetermineRelevantProtocolIdsConfig() {
+        return new DetermineRelevantProtocolIdsConfig();
+    }
+
+    /**
+     * Create an instance of {@link EnvelopMessageConfig }
+     * 
+     */
+    public EnvelopMessageConfig createEnvelopMessageConfig() {
+        return new EnvelopMessageConfig();
+    }
+
+    /**
+     * Create an instance of {@link CompleteMessageTransformInboundConfig }
+     * 
+     */
+    public CompleteMessageTransformInboundConfig createCompleteMessageTransformInboundConfig() {
+        return new CompleteMessageTransformInboundConfig();
+    }
+
+    /**
+     * Create an instance of {@link PostMessageToExchangeConfig }
+     * 
+     */
+    public PostMessageToExchangeConfig createPostMessageToExchangeConfig() {
+        return new PostMessageToExchangeConfig();
+    }
+
+    /**
+     * Create an instance of {@link PostToSubscriberWebServiceConfig }
+     * 
+     */
+    public PostToSubscriberWebServiceConfig createPostToSubscriberWebServiceConfig() {
+        return new PostToSubscriberWebServiceConfig();
     }
 
     /**
@@ -101,14 +150,6 @@ public class ObjectFactory {
     }
 
     /**
-     * Create an instance of {@link MessageTransformInboundConfig }
-     * 
-     */
-    public MessageTransformInboundConfig createMessageTransformInboundConfig() {
-        return new MessageTransformInboundConfig();
-    }
-
-    /**
      * Create an instance of {@link PGPDecryptConfig }
      * 
      */
@@ -133,22 +174,6 @@ public class ObjectFactory {
     }
 
     /**
-     * Create an instance of {@link DetermineRelevantProtocolIdsConfig }
-     * 
-     */
-    public DetermineRelevantProtocolIdsConfig createDetermineRelevantProtocolIdsConfig() {
-        return new DetermineRelevantProtocolIdsConfig();
-    }
-
-    /**
-     * Create an instance of {@link EnvelopMessageConfig }
-     * 
-     */
-    public EnvelopMessageConfig createEnvelopMessageConfig() {
-        return new EnvelopMessageConfig();
-    }
-
-    /**
      * Create an instance of {@link ComponentConfig }
      * 
      */
@@ -170,22 +195,6 @@ public class ObjectFactory {
      */
     public AuditLastMessageConfig createAuditLastMessageConfig() {
         return new AuditLastMessageConfig();
-    }
-
-    /**
-     * Create an instance of {@link PostMessageToExchangeConfig }
-     * 
-     */
-    public PostMessageToExchangeConfig createPostMessageToExchangeConfig() {
-        return new PostMessageToExchangeConfig();
-    }
-
-    /**
-     * Create an instance of {@link PostToSubscriberWebServiceConfig }
-     * 
-     */
-    public PostToSubscriberWebServiceConfig createPostToSubscriberWebServiceConfig() {
-        return new PostToSubscriberWebServiceConfig();
     }
 
     /**

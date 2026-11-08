@@ -5,11 +5,14 @@ import org.endeavourhealth.core.database.dal.DalProvider;
 import org.endeavourhealth.core.database.dal.audit.LastDataDalI;
 import org.endeavourhealth.core.database.dal.audit.models.Exchange;
 import org.endeavourhealth.core.database.dal.audit.models.HeaderKeys;
+import org.endeavourhealth.core.database.dal.audit.models.LastDataInSubscriber;
 import org.endeavourhealth.core.database.dal.audit.models.LastDataToSubscriber;
+import org.endeavourhealth.core.database.dal.datagenerator.SubscriberZipFileUUIDsDalI;
 import org.endeavourhealth.core.messaging.pipeline.PipelineComponent;
 import org.endeavourhealth.core.messaging.pipeline.PipelineException;
 import org.endeavourhealth.core.messaging.pipeline.SubscriberBatch;
 import org.endeavourhealth.transform.common.ExchangeHelper;
+import org.endeavourhealth.transform.subscriber.SubscriberConfig;
 
 import java.util.Date;
 import java.util.UUID;
@@ -35,7 +38,6 @@ public class AuditLastMessage extends PipelineComponent {
         }
 
         try {
-            LastDataToSubscriber a = new LastDataToSubscriber();
 
             SubscriberBatch subscriberBatch = SubscriberBatch.getSubscriberBatch(exchange);
             String subscriberName = subscriberBatch.getEndpoint();
@@ -53,16 +55,44 @@ public class AuditLastMessage extends PipelineComponent {
                 return;
             }
 
-            a.setServiceId(serviceId);
-            a.setSystemId(systemId);
-            a.setSubscriberConfigName(subscriberName);
-            a.setSentDate(new Date());
-            a.setExchangeId(exchangeId);
-            a.setExtractDate(extractDate);
-            a.setExtractCutoff(extractCutoff);
-
             LastDataDalI dal = DalProvider.factoryLastDataDal();
-            dal.save(a);
+
+            //audit that we've sent the data
+            LastDataToSubscriber lastSent = new LastDataToSubscriber();
+            lastSent.setServiceId(serviceId);
+            lastSent.setSystemId(systemId);
+            lastSent.setSubscriberConfigName(subscriberName);
+            lastSent.setSentDate(new Date());
+            lastSent.setExchangeId(exchangeId);
+            lastSent.setExtractDate(extractDate);
+            lastSent.setExtractCutoff(extractCutoff);
+            dal.save(lastSent);
+
+            LastDataInSubscriber lastWritten = new LastDataInSubscriber();
+            lastWritten.setServiceId(serviceId);
+            lastWritten.setSystemId(systemId);
+            lastWritten.setSubscriberConfigName(subscriberName);
+            lastWritten.setWrittenDate(new Date());
+            lastWritten.setExchangeId(exchangeId);
+            lastWritten.setExtractDate(extractDate);
+            lastWritten.setExtractCutoff(extractCutoff);
+
+            //for internal subscribers we will already have written the data to the DB, but
+            //for remote ones, we'll just have staged it for later collection, so audit that
+            SubscriberConfig subscriberConfig = SubscriberConfig.readFromConfig(subscriberName);
+            if (subscriberConfig.getRemoteSubscriberId() == null) {
+                //if internal, just audit that we're now fully up to date
+                dal.save(lastWritten);
+
+            } else {
+                //if remote, we need to tell the data_generator DB that we're waiting on the specific queued message
+                //and that will get updated later when the Remote Subscriber has actually applied the data
+                UUID queuedMessageId = subscriberBatch.getQueuedMessageId();
+                int subscriberId = subscriberConfig.getRemoteSubscriberId().intValue();
+
+                SubscriberZipFileUUIDsDalI dataGeneratorDal = DalProvider.factorySubscriberZipFileUUIDs();
+                dataGeneratorDal.logLastMessageStaged(subscriberId, queuedMessageId, lastWritten);
+            }
 
 
         } catch (Exception ex) {

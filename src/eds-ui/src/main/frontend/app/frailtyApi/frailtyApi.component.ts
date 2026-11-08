@@ -4,7 +4,7 @@ import {Component} from "@angular/core";
 import {Subscription} from "rxjs/Subscription";
 import {ServiceService} from "../services/service.service";
 import {FrailtyApiService} from "./frailtyApi.service";
-import {FrailtyStat} from "./FrailtyStat";
+import {FrailtyStat, SubscriberFlag} from "./FrailtyStat";
 import {ServiceListComponent} from "../services/serviceList.component";
 import {DateTimeFormatter} from "../utility/DateTimeFormatter";
 
@@ -16,14 +16,18 @@ export class FrailtyApiComponent {
     //SD-338 - need to import the static formatting functions so they can be used by the HTML template
     formatYYYYMMDDHHMM = DateTimeFormatter.formatYYYYMMDDHHMM;
     formatHHMM = DateTimeFormatter.formatHHMM;
+    getDateDiffSimpleFromNow = DateTimeFormatter.getDateDiffSimpleFromNow;
 
     recentStatsGroupBy: string;
     recentStatsMinutesBack: number;
     recentStats: FrailtyStat[];
     recentStatResultsGroupBy: string;
     refreshingRecentStats: boolean;
+    statusLastRefreshed: Date;
 
     downloadingMonthlyStats: boolean;
+    recentStatsSelectedFlag:string;
+    subscriberFlags: SubscriberFlag[];
 
     constructor(protected frailtyService:FrailtyApiService,
                 protected logger:LoggerService,
@@ -35,14 +39,26 @@ export class FrailtyApiComponent {
     ngOnInit() {
         this.recentStatsMinutesBack = 20;
         this.recentStatsGroupBy = 'minute';
+        this.recentStatsSelectedFlag = '';
+        this.getSubscriberFlags();
         this.refreshStatus();
+    }
+
+    getSubscriberFlags(){
+        var vm=this;
+        vm.frailtyService.getSubscriberFlags().subscribe(
+            (result)=>{
+                vm.subscriberFlags = result;
+            }
+        )
     }
 
     refreshStatus() {
         var vm = this;
+        vm.statusLastRefreshed = new Date();
         vm.refreshingRecentStats = true;
 
-        vm.frailtyService.getRecentStats(vm.recentStatsMinutesBack, vm.recentStatsGroupBy).subscribe(
+        vm.frailtyService.getRecentStats(vm.recentStatsMinutesBack, vm.recentStatsGroupBy, vm.recentStatsSelectedFlag).subscribe(
             (result) => {
                 vm.recentStats = result;
                 vm.recentStatResultsGroupBy = vm.recentStatsGroupBy;

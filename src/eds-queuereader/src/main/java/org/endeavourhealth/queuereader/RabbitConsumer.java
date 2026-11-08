@@ -8,6 +8,7 @@ import com.rabbitmq.client.Envelope;
 import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.common.utility.FileHelper;
 import org.endeavourhealth.common.utility.MetricsHelper;
+import org.endeavourhealth.common.utility.MetricsTimer;
 import org.endeavourhealth.common.utility.SlackHelper;
 import org.endeavourhealth.core.application.ApplicationHeartbeatCallbackI;
 import org.endeavourhealth.core.configuration.ComponentConfig;
@@ -36,11 +37,16 @@ public class RabbitConsumer extends DefaultConsumer
 							implements ApplicationHeartbeatCallbackI {
 	private static final Logger LOG = LoggerFactory.getLogger(RabbitConsumer.class);
 
+	//file extensions of the "kill" files that are used to get the QueueReader to gracefully exit
 	private static final String FILE_EXT_KILL = "kill";
 	private static final String FILE_EXT_RESTART = "restart";
+	private static final String FILE_EXT_RESTART_QUIET = "restart_quiet";
 
+	//exit codes for the Queue Reader app, which are used by the runQueueReader script
 	private static final int EXIT_CODE_STOP = 0;
+	private static final int EXIT_CODE_FAILED = 1024;
 	private static final int EXIT_CODE_RESTART = 1025;
+	private static final int EXIT_CODE_RESTART_QUIET = 1026;
 
 	//variables to prevent duplicate processing in the event of Rabbit fail-overs
 	private static final List<RabbitConsumer_State> messagesBeingProcessed = new ArrayList<>();
@@ -68,6 +74,7 @@ public class RabbitConsumer extends DefaultConsumer
 		//call this to delete any pre-existing kill file
 		checkIfKillFileExists(FILE_EXT_KILL);
 		checkIfKillFileExists(FILE_EXT_RESTART);
+		checkIfKillFileExists(FILE_EXT_RESTART_QUIET);
 		deleteExitCodeFile();
 
 		startKillCheckingThread();
@@ -90,43 +97,46 @@ public class RabbitConsumer extends DefaultConsumer
 
 		MetricsHelper.recordEvent("message_received");
 
-		RabbitConsumer_State processingState = findProcessingState(bytes, properties.getHeaders());
+		try (MetricsTimer t = MetricsHelper.recordTime("message_processed")) {
 
-		//check if we should process the message or not
-		long deliveryTag = envelope.getDeliveryTag();
-		if (!processMessageNow(processingState, deliveryTag)) {
-			return;
-		}
+            RabbitConsumer_State processingState = findProcessingState(bytes, properties.getHeaders());
 
-		boolean shouldAck = false;
+            //check if we should process the message or not
+            long deliveryTag = envelope.getDeliveryTag();
+            if (!processMessageNow(processingState, deliveryTag)) {
+                return;
+            }
 
-		Exchange exchange = decodeExchange(properties, bytes);
-		if (exchange != null) {
-			processingState.setExchangeId(exchange.getId());
-			LOG.info(configId + " received exchange " + exchange.getId() + " for " + exchange.getHeader(HeaderKeys.SenderLocalIdentifier));
+            boolean shouldAck = false;
 
-			// Process the message
-			if (pipeline.execute(exchange)) {
-				shouldAck = true;
+            Exchange exchange = decodeExchange(properties, bytes);
+            if (exchange != null) {
+                processingState.setExchangeId(exchange.getId());
+                LOG.info(configId + " received exchange " + exchange.getId() + " for " + exchange.getHeader(HeaderKeys.SenderLocalIdentifier));
 
-				//when we successfully process something, clear this
-				lastExchangeAttempted = null;
+                // Process the message
+                if (pipeline.execute(exchange)) {
+                    shouldAck = true;
 
-			} else {
-				//keep track of rejections and send slack messages if required
-				updateAttemptsOnFailure(processingState, exchange.getException());
-			}
-		}
+                    //when we successfully process something, clear this
+                    lastExchangeAttempted = null;
 
-		//update our state and send the ack or nak
-		processingState.setShouldAck(new Boolean(shouldAck));
-		ackOrNak(processingState, deliveryTag);
+                } else {
+                    //keep track of rejections and send slack messages if required
+                    updateAttemptsOnFailure(processingState, exchange.getException());
+                }
+            }
 
-		//tidy up and remove our processing state object
-		processingFinished(processingState);
+            //update our state and send the ack or nak
+            processingState.setShouldAck(new Boolean(shouldAck));
+            ackOrNak(processingState, deliveryTag);
 
-		//see if we've been told to finish
-		checkIfKillFileExistsAndStopIfSo();
+            //tidy up and remove our processing state object
+            processingFinished(processingState);
+
+            //see if we've been told to finish
+            checkIfKillFileExistsAndStopIfSo();
+        }
 	}
 
 	private static void processingFinished(RabbitConsumer_State processingState) {
@@ -283,7 +293,7 @@ public class RabbitConsumer extends DefaultConsumer
 		//if we've failed on the same exchange X times, then halt the queue reader
 		if (lastExchangeAttempts >= TransformConfig.instance().getAttemptsPermmitedPerExchange()) {
 			String reason = "Failed " + lastExchangeAttempts + " times on exchange " + lastExchangeAttempted.getExchangeId() + " so halting queue reader";
-			stop(reason, 1024); //just use non-standard exit code
+			stop(reason, EXIT_CODE_FAILED); //just use non-standard exit code
 		}
 	}
 
@@ -358,8 +368,12 @@ public class RabbitConsumer extends DefaultConsumer
 			stop(reason, EXIT_CODE_STOP);
 
 		} else if (checkIfKillFileExists(FILE_EXT_RESTART)) {
-			String reason = "Detected restart file";
+			String reason = "Detected restart (loud) file";
 			stop(reason, EXIT_CODE_RESTART);
+
+		} else if (checkIfKillFileExists(FILE_EXT_RESTART_QUIET)) {
+			String reason = "Detected restart (quiet) file";
+			stop(reason, EXIT_CODE_RESTART_QUIET);
 		}
 	}
 

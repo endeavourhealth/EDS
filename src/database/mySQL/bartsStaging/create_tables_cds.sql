@@ -379,7 +379,7 @@ create table cds_outpatient_target_latest
     audit_json                  mediumtext   null comment 'Used for Audit Purposes',
     is_confidential             bool COMMENT 'if this procedure should be confidential or not, i.e. withheld flag set',
 
-    CONSTRAINT pk_emergency_target_latest PRIMARY KEY (unique_id)
+    CONSTRAINT pk_outpatient_target_latest PRIMARY KEY (unique_id)
 );
 
 

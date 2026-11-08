@@ -34,6 +34,8 @@ import org.endeavourhealth.transform.emis.EmisOpenToFhirTransformer;
 import org.endeavourhealth.transform.fhirhl7v2.FhirHl7v2Filer;
 import org.endeavourhealth.transform.hl7v2fhir.FhirTransformer;
 import org.endeavourhealth.transform.homertonhi.HomertonHiCsvToFhirTransformer;
+import org.endeavourhealth.transform.nems.NemsXmlToFhirTransformer;
+import org.endeavourhealth.transform.nwlextracts.NwlExtractsCsvToFhirTransformer;
 import org.endeavourhealth.transform.tpp.TppCsvToFhirTransformer;
 import org.endeavourhealth.transform.vision.VisionCsvToFhirTransformer;
 import org.hl7.fhir.instance.model.Resource;
@@ -168,8 +170,14 @@ public class MessageTransformInbound extends PipelineComponent {
 				} else if (software.equalsIgnoreCase(MessageFormat.BHRUT_CSV)) {
 					processBhrutCsvTransform(exchange, fhirResourceFiler, messageVersion);
 
-				} else if (software.equalsIgnoreCase(MessageFormat.IMPERIAL_HL7_V2)) {
-					processImperialHL7Transform(exchange, fhirResourceFiler, messageVersion);
+				} else if (software.equalsIgnoreCase(MessageFormat.ACUTE_HL7V2)) {
+					processAcuteHL7Transform(exchange, fhirResourceFiler, messageVersion);
+
+				} else if (software.equalsIgnoreCase(MessageFormat.IMPERIAL_CSV)) {
+					processNwlExtractsCsvTransform(exchange, fhirResourceFiler, messageVersion);
+
+				} else if (software.equalsIgnoreCase(MessageFormat.NEMS_XML)){
+					processNemsXml(exchange, fhirResourceFiler, messageVersion);
 
 				} else if (software.equalsIgnoreCase("BULK_TRANSFORM_TO_SUBSCRIBER")) {
 					//do nothing - we ended up with Exchanges re-queued into the inbound queue that should not have been re-queued
@@ -196,22 +204,21 @@ public class MessageTransformInbound extends PipelineComponent {
 			if (currentErrors.getError().size() > 0) {
 				sendSlackAlert(exchange, software, serviceId, currentErrors);
 			}
-
 		}
-
-		//if we had any errors with the transform, update the error state for this service and system, so
-		//we don't attempt to run any further exchanges from the same source until the error is resolved
-		updateErrorState(errorState, serviceId, systemId, exchange.getId(), currentErrors);
-
-		//save the audit of this transform, including errors
-		int newBatchIdCount = batchIds.size() - startingBatchIdCount;
-		updateTransformAudit(transformAudit, currentErrors, newBatchIdCount);
 
 		//may as well clear down the cache of reference mappings since they won't be of much use for the next Exchange
 		IdHelper.clearCache();
 
+		//if we had any errors with the transform, update the error state for this service and system, so
+		//we don't attempt to run any other exchanges from the same source until the error is resolved
+		updateErrorState(errorState, serviceId, systemId, exchange.getId(), currentErrors);
+
+		//save the audit of this transform, including errors
+		int newBatchIdCount = batchIds.size() - startingBatchIdCount;
+		updateTransformAuditAsFinished(transformAudit, currentErrors, newBatchIdCount);
+
 		//if we had any errors during the transform
-		if (currentErrors.getError().size() > 0) {
+		if (!currentErrors.getError().isEmpty()) {
 
 			//for some message formats (e.g. daily non-transactional formats), and in certain environements (e.g. live) we don't want a transform
 			//failure to block the queue until fixed, so check if we're supposed to ACK or reject the message from rabbit or not
@@ -226,19 +233,23 @@ public class MessageTransformInbound extends PipelineComponent {
 				//we don't remove the exchange from Rabbit and it'll just block any further processing on that queue
 				throw new Exception("Failing transform");
 			}
+
+		} else {
+
+			//if we make it here, we fully transformed OK
+
+			//update the "latest data" table to record the new data date in DDS
+			updateDataProcessed(exchange);
+
+			//if our transform didn't generate any batch IDs we still need to send something through the
+			//queues so that we update the last_data_to_subscriber table that records that subscribers are up-to-date,
+			//so use add this special "dummy" UUID
+			if (batchIds.isEmpty()) {
+				batchIds.add(ExchangeHelper.DUMMY_BATCH_ID);
+			}
+
+			return batchIds;
 		}
-
-		//if we make it here, we fully transformed OK
-		updateDataProcessed(exchange);
-
-		//if our transform didn't generate any batch IDs we still need to send something through the
-		//queues so that we update the last_data_to_subscriber table that records that subscribers are up-to-date,
-		//so use add this special "dummy" UUID
-		if (batchIds.isEmpty()) {
-			batchIds.add(ExchangeHelper.DUMMY_BATCH_ID);
-		}
-
-		return batchIds;
 	}
 
 	/**
@@ -319,6 +330,7 @@ public class MessageTransformInbound extends PipelineComponent {
 		ExchangeTransformAudit latest = auditRepository.getLatestExchangeTransformAudit(exchange.getServiceId(), exchange.getSystemId(), exchange.getId());
 		if (latest == null
 				|| (latest.getEnded() != null && latest.getErrorXml() == null)) {
+			//LOG.debug("Last transform attempt null or OK, so will not re-queue previous batches");
 			return;
 		}
 
@@ -327,6 +339,7 @@ public class MessageTransformInbound extends PipelineComponent {
 			UUID batchId = batch.getBatchId();
 			batchIds.add(batchId);
 		}
+		//LOG.debug("Last transform attempt was in error, so will re-queue " + batchIds.size() + " batches");
 	}
 
 	private void processAdastraXml(Exchange exchange, FhirResourceFiler fhirResourceFiler, String version) throws Exception {
@@ -513,9 +526,15 @@ public class MessageTransformInbound extends PipelineComponent {
 		return transformAudit;
 	}
 
-	private void updateTransformAudit(ExchangeTransformAudit transformAudit, TransformError errors, int newBatchIdCount) throws Exception {
+	private void updateTransformAuditAsFinished(ExchangeTransformAudit transformAudit, TransformError errors, int newBatchIdCount) throws Exception {
 
-		transformAudit.setEnded(new Date());
+		//SD-248 - only set the end date if the transform completed WITH an error.
+		//If the transform completed OK, then CompleteMessageTransformInbound will set the end date after
+		//the batches are posted into the RabbitMQ Protocol queue
+		if (!errors.getError().isEmpty()) {
+			transformAudit.setEnded(new Date());
+		}
+
 		transformAudit.setNumberBatchesCreated(new Integer(newBatchIdCount));
 
 		if (errors.getError().size() > 0) {
@@ -629,8 +648,19 @@ public class MessageTransformInbound extends PipelineComponent {
 	 * @param version
 	 * @throws Exception
 	 */
-	private void processImperialHL7Transform(Exchange exchange, FhirResourceFiler fhirResourceFiler, String version) throws Exception {
+	private void processAcuteHL7Transform(Exchange exchange, FhirResourceFiler fhirResourceFiler, String version) throws Exception {
 		FhirTransformer.transform(exchange, fhirResourceFiler, version);
+	}
+
+	private void processNwlExtractsCsvTransform(Exchange exchange, FhirResourceFiler fhirResourceFiler, String version) throws Exception {
+
+	//String exchangeBody = exchange.getBody();
+		NwlExtractsCsvToFhirTransformer.transform(exchange, fhirResourceFiler, version);
+	}
+	private void processNemsXml(Exchange exchange, FhirResourceFiler fhirResourceFiler, String version) throws Exception {
+		UUID exchangeId = exchange.getId();
+		String exchangeBody = exchange.getBody();
+		NemsXmlToFhirTransformer.transform(exchangeBody, fhirResourceFiler, version);
 	}
 
 }

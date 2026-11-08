@@ -1,5 +1,6 @@
 USE reference;
 
+DROP TABLE IF EXISTS townsend_deprivation_lookup;
 DROP TABLE IF EXISTS read2_lookup;
 DROP TABLE IF EXISTS postcode_lookup;
 DROP TABLE IF EXISTS lsoa_lookup;
@@ -30,7 +31,7 @@ CREATE TABLE postcode_lookup
   lsoa_code varchar(9),
   msoa_code varchar(9),
   ward_code varchar(9),
-  ccg_code varchar(3),
+  ccg_code varchar(9),
   local_authority_code varchar(9) COMMENT 'london borough, local authority',
   lsoa_2001_code varchar(9),
   lsoa_2011_code varchar(9),
@@ -56,7 +57,7 @@ CREATE TABLE ccg_lookup
 CREATE TABLE ward_lookup
 (
   ward_code varchar(9) NOT NULL,
-  ward_name varchar(255),
+  ward_name varchar(255) COLLATE utf8mb4_bin,   -- added collation for SD-894 to allow higher byte ward names, i.e. Rhyl Tŷ Newydd
   CONSTRAINT pk_ward_lookup PRIMARY KEY (ward_code)
 );
 
@@ -147,7 +148,7 @@ CREATE UNIQUE INDEX ix_encounter_code_mapping
 CREATE TABLE snomed_lookup (
     concept_id varchar(50),
     type_id varchar(50),
-    term text,
+    term text COLLATE utf8mb4_bin,   -- added collation for SD-768 to allow higher byte terms, i.e. Māori (ethnic group)
     CONSTRAINT pk_encounter_code PRIMARY KEY (concept_id)
 );
 
@@ -281,3 +282,11 @@ CREATE TABLE read2_lookup (
    preferred_term varchar(255) DEFAULT NULL,
    PRIMARY KEY (`read_code`)
  );
+
+CREATE TABLE townsend_deprivation_lookup (
+  postcode_no_space varchar(8) COMMENT 'full postcode with no spaces',
+  townsend_2011_score double COMMENT 'townsend deprivation score',
+  release_version double COMMENT 'release version number',
+  release_date date COMMENT 'release date from file',
+	CONSTRAINT px_townsend_deprivation_lookup PRIMARY KEY (postcode_no_space)
+);

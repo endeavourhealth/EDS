@@ -23,6 +23,7 @@ export class ScheduledTasksComponent {
     //SD-338 - need to import the static formatting functions so they can be used by the HTML template
     formatYYYYMMDDHHMM = DateTimeFormatter.formatYYYYMMDDHHMM;
     formatHHMMSS = DateTimeFormatter.formatHHMMSS;
+    getDateDiffSimpleFromNow = DateTimeFormatter.getDateDiffSimpleFromNow;
 
     latest: ScheduledTaskAudit[];
     rules: ScheduledTaskRule[];
@@ -46,6 +47,8 @@ export class ScheduledTasksComponent {
     refreshAll() {
         var vm = this;
         vm.statusLastRefreshed = new Date();
+        vm.rules = null;
+        vm.latest = null;
         vm.refreshRules();
         vm.refreshSummary();
     }
@@ -57,6 +60,7 @@ export class ScheduledTasksComponent {
             .subscribe(
                 data => {
                     vm.rules = data;
+                    vm.calculateWarnings();
                 },
                 (error) => {
                     vm.logger.error('Failed to load rules', error);
@@ -73,6 +77,7 @@ export class ScheduledTasksComponent {
             .subscribe(
                 data => {
                     vm.latest = data;
+                    vm.calculateWarnings();
                 },
                 (error) => {
                     vm.logger.error('Failed to load summary', error);
@@ -80,50 +85,82 @@ export class ScheduledTasksComponent {
             );
     }
 
+    calculateWarnings() {
+        var vm = this;
+
+        if (!vm.latest
+            || !vm.rules) {
+            return;
+        }
+
+        //for the audit for each rule
+        for (var i=0; i<vm.rules.length; i++) {
+            var rule = vm.rules[i];
+            var found = false;
+
+            for (var j=0; j<vm.latest.length; j++) {
+                var n = vm.latest[j];
+                if (n.applicationName == rule.applicationName
+                    && n.taskName == rule.taskName) {
+
+                    //set the rule on the task
+                    n.rule = rule;
+                    found = true;
+                }
+            }
+
+            //if no audit was found for a rule, create an audit for it
+            if (!found) {
+                //console.log('Did not find ' + rule.applicationName + ' for ' + rule.taskName);
+                var n:ScheduledTaskAudit = new ScheduledTaskAudit();
+                n.applicationName = rule.applicationName;
+                n.taskName = rule.taskName;
+                n.rule = rule;
+                vm.latest.push(n);
+            }
+        }
+
+        //work out if any audits haven't been run in time
+        for (var j=0; j<vm.latest.length; j++) {
+            var n = vm.latest[j];
+
+            if (vm.isItemTooOld(n)) {
+                n.notRunWarning = true;
+            }
+        }
+    }
+
     getSummariesToDisplay(): ScheduledTaskAudit[] {
         var vm = this;
 
         var ret:ScheduledTaskAudit[] = [];
 
-        //console.log('latest = ' + vm.latest)
-        if (vm.latest) {
-            for (var i=0; i<vm.latest.length; i++) {
-                var n = vm.latest[i];
-                //console.log('adding latest at ' + i);
-                ret.push(n);
-            }
+        //if we've not got one of the two arrays, just show all summaries
+        if (!vm.latest
+            || !vm.rules) {
+            return ret;
         }
 
-        if (vm.rules) {
+        for (var i=0; i<vm.latest.length; i++) {
+            var n = vm.latest[i];
 
-            for (var i=0; i<vm.rules.length; i++) {
-                var rule = vm.rules[i];
-                var found = false;
-
-                for (var j=0; j<ret.length; j++) {
-                    var n = ret[j];
-                    if (n.applicationName == rule.applicationName
-                        && n.taskName == rule.taskName) {
-
-                        //set the rule on the task
-                        n.rule = rule;
-                        found = true;
-                    }
-                }
-
-                if (!found) {
-                    //console.log('Did not find ' + rule.applicationName + ' for ' + rule.taskName);
-                    var n:ScheduledTaskAudit = new ScheduledTaskAudit();
-                    n.applicationName = rule.applicationName;
-                    n.taskName = rule.taskName;
-                    n.rule = rule;
-                    ret.push(n);
-                }
+            //if wanting warnings only, then skip any that are OK
+            if (vm.scheduledTasksService.showWarningsOnly
+                && n.success
+                && !n.errorMessage
+                && !n.notRunWarning) {
+                continue;
             }
+
+            //console.log('adding latest at ' + i);
+            ret.push(n);
         }
 
         //sort
-        ret = linq(ret).OrderBy(s => s.applicationName.toLowerCase()).ToArray();
+        ret = linq(ret)
+            .OrderBy(s => s.applicationName.toLowerCase())
+            .ThenBy(s => s.taskName.toLowerCase())
+            .ToArray();
 
         return ret;
     }
@@ -163,7 +200,7 @@ export class ScheduledTasksComponent {
             return 1000 * 60 * 60 * 24 * 7 * rule.within;
 
         } else if (rule.withinUnit == 'month') {
-            return 1000 * 60 * 60 * 24 * 30 * rule.within; //just approx month length
+            return 1000 * 60 * 60 * 24 * 31 * rule.within; //assume max month length
 
         } else if (rule.withinUnit == 'year') {
             return 1000 * 60 * 60 * 24 * 365 * rule.within;
