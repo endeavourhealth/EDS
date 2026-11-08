@@ -324,3 +324,10 @@ index.d.ts
 **/typings/globals
 
 id_file
+src/dds-ui/AGENTS.md
+src/dds-ui/qradmin.sh
+# dds-ui: Vue build output is copied into target by Maven
+src/dds-ui/src/main/webapp/assets/
+src/dds-ui/src/main/webapp/themes/
+src/dds-ui/src/main/webapp/index.html
+src/dds-ui/src/main/webapp/keycloak.json

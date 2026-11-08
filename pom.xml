@@ -32,6 +32,7 @@
     <module>src/eds-queuereader</module>
     <module>src/eds-subscriber</module>
     <module>src/eds-ui</module>
+    <module>src/dds-ui</module>
     <module>src/utility-postcode-updater</module>
     <module>src/utility-enterprise-age-updater</module>
     <module>src/utility-database-deidentifier</module>
