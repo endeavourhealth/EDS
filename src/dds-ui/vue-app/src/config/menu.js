@@ -1,0 +1,20 @@
+// Menu configuration with FontAwesome 6 icon classes
+export default [
+  { caption: 'Publishers', icon: 'fa-solid fa-gears', route: '/services' },
+  { caption: 'Subscribers', icon: 'fa-solid fa-users', route: '/subscribers' },
+  { caption: 'Queue Readers', icon: 'fa-solid fa-list', route: '/queueReaders' },
+  { caption: 'Queue Server Admin', icon: 'fa-solid fa-server', route: '/queueServerAdmin' },
+  { caption: 'Subscriber API', icon: 'fa-solid fa-plug', route: '/subscriberApi' },
+  { caption: 'HL7 Receiver', icon: 'fa-solid fa-arrow-right-arrow-left', route: '/hl7Receiver' },
+  { caption: 'HL7v2 API', icon: 'fa-solid fa-code', route: '/hl7v2Api' },
+  { caption: 'SFTP Reader', icon: 'fa-solid fa-lock', route: '/sftpReader' },
+  { caption: 'Scheduled Tasks', icon: 'fa-solid fa-clock', route: '/scheduledTasks' },
+  { caption: 'Statistics', icon: 'fa-solid fa-chart-bar', route: '/stats' },
+  { caption: 'Remote Filing', icon: 'fa-solid fa-cloud-arrow-up', route: '/remoteFiling' },
+  { caption: 'Audit', icon: 'fa-solid fa-eye', route: '/audit' },
+  { caption: 'Publisher Errors', icon: 'fa-solid fa-triangle-exclamation', route: '/publisherErrors' },
+  { caption: 'Routing Config', icon: 'fa-solid fa-sitemap', route: '/routingConfig' },
+  { caption: 'System Config', icon: 'fa-solid fa-wrench', route: '/systemConfig' },
+  { caption: 'Config Manager', icon: 'fa-solid fa-gear', route: '/configManager' },
+  { caption: 'Monitoring', icon: 'fa-solid fa-tachometer-alt', route: '/logging' },
+]

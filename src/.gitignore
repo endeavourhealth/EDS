@@ -14,3 +14,5 @@ bower_components/
 uiDesigner.xml
 workspace.xml
 vcs.xml
+!dds-ui/vue-app/*.js
+!dds-ui/vue-app/src/**/*.js

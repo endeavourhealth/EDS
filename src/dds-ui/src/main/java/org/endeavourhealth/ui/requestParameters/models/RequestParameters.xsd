@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- edited with XMLSpy v2016 rel. 2 (http://www.altova.com) by Drew Littler (Yorkshire Code Ltd) -->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+	<xs:element name="requestParameters" type="requestParameters"/>
+	<xs:complexType name="requestParameters">
+		<xs:sequence>
+			<xs:element name="reportUuid" type="xs:string"/>
+			<xs:element name="baselineDate" type="xs:date" minOccurs="0"/>
+			<xs:element name="patientType">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:enumeration value="regular"/>
+						<xs:enumeration value="nonRegular"/>
+						<xs:enumeration value="all"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="patientStatus">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:enumeration value="active"/>
+						<xs:enumeration value="all"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="organisation" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+</xs:schema>
